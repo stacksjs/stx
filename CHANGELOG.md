@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.241...v0.2.242)
+
+## 🐛 Bug Fixes
+
+- **typecheck**: declare the browser auto-imports on the script-block path too ([a3f7226](https://github.com/stacksjs/stx/commit/a3f7226)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.242 ([0a87708](https://github.com/stacksjs/stx/commit/0a87708)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.240...v0.2.241)
 
 ## 🐛 Bug Fixes
