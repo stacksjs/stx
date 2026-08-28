@@ -43,6 +43,7 @@
  * @module stx-virtual-ts
  */
 
+import { BROWSER_CORE_IMPORTS } from './client-script'
 import path from 'node:path'
 import { stripCommentsAndLiterals } from './strip-literals'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
@@ -1371,6 +1372,19 @@ export function buildVirtualTypeScript(
     }
     for (const decl of serverContextDeclarations().split('\n'))
       append(decl)
+    /*
+     * The names stx auto-imports into a client script from
+     * `@stacksjs/browser` - `debounce`, `useTimeoutFn`, `useDocumentVisibility`
+     * and the rest of `BROWSER_CORE_IMPORTS`. They are injected at build time
+     * and were declared nowhere, so the checker reported each one as
+     * "Cannot find name" against a script that runs.
+     *
+     * `any`, like the other context names: their real types live in a package
+     * this buffer does not import, and a wrong type would be worse than a
+     * loose one.
+     */
+    for (const name of BROWSER_CORE_IMPORTS)
+      append(`declare var ${name}: any`)
     for (const name of STX_TEMPLATE_GLOBALS)
       append(`declare var ${name}: any`)
     append(`declare var ${INTERPOLATION_PLACEHOLDER}: any`)

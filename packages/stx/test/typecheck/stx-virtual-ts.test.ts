@@ -14,6 +14,7 @@
  * inside `{{ }}`, which renders empty).
  */
 import { describe, expect, it } from 'bun:test'
+import { BROWSER_CORE_IMPORTS } from '../../src/client-script'
 import {
   buildVirtualTypeScript,
   collectBlockDeclarations,
@@ -339,5 +340,27 @@ describe('markup guards narrow the expressions inside them', () => {
     // TypeScript rejects outright as TS1313 - 93 of them on the first attempt.
     expect(virtual.text).toContain('if (row) {')
     expect(virtual.text).not.toMatch(/if \(row\) ;/)
+  })
+})
+
+describe('the names stx auto-imports into a client script are declared', () => {
+  /*
+   * `BROWSER_CORE_IMPORTS` is injected at build time from `@stacksjs/browser` -
+   * `debounce`, `useTimeoutFn`, `useDocumentVisibility` and a dozen more. They
+   * were declared nowhere, so the checker reported each one as "Cannot find
+   * name" against a script that runs, and suggested the nearest global instead:
+   * "Cannot find name 'useTimeoutFn'. Did you mean 'useTimeout'?"
+   */
+  it('declares every browser-core auto-import', () => {
+    const virtual = buildVirtualTypeScript('<script client>\nconst x = 1\n</script>')
+
+    for (const name of BROWSER_CORE_IMPORTS)
+      expect(virtual.text).toContain(`declare var ${name}: any`)
+  })
+
+  it('covers the ones a real component reached for', () => {
+    // Each of these was a diagnostic in the Stacks dashboard components.
+    for (const name of ['useTimeoutFn', 'useDocumentVisibility', 'debounce'])
+      expect(BROWSER_CORE_IMPORTS).toContain(name)
   })
 })

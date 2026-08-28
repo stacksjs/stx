@@ -340,7 +340,7 @@ export const STX_AUTO_IMPORTS: readonly string[] = STX_RUNTIME_GLOBALS
  * App-specific models are detected dynamically (PascalCase identifiers
  * used with query methods like .all(), .find(), .where(), etc.)
  */
-const BROWSER_CORE_IMPORTS = [
+export const BROWSER_CORE_IMPORTS: readonly string[] = [
   // Browser Query Builder - only symbols truly unique to @stacksjs/browser
   'browserQuery', 'BrowserQueryBuilder', 'BrowserQueryError',
   'browserAuth', 'configureBrowser', 'getBrowserConfig',
