@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.243...v0.2.244)
+
+## 🐛 Bug Fixes
+
+- **typecheck**: useObjectUrl was reported as an undefined name ([aef930b](https://github.com/stacksjs/stx/commit/aef930b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **types**: defineEmits rejected its own documented map form ([de852e8](https://github.com/stacksjs/stx/commit/de852e8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **lifecycle**: an async onMount is a type error against an API that runs it ([9e01c8c](https://github.com/stacksjs/stx/commit/9e01c8c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.244 ([3d5f940](https://github.com/stacksjs/stx/commit/3d5f940)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.242...v0.2.243)
 
 ## 🐛 Bug Fixes
