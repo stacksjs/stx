@@ -311,6 +311,24 @@ describe('markup guards narrow the expressions inside them', () => {
     expect(guardChainAt(source, source.indexOf('{{ y }}'))).toEqual(['!(a)', 'b'])
   })
 
+  it('rules out every branch in an @else that follows an @elseif', () => {
+    /*
+     * The case the first implementation got backwards. It negated the
+     * ACCUMULATED conditions, so `['!(a)', 'b']` became `['a', '!(b)']` -
+     * asserting the first branch matched, which is the opposite of `@else`.
+     * A three-branch layout reported "types '\"bare\"' and '\"centered\"' have
+     * no overlap" on markup that is plainly fine.
+     */
+    const source = "@if (v === 'bare')\nA\n@elseif (v === 'centered')\nB\n@else\n{{ d }}\n@endif"
+    expect(guardChainAt(source, source.indexOf('{{ d }}')))
+      .toEqual(["!(v === 'bare')", "!(v === 'centered')"])
+  })
+
+  it('rules out all three when two @elseif precede the @else', () => {
+    const source = '@if (a)\nA\n@elseif (b)\nB\n@elseif (c)\nC\n@else\n{{ d }}\n@endif'
+    expect(guardChainAt(source, source.indexOf('{{ d }}'))).toEqual(['!(a)', '!(b)', '!(c)'])
+  })
+
   it('inverts @unless', () => {
     const source = '@unless (hidden)\n{{ shown }}\n@endunless'
     expect(guardChainAt(source, source.indexOf('shown'))).toEqual(['!(hidden)'])

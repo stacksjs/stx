@@ -1225,7 +1225,16 @@ const DIRECT_ASSIGNMENT_RE = /^\s*[A-Z_$][\w$]*\s*=[^=]/i
  */
 export function guardChainAt(source: string, offset: number): string[] {
   const directive = /@(if|unless|elseif|else|endif|endunless)\b\s*(\()?/g
-  const stack: Array<{ conditions: string[] }> = []
+  /*
+   * Per open block: the branches already ruled out, and the branch we are in.
+   *
+   * Kept apart because merging them is wrong for `@else` after `@elseif`.
+   * Negating an accumulated `['!(a)', 'b']` gives `['a', '!(b)']` - which
+   * asserts the FIRST branch matched, the opposite of what `@else` means. It
+   * surfaced as "types '\"bare\"' and '\"centered\"' have no overlap" on a
+   * three-branch layout.
+   */
+  const stack: Array<{ seen: string[], current: string | null }> = []
   let match: RegExpExecArray | null
 
   while ((match = directive.exec(source)) !== null) {
@@ -1260,23 +1269,29 @@ export function guardChainAt(source: string, offset: number): string[] {
     }
 
     if (name === 'if') {
-      stack.push({ conditions: [condition] })
+      stack.push({ seen: [], current: condition })
     }
     else if (name === 'unless') {
-      stack.push({ conditions: [`!(${condition})`] })
+      stack.push({ seen: [], current: `!(${condition})` })
     }
     else if (name === 'elseif' || name === 'else') {
-      // Everything before this branch is now known to be false, and an
-      // `@elseif` adds its own condition on top.
-      const current = stack[stack.length - 1]
-      if (!current)
+      // The branch we were in is now ruled out, and an `@elseif` opens a new
+      // one on top of that.
+      const open = stack[stack.length - 1]
+      if (!open)
         continue
-      const negated = current.conditions.map(c => `!(${c})`)
-      current.conditions = name === 'elseif' ? [...negated, condition] : negated
+      if (open.current)
+        open.seen.push(open.current)
+      open.current = name === 'elseif' ? condition : null
     }
   }
 
-  return stack.flatMap(entry => entry.conditions).filter(Boolean)
+  return stack
+    .flatMap(entry => [
+      ...entry.seen.map(seen => `!(${seen})`),
+      ...(entry.current ? [entry.current] : []),
+    ])
+    .filter(Boolean)
 }
 
 export function expressionStatement(
