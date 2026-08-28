@@ -17,6 +17,7 @@ import { describe, expect, it } from 'bun:test'
 import {
   buildVirtualTypeScript,
   collectBlockDeclarations,
+  guardChainAt,
   collectTemplateBindings,
   crossScopeCollisions,
   extractScriptBlocks,
@@ -276,5 +277,67 @@ describe('position mapping', () => {
     const resolved = resolvePosition(built, line, (mapped.prefixLength ?? 0) + 5)
     expect(resolved).toMatchObject({ line: 1, column: 11 })
     expect(source[10]).toBe('t')
+  })
+})
+
+describe('markup guards narrow the expressions inside them', () => {
+  /*
+   * A page that writes
+   *
+   *   @if (comparison)
+   *     {{ comparison.name }}
+   *   @endif
+   *
+   * is safe, and `comparison` is `T | undefined` from the lookup above it. The
+   * checker did not know the guard, so every read inside the branch came back
+   * as "possibly undefined" - 75 of them in one real application, which is
+   * where this was found. Reporting against markup that cannot fail is the
+   * fastest way to make a checker ignored, and the fix it implies (add a `?.`)
+   * makes the template worse.
+   */
+  it('reports the enclosing @if', () => {
+    const source = '@if (comparison)\n{{ comparison.name }}\n@endif'
+    expect(guardChainAt(source, source.indexOf('{{ comparison.name }}'))).toEqual(['comparison'])
+  })
+
+  it('negates the condition inside @else', () => {
+    const source = '@if (user)\nA\n@else\n{{ fallback }}\n@endif'
+    expect(guardChainAt(source, source.indexOf('fallback'))).toEqual(['!(user)'])
+  })
+
+  it('carries the earlier branches into @elseif', () => {
+    const source = '@if (a)\nX\n@elseif (b)\n{{ y }}\n@endif'
+    expect(guardChainAt(source, source.indexOf('{{ y }}'))).toEqual(['!(a)', 'b'])
+  })
+
+  it('inverts @unless', () => {
+    const source = '@unless (hidden)\n{{ shown }}\n@endunless'
+    expect(guardChainAt(source, source.indexOf('shown'))).toEqual(['!(hidden)'])
+  })
+
+  it('nests, outermost first', () => {
+    const source = '@if (a)\n@if (b)\n{{ c }}\n@endif\n@endif'
+    expect(guardChainAt(source, source.indexOf('{{ c }}'))).toEqual(['a', 'b'])
+  })
+
+  it('is empty once the block has closed', () => {
+    const source = '@if (a)\nX\n@endif\n{{ after }}'
+    expect(guardChainAt(source, source.indexOf('after'))).toEqual([])
+  })
+
+  it('reads a condition that contains its own parentheses', () => {
+    const source = '@if (items.filter(x => x.on).length)\n{{ items }}\n@endif'
+    expect(guardChainAt(source, source.indexOf('{{ items }}'))).toEqual(['items.filter(x => x.on).length'])
+  })
+
+  it('emits the guard as a braced if, so the statement is not an empty body', () => {
+    const virtual = buildVirtualTypeScript(
+      '<script server>\nconst row = maybeRow()\n</script>\n@if (row)\n{{ row.name }}\n@endif',
+    )
+
+    // `if (row) ;void(…)` makes the leading semicolon the if-body, which
+    // TypeScript rejects outright as TS1313 - 93 of them on the first attempt.
+    expect(virtual.text).toContain('if (row) {')
+    expect(virtual.text).not.toMatch(/if \(row\) ;/)
   })
 })

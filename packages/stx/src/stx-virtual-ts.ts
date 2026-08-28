@@ -70,6 +70,12 @@ export interface TemplateExpression {
   kind: 'interpolation' | 'directive'
   /** For directives, the attribute name (`:if`, `@click`, `x-text`). */
   attribute?: string
+  /**
+   * 0-based offset of the expression's first character, used to work out which
+   * `@if` / `@unless` blocks enclose it. Not part of a diagnostic; `line` and
+   * `column` carry that.
+   */
+  offset?: number
 }
 
 /** A synthetic line's origin, for diagnostics that land outside the source. */
@@ -497,6 +503,7 @@ export function extractTemplateExpressions(source: string): TemplateExpression[]
       code: code.trim(),
       line: lineAt(masked, offset),
       column: columnAt(masked, offset),
+      offset,
       kind: 'interpolation',
     })
   }
@@ -543,6 +550,7 @@ export function extractTemplateExpressions(source: string): TemplateExpression[]
         code: substituteInterpolations(iterable.trim()),
         line: lineAt(masked, offset + iterableStart),
         column: columnAt(masked, offset + iterableStart),
+        offset: offset + iterableStart,
         kind: 'directive',
         attribute: base,
       })
@@ -554,6 +562,7 @@ export function extractTemplateExpressions(source: string): TemplateExpression[]
       code: substituteInterpolations(value.trim()),
       line: lineAt(masked, offset + lead),
       column: columnAt(masked, offset + lead),
+      offset: offset + lead,
       kind: 'directive',
       attribute: base,
     })
@@ -1149,6 +1158,83 @@ const DIRECT_ASSIGNMENT_RE = /^\s*[A-Z_$][\w$]*\s*=[^=]/i
  * errors — `@click="open = !open"` assigns to what TypeScript sees as a
  * `const`, and that form is documented stx syntax, not a mistake.
  */
+/**
+ * The `@if` / `@unless` conditions that enclose a given offset, outermost first
+ * and already negated for `@else` / `@elseif` branches.
+ *
+ * Markup guards its own expressions, and the checker did not know it. A page
+ * that writes
+ *
+ *   @if (comparison)
+ *     {{ comparison.name }}
+ *   @endif
+ *
+ * is safe, and `comparison` is `T | undefined` from the `.find()` above it, so
+ * every read inside the branch came back as "possibly undefined" - 75 of them
+ * in one application. Reported against markup that cannot fail is the fastest
+ * way to make a checker ignored, and the advice it implies (add a `?.`) makes
+ * the template worse.
+ *
+ * Conditions are emitted verbatim into `if (…)`, so a condition that does not
+ * compile is reported where it is written - as its own template expression -
+ * rather than twice.
+ */
+export function guardChainAt(source: string, offset: number): string[] {
+  const directive = /@(if|unless|elseif|else|endif|endunless)\b\s*(\()?/g
+  const stack: Array<{ conditions: string[] }> = []
+  let match: RegExpExecArray | null
+
+  while ((match = directive.exec(source)) !== null) {
+    if (match.index >= offset)
+      break
+
+    const name = match[1]!
+
+    if (name === 'endif' || name === 'endunless') {
+      stack.pop()
+      continue
+    }
+
+    // Read the balanced parenthesised condition, when there is one.
+    let condition = ''
+    if (match[2] === '(') {
+      let depth = 0
+      let index = match.index + match[0].length - 1
+      const start = index + 1
+      for (; index < source.length; index++) {
+        const char = source[index]
+        if (char === '(')
+          depth++
+        else if (char === ')') {
+          depth--
+          if (depth === 0)
+            break
+        }
+      }
+      condition = source.slice(start, index).trim()
+      directive.lastIndex = index + 1
+    }
+
+    if (name === 'if') {
+      stack.push({ conditions: [condition] })
+    }
+    else if (name === 'unless') {
+      stack.push({ conditions: [`!(${condition})`] })
+    }
+    else if (name === 'elseif' || name === 'else') {
+      // Everything before this branch is now known to be false, and an
+      // `@elseif` adds its own condition on top.
+      const current = stack[stack.length - 1]
+      if (!current)
+        continue
+      const negated = current.conditions.map(c => `!(${c})`)
+      current.conditions = name === 'elseif' ? [...negated, condition] : negated
+    }
+  }
+
+  return stack.flatMap(entry => entry.conditions).filter(Boolean)
+}
+
 export function expressionStatement(
   expression: TemplateExpression,
 ): { text: string, prefixLength: number } | null {
@@ -1323,6 +1409,7 @@ export function buildVirtualTypeScript(
       // `(count: __StxTemplateValue<typeof count>)` inline makes the annotation
       // reference the parameter it is annotating, which TypeScript reads as a
       // circular initialiser.
+      const maskedSource = maskNonTemplateRegions(source)
       const declared = [...new Set(blocks.flatMap(block => collectBlockDeclarations(block.code)))]
       const shadowed = declared.filter(name => /^[A-Z_$][\w$]*$/i.test(name))
 
@@ -1337,11 +1424,29 @@ export function buildVirtualTypeScript(
 
       for (const { expression, statement } of statements) {
         const pad = '  '.repeat(indent)
-        append(pad + statement.text, {
+        /*
+         * Wrapped in the `@if` / `@unless` blocks that enclose it, so a guard
+         * the markup already applies narrows the expression the same way it
+         * would in TypeScript. One `if` per expression rather than grouping:
+         * the statement stays on one line, so its diagnostic keeps pointing at
+         * the source line and column it came from.
+         */
+        const guards = expression.offset === undefined
+          ? []
+          : guardChainAt(maskedSource, expression.offset)
+        // Braced, because every statement starts with `;` for ASI safety and
+        // `if (x) ;void(…)` makes that semicolon the if-body - which TypeScript
+        // rejects outright as TS1313.
+        const guardPrefix = guards.length > 0
+          ? `${guards.map(condition => `if (${condition}) `).join('')}{ `
+          : ''
+        const guardSuffix = guards.length > 0 ? ' }' : ''
+
+        append(pad + guardPrefix + statement.text + guardSuffix, {
           line: expression.line,
           column: expression.column,
           expression,
-          prefixLength: statement.prefixLength + pad.length,
+          prefixLength: statement.prefixLength + pad.length + guardPrefix.length,
         })
       }
 
