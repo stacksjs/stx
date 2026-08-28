@@ -78,6 +78,15 @@ describe('crosswind + app shell composition (#1749)', () => {
 
     expect(match).not.toBeNull()
     expect(out).not.toContain('<style data-crosswind="generated">')
-    expect(getCrosswindServeAsset(match![1]!)).toContain('display: flex')
+
+    /*
+     * Whitespace-insensitive: this asserts that the utility COMPILED, and
+     * whether the output is minified is decided by a crosswind config found
+     * relative to the working directory. The same correct CSS satisfied
+     * `'display: flex'` from the repo root and failed from `packages/stx` -
+     * where this package's own `test` script runs - on `display:flex`.
+     */
+    const served = getCrosswindServeAsset(match![1]!).replace(/\s+/g, '')
+    expect(served).toContain('.flex{display:flex')
   })
 })

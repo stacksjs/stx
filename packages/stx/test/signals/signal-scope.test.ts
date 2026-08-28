@@ -117,7 +117,15 @@ describe('Signal Scoped Components', () => {
     const result = await Bun.build({
       entrypoints: [testFile],
       outdir: OUTPUT_DIR,
-      plugins: [stxPlugin()],
+      /*
+       * The components directory is named explicitly rather than left to the
+       * ambient `stx.config.ts`, which the plugin finds relative to the working
+       * directory. Only the repo root has one, so from `packages/stx` - where
+       * this package's own `test` script runs - `<Button />` resolved to the
+       * BUILTIN button instead of the fixture written above, and the assertion
+       * failed against markup the test never wrote.
+       */
+      plugins: [stxPlugin({ componentsDir: path.join(TEMP_DIR, 'components') })],
     })
 
     const html = await getHtmlOutput(result)

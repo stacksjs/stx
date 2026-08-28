@@ -33,12 +33,34 @@ import { describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 
-/** Compile one fixture in isolation and hand back tsc's verdict. */
+/**
+ * Where `props.ts` actually is, from this test file rather than from the
+ * working directory.
+ */
+const PROPS_MODULE = path.resolve(import.meta.dir, '../../src/props')
+
+/**
+ * Compile one fixture in isolation and hand back tsc's verdict.
+ *
+ * `__PROPS__` in the source is replaced with a specifier that reaches
+ * `src/props` from wherever the fixture ended up. It used to be a fixed
+ * `'../../packages/stx/src/props'`, which is correct only when the fixture sits
+ * two levels under the REPO root - true for `bun test` at the root, false for
+ * `bun test` inside `packages/stx`, which is what this package's own `test`
+ * script runs. From there the specifier resolved to `packages/packages/stx/…`
+ * and tsc failed with TS2307 before it ever reached the constraint.
+ *
+ * That is worse than a broken test: all four cases still ran, still called tsc,
+ * and still asserted a non-zero exit - so they were red for a reason that has
+ * nothing to do with `defineProps`, and a real regression in the constraint
+ * would have looked exactly the same.
+ */
 async function compile(source: string): Promise<{ code: number, output: string }> {
   const dir = path.resolve('.stx', `props-iface-${crypto.randomUUID()}`)
   await fs.promises.mkdir(dir, { recursive: true })
   const file = path.join(dir, 'fixture.ts')
-  await Bun.write(file, source)
+  const specifier = path.relative(dir, PROPS_MODULE).replace(/\\/g, '/')
+  await Bun.write(file, source.replaceAll('__PROPS__', specifier.startsWith('.') ? specifier : `./${specifier}`))
 
   const result = Bun.spawnSync(
     // `--types bun` because props.ts reads `process`; without it every run fails
@@ -55,8 +77,8 @@ async function compile(source: string): Promise<{ code: number, output: string }
   }
 }
 
-// `.stx/<dir>/fixture.ts` is two levels below the repo root.
-const PROPS = '../../packages/stx/src/props'
+/** Substituted by {@link compile} for a specifier that resolves from the fixture. */
+const PROPS = '__PROPS__'
 
 describe('defineProps and an interface', () => {
   it('accepts the exact shape the framework scaffolds', async () => {

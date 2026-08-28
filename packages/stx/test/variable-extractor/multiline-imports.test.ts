@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test'
+import { relative, resolve } from 'node:path'
 import { convertToCommonJS, extractVariables, isCompleteImport } from '../../src/variable-extractor'
 
 /**
@@ -47,12 +48,25 @@ describe('isCompleteImport', () => {
   })
 })
 
+/*
+ * `~` is resolved by the extractor against `process.cwd()`, so the fixture's
+ * tilde path has to be written from wherever the tests are being run.
+ *
+ * It was the literal `~/packages/stx/test/fixtures/…`, which is right for
+ * `bun test` at the repo root and doubles to `packages/stx/packages/stx/…` for
+ * `bun test` inside this package - the command this package's own `test` script
+ * runs. The extractor then reported an unresolvable import, left every variable
+ * undefined, and the assertion failed on `undefined` rather than on anything to
+ * do with multi-line imports.
+ */
+const SIDEBAR_FIXTURE = relative(process.cwd(), resolve(import.meta.dir, '../fixtures/server-imports/sidebar'))
+
 describe('convertToCommonJS with multi-line imports', () => {
   it('resolves project-root tilde imports in server scripts', async () => {
     const context: Record<string, unknown> = {}
 
     await extractVariables(
-      `import { buildSidebarRoleMap } from '~/packages/stx/test/fixtures/server-imports/sidebar'
+      `import { buildSidebarRoleMap } from '~/${SIDEBAR_FIXTURE}'
 export const sidebarRoleMap = buildSidebarRoleMap()`,
       context,
       '/project/resources/views/layouts/dashboard.stx',
