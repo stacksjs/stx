@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.238...v0.2.239)
+
+## 🐛 Bug Fixes
+
+- **typecheck**: narrow a template expression by the markup that guards it ([7754614](https://github.com/stacksjs/stx/commit/7754614)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **typecheck**: declare `props` and `loop`, which the runtime provides ([1573774](https://github.com/stacksjs/stx/commit/1573774)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.239 ([e5fed78](https://github.com/stacksjs/stx/commit/e5fed78)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.237...v0.2.238)
 
 ## ✨ Features
