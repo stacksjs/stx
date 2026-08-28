@@ -18,5 +18,5 @@ export const BROWSER_CORE_IMPORTS: readonly string[] = [
   'debounce', 'throttle', 'retry', 'sleep', 'wait', 'delay', 'waitUntil', 'waitWhile',
   'lazy', 'clamp', 'rand', 'readableSize',
   // Stacks composables that are not part of the STX-native runtime
-  'useActiveElement', 'useDocumentVisibility', 'useIntervalFn', 'useTimeoutFn',
+  'useActiveElement', 'useDocumentVisibility', 'useIntervalFn', 'useObjectUrl', 'useTimeoutFn',
 ]
