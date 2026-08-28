@@ -33,34 +33,69 @@ export const toolbarButtonClasses = [
 // without competing with the row cards below it.
 export const isArc = theme === 'arc'
 
-// Window chrome. A macOS sidebar owns the traffic lights, so they are on by
+// Window chrome. A macOS sidebar owns the top-left corner, so it is on by
 // default there. Arc's sidebar can go either way — a browser window puts the
 // lights and the back/forward controls in the sidebar, while an app that only
-// borrows the look wants a bare strip — so on this theme both are opt-in.
+// borrows the look wants a bare strip — so on this theme it is opt-in.
 //
 // `windowControls` says WHO DRAWS THEM, which `showWindowControls` could not
 // express:
 //
-//   'draw'    HTML replicas. Right for a web page imitating macOS.
+//   'auto'    the default: replicas in a browser, the platform's own inside a
+//             Craft window, decided by the host rather than by the author.
+//   'draw'    replicas, always. For a web page imitating macOS — a marketing
+//             shot, a screenshot — that must look the same everywhere.
 //   'native'  the OS already drew them; reserve the room and keep out of it.
 //   'none'    no controls, no room.
 //
-// The distinction is not cosmetic. Inside a real window with the titlebar
-// hidden the platform still draws its own controls, so drawing replicas as
-// well puts SIX circles in the corner — three live ones from the window
-// server and three that only look like buttons.
+// The distinction is not cosmetic. Inside a real window the platform draws its
+// own controls whatever this component does, so replicas there put SIX circles
+// in the corner — three live ones from the window server and three that only
+// look like buttons. That was the old default's doing: the same markup renders
+// on a docs page, where mock lights are the whole point, and in an app, where
+// they are a bug, and a fixed choice cannot be right in both.
 //
-// Measured from a Craft window at 2x: 12pt discs, 20pt apart, the first 10pt
-// from the window's left edge, the block ending 62pt in, centred 14pt below
-// the top. `--stx-native-controls-width` is the room to leave AFTER this
-// header's own left padding, so an app whose platform places them differently
-// can retune it without forking the component.
+// So the host decides. Craft publishes, before the document is parsed:
+//
+//   --craft-window-controls-replicas   the `display` a replica should take —
+//                                      `none` where it drew real buttons
+//   --craft-window-controls-width      the room they need, from the window's
+//                                      left edge (0 when they sit in a
+//                                      titlebar of their own)
+//
+// Both are read as fallbacks, so a browser — where neither is set — draws the
+// replicas and reserves nothing, and no JavaScript is involved either way.
+// `--stx-native-controls-width` stays the manual override for a host that
+// publishes nothing: it is the room to leave AFTER this header's own left
+// padding.
 const controlsProp = $props.windowControls || ''
 export const windowControls = controlsProp
-  || (($props.showWindowControls ?? !isArc) ? 'draw' : 'none')
-export const showWindowControls = windowControls === 'draw'
-export const reserveWindowControls = windowControls === 'native'
+  || (($props.showWindowControls ?? !isArc) ? 'auto' : 'none')
+export const autoWindowControls = windowControls === 'auto'
+export const showWindowControls = windowControls === 'draw' || autoWindowControls
+export const reserveWindowControls = windowControls === 'native' || autoWindowControls
 export const showNavigation = $props.showNavigation ?? false
+
+// A replica yields to the real thing — but only when it was the default that
+// put it there. An author who asked for 'draw' gets replicas everywhere.
+export const replicaStyle = autoWindowControls
+  ? 'display: var(--craft-window-controls-replicas, flex)'
+  : ''
+
+// The room to leave, measured from the window's left edge and reduced by the
+// padding this header already has. `native` was asked for explicitly, so it
+// assumes controls exist and falls back to the measured 62px; `auto` cannot
+// assume, so with no host publishing a width it reserves nothing and lets the
+// replicas stand.
+const controlsWidth = `var(--craft-window-controls-width, ${autoWindowControls ? '0px' : '62px'})`
+export const macosControlsReserve = `var(--stx-native-controls-width, max(0px, calc(${controlsWidth} - 21px)))`
+export const arcControlsReserve = `var(--stx-native-controls-width, max(0px, calc(${controlsWidth} - 12px)))`
+
+// No top padding when the platform's controls overlay this row — see the row
+// itself for why 14pt is the number that matters. Expressed as arithmetic
+// rather than a branch because only the host knows: a window that keeps its
+// buttons in a titlebar publishes a width of 0 and keeps the padding.
+export const arcChromePadding = `padding-top: max(0px, calc(12px - ${controlsWidth}))`
 
 // A titled Arc header with window controls puts the two on one row, the way
 // Arc and Dia do. A logo needs the wider second row to sit in, so its presence
@@ -117,11 +152,23 @@ function onWindowControl(action) {
 
 @if(isMacos)
   <div class="flex h-[52px] shrink-0 items-center justify-between pl-[21px] pr-[10px] [-webkit-app-region:drag]">
-    @if(showWindowControls)
-      <div class="group/lights flex items-center gap-[7px] [-webkit-app-region:no-drag]">
-        <button type="button" class="{{ trafficLightClasses }} bg-[#ff5f57]" aria-label="Close window" @click="onWindowControl('close')"></button>
-        <button type="button" class="{{ trafficLightClasses }} bg-[#febc2e]" aria-label="Minimize window" @click="onWindowControl('minimize')"></button>
-        <button type="button" class="{{ trafficLightClasses }} bg-[#28c840]" aria-label="Zoom window" @click="onWindowControl('zoom')"></button>
+    @if(showWindowControls || reserveWindowControls)
+      <div class="flex items-center [-webkit-app-region:no-drag]">
+        @if(reserveWindowControls)
+          <!--
+            Empty on purpose. Where the platform drew the real buttons they are
+            already here, over the top of this row; anything rendered into this
+            space would sit underneath them.
+          -->
+          <span class="shrink-0" style="width: {{ macosControlsReserve }}" aria-hidden="true"></span>
+        @endif
+        @if(showWindowControls)
+          <div class="group/lights flex items-center gap-[7px]" style="{{ replicaStyle }}">
+            <button type="button" class="{{ trafficLightClasses }} bg-[#ff5f57]" aria-label="Close window" @click="onWindowControl('close')"></button>
+            <button type="button" class="{{ trafficLightClasses }} bg-[#febc2e]" aria-label="Minimize window" @click="onWindowControl('minimize')"></button>
+            <button type="button" class="{{ trafficLightClasses }} bg-[#28c840]" aria-label="Zoom window" @click="onWindowControl('zoom')"></button>
+          </div>
+        @endif
       </div>
     @elseif(logo || title)
       <div class="flex min-w-0 items-center gap-[8px] [-webkit-app-region:no-drag]">
@@ -168,7 +215,7 @@ function onWindowControl(action) {
     where the platform puts the middle of its controls (they span 8..19pt).
     Any padding above pushes the name below buttons it is meant to sit beside.
   -->
-  <div class="flex flex-col gap-[8px] px-[10px] pb-[8px] {{ reserveWindowControls ? 'pt-0' : 'pt-[12px]' }}">
+  <div class="flex flex-col gap-[8px] px-[10px] pb-[8px]" style="{{ reserveWindowControls ? arcChromePadding : 'padding-top: 12px' }}">
     @if(showWindowControls || reserveWindowControls || showNavigation)
       <div class="flex items-center gap-[12px] px-[2px] [-webkit-app-region:drag]">
         @if(reserveWindowControls)
@@ -177,10 +224,10 @@ function onWindowControl(action) {
             buttons here; anything rendered into this space would sit under
             them, and a replica beside them would make six.
           -->
-          <span class="shrink-0" style="width: var(--stx-native-controls-width, 52px)" aria-hidden="true"></span>
+          <span class="shrink-0" style="width: {{ arcControlsReserve }}" aria-hidden="true"></span>
         @endif
         @if(showWindowControls)
-          <div class="flex items-center gap-[7px] [-webkit-app-region:no-drag]">
+          <div class="flex items-center gap-[7px] [-webkit-app-region:no-drag]" style="{{ replicaStyle }}">
             <button type="button" class="{{ trafficLightClasses }} bg-[#ff5f57]" aria-label="Close window" @click="onWindowControl('close')"></button>
             <button type="button" class="{{ trafficLightClasses }} bg-[#febc2e]" aria-label="Minimize window" @click="onWindowControl('minimize')"></button>
             <button type="button" class="{{ trafficLightClasses }} bg-[#28c840]" aria-label="Zoom window" @click="onWindowControl('zoom')"></button>

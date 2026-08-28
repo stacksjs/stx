@@ -118,22 +118,27 @@ export interface SidebarHeaderProps {
   /**
    * Who draws the window controls.
    *
-   * - `draw` — HTML replicas, wired to Craft's window API when present. Right
-   *   for a web page imitating macOS.
+   * - `auto` — the default. Replicas in a browser, the platform's own inside a
+   *   Craft window, decided by the host rather than by the author.
+   * - `draw` — replicas, always. For a web page imitating macOS that has to
+   *   look the same everywhere.
    * - `native` — the platform already drew them. Reserve the room and render
    *   nothing into it.
    * - `none` — no controls and no room.
    *
-   * Inside a real window with the titlebar hidden the platform draws its own
-   * controls regardless, so `draw` there puts SIX circles in the corner: three
-   * live buttons from the window server and three that only look like them.
+   * Inside a real window the platform draws its own controls whatever this
+   * component does, so replicas there put SIX circles in the corner: three live
+   * buttons from the window server and three that only look like them. `auto`
+   * exists because the same markup renders on a docs page, where mock lights
+   * are the point, and in an app, where they are a bug — it reads the host's
+   * `--craft-window-controls-replicas` and `--craft-window-controls-width`,
+   * which Craft publishes before the document is parsed.
    *
-   * The reserved width is `--stx-native-controls-width` (default 52px, the
-   * room after this header's own left padding), so an app whose platform
-   * places them differently can retune it.
+   * `--stx-native-controls-width` overrides the reserved width for a host that
+   * publishes nothing; it is the room after this header's own left padding.
    */
-  windowControls?: 'draw' | 'native' | 'none'
-  /** @deprecated Use `windowControls`. `true` means `draw`, `false` means `none`. */
+  windowControls?: 'auto' | 'draw' | 'native' | 'none'
+  /** @deprecated Use `windowControls`. `true` means `auto`, `false` means `none`. */
   showWindowControls?: boolean
   /** Floating Liquid Glass toolbar buttons on the right. */
   actions?: SidebarActionData[]
