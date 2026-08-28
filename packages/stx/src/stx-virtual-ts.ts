@@ -706,6 +706,17 @@ export const STX_SERVER_CONTEXT = [
   // the typed bridge is built on.
   'defineClientPayload',
   'defineStore',
+  /*
+   * The render props.
+   *
+   * `variable-extractor.ts` reserves `props` and `$props` as context bindings,
+   * so a server block reads them the same way it reads `params` - but they were
+   * not declared here, only in `STX_TEMPLATE_GLOBALS`, which covers template
+   * expressions and not script blocks. Every email template in the wild opens
+   * `const name = props.customerName`, and the checker called that a typo.
+   */
+  'props',
+  '$props',
 ] as const
 
 export function serverContextDeclarations(): string {
@@ -1096,6 +1107,13 @@ export const STX_TEMPLATE_GLOBALS = [
   '$page',
   '$route',
   '$loop',
+  /*
+   * `loop` as well as `$loop`. The loop directive binds BOTH names to the same
+   * context - see `loop:` / `$loop:` in `loops.ts` - and only the sigil form
+   * was declared, so `{{ loop.index }}` and `{{ loop.last }}` were reported as
+   * "Cannot find name 'loop'. Did you mean '$loop'?" against markup that works.
+   */
+  'loop',
   '$errors',
   '$csrf',
   'props',
