@@ -14,8 +14,19 @@
 // Types
 // =============================================================================
 
-export type LifecycleHook = () => void | (() => void)
 export type CleanupFn = () => void
+
+/**
+ * A lifecycle hook may be `async`.
+ *
+ * `onMount(async () => { data.set(await load()) })` is the documented way to
+ * fetch a component's initial data, and the signals API has always typed it
+ * that way. This declaration used to allow only a synchronous hook, so every
+ * async `onMount` in a real app was a type error against an API that ran it
+ * fine. Only a *synchronous* return can be a cleanup function - the runtime
+ * registers it before the next hook runs - so a promise resolves to `void`.
+ */
+export type LifecycleHook = () => void | CleanupFn | Promise<void>
 // eslint-disable-next-line pickier/no-unused-vars
 export type WatchCallback<T> = (newValue: T, oldValue: T | undefined) => void | CleanupFn
 export type WatchSource<T> = () => T
@@ -95,6 +106,10 @@ function getOrWarnInstance(hookName: string): ComponentInstance | null {
     return null
   }
   return currentInstance
+}
+
+function isThenable(value: unknown): value is Promise<unknown> {
+  return typeof (value as { then?: unknown } | null | undefined)?.then === 'function'
 }
 
 // =============================================================================
@@ -395,6 +410,11 @@ export function mountComponent(instance: ComponentInstance): void {
       if (typeof cleanup === 'function') {
         instance.destroyHooks.push(cleanup)
       }
+      else if (isThenable(cleanup)) {
+        // An async hook throws after it has already returned, so the catch
+        // below never sees it. Route it to the same place.
+        cleanup.catch((error: unknown) => console.error('[stx] Error in lifecycle hook:', error))
+      }
     }
 catch (error) {
       console.error('[stx] Error in onMount hook:', error)
@@ -413,6 +433,11 @@ export function updateComponent(instance: ComponentInstance): void {
       const cleanup = hook()
       if (typeof cleanup === 'function') {
         instance.destroyHooks.push(cleanup)
+      }
+      else if (isThenable(cleanup)) {
+        // An async hook throws after it has already returned, so the catch
+        // below never sees it. Route it to the same place.
+        cleanup.catch((error: unknown) => console.error('[stx] Error in lifecycle hook:', error))
       }
     }
 catch (error) {
@@ -596,6 +621,9 @@ finally {
         const cleanup = hook();
         if (typeof cleanup === 'function') {
           instance.destroyHooks.push(cleanup);
+        }
+        else if (cleanup && typeof cleanup.then === 'function') {
+          cleanup.catch(function(e) { console.error('[stx] onMount error:', e); });
         }
       }
 catch (e) {

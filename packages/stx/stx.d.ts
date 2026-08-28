@@ -78,12 +78,25 @@ declare function isDerived(_value: unknown): value is StxDerivedSignal<unknown>
 // Lifecycle
 // ============================================================================
 
-declare function onMount(_fn: () => void | StxCleanup): void
-declare function onDestroy(_fn: () => void): void
-declare function onBeforeMount(_fn: () => void): void
-declare function onMounted(_fn: () => void | StxCleanup): void
-declare function onBeforeUnmount(_fn: () => void): void
-declare function onUnmounted(_fn: () => void): void
+/**
+ * A lifecycle hook may be `async`.
+ *
+ * `onMount(async () => { rows.set(await load()) })` is the documented way to
+ * fetch a component's initial data - it is the second JSDoc example on both
+ * `onMount` implementations - and the runtime has always awaited nothing and
+ * simply let the promise run. These declarations left the promise out of the
+ * return union, so every async `onMount` in a real app was a type error
+ * against a call that works.
+ *
+ * Only a synchronous return can be a cleanup function: the runtime registers
+ * it before the next hook runs. So a promise resolves to `void`.
+ */
+declare function onMount(_fn: () => void | StxCleanup | Promise<void>): void
+declare function onDestroy(_fn: () => void | Promise<void>): void
+declare function onBeforeMount(_fn: () => void | Promise<void>): void
+declare function onMounted(_fn: () => void | StxCleanup | Promise<void>): void
+declare function onBeforeUnmount(_fn: () => void | Promise<void>): void
+declare function onUnmounted(_fn: () => void | Promise<void>): void
 // onBeforeUpdate / onUpdated / onErrorCaptured are NOT declared: they exist in
 // reactivity.ts and composition-api.ts but have no client-runtime counterpart,
 // so declaring them promised a global that resolved to undefined (#1804).
@@ -608,7 +621,26 @@ declare function watchMultiple(
 
 declare function defineProps<T extends Record<string, any> = Record<string, any>>(_definitions?: any): T
 declare function withDefaults<T extends Record<string, any>>(_props: T, _defaults: Partial<T>): T
-declare function defineEmits<T extends string = string>(): (_event: T, _payload?: unknown) => void
+/**
+ * Two forms, matching the runtime.
+ *
+ * The union form names the events and leaves the payload open. The map form
+ * gives each event a payload tuple, so `emit('view')` with a missing record
+ * and `emit('view', record, extra)` with a spare one are both errors.
+ *
+ * This used to be the union form alone, with a single optional `_payload`.
+ * That made the documented map form - the one `props.ts` and the composition
+ * API both implement, and the one the dashboard tables are written in - a
+ * constraint violation, and made a third argument an arity error even though
+ * the runtime forwards every argument it is given.
+ *
+ * @example
+ * const emit = defineEmits<'change' | 'close'>()
+ * @example
+ * const emit = defineEmits<{ view: [record: Row], remove: [id: number] }>()
+ */
+declare function defineEmits<T extends string = string>(): (_event: T, ..._args: unknown[]) => void
+declare function defineEmits<T extends Record<string, unknown[]>>(): <K extends keyof T & string>(_event: K, ..._args: T[K]) => void
 declare function defineExpose<T extends Record<string, any>>(_exposed: T): void
 declare function defineSlots<T extends Record<string, (..._args: any[]) => any> = Record<string, (..._args: any[]) => any>>(): T
 declare function provide<T>(_key: string | symbol, _value: T): void
