@@ -340,17 +340,8 @@ export const STX_AUTO_IMPORTS: readonly string[] = STX_RUNTIME_GLOBALS
  * App-specific models are detected dynamically (PascalCase identifiers
  * used with query methods like .all(), .find(), .where(), etc.)
  */
-export const BROWSER_CORE_IMPORTS: readonly string[] = [
-  // Browser Query Builder - only symbols truly unique to @stacksjs/browser
-  'browserQuery', 'BrowserQueryBuilder', 'BrowserQueryError',
-  'browserAuth', 'configureBrowser', 'getBrowserConfig',
-  'createBrowserDb', 'createBrowserModel', 'isBrowser',
-  // Browser utilities promised by the Stacks browser auto-import manifest
-  'debounce', 'throttle', 'retry', 'sleep', 'wait', 'delay', 'waitUntil', 'waitWhile',
-  'lazy', 'clamp', 'rand', 'readableSize',
-  // Stacks composables that are not part of the STX-native runtime
-  'useActiveElement', 'useDocumentVisibility', 'useIntervalFn', 'useTimeoutFn',
-]
+export { BROWSER_CORE_IMPORTS } from './browser-core-imports'
+import { BROWSER_CORE_IMPORTS } from './browser-core-imports'
 
 export interface BrowserCoreAutoImportResult {
   code: string

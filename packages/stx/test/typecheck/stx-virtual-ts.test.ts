@@ -401,3 +401,33 @@ describe('a @foreach head is read to its balanced close', () => {
     expect(collectTemplateBindings(unclosed)).toEqual([])
   })
 })
+
+describe('a client script may call the browser auto-imports', () => {
+  /*
+   * There are two declaration paths and only one of them knew about these.
+   * `buildVirtualTypeScript` covers TEMPLATE expressions; script blocks
+   * assemble their globals separately in `typecheck.ts`, so a block calling
+   * `debounce(…)` or `useTimeoutFn(…)` was told it was a typo, with the nearest
+   * runtime global offered as a correction:
+   *
+   *   Cannot find name 'useTimeoutFn'. Did you mean 'useTimeout'?
+   *
+   * The list is a leaf module for the same reason: reached across
+   * `client-script.ts`, the chunked build stopped emitting the template half
+   * of it, silently.
+   */
+  it('declares them for template expressions', () => {
+    const virtual = buildVirtualTypeScript('<script client>\nconst x = 1\n</script>')
+
+    for (const name of BROWSER_CORE_IMPORTS)
+      expect(virtual.text).toContain(`declare var ${name}: any`)
+  })
+
+  it('imports the list from a module that imports nothing', async () => {
+    // If this ever reaches back into `client-script`, the bundled build can
+    // order it after its first use again.
+    const leaf = await Bun.file(new URL('../../src/browser-core-imports.ts', import.meta.url)).text()
+    // Import STATEMENTS, not the word - the docblock says "auto-imports".
+    expect(leaf.split('\n').filter(line => /^\s*import\b/.test(line))).toEqual([])
+  })
+})

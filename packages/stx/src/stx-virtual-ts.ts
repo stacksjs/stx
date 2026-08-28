@@ -43,7 +43,7 @@
  * @module stx-virtual-ts
  */
 
-import { BROWSER_CORE_IMPORTS } from './client-script'
+import { BROWSER_CORE_IMPORTS } from './browser-core-imports'
 import path from 'node:path'
 import { stripCommentsAndLiterals } from './strip-literals'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'

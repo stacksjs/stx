@@ -32,6 +32,7 @@
 
 import type { ScriptBlock, ScriptKind, VirtualFile } from './stx-virtual-ts'
 import { existsSync, readFileSync } from 'node:fs'
+import { BROWSER_CORE_IMPORTS } from './browser-core-imports'
 import path from 'node:path'
 import type { ComposableModule } from './composable-loader'
 import { listComposableModules } from './composable-loader'
@@ -623,6 +624,20 @@ export async function typecheckStxFiles(
       // untyped globals still beat unresolved ones, because the alternative is
       // a wall of "Cannot find name" on working code.
       : ['declare const window: any', ...STX_RUNTIME_GLOBALS.map(name => `declare const ${name}: any`)]),
+    /*
+     * The names stx injects into a client script from `@stacksjs/browser` -
+     * `debounce`, `throttle`, `sleep`, `useTimeoutFn`, `useDocumentVisibility`
+     * and the rest. They are declared for TEMPLATE expressions by
+     * `buildVirtualTypeScript`, and script blocks assemble their globals here
+     * instead - so a block calling one was told it was a typo, with the nearest
+     * runtime global offered as a correction: "Cannot find name 'useTimeoutFn'.
+     * Did you mean 'useTimeout'?"
+     *
+     * `any` on purpose. Their real types live in a package these buffers do not
+     * import, and a wrong type would be worse than a loose one.
+     */
+    ['// Generated — the names stx auto-imports from @stacksjs/browser.',
+      ...BROWSER_CORE_IMPORTS.map(name => `declare const ${name}: any`)].join('\n'),
     virtualStxModuleDeclaration(files),
     composableGlobalDeclarations(await listComposableModules()),
   ].filter(Boolean).join('\n')
