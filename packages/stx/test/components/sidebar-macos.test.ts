@@ -155,7 +155,10 @@ describe('macOS sidebar component', () => {
     expect(sidebarId).toStartWith('stx-sidebar-')
     expect(result).not.toContain(`getElementById("${sidebarId}")`)
     expect(result).not.toContain(`getElementById('${sidebarId}')`)
-    expect(result).toContain('querySelector("[data-stx-sidebar]")')
+    // Either quote style: the negative assertions above already spell both,
+    // because which one reaches the page depends on whether the client script
+    // was transpiled or shipped as authored. See the disclosure test above.
+    expect(result).toMatch(/querySelector\((['"])\[data-stx-sidebar\]\1\)/)
   })
 
   it('bridges string props without embedding quote characters', async () => {
