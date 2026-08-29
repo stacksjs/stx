@@ -154,10 +154,30 @@ function onWindowControl(action) {
   if (action === 'zoom') (api?.maximize || api?.zoom)?.call(api)
   emit('windowControl', action)
 }
+
+/*
+ * This strip is the window's drag handle, and the CSS on it cannot make it one
+ * everywhere. `-webkit-app-region: drag` is Chromium's property: Electron and
+ * Tauri honour it, WebKit never implemented it, and a WKWebView discards the
+ * declaration outright — `style.setProperty('-webkit-app-region', 'drag')`
+ * reads back as the empty string there. So in a Craft window the class is
+ * decoration, and a header that looked draggable belonged to a window that
+ * could not be moved. It stays for the hosts it works in; this covers the one
+ * it does not, by handing the press to the platform's own drag loop.
+ *
+ * A press on anything you can click is left alone, replica traffic lights and
+ * the search field included — dragging a window by its close button is not a
+ * gesture anyone makes on purpose.
+ */
+function onChromePress(event) {
+  if (event.button !== 0) return
+  if (event.target?.closest?.('button, a, input, select, textarea, [role="button"]')) return
+  window.craft?.window?.startDrag?.()
+}
 </script>
 
 @if(isMacos)
-  <div class="flex h-[52px] shrink-0 items-center justify-between pl-[21px] pr-[10px] [-webkit-app-region:drag]">
+  <div class="flex h-[52px] shrink-0 items-center justify-between pl-[21px] pr-[10px] [-webkit-app-region:drag]" @mousedown="onChromePress($event)">
     @if(showWindowControls || reserveWindowControls)
       <div class="flex items-center [-webkit-app-region:no-drag]">
         @if(reserveWindowControls)
@@ -223,7 +243,7 @@ function onWindowControl(action) {
   -->
   <div class="flex flex-col gap-[8px] px-[10px] pb-[8px]" style="{{ reserveWindowControls ? arcChromePadding : 'padding-top: 12px' }}">
     @if(showWindowControls || reserveWindowControls || showNavigation)
-      <div class="flex items-center gap-[12px] px-[2px] [-webkit-app-region:drag]">
+      <div class="flex items-center gap-[12px] px-[2px] [-webkit-app-region:drag]" @mousedown="onChromePress($event)">
         @if(reserveWindowControls)
           <!--
             Empty on purpose. The window server has already drawn three live

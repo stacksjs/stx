@@ -12,10 +12,13 @@
  * `--craft-window-controls-replicas` and `--craft-window-controls-width`
  * before the document is parsed, and a browser publishes neither.
  *
- * Measured from a Craft window at 2x, the platform's are 12pt discs 20pt
- * apart, the first 10pt from the window's left edge, the block ending 62pt in
- * and centred 14pt below the top. `native` reserves that room and renders
- * nothing into it.
+ * `native` reserves the room the host says its buttons need and renders nothing
+ * into it. It asks rather than assuming for a reason: this file used to record
+ * a measurement — 12pt discs 20pt apart, the block ending 62pt in — and every
+ * number in it was wrong. Craft measures its own window now and publishes the
+ * answer, which on macOS 27 is a 60x14 block at (9, 9), ending 69pt in. It also
+ * differs by window style, moves when a sidebar is installed under it, and goes
+ * away entirely in fullscreen.
  */
 import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
@@ -113,5 +116,35 @@ describe('the template honours the mode', () => {
     // 0, does not overlay this row, and keeps its padding.
     expect(source).toContain('padding-top: max(0px, calc(12px - ')
     expect(source).toContain("reserveWindowControls ? arcChromePadding : 'padding-top: 12px'")
+  })
+})
+
+describe('the strip that moves the window', () => {
+  /*
+   * `-webkit-app-region: drag` is Chromium's, and the class stays for the hosts
+   * that implement it. WebKit is not one: a WKWebView discards the declaration,
+   * so inside a Craft window that class alone left a header that looked
+   * draggable on a window that could not be moved.
+   */
+  it('asks the host to drag, rather than relying on the CSS alone', () => {
+    expect(source).toContain('window.craft?.window?.startDrag?.()')
+  })
+
+  it('wires the press on both chrome rows, not just the macOS one', () => {
+    const wired = source.match(/@mousedown="onChromePress\(\$event\)"/g) ?? []
+    expect(wired).toHaveLength(2)
+  })
+
+  it('leaves a press on anything clickable alone', () => {
+    // Dragging a window by its own close button is not a gesture anyone makes
+    // on purpose, and the strip carries replica lights, a search field and
+    // action buttons.
+    const handler = source.slice(source.indexOf('function onChromePress'))
+    expect(handler).toContain(`closest?.('button, a, input, select, textarea, [role="button"]')`)
+  })
+
+  it('ignores anything that is not a left press', () => {
+    const handler = source.slice(source.indexOf('function onChromePress'))
+    expect(handler).toContain('event.button !== 0')
   })
 })
