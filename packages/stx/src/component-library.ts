@@ -337,6 +337,72 @@ function compileTemplateToRender(template: string): string {
  * element's public surface, which is already expressed as properties, and
  * leaving the call in would reference an import that does not exist at runtime.
  */
+/**
+ * Split a `withDefaults(..., { ... })` object into name/value pairs.
+ *
+ * Values are read by scanning to the comma that actually ends them, rather
+ * than to the first comma in the text. The difference is not academic: a
+ * default of `'To begin, click your user name'` used to be cut at its own
+ * comma and emitted as `'To begin`, so the generated render function failed
+ * to parse with "Unterminated string literal" and the whole component library
+ * build stopped on a component whose only sin was a comma in a sentence.
+ *
+ * Quotes (including template literals and escapes) and nested brackets are
+ * tracked so an object, array or function default survives intact too.
+ */
+export function parseDefaults(object: string): Array<[string, string]> {
+  const body = object.trim().replace(/^\{/, '').replace(/\}$/, '')
+  const pairs: Array<[string, string]> = []
+
+  let index = 0
+
+  while (index < body.length) {
+    const key = /\s*([A-Za-z_$][\w$]*)\s*:/y
+
+    key.lastIndex = index
+    const match = key.exec(body)
+
+    if (!match) break
+
+    index = key.lastIndex
+
+    let depth = 0
+    let quote = ''
+    const start = index
+
+    while (index < body.length) {
+      const char = body[index] as string
+
+      if (quote) {
+        if (char === '\\') index++
+        else if (char === quote) quote = ''
+      }
+      else if (char === '\'' || char === '"' || char === '`') {
+        quote = char
+      }
+      else if (char === '{' || char === '[' || char === '(') {
+        depth++
+      }
+      else if (char === '}' || char === ']' || char === ')') {
+        depth--
+      }
+      else if (char === ',' && depth === 0) {
+        break
+      }
+
+      index++
+    }
+
+    const value = body.slice(start, index).trim()
+
+    if (value) pairs.push([match[1], value])
+
+    index++
+  }
+
+  return pairs
+}
+
 function compileScriptScope(source: string, file: string, outputDir: string): {
   imports: string[]
   body: string
@@ -389,9 +455,8 @@ function compileScriptScope(source: string, file: string, outputDir: string): {
       const clean = name.split(':')[0].trim()
       if (clean) propNames.push(clean)
     }
-    for (const pair of (propMatch[2] || '').matchAll(/([A-Za-z_$][\w$]*)\s*:\s*([^,}]+)/g)) {
-      defaults[pair[1]] = pair[2].trim()
-    }
+    for (const [name, value] of parseDefaults(propMatch[2] || ''))
+      defaults[name] = value
     code = code.replace(propMatch[0], '')
   }
 
