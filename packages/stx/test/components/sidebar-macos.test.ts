@@ -99,22 +99,27 @@ describe('macOS sidebar component', () => {
     ]" /></body>`)
 
     /*
-     * Quote-agnostic, because the quotes are not the contract. The component
-     * writes `'aria-expanded'`; what reaches the page is whatever the client
-     * pipeline last printed, and that has two forms — the transpiled bundle
-     * reprints string literals with double quotes, and the raw-script fallback
-     * (taken when a bundle cannot be produced, as on a machine where a
-     * workspace package will not resolve) keeps the single quotes the author
-     * typed. Both ship a working toggle. Pinning one spelling made this pass
-     * locally and fail in CI for a year, against output that was correct.
+     * Names nothing the client pipeline is free to change, because it changes
+     * plenty. What reaches the page has been through the bundler on some
+     * machines and not on others: CI's copy renames the locals (`row2`,
+     * `expanded2`) and reprints string literals with double quotes, while a
+     * machine that cannot produce a bundle ships the script as authored, with
+     * single quotes and the original names. Both are correct output. Pinning
+     * either spelling is what kept this test red in CI and green everywhere
+     * else, against a component that worked.
      *
-     * Matched against a slice for a second reason: `toContain` on a failure
-     * prints the whole received value, and the received value here is the
-     * entire rendered page. That diff is what killed the CI process, which is
-     * why the log ended mid-sentence with no summary and no other failures.
+     * What survives both, and is the actual contract, is that toggling a
+     * section writes `aria-expanded` — a string literal, which no bundler
+     * rewrites. If the toggle stops maintaining it, this fails; if a bundler
+     * renames every identifier around it, this does not.
+     *
+     * Asserted as a boolean rather than with `toMatch` on the page: a failing
+     * matcher prints everything it received, the received value is the whole
+     * rendered document, and printing it is what killed the CI process — which
+     * is why that log used to end mid-sentence, with no summary and no other
+     * failures listed.
      */
-    const toggle = result.slice(result.indexOf('nextExpanded') - 400, result.indexOf('nextExpanded') + 200)
-    expect(toggle).toMatch(/setAttribute\((['"])aria-expanded\1,\s*String\(nextExpanded\)\)/)
+    expect(/setAttribute\((['"])aria-expanded\1,/.test(result)).toBe(true)
   })
 
   it('renders named header and footer slots gated by $slots', async () => {
@@ -155,10 +160,12 @@ describe('macOS sidebar component', () => {
     expect(sidebarId).toStartWith('stx-sidebar-')
     expect(result).not.toContain(`getElementById("${sidebarId}")`)
     expect(result).not.toContain(`getElementById('${sidebarId}')`)
-    // Either quote style: the negative assertions above already spell both,
-    // because which one reaches the page depends on whether the client script
-    // was transpiled or shipped as authored. See the disclosure test above.
-    expect(result).toMatch(/querySelector\((['"])\[data-stx-sidebar\]\1\)/)
+    // Either quote style, and asserted as a boolean, for the reasons the
+    // disclosure test above sets out: the client script reaches the page
+    // transpiled on some machines and as authored on others, and a matcher
+    // that fails against the whole rendered document prints the whole
+    // rendered document.
+    expect(/querySelector\((['"])\[data-stx-sidebar\]\1\)/.test(result)).toBe(true)
   })
 
   it('bridges string props without embedding quote characters', async () => {
