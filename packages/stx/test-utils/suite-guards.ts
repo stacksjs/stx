@@ -26,10 +26,10 @@
  * lives in `checker-timeout.ts`, which has to be called per file because Bun
  * resets the default timeout for every file it loads.
  */
-import { afterEach } from 'bun:test'
-import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { existsSync } from 'node:fs'
+import { afterEach } from 'bun:test'
 
 /** The repository root: this file is `packages/stx/test-utils/`. */
 const anchor = path.resolve(import.meta.dir, '../../..')
