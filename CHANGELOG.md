@@ -1,5 +1,36 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.245...v0.2.246)
+
+## ✨ Features
+
+- **desktop**: native context menus ([2a10935](https://github.com/stacksjs/stx/commit/2a10935)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **components**: a prop default containing a comma broke the library build ([d42c51f](https://github.com/stacksjs/stx/commit/d42c51f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sidebar**: make the header actually drag the window ([d6f2fa6](https://github.com/stacksjs/stx/commit/d6f2fa6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **test**: assert what the bundler cannot rename ([ce5de9c](https://github.com/stacksjs/stx/commit/ce5de9c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **test**: the sidebar's other quote-shaped assertion, before it goes off too ([aeed4e3](https://github.com/stacksjs/stx/commit/aeed4e3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **test**: assert the disclosure toggle, not the quotes around it ([d1f4488](https://github.com/stacksjs/stx/commit/d1f4488)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **test**: give the checker tests time, and stop one of them taking the suite ([702fa84](https://github.com/stacksjs/stx/commit/702fa84)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 📝 Documentation
+
+- **sidebar**: the host measures the buttons, so stop quoting a number ([14c9fe2](https://github.com/stacksjs/stx/commit/14c9fe2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 💄 Styles
+
+- **test**: format the suite guards the way the checker wants ([fd24dd7](https://github.com/stacksjs/stx/commit/fd24dd7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.246 ([84007d8](https://github.com/stacksjs/stx/commit/84007d8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.244...v0.2.245)
 
 ## 🐛 Bug Fixes
