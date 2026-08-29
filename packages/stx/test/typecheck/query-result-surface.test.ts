@@ -21,6 +21,9 @@ import { afterAll, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { typecheckStxFiles } from '../../src/typecheck'
+import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+
+allowForATypeScriptProgram()
 
 const dir = join(tmpdir(), `stx-query-surface-${crypto.randomUUID()}`)
 

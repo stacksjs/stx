@@ -24,6 +24,9 @@
 import { afterAll, describe, expect, it } from 'bun:test'
 import { join } from 'node:path'
 import { typecheckStxFiles } from '../../src/typecheck'
+import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+
+allowForATypeScriptProgram()
 
 const dir = join(import.meta.dir, `.tmp-relative-${crypto.randomUUID()}`)
 

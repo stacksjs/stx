@@ -34,6 +34,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { collectRepeatedFlag } from '../../src/cli-flags'
 import { typecheckStxFiles } from '../../src/typecheck'
+import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+
+allowForATypeScriptProgram()
 
 const dir = join(tmpdir(), `stx-lib-repeat-${crypto.randomUUID()}`)
 const domain = join(dir, 'types', 'domain.d.ts')

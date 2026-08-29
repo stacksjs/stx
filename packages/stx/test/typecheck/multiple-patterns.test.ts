@@ -23,6 +23,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+
+allowForATypeScriptProgram()
 
 const dir = join(tmpdir(), `stx-multi-${crypto.randomUUID()}`)
 const cli = join(import.meta.dir, '..', '..', 'bin', 'cli.ts')

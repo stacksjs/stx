@@ -27,6 +27,9 @@ import { afterAll, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { typecheckStxFiles } from '../../src/typecheck'
+import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+
+allowForATypeScriptProgram()
 
 // Outside the repo: a fixture inside it is reached by this repository's own
 // tsconfig, and unrelated errors would muddy exactly the counts under test.

@@ -24,6 +24,9 @@ import { afterAll, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { typecheckStxFiles } from '../../src/typecheck'
+import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+
+allowForATypeScriptProgram()
 
 // Inside the repo, unlike the other typecheck fixtures: resolving
 // `@stacksjs/stx` is the whole point, and that needs a node_modules to walk up

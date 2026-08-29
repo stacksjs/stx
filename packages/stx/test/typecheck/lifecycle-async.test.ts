@@ -20,6 +20,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createComponentInstance, mountComponent, onMount, setCurrentInstance } from '../../src/composables'
 import { typecheckStxFiles } from '../../src/typecheck'
+import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+
+allowForATypeScriptProgram()
 
 const dir = join(tmpdir(), `stx-lifecycle-${crypto.randomUUID()}`)
 

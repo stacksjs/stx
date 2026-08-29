@@ -31,6 +31,9 @@ import {
   substituteInterpolationsInPlace,
 } from '../../src/stx-virtual-ts'
 import { typecheckStxFiles } from '../../src/typecheck'
+import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+
+allowForATypeScriptProgram()
 
 /** Type-check one `.stx` source and return its diagnostics. */
 async function check(source: string) {

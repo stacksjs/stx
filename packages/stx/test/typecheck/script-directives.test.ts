@@ -27,6 +27,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { blankScriptDirectives } from '../../src/stx-virtual-ts'
 import { typecheckStxFiles } from '../../src/typecheck'
+import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+
+allowForATypeScriptProgram()
 
 const dir = join(tmpdir(), `stx-dir-${crypto.randomUUID()}`)
 

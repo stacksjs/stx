@@ -18,6 +18,9 @@ import {
   typecheckStxFiles,
   virtualPathFor,
 } from '../../src/typecheck'
+import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+
+allowForATypeScriptProgram()
 
 describe('extractScriptBlocks (#1852)', () => {
   it('distinguishes server, client and plain blocks', () => {

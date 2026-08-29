@@ -26,6 +26,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { clearComposableCache } from '../../src/composable-loader'
 import { typecheckStxFiles } from '../../src/typecheck'
+import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+
+allowForATypeScriptProgram()
 
 const APP = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-composables-tc-'))
 const functionsDir = path.join(APP, 'functions')

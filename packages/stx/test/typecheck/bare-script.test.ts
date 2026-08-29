@@ -34,6 +34,9 @@ import { afterAll, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { formatTypecheckDiagnostics, typecheckStxFiles } from '../../src/typecheck'
+import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+
+allowForATypeScriptProgram()
 
 // Outside the repo on purpose: a fixture inside it is reached by this
 // repository's own tsconfig, so tsc reports unrelated errors and the fixture
