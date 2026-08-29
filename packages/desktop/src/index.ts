@@ -453,6 +453,17 @@ export { menu } from './menu'
 export type { MenuActionEvent, MenuAPI, MenuItem } from './menu'
 
 // =============================================================================
+// Native Context Menu (right-click, at the pointer)
+// =============================================================================
+export { contextMenu } from './context-menu'
+export type {
+  ContextMenuAPI,
+  ContextMenuActionEvent,
+  ContextMenuItem,
+  ContextMenuOptions,
+} from './context-menu'
+
+// =============================================================================
 // System / Host Info
 // =============================================================================
 export { system } from './system'
