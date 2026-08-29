@@ -98,7 +98,23 @@ describe('macOS sidebar component', () => {
       { id: 'library', label: 'Library', items: [{ id: 'components', label: 'Components' }] },
     ]" /></body>`)
 
-    expect(result).toContain('setAttribute("aria-expanded", String(nextExpanded))')
+    /*
+     * Quote-agnostic, because the quotes are not the contract. The component
+     * writes `'aria-expanded'`; what reaches the page is whatever the client
+     * pipeline last printed, and that has two forms — the transpiled bundle
+     * reprints string literals with double quotes, and the raw-script fallback
+     * (taken when a bundle cannot be produced, as on a machine where a
+     * workspace package will not resolve) keeps the single quotes the author
+     * typed. Both ship a working toggle. Pinning one spelling made this pass
+     * locally and fail in CI for a year, against output that was correct.
+     *
+     * Matched against a slice for a second reason: `toContain` on a failure
+     * prints the whole received value, and the received value here is the
+     * entire rendered page. That diff is what killed the CI process, which is
+     * why the log ended mid-sentence with no summary and no other failures.
+     */
+    const toggle = result.slice(result.indexOf('nextExpanded') - 400, result.indexOf('nextExpanded') + 200)
+    expect(toggle).toMatch(/setAttribute\((['"])aria-expanded\1,\s*String\(nextExpanded\)\)/)
   })
 
   it('renders named header and footer slots gated by $slots', async () => {
