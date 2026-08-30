@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
-import { showConfirmDialog, showMessageBox } from '../src/dialogs'
+import { showConfirmDialog, showMessageBox, showOpenDialog } from '../src/dialogs'
 
 /**
  * The browser fallback for `showMessageBox`.
@@ -83,5 +83,50 @@ describe('showMessageBox with a bridge', () => {
     await showMessageBox({ message: 'Hi', buttons: ['A', 'B'] })
     expect(seen).toEqual({ message: 'Hi', buttons: ['A', 'B'] })
     expect(asked).toEqual([])
+  })
+})
+
+/**
+ * `showOpenDialog` and the three native panels.
+ *
+ * Craft's bridge picks between openFolder, openFiles and openFile by looking at
+ * `options.properties` and nothing else. The friendly booleans were forwarded
+ * untranslated, so the documented way to ask for a folder opened a file picker
+ * — a panel that appears, works, and cannot select what was asked for.
+ */
+describe('showOpenDialog', () => {
+  let seen: any
+
+  beforeEach(() => {
+    seen = undefined
+    ;(window as any).craft = {
+      dialog: { showOpenDialog: async (o: any) => { seen = o; return { canceled: true, filePaths: [] } } },
+    }
+  })
+
+  it('turns canChooseDirectories into the property Craft dispatches on', async () => {
+    await showOpenDialog({ title: 'Pick a folder', canChooseDirectories: true })
+    expect(seen.properties).toContain('openDirectory')
+    expect(seen.title).toBe('Pick a folder')
+  })
+
+  it('turns multiSelections into its property too', async () => {
+    await showOpenDialog({ multiSelections: true })
+    expect(seen.properties).toContain('multiSelections')
+  })
+
+  it('leaves an explicit properties array intact for callers who speak Electron', async () => {
+    await showOpenDialog({ properties: ['openDirectory'] })
+    expect(seen.properties).toEqual(['openDirectory'])
+  })
+
+  it('does not invent properties that were not asked for', async () => {
+    await showOpenDialog({ title: 'Pick a file' })
+    expect(seen.properties).toEqual([])
+  })
+
+  it('does not duplicate a property given both ways', async () => {
+    await showOpenDialog({ properties: ['openDirectory'], canChooseDirectories: true })
+    expect(seen.properties).toEqual(['openDirectory'])
   })
 })

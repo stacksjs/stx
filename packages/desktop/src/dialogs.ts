@@ -35,6 +35,52 @@ export interface OpenDialogOptions {
   canChooseFiles?: boolean
   /** Allow creating new directories */
   canCreateDirectories?: boolean
+  /**
+   * Panel behaviours, Electron's spelling.
+   *
+   * This is what Craft's bridge actually dispatches on, so it is part of the
+   * contract rather than a convenience: `'openDirectory'` routes to the folder
+   * panel, `'multiSelections'` to the multi-file panel, anything else to the
+   * single-file panel. Setting the booleans above is enough — they are
+   * translated into this before the call — but a caller that already speaks
+   * Electron can pass it directly.
+   */
+  properties?: OpenDialogProperty[]
+}
+
+/** A behaviour Craft's open panel understands. */
+export type OpenDialogProperty =
+  | 'openFile'
+  | 'openDirectory'
+  | 'multiSelections'
+  | 'showHiddenFiles'
+  | 'createDirectory'
+
+/**
+ * Restate the options in the terms Craft's bridge reads.
+ *
+ * `craft.dialog.showOpenDialog` chooses between three different native panels
+ * by looking at `options.properties`, and nothing else. The friendly booleans
+ * were passed straight through and never consulted, so `canChooseDirectories:
+ * true` — the documented way to ask for a folder — opened a *file* picker.
+ * Which is not a crash, and not obviously a bug from the calling side: a panel
+ * appears, the user cannot pick their folder, and it reads as macOS being
+ * awkward.
+ */
+function toCraftOpenOptions(options: OpenDialogOptions): OpenDialogOptions {
+  const properties = new Set<OpenDialogProperty>(options.properties ?? [])
+  if (options.canChooseDirectories)
+    properties.add('openDirectory')
+  if (options.canChooseFiles)
+    properties.add('openFile')
+  if (options.multiSelections)
+    properties.add('multiSelections')
+  if (options.showHiddenFiles)
+    properties.add('showHiddenFiles')
+  if (options.canCreateDirectories)
+    properties.add('createDirectory')
+
+  return { ...options, properties: [...properties] }
 }
 
 /**
@@ -178,7 +224,7 @@ export async function showOpenDialog(options: OpenDialogOptions = {}): Promise<O
     // Use Craft's native dialog
     const craftWindow = window as any
     try {
-      return await craftWindow.craft.dialog.showOpenDialog(options)
+      return await craftWindow.craft.dialog.showOpenDialog(toCraftOpenOptions(options))
     }
     catch (error) {
       console.warn('[stx-dialog] Failed to show native open dialog:', error)
@@ -193,9 +239,10 @@ export async function showOpenDialog(options: OpenDialogOptions = {}): Promise<O
       return
     }
 
+    const wants = new Set(toCraftOpenOptions(options).properties)
     const input = document.createElement('input')
     input.type = 'file'
-    input.multiple = options.multiSelections ?? false
+    input.multiple = wants.has('multiSelections')
 
     // Set accept types from filters
     if (options.filters?.length) {
@@ -204,7 +251,7 @@ export async function showOpenDialog(options: OpenDialogOptions = {}): Promise<O
     }
 
     // Directory selection (limited browser support)
-    if (options.canChooseDirectories && !options.canChooseFiles) {
+    if (wants.has('openDirectory') && !wants.has('openFile')) {
       (input as any).webkitdirectory = true
     }
 
