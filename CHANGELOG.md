@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.246...v0.2.247)
+
+## ✨ Features
+
+- **desktop**: make the menubar API survivable ([a0a7e12](https://github.com/stacksjs/stx/commit/a0a7e12)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **desktop**: type the menu roles, and document the menubar ([0d68b1d](https://github.com/stacksjs/stx/commit/0d68b1d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **desktop**: the menu API described a shape the native side never parsed ([a4e917a](https://github.com/stacksjs/stx/commit/a4e917a)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#27](https://github.com/stacksjs/stx/issues/27))
+
+## 🔧 Chores
+
+- release v0.2.247 ([11f5acb](https://github.com/stacksjs/stx/commit/11f5acb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.245...v0.2.246)
 
 ## ✨ Features
