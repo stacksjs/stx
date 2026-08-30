@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { menu } from '../src/menu'
+import type { ApplicationMenu } from '../src/menu'
+import { menu, standardMenus } from '../src/menu'
 import { findCall, installMockBridge } from './_mock-bridge'
 
 describe('menu', () => {
@@ -24,6 +25,48 @@ describe('menu', () => {
     }
     await menu.set(appMenu)
     expect(findCall(bridge.calls, 'menu', 'set')!.args[0]).toEqual(appMenu)
+  })
+
+  it('wires onClick without the caller ever naming an id', async () => {
+    let picked = 0
+    await menu.set({
+      menus: [
+        { label: 'View', items: [{ label: 'Reload', shortcut: 'cmd+r', onClick: () => { picked++ } }] },
+      ],
+    })
+
+    const sent = findCall(bridge.calls, 'menu', 'set')!.args[0] as ApplicationMenu
+    const item = sent.menus[0].items[0]
+
+    // The closure does not go to the native side; an id it can report back does.
+    expect(item.id).toBeTruthy()
+    expect('onClick' in item).toBe(false)
+
+    window.dispatchEvent(new CustomEvent('craft:menu:action', { detail: { id: item.id } }))
+    expect(picked).toBe(1)
+  })
+
+  it('a second set replaces the previous wiring instead of stacking on it', async () => {
+    let first = 0
+    let second = 0
+    await menu.set({ menus: [{ label: 'View', items: [{ id: 'a', label: 'A', onClick: () => { first++ } }] }] })
+    await menu.set({ menus: [{ label: 'View', items: [{ id: 'a', label: 'A', onClick: () => { second++ } }] }] })
+
+    window.dispatchEvent(new CustomEvent('craft:menu:action', { detail: { id: 'a' } }))
+    expect(first).toBe(0)
+    expect(second).toBe(1)
+  })
+
+  it('standardMenus.leading puts the app menu first, where AppKit expects it', () => {
+    const leading = standardMenus.leading('MyApp')
+    expect(leading[0].label).toBe('MyApp')
+    expect(leading[1].label).toBe('Edit')
+
+    // Clipboard items must be roles: an id round-tripping through JS cannot
+    // reach the field editor, so Copy would do nothing in a text input.
+    const copy = leading[1].items.find(i => i.label === 'Copy')
+    expect(copy?.role).toBe('copy')
+    expect(copy?.id).toBeUndefined()
   })
 
   it('carries roles, separators and shortcuts through untouched', async () => {
@@ -90,8 +133,14 @@ describe('menu', () => {
 describe('menu (no bridge)', () => {
   beforeEach(() => { delete (window as any).craft })
 
-  it('all action methods are graceful no-ops', async () => {
-    await expect(menu.set([])).resolves.toBeUndefined()
+  it('reports that it did not set a menu, rather than pretending', async () => {
+    // The difference between "applied" and "silently did nothing" is the whole
+    // reason `set` returns a boolean: without it, an app with no bridge and an
+    // app with a bad payload look identical from the calling side.
+    await expect(menu.set({ menus: [] })).resolves.toBe(false)
+  })
+
+  it('other action methods stay graceful no-ops', async () => {
     await expect(menu.setDock([])).resolves.toBeUndefined()
     await expect(menu.enableItem('x')).resolves.toBeUndefined()
   })

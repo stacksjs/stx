@@ -1,14 +1,50 @@
 /**
  * Application Menu (macOS top-of-screen menubar) + Dock Menu
  *
- * Build the native menubar (`File`, `Edit`, `View`, ...) and the
- * dock-icon contextual menu. When running outside a Craft window this
- * module is a no-op — there's no portable web equivalent to the
- * macOS menubar.
+ * Outside a Craft window every call here is a no-op: there is no portable web
+ * equivalent to the macOS menubar.
  *
- * Each menu item is identified by an `id`. The native side fires a
- * `craft:menu:action` event with `{id}` when the user picks it; use
- * `menu.onAction(cb)` to listen.
+ * ## Two rules that are not guessable
+ *
+ * **`set` replaces the bar.** It builds a fresh NSMenu from what you pass and
+ * calls `setMainMenu:`. There is no merging: anything you leave out is gone,
+ * including Edit. An app that supplies only its own View menu ends up with no
+ * Copy anywhere.
+ *
+ * **The first menu becomes the application menu.** AppKit takes menu zero as
+ * the app menu and titles it with the app name, whatever you called it. Supply
+ * `[Edit, View, Window]` and the bar reads `AppName, View, Window` — Edit did
+ * not fail, it was consumed. Supply one menu and the bar is only the app menu.
+ *
+ * Together these are why {@link standardMenus} exists: hand-writing the app,
+ * Edit and Window menus for every app is boilerplate, and forgetting any of
+ * them silently removes system behaviour the user expects.
+ *
+ * ```ts
+ * await menu.set({
+ *   menus: [
+ *     ...standardMenus.leading('MyApp'),
+ *     { label: 'View', items: [
+ *       { label: 'Reload', shortcut: 'cmd+r', onClick: () => reload() },
+ *     ] },
+ *     standardMenus.window(),
+ *   ],
+ * })
+ * ```
+ *
+ * ## Roles, not ids, wherever AppKit has one
+ *
+ * A role wires the item to an AppKit selector with a nil target, so the
+ * responder chain performs it. Cut, copy and paste *must* use roles: an id
+ * round-tripping through JS cannot reach the field editor, so Copy would do
+ * nothing inside a text input. {@link standardMenus} already does this.
+ *
+ * ## Handling picks
+ *
+ * Give an item an `onClick` and `set` wires it for you. Ids are generated for
+ * items that need one and omitted from what you have to think about. If you
+ * would rather dispatch centrally, set your own `id` and use
+ * {@link MenuAPI.onAction}; both work, and they compose.
  */
 import { hasBridge, onCraftEvent } from './_bridge'
 
@@ -40,6 +76,14 @@ export interface MenuItem {
   separator?: boolean
   /** SF Symbol or asset name (macOS only). */
   icon?: string
+  /**
+   * Run this when the item is picked.
+   *
+   * `set` gives the item an id if it has none and wires the listener, so a
+   * menu can be written as a list of things and what they do, with no id
+   * bookkeeping. Items with a `role` do not need one — AppKit performs those.
+   */
+  onClick?: () => void
 }
 
 /**
@@ -75,12 +119,16 @@ export interface MenuActionEvent {
 
 export interface MenuAPI {
   /**
-   * Set the application menu.
+   * Replace the menubar.
    *
-   * Merged into the runtime's existing bar, not a replacement: a menu the bar
-   * does not already have is silently dropped.
+   * Resolves `true` when a native bar was set, `false` when there is no bridge
+   * — so a caller can tell "applied" from "silently did nothing", which is the
+   * difference between a working menu and a mystery.
+   *
+   * Any `onClick` on an item is wired here; a second `set` replaces the
+   * previous wiring rather than stacking on it.
    */
-  set: (menu: ApplicationMenu) => Promise<void>
+  set: (menu: ApplicationMenu) => Promise<boolean>
   /** Set the dock-icon contextual menu. */
   setDock: (items: MenuItem[]) => Promise<void>
   /** Append an item under the parent id (or top-level if parent is "" or "menubar"). */
@@ -97,9 +145,123 @@ export interface MenuAPI {
   onAction: (cb: (event: MenuActionEvent) => void) => () => void
 }
 
+/**
+ * The menus every Mac app is expected to have, built correctly.
+ *
+ * Hand-writing these is boilerplate with a penalty: omit Edit and the app has
+ * no Copy; omit the app menu and the first menu you *did* write gets eaten in
+ * its place. Every item here uses a role, so AppKit performs it through the
+ * responder chain and macOS augments the menus with its own additions —
+ * Writing Tools and Emoji & Symbols in Edit, Quit and Keep Windows in the app
+ * menu — which it only does for menus it recognises.
+ */
+export const standardMenus = {
+  /** The application menu. Must be first in the bar; AppKit titles it for you. */
+  app(appName: string): Menu {
+    return {
+      label: appName,
+      items: [
+        { label: `About ${appName}`, role: 'about' },
+        { separator: true },
+        { label: `Hide ${appName}`, role: 'hide', shortcut: 'cmd+h' },
+        { label: 'Hide Others', role: 'hideOthers', shortcut: 'cmd+alt+h' },
+        { label: 'Show All', role: 'showAll' },
+        { separator: true },
+        { label: `Quit ${appName}`, role: 'quit', shortcut: 'cmd+q' },
+      ],
+    }
+  },
+
+  /** Undo/redo and the clipboard. Roles throughout, which is the only way these work. */
+  edit(): Menu {
+    return {
+      label: 'Edit',
+      items: [
+        { label: 'Undo', role: 'undo', shortcut: 'cmd+z' },
+        { label: 'Redo', role: 'redo', shortcut: 'cmd+shift+z' },
+        { separator: true },
+        { label: 'Cut', role: 'cut', shortcut: 'cmd+x' },
+        { label: 'Copy', role: 'copy', shortcut: 'cmd+c' },
+        { label: 'Paste', role: 'paste', shortcut: 'cmd+v' },
+        { label: 'Select All', role: 'selectAll', shortcut: 'cmd+a' },
+      ],
+    }
+  },
+
+  /** Minimise, zoom and close. */
+  window(): Menu {
+    return {
+      label: 'Window',
+      items: [
+        { label: 'Minimize', role: 'minimize', shortcut: 'cmd+m' },
+        { label: 'Zoom', role: 'zoom' },
+        { separator: true },
+        { label: 'Close Window', role: 'close', shortcut: 'cmd+w' },
+      ],
+    }
+  },
+
+  /**
+   * The app menu and Edit, in the order the bar needs them.
+   *
+   * Spread this first and add your own menus after: the app menu has to be
+   * index zero, and Edit is the one people notice missing.
+   */
+  leading(appName: string): Menu[] {
+    return [this.app(appName), this.edit()]
+  },
+}
+
+/** Auto-generated ids for items that carry an `onClick` but no id of their own. */
+let generatedId = 0
+
+/**
+ * Strip `onClick` from the payload and return the handlers by id.
+ *
+ * The native side is given plain data; the closures stay on this side, keyed by
+ * the id it will report back.
+ */
+function extractHandlers(appMenu: ApplicationMenu): {
+  payload: ApplicationMenu
+  handlers: Map<string, () => void>
+} {
+  const handlers = new Map<string, () => void>()
+
+  const payload: ApplicationMenu = {
+    menus: appMenu.menus.map(m => ({
+      label: m.label,
+      items: m.items.map((item) => {
+        const { onClick, ...rest } = item
+        if (!onClick) return rest
+
+        const id = rest.id ?? `stx.menu.${generatedId++}`
+        handlers.set(id, onClick)
+        return { ...rest, id }
+      }),
+    })),
+  }
+
+  return { payload, handlers }
+}
+
+/** Removes the listener installed by the previous `set`, so repeats do not stack. */
+let disposeHandlers: (() => void) | null = null
+
 export const menu: MenuAPI = {
-  async set(menu) {
-    if (hasBridge('menu')) await window.craft!.menu.set(menu)
+  async set(appMenu) {
+    if (!hasBridge('menu')) return false
+
+    const { payload, handlers } = extractHandlers(appMenu)
+
+    disposeHandlers?.()
+    disposeHandlers = handlers.size > 0
+      ? onCraftEvent<MenuActionEvent>('craft:menu:action', (event) => {
+          handlers.get(event.id)?.()
+        })
+      : null
+
+    await window.craft!.menu.set(payload)
+    return true
   },
   async setDock(items) {
     if (hasBridge('menu')) await window.craft!.menu.setDock(items)
