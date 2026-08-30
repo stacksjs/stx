@@ -450,7 +450,7 @@ export type { AppAPI, AppInfo, AppNotifyOptions } from './app-info'
 // Native Application Menu (macOS menubar + dock menu)
 // =============================================================================
 export { menu, standardMenus } from './menu'
-export type { ApplicationMenu, Menu, MenuActionEvent, MenuAPI, MenuItem } from './menu'
+export type { ApplicationMenu, Menu, MenuActionEvent, MenuAPI, MenuItem, MenuRole } from './menu'
 
 // =============================================================================
 // Native Context Menu (right-click, at the pointer)

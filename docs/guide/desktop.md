@@ -191,6 +191,101 @@ if (await isWebviewAvailable()) {
 
 ---
 
+## The Application Menu
+
+The bar along the top of the screen. A Craft app that never sets one inherits
+AppKit's default: the app name, Edit, and Window, with nothing of your app in
+it and no keyboard shortcuts you chose.
+
+```typescript
+import { menu, standardMenus } from '@stacksjs/desktop'
+
+await menu.set({
+  menus: [
+    ...standardMenus.leading('My App'),
+    {
+      label: 'View',
+      items: [
+        { label: 'Reload', shortcut: 'cmd+r', onClick: () => location.reload() },
+        { separator: true },
+        { label: 'Enter Full Screen', role: 'fullscreen' },
+      ],
+    },
+    standardMenus.window(),
+  ],
+})
+```
+
+### Two rules that are not visible in the signature
+
+Both produce a menubar that looks like your code failed to run, and neither
+raises an error.
+
+**`set` replaces the whole bar.** There is no merge. Whatever you leave out is
+gone — pass only a View menu and the app loses Copy and Paste.
+
+**The first menu becomes the application menu.** AppKit takes it and retitles it
+with the app name, so `[Edit, View, Window]` renders as `My App, View, Window`:
+your Edit menu is still there, wearing the app's name, and its items are the
+ones a person will look for under Edit and not find.
+
+`standardMenus.leading(name)` exists to settle both at once. It returns the
+application menu and Edit, in that order, so the rest of your menus follow in
+the order you wrote them.
+
+### Standard menus
+
+```typescript
+standardMenus.app('My App')  // About, Hide, Hide Others, Show All, Quit
+standardMenus.edit()         // Undo, Redo, Cut, Copy, Paste, Select All
+standardMenus.window()       // Minimize, Zoom, Close Window
+standardMenus.leading('My App')  // [app(), edit()] — the two that must come first
+```
+
+Every item in these is declared by `role` rather than by a click handler, which
+matters more than it looks. A role is performed by AppKit down the responder
+chain, so Copy reaches whatever the user is actually focused on — including the
+text field inside a native dialog, which a JavaScript handler cannot see. macOS
+also recognises menus built from roles and adds to them on its own: Writing
+Tools and Emoji & Symbols appear under Edit, Quit gains Keep Windows. Hand-roll
+a "Copy" item with an `onClick` and you get none of that, and it does nothing in
+a text field.
+
+### Handling picks
+
+Give an item an `onClick` and `set` handles the wiring — the closure stays in
+your code, the native side gets a generated id, and a later `set` replaces the
+previous wiring rather than stacking a second listener on it.
+
+```typescript
+{ label: 'Rescan', shortcut: 'cmd+r', onClick: () => rescan() }
+```
+
+For a single handler over many items — dispatching to a router, say — set your
+own ids and listen centrally instead. The two compose; an item with an `onClick`
+is simply also dispatched to its closure.
+
+```typescript
+const stop = menu.onAction((event) => {
+  if (event.id.startsWith('nav.')) router.go(event.id.slice(4))
+})
+```
+
+### Knowing whether it applied
+
+`set` resolves `true` when the menu reached the native side and `false` when
+there is no bridge — in a browser tab, or a dev server opened outside Craft.
+
+```typescript
+if (!(await menu.set(appMenu)))
+  console.info('not running under Craft; no application menu')
+```
+
+Without that return value, "this is a browser" and "this payload was wrong" look
+identical from the calling side, and both look like nothing happened.
+
+---
+
 ## System Tray
 
 ### Creating a System Tray

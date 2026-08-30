@@ -48,22 +48,58 @@
  */
 import { hasBridge, onCraftEvent } from './_bridge'
 
+/**
+ * The stock behaviours macOS already knows how to perform.
+ *
+ * Spelled out as a union rather than typed `string` because an unrecognised
+ * role does not fail: the native side falls back to forwarding the item as an
+ * event, so `'togglefullscreen'` — Electron's name for what is `'fullscreen'`
+ * here — builds a menu item that looks right, is enabled, and does nothing.
+ * That mistake is one letter deep and invisible until someone clicks it.
+ *
+ * Mirrors the table in Craft's `menu_roles.zig`. Craft matches case
+ * insensitively; this list is the canonical casing.
+ */
+export type MenuRole =
+  | 'about'
+  | 'hide'
+  | 'hideOthers'
+  | 'showAll'
+  | 'quit'
+  | 'undo'
+  | 'redo'
+  | 'cut'
+  | 'copy'
+  | 'paste'
+  | 'delete'
+  | 'selectAll'
+  | 'close'
+  | 'minimize'
+  | 'zoom'
+  | 'front'
+  | 'fullscreen'
+  | 'reload'
+  | 'forceReload'
+
 export interface MenuItem {
   /** Stable identifier. The same id is reported by `onAction`. */
   id?: string
   /** Visible label. */
   label?: string
   /**
-   * Apple's stock menu roles (e.g. `'copy'`, `'paste'`, `'close'`,
-   * `'quit'`, `'togglefullscreen'`).
+   * One of the stock behaviours in {@link MenuRole}.
    *
    * Cut, copy and paste *must* take this path. A role wires the item to the
    * AppKit selector with a nil target, so the responder chain performs it; an
    * id round-tripping through JS cannot reach the field editor or the
    * WKWebView's own clipboard actions, and Copy silently does nothing inside a
    * text field.
+   *
+   * macOS also augments menus built from roles — Writing Tools and Emoji &
+   * Symbols appear under an Edit menu it recognises, Quit gains Keep Windows —
+   * which it will not do for an item you wire by hand.
    */
-  role?: string
+  role?: MenuRole
   /**
    * Keyboard shortcut, lowercase and `+`-joined: `'cmd+s'`, `'cmd+shift+z'`.
    *

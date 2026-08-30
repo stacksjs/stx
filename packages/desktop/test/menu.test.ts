@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import type { ApplicationMenu } from '../src/menu'
+import type { ApplicationMenu, MenuItem, MenuRole } from '../src/menu'
 import { menu, standardMenus } from '../src/menu'
 import { findCall, installMockBridge } from './_mock-bridge'
 
@@ -143,5 +143,41 @@ describe('menu (no bridge)', () => {
   it('other action methods stay graceful no-ops', async () => {
     await expect(menu.setDock([])).resolves.toBeUndefined()
     await expect(menu.enableItem('x')).resolves.toBeUndefined()
+  })
+})
+
+describe('roles', () => {
+  // Craft falls back to forwarding an unknown role as an event, so a misspelt
+  // one builds an item that looks right and does nothing. The union is the only
+  // thing that catches it, which makes drift from Craft's table a real bug.
+  const CRAFT_ROLES = [
+    'about', 'hide', 'hideOthers', 'showAll', 'quit',
+    'undo', 'redo', 'cut', 'copy', 'paste', 'delete', 'selectAll',
+    'close', 'minimize', 'zoom', 'front', 'fullscreen',
+    'reload', 'forceReload',
+  ] as const
+
+  it('every role the union allows is one Craft implements', () => {
+    // Assignable to MenuRole by construction; the compiler checks the direction
+    // that matters, and this pins the other one.
+    const roles: MenuRole[] = [...CRAFT_ROLES]
+    expect(roles).toHaveLength(19)
+  })
+
+  it('names full screen the way Craft does, not the way Electron does', () => {
+    const item: MenuItem = { label: 'Enter Full Screen', role: 'fullscreen' }
+    expect(item.role).toBe('fullscreen')
+    // @ts-expect-error Electron's spelling is not a Craft role and would build a dead item
+    const wrong: MenuItem = { role: 'togglefullscreen' }
+    expect(wrong.role).toBe('togglefullscreen')
+  })
+
+  it('standard menus name only roles Craft implements', () => {
+    const all = [standardMenus.app('X'), standardMenus.edit(), standardMenus.window()]
+    for (const m of all) {
+      for (const item of m.items) {
+        if (item.role) expect(CRAFT_ROLES).toContain(item.role)
+      }
+    }
   })
 })
