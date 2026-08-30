@@ -14,29 +14,59 @@ import { hasBridge, onCraftEvent } from './_bridge'
 
 export interface MenuItem {
   /** Stable identifier. The same id is reported by `onAction`. */
-  id: string
+  id?: string
   /** Visible label. */
   label?: string
   /**
    * Apple's stock menu roles (e.g. `'copy'`, `'paste'`, `'close'`,
-   * `'quit'`). When set, AppKit hooks the system behaviour for free
-   * — you don't need to reimplement Copy/Paste yourself.
+   * `'quit'`, `'togglefullscreen'`).
+   *
+   * Cut, copy and paste *must* take this path. A role wires the item to the
+   * AppKit selector with a nil target, so the responder chain performs it; an
+   * id round-tripping through JS cannot reach the field editor or the
+   * WKWebView's own clipboard actions, and Copy silently does nothing inside a
+   * text field.
    */
   role?: string
-  /** Keyboard accelerator (e.g. `'Cmd+S'`). */
-  accelerator?: string
+  /**
+   * Keyboard shortcut, lowercase and `+`-joined: `'cmd+s'`, `'cmd+shift+z'`.
+   *
+   * Named `shortcut` because that is the key the native side reads. It was
+   * declared here as `accelerator` — Electron's name — which parsed into
+   * nothing and produced menu items with no shortcut and no error.
+   */
+  shortcut?: string
   /** True for a separator line. Other fields ignored. */
   separator?: boolean
-  /** Render as a checkbox; toggle via `menu.checkItem(id)`. */
-  checkable?: boolean
-  /** Initial checked state for checkable items. */
-  checked?: boolean
-  /** Disabled at startup (still renders, can't be picked). */
-  disabled?: boolean
-  /** Submenu under this item. */
-  submenu?: MenuItem[]
   /** SF Symbol or asset name (macOS only). */
   icon?: string
+}
+
+/**
+ * One top-level menu in the bar.
+ *
+ * The menubar is two levels — a list of menus, each a list of items — not a
+ * tree. `MenuItem` has no `submenu`, because the native side does not read one.
+ */
+export interface Menu {
+  /** The menu's title in the bar: `'File'`, `'View'`. */
+  label: string
+  items: MenuItem[]
+}
+
+/**
+ * What `menu.set` sends.
+ *
+ * The native side parses `{menus: [...]}`, not a bare array. Passing an array
+ * — which this package's own type used to ask for — deserialises into an empty
+ * menu set and changes nothing, with no error anywhere.
+ *
+ * Menus are *merged into* the bar the runtime already provides rather than
+ * replacing it, so a menu the runtime does not already carry (`File`, for
+ * instance) is dropped. Put app commands under a menu that exists.
+ */
+export interface ApplicationMenu {
+  menus: Menu[]
 }
 
 export interface MenuActionEvent {
@@ -44,8 +74,13 @@ export interface MenuActionEvent {
 }
 
 export interface MenuAPI {
-  /** Set the application menu (replaces the entire menubar). */
-  set: (items: MenuItem[]) => Promise<void>
+  /**
+   * Set the application menu.
+   *
+   * Merged into the runtime's existing bar, not a replacement: a menu the bar
+   * does not already have is silently dropped.
+   */
+  set: (menu: ApplicationMenu) => Promise<void>
   /** Set the dock-icon contextual menu. */
   setDock: (items: MenuItem[]) => Promise<void>
   /** Append an item under the parent id (or top-level if parent is "" or "menubar"). */
@@ -63,8 +98,8 @@ export interface MenuAPI {
 }
 
 export const menu: MenuAPI = {
-  async set(items) {
-    if (hasBridge('menu')) await window.craft!.menu.set(items)
+  async set(menu) {
+    if (hasBridge('menu')) await window.craft!.menu.set(menu)
   },
   async setDock(items) {
     if (hasBridge('menu')) await window.craft!.menu.setDock(items)

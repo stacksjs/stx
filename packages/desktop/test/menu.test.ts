@@ -12,10 +12,38 @@ describe('menu', () => {
     bridge.uninstall()
   })
 
-  it('set forwards items as array', async () => {
-    const items = [{ id: 'file', label: 'File', submenu: [{ id: 'open', label: 'Open' }] }]
-    await menu.set(items)
-    expect(findCall(bridge.calls, 'menu', 'set')!.args[0]).toEqual(items)
+  it('set forwards the {menus} envelope the native side parses', async () => {
+    // Not a bare array: `setAppMenu` deserialises `{menus: [...]}`, and an
+    // array arrives as an empty menu set that changes nothing and reports no
+    // error. This package asked for an array until it was tried against a real
+    // window.
+    const appMenu = {
+      menus: [
+        { label: 'View', items: [{ id: 'disk', label: 'Disk Usage', shortcut: 'cmd+5' }] },
+      ],
+    }
+    await menu.set(appMenu)
+    expect(findCall(bridge.calls, 'menu', 'set')!.args[0]).toEqual(appMenu)
+  })
+
+  it('carries roles, separators and shortcuts through untouched', async () => {
+    const appMenu = {
+      menus: [
+        {
+          label: 'Edit',
+          items: [
+            { id: 'copy', label: 'Copy', role: 'copy', shortcut: 'cmd+c' },
+            { id: 'sep', separator: true },
+            { id: 'all', label: 'Select All', role: 'selectAll', shortcut: 'cmd+a' },
+          ],
+        },
+      ],
+    }
+    await menu.set(appMenu)
+    const sent = findCall(bridge.calls, 'menu', 'set')!.args[0] as typeof appMenu
+    expect(sent.menus[0].items[0].role).toBe('copy')
+    expect(sent.menus[0].items[1].separator).toBe(true)
+    expect(sent.menus[0].items[2].shortcut).toBe('cmd+a')
   })
 
   it('setDock forwards items', async () => {
