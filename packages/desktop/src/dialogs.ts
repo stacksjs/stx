@@ -331,26 +331,41 @@ export async function showMessageBox(options: MessageBoxOptions): Promise<Messag
     }
   }
 
-  // Web fallback
+  // Web fallback.
+  //
+  // `response` is an *index into `buttons`*, so the fallback has to answer in
+  // the same currency the native path does. It used to return `confirmed ? 1 :
+  // 0`, which is backwards for the conventional `[action, 'Cancel']` ordering:
+  // accepting the dialog reported button 1, Cancel. Every caller that asked
+  // "did they confirm?" as `response === 0` got the opposite answer in a
+  // browser, and only in a browser — which is the hardest place to notice,
+  // because the native build behaves.
   const buttons = options.buttons || ['OK']
+  const detail = options.detail ? `\n\n${options.detail}` : ''
+  const text = `${options.message}${detail}`
 
   if (buttons.length === 1) {
-    // Simple alert
-    alert(options.message)
+    alert(text)
     return { response: 0 }
   }
 
-  if (buttons.length === 2 && options.type === 'question') {
-    // Use confirm for simple yes/no
-    const confirmed = confirm(options.message)
-    return { response: confirmed ? 1 : 0 }
+  // Which index means "cancel", and which means "go ahead". `cancelButton`
+  // wins if given; otherwise the last button is the way out, as it is on macOS.
+  const cancelIndex = options.cancelButton ?? buttons.length - 1
+  const acceptIndex = options.defaultButton !== undefined && options.defaultButton !== cancelIndex
+    ? options.defaultButton
+    : buttons.findIndex((_, i) => i !== cancelIndex)
+
+  if (buttons.length > 2) {
+    // `confirm` is two-way and this dialog is not, so the extra buttons are
+    // unreachable rather than silently mapped onto one of the two answers.
+    console.warn(
+      `[stx-dialog] ${buttons.length} buttons requested; a browser confirm offers two. `
+      + `Reachable: "${buttons[acceptIndex]}" and "${buttons[cancelIndex]}".`,
+    )
   }
 
-  // For more complex dialogs, we'd need a custom modal
-  // For now, fall back to confirm
-  console.warn('[stx-dialog] Complex message box not fully supported in browser, using confirm')
-  const confirmed = confirm(`${options.message}\n\n${buttons.join(' / ')}`)
-  return { response: confirmed ? (buttons.length - 1) : 0 }
+  return { response: confirm(text) ? acceptIndex : cancelIndex }
 }
 
 /**
@@ -433,15 +448,18 @@ export async function showAlertDialog(message: string, title?: string): Promise<
  * @returns True if confirmed, false if cancelled
  */
 export async function showConfirmDialog(message: string, title?: string): Promise<boolean> {
+  // OK first: NSAlert adds buttons right-to-left and makes the first one the
+  // default, so `['Cancel', 'OK']` produced a confirm dialog that defaulted to
+  // Cancel and put OK on the left — backwards on both counts for macOS.
   const result = await showMessageBox({
     type: 'question',
     title: title || 'Confirm',
     message,
-    buttons: ['Cancel', 'OK'],
-    defaultButton: 1,
-    cancelButton: 0,
+    buttons: ['OK', 'Cancel'],
+    defaultButton: 0,
+    cancelButton: 1,
   })
-  return result.response === 1
+  return result.response === 0
 }
 
 /**
