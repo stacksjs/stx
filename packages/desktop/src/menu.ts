@@ -268,10 +268,17 @@ function extractHandlers(appMenu: ApplicationMenu): {
       label: m.label,
       items: m.items.map((item) => {
         const { onClick, ...rest } = item
-        if (!onClick) return rest
+        if (rest.separator)
+          return rest
 
+        // Every item needs an id, not only the ones with a handler. Craft's
+        // menu builder does `const id = it.id orelse continue` — an item
+        // without one is skipped in silence, so a menu of pure role items
+        // (Edit, Window, the app menu) arrived as a menu of separators. The
+        // shape looked right in the payload and the bar came up empty.
         const id = rest.id ?? `stx.menu.${generatedId++}`
-        handlers.set(id, onClick)
+        if (onClick)
+          handlers.set(id, onClick)
         return { ...rest, id }
       }),
     })),

@@ -63,10 +63,29 @@ describe('menu', () => {
     expect(leading[1].label).toBe('Edit')
 
     // Clipboard items must be roles: an id round-tripping through JS cannot
-    // reach the field editor, so Copy would do nothing in a text input.
+    // reach the field editor, so Copy would do nothing in a text input. The id
+    // that `set` adds is inert for a role item — Craft resolves the selector
+    // from the role and ignores it — but it has to be there for the item to be
+    // built at all.
     const copy = leading[1].items.find(i => i.label === 'Copy')
     expect(copy?.role).toBe('copy')
-    expect(copy?.id).toBeUndefined()
+  })
+
+  it('gives every item an id, because Craft silently skips the ones without', async () => {
+    // `const id = it.id orelse continue` in Craft's menu builder. A menu of
+    // pure role items therefore arrived as a menu of separators — which is
+    // what shipped in 0.2.247: no Copy, no Paste, no Quit, and a payload that
+    // looked correct at every point before the bridge.
+    await menu.set({ menus: [...standardMenus.leading('App'), standardMenus.window()] })
+
+    const sent = findCall(bridge.calls, 'menu', 'set')!.args[0] as ApplicationMenu
+    for (const m of sent.menus) {
+      for (const item of m.items) {
+        if (item.separator)
+          continue
+        expect(item.id, `"${item.label}" would be dropped by the native side`).toBeTruthy()
+      }
+    }
   })
 
   it('carries roles, separators and shortcuts through untouched', async () => {
