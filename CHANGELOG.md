@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.247...v0.2.248)
+
+## 🐛 Bug Fixes
+
+- **desktop**: asking for a folder opened a file picker ([ce59eef](https://github.com/stacksjs/stx/commit/ce59eef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **desktop**: the dialog fallback answered the opposite question ([3ac2e3d](https://github.com/stacksjs/stx/commit/3ac2e3d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.248 ([458dc0b](https://github.com/stacksjs/stx/commit/458dc0b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.246...v0.2.247)
 
 ## ✨ Features
