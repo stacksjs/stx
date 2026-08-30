@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.248...v0.2.249)
+
+## 🐛 Bug Fixes
+
+- **desktop**: standardMenus built menus of separators ([1b3f8c1](https://github.com/stacksjs/stx/commit/1b3f8c1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.249 ([ed209c0](https://github.com/stacksjs/stx/commit/ed209c0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.247...v0.2.248)
 
 ## 🐛 Bug Fixes
