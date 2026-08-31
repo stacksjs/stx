@@ -1355,6 +1355,21 @@ else {
   // mode where every page is part of the same SPA shell.
   document.addEventListener('click',function(e){
     if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button!==0)return;
+    // A handler on the page has already decided this click is not a
+    // navigation, so the router must not perform one - the same contract the
+    // browser honours for a plain anchor.
+    //
+    // This listener used to run in the CAPTURE phase, which broke that twice
+    // over: it saw the click before the anchor did, so defaultPrevented was
+    // necessarily false by the time it was read here, and the stopPropagation
+    // below then stopped the event ever reaching the element - so a page's own
+    // click handler on an intercepted link never ran AT ALL. Progressive
+    // enhancement on an anchor was impossible; the only way out was to swap it
+    // for a button in script (stacksjs/stacks#2393).
+    //
+    // Bubbling instead puts the page's handlers first, which is where a
+    // decision about the page's own markup belongs.
+    if(e.defaultPrevented)return;
     if(!e.target||!e.target.closest)return;
     var link=e.target.closest('[data-stx-link]');
     // A marked link still has to clear the opt-out set. It used to skip it
@@ -1372,7 +1387,7 @@ else {
     e.stopPropagation();
     log('[router] navigating to:',href);
     navigate(withCurrentLocale(href));
-  },true);
+  });
 
   // ── Form submission ──
   // A submit IS a navigation, and the router only ever watched clicks. So any
