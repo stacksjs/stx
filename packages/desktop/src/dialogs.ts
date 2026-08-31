@@ -50,11 +50,11 @@ export interface OpenDialogOptions {
 
 /** A behaviour Craft's open panel understands. */
 export type OpenDialogProperty =
-  | 'openFile'
-  | 'openDirectory'
-  | 'multiSelections'
-  | 'showHiddenFiles'
-  | 'createDirectory'
+| 'openFile'
+| 'openDirectory'
+| 'multiSelections'
+| 'showHiddenFiles'
+| 'createDirectory'
 
 /**
  * Restate the options in the terms Craft's bridge reads.

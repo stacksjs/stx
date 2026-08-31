@@ -61,25 +61,25 @@ import { hasBridge, onCraftEvent } from './_bridge'
  * insensitively; this list is the canonical casing.
  */
 export type MenuRole =
-  | 'about'
-  | 'hide'
-  | 'hideOthers'
-  | 'showAll'
-  | 'quit'
-  | 'undo'
-  | 'redo'
-  | 'cut'
-  | 'copy'
-  | 'paste'
-  | 'delete'
-  | 'selectAll'
-  | 'close'
-  | 'minimize'
-  | 'zoom'
-  | 'front'
-  | 'fullscreen'
-  | 'reload'
-  | 'forceReload'
+| 'about'
+| 'hide'
+| 'hideOthers'
+| 'showAll'
+| 'quit'
+| 'undo'
+| 'redo'
+| 'cut'
+| 'copy'
+| 'paste'
+| 'delete'
+| 'selectAll'
+| 'close'
+| 'minimize'
+| 'zoom'
+| 'front'
+| 'fullscreen'
+| 'reload'
+| 'forceReload'
 
 export interface MenuItem {
   /** Stable identifier. The same id is reported by `onAction`. */
@@ -297,11 +297,12 @@ export const menu: MenuAPI = {
     const { payload, handlers } = extractHandlers(appMenu)
 
     disposeHandlers?.()
-    disposeHandlers = handlers.size > 0
-      ? onCraftEvent<MenuActionEvent>('craft:menu:action', (event) => {
-          handlers.get(event.id)?.()
-        })
-      : null
+    disposeHandlers = null
+    if (handlers.size > 0) {
+      disposeHandlers = onCraftEvent<MenuActionEvent>('craft:menu:action', (event) => {
+        handlers.get(event.id)?.()
+      })
+    }
 
     await window.craft!.menu.set(payload)
     return true
