@@ -86,3 +86,166 @@ describe('Drawer', () => {
     expect(source).toContain('isOpen,')
   })
 })
+
+/**
+ * The focus retry, executed rather than read.
+ *
+ * The string assertions above say `captureFocus` is wired up. They passed
+ * while focus never actually moved: the effect runs before `:show` reveals the
+ * panel, and `focus()` on a `display: none` element is a silent no-op, so the
+ * one attempt was always made a frame too early. Nothing throws and the drawer
+ * looks correct - it is simply unreachable by keyboard.
+ *
+ * So this runs the shipped `focusFirst` against a DOM that refuses focus until
+ * the panel is shown, which is the browser's actual behaviour and the one
+ * thing a source-text check cannot notice.
+ */
+function loadFocusFirst(environment: Record<string, any>) {
+  const start = source.indexOf('function focusFirst(')
+  const end = source.indexOf('function captureFocus(')
+
+  if (start < 0 || end < 0)
+    throw new Error('focusFirst is no longer in Drawer.stx under that name')
+
+  const names = Object.keys(environment)
+  const make = new Function(...names, `${source.slice(start, end)}; return focusFirst`)
+
+  return make(...names.map(name => environment[name]))
+}
+
+/* A panel that only accepts focus once it is shown, like a real one. */
+function stubDom(options: { shown: boolean, focusable?: boolean }) {
+  const active = { current: 'body' as string }
+  const shown = { value: options.shown }
+
+  const target = {
+    tagName: 'BUTTON',
+    focus() {
+      if (shown.value)
+        active.current = 'target'
+    },
+  }
+
+  const panel = {
+    tagName: 'DIV',
+    querySelector: (selector: string) => (options.focusable === false || selector.includes('autofocus') ? null : target),
+    focus() {
+      if (shown.value)
+        active.current = 'panel'
+    },
+  }
+
+  return {
+    active,
+    shown,
+    target,
+    panel,
+    document: {
+      querySelector: () => panel,
+      get activeElement() {
+        return active.current === 'target' ? target : active.current === 'panel' ? panel : 'body'
+      },
+    },
+  }
+}
+
+describe('Drawer focus retry', () => {
+  test('keeps trying until the panel is actually shown', () => {
+    // The bug this covers: a single attempt, made while the panel was still
+    // display:none, so focus stayed on the body and the drawer could not be
+    // reached by keyboard.
+    const dom = stubDom({ shown: false })
+    let frames = 0
+
+    const focusFirst = loadFocusFirst({
+      isOpen: () => true,
+      document: dom.document,
+      requestAnimationFrame: (callback: () => void) => {
+        frames++
+        // `:show` reveals the panel a few frames after the effect runs.
+        if (frames === 3)
+          dom.shown.value = true
+
+        callback()
+      },
+    })
+
+    focusFirst(10)
+
+    expect(dom.document.activeElement).toBe(dom.target)
+    expect(frames).toBe(3)
+  })
+
+  test('gives up rather than spinning when nothing can take focus', () => {
+    const dom = stubDom({ shown: false })
+    let frames = 0
+
+    const focusFirst = loadFocusFirst({
+      isOpen: () => true,
+      document: dom.document,
+      requestAnimationFrame: (callback: () => void) => { frames++; callback() },
+    })
+
+    focusFirst(10)
+
+    // Bounded: a drawer whose panel never accepts focus must not retry forever.
+    expect(frames).toBe(10)
+  })
+
+  test('stops if the drawer closed while it was still trying', () => {
+    const dom = stubDom({ shown: false })
+    let open = true
+    let frames = 0
+
+    const focusFirst = loadFocusFirst({
+      isOpen: () => open,
+      document: dom.document,
+      requestAnimationFrame: (callback: () => void) => { frames++; open = false; callback() },
+    })
+
+    focusFirst(10)
+
+    // Otherwise a drawer opened and shut inside those frames yanks focus back
+    // out of whatever the reader moved on to.
+    expect(frames).toBe(1)
+  })
+})
+
+/**
+ * Theming.
+ *
+ * The panel painted itself white and gave an app no say in it, so a drawer in
+ * an app with its own palette was the one element on screen belonging to no
+ * theme. `className` was not the answer: it lands on the transparent
+ * positioned wrapper, not on the scrolling container that carries the colour.
+ */
+describe('Drawer theming', () => {
+  test('lets the app paint the panel', () => {
+    expect(source).toContain('panelClass')
+    expect(source).toContain('panelStyle')
+  })
+
+  test('still paints itself when the app says nothing', () => {
+    // An app that passes no palette must not get a transparent panel with the
+    // page showing through its own text.
+    expect(source).toContain("panelClass || 'bg-white dark:bg-blue-gray-800'")
+  })
+
+  test('lets the app tone the backdrop', () => {
+    expect(source).toContain('backdropClass')
+    expect(source).toContain("$props.backdropClass || 'bg-gray-500/75 dark:bg-gray-900/75'")
+  })
+
+  test('takes a width without the app knowing where width lives', () => {
+    // The width is on the wrapper, not the panel; an app should not have to
+    // learn that to make a cart wider than a notification tray.
+    expect(source).toContain('$props.size')
+    expect(source).toContain("'max-w-md'")
+  })
+
+  test('keeps className landing on the wrapper it always did', () => {
+    // Changing where an existing prop applies would silently restyle every
+    // drawer already shipped.
+    expect(source).toContain('export const panelClasses = `pointer-events-auto relative ${sizeClasses[position]} ${className}`')
+  })
+})

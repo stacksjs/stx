@@ -10,6 +10,23 @@ export const position = $props.position || 'right'
 export const title = $props.title || ''
 export const className = $props.className || ''
 
+/*
+ * The surface, left to the app.
+ *
+ * The panel painted itself `bg-white dark:bg-blue-gray-800` and offered no way
+ * to say otherwise, so a drawer in an app with its own palette arrived as a
+ * white rectangle with the app's colours inside it - the one element on the
+ * screen that belongs to no theme. `className` did not help: it lands on the
+ * positioned wrapper, which is transparent, while the colour is on the
+ * scrolling container within.
+ *
+ * `panelStyle` rather than only a class because an app whose palette lives in
+ * CSS variables has nothing to name in a utility class.
+ */
+export const panelClass = $props.panelClass || ''
+export const panelStyle = $props.panelStyle || ''
+export const backdropClass = $props.backdropClass || 'bg-gray-500/75 dark:bg-gray-900/75'
+
 const positionClasses = {
   right: 'inset-y-0 right-0 pl-10 sm:pl-16',
   left: 'inset-y-0 left-0 pr-10 sm:pr-16',
@@ -17,9 +34,14 @@ const positionClasses = {
   bottom: 'inset-x-0 bottom-0 pt-10',
 }
 
+// `size` widens a side drawer without the app having to know that the width
+// lives on the wrapper rather than the panel. Ignored for top/bottom, which
+// are constrained by height instead.
+const width = $props.size ? `max-w-${$props.size}` : 'max-w-md'
+
 const sizeClasses = {
-  right: 'max-w-md w-screen',
-  left: 'max-w-md w-screen',
+  right: `${width} w-screen`,
+  left: `${width} w-screen`,
   top: 'max-h-[90vh] w-full',
   bottom: 'max-h-[90vh] w-full',
 }
@@ -107,16 +129,39 @@ function unlockScroll() {
  */
 let opener = null
 
+/*
+ * Retried across frames, because focus is refused before the panel is shown.
+ *
+ * `:show` toggles the drawer's display, and that has not happened yet on the
+ * frame the effect runs: `focus()` on a `display: none` element is a silent
+ * no-op, so a single attempt left focus on the body every time. Nothing
+ * throws, and the drawer looks right - it is only unreachable by keyboard.
+ *
+ * So the attempt repeats until `document.activeElement` proves it landed,
+ * rather than assuming any one frame is late enough. Bounded, so a panel with
+ * nothing focusable in it cannot spin; the panel itself carries `tabindex=-1`
+ * and takes focus in that case. It also stops if the drawer closed in the
+ * meantime, so a drawer opened and shut inside those few frames does not
+ * pull focus back afterwards.
+ */
+function focusFirst(attempts) {
+  if (!isOpen()) return
+
+  const panel = document.querySelector('[data-stx-drawer-panel]')
+  if (!panel) return
+
+  const target = panel.querySelector('[autofocus]') || panel.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])') || panel
+
+  target.focus?.()
+
+  if (document.activeElement === target) return
+  if (attempts > 0) requestAnimationFrame(() => focusFirst(attempts - 1))
+}
+
 function captureFocus() {
   opener = document.activeElement
 
-  requestAnimationFrame(() => {
-    const panel = document.querySelector('[data-stx-drawer-panel]')
-    if (!panel) return
-
-    const target = panel.querySelector('[autofocus]') || panel.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
-    ;(target || panel).focus?.()
-  })
+  requestAnimationFrame(() => focusFirst(10))
 }
 
 function releaseFocus() {
@@ -153,7 +198,7 @@ defineExpose({
 </script>
 <div :show="isOpen()">
   <div
-    class="fixed inset-0 z-50 bg-gray-500/75 dark:bg-gray-900/75 transition-opacity duration-500"
+    class="fixed inset-0 z-50 {{ backdropClass }} transition-opacity duration-500"
     style="animation: fadeIn 0.5s ease-in-out"
     aria-hidden="true"
     @click="onBackdropClick()"
@@ -187,7 +232,7 @@ defineExpose({
               </svg>
             </button>
           </div>
-          <div class="relative flex h-full flex-col overflow-y-auto bg-white dark:bg-blue-gray-800 py-6 shadow-xl">
+          <div class="relative flex h-full flex-col overflow-y-auto {{ panelClass || 'bg-white dark:bg-blue-gray-800' }} py-6 shadow-xl" style="{{ panelStyle }}">
             @if(title)
             <div class="px-4 sm:px-6">
               <h2 class="text-base font-semibold text-fg">
@@ -221,15 +266,16 @@ defineExpose({
 </style>
 
 === Extracted Classes ===
+'bg-white
 -inset-2.5
 absolute
-bg-gray-500/75
+backdropClass
 bg-white
 bottom-0
 closeButtonClasses
 containerClasses
 dark:bg-blue-gray-800
-dark:bg-gray-900/75
+dark:bg-blue-gray-800'
 dark:hover:text-white
 dark:text-gray-400
 duration-500
@@ -255,6 +301,7 @@ mt-6
 open
 overflow-hidden
 overflow-y-auto
+panelClass
 panelClasses
 pb-10
 pl-10
@@ -286,4 +333,5 @@ w-full
 w-screen
 z-50
 {{
+||
 }}
