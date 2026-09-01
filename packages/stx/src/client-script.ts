@@ -529,7 +529,7 @@ function collectLocalBindings(code: string): Set<string> {
  * const trails = await Trail.all()  // 'Trail' is auto-imported from '@stacksjs/browser'
  * ```
  */
-function transformAutoImports(code: string): AutoImportResult {
+export function transformAutoImports(code: string): AutoImportResult {
   const usedStxImports: Set<string> = new Set()
   const usedBrowserImports: Set<string> = new Set()
   let transformedCode = code
@@ -620,11 +620,28 @@ function transformAutoImports(code: string): AutoImportResult {
     }
   }
 
-  // Check core browser utilities
+  // Check core browser utilities.
+  //
+  // Read with comments and string literals blanked out, for the same reason
+  // injectBrowserCoreAutoImports does it one screen down: a bare word match
+  // over raw source counts prose. A component whose comment mentioned
+  // useTimeoutFn, or whose copy said "Your Mac can sleep", got that name added
+  // to the destructure — and since nothing actually called it, neither the
+  // real-import conversion nor the bootstrap ever supplied it. The page then
+  // shipped `var { useTimeoutFn } = window.StacksBrowser || {}` for a symbol it
+  // never used, and reported it on every navigation through the auto-import
+  // guard as a name the client runtime does not provide. True, and unfixable
+  // from the other end: no export could satisfy a reference nothing needed.
+  //
+  // Still a bare word rather than a call, unlike the injector: these are not
+  // all functions. BrowserQueryError is a class, reached through `instanceof`
+  // and `new`, and requiring `(` would drop the legitimate uses along with the
+  // prose.
+  const searchableForBrowser = stripCommentsAndLiterals(transformedCode)
   for (const symbol of BROWSER_CORE_IMPORTS) {
     if (existingImports.has(symbol) || locallyDeclared.has(symbol)) continue
     const symbolRegex = new RegExp(`\\b${symbol}\\b`, 'g')
-    if (symbolRegex.test(transformedCode)) {
+    if (symbolRegex.test(searchableForBrowser)) {
       usedBrowserImports.add(symbol)
     }
   }
