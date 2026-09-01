@@ -55,6 +55,96 @@ function onPanelKey(event) {
   if (event.key === 'Escape') close()
 }
 
+/*
+ * Escape closes it from anywhere, not just from inside the panel.
+ *
+ * The keydown handler on the panel only fires when focus is already in it, and
+ * opening a drawer does not move focus - so the very first Escape, pressed
+ * while focus is still on whatever opened it, did nothing. Bound on the
+ * document instead, and only while open.
+ */
+function onDocumentKey(event) {
+  if (event.key === 'Escape' && isOpen()) close()
+}
+
+/*
+ * Hold the page still behind the drawer.
+ *
+ * Without this the page scrolls under an open drawer, which on a phone means a
+ * drag inside the cart scrolls the restaurant behind it and the cart stays
+ * put. The scrollbar's width is replaced as padding so the page does not jump
+ * sideways when it disappears.
+ */
+let restoreScroll = null
+
+function lockScroll() {
+  if (restoreScroll) return
+
+  const gap = window.innerWidth - document.documentElement.clientWidth
+  const previous = { overflow: document.body.style.overflow, paddingRight: document.body.style.paddingRight }
+
+  document.body.style.overflow = 'hidden'
+  if (gap > 0) document.body.style.paddingRight = `${gap}px`
+
+  restoreScroll = () => {
+    document.body.style.overflow = previous.overflow
+    document.body.style.paddingRight = previous.paddingRight
+    restoreScroll = null
+  }
+}
+
+function unlockScroll() {
+  if (restoreScroll) restoreScroll()
+}
+
+/*
+ * Focus moves in on open and back on close.
+ *
+ * A drawer that leaves focus behind is unreachable by keyboard: Tab walks the
+ * page underneath it, and a screen reader never learns anything opened. Focus
+ * returns to whatever opened it on the way out, so closing does not dump the
+ * user at the top of the document.
+ */
+let opener = null
+
+function captureFocus() {
+  opener = document.activeElement
+
+  requestAnimationFrame(() => {
+    const panel = document.querySelector('[data-stx-drawer-panel]')
+    if (!panel) return
+
+    const target = panel.querySelector('[autofocus]') || panel.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    ;(target || panel).focus?.()
+  })
+}
+
+function releaseFocus() {
+  const target = opener
+  opener = null
+  if (target && typeof target.focus === 'function') target.focus()
+}
+
+effect(() => {
+  if (isOpen()) {
+    lockScroll()
+    captureFocus()
+    document.addEventListener('keydown', onDocumentKey)
+  }
+  else {
+    unlockScroll()
+    releaseFocus()
+    document.removeEventListener('keydown', onDocumentKey)
+  }
+})
+
+onDestroy(() => {
+  // A drawer removed while open would otherwise leave the page locked, with no
+  // drawer left to unlock it.
+  unlockScroll()
+  document.removeEventListener('keydown', onDocumentKey)
+})
+
 defineExpose({
   open: () => isOpen.set(true),
   close,
@@ -65,6 +155,7 @@ defineExpose({
   <div
     class="fixed inset-0 z-50 bg-gray-500/75 dark:bg-gray-900/75 transition-opacity duration-500"
     style="animation: fadeIn 0.5s ease-in-out"
+    aria-hidden="true"
     @click="onBackdropClick()"
   >
   </div>
@@ -74,6 +165,11 @@ defineExpose({
         <div
           class="{{ panelClasses }}"
           style="animation: slideIn 0.5s ease-in-out"
+          data-stx-drawer-panel
+          role="dialog"
+          aria-modal="true"
+          {{ title ? 'aria-label="' + title + '"' : '' }}
+          tabindex="-1"
         >
           <div class="{{ closeButtonClasses }}">
             <button
@@ -151,6 +247,7 @@ hover:text-white
 inset-0
 inset-x-0
 inset-y-0
+keydown
 left-0
 max-w-full
 max-w-md
