@@ -1,5 +1,25 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.249...v0.2.250)
+
+## 🐛 Bug Fixes
+
+- **ssg**: invalidate a page when a module its client script imports changes ([9108e87](https://github.com/stacksjs/stx/commit/9108e87)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1723](https://github.com/stacksjs/stx/issues/1723), [#1940](https://github.com/stacksjs/stx/issues/1940))
+- **router**: a click the page already handled is not a navigation (#1948) ([dac0040](https://github.com/stacksjs/stx/commit/dac0040)) _(by Glenn Michael Torregosa <gtorregosa@gmail.com>)_ ([#1948](https://github.com/stacksjs/stx/issues/1948), [#1948](https://github.com/stacksjs/stx/issues/1948), [#2393](https://github.com/stacksjs/stx/issues/2393))
+
+## 💄 Styles
+
+- **desktop**: format the two files holding the format check red (#1949) ([d0f6afb](https://github.com/stacksjs/stx/commit/d0f6afb)) _(by Glenn Michael Torregosa <gtorregosa@gmail.com>)_ ([#1949](https://github.com/stacksjs/stx/issues/1949), [#1949](https://github.com/stacksjs/stx/issues/1949))
+
+## 🔧 Chores
+
+- release v0.2.250 ([7f32c2b](https://github.com/stacksjs/stx/commit/7f32c2b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Glenn Michael Torregosa <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.248...v0.2.249)
 
 ## 🐛 Bug Fixes
