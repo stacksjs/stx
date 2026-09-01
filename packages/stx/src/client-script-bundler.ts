@@ -50,6 +50,81 @@ interface BundleCacheMetadata {
 const bundleInputs = new Map<string, string[]>()
 
 /** Every file the client bundle for `filePath` was built from. */
+/**
+ * Keep the bundle cache from growing forever.
+ *
+ * Every distinct `(source, host file)` pair gets its own `{hash}.js` and
+ * `{hash}.deps.json`, and nothing ever removed the ones that stopped being
+ * reachable. A cache entry is only useful while some file still hashes to it,
+ * so editing a `<script client>` in a loop leaves one dead pair behind per
+ * edit. On the app this was written for that reached 5,895 files and 2.2GB -
+ * enough to fill the disk and stop the build with ENOSPC, which reads as a
+ * machine problem rather than a cache that was never swept.
+ *
+ * By modified time rather than by reachability, because reachability is not
+ * knowable from here: this process only sees the pages it happens to build,
+ * and a partial build would evict everything it did not touch. Time is a
+ * proxy, and the entries this keeps are the ones something asked for most
+ * recently.
+ *
+ * Swept on the first write to a cache and every `SWEEP_EVERY` writes after,
+ * per directory. Not once per process: a dev server writes bundles for hours,
+ * and a single sweep at startup would let it grow unbounded for the rest of
+ * the run - which is the same bug with a longer fuse. Counting per directory
+ * rather than globally so one project's builds cannot postpone another's
+ * sweep. Growth is bounded at the limit plus one sweep interval.
+ *
+ * The cost is one `readdir` and a sort, which is why it is not on every write.
+ */
+const CACHE_ENTRY_LIMIT = 600
+const SWEEP_EVERY = 100
+
+const writesSinceSweep = new Map<string, number>()
+
+async function pruneBundleCache(cacheDir: string): Promise<void> {
+  const since = writesSinceSweep.get(cacheDir) ?? 0
+
+  if (since > 0 && since < SWEEP_EVERY) {
+    writesSinceSweep.set(cacheDir, since + 1)
+    return
+  }
+
+  writesSinceSweep.set(cacheDir, 1)
+
+  try {
+    const names = (await fs.promises.readdir(cacheDir)).filter(name => name.endsWith('.js'))
+
+    if (names.length <= CACHE_ENTRY_LIMIT)
+      return
+
+    const entries = await Promise.all(names.map(async (name) => {
+      try {
+        return { name, at: (await fs.promises.stat(path.join(cacheDir, name))).mtimeMs }
+      }
+      catch {
+        return null
+      }
+    }))
+
+    const alive = entries.filter((entry): entry is { name: string, at: number } => entry !== null)
+    alive.sort((a, b) => b.at - a.at)
+
+    for (const entry of alive.slice(CACHE_ENTRY_LIMIT)) {
+      const base = entry.name.slice(0, -3)
+
+      // The sidecar goes with it. Left behind, it is a dependency list for a
+      // bundle that no longer exists.
+      await fs.promises.rm(path.join(cacheDir, `${base}.js`), { force: true })
+      await fs.promises.rm(path.join(cacheDir, `${base}.deps.json`), { force: true })
+    }
+
+    logBundlerDiagnostic('pruned bundle cache to', CACHE_ENTRY_LIMIT, 'entries')
+  }
+  catch {
+    // A cache that cannot be swept is not a reason to fail a build.
+  }
+}
+
 export function clientBundleDependencies(filePath: string): string[] {
   return bundleInputs.get(filePath) ?? []
 }
@@ -746,6 +821,12 @@ ${publicAssignments}`.trim()
     } satisfies BundleCacheMetadata))
 
     recordBundleInputs(filePath, depsSnapshot.map(dep => dep.path))
+
+    // After writing, not before: the entry just written is the most recent, so
+    // it survives its own sweep. Awaited rather than left running, because a
+    // build that exits first leaves the sweep half done - and the one time
+    // that matters is the build that filled the disk.
+    await pruneBundleCache(cacheDir)
 
     return bundled
   }
