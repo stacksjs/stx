@@ -638,8 +638,41 @@ export function transformAutoImports(code: string): AutoImportResult {
   // and `new`, and requiring `(` would drop the legitimate uses along with the
   // prose.
   const searchableForBrowser = stripCommentsAndLiterals(transformedCode)
+
+  // Names imported from ANY module, not just the three the regex above matches.
+  //
+  // That regex only recognises `stx`, `@stacksjs/stx` and `@stacksjs/browser`,
+  // so `existingImports` never learned about an import from anywhere else — and
+  // several of these helpers are re-exported by more than one package.
+  // `import { useObjectUrl } from '@stacksjs/composables'` followed by a real
+  // call therefore left the import in place AND added the name here, so the
+  // wrapper emitted `var { useObjectUrl } = window.StacksBrowser || {}` on top
+  // of a working import. The var shadows the binding with undefined for the
+  // life of the page, and the auto-import guard reports it on every navigation.
+  //
+  // injectBrowserCoreAutoImports gets this right one screen down, for the same
+  // reason and with the same shape of set. A name the author already imported
+  // is supplied by that import; auto-import has nothing to add.
+  const importedFromAnywhere = new Set<string>()
+  for (const importMatch of transformedCode.matchAll(/^\s*import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+['"][^'"]+['"]\s*;?\s*$/gm)) {
+    for (const specifier of importMatch[1].split(',')) {
+      // Both sides of an alias. The local name is what the body calls, and the
+      // imported name still appears in the import statement itself — which the
+      // bare-word scan below reads, since stripCommentsAndLiterals removes
+      // comments and strings but not import syntax. Recording only the local
+      // name left `import { useTimeoutFn as timeout }` matching on the original
+      // and auto-importing a name that is not even a binding here.
+      const parts = specifier.trim().replace(/^type\s+/, '').split(/\s+as\s+/)
+      for (const part of parts) {
+        const name = part.trim()
+        if (name)
+          importedFromAnywhere.add(name)
+      }
+    }
+  }
+
   for (const symbol of BROWSER_CORE_IMPORTS) {
-    if (existingImports.has(symbol) || locallyDeclared.has(symbol)) continue
+    if (existingImports.has(symbol) || locallyDeclared.has(symbol) || importedFromAnywhere.has(symbol)) continue
     const symbolRegex = new RegExp(`\\b${symbol}\\b`, 'g')
     if (symbolRegex.test(searchableForBrowser)) {
       usedBrowserImports.add(symbol)
