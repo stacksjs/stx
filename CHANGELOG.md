@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.251...v0.2.252)
+
+## 🐛 Bug Fixes
+
+- **signals**: mount() must not adopt an x-data root the runtime has not claimed ([6f372fc](https://github.com/stacksjs/stx/commit/6f372fc)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.252 ([3b9766a](https://github.com/stacksjs/stx/commit/3b9766a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.250...v0.2.251)
 
 ## 🐛 Bug Fixes
