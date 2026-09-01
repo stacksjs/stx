@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.261...v0.2.262)
+
+## 🐛 Bug Fixes
+
+- **drawer**: focus the panel once it is actually showing ([81b7edb](https://github.com/stacksjs/stx/commit/81b7edb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.262 ([fe19b3f](https://github.com/stacksjs/stx/commit/fe19b3f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.260...v0.2.261)
 
 ## ✨ Features
