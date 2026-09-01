@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.253...v0.2.254)
+
+## 🐛 Bug Fixes
+
+- **stx**: decide the browser bootstrap from the auto-import manifest ([00b1049](https://github.com/stacksjs/stx/commit/00b1049)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.254 ([55a4104](https://github.com/stacksjs/stx/commit/55a4104)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.252...v0.2.253)
 
 ## 🐛 Bug Fixes
