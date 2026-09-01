@@ -73,6 +73,11 @@ export async function buildApp(options: UnifiedBuildOptions = {}): Promise<Unifi
       generate404: config.build?.generate404 ?? true,
       minify: config.build?.minify ?? true,
       cleanOutput: config.build?.cleanOutput ?? true,
+      // Forward the project's router block. Everything else on this call is
+      // read off `config`, but the router was left behind, so a project that
+      // set `container` or `prefetch` in its config had those quietly replaced
+      // by the router client's own defaults on every static build.
+      router: config.router,
       ...options.ssg,
     })
   }

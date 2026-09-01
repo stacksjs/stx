@@ -45,6 +45,7 @@
  * @module ssg
  */
 
+import type { StxOptions } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
 import { CONVENTIONAL_ASSET_OUTPUT, CONVENTIONAL_ASSET_ROOT, resolveConventionalAssetRoot } from './asset-roots'
@@ -76,6 +77,15 @@ import {
 // =============================================================================
 
 export interface SSGConfig {
+  /**
+   * Client-side router options, forwarded verbatim to the injected router.
+   *
+   * Read here as `options.router` when the page is generated. Previously typed
+   * only as an `any` cast at the call site, which let `buildApp` omit it
+   * without the compiler noticing — so a project that configured `container`
+   * or `prefetch` got the client's built-in defaults instead.
+   */
+  router?: StxOptions['router']
   /** Directory containing pages (default: 'pages') */
   pagesDir?: string
   /**
@@ -842,7 +852,7 @@ async function renderPage(
   // so runtime-injection emitted no __stxRouterConfig at all and the SSG page
   // silently fell back to the client's own defaults — the same source
   // navigating differently depending on which binary rendered it (#1792 P2).
-  html = await injectRouterScript(html, { router: (options as any).router })
+  html = await injectRouterScript(html, { router: options.router })
 
   // Belt-and-suspenders: ensure Crosswind CSS is injected even if a race
   // condition inside processDirectives' parallel chunks skipped it. The

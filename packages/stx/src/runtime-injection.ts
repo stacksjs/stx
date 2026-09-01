@@ -363,6 +363,35 @@ export function injectTooltipRuntime(html: string): string {
  * The router is provided by the canonical router in packages/router/src/client.ts.
  * It guards against double-initialization so it's safe to inject alongside @stxRouter.
  */
+/**
+ * Matches the router's own `<script>` tag, and only that.
+ *
+ * Two things have to be true for a match, and the `includes('data-stx-router')`
+ * this replaces checked neither: the attribute must sit inside a `<script>`
+ * OPENING tag (`[^>]*` cannot cross the `>` into a script body), and the
+ * attribute name must END where the name ends.
+ *
+ * The signals runtime is inlined into every reactive page well before this
+ * runs, and it contains the selector `[data-stx-router-container]` — its own
+ * container lookup. `data-stx-router` is a prefix of that attribute, so the old
+ * guard read "already injected" for any page carrying the runtime and returned
+ * the template untouched.
+ *
+ * The effect was invisible and exactly backwards: a static page got SPA
+ * navigation, and the moment it grew an `x-data` it silently dropped back to
+ * full document loads — re-rendering the nav, the sidebar and the head on every
+ * click, with nothing logged and emitted HTML that looked deliberate. The more
+ * interactive the app, the more certain it was to lose the router.
+ */
+const ROUTER_SCRIPT_TAG = /<script\b[^>]*\sdata-stx-router(?=[\s=>])/i
+
+/** Whether `template` already carries the SPA router. */
+export function hasRouterScript(template: string): boolean {
+  return ROUTER_SCRIPT_TAG.test(template)
+    || template.includes('__stxRouter)return')
+    || template.includes('__stxRouter=true')
+}
+
 export async function injectRouterScript(template: string, options?: StxOptions): Promise<string> {
   // Only inject into full HTML pages (not template fragments or components)
   if (!template.includes('</body>')) {
@@ -370,7 +399,7 @@ export async function injectRouterScript(template: string, options?: StxOptions)
   }
 
   // Don't inject if already present (check for the router's own guard, not config references)
-  if (template.includes('data-stx-router') || template.includes('__stxRouter)return') || template.includes('__stxRouter=true')) {
+  if (hasRouterScript(template)) {
     return template
   }
 
