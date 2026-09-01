@@ -6968,8 +6968,39 @@ else {
         // Only use fallback when we genuinely couldn't find a suitable root element.
         // Do NOT fallback just because the script is in body> — layout scripts in body>
         // with valid siblings (e.g. sidebar <aside>) should use those siblings as root.
+
+        // An x-data root that initScope has not claimed yet is not ours to mount.
+        //
+        // The element carries its own state expression and the reactive runtime
+        // owns it; data-stx-scope is on it from the server, but the id is not
+        // in stx._scopes until initScope runs, which on a navigation happens
+        // later in the stx:load handler. Mounting it in the meantime binds its
+        // whole subtree against whatever scope the mounting script brought.
+        //
+        // That is what a layout script did after every SPA navigation. Its own
+        // re-executed script now lands inside the content container next to the
+        // incoming page, so previousElementSibling resolved to the *page's*
+        // x-data root; mount() adopted it and ran processElement over it with the
+        // sidebar's scope. Every :for template inside was consumed against a
+        // scope holding none of the page's data, and bindFor replaces each
+        // template with its stx-for anchor on that single pass — so the markup a
+        // retry needed was gone, and the effect had read no signal to re-run on.
+        // The list stayed empty for the life of the page while its state sat
+        // fully populated beside it. Cold loads never hit it: there the page's
+        // own script mounts first, with the right scope.
+        //
+        // Registered scopes are left alone, so an element the reactive runtime
+        // has already initialised keeps whatever behaviour it had.
+        function awaitingReactiveInit(el) {
+          if (!el || !el.hasAttribute || !el.hasAttribute('data-stx-xdata'))
+            return false;
+          var id = el.getAttribute('data-stx-scope');
+          return !(id && window.stx && window.stx._scopes && window.stx._scopes[id]);
+        }
+
         var needsFallback = !root || root === document.body
-          || (root && root.tagName === 'SCRIPT');
+          || (root && root.tagName === 'SCRIPT')
+          || awaitingReactiveInit(root);
         if (needsFallback) {
           var routerOpts = window.STX_ROUTER_OPTIONS || window.__stxRouterConfig || {};
           var container = document.querySelector('[data-stx-content]')
@@ -6987,12 +7018,22 @@ else {
               if (children[ci].__stx_scope) { hasMount = true; break; }
             }
             if (hasMount) for (var ci = 0; ci < children.length; ci++) {
-              if (!children[ci].__stx_scope && children[ci].tagName !== 'SCRIPT') {
-                root = children[ci];
-                break;
-              }
+              var candidate = children[ci];
+              if (candidate.__stx_scope || candidate.tagName === 'SCRIPT') continue;
+              if (awaitingReactiveInit(candidate)) continue;
+              root = candidate;
+              break;
             }
           }
+        }
+
+        // The fallback can still land on one (a container whose only unmounted
+        // child is the incoming page). Processing the container instead is safe:
+        // processElement skips [data-stx-scope] children, so the reactive
+        // runtime keeps its subtree and binds it with the right scope.
+        if (awaitingReactiveInit(root)) {
+          var reactiveOwnerParent = root.parentElement;
+          root = reactiveOwnerParent && reactiveOwnerParent !== document.body ? reactiveOwnerParent : null;
         }
 
         if (!root) { console.warn('[stx] mount: no root element found'); return; }
