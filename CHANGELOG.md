@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.250...v0.2.251)
+
+## 🐛 Bug Fixes
+
+- **router**: keep the container's external scripts across a navigation ([002648a](https://github.com/stacksjs/stx/commit/002648a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.251 ([0a9b0f9](https://github.com/stacksjs/stx/commit/0a9b0f9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.249...v0.2.250)
 
 ## 🐛 Bug Fixes
