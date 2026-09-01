@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.259...v0.2.260)
+
+## 🐛 Bug Fixes
+
+- **bundler**: sweep the client-bundle cache instead of growing it forever ([7dfb9a5](https://github.com/stacksjs/stx/commit/7dfb9a5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.260 ([1e530f9](https://github.com/stacksjs/stx/commit/1e530f9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.258...v0.2.259)
 
 ## 🐛 Bug Fixes
