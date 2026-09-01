@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.258...v0.2.259)
+
+## 🐛 Bug Fixes
+
+- **stx**: stop the signals runtime from suppressing the SPA router ([566dfde](https://github.com/stacksjs/stx/commit/566dfde)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.259 ([e442d83](https://github.com/stacksjs/stx/commit/e442d83)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.257...v0.2.258)
 
 ## 🐛 Bug Fixes
