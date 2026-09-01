@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.252...v0.2.253)
+
+## 🐛 Bug Fixes
+
+- **stx**: three silent hydration failures in partials and imported signals ([42b5fcf](https://github.com/stacksjs/stx/commit/42b5fcf)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2391](https://github.com/stacksjs/stx/issues/2391), [#2394](https://github.com/stacksjs/stx/issues/2394), [#2394](https://github.com/stacksjs/stx/issues/2394), [#2391](https://github.com/stacksjs/stx/issues/2391), [#2394](https://github.com/stacksjs/stx/issues/2394))
+
+## ✅ Tests
+
+- **serve**: pin what a per-request view's template receives from <script server> ([0df523c](https://github.com/stacksjs/stx/commit/0df523c)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2390](https://github.com/stacksjs/stx/issues/2390), [#2392](https://github.com/stacksjs/stx/issues/2392), [#2390](https://github.com/stacksjs/stx/issues/2390), [#2392](https://github.com/stacksjs/stx/issues/2392))
+
+## 🔧 Chores
+
+- release v0.2.253 ([6efdcc4](https://github.com/stacksjs/stx/commit/6efdcc4)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.251...v0.2.252)
 
 ## 🐛 Bug Fixes
