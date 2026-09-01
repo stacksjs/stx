@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.254...v0.2.255)
+
+## 🐛 Bug Fixes
+
+- **stx**: the browser destructure must not suppress its own bootstrap ([61355f7](https://github.com/stacksjs/stx/commit/61355f7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.255 ([3831197](https://github.com/stacksjs/stx/commit/3831197)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.253...v0.2.254)
 
 ## 🐛 Bug Fixes
