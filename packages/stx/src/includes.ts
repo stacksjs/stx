@@ -1123,6 +1123,22 @@ catch (error: unknown) {
         // the branch below for that reason.
         if (!isServerScript) {
           try {
+            // Turn called browser helpers into real imports before asking
+            // whether there is anything to bundle, exactly as the page path in
+            // processClientScript and the component path in utils.ts already
+            // do. This was the third client-script entry point and the only one
+            // without it.
+            //
+            // An include that calls one — Dashboard/UI/Table.stx calls
+            // useObjectUrl for its export link — got no import here, so the
+            // later destructure pass bound the name off `window.StacksBrowser`
+            // instead. Nothing populates that global, so the helper was
+            // undefined for the life of the page and the auto-import guard
+            // reported it on every navigation. Injecting the import both
+            // supplies the helper and gives hasUserImports something to see,
+            // which routes the script through the bundler that inlines it.
+            const { injectBrowserCoreAutoImports } = await import('./client-script')
+            scriptContent = injectBrowserCoreAutoImports(scriptContent).code
             const { hasUserImports, bundleClientScript } = await import('./client-script-bundler')
             if (hasUserImports(scriptContent)) {
               scriptContent = await bundleClientScript(scriptContent, includeFilePath, {
