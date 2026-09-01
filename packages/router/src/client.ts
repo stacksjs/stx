@@ -406,10 +406,68 @@ export function getRouterScript(): string {
   function fragmentMarker(declared){
     return '<!--stx-fragment'+(declared==='true'?' rt=1':declared==='false'?' rt=0':'')+'-->';
   }
+  // ── External scripts inside the routed container ──
+  //
+  // A page whose x-data factory lives in its own file — a
+  // <script src="dashboard-xdata.js"> sitting inside [data-stx-content] — lost that
+  // file on every SPA navigation. Both swap paths dropped it: the fragment
+  // path's regex sees an empty body and returns '', and the full-document path
+  // removed it outright. The inline scripts beside it were re-executed with
+  // care; the external ones were deleted.
+  //
+  // The result was a screen that rendered on a cold load and came back empty
+  // after a click, reporting "dashboardXData is not defined" with every binding
+  // in the container left unevaluated — because nothing had defined it since
+  // the file was thrown away.
+  //
+  // Loaded once per URL, never re-run. What these files define is a global that
+  // outlives the navigation, so a second execution buys nothing and costs
+  // whatever side effects the file has: a mount helper firing again on every
+  // click through the same page is its own bug.
+  var loadedExternalScripts={};
+  // The base is resolved first because callers pass what they have: the
+  // fragment path knows only the path it navigated to ('/reports/disk'), and
+  // new URL(src, '/reports/disk') throws — a base must be absolute. Silently
+  // returning '' there meant the file was never requested, which is the bug
+  // this whole block exists to fix, reintroduced one level down.
+  function externalScriptKey(src,base){
+    try{
+      var absoluteBase=base?new URL(base,location.href).href:location.href;
+      return new URL(src,absoluteBase).href;
+    }catch(e){return ''}
+  }
+  function rememberExternalScript(src,base){
+    var key=externalScriptKey(src,base);
+    if(key)loadedExternalScripts[key]=1;
+    return key;
+  }
+  // Returns a promise, or null when there is nothing to wait for — an already
+  // loaded file, or an unparseable src. Resolves rather than rejects on error:
+  // one 404 must not stop the rest of the page hydrating, matching what the
+  // head-script path already does by sending failures to execScripts too.
+  function loadExternalScript(src,base){
+    var key=externalScriptKey(src,base);
+    if(!key||loadedExternalScripts[key])return null;
+    loadedExternalScripts[key]=1;
+    return new Promise(function(resolve){
+      var el=document.createElement('script');
+      el.src=key;
+      // Deliberately NOT data-stx-page: both swap paths clear those on every
+      // navigation, which would sweep this away and — since it is never loaded
+      // twice — leave the document without it. These are loaded once and stay,
+      // the same as the external head scripts beside them.
+      el.setAttribute('data-stx-external','');
+      el.onload=function(){resolve()};
+      el.onerror=function(){log('[router] container script failed:',key);resolve()};
+      document.head.appendChild(el);
+    });
+  }
+
   // Record scripts from the initial page load
   document.querySelectorAll('script').forEach(function(s){
     var text=s.textContent||'';
-    if(text.trim()&&!s.hasAttribute('src'))executedScriptHashes[hashScript(text)]=1;
+    if(s.hasAttribute('src'))rememberExternalScript(s.getAttribute('src'));
+    else if(text.trim())executedScriptHashes[hashScript(text)]=1;
   });
   function cacheKey(url){
     // Base is the CURRENT document, not the origin root: a relative key like
@@ -713,6 +771,7 @@ else {
         var fragStyles=[];
         var fragCrosswindHrefs=[];
         var fragCrosswindCSS=null;
+        var fragExternalScripts=[];
         var cleanFrag=html.replace(new RegExp('<scr'+'ipt\\\\b([^>]*)>([\\\\s\\\\S]*?)<\\\\/scr'+'ipt>','gi'),function(m,attrs,code){
           // A data block is not code, and everything below this line assumes it
           // is: the body gets stashed in fragScripts, re-emitted as a pending
@@ -730,6 +789,12 @@ else {
           var typeMatch=attrs.match(/\\btype\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))/i);
           var scriptType=((typeMatch&&(typeMatch[1]||typeMatch[2]||typeMatch[3]))||'').trim().toLowerCase();
           if(scriptType&&scriptType!=='text/javascript'&&scriptType!=='application/javascript'&&scriptType!=='module')return m;
+          // An external script has no body, so every check below reads it as
+          // nothing to run and the fragment loses it. Queue it instead; the
+          // file is where the page's factory usually lives.
+          var srcMatch=attrs.match(/\\bsrc\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))/i);
+          var fragSrc=srcMatch&&(srcMatch[1]||srcMatch[2]||srcMatch[3]);
+          if(fragSrc){fragExternalScripts.push(fragSrc);return ''}
           if(code&&code.trim()&&!isSignalsRuntimeScript({hasAttribute:function(name){return name==='data-stx-runtime'&&attrs.indexOf('data-stx-runtime')!==-1}},code)){
             var slot='fragment-'+(++fragScriptId);
             var scoped=/(?:^|\\s)data-stx-scoped(?:\\s|=|$)/i.test(attrs);
@@ -817,6 +882,7 @@ else {
         log('[router] frag scripts:', fragScripts.length);
         document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
         fragScripts.sort(function(a,b){return (a.setupName?1:0)-(b.setupName?1:0)});
+        function runFragScripts(){
         fragScripts.forEach(function(entry){
           var code=entry.text;
           log('[router] exec script len:', code.length, 'has __stx_setup:', code.indexOf('__stx_setup')>-1);
@@ -885,6 +951,20 @@ else {
         log('[router] scripts done. _latestSetup:', !!(window.stx&&window.stx._latestSetup));
         // THEN fire stx:load — now _latestSetup is set and processElement has the right scope
         window.dispatchEvent(new Event('stx:load'));
+        }
+        // The container's own files first, for the same reason as the
+        // full-document path: the inline scripts call into them. Only awaited
+        // when something actually has to load, so a fragment with no external
+        // scripts — every fragment before this change — still runs its inline
+        // scripts in the same synchronous turn and nothing about its timing
+        // moves.
+        var fragPending=[];
+        fragExternalScripts.forEach(function(src){
+          var pending=loadExternalScript(src,url);
+          if(pending)fragPending.push(pending);
+        });
+        if(fragPending.length)Promise.all(fragPending).then(runFragScripts).catch(runFragScripts);
+        else runFragScripts();
       }
       return new Promise(function(resolve,reject){
         function completeFragSwap(){
@@ -1041,12 +1121,15 @@ else {
       // scripts as placeholders so re-execution keeps document.currentScript
       // beside the component template it owns.
       var routedBodyScripts=[];
+      var routedExternalScripts=[];
       var routedBodyScriptId=0;
       function prepareRoutedBodyScripts(root){
         if(!root)return;
         root.querySelectorAll('script').forEach(function(s){
           var text=s.textContent||'';
-          if(s.hasAttribute('src')){s.remove();return}
+          // Not discarded: queued against docBase, so a relative src resolves
+          // against the page being navigated to rather than the current URL.
+          if(s.hasAttribute('src')){routedExternalScripts.push(s.getAttribute('src'));s.remove();return}
           var type=(s.getAttribute('type')||'').trim().toLowerCase();
           var executable=!type||type==='text/javascript'||type==='application/javascript'||type==='module';
           if(!executable||!text.trim())return;
@@ -1108,6 +1191,14 @@ else {
           ns.onerror=reject;
           document.head.appendChild(ns);
         }));
+      });
+
+      // Before the inline scripts, and through the same barrier: an inline
+      // script's whole reason for existing is often to call into one of these,
+      // so running it first would fail exactly the way this bug did.
+      routedExternalScripts.forEach(function(src){
+        var pending=loadExternalScript(src,docBase);
+        if(pending)extPromises.push(pending);
       });
 
       // ── Script re-execution ──
