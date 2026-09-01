@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.260...v0.2.261)
+
+## ✨ Features
+
+- **drawer**: make it behave like a dialog ([7defc98](https://github.com/stacksjs/stx/commit/7defc98)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.261 ([18c8238](https://github.com/stacksjs/stx/commit/18c8238)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.259...v0.2.260)
 
 ## 🐛 Bug Fixes
