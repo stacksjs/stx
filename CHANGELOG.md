@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.255...v0.2.256)
+
+## 🐛 Bug Fixes
+
+- **stx**: auto-import a browser symbol for using it, not for naming it ([dc8baab](https://github.com/stacksjs/stx/commit/dc8baab)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.256 ([36e4d88](https://github.com/stacksjs/stx/commit/36e4d88)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.254...v0.2.255)
 
 ## 🐛 Bug Fixes
