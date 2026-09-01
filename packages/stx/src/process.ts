@@ -400,7 +400,7 @@ export async function processDirectives(
   // is safe, but a caller that reused ONE context object across two different
   // templates would silently give the second the first's gate.
   if (context.__stx_signals_gate === undefined)
-    context.__stx_signals_gate = usesSignalsInScript(template)
+    context.__stx_signals_gate = usesSignalsInScript(template, filePath)
 
   const isTopLevel = !context.__stxProcessingDepth
   if (isTopLevel)

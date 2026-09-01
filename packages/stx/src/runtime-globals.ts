@@ -33,6 +33,8 @@
  * @module runtime-globals
  */
 
+import { importsSignalDeclarations } from './imported-signals'
+
 /**
  * Public stx APIs made available as bare identifiers inside client scripts.
  *
@@ -267,7 +269,7 @@ const HAS_EVENT_HANDLER = /\s@[a-z][\w.:-]*\s*=/i
  * must still bind it imperatively. Conflating the two makes that fallback
  * unreachable.
  */
-export function templateHasReactiveContext(template: string): boolean {
+export function templateHasReactiveContext(template: string, filePath?: string): boolean {
   if (!template)
     return false
   // Quoted syntax is not syntax: a docs page showing `:if="open"` inside a code
@@ -277,7 +279,25 @@ export function templateHasReactiveContext(template: string): boolean {
   if (TEMPLATE_REACTIVE_PATTERNS.some(pattern => pattern.test(live)))
     return true
   // Every reactive runtime global, not just the handful spelled out above.
-  return usesReactiveRuntime(live)
+  if (usesReactiveRuntime(live))
+    return true
+  // …and the ones a script reaches through an imported module, which name no
+  // runtime global themselves. Without this the page is treated as static and
+  // never gets a setup function. stacksjs/stacks#2394.
+  return scriptsImportSignals(live, filePath)
+}
+
+/** Whether any client script in the template declares its signals in a module it imports. */
+function scriptsImportSignals(template: string, filePath?: string): boolean {
+  if (!filePath)
+    return false
+
+  for (const match of template.matchAll(/<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script\s*>/gi)) {
+    if (importsSignalDeclarations(match[1], filePath))
+      return true
+  }
+
+  return false
 }
 
 /**
@@ -297,12 +317,12 @@ export function templateHasReactiveContext(template: string): boolean {
  * They live here because events.ts is a leaf module and importing
  * signal-processing.ts would close a cycle through client-script.ts.
  */
-export function templateNeedsRuntime(template: string): boolean {
+export function templateNeedsRuntime(template: string, filePath?: string): boolean {
   if (!template)
     return false
   // Blanked for the same reason as above: `@click="go()"` inside a code sample
   // is documentation, not a handler (#1835).
-  return HAS_EVENT_HANDLER.test(blankInertHtmlRegions(template)) || templateHasReactiveContext(template)
+  return HAS_EVENT_HANDLER.test(blankInertHtmlRegions(template)) || templateHasReactiveContext(template, filePath)
 }
 
 /**

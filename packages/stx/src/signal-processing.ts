@@ -199,12 +199,15 @@ function parseItemSpec(spec: string): { itemVar: string | null, indexVar: string
  * Server-side directives are processed at build time.
  * Remaining directives with reactive values are handled by the client runtime.
  */
-export function hasSignalsSyntax(template: string): boolean {
+export function hasSignalsSyntax(template: string, filePath?: string): boolean {
   // Delegates. The patterns and the reactive-globals check moved to
   // runtime-globals.ts so that this decision, the auto-mount test in
   // client-script.ts, and the event-stripping gate in events.ts are one
   // function rather than three lists that drift (#1819, #1820, #1824).
-  return templateNeedsRuntime(template)
+  //
+  // `filePath` lets the delegate follow a script's imports, for the page whose
+  // signals are declared in a module rather than inline (stacksjs/stacks#2394).
+  return templateNeedsRuntime(template, filePath)
 }
 
 /**
@@ -1237,7 +1240,9 @@ export async function processScriptSetup(template: string, filePath?: string, se
   // old first-script-only behavior that left subsequent signal scripts for
   // processClientScript to stx.mount() wrap — which set __stx_scope on the
   // sibling <main> and blocked processElement from walking page content.
-  const signalScripts: { fullMatch: string, attrs: string, content: string }[] = []
+  const signalScripts: { fullMatch: string, attrs: string, content: string, bundled?: string }[] = []
+
+  const { hasUserImports, bundleClientScript } = await importOnce('stx/client-script-bundler', () => import('./client-script-bundler'))
 
   for (const s of scripts) {
     let content = s.body
@@ -1246,6 +1251,30 @@ export async function processScriptSetup(template: string, filePath?: string, se
     }
     if (SIGNAL_API_RE.test(content)) {
       signalScripts.push({ fullMatch: s.fullMatch, attrs: s.attrs, content })
+      continue
+    }
+
+    // A script that factors its signals into a module names no signal API
+    // itself — `const { signal } = makeProbe()` matches nothing above — so the
+    // page was treated as static: no setup function, no `data-stx` on <body>,
+    // every binding inert with nothing logged. The bundler inlines that
+    // module, so ask it. stacksjs/stacks#2394.
+    //
+    // Only for a script that actually imports something, and the bundle is
+    // kept so the resolve pass below does not repeat the work.
+    if (!hasUserImports(content))
+      continue
+
+    try {
+      const bundled = await bundleClientScript(injectBrowserCoreAutoImports(content).code, filePath || '', {
+        projectRoot: process.cwd(),
+      })
+      if (SIGNAL_API_RE.test(bundled))
+        signalScripts.push({ fullMatch: s.fullMatch, attrs: s.attrs, content, bundled })
+    }
+    catch {
+      // A script that cannot be bundled is not a signal script we can prove.
+      // The existing per-script bundling below reports the real failure.
     }
   }
 
@@ -1277,12 +1306,11 @@ export async function processScriptSetup(template: string, filePath?: string, se
   // Bundle user imports and resolve store imports for each script, then
   // concatenate. Scripts are processed in document order, so later scripts
   // (usually the page) can see earlier declarations (usually the layout).
-  const { hasUserImports, bundleClientScript } = await importOnce('stx/client-script-bundler', () => import('./client-script-bundler'))
   const resolvedParts: string[] = []
   for (let i = 0; i < signalScripts.length; i++) {
-    let scriptContent = signalScripts[i].content
-    scriptContent = injectBrowserCoreAutoImports(scriptContent).code
-    if (hasUserImports(scriptContent)) {
+    // Reuse the bundle the detection pass above already produced, if any.
+    let scriptContent = signalScripts[i].bundled ?? injectBrowserCoreAutoImports(signalScripts[i].content).code
+    if (!signalScripts[i].bundled && hasUserImports(scriptContent)) {
       scriptContent = await bundleClientScript(scriptContent, filePath || '', {
         projectRoot: process.cwd(),
       })
@@ -1651,7 +1679,7 @@ export function extractExports(setupContent: string): string {
  * bundle as the setup code, so rendered pages never depend on bare specifiers.
  */
 export async function processSignals(template: string, options: StxOptions, filePath?: string, serverData?: Record<string, unknown>): Promise<string> {
-  if (!hasSignalsSyntax(template)) {
+  if (!hasSignalsSyntax(template, filePath)) {
     return template
   }
 

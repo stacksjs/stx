@@ -71,6 +71,7 @@ import { findSfcTemplateBlock } from './sfc-template'
 import path from 'node:path'
 import { processConditionals } from './conditionals'
 import { isProduction, isTest } from './env'
+import { findBodyOpenTag, replaceBodyOpenTag } from './find-body-tag'
 import { processExpressions, usesSignalsInScript } from './expressions'
 import { buildRuntimeGlobalsDestructure } from './runtime-globals'
 import { LRUCache } from './performance-utils'
@@ -350,9 +351,37 @@ function transformSignalScript(scriptContent: string, scopeId: string): string {
 }
 
 /**
- * Add data-stx-scope attribute to the first element in HTML content
+ * Add data-stx-scope attribute to the first element in HTML content.
+ *
+ * `stamped: false` means the content had no element this could be attached to,
+ * which the caller reports: an unstamped scope is registered by the emitted
+ * script and then never found by `document.querySelector`, so every binding in
+ * the partial stays inert with nothing logged.
  */
-function addScopeToRootElement(html: string, scopeId: string): { html: string, mergedIntoExisting: string | null } {
+function addScopeToRootElement(html: string, scopeId: string): { html: string, mergedIntoExisting: string | null, stamped: boolean } {
+  // A partial that carries the page skeleton opens with `<!DOCTYPE html>` and
+  // `<html>`, neither of which is a scope root: the doctype is not an element
+  // at all, and `<html>` is replaced wholesale when the document is assembled.
+  // `<body>` is the element that actually survives into the page and contains
+  // the partial's markup, so stamp that one.
+  //
+  // Before this, the leading `<!DOCTYPE` failed the first-element match
+  // outright and the function returned the html untouched — the one shape
+  // where a partial declaring signals silently hydrated nothing.
+  // stacksjs/stacks#2394.
+  if (findBodyOpenTag(html)) {
+    const bodyTag = findBodyOpenTag(html)!
+    const existingBodyScope = bodyTag.tag.match(/data-stx-scope="([^"]*)"/)
+    if (existingBodyScope)
+      return { html, mergedIntoExisting: existingBodyScope[1], stamped: true }
+
+    return {
+      html: replaceBodyOpenTag(html, (_tag, attrs) => `<body${attrs} data-stx-scope="${scopeId}">`),
+      mergedIntoExisting: null,
+      stamped: true,
+    }
+  }
+
   // Skip comments (real <!-- --> and masked \x00STX_HTML_COMMENT_N\x00
   // placeholders from process.ts), whitespace, and find the first real element
   const elementMatch = html.match(/^(\s*(?:(?:<!--[\s\S]*?-->|\x00STX_HTML_COMMENT_\d+\x00)\s*)*)(<[a-zA-Z][a-zA-Z0-9-]*)(\s[^>]*>|>)/s)
@@ -363,7 +392,7 @@ function addScopeToRootElement(html: string, scopeId: string): { html: string, m
     if (existingScope) {
       // Don't add a duplicate — return the existing scope ID so the caller
       // can register signals under that scope instead
-      return { html, mergedIntoExisting: existingScope[1] }
+      return { html, mergedIntoExisting: existingScope[1], stamped: true }
     }
     const before = elementMatch[1]
     const tagStart = elementMatch[2]
@@ -371,9 +400,10 @@ function addScopeToRootElement(html: string, scopeId: string): { html: string, m
     return {
       html: `${before}${tagStart} data-stx-scope="${scopeId}"${afterTag}${html.slice(elementMatch[0].length)}`,
       mergedIntoExisting: null,
+      stamped: true,
     }
   }
-  return { html, mergedIntoExisting: null }
+  return { html, mergedIntoExisting: null, stamped: false }
 }
 
 // Counter for generating unique scope IDs
@@ -1013,7 +1043,7 @@ catch (error: unknown) {
       // the PRE-strip source. Plain assignment, not a merge — the gate describes
       // THIS partial, and any parent-scoped override still ORs in separately
       // inside processExpressions.
-      includeContext.__stx_signals_gate = usesSignalsInScript(partialContent)
+      includeContext.__stx_signals_gate = usesSignalsInScript(partialContent, includeFilePath)
 
       // Add local variables to the context, ensuring array references are preserved
       for (const [key, value] of Object.entries(localVars)) {
@@ -1033,6 +1063,28 @@ catch (error: unknown) {
 
         const isServerScript = scriptAttrs.includes('server')
         const shouldTranspile = shouldTranspileTypeScript(scriptAttrs)
+
+        // Interpolate `{{ expr }}` / `{!! expr !!}` against the include's
+        // context before anything tries to parse this as JavaScript.
+        //
+        // The page-level pass runs at the top of `processOtherDirectives`,
+        // ~150 lines before `processIncludes` expands anything — so a
+        // partial's `<script client>` was the one script body that never got
+        // it. `const point = {!! vm.mapPoint !!}` reached the bundler as
+        // literal text and failed with `Expected identifier but found "!"`,
+        // or, when the script needed no bundling, was emitted verbatim as a
+        // SyntaxError shipped to the browser. Neither looks like an include
+        // problem from the outside, and the dev server disagreed with the
+        // build because it interpolates the collected client scripts in a
+        // separate pass after the template is fully resolved.
+        //
+        // Before the CSS extractor and the transpiler deliberately: both
+        // parse the body, and a raw directive is not valid JavaScript.
+        // stacksjs/stacks#2391.
+        if (!isServerScript && scriptContent.trim()) {
+          const { interpolateScriptExpressions } = await import('./expressions')
+          scriptContent = interpolateScriptExpressions(scriptContent, includeContext)
+        }
 
         // Vendor CSS side-effect imports MUST be extracted BEFORE
         // `transpileTypeScript` runs — Bun.Transpiler tree-shakes
@@ -1195,6 +1247,17 @@ catch (e) {
             `window.stx._scopes['${scopeResult.mergedIntoExisting}']`,
           )
           signalScopeId = scopeResult.mergedIntoExisting
+        }
+        else if (!scopeResult.stamped) {
+          // The script registers `window.stx._scopes[id]` and the runtime
+          // resolves it with `document.querySelector('[data-stx-scope="id"]')`.
+          // With nothing stamped, that query returns null and every binding in
+          // the partial is inert — no error, no console output, a page that
+          // renders its static half and looks like a data problem. Say so.
+          console.warn(
+            `[stx] ${path.relative(process.cwd(), includeFilePath)} declares signals but has no element to scope them to, `
+            + `so nothing in it will hydrate. Wrap the partial's markup in a single root element.`,
+          )
         }
       }
 

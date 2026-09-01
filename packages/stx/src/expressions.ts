@@ -36,6 +36,7 @@ import { createSafeFunction, isExpressionSafe, safeEvaluate } from './safe-evalu
 import { createDetailedErrorMessage } from './utils'
 import { createPlaceholder } from './placeholder'
 import { maskAtElementPosition, matchScriptElement, matchStyleElement, restoreStashedScripts, stashScriptElements, type TokenMatcher } from './html-masking'
+import { importsSignalDeclarations } from './imported-signals'
 
 /**
  * Add basic filter support to expressions
@@ -507,8 +508,12 @@ function joinBraces(length: number): string {
 /**
  * Check if a template uses signals (state, derived, effect) in its script blocks
  * or has reactive attributes (@if, @for) with function call expressions
+ *
+ * `filePath` lets a script that factors its signals into an imported module be
+ * recognised too. Without it the scan is text-only, which is what every caller
+ * did before and is still correct for a script that declares its own signals.
  */
-export function usesSignalsInScript(template: string): boolean {
+export function usesSignalsInScript(template: string, filePath?: string): boolean {
   // Check genuine script elements only. Tag-like text inside comments,
   // attributes, or style bodies is not executable script.
   const { scripts } = stashScriptElements(template)
@@ -518,6 +523,12 @@ export function usesSignalsInScript(template: string): boolean {
       continue
     const content = match[2]
     if (/\b(state|derived|effect|ref|reactive|computed|watch|watchEffect)\s*(?:<[^>]*>)?\s*\(/.test(content)) {
+      return true
+    }
+    // `const { signal } = makeProbe()` names no signal API, so the scan above
+    // sees a static page and every binding on it silently goes inert. Follow
+    // the import instead of guessing. stacksjs/stacks#2394.
+    if (importsSignalDeclarations(content, filePath)) {
       return true
     }
   }
