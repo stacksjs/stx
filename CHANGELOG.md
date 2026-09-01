@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.256...v0.2.257)
+
+## 🐛 Bug Fixes
+
+- **stx**: inject browser core imports on the include path too ([b4a8bc8](https://github.com/stacksjs/stx/commit/b4a8bc8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.257 ([ae3a653](https://github.com/stacksjs/stx/commit/ae3a653)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.255...v0.2.256)
 
 ## 🐛 Bug Fixes
