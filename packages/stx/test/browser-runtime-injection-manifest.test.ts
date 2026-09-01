@@ -67,3 +67,33 @@ describe('browser runtime injection follows the auto-import manifest', () => {
     expect(injectBrowserRuntime(prose)).not.toContain('@stacksjs/browser')
   })
 })
+
+describe('the already-injected check does not suppress the bootstrap', () => {
+  it('still injects for a template carrying the generated destructure', () => {
+    // The client-script pass emits this for exactly the templates that need the
+    // module, and it runs first. A bare includes('window.StacksBrowser') check
+    // therefore saw its own reason to inject and read it as proof the work was
+    // done — so the module never loaded and every name in that destructure
+    // resolved to undefined.
+    const template = '<html><head></head><body><script>'
+      + 'var { useTimeoutFn } = window.StacksBrowser || {}; useTimeoutFn()'
+      + '</script></body></html>'
+    expect(injectBrowserRuntime(template)).toContain('import \'@stacksjs/browser\'')
+  })
+
+  it('does not inject a second time when the bootstrap is already there', () => {
+    const template = '<html><head><script type="module">import \'@stacksjs/browser\'</script></head>'
+      + '<body><script>useTimeoutFn()</script></body></html>'
+    const out = injectBrowserRuntime(template)
+    expect(out.match(/@stacksjs\/browser/g)?.length).toBe(1)
+  })
+
+  it('leaves a page that supplies the global itself alone', () => {
+    // An assignment means someone else has supplied a bootstrap; a read is what
+    // asks for one. Only the assignment should suppress injection.
+    const template = '<html><head></head><body><script>'
+      + 'window.StacksBrowser = {}; useTimeoutFn()'
+      + '</script></body></html>'
+    expect(injectBrowserRuntime(template)).not.toContain('import \'@stacksjs/browser\'')
+  })
+})

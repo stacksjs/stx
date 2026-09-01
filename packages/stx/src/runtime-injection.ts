@@ -25,8 +25,24 @@ import { getTooltipRuntime } from './builtins/tooltip'
  * Server scripts should use the server ORM directly, not browser functions.
  */
 export function injectBrowserRuntime(template: string): string {
-  // Don't inject if already present
-  if (template.includes('window.StacksBrowser') || template.includes('StacksBrowser =')) {
+  // Don't inject if the bootstrap is already there, or the page defines the
+  // global itself.
+  //
+  // Deliberately NOT a bare `includes('window.StacksBrowser')`. The
+  // client-script pass emits `var { useTimeoutFn } = window.StacksBrowser || {}`
+  // for exactly the templates that need this module, and it runs first — so
+  // that test saw its own reason to inject and read it as proof the work was
+  // already done. The module was then never loaded, and every auto-imported
+  // name in that destructure resolved to undefined against a global nothing
+  // had defined.
+  //
+  // A read of the global is what asks for the bootstrap; only an assignment to
+  // it means someone else has supplied one. The `[^=]` keeps `===` from
+  // counting as an assignment, and `|| {}` after the name is a read, so the
+  // generated destructure no longer suppresses the thing it depends on.
+  const alreadyBootstrapped = /import\s+['"]@stacksjs\/browser['"]/.test(template)
+  const pageSuppliesGlobal = /\bStacksBrowser\s*=[^=]/.test(template)
+  if (alreadyBootstrapped || pageSuppliesGlobal) {
     return template
   }
 
