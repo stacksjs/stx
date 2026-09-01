@@ -8,6 +8,7 @@
  */
 
 import type { StxOptions } from './types'
+import { BROWSER_CORE_IMPORTS } from './browser-core-imports'
 import { getOwnedRouteMatchers } from './owned-routes'
 import { toScriptJson } from './script-json'
 import { findBodyOpenTag, replaceBodyOpenTag } from './find-body-tag'
@@ -52,15 +53,24 @@ export function injectBrowserRuntime(template: string): string {
     return template
   }
 
-  // Core browser utilities (framework-provided, not app-specific)
-  // Only include symbols that are truly unique to @stacksjs/browser
-  // and wouldn't appear in normal application code
-  const coreSymbols = [
-    'browserQuery', 'BrowserQueryBuilder', 'configureBrowser', 'createBrowserModel',
-    'debounce', 'throttle', 'retry', 'sleep', 'wait', 'delay', 'waitUntil', 'waitWhile',
-    'lazy', 'clamp', 'rand', 'readableSize',
-    'useActiveElement', 'useDocumentVisibility', 'useIntervalFn',
-  ]
+  // The names that make this template need @stacksjs/browser are exactly the
+  // names the client-script pass will auto-import from it. This used to be a
+  // second hand-maintained list, and it had drifted seven names behind:
+  // BrowserQueryError, browserAuth, getBrowserConfig, createBrowserDb,
+  // isBrowser, useObjectUrl and useTimeoutFn were all promised by the
+  // auto-import manifest but did not count as a reason to load the module.
+  //
+  // A page whose client code used only those got the destructure without the
+  // module: `var { useTimeoutFn } = window.StacksBrowser || {}` against a
+  // global nothing had defined. Every one of them came out undefined, and the
+  // page reported it through the auto-import guard rather than by failing at
+  // the call site — so it read as a packaging warning rather than as the
+  // missing bootstrap it was.
+  //
+  // Reading the manifest directly is what keeps the two ends honest. That is
+  // the reason browser-core-imports.ts is a leaf module importing nothing:
+  // it already had two readers, and this is the third.
+  const coreSymbols = BROWSER_CORE_IMPORTS
 
   // Check for core browser utilities in CLIENT code only
   const usesCoreSymbols = coreSymbols.some(sym => {
