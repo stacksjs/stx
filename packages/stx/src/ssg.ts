@@ -49,6 +49,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { CONVENTIONAL_ASSET_OUTPUT, CONVENTIONAL_ASSET_ROOT, resolveConventionalAssetRoot } from './asset-roots'
 import { externalizeSharedAssets } from './build-externalize'
+import { clientBundleDependencies } from './client-script-bundler'
 import { externalizeRepeatedAssets } from './build-externalize-repeated'
 import { createRouter, type Route } from './router'
 import { processDirectives, injectRouterScript } from './process'
@@ -800,6 +801,25 @@ async function renderPage(
     stxOptions,
     dependencies
   )
+
+  /*
+   * Fold in whatever the client bundler resolved.
+   *
+   * `processDirectives` collects what the template reaches through `@include`
+   * and friends. It cannot see through a `<script client>` block's imports -
+   * those are resolved later, by Bun.build inside the bundler - so a page
+   * whose script imports a helper recorded no dependency on that helper, and
+   * editing it left this cache convinced the page was unchanged. The build
+   * then said "Cached: N" and served the previous build's JavaScript, with
+   * correct source on disk and a green build to go with it.
+   *
+   * The page's own file and every partial it pulled in are asked for, because
+   * a partial can carry a `<script client>` of its own.
+   */
+  for (const host of [route.filePath, ...dependencies]) {
+    for (const input of clientBundleDependencies(host))
+      dependencies.add(input)
+  }
 
   // Inject route params for client-side useRoute().params access.
   // The dev server does this in serve.ts:668 — SSG must mirror it so

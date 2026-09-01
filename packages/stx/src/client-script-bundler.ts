@@ -26,6 +26,39 @@ interface BundleCacheMetadata {
   files: Array<{ path: string, mtimeMs: number }>
 }
 
+/**
+ * What each host file's client bundle was built from.
+ *
+ * The bundle cache re-validates its own inputs (#1723), so an edit to an
+ * imported helper always produces a fresh bundle. That is not enough on its
+ * own: the SSG caches the *rendered page* a level above, keyed on the `.stx`
+ * file and the dependencies collected while rendering it - which are the
+ * `@include`d partials and nothing else. A page whose `<script client>`
+ * imports a helper therefore stayed cached when the helper changed, the
+ * bundler was never asked, and the build reported "Cached: 306" while serving
+ * the previous build's JavaScript.
+ *
+ * That is a bad failure to debug, because everything downstream looks correct:
+ * the source is right, the build is green, and the browser is running code
+ * that no longer exists on disk.
+ *
+ * So the bundler publishes what it resolved, and the SSG folds it into the
+ * dependency list it already keeps. Recorded on a cache hit as well as a fresh
+ * build - a cache hit is exactly when the SSG most needs to know, because
+ * nothing else in that path touches the helper.
+ */
+const bundleInputs = new Map<string, string[]>()
+
+/** Every file the client bundle for `filePath` was built from. */
+export function clientBundleDependencies(filePath: string): string[] {
+  return bundleInputs.get(filePath) ?? []
+}
+
+function recordBundleInputs(filePath: string, files: string[]): void {
+  if (filePath)
+    bundleInputs.set(filePath, files)
+}
+
 export function shouldLogBundlerDiagnostics(
   environment: { STX_DEBUG?: string } = process.env as { STX_DEBUG?: string },
 ): boolean {
@@ -473,6 +506,14 @@ export async function bundleClientScript(
     }
     if (depsValid) {
       logBundlerDiagnostic('cache hit:', hash)
+      try {
+        const stored = JSON.parse(await Bun.file(depsPath).text()) as BundleCacheMetadata
+        recordBundleInputs(filePath, (stored.files ?? []).map(dep => dep.path))
+      }
+      catch {
+        // No sidecar to read: the page keeps the deps it already had, which is
+        // no worse than before this existed.
+      }
       return await cacheFile.text()
     }
     logBundlerDiagnostic('cache invalidated by dep change:', hash)
@@ -703,6 +744,8 @@ ${publicAssignments}`.trim()
       metadataVersion: BUNDLE_CACHE_METADATA_VERSION,
       files: depsSnapshot,
     } satisfies BundleCacheMetadata))
+
+    recordBundleInputs(filePath, depsSnapshot.map(dep => dep.path))
 
     return bundled
   }
