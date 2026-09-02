@@ -120,10 +120,41 @@ function serializeForScript(value: unknown): string {
     .replace(/\u2029/g, '\\u2029')
 }
 
+/**
+ * The pre-paint script, and the runtime that shares its rules.
+ *
+ * The directive existed to settle appearance before the first frame, and it
+ * did that and stopped there. Everything *after* the first frame — the
+ * settings control that changes the mode, persisting the choice, following the
+ * system while the mode is `system` — was left to each application, which then
+ * wrote a second implementation of the same rules by hand.
+ *
+ * Two implementations of one contract do not stay in step, and the way they
+ * come apart is silent. `data-theme` is the proof: this script sets it, an
+ * application's own `setColorMode` usually does not, so every runtime change
+ * left the attribute describing the mode the page loaded in rather than the
+ * one it is in.
+ *
+ * So the script publishes what it already knows how to do. `apply` is the
+ * body of the bootstrap, reused rather than restated; `setColorMode` and
+ * `setAppearance` write the same persisted object this script reads and then
+ * call it; `watchSystem` re-applies on a `prefers-color-scheme` change while —
+ * and only while — the stored mode is `system`.
+ *
+ * Every change dispatches `stx:appearance` on `window`, carrying the resolved
+ * state. Applications with something outside the document to keep in step — a
+ * native window whose material AppKit resolves against the *window's*
+ * appearance, say — have one event to listen to instead of a wrapper around
+ * every call site.
+ *
+ * Kept in one synchronous script rather than split into a module: the pre-paint
+ * half must not wait for a fetch, and a runtime that arrived later would be
+ * missing exactly when a settings panel binds to it.
+ */
 function generateBootstrap(options: AppearanceBootstrapOptions): string {
   const config = serializeForScript(options)
 
-  return `<script data-stx-scoped data-stx-appearance-bootstrap>(function(){"use strict";const config=${config};const root=document.documentElement;let stored={};try{const raw=localStorage.getItem(config.storageKey);const parsed=raw?JSON.parse(raw):{};if(parsed&&typeof parsed==="object"&&!Array.isArray(parsed))stored=parsed}catch{}const selectedAppearance=config.appearance.allowed.includes(stored[config.appearance.key])?stored[config.appearance.key]:config.appearance.default;const selectedMode=["light","dark","system"].includes(stored[config.colorMode.key])?stored[config.colorMode.key]:config.colorMode.default;root.setAttribute("data-"+config.appearance.attribute,selectedAppearance);root.setAttribute("data-"+config.colorMode.attribute,selectedMode);let dark=selectedMode==="dark";if(selectedMode==="system"){try{dark=matchMedia("(prefers-color-scheme: dark)").matches}catch{dark=false}}root.classList.toggle("dark",dark);root.dataset.theme=dark?"dark":"light"}());</script>`
+  return `<script data-stx-scoped data-stx-appearance-bootstrap>(function(){"use strict";const config=${config};const root=document.documentElement;const MODES=["light","dark","system"];function read(){let stored={};try{const raw=localStorage.getItem(config.storageKey);const parsed=raw?JSON.parse(raw):{};if(parsed&&typeof parsed==="object"&&!Array.isArray(parsed))stored=parsed}catch{}return stored}function write(stored){try{localStorage.setItem(config.storageKey,JSON.stringify(stored))}catch{}}function resolve(){const stored=read();return{appearance:config.appearance.allowed.includes(stored[config.appearance.key])?stored[config.appearance.key]:config.appearance.default,colorMode:MODES.includes(stored[config.colorMode.key])?stored[config.colorMode.key]:config.colorMode.default}}function prefersDark(){try{return matchMedia("(prefers-color-scheme: dark)").matches}catch{return false}}function apply(){const state=resolve();const dark=state.colorMode==="dark"||(state.colorMode==="system"&&prefersDark());root.setAttribute("data-"+config.appearance.attribute,state.appearance);root.setAttribute("data-"+config.colorMode.attribute,state.colorMode);root.classList.toggle("dark",dark);root.dataset.theme=dark?"dark":"light";state.dark=dark;try{window.dispatchEvent(new CustomEvent("stx:appearance",{detail:state}))}catch{}return state}function store(key,allowed,value){if(allowed.includes(value)){const stored=read();stored[key]=value;write(stored)}return apply()}window.__stxAppearance={config:config,read:read,resolve:resolve,apply:apply,setColorMode:function(mode){return store(config.colorMode.key,MODES,mode)},setAppearance:function(name){return store(config.appearance.key,config.appearance.allowed,name)},watchSystem:function(){try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",function(){if(resolve().colorMode==="system")apply()})}catch{}}};apply()}());</script>`
 }
 
 function findClosingParenthesis(source: string, openIndex: number): number {
