@@ -1089,6 +1089,18 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     console.warn(siteUrlFallbackWarning())
 
   const cfg: Required<SSGConfig> = {
+    // The router config the injected script is handed, and the reason
+    // `SSGConfig.router` was given a real type: `renderPage` is called with
+    // this object, so its `options.router` is this key. It was never set, so
+    // the forwarding added in 566dfdead read `undefined` on every page and
+    // emitted no `__stxRouterConfig` — the fix was inert, and the compiler has
+    // been saying so since the `any` cast came off.
+    //
+    // Read from the loaded config rather than `buildConfig`, because `router`
+    // is a top-level key of `stx.config.ts` like `partialsDir` below. The `??`
+    // is for the type only: `loadStxConfig` merges `defaultConfig`, which
+    // always carries a `router`, so the fallback is unreachable at runtime.
+    router: options.router ?? (stxConfig as any)?.router ?? {},
     pagesDir: options.pagesDir || buildConfig.pagesDir || 'pages',
     outputDir: options.outputDir || buildConfig.outputDir || 'dist',
     baseUrl: options.baseUrl || buildConfig.baseUrl || '/',
