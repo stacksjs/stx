@@ -50,10 +50,22 @@ const closeButtonPosition = {
 export const containerClasses = `pointer-events-none fixed ${positionClasses[position]} flex max-w-full`.trim()
 export const panelClasses = `pointer-events-auto relative ${sizeClasses[position]} ${className}`.trim()
 export const closeButtonClasses = `absolute top-0 ${closeButtonPosition[position]} flex pt-4 pr-2 sm:pr-4`.trim()
+
+/*
+ * This drawer's own id.
+ *
+ * The focus move looked the panel up with a document-wide query, which finds
+ * the first drawer on the page rather than the one that just opened. With two
+ * on a page - a cart and the item being added to it - opening the second
+ * focused the first, which is hidden, so focus went nowhere and the retry
+ * spent its ten frames failing. Same idiom as Dropdown and Popover.
+ */
+export const drawerInstanceId = `stx-drawer-${Math.random().toString(36).slice(2, 11)}`
 </script>
 
 <script client>
 const emit = defineEmits()
+const drawerInstanceId = {{ drawerInstanceId }}
 // useReactiveProp lets the parent drive `open` via signals
 // (`:open="drawerOpen()"`) instead of the prop being captured once.
 // See stacksjs/stx#1704.
@@ -139,10 +151,33 @@ let opener = null
  * meantime, so a drawer opened and shut inside those few frames does not
  * pull focus back afterwards.
  */
+/*
+ * The next chance to try, whichever comes first.
+ *
+ * `requestAnimationFrame` is the right signal when the page is painting, and
+ * it is suspended entirely when the page is not - a background tab, or a
+ * window the compositor has parked. A drawer opened in that state would never
+ * take focus, and would still not have it when the reader came back, because
+ * the one scheduled callback fires long after everything else has moved on.
+ * So a timer races the frame and the first to arrive wins.
+ */
+function soon(callback) {
+  let done = false
+
+  const once = () => {
+    if (done) return
+    done = true
+    callback()
+  }
+
+  requestAnimationFrame(once)
+  setTimeout(once, 32)
+}
+
 function focusFirst(attempts) {
   if (!isOpen()) return
 
-  const panel = document.querySelector('[data-stx-drawer-panel]')
+  const panel = document.querySelector(`[data-stx-drawer-panel="${drawerInstanceId}"]`)
   if (!panel) return
 
   const target = panel.querySelector('[autofocus]') || panel.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])') || panel
@@ -150,13 +185,13 @@ function focusFirst(attempts) {
   target.focus?.()
 
   if (document.activeElement === target) return
-  if (attempts > 0) requestAnimationFrame(() => focusFirst(attempts - 1))
+  if (attempts > 0) soon(() => focusFirst(attempts - 1))
 }
 
 function captureFocus() {
   opener = document.activeElement
 
-  requestAnimationFrame(() => focusFirst(10))
+  soon(() => focusFirst(10))
 }
 
 function releaseFocus() {
@@ -206,7 +241,7 @@ defineExpose({
         <div
           class="{{ panelClasses }}"
           style="animation: slideIn 0.5s ease-in-out"
-          data-stx-drawer-panel
+          data-stx-drawer-panel="{{ drawerInstanceId }}"
           role="dialog"
           aria-modal="true"
           {{ title ? 'aria-label="' + title + '"' : '' }}

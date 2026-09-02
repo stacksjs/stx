@@ -101,11 +101,11 @@ describe('Drawer', () => {
  * thing a source-text check cannot notice.
  */
 function loadFocusFirst(environment: Record<string, any>) {
-  const start = source.indexOf('function focusFirst(')
+  const start = source.indexOf('function soon(')
   const end = source.indexOf('function captureFocus(')
 
   if (start < 0 || end < 0)
-    throw new Error('focusFirst is no longer in Drawer.stx under that name')
+    throw new Error('soon/focusFirst are no longer in Drawer.stx under those names')
 
   const names = Object.keys(environment)
   const make = new Function(...names, `${source.slice(start, end)}; return focusFirst`)
@@ -159,6 +159,7 @@ describe('Drawer focus retry', () => {
 
     const focusFirst = loadFocusFirst({
       isOpen: () => true,
+      drawerInstanceId: 'stx-drawer-test',
       document: dom.document,
       requestAnimationFrame: (callback: () => void) => {
         frames++
@@ -182,6 +183,7 @@ describe('Drawer focus retry', () => {
 
     const focusFirst = loadFocusFirst({
       isOpen: () => true,
+      drawerInstanceId: 'stx-drawer-test',
       document: dom.document,
       requestAnimationFrame: (callback: () => void) => { frames++; callback() },
     })
@@ -199,6 +201,7 @@ describe('Drawer focus retry', () => {
 
     const focusFirst = loadFocusFirst({
       isOpen: () => open,
+      drawerInstanceId: 'stx-drawer-test',
       document: dom.document,
       requestAnimationFrame: (callback: () => void) => { frames++; open = false; callback() },
     })
@@ -247,5 +250,119 @@ describe('Drawer theming', () => {
     // Changing where an existing prop applies would silently restyle every
     // drawer already shipped.
     expect(source).toContain('export const panelClasses = `pointer-events-auto relative ${sizeClasses[position]} ${className}`')
+  })
+})
+
+/**
+ * Two drawers on one page.
+ *
+ * The panel was found with a document-wide query, which returns the first
+ * drawer in the document and not the one that just opened. A page with a cart
+ * drawer and an item drawer therefore focused the wrong panel - a hidden one -
+ * so the retry spent its ten frames failing and focus never moved.
+ */
+describe('Drawer instance scoping', () => {
+  test('each drawer looks up its own panel', () => {
+    expect(source).toContain('drawerInstanceId')
+    expect(source).toContain('[data-stx-drawer-panel="${drawerInstanceId}"]')
+  })
+
+  test('the id it queries for is the id it renders', () => {
+    // The two halves are written in different places; a rename in one is
+    // invisible until a drawer stops taking focus.
+    expect(source).toContain('data-stx-drawer-panel="{{ drawerInstanceId }}"')
+  })
+
+  test('the id differs per instance', () => {
+    expect(source).toContain('Math.random()')
+  })
+
+  test('finds nothing rather than the wrong panel', () => {
+    // The point of the id: a query scoped to another drawer's id must miss,
+    // where the old document-wide one would have returned that drawer.
+    const dom = stubDom({ shown: true })
+    let asked = ''
+
+    const focusFirst = loadFocusFirst({
+      isOpen: () => true,
+      drawerInstanceId: 'drawer-two',
+      document: {
+        querySelector: (selector: string) => {
+          asked = selector
+          // Only drawer-one exists in this document.
+          return selector.includes('drawer-one') ? dom.panel : null
+        },
+        get activeElement() { return 'body' },
+      },
+      requestAnimationFrame: (callback: () => void) => callback(),
+    })
+
+    focusFirst(10)
+
+    expect(asked).toContain('drawer-two')
+    expect(dom.active.current).toBe('body')
+  })
+})
+
+/**
+ * A drawer opened while the page is not painting.
+ *
+ * `requestAnimationFrame` does not fire at all in a background tab or a parked
+ * window, so a retry built only on frames never runs: the drawer opens without
+ * focus and still has none when the reader comes back, because the single
+ * pending callback fires after everything else has moved on. A timer races the
+ * frame so the retry survives a compositor that is asleep.
+ */
+describe('Drawer focus without frames', () => {
+  test('still focuses when requestAnimationFrame never fires', () => {
+    const dom = stubDom({ shown: true })
+    const timers: Array<() => void> = []
+
+    const focusFirst = loadFocusFirst({
+      isOpen: () => true,
+      drawerInstanceId: 'stx-drawer-test',
+      document: dom.document,
+      requestAnimationFrame: () => {},
+      setTimeout: (callback: () => void) => { timers.push(callback); return 1 },
+    })
+
+    // Hidden on the first pass, revealed before the timer runs the retry.
+    dom.shown.value = false
+    focusFirst(10)
+    dom.shown.value = true
+    while (timers.length) timers.shift()!()
+
+    expect(dom.document.activeElement).toBe(dom.target)
+  })
+
+  test('the frame and the timer do not both retry', () => {
+    // Racing two schedulers must not double the work each round; ten attempts
+    // would otherwise become a thousand.
+    const dom = stubDom({ shown: false })
+    const frames: Array<() => void> = []
+    const timers: Array<() => void> = []
+    let attempts = 0
+
+    const focusFirst = loadFocusFirst({
+      isOpen: () => true,
+      drawerInstanceId: 'stx-drawer-test',
+      document: {
+        querySelector: () => { attempts++; return dom.panel },
+        get activeElement() { return 'body' },
+      },
+      requestAnimationFrame: (callback: () => void) => { frames.push(callback); return 1 },
+      setTimeout: (callback: () => void) => { timers.push(callback); return 1 },
+    })
+
+    focusFirst(2)
+
+    // Run both schedulers, frame first, then the timer that raced it.
+    while (frames.length || timers.length) {
+      while (frames.length) frames.shift()!()
+      while (timers.length) timers.shift()!()
+    }
+
+    // Three attempts total: the initial call plus two retries.
+    expect(attempts).toBe(3)
   })
 })
