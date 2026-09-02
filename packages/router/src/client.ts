@@ -151,6 +151,45 @@ export function getRouterScript(): string {
       delete attrsCache[oldest];
     }
   }
+  // Read a prefetch response into the shape setCache stores, or null when this
+  // answer must not be cached at all.
+  //
+  // Both prefetch paths used to assemble this by hand, and both left out
+  // X-STX-Container-Attrs (#1947): setCache takes six arguments and they
+  // passed five, which JavaScript accepts without a word. The entry was
+  // cached with no container attributes, so a link that had been hovered
+  // before it was clicked applied '' on the cache hit, and setContainerAttrs
+  // stripped the class the previous navigation had put on the routed
+  // container. A dashboard lost its max-width, but only on links that
+  // happened to be hovered first, and a hard reload always fixed it — which
+  // made it read as a CSS problem.
+  //
+  // Hand-assembling it twice is what let them drift, so the two guards below
+  // live here rather than at the call sites — the hover path had one of them
+  // and the public router.prefetch() had neither:
+  //
+  //   - a redirected body belongs to the URL it came FROM. A guarded route
+  //     prefetched while logged out answers with /login's markup, and storing
+  //     that under the guarded key poisons the cache: the later real
+  //     navigation is a hit, so it swaps the login page in without ever
+  //     reaching the network, where navigate's own redirect check would have
+  //     caught it (#1849).
+  //   - a fragment from a DIFFERENT build must not be handed to this page's
+  //     runtime (#1772). navigate answers skew by reloading; a prefetch must
+  //     not, because the user only hovered a link. Declining to cache is the
+  //     whole fix — the click then goes to the network, where navigate does
+  //     the reload properly.
+  function readPrefetchResponse(r,wantsFragment){
+    if(r.redirected)return Promise.resolve(null);
+    if(isBuildSkew(r.headers.get('X-STX-Build')||''))return Promise.resolve(null);
+    var isFrag=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';
+    var layout=r.headers.get('X-STX-Layout')||'';
+    var group=r.headers.get('X-STX-Layout-Group')||'';
+    var title=r.headers.get('X-STX-Title')||'';
+    var cattrs=r.headers.get('X-STX-Container-Attrs')||'';
+    var runtime=r.headers.get('X-STX-Runtime')||'';
+    return r.text().then(function(html){return{html:isFrag?fragmentMarker(runtime)+html:html,layout:layout,layoutGroup:group,title:title,containerAttrs:cattrs}});
+  }
   // Apply a page title captured from the fragment response's X-STX-Title
   // header (URI-encoded) so SPA swaps keep document.title in sync with the
   // page — full-document swaps set the title from the <title> tag directly.
@@ -171,7 +210,14 @@ export function getRouterScript(): string {
     var probe=document.createElement('div');
     probe.innerHTML='<i '+attrStr+'></i>';
     var src=probe.firstChild;
-    if(src&&src.attributes){
+    // getAttributeNames first: it is the same standard DOM answer and it is
+    // what the test DOM implements. Reading .attributes alone made this
+    // silently return {} there — so the whole container-attrs path, header to
+    // element, had no test coverage at all while #1947 sat in it.
+    if(src&&src.getAttributeNames){
+      src.getAttributeNames().forEach(function(n){map[n]=src.getAttribute(n)});
+    }
+    else if(src&&src.attributes){
       Array.prototype.forEach.call(src.attributes,function(a){map[a.name]=a.value});
     }
     return map;
@@ -1635,21 +1681,9 @@ else {
       prefetching[key]=true;
       var wantsFragment=shouldUseFragmentResponse();
       fetch(href,{headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
-        // Never cache a body that came from somewhere else. A guarded route
-        // prefetched while logged out answers with /login's markup, and
-        // storing it under the guarded key poisons the cache: the later real
-        // navigation is a cache hit, so it swaps the login page in without
-        // ever hitting the network, where the redirect check above would
-        // have caught it (#1849).
-        if(r.redirected)return null;
-        var isFrag=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';
-        var pLayout=r.headers.get('X-STX-Layout')||'';
-        var pGroup=r.headers.get('X-STX-Layout-Group')||'';
-        var pTitle=r.headers.get('X-STX-Title')||'';
-        var pRuntime=r.headers.get('X-STX-Runtime')||'';
-        return r.text().then(function(html){return{html:isFrag?fragmentMarker(pRuntime)+html:html,layout:pLayout,layoutGroup:pGroup,title:pTitle}});
+        return readPrefetchResponse(r,wantsFragment);
       }).then(function(result){
-        if(result&&o.cache)setCache(key,result.html,result.layout,result.layoutGroup,result.title);
+        if(result&&o.cache)setCache(key,result.html,result.layout,result.layoutGroup,result.title,result.containerAttrs);
       }).catch(function(){}).finally(function(){delete prefetching[key]});
     },true);
   }
@@ -1765,7 +1799,7 @@ else {
       var key=cacheKey(url);
       if(!cache[key]){
         var wantsFragment=shouldUseFragmentResponse();
-        fetch(url,{headers:wantsFragment?{'X-STX-Router':'true'}:{'Accept':'text/html'}}).then(function(r){var isFrag=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';var pLayout=r.headers.get('X-STX-Layout')||'';var pGroup=r.headers.get('X-STX-Layout-Group')||'';var pTitle=r.headers.get('X-STX-Title')||'';var pRuntime=r.headers.get('X-STX-Runtime')||'';return r.text().then(function(html){return{html:isFrag?fragmentMarker(pRuntime)+html:html,layout:pLayout,layoutGroup:pGroup,title:pTitle}})}).then(function(result){setCache(key,result.html,result.layout,result.layoutGroup,result.title)}).catch(function(){});
+        fetch(url,{headers:wantsFragment?{'X-STX-Router':'true'}:{'Accept':'text/html'}}).then(function(r){return readPrefetchResponse(r,wantsFragment)}).then(function(result){if(result)setCache(key,result.html,result.layout,result.layoutGroup,result.title,result.containerAttrs)}).catch(function(){});
       }
     },
     // Re-run the CURRENT route against the server and swap the result.
