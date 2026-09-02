@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.263...v0.2.264)
+
+## ✨ Features
+
+- **appearance**: publish the runtime the bootstrap already implements ([853cc24](https://github.com/stacksjs/stx/commit/853cc24)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **components**: a directive expression may call something ([6a12e0a](https://github.com/stacksjs/stx/commit/6a12e0a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.264 ([558864c](https://github.com/stacksjs/stx/commit/558864c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.262...v0.2.263)
 
 ## 🐛 Bug Fixes
