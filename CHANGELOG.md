@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.262...v0.2.263)
+
+## 🐛 Bug Fixes
+
+- **drawer**: give each drawer its own panel, and focus it without frames ([f65dd70](https://github.com/stacksjs/stx/commit/f65dd70)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.263 ([163ddcd](https://github.com/stacksjs/stx/commit/163ddcd)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.261...v0.2.262)
 
 ## 🐛 Bug Fixes
