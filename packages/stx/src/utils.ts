@@ -20,6 +20,8 @@ import { extractAndStripCssImports, extractBridgeData, injectBrowserCoreAutoImpo
 import { COMPONENT_CLIENT_FACTORIES_CONTEXT_KEY, registerComponentClientFactory } from './component-client-factories'
 import { interpolateScriptExpressions, processExpressions, usesSignalsInScript } from './expressions'
 import { COMPONENT_SCOPE_LOCAL_GLOBALS, buildRuntimeGlobalsDestructure } from './runtime-globals'
+import type { DepSnapshot } from './render-memo'
+import { contentKey, depsUnchanged, renderMemo, snapshotDeps } from './render-memo'
 import { transformStoreImports } from './store-imports'
 import { LRUCache } from './performance-utils'
 import { processDirectives } from './process'
@@ -1080,8 +1082,40 @@ export async function renderComponentWithSlot(
     for (const [slotName, slotDef] of parsedSlotContent.namedSlots)
       $slots[slotName] = slotDef.content
 
+    /*
+     * The component's own id, deterministic across renders (#1945).
+     *
+     * Eleven shipped components stamped `Math.random()` into their markup to
+     * get an id unique to the instance. That is the same problem cbe08f0b4b
+     * removed from scope ids, reached from the component side: a page holding
+     * any of them renders different bytes every time, so a caller cannot tell
+     * two renders are the same answer and the whole point of #1945 is lost for
+     * that page. Measured on a page with one <Sidebar>: byte-identical false,
+     * differing only in `id="stx-sidebar-XXXXXX"`.
+     *
+     * It draws from the same per-render sequence the scope id below uses, so
+     * it has the properties that id was designed for — unique within a
+     * document, distinct between documents, identical between renders of one —
+     * and it is allocated HERE, before the component's `<script server>` runs,
+     * because that is where a component needs to read it.
+     *
+     * Allocated for every component, not only the ones that end up with a
+     * scope: which components carry client scripts is not knowable this early,
+     * and a sequence that skips is still a sequence.
+     */
+    const scopeSeq = (parentContext.__stx_scope_seq ??= {
+      n: 0,
+      key: Bun.hash(String(parentContext.__filename ?? parentFilePath)).toString(36).slice(0, 6),
+    }) as { n: number, key: string }
+    // Key last, so the id keeps the `stx_<name>_<n>_<suffix>` shape the random
+    // one had. Nothing that matched the old ids has to change, and the name
+    // stays at the front where it is readable in a DOM inspector.
+    const componentUid = `stx_${baseName.replace(/[^a-zA-Z0-9]/g, '_')}_${++scopeSeq.n}_${scopeSeq.key}`
+
     const componentContext: Record<string, unknown> = {
       ...filteredParentContext,
+      // Readable from the component's own `<script server>` and template.
+      $uid: componentUid,
       ...props,
       props, // Allow `props.foo` syntax in addition to just `foo`
       slot: componentSlotContent,
@@ -1366,14 +1400,10 @@ export async function renderComponentWithSlot(
      * object, fresh per render — so siblings share it, and the preserve-list
      * entry carries it into nested components by reference.
      */
-    const scopeSeq = (parentContext.__stx_scope_seq ??= {
-      n: 0,
-      key: Bun.hash(String(parentContext.__filename ?? parentFilePath)).toString(36).slice(0, 6),
-    }) as { n: number, key: string }
-    // Key last, so the id keeps the `stx_<name>_<n>_<suffix>` shape the random
-    // one had. Nothing that matched the old ids has to change, and the name
-    // stays at the front where it is readable in a DOM inspector.
-    const scopeId = `stx_${baseName.replace(/[^a-zA-Z0-9]/g, '_')}_${++scopeSeq.n}_${scopeSeq.key}`
+    // Allocated once per component instance, above, where `$uid` needed it.
+    // One id for the scope and for the component's own markup: they identify
+    // the same instance, and two counters would be two things to keep in step.
+    const scopeId = componentUid
 
     // Wrap component in a scope container if it has client scripts with signals
     // (hasSignalScripts already computed above for componentOptions)
@@ -1401,65 +1431,11 @@ export async function renderComponentWithSlot(
         if (!scriptMatch) return script
 
         const [, attrs, rawContent] = scriptMatch
-        const cssExtraction = extractAndStripCssImports(rawContent, {
-          filePath: componentFilePath,
-          projectRoot: process.cwd(),
-        })
-        let bundledContent = cssExtraction.code
-        const vendorStyleTags = renderVendorStyleTags(cssExtraction.styles)
-        bundledContent = injectBrowserCoreAutoImports(bundledContent).code
-        const { hasUserImports, bundleClientScript } = await importOnce('stx/client-script-bundler', () => import('./client-script-bundler'))
-        if (hasUserImports(bundledContent)) {
-          bundledContent = await bundleClientScript(bundledContent, componentFilePath, {
-            projectRoot: process.cwd(),
-            minify: options.buildMode === 'compile',
-          })
-        }
-        const { stripStxRuntimeImports } = await importOnce('stx/signal-processing', () => import('./signal-processing'))
-        bundledContent = stripStxRuntimeImports(bundledContent)
-        // Transform store imports before IIFE wrapping (import statements can't be inside functions)
-        const content = transformStoreImports(bundledContent)
-        const componentLocalNames = extractVariableNames(content)
-        // Wrap script content to register in scope
-        // Add data-stx-scoped attribute to prevent double-processing by processScriptSetup
-        // Pull the full component-system API into scope, not just the
-        // reactivity primitives. Components shipped from @stacksjs/components
-        // (Notification, Dropdown, Tabs, Sidebar, Transition, …) call
-        // `defineEmits()` / `defineExpose()` at the top of their
-        // `<script client>` blocks; if those identifiers aren't bound here
-        // the very first line throws `defineEmits is not defined`,
-        // tearing down the whole inline IIFE before any reactive binding
-        // gets a chance to wire up. Mirrors the destructure the page-level
-        // setup uses in signal-processing.ts.
-        const factoryBody = `function(__scopeId) {
-  ${buildRuntimeGlobalsDestructure('const', [...COMPONENT_SCOPE_LOCAL_GLOBALS, ...componentLocalNames], content)}
-  const __scope = window.stx._scopes = window.stx._scopes || {};
-  const __scopeVars = __scope[__scopeId] = __scope[__scopeId] || {};
-  __scopeVars.$refs = __scopeVars.$refs || {};
-  const __previousCurrentElement = window.__STX_CURRENT_ELEMENT__;
-  window.__STX_CURRENT_ELEMENT__ = document.querySelector('[data-stx-scope="' + __scopeId + '"]');
-
-  // Scope-specific lifecycle callbacks
-  __scopeVars.__mountCallbacks = __scopeVars.__mountCallbacks || [];
-  __scopeVars.__destroyCallbacks = __scopeVars.__destroyCallbacks || [];
-  const onMount = (fn) => __scopeVars.__mountCallbacks.push(fn);
-  const onDestroy = (fn) => __scopeVars.__destroyCallbacks.push(fn);
-
-try {
-${content}
-
-  // Register all defined signals and functions in this scope
-  const __localVars = {};
-  try {
-    ${componentLocalNames.map(v => `if (typeof ${v} !== 'undefined') __localVars['${v}'] = ${v};`).join('\n    ')}
-  }
-catch (e) {}
-  Object.assign(__scopeVars, __localVars);
-}
-finally {
-  window.__STX_CURRENT_ELEMENT__ = __previousCurrentElement;
-}
-}`
+        const { vendorStyleTags, factoryBody } = await buildComponentIsland(
+          rawContent,
+          componentFilePath,
+          options.buildMode === 'compile',
+        )
         const factoryId = hydrateTrigger
           ? null
           : registerComponentClientFactory(parentContext, factoryBody)
@@ -2086,4 +2062,141 @@ export function getComponentCacheStats(): { size: number, maxSize: number } {
     size: componentsCache.size,
     maxSize: 500,
   }
+}
+
+// ── Component islands ───────────────────────────────────────────────────────
+
+/** The compiled client artifact for one component script. */
+interface ComponentIsland {
+  /** `<style>` tags for the script's vendor CSS imports, emitted ahead of it. */
+  vendorStyleTags: string
+  /** `function(__scopeId) { … }` — the scope id is applied at the call site. */
+  factoryBody: string
+  /** Files the artifact was built from; re-stat'ed before a memo hit is served. */
+  deps: DepSnapshot[]
+}
+
+/**
+ * Islands by script source, component file and build mode (#1945).
+ *
+ * The artifact is a function of those three alone — the scope id is threaded
+ * in as the factory's argument at the call site and the props ride on the root
+ * element — so an unchanged component is string interpolation from here on.
+ * Rendering one used to re-run the whole chain on its bundle every time:
+ * CSS-import extraction, browser-helper injection, the bundler's cache read,
+ * runtime-import stripping, store-import rewriting, the declaration scan and a
+ * regex per runtime global to size the destructure, each making its own copy
+ * of a ~190KB string.
+ *
+ * Bundle inputs and vendor CSS files are re-stat'ed on every hit, so an edit
+ * to a helper under a dev server invalidates this the same way it invalidates
+ * the bundle cache. A script the bundler gave back unbundled is not
+ * remembered: whatever it warned about, it warns about on every render that
+ * hits it, as before.
+ */
+const componentIslands = renderMemo<ComponentIsland>(128)
+
+async function buildComponentIsland(rawContent: string, componentFilePath: string, minify: boolean): Promise<ComponentIsland> {
+  const key = contentKey(rawContent, componentFilePath, minify)
+  const remembered = componentIslands.get(key)
+  if (remembered) {
+    if (depsUnchanged(remembered.deps))
+      return remembered
+    componentIslands.delete(key)
+  }
+
+  const cssExtraction = extractAndStripCssImports(rawContent, {
+    filePath: componentFilePath,
+    projectRoot: process.cwd(),
+  })
+  let bundledContent = cssExtraction.code
+  const vendorStyleTags = renderVendorStyleTags(cssExtraction.styles)
+  bundledContent = injectBrowserCoreAutoImports(bundledContent).code
+  const { hasUserImports, bundleClientScript } = await importOnce('stx/client-script-bundler', () => import('./client-script-bundler'))
+  // Filled by the bundler itself rather than read back from its host-keyed
+  // map afterwards. A component's client blocks are bundled under one
+  // Promise.all, so a second call's bookkeeping can land between this call's
+  // await and the read — and the island would then be remembered against
+  // another script's dependency list, which is exactly the staleness the
+  // snapshot exists to prevent.
+  const bundleInputs: string[] = []
+  let bundleFellBack = false
+  if (hasUserImports(bundledContent)) {
+    const unbundled = bundledContent
+    bundledContent = await bundleClientScript(unbundled, componentFilePath, {
+      projectRoot: process.cwd(),
+      minify,
+      collectInputs: bundleInputs,
+    })
+    // Every fallback path hands the source back as it was.
+    bundleFellBack = bundledContent === unbundled
+  }
+  const { stripStxRuntimeImports } = await importOnce('stx/signal-processing', () => import('./signal-processing'))
+  bundledContent = stripStxRuntimeImports(bundledContent)
+  // Transform store imports before IIFE wrapping (import statements can't be inside functions)
+  const content = transformStoreImports(bundledContent)
+  const componentLocalNames = extractVariableNames(content)
+  // Wrap script content to register in scope
+  // Add data-stx-scoped attribute to prevent double-processing by processScriptSetup
+  // Pull the full component-system API into scope, not just the
+  // reactivity primitives. Components shipped from @stacksjs/components
+  // (Notification, Dropdown, Tabs, Sidebar, Transition, …) call
+  // `defineEmits()` / `defineExpose()` at the top of their
+  // `<script client>` blocks; if those identifiers aren't bound here
+  // the very first line throws `defineEmits is not defined`,
+  // tearing down the whole inline IIFE before any reactive binding
+  // gets a chance to wire up. Mirrors the destructure the page-level
+  // setup uses in signal-processing.ts.
+  const factoryBody = `function(__scopeId) {
+  ${buildRuntimeGlobalsDestructure('const', [...COMPONENT_SCOPE_LOCAL_GLOBALS, ...componentLocalNames], content)}
+  const __scope = window.stx._scopes = window.stx._scopes || {};
+  const __scopeVars = __scope[__scopeId] = __scope[__scopeId] || {};
+  __scopeVars.$refs = __scopeVars.$refs || {};
+  const __previousCurrentElement = window.__STX_CURRENT_ELEMENT__;
+  window.__STX_CURRENT_ELEMENT__ = document.querySelector('[data-stx-scope="' + __scopeId + '"]');
+
+  // Scope-specific lifecycle callbacks
+  __scopeVars.__mountCallbacks = __scopeVars.__mountCallbacks || [];
+  __scopeVars.__destroyCallbacks = __scopeVars.__destroyCallbacks || [];
+  const onMount = (fn) => __scopeVars.__mountCallbacks.push(fn);
+  const onDestroy = (fn) => __scopeVars.__destroyCallbacks.push(fn);
+
+try {
+${content}
+
+  // Register all defined signals and functions in this scope
+  const __localVars = {};
+  try {
+    ${componentLocalNames.map(v => `if (typeof ${v} !== 'undefined') __localVars['${v}'] = ${v};`).join('\n    ')}
+  }
+catch (e) {}
+  Object.assign(__scopeVars, __localVars);
+}
+finally {
+  window.__STX_CURRENT_ELEMENT__ = __previousCurrentElement;
+}
+}`
+
+  const island: ComponentIsland = {
+    vendorStyleTags,
+    factoryBody,
+    deps: snapshotDeps([...bundleInputs, ...cssExtraction.styles.map(style => style.resolvedPath)]),
+  }
+  // Remember only a build that succeeded. Both failure modes produce a result
+  // that LOOKS complete and carries nothing that could later invalidate it:
+  //
+  //   - the bundler's fallback hands back the unbundled source, and its
+  //     warning is the only sign anything is wrong;
+  //   - an unresolvable vendor CSS import is stripped and simply contributes
+  //     no <style> tag, and the file it names is not on disk to be stat'ed.
+  //
+  // Either way the dependency snapshot is missing the very file whose
+  // appearance should invalidate this, so caching it would outlive the fix:
+  // create the stylesheet, or install the package, and the page would keep
+  // rendering the broken build until the process restarted. Recomputing is
+  // also what keeps the warning printing on every render, which is the only
+  // thing pointing at the problem.
+  if (!bundleFellBack && cssExtraction.unresolved.length === 0)
+    componentIslands.set(key, island)
+  return island
 }

@@ -5,8 +5,16 @@
  * enforcing the use of STX composables and Vue-style alternatives instead
  * of raw browser APIs.
  */
+import { contentKey, renderMemo } from './render-memo'
 import { stripCommentsAndLiterals } from './strip-literals'
 import type { StrictModeConfig } from './types'
+
+/**
+ * Verdicts by script, file and rules: the message that was reported, or '' for
+ * a clean script. Under failOnViolation a remembered violation is thrown again
+ * on every render — that render fails — but it is warned about once.
+ */
+const verdicts = renderMemo<string>(256)
 
 /**
  * Prohibited DOM API patterns in client scripts.
@@ -179,6 +187,23 @@ export function validateClientScript(
     ? { enabled: strict, failOnViolation: strict }
     : (strict ?? { enabled: false })
 
+  // Nothing below can be observed with strict mode off: the scan only ever fed
+  // a warning or a throw, and both sit behind this flag. It ran anyway, on
+  // every client script of every render (#1945).
+  if (!strictConfig.enabled)
+    return
+
+  // Same script, same file, same rules: same verdict. Each rule makes its own
+  // pass over the script, and a warning repeated on every render of an
+  // unchanged view is not more information than the first one.
+  const memoKey = contentKey(content, filePath, originFilePath, JSON.stringify(strictConfig))
+  const remembered = verdicts.get(memoKey)
+  if (remembered !== undefined) {
+    if (remembered && strictConfig.failOnViolation)
+      throw new Error(remembered)
+    return
+  }
+
   const allowPatterns = strictConfig.allowPatterns ?? []
   const errors: string[] = []
 
@@ -261,25 +286,29 @@ export function validateClientScript(
     }
   }
 
-  if (errors.length > 0 && strictConfig.enabled) {
-    // Report a path the reader can act on, not a bare basename. `default.stx`
-    // matched nine files in the project that surfaced this, and none of them
-    // contained the offending code — the script was authored in a view and
-    // `filePath` was the layout that view is composed into (#1836).
-    const rel = (p: string): string => {
-      const cwd = `${process.cwd()}/`
-      return p.startsWith(cwd) ? p.slice(cwd.length) : p
-    }
-    const where = originFilePath && originFilePath !== filePath
-      ? `${rel(originFilePath)} (composed into ${rel(filePath)})`
-      : rel(filePath)
-    const baseMessage = `[STX] DOM API violation in ${where}:\n${errors.join('\n')}\n  Tip: prefer useRef(), navigate(), and composables for component code`
+  if (errors.length === 0) {
+    verdicts.set(memoKey, '')
+    return
+  }
 
-    if (strictConfig.failOnViolation) {
-      throw new Error(baseMessage)
-    }
-    else {
-      console.warn(baseMessage)
-    }
+  // Report a path the reader can act on, not a bare basename. `default.stx`
+  // matched nine files in the project that surfaced this, and none of them
+  // contained the offending code — the script was authored in a view and
+  // `filePath` was the layout that view is composed into (#1836).
+  const rel = (p: string): string => {
+    const cwd = `${process.cwd()}/`
+    return p.startsWith(cwd) ? p.slice(cwd.length) : p
+  }
+  const where = originFilePath && originFilePath !== filePath
+    ? `${rel(originFilePath)} (composed into ${rel(filePath)})`
+    : rel(filePath)
+  const baseMessage = `[STX] DOM API violation in ${where}:\n${errors.join('\n')}\n  Tip: prefer useRef(), navigate(), and composables for component code`
+  verdicts.set(memoKey, baseMessage)
+
+  if (strictConfig.failOnViolation) {
+    throw new Error(baseMessage)
+  }
+  else {
+    console.warn(baseMessage)
   }
 }

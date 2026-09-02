@@ -47,7 +47,7 @@ export const followSystemAppearance = $props.followSystemAppearance ?? true
 
 // Unique id so the client controller can find this pane even with several
 // sidebars on the page.
-export const sidebarUid = $props.id || `stx-sidebar-${Math.random().toString(36).slice(2, 8)}`
+export const sidebarUid = $props.id || $uid
 
 const themeStyle = resolveSidebarTheme(theme)
 export const selectionModel = themeStyle.selection

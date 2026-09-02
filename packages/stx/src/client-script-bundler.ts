@@ -17,6 +17,8 @@ import { getPublicEnvDefine } from './public-env'
 import { stateDir } from './state-dir'
 import { describeBuildFailure, formatBuildFailure } from './build-message'
 import { config } from './config'
+import type { DepSnapshot } from './render-memo'
+import { depsUnchanged, renderMemo } from './render-memo'
 
 const BUNDLE_CACHE_VERSION = 5
 const BUNDLE_CACHE_METADATA_VERSION = 1
@@ -489,6 +491,16 @@ function createBundlePlugin(
  * making the temp paths unique and leaving the duplicated work in place.
  */
 const inFlightBundles = new Map<string, Promise<string>>()
+
+/**
+ * Bundles this process has already produced or read back, by cache hash.
+ *
+ * The on-disk cache hit on every render and still cost every render: the
+ * ~190KB output was read from disk and its sidecar parsed again each time
+ * (#1945). The deps are re-stat'ed on a hit exactly as the disk path does, so
+ * an edited helper invalidates the same way; only the read is skipped.
+ */
+const bundleMemo = renderMemo<{ code: string, files: DepSnapshot[] }>(64)
 const CLIENT_BUNDLE_QUEUE = Symbol.for('stx.client-bundle-build-queue')
 
 interface ClientBundleGlobal {
@@ -525,6 +537,20 @@ export async function bundleClientScript(
     projectRoot?: string
     minify?: boolean
     cacheDir?: string
+    /**
+     * Receives the files this bundle was built from, for a caller that needs
+     * them for its own cache key.
+     *
+     * `clientBundleDependencies()` answers the same question from a map keyed
+     * by host file path, which is only correct while calls for one host are
+     * serialized. They are not: a component with two bundling `<script client>`
+     * blocks builds them under one `Promise.all`, so the second call's
+     * `recordBundleInputs` can land between the first's await and its read, and
+     * the first caller gets the second's file list. That map is a
+     * process-global keyed on the host, so it cannot distinguish them; this
+     * hands each caller its own answer.
+     */
+    collectInputs?: string[]
   } = {},
 ): Promise<string> {
   const projectRoot = options.projectRoot || process.cwd()
@@ -548,31 +574,45 @@ export async function bundleClientScript(
   // every recorded transitive dep's mtime to be unchanged since the
   // bundle was built.
   const cachePath = path.join(cacheDir, `${hash}.js`)
+
+  // Already produced or read back by this process: stat the deps, skip the read.
+  //
+  // Keyed on the cache PATH rather than the hash. `hash` covers the source and
+  // the host file but not `cacheDir`, and the on-disk cache leans on the
+  // directory to keep two projects — or a test's isolated cache — apart. A
+  // process-global map keyed on the hash alone would lose that partition and
+  // hand one project's bundle to another. The path carries both.
+  const remembered = bundleMemo.get(cachePath)
+  if (remembered) {
+    if (depsUnchanged(remembered.files)) {
+      logBundlerDiagnostic('memo hit:', hash)
+      const paths = remembered.files.map(dep => dep.path)
+      recordBundleInputs(filePath, paths)
+      options.collectInputs?.push(...paths)
+      return remembered.code
+    }
+    bundleMemo.delete(cachePath)
+    logBundlerDiagnostic('memo invalidated by dep change:', hash)
+  }
   const depsPath = path.join(cacheDir, `${hash}.deps.json`)
   const cacheFile = Bun.file(cachePath)
   if (await cacheFile.exists()) {
     const depsFile = Bun.file(depsPath)
     let depsValid = true
+    // What the sidecar recorded, kept for the memo so a later hit re-stats the
+    // same files without opening the sidecar again.
+    let storedFiles: DepSnapshot[] | null = null
     if (await depsFile.exists()) {
       try {
         const stored = JSON.parse(await depsFile.text()) as BundleCacheMetadata
         if (stored.metadataVersion !== BUNDLE_CACHE_METADATA_VERSION || !Array.isArray(stored.files))
           depsValid = false
+        else
+          storedFiles = stored.files
 
-        for (const dep of Array.isArray(stored.files) ? stored.files : []) {
-          try {
-            const current = fs.statSync(dep.path).mtimeMs
-            if (current !== dep.mtimeMs) {
-              depsValid = false
-              break
-            }
-          }
-          catch {
-            // Dep file was deleted since last build — treat as invalid.
-            depsValid = false
-            break
-          }
-        }
+        // A dep deleted since the build counts as changed.
+        if (storedFiles && !depsUnchanged(storedFiles))
+          depsValid = false
       }
       catch {
         // Corrupt sidecar — rebundle.
@@ -581,26 +621,40 @@ export async function bundleClientScript(
     }
     if (depsValid) {
       logBundlerDiagnostic('cache hit:', hash)
-      try {
-        const stored = JSON.parse(await Bun.file(depsPath).text()) as BundleCacheMetadata
-        recordBundleInputs(filePath, (stored.files ?? []).map(dep => dep.path))
+      // No sidecar to read: the page keeps the deps it already had, which is
+      // no worse than before this existed.
+      if (storedFiles) {
+        recordBundleInputs(filePath, storedFiles.map(dep => dep.path))
+        options.collectInputs?.push(...storedFiles.map(dep => dep.path))
       }
-      catch {
-        // No sidecar to read: the page keeps the deps it already had, which is
-        // no worse than before this existed.
-      }
-      return await cacheFile.text()
+      const code = await cacheFile.text()
+      // Only with a sidecar. Without one there is nothing to re-stat, and an
+      // entry with an empty dep list is re-validated by checking nothing — so
+      // it would be served for the rest of the process no matter what happened
+      // on disk. Re-reading the file each render, as before, is both cheaper
+      // than being wrong and self-correcting once the sidecar reappears.
+      if (storedFiles)
+        bundleMemo.set(cachePath, { code, files: storedFiles })
+      return code
     }
     logBundlerDiagnostic('cache invalidated by dep change:', hash)
   }
 
   // Share a single build between concurrent callers for the same script.
   const running = inFlightBundles.get(hash)
-  if (running)
-    return await running
+  if (running) {
+    const shared = await running
+    // The build that actually ran pushed into ITS caller's array, not ours, so
+    // take the inputs from what it recorded. Without this a caller that merely
+    // joined an in-flight build is handed an empty dependency list and would
+    // remember its own artifact with nothing able to invalidate it.
+    if (options.collectInputs)
+      options.collectInputs.push(...(bundleMemo.get(cachePath)?.files ?? []).map(dep => dep.path))
+    return shared
+  }
 
   const build = queueClientBundleBuild(() =>
-    buildBundle(code, filePath, { projectRoot, minify, cacheDir, hash, cachePath, depsPath }),
+    buildBundle(code, filePath, { projectRoot, minify, cacheDir, hash, cachePath, depsPath, collectInputs: options.collectInputs }),
   )
   inFlightBundles.set(hash, build)
   try {
@@ -621,6 +675,7 @@ async function buildBundle(
     hash: string
     cachePath: string
     depsPath: string
+    collectInputs?: string[]
   },
 ): Promise<string> {
   const { projectRoot, minify, cacheDir, hash, cachePath, depsPath } = options
@@ -821,6 +876,8 @@ ${publicAssignments}`.trim()
     } satisfies BundleCacheMetadata))
 
     recordBundleInputs(filePath, depsSnapshot.map(dep => dep.path))
+    options.collectInputs?.push(...depsSnapshot.map(dep => dep.path))
+    bundleMemo.set(cachePath, { code: bundled, files: depsSnapshot })
 
     // After writing, not before: the entry just written is the most recent, so
     // it survives its own sweep. Awaited rather than left running, because a

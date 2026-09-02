@@ -6,7 +6,7 @@ export const as = $props.as || 'div'
 
 const baseClasses = 'relative'
 export const listboxClasses = `${baseClasses} ${className}`.trim()
-export const listboxInstanceId = `stx-lb-${Math.random().toString(36).slice(2, 11)}`
+export const listboxInstanceId = $uid
 </script>
 
 <script client>

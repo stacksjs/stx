@@ -274,7 +274,14 @@ describe('Drawer instance scoping', () => {
   })
 
   test('the id differs per instance', () => {
-    expect(source).toContain('Math.random()')
+    // $uid is the framework's per-instance id: allocated from a per-render
+    // sequence, so two drawers on one page get two ids, and the SAME two on
+    // every render of that page. It replaced a Math.random() literal, which
+    // gave per-instance uniqueness but made the page render different bytes
+    // every time and so uncacheable (stacksjs/stx#1945). The uniqueness and
+    // stability properties themselves are pinned in the framework, in
+    // packages/stx/test/render-determinism.test.ts.
+    expect(source).toContain('drawerInstanceId = $uid')
   })
 
   test('finds nothing rather than the wrong panel', () => {

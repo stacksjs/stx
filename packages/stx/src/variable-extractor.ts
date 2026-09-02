@@ -112,6 +112,13 @@ import { mergeHeadConfigs, seoMetaToHeadConfig } from './head'
 import { getPublicEnvDefine } from './public-env'
 import { safeEvaluate } from './safe-evaluator'
 import { responseBindings } from './page-response'
+import { contentKey, renderMemo } from './render-memo'
+
+/**
+ * Transpiled server scripts by source and public env. Only the EXECUTION of a
+ * server script depends on the props; transpiling it was done per render (#1945).
+ */
+const transpiledServerScripts = renderMemo<string>(128)
 
 /**
  * Extract declared variable names from converted CommonJS script.
@@ -472,18 +479,24 @@ export async function extractVariables(
   if (!scriptContent.trim())
     return
 
-  // Strip TypeScript syntax using Bun.Transpiler for full TS support
-  let jsContent: string
-  try {
-    const transpiler = getSharedTranspiler({ loader: 'ts', target: 'browser', define: getPublicEnvDefine() })
-    // Strip .stx component imports before transpiling
-    let processedCode = scriptContent.replace(/^\s*import\s+\w+\s+from\s+['"][^'"]*\.stx['"]\s*;?\s*$/gm, '')
-    processedCode = processedCode.replace(/^\s*import\s+['"][^'"]*\.stx['"]\s*;?\s*$/gm, '')
-    jsContent = transpiler.transformSync(processedCode)
-  }
-  catch {
-    // Fallback to regex-based stripping if Bun.Transpiler fails
-    jsContent = stripTypeScript(scriptContent)
+  // Strip TypeScript syntax using Bun.Transpiler for full TS support. The
+  // public env is part of the key because it is compiled in as defines.
+  const define = getPublicEnvDefine()
+  const transpileKey = contentKey(scriptContent, JSON.stringify(define))
+  let jsContent = transpiledServerScripts.get(transpileKey)
+  if (jsContent === undefined) {
+    try {
+      const transpiler = getSharedTranspiler({ loader: 'ts', target: 'browser', define })
+      // Strip .stx component imports before transpiling
+      let processedCode = scriptContent.replace(/^\s*import\s+\w+\s+from\s+['"][^'"]*\.stx['"]\s*;?\s*$/gm, '')
+      processedCode = processedCode.replace(/^\s*import\s+['"][^'"]*\.stx['"]\s*;?\s*$/gm, '')
+      jsContent = transpiler.transformSync(processedCode)
+    }
+    catch {
+      // Fallback to regex-based stripping if Bun.Transpiler fails
+      jsContent = stripTypeScript(scriptContent)
+    }
+    transpiledServerScripts.set(transpileKey, jsContent)
   }
 
   // Create a safe execution environment

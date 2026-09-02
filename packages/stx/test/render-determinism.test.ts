@@ -37,6 +37,12 @@ beforeAll(() => {
     path.join(componentsDir, 'Counter.stx'),
     `<script client>\nconst n = state(0)\n</script>\n<div><span :text="n()"></span></div>`,
   )
+  // A component that puts its own per-instance id in its markup, the way
+  // Dropdown, Drawer, Sidebar and eight others do.
+  fs.writeFileSync(
+    path.join(componentsDir, 'Uid.stx'),
+    `<script server>\nexport const mine = $uid\n</script>\n<div data-uid="{{ mine }}"></div>`,
+  )
 })
 
 afterAll(() => fs.rmSync(APP, { recursive: true, force: true }))
@@ -50,6 +56,11 @@ function page(name: string, body: string): string {
 /** Component scope ids in a rendered page, in document order. */
 function scopeIds(html: string): string[] {
   return [...html.matchAll(/data-stx-scope="(stx_[^"]+)"/g)].map(m => m[1])
+}
+
+/** What the Uid fixture below rendered its `$uid` as, in document order. */
+function uids(html: string): string[] {
+  return [...html.matchAll(/data-uid="([^"]+)"/g)].map(m => m[1])
 }
 
 describe('rendering the same view twice', () => {
@@ -110,6 +121,35 @@ describe('scope ids stay unique where it matters', () => {
     expect(idsA).toHaveLength(1)
     expect(idsB).toHaveLength(1)
     expect(idsA[0]).not.toBe(idsB[0])
+  })
+
+  it('gives a component the same $uid every render', async () => {
+    // $uid is what a component puts in its own markup when it needs an id for
+    // an instance — eleven shipped components did that with Math.random(),
+    // which is per-instance unique and per-RENDER different, so any page using
+    // one rendered different bytes every time. That is the same defect this
+    // file exists for, reached from the component side.
+    const file = page('uid-stable.stx', `<div><Uid /></div>`)
+
+    expect(uids(await renderView(file, {}, options))).toEqual(uids(await renderView(file, {}, options)))
+  })
+
+  it('gives two instances of one component different $uids', async () => {
+    // The half a plain content hash would lose: two <Uid /> with identical
+    // props are still two elements, and one id would collide in the DOM.
+    const file = page('uid-two.stx', `<div><Uid /><Uid /></div>`)
+
+    const ids = uids(await renderView(file, {}, options))
+
+    expect(ids).toHaveLength(2)
+    expect(new Set(ids).size).toBe(2)
+  })
+
+  it('gives two different pages different $uids for the same component', async () => {
+    const a = page('uid-page-a.stx', `<div><Uid /></div>`)
+    const b = page('uid-page-b.stx', `<div><Uid /></div>`)
+
+    expect(uids(await renderView(a, {}, options))[0]).not.toBe(uids(await renderView(b, {}, options))[0])
   })
 
   it('keeps the id shape callers already match on', async () => {

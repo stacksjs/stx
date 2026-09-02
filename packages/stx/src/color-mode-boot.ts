@@ -209,7 +209,10 @@ function bootInsertionPoint(html: string): number | null {
     return null
 
   let insertAt = headOpen.index + headOpen[0].length
-  const charset = /^\s*<meta\b[^>]*\bcharset\b[^>]*>/i.exec(html.slice(insertAt))
+  // Sticky, so the test runs at insertAt without copying the rest of the
+  // document just to anchor it (#1945).
+  LEADING_CHARSET_META.lastIndex = insertAt
+  const charset = LEADING_CHARSET_META.exec(html)
   if (charset)
     insertAt += charset[0].length
 
@@ -218,6 +221,8 @@ function bootInsertionPoint(html: string): number | null {
 
 const BOOT_SCRIPT_TAG = new RegExp(`<script\\b[^>]*\\b${COLOR_MODE_BOOT_MARKER}\\b[^>]*>[\\s\\S]*?<\\/script>`, 'i')
 const CHARSET_META = /<meta\b[^>]*\bcharset\b[^>]*>/i
+const LEADING_CHARSET_META = /\s*<meta\b[^>]*\bcharset\b[^>]*>/iy
+const HEAD_CLOSE = /<\/head>/gi
 
 /**
  * Pull `<meta charset>` to the top of `<head>`.
@@ -237,7 +242,12 @@ function hoistCharsetMeta(html: string): string {
     return html
 
   const headStart = headOpen.index + headOpen[0].length
-  const headEnd = html.toLowerCase().indexOf('</head>', headStart)
+  // Searched in place: lower-casing the document to find one tag copied the
+  // whole page — a few hundred KB with a component bundle inlined — on every
+  // render (#1945).
+  HEAD_CLOSE.lastIndex = headStart
+  const headClose = HEAD_CLOSE.exec(html)
+  const headEnd = headClose ? headClose.index : -1
   const head = html.slice(headStart, headEnd === -1 ? html.length : headEnd)
 
   const meta = CHARSET_META.exec(head)

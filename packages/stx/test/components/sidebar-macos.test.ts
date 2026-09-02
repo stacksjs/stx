@@ -155,9 +155,13 @@ describe('macOS sidebar component', () => {
     const result = await render(`<body><Sidebar theme="macos" placement="static" :sections="[
       { id: 's', items: [{ id: 'a', label: 'A' }] },
     ]" /></body>`)
-    const sidebarId = result.match(/\bid="(stx-sidebar-[^"]+)"/)?.[1]
+    // Read the id off the element rather than assuming its shape. It is the
+    // framework's per-instance `$uid` now, not a `stx-sidebar-` literal
+    // (stacksjs/stx#1945) — and what this test is about is that the controller
+    // does not reach for the id at all, whatever it is.
+    const sidebarId = result.match(/<aside\b[^>]*\bid="([^"]+)"/)?.[1]
 
-    expect(sidebarId).toStartWith('stx-sidebar-')
+    expect(sidebarId).toBeTruthy()
     expect(result).not.toContain(`getElementById("${sidebarId}")`)
     expect(result).not.toContain(`getElementById('${sidebarId}')`)
     // Either quote style, and asserted as a boolean, for the reasons the

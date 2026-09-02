@@ -2,7 +2,7 @@
 export const target = $props.target || 'body'
 export const disabled = $props.disabled || false
 
-export const portalId = `portal-content-${Math.random().toString(36).slice(2, 11)}`
+export const portalId = $uid
 </script>
 
 <script client>

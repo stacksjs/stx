@@ -35,18 +35,33 @@ import path from 'node:path'
 import { getPublicEnvDefine } from './public-env'
 import { SERVER_ONLY_COMPOSABLES } from './unresolved-identifiers'
 import { getSharedTranspiler } from './utils'
+import { contentKey, renderMemo } from './render-memo'
 
 /** Cache keyed by the set of names actually requested. */
 const _cache = new Map<string, string>()
 
+/** Scan results, by page source and the runtime-owned generation below. */
+const referenced = renderMemo<string[]>(64)
+
 /** Names the runtime already provides — never shadowed by this bundle. */
 const RUNTIME_OWNED = new Set<string>()
+
+/**
+ * Bumped whenever RUNTIME_OWNED changes, and part of the scan's memo key.
+ *
+ * The scan's answer depends on that set as well as on the source, and the set
+ * is mutable. Keying the memo on the source alone let one caller's answer be
+ * served after the set had changed under it — which is exactly what the
+ * "never offers a name the runtime owns" case does.
+ */
+let runtimeOwnedGeneration = 0
 
 const SERVER_ONLY = new Set(SERVER_ONLY_COMPOSABLES)
 
 /** Clear the cache. Dev HMR calls this when composables change on disk. */
 export function clearFrameworkComposableCache(): void {
   _cache.clear()
+  referenced.clear()
 }
 
 /**
@@ -118,6 +133,13 @@ export function referencedFrameworkComposables(source: string): string[] {
   if (!source)
     return []
 
+  // The page is scanned whole — a few hundred KB with a component bundle
+  // inlined — once per candidate name, on every render (#1945).
+  const key = contentKey(source, runtimeOwnedGeneration)
+  const remembered = referenced.get(key)
+  if (remembered)
+    return remembered.slice()
+
   // Strip stx-owned script blocks first. The scan otherwise runs over the
   // injected runtime, whose own ~150KB of source mentions plenty of these names
   // followed by a paren — so every page looked like it needed the bundle.
@@ -136,7 +158,9 @@ export function referencedFrameworkComposables(source: string): string[] {
     if (new RegExp(`(^|[^\\w$.])${escaped}\\s*\\(`).test(authored))
       found.push(name)
   }
-  return found.sort()
+  found.sort()
+  referenced.set(key, found)
+  return found.slice()
 }
 
 /**
@@ -265,4 +289,5 @@ ${assignments}
 export function __setRuntimeOwnedForTest(names: string[]): void {
   RUNTIME_OWNED.clear()
   for (const n of names) RUNTIME_OWNED.add(n)
+  runtimeOwnedGeneration++
 }

@@ -4,7 +4,7 @@ export const as = $props.as || 'div'
 
 const baseClasses = 'relative inline-block text-left'
 export const dropdownClasses = `${baseClasses} ${className}`.trim()
-export const dropdownInstanceId = `stx-dd-${Math.random().toString(36).slice(2, 11)}`
+export const dropdownInstanceId = $uid
 </script>
 
 <script client>

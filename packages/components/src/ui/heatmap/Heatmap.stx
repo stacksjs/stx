@@ -1,5 +1,5 @@
 <script server>
-export const id = $props.id || `stx-heatmap-${Math.random().toString(36).slice(2, 8)}`
+export const id = $props.id || $uid
 export const mode = $props.mode || 'overlay'
 export const width = $props.width || null
 export const height = $props.height || null

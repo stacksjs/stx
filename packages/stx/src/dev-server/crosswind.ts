@@ -9,6 +9,7 @@ import { hasLocalConfig } from 'bunfig'
 import { mergeCrosswindConfig } from '../crosswind-config'
 import { stateDir } from '../state-dir'
 import { colors } from './terminal-colors'
+import { contentKey, renderMemo } from '../render-memo'
 
 // Type for Crosswind module
 interface CrosswindModule {
@@ -312,11 +313,13 @@ export async function loadCrosswind(): Promise<CrosswindModule | null> {
  * Reset the Crosswind module cache (useful for testing)
  */
 export function resetCssCache(): void {
+  cssByPage.clear()
   cssByClassSet.clear()
   serveCssByHash.clear()
 }
 
 export function resetCrosswindCache(): void {
+  cssByPage.clear()
   crosswindModule = null
   crosswindLoadAttempted = false
   cachedConfig = null
@@ -627,7 +630,40 @@ export function extractClassNames(htmlContent: string): Set<string> {
 /**
  * Extract utility classes from HTML content and generate CSS using Crosswind
  */
+/**
+ * CSS by page bytes.
+ *
+ * The class-set cache below already makes generation itself a lookup, but
+ * reaching it meant extracting classes from the whole page — with a component
+ * bundle inlined, a few hundred KB — then sorting and joining the set into a
+ * key, on every render (#1945). An unchanged page is answered before any of
+ * that. Cleared with the other caches.
+ */
+const cssByPage = renderMemo<string>(64)
+
 export async function generateCrosswindCSS(htmlContent: string, appDir?: string): Promise<string> {
+  const remembered = cssByPage.get(contentKey(htmlContent, appDir, configFingerprint))
+  if (remembered !== undefined)
+    return remembered
+  const css = await generateCrosswindCSSUncached(htmlContent, appDir)
+  // Only a non-empty result, which is the rule the class-set cache below
+  // already follows: it is written on the success path alone. '' is returned
+  // both by a page with no utility classes and by a FAILED generation —
+  // crosswind unavailable, or the generator throwing — and the two are
+  // indistinguishable here. Remembering the second kind would leave that page
+  // with no stylesheet for the rest of the process, and because
+  // injectCrosswindCSS reads '' as "leave the HTML alone" there would be no
+  // second error to explain it. Re-running on a genuinely class-less page
+  // costs one extraction.
+  //
+  // Keyed on the fingerprint as known AFTER generating: the first render
+  // learns it, so this is what the next render of the page will look up.
+  if (css)
+    cssByPage.set(contentKey(htmlContent, appDir, configFingerprint), css)
+  return css
+}
+
+async function generateCrosswindCSSUncached(htmlContent: string, appDir?: string): Promise<string> {
   try {
     // Load crosswind module
     const hw = await loadCrosswind()

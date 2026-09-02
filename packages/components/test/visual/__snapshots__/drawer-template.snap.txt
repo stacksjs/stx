@@ -66,7 +66,7 @@ export const closeButtonClasses = `absolute top-0 ${closeButtonPosition[position
  * focused the first, which is hidden, so focus went nowhere and the retry
  * spent its ten frames failing. Same idiom as Dropdown and Popover.
  */
-export const drawerInstanceId = `stx-drawer-${Math.random().toString(36).slice(2, 11)}`
+export const drawerInstanceId = $uid
 </script>
 <script client>
   const emit = defineEmits()

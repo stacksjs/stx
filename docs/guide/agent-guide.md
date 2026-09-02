@@ -5311,6 +5311,7 @@ bun add -d @iconify-json/lucide
 | Props in | `:prop="expr"` is evaluated server-side when every identifier is in scope, else deferred as a client-reactive attribute; `kebab-case` → `camelCase` | `component-renderer.js:198-235` |
 | Props read | Whole props object is spread into the component context, and also available as `$props` / `props` | `utils.js:512-515` |
 | Destructured defaults | `const { size = 'md' } = defineProps<P>()` defaults are evaluated and merged | `utils.js:292-311` (`applyDestructuredPropDefaults`) |
+| Per-instance id | `$uid` — unique within a document, identical across renders of one page, distinct between pages. Use it for any id a component puts in its own markup (`id="{{ $uid }}"`, `data-x-id="{{ $uid }}"`) and for the selector its client script queries with. **Never** `Math.random()`: that is per-instance unique but per-render different, so the page renders different bytes every time and no caller can cache it (stacksjs/stx#1945) | `utils.js` (`componentUid`); used at `Dropdown.stx:7`, `Drawer.stx:63`, `Sidebar.stx:50` |
 | Default slot | `<slot />` | `utils.js:570-571`, `slots.js:196-201` |
 | Named slots | `<slot name="header" />` in the component; `<template #header>`, `<template v-slot:header>`, `<template slot="header">` or `slot="header"` on any element in the caller; presence testable via `$slots.header` | `slots.js:36-78`, `utils.js:507-511`; used at `Sidebar.stx:361-391` |
 | Events out | `defineEmits()` in `<script client>`; caller binds `@change="…"` | `Switch.stx:22,36` |

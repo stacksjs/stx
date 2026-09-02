@@ -29,7 +29,7 @@ export const optionDisabledClasses = `${optionBaseClasses} opacity-50 cursor-not
 
 const baseClasses = 'w-full'
 export const groupClasses = `${baseClasses} ${className}`.trim()
-export const radioGroupInstanceId = `stx-rg-${Math.random().toString(36).slice(2, 11)}`
+export const radioGroupInstanceId = $uid
 </script>
 
 <script client>

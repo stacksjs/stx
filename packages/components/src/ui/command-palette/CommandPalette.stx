@@ -5,7 +5,7 @@ export const className = $props.className || ''
 
 const baseClasses = 'fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6 md:p-20'
 export const paletteClasses = `${baseClasses} ${className}`.trim()
-export const paletteInstanceId = `stx-cmd-${Math.random().toString(36).slice(2, 11)}`
+export const paletteInstanceId = $uid
 </script>
 
 <script client>

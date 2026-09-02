@@ -220,11 +220,24 @@ function resolveByPackageExports(spec: string, fromDir: string): string | null {
 export function extractAndStripCssImports(
   code: string,
   options: { filePath?: string, projectRoot?: string },
-): { code: string, styles: VendorCssImport[] } {
+): { code: string, styles: VendorCssImport[], unresolved: string[] } {
   const templateDir = options.filePath ? path.dirname(options.filePath) : (options.projectRoot || process.cwd())
   const projectRoot = options.projectRoot || process.cwd()
   const seen = new Set<string>()
   const styles: VendorCssImport[] = []
+  /*
+   * Specifiers that produced no stylesheet, so a caller can decline to REMEMBER
+   * this result (stacksjs/stx#1945).
+   *
+   * A failure here is invisible in the return value — the import is stripped
+   * either way and `styles` simply has one fewer entry — which is fine for a
+   * caller that recomputes every time and fatal for one that caches. The file
+   * that could not be resolved is not on disk to be stat'ed, so it cannot be
+   * recorded as a dependency either: the artifact would be remembered with
+   * nothing to invalidate it, and creating the missing file (or installing the
+   * package) would never take effect.
+   */
+  const unresolved: string[] = []
 
   const stripped = code.replace(CSS_SIDE_EFFECT_IMPORT_REGEX, (_match, spec: string) => {
     let resolvedPath: string
@@ -256,6 +269,7 @@ export function extractAndStripCssImports(
     }
     catch (err: any) {
       console.warn(`[stx:vendor-css] could not resolve ${JSON.stringify(spec)} (from ${options.filePath || '<unknown>'}): ${err?.message || err}`)
+      unresolved.push(spec)
       return ''
     }
 
@@ -269,11 +283,12 @@ export function extractAndStripCssImports(
     }
     catch (err: any) {
       console.warn(`[stx:vendor-css] could not read ${resolvedPath}: ${err?.message || err}`)
+      unresolved.push(spec)
     }
     return ''
   })
 
-  return { code: stripped, styles }
+  return { code: stripped, styles, unresolved }
 }
 
 /**

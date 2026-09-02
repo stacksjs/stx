@@ -5,7 +5,7 @@ export const as = $props.as || 'div'
 
 const baseClasses = 'relative'
 export const comboboxClasses = `${baseClasses} ${className}`.trim()
-export const comboboxInstanceId = `stx-cb-${Math.random().toString(36).slice(2, 11)}`
+export const comboboxInstanceId = $uid
 </script>
 
 <script client>

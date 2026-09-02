@@ -4,7 +4,7 @@ export const as = $props.as || 'div'
 
 const baseClasses = 'relative'
 export const popoverClasses = `${baseClasses} ${className}`.trim()
-export const popoverInstanceId = `stx-pop-${Math.random().toString(36).slice(2, 11)}`
+export const popoverInstanceId = $uid
 </script>
 
 <script client>

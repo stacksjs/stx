@@ -2,6 +2,7 @@ import type { StxOptions } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
 import { clearComponentCache, fileExists } from './utils'
+import { clearRenderMemos } from './render-memo'
 
 /**
  * Cache entry structure
@@ -169,6 +170,7 @@ export async function getCachedRouterScript(): Promise<string> {
 export function clearDevCaches(): void {
   fileContentCache.clear()
   clearComponentCache()
+  clearRenderMemos()
   _cachedSignalsRuntime = null
   _cachedSignalsRuntimeDev = null
   _cachedRouterScript = null

@@ -3,7 +3,7 @@ export const to = $props.to || 'body'
 export const disabled = $props.disabled || false
 export const defer = $props.defer || false
 
-export const teleportId = `teleport-${Math.random().toString(36).slice(2, 11)}`
+export const teleportId = $uid
 </script>
 
 <script client>
