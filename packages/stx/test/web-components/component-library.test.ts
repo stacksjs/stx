@@ -429,3 +429,89 @@ function chartData(data: Activity): number {
     })).rejects.toThrow('Expected')
   })
 })
+
+describe('directive expressions that call something', () => {
+  it('keeps the whole expression instead of stopping at the first bracket', async () => {
+    const { input, output } = await workspace()
+
+    /*
+     * The expression a real component writes: a signal read, then a property
+     * off it. Under the lazy match this parsed as `page(`, which is not a
+     * loop header, so the `@foreach` was emitted as literal text and its
+     * `@endforeach` closed a block nothing had opened - the component failed
+     * to compile with "Unexpected }" and named the file and nothing else.
+     */
+    await fixture(input, 'panel.stx', `
+<template>
+  <ul>
+    @foreach(page().metrics as metric)
+      <li>{{ metric.label }}</li>
+    @endforeach
+  </ul>
+  @if(ready())
+    <p id="ready">Ready</p>
+  @endif
+</template>
+
+<script client>
+const page = () => ({ metrics: [{ label: 'Attributed revenue' }, { label: 'Recovered carts' }] })
+const ready = () => true
+</script>
+`)
+
+    await buildComponentLibrary({ inputDir: input, outputDir: output, prefix: 'dx' })
+
+    const compiled = await readFile(path.join(output, 'dx-panel.js'), 'utf8')
+
+    // The whole expression reached the generated loop header and condition.
+    // Truncated at the first bracket, neither of these compiles.
+    expect(compiled).toContain('__values(page().metrics)')
+    expect(compiled).toContain('if (ready())')
+  })
+
+  it('does not count a bracket inside a string', async () => {
+    const { input, output } = await workspace()
+
+    await fixture(input, 'quoted.stx', `
+<template>
+  @if(suffix === ')')
+    <p id="closer">closing</p>
+  @endif
+</template>
+
+<script client>
+const suffix = ')'
+</script>
+`)
+
+    await buildComponentLibrary({ inputDir: input, outputDir: output, prefix: 'dx' })
+
+    const compiled = await readFile(path.join(output, 'dx-quoted.js'), 'utf8')
+
+    // The `)` inside the string is part of the value, not the end of the
+    // directive, so the condition survives whole.
+    expect(compiled).toContain('if (suffix === ")")')
+  })
+
+  it('leaves a bracket after a closing directive as markup', async () => {
+    const { input, output } = await workspace()
+
+    // `@endif` takes no expression, so the parenthesis that follows it is
+    // prose and has to survive as prose.
+    await fixture(input, 'prose.stx', `
+<template>
+  @if(true)
+    <p id="note">yes</p>
+  @endif
+  <span id="aside">(and this stays)</span>
+</template>
+`)
+
+    await buildComponentLibrary({ inputDir: input, outputDir: output, prefix: 'dx' })
+
+    const compiled = await readFile(path.join(output, 'dx-prose.js'), 'utf8')
+
+    expect(compiled).toContain('(and this stays)')
+    expect(compiled).toContain('if (true)')
+  })
+})

@@ -255,8 +255,60 @@ function compileTemplateToRender(template: string): string {
   // reads the component, not to whoever loads the page.
   const source = template.replace(/\{\{--[\s\S]*?--\}\}/g, '')
 
-  const directive = /@(if|elseif|else|endif|foreach|endforeach)\s*(?:\(([\s\S]*?)\))?/g
+  const directive = /@(if|elseif|else|endif|foreach|endforeach)\s*/g
   let match: RegExpExecArray | null
+
+  /**
+   * The expression inside a directive's parentheses.
+   *
+   * Scanned by balancing parentheses, the way the page renderer's loop parser
+   * already does. A lazy `\(([\s\S]*?)\)` stops at the FIRST `)`, so any
+   * expression that calls something was cut in half: `@foreach(page().metrics
+   * as metric)` yielded `page(`, which is not a loop header, so the directive
+   * was emitted as literal text and its `@endforeach` closed a block nothing
+   * had opened - and the component failed to compile with "Unexpected }",
+   * naming the file and nothing else. `@if(ready())` became `if (ready( ) {`.
+   *
+   * Quotes are tracked so a `)` inside a string is not counted, which is what
+   * lets `@if(suffix === ')')` through.
+   */
+  const expressionAt = (open: number): { expression: string, end: number } | null => {
+    if (source[open] !== '(')
+      return null
+
+    let depth = 0
+    let quote = ''
+
+    for (let index = open; index < source.length; index++) {
+      const char = source[index]
+
+      if (quote !== '') {
+        if (char === '\\')
+          index++
+        else if (char === quote)
+          quote = ''
+        continue
+      }
+
+      if (char === '\'' || char === '"' || char === '`') {
+        quote = char
+        continue
+      }
+
+      if (char === '(') {
+        depth++
+      }
+      else if (char === ')') {
+        depth--
+        if (depth === 0)
+          return { expression: source.slice(open + 1, index), end: index + 1 }
+      }
+    }
+
+    // Unbalanced. Left to the caller to treat as a directive without an
+    // expression rather than silently swallowing the rest of the template.
+    return null
+  }
 
   const text = (raw: string): void => {
     if (raw === '') return
@@ -281,12 +333,24 @@ function compileTemplateToRender(template: string): string {
     text(source.slice(cursor, match.index))
     cursor = match.index + match[0].length
 
+    // `@else`, `@endif` and `@endforeach` take no expression, so a `(` that
+    // happens to follow one is markup and stays markup.
+    const takesExpression = match[1] === 'if' || match[1] === 'elseif' || match[1] === 'foreach'
+    const parsed = takesExpression ? expressionAt(cursor) : null
+
+    if (parsed) {
+      cursor = parsed.end
+      directive.lastIndex = parsed.end
+    }
+
+    const expression = parsed?.expression
+
     switch (match[1]) {
       case 'if':
-        parts.push(`if (${match[2]}) {`)
+        parts.push(`if (${expression}) {`)
         break
       case 'elseif':
-        parts.push(`} else if (${match[2]}) {`)
+        parts.push(`} else if (${expression}) {`)
         break
       case 'else':
         parts.push('} else {')
@@ -300,9 +364,9 @@ function compileTemplateToRender(template: string): string {
         // use. Written as a for-of over entries so an object iterates as
         // happily as an array; a loop that only works on arrays is a trap the
         // author finds at runtime.
-        const pair = /^([\s\S]+?)\s+as\s+(?:([A-Za-z_$][\w$]*)\s*=>\s*)?([A-Za-z_$][\w$]*)$/.exec((match[2] || '').trim())
+        const pair = /^([\s\S]+?)\s+as\s+(?:([A-Za-z_$][\w$]*)\s*=>\s*)?([A-Za-z_$][\w$]*)$/.exec((expression || '').trim())
         if (!pair) {
-          parts.push(`out += ${JSON.stringify(match[0])};`)
+          parts.push(`out += ${JSON.stringify(match[0] + (parsed ? `(${expression})` : ''))};`)
           break
         }
         const [, iterable, key, value] = pair

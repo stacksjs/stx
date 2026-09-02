@@ -109,7 +109,10 @@ describe('@appearanceBootstrap', () => {
     expect(output).toContain('"allowed":["macos","arc"]')
     expect(output).toContain('"default":"macos"')
     expect(output).toContain('config.appearance.allowed.includes')
-    expect(output).toContain('["light","dark","system"].includes')
+    // The modes are hoisted into a `MODES` const the emitted script reuses
+    // for both the read and the setter, rather than repeating the literal.
+    expect(output).toContain('const MODES=["light","dark","system"]')
+    expect(output).toContain('MODES.includes(stored[config.colorMode.key])')
   })
 
   it('supports server context in the options object', () => {
