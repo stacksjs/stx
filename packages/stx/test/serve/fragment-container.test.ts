@@ -34,6 +34,19 @@ describe('parseContainerSelector (#1853)', () => {
 })
 
 describe('findContainerRegion (#1853)', () => {
+  it('ignores container-looking markup inside comments and raw-text elements', () => {
+    const html = `
+      <body>
+        <!-- The layout owns the single <main> landmark. -->
+        <script>const example = '<main>not markup</main>'</script>
+        <style>main::before { content: '<main>'; }</style>
+        <main class="content">REAL</main>
+      </body>
+    `
+
+    expect(inner(html)).toBe('REAL')
+  })
+
   it('extracts the inner content of <main> by default', () => {
     const html = '<body><header>chrome</header><main class="x">CONTENT</main></body>'
     expect(inner(html)).toBe('CONTENT')

@@ -268,6 +268,22 @@ describe('App Shell', () => {
   })
 
   describe('extractContainerContent', () => {
+    it('uses the shared HTML-aware locator when comments name the container tag', () => {
+      const doc = `<!DOCTYPE html>
+<html>
+<body>
+  <!-- The layout owns the single <main> landmark. -->
+  <nav>Dashboard</nav>
+  <main><h1>Real page</h1></main>
+</body>
+</html>`
+
+      const result = extractContainerContent(doc)
+
+      expect(result).toContain('<h1>Real page</h1>')
+      expect(result).not.toContain('<nav>')
+    })
+
     it('preserves dynamic route params from the document head', () => {
       const doc = `<!DOCTYPE html>
 <html>

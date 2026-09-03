@@ -15,6 +15,7 @@ import type { StxOptions } from './types'
 import path from 'node:path'
 import { classifyAllScripts } from './script-classifier'
 import { startsDocument } from './document-shell'
+import { findContainerRegion } from './fragment-container'
 import { isSpaNavRequest } from './spa-nav'
 export { extractLayoutMetadata } from 'stx-router/layout-metadata'
 export type { LayoutMetadata } from 'stx-router/layout-metadata'
@@ -380,45 +381,15 @@ export function extractContainerContent(html: string, containerSelector: string 
     }
   }
 
-  // Only support simple tag selectors for now (`main`, `body`, etc.)
-  // This matches the common router.container values.
-  const tag = containerSelector.replace(/^[.#]/, '').toLowerCase()
-  const openRe = new RegExp(`<${tag}\\b[^>]*>`, 'i')
-  const openMatch = trimmed.match(openRe)
-  if (!openMatch || openMatch.index === undefined) {
+  const containerRegion = findContainerRegion(trimmed, containerSelector)
+  if (!containerRegion) {
     // Container not found — fall back to full body extraction
     return stripDocumentWrapper(html)
   }
 
-  const openEnd = openMatch.index + openMatch[0].length
-  // Walk forward looking for balanced close tag of the same name (handles nesting)
-  const openTagRe = new RegExp(`<${tag}\\b[^>]*>`, 'gi')
-  const closeTagRe = new RegExp(`</${tag}\\s*>`, 'gi')
-  openTagRe.lastIndex = openEnd
-  closeTagRe.lastIndex = openEnd
-  let depth = 1
-  let closeIdx = -1
-  while (depth > 0) {
-    const nextOpen = openTagRe.exec(trimmed)
-    const nextClose = closeTagRe.exec(trimmed)
-    if (!nextClose) break
-    if (nextOpen && nextOpen.index < nextClose.index) {
-      depth++
-      closeTagRe.lastIndex = nextOpen.index + nextOpen[0].length
-    }
-    else {
-      depth--
-      closeIdx = nextClose.index
-      if (depth > 0) {
-        openTagRe.lastIndex = nextClose.index + nextClose[0].length
-      }
-    }
-  }
-
-  if (closeIdx === -1) {
-    return stripDocumentWrapper(html)
-  }
-
+  const tag = containerRegion.tagName
+  const openEnd = containerRegion.start
+  const closeIdx = containerRegion.end
   const innerContent = trimmed.slice(openEnd, closeIdx).trim()
 
   // Preserve <script> tags from the body that live OUTSIDE the container
@@ -433,7 +404,7 @@ export function extractContainerContent(html: string, containerSelector: string 
     const bodyStart = bodyOpenMatch.index + bodyOpenMatch[0].length
     // Only scan body regions OUTSIDE the container: [bodyStart, openMatch.index) and (closeIdx + closeTagLength, bodyCloseIdx)
     const regions: Array<[number, number]> = [
-      [bodyStart, openMatch.index],
+      [bodyStart, containerRegion.openIndex],
       [closeIdx + `</${tag}>`.length, bodyCloseIdx],
     ]
     const scriptRe = /<script\b[^>]*>[\s\S]*?<\/script>/gi

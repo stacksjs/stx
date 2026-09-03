@@ -52,6 +52,29 @@ const VOID_ELEMENTS = new Set([
   'link', 'meta', 'param', 'source', 'track', 'wbr',
 ])
 
+interface IgnoredRange {
+  start: number
+  end: number
+}
+
+/**
+ * Comments and raw-text elements can contain strings such as `<main>` which
+ * are text, not nodes. Preserve their offsets so the lightweight matcher can
+ * skip false tags without changing the indexes returned to callers.
+ */
+function ignoredMarkupRanges(html: string): IgnoredRange[] {
+  const ranges: IgnoredRange[] = []
+  const ignoredRe = /<!--[\s\S]*?(?:-->|$)|<(script|style|textarea|title|template)\b[^>]*>[\s\S]*?<\/\1\s*>/gi
+  let match: RegExpExecArray | null
+  while ((match = ignoredRe.exec(html)) !== null)
+    ranges.push({ start: match.index, end: match.index + match[0].length })
+  return ranges
+}
+
+function isIgnoredOffset(offset: number, ranges: IgnoredRange[]): boolean {
+  return ranges.some(range => offset >= range.start && offset < range.end)
+}
+
 /**
  * Parse the supported subset of CSS selector syntax.
  *
@@ -143,9 +166,12 @@ export function findContainerRegion(html: string, selector = 'main'): ContainerR
     return null
 
   const openRe = /<([a-z][\w-]*)\b([^>]*)>/gi
+  const ignoredRanges = ignoredMarkupRanges(html)
   let match: RegExpExecArray | null
 
   while ((match = openRe.exec(html)) !== null) {
+    if (isIgnoredOffset(match.index, ignoredRanges))
+      continue
     const tagName = match[1].toLowerCase()
     const attrs = match[2] || ''
 
@@ -169,6 +195,8 @@ export function findContainerRegion(html: string, selector = 'main'): ContainerR
     let pair: RegExpExecArray | null
 
     while ((pair = pairRe.exec(html)) !== null) {
+      if (isIgnoredOffset(pair.index, ignoredRanges))
+        continue
       const isClose = pair[1] === '/'
       const selfClosing = !isClose && (pair[2] || '').trimEnd().endsWith('/')
       if (selfClosing)
