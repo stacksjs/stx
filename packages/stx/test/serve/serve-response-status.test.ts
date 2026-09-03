@@ -13,10 +13,14 @@ import path from 'node:path'
 import { serve } from '../../src/serve'
 
 const DIR = path.join(import.meta.dir, 'fixtures-response-status')
-const PORT = 9400 + Math.floor(Math.random() * 400)
-const BASE = `http://localhost:${PORT}`
 
 let server: Awaited<ReturnType<typeof serve>> | null = null
+// Filled in by beforeAll from the address the server actually bound. Picking a
+// number here instead -- this drew one at random from 9400-9799 -- races every
+// other test that starts a server: serve.test.ts walked a counter through the
+// same range, and when the two met, the fetches below reached ITS server and
+// got 404 for every fixture this file had written.
+let BASE = ''
 
 beforeAll(async () => {
   await fs.promises.mkdir(DIR, { recursive: true })
@@ -48,17 +52,10 @@ setResponseHeader('Location', '/retired')
 
   await Bun.write(path.join(DIR, 'ordinary.stx'), `<h1>Nothing special.</h1>\n`)
 
-  server = await serve({ port: PORT, root: DIR, watch: false })
-
-  for (let attempt = 0; attempt < 20; attempt++) {
-    try {
-      await fetch(`${BASE}/ordinary`)
-      break
-    }
-    catch {
-      await Bun.sleep(50)
-    }
-  }
+  // 0 asks the OS for a free port. serve() resolves once it is listening and
+  // reports where, so there is nothing left to poll for.
+  server = await serve({ port: 0, root: DIR, watch: false })
+  BASE = server.url.replace(/\/$/, '')
 })
 
 afterAll(async () => {

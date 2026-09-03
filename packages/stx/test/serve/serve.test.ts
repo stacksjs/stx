@@ -4,12 +4,18 @@ import path from 'node:path'
 import { createMiddleware, createRoute, serve, serveFile } from '../../src/serve'
 
 const TEST_DIR = path.join(import.meta.dir, 'fixtures')
-const PORT_START = 9000 + Math.floor(Math.random() * 1000) // Random port to avoid conflicts
 
-let portCounter = PORT_START
-
+// 0 asks the OS for a free port, which is the only allocation that cannot
+// collide. This used to be a random base in 9000-9999 walked upward by a
+// counter, so one run of this file swept a band of about a dozen ports --
+// straight through the 9400-9799 range serve-response-status.test.ts drew its
+// own port from. When the two overlapped, that file's fetches reached THIS
+// file's server, which knows nothing of its fixtures and answered 404 to
+// everything: five failures in a suite where each file passes alone.
+// Every call site below reads the bound address back out of serve()'s handle,
+// so none of them needs to know the number in advance.
 function getPort() {
-  return portCounter++
+  return 0
 }
 
 // Helper to wait for server to be ready
