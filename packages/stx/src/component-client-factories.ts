@@ -83,3 +83,62 @@ ${definitions}
 
   return `${output.slice(0, firstScopedScript)}${prelude}\n${output.slice(firstScopedScript)}`
 }
+
+/**
+ * The registrations a memoised component render would otherwise not make
+ * (stacksjs/stx#1945).
+ *
+ * `instances` decides how a factory reaches the page: at one instance
+ * `injectComponentClientFactories` inlines the definition over the call, and at
+ * more than one it emits a shared prelude instead. So the count is an input to
+ * the document's final bytes, not bookkeeping. A component whose output is
+ * served from a cache never reaches `registerComponentClientFactory`, the count
+ * stays at zero, and the definition is never inlined — the call survives into
+ * the page referring to a factory nothing ever defined, and the component does
+ * not hydrate. The whole page also stops being byte-identical between renders,
+ * which is the property #1945 exists to establish.
+ *
+ * Replaying the registrations on a cache hit keeps the count exactly what a
+ * full render would have produced. Bodies are replayed rather than ids because
+ * the id is derived from the body, so re-registering reproduces it.
+ */
+export function snapshotComponentClientFactoryCounts(
+  context: Record<string, unknown>,
+): Map<string, number> {
+  const registry = registryFrom(context)
+  const counts = new Map<string, number>()
+  if (registry) {
+    for (const [id, factory] of registry)
+      counts.set(id, factory.instances)
+  }
+  return counts
+}
+
+/** The factories registered since `before`, with how many instances each gained. */
+export function componentClientFactoriesRegisteredSince(
+  context: Record<string, unknown>,
+  before: Map<string, number>,
+): Array<{ body: string, count: number }> {
+  const registry = registryFrom(context)
+  if (!registry)
+    return []
+
+  const registered: Array<{ body: string, count: number }> = []
+  for (const [id, factory] of registry) {
+    const gained = factory.instances - (before.get(id) ?? 0)
+    if (gained > 0)
+      registered.push({ body: factory.body, count: gained })
+  }
+  return registered
+}
+
+/** Re-register what a cached render registered, so the instance counts match. */
+export function replayComponentClientFactories(
+  context: Record<string, unknown>,
+  registered: Array<{ body: string, count: number }>,
+): void {
+  for (const { body, count } of registered) {
+    for (let instance = 0; instance < count; instance++)
+      registerComponentClientFactory(context, body)
+  }
+}

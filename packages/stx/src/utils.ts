@@ -17,7 +17,13 @@ import path from 'node:path'
 
 // Import from expressions
 import { extractAndStripCssImports, extractBridgeData, injectBrowserCoreAutoImports, processClientScript, renderVendorStyleTags } from './client-script'
-import { COMPONENT_CLIENT_FACTORIES_CONTEXT_KEY, registerComponentClientFactory } from './component-client-factories'
+import {
+  COMPONENT_CLIENT_FACTORIES_CONTEXT_KEY,
+  componentClientFactoriesRegisteredSince,
+  registerComponentClientFactory,
+  replayComponentClientFactories,
+  snapshotComponentClientFactoryCounts,
+} from './component-client-factories'
 import { interpolateScriptExpressions, processExpressions, usesSignalsInScript } from './expressions'
 import { COMPONENT_SCOPE_LOCAL_GLOBALS, buildRuntimeGlobalsDestructure } from './runtime-globals'
 import type { DepSnapshot } from './render-memo'
@@ -59,10 +65,32 @@ const componentResolutionCache = new LRUCache<string, string>(1000)
 interface ComponentRenderCacheEntry {
   output: string
   dependencies: string[]
+  /** Registrations to replay, so `instances` matches a full render (#1945). */
+  clientFactories: Array<{ body: string, count: number }>
+  /**
+   * Scope ids the skipped subtree drew, so the sequence advances the same.
+   *
+   * Defensive, and honestly so: the sequence is shared by the whole document,
+   * and a subtree that is not rendered cannot draw from it, so a hit that did
+   * not account for what it skipped would number every later component
+   * differently from the render it claims to repeat. No page shape tried so far
+   * makes that observable -- the entries measured all report zero -- so this is
+   * reasoned from the sequence's contract rather than pinned by a test, and is
+   * kept because being wrong here is silent and the accounting is two lines.
+   */
+  uidsConsumed: number
+  /** Expressions the skipped render handed back up to the caller. */
+  preservedClientExpressions: string[]
 }
 // Components that explicitly declare `<script server cache>` promise that
 // their rendered fragment is a pure function of props and slots. Memoizing
 // those fragments avoids recompiling large repeated lists on every request.
+//
+// Returning a cached string skips everything the render would also have DONE,
+// not only the string it produced, so an entry carries those effects and
+// replays them -- see the fields above, and the hit below for why each is
+// load-bearing. That is what lets a component with a client script opt in
+// (#1945); before, only all-server components could.
 const componentRenderCache = new LRUCache<string, ComponentRenderCacheEntry>(2000)
 let scopeIdCounter = 0
 
@@ -1160,28 +1188,81 @@ export async function renderComponentWithSlot(
     const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
     const scriptMatches = [...componentContent.matchAll(scriptRegex)]
     const clientScripts: string[] = []
+    /*
+     * `<script server cache>` is the author's promise that this fragment is a
+     * pure function of its props and slots. It stays an opt-in: an ordinary
+     * `<script server>` may read a clock, a request or a database, and a
+     * component that did would be served its first answer forever.
+     *
+     * What lifts here (stacksjs/stx#1945) is the second half of the old gate,
+     * which also required EVERY script in the file to be a server script. That
+     * ruled out the components the cost actually sits in -- anything with a
+     * `<script client>` could not opt in however pure its author knew it to be,
+     * and those are precisely the ones that carry an expensive island. The
+     * restriction stood because returning a cached string skips the
+     * REGISTRATION a client script performs as well as the render, and the
+     * document's bytes depend on it; the entry now carries those effects and
+     * replays them, so the restriction has nothing left to protect.
+     */
     const cacheableServerComponent = scriptMatches.some(match =>
       /\bserver\b/.test(match[1] || '') && /\bcache\b/.test(match[1] || ''),
-    ) && scriptMatches.every(match => /\bserver\b/.test(match[1] || ''))
+    )
     let componentRenderCacheKey: string | null = null
     let dependencyBaseline: Set<string> | null = null
+    let clientFactoryBaseline: Map<string, number> | null = null
+    let uidBaseline = 0
+    let preservedExpressionBaseline: Set<string> | null = null
 
+    // `<script server cache>` is an author's promise that the fragment is a pure
+    // function of props and slots, so the caller's scope need not be keyed. Any
+    // other component may still be memoised, but only by keying everything it
+    // could read -- `filteredParentContext` copies every non-internal caller
+    // binding in, so a component can read anything the page declared, and a key
+    // built from props alone would serve one page's render to another's.
     if (cacheableServerComponent) {
       const serializedInput = serializeComponentRenderInput({
         props,
         slot: slotContent,
         buildMode: options.buildMode ?? '',
         skipEventDirectives: options.skipEventDirectives === true,
+        // The scope id is stamped through the output and drawn from a sequence,
+        // so two instances of one component on a page render different bytes
+        // and must not share an entry. Between renders of the same page the
+        // sequence repeats, which is what makes the entry reusable at all.
+        uid: componentUid,
       })
       if (serializedInput !== null) {
-        componentRenderCacheKey = `${componentFilePath}\0${serializedInput}`
+        componentRenderCacheKey = `${componentFilePath}\0${contentKey(componentContent)}\0${serializedInput}`
         const cachedRender = componentRenderCache.get(componentRenderCacheKey)
         if (cachedRender) {
           for (const dependency of cachedRender.dependencies)
             dependencies.add(dependency)
+          // Everything below is work the full render would have done besides
+          // returning a string. Skipping any of it makes the cached page differ
+          // from the uncached one, which is the failure this cache exists to
+          // avoid rather than cause.
+          replayComponentClientFactories(parentContext, cachedRender.clientFactories)
+          scopeSeq.n += cachedRender.uidsConsumed
+          if (cachedRender.preservedClientExpressions.length > 0) {
+            const preserved = new Set(
+              Array.isArray(parentContext.__stx_preserved_client_expressions)
+                ? parentContext.__stx_preserved_client_expressions as string[]
+                : [],
+            )
+            for (const expression of cachedRender.preservedClientExpressions)
+              preserved.add(expression)
+            parentContext.__stx_preserved_client_expressions = [...preserved]
+          }
           return cachedRender.output
         }
         dependencyBaseline = new Set(dependencies)
+        clientFactoryBaseline = snapshotComponentClientFactoryCounts(parentContext)
+        uidBaseline = scopeSeq.n
+        preservedExpressionBaseline = new Set(
+          Array.isArray(parentContext.__stx_preserved_client_expressions)
+            ? parentContext.__stx_preserved_client_expressions as string[]
+            : [],
+        )
       }
     }
 
@@ -1506,9 +1587,22 @@ else {
     }
 
     if (componentRenderCacheKey && dependencyBaseline) {
+      const preservedNow = Array.isArray(parentContext.__stx_preserved_client_expressions)
+        ? parentContext.__stx_preserved_client_expressions as string[]
+        : []
       componentRenderCache.set(componentRenderCacheKey, {
         output,
         dependencies: [...dependencies].filter(dependency => !dependencyBaseline.has(dependency)),
+        clientFactories: clientFactoryBaseline
+          ? componentClientFactoriesRegisteredSince(parentContext, clientFactoryBaseline)
+          : [],
+        // The ids the SUBTREE drew. This component's own is not among them:
+        // it is allocated above the cache check, so a hit has already drawn it
+        // and only the skipped descendants are left to account for.
+        uidsConsumed: scopeSeq.n - uidBaseline,
+        preservedClientExpressions: preservedExpressionBaseline
+          ? preservedNow.filter(expression => !preservedExpressionBaseline.has(expression))
+          : [],
       })
     }
 
