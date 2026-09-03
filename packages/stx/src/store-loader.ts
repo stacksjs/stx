@@ -14,6 +14,7 @@ import { bundleClientScript, clientBundleDependencies, hasUserImports } from './
 import { loadStxConfig } from './config'
 import { getPublicEnvDefine } from './public-env'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
+import { stripStxRuntimeImports } from './signal-processing'
 import { readSigned, type SignedCacheEntry, sourceSignature, writeSigned } from './source-signature'
 import { stripModuleImports, transformStoreImports } from './store-imports'
 import { getSharedTranspiler } from './utils'
@@ -165,6 +166,14 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
       // resolved from window.stx by the existing transform below.
       if (hasUserImports(code))
         code = await bundleClientScript(code, file, { projectRoot: process.cwd() })
+
+      // A bundled dependency may import the same STX runtime names as the
+      // store entry. Bun keeps that external import and renames the dependency
+      // binding (for example `defineStore as defineStore2`). A plain import
+      // strip loses the alias and leaves the bundled body calling an undefined
+      // identifier. Preserve those mappings against the canonical runtime
+      // globals before the generic import cleanup below.
+      code = stripStxRuntimeImports(code)
 
       // Rewrite `@stores` / `@composables` imports to their runtime globals, so
       // a store can use another store or a composable the same way a page can.

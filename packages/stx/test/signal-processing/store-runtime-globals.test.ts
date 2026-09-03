@@ -72,6 +72,33 @@ describe('store runtime globals (#1838)', () => {
     expect(storeFactory?.().loginUrl).toBe('/api/auth/login')
   })
 
+  it('preserves renamed STX runtime imports from bundled store dependencies', async () => {
+    const dir = await storesDir({
+      'auth.ts': `import { defineStore, state, useStore } from '@stacksjs/stx'
+export function useAuth() { return useStore('auth') }
+defineStore('auth', () => ({ user: state(null) }))`,
+      'athletes.ts': `import { defineStore, state } from '@stacksjs/stx'
+import { useAuth } from './auth'
+defineStore('athletes', () => ({ auth: useAuth(), loading: state(true) }))`,
+    })
+
+    const script = await getStoreScript(dir) ?? ''
+    const stores = new Map<string, unknown>()
+    const window = {
+      stx: {
+        defineStore: (name: string, factory: () => unknown) => stores.set(name, factory()),
+        state: (value: unknown) => value,
+        useStore: (name: string) => stores.get(name),
+      },
+    }
+
+    expect(script).toMatch(/var defineStore\d+ = defineStore/)
+    expect(script).toMatch(/state\d+ = state/)
+    expect(() => new Function('window', script)(window)).not.toThrow()
+    expect(stores.has('auth')).toBeTrue()
+    expect(stores.has('athletes')).toBeTrue()
+  })
+
   it('destructures a window.stx-only composable the store references', async () => {
     const dir = await storesDir({
       'session.ts': `
