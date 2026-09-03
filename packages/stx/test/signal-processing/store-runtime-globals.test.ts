@@ -18,7 +18,7 @@
  * (`grep -rn 'getStoreScript\|store-loader' packages/stx/test | wc -l` -> 0).
  */
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { clearStoreCache, getStoreScript } from '../../src/store-loader'
@@ -28,8 +28,10 @@ const dirs: string[] = []
 async function storesDir(files: Record<string, string>): Promise<string> {
   const dir = await mkdtemp(path.join(tmpdir(), 'stx-stores-'))
   dirs.push(dir)
-  for (const [name, body] of Object.entries(files))
+  for (const [name, body] of Object.entries(files)) {
+    await mkdir(path.dirname(path.join(dir, name)), { recursive: true })
     await writeFile(path.join(dir, name), body, 'utf8')
+  }
   clearStoreCache()
   return dir
 }
@@ -41,6 +43,35 @@ afterEach(async () => {
 })
 
 describe('store runtime globals (#1838)', () => {
+  it('bundles explicit package-style imports instead of erasing their bindings', async () => {
+    const dir = await storesDir({
+      'lib/api-url.ts': `
+        export function joinApiUrl(path) {
+          return '/api/' + path.replace(/^\\//, '')
+        }
+      `,
+      'auth.ts': `
+        import { defineStore } from '@stacksjs/stx'
+        import { joinApiUrl } from './lib/api-url'
+        defineStore('auth', () => ({ loginUrl: joinApiUrl('/auth/login') }))
+      `,
+    })
+
+    const script = await getStoreScript(dir) ?? ''
+    let storeFactory: (() => { loginUrl: string }) | undefined
+    const window = {
+      stx: {
+        defineStore: (_name: string, factory: () => { loginUrl: string }) => {
+          storeFactory = factory
+        },
+      },
+    }
+
+    expect(script).not.toContain("from './lib/api-url'")
+    new Function('window', script)(window)
+    expect(storeFactory?.().loginUrl).toBe('/api/auth/login')
+  })
+
   it('destructures a window.stx-only composable the store references', async () => {
     const dir = await storesDir({
       'session.ts': `

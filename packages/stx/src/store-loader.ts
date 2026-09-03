@@ -10,6 +10,7 @@
  */
 
 import path from 'node:path'
+import { bundleClientScript, clientBundleDependencies, hasUserImports } from './client-script-bundler'
 import { loadStxConfig } from './config'
 import { getPublicEnvDefine } from './public-env'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
@@ -107,7 +108,11 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
 
   // Includes the empty case, so creating the FIRST store file invalidates the
   // `null` that was memoised before it existed.
-  const signature = sourceSignature(storeFiles)
+  const storeInputs = () => [...new Set([
+    ...storeFiles,
+    ...storeFiles.flatMap(file => clientBundleDependencies(file)),
+  ])]
+  let signature = sourceSignature(storeInputs())
   const cached = readSigned(_cachedStoreScripts, resolvedDir, signature)
   if (cached !== undefined) return cached || null
 
@@ -152,6 +157,14 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
       const storeName = path.basename(file, '.ts')
 
       collectDeclaredNames(code, declaredNames)
+
+      // A store is browser code just like a <script client> block. Explicit
+      // imports from installed packages and local helpers therefore need the
+      // same Bun bundle pass; stripping every import left those bindings as
+      // runtime ReferenceErrors. STX runtime imports remain external and are
+      // resolved from window.stx by the existing transform below.
+      if (hasUserImports(code))
+        code = await bundleClientScript(code, file, { projectRoot: process.cwd() })
 
       // Rewrite `@stores` / `@composables` imports to their runtime globals, so
       // a store can use another store or a composable the same way a page can.
@@ -206,6 +219,10 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
     .join('\n')
 
   const code = `;(function(){\nvar __stx = window.stx || {};\n${runtimeBindings}\n${joinedChunks}\n})();`
+  // The first cold bundle discovers its transitive inputs. Sign the cached
+  // aggregate with that complete graph so editing an imported helper
+  // invalidates the store script on the next read.
+  signature = sourceSignature(storeInputs())
   writeSigned(_cachedStoreScripts, resolvedDir, signature, code)
   return code
 }
