@@ -1,4 +1,13 @@
-<script server>
+<script server cache>
+// `cache` is a promise that what this renders is a function of its props and
+// slots alone, and it is kept: everything below reads $props (plus $uid, which
+// the cache keys on, so two instances never share an entry), the helpers it
+// imports hold no module state, and nothing here reads the clock, the request
+// or the route -- selecting the active row from the URL is client-side, in the
+// <script client> block below. Because a hit serves this component's whole
+// SUBTREE from one entry, that last point covers the rows too: if any of them
+// ever resolved the active item on the server, this could not be cached.
+// Adding a server-side read of anything else means dropping `cache` again.
 import { normalizeSpaces, spaceIndexOf } from './spaces'
 import { resolveSidebarTheme } from './themes'
 
