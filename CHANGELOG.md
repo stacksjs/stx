@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.267...v0.2.268)
+
+## 🐛 Bug Fixes
+
+- **components**: keep events on conditional roots ([e370bfd](https://github.com/stacksjs/stx/commit/e370bfd)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.268 ([d5961e9](https://github.com/stacksjs/stx/commit/d5961e9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.266...v0.2.267)
 
 ## 🐛 Bug Fixes
