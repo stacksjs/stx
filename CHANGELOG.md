@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.268...v0.2.269)
+
+## 🐛 Bug Fixes
+
+- **stores**: preserve bundled runtime aliases ([84beac9](https://github.com/stacksjs/stx/commit/84beac9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **release**: keep retry dispatch tagless ([32044a4](https://github.com/stacksjs/stx/commit/32044a4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **release**: publish stx dependencies first ([1a6e93c](https://github.com/stacksjs/stx/commit/1a6e93c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.269 ([8fad444](https://github.com/stacksjs/stx/commit/8fad444)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.267...v0.2.268)
 
 ## 🐛 Bug Fixes
