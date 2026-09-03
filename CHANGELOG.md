@@ -1,5 +1,32 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.265...v0.2.266)
+
+## 🐛 Bug Fixes
+
+- **stores**: bundle explicit client imports ([78a39fa](https://github.com/stacksjs/stx/commit/78a39fa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **router**: a prefetched entry keeps the container attributes (#1947) ([eb0bd6e](https://github.com/stacksjs/stx/commit/eb0bd6e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1947](https://github.com/stacksjs/stx/issues/1947), [#1947](https://github.com/stacksjs/stx/issues/1947), [#1849](https://github.com/stacksjs/stx/issues/1849), [#1772](https://github.com/stacksjs/stx/issues/1772))
+
+## ⚡ Performance Improvements
+
+- **cache**: bound the fragment cache in bytes, not just entries (#1945) ([50fe0d2](https://github.com/stacksjs/stx/commit/50fe0d2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **components**: the sidebar renders once per set of props (#1945) ([f1c9662](https://github.com/stacksjs/stx/commit/f1c9662)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **ssr**: let a component with a client script opt into render caching (#1945) ([cd2672e](https://github.com/stacksjs/stx/commit/cd2672e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **ssr**: stop rebuilding what an unchanged render already answered (#1945) ([6a660c1](https://github.com/stacksjs/stx/commit/6a660c1)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+
+## ✅ Tests
+
+- **serve**: let the OS pick the port, so two files stop racing for one ([11551d2](https://github.com/stacksjs/stx/commit/11551d2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.266 ([7a56b48](https://github.com/stacksjs/stx/commit/7a56b48)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.264...v0.2.265)
 
 ## 🐛 Bug Fixes
