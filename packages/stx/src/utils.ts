@@ -91,7 +91,25 @@ interface ComponentRenderCacheEntry {
 // replays them -- see the fields above, and the hit below for why each is
 // load-bearing. That is what lets a component with a client script opt in
 // (#1945); before, only all-server components could.
-const componentRenderCache = new LRUCache<string, ComponentRenderCacheEntry>(2000)
+/**
+ * What the rendered-fragment cache may retain (stacksjs/stx#1945).
+ *
+ * The count on its own stopped describing this cache when cd2672ec5e let a
+ * component carrying a client island opt in: an all-server fragment is a row
+ * or a section, while an island-bearing component's output runs to tens of
+ * kilobytes, so 2000 entries went from a few megabytes to something an
+ * OOM-sensitive host cannot predict. #1945 is a memory report, and answering
+ * it with a cache whose footprint is unbounded in bytes would be answering it
+ * with a bigger version of the same problem. The count still applies -- both
+ * bounds hold at once, whichever binds first.
+ */
+const COMPONENT_RENDER_CACHE_BYTES = 32 * 1024 * 1024
+const componentRenderCache = new LRUCache<string, ComponentRenderCacheEntry>(2000, {
+  maxBytes: COMPONENT_RENDER_CACHE_BYTES,
+  // The output dominates; the replay bookkeeping beside it is a few hundred
+  // bytes and is not worth walking on every set.
+  sizeOf: entry => entry.output.length,
+})
 let scopeIdCounter = 0
 
 function serializeComponentRenderInput(value: unknown): string | null {

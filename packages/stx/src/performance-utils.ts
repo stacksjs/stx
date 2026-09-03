@@ -7,12 +7,41 @@
  * Generic LRU (Least Recently Used) cache implementation
  * Automatically evicts least recently used items when capacity is reached
  */
+/**
+ * How a cache measures what it is holding, when entry count is not enough.
+ *
+ * A count-bounded cache assumes entries are roughly one size. That holds for
+ * the caches here that store paths or small fragments, and stops holding as
+ * soon as the values are rendered output: one entry can be tens of kilobytes
+ * and another a few bytes, so `maxSize` stops describing the footprint at all
+ * (stacksjs/stx#1945). Passing `sizeOf` and `maxBytes` bounds the bytes as
+ * well, which is the number a memory-constrained host actually has to budget.
+ */
+export interface LRUCacheOptions<V> {
+  /** Bytes this cache may retain across all entries. */
+  maxBytes: number
+  /** What one value costs. Called once per `set`, so keep it cheap. */
+  sizeOf: (value: V) => number
+}
+
 export class LRUCache<K, V> {
   private cache = new Map<K, V>()
   private readonly maxSize: number
+  private readonly options: LRUCacheOptions<V> | null
+  private sizes: Map<K, number> | null
+  private bytes = 0
 
-  constructor(maxSize: number = 100) {
+  constructor(maxSize: number = 100, options?: LRUCacheOptions<V>) {
     this.maxSize = maxSize
+    this.options = options ?? null
+    // Only allocated when the cache is byte-bounded, so a count-bounded one
+    // costs exactly what it did before.
+    this.sizes = options ? new Map<K, number>() : null
+  }
+
+  /** Bytes currently retained. Zero unless the cache is byte-bounded. */
+  get byteSize(): number {
+    return this.bytes
   }
 
   /**
@@ -36,17 +65,32 @@ export class LRUCache<K, V> {
   set(key: K, value: V): void {
     // If key exists, delete it first to update position
     if (this.cache.has(key)) {
-      this.cache.delete(key)
+      this.delete(key)
     }
-    // If at capacity, delete the oldest (first) entry
-    else if (this.cache.size >= this.maxSize) {
+
+    const size = this.options ? this.options.sizeOf(value) : 0
+    // One value larger than the whole budget would evict every other entry and
+    // still not fit. Declining to store it leaves the cache useful.
+    if (this.options && size > this.options.maxBytes)
+      return
+
+    // Evict oldest-first until the new entry fits under both bounds.
+    while (
+      this.cache.size > 0
+      && (this.cache.size >= this.maxSize
+        || (this.options !== null && this.bytes + size > this.options.maxBytes))
+    ) {
       const oldestKey = this.cache.keys().next().value
-      if (oldestKey !== undefined) {
-        this.cache.delete(oldestKey)
-      }
+      if (oldestKey === undefined)
+        break
+      this.delete(oldestKey)
     }
 
     this.cache.set(key, value)
+    if (this.sizes) {
+      this.sizes.set(key, size)
+      this.bytes += size
+    }
   }
 
   /**
@@ -60,6 +104,13 @@ export class LRUCache<K, V> {
    * Delete a key from the cache
    */
   delete(key: K): boolean {
+    if (this.sizes) {
+      const size = this.sizes.get(key)
+      if (size !== undefined) {
+        this.bytes -= size
+        this.sizes.delete(key)
+      }
+    }
     return this.cache.delete(key)
   }
 
@@ -68,6 +119,8 @@ export class LRUCache<K, V> {
    */
   clear(): void {
     this.cache.clear()
+    this.sizes?.clear()
+    this.bytes = 0
   }
 
   /**
