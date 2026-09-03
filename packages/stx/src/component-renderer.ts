@@ -1073,16 +1073,18 @@ async function processCustomElementTags(
         // Render the builtin directly
         let rendered = builtinDef.render(resolvedProps, tag.content, renderCtx)
 
+        // Forward parent events to the builtin's concrete root before a
+        // structural client binding wraps it in <template>. Events placed on
+        // that inert wrapper never reach the rendered anchor/button.
+        if (Object.keys(resolvedProps.events).length > 0) {
+          const eventAttrs = serialiseForwardedEvents(resolvedProps.events)
+          rendered = rendered.replace(/^(\s*<[a-zA-Z][a-zA-Z0-9-]*)/, `$1 ${eventAttrs}`)
+        }
+
         // Emit clientReactive bindings on the rendered output (same as file components)
         // This preserves :for, :to, :text etc. that couldn't be evaluated server-side
         if (Object.keys(resolvedProps.clientReactive).length > 0) {
           rendered = emitClientReactiveAttrs(rendered, resolvedProps.clientReactive)
-        }
-
-        // Forward @event attributes from parent to builtin's root element
-        if (Object.keys(resolvedProps.events).length > 0) {
-          const eventAttrs = serialiseForwardedEvents(resolvedProps.events)
-          rendered = rendered.replace(/^(\s*<[a-zA-Z][a-zA-Z0-9-]*)/, `$1 ${eventAttrs}`)
         }
 
         result = result.substring(0, tag.startIndex) + rendered + result.substring(tag.endIndex)
@@ -1127,13 +1129,7 @@ async function processCustomElementTags(
         dependencies,
       )
 
-      // If there are clientReactive bindings, emit them as :attr="expr" on the
-      // outermost element of the rendered output so that the client runtime can
-      // pick them up.
       let finalContent = processedContent
-      if (Object.keys(resolvedProps.clientReactive).length > 0) {
-        finalContent = emitClientReactiveAttrs(finalContent, resolvedProps.clientReactive)
-      }
 
       // Forward @event attributes from parent to component's root element.
       // This connects parent handlers to child defineEmits() — the child emits
@@ -1149,6 +1145,13 @@ async function processCustomElementTags(
             + ` data-stx-parent-events="${parentEvents}" ${eventAttrs}`
             + finalContent.substring(root.insertPos)
         }
+      }
+
+      // Apply structural client bindings after event forwarding. :if/:for may
+      // wrap the component in an inert <template>; the listener belongs on the
+      // concrete component root inside that wrapper.
+      if (Object.keys(resolvedProps.clientReactive).length > 0) {
+        finalContent = emitClientReactiveAttrs(finalContent, resolvedProps.clientReactive)
       }
 
       // Replace the tag with processed content

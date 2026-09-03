@@ -136,6 +136,41 @@ describe('Signal Scoped Components', () => {
     expect(html).not.toMatch(/id="__stx_evt_\d+"[^>]*>Click me/)
   })
 
+  it('preserves a signal handler forwarded through StxLink', async () => {
+    const componentFile = path.join(TEMP_DIR, 'components', 'AccountMenu.stx')
+    await Bun.write(componentFile, `
+      <nav>
+        <StxLink :if="isAdmin" to="/settings" @click="open.set(false)">Settings</StxLink>
+        <div :show="open()">Menu</div>
+      </nav>
+
+      <script client>
+        const open = state(true)
+        const isAdmin = state(true)
+      </script>
+    `)
+
+    const testFile = await createTestFile('stx-link-click-preserved.stx', `
+      <!DOCTYPE html>
+      <html>
+      <head><title>StxLink event forwarding</title></head>
+      <body>
+        <AccountMenu />
+      </body>
+      </html>
+    `)
+
+    const result = await Bun.build({
+      entrypoints: [testFile],
+      outdir: OUTPUT_DIR,
+      plugins: [stxPlugin({ componentsDir: path.join(TEMP_DIR, 'components') })],
+    })
+
+    const html = await getHtmlOutput(result)
+    expect(html).toMatch(/<a\b[^>]*@click="open\.set\(false\)"[^>]*>Settings/)
+    expect(html).not.toMatch(/<template\b[^>]*@click=/)
+  })
+
   it('should place scope registration beside the HTML before the document closes', async () => {
     const componentFile = path.join(TEMP_DIR, 'components', 'InitOrder.stx')
     await Bun.write(componentFile, `
