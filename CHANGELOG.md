@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.266...v0.2.267)
+
+## 🐛 Bug Fixes
+
+- **router**: ignore inert container markup ([ab8d7d5](https://github.com/stacksjs/stx/commit/ab8d7d5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.267 ([342b4b7](https://github.com/stacksjs/stx/commit/342b4b7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.265...v0.2.266)
 
 ## 🐛 Bug Fixes
