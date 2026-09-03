@@ -85,6 +85,7 @@ jobs:
         working-directory: packages/devtools-extension
 
       - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: home-lang/pantry/packages/action@main
         with:
           install: false
@@ -94,6 +95,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Attach the extension to the release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: packages/devtools-extension/stacks-devtools-*.zip
