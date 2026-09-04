@@ -777,6 +777,23 @@ export interface StxConfig {
    */
   /** Directory to store cached templates, defaults to `cache` inside `stateDir` */
   cachePath: string
+  /**
+   * Bytes the rendered-fragment cache may retain, across all entries.
+   *
+   * A component declaring `<script server cache>` has its rendered output kept
+   * and reused for the same props, which is what makes an unchanged page cheap
+   * to re-render (stacksjs/stx#1945). That memory is real, and how much of it
+   * is worth spending is a property of the HOST, not of stx: a build box has
+   * room a container under an OOM limit does not.
+   *
+   * Entry count is bounded separately and always; this is the byte ceiling,
+   * whichever binds first. Set it to 0 to keep no rendered fragments at all --
+   * every render then does the full work, which is the behaviour before the
+   * cache existed and the right answer when memory is scarcer than time.
+   *
+   * @default 33554432 (32MB)
+   */
+  componentRenderCacheBytes: number
   /** Custom directives registered by the user */
   customDirectives?: CustomDirective[]
   /** Middleware for pre/post-processing templates */

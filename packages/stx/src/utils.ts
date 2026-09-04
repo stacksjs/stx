@@ -104,6 +104,29 @@ interface ComponentRenderCacheEntry {
  * bounds hold at once, whichever binds first.
  */
 const COMPONENT_RENDER_CACHE_BYTES = 32 * 1024 * 1024
+
+/**
+ * The budget currently applied, so a config that never changes costs one
+ * number comparison per component render rather than an eviction sweep.
+ */
+let appliedComponentRenderCacheBytes = COMPONENT_RENDER_CACHE_BYTES
+
+/**
+ * Point the fragment cache at the host's budget (`componentRenderCacheBytes`).
+ *
+ * Read here rather than plumbed from config load because the cache is module
+ * state that exists before any config does, and because `serve()`, the dev
+ * server, SSG and a direct `renderView` all arrive with their own resolved
+ * options -- there is no single earlier place they share.
+ */
+function applyComponentRenderCacheBudget(options: StxOptions): void {
+  const configured = (options as { componentRenderCacheBytes?: number }).componentRenderCacheBytes
+  if (typeof configured !== 'number' || configured < 0 || configured === appliedComponentRenderCacheBytes)
+    return
+
+  appliedComponentRenderCacheBytes = configured
+  componentRenderCache.setMaxBytes(configured)
+}
 const componentRenderCache = new LRUCache<string, ComponentRenderCacheEntry>(2000, {
   maxBytes: COMPONENT_RENDER_CACHE_BYTES,
   // The output dominates; the replay bookkeeping beside it is a few hundred
@@ -1237,7 +1260,14 @@ export async function renderComponentWithSlot(
     // could read -- `filteredParentContext` copies every non-internal caller
     // binding in, so a component can read anything the page declared, and a key
     // built from props alone would serve one page's render to another's.
-    if (cacheableServerComponent) {
+    applyComponentRenderCacheBudget(options)
+    // A 0 budget is a host saying it would rather spend the time than the
+    // memory. The budget alone would already deliver that -- every value is
+    // larger than 0 bytes, so every one is declined -- but it would serialise
+    // the props and hash them first, on every render, to build a key nothing
+    // will ever store or read. Skipping that is the only thing this condition
+    // does; correctness sits in the budget either way.
+    if (cacheableServerComponent && appliedComponentRenderCacheBytes > 0) {
       const serializedInput = serializeComponentRenderInput({
         props,
         slot: slotContent,

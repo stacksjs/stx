@@ -27,7 +27,7 @@ export interface LRUCacheOptions<V> {
 export class LRUCache<K, V> {
   private cache = new Map<K, V>()
   private readonly maxSize: number
-  private readonly options: LRUCacheOptions<V> | null
+  private options: LRUCacheOptions<V> | null
   private sizes: Map<K, number> | null
   private bytes = 0
 
@@ -42,6 +42,32 @@ export class LRUCache<K, V> {
   /** Bytes currently retained. Zero unless the cache is byte-bounded. */
   get byteSize(): number {
     return this.bytes
+  }
+
+  /**
+   * Change the byte budget, evicting immediately down to the new one.
+   *
+   * The caches here are module state, built when the module loads and so before
+   * any config has been read. A host that wants a different ceiling -- or none
+   * at all -- can only say so afterwards, and it should take effect on what is
+   * already held rather than only on what arrives next: a container that has
+   * just told stx to keep 4MB is not helped by a cache that keeps its current
+   * 32MB until the entries happen to age out.
+   *
+   * A no-op on a cache built without a budget: giving one bytes it never
+   * measured would evict against a total that is always zero.
+   */
+  setMaxBytes(maxBytes: number): void {
+    if (!this.options)
+      return
+
+    this.options = { ...this.options, maxBytes }
+    while (this.bytes > maxBytes && this.cache.size > 0) {
+      const oldestKey = this.cache.keys().next().value
+      if (oldestKey === undefined)
+        break
+      this.delete(oldestKey)
+    }
   }
 
   /**

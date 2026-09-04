@@ -31,6 +31,7 @@ export const defaultConfig: StxConfig = {
   stateDir: DEFAULT_STATE_DIR,
   cachePath: '.stx/cache',
   cacheVersion: '1.0.0',
+  componentRenderCacheBytes: 32 * 1024 * 1024,
 
   // ==========================================================================
   // SSG Build Configuration (Static Site Generation)
