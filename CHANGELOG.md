@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.269...v0.2.270)
+
+## ✨ Features
+
+- **images**: optimize public assets during static builds ([e8dd161](https://github.com/stacksjs/stx/commit/e8dd161)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.270 ([9bad0ae](https://github.com/stacksjs/stx/commit/9bad0ae)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.268...v0.2.269)
 
 ## 🐛 Bug Fixes
