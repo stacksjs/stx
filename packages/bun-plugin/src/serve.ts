@@ -1166,6 +1166,8 @@ export async function serve(options: ServeOptions): Promise<void> {
   const stxModule = options.stxModule
     ? Promise.resolve(options.stxModule)
     : defaultStxModule
+  const imageDeliveryOutputDir = stateDir(process.cwd(), 'image-delivery')
+  const imageDeliveryRoot = nodePath.join(imageDeliveryOutputDir, '_stx', 'images')
 
   // Synchronously-reachable handle to the resolved stx module, so the file
   // watcher can clear stx's framework-level dev caches without awaiting.
@@ -3283,6 +3285,52 @@ function __stxOverlay(errs){
                   return new Response(content, { headers })
                 }
 
+                // Responsive images generated for serve mode. SSG writes the
+                // same URL namespace into dist; a dynamic production server has
+                // no dist directory, so it prepares the catalog in framework
+                // state and serves those content-addressed files directly.
+                // Keep this ahead of application hooks and catch-all routes:
+                // framework-owned assets must not be intercepted by either.
+                if ((req.method === 'GET' || req.method === 'HEAD') && path.startsWith('/_stx/images/')) {
+                  let decodedPath: string
+                  try {
+                    decodedPath = decodeURIComponent(path.slice('/_stx/images/'.length))
+                  }
+                  catch {
+                    return new Response('Invalid image path', { status: 400 })
+                  }
+
+                  if (!decodedPath || decodedPath.includes('\0'))
+                    return new Response('Invalid image path', { status: 400 })
+
+                  const resolvedPath = nodePath.resolve(imageDeliveryRoot, decodedPath)
+                  if (!resolvedPath.startsWith(`${imageDeliveryRoot}${nodePath.sep}`))
+                    return new Response('Invalid image path', { status: 400 })
+
+                  try {
+                    const file = Bun.file(resolvedPath)
+                    if (await file.exists()) {
+                      const stat = await file.stat().catch(() => null)
+                      if (stat && !stat.isDirectory()) {
+                        const ext = resolvedPath.split('.').pop()?.toLowerCase()
+                        const headers = {
+                          'Content-Type': staticContentTypes[ext || ''] || 'application/octet-stream',
+                          'Cache-Control': 'public, max-age=31536000, immutable',
+                          ...corsHeaders,
+                        }
+                        return req.method === 'HEAD'
+                          ? new Response(null, { headers })
+                          : new Response(file, { headers })
+                      }
+                    }
+                  }
+                  catch {
+                    // Missing or unreadable generated file — return a real 404
+                    // instead of letting an application catch-all render HTML.
+                  }
+                  return new Response('Image not found', { status: 404 })
+                }
+
                 // The store bundle on its own, for store HMR (#1877 ask 4). It is
                 // normally inlined into the page; the HMR client needs it as a
                 // standalone fetch so an edit can be applied without a reload.
@@ -4156,18 +4204,26 @@ function __stxOverlay(errs){
     console.warn(`\x1b[33m[stx]\x1b[0m port ${port} in use — using \x1b[1m${actualPort}\x1b[0m instead`)
   }
 
-  // Now that the socket is listening, derive the image placeholders. Ordering
+  // Now that the socket is listening, derive placeholders and prepare the
+  // responsive image catalog. Ordering
   // is the whole point: the health check only asks whether something is bound,
   // and the first request waits on `placeholdersReady` anyway — so this costs
   // nothing a visitor sees, and no longer costs the deploy.
   void (async () => {
     try {
-      const { warmImagePlaceholders } = await import('@stacksjs/stx')
-      const derived = await warmImagePlaceholders(nodePath.resolve(process.cwd(), publicDir), {
-        cachePath: stateDir(process.cwd(), 'image-placeholders.json'),
-      })
+      const stx = await stxModule
+      const publicRoot = nodePath.resolve(process.cwd(), publicDir)
+      const [placeholderResult, deliveryResult] = await Promise.allSettled([
+        stx.warmImagePlaceholders(publicRoot, {
+          cachePath: stateDir(process.cwd(), 'image-placeholders.json'),
+        }),
+        stx.prepareImageDelivery(publicRoot, imageDeliveryOutputDir),
+      ])
+      const derived = placeholderResult.status === 'fulfilled' ? placeholderResult.value : 0
       if (derived > 0 && !production)
         console.log(`[stx] derived ${derived} image placeholder(s)`)
+      if (deliveryResult.status === 'fulfilled' && deliveryResult.value.count > 0 && !production)
+        console.log(`[stx] optimized ${deliveryResult.value.count} image(s) for responsive delivery`)
     }
     catch {
       // No codec or no public directory. <StxImage> falls back to a flat colour.

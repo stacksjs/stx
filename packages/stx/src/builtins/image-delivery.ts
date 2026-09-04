@@ -76,11 +76,16 @@ export async function prepareImageDelivery(
   publicDir: string,
   outputDir: string,
 ): Promise<{ count: number, fingerprint: string }> {
-  clearImageDeliveryCatalog()
-  if (!publicDir || !fs.existsSync(publicDir)) return { count: 0, fingerprint: '' }
+  if (!publicDir || !fs.existsSync(publicDir)) {
+    clearImageDeliveryCatalog()
+    return { count: 0, fingerprint: '' }
+  }
 
   const files = await collectRasterImages(publicDir)
-  if (files.length === 0) return { count: 0, fingerprint: '' }
+  if (files.length === 0) {
+    clearImageDeliveryCatalog()
+    return { count: 0, fingerprint: '' }
+  }
 
   const catalog = await createImageDeliveryCatalog({
     entries: files.map(file => ({
@@ -98,6 +103,9 @@ export async function prepareImageDelivery(
     concurrency: 4,
   })
 
+  // Swap the complete catalog in atomically. The production server may refresh
+  // this after a watched public image changes; clearing it before codecs finish
+  // creates a window where concurrent renders silently fall back to originals.
   deliveryCatalog = new Map(Object.entries(catalog.entries))
   return { count: files.length, fingerprint: catalog.fingerprint }
 }

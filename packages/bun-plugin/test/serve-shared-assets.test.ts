@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bu
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { encode } from 'ts-images'
 
 setDefaultTimeout(60_000)
 
@@ -25,7 +26,7 @@ beforeAll(async () => {
   )
   await Bun.write(
     path.join(dir, 'views', 'index.stx'),
-    '<script>const count = state(0)</script><main class="flex">{{ count() }}<ProjectPanel>Project component</ProjectPanel><FactoryProbe /><FactoryProbe /><script data-stx-scoped client>window.__fragmentProbeRuns = (window.__fragmentProbeRuns || 0) + 1</script></main>',
+    '<script>const count = state(0)</script><main class="flex">{{ count() }}<ProjectPanel>Project component</ProjectPanel><FactoryProbe /><FactoryProbe /><Image src="/images/hero.png" alt="Responsive hero" /><script data-stx-scoped client>window.__fragmentProbeRuns = (window.__fragmentProbeRuns || 0) + 1</script></main>',
   )
   await Bun.write(
     path.join(dir, 'views', '[...all].stx'),
@@ -35,6 +36,14 @@ beforeAll(async () => {
     path.join(dir, 'public', 'images', 'favicon.svg'),
     '<svg data-public-favicon></svg>',
   )
+  const pixels = new Uint8Array(32 * 16 * 4)
+  for (let offset = 0; offset < pixels.length; offset += 4) {
+    pixels[offset] = (offset * 3) % 256
+    pixels[offset + 1] = (offset * 7) % 256
+    pixels[offset + 2] = (offset * 11) % 256
+    pixels[offset + 3] = 255
+  }
+  await Bun.write(path.join(dir, 'public', 'images', 'hero.png'), await encode({ data: pixels, width: 32, height: 16, channels: 4 }, 'png'))
   await Bun.write(path.join(dir, 'driver.ts'), `import { serve } from ${JSON.stringify(SERVE_SRC)}
 
 serve({
@@ -86,6 +95,21 @@ describe('serve shared STX assets', () => {
     expect(html).toContain('<section data-project-component>Project component</section>')
     expect(html).not.toContain('<ProjectPanel')
     expect(html).not.toContain('<FactoryProbe')
+  })
+
+  it('renders and serves optimized responsive images in dynamic serve mode', async () => {
+    const html = await (await fetch(BASE)).text()
+    const generatedUrl = html.match(/\/(?:_stx\/images\/[^" ]+\.(?:avif|webp|png))/)?.[0]
+
+    expect(html).toContain('<picture>')
+    expect(html).toContain('background-image:url(data:image/bmp;base64,')
+    expect(generatedUrl).toBeTruthy()
+
+    const response = await fetch(`${BASE}${generatedUrl}`)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('cache-control')).toBe('public, max-age=31536000, immutable')
+    expect(response.headers.get('content-type')).toMatch(/^image\/(?:avif|webp|png)$/)
+    expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0)
   })
 
   it('preflights every supported API method and dashboard request header', async () => {
