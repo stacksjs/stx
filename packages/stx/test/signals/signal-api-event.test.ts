@@ -32,6 +32,25 @@ describe('signal API event handlers', () => {
     expect(open()).toBe(true)
   })
 
+  it('keeps a signal raw when an inline handler calls a composable toggle method', async () => {
+    const dark = window.stx.state(false)
+    dark.toggle = () => dark.set(!dark())
+    window.__stx_setup_signal_toggle = () => ({ dark })
+
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_signal_toggle">
+        <button type="button">Toggle theme</button>
+      </main>
+    `
+    document.querySelector('button').setAttribute('@click', 'dark.toggle()')
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    document.querySelector('button').dispatchEvent(new window.Event('click', { bubbles: true }))
+    expect(dark()).toBe(true)
+  })
+
   it('keeps a signal raw when an inline handler assigns its value property', async () => {
     const active = window.stx.state(false)
     window.__stx_setup_signal_value = () => ({ active })

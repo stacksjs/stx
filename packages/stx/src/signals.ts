@@ -1965,7 +1965,7 @@ catch (e) {
 
   function expressionUsesSignalMethod(expression, name) {
     var escapedName = name.replace(/[-/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&');
-    return new RegExp('(?:^|[^\\\\w$])' + escapedName + '\\\\s*\\\\.\\\\s*(?:set|update|subscribe)\\\\s*\\\\(').test(expression);
+    return new RegExp('(?:^|[^\\\\w$])' + escapedName + '\\\\s*\\\\.\\\\s*(?:set|update|subscribe|toggle)\\\\s*\\\\(').test(expression);
   }
 
   function expressionUsesSignalValue(expression, name) {
