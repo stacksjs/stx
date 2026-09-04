@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.273...v0.2.274)
+
+## 🐛 Bug Fixes
+
+- **signals**: preserve composable toggle handlers ([31169dc](https://github.com/stacksjs/stx/commit/31169dc)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.274 ([c535479](https://github.com/stacksjs/stx/commit/c535479)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.272...v0.2.273)
 
 ## 🐛 Bug Fixes
