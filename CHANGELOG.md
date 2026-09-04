@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.270...v0.2.271)
+
+## 🐛 Bug Fixes
+
+- **images**: prefer efficient delivery formats ([cbeadfc](https://github.com/stacksjs/stx/commit/cbeadfc)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.271 ([c3b1f3c](https://github.com/stacksjs/stx/commit/c3b1f3c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.269...v0.2.270)
 
 ## ✨ Features
