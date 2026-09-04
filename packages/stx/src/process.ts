@@ -57,8 +57,9 @@ import { processVueTemplate } from './vue-template'
 import { processDynamicComponents } from './dynamic-components'
 import { dedupeScopedStyles, processScopedStyles } from './style-scoping'
 import { injectColorModeBootScript, normalizeCriticalHeadOrder } from './color-mode-boot'
-import { injectBuildId } from './build-id'
-import { applyHtmlAttrs, ensureDocumentShell, hasDocumentShell, injectCloakStyle, injectConfigHeadTags, mergeHtmlAttrs, metaDedupKey, startsDocument } from './document-shell'
+import { buildIdFragment } from './build-id'
+import { applyHeadInjections, createHeadInjections } from './head-injection'
+import { applyHtmlAttrs, cloakStyleFragment, ensureDocumentShell, hasDocumentShell, injectConfigHeadTags, mergeHtmlAttrs, metaDedupKey, startsDocument } from './document-shell'
 
 // Extracted modules
 import { hasSignalsSyntax, convertSignalDirectivesToAttributes, convertSignalLoopsToAttributes, preEvalLiteralReactiveIfs, processSignals } from './signal-processing'
@@ -568,19 +569,34 @@ export async function processDirectives(
       // runtime's late injection covers those). Covers layout-supplied heads
       // that don't go through generateDocumentShell.
       if (isTopLevel) {
-        result = injectCloakStyle(result)
-        // Same reasoning for the color-mode boot script (#1794), one step
-        // earlier in the head: the theme has to be on the root element before
-        // first paint, which the post-hydration useColorMode cannot do. Also
+        // The cloak style and the build-id meta are each a few hundred bytes,
+        // and splicing them separately rebuilt the whole document once each --
+        // 212KB allocated per insertion on a page that size (#1945). Collected
+        // and applied together, they share one rebuild, and a page needing
+        // neither is not rebuilt at all.
+        const headInjections = createHeadInjections()
+        const cloak = cloakStyleFragment(result)
+        if (cloak !== null)
+          headInjections.beforeClose.push(cloak)
+        // Stamp the build that rendered this page, so the router can spot a
+        // loaded runtime being asked to hydrate a fragment from a newer build
+        // and fall back to a full navigation instead (#1772).
+        const buildId = buildIdFragment(result)
+        if (buildId !== null)
+          headInjections.afterOpen.push(buildId)
+        result = applyHeadInjections(result, headInjections)
+
+        // The color-mode boot script (#1794) keeps its own splice: it does not
+        // anchor to the head's edges like the two above, but to the position
+        // after a leading <meta charset>, so that the encoding declaration
+        // stays at the top of the document. Folding it into the shared rebuild
+        // would move it ahead of the charset. It also has to be live before
+        // first paint, which the post-hydration useColorMode cannot do, and is
         // idempotent — a no-op on auto-shell pages, where generateDocumentShell
         // already positioned it, and on any page when app.colorMode is unset.
         const colorModeConfig = (options as any).app?.colorMode
         if (colorModeConfig)
           result = injectColorModeBootScript(result, colorModeConfig)
-        // Stamp the build that rendered this page, so the router can spot a
-        // loaded runtime being asked to hydrate a fragment from a newer build
-        // and fall back to a full navigation instead (#1772).
-        result = injectBuildId(result)
         result = placeSignalsRuntimeBeforeScripts(result)
       }
 

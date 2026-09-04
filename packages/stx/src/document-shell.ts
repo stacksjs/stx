@@ -269,12 +269,28 @@ export function applyHtmlAttrs(html: string, htmlAttrs: Record<string, string> =
  * the runtime's late injection.
  */
 export function injectCloakStyle(html: string): string {
-  if (html.includes('data-stx-cloak'))
+  const fragment = cloakStyleFragment(html)
+  if (fragment === null)
     return html
   const headCloseIdx = html.lastIndexOf('</head>')
-  if (headCloseIdx === -1)
-    return html
-  return `${html.slice(0, headCloseIdx)}${CLOAK_STYLE}\n${html.slice(headCloseIdx)}`
+  return `${html.slice(0, headCloseIdx)}${fragment}${html.slice(headCloseIdx)}`
+}
+
+/**
+ * The same decision as `injectCloakStyle`, without the splice
+ * (stacksjs/stx#1945).
+ *
+ * Returns what belongs before `</head>`, or null when nothing does -- the style
+ * is already present, or there is no head to put it in. A caller collecting
+ * several of these rebuilds the document once instead of once each; the guards
+ * stay here, because whether this applies is this module's business.
+ */
+export function cloakStyleFragment(html: string): string | null {
+  if (html.includes('data-stx-cloak'))
+    return null
+  if (html.lastIndexOf('</head>') === -1)
+    return null
+  return `${CLOAK_STYLE}\n`
 }
 
 /**

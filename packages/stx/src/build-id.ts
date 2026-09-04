@@ -62,13 +62,26 @@ export function __setBuildIdForTest(id: string | null): void {
  * id in a response header instead, since they have nowhere to put a meta.
  */
 export function injectBuildId(html: string, buildId: string = getBuildId()): string {
-  if (html.includes(`name="${BUILD_ID_META}"`))
+  const fragment = buildIdFragment(html, buildId)
+  if (fragment === null)
     return html
 
-  const headOpen = /<head\b[^>]*>/i.exec(html)
-  if (!headOpen)
-    return html
-
+  const headOpen = /<head\b[^>]*>/i.exec(html)!
   const insertAt = headOpen.index + headOpen[0].length
-  return `${html.slice(0, insertAt)}\n  <meta name="${BUILD_ID_META}" content="${buildId}">${html.slice(insertAt)}`
+  return `${html.slice(0, insertAt)}${fragment}${html.slice(insertAt)}`
+}
+
+/**
+ * The same decision as `injectBuildId`, without the splice (stacksjs/stx#1945).
+ *
+ * Returns what belongs immediately after the `<head>` open tag, or null when
+ * the id is already stamped or the document has no head -- an SPA fragment
+ * carries it in a response header instead, having nowhere to put a meta.
+ */
+export function buildIdFragment(html: string, buildId: string = getBuildId()): string | null {
+  if (html.includes(`name="${BUILD_ID_META}"`))
+    return null
+  if (!/<head\b[^>]*>/i.test(html))
+    return null
+  return `\n  <meta name="${BUILD_ID_META}" content="${buildId}">`
 }
