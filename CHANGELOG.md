@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.272...v0.2.273)
+
+## 🐛 Bug Fixes
+
+- **images**: optimize dynamic serve delivery ([78fcaf3](https://github.com/stacksjs/stx/commit/78fcaf3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.273 ([c8a7674](https://github.com/stacksjs/stx/commit/c8a7674)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.271...v0.2.272)
 
 ## 🐛 Bug Fixes
