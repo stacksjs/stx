@@ -45,7 +45,7 @@ const VOID_TAGS = new Set([
  * owns the iteration scope, so bindings on the loop element and its descendants
  * must remain intact until each row is cloned in the browser.
  */
-function reactiveLoopRanges(template: string): Array<[number, number]> {
+export function reactiveLoopRanges(template: string): Array<[number, number]> {
   const ranges: Array<[number, number]> = []
   const openingTag = /<([a-zA-Z][a-zA-Z0-9-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)\s*\/?>/g
   let match: RegExpExecArray | null

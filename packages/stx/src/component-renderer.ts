@@ -29,6 +29,7 @@ import { renderComponentWithSlot, userComponentFileExists } from './utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluateObject, freeIdentifiers } from './safe-evaluator'
 import { BOOLEAN_ATTRIBUTE_SENTINEL } from './prop-sentinels'
 import { COMPONENT_PASSTHROUGH_X_ATTRS } from './runtime-globals'
+import { reactiveLoopRanges } from './server-bindings'
 import { stripCommentsAndLiterals } from './strip-literals'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -99,6 +100,7 @@ function parseComponentProps(
   rawProps: Record<string, string>,
   context: Record<string, any>,
   options: StxOptions,
+  deferDynamicToClient = false,
 ): ResolvedProps {
   const resolved: ResolvedProps = {
     static: {},
@@ -215,6 +217,17 @@ function parseComponentProps(
       // context evaluates to false instead of throwing, which used to erase the
       // directive and render every component branch.
       if (propName === 'if' || propName === 'for' || propName === 'show') {
+        resolved.clientReactive[propName] = expression
+        continue
+      }
+
+      // A reactive loop owns the scope of every descendant binding. The
+      // server context may contain a same-named placeholder object, which can
+      // make expressions appear to evaluate successfully while baking broken
+      // values such as `undefined logo` into component output. Native element
+      // bindings already receive this protection in server-bindings; component
+      // props need the same boundary.
+      if (deferDynamicToClient) {
         resolved.clientReactive[propName] = expression
         continue
       }
@@ -1002,6 +1015,7 @@ async function processCustomElementTags(
   // component-processing.ts for defense.
   const stashed = stashScriptElements(output)
   output = stashed.output
+  const clientLoopRanges = reactiveLoopRanges(output)
 
   // Process kebab-case components (e.g., <my-component />)
   const kebabPattern = /[a-z][a-z0-9]*-[a-z0-9-]*/
@@ -1050,7 +1064,8 @@ async function processCustomElementTags(
       const rawProps = parseAllAttributes(resolveTagConditionals(tag.attributes, context, filePath))
 
       // Categorize into ResolvedProps
-      const resolvedProps = parseComponentProps(rawProps, context, options)
+      const inClientLoop = clientLoopRanges.some(([start, end]) => tag.startIndex >= start && tag.startIndex < end)
+      const resolvedProps = parseComponentProps(rawProps, context, options, inClientLoop)
 
       // --- Check if this is a builtin component ---
       // A project-authored component file of the same name takes precedence so
