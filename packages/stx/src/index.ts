@@ -96,6 +96,11 @@ export {
   warmImagePlaceholders,
   type ImagePlaceholder,
 } from './builtins/image-placeholder'
+export {
+  clearImageDeliveryCatalog,
+  getImageDelivery,
+  prepareImageDelivery,
+} from './builtins/image-delivery'
 
 // Core functionality - these are the primary modules
 export * from './reactivity'

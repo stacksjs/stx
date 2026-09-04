@@ -1193,6 +1193,17 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
       }
     }
 
+    // Build real responsive variants before rendering. <Image> is a
+    // synchronous builtin, so it reads this catalog while expanding templates.
+    // The content fingerprint joins the build-wide salt so changed image bytes
+    // can never reuse cached HTML containing stale content-addressed URLs.
+    const { prepareImageDelivery } = await import('./builtins/image-delivery')
+    const imageDelivery = await prepareImageDelivery(cfg.publicDir, cfg.outputDir)
+    if (imageDelivery.count > 0) {
+      console.log(`Optimized ${imageDelivery.count} image(s) for responsive delivery`)
+      cacheSalt = [cacheSalt, imageDelivery.fingerprint].filter(Boolean).join(':')
+    }
+
     const buildCache = new BuildCache(cfg.cacheDir, cacheSalt)
     if (cfg.cache) {
       await buildCache.load()
@@ -1253,23 +1264,6 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     }
 
     result.totalPages = pagesToGenerate.length
-
-    // Derive image placeholders BEFORE any page renders. <StxImage> reads them
-    // with a synchronous lookup — a builtin renders inside a synchronous pass —
-    // so this is the only moment the work can happen. Cached against file
-    // mtime and size, which makes it a no-op on every build after the first.
-    try {
-      const { warmImagePlaceholders } = await import('./builtins/image-placeholder')
-      const { stateDir } = await import('./state-dir')
-      const warmed = await warmImagePlaceholders(cfg.publicDir, {
-        cachePath: stateDir(process.cwd(), 'image-placeholders.json'),
-      })
-      if (warmed > 0) console.log(`Derived ${warmed} image placeholder(s)`)
-    }
-    catch {
-      // No codec, no public directory, nothing to derive from. <StxImage>
-      // falls back to a flat colour and the build carries on.
-    }
 
     console.log(`Generating ${result.totalPages} pages...`)
 

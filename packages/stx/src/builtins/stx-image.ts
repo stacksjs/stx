@@ -28,6 +28,7 @@
 
 import type { BuiltinComponentDef, ResolvedProps, RenderContext } from '../component-registry'
 import { forwardResolvedAttrs, forwardStaticAttrs } from './attrs'
+import { getImageDelivery } from './image-delivery'
 import { getImagePlaceholder } from './image-placeholder'
 
 // Default responsive breakpoints (matching Tailwind defaults)
@@ -198,18 +199,19 @@ function generateBlurPlaceholder(width: number, height: number, color = '#e5e7eb
 
 export const StxImageBuiltin: BuiltinComponentDef = {
   name: 'StxImage',
-  aliases: ['stx-image', 'stx-img'],
+  aliases: ['Image', 'stx-image', 'stx-img'],
 
   render(props: ResolvedProps, _slotContent: string, _ctx: RenderContext): string {
     const src = resolveProp(props, 'src') || ''
+    const delivery = getImageDelivery(src)
     const alt = resolveProp(props, 'alt') || ''
-    const width = resolveProp(props, 'width')
-    const height = resolveProp(props, 'height')
+    const width = resolveProp(props, 'width') || (delivery ? String(delivery.source.width) : undefined)
+    const height = resolveProp(props, 'height') || (delivery ? String(delivery.source.height) : undefined)
     const sizes = resolveProp(props, 'sizes')
     const srcset = resolveProp(props, 'srcset')
     const densities = resolveProp(props, 'densities')
     const format = resolveProp(props, 'format')
-    const placeholder = resolveProp(props, 'placeholder')
+    const placeholder = resolveProp(props, 'placeholder') || (delivery ? 'thumbhash' : undefined)
     const placeholderColor = resolveProp(props, 'placeholderColor') || '#e5e7eb'
     const provider = resolveProp(props, 'provider')
     const className = resolveProp(props, 'class') || resolveProp(props, 'className') || ''
@@ -218,7 +220,10 @@ export const StxImageBuiltin: BuiltinComponentDef = {
 
     const lazy = resolveBoolProp(props, 'lazy', true)
     const preload = resolveBoolProp(props, 'preload', false)
-    const usePicture = resolveBoolProp(props, 'picture', false) || !!format
+    const priority = resolveBoolProp(props, 'priority', false)
+    const explicitLoading = resolveProp(props, 'loading')
+    const decoding = resolveProp(props, 'decoding') || 'async'
+    const usePicture = !!delivery || resolveBoolProp(props, 'picture', false) || !!format
 
     const numWidth = width ? Number.parseInt(width) : undefined
     const numHeight = height ? Number.parseInt(height) : undefined
@@ -227,7 +232,11 @@ export const StxImageBuiltin: BuiltinComponentDef = {
     let finalSrcset = srcset || ''
     let finalSizes = ''
 
-    if (!finalSrcset && sizes) {
+    if (delivery) {
+      finalSrcset = delivery.sources[delivery.fallback.format] || ''
+      finalSizes = sizes ? parseSizes(sizes) : '100vw'
+    }
+    else if (!finalSrcset && sizes && provider && provider !== 'local' && provider !== 'static') {
       // Auto-generate responsive srcset from breakpoint sizes
       finalSrcset = generateSrcset(src, DEFAULT_SRCSET_WIDTHS, provider, format)
       finalSizes = parseSizes(sizes)
@@ -260,7 +269,9 @@ export const StxImageBuiltin: BuiltinComponentDef = {
     // run, which keeps a build without the image codec working exactly as it
     // did before.
     if (placeholder === 'blur' || placeholder === 'color' || placeholder === 'thumbhash') {
-      const derived = getImagePlaceholder(src)
+      const derived = delivery?.placeholder
+        ? { dataUrl: delivery.placeholder.dataUrl, color: placeholderColor }
+        : getImagePlaceholder(src)
 
       if (derived && placeholder === 'color') {
         styles.push(`background-color:${derived.color}`)
@@ -294,7 +305,7 @@ export const StxImageBuiltin: BuiltinComponentDef = {
     }
 
     // ── Transform src for provider ───────────────────────────────
-    const finalSrc = transformSrc(src, numWidth, numHeight, provider, format)
+    const finalSrc = delivery?.fallback.url || transformSrc(src, numWidth, numHeight, provider, format)
 
     // ── Build <img> attributes ───────────────────────────────────
     const imgAttrs: string[] = []
@@ -304,8 +315,10 @@ export const StxImageBuiltin: BuiltinComponentDef = {
 
     if (width) imgAttrs.push(`width="${escapeAttr(width)}"`)
     if (height) imgAttrs.push(`height="${escapeAttr(height)}"`)
-    if (lazy) imgAttrs.push('loading="lazy"')
-    imgAttrs.push('decoding="async"')
+    const loading = explicitLoading || (priority || preload ? 'eager' : lazy ? 'lazy' : '')
+    if (loading) imgAttrs.push(`loading="${escapeAttr(loading)}"`)
+    if (priority) imgAttrs.push('fetchpriority="high"')
+    imgAttrs.push(`decoding="${escapeAttr(decoding)}"`)
     if (className) imgAttrs.push(`class="${escapeAttr(className)}"`)
     if (styles.length > 0) imgAttrs.push(`style="${escapeAttr(styles.join(';'))}"`)
     if (finalSrcset) imgAttrs.push(`srcset="${escapeAttr(finalSrcset)}"`)
@@ -315,7 +328,7 @@ export const StxImageBuiltin: BuiltinComponentDef = {
     const consumedStatic = new Set([
       'src', 'alt', 'width', 'height', 'lazy', 'sizes', 'srcset',
       'placeholder', 'placeholderColor', 'class', 'className', 'style',
-      'format', 'provider', 'quality', 'densities', 'preload', 'picture',
+      'format', 'provider', 'quality', 'densities', 'preload', 'priority', 'picture', 'loading', 'decoding',
     ])
     imgAttrs.push(...forwardStaticAttrs(props, consumedStatic))
     imgAttrs.push(...forwardResolvedAttrs(props, consumedStatic))
@@ -334,8 +347,17 @@ export const StxImageBuiltin: BuiltinComponentDef = {
     if (usePicture) {
       const sources: string[] = []
 
+      if (delivery) {
+        for (const candidate of ['avif', 'webp'] as const) {
+          const candidateSrcset = delivery.sources[candidate]
+          if (candidateSrcset) {
+            sources.push(`<source type="image/${candidate}" srcset="${escapeAttr(candidateSrcset)}"${finalSizes ? ` sizes="${escapeAttr(finalSizes)}"` : ''} />`)
+          }
+        }
+      }
+
       // Add avif source if format is avif or auto
-      if (format === 'avif' || format === 'auto') {
+      if (!delivery && (format === 'avif' || format === 'auto')) {
         const avifSrc = transformSrc(src, numWidth, numHeight, provider, 'avif')
         const avifSrcset = finalSrcset
           ? generateSrcset(src, DEFAULT_SRCSET_WIDTHS, provider, 'avif')
@@ -344,7 +366,7 @@ export const StxImageBuiltin: BuiltinComponentDef = {
       }
 
       // Add webp source
-      if (format === 'webp' || format === 'auto') {
+      if (!delivery && (format === 'webp' || format === 'auto')) {
         const webpSrc = transformSrc(src, numWidth, numHeight, provider, 'webp')
         const webpSrcset = finalSrcset
           ? generateSrcset(src, DEFAULT_SRCSET_WIDTHS, provider, 'webp')
