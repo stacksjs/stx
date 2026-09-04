@@ -26,6 +26,7 @@
  * @module builtins/stx-image
  */
 
+import type { ImageDeliveryManifest } from 'ts-images/delivery'
 import type { BuiltinComponentDef, ResolvedProps, RenderContext } from '../component-registry'
 import { forwardResolvedAttrs, forwardStaticAttrs } from './attrs'
 import { getImageDelivery } from './image-delivery'
@@ -64,6 +65,22 @@ function resolveBoolProp(props: ResolvedProps, key: string, defaultVal = false):
   const stat = props.static[key]
   if (stat !== undefined) return stat !== 'false' && stat !== false
   return defaultVal
+}
+
+function efficientDeliverySources(delivery: ImageDeliveryManifest): Array<{ format: 'avif' | 'webp', srcset: string }> {
+  const bytesByFormat = (format: string) => delivery.variants
+    .filter(variant => variant.format === format)
+    .reduce((total, variant) => total + variant.bytes, 0)
+  const fallbackBytes = bytesByFormat(delivery.fallback.format)
+
+  return (['avif', 'webp'] as const)
+    .map(format => ({ format, srcset: delivery.sources[format] || '', bytes: bytesByFormat(format) }))
+    // A modern extension is not automatically an optimization. Browsers use
+    // the first supported <source>, so omit any family that costs at least as
+    // much as the fallback and put the smallest useful family first.
+    .filter(candidate => candidate.srcset && candidate.bytes > 0 && candidate.bytes < fallbackBytes)
+    .sort((a, b) => a.bytes - b.bytes)
+    .map(({ format, srcset }) => ({ format, srcset }))
 }
 
 /**
@@ -348,11 +365,8 @@ export const StxImageBuiltin: BuiltinComponentDef = {
       const sources: string[] = []
 
       if (delivery) {
-        for (const candidate of ['avif', 'webp'] as const) {
-          const candidateSrcset = delivery.sources[candidate]
-          if (candidateSrcset) {
-            sources.push(`<source type="image/${candidate}" srcset="${escapeAttr(candidateSrcset)}"${finalSizes ? ` sizes="${escapeAttr(finalSizes)}"` : ''} />`)
-          }
+        for (const candidate of efficientDeliverySources(delivery)) {
+          sources.push(`<source type="image/${candidate.format}" srcset="${escapeAttr(candidate.srcset)}"${finalSizes ? ` sizes="${escapeAttr(finalSizes)}"` : ''} />`)
         }
       }
 

@@ -18,17 +18,19 @@ describe('build-time Image delivery', () => {
     outputDir = join(tempDir, 'dist')
     await mkdir(join(publicDir, 'images'), { recursive: true })
 
-    const pixels = new Uint8Array([
-      240, 80, 40, 255,
-      40, 100, 240, 255,
-      30, 180, 100, 255,
-      250, 200, 40, 255,
-      250, 200, 40, 255,
-      30, 180, 100, 255,
-      40, 100, 240, 255,
-      240, 80, 40, 255,
-    ])
-    const png = await encode({ data: pixels, width: 4, height: 2, channels: 4 }, 'png')
+    const width = 64
+    const height = 32
+    const pixels = new Uint8Array(width * height * 4)
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const offset = (y * width + x) * 4
+        pixels[offset] = (x * 7 + y * 3) % 256
+        pixels[offset + 1] = (x * 2 + y * 11) % 256
+        pixels[offset + 2] = (x * 13 + y * 5) % 256
+        pixels[offset + 3] = 255
+      }
+    }
+    const png = await encode({ data: pixels, width, height, channels: 4 }, 'png')
     await writeFile(join(publicDir, 'images', 'hero.png'), png)
   })
 
@@ -52,10 +54,9 @@ describe('build-time Image delivery', () => {
     )
 
     expect(html).toContain('<picture>')
-    expect(html).toContain('type="image/avif"')
-    expect(html).toContain('type="image/webp"')
-    expect(html).toContain('width="4"')
-    expect(html).toContain('height="2"')
+    expect(html).toMatch(/type="image\/(avif|webp)"/)
+    expect(html).toContain('width="64"')
+    expect(html).toContain('height="32"')
     expect(html).toContain('sizes="100vw"')
     expect(html).toContain('background-image:url(data:image/bmp;base64,')
     expect(html).toContain('/_stx/images/')
