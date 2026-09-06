@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.275...v0.2.276)
+
+## 🐛 Bug Fixes
+
+- **images**: skip unreadable delivery assets ([3fac398](https://github.com/stacksjs/stx/commit/3fac398)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.276 ([7335144](https://github.com/stacksjs/stx/commit/7335144)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.274 ([ba8710c](https://github.com/stacksjs/stx/commit/ba8710c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/heads/main' ([5ff7bc9](https://github.com/stacksjs/stx/commit/5ff7bc9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.274...v0.2.275)
 
 ## ✨ Features
