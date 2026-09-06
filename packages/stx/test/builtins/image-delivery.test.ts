@@ -62,6 +62,15 @@ describe('build-time Image delivery', () => {
     expect(html).toContain('/_stx/images/')
   })
 
+  it('skips an unreadable raster without failing every valid image', async () => {
+    await writeFile(join(publicDir, 'images', 'broken.png'), 'not image bytes')
+
+    const result = await prepareImageDelivery(publicDir, outputDir)
+
+    expect(result.count).toBe(1)
+    expect(result.fingerprint).toHaveLength(64)
+  })
+
   it('keeps a reactive source on an img root instead of binding src to picture', async () => {
     clearImageDeliveryCatalog()
     const options = { ...defaultConfig, componentsDir: join(tempDir, 'components') } as any

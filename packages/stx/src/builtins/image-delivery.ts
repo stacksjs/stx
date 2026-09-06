@@ -2,6 +2,7 @@ import type { ImageDeliveryManifest } from 'ts-images/delivery'
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
+import { generateThumbHash } from 'ts-images'
 import { createImageDeliveryCatalog } from 'ts-images/delivery'
 
 const RASTER_EXTENSIONS = new Set(['.avif', '.jpeg', '.jpg', '.png', '.webp'])
@@ -39,6 +40,38 @@ async function collectRasterImages(root: string, directory = root): Promise<Arra
     files.push({ absolutePath, relativePath: path.relative(root, absolutePath) })
   }
   return files
+}
+
+type RasterFile = Awaited<ReturnType<typeof collectRasterImages>>[number]
+
+function deliveryEntries(files: RasterFile[]) {
+  return files.map(file => ({
+    key: publicUrl(file.relativePath),
+    input: file.absolutePath,
+    name: catalogName(file.relativePath),
+  }))
+}
+
+async function decodableFiles(files: RasterFile[]): Promise<RasterFile[]> {
+  const supported: RasterFile[] = []
+  const concurrency = 8
+
+  for (let offset = 0; offset < files.length; offset += concurrency) {
+    const batch = files.slice(offset, offset + concurrency)
+    const results = await Promise.all(batch.map(async (file) => {
+      try {
+        await generateThumbHash(file.absolutePath)
+        return file
+      }
+      catch {
+        console.warn(`[stx-images] Skipping unreadable raster: ${file.relativePath}`)
+        return null
+      }
+    }))
+    supported.push(...results.filter((file): file is RasterFile => file !== null))
+  }
+
+  return supported
 }
 
 function normalizeLookupSource(src: string): string | undefined {
@@ -87,25 +120,46 @@ export async function prepareImageDelivery(
     return { count: 0, fingerprint: '' }
   }
 
-  const catalog = await createImageDeliveryCatalog({
-    entries: files.map(file => ({
-      key: publicUrl(file.relativePath),
-      input: file.absolutePath,
-      name: catalogName(file.relativePath),
-    })),
+  const catalogOptions = {
     outDir: path.join(outputDir, '_stx', 'images'),
     baseUrl: DELIVERY_URL,
     widths: DEFAULT_WIDTHS,
-    formats: ['avif', 'webp'],
+    formats: ['avif', 'webp'] as const,
     quality: { avif: 70, webp: 78, jpeg: 82, png: 100 },
     placeholder: true,
     batchConcurrency: 4,
     concurrency: 4,
-  })
+  }
+
+  let optimizedFiles = files
+  let catalog: Awaited<ReturnType<typeof createImageDeliveryCatalog>>
+  try {
+    catalog = await createImageDeliveryCatalog({
+      ...catalogOptions,
+      entries: deliveryEntries(files),
+    })
+  }
+  catch (error) {
+    optimizedFiles = await decodableFiles(files)
+    // If every file decodes independently, this was not a bad input. Preserve
+    // the real catalog error instead of quietly turning an encoder or I/O
+    // failure into an unoptimized build.
+    if (optimizedFiles.length === files.length)
+      throw error
+    if (optimizedFiles.length === 0) {
+      clearImageDeliveryCatalog()
+      return { count: 0, fingerprint: '' }
+    }
+
+    catalog = await createImageDeliveryCatalog({
+      ...catalogOptions,
+      entries: deliveryEntries(optimizedFiles),
+    })
+  }
 
   // Swap the complete catalog in atomically. The production server may refresh
   // this after a watched public image changes; clearing it before codecs finish
   // creates a window where concurrent renders silently fall back to originals.
   deliveryCatalog = new Map(Object.entries(catalog.entries))
-  return { count: files.length, fingerprint: catalog.fingerprint }
+  return { count: optimizedFiles.length, fingerprint: catalog.fingerprint }
 }
