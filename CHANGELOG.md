@@ -1,5 +1,29 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.274...v0.2.275)
+
+## ✨ Features
+
+- **config**: let the host set what the fragment cache may keep (#1945) ([5b91b6a](https://github.com/stacksjs/stx/commit/5b91b6a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+
+## 🐛 Bug Fixes
+
+- **signals**: preserve conditionals around nested loops ([de6e955](https://github.com/stacksjs/stx/commit/de6e955)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **render**: head fragments share one rebuild instead of one each (#1945) ([3eb414a](https://github.com/stacksjs/stx/commit/3eb414a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+
+## 🔧 Chores
+
+- release v0.2.275 ([7687691](https://github.com/stacksjs/stx/commit/7687691)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.274 ([13b9b24](https://github.com/stacksjs/stx/commit/13b9b24)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.273...v0.2.274)
 
 ## 🐛 Bug Fixes
