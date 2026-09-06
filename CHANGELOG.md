@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.277...v0.2.278)
+
+## 🐛 Bug Fixes
+
+- **websocket**: honor broadcasting subscriptions ([ae2e2c0](https://github.com/stacksjs/stx/commit/ae2e2c0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.278 ([afd15f5](https://github.com/stacksjs/stx/commit/afd15f5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.276...v0.2.277)
 
 ## 🐛 Bug Fixes
