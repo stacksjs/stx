@@ -126,6 +126,10 @@ export async function prepareImageDelivery(
     widths: DEFAULT_WIDTHS,
     formats: ['avif', 'webp'] as const,
     quality: { avif: 70, webp: 78, jpeg: 82, png: 100 },
+    // Delivery variants top out at 1920px. Keeping an additional source-sized
+    // variant wastes build time and can exceed a pure TypeScript encoder's
+    // frame limits for otherwise valid, very large source photography.
+    includeOriginal: false,
     placeholder: true,
     batchConcurrency: 4,
     concurrency: 4,

@@ -71,6 +71,23 @@ describe('build-time Image delivery', () => {
     expect(result.fingerprint).toHaveLength(64)
   })
 
+  it('does not send an oversized original frame to responsive encoders', async () => {
+    const width = 4097
+    const height = 8
+    const pixels = new Uint8Array(width * height * 4).fill(127)
+    const file = join(publicDir, 'images', 'wide.png')
+    await writeFile(file, await encode({ data: pixels, width, height, channels: 4 }, 'png'))
+
+    try {
+      const result = await prepareImageDelivery(publicDir, outputDir)
+      expect(result.count).toBe(2)
+      expect(result.fingerprint).toHaveLength(64)
+    }
+    finally {
+      await rm(file)
+    }
+  })
+
   it('keeps a reactive source on an img root instead of binding src to picture', async () => {
     clearImageDeliveryCatalog()
     const options = { ...defaultConfig, componentsDir: join(tempDir, 'components') } as any
