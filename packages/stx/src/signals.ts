@@ -1014,6 +1014,7 @@ finally {
     var reconnectTimer = null;
     var manualClose = false;
     var listeners = {};
+    var subscriptions = {};
 
     function connect() {
       if (ws() && ws().readyState <= 1) return;
@@ -1026,6 +1027,13 @@ finally {
       socket.onopen = function() {
         status.set('OPEN');
         reconnectAttempts = 0;
+        // A channel is commonly selected immediately after useWebSocket(),
+        // while the native socket is still CONNECTING. Keep that intent and
+        // subscribe once the transport is writable. Replaying the set here
+        // also restores channels after an automatic reconnect.
+        for (var channel in subscriptions) {
+          send({ event: 'subscribe', channel: channel });
+        }
         if (options.onOpen) options.onOpen(socket);
       };
 
@@ -1080,7 +1088,11 @@ finally {
     }
 
     function subscribe(channel) {
-      send({ type: 'subscribe', channel: channel });
+      subscriptions[channel] = true;
+      var socket = ws();
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        send({ event: 'subscribe', channel: channel });
+      }
       return {
         listen: function(event, handler) {
           var key = channel + ':' + event;
@@ -1089,7 +1101,8 @@ finally {
           return this;
         },
         leave: function() {
-          send({ type: 'unsubscribe', channel: channel });
+          delete subscriptions[channel];
+          send({ event: 'unsubscribe', channel: channel });
           // Remove all listeners for this channel
           var prefix = channel + ':';
           for (var key in listeners) {
