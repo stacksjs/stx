@@ -257,6 +257,33 @@ describe('convertSignalLoopsToAttributes — server-data detection', () => {
     expect(output).toContain('@foreach (n.parts as part)')
     expect(output).not.toMatch(/@for\s*=/)
   })
+
+  it('keeps an enclosing server conditional intact when converting nested client loops', () => {
+    const input = `
+      @if (arbEvents.length === 0)
+        <p>No arbitrage on the board right now.</p>
+      @else
+        <div>
+          @foreach (arbEvents as ev)
+            <section>
+              @foreach (ev.selections as selection)
+                <span>{{ selection.label }}</span>
+              @endforeach
+            </section>
+          @endforeach
+        </div>
+      @endif
+    `
+    const output = convertSignalLoopsToAttributes(input, {})
+
+    expect(output).toContain('@if (arbEvents.length === 0)')
+    expect(output).toContain('@else')
+    expect(output).toContain('@endif')
+    expect(output).toContain('@for="ev in arbEvents"')
+    expect(output).toContain('@for="selection in ev.selections"')
+    expect(output).not.toContain('@foreach')
+    expect(output).not.toContain('@endforeach')
+  })
 })
 
 /**

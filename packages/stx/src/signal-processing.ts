@@ -926,18 +926,18 @@ export function preEvalLiteralReactiveIfs(template: string): string {
 export function convertSignalLoopsToAttributes(template: string, context?: Record<string, any>): string {
   let output = template
 
-  // Pattern to match @for(expr)...@endfor or @foreach(expr)...@endforeach
-  const forDirectiveStart = /@(for|foreach)\s*\(/g
-  let match: RegExpExecArray | null
-  const replacements: Array<{ start: number, end: number, replacement: string }> = []
-  // Loops left for processLoops, with the variables they bind and the span they
-  // cover. A nested loop iterating one of those variables — `@foreach (ev.rows as r)`
-  // inside `@foreach (board as ev)` — is server-side too, even though `ev` is a loop
-  // binding that never appears in the context object. Matches arrive in document
-  // order, so an enclosing loop is always recorded before the loops inside it.
-  const serverScopes: Array<{ start: number, end: number, vars: string[] }> = []
+    // Pattern to match @for(expr)...@endfor or @foreach(expr)...@endforeach
+    const forDirectiveStart = /@(for|foreach)\s*\(/g
+    let match: RegExpExecArray | null
+    const replacements: Array<{ start: number, end: number, replacement: string }> = []
+    // Loops left for processLoops, with the variables they bind and the span they
+    // cover. A nested loop iterating one of those variables — `@foreach (ev.rows as r)`
+    // inside `@foreach (board as ev)` — is server-side too, even though `ev` is a loop
+    // binding that never appears in the context object. Matches arrive in document
+    // order, so an enclosing loop is always recorded before the loops inside it.
+    const serverScopes: Array<{ start: number, end: number, vars: string[] }> = []
 
-  while ((match = forDirectiveStart.exec(output)) !== null) {
+    while ((match = forDirectiveStart.exec(output)) !== null) {
     const directive = match[1] // 'for' or 'foreach'
     const startIdx = match.index
     const exprStart = startIdx + match[0].length
@@ -1033,10 +1033,17 @@ export function convertSignalLoopsToAttributes(template: string, context?: Recor
     }
 
     const content = output.substring(afterExpr, endIdx - endTag.length).trim()
+    // A client loop owns its aliases. Remove identically-named outer context
+    // keys while recursively converting its body so a nested `ev.rows` loop
+    // cannot be mistaken for unrelated server context named `ev`.
+    const nestedContext = context ? { ...context } : {}
+    if (parsed.itemVar) delete nestedContext[parsed.itemVar]
+    if (parsed.indexVar) delete nestedContext[parsed.indexVar]
+    const convertedContent = convertSignalLoopsToAttributes(content, nestedContext)
 
     // Check for single root element
     // Handle > in attribute values by matching quoted attrs properly
-    const singleElementMatch = content.match(SINGLE_ELEMENT_RE)
+    const singleElementMatch = convertedContent.match(SINGLE_ELEMENT_RE)
 
     let replacement: string
     if (singleElementMatch) {
@@ -1044,10 +1051,17 @@ export function convertSignalLoopsToAttributes(template: string, context?: Recor
       replacement = `<${tag}${attrs} @for="${expr}">${innerContent}</${tag}>`
     }
     else {
-      replacement = `<template @for="${expr}">${content}</template>`
+      replacement = `<template @for="${expr}">${convertedContent}</template>`
     }
 
     replacements.push({ start: startIdx, end: endIdx, replacement })
+    // Nested loops were converted recursively above. Skipping the outer span
+    // prevents overlapping replacements from being collected with offsets into
+    // the original string. Applying an inner rewrite first changes its parent's
+    // length, so the parent's stale end offset consumes whatever follows it — in
+    // practice often the @endif of an enclosing server conditional, which then
+    // leaks literal @if/@else text into the rendered DOM.
+    forDirectiveStart.lastIndex = endIdx
   }
 
   // Apply replacements from end to start
