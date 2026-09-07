@@ -26,6 +26,10 @@ import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { extractLayoutMetadata } from 'stx-router/layout-metadata'
 import { actionRedirectResponse, compressResponse, runPageAction as sharedRunPageAction } from '@stacksjs/stx'
+import { runPageMiddleware } from './page-middleware'
+import type { MiddlewareContext, MiddlewareHandler, MiddlewareRequest, PageMiddleware, PrepareMiddlewareRequest } from './page-middleware'
+
+export type { MiddlewareContext, MiddlewareDefinition, MiddlewareHandler, MiddlewareRequest, PageMiddleware, PrepareMiddlewareRequest } from './page-middleware'
 
 /**
  * A bundle failure on its way to the dev-server overlay (#1884 ask 2).
@@ -828,10 +832,10 @@ export interface ServeOptions {
    * ```
    *
    * Discovery scans every `.stx`/`.md`/`.html` page once at startup,
-   * extracts the `middleware:` list, and at request time runs them in
-   * declaration order before SSR. The first middleware that returns a
-   * `Response` (e.g. a redirect) short-circuits the chain — same
-   * contract as Laravel's `handle($request, $next)`.
+   * extracts the `middleware:` list, and runs the combined chain by priority
+   * before SSR. Function handlers may return a `Response`. Class-style
+   * handlers use `{ name, priority, handle(request) }` and may throw a
+   * `Response` or status-carrying error, matching Stacks API middleware.
    *
    * `globalMiddleware` runs on every page request.
    * `groups` lets you alias a list of names (Laravel's middleware groups,
@@ -842,7 +846,14 @@ export interface ServeOptions {
    * shape (gate authed pages → /login, redirect logged-in users away
    * from /login → /) needs zero registration.
    */
-  middleware?: Record<string, MiddlewareHandler>
+  middleware?: Record<string, PageMiddleware>
+
+  /**
+   * Prepare the Request before class-style page middleware receives it.
+   * Frameworks can use this to install their normal request helpers once, so
+   * the same middleware instance can guard API and rendered-page routes.
+   */
+  prepareMiddlewareRequest?: PrepareMiddlewareRequest
 
   /** Names that run on every page request, before per-page middleware. */
   globalMiddleware?: string[]
@@ -910,35 +921,6 @@ export function isRenderableCacheCandidate(html: string): boolean {
  */
 export function usableErrorPage(rendered: string | null): string | null {
   return rendered && !isRenderFailure(rendered) ? rendered : null
-}
-
-/**
- * Middleware handler — a Laravel-style gate that either passes through
- * (returns `void`/`null`/`undefined`) or terminates the pipeline by
- * returning a `Response`.
- *
- * The third argument is the colon-separated arg list, so a page that
- * declares `middleware: ['auth:admin']` invokes the `auth` handler
- * with `args = ['admin']` — the same shape as Laravel's
- * `handle($request, $next, ...$args)`.
- */
-export type MiddlewareHandler = (
-  req: Request,
-  ctx: MiddlewareContext,
-  ...args: string[]
-) => Response | null | undefined | void | Promise<Response | null | undefined | void>
-
-export interface MiddlewareContext {
-  /** Current URL pathname, e.g. `/host/dashboard`. */
-  path: string
-  /** Parsed URL — useful for query strings, hash, etc. */
-  url: URL
-  /** Path params extracted from a dynamic segment, e.g. `{ id: 'tesla-…' }`. */
-  params: Record<string, string>
-  /** Cookies already parsed from the request. */
-  cookies: Record<string, string>
-  /** Build a 302 to `to`, preserving the original target as `?next=…`. */
-  redirect: (to: string, status?: number) => Response
 }
 
 // Default STX config for serving - matches @stacksjs/stx defaults
@@ -1914,7 +1896,7 @@ function __stxOverlay(errs){
     return `${filePath}\0${loc}\0${search}\0${host}\0${cookies}\0${ip}`
   }
 
-  const builtInMiddleware: Record<string, MiddlewareHandler> = authConfig === null ? {} : {
+  const builtInMiddleware: Record<string, PageMiddleware> = authConfig === null ? {} : {
     auth: (_req, ctx) => {
       const tok = ctx.cookies[authCookieName]
       if (!tok) return ctx.redirect(authRedirectTo)
@@ -1927,7 +1909,7 @@ function __stxOverlay(errs){
     },
   }
 
-  const middlewareRegistry: Record<string, MiddlewareHandler> = {
+  const middlewareRegistry: Record<string, PageMiddleware> = {
     ...builtInMiddleware,
     ...(options.middleware ?? {}),
   }
@@ -3408,20 +3390,15 @@ function __stxOverlay(errs){
                       })
                     },
                   }
-                  for (const entry of expanded) {
-                    // Laravel-style `auth:admin,owner` → handler('auth') called
-                    // with args = ['admin', 'owner'].
-                    const colon = entry.indexOf(':')
-                    const name = colon === -1 ? entry : entry.slice(0, colon)
-                    const args = colon === -1 ? [] : entry.slice(colon + 1).split(',')
-                    const handler = middlewareRegistry[name]
-                    if (!handler) {
-                      console.warn(`[stx serve] unknown middleware "${name}" on ${path}`)
-                      continue
-                    }
-                    const result = await handler(req, ctx, ...args)
-                    if (result instanceof Response) return result
-                  }
+                  const middlewareResponse = await runPageMiddleware({
+                    request: req as MiddlewareRequest,
+                    context: ctx,
+                    entries: expanded,
+                    registry: middlewareRegistry,
+                    prepareRequest: options.prepareMiddlewareRequest,
+                  })
+                  if (middlewareResponse)
+                    return middlewareResponse
                 }
                 // Silence the `redirectWithNext` helper unused-warning — kept
                 // around as part of the public-ish surface for callers that

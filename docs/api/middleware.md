@@ -4,17 +4,33 @@ stx ships a Laravel-style route middleware pipeline for the dev server and SSR m
 
 The same pipeline runs during SPA navigation (initial-render and client-side route changes both go through the same handlers), so a gated page is gated everywhere.
 
-## Defining a Handler
+## Defining Middleware
 
-A handler either passes through (returns `void` / `null` / `undefined`) or terminates the pipeline by returning a `Response`.
+Class-style middleware uses the same small interface as Stacks API middleware: `name`, `priority`, and `handle(request)`. Return `void` to continue. Throw a `Response` or an error carrying `status` / `statusCode` to stop the request.
+
+```ts
+import { Middleware } from '@stacksjs/router'
+
+export default new Middleware({
+  name: 'RequireAdmin',
+  priority: 2,
+  handle(request) {
+    if (request.cookie('role') !== 'admin')
+      throw new Response('Forbidden', { status: 403 })
+  },
+})
+```
+
+Stacks applications load these instances and their aliases directly from `app/Middleware/` and `app/Middleware.ts` for both API routes and stx pages. The normal Stacks dev and production page servers also prepare the request with the same helpers before calling `handle`.
+
+Standalone stx applications may continue to register function handlers. A function passes through with `void`, `null`, or `undefined`, and returns a `Response` to stop the pipeline:
 
 ```ts
 import type { MiddlewareHandler } from '@stacksjs/bun-plugin-stx'
 
-const requireAdmin: MiddlewareHandler = (req, ctx) => {
-  if (ctx.cookies['role'] !== 'admin')
-    return ctx.redirect('/login')
-  return null  // pass through
+const requireAdmin: MiddlewareHandler = (request, context) => {
+  if (context.cookies.role !== 'admin')
+    return context.redirect('/login')
 }
 ```
 
@@ -57,7 +73,11 @@ serve({
   pagesDir: 'pages',
   middleware: {
     auth: (req, ctx) => ctx.cookies['session'] ? null : ctx.redirect('/login'),
-    requireAdmin,
+    requireAdmin: {
+      name: 'RequireAdmin',
+      priority: 2,
+      handle: requireAdmin,
+    },
     rateLimit: (req, ctx) => { /* ... */ },
   },
 
@@ -91,14 +111,15 @@ The plugin scans page files at startup and stamps the metadata into its route ta
 
 ### Order of Execution
 
-1. **Global middleware** (`globalMiddleware` array, in order).
-2. **Page middleware** (`definePageMeta({ middleware })`, in order; group names expand recursively).
+1. **Global middleware** (`globalMiddleware` array).
+2. **Page middleware** (`definePageMeta({ middleware })`; group names expand recursively).
+3. The combined chain is sorted by `priority`, lowest first. Middleware without an explicit priority uses `10`, and ties retain declaration order.
 
 Each handler can short-circuit the chain by returning a `Response`. If every handler passes through, the page renders.
 
 ## Parameterized Middleware
 
-Append colon-separated args to the name: `'auth:admin,owner'` invokes the `auth` handler with `args = ['admin', 'owner']`. Same shape as Laravel's `handle($request, $next, ...$args)`.
+Append colon-separated args to the name. Function middleware receives them as trailing arguments. Class-style middleware reads the original string from `request._middlewareParams` under the resolved name, matching Stacks API middleware.
 
 ```ts
 serve({
@@ -112,6 +133,23 @@ serve({
   },
 })
 ```
+
+```ts
+import { Middleware } from '@stacksjs/router'
+
+export default new Middleware({
+  name: 'Role',
+  handle(request) {
+    const allowedRoles = request._middlewareParams?.role?.split(',') ?? []
+    if (!allowedRoles.includes(request.cookie('role') ?? ''))
+      throw new Response('Forbidden', { status: 403 })
+  },
+})
+```
+
+The complete middleware name is resolved before stx interprets a colon as parameters. An alias named `env:production` therefore remains an exact alias, while `role:admin,owner` resolves `role` with parameters.
+
+Prefix a reference with `!` to invert it. For example, `!auth` passes only when `auth` refuses the request. Missing middleware fails closed with a 500 response.
 
 ```html
 <script server>
