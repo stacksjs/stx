@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.280...v0.2.281)
+
+## ✨ Features
+
+- **desktop**: persistentStorage on nativeWindow.open ([3c2d516](https://github.com/stacksjs/stx/commit/3c2d516)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **desktop**: controlling the window from inside it ([62683b6](https://github.com/stacksjs/stx/commit/62683b6)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.281 ([9f9b0cb](https://github.com/stacksjs/stx/commit/9f9b0cb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.279...v0.2.280)
 
 ## ✨ Features
