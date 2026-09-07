@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.278...v0.2.279)
+
+## ✨ Features
+
+- **serve**: accept class-style page middleware ([78a2219](https://github.com/stacksjs/stx/commit/78a2219)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.279 ([d53a8a8](https://github.com/stacksjs/stx/commit/d53a8a8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.277...v0.2.278)
 
 ## 🐛 Bug Fixes
