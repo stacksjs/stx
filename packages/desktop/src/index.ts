@@ -514,6 +514,8 @@ export type { PrintingAPI, PrintToPDFResult } from './printing'
 // =============================================================================
 export { nativeAutoLaunch } from './native-autolaunch'
 export type { NativeAutoLaunchAPI } from './native-autolaunch'
+export { nativeWindow } from './native-window'
+export type { NativeWindow, NativeWindowOptions, WindowAppearance } from './native-window'
 
 // =============================================================================
 // Touch Bar (legacy macOS hardware)
