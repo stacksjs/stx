@@ -92,6 +92,44 @@ export interface ComponentTagMatch {
 }
 
 /**
+ * Sticky tag-name matchers, one per pattern source.
+ *
+ * `findComponentTags` tests every `<` in the document, and it used to do that
+ * by slicing the whole remaining document and matching `^...` against the copy.
+ * On a component-dense 237KB page that was 4,250 slices totalling 95MB in a
+ * single render -- 89% of everything the render allocated, and the largest
+ * single item behind stacksjs/stx#1945. A sticky match runs at an offset in the
+ * original string and copies nothing.
+ *
+ * Compiling once per pattern instead of once per `<` takes a regex compile out
+ * of the same loop. The three call sites pass module-level literals, so this
+ * map holds three entries; a caller that builds patterns dynamically would need
+ * to bound it.
+ *
+ * Flags are deliberately NOT carried over from `tagPattern`. The old matcher
+ * was built from `.source` alone, so it was always case-sensitive whatever the
+ * caller's pattern said -- and the PascalCase / kebab / lowercase dispatch
+ * depends on that.
+ *
+ * The lookahead is the #1845 fix and has to stay: a tag name ends at the first
+ * character that cannot appear in one. Without it the pattern matches a PREFIX
+ * of a longer tag -- `<ion-button />` matched `ion`, lost the hyphen that marks
+ * it a custom element, and resolved `ion.stx` from disk, splicing an ENOENT
+ * error into the page. The paired form `<ion-button></ion-button>` was already
+ * ignored, so only self-closing custom elements were affected.
+ */
+const tagNameMatchers = new Map<string, RegExp>()
+
+function tagNameMatcherFor(tagPattern: RegExp): RegExp {
+  let matcher = tagNameMatchers.get(tagPattern.source)
+  if (!matcher) {
+    matcher = new RegExp(`(${tagPattern.source})(?![\\w.:-])`, 'y')
+    tagNameMatchers.set(tagPattern.source, matcher)
+  }
+  return matcher
+}
+
+/**
  * Find component tags in HTML, properly handling quoted strings
  * This solves the issue where `>` inside attribute values would incorrectly end the tag
  *
@@ -110,15 +148,10 @@ export function findComponentTags(html: string, tagPattern: RegExp, skipTags?: S
     if (tagStart === -1)
       break
 
-    // Check if this matches our tag pattern
-    const afterLt = html.slice(tagStart + 1)
-    // A tag name ends at the first character that cannot appear in one.
-    // Without this lookahead the pattern matches a PREFIX of a longer tag:
-    // `<ion-button />` matched `ion`, lost the hyphen that marks it a custom
-    // element, and resolved `ion.stx` from disk — splicing an ENOENT error
-    // into the page. The paired form `<ion-button></ion-button>` was already
-    // ignored, so only self-closing custom elements were affected (#1845).
-    const tagNameMatch = afterLt.match(new RegExp(`^(${tagPattern.source})(?![\\w.:-])`))
+    // Check if this matches our tag pattern, at that offset in `html` itself.
+    const matcher = tagNameMatcherFor(tagPattern)
+    matcher.lastIndex = tagStart + 1
+    const tagNameMatch = matcher.exec(html)
 
     if (!tagNameMatch) {
       pos = tagStart + 1
