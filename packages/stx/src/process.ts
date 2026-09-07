@@ -58,6 +58,7 @@ import { processDynamicComponents } from './dynamic-components'
 import { dedupeScopedStyles, processScopedStyles } from './style-scoping'
 import { injectColorModeBootScript, normalizeCriticalHeadOrder } from './color-mode-boot'
 import { buildIdFragment } from './build-id'
+import type { HeadInjections } from './head-injection'
 import { applyHeadInjections, createHeadInjections } from './head-injection'
 import { applyHtmlAttrs, cloakStyleFragment, ensureDocumentShell, hasDocumentShell, injectConfigHeadTags, mergeHtmlAttrs, metaDedupKey, startsDocument } from './document-shell'
 
@@ -404,8 +405,18 @@ export async function processDirectives(
     context.__stx_signals_gate = usesSignalsInScript(template, filePath)
 
   const isTopLevel = !context.__stxProcessingDepth
-  if (isTopLevel)
+  if (isTopLevel) {
     initializeComponentClientFactories(context)
+    // Open the render's head collection before the pipeline runs, not after it,
+    // so passes deeper in the pipeline can contribute a fragment instead of
+    // rebuilding the whole document to splice one in (stacksjs/stx#1945).
+    // Reset per top-level render: a nested call shares this context and must
+    // dedupe against the collection, but a second top-level render through the
+    // same context (a layout wrapping a page) gets a fresh chance to
+    // contribute, exactly as the old per-document marker checks allowed.
+    context.__stx_head_injections = createHeadInjections()
+    context.__stx_seo_staged = false
+  }
   if (!context.__stxProcessingDepth) {
     context.__stxProcessingDepth = 0
   }
@@ -569,12 +580,18 @@ export async function processDirectives(
       // runtime's late injection covers those). Covers layout-supplied heads
       // that don't go through generateDocumentShell.
       if (isTopLevel) {
-        // The cloak style and the build-id meta are each a few hundred bytes,
-        // and splicing them separately rebuilt the whole document once each --
-        // 212KB allocated per insertion on a page that size (#1945). Collected
-        // and applied together, they share one rebuild, and a page needing
-        // neither is not rebuilt at all.
-        const headInjections = createHeadInjections()
+        // The cloak style, the build-id meta and the default SEO block are each
+        // a few hundred bytes, and splicing them separately rebuilt the whole
+        // document once each -- 172KB allocated per insertion on a 182KB page
+        // (#1945). Collected and applied together they share one rebuild, and a
+        // page needing none of them is not rebuilt at all.
+        //
+        // The collection was opened before the pipeline ran, so it already
+        // carries whatever deeper passes contributed. Fall back to an empty one
+        // for callers that reach here without going through processDirectives.
+        // Fragments apply in push order, which puts the pipeline's ahead of the
+        // two added here; nothing reads any of them by position.
+        const headInjections = (context.__stx_head_injections as HeadInjections | undefined) ?? createHeadInjections()
         const cloak = cloakStyleFragment(result)
         if (cloak !== null)
           headInjections.beforeClose.push(cloak)

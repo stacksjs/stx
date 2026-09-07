@@ -403,8 +403,13 @@ export function injectSeoTags(
     return html
   }
 
-  // If the HTML already has meta tags or if auto-injection is disabled, return unchanged
+  // If the HTML already has meta tags or if auto-injection is disabled, return unchanged.
+  // `__stx_seo_staged` is the same check for the staged path below: once this
+  // render has contributed the block to the head collection it is no longer
+  // findable in `html`, so the marker alone would let a nested call stage it a
+  // second time.
   if (html.includes('<!-- stx SEO Tags -->')
+    || context.__stx_seo_staged === true
     || options.skipDefaultSeoTags === true) {
     return html
   }
@@ -518,10 +523,36 @@ export function injectSeoTags(
 `
   }
 
-  // Add title tag if missing
+  // Add title tag if missing.
+  //
+  // This one stays a splice even when the block below is staged. The title has
+  // to be IN the document by the time renderHead runs, a few steps later: that
+  // pass replaces an existing <title> with a higher-precedence one instead of
+  // appending a second. A staged title is invisible to it, so the page would
+  // end up with the @head title and then ours -- two titles, browser uses the
+  // first. It is also the rare path; a document that already has a <title>
+  // pays nothing here.
   let result = html
   if (!hasTitle) {
     result = result.replace(/<head[^>]*>/, `$&\n<title>${escapeHtml(title)}</title>`)
+  }
+
+  // Contribute the meta block to the render's head collection when one is open,
+  // rather than splicing it in here (stacksjs/stx#1945). Splicing rebuilds the
+  // whole document to insert ~500 bytes: on a 182KB page that was measured at
+  // 172KB allocated, 99.7% of it a copy of bytes that did not change. Staged,
+  // it rides the single rebuild the top-level pipeline already performs for the
+  // cloak style and the build-id meta.
+  //
+  // Nothing else in the pipeline reads these tags between here and that
+  // rebuild -- renderHead only reconciles <title>, which is why that one is
+  // handled above -- and the passes that strip the block later (render.ts,
+  // build-views.ts, site-builder/seo.ts) all run on the finished document.
+  const staged = context.__stx_head_injections as { afterOpen: string[] } | undefined
+  if (staged) {
+    context.__stx_seo_staged = true
+    staged.afterOpen.push(`\n${seoTagsMinimal}\n`)
+    return result
   }
 
   // Add SEO tags
