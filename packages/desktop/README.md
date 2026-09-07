@@ -313,6 +313,88 @@ await showSuccessToast('File saved successfully!')
 await showErrorToast('Failed to save file', 5000)
 ```
 
+### Self-Updating
+
+An installed app can replace itself from its own GitHub releases.
+
+```typescript
+import { createSelfUpdater } from '@stacksjs/desktop'
+
+const updater = await createSelfUpdater({
+  repository: 'stacksjs/barista',
+  currentVersion: '0.3.0',
+  autoDownload: false,
+})
+
+const update = await updater.checkForUpdates()
+if (update) {
+  await updater.downloadUpdate()
+  await updater.installUpdate() // verifies, swaps the bundle, relaunches
+}
+```
+
+`createSelfUpdater` finds two things by itself that are easy to get wrong by hand:
+
+- **which bundle to replace** — the outermost `.app` above `process.execPath`, so a
+  helper or XPC service inside the app still updates the whole app, and a `bun run`
+  in development throws instead of swapping a directory in your source tree;
+- **who is allowed to publish updates** — the Apple Developer Team ID that signed the
+  copy already on disk. You do not configure your own team ID, and you cannot get it
+  wrong by copying an example.
+
+#### What is checked before the bundle is swapped
+
+On macOS, the SHA-256 in the manifest is the weakest of the three checks, not the
+strongest — whoever can rewrite the manifest can rewrite the hash with it. So the
+staged bundle also has to satisfy the two questions Gatekeeper asks at launch:
+
+| Check | Tool | Rejects |
+|---|---|---|
+| Signature intact | `codesign --verify --deep --strict` | tampered or re-packed bundles |
+| Notarized by Apple | `spctl -a -t exec` | anything Apple has not scanned |
+| Signed by *your* team | `TeamIdentifier` from `codesign -dv` | notarized builds from other developers |
+
+Only after all three pass is the quarantine flag cleared and the bundle swapped, and
+the swap is two renames inside the install directory — so a failure never leaves the
+user without an app.
+
+Set `requireSameTeam: false` only when a build genuinely changes teams; without it
+the updater will accept any notarized bundle, and notarization is available to every
+Apple developer account there is.
+
+#### Publishing an update
+
+Attach an `update.json` to the release, beside the `.dmg`:
+
+```typescript
+import { createGitHubUpdateManifest, UPDATE_MANIFEST_ASSET } from '@stacksjs/desktop'
+
+const manifest = createGitHubUpdateManifest({
+  repository: 'stacksjs/barista',
+  version: '0.3.1',
+  artifacts: { darwin: 'dist/Barista-0.3.1.dmg' },
+})
+
+await Bun.write(UPDATE_MANIFEST_ASSET, JSON.stringify(manifest, null, 2))
+```
+
+Generate it **after** notarization. Stapling the ticket rewrites the DMG, so a
+manifest built before that step carries a hash no download can ever match.
+
+#### Relaunching a launcher/agent app
+
+The default relaunch opens the new bundle and quits the launcher — the process that
+spawned this one. That is right for the shape stx desktop apps have, where one binary
+runs as a launcher, an agent and a window; calling `process.exit(0)` from the agent
+would kill a child and leave the window open on a dead server. Override `relaunch`,
+or compose `relaunchBundle` and `quitLauncher`, for anything different.
+
+#### Bundle primitives
+
+The pieces are exported individually for installers, CI checks, and "am I running the
+build I think I am?": `verifyBundleTrust`, `readBundleIdentity`, `extractBundle`,
+`swapBundle`, `clearQuarantine`, `canReplaceBundle`, and `bundlePathForExecutable`.
+
 ## API Reference
 
 ### Window Management
