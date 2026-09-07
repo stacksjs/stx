@@ -115,6 +115,44 @@ describe('reachability is transitive', () => {
   })
 })
 
+describe('bundles that ship with the page but are not in it yet', () => {
+  // The store bundle, the framework-composable bundle and this one are now
+  // collected and spliced into the document together, so this selection runs
+  // before the store tag is in `pageSource` (#1945). Passing the pending text
+  // as an extra source has to reach the same answer, or a composable used only
+  // from a store is silently dropped -- the #1936 case that breaks a page at
+  // click time rather than at build time.
+  it('keeps a composable reached only from a store handed over as an extra source', async () => {
+    clearComposableCache()
+    const storeTag = '<script data-stx-stores>defineStore("x", () => ({ go: () => renderAnalyticsChart() }))</script>'
+    const bundle = await getComposableScript(dir, '<html><body><h1>Blog</h1></body></html>', [storeTag]) ?? ''
+
+    expect(bundle).toContain('drawAnalyticsChart')
+  })
+
+  it('reaches the same answer as scanning a document that already contains them', async () => {
+    const page = '<html><body><h1>Blog</h1></body></html>'
+    const storeTag = '<script data-stx-stores>defineStore("x", () => ({ go: () => renderAnalyticsChart() }))</script>'
+
+    clearComposableCache()
+    const spliced = await getComposableScript(dir, page + storeTag) ?? ''
+    clearComposableCache()
+    const passed = await getComposableScript(dir, page, [storeTag]) ?? ''
+
+    expect(passed).toBe(spliced)
+    expect(passed).not.toBe('')
+  })
+
+  it('still prunes what none of the sources reach', async () => {
+    clearComposableCache()
+    const storeTag = '<script data-stx-stores>defineStore("x", () => ({}))</script>'
+    const bundle = await getComposableScript(dir, '<script client>const n = increment(1)</script>', [storeTag]) ?? ''
+
+    expect(bundle).toContain('increment')
+    expect(bundle).not.toContain('drawAnalyticsChart')
+  })
+})
+
 describe('the import form', () => {
   it('is recognised as a reference', async () => {
     const bundle = await bundleFor(`<script client>import { increment } from '@composables'</script>`)

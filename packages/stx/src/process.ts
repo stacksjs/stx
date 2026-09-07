@@ -617,82 +617,91 @@ export async function processDirectives(
         result = placeSignalsRuntimeBeforeScripts(result)
       }
 
-      // Auto-inject store definitions from storesDir.
-      // MUST run AFTER the signals runtime (which defines defineStore/state/derived
-      // as globals) and BEFORE any page scripts that call useStore().
-      if (isTopLevel) {
-        try {
-          const { getStoreScript } = await importOnce('stx/store-loader', () => import('./store-loader'))
-          // Prefer the resolved storesDir from options (set by serve-app.ts to
-          // point at the real app directory). Fall back to config lookup.
-          const resolvedStoresDir = (options as any).storesDir as string | undefined
-          const storeCode = await getStoreScript(resolvedStoresDir)
-          if (storeCode) {
-            const storeTag = `<script data-stx-stores>${storeCode}</script>`
-            const runtime = findScriptBlockByAttribute(result, 'data-stx-runtime')
-            if (runtime) {
-              result = result.slice(0, runtime.end) + '\n' + storeTag + result.slice(runtime.end)
-            }
-          }
-        }
-        catch {
-          // Store loading is optional
-        }
-      }
-
-      // Framework composables the page actually calls but the runtime does not
-      // provide (#1805). Bundled from the real modules rather than hand-ported,
-      // demand-driven, and skip-never-clobber so the runtime's own signal-based
-      // versions always win. Injected before the user composables so a user
-      // composable can build on one.
-      if (isTopLevel) {
-        try {
-          const { getFrameworkComposableScript } = await importOnce(
-            'stx/framework-composables',
-            () => import('./framework-composables'),
-          )
-          const frameworkScript = await getFrameworkComposableScript(result)
-          if (frameworkScript) {
-            const anchor = findScriptBlockByAttribute(result, 'data-stx-stores')
-              || findScriptBlockByAttribute(result, 'data-stx-runtime')
-            if (anchor)
-              result = result.slice(0, anchor.end) + '\n' + frameworkScript + result.slice(anchor.end)
-          }
-        }
-        catch {
-          // Framework composables are an enhancement; never fail a render.
-        }
-      }
-
-      // Auto-inject composables from composablesDir (default: composables/, then
-      // functions/). Populates window.__composables, which is what
-      // `import { useThing } from '@composables'` compiles to — without it that
-      // import destructured undefined and every binding using a composable
-      // silently did nothing (#1780).
+      // The store bundle, the framework-composable bundle and the user
+      // composable bundle all land as sibling <script> tags immediately after
+      // the signals runtime. Each used to splice itself in, and a splice is a
+      // copy of the whole document -- 185KB apiece on a 199KB page, to insert a
+      // few hundred bytes (#1945). Collected here and spliced once.
       //
-      // Injected AFTER the stores tag: composables may call useStore(), and the
-      // store definitions must already have run. Both land before any page
-      // <script client>, which is what consumes them.
+      // Anchored to the runtime because these depend on it: it defines
+      // defineStore/state/derived as globals. All three land before any page
+      // <script client>, which is what consumes them. No runtime tag means no
+      // anchor, and none of them are injected -- as before.
       if (isTopLevel) {
-        try {
-          const { getComposableScript } = await importOnce('stx/composable-loader', () => import('./composable-loader'))
-          const resolvedComposablesDir = (options as any).composablesDir as string | undefined
-          // `result` is passed so the bundle can be pruned to what this page
-          // can actually reach. It already carries the stores tag at this
-          // point, so a composable used only from a store is still kept (#1936).
-          const composableCode = await getComposableScript(resolvedComposablesDir, result)
-          if (composableCode) {
-            const composableTag = `<script data-stx-composables>${composableCode}</script>`
-            // Anchor to the stores tag when present, else the signals runtime.
-            const anchor = findScriptBlockByAttribute(result, 'data-stx-stores')
-              || findScriptBlockByAttribute(result, 'data-stx-runtime')
-            if (anchor) {
-              result = result.slice(0, anchor.end) + '\n' + composableTag + result.slice(anchor.end)
-            }
+        const runtime = findScriptBlockByAttribute(result, 'data-stx-runtime')
+        if (runtime) {
+          let storeTag: string | null = null
+          let composableTag: string | null = null
+          let frameworkScript: string | null = null
+
+          // Auto-inject store definitions from storesDir.
+          try {
+            const { getStoreScript } = await importOnce('stx/store-loader', () => import('./store-loader'))
+            // Prefer the resolved storesDir from options (set by serve-app.ts to
+            // point at the real app directory). Fall back to config lookup.
+            const resolvedStoresDir = (options as any).storesDir as string | undefined
+            const storeCode = await getStoreScript(resolvedStoresDir)
+            if (storeCode)
+              storeTag = `<script data-stx-stores>${storeCode}</script>`
           }
-        }
-        catch {
-          // Composable loading is optional
+          catch {
+            // Store loading is optional
+          }
+
+          // Framework composables the page actually calls but the runtime does
+          // not provide (#1805). Bundled from the real modules rather than
+          // hand-ported, demand-driven, and skip-never-clobber so the runtime's
+          // own signal-based versions always win.
+          //
+          // Scans a document that no longer carries the store tag, which is what
+          // it effectively saw before: its scan strips every stx-owned script
+          // block, the store tag included, so that an injected bundle cannot
+          // look like page code asking for a composable.
+          try {
+            const { getFrameworkComposableScript } = await importOnce(
+              'stx/framework-composables',
+              () => import('./framework-composables'),
+            )
+            frameworkScript = await getFrameworkComposableScript(result)
+          }
+          catch {
+            // Framework composables are an enhancement; never fail a render.
+          }
+
+          // Auto-inject composables from composablesDir (default: composables/,
+          // then functions/). Populates window.__composables, which is what
+          // `import { useThing } from '@composables'` compiles to — without it
+          // that import destructured undefined and every binding using a
+          // composable silently did nothing (#1780).
+          //
+          // Unlike the pass above, this one wants to see the other bundles: it
+          // prunes to what the page can reach, and a composable used only from a
+          // store has to survive (#1936). They are handed over as extra scan
+          // sources rather than spliced in first, which is the same text to a
+          // reachability scan and one document copy cheaper.
+          try {
+            const { getComposableScript } = await importOnce('stx/composable-loader', () => import('./composable-loader'))
+            const resolvedComposablesDir = (options as any).composablesDir as string | undefined
+            const pending = [storeTag, frameworkScript].filter((text): text is string => text !== null)
+            const composableCode = await getComposableScript(resolvedComposablesDir, result, pending)
+            if (composableCode)
+              composableTag = `<script data-stx-composables>${composableCode}</script>`
+          }
+          catch {
+            // Composable loading is optional
+          }
+
+          // Composables ahead of framework composables is the order the separate
+          // splices produced: both anchored to the store tag, so whichever went
+          // in last ended up first. Reproduced rather than corrected -- the
+          // comment on the framework block claims the opposite order, and
+          // deciding which is right is a behaviour change, not a perf one.
+          const tags = [storeTag, composableTag, frameworkScript]
+            .filter((text): text is string => text !== null)
+            .map(tag => `\n${tag}`)
+            .join('')
+          if (tags)
+            result = result.slice(0, runtime.end) + tags + result.slice(runtime.end)
         }
       }
 

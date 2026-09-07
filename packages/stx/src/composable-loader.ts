@@ -194,7 +194,7 @@ function mentions(text: string, name: string): boolean {
 function selectReachable(
   modules: ComposableModule[],
   codeByFile: Map<string, string>,
-  pageSource: string,
+  pageSources: readonly string[],
 ): Set<string> {
   const fileForName = new Map<string, string>()
   for (const { file, names } of modules) {
@@ -214,7 +214,7 @@ function selectReachable(
   }
 
   const selected = new Set<string>()
-  let frontier = filesMentionedIn(pageSource)
+  let frontier = pageSources.flatMap(filesMentionedIn)
   while (frontier.length > 0) {
     const next: string[] = []
     for (const file of frontier) {
@@ -236,7 +236,19 @@ function selectReachable(
  * reach. Omit to emit every composable, which is what a caller with no page in
  * hand needs.
  */
-export async function getComposableScript(composablesDir?: string, pageSource?: string): Promise<string | null> {
+export async function getComposableScript(
+  composablesDir?: string,
+  pageSource?: string,
+  /**
+   * Text that is not (yet) part of `pageSource` but will ship with the page --
+   * the store bundle and the framework-composable bundle, which are collected
+   * alongside this one and spliced into the document together (#1945). They are
+   * scanned for reachability the same way the page is, because a composable
+   * used only from a store still has to be kept (#1936); passing them here
+   * rather than splicing them in first is what lets the three share one splice.
+   */
+  extraSources?: readonly string[],
+): Promise<string | null> {
   const resolvedDir = await resolveComposablesDir(composablesDir)
   if (!resolvedDir) return null
 
@@ -290,7 +302,7 @@ export async function getComposableScript(composablesDir?: string, pageSource?: 
 
   const selected = pageSource === undefined
     ? new Set(composableFiles)
-    : selectReachable(modules, codeByFile, pageSource)
+    : selectReachable(modules, codeByFile, extraSources ? [pageSource, ...extraSources] : [pageSource])
 
   // A page that reaches none of them gets no script at all, which is the whole
   // point: the previous behaviour shipped every body to every route.
