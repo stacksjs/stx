@@ -65,6 +65,15 @@ export interface NativeWindowOptions {
    * own history row, so there is only one pair of arrows in the window.
    */
   chromeControls?: boolean
+  /**
+   * Whether the page's storage — `localStorage`, IndexedDB, cookies — survives
+   * a quit and is shared with the app's other windows.
+   *
+   * Off by default, because the ephemeral store costs no disk I/O at startup.
+   * A second window that keeps a preference must set it, or it writes where
+   * the window that opened it cannot read — and both forget on quit.
+   */
+  persistentStorage?: boolean
   /** Web Inspector in this window. Off by default. */
   devTools?: boolean
 }
