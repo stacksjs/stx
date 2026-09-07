@@ -1,5 +1,28 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.279...v0.2.280)
+
+## ✨ Features
+
+- **desktop**: a self-updater that finds its own bundle and its own team ([8cd3838](https://github.com/stacksjs/stx/commit/8cd3838)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **render**: find the first script tag without copying the page at every '<' (#1945) ([34fc01c](https://github.com/stacksjs/stx/commit/34fc01c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945), [#1787](https://github.com/stacksjs/stx/issues/1787), [#1792](https://github.com/stacksjs/stx/issues/1792))
+- **components**: scan for component tags without copying the document per tag (#1945) ([98be4f1](https://github.com/stacksjs/stx/commit/98be4f1)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945), [#1845](https://github.com/stacksjs/stx/issues/1845))
+- **render**: the three script bundles share one splice (#1945) ([132ef77](https://github.com/stacksjs/stx/commit/132ef77)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945), [#1936](https://github.com/stacksjs/stx/issues/1936))
+- **render**: put head injections after <meta charset> so nothing has to hoist it back (#1945) ([53d7f2e](https://github.com/stacksjs/stx/commit/53d7f2e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **seo**: stage the default SEO block instead of rebuilding the page for it (#1945) ([4272fec](https://github.com/stacksjs/stx/commit/4272fec)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+
+## 🔧 Chores
+
+- release v0.2.280 ([28a9d74](https://github.com/stacksjs/stx/commit/28a9d74)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.278...v0.2.279)
 
 ## ✨ Features
