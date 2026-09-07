@@ -53,11 +53,33 @@ describe('head injections', () => {
   it('handles a contribution to only one anchor', () => {
     const onlyOpen = createHeadInjections()
     onlyOpen.afterOpen.push('<meta name="o">')
-    expect(applyHeadInjections(PAGE, onlyOpen)).toContain('<head><meta name="o">')
+    expect(applyHeadInjections(PAGE, onlyOpen)).toContain('charset="utf-8"><meta name="o">')
 
     const onlyClose = createHeadInjections()
     onlyClose.beforeClose.push('<meta name="c">')
     expect(applyHeadInjections(PAGE, onlyClose)).toContain('<meta name="c"></head>')
+  })
+
+  it('inserts after a leading <meta charset>, not ahead of it', () => {
+    // The encoding declaration has to stay inside the first 1024 bytes, and
+    // these fragments are big enough to push it out -- the default SEO block
+    // alone is ~500 bytes. Getting the order right here is what makes the
+    // end-of-pipeline charset hoist a no-op instead of a whole-document copy.
+    const injections = createHeadInjections()
+    injections.afterOpen.push('x'.repeat(600))
+    const out = applyHeadInjections(PAGE, injections)
+
+    expect(out.indexOf('charset')).toBeLessThan(out.indexOf('xxx'))
+    expect(out.indexOf('charset')).toBeLessThan(1024)
+  })
+
+  it('inserts at the head opening when no charset leads it', () => {
+    // Only a charset that IMMEDIATELY follows <head> is stepped over; one
+    // further down the head is someone else's ordering problem, not ours.
+    const late = '<html><head><title>t</title><meta charset="utf-8"></head><body></body></html>'
+    const injections = createHeadInjections()
+    injections.afterOpen.push('<meta name="a">')
+    expect(applyHeadInjections(late, injections)).toContain('<head><meta name="a">')
   })
 
   it('leaves a document with no head alone', () => {

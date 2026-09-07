@@ -59,22 +59,49 @@ export function applyHeadInjections(html: string, injections: HeadInjections): s
   // Resolved together, because both offsets index into the SAME string. Doing
   // one splice and then looking for the second anchor would search a document
   // whose offsets had already shifted.
-  const headOpen = /<head\b[^>]*>/i.exec(html)
   const headCloseIdx = html.lastIndexOf('</head>')
+  const openAt = afterOpen ? headInsertionPoint(html) : null
+  const closeAt = beforeClose && headCloseIdx !== -1 ? headCloseIdx : null
 
-  const openAt = headOpen && (!afterOpen ? -1 : headOpen.index + headOpen[0].length)
-  const closeAt = headCloseIdx === -1 || !beforeClose ? -1 : headCloseIdx
-
-  if (openAt === -1 && closeAt === -1)
+  if (openAt === null && closeAt === null)
     return html
-  if (openAt === null)
-    return closeAt === -1 ? html : `${html.slice(0, closeAt)}${beforeClose}${html.slice(closeAt)}`
-
-  if (openAt !== -1 && closeAt !== -1) {
+  if (openAt !== null && closeAt !== null) {
     // The one rebuild this module exists for.
     return `${html.slice(0, openAt)}${afterOpen}${html.slice(openAt, closeAt)}${beforeClose}${html.slice(closeAt)}`
   }
-  if (openAt !== -1)
+  if (openAt !== null)
     return `${html.slice(0, openAt)}${afterOpen}${html.slice(openAt)}`
-  return `${html.slice(0, closeAt)}${beforeClose}${html.slice(closeAt)}`
+  return `${html.slice(0, closeAt!)}${beforeClose}${html.slice(closeAt!)}`
+}
+
+/** A `<meta charset>` that leads `<head>`, matched from a given offset. */
+const LEADING_CHARSET_META = /\s*<meta\b[^>]*\bcharset\b[^>]*>/iy
+
+/**
+ * Offset of the canonical head-injection position: just inside `<head>`, after
+ * a `<meta charset>` that leads it. `null` when the document has no head.
+ *
+ * Stepping over the charset is not cosmetic. The encoding declaration has to
+ * land inside the document's first 1024 bytes, and what gets inserted here is
+ * big enough to push it out -- the signals runtime is the whole client library,
+ * the default SEO block ~500 bytes. Displacing it was then repaired at the end
+ * of the pipeline by hoisting the charset back up, which rebuilt the whole
+ * document (186KB on a 199KB page) to move three bytes. Every injector landing
+ * after the charset means the order is right the first time and there is
+ * nothing to repair (stacksjs/stx#1945).
+ *
+ * `hoistCharsetMeta` stays as the backstop for anything that does not come
+ * through here.
+ */
+export function headInsertionPoint(html: string): number | null {
+  const headOpen = /<head\b[^>]*>/i.exec(html)
+  if (!headOpen)
+    return null
+
+  const afterTag = headOpen.index + headOpen[0].length
+  // Sticky, so the test runs at that offset without copying the rest of the
+  // document just to anchor it.
+  LEADING_CHARSET_META.lastIndex = afterTag
+  const charset = LEADING_CHARSET_META.exec(html)
+  return charset ? afterTag + charset[0].length : afterTag
 }

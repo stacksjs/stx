@@ -7,6 +7,7 @@
  * @module runtime-injection
  */
 
+import { headInsertionPoint } from './head-injection'
 import type { StxOptions } from './types'
 import { BROWSER_CORE_IMPORTS } from './browser-core-imports'
 import { getOwnedRouteMatchers } from './owned-routes'
@@ -243,13 +244,15 @@ function placeRuntimeTag(template: string, runtimeScript: string): string {
   if (firstScript !== -1 && (doctype === -1 || firstScript > doctype))
     return template.slice(0, firstScript) + runtimeScript + '\n' + template.slice(firstScript)
 
-  // Immediately after `<head>` rather than before `</head>`: the head can hold
-  // scripts of its own, and the runtime has to precede them.
-  const headOpen = /<head\b[^>]*>/i.exec(template)
-  if (headOpen) {
-    const at = headOpen.index + headOpen[0].length
-    return `${template.slice(0, at)}\n${runtimeScript}${template.slice(at)}`
-  }
+  // At the head opening rather than before `</head>`: the head can hold scripts
+  // of its own, and the runtime has to precede them. `headInsertionPoint` puts
+  // it after a leading `<meta charset>` -- the runtime is the entire client
+  // library, so landing ahead of the encoding declaration pushes it far past
+  // the 1024 bytes the spec allows, and the end-of-pipeline hoist that used to
+  // repair that rebuilt the whole document to move three bytes (#1945).
+  const headAt = headInsertionPoint(template)
+  if (headAt !== null)
+    return `${template.slice(0, headAt)}\n${runtimeScript}${template.slice(headAt)}`
 
   if (template.includes('</head>')) {
     const idx = template.indexOf('</head>')

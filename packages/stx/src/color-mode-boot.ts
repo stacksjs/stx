@@ -48,6 +48,7 @@
  *
  * @module color-mode-boot
  */
+import { headInsertionPoint } from './head-injection'
 
 /** Marker attribute — makes injection idempotent and findable by tests. */
 export const COLOR_MODE_BOOT_MARKER = 'data-stx-color-mode-boot'
@@ -197,31 +198,13 @@ export function injectColorModeBootScript(html: string, options: ColorModeBootCo
 
 /**
  * Offset of the canonical boot-script position: just inside `<head>`, after a
- * leading `<meta charset>`.
- *
- * `<meta charset>` is stepped over when it leads the head — the spec wants it
- * inside the first 1024 bytes, and pushing it down behind this script erodes
- * that budget for no reason.
+ * leading `<meta charset>` — the same position every other head injector uses,
+ * so it is defined once, in head-injection.ts.
  */
-function bootInsertionPoint(html: string): number | null {
-  const headOpen = /<head\b[^>]*>/i.exec(html)
-  if (!headOpen)
-    return null
-
-  let insertAt = headOpen.index + headOpen[0].length
-  // Sticky, so the test runs at insertAt without copying the rest of the
-  // document just to anchor it (#1945).
-  LEADING_CHARSET_META.lastIndex = insertAt
-  const charset = LEADING_CHARSET_META.exec(html)
-  if (charset)
-    insertAt += charset[0].length
-
-  return insertAt
-}
+const bootInsertionPoint = headInsertionPoint
 
 const BOOT_SCRIPT_TAG = new RegExp(`<script\\b[^>]*\\b${COLOR_MODE_BOOT_MARKER}\\b[^>]*>[\\s\\S]*?<\\/script>`, 'i')
 const CHARSET_META = /<meta\b[^>]*\bcharset\b[^>]*>/i
-const LEADING_CHARSET_META = /\s*<meta\b[^>]*\bcharset\b[^>]*>/iy
 const HEAD_CLOSE = /<\/head>/gi
 
 /**
