@@ -300,6 +300,27 @@ function findScriptBlockByAttribute(html: string, attribute: string): ScriptBloc
   }
 }
 
+/**
+ * Sticky, so each test runs at an offset in the document instead of against a
+ * copy of everything after it.
+ *
+ * `findFirstScriptTag` looks at every `<` until it finds a script, and it used
+ * to slice the whole remainder at each one to run an anchored `^...` pattern
+ * over the copy. That was the largest remaining allocation site in the render
+ * after the component scan: 2.4MB on a plain page, 4.5MB on a component-dense
+ * one, per render (#1945). Nothing about the matching changes -- same patterns,
+ * same `i` flag, evaluated at `lastIndex` rather than at the start of a slice.
+ *
+ * STYLE_CLOSE_TAG matches the exact literal `</style>`, case-insensitively,
+ * because that is what the `toLowerCase().indexOf('</style>')` it replaces did.
+ * It must NOT be widened to tolerate `</style >`: a page where that spelling
+ * currently fails to close the skip would start closing it, which moves where
+ * the runtime is placed -- the regression class #1787 and #1792 exist to pin.
+ */
+const STYLE_OPEN_TAG = /<style\b[^>]*>/iy
+const STYLE_CLOSE_TAG = /<\/style>/gi
+const SCRIPT_OPEN_TAG = /<script\b[^>]*>/iy
+
 function findFirstScriptTag(html: string): number {
   let searchFrom = 0
 
@@ -314,15 +335,22 @@ function findFirstScriptTag(html: string): number {
       continue
     }
 
-    const remainder = html.slice(tagStart)
-    const styleTag = /^<style\b[^>]*>/i.exec(remainder)
+    STYLE_OPEN_TAG.lastIndex = tagStart
+    const styleTag = STYLE_OPEN_TAG.exec(html)
     if (styleTag) {
-      const styleEnd = html.toLowerCase().indexOf('</style>', tagStart + styleTag[0].length)
-      searchFrom = styleEnd === -1 ? html.length : styleEnd + '</style>'.length
+      // Searched in place. Lower-casing the document to find one closing tag
+      // copied the whole page per <style>, and the index it produced was
+      // computed against a string that is not always the same LENGTH as the
+      // original -- a handful of code points grow when lower-cased -- so the
+      // offset could land off the mark on such a page.
+      STYLE_CLOSE_TAG.lastIndex = tagStart + styleTag[0].length
+      const styleEnd = STYLE_CLOSE_TAG.exec(html)
+      searchFrom = styleEnd === null ? html.length : styleEnd.index + '</style>'.length
       continue
     }
 
-    if (/^<script\b[^>]*>/i.test(remainder))
+    SCRIPT_OPEN_TAG.lastIndex = tagStart
+    if (SCRIPT_OPEN_TAG.test(html))
       return tagStart
 
     searchFrom = tagStart + 1
