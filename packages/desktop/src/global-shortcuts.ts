@@ -54,34 +54,62 @@ export interface GlobalShortcuts {
   on: (cb: (e: ShortcutFireEvent) => void) => () => void
 }
 
+/**
+ * The shortcuts bridge as craft-bridge.js actually ships it.
+ *
+ * craft-native declares `craft.shortcuts` optional and its `register` as
+ * two-argument, so every call here is a TS2532 and the `opts` pass-through a
+ * TS2554. Cast rather than augment, for the reason focus.ts records: index.d.ts
+ * re-exports a fixed list of type names, so `declare module 'craft-native'`
+ * silently declares a SECOND interface instead of merging, and the calls still
+ * fail. Worth an upstream issue alongside the CraftFocusAPI gap.
+ *
+ * Every call is already guarded by `hasBridge('shortcuts')`, which is what
+ * makes the non-null assertion safe at runtime.
+ */
+interface ShortcutsBridge {
+  register: (id: string, accelerator: string, opts?: GlobalShortcutOptions) => Promise<void>
+  unregister: (id: string) => Promise<void>
+  unregisterAll: () => Promise<void>
+  enable: (id: string) => Promise<void>
+  disable: (id: string) => Promise<void>
+  isRegistered: (id: string) => Promise<boolean>
+  list: () => Promise<Array<{ id: string, accelerator: string, enabled: boolean }>>
+}
+
+/** Only ever called behind `hasBridge('shortcuts')`. */
+function shortcutsBridge(): ShortcutsBridge {
+  return window.craft!.shortcuts as unknown as ShortcutsBridge
+}
+
 export const globalShortcuts: GlobalShortcuts = {
   async register(id, accelerator, opts) {
     if (!hasBridge('shortcuts')) return
-    await window.craft!.shortcuts.register(id, accelerator, opts)
+    await shortcutsBridge().register(id, accelerator, opts)
   },
   async unregister(id) {
     if (!hasBridge('shortcuts')) return
-    await window.craft!.shortcuts.unregister(id)
+    await shortcutsBridge().unregister(id)
   },
   async unregisterAll() {
     if (!hasBridge('shortcuts')) return
-    await window.craft!.shortcuts.unregisterAll()
+    await shortcutsBridge().unregisterAll()
   },
   async enable(id) {
     if (!hasBridge('shortcuts')) return
-    await window.craft!.shortcuts.enable(id)
+    await shortcutsBridge().enable(id)
   },
   async disable(id) {
     if (!hasBridge('shortcuts')) return
-    await window.craft!.shortcuts.disable(id)
+    await shortcutsBridge().disable(id)
   },
   async isRegistered(id) {
     if (!hasBridge('shortcuts')) return false
-    return await window.craft!.shortcuts.isRegistered(id)
+    return await shortcutsBridge().isRegistered(id)
   },
   async list() {
     if (!hasBridge('shortcuts')) return []
-    return await window.craft!.shortcuts.list()
+    return await shortcutsBridge().list()
   },
   on(cb) {
     return onCraftEvent<ShortcutFireEvent>('craft:shortcut', cb)

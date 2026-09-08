@@ -20,18 +20,9 @@
  * ```
  */
 import type { BundleIdentity, BundleTrustPolicy, BundleTrustResult, UpdateManifest, UpdaterConfig } from 'craft-native'
-import { spawn } from 'node:child_process'
 import process from 'node:process'
-import {
-  AutoUpdater,
-  canReplaceBundle,
-  clearQuarantine,
-  extractBundle,
-  generateUpdateManifest,
-  readBundleIdentity,
-  swapBundle,
-  verifyBundleTrust,
-} from 'craft-native'
+import { spawn } from 'node:child_process'
+import { AutoUpdater, canReplaceBundle, clearQuarantine, extractBundle, generateUpdateManifest, readBundleIdentity, swapBundle, verifyBundleTrust } from 'craft-native'
 
 export { AutoUpdater, generateUpdateManifest }
 

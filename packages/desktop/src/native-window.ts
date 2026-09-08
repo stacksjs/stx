@@ -167,22 +167,22 @@ export const nativeWindow: NativeWindow = {
   },
 
   open(options: NativeWindowOptions): Promise<{ name: string }> {
-    const ns = api()
-    if (!ns?.open) {
+    // A Craft older than `window.open`, or one whose bridge rejects. A tab is
+    // still better than the gesture doing nothing at all. Named rather than
+    // inlined into `.catch()` because both paths below want it.
+    const openInTabInstead = (): { name: string } => {
       if (typeof window !== 'undefined' && options.url)
         window.open(options.url, options.name)
-      return Promise.resolve({ name: options.name })
+      return { name: options.name }
     }
+
+    const ns = api()
+    if (!ns?.open)
+      return Promise.resolve(openInTabInstead())
 
     return ns.open(options)
       .then(result => ({ name: result?.name || options.name }))
-      .catch(() => {
-        // A Craft older than `window.open`. A tab is still better than the
-        // gesture doing nothing at all.
-        if (typeof window !== 'undefined' && options.url)
-          window.open(options.url, options.name)
-        return { name: options.name }
-      })
+      .catch(openInTabInstead)
   },
 
   close: () => call(ns => ns.close?.()),
