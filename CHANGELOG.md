@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.282...v0.2.283)
+
+## 🐛 Bug Fixes
+
+- correct the ts-css version range left behind by the rename ([c4f514d](https://github.com/stacksjs/stx/commit/c4f514d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.283 ([f7dcb43](https://github.com/stacksjs/stx/commit/f7dcb43)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.281...v0.2.282)
 
 ## 💥 Breaking Changes

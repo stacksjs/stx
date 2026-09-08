@@ -1,6 +1,6 @@
 {
   "name": "js-framework-benchmark-stx",
-  "version": "0.2.282",
+  "version": "0.2.283",
   "private": true,
   "type": "module",
   "description": "STX (keyed) benchmark",
