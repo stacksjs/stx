@@ -17,12 +17,13 @@
 
 import type { StxOptions } from '../../src/types'
 import { describe, expect, it } from 'bun:test'
+import path from 'node:path'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
 
 const options = {
   ...defaultConfig,
-  componentsDir: '/Users/glennmichaeltorregosa/Documents/Projects/stx/packages/components/src/ui',
+  componentsDir: path.resolve(__dirname, '../../../components/src/ui'),
 } as StxOptions
 
 /** The `<n>` from `stx_<name>_<n>_<random>`, per scope, in document order. */
