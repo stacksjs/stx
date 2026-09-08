@@ -204,7 +204,7 @@ export function injectColorModeBootScript(html: string, options: ColorModeBootCo
 const bootInsertionPoint = headInsertionPoint
 
 const BOOT_SCRIPT_TAG = new RegExp(`<script\\b[^>]*\\b${COLOR_MODE_BOOT_MARKER}\\b[^>]*>[\\s\\S]*?<\\/script>`, 'i')
-const CHARSET_META = /<meta\b[^>]*\bcharset\b[^>]*>/i
+const CHARSET_META = /<meta\b[^>]*\bcharset\b[^>]*>/gi
 const HEAD_CLOSE = /<\/head>/gi
 
 /**
@@ -230,15 +230,26 @@ function hoistCharsetMeta(html: string): string {
   // render (#1945).
   HEAD_CLOSE.lastIndex = headStart
   const headClose = HEAD_CLOSE.exec(html)
-  const headEnd = headClose ? headClose.index : -1
-  const head = html.slice(headStart, headEnd === -1 ? html.length : headEnd)
+  const headEnd = headClose ? headClose.index : html.length
 
-  const meta = CHARSET_META.exec(head)
-  if (!meta || head.slice(0, meta.index).trim() === '')
+  // Searched at an offset in `html`, not in a copy of the head. Slicing the
+  // head out first cost ~170KB per render even when the answer was "already in
+  // place and nothing to do" -- the head carries the inlined signals runtime,
+  // so it IS most of the page. That copy outlived the fix in 53d7f2e6ae, which
+  // made this function a no-op in result without making it free to reach that
+  // result (#1945).
+  CHARSET_META.lastIndex = headStart
+  const meta = CHARSET_META.exec(html)
+  if (!meta || meta.index >= headEnd)
     return html
 
-  const withoutMeta = head.slice(0, meta.index) + head.slice(meta.index + meta[0].length)
-  return html.slice(0, headStart) + `\n  ${meta[0]}` + withoutMeta + html.slice(headStart + head.length)
+  // Bounded by the meta, so on the common path -- charset already leading --
+  // this is a few characters of whitespace rather than the whole head.
+  if (html.slice(headStart, meta.index).trim() === '')
+    return html
+
+  const metaEnd = meta.index + meta[0].length
+  return `${html.slice(0, headStart)}\n  ${meta[0]}${html.slice(headStart, meta.index)}${html.slice(metaEnd, headEnd)}${html.slice(headEnd)}`
 }
 
 /**
