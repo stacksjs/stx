@@ -1050,7 +1050,17 @@ async function processCustomElementTags(
     // Find all matching component tags
     const tags = findComponentTags(result, tagPattern, skipTags)
 
-    // Process from end to start to preserve indices
+    // What each tag is replaced by, if anything. Collected rather than spliced
+    // in one at a time: a splice rebuilds the whole document, so N component
+    // tags used to mean N rebuilds of the page -- 540KB per render on a
+    // component-dense page, for a document that only needed assembling once
+    // (#1945). A tag with no entry here keeps its original text.
+    const replacements = new Map<number, string>()
+
+    // Still processed from end to start. The order is not about indices any
+    // more -- those all refer to the pre-loop scan of `result` -- but rendering
+    // a component consumes scope ids from a per-render sequence, so the order
+    // in which they are rendered is observable in the output.
     for (let i = tags.length - 1; i >= 0; i--) {
       const tag = tags[i]
 
@@ -1103,7 +1113,7 @@ async function processCustomElementTags(
           rendered = emitClientReactiveAttrs(rendered, resolvedProps.clientReactive)
         }
 
-        result = result.substring(0, tag.startIndex) + rendered + result.substring(tag.endIndex)
+        replacements.set(i, rendered)
         continue
       }
 
@@ -1171,10 +1181,27 @@ async function processCustomElementTags(
       }
 
       // Replace the tag with processed content
-      result = result.substring(0, tag.startIndex) + finalContent + result.substring(tag.endIndex)
+      replacements.set(i, finalContent)
     }
 
-    return result
+    if (replacements.size === 0)
+      return result
+
+    // The one rebuild. Forward this time, because the offsets index into the
+    // string the scan ran over and nothing in the loop above modified it.
+    let assembled = ''
+    let cursor = 0
+    for (let i = 0; i < tags.length; i++) {
+      const replacement = replacements.get(i)
+      if (replacement === undefined)
+        continue
+      assembled += result.slice(cursor, tags[i].startIndex)
+      assembled += replacement
+      cursor = tags[i].endIndex
+    }
+    assembled += result.slice(cursor)
+
+    return assembled
   }
 }
 
