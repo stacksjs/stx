@@ -554,6 +554,47 @@ const RESERVED_PARAM_NAMES = new Set([
  * ```
  */
 /**
+ * Compiled expression bodies, keyed by parameter list and source.
+ *
+ * `new Function` is a compile: it parses the source and allocates a code object,
+ * off-heap and invisible to a heap profiler. One render of a component-dense
+ * page did that 5,666 times for 106 distinct sources -- 1.7MB of source
+ * recompiled per render, a 53x redundancy, and the largest remaining cost
+ * behind stacksjs/stx#1945 once the string copies were gone.
+ *
+ * Sharing one compiled function across those calls is sound because it closes
+ * over nothing: the body is `'use strict'; try { return <expr> } catch ...`,
+ * every value it reads arrives as a parameter, and it keeps no state between
+ * calls. Two calls with the same parameter NAMES and the same source are
+ * therefore interchangeable -- which is why the parameter list is part of the
+ * key and not just the expression.
+ *
+ * Bounded rather than a plain Map. The key space is template-derived, so it is
+ * finite per app, but a long-running server rendering many templates should not
+ * accumulate every expression it has ever seen.
+ */
+const COMPILED_EXPRESSION_LIMIT = 2000
+const compiledExpressions = new Map<string, (...args: unknown[]) => unknown>()
+
+function compileFunctionBody(params: string[], body: string): (...args: unknown[]) => unknown {
+  const key = `${params.join(',')}\u0000${body}`
+  const cached = compiledExpressions.get(key)
+  if (cached)
+    return cached
+
+  // eslint-disable-next-line no-new-func
+  const compiled = new Function(...params, body) as (...args: unknown[]) => unknown
+  // Cleared wholesale rather than evicted one at a time. This is a compile
+  // cache for a finite, template-derived key space, so the limit is a runaway
+  // guard rather than a working-set bound -- reaching it means something is
+  // generating expressions dynamically, and the next render simply re-warms.
+  if (compiledExpressions.size >= COMPILED_EXPRESSION_LIMIT)
+    compiledExpressions.clear()
+  compiledExpressions.set(key, compiled)
+  return compiled
+}
+
+/**
  * The variables an expression actually reads from its surrounding scope.
  *
  * Deliberately not every identifier in the string. A property name is not a
@@ -619,8 +660,7 @@ export function createSafeFunction(expression: string, contextKeys: string[]): (
   }
 
   const buildFunc = (extraParams: string[]): (...args: unknown[]) => unknown =>
-    // eslint-disable-next-line no-new-func
-    new Function(...filteredKeys, ...extraParams, `
+    compileFunctionBody([...filteredKeys, ...extraParams], `
     'use strict';
     try {
       return ${sanitizedExpr};
@@ -631,7 +671,7 @@ catch (e) {
       }
       throw e;
     }
-  `) as (...args: unknown[]) => unknown
+  `)
 
   // Create the function with strict mode
   let func = buildFunc([])
