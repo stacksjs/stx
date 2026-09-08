@@ -1,4 +1,4 @@
-<script server>
+<script server cache>
 export const variant = $props.variant || 'circle'
 export const size = $props.size || 'md'
 export const color = $props.color || 'primary'

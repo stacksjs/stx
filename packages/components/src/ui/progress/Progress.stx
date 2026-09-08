@@ -1,4 +1,4 @@
-<script server>
+<script server cache>
 export const value = $props.value || 0
 export const max = $props.max || 100
 export const variant = $props.variant || 'linear'

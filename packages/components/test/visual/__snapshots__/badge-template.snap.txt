@@ -4,7 +4,7 @@
 (none)
 
 === Template ===
-<script server>
+<script server cache>
   export const variant = $props.variant || 'default'
 export const size = $props.size || 'md'
 export const dot = $props.dot || false

@@ -1,4 +1,4 @@
-<script server>
+<script server cache>
 export const content = $props.content || ''
 export const position = $props.position || 'top'
 export const delay = $props.delay || 0

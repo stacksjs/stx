@@ -1,4 +1,4 @@
-<script server>
+<script server cache>
 export const variant = $props.variant || 'default'
 export const padding = $props.padding || 'default'
 export const hover = $props.hover || false

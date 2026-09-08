@@ -1,4 +1,4 @@
-<script server>
+<script server cache>
 export const src = $props.src || ''
 export const alt = $props.alt || ''
 export const initials = $props.initials || ''

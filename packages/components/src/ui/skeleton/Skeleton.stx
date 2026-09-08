@@ -1,4 +1,4 @@
-<script server>
+<script server cache>
 export const variant = $props.variant || 'text'
 export const count = $props.count || 1
 export const width = $props.width || ''

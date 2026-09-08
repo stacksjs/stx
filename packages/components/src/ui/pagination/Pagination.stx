@@ -1,4 +1,4 @@
-<script server>
+<script server cache>
 export const currentPage = $props.currentPage || 1
 export const totalPages = $props.totalPages || 1
 export const siblingCount = $props.siblingCount || 1
