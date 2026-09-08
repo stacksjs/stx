@@ -1,5 +1,16 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.283...v0.2.284)
+
+## 🔧 Chores
+
+- release v0.2.284 ([a1b8871](https://github.com/stacksjs/stx/commit/a1b8871)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: ts-css 0.3.2, which renames the config type family ([230e918](https://github.com/stacksjs/stx/commit/230e918)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.282...v0.2.283)
 
 ## 🐛 Bug Fixes
