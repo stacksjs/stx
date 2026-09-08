@@ -1312,6 +1312,113 @@ export function getTranslation(
   return result
 }
 
+// =============================================================================
+// Text Direction
+// =============================================================================
+
+/**
+ * Language subtags whose DEFAULT script is right-to-left.
+ *
+ * Keyed by the ISO 639 language subtag rather than by full locale, because
+ * direction is a property of the writing system: `ar` and `ar-EG` differ in
+ * region, not in which of these two lists the language belongs to.
+ *
+ * Membership follows CLDR's default script per language, so languages that are
+ * usually written in Latin today are absent even where an Arabic-script
+ * orthography also exists — Hausa (Ajami) and Kurmanji Kurdish are the ones
+ * people expect to find here. Those are reached by their script subtag
+ * (`ha-Arab`) or by the language that actually denotes the RTL variety
+ * (`ckb` for Sorani), which is what keeps `ku` and `ha` from mis-flipping every
+ * page that uses them in their ordinary Latin form.
+ */
+const RTL_LANGUAGES: ReadonlySet<string> = new Set([
+  'ar', // Arabic
+  'arc', // Aramaic
+  'ckb', // Central Kurdish (Sorani)
+  'dv', // Divehi
+  'fa', // Persian
+  'he', // Hebrew
+  'khw', // Khowar
+  'ks', // Kashmiri
+  'nqo', // N'Ko
+  'prs', // Dari
+  'ps', // Pashto
+  'sd', // Sindhi
+  'syr', // Syriac
+  'ug', // Uyghur
+  'ur', // Urdu
+  'uz-af', // Uzbek (Afghanistan)
+  'yi', // Yiddish
+])
+
+/**
+ * Script subtags written right-to-left.
+ *
+ * An explicit script wins over the language default in both directions, which
+ * is the only way to tell `pa-Guru` from `pa-Arab`, or Ajami Hausa (`ha-Arab`)
+ * from the Latin orthography that `ha` alone means.
+ */
+const RTL_SCRIPTS: ReadonlySet<string> = new Set([
+  'adlm',
+  'arab',
+  'aran',
+  'hebr',
+  'nkoo',
+  'rohg',
+  'syrc',
+  'thaa',
+  'yezi',
+])
+
+/** Text direction of a document or element. */
+export type TextDirection = 'ltr' | 'rtl'
+
+/**
+ * Resolve the writing direction of a BCP 47 locale tag.
+ *
+ * An explicit script subtag decides on its own; otherwise the language subtag
+ * does. Anything unrecognised is `'ltr'`, which is both the CSS initial value
+ * and the safer guess.
+ *
+ * @example
+ * getLocaleDirection('en')        // 'ltr'
+ * getLocaleDirection('ar-EG')     // 'rtl'
+ * getLocaleDirection('ha-Arab')   // 'rtl' — script overrides the language
+ * getLocaleDirection('fa-Latn')   // 'ltr' — and in the other direction too
+ */
+export function getLocaleDirection(locale: string | undefined | null): TextDirection {
+  if (!locale)
+    return 'ltr'
+
+  const subtags = locale.trim().toLowerCase().replace(/_/g, '-').split('-')
+  const language = subtags[0]
+  if (!language)
+    return 'ltr'
+
+  // A four-letter subtag in second position is a script (BCP 47 ordering).
+  const script = subtags[1]?.length === 4 ? subtags[1] : undefined
+  if (script)
+    return RTL_SCRIPTS.has(script) ? 'rtl' : 'ltr'
+
+  // `uz-af` is the one region-qualified entry, so check the two-subtag form
+  // before falling back to the bare language.
+  if (subtags.length > 1 && RTL_LANGUAGES.has(`${language}-${subtags[1]}`))
+    return 'rtl'
+
+  return RTL_LANGUAGES.has(language) ? 'rtl' : 'ltr'
+}
+
+/**
+ * Whether a locale is written right-to-left.
+ *
+ * @example
+ * isRtlLocale('he')  // true
+ * isRtlLocale('en')  // false
+ */
+export function isRtlLocale(locale: string | undefined | null): boolean {
+  return getLocaleDirection(locale) === 'rtl'
+}
+
 /**
  * Process @translate directive
  */
