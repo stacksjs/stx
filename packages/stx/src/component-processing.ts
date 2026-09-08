@@ -130,17 +130,84 @@ function tagNameMatcherFor(tagPattern: RegExp): RegExp {
 }
 
 /**
+ * Lowercased mirrors of a caller's HTML tag set, built once per set.
+ *
+ * The sets below list the SVG elements under their camelCase spellings
+ * (`clipPath`, `linearGradient`, `feGaussianBlur`), so a raw `has()` on a
+ * lowercased tag name misses them. Only the new all-caps check reads this
+ * mirror; the lowercase pass keeps its existing exact-membership behaviour.
+ */
+const loweredHtmlTags = new WeakMap<Set<string>, Set<string>>()
+
+/**
+ * Skip predicate for the PascalCase pass: an HTML element SHOUTED in caps.
+ *
+ * HTML tag names are case-insensitive, so `<STYLE>`, `<DIV>` and `<H1>` are
+ * ordinary elements — but they also match the PascalCase component pattern
+ * (an initial capital followed by letters and digits), and that pass was the
+ * only one given no skip set. It therefore resolved `<STYLE>` to `style.stx`,
+ * found nothing, and spliced an ENOENT error (with absolute server paths) into
+ * the page — a user-visible failure on valid HTML input.
+ *
+ * Handing the pass the full `htmlTags` set is NOT the fix: it is a purely
+ * case-insensitive membership test, so it would also swallow `<Table>`,
+ * `<Button>`, `<Image>`, `<Video>`, `<Select>`, `<Progress>`, `<Form>` and
+ * `<Dialog>` — every one of which `@stacksjs/components` actually ships.
+ *
+ * The discriminator is SPELLING, and it is decided without touching the disk:
+ *
+ *   - stx components are PascalCase (`MyComponent`), never SCREAMING_CASE. So
+ *     `Table` (component) and `TABLE` (element) never collide, and this stays
+ *     a pure syntax rule — a name does not change meaning because a file
+ *     appeared or vanished next to it, and a genuinely missing `<Table>` still
+ *     reports itself instead of silently rendering an empty HTML table.
+ *   - The all-caps namespace only overlaps PascalCase for single-letter names
+ *     (`<A>`, `<B>`, `<I>`, `<P>`, `<Q>`, `<S>`, `<U>`). Those are HTML tags;
+ *     a one-letter component is not a convention anyone uses, and the
+ *     lowercase pass already treats `<a>`/`<b>` as HTML.
+ *   - Membership in `htmlTags` is still required, so all-caps names that are
+ *     NOT elements — `<FAQ />`, `<CTA />`, `<SEO />` — keep resolving as
+ *     components.
+ *
+ * Mixed-case spellings of an element (`<Div>`, `<Br>`) deliberately remain
+ * component references: they are indistinguishable from a PascalCase component
+ * name, so guessing either way would break someone.
+ */
+export function uppercaseHtmlTagSkip(htmlTags: Set<string>): (tagName: string) => boolean {
+  let cached = loweredHtmlTags.get(htmlTags)
+  if (!cached) {
+    cached = new Set([...htmlTags].map(tag => tag.toLowerCase()))
+    loweredHtmlTags.set(htmlTags, cached)
+  }
+  const known = cached
+  return (tagName: string) => !/[a-z]/.test(tagName) && known.has(tagName.toLowerCase())
+}
+
+/**
  * Find component tags in HTML, properly handling quoted strings
  * This solves the issue where `>` inside attribute values would incorrectly end the tag
  *
  * @param html - The HTML string to search
  * @param tagPattern - Regex pattern for tag name (for PascalCase components)
- * @param skipTags - Optional set of tag names to skip (for HTML tags)
+ * @param skipTags - Optional set of tag names to skip (matched case-insensitively),
+ *   or a predicate receiving the tag name exactly as it was written. The
+ *   PascalCase pass needs the predicate form: it must skip `<STYLE>` while
+ *   still claiming `<Style>` (see `uppercaseHtmlTagSkip`).
  * @returns Array of found component tags
  */
-export function findComponentTags(html: string, tagPattern: RegExp, skipTags?: Set<string>): ComponentTagMatch[] {
+export function findComponentTags(
+  html: string,
+  tagPattern: RegExp,
+  skipTags?: Set<string> | ((tagName: string) => boolean),
+): ComponentTagMatch[] {
   const matches: ComponentTagMatch[] = []
   let pos = 0
+
+  const shouldSkip = typeof skipTags === 'function'
+    ? skipTags
+    : skipTags
+      ? (tagName: string) => skipTags.has(tagName.toLowerCase())
+      : undefined
 
   while (pos < html.length) {
     // Find the start of a potential tag
@@ -161,7 +228,7 @@ export function findComponentTags(html: string, tagPattern: RegExp, skipTags?: S
     const tagName = tagNameMatch[1]
 
     // Skip HTML tags - only advance past the opening tag, not the content
-    if (skipTags && skipTags.has(tagName.toLowerCase())) {
+    if (shouldSkip && shouldSkip(tagName)) {
       // Find the end of just the opening tag
       let currentPos = tagStart + 1 + tagName.length
       while (currentPos < html.length && html[currentPos] !== '>') {
@@ -867,9 +934,10 @@ export async function processCustomElements(
   const kebabPattern = /[a-z][a-z0-9]*-[a-z0-9-]*/
   output = await processComponentsWithParser(output, kebabPattern, false)
 
-  // Process PascalCase components (e.g., <MyComponent />)
+  // Process PascalCase components (e.g., <MyComponent />) - skip HTML tags
+  // SHOUTED in caps (<STYLE>, <DIV>), which are elements, not components.
   const pascalPattern = /[A-Z][a-zA-Z0-9]*/
-  output = await processComponentsWithParser(output, pascalPattern, true)
+  output = await processComponentsWithParser(output, pascalPattern, true, uppercaseHtmlTagSkip(htmlTags))
 
   // Process single-word lowercase components (e.g., <card />) - skip HTML tags
   const lowercasePattern = /[a-z][a-z0-9]*/
@@ -883,7 +951,7 @@ export async function processCustomElements(
   /**
    * Process components using the proper parser that handles quoted strings
    */
-  async function processComponentsWithParser(html: string, tagPattern: RegExp, isPascalCase: boolean, skipTags?: Set<string>): Promise<string> {
+  async function processComponentsWithParser(html: string, tagPattern: RegExp, isPascalCase: boolean, skipTags?: Set<string> | ((tagName: string) => boolean)): Promise<string> {
     let result = html
 
     // Find all matching component tags (pass skipTags to avoid consuming HTML tag content)

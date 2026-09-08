@@ -23,7 +23,7 @@ import type { ResolvedProps, RenderContext } from './component-registry'
 import { registry } from './component-registry'
 import { processConditionals } from './conditionals'
 import { registerBuiltins } from './builtins'
-import { decodeAttributeEntities, decodeStxProp, findComponentTags, parseMultilineAttributes, pascalToKebab, restoreStashedScripts, stashScriptElements } from './component-processing'
+import { decodeAttributeEntities, decodeStxProp, findComponentTags, parseMultilineAttributes, pascalToKebab, restoreStashedScripts, stashScriptElements, uppercaseHtmlTagSkip } from './component-processing'
 import { maskAtElementPosition, matchHtmlComment } from './html-masking'
 import { renderComponentWithSlot, userComponentFileExists } from './utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluateObject, freeIdentifiers } from './safe-evaluator'
@@ -1021,9 +1021,10 @@ async function processCustomElementTags(
   const kebabPattern = /[a-z][a-z0-9]*-[a-z0-9-]*/
   output = await processTagsWithParser(output, kebabPattern, false)
 
-  // Process PascalCase components (e.g., <MyComponent />)
+  // Process PascalCase components (e.g., <MyComponent />) - skip HTML tags
+  // SHOUTED in caps (<STYLE>, <DIV>), which are elements, not components.
   const pascalPattern = /[A-Z][a-zA-Z0-9]*/
-  output = await processTagsWithParser(output, pascalPattern, true)
+  output = await processTagsWithParser(output, pascalPattern, true, uppercaseHtmlTagSkip(htmlTags))
 
   // Process single-word lowercase components (e.g., <card />) - skip HTML tags
   const lowercasePattern = /[a-z][a-z0-9]*/
@@ -1041,7 +1042,7 @@ async function processCustomElementTags(
     html: string,
     tagPattern: RegExp,
     isPascalCase: boolean,
-    skipTags?: Set<string>,
+    skipTags?: Set<string> | ((tagName: string) => boolean),
   ): Promise<string> {
     if (!html) return html
     let result = html
