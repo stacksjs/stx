@@ -58,6 +58,34 @@ interface BuildErrorPayload {
  */
 type CrosswindEngine = Pick<typeof import('@cwcss/crosswind'), 'CSSGenerator' | 'config'>
 
+/**
+ * Where the utility-CSS engine can be found inside a package store, in
+ * priority order.
+ *
+ * The engine has been published under three names. It is now a subpath of
+ * `@stacksjs/ts-css`, which absorbed it; before that it shipped standalone as
+ * `@cwcss/crosswind`, and before that as `@stacksjs/crosswind`. All three are
+ * probed, newest first, so an app that has upgraded gets the engine it
+ * declares while one that has not keeps working untouched.
+ */
+const ENGINE_PACKAGE_ENTRIES: string[][] = [
+  ['@stacksjs', 'ts-css', 'dist', 'engine', 'index.js'],
+  ['@stacksjs', 'ts-css', 'src', 'engine', 'index.ts'],
+  ['@cwcss', 'crosswind', 'dist', 'index.js'],
+  ['@cwcss', 'crosswind', 'src', 'index.ts'],
+  ['@stacksjs', 'crosswind', 'dist', 'index.js'],
+  ['@stacksjs', 'crosswind', 'src', 'index.ts'],
+]
+
+/** The same three names as bare specifiers, for standard resolution. */
+const ENGINE_SPECIFIERS = [
+  '@stacksjs/ts-css/engine',
+  '@cwcss/crosswind',
+  '@cwcss/crosswind/dist/index.js',
+  '@stacksjs/crosswind',
+  '@stacksjs/crosswind/dist/index.js',
+]
+
 // Hoisted lazy import promise for @stacksjs/stx — kicked off once at module
 // load instead of inside every request handler. The promise is cached, so the
 // many `await stxModule` reads downstream cost a microtask each, not a full
@@ -2127,8 +2155,8 @@ function __stxOverlay(errs){
     let dir = process.cwd()
     while (dir !== nodePath.dirname(dir)) {
       for (const store of ['node_modules', 'pantry']) {
-        for (const entry of ['dist/index.js', 'src/index.ts']) {
-          const candidate = nodePath.join(dir, store, '@cwcss', 'crosswind', entry)
+        for (const entry of ENGINE_PACKAGE_ENTRIES) {
+          const candidate = nodePath.join(dir, store, ...entry)
           try {
             if (!await Bun.file(candidate).exists())
               continue
@@ -2144,24 +2172,28 @@ function __stxOverlay(errs){
       dir = nodePath.dirname(dir)
     }
 
+    // bun-plugin-stx's own dependency, under whichever name it is installed.
+    for (const specifier of ENGINE_SPECIFIERS) {
+      try {
+        const mod = await import(specifier)
+        if (mod?.CSSGenerator) {
+          crosswindModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
+          return crosswindModule
+        }
+      }
+      catch { /* try the next specifier */ }
+    }
+
     try {
-      // bun-plugin-stx's own dependency
-      const mod = await import('@cwcss/crosswind')
+      // Last resort: a checkout on this machine, so a stray clone can
+      // never shadow a version the project or the plugin declares.
+      const localPath = nodePath.join(process.env.HOME || '', 'Code/Tools/crosswind/packages/toolkit/src/engine/index.ts')
+      const mod = await import(localPath)
       crosswindModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
       return crosswindModule
     }
     catch {
-      try {
-        // Last resort: a checkout on this machine, so a stray clone can
-        // never shadow a version the project or the plugin declares.
-        const localPath = nodePath.join(process.env.HOME || '', 'Code/Tools/crosswind/packages/crosswind/src/index.ts')
-        const mod = await import(localPath)
-        crosswindModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
-        return crosswindModule
-      }
-      catch {
-        return null
-      }
+      return null
     }
   }
 

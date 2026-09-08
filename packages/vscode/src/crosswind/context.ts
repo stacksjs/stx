@@ -25,23 +25,38 @@ let parseClass: any
 let builtInRules: any
 let crosswindLoaded = false
 
+/**
+ * The utility-CSS engine, newest package name first. It now lives at the
+ * `engine` subpath of `@stacksjs/ts-css`; `@cwcss/crosswind` is the standalone
+ * package it was published as before that.
+ */
+export const ENGINE_SPECIFIERS = ['@stacksjs/ts-css/engine', '@cwcss/crosswind']
+
 async function loadCrosswind() {
   if (crosswindLoaded)
     return
 
   setupBunPolyfill()
 
-  try {
-    const crosswind = await import('@cwcss/crosswind')
-    CSSGenerator = crosswind.CSSGenerator
-    parseClass = crosswind.parseClass
-    builtInRules = crosswind.builtInRules
-    crosswindLoaded = true
+  let lastError: unknown
+  for (const specifier of ENGINE_SPECIFIERS) {
+    try {
+      const crosswind = await import(specifier)
+      if (!crosswind?.CSSGenerator)
+        continue
+      CSSGenerator = crosswind.CSSGenerator
+      parseClass = crosswind.parseClass
+      builtInRules = crosswind.builtInRules
+      crosswindLoaded = true
+      return
+    }
+    catch (error) {
+      lastError = error
+    }
   }
-  catch (error) {
-    console.error('[Crosswind] Failed to load @cwcss/crosswind:', error)
-    throw new Error(`Cannot load @cwcss/crosswind: ${error}`)
-  }
+
+  console.error(`[Crosswind] Failed to load the CSS engine from any of ${ENGINE_SPECIFIERS.join(', ')}:`, lastError)
+  throw new Error(`Cannot load the CSS engine: ${lastError}`)
 }
 
 /**

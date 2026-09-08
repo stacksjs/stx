@@ -163,6 +163,34 @@ async function tryImportCrosswind(importPath: string): Promise<CrosswindModule |
 }
 
 /**
+ * Where the utility-CSS engine can be found inside a package store, in
+ * priority order.
+ *
+ * The engine has been published under three names. It is now a subpath of
+ * `@stacksjs/ts-css`, which absorbed it; before that it shipped standalone as
+ * `@cwcss/crosswind`, and before that as `@stacksjs/crosswind`. All three are
+ * probed, newest first, so an app that has upgraded gets the engine it
+ * declares while one that has not keeps working untouched.
+ */
+const ENGINE_PACKAGE_ENTRIES: string[][] = [
+  ['@stacksjs', 'ts-css', 'dist', 'engine', 'index.js'],
+  ['@stacksjs', 'ts-css', 'src', 'engine', 'index.ts'],
+  ['@cwcss', 'crosswind', 'dist', 'index.js'],
+  ['@cwcss', 'crosswind', 'src', 'index.ts'],
+  ['@stacksjs', 'crosswind', 'dist', 'index.js'],
+  ['@stacksjs', 'crosswind', 'src', 'index.ts'],
+]
+
+/** The same three names as bare specifiers, for standard resolution. */
+const ENGINE_SPECIFIERS = [
+  '@stacksjs/ts-css/engine',
+  '@cwcss/crosswind',
+  '@cwcss/crosswind/dist/index.js',
+  '@stacksjs/crosswind',
+  '@stacksjs/crosswind/dist/index.js',
+]
+
+/**
  * Crosswind copies installed by the PROJECT being served, nearest first.
  *
  * These are tried before a bare-specifier import. `import('@cwcss/crosswind')`
@@ -183,14 +211,10 @@ function findProjectCrosswindPaths(): string[] {
   // with no node_modules.
   let currentDir = process.cwd()
   while (currentDir !== path.dirname(currentDir)) {
-    // Try @cwcss/crosswind first (new package name), in both stores
-    paths.push(path.join(currentDir, 'node_modules', '@cwcss', 'crosswind', 'dist', 'index.js'))
-    paths.push(path.join(currentDir, 'node_modules', '@cwcss', 'crosswind', 'src', 'index.ts'))
-    paths.push(path.join(currentDir, 'pantry', '@cwcss', 'crosswind', 'dist', 'index.js'))
-    paths.push(path.join(currentDir, 'pantry', '@cwcss', 'crosswind', 'src', 'index.ts'))
-    // Also try @stacksjs/crosswind (legacy package name)
-    paths.push(path.join(currentDir, 'node_modules', '@stacksjs', 'crosswind', 'dist', 'index.js'))
-    paths.push(path.join(currentDir, 'pantry', '@stacksjs', 'crosswind', 'dist', 'index.js'))
+    for (const store of ['node_modules', 'pantry']) {
+      for (const entry of ENGINE_PACKAGE_ENTRIES)
+        paths.push(path.join(currentDir, store, ...entry))
+    }
     currentDir = path.dirname(currentDir)
   }
 
@@ -209,7 +233,10 @@ function findDevCrosswindPaths(): string[] {
   // Common development locations (relative to home)
   if (homeDir) {
     const devPaths = [
-      // crosswind monorepo (both dist and src)
+      // crosswind monorepo (both dist and src; the engine moved under the
+      // toolkit package when it was folded into @stacksjs/ts-css)
+      path.join(homeDir, 'Code', 'Tools', 'crosswind', 'packages', 'toolkit', 'dist', 'engine', 'index.js'),
+      path.join(homeDir, 'Code', 'Tools', 'crosswind', 'packages', 'toolkit', 'src', 'engine', 'index.ts'),
       path.join(homeDir, 'Code', 'Tools', 'crosswind', 'packages', 'crosswind', 'dist', 'index.js'),
       path.join(homeDir, 'Code', 'Tools', 'crosswind', 'packages', 'crosswind', 'src', 'index.ts'),
       path.join(homeDir, 'repos', 'stacks-org', 'crosswind', 'packages', 'crosswind', 'dist', 'index.js'),
@@ -275,12 +302,7 @@ export async function loadCrosswind(): Promise<CrosswindModule | null> {
     }
 
     // Strategy 2: stx's own dependency, via standard resolution.
-    const importPaths = [
-      '@cwcss/crosswind',
-      '@cwcss/crosswind/dist/index.js',
-      '@stacksjs/crosswind',
-      '@stacksjs/crosswind/dist/index.js',
-    ]
+    const importPaths = ENGINE_SPECIFIERS
 
     for (const importPath of importPaths) {
       const result = await tryImportCrosswind(importPath)

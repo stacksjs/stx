@@ -70,6 +70,7 @@ try {
     splitting: false,
     external: [
       '@stacksjs/stx',
+      '@stacksjs/ts-css',
       '@cwcss/crosswind',
       'ts-syntax-highlighter',
     ],
@@ -121,6 +122,7 @@ const utilResult = await Bun.build({
   splitting: false,
   external: [
     '@stacksjs/stx',
+    '@stacksjs/ts-css',
     '@cwcss/crosswind',
     'ts-syntax-highlighter',
   ],

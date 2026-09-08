@@ -102,8 +102,30 @@ describe('Crosswind Integration Tests', () => {
     const contextPath = path.join(PACKAGE_ROOT, 'src/crosswind/context.ts')
     const content = await Bun.file(contextPath).text()
 
-    expect(content).toContain("await import('@cwcss/crosswind')")
+    // Imported through a variable rather than a literal specifier: the
+    // engine's newest package name is not a static dependency here, and a
+    // literal would make the compiler demand it.
+    expect(content).toContain('await import(specifier)')
     expect(content).toContain('async function loadCrosswind()')
+  })
+
+  test('should try the engine package names newest first', async () => {
+    const contextPath = path.join(PACKAGE_ROOT, 'src/crosswind/context.ts')
+    const content = await Bun.file(contextPath).text()
+
+    // The engine moved into @stacksjs/ts-css; @cwcss/crosswind is the
+    // standalone package it shipped as before that. An extension pointed at
+    // the older one on a project that has upgraded generates stale CSS, so
+    // the order here is what keeps hovers and completions honest.
+    // Scoped to the specifier table — `@cwcss/crosswind` also appears in the
+    // type import on line 1, which says nothing about resolution order.
+    const table = content.match(/ENGINE_SPECIFIERS\s*=\s*\[([^\]]*)\]/)?.[1] ?? ''
+    const preferred = table.indexOf('@stacksjs/ts-css/engine')
+    const legacy = table.indexOf('@cwcss/crosswind')
+
+    expect(preferred).toBeGreaterThan(-1)
+    expect(legacy).toBeGreaterThan(-1)
+    expect(preferred).toBeLessThan(legacy)
   })
 
   test('should have proper async initialization pattern', async () => {

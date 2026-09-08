@@ -3,9 +3,21 @@ import type * as vscode from 'vscode'
 /**
  * Sort utility classes based on Crosswind's rule ordering
  */
+import { ENGINE_SPECIFIERS } from './context'
+
 export async function sortClasses(classes: string[]): Promise<string[]> {
   try {
-    const crosswind = await import('@cwcss/crosswind')
+    // Resolved through the shared table rather than a literal specifier: the
+    // engine's newest package name is not a static dependency of this
+    // extension, and a literal would make the compiler demand it.
+    let crosswind: any
+    for (const specifier of ENGINE_SPECIFIERS) {
+      crosswind = await import(specifier).catch(() => null)
+      if (crosswind?.parseClass)
+        break
+    }
+    if (!crosswind?.parseClass)
+      return classes
     const { builtInRules, parseClass, defaultConfig } = crosswind
 
     const classesWithPriority = classes.map((className) => {

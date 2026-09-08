@@ -11,6 +11,7 @@ try {
     format: 'cjs',
     external: [
       'vscode',
+      '@stacksjs/ts-css',
       '@cwcss/crosswind',
       'prettier',
     ],
@@ -47,6 +48,7 @@ try {
     format: 'esm',
     external: [
       'vscode',
+      '@stacksjs/ts-css',
       '@cwcss/crosswind'
     ],
     naming: '[dir]/[name].mjs',
