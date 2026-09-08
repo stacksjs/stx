@@ -23,7 +23,7 @@
         "ejs": "^6.0.1",
         "gray-matter": "^4.0.3",
         "handlebars": "^4.7.9",
-        "isomorphic-dompurify": "^3.22.0",
+        "isomorphic-dompurify": "^4.2.0",
         "js-yaml": "^5.2.2",
         "liquidjs": "^10.29.0",
         "markdown-it": "^14.1.1",
@@ -1624,7 +1624,7 @@
       "name": "@stacksjs/desktop",
       "version": "0.2.280",
       "dependencies": {
-        "craft-native": ">=0.0.76",
+        "craft-native": ">=0.0.88",
       },
     },
     "packages/devtools": {
@@ -2445,7 +2445,7 @@
 
     "constantinople": ["constantinople@4.0.1", "", { "dependencies": { "@babel/parser": "^7.6.0", "@babel/types": "^7.6.1" } }, "sha512-vCrqcSIq4//Gx74TXXCGnHpulY1dskqLTFGDmhrGxzeXL8lF8kvXv6mpNWlJj1uD4DW23D4ljAqbY4RRaaUZIw=="],
 
-    "craft-native": ["craft-native@0.0.76", "", { "bin": { "craft-sdk": "./dist/cli.js" } }, "sha512-NQ8taXw0GTpH6fKc3i+KF1Yj5CbIDiViK0UZ69P4kewRfo337E2lzH8NZ8/ohz1aZ97+h6zKaHztCyB/2+1hQQ=="],
+    "craft-native": ["craft-native@0.0.90", "", { "bin": { "craft-sdk": "./dist/cli.js" } }, "sha512-38sZHDJfjisiIC4e/JezvGXw7eqwruoIP5iVsrP8Qa8h+NMpDi6N24jp0Oflb4/RVOwg+xQQwTcihn86s8W2lA=="],
 
     "create-stx": ["create-stx@workspace:packages/create-stx"],
 
@@ -2611,7 +2611,7 @@
 
     "iso-639-1": ["iso-639-1@3.1.5", "", {}, "sha512-gXkz5+KN7HrG0Q5UGqSMO2qB9AsbEeyLP54kF1YrMsIxmu+g4BdB7rflReZTSTZGpfj8wywu6pfPBCylPIzGQA=="],
 
-    "isomorphic-dompurify": ["isomorphic-dompurify@3.22.0", "", { "dependencies": { "dompurify": "^3.4.12", "jsdom": "^30.0.0" } }, "sha512-cz/BkSODnQir4IV2quqbuEHhAGz4MAYGvhoemsxuwMpY/oZbRHlNjPLPyIQ0fdULiwDPUE+OHPwWb6XTEiNk1A=="],
+    "isomorphic-dompurify": ["isomorphic-dompurify@4.2.0", "", { "dependencies": { "dompurify": "^3.4.12", "jsdom": "^30.0.0" } }, "sha512-0rp/dna3nh3lQNZrWRJTZzRS8rSYBFXq7zuDOMn0MiklhFyND8fQqQbAcVFv1MkRJ2xDhgR6G7E0bl1msYQKTQ=="],
 
     "js-framework-benchmark-stx": ["js-framework-benchmark-stx@workspace:packages/benchmarks/js-framework-benchmark"],
 
