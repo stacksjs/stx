@@ -98,7 +98,7 @@
     "!packages/vscode"
   ],
   "dependencies": {
-    "@stacksjs/ts-css": "^0.2.19",
+    "@stacksjs/ts-css": "^0.3.1",
     "very-happy-dom": "^0.1.10"
   },
   "devDependencies": {
