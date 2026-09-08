@@ -22,7 +22,7 @@ A modern templating engine with Vue-like Single File Components, Laravel Blade d
 - **PWA Support** - Service worker, manifest, and offline page generation
 - **Web Component Libraries** - Compile `.stx` design systems to progressive custom elements with CSS-first rendering, SSR/Declarative Shadow DOM, CEM, JSX types, and ESM bundles
 - **200K+ Icons** - Built-in Iconify integration
-- **Crosswind CSS** - Utility-first CSS framework integration
+- **Css CSS** - Utility-first CSS framework integration
 - **Native Desktop** - Build desktop apps with `stx dev --native`
 - **Custom Directives** - Extend with your own directives
 
@@ -442,7 +442,7 @@ The stx VS Code extension provides full IDE support:
 - Hover documentation for directives and variables
 - Go-to-definition for templates and components
 - Real-time diagnostics (unclosed directives, missing templates)
-- Crosswind CSS utility class previews, color decorations, and sorting
+- Css CSS utility class previews, color decorations, and sorting
 - Code folding, document links, and semantic tokens
 
 The extension also exports all its features as a library for building custom plugins:
@@ -453,7 +453,7 @@ import {
   createCompletionProvider,
   VirtualTsDocumentProvider,
   ComponentRegistry,
-  activateCrosswind,
+  activateCss,
 } from 'vscode-stacks'
 ```
 

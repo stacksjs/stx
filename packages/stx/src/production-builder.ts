@@ -23,7 +23,7 @@ import { generateManifest, writeManifest, type ManifestRoute, type ManifestAsset
 import { injectColorModeBootScript } from './color-mode-boot'
 import { applyHtmlAttrs, ensureDocumentShell } from './document-shell'
 import { extractContainerContent } from './app-shell'
-import { injectCrosswindCSS } from './dev-server/crosswind'
+import { injectCss } from './dev-server/ts-css'
 import { loadStxConfig } from './config'
 
 /**
@@ -281,13 +281,13 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
         }
       }
 
-      // Regenerate Crosswind CSS AFTER shell wrapping so classes applied to
+      // Regenerate Css CSS AFTER shell wrapping so classes applied to
       // <body> (via stx.config.ts `app.head.bodyClass` — e.g. `bg-black
-      // text-white`) get scanned and generated. The initial Crosswind pass
+      // text-white`) get scanned and generated. The initial Css pass
       // runs during compileTemplate before <body> exists, so body classes are
       // otherwise missed and the page renders unstyled.
-      compiled.html = compiled.html.replace(/<style data-crosswind="generated">[\s\S]*?<\/style>\s*/g, '')
-      compiled.html = await injectCrosswindCSS(compiled.html)
+      compiled.html = compiled.html.replace(/<style data-css="generated">[\s\S]*?<\/style>\s*/g, '')
+      compiled.html = await injectCss(compiled.html)
 
       // Extract fragment AFTER shell wrapping — must contain ONLY the router
       // container's inner content, not the full body. The SPA router injects

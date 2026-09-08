@@ -56,7 +56,7 @@
     [data-theme="dark"] .icon-moon { display: none; }
     [data-theme="dark"] .icon-sun { display: block; }
 
-    /* Crosswind doesn't yet ship an `animate-fade-in` shorthand — add a minimal keyframe. */
+    /* Css doesn't yet ship an `animate-fade-in` shorthand — add a minimal keyframe. */
     @keyframes fadeIn { from { opacity: 0; transform: translateY(0.5rem); } to { opacity: 1; transform: none; } }
     .animate-fade-in { animation: fadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
@@ -64,7 +64,7 @@
     @keyframes toastIn { from { opacity: 0; transform: translateY(1rem) scale(0.95); } to { opacity: 1; transform: none; } }
     .toast-anim { animation: toastIn 0.32s cubic-bezier(0.16, 1, 0.3, 1); }
 
-    /* Focus rings — crosswind's default ring tokens don't auto-wire to our brand */
+    /* Focus rings — css's default ring tokens don't auto-wire to our brand */
     *:focus-visible { outline: 2px solid #FF3E54; outline-offset: 2px; border-radius: 0.375rem; }
 
     /* Scrollbar */

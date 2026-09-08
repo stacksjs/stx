@@ -15,7 +15,7 @@
  * </TransitionGroup>
  * ```
  *
- * With `name="card"`, supply the transition classes (e.g. via crosswind/CSS):
+ * With `name="card"`, supply the transition classes (e.g. via css/CSS):
  * `card-enter-from` / `card-enter-active` / `card-enter-to`,
  * `card-leave-from` / `card-leave-active` / `card-leave-to`, and `card-move`
  * (applied to elements that shift position during a reorder). The first render

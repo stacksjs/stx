@@ -49,7 +49,7 @@ export default {
 
 Everything stx generates for a project that is neither source nor a build
 artifact you ship lives under one directory: the compiled-template cache, the
-Crosswind CSS cache, the client-script bundle cache and its temp directory, the
+Css CSS cache, the client-script bundle cache and its temp directory, the
 generated route manifest and route types, dev-server output, SSG and media
 caches, and story snapshots. It defaults to a hidden `.stx/` in the project
 root.

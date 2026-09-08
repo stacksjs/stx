@@ -1,10 +1,10 @@
-import type { CrosswindConfig } from '@cwcss/crosswind'
+import type { CssConfig } from '@stacksjs/ts-css/engine'
 
 /**
- * Crosswind config for Drivly.
+ * Css config for Drivly.
  * Only scans drivly's own files so we don't pick up stx's other examples.
  */
-const config: Partial<CrosswindConfig> = {
+const config: Partial<CssConfig> = {
   content: [
     './pages/**/*.stx',
     './layouts/**/*.stx',

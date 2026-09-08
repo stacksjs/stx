@@ -43,7 +43,7 @@ function page(name: string, body: string): void {
 
 const RUNTIME = '<script data-stx-scoped data-stx-runtime>var stx = 1; /* big */</script>'
 const ROUTER = '<script data-stx-router>var router = 1; /* big */</script>'
-const CSS = '<style data-crosswind="generated">.a{color:red}</style>'
+const CSS = '<style data-css="generated">.a{color:red}</style>'
 
 function assets(): string[] {
   const assetDir = path.join(dir, EXTERNALIZED_ASSET_DIR)
@@ -78,7 +78,7 @@ describe('shared blobs become shared files', () => {
 
     const html = readFileSync(path.join(dir, 'a.html'), 'utf8')
     expect(html).toContain('rel="stylesheet"')
-    expect(html).not.toContain('<style data-crosswind')
+    expect(html).not.toContain('<style data-css')
   })
 
   it('leaves an href that resolves to a real file', () => {

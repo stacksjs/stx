@@ -61,7 +61,7 @@ import { extractPageMetaFromSource } from './page-meta'
 import { resolveSiteUrl, siteUrlFallbackWarning } from './site-url'
 import { generateRobotsTxt } from './seo'
 import { stateDir } from './state-dir'
-import { injectCrosswindCSS } from './dev-server/crosswind'
+import { injectCss } from './dev-server/ts-css'
 import { clearBundleFailures, getBundleFailures } from './client-script-bundler'
 import {
   loadMiddlewareFromDirectory,
@@ -170,11 +170,11 @@ export interface SSGConfig {
    *
    * A page's key is its own file plus the dependencies collected while
    * rendering it, which covers templates, components and layouts and nothing
-   * else. Anything build-wide — the Crosswind config, an env var the pages read
+   * else. Anything build-wide — the Css config, an env var the pages read
    * — is invisible to it, and a build that reports every route `Cached` and
    * exits 0 gives no signal that it used the old value (#1940).
    *
-   * Defaults to a digest of the resolved Crosswind config. Set it to add your
+   * Defaults to a digest of the resolved Css config. Set it to add your
    * own build inputs; set it to a constant to opt out of that default.
    */
   cacheSalt?: string
@@ -367,7 +367,7 @@ class BuildCache {
    *
    * The dependency list is collected while rendering a page, so it holds the
    * templates, components and layouts that page reached — and nothing else. The
-   * Crosswind config is not in it, yet it decides the stylesheet every page
+   * Css config is not in it, yet it decides the stylesheet every page
    * ships. Editing a preflight or the safelist therefore produced a build that
    * reported `Cached: 24`, exited 0, and emitted the old CSS: the one edit that
    * applies to every page was the one the key ignored.
@@ -854,11 +854,11 @@ async function renderPage(
   // navigating differently depending on which binary rendered it (#1792 P2).
   html = await injectRouterScript(html, { router: options.router })
 
-  // Belt-and-suspenders: ensure Crosswind CSS is injected even if a race
+  // Belt-and-suspenders: ensure Css CSS is injected even if a race
   // condition inside processDirectives' parallel chunks skipped it. The
-  // function early-returns if <style data-crosswind="generated"> is already
+  // function early-returns if <style data-css="generated"> is already
   // present, so this is a no-op for pages that already have it.
-  html = await injectCrosswindCSS(html)
+  html = await injectCss(html)
 
   // Minify if enabled
   if (options.minify !== false) {
@@ -1130,7 +1130,7 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     publicDir: options.publicDir || buildConfig.publicDir || 'public',
     trailingSlash: options.trailingSlash ?? buildConfig.trailingSlash ?? false,
     cleanOutput: options.cleanOutput ?? buildConfig.cleanOutput ?? true,
-    // Empty means "derive it" — the Crosswind digest is computed below, once
+    // Empty means "derive it" — the Css digest is computed below, once
     // the build starts, rather than here where every other key is a plain read.
     cacheSalt: options.cacheSalt ?? '',
     // Fall back to the loaded config, so these behave like every other
@@ -1175,7 +1175,7 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
 
     // Initialize caches.
     //
-    // The salt is the resolved Crosswind config. It decides the stylesheet every
+    // The salt is the resolved Css config. It decides the stylesheet every
     // page ships, and it appears in no page's dependency list, so before this a
     // preflight or safelist edit produced a build that reported every route
     // `Cached`, exited 0, and emitted the previous CSS. Nothing surfaced it: the
@@ -1183,9 +1183,9 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     // (#1940).
     let cacheSalt = cfg.cacheSalt
     if (!cacheSalt) {
-      const { resolveUserCrosswindConfig, fingerprintConfig } = await import('./dev-server/crosswind')
+      const { resolveUserCssConfig, fingerprintConfig } = await import('./dev-server/ts-css')
       try {
-        cacheSalt = fingerprintConfig(await resolveUserCrosswindConfig(process.cwd()))
+        cacheSalt = fingerprintConfig(await resolveUserCssConfig(process.cwd()))
       }
       catch {
         // A config that cannot be resolved is the same position as having no
@@ -1209,17 +1209,17 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
       await buildCache.load()
     }
 
-    // Pre-warm Crosswind config loading. We call generateCrosswindCSS once
+    // Pre-warm Css config loading. We call generateCss once
     // on a minimal HTML snippet so its cachedConfig module state is populated
     // BEFORE the parallel page renders start. Without this, N parallel workers
     // all race to load the config simultaneously and some end up with empty
     // CSS, causing random pages to ship without styles.
     try {
-      const { generateCrosswindCSS: warmCrosswind } = await import('./dev-server/crosswind')
-      await warmCrosswind('<div class="bg-black"></div>')
+      const { generateCss: warmCss } = await import('./dev-server/ts-css')
+      await warmCss('<div class="bg-black"></div>')
     }
     catch {
-      // If Crosswind isn't installed, proceed without pre-warming
+      // If Css isn't installed, proceed without pre-warming
     }
 
     // Load route middleware from middleware/ directory

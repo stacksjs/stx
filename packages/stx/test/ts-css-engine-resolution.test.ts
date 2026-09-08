@@ -8,7 +8,7 @@ import process from 'node:process'
 /**
  * The utility-CSS engine has shipped under three package names: it now lives
  * at the `engine` subpath of `@stacksjs/ts-css`, which absorbed it, and before
- * that it was standalone as `@cwcss/crosswind` and `@stacksjs/crosswind`.
+ * that it was standalone as `@stacksjs/ts-css` and `@stacksjs/ts-css`.
  *
  * The loader probes a fixed table of paths, so a wrong entry fails the way a
  * missing engine does — silently, with every utility class compiling to
@@ -16,7 +16,7 @@ import process from 'node:process'
  * on disk and check the loader actually finds it.
  */
 
-const LOADER = path.join(import.meta.dir, '..', 'src', 'dev-server', 'crosswind.ts')
+const LOADER = path.join(import.meta.dir, '..', 'src', 'dev-server', 'ts-css.ts')
 
 const cwd = process.cwd()
 const created: string[] = []
@@ -51,36 +51,34 @@ describe('engine resolution', () => {
     const dir = await projectWithEngine(['@stacksjs', 'ts-css', 'dist', 'engine', 'index.js'], 'ts-css-engine')
     process.chdir(dir)
 
-    const { loadCrosswind } = await freshLoader()
-    const mod = await loadCrosswind()
+    const { loadCssEngine } = await freshLoader()
+    const mod = await loadCssEngine()
 
     expect(mod).not.toBeNull()
     expect(new mod.CSSGenerator({}).marker).toBe('ts-css-engine')
   })
 
-  test('still finds a project on the standalone @cwcss/crosswind', async () => {
-    const dir = await projectWithEngine(['@cwcss', 'crosswind', 'dist', 'index.js'], 'cwcss')
+  test('finds the engine from a source checkout layout', async () => {
+    const dir = await projectWithEngine(['@stacksjs', 'ts-css', 'src', 'engine', 'index.ts'], 'from-src')
     process.chdir(dir)
 
-    const { loadCrosswind } = await freshLoader()
-    const mod = await loadCrosswind()
+    const { loadCssEngine } = await freshLoader()
+    const mod = await loadCssEngine()
 
     expect(mod).not.toBeNull()
-    expect(new mod.CSSGenerator({}).marker).toBe('cwcss')
+    expect(new mod.CSSGenerator({}).marker).toBe('from-src')
   })
 
-  test('prefers @stacksjs/ts-css when a project has both installed', async () => {
-    const dir = await projectWithEngine(['@stacksjs', 'ts-css', 'dist', 'engine', 'index.js'], 'ts-css-engine')
-    const legacy = path.join(dir, 'node_modules', '@cwcss', 'crosswind', 'dist', 'index.js')
-    mkdirSync(path.dirname(legacy), { recursive: true })
-    await writeFile(legacy, 'export class CSSGenerator { marker = \'cwcss\' }\nexport const config = {}\n')
+  test('prefers the built engine over a source checkout', async () => {
+    const dir = await projectWithEngine(['@stacksjs', 'ts-css', 'dist', 'engine', 'index.js'], 'from-dist')
+    const src = path.join(dir, 'node_modules', '@stacksjs', 'ts-css', 'src', 'engine', 'index.ts')
+    mkdirSync(path.dirname(src), { recursive: true })
+    await writeFile(src, 'export class CSSGenerator { marker = \'from-src\' }\nexport const config = {}\n')
     process.chdir(dir)
 
-    const { loadCrosswind } = await freshLoader()
-    const mod = await loadCrosswind()
+    const { loadCssEngine } = await freshLoader()
+    const mod = await loadCssEngine()
 
-    // An app that has upgraded must get the engine it declares, not the
-    // leftover it has not removed yet.
-    expect(new mod.CSSGenerator({}).marker).toBe('ts-css-engine')
+    expect(new mod.CSSGenerator({}).marker).toBe('from-dist')
   })
 })

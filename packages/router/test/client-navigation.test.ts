@@ -88,7 +88,7 @@ describe('router browser navigation behavior', () => {
     expect(window.stxRouter.cache['/gifts?sort=popular']).toContain('Gift boxes')
   })
 
-  it('loads content-addressed Crosswind CSS from fragments once', async () => {
+  it('loads content-addressed Css CSS from fragments once', async () => {
     const window = installRouter(`
       <html>
         <head>
@@ -99,7 +99,7 @@ describe('router browser navigation behavior', () => {
       </html>
     `, async () => {
       return response(`
-        <link data-crosswind="generated" rel="stylesheet" href="/_stx/crosswind.0123456789abcdef.css">
+        <link data-css="generated" rel="stylesheet" href="/_stx/css.0123456789abcdef.css">
         <section>Catalog</section>
       `, {
         'X-STX-Fragment': 'true',
@@ -113,9 +113,9 @@ describe('router browser navigation behavior', () => {
     await window.stxRouter.navigate('/catalog')
     await waitForRouterSwap()
 
-    const links = window.document.querySelectorAll('head link[data-crosswind]')
+    const links = window.document.querySelectorAll('head link[data-css]')
     expect(links).toHaveLength(1)
-    expect(links[0]?.getAttribute('href')).toBe('/_stx/crosswind.0123456789abcdef.css')
+    expect(links[0]?.getAttribute('href')).toBe('/_stx/css.0123456789abcdef.css')
     expect(window.document.querySelector('main')?.textContent).toContain('Catalog')
   })
 

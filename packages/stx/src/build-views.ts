@@ -5,7 +5,7 @@
  * This handles all the boilerplate for:
  * - Processing STX templates
  * - Extracting server-side variables
- * - Generating Tailwind CSS via Crosswind
+ * - Generating Tailwind CSS via Css
  * - Supporting layouts and components
  * - Placeholder token replacement for dynamic values
  */
@@ -248,7 +248,7 @@ export function watchViews(
  *
  * Optimized for email rendering:
  * - Disables SEO tag injection
- * - Inlines utility classes as style attributes (via Crosswind)
+ * - Inlines utility classes as style attributes (via Css)
  * - Strips <style> and <script> blocks
  * - Returns clean HTML + plain text suitable for email
  *
@@ -298,18 +298,18 @@ export async function renderEmail(
 /**
  * Inline CSS classes as style attributes for email compatibility.
  *
- * Generates CSS from utility classes via Crosswind, parses the rules,
+ * Generates CSS from utility classes via Css, parses the rules,
  * and applies them as inline `style` attributes on matching elements.
  * Email clients ignore <style> blocks, so this is required.
  */
 async function inlineCssClasses(html: string): Promise<string> {
   try {
-    const { generateCrosswindCSS, extractClassNames } = await import('./dev-server/crosswind')
+    const { generateCss, extractClassNames } = await import('./dev-server/ts-css')
 
     const classes = extractClassNames(html)
     if (classes.size === 0) return html
 
-    const css = await generateCrosswindCSS(html)
+    const css = await generateCss(html)
     if (!css) return html
 
     // Parse CSS rules into a class → properties map
@@ -353,7 +353,7 @@ async function inlineCssClasses(html: string): Promise<string> {
     )
   }
   catch {
-    // Crosswind not available, return HTML as-is
+    // Css not available, return HTML as-is
     return html
   }
 }

@@ -16,7 +16,7 @@ import stxPlugin from 'bun-plugin-stx'
 import { CONVENTIONAL_ASSET_OUTPUT, resolveConventionalAssetRoot } from '../asset-roots'
 import { externalizeSharedAssets } from '../build-externalize'
 import { externalizeRepeatedAssets } from '../build-externalize-repeated'
-import { injectCrosswindCSS } from '../dev-server/crosswind'
+import { injectCss } from '../dev-server/ts-css'
 import { injectSeo } from './seo'
 import { generateSitemap, type SitemapEntry } from './sitemap'
 import { generateRobots } from './robots'
@@ -42,7 +42,7 @@ export interface BuildResult {
 /**
  * Build a static stx site end-to-end:
  * 1. Bundle all pages with bun-plugin-stx
- * 2. Inject Crosswind CSS into each HTML file
+ * 2. Inject Css CSS into each HTML file
  * 3. Replace stx default SEO tags with site-specific ones
  * 4. Drop the empty bundle chunks bun-plugin-stx leaves behind
  * 5. Copy public/ assets verbatim
@@ -119,7 +119,7 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
   pruneEmptyJsChunks(outDir)
 
   // Walk the actual emitted .html files (not the build result, which lists
-  // chunks too) so we can rewrite them with SEO + Crosswind CSS.
+  // chunks too) so we can rewrite them with SEO + Css CSS.
   const htmlFiles = listFiles(outDir).filter(f => f.endsWith('.html'))
   const i18n = resolveI18n(options, process.cwd())
   // Used for locale-aware <a href> rewrites — any internal href that
@@ -145,7 +145,7 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
       if (i18n)
         html = applyTranslations(html, i18n, locale)
 
-      html = await injectCrosswindCSS(html, process.cwd())
+      html = await injectCss(html, process.cwd())
       html = injectSeo(html, options, options.pages?.[basePath], basePath)
 
       if (i18n) {

@@ -400,7 +400,7 @@ export function generateDocumentShell(
      * escaped — that is the XSS path (#1792 item 4).
      */
     titleIsHtml?: boolean
-    /** Extra styles to inject in <head> (e.g. Crosswind CSS, scoped styles) */
+    /** Extra styles to inject in <head> (e.g. Css CSS, scoped styles) */
     styles?: string[]
     /** Extra scripts to inject before </body> (e.g. signals runtime, router) */
     bodyScripts?: string[]
@@ -484,7 +484,7 @@ export function generateDocumentShell(
   // scripts) so the [x-cloak] rule is live before first paint — prevents the
   // conditional-directive FOUC (#1736).
   // The page's own head tags come out of the fragment body — see
-  // hoistLeadingHeadTags. They sit AFTER options.styles (Crosswind) so the page
+  // hoistLeadingHeadTags. They sit AFTER options.styles (Css) so the page
   // still wins the cascade exactly as it did when it rendered inside <body>.
   const { body: pageBody, hoisted: pageHeadTags } = hoistLeadingHeadTags(content)
 

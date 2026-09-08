@@ -1,5 +1,5 @@
 /**
- * A crosswind config means the same thing on every render path
+ * A css config means the same thing on every render path
  * (stacksjs/stx#1867).
  *
  * There were two merges and they disagreed. The dev-server path read only
@@ -16,7 +16,7 @@
  * eight design tokens under `theme.extend.colors`.
  */
 import { describe, expect, it } from 'bun:test'
-import { deepMergeThemes, mergeCrosswindConfig } from '../src/crosswind-config'
+import { deepMergeThemes, mergeCssConfig } from '../src/ts-css-config'
 
 const BASE = {
   theme: {
@@ -31,7 +31,7 @@ const BASE = {
 describe('a theme written without extend', () => {
   it('reaches the generator at all', () => {
     // The whole bug: this shape was read for `extend`, found none, and dropped.
-    const { config } = mergeCrosswindConfig(BASE, {
+    const { config } = mergeCssConfig(BASE, {
       theme: { colors: { panel: 'var(--panel)', 'text-2': 'var(--text-2)' } },
     })
 
@@ -43,7 +43,7 @@ describe('a theme written without extend', () => {
     // The serve path's failure mode: adding one token killed `bg-red-500`
     // everywhere. Classes come from scanning the page, so an unused base color
     // costs nothing and dropping it costs everything.
-    const { config } = mergeCrosswindConfig(BASE, {
+    const { config } = mergeCssConfig(BASE, {
       theme: { colors: { panel: 'var(--panel)' } },
     })
 
@@ -52,7 +52,7 @@ describe('a theme written without extend', () => {
   })
 
   it('still lets a project override a specific base value', () => {
-    const { config } = mergeCrosswindConfig(BASE, {
+    const { config } = mergeCssConfig(BASE, {
       theme: { colors: { red: { 500: '#dc2626' } } },
     })
 
@@ -63,7 +63,7 @@ describe('a theme written without extend', () => {
 
 describe('extend keeps working', () => {
   it('is passed through for the generator to apply', () => {
-    const { config } = mergeCrosswindConfig(BASE, {
+    const { config } = mergeCssConfig(BASE, {
       theme: { extend: { colors: { brand: '#0af' } } },
     })
 
@@ -71,7 +71,7 @@ describe('extend keeps working', () => {
   })
 
   it('coexists with sibling theme keys', () => {
-    const { config } = mergeCrosswindConfig(BASE, {
+    const { config } = mergeCssConfig(BASE, {
       theme: {
         colors: { panel: 'var(--panel)' },
         extend: { spacing: { 7: '28px' } },
@@ -85,13 +85,13 @@ describe('extend keeps working', () => {
   })
 
   it('is absent when nobody declared one', () => {
-    expect(mergeCrosswindConfig(BASE, {}).config.theme.extend).toBeUndefined()
+    expect(mergeCssConfig(BASE, {}).config.theme.extend).toBeUndefined()
   })
 })
 
 describe('the keys the serve path used to drop', () => {
   it('carries darkMode, rules, variants, blocklist and cssVariables through', () => {
-    const { config } = mergeCrosswindConfig(BASE, {
+    const { config } = mergeCssConfig(BASE, {
       darkMode: 'media',
       rules: [['x', { color: 'red' }]],
       variants: ['hocus'],
@@ -107,7 +107,7 @@ describe('the keys the serve path used to drop', () => {
   })
 
   it('merges safelist and shortcuts rather than replacing them', () => {
-    const merged = mergeCrosswindConfig(BASE, {
+    const merged = mergeCssConfig(BASE, {
       safelist: ['user-safe'],
       shortcuts: { 'user-btn': 'rounded' },
     })
@@ -117,7 +117,7 @@ describe('the keys the serve path used to drop', () => {
   })
 
   it('concatenates preflights instead of losing the base layer', () => {
-    const { config } = mergeCrosswindConfig(
+    const { config } = mergeCssConfig(
       { ...BASE, preflights: ['base-layer'] },
       { preflights: ['user-font-face'] },
     )
@@ -130,7 +130,7 @@ describe('what stx owns regardless', () => {
   it('pins content and output even when the user sets them', () => {
     // #1822: classes come from scanning the rendered page, and the CSS is
     // returned rather than written.
-    const { config } = mergeCrosswindConfig(BASE, {
+    const { config } = mergeCssConfig(BASE, {
       content: ['./src/**/*.stx'],
       output: 'dist/app.css',
     })
@@ -141,11 +141,11 @@ describe('what stx owns regardless', () => {
 
   it('honours preflight and minify instead of ignoring them', () => {
     // Defaults, and they differ: preflight is on unless turned off, minify is
-    // off unless turned on. Both spellings are `mergeCrosswindConfig`'s own
+    // off unless turned on. Both spellings are `mergeCssConfig`'s own
     // (`user.preflight !== false`, `user.minify === true`), so this line is the
     // documented contract, not a snapshot of whatever a build happens to pass.
-    expect(mergeCrosswindConfig(BASE, {})).toMatchObject({ includePreflight: true, minify: false })
-    expect(mergeCrosswindConfig(BASE, { preflight: false, minify: true }))
+    expect(mergeCssConfig(BASE, {})).toMatchObject({ includePreflight: true, minify: false })
+    expect(mergeCssConfig(BASE, { preflight: false, minify: true }))
       .toMatchObject({ includePreflight: false, minify: true })
   })
 })

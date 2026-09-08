@@ -11,24 +11,24 @@ if (process.env.CI || process.env.npm_lifecycle_event === 'prepublishOnly') {
   process.exit(0)
 }
 
-// Crosswind location
-const crosswindPath = resolve(process.env.HOME || '~', 'Code/Tools/crosswind/packages/crosswind')
+// Css location
+const cssPath = resolve(process.env.HOME || '~', 'Code/Tools/crosswind/packages/toolkit')
 
-// Check if crosswind is available
-if (!existsSync(crosswindPath)) {
-  console.log('[css] Skipping CSS build — crosswind not found (optional dependency)')
+// Check if css is available
+if (!existsSync(cssPath)) {
+  console.log('[css] Skipping CSS build — css not found (optional dependency)')
   process.exit(0)
 }
 
-console.log('🚀 Building CSS with Crosswind...')
+console.log('🚀 Building CSS with Css...')
 
 const contentPath = resolve(import.meta.dir, '../../../examples/**/*.stx')
 const outputPath = resolve(import.meta.dir, '../examples/dist/styles.css')
-const configPath = resolve(import.meta.dir, '../config/crosswind.ts')
+const configPath = resolve(import.meta.dir, '../config/css.ts')
 
 try {
-  const crosswindCli = resolve(crosswindPath, 'bin/cli.ts')
-  const result = await $`bun ${crosswindCli} build --content ${contentPath} --output ${outputPath} --config ${configPath}`.text()
+  const cssCli = resolve(cssPath, 'bin/cli.ts')
+  const result = await $`bun ${cssCli} build --content ${contentPath} --output ${outputPath} --config ${configPath}`.text()
 
   console.log(result)
 

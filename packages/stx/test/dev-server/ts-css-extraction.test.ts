@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { extractClassNames, loadCrosswind } from '../../src/dev-server/crosswind'
+import { extractClassNames, loadCssEngine } from '../../src/dev-server/ts-css'
 
 /**
  * Who extracts the class names.
@@ -11,14 +11,14 @@ import { extractClassNames, loadCrosswind } from '../../src/dev-server/crosswind
  * page. Those classes generated no CSS and the element rendered unstyled, with
  * nothing in the build to say so.
  *
- * The fix is to stop keeping a second, weaker copy of Crosswind's rules and
- * defer to Crosswind's own `extractClasses`. The local one stays as a fallback
- * for an installed Crosswind that predates the export.
+ * The fix is to stop keeping a second, weaker copy of Css's rules and
+ * defer to Css's own `extractClasses`. The local one stays as a fallback
+ * for an installed Css that predates the export.
  */
-describe('crosswind class extraction', () => {
-  it('forwards crosswind\'s own extractor through the module adapter', async () => {
-    const hw = await loadCrosswind()
-    // Skipped rather than failed when Crosswind is absent: this package works
+describe('css class extraction', () => {
+  it('forwards css\'s own extractor through the module adapter', async () => {
+    const hw = await loadCssEngine()
+    // Skipped rather than failed when Css is absent: this package works
     // without it, it just emits no utility CSS.
     if (!hw)
       return
@@ -26,7 +26,7 @@ describe('crosswind class extraction', () => {
     // The adapter names every export it forwards, so an entry missing there is
     // invisible to callers no matter what the package exports — which is how
     // the improved extractor stayed unreachable for a while after it shipped.
-    // What it *finds* is Crosswind's business and is covered by Crosswind's own
+    // What it *finds* is Css's business and is covered by Css's own
     // suite; the contract here is only that it is reachable and usable.
     expect(typeof hw.extractClasses).toBe('function')
 
@@ -46,7 +46,7 @@ describe('crosswind class extraction', () => {
     // Attributes: fine.
     expect(local.has('flex')).toBe(true)
     expect(local.has('gap-2')).toBe(true)
-    // Code: not seen. This is the gap that made deferring to Crosswind
+    // Code: not seen. This is the gap that made deferring to Css
     // necessary, and it is asserted so the fallback's limits stay explicit
     // rather than being rediscovered as a styling bug.
     expect(local.has('i-hugeicons-sun-03')).toBe(false)

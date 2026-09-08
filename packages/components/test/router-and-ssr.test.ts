@@ -26,7 +26,7 @@
  *
  * Rendered through `processDirectives` rather than asserted against source
  * text: the question is what an app receives, and a source-text check would
- * pass on markup that never rendered. The injected crosswind <style> is not
+ * pass on markup that never rendered. The injected css <style> is not
  * evidence of a render either, so it is stripped first.
  */
 

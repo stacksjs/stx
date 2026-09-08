@@ -401,7 +401,7 @@ become the wrapper's direct children and the runtime animates them:
 - `name` (default `v`) — the class prefix.
 - `tag` (default `div`) — the wrapper element.
 
-Provide the transition classes for that name (crosswind utilities or plain CSS):
+Provide the transition classes for that name (css utilities or plain CSS):
 
 | Phase | Classes |
 |---|---|

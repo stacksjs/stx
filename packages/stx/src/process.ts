@@ -13,7 +13,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 // Directive processors
-import { injectCrosswindCSS } from './dev-server/crosswind'
+import { injectCss } from './dev-server/ts-css'
 import { findBodyOpenTag, replaceBodyOpenTag } from './find-body-tag'
 import { matchHtmlComment, matchStyleElement, maskAtElementPosition, stashScriptElements } from './html-masking'
 import { processA11yDirectives } from './a11y'
@@ -743,16 +743,16 @@ export async function processDirectives(
       if (isTopLevel)
         result = normalizeCriticalHeadOrder(result)
 
-      // Generate and inject Crosswind CSS AFTER document shell wrapping
+      // Generate and inject Css CSS AFTER document shell wrapping
       // so bodyClass from stx.config.ts (e.g. 'bg-[#0a0a0f]') is included in the scan.
       // Skip when the caller has opted out via renderOptions.injectCSS=false —
       // renderTemplate sets __stx_inject_css=false on the inner page render of a
       // layout-wrapped template so injection only fires once, on the outer layout
       // render, after the page content has been embedded. Without this guard the
-      // page render injects first, the early-return in injectCrosswindCSS fires on
+      // page render injects first, the early-return in injectCss fires on
       // the outer render, and layout-only utility classes never get scanned.
       if (isTopLevel && context.__stx_inject_css !== false) {
-        result = await injectCrosswindCSS(result, undefined, options.buildMode === 'serve')
+        result = await injectCss(result, undefined, options.buildMode === 'serve')
       }
 
       if (isTopLevel) {
@@ -2041,7 +2041,7 @@ else {
   if (opts.csp?.enabled && opts.csp.useNonce && typeof context.cspNonce === 'string')
     output = addNonceToInlineContent(output, context.cspNonce)
 
-  // Note: Crosswind CSS injection is done at the top level in processDirectives
+  // Note: Css CSS injection is done at the top level in processDirectives
   // to avoid duplicate injection for includes/layouts/components
 
   return output

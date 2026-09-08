@@ -6,7 +6,7 @@
  * is more specific — so both halves are pinned here, because a seam nobody
  * documented is one refactor away from not existing.
  *
- *  1. **The build-time seam already works.** A project's `crosswind.config.ts`
+ *  1. **The build-time seam already works.** A project's `css.config.ts`
  *     `theme.colors` deep-merges over the base palette, and stx generates CSS by
  *     scanning the rendered page — so redefining a shade re-themes every
  *     component that names it, with no component edits and no opt-in. Asserted
@@ -28,13 +28,13 @@ import { afterAll, describe, expect, it } from 'bun:test'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { defaultConfig } from '../../stx/src/config'
-import { resetCrosswindCache } from '../../stx/src/dev-server/crosswind'
+import { resetCssCache } from '../../stx/src/dev-server/ts-css'
 import { processDirectives } from '../../stx/src/process'
 import { stxThemePreset, THEMED_FAMILIES, themeVariableNames } from '../src/theme'
 
 const UI = join(import.meta.dir, '..', 'src', 'ui')
 
-/** A stand-in for crosswind's default palette, in its own shape. */
+/** A stand-in for css's default palette, in its own shape. */
 const DEFAULTS = {
   gray: { 50: '#f9fafb', 600: '#4b5563', 900: '#111827' },
   indigo: { 500: '#6366f1', 600: '#4f46e5' },
@@ -53,27 +53,27 @@ afterAll(() => {
 })
 
 /**
- * Render a template as an app would, with a given crosswind config on disk.
+ * Render a template as an app would, with a given css config on disk.
  *
  * The config is discovered from the working directory, so this needs a real
  * one — which is also the point: it exercises the path an app actually takes.
  */
 async function renderWithConfig(config: string, template: string): Promise<string> {
   // Inside the repo rather than in the system temp directory: the config
-  // resolves `@cwcss/crosswind`, and that needs a node_modules to walk up to.
+  // resolves `@stacksjs/ts-css`, and that needs a node_modules to walk up to.
   // From /var/folders it fails, the config loads as null, and every assertion
   // then measures the STOCK palette while reading as a passing custom theme.
   const dir = mkdtempSync(join(import.meta.dir, '.tmp-theme-'))
   dirs.push(dir)
-  await Bun.write(join(dir, 'crosswind.config.ts'), config)
+  await Bun.write(join(dir, 'css.config.ts'), config)
 
   const previous = process.cwd()
   process.chdir(dir)
-  // The resolved crosswind config is cached in module state for the life of the
+  // The resolved css config is cached in module state for the life of the
   // process, so without this the FIRST config in the file silently answers for
   // every later one — and each assertion would pass or fail on a theme it never
   // asked for.
-  resetCrosswindCache()
+  resetCssCache()
   try {
     const options = { ...defaultConfig, componentsDir: UI, root: dir } as any
     const out = await processDirectives(template, {}, join(dir, 'page.stx'), options, new Set<string>())
@@ -81,7 +81,7 @@ async function renderWithConfig(config: string, template: string): Promise<strin
   }
   finally {
     process.chdir(previous)
-    resetCrosswindCache()
+    resetCssCache()
   }
 }
 
@@ -172,7 +172,7 @@ describe('stxThemePreset', () => {
 describe('the preset in a real render', () => {
   const CONFIG = `
 import { stxThemePreset } from '${join(import.meta.dir, '..', 'src', 'theme')}'
-const cw = await import('@cwcss/crosswind')
+const cw = await import('@stacksjs/ts-css/engine')
 export default { theme: { colors: stxThemePreset(cw.defaultConfig?.theme?.colors ?? {}) } }
 `
 

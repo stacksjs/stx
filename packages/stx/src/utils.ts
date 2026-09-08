@@ -1477,8 +1477,8 @@ export async function renderComponentWithSlot(
       defaultLayout: undefined,
     }
 
-    // Mark as non-top-level so Crosswind CSS isn't injected per-component
-    // (only the top-level page call should inject Crosswind)
+    // Mark as non-top-level so Css CSS isn't injected per-component
+    // (only the top-level page call should inject Css)
     componentContext.__stxProcessingDepth = (parentContext.__stxProcessingDepth as number || 0) + 1
 
     // Process the component content recursively with the new context

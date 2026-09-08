@@ -7,7 +7,7 @@ describe('SPA Fragment Extraction', () => {
 <head>
   <meta charset="UTF-8">
   <title>bun-queue Dashboard</title>
-  <style data-stx-crosswind>.flex{display:flex}.p-4{padding:1rem}.bg-gray-100{background-color:#f7fafc}</style>
+  <style data-stx-css>.flex{display:flex}.p-4{padding:1rem}.bg-gray-100{background-color:#f7fafc}</style>
   <style data-stx-page>.dashboard-header{font-size:1.5rem;font-weight:bold}</style>
 </head>
 <body class="bg-gray-100">
@@ -125,7 +125,7 @@ if(window.stx)window.stx._latestSetup=__stx_setup_1234_0;
     expect(fragment).not.toContain('class="sidebar"')
 
     // Head styles are included
-    expect(fragment).toContain('<style data-stx-crosswind>')
+    expect(fragment).toContain('<style data-stx-css>')
     expect(fragment).toContain('<style data-stx-page>')
 
     // Body styles (from @push) before <main> are included

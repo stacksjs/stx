@@ -3,7 +3,7 @@
  *
  * SSR of an unchanged view re-ran every stage on the same bytes: the component
  * bundle was read from disk, re-wrapped and re-inlined; the DOM-API validator
- * re-scanned the same script; the composable scan and the crosswind class
+ * re-scanned the same script; the composable scan and the css class
  * extraction walked the same few hundred KB of page. The JS heap stayed flat —
  * nothing was retained — but each stage makes native copies of a large string,
  * and the allocator's high-water mark climbed by megabytes per render. The

@@ -13,7 +13,7 @@
  *   serve pages/home.stx pages/about.md pages/index.html
  */
 
-import type { CrosswindConfig } from '@cwcss/crosswind'
+import type { CssConfig } from '@stacksjs/ts-css/engine'
 import type { SQLQueryBindings } from 'bun:sqlite'
 import { serve as bunServe, Glob } from 'bun'
 import { existsSync, watch as fsWatch, statSync } from 'node:fs'
@@ -21,7 +21,7 @@ import nodeFs from 'node:fs/promises'
 import nodePath from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
-import { BUILD_ID_HEADER, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, mergeCrosswindConfig, readResponseHeaders, readResponseStatus, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
+import { BUILD_ID_HEADER, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, mergeCssConfig, readResponseHeaders, readResponseStatus, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
 import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { extractLayoutMetadata } from 'stx-router/layout-metadata'
@@ -46,7 +46,7 @@ interface BuildErrorPayload {
 }
 
 /**
- * The slice of Crosswind this server calls, taken from the package's own types
+ * The slice of Css this server calls, taken from the package's own types
  * rather than restated here.
  *
  * `CSSGenerator` has to be a constructor type, because it is `new`-ed below.
@@ -56,34 +56,23 @@ interface BuildErrorPayload {
  * what made this hard to see in the first place (see the deleted
  * `cwcss-crosswind.d.ts`). `typeof import` cannot drift from the real engine.
  */
-type CrosswindEngine = Pick<typeof import('@cwcss/crosswind'), 'CSSGenerator' | 'config'>
+type CssEngine = Pick<typeof import('@stacksjs/ts-css/engine'), 'CSSGenerator' | 'config'>
 
 /**
- * Where the utility-CSS engine can be found inside a package store, in
- * priority order.
+ * Where the utility-CSS engine can be found inside a package store.
  *
- * The engine has been published under three names. It is now a subpath of
- * `@stacksjs/ts-css`, which absorbed it; before that it shipped standalone as
- * `@cwcss/crosswind`, and before that as `@stacksjs/crosswind`. All three are
- * probed, newest first, so an app that has upgraded gets the engine it
- * declares while one that has not keeps working untouched.
+ * The engine ships inside `@stacksjs/ts-css`, at its `engine` subpath. Both
+ * layouts are probed so a source checkout works alongside an installed build.
  */
 const ENGINE_PACKAGE_ENTRIES: string[][] = [
   ['@stacksjs', 'ts-css', 'dist', 'engine', 'index.js'],
   ['@stacksjs', 'ts-css', 'src', 'engine', 'index.ts'],
-  ['@cwcss', 'crosswind', 'dist', 'index.js'],
-  ['@cwcss', 'crosswind', 'src', 'index.ts'],
-  ['@stacksjs', 'crosswind', 'dist', 'index.js'],
-  ['@stacksjs', 'crosswind', 'src', 'index.ts'],
 ]
 
-/** The same three names as bare specifiers, for standard resolution. */
+/** The same package as bare specifiers, for standard resolution. */
 const ENGINE_SPECIFIERS = [
   '@stacksjs/ts-css/engine',
-  '@cwcss/crosswind',
-  '@cwcss/crosswind/dist/index.js',
-  '@stacksjs/crosswind',
-  '@stacksjs/crosswind/dist/index.js',
+  '@stacksjs/ts-css/dist/engine/index.js',
 ]
 
 // Hoisted lazy import promise for @stacksjs/stx — kicked off once at module
@@ -699,7 +688,7 @@ export interface ServeOptions {
    * turns it into a working set. Raise it on a site with a lot of genuinely
    * different pages and a lot of memory.
    */
-  crosswindCacheLimit?: number
+  cssCacheLimit?: number
   /**
    * Render every discovered static route in the background after startup.
    *
@@ -1161,7 +1150,7 @@ export async function serve(options: ServeOptions): Promise<void> {
   //
   // The work itself starts AFTER the port is bound, further down. Not awaiting
   // it was not enough: decoding 114 images saturates the loop for long enough
-  // that everything still queued behind it in this function — Crosswind, route
+  // that everything still queued behind it in this function — Css, route
   // discovery, the bind itself — simply does not run. The deploy failed the
   // same way twice on that.
   let markPlaceholdersReady: () => void = () => {}
@@ -1256,7 +1245,7 @@ export async function serve(options: ServeOptions): Promise<void> {
   const ENABLE_HTML_CACHE = options.renderCache === true
   const RENDER_CACHE_VARY = options.renderCacheVary ?? 'request'
   /*
-   * Crosswind-generated CSS, keyed by the page's sorted class set. Lives here
+   * Css-generated CSS, keyed by the page's sorted class set. Lives here
    * for the same reason as `htmlCache`: so the watcher can wipe it on a source
    * edit and pick up a new utility's CSS on the next render.
    *
@@ -1270,7 +1259,7 @@ export async function serve(options: ServeOptions): Promise<void> {
    * traffic, at which point the kernel's memory ceiling throttled it into
    * answering nothing at all while still reporting itself healthy.
    */
-  const crosswindCssCache = boundedCache<string>(options.crosswindCacheLimit ?? 512)
+  const cssCssCache = boundedCache<string>(options.cssCacheLimit ?? 512)
 
   // ── HMR: live-reload via Server-Sent Events. ────────────────────────
   //
@@ -1476,13 +1465,13 @@ function __stxOverlay(errs){
           if (isStxLike)
             sourceFiles = null
           routes.clear()
-          // Wipe the rendered-HTML cache and Crosswind CSS cache too. The
+          // Wipe the rendered-HTML cache and Css CSS cache too. The
           // signature check should catch most edits, but it relies on every
           // dependency being tracked correctly during the previous render —
           // a single missed dep is enough for a page to render stale. Clearing
           // on watch is the simple, correct fallback for dev.
           htmlCache.clear()
-          crosswindCssCache.clear()
+          cssCssCache.clear()
           // Also wipe stx's framework-level caches (fileContentCache, signals
           // runtime, router script). The app-render caches above are cleared
           // on every edit, but the framework caches previously survived until
@@ -2089,7 +2078,7 @@ function __stxOverlay(errs){
   // ── Rendered-HTML cache (static routes only). ───────────────────────
   //
   // `htmlCache` itself is declared with the other top-level caches above
-  // (alongside `routes`/`crosswindCssCache`) so the file watcher can wipe
+  // (alongside `routes`/`cssCssCache`) so the file watcher can wipe
   // it on every source change. Keyed by template file path; each entry
   // remembers the mtimes of the template AND every dependency it
   // accumulated during the last render (layout, components, partials).
@@ -2126,25 +2115,25 @@ function __stxOverlay(errs){
     return sig
   }
 
-  // Crosswind CSS lazy loading
-  let crosswindModule: CrosswindEngine | null = null
-  let crosswindLoadAttempted = false
+  // Css CSS lazy loading
+  let cssModule: CssEngine | null = null
+  let cssLoadAttempted = false
 
-  // Crosswind user config cache. Process lifetime is the invalidation
+  // Css user config cache. Process lifetime is the invalidation
   // boundary for the *config* itself (config changes require a restart).
-  let crosswindUserConfigPromise: Promise<Record<string, any>> | null = null
-  // `crosswindCssCache` itself (sorted class-set → CSS) lives with the
+  let cssUserConfigPromise: Promise<Record<string, any>> | null = null
+  // `cssCssCache` itself (sorted class-set → CSS) lives with the
   // other top-level caches above so the file watcher wipes it on every
   // source change. Re-running the generator for a touched template picks
   // up newly added utility classes that weren't in the previous render.
 
-  async function loadCrosswind(): Promise<CrosswindEngine | null> {
-    if (crosswindLoadAttempted)
-      return crosswindModule
-    crosswindLoadAttempted = true
+  async function loadCssEngine(): Promise<CssEngine | null> {
+    if (cssLoadAttempted)
+      return cssModule
+    cssLoadAttempted = true
 
-    // The crosswind the SERVED PROJECT installed, nearest first. This is
-    // tried before a bare import because `import('@cwcss/crosswind')`
+    // The css the SERVED PROJECT installed, nearest first. This is
+    // tried before a bare import because `import('@stacksjs/ts-css/engine')`
     // resolves relative to this file and therefore always found the copy
     // hoisted next to bun-plugin-stx, ignoring the app's own — usually
     // newer — version. Since the engine version decides what a class
@@ -2162,8 +2151,8 @@ function __stxOverlay(errs){
               continue
             const mod = await import(candidate)
             if (mod?.CSSGenerator) {
-              crosswindModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
-              return crosswindModule
+              cssModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
+              return cssModule
             }
           }
           catch { /* try the next candidate */ }
@@ -2177,8 +2166,8 @@ function __stxOverlay(errs){
       try {
         const mod = await import(specifier)
         if (mod?.CSSGenerator) {
-          crosswindModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
-          return crosswindModule
+          cssModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
+          return cssModule
         }
       }
       catch { /* try the next specifier */ }
@@ -2189,17 +2178,17 @@ function __stxOverlay(errs){
       // never shadow a version the project or the plugin declares.
       const localPath = nodePath.join(process.env.HOME || '', 'Code/Tools/crosswind/packages/toolkit/src/engine/index.ts')
       const mod = await import(localPath)
-      crosswindModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
-      return crosswindModule
+      cssModule = { CSSGenerator: mod.CSSGenerator, config: mod.config }
+      return cssModule
     }
     catch {
       return null
     }
   }
 
-  async function generateCrosswindCSS(htmlContent: string): Promise<string> {
+  async function generateCss(htmlContent: string): Promise<string> {
     try {
-      const cw = await loadCrosswind()
+      const cw = await loadCssEngine()
       if (!cw)
         return ''
 
@@ -2235,20 +2224,20 @@ function __stxOverlay(errs){
       if (classes.size === 0)
         return ''
 
-      // Load user crosswind config via bunfig — picks up `config/crosswind.ts`,
-      // `crosswind.config.ts`, `.config/crosswind.ts`, and other standard
+      // Load user css config via bunfig — picks up `config/css.ts`,
+      // `css.config.ts`, `.config/css.ts`, and other standard
       // bunfig locations. Cached for the lifetime of the dev process; bun's
       // --watch process restart bust the cache when the config file changes.
-      if (!crosswindUserConfigPromise) {
-        crosswindUserConfigPromise = loadConfig({
-          name: 'crosswind',
+      if (!cssUserConfigPromise) {
+        cssUserConfigPromise = loadConfig({
+          name: 'css',
           cwd: process.cwd(),
           defaultConfig: {} as Record<string, any>,
           checkEnv: false,
           verbose: false,
         }) as Promise<Record<string, any>>
       }
-      const userConfig = await crosswindUserConfigPromise
+      const userConfig = await cssUserConfigPromise
 
       // Same merge the dev-server path uses (#1867). This used to read only
       // `safelist`, `shortcuts` and `theme` — dropping `darkMode`,
@@ -2256,7 +2245,7 @@ function __stxOverlay(errs){
       // to shallow-spread `theme`, so a user's `colors` replaced the whole
       // stock palette here while the same key was ignored outright on the other
       // path. One config file, two meanings, decided by which binary rendered.
-      const merged = mergeCrosswindConfig(cw.config as Record<string, any>, userConfig)
+      const merged = mergeCssConfig(cw.config as Record<string, any>, userConfig)
       const generatorConfig = merged.config
       const { includePreflight, minify, tokenCSS } = merged
 
@@ -2268,16 +2257,16 @@ function __stxOverlay(errs){
       // above). Same set → same CSS, so we can short-circuit the entire
       // generator pipeline below for repeat renders of the same template.
       const cacheKey = [...classes].sort().join(' ')
-      const cached = crosswindCssCache.read(cacheKey)
+      const cached = cssCssCache.read(cacheKey)
       if (cached !== undefined)
         return cached
 
-      // `mergeCrosswindConfig` returns a loose Dict, while the engine's
-      // constructor asks for a fully-populated CrosswindConfig. The engine fills
+      // `mergeCssConfig` returns a loose Dict, while the engine's
+      // constructor asks for a fully-populated CssConfig. The engine fills
       // its own defaults for anything absent, so the merged object is what it
       // wants at runtime — the cast names that gap instead of hiding it behind
       // an `any` on the module type, which is what the old stub did.
-      const generator = new cw.CSSGenerator(generatorConfig as CrosswindConfig)
+      const generator = new cw.CSSGenerator(generatorConfig as CssConfig)
       for (const className of classes) {
         generator.generate(className)
       }
@@ -2319,10 +2308,10 @@ function __stxOverlay(errs){
 
       // Role-token values first, so the utilities below resolve against them and
       // an app's own stylesheet — which comes after — can still override (#1930).
-      return crosswindCssCache.remember(cacheKey, tokenCSS + baseCss + shortcutCSS)
+      return cssCssCache.remember(cacheKey, tokenCSS + baseCss + shortcutCSS)
     }
     catch (error) {
-      console.warn('Failed to generate Crosswind CSS:', error)
+      console.warn('Failed to generate Css CSS:', error)
       return ''
     }
   }
@@ -2525,7 +2514,7 @@ function __stxOverlay(errs){
     // Client scripts remain in the template (not stripped) so processDirectives()
     // transforms <script client> into <script data-stx-scoped> with stx.mount().
 
-    // Crosswind CSS is already injected by processDirectives() (injectCrosswindCSS at top level).
+    // Css CSS is already injected by processDirectives() (injectCss at top level).
     // Do NOT generate it again here — duplicate Preflight resets would strip all utility styles.
 
     // Store in the render cache unless the page opted out (e.g. a server
@@ -2889,7 +2878,7 @@ function __stxOverlay(errs){
     })
 
     // Client scripts are already handled by processDirectives (transformed into data-stx-scoped)
-    // Crosswind CSS is already injected by processDirectives() — no duplicate injection needed.
+    // Css CSS is already injected by processDirectives() — no duplicate injection needed.
 
     return output
   }
@@ -3364,12 +3353,12 @@ function __stxOverlay(errs){
                   })
                 }
 
-                const crosswindAsset = path.match(/^\/_stx\/crosswind\.([a-f0-9]{16})\.css$/)
-                if (crosswindAsset) {
+                const cssAsset = path.match(/^\/_stx\/css\.([a-f0-9]{16})\.css$/)
+                if (cssAsset) {
                   const stx = await stxModule
-                  const content = stx.getCrosswindServeAsset(crosswindAsset[1]!)
+                  const content = stx.getCssServeAsset(cssAsset[1]!)
                   if (content === undefined)
-                    return new Response('Crosswind asset not found', { status: 404 })
+                    return new Response('Css asset not found', { status: 404 })
                   const headers = {
                     'Content-Type': 'text/css; charset=utf-8',
                     'Cache-Control': 'public, max-age=31536000, immutable',
@@ -3652,7 +3641,7 @@ function __stxOverlay(errs){
                     let mainContentStart = -1
                     let mainContentEnd = -1
 
-                    // Extract styles from <head> AND body (Crosswind CSS, page styles, @push('styles'))
+                    // Extract styles from <head> AND body (Css CSS, page styles, @push('styles'))
                     // The router's doFragSwap injects these into <head> during SPA swap
                     const headStyles: string[] = []
                     const headMatch = content.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)
@@ -3661,8 +3650,8 @@ function __stxOverlay(errs){
                       let styleMatch: RegExpExecArray | null
                       const styleRe = /<style\b[^>]*>[\s\S]*?<\/style>/gi
                       while ((styleMatch = styleRe.exec(headContent)) !== null) {
-                        if (styleMatch[0].includes('data-crosswind')) {
-                          // Include Crosswind utility CSS WITHOUT the Preflight reset.
+                        if (styleMatch[0].includes('data-css')) {
+                          // Include Css utility CSS WITHOUT the Preflight reset.
                           // The initial page load already has Preflight — fragments only need
                           // new utility classes for the navigated page.
                           const cssContent = styleMatch[0].replace(/<style[^>]*>/, '').replace(/<\/style>/, '')
@@ -3672,7 +3661,7 @@ function __stxOverlay(errs){
                             const afterPreflight = cssContent.indexOf('}', hiddenRule) + 1
                             const utilities = cssContent.slice(afterPreflight).trim()
                             if (utilities) {
-                              headStyles.push(`<style data-crosswind="fragment">${utilities}</style>`)
+                              headStyles.push(`<style data-css="fragment">${utilities}</style>`)
                             }
                           }
                           continue
@@ -3680,10 +3669,10 @@ function __stxOverlay(errs){
                         headStyles.push(styleMatch[0])
                       }
 
-                      const crosswindLinkRe = /<link\b[^>]*\bdata-crosswind=(?:"generated"|'generated')[^>]*>/gi
-                      let crosswindLinkMatch: RegExpExecArray | null
-                      while ((crosswindLinkMatch = crosswindLinkRe.exec(headContent)) !== null) {
-                        headStyles.push(crosswindLinkMatch[0])
+                      const cssLinkRe = /<link\b[^>]*\bdata-css=(?:"generated"|'generated')[^>]*>/gi
+                      let cssLinkMatch: RegExpExecArray | null
+                      while ((cssLinkMatch = cssLinkRe.exec(headContent)) !== null) {
+                        headStyles.push(cssLinkMatch[0])
                       }
                     }
 

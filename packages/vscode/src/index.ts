@@ -47,42 +47,42 @@ export { PropsTypeExtractor } from './services/PropsTypeExtractor'
 export type { PropDetail, ExtractedProps } from './services/PropsTypeExtractor'
 
 // =============================================================================
-// Crosswind (utility-first CSS) — Hover, completion, sorting, color previews
+// Css (utility-first CSS) — Hover, completion, sorting, color previews
 // =============================================================================
 
 export {
-  activateCrosswind,
-  deactivateCrosswind,
-  CrosswindContext,
-} from './crosswind/index'
+  activateCss,
+  deactivateCss,
+  CssContext,
+} from './ts-css/index'
 export {
-  loadCrosswindConfig,
-  getDefaultConfig as getCrosswindDefaultConfig,
-} from './crosswind/context'
-export { createCrosswindHoverProvider } from './crosswind/hover-provider'
-export { createCrosswindCompletionProvider } from './crosswind/completion-provider'
-export { createSortClassesCommand, sortClasses } from './crosswind/sort-provider'
-export { registerColorDecorations } from './crosswind/color-provider'
+  loadCssEngineConfig,
+  getDefaultConfig as getCssDefaultConfig,
+} from './ts-css/context'
+export { createCssHoverProvider } from './css/hover-provider'
+export { createCssCompletionProvider } from './css/completion-provider'
+export { createSortClassesCommand, sortClasses } from './css/sort-provider'
+export { registerColorDecorations } from './css/color-provider'
 
-// Crosswind utilities
+// Css utilities
 export {
   extractClassesFromDocument,
   getClassAtPosition,
   extractClassesFromLine,
-} from './crosswind/utils/class-matcher'
-export type { ClassMatch } from './crosswind/utils/class-matcher'
+} from './css/utils/class-matcher'
+export type { ClassMatch } from './css/utils/class-matcher'
 export {
   extractColorFromCSS,
   isColorClass,
   extractAllColors,
-} from './crosswind/utils/color-extractor'
-export type { ColorInfo } from './crosswind/utils/color-extractor'
+} from './css/utils/color-extractor'
+export type { ColorInfo } from './css/utils/color-extractor'
 export {
   prettifyCSS,
   extractRuleForClass,
   formatCSSDeclarations,
   addRemToPxComment,
-} from './crosswind/utils/css-parser'
+} from './css/utils/css-parser'
 
 // =============================================================================
 // Utilities — Template path resolution, CSS analysis, JSDoc formatting

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'bun:test'
-import { generateCrosswindCSS } from '../src/dev-server/crosswind'
+import { generateCss } from '../src/dev-server/ts-css'
 
 /**
  * End-to-end guard on the CSS the dev server actually serves for arbitrary
  * utility values.
  *
- * These all broke at once, and none of them broke loudly. `import('@cwcss/crosswind')`
+ * These all broke at once, and none of them broke loudly. `import('@stacksjs/ts-css/engine')`
  * resolves relative to stx rather than to the app being served, so stx's own
  * hoisted copy won even when the project declared a newer one — and the engine
  * version decides what a class compiles to. On a stale engine `blur-[50px]`
@@ -19,7 +19,7 @@ import { generateCrosswindCSS } from '../src/dev-server/crosswind'
 describe('arbitrary values survive the dev server CSS pipeline', () => {
   /*
    * Whitespace is normalised because these assertions are about VALUES, and
-   * whether the output is minified is decided by a crosswind config found
+   * whether the output is minified is decided by a css config found
    * relative to the working directory. So the same correct CSS satisfied these
    * from the repo root and failed from `packages/stx` - which is where this
    * package's own `test` script runs - on `--cw-blur:blur(3px)` versus
@@ -27,7 +27,7 @@ describe('arbitrary values survive the dev server CSS pipeline', () => {
    * teaches people to ignore it.
    */
   async function serve(classNames: string): Promise<string> {
-    const css = await generateCrosswindCSS(`<div class="${classNames}"></div>`)
+    const css = await generateCss(`<div class="${classNames}"></div>`)
 
     return css.replace(/\s*([:;,{}])\s*/g, '$1 ').replace(/\s+/g, ' ')
   }
@@ -41,13 +41,15 @@ describe('arbitrary values survive the dev server CSS pipeline', () => {
     const css = await serve('blur-[3px] backdrop-blur-[50px] backdrop-saturate-[180%] backdrop-saturate-[1.7] brightness-[1.2] hue-rotate-[30deg]')
 
     // Each function is named so several can compose on one element; the
-    // shared `filter` / `backdrop-filter` declaration lists them all.
-    expect(css).toContain(normalized('--cw-blur: blur(3px)'))
-    expect(css).toContain(normalized('--cw-backdrop-blur: blur(50px)'))
-    expect(css).toContain(normalized('--cw-backdrop-saturate: saturate(180%)'))
-    expect(css).toContain(normalized('--cw-backdrop-saturate: saturate(1.7)'))
-    expect(css).toContain(normalized('--cw-brightness: brightness(1.2)'))
-    expect(css).toContain(normalized('--cw-hue-rotate: hue-rotate(30deg)'))
+    // shared `filter` / `backdrop-filter` declaration lists them all. The
+    // engine's custom-property prefix is `--tc-`; it was `--cw-` back when the
+    // engine shipped as a standalone package under its old name.
+    expect(css).toContain(normalized('--tc-blur: blur(3px)'))
+    expect(css).toContain(normalized('--tc-backdrop-blur: blur(50px)'))
+    expect(css).toContain(normalized('--tc-backdrop-saturate: saturate(180%)'))
+    expect(css).toContain(normalized('--tc-backdrop-saturate: saturate(1.7)'))
+    expect(css).toContain(normalized('--tc-brightness: brightness(1.2)'))
+    expect(css).toContain(normalized('--tc-hue-rotate: hue-rotate(30deg)'))
 
     expect(css).not.toContain('pxpx')
     expect(css).not.toContain('NaN')

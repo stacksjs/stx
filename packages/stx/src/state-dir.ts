@@ -2,7 +2,7 @@
  * Where stx keeps its generated state.
  *
  * Everything stx writes for a project that is neither source nor a build
- * artifact you ship — the compiled-template cache, the Crosswind CSS cache, the
+ * artifact you ship — the compiled-template cache, the Css CSS cache, the
  * client-script bundle cache and its temp directory, the generated route
  * manifest and route types, dev-server output, SSG and media caches, story
  * snapshots — lives under one directory. It defaults to a hidden `.stx/` in the

@@ -1,11 +1,11 @@
-// Import type from local crosswind package
-import type { CrosswindConfig } from '../../../../crosswind/packages/crosswind/src/types'
+// Import type from local css package
+import type { CssConfig } from '../../../../css/packages/css/src/types'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const config: Partial<CrosswindConfig> = {
+const config: Partial<CssConfig> = {
   content: [
     path.resolve(__dirname, '../../examples/**/*.stx'),
     path.resolve(__dirname, '../../examples/**/*.{html,js,ts,jsx,tsx}'),

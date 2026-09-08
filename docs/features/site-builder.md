@@ -28,7 +28,7 @@ bun run build.ts
 ## What It Does
 
 1. **Bundle every page** under `pagesDir` (default `pages/`) via `Bun.build` + `bun-plugin-stx`.
-2. **Inject Crosswind CSS** into each emitted `.html` file.
+2. **Inject Css CSS** into each emitted `.html` file.
 3. **Replace stx's default SEO tags** with values derived from `siteConfig.seo` and per-page `siteConfig.pages[path]`.
 4. **Drop empty `chunk-*.js`** that `bun-plugin-stx` emits as 0-byte JS siblings for each `.stx` page.
 5. **Copy `publicDir`** (default `public/`) verbatim into `outDir`.

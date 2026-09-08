@@ -57,7 +57,7 @@ All paths now use `Bun.Transpiler({ loader: 'ts' })` for TypeScript stripping:
 `processDirectives()` is the core of the engine (~920 lines after code split). It acts as a pipeline orchestrator, delegating to extracted modules (`signal-processing.ts`, `runtime-injection.ts`, `component-processing.ts`, `script-validation.ts`, `inline-assets.ts`, `misc-directives.ts`). Three sequential phases:
 
 ```
-processDirectives (entry, error handling, Crosswind CSS)
+processDirectives (entry, error handling, Css CSS)
   └─ processDirectivesInternal (Phase 1-2)
        ├─ Phase 1: Pre-processing
        │    ├─ Strip comments: {{-- ... --}}

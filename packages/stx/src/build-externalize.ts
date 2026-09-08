@@ -110,11 +110,11 @@ const BLOB_KINDS: BlobKind[] = [
     replace: href => `<script data-stx-router src="${href}"></script>`,
   },
   {
-    pattern: /<style\b([^>]*\bdata-crosswind=(?:"generated"|'generated')[^>]*)>([\s\S]*?)<\/style>/gi,
-    prefix: 'crosswind',
+    pattern: /<style\b([^>]*\bdata-css=(?:"generated"|'generated')[^>]*)>([\s\S]*?)<\/style>/gi,
+    prefix: 'css',
     extension: 'css',
     contentType: 'text/css; charset=utf-8',
-    replace: href => `<link data-crosswind="generated" rel="stylesheet" href="${href}">`,
+    replace: href => `<link data-css="generated" rel="stylesheet" href="${href}">`,
   },
 ]
 

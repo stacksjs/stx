@@ -285,7 +285,7 @@ export function getRouterScript(): string {
     return blocks;
   }
 
-  function mergeCrosswindCSS(existing,incoming){
+  function mergeCss(existing,incoming){
     var blocks=extractCssBlocks(incoming);
     var newBlocks=[];
     for(var bi=0;bi<blocks.length;bi++){
@@ -815,8 +815,8 @@ else {
         var fragScripts=[];
         var fragScriptId=0;
         var fragStyles=[];
-        var fragCrosswindHrefs=[];
-        var fragCrosswindCSS=null;
+        var fragCssHrefs=[];
+        var fragCss=null;
         var fragExternalScripts=[];
         var cleanFrag=html.replace(new RegExp('<scr'+'ipt\\\\b([^>]*)>([\\\\s\\\\S]*?)<\\\\/scr'+'ipt>','gi'),function(m,attrs,code){
           // A data block is not code, and everything below this line assumes it
@@ -857,43 +857,43 @@ else {
           return '';
         });
         cleanFrag=cleanFrag.replace(new RegExp('<sty'+'le\\\\b([^>]*)>([\\\\s\\\\S]*?)<\\\\/sty'+'le>','gi'),function(m,attrs,css){
-          if(attrs.indexOf('data-crosswind')!==-1){
-            fragCrosswindCSS=css;
+          if(attrs.indexOf('data-css')!==-1){
+            fragCss=css;
           }else{
             fragStyles.push({attrs:attrs,css:css});
           }
           return '';
         });
         cleanFrag=cleanFrag.replace(new RegExp('<link\\\\b([^>]*)>','gi'),function(m,attrs){
-          if(attrs.indexOf('data-crosswind')===-1)return m;
+          if(attrs.indexOf('data-css')===-1)return m;
           var hrefMatch=attrs.match(/\\bhref=(["'])(.*?)\\1/i);
-          if(hrefMatch&&hrefMatch[2])fragCrosswindHrefs.push(hrefMatch[2]);
+          if(hrefMatch&&hrefMatch[2])fragCssHrefs.push(hrefMatch[2]);
           return '';
         });
-        // Remove old page styles (not crosswind — that gets merged)
+        // Remove old page styles (not css — that gets merged)
         document.querySelectorAll('style[data-stx-page]').forEach(function(s){s.remove()});
-        // Merge crosswind CSS from fragment into existing crosswind style
-        if(fragCrosswindCSS){
-          var curCrosswind=document.querySelector('head style[data-crosswind]');
-          if(curCrosswind){
-            var merged=mergeCrosswindCSS(curCrosswind.textContent||'',fragCrosswindCSS);
-            if(merged)curCrosswind.textContent=merged;
+        // Merge css CSS from fragment into existing css style
+        if(fragCss){
+          var curCss=document.querySelector('head style[data-css]');
+          if(curCss){
+            var merged=mergeCss(curCss.textContent||'',fragCss);
+            if(merged)curCss.textContent=merged;
           }else{
             var cw=document.createElement('style');
-            cw.setAttribute('data-crosswind','generated');
-            cw.textContent=fragCrosswindCSS;
+            cw.setAttribute('data-css','generated');
+            cw.textContent=fragCss;
             document.head.appendChild(cw);
           }
         }
-        fragCrosswindHrefs.forEach(function(href){
+        fragCssHrefs.forEach(function(href){
           var absolute=new URL(href,location.href).href;
           var exists=false;
-          document.querySelectorAll('head link[data-crosswind][href]').forEach(function(link){
+          document.querySelectorAll('head link[data-css][href]').forEach(function(link){
             if(new URL(link.getAttribute('href'),location.href).href===absolute)exists=true;
           });
           if(exists)return;
           var link=document.createElement('link');
-          link.setAttribute('data-crosswind','generated');
+          link.setAttribute('data-css','generated');
           link.setAttribute('rel','stylesheet');
           link.setAttribute('href',href);
           document.head.appendChild(link);
@@ -1063,20 +1063,20 @@ else {
       var curStyles=document.querySelectorAll('head style');
       var newStyles=doc.querySelectorAll('head style');
 
-      // Merge crosswind styles instead of replacing — persistent elements
+      // Merge css styles instead of replacing — persistent elements
       // (nav, footer) outside <main> still need their utility classes
-      var curCrosswind=document.querySelector('head style[data-crosswind]');
-      var newCrosswind=null;
-      newStyles.forEach(function(s){if(s.getAttribute('data-crosswind'))newCrosswind=s});
+      var curCss=document.querySelector('head style[data-css]');
+      var newCss=null;
+      newStyles.forEach(function(s){if(s.getAttribute('data-css'))newCss=s});
 
-      if(curCrosswind&&newCrosswind){
-        var merged=mergeCrosswindCSS(curCrosswind.textContent||'',newCrosswind.textContent||'');
-        if(merged)curCrosswind.textContent=merged;
+      if(curCss&&newCss){
+        var merged=mergeCss(curCss.textContent||'',newCss.textContent||'');
+        if(merged)curCss.textContent=merged;
       }
 
       var incoming=[];
       newStyles.forEach(function(s){
-        if(!keepIds[s.id]&&!s.getAttribute('data-crosswind')){
+        if(!keepIds[s.id]&&!s.getAttribute('data-css')){
           var ns=document.createElement('style');
           ns.textContent=s.textContent;
           ns.setAttribute('data-stx-incoming','');
@@ -1085,17 +1085,17 @@ else {
         }
       });
 
-      // If no existing crosswind but new page has one, add it
-      if(!curCrosswind&&newCrosswind){
+      // If no existing css but new page has one, add it
+      if(!curCss&&newCss){
         var ns=document.createElement('style');
-        ns.textContent=newCrosswind.textContent;
-        ns.setAttribute('data-crosswind',newCrosswind.getAttribute('data-crosswind'));
+        ns.textContent=newCss.textContent;
+        ns.setAttribute('data-css',newCss.getAttribute('data-css'));
         document.head.appendChild(ns);
       }
 
-      // Remove old styles (except persistent ones, crosswind, and incoming)
+      // Remove old styles (except persistent ones, css, and incoming)
       curStyles.forEach(function(s){
-        if(!keepIds[s.id]&&!s.hasAttribute('data-stx-incoming')&&!s.hasAttribute('data-crosswind'))s.remove();
+        if(!keepIds[s.id]&&!s.hasAttribute('data-stx-incoming')&&!s.hasAttribute('data-css'))s.remove();
       });
 
       incoming.forEach(function(s){s.removeAttribute('data-stx-incoming')});

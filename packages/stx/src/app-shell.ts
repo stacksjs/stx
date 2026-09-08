@@ -363,7 +363,7 @@ export function isSpaNavigation(request: Request): boolean {
 export function extractContainerContent(html: string, containerSelector: string = 'main'): string {
   const trimmed = html.trim()
 
-  // Preserve <style> tags from <head> so crosswind / scoped styles still apply,
+  // Preserve <style> tags from <head> so css / scoped styles still apply,
   // plus the route-param handoff required before routed components mount.
   const headStyles: string[] = []
   const headScripts: string[] = []

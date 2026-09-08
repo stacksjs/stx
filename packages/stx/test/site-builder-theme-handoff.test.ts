@@ -15,7 +15,7 @@
  * So the FOUC guard CAUSED a FOUC: a light-preference user carried the dark
  * class from first paint until hydration. That is the exact thing it exists to
  * prevent, and `dark` on the root is the default dark-mode strategy for
- * Crosswind/Tailwind-style utilities.
+ * Css/Tailwind-style utilities.
  *
  * The browser-chrome `<meta>` tags are complementary — color-mode-boot does not
  * manage `theme-color` — so those still apply.

@@ -13,7 +13,7 @@ import { EXTERNALIZED_ASSET_DIR, externalizeHtml } from '../../src/build-externa
 const RUNTIME_BODY = 'var stx = 1; /* a very large runtime */'
 const RUNTIME = `<script data-stx-scoped data-stx-runtime>${RUNTIME_BODY}</script>`
 const ROUTER = '<script data-stx-router>var router = 1;</script>'
-const CSS = '<style data-crosswind="generated">.a{color:red}</style>'
+const CSS = '<style data-css="generated">.a{color:red}</style>'
 
 describe('externalizing one document', () => {
   it('replaces the inline runtime with a src reference', () => {
@@ -45,7 +45,7 @@ describe('externalizing one document', () => {
     const { assets } = externalizeHtml(`${RUNTIME}${CSS}`)
 
     expect(assets.find(a => a.filename.startsWith('runtime'))!.contentType).toContain('javascript')
-    expect(assets.find(a => a.filename.startsWith('crosswind'))!.contentType).toContain('css')
+    expect(assets.find(a => a.filename.startsWith('css'))!.contentType).toContain('css')
   })
 
   it('handles runtime, router and stylesheet in one pass', () => {
@@ -53,7 +53,7 @@ describe('externalizing one document', () => {
 
     expect(assets).toHaveLength(3)
     expect(html).toContain('rel="stylesheet"')
-    expect(html).not.toContain('<style data-crosswind')
+    expect(html).not.toContain('<style data-css')
     expect(html).not.toContain('var router = 1;')
   })
 

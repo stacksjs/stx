@@ -22,7 +22,7 @@ import {
   getThemeSelectorHtml,
   getThemeSelectorScript,
   getThemeSelectorStyles,
-  injectCrosswindCSS,
+  injectCss,
   setupKeyboardShortcuts,
 } from './index'
 
@@ -575,12 +575,12 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         }
       }
 
-      // If we found a matching route, serve its content with Crosswind CSS injection
+      // If we found a matching route, serve its content with Css CSS injection
       if (routeMatched) {
-        // Inject Crosswind CSS for utility classes (async)
+        // Inject Css CSS for utility classes (async)
         // Always return full HTML — the SPA router extracts <main> content
         // and swaps <head> styles client-side via DOMParser
-        return injectCrosswindCSS(routeMatched.content).then(content => {
+        return injectCss(routeMatched.content).then(content => {
           // Inject stx client helpers (formatters, badge system, detail panel builder, etc.)
           if (content.includes('</head>')) {
             content = content.replace('</head>', `${stxClientHelpers}\n</head>`)
@@ -674,7 +674,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
       if (url.pathname !== '/' && routes['/']) {
         const isRouterRequest = isSpaNavRequest(request)
 
-        return injectCrosswindCSS(routes['/'].content).then(content => {
+        return injectCss(routes['/'].content).then(content => {
           if (isRouterRequest) {
             const mainMatch = content.match(/<main[^>]*>([\s\S]*?)<\/main>/i)
             if (mainMatch) {

@@ -47,7 +47,7 @@ export const collapsedClass = $props.collapsedClass || ''
 export const className = $props.className || ''
 
 // Mirror the OS light/dark preference onto the root element's `dark` class.
-// A native sidebar follows the system appearance, and Crosswind's `dark:`
+// A native sidebar follows the system appearance, and Css's `dark:`
 // variants are class-based, so something has to write that class — but it is
 // the document's business, not a navigation pane's. Left on by default so a
 // sidebar dropped into a page with no theme controller still behaves; turn it
@@ -343,7 +343,7 @@ function toggleCollapse() {
 }
 
 // ---------------------------------------------------------------------------
-// Appearance — native sidebars follow the OS light/dark appearance. Crosswind
+// Appearance — native sidebars follow the OS light/dark appearance. Css
 // dark: utilities are class-based, so mirror prefers-color-scheme onto the
 // root element unless the app manages its own theme (data-theme attribute).
 // ---------------------------------------------------------------------------

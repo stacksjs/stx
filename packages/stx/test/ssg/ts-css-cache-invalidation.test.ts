@@ -1,8 +1,8 @@
 /**
- * A Crosswind config edit invalidates the SSG cache (stacksjs/stx#1940).
+ * A Css config edit invalidates the SSG cache (stacksjs/stx#1940).
  *
  * The page cache keyed on each page's `.stx` file and the dependencies collected
- * while rendering it. The Crosswind config is in neither, yet it decides the
+ * while rendering it. The Css config is in neither, yet it decides the
  * stylesheet every page ships — so editing a preflight or the safelist produced
  * a build that reported every route `Cached`, exited 0, and emitted the old CSS.
  *
@@ -18,16 +18,16 @@
  * build re-rendered.
  *
  * The salt is exercised through the `cacheSalt` option rather than by editing a
- * real `crosswind.config.ts`, because the config resolves from `process.cwd()`
+ * real `css.config.ts`, because the config resolves from `process.cwd()`
  * and mutating that mid-suite is a global. `cacheSalt` is the same value on the
- * same code path — the default simply computes the Crosswind digest into it.
+ * same code path — the default simply computes the Css digest into it.
  */
 
 import { afterAll, beforeEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { fingerprintConfig } from '../../src/dev-server/crosswind'
+import { fingerprintConfig } from '../../src/dev-server/ts-css'
 import { generateStaticSite } from '../../src/ssg'
 
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-cw-cache-'))

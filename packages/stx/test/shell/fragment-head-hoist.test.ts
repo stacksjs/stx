@@ -76,9 +76,9 @@ describe('generateDocumentShell (fragment head tags)', () => {
     expect(out.indexOf('<main class="flex">')).toBeGreaterThan(headEnd)
   })
 
-  it('keeps the page style after Crosswind so the page still wins the cascade', () => {
-    const out = generateDocumentShell(FRAGMENT, {}, { styles: ['<style data-crosswind="generated">.flex{display:flex}</style>'] })
-    expect(out.indexOf('data-crosswind')).toBeLessThan(out.indexOf('--accent: #46d3c0'))
+  it('keeps the page style after Css so the page still wins the cascade', () => {
+    const out = generateDocumentShell(FRAGMENT, {}, { styles: ['<style data-css="generated">.flex{display:flex}</style>'] })
+    expect(out.indexOf('data-css')).toBeLessThan(out.indexOf('--accent: #46d3c0'))
   })
 
   it('leaves a page with no leading head tags unchanged in the body', () => {

@@ -1,7 +1,7 @@
 /**
  * A hand-written `declare module 'pkg'` overrides that package's real types.
  *
- * `packages/stx/src/cwcss-crosswind.d.ts` declared `@cwcss/crosswind` with a
+ * `packages/stx/src/cwcss-crosswind.d.ts` declared `@stacksjs/ts-css` with a
  * three-member `CSSGenerator` that had no `toCSS` and a `generate` returning
  * string. The installed engine has had `toCSS` and a void `generate` for
  * releases. Because an ambient module declaration wins over the resolved
@@ -28,7 +28,7 @@ const REPO = path.resolve(import.meta.dir, '../../..')
 
 /**
  * Packages already shadowed when this guard was written. Each ships its own
- * types, so each carries the same latent drift as the crosswind stub did — none
+ * types, so each carries the same latent drift as the css stub did — none
  * has been checked against its real declarations yet. The list exists to stop
  * NEW ones, and it should only ever shrink.
  *
@@ -111,12 +111,15 @@ describe('hand-written ambient module declarations', () => {
     expect(offenders).toEqual([])
   })
 
-  it('no longer declares @cwcss/crosswind, which shipped types all along', () => {
+  it('no longer declares the CSS engine, which shipped types all along', () => {
     // The specific regression. Deleting the stub is what let `serve.ts` be
-    // typed from `typeof import('@cwcss/crosswind')` instead of a stale copy.
+    // typed from `typeof import('@stacksjs/ts-css/engine')` instead of a stale
+    // copy. `shipsOwnTypes` resolves a package root, so it is asked about the
+    // package rather than the engine subpath.
     const specifiers = ambientModuleDeclarations().map(d => d.specifier)
-    expect(specifiers).not.toContain('@cwcss/crosswind')
-    expect(shipsOwnTypes('@cwcss/crosswind')).toBe(true)
+    expect(specifiers).not.toContain('@stacksjs/ts-css')
+    expect(specifiers).not.toContain('@stacksjs/ts-css/engine')
+    expect(shipsOwnTypes('@stacksjs/ts-css')).toBe(true)
   })
 
   it('keeps the allowlist honest — every entry is one the scan actually finds', () => {

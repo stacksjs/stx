@@ -1,4 +1,4 @@
-import type { CrosswindConfig } from '@cwcss/crosswind'
+import type { CssConfig } from '@stacksjs/ts-css/engine'
 import type * as vscode from 'vscode'
 
 // Polyfill Bun APIs for Node.js environment (VSCode extension host)
@@ -23,17 +23,17 @@ function setupBunPolyfill() {
 let CSSGenerator: any
 let parseClass: any
 let builtInRules: any
-let crosswindLoaded = false
+let cssLoaded = false
 
 /**
  * The utility-CSS engine, newest package name first. It now lives at the
- * `engine` subpath of `@stacksjs/ts-css`; `@cwcss/crosswind` is the standalone
+ * `engine` subpath of `@stacksjs/ts-css`; `@stacksjs/ts-css` is the standalone
  * package it was published as before that.
  */
-export const ENGINE_SPECIFIERS = ['@stacksjs/ts-css/engine', '@cwcss/crosswind']
+export const ENGINE_SPECIFIERS = ['@stacksjs/ts-css/engine', '@stacksjs/ts-css/engine']
 
-async function loadCrosswind() {
-  if (crosswindLoaded)
+async function loadCssEngine() {
+  if (cssLoaded)
     return
 
   setupBunPolyfill()
@@ -41,13 +41,13 @@ async function loadCrosswind() {
   let lastError: unknown
   for (const specifier of ENGINE_SPECIFIERS) {
     try {
-      const crosswind = await import(specifier)
-      if (!crosswind?.CSSGenerator)
+      const css = await import(specifier)
+      if (!css?.CSSGenerator)
         continue
-      CSSGenerator = crosswind.CSSGenerator
-      parseClass = crosswind.parseClass
-      builtInRules = crosswind.builtInRules
-      crosswindLoaded = true
+      CSSGenerator = css.CSSGenerator
+      parseClass = css.parseClass
+      builtInRules = css.builtInRules
+      cssLoaded = true
       return
     }
     catch (error) {
@@ -55,19 +55,19 @@ async function loadCrosswind() {
     }
   }
 
-  console.error(`[Crosswind] Failed to load the CSS engine from any of ${ENGINE_SPECIFIERS.join(', ')}:`, lastError)
+  console.error(`[ts-css] Failed to load the CSS engine from any of ${ENGINE_SPECIFIERS.join(', ')}:`, lastError)
   throw new Error(`Cannot load the CSS engine: ${lastError}`)
 }
 
 /**
- * Manages the Crosswind CSS generator instance
+ * Manages the Css CSS generator instance
  */
-export class CrosswindContext {
+export class CssContext {
   private generator: typeof CSSGenerator | null = null
   private classCache: Map<string, string> = new Map()
   private ready: Promise<void>
 
-  constructor(private config: CrosswindConfig) {
+  constructor(private config: CssConfig) {
     this.ready = this.initialize()
   }
 
@@ -77,13 +77,13 @@ export class CrosswindContext {
 
   private async initialize(): Promise<void> {
     try {
-      await loadCrosswind()
+      await loadCssEngine()
       this.generator = new CSSGenerator(this.config)
       // eslint-disable-next-line no-console
-      console.log('[Crosswind] CSS Generator initialized')
+      console.log('[ts-css] CSS Generator initialized')
     }
     catch (error) {
-      console.error('[Crosswind] Failed to initialize generator:', error)
+      console.error('[ts-css] Failed to initialize generator:', error)
     }
   }
 
@@ -97,7 +97,7 @@ export class CrosswindContext {
       return this.classCache.get(className)!
 
     try {
-      await loadCrosswind()
+      await loadCssEngine()
       const singleClassGenerator = new CSSGenerator(this.config)
       singleClassGenerator.generate(className)
       const css = singleClassGenerator.toCSS(false, false)
@@ -108,7 +108,7 @@ export class CrosswindContext {
       }
     }
     catch (error) {
-      console.error(`[Crosswind] Error generating CSS for class "${className}":`, error)
+      console.error(`[ts-css] Error generating CSS for class "${className}":`, error)
     }
 
     return null
@@ -125,12 +125,12 @@ export class CrosswindContext {
       return this.generator.toCSS(false, false)
     }
     catch (error) {
-      console.error('[Crosswind] Error generating CSS:', error)
+      console.error('[ts-css] Error generating CSS:', error)
       return ''
     }
   }
 
-  async reload(config: CrosswindConfig): Promise<void> {
+  async reload(config: CssConfig): Promise<void> {
     this.config = config
     this.generator = null
     this.classCache.clear()
@@ -151,7 +151,7 @@ export class CrosswindContext {
 
   async matchesRule(className: string): Promise<boolean> {
     try {
-      await loadCrosswind()
+      await loadCssEngine()
       const parsed = parseClass(className)
 
       for (const rule of builtInRules) {
@@ -174,9 +174,9 @@ export class CrosswindContext {
 }
 
 /**
- * Get default Crosswind configuration
+ * Get default Css configuration
  */
-export function getDefaultConfig(vscodeModule: typeof vscode): CrosswindConfig {
+export function getDefaultConfig(vscodeModule: typeof vscode): CssConfig {
   const workspaceFolder = vscodeModule.workspace.workspaceFolders?.[0]?.uri.fsPath
 
   return {
@@ -252,9 +252,9 @@ export function getDefaultConfig(vscodeModule: typeof vscode): CrosswindConfig {
 }
 
 /**
- * Load Crosswind configuration from workspace
+ * Load Css configuration from workspace
  */
-export async function loadCrosswindConfig(vscodeModule: typeof vscode): Promise<CrosswindConfig> {
+export async function loadCssEngineConfig(vscodeModule: typeof vscode): Promise<CssConfig> {
   const workspaceFolder = vscodeModule.workspace.workspaceFolders?.[0]?.uri.fsPath
 
   if (!workspaceFolder) {
@@ -262,7 +262,7 @@ export async function loadCrosswindConfig(vscodeModule: typeof vscode): Promise<
   }
 
   try {
-    const configPath = `${workspaceFolder}/crosswind.config`
+    const configPath = `${workspaceFolder}/css.config`
     const config = await import(configPath)
     return config.default || config
   }

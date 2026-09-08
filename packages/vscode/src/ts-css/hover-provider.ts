@@ -1,12 +1,12 @@
 import type * as vscode from 'vscode'
-import type { CrosswindContext } from './context'
+import type { CssContext } from './context'
 import { getClassAtPosition } from './utils/class-matcher'
 import { addRemToPxComment, prettifyCSS } from './utils/css-parser'
 
 /**
- * Create hover provider for Crosswind utility classes
+ * Create hover provider for Css utility classes
  */
-export function createCrosswindHoverProvider(vscodeModule: typeof vscode, context: CrosswindContext): vscode.HoverProvider {
+export function createCssHoverProvider(vscodeModule: typeof vscode, context: CssContext): vscode.HoverProvider {
   return {
     async provideHover(document, position, _token) {
       const config = vscodeModule.workspace.getConfiguration('stx.utilityClasses')
@@ -34,7 +34,7 @@ export function createCrosswindHoverProvider(vscodeModule: typeof vscode, contex
           return null
         }
 
-        const remToPxRatio = vscodeModule.workspace.getConfiguration('crosswind').get<number>('remToPxRatio', 16)
+        const remToPxRatio = vscodeModule.workspace.getConfiguration('css').get<number>('remToPxRatio', 16)
         const processedCSS = addRemToPxComment(css, remToPxRatio)
         const prettyCSS = prettifyCSS(processedCSS)
 
@@ -42,13 +42,13 @@ export function createCrosswindHoverProvider(vscodeModule: typeof vscode, contex
         markdown.supportHtml = true
         markdown.isTrusted = true
 
-        markdown.appendMarkdown(`**Crosswind Utility:** \`${className}\`\n\n`)
+        markdown.appendMarkdown(`**Css Utility:** \`${className}\`\n\n`)
         markdown.appendCodeblock(prettyCSS, 'css')
 
         return new vscodeModule.Hover(markdown)
       }
       catch (error) {
-        console.error('[Crosswind Hover] Error:', error)
+        console.error('[Css Hover] Error:', error)
         return null
       }
     },

@@ -29,7 +29,7 @@
  */
 
 import { describe, expect, it } from 'bun:test'
-import { mergeCrosswindConfig } from '../src/crosswind-config'
+import { mergeCssConfig } from '../src/ts-css-config'
 import { SEMANTIC_TOKENS, semanticColors, semanticTokenCSS, semanticTokenNames, tokenVariable } from '../src/theme-tokens'
 
 const PALETTE = {
@@ -107,7 +107,7 @@ describe('semanticTokenCSS', () => {
 describe('the merged config every render path uses', () => {
   it('carries the role tokens with no user config at all', () => {
     // The property that lets a component say `text-fg-muted` unconditionally.
-    const { config, tokenCSS } = mergeCrosswindConfig({ theme: { colors: PALETTE } }, {})
+    const { config, tokenCSS } = mergeCssConfig({ theme: { colors: PALETTE } }, {})
 
     expect(config.theme.colors['fg-muted']).toBe('var(--stx-fg-muted, #4b5563)')
     expect(tokenCSS).toContain('--stx-fg-muted')
@@ -117,7 +117,7 @@ describe('the merged config every render path uses', () => {
     // Additive. If `gray-600` resolved through a variable instead, every opacity
     // modifier in every app would become `color-mix()` — a real change to the
     // emitted CSS that nobody asked for.
-    const { config } = mergeCrosswindConfig({ theme: { colors: PALETTE } }, {})
+    const { config } = mergeCssConfig({ theme: { colors: PALETTE } }, {})
 
     expect(config.theme.colors.gray['600']).toBe('#4b5563')
     expect(config.theme.colors.white).toBe('#fff')
@@ -125,7 +125,7 @@ describe('the merged config every render path uses', () => {
 
   it('lets a project redefine a role outright', () => {
     // Merged as BASE colours, so the user's own config still wins.
-    const { config } = mergeCrosswindConfig(
+    const { config } = mergeCssConfig(
       { theme: { colors: PALETTE } },
       { theme: { colors: { accent: '#e11d48' } } },
     )
@@ -136,7 +136,7 @@ describe('the merged config every render path uses', () => {
   })
 
   it('survives a base config with no palette', () => {
-    const { config, tokenCSS } = mergeCrosswindConfig({}, {})
+    const { config, tokenCSS } = mergeCssConfig({}, {})
 
     expect(tokenCSS).toBe('')
     expect(config.theme.colors).toEqual({})

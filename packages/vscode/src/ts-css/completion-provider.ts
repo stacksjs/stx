@@ -1,5 +1,5 @@
 import type * as vscode from 'vscode'
-import type { CrosswindContext } from './context'
+import type { CssContext } from './context'
 import { extractColorFromCSS } from './utils/color-extractor'
 
 const COMMON_UTILITIES = [
@@ -30,9 +30,9 @@ const COMMON_UTILITIES = [
 ]
 
 /**
- * Create autocomplete provider for Crosswind utility classes
+ * Create autocomplete provider for Css utility classes
  */
-export function createCrosswindCompletionProvider(vscodeModule: typeof vscode, context: CrosswindContext): vscode.CompletionItemProvider {
+export function createCssCompletionProvider(vscodeModule: typeof vscode, context: CssContext): vscode.CompletionItemProvider {
   return {
     async provideCompletionItems(document, position) {
       const config = vscodeModule.workspace.getConfiguration('stx.utilityClasses')
@@ -60,7 +60,7 @@ export function createCrosswindCompletionProvider(vscodeModule: typeof vscode, c
             vscodeModule.CompletionItemKind.Property,
           )
 
-          item.detail = 'Crosswind Utility'
+          item.detail = 'Css Utility'
           item.sortText = `0${utility}`
 
           try {

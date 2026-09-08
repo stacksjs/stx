@@ -1,14 +1,14 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import path from 'node:path'
-import { loadCrosswind, loadCrosswindConfig, resetCrosswindCache } from '../../src/dev-server/crosswind'
+import { loadCssEngine, loadCssEngineConfig, resetCssCache } from '../../src/dev-server/ts-css'
 
 // =============================================================================
-// Regression: the crosswind config loader must NOT emit noisy error stacks
+// Regression: the css config loader must NOT emit noisy error stacks
 // when the config file is simply missing. Earlier we handed off directly to
 // bunfig's `loadConfigWithResult`, which searches 250+ fallback paths and
 // then logs a multi-screen ConfigNotFoundError dump on every request when
 // no config file is found. The dev server was run from repo root while the
-// actual config lived in `examples/drivly/crosswind.config.ts` — every page
+// actual config lived in `examples/drivly/css.config.ts` — every page
 // build produced a wall of red error output.
 //
 // The fix uses bunfig's lightweight discovery API and only loads the full
@@ -16,7 +16,7 @@ import { loadCrosswind, loadCrosswindConfig, resetCrosswindCache } from '../../s
 // → silent `null`, without duplicating bunfig's resolution rules.
 // =============================================================================
 
-const TMP_ROOT = path.join('/tmp', `stx-crosswind-config-${process.pid}-${Date.now()}`)
+const TMP_ROOT = path.join('/tmp', `stx-ts-css-config-${process.pid}-${Date.now()}`)
 const ORIGINAL_CROSSWIND_SRC = process.env.CROSSWIND_SRC
 
 async function mkTmpDir(name: string): Promise<string> {
@@ -26,7 +26,7 @@ async function mkTmpDir(name: string): Promise<string> {
 }
 
 afterEach(async () => {
-  resetCrosswindCache()
+  resetCssCache()
   if (ORIGINAL_CROSSWIND_SRC === undefined)
     delete process.env.CROSSWIND_SRC
   else
@@ -34,7 +34,7 @@ afterEach(async () => {
   await Bun.$`rm -rf ${TMP_ROOT}`.quiet().nothrow()
 })
 
-describe('loadCrosswind (dev-server)', () => {
+describe('loadCssEngine (dev-server)', () => {
   it('prefers an explicit CROSSWIND_SRC module', async () => {
     const dir = await mkTmpDir('explicit-source')
     const source = path.join(dir, 'index.ts')
@@ -43,17 +43,17 @@ describe('loadCrosswind (dev-server)', () => {
       export const config = { source: 'explicit' }
     `)
     process.env.CROSSWIND_SRC = source
-    resetCrosswindCache()
+    resetCssCache()
 
-    const result = await loadCrosswind()
+    const result = await loadCssEngine()
 
     expect(result).not.toBeNull()
     expect((result as any)?.config?.source).toBe('explicit')
   })
 })
 
-describe('loadCrosswindConfig (dev-server)', () => {
-  it('returns null silently when no crosswind config exists at cwd', async () => {
+describe('loadCssEngineConfig (dev-server)', () => {
+  it('returns null silently when no css config exists at cwd', async () => {
     const dir = await mkTmpDir('no-config')
 
     // Capture any stderr noise that bunfig's error logger would otherwise
@@ -66,7 +66,7 @@ describe('loadCrosswindConfig (dev-server)', () => {
     console.warn = (...args: unknown[]) => warnLogs.push(args.map(a => String(a)).join(' '))
 
     try {
-      const result = await loadCrosswindConfig(dir)
+      const result = await loadCssEngineConfig(dir)
       expect(result).toBeNull()
       // No config-not-found noise should reach stderr
       expect(errorLogs.join('\n')).not.toContain('ConfigNotFound')
@@ -79,29 +79,29 @@ describe('loadCrosswindConfig (dev-server)', () => {
     }
   })
 
-  it('loads a crosswind.config.ts when present', async () => {
+  it('loads a css.config.ts when present', async () => {
     const dir = await mkTmpDir('has-config')
-    await Bun.write(path.join(dir, 'crosswind.config.ts'), `
+    await Bun.write(path.join(dir, 'css.config.ts'), `
       export default {
         content: ['./pages/**/*.stx'],
         theme: { extend: { colors: { brand: '#FF3E54' } } },
       }
     `)
 
-    const result = await loadCrosswindConfig(dir)
+    const result = await loadCssEngineConfig(dir)
     expect(result).not.toBeNull()
     expect((result as any).content).toEqual(['./pages/**/*.stx'])
     expect((result as any).theme?.extend?.colors?.brand).toBe('#FF3E54')
   }, 15_000)
 
-  it('loads a crosswind.config.js (JS variant)', async () => {
+  it('loads a css.config.js (JS variant)', async () => {
     const dir = await mkTmpDir('js-config')
     await Bun.write(
-      path.join(dir, 'crosswind.config.js'),
+      path.join(dir, 'css.config.js'),
       'export default { content: ["./src/**/*.html"] }',
     )
 
-    const result = await loadCrosswindConfig(dir)
+    const result = await loadCssEngineConfig(dir)
     expect(result).not.toBeNull()
     expect((result as any).content).toEqual(['./src/**/*.html'])
   })
@@ -110,11 +110,11 @@ describe('loadCrosswindConfig (dev-server)', () => {
     const dir = await mkTmpDir('nested-json-config')
     await Bun.$`mkdir -p ${path.join(dir, 'config')}`.quiet()
     await Bun.write(
-      path.join(dir, 'config/crosswind.json'),
+      path.join(dir, 'config/css.json'),
       JSON.stringify({ content: ['./views/**/*.stx'], preflight: false }),
     )
 
-    const result = await loadCrosswindConfig(dir)
+    const result = await loadCssEngineConfig(dir)
     expect((result as any)?.content).toEqual(['./views/**/*.stx'])
     expect((result as any)?.preflight).toBe(false)
   })
@@ -126,7 +126,7 @@ describe('loadCrosswindConfig (dev-server)', () => {
       `export default { content: ['./generic/**/*.stx'], minify: true }`,
     )
 
-    const result = await loadCrosswindConfig(dir)
+    const result = await loadCssEngineConfig(dir)
     expect((result as any)?.content).toEqual(['./generic/**/*.stx'])
     expect((result as any)?.minify).toBe(true)
   })
@@ -140,15 +140,15 @@ describe('loadCrosswindConfig (dev-server)', () => {
     const outer = await mkTmpDir('outer')
     const inner = await mkTmpDir('outer/inner-app')
     await Bun.write(
-      path.join(inner, 'crosswind.config.ts'),
+      path.join(inner, 'css.config.ts'),
       `export default { content: ['inner-only'] }`,
     )
 
-    const result = await loadCrosswindConfig(inner)
+    const result = await loadCssEngineConfig(inner)
     expect((result as any)?.content).toEqual(['inner-only'])
 
     // The outer dir has no config — must still return null silently.
-    const outerResult = await loadCrosswindConfig(outer)
+    const outerResult = await loadCssEngineConfig(outer)
     expect(outerResult).toBeNull()
   })
 })

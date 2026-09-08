@@ -530,7 +530,7 @@ Hover over color utilities to see the actual color before applying it:
 ### Colors Not Showing?
 
 1. Ensure `stx.utilityClasses.colorPreview` is enabled
-2. Check that you have `@cwcss/crosswind` dependency installed
+2. Check that you have `@stacksjs/ts-css` dependency installed
 3. Reload window to reinitialize the extension
 
 ### Syntax Highlighting Issues?

@@ -12,7 +12,7 @@ try {
     external: [
       'vscode',
       '@stacksjs/ts-css',
-      '@cwcss/crosswind',
+      '@stacksjs/ts-css/engine',
       'prettier',
     ],
     minify: true,
@@ -49,7 +49,7 @@ try {
     external: [
       'vscode',
       '@stacksjs/ts-css',
-      '@cwcss/crosswind'
+      '@stacksjs/ts-css/engine'
     ],
     naming: '[dir]/[name].mjs',
     minify: true,

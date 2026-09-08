@@ -17,7 +17,7 @@
  *
  * ## Where the values come from
  *
- * Each token names a shade in crosswind's own palette rather than carrying a hex
+ * Each token names a shade in css's own palette rather than carrying a hex
  * value, and the light/dark pairs are the ones the component library already
  * used most — measured, not invented:
  *
@@ -113,7 +113,7 @@ export function tokenVariable(name: string): string {
 type Palette = Record<string, unknown>
 
 /**
- * Resolve a `family-shade` reference against a crosswind palette.
+ * Resolve a `family-shade` reference against a css palette.
  *
  * Returns undefined rather than guessing when the family or shade is absent, so
  * a token backed by nothing is dropped instead of emitting `var(--stx-x, )`.

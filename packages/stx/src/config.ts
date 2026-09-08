@@ -625,7 +625,7 @@ function detachMutableContainers(loaded: StxConfig): void {
  *
  * The resolver is module state because plenty of stx runs from module scope or
  * from helpers that never see a config object — the client-script bundler and
- * the Crosswind cache, for two. Writing the resolved value back into `loaded`
+ * the Css cache, for two. Writing the resolved value back into `loaded`
  * keeps the config object honest about where things actually go.
  */
 function applyStateDir(loaded: StxConfig): void {

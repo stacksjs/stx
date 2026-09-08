@@ -205,18 +205,18 @@ export async function activate(context: vscode.ExtensionContext) {
     semanticTokensProvider,
   )
 
-  // Activate Crosswind utility class features
+  // Activate Css utility class features
   const utilityClassesEnabled = vscode.workspace.getConfiguration('stx.utilityClasses').get<boolean>('enable', true)
 
   if (utilityClassesEnabled) {
     try {
-      const { activateCrosswind } = await import('./crosswind/index')
-      await activateCrosswind(context)
-      console.log('stx Extension - Crosswind utility class features activated')
+      const { activateCss } = await import('./ts-css/index')
+      await activateCss(context)
+      console.log('stx Extension - Css utility class features activated')
     }
     catch (error) {
-      console.error('stx Extension - Failed to activate Crosswind features:', error)
-      vscode.window.showErrorMessage(`Failed to activate Crosswind: ${error}`)
+      console.error('stx Extension - Failed to activate Css features:', error)
+      vscode.window.showErrorMessage(`Failed to activate Css: ${error}`)
     }
   }
 

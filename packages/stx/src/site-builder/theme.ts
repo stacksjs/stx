@@ -91,7 +91,7 @@ export function injectThemeBootstrap(html: string, site: SiteConfig): string {
   // color-mode boot script sets the correct value. A light-preference user got
   // the dark class from first paint until hydration, which is the exact thing
   // the guard exists to prevent, and `dark` on the root is the default
-  // dark-mode strategy for Crosswind/Tailwind-style utilities.
+  // dark-mode strategy for Css/Tailwind-style utilities.
   //
   // The browser-chrome <meta> tags below are complementary rather than
   // conflicting — color-mode-boot does not manage theme-color — so those still

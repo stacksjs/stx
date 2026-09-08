@@ -1,31 +1,31 @@
-// @ts-nocheck - Skip type checking due to Crosswind type version differences
+// @ts-nocheck - Skip type checking due to Css type version differences
 /**
- * Crosswind CSS Generation Module
- * Provides on-the-fly Tailwind CSS generation using Crosswind
+ * Css CSS Generation Module
+ * Provides on-the-fly Tailwind CSS generation using Css
  */
 
 import path from 'node:path'
 import { hasLocalConfig } from 'bunfig'
-import { mergeCrosswindConfig } from '../crosswind-config'
+import { mergeCssConfig } from '../ts-css-config'
 import { stateDir } from '../state-dir'
 import { colors } from './terminal-colors'
 import { contentKey, renderMemo } from '../render-memo'
 
-// Type for Crosswind module
-interface CrosswindModule {
-  CSSGenerator: new (config: CrosswindConfig) => CSSGenerator
-  config: CrosswindConfig
-  build?: (config: CrosswindConfig) => Promise<CrosswindBuildResult>
-  defaultConfig?: CrosswindConfig
+// Type for Css module
+interface CssModule {
+  CSSGenerator: new (config: CssConfig) => CSSGenerator
+  config: CssConfig
+  build?: (config: CssConfig) => Promise<CssBuildResult>
+  defaultConfig?: CssConfig
   /**
-   * Crosswind's own extractor. Preferred over the local fallback below —
+   * Css's own extractor. Preferred over the local fallback below —
    * it is the authority on what counts as a class candidate, and it keeps
    * up with syntax this package would otherwise have to mirror by hand.
    */
   extractClasses?: (content: string) => Set<string>
 }
 
-interface CrosswindConfig {
+interface CssConfig {
   content?: string[]
   output?: string
   preflight?: boolean
@@ -35,7 +35,7 @@ interface CrosswindConfig {
   [key: string]: unknown
 }
 
-interface CrosswindBuildResult {
+interface CssBuildResult {
   css: string
   classes: Set<string>
   duration: number
@@ -46,16 +46,16 @@ interface CSSGenerator {
   toCSS(preflight: boolean, minify: boolean): string
 }
 
-// Crosswind lazy loading cache
-let crosswindModule: CrosswindModule | null = null
-let crosswindLoadAttempted = false
+// Css lazy loading cache
+let cssModule: CssModule | null = null
+let cssLoadAttempted = false
 
 // Cached config and CSS for dev server
-let cachedConfig: CrosswindConfig | null = null
+let cachedConfig: CssConfig | null = null
 let cachedCSS: string = ''
 let isBuilding = false
 
-// Memoize generateCrosswindCSS output by sorted class-set string.
+// Memoize generateCss output by sorted class-set string.
 //
 // In-memory: a Map keyed on the sorted class set, capped at MAX_CACHE
 // entries with LRU eviction (Map iteration order is insertion order,
@@ -104,7 +104,7 @@ function registerServeCss(css: string): string {
   return hash
 }
 
-export function getCrosswindServeAsset(hash: string): string | undefined {
+export function getCssServeAsset(hash: string): string | undefined {
   const css = serveCssByHash.get(hash)
   if (css === undefined)
     return
@@ -138,9 +138,9 @@ async function writeDiskCache(key: string, css: string): Promise<void> {
 }
 
 /**
- * Try to dynamically import crosswind from a given path
+ * Try to dynamically import css from a given path
  */
-async function tryImportCrosswind(importPath: string): Promise<CrosswindModule | null> {
+async function tryImportCss(importPath: string): Promise<CssModule | null> {
   try {
     const pkg = await import(importPath)
     if (pkg && pkg.CSSGenerator) {
@@ -163,51 +163,40 @@ async function tryImportCrosswind(importPath: string): Promise<CrosswindModule |
 }
 
 /**
- * Where the utility-CSS engine can be found inside a package store, in
- * priority order.
+ * Where the utility-CSS engine can be found inside a package store.
  *
- * The engine has been published under three names. It is now a subpath of
- * `@stacksjs/ts-css`, which absorbed it; before that it shipped standalone as
- * `@cwcss/crosswind`, and before that as `@stacksjs/crosswind`. All three are
- * probed, newest first, so an app that has upgraded gets the engine it
- * declares while one that has not keeps working untouched.
+ * The engine ships inside `@stacksjs/ts-css`, at its `engine` subpath. Both
+ * layouts are probed so a source checkout works alongside an installed build.
  */
 const ENGINE_PACKAGE_ENTRIES: string[][] = [
   ['@stacksjs', 'ts-css', 'dist', 'engine', 'index.js'],
   ['@stacksjs', 'ts-css', 'src', 'engine', 'index.ts'],
-  ['@cwcss', 'crosswind', 'dist', 'index.js'],
-  ['@cwcss', 'crosswind', 'src', 'index.ts'],
-  ['@stacksjs', 'crosswind', 'dist', 'index.js'],
-  ['@stacksjs', 'crosswind', 'src', 'index.ts'],
 ]
 
-/** The same three names as bare specifiers, for standard resolution. */
+/** The same package as bare specifiers, for standard resolution. */
 const ENGINE_SPECIFIERS = [
   '@stacksjs/ts-css/engine',
-  '@cwcss/crosswind',
-  '@cwcss/crosswind/dist/index.js',
-  '@stacksjs/crosswind',
-  '@stacksjs/crosswind/dist/index.js',
+  '@stacksjs/ts-css/dist/engine/index.js',
 ]
 
 /**
- * Crosswind copies installed by the PROJECT being served, nearest first.
+ * Css copies installed by the PROJECT being served, nearest first.
  *
- * These are tried before a bare-specifier import. `import('@cwcss/crosswind')`
+ * These are tried before a bare-specifier import. `import('@stacksjs/ts-css/engine')`
  * resolves relative to this file, so it always finds the copy hoisted next to
- * stx itself and an app's own — usually newer — crosswind was ignored. The
+ * stx itself and an app's own — usually newer — css was ignored. The
  * engine version decides what CSS a class compiles to, so serving an app with
  * a different version than it declares produced output the app could not
  * reproduce: arbitrary filter values like `blur-[50px]` compiled to
  * `blur(50pxpx)` and `backdrop-saturate-[180%]` to `saturate(NaN)`, both of
  * which a browser drops, so the utility silently did nothing.
  */
-function findProjectCrosswindPaths(): string[] {
+function findProjectCssPaths(): string[] {
   const paths: string[] = []
 
   // Search from current working directory up. Check pantry/ as well as
   // node_modules/ at each level — pantry is Stacks' vendored package
-  // store and the only place crosswind lives in pantry-managed projects
+  // store and the only place css lives in pantry-managed projects
   // with no node_modules.
   let currentDir = process.cwd()
   while (currentDir !== path.dirname(currentDir)) {
@@ -222,58 +211,54 @@ function findProjectCrosswindPaths(): string[] {
 }
 
 /**
- * Last-resort locations: a crosswind checkout sitting somewhere on this
+ * Last-resort locations: a ts-css checkout sitting somewhere on this
  * machine. Only reached when neither the project nor stx's own dependency
  * provides one, so a stray checkout can never shadow an installed version.
  */
-function findDevCrosswindPaths(): string[] {
+function findDevCssPaths(): string[] {
   const paths: string[] = []
   const homeDir = process.env.HOME || process.env.USERPROFILE || ''
 
-  // Common development locations (relative to home)
-  if (homeDir) {
-    const devPaths = [
-      // crosswind monorepo (both dist and src; the engine moved under the
-      // toolkit package when it was folded into @stacksjs/ts-css)
-      path.join(homeDir, 'Code', 'Tools', 'crosswind', 'packages', 'toolkit', 'dist', 'engine', 'index.js'),
-      path.join(homeDir, 'Code', 'Tools', 'crosswind', 'packages', 'toolkit', 'src', 'engine', 'index.ts'),
-      path.join(homeDir, 'Code', 'Tools', 'crosswind', 'packages', 'crosswind', 'dist', 'index.js'),
-      path.join(homeDir, 'Code', 'Tools', 'crosswind', 'packages', 'crosswind', 'src', 'index.ts'),
-      path.join(homeDir, 'repos', 'stacks-org', 'crosswind', 'packages', 'crosswind', 'dist', 'index.js'),
-      path.join(homeDir, 'repos', 'stacks-org', 'crosswind', 'packages', 'crosswind', 'src', 'index.ts'),
-      // stx monorepo's node_modules
-      path.join(homeDir, 'Code', 'Tools', 'stx', 'packages', 'stx', 'node_modules', '@cwcss', 'crosswind', 'dist', 'index.js'),
-      path.join(homeDir, 'Code', 'Tools', 'stx', 'packages', 'stx', 'node_modules', '@stacksjs', 'crosswind', 'dist', 'index.js'),
-    ]
-    paths.push(...devPaths)
+  // The engine lives under the toolkit package of the ts-css monorepo, whose
+  // working-copy directory is still named after the project it grew out of.
+  const checkouts = [
+    homeDir && path.join(homeDir, 'Code', 'Tools', 'crosswind'),
+    homeDir && path.join(homeDir, 'repos', 'stacks-org', 'crosswind'),
+    path.join(process.cwd(), '..', 'crosswind'),
+    path.join(process.cwd(), '..', 'ts-css'),
+  ].filter(Boolean) as string[]
+
+  for (const checkout of checkouts) {
+    paths.push(path.join(checkout, 'packages', 'toolkit', 'dist', 'engine', 'index.js'))
+    paths.push(path.join(checkout, 'packages', 'toolkit', 'src', 'engine', 'index.ts'))
   }
 
-  // Also try relative to cwd for linked packages
-  paths.push(path.join(process.cwd(), '..', 'crosswind', 'packages', 'crosswind', 'dist', 'index.js'))
-  paths.push(path.join(process.cwd(), '..', 'crosswind', 'packages', 'crosswind', 'src', 'index.ts'))
+  // stx monorepo's own node_modules
+  if (homeDir)
+    paths.push(path.join(homeDir, 'Code', 'Tools', 'stx', 'node_modules', '@stacksjs', 'ts-css', 'dist', 'engine', 'index.js'))
 
   return paths
 }
 
 /**
- * Lazily load the Crosswind module
- * Returns null if Crosswind is not installed
+ * Lazily load the Css module
+ * Returns null if Css is not installed
  */
-export async function loadCrosswind(): Promise<CrosswindModule | null> {
-  if (crosswindLoadAttempted) {
-    return crosswindModule
+export async function loadCssEngine(): Promise<CssModule | null> {
+  if (cssLoadAttempted) {
+    return cssModule
   }
-  crosswindLoadAttempted = true
+  cssLoadAttempted = true
 
   try {
-    const loadFrom = async (candidates: string[]): Promise<CrosswindModule | null> => {
+    const loadFrom = async (candidates: string[]): Promise<CssModule | null> => {
       for (const candidate of candidates) {
         if (!await Bun.file(candidate).exists())
           continue
-        const result = await tryImportCrosswind(candidate)
+        const result = await tryImportCss(candidate)
         if (result) {
           if (!process.env.STACKS_DEV_QUIET)
-            console.log(`${colors.green}[Crosswind]${colors.reset} CSS engine loaded from ${path.dirname(path.dirname(candidate))}`)
+            console.log(`${colors.green}[ts-css]${colors.reset} CSS engine loaded from ${path.dirname(path.dirname(candidate))}`)
           return result
         }
       }
@@ -286,53 +271,53 @@ export async function loadCrosswind(): Promise<CrosswindModule | null> {
       const explicitPath = path.resolve(process.env.CROSSWIND_SRC)
       const explicitModule = await loadFrom([explicitPath])
       if (!explicitModule)
-        throw new Error(`CROSSWIND_SRC did not resolve to a Crosswind module: ${explicitPath}`)
-      crosswindModule = explicitModule
-      return crosswindModule
+        throw new Error(`CROSSWIND_SRC did not resolve to a Css module: ${explicitPath}`)
+      cssModule = explicitModule
+      return cssModule
     }
 
-    // Strategy 1: the crosswind the PROJECT installed. This comes first
+    // Strategy 1: the css the PROJECT installed. This comes first
     // because a bare import resolves relative to stx, not to the app, so
     // stx's own copy used to win even when the app declared a newer one —
     // and the engine version decides what a class compiles to.
-    const projectModule = await loadFrom(findProjectCrosswindPaths())
+    const projectModule = await loadFrom(findProjectCssPaths())
     if (projectModule) {
-      crosswindModule = projectModule
-      return crosswindModule
+      cssModule = projectModule
+      return cssModule
     }
 
     // Strategy 2: stx's own dependency, via standard resolution.
     const importPaths = ENGINE_SPECIFIERS
 
     for (const importPath of importPaths) {
-      const result = await tryImportCrosswind(importPath)
+      const result = await tryImportCss(importPath)
       if (result) {
-        crosswindModule = result
+        cssModule = result
         if (!process.env.STACKS_DEV_QUIET)
-          console.log(`${colors.green}[Crosswind]${colors.reset} CSS engine loaded`)
-        return crosswindModule
+          console.log(`${colors.green}[ts-css]${colors.reset} CSS engine loaded`)
+        return cssModule
       }
     }
 
     // Strategy 3: a checkout somewhere on this machine. Last, so a stray
     // clone can never shadow a version the project or stx actually declares.
-    const devModule = await loadFrom(findDevCrosswindPaths())
+    const devModule = await loadFrom(findDevCssPaths())
     if (devModule) {
-      crosswindModule = devModule
-      return crosswindModule
+      cssModule = devModule
+      return cssModule
     }
 
-    throw new Error('Crosswind CSSGenerator not found in any location')
+    throw new Error('Css CSSGenerator not found in any location')
   }
   catch {
-    console.warn(`${colors.yellow}[Crosswind] CSS engine not available, Tailwind styles will not be generated${colors.reset}`)
-    console.warn(`${colors.yellow}Run 'bun add @stacksjs/crosswind' to enable CSS generation${colors.reset}`)
+    console.warn(`${colors.yellow}[ts-css] CSS engine not available, Tailwind styles will not be generated${colors.reset}`)
+    console.warn(`${colors.yellow}Run 'bun add @stacksjs/ts-css' to enable CSS generation${colors.reset}`)
     return null
   }
 }
 
 /**
- * Reset the Crosswind module cache (useful for testing)
+ * Reset the Css module cache (useful for testing)
  */
 export function resetCssCache(): void {
   cssByPage.clear()
@@ -340,10 +325,10 @@ export function resetCssCache(): void {
   serveCssByHash.clear()
 }
 
-export function resetCrosswindCache(): void {
+export function resetCssCache(): void {
   cssByPage.clear()
-  crosswindModule = null
-  crosswindLoadAttempted = false
+  cssModule = null
+  cssLoadAttempted = false
   cachedConfig = null
   cachedCSS = ''
   cssByClassSet.clear()
@@ -357,9 +342,9 @@ export function resetCrosswindCache(): void {
 }
 
 /**
- * Load crosswind config from the working directory.
+ * Load css config from the working directory.
  *
- * Uses `bunfig` for resolution so crosswind configs compose the same way as
+ * Uses `bunfig` for resolution so css configs compose the same way as
  * `stx.config.ts` and other stacks configs — a single source of truth for
  * config loading across the stack.
  *
@@ -372,26 +357,45 @@ export function resetCrosswindCache(): void {
  * common "no config file" case silent and fast.
  */
 /**
- * Load the user's crosswind config via bunfig — our shared config loader.
+ * Load the user's css config via bunfig — our shared config loader.
  * `hasLocalConfig` uses the same filename, extension, alias, custom-directory,
  * and resolution-priority rules as bunfig's loader, so this integration never
  * maintains a parallel list of paths. Returns `null`
  * when no config file is present, so callers can fall through to defaults
  * without surfacing a "not found" warning to the user.
  */
-export async function loadCrosswindConfig(cwd: string): Promise<CrosswindConfig | null> {
+/** Deprecation notice for the old config filename is worth saying once. */
+let warnedLegacyConfigName = false
+
+export async function loadCssEngineConfig(cwd: string): Promise<CssConfig | null> {
   try {
     // A missing config is the overwhelmingly common path. The discovery
     // subpath is deliberately lightweight, letting us avoid the full loader
     // and its fallback search without duplicating bunfig's resolution rules.
-    if (!hasLocalConfig({ name: 'crosswind', cwd }))
+    //
+    // `crosswind` is the name this config had before the engine moved into
+    // @stacksjs/ts-css. It is still read, because the failure mode of dropping
+    // it is silent: bunfig finds nothing, the app falls through to defaults,
+    // and the site renders with its theme, fonts and safelist quietly gone.
+    const name = hasLocalConfig({ name: 'css', cwd })
+      ? 'css'
+      : hasLocalConfig({ name: 'crosswind', cwd })
+        ? 'crosswind'
+        : null
+
+    if (!name)
       return null
 
+    if (name === 'crosswind' && !process.env.STACKS_DEV_QUIET && !warnedLegacyConfigName) {
+      warnedLegacyConfigName = true
+      console.warn(`${colors.yellow}[ts-css]${colors.reset} Reading the CSS config from a \`crosswind\` file. Rename it to \`css\` (e.g. config/css.ts) — the old name is deprecated.`)
+    }
+
     const { loadConfigWithResult } = await import('bunfig')
-    const result = await loadConfigWithResult<CrosswindConfig>({
-      name: 'crosswind',
+    const result = await loadConfigWithResult<CssConfig>({
+      name,
       cwd,
-      defaultConfig: {} as CrosswindConfig,
+      defaultConfig: {} as CssConfig,
       checkEnv: false,
       verbose: false,
     })
@@ -404,13 +408,13 @@ export async function loadCrosswindConfig(cwd: string): Promise<CrosswindConfig 
 
     const rel = path.relative(cwd, result.path)
     if (!process.env.STACKS_DEV_QUIET)
-      console.log(`${colors.green}[Crosswind]${colors.reset} Loaded config from ${rel || result.path}`)
+      console.log(`${colors.green}[ts-css]${colors.reset} Loaded config from ${rel || result.path}`)
     return result.config
   }
   catch (error) {
     // bunfig's strict-mode loader throws ConfigNotFoundError when the project
-    // simply doesn't ship a `config/crosswind.ts` (or any other matching name).
-    // That is the normal case — the caller falls through to Crosswind's
+    // simply doesn't ship a `config/css.ts` (or any other matching name).
+    // That is the normal case — the caller falls through to Css's
     // built-in defaults and there's nothing for the user to fix. Don't spam
     // the console with a "Failed to load" warning every time CSS regenerates.
     // Only surface the warning when something genuinely went wrong (syntax
@@ -418,35 +422,35 @@ export async function loadCrosswindConfig(cwd: string): Promise<CrosswindConfig 
     if (error instanceof Error && error.name === 'ConfigNotFoundError')
       return null
 
-    console.warn(`${colors.yellow}[Crosswind]${colors.reset} Failed to load crosswind config:`, error instanceof Error ? error.message : error)
+    console.warn(`${colors.yellow}[ts-css]${colors.reset} Failed to load css config:`, error instanceof Error ? error.message : error)
     return null
   }
 }
 
 /**
- * Resolve the project's crosswind config the way CSS generation does.
+ * Resolve the project's css config the way CSS generation does.
  *
  * Priority: the `css` field of `stx.config.ts` (a path, or an inline object
- * that may itself name a path), then auto-discovery of `crosswind.config.ts`.
+ * that may itself name a path), then auto-discovery of `css.config.ts`.
  *
  * Extracted so the SSG's cache key can be built from the same resolution the
  * stylesheet is. Two copies of this precedence would drift, and a cache key
  * computed from a *different* config than the CSS is worse than no key at all —
  * it would report freshness it has not checked.
  */
-export async function resolveUserCrosswindConfig(resolveRoot: string): Promise<CrosswindConfig | null> {
-  let stxCssConfig: CrosswindConfig | null = null
+export async function resolveUserCssConfig(resolveRoot: string): Promise<CssConfig | null> {
+  let stxCssConfig: CssConfig | null = null
   try {
     const { loadStxConfig } = await import('../config')
     const stxConfig = await loadStxConfig(resolveRoot)
     if (stxConfig.css) {
       if (typeof stxConfig.css === 'string') {
-        // Path to crosswind config file
+        // Path to css config file
         const configPath = path.isAbsolute(stxConfig.css) ? stxConfig.css : path.resolve(resolveRoot, stxConfig.css)
         if (await Bun.file(configPath).exists()) {
           const mod = await import(configPath)
           stxCssConfig = mod.default || mod
-          console.log(`${colors.green}[Crosswind]${colors.reset} Loaded config from stx.config.ts → ${stxConfig.css}`)
+          console.log(`${colors.green}[ts-css]${colors.reset} Loaded config from stx.config.ts → ${stxConfig.css}`)
         }
       }
       else {
@@ -459,7 +463,7 @@ export async function resolveUserCrosswindConfig(resolveRoot: string): Promise<C
           content: stxConfig.css.content || [],
           preflight: stxConfig.css.preflight ?? true,
           minify: stxConfig.css.minify ?? false,
-        } as CrosswindConfig
+        } as CssConfig
         if (stxConfig.css.config) {
           const configPath = path.isAbsolute(stxConfig.css.config) ? stxConfig.css.config : path.resolve(resolveRoot, stxConfig.css.config)
           if (await Bun.file(configPath).exists()) {
@@ -468,17 +472,17 @@ export async function resolveUserCrosswindConfig(resolveRoot: string): Promise<C
             stxCssConfig = { ...extConfig, ...stxCssConfig }
           }
         }
-        console.log(`${colors.green}[Crosswind]${colors.reset} Using inline CSS config from stx.config.ts`)
+        console.log(`${colors.green}[ts-css]${colors.reset} Using inline CSS config from stx.config.ts`)
       }
     }
   }
   catch {}
 
-  return stxCssConfig || await loadCrosswindConfig(resolveRoot)
+  return stxCssConfig || await loadCssEngineConfig(resolveRoot)
 }
 
 /**
- * A short, stable digest of a resolved crosswind config.
+ * A short, stable digest of a resolved css config.
  *
  * Hashes the resolved OBJECT rather than a file, so it covers a config
  * assembled from several files, an inline `css` block in `stx.config.ts`, and a
@@ -510,17 +514,17 @@ export function fingerprintConfig(config: unknown): string {
 }
 
 /**
- * Build Crosswind CSS using the build() API
+ * Build Css CSS using the build() API
  * This scans content files and generates CSS for all used classes
  */
-export async function buildCrosswindCSS(cwd: string): Promise<string> {
+export async function buildCss(cwd: string): Promise<string> {
   if (isBuilding) {
     return cachedCSS
   }
   isBuilding = true
 
   try {
-    const hw = await loadCrosswind()
+    const hw = await loadCssEngine()
     if (!hw || !hw.build) {
       isBuilding = false
       return ''
@@ -528,7 +532,7 @@ export async function buildCrosswindCSS(cwd: string): Promise<string> {
 
     // Load config if not cached
     if (!cachedConfig) {
-      cachedConfig = await loadCrosswindConfig(cwd)
+      cachedConfig = await loadCssEngineConfig(cwd)
     }
 
     if (!cachedConfig) {
@@ -540,7 +544,7 @@ export async function buildCrosswindCSS(cwd: string): Promise<string> {
     // Build with the config - deep merge theme to preserve defaults
     const defaultTheme = hw.defaultConfig?.theme || {}
     const userTheme = cachedConfig.theme || {}
-    const config: CrosswindConfig = {
+    const config: CssConfig = {
       ...hw.defaultConfig,
       ...cachedConfig,
       theme: {
@@ -559,7 +563,7 @@ export async function buildCrosswindCSS(cwd: string): Promise<string> {
     const duration = performance.now() - start
 
     cachedCSS = result.css
-    console.log(`${colors.cyan}[Crosswind]${colors.reset} Built ${result.classes.size} classes in ${duration.toFixed(1)}ms`)
+    console.log(`${colors.cyan}[ts-css]${colors.reset} Built ${result.classes.size} classes in ${duration.toFixed(1)}ms`)
 
     // Write to output file if specified
     if (config.output) {
@@ -580,19 +584,19 @@ export async function buildCrosswindCSS(cwd: string): Promise<string> {
     return result.css
   }
   catch (error) {
-    console.error(`${colors.red}[Crosswind]${colors.reset} Build error:`, error)
+    console.error(`${colors.red}[ts-css]${colors.reset} Build error:`, error)
     isBuilding = false
     return cachedCSS
   }
 }
 
 /**
- * Rebuild Crosswind CSS (called on file changes)
+ * Rebuild Css CSS (called on file changes)
  */
-export async function rebuildCrosswindCSS(cwd: string): Promise<void> {
+export async function rebuildCss(cwd: string): Promise<void> {
   // Clear cached config to reload it
   cachedConfig = null
-  await buildCrosswindCSS(cwd)
+  await buildCss(cwd)
 }
 
 /**
@@ -605,7 +609,7 @@ export function getCachedCSS(): string {
 /**
  * Extract all CSS class names from HTML content.
  *
- * This is the FALLBACK. `generateCrosswindCSS` prefers Crosswind's own
+ * This is the FALLBACK. `generateCss` prefers Css's own
  * `extractClasses`, and the difference is not cosmetic: this function only
  * understands `class=""` and quoted literals inside `x-class` / `:class`, so
  * every class that lives in code — a helper returning a class string, an icon
@@ -614,9 +618,9 @@ export function getCachedCSS(): string {
  * which is what drove projects to pre-generate whole icon stylesheets and ship
  * them alongside the page.
  *
- * Keeping a second, weaker copy of Crosswind's extraction rules in this package
+ * Keeping a second, weaker copy of Css's extraction rules in this package
  * is what let the two drift apart in the first place. It stays only for the
- * case where the installed Crosswind predates the export.
+ * case where the installed Css predates the export.
  */
 export function extractClassNames(htmlContent: string): Set<string> {
   const classes = new Set<string>()
@@ -650,7 +654,7 @@ export function extractClassNames(htmlContent: string): Set<string> {
 }
 
 /**
- * Extract utility classes from HTML content and generate CSS using Crosswind
+ * Extract utility classes from HTML content and generate CSS using Css
  */
 /**
  * CSS by page bytes.
@@ -663,18 +667,18 @@ export function extractClassNames(htmlContent: string): Set<string> {
  */
 const cssByPage = renderMemo<string>(64)
 
-export async function generateCrosswindCSS(htmlContent: string, appDir?: string): Promise<string> {
+export async function generateCss(htmlContent: string, appDir?: string): Promise<string> {
   const remembered = cssByPage.get(contentKey(htmlContent, appDir, configFingerprint))
   if (remembered !== undefined)
     return remembered
-  const css = await generateCrosswindCSSUncached(htmlContent, appDir)
+  const css = await generateCssUncached(htmlContent, appDir)
   // Only a non-empty result, which is the rule the class-set cache below
   // already follows: it is written on the success path alone. '' is returned
   // both by a page with no utility classes and by a FAILED generation —
-  // crosswind unavailable, or the generator throwing — and the two are
+  // css unavailable, or the generator throwing — and the two are
   // indistinguishable here. Remembering the second kind would leave that page
   // with no stylesheet for the rest of the process, and because
-  // injectCrosswindCSS reads '' as "leave the HTML alone" there would be no
+  // injectCss reads '' as "leave the HTML alone" there would be no
   // second error to explain it. Re-running on a genuinely class-less page
   // costs one extraction.
   //
@@ -685,15 +689,15 @@ export async function generateCrosswindCSS(htmlContent: string, appDir?: string)
   return css
 }
 
-async function generateCrosswindCSSUncached(htmlContent: string, appDir?: string): Promise<string> {
+async function generateCssUncached(htmlContent: string, appDir?: string): Promise<string> {
   try {
-    // Load crosswind module
-    const hw = await loadCrosswind()
+    // Load css module
+    const hw = await loadCssEngine()
     if (!hw) {
       return ''
     }
 
-    // Crosswind's extractor when the installed version exports it, ours only
+    // Css's extractor when the installed version exports it, ours only
     // as a fallback. See `extractClassNames` for why the difference matters.
     const classes = typeof hw.extractClasses === 'function'
       ? hw.extractClasses(htmlContent)
@@ -704,7 +708,7 @@ async function generateCrosswindCSSUncached(htmlContent: string, appDir?: string
     }
 
     // Resolve config search root — prefer the caller-supplied app dir so
-    // `stx <app-dir>` from outside the app still finds its crosswind.config.
+    // `stx <app-dir>` from outside the app still finds its css.config.
     // Fallback: `process.cwd()` (legacy behaviour).
     const resolveRoot = appDir ? path.resolve(appDir) : process.cwd()
 
@@ -716,7 +720,7 @@ async function generateCrosswindCSSUncached(htmlContent: string, appDir?: string
       diskCacheRoot = stateDir(resolveRoot, 'cache')
 
     // Cache lookup — keyed on the sorted class set + a fingerprint of
-    // the loaded crosswind config. Different config (theme tokens,
+    // the loaded css config. Different config (theme tokens,
     // safelist, shortcuts) needs a different cache slot even with the
     // same class set, otherwise a stale CSS file outlives the config
     // edit that produced it.
@@ -734,10 +738,10 @@ async function generateCrosswindCSSUncached(htmlContent: string, appDir?: string
       return onDisk
     }
 
-    // Load the project's crosswind config
-    // Priority: 1) stx.config.ts css field, 2) crosswind.config.ts auto-discovery
+    // Load the project's css config
+    // Priority: 1) stx.config.ts css field, 2) css.config.ts auto-discovery
     if (!cachedConfig) {
-      cachedConfig = await resolveUserCrosswindConfig(resolveRoot)
+      cachedConfig = await resolveUserCssConfig(resolveRoot)
       configFingerprint = fingerprintConfig(cachedConfig)
     }
 
@@ -751,12 +755,12 @@ async function generateCrosswindCSSUncached(htmlContent: string, appDir?: string
     // way, let it clobber the stock palette instead. `content`/`output` are
     // still stx-owned and still pinned last (#1822); `preflight`/`minify` are
     // still honoured rather than ignored twice over.
-    const merged = mergeCrosswindConfig(baseConfig as Record<string, any>, userConfig as Record<string, any>)
+    const merged = mergeCssConfig(baseConfig as Record<string, any>, userConfig as Record<string, any>)
     const { safelist, includePreflight, minify, tokenCSS } = merged
-    const crosswindConfig = merged.config as CrosswindConfig
+    const cssConfig = merged.config as CssConfig
 
-    // Generate CSS using Crosswind's CSSGenerator
-    const generator = new hw.CSSGenerator(crosswindConfig)
+    // Generate CSS using Css's CSSGenerator
+    const generator = new hw.CSSGenerator(cssConfig)
 
     // Generate safelist classes
     for (const cls of safelist) {
@@ -771,7 +775,7 @@ async function generateCrosswindCSSUncached(htmlContent: string, appDir?: string
 
     // Generate shortcut CSS rules — CSSGenerator expands shortcuts into
     // individual utility classes but doesn't emit grouped .shortcut { ... } rules
-    const shortcuts = crosswindConfig.shortcuts || (userConfig as any).shortcuts || {}
+    const shortcuts = cssConfig.shortcuts || (userConfig as any).shortcuts || {}
     for (const [name, classStr] of Object.entries(shortcuts)) {
       if (!classes.has(name) && !safelist.includes(name)) continue
       const parts = (classStr as string).split(/\s+/).filter(Boolean)
@@ -829,7 +833,7 @@ async function generateCrosswindCSSUncached(htmlContent: string, appDir?: string
     return css
   }
   catch (error) {
-    console.warn('Failed to generate Crosswind CSS:', error)
+    console.warn('Failed to generate Css CSS:', error)
     return ''
   }
 }
@@ -838,9 +842,9 @@ async function generateCrosswindCSSUncached(htmlContent: string, appDir?: string
  * Inject generated CSS into HTML content
  * Tries to inject before </head>, falls back to <body> or prepends
  */
-export async function injectCrosswindCSS(htmlContent: string, appDir?: string, serveMode = false): Promise<string> {
+export async function injectCss(htmlContent: string, appDir?: string, serveMode = false): Promise<string> {
   // Generate CSS for ALL utility classes in the (possibly shell-composed)
-  // content. We must NOT early-return just because a `data-crosswind="generated"`
+  // content. We must NOT early-return just because a `data-css="generated"`
   // style already exists: when a page is composed into a pre-processed app shell,
   // the shell already carries a generated style covering the SHELL's classes
   // only (its nav/layout used e.g. `gap-4`). Early-returning there drops the
@@ -849,22 +853,22 @@ export async function injectCrosswindCSS(htmlContent: string, appDir?: string, s
   // content and REPLACE the existing style, so the single emitted stylesheet
   // covers the union of shell + page classes — with exactly one Preflight reset.
   // See stacksjs/stx#1749.
-  const css = await generateCrosswindCSS(htmlContent, appDir)
+  const css = await generateCss(htmlContent, appDir)
 
   if (!css) {
-    // Nothing to emit (no classes, or crosswind unavailable). Leave any existing
+    // Nothing to emit (no classes, or css unavailable). Leave any existing
     // generated style in place rather than stripping it.
     return htmlContent
   }
 
   const assetTag = serveMode
-    ? `<link data-crosswind="generated" rel="stylesheet" href="/_stx/crosswind.${registerServeCss(css)}.css">`
-    : `<style data-crosswind="generated">\n${css}\n</style>`
+    ? `<link data-css="generated" rel="stylesheet" href="/_stx/css.${registerServeCss(css)}.css">`
+    : `<style data-css="generated">\n${css}\n</style>`
 
   // If one or more generated styles already exist (e.g. from the composed
   // shell, or a recursive layout render), replace the first with the complete
   // one and drop any duplicates — keeping a single Preflight reset.
-  const existing = /(?:<style\b[^>]*\bdata-crosswind=(?:"generated"|'generated')[^>]*>[\s\S]*?<\/style>|<link\b[^>]*\bdata-crosswind=(?:"generated"|'generated')[^>]*>)/g
+  const existing = /(?:<style\b[^>]*\bdata-css=(?:"generated"|'generated')[^>]*>[\s\S]*?<\/style>|<link\b[^>]*\bdata-css=(?:"generated"|'generated')[^>]*>)/g
   if (existing.test(htmlContent)) {
     let placed = false
     return htmlContent.replace(existing, () => {

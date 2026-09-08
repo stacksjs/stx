@@ -73,7 +73,7 @@ A companion RFC covering the framework-side changes is filed separately.
 |---|---|
 | 1 | Never write `<!DOCTYPE>`, `<html>`, `<head>` or `<body>` in a page or component |
 | 2 | Never write vanilla DOM code |
-| 3 | Never write vanilla CSS — Crosswind only |
+| 3 | Never write vanilla CSS — Css only |
 | 4 | Use `StxLink` for every internal navigation |
 | 5 | Use `useHead` / `useSeoMeta` — never hand-write `<title>` or meta in a page |
 | 6 | Use `@stacksjs/components` before hand-rolling any UI primitive |
@@ -140,7 +140,7 @@ times *in pages*. The two layout files do define slots (`layouts/default.stx:39,
 8. No vanilla JS — the strict-mode mandate
 9. Navigation and routing
 10. Components
-11. Styling with Crosswind, and TypeScript
+11. Styling with Css, and TypeScript
 12. Verification and enforcement
 
 
@@ -187,7 +187,7 @@ There is no `index.html` in this project and there must never be one. `config/ui
 | Applies `resolveStxRoot` | **Yes** (`config.js:408`) | **No** |
 | Prefixes `partialsDir`/`componentsDir`/`layoutsDir` with `root` | **Yes** (`config.js:411-419`) | **No** |
 | Loads `plugins` → `_pluginComponentDirs` | Yes (`config.js:420-468`) | No (imports A's result at `serve.js:8922-8930`) |
-| Used by | `stx build` (`build.js:4`), SSG, `production-builder.js:46-50`, `store-loader.js:11`, Crosswind config discovery | the dev server (`bun scripts/dev.ts`) and `buddy serve` request path |
+| Used by | `stx build` (`build.js:4`), SSG, `production-builder.js:46-50`, `store-loader.js:11`, Css config discovery | the dev server (`bun scripts/dev.ts`) and `buddy serve` request path |
 
 A relative directory value **cannot** be correct in both loaders unless `root` is `'.'` or the value is absolute. Verified by running both against this repo:
 
@@ -216,7 +216,7 @@ Every path-bearing key in `StxConfig`, its default, what it resolves against, an
 | `templatesDir` | :263 | `'.'` | cwd | `docs.js:559` only | unset — no runtime effect |
 | `build.pagesDir` / `build.outputDir` | BuildConfig | `'pages'` / `'dist'` (`config.js:29-30`) | cwd | `ssg.js` | unset → wrote `dist/` |
 | `plugins` | :277 | — | package resolution | `config.js:420-468` | unset (see the components chapter) |
-| `css` | :281 | — | cwd | Crosswind loader | unset (see the Crosswind chapter) |
+| `css` | :281 | — | cwd | Css loader | unset (see the Css chapter) |
 
 Non-configurable, hardcoded paths you cannot move: `resources/assets` (`serve.js:9305`), `config/stx.ts` for `loadStxPartialsDir` (`@stacksjs/buddy/dist/production-server.js:70-75` — bughq's file is `config/ui.ts`, so this lookup always returns `undefined`), and the components directory the dev/prod servers force (`@stacksjs/actions/dist/dev/views.js:71`, `production-server.js:121`).
 
@@ -626,7 +626,7 @@ import type { StxOptions as UiOptions } from '@stacksjs/stx'
  *      → applies resolveStxRoot (config.js:363-374) and prefixes
  *        componentsDir/layoutsDir/partialsDir with `root` (config.js:411-419).
  *      → used by `stx build`, the SSG, production-builder, store-loader,
- *        and Crosswind config discovery.
+ *        and Css config discovery.
  *
  *   B. bun-plugin-stx serve()                   (dist/serve.js:8912-8919)
  *      → raw bunfig load, NO root prefixing, defaults ssr:true.
@@ -3936,7 +3936,7 @@ Today that exits 1 and prints `violating blocks: 20`. Gotcha: the line numbers i
 | `document.createElement()` | markup + `@if` / `:if` | `signal-processing.js:201-265`, `signals.js:1681-1690` | `register.stx:193` |
 | `el.innerHTML = x` | `:html="x"` | `signals.js:1817-1823` | 0 sites — keep it that way |
 | `el.textContent = x` | `:text="x"` | `signals.js:1811-1815` | `login.stx:173`, `index.stx:136,143` |
-| `el.style.display = …` | `:if` / `:show` / `:class` + Crosswind | `signals.js:1694-1697` (`:show`), `1802-1805` (`:class`) | `login.stx:173`, `index.stx:140`, `register.stx:188,195` |
+| `el.style.display = …` | `:if` / `:show` / `:class` + Css | `signals.js:1694-1697` (`:show`), `1802-1805` (`:class`) | `login.stx:173`, `index.stx:140`, `register.stx:188,195` |
 | `el.classList.add/remove` | `:class="{ 'cls': cond }"` | `bindClass`, `signals.js:2155-2171` | 0 sites — keep it that way |
 | `el.setAttribute(k, v)` | `:k="v"` | `signals.js:1784-1800` | `index.stx:137,144`, `register.stx:188` |
 | `addEventListener` / `on*=` attr | `@click` / `@change` / `@input`, or `useEventListener()` | `signals.js:1830-1840`, `signals.js:3645-3652` | `dashboard.stx:429`, `StartMenu.stx:52` |
@@ -4049,7 +4049,7 @@ Today: 17 DOM-0 handlers (16 in the dead scaffolding under `resources/components
 
 ### 8.5 MUST — express visual state as `:class` / `:if` / `:show`, never by assigning `.style.*` or `.classList`
 
-**WHY.** `:class` accepts the object form `{ 'a b': cond }` and splits multi-token keys before touching `classList` (`bindClass`, `signals.js:2155-2171`); `:style`, `:show` and `:if` are dispatched at `signals.js:1806-1809`, `1694-1697`, `1681-1690`. All four re-run inside an `effect`, so they track the signal. An imperative `el.style.display = 'none'` runs once and is erased by the next `<main>` swap. It also writes raw CSS from JS, which violates the Crosswind-only rule from Chapter 5 twice over.
+**WHY.** `:class` accepts the object form `{ 'a b': cond }` and splits multi-token keys before touching `classList` (`bindClass`, `signals.js:2155-2171`); `:style`, `:show` and `:if` are dispatched at `signals.js:1806-1809`, `1694-1697`, `1681-1690`. All four re-run inside an `effect`, so they track the signal. An imperative `el.style.display = 'none'` runs once and is erased by the next `<main>` swap. It also writes raw CSS from JS, which violates the Css-only rule from Chapter 5 twice over.
 
 **WRONG** — `resources/views/index.stx:132-147`. This script exists on **1** of the 24 pages that include `SiteNav`, so on the other 23 a signed-in visitor still sees "Log in / Sign up":
 
@@ -5407,23 +5407,23 @@ done
 
 Plus `test ! -d resources/views/components` — no component may live under `pagesDir`.
 
-## 11. Styling with Crosswind, and TypeScript
+## 11. Styling with Css, and TypeScript
 
 Two halves of the same discipline: the browser gets utility classes generated from a typed config, and the editor gets types that actually run. bughq currently fails both — 1,001 lines of hand-written CSS live inside 23 `.stx` files, another 273 in `public/marketing.css`, and `bun run typecheck` inspects exactly nine project files.
 
-### Part A — Crosswind
+### Part A — Css
 
 #### How the CSS actually gets to the page (read this before any rule)
 
 | Step | Mechanism | File:line |
 |---|---|---|
-| Config discovery | `bunfig` searches `<cwd>`, `<cwd>/config`, `<cwd>/.config` for `crosswind.*` — this is why `config/crosswind.ts` is found | `node_modules/bunfig/dist/discovery.js:32-40`, `node_modules/@stacksjs/stx/dist/dev-server/crosswind.js:145-147` |
-| Class extraction | Regex over the **rendered HTML**: `class="…"` plus **string literals only** inside `:class="…"` / `x-class="…"` | `dev-server/crosswind.js:218-238` |
-| Config merge | `{...baseConfig, ...userConfig, content: [], output: '', preflight: true, minify: true, theme, safelist}` — your `content`/`output`/`preflight`/`minify` are **discarded** | `dev-server/crosswind.js:305-313` |
-| Theme merge | Only `theme.extend` is carried across; top-level `theme.*` keys are dropped | `dev-server/crosswind.js:296-300` |
-| Generation | `new CSSGenerator(cfg)`, `generate()` per safelist entry then per extracted class, `toCSS(true, false)` | `dev-server/crosswind.js:313-318` |
-| Injection | One `<style data-crosswind="generated">` before `</head>` | `dev-server/crosswind.js:371-393`, called from `process.js:258-259` (top-level render only, gated on `context.__stx_inject_css !== false`) |
-| SPA survival | On navigation the router **merges** `style[data-crosswind]` (append-only, dedup by block) and **destroys** every other `<head>` style | `node_modules/stx-router/dist/client.js:517-529, 548` |
+| Config discovery | `bunfig` searches `<cwd>`, `<cwd>/config`, `<cwd>/.config` for `css.*` — this is why `config/css.ts` is found | `node_modules/bunfig/dist/discovery.js:32-40`, `node_modules/@stacksjs/stx/dist/dev-server/ts-css.js:145-147` |
+| Class extraction | Regex over the **rendered HTML**: `class="…"` plus **string literals only** inside `:class="…"` / `x-class="…"` | `dev-server/ts-css.js:218-238` |
+| Config merge | `{...baseConfig, ...userConfig, content: [], output: '', preflight: true, minify: true, theme, safelist}` — your `content`/`output`/`preflight`/`minify` are **discarded** | `dev-server/ts-css.js:305-313` |
+| Theme merge | Only `theme.extend` is carried across; top-level `theme.*` keys are dropped | `dev-server/ts-css.js:296-300` |
+| Generation | `new CSSGenerator(cfg)`, `generate()` per safelist entry then per extracted class, `toCSS(true, false)` | `dev-server/ts-css.js:313-318` |
+| Injection | One `<style data-css="generated">` before `</head>` | `dev-server/ts-css.js:371-393`, called from `process.js:258-259` (top-level render only, gated on `context.__stx_inject_css !== false`) |
+| SPA survival | On navigation the router **merges** `style[data-css]` (append-only, dedup by block) and **destroys** every other `<head>` style | `node_modules/stx-router/dist/client.js:517-529, 548` |
 
 Extraction runs on rendered output, so a class string composed in `<script server>` and interpolated with `{{ }}` is safe. A class string computed in the browser is not. That single distinction drives rules 11.4 and 11.5.
 
@@ -5433,8 +5433,8 @@ Extraction runs on rendered output, so a class string composed in `<script serve
 
 **WHY.** Three independent mechanisms punish it.
 
-1. It is invisible to Crosswind. The extractor only reads `class=` attributes (`dev-server/crosswind.js:219`); a `<style>` block is dead weight the engine cannot dedupe, purge, or minify.
-2. The SPA router tears down and rebuilds page styles on every swap, but only the Crosswind tag is treated as durable (`stx-router/dist/client.js:548` removes every `head style` that is neither `keepIds` nor `[data-crosswind]`). Fragment swaps re-append the incoming page's styles as `style[data-stx-page]` (`client.js:433-438`) while the **entry page's** server-rendered `<style>` — which carries no `data-stx-page` — is never removed (`client.js:418`). Navigate `/dashboard → /settings` and two conflicting `:root` blocks are live at once.
+1. It is invisible to Css. The extractor only reads `class=` attributes (`dev-server/ts-css.js:219`); a `<style>` block is dead weight the engine cannot dedupe, purge, or minify.
+2. The SPA router tears down and rebuilds page styles on every swap, but only the Css tag is treated as durable (`stx-router/dist/client.js:548` removes every `head style` that is neither `keepIds` nor `[data-css]`). Fragment swaps re-append the incoming page's styles as `style[data-stx-page]` (`client.js:433-438`) while the **entry page's** server-rendered `<style>` — which carries no `data-stx-page` — is never removed (`client.js:418`). Navigate `/dashboard → /settings` and two conflicting `:root` blocks are live at once.
 3. It defeats every one of the twelve requirements at once: it is vanilla CSS, it is not a directive, and it is duplicated per file.
 
 **WRONG** — `resources/views/dashboard.stx:298-369`, 72 lines of CSS in a view:
@@ -5454,7 +5454,7 @@ Extraction runs on rendered output, so a class string composed in `<script serve
 </style>
 ```
 
-**RIGHT** — tokens move to `config/crosswind.ts` (rule 11.2), repeated shapes become shortcuts, one-offs become utilities on the element:
+**RIGHT** — tokens move to `config/css.ts` (rule 11.2), repeated shapes become shortcuts, one-offs become utilities on the element:
 
 ```stx
 <!-- resources/views/dashboard.stx — no <style> tag at all -->
@@ -5463,14 +5463,14 @@ Extraction runs on rendered output, so a class string composed in `<script serve
 ```
 
 ```ts
-// config/crosswind.ts
+// config/css.ts
 shortcuts: {
   'panel': 'bg-panel border border-line rounded-xl',
   'icon-btn': 'inline-flex items-center justify-center w-[34px] h-[34px] rounded-[9px] border border-line bg-panel text-muted transition-colors hover:text-ink',
 },
 ```
 
-`shortcuts` are expanded by the render path (`dev-server/crosswind.js:319-345`) provided the shortcut name itself appears in a `class=` attribute or in `safelist`.
+`shortcuts` are expanded by the render path (`dev-server/ts-css.js:319-345`) provided the shortcut name itself appears in a `class=` attribute or in `safelist`.
 
 **CHECK.**
 ```bash
@@ -5479,7 +5479,7 @@ grep -rln --include='*.stx' '<style' resources/    # must print nothing; current
 
 ---
 
-#### 11.2 MUST declare design tokens exactly once, in `config/crosswind.ts`
+#### 11.2 MUST declare design tokens exactly once, in `config/css.ts`
 
 **WHY.** `theme.extend.colors` values are emitted verbatim into the utility (`bg-panel { background-color: var(--panel) }` — verified by generating against bughq's own config), and the `var()` targets must be defined in exactly one place or the utilities lie. bughq defines them in **three mutually inconsistent** places:
 
@@ -5489,7 +5489,7 @@ grep -rln --include='*.stx' '<style' resources/    # must print nothing; current
 | `resources/views/issue/[id].stx:369` | `#f6f7f9` | `#0a0c12` | `--panel`, `--panel-2` | one page |
 | `public/marketing.css:5-51` | `#fbfbfd` | `#090b11` | `--surface` (**no `--panel`**) | 26 pages |
 
-`config/crosswind.ts:25` maps `panel: 'var(--panel)'`. On any of the 26 marketing pages that token is undefined, so `bg-panel` resolves to nothing. On `/issue/[id]` the "same" background is a different colour than on `/dashboard`.
+`config/css.ts:25` maps `panel: 'var(--panel)'`. On any of the 26 marketing pages that token is undefined, so `bg-panel` resolves to nothing. On `/issue/[id]` the "same" background is a different colour than on `/dashboard`.
 
 **WRONG** — nine copies of this, one per app page (`resources/views/account.stx:64-76`, `dashboard.stx:300-315`, …):
 
@@ -5502,10 +5502,10 @@ grep -rln --include='*.stx' '<style' resources/    # must print nothing; current
 </style>
 ```
 
-**RIGHT** — one `preflights` entry in the typed config. `Preflight` is `{ getCSS: () => string }` (`node_modules/@cwcss/crosswind/dist/types.d.ts:136-138`); the returned CSS is prepended to the generated sheet, so it lands inside the one `<style data-crosswind>` tag the router preserves across SPA swaps:
+**RIGHT** — one `preflights` entry in the typed config. `Preflight` is `{ getCSS: () => string }` (`node_modules/@stacksjs/ts-css/dist/types.d.ts:136-138`); the returned CSS is prepended to the generated sheet, so it lands inside the one `<style data-css>` tag the router preserves across SPA swaps:
 
 ```ts
-// config/crosswind.ts
+// config/css.ts
 const LIGHT = `--bg:#fbfbfd;--panel:#ffffff;--panel-2:#f4f5f8;--border:rgba(15,23,42,.09);
 --text:#0b0f19;--text-2:#4b5565;--text-3:#97a1b2;--accent:#e11d48;`
 const DARK = `--bg:#090b11;--panel:#10131c;--panel-2:#161a24;--border:rgba(148,163,184,.12);
@@ -5523,55 +5523,55 @@ Verified: a `preflights` entry survives the render path's config merge and appea
 
 **CHECK.**
 ```bash
-# Any CSS custom property declared outside config/crosswind.ts is a violation.
+# Any CSS custom property declared outside config/css.ts is a violation.
 grep -rn --include='*.stx' -- '--[a-z0-9-]*:' resources/ | wc -l   # must be 0; currently 101
 grep -cE -- '^\s*--[a-z-]+:' public/marketing.css                  # must be 0; currently 47
 ```
 
 ---
 
-#### 11.3 MUST end `config/crosswind.ts` with `satisfies CrosswindConfig`, and put every theme value under `theme.extend`
+#### 11.3 MUST end `config/css.ts` with `satisfies CssConfig`, and put every theme value under `theme.extend`
 
-**WHY.** `config/ui.ts:79` ends `} satisfies UiOptions` and is therefore correct. `config/crosswind.ts:40` ends with a bare `}` and is therefore not: line 38 says `preflight: true`, and `preflight` is **not a key of `CrosswindConfig`** — the real key is `includePreflight` (`node_modules/@cwcss/crosswind/dist/types.d.ts:27-48`; the runtime reads `includePreflight ?? true`). It is a silent no-op. So are `content` (lines 14-20), `minify` (line 39) and `output`: the render path overwrites all four unconditionally at `dev-server/crosswind.js:307-310`. Five of the eight lines in that config do nothing.
+**WHY.** `config/ui.ts:79` ends `} satisfies UiOptions` and is therefore correct. `config/css.ts:40` ends with a bare `}` and is therefore not: line 38 says `preflight: true`, and `preflight` is **not a key of `CssConfig`** — the real key is `includePreflight` (`node_modules/@stacksjs/ts-css/dist/types.d.ts:27-48`; the runtime reads `includePreflight ?? true`). It is a silent no-op. So are `content` (lines 14-20), `minify` (line 39) and `output`: the render path overwrites all four unconditionally at `dev-server/ts-css.js:307-310`. Five of the eight lines in that config do nothing.
 
-Separately, `dev-server/crosswind.js:296-300` copies **only** `theme.extend` from user config onto the base theme. A top-level `theme.colors` is silently discarded at request time.
+Separately, `dev-server/ts-css.js:296-300` copies **only** `theme.extend` from user config onto the base theme. A top-level `theme.colors` is silently discarded at request time.
 
-**WRONG** — `config/crosswind.ts:13, 38-40`:
+**WRONG** — `config/css.ts:13, 38-40`:
 
 ```ts
 export default {
-  content: [ './resources/views/**/*.{stx,html}', ... ],   // discarded at crosswind.js:307
+  content: [ './resources/views/**/*.{stx,html}', ... ],   // discarded at css.js:307
   theme: { extend: { colors: {...}, fontFamily: {...} } },
   preflight: true,                                          // not a key. no-op.
-  minify: true,                                            // discarded at crosswind.js:310
+  minify: true,                                            // discarded at css.js:310
 }
 ```
 
 **RIGHT:**
 
 ```ts
-import type { CrosswindConfig } from '@cwcss/crosswind'
+import type { CssConfig } from '@stacksjs/ts-css/engine'
 
 export default {
   theme: { extend: { colors: { canvas: 'var(--bg)', panel: 'var(--panel)', /* … */ } } },
   preflights: [/* rule 11.2 */],
   safelist: [/* rule 11.4 */],
   shortcuts: { /* rule 11.1 */ },
-} satisfies Partial<CrosswindConfig>
+} satisfies Partial<CssConfig>
 ```
 
 **CHECK.** Add the `satisfies` and run `tsc`. Confirmed to produce:
 ```
-config/crosswind.ts(38,3): error TS2561: Object literal may only specify known properties,
-  but 'preflight' does not exist in type 'Partial<CrosswindConfig>'. Did you mean 'preflights'?
+config/css.ts(38,3): error TS2561: Object literal may only specify known properties,
+  but 'preflight' does not exist in type 'Partial<CssConfig>'. Did you mean 'preflights'?
 ```
-Grep guard: `grep -L 'satisfies' config/crosswind.ts` must print nothing.
+Grep guard: `grep -L 'satisfies' config/css.ts` must print nothing.
 
 ---
 
 #### 11.4 MUST NOT return a class string from a client-side function
 
-**WHY.** The extractor's dynamic branch (`dev-server/crosswind.js:227-237`) pulls single-quoted **string literals** out of the `:class` attribute value and nothing else. `:class="fn()"` yields zero literals, so zero utilities are generated. The classes then exist in the DOM at runtime with no matching rule.
+**WHY.** The extractor's dynamic branch (`dev-server/ts-css.js:227-237`) pulls single-quoted **string literals** out of the `:class` attribute value and nothing else. `:class="fn()"` yields zero literals, so zero utilities are generated. The classes then exist in the DOM at runtime with no matching rule.
 
 **WRONG** — `resources/components/AutofixPanel.stx:89-91, 109-113` bound at `:309, :337`:
 
@@ -5590,7 +5590,7 @@ function readyClass() {
 <div :class="readyClass()">
 ```
 
-Verified against bughq's own `config/crosswind.ts` — rendering `<div :class="loadingClass()"></div>` produces a sheet in which `.grid`, `.gap-3`, `.flex-col` and `md\:flex-row` are all **absent**. Those styles only ever appear when some *other* element on the same document happens to use the same utility literally.
+Verified against bughq's own `config/css.ts` — rendering `<div :class="loadingClass()"></div>` produces a sheet in which `.grid`, `.gap-3`, `.flex-col` and `md\:flex-row` are all **absent**. Those styles only ever appear when some *other* element on the same document happens to use the same utility literally.
 
 **RIGHT** — literals inside the attribute. Same test, `<div :class="loading() ? 'grid gap-3' : 'hidden'"></div>`, generates `.grid`, `.gap-3` and `.hidden`:
 
@@ -5599,14 +5599,14 @@ Verified against bughq's own `config/crosswind.ts` — rendering `<div :class="l
 <div :class="isReady() ? 'flex flex-col gap-4 md:flex-row md:items-center md:justify-between' : 'hidden'">
 ```
 
-If a helper is genuinely unavoidable, every class it can emit MUST be listed in `safelist` in `config/crosswind.ts` — the safelist is merged at `dev-server/crosswind.js:301-304` and force-generated at `:314-315`.
+If a helper is genuinely unavoidable, every class it can emit MUST be listed in `safelist` in `config/css.ts` — the safelist is merged at `dev-server/ts-css.js:301-304` and force-generated at `:314-315`.
 
 Composing in `<script server>` is always safe, because extraction runs after interpolation. That is how the shipped library does it — `node_modules/@stacksjs/components/src/ui/badge/Badge.stx:30` builds `badgeClasses` in a server block and emits `class="{{ badgeClasses }}"`, and it ships zero `<style>` tags.
 
 **CHECK.** Rendered-output check using stx's own extractor:
 ```bash
 bun -e '
-const {extractClassNames}=await import("./node_modules/@stacksjs/stx/dist/dev-server/crosswind.js")
+const {extractClassNames}=await import("./node_modules/@stacksjs/stx/dist/dev-server/ts-css.js")
 for await (const f of new Bun.Glob("resources/**/*.stx").scan(".")) {
   const s=await Bun.file(f).text()
   for (const m of s.matchAll(/:class="([^"]+)"/g))
@@ -5660,7 +5660,7 @@ Manual review for the `:style` survivors: each must be a genuinely continuous nu
 
 `--panel-2` and `--border-2` are declared in exactly one file in the entire repo: `resources/views/issue/[id].stx:369`. That is also the only page that mounts the component (`issue/[id].stx:564`). Drop `<AutofixPanel>` on `/dashboard` — which defines `--panel` but not `--panel-2` — and every panel surface goes transparent.
 
-**RIGHT.** The tokens live in `config/crosswind.ts` `preflights` (rule 11.2) and the component uses utilities that are defined for every page:
+**RIGHT.** The tokens live in `config/css.ts` `preflights` (rule 11.2) and the component uses utilities that are defined for every page:
 
 ```stx
 <!-- resources/components/AutofixPanel.stx — no <style> -->
@@ -5671,10 +5671,10 @@ Manual review for the `:style` survivors: each must be a genuinely continuous nu
 
 **CHECK.**
 ```bash
-# every var(--x) referenced from resources/components must be declared in config/crosswind.ts
+# every var(--x) referenced from resources/components must be declared in config/css.ts
 comm -23 \
   <(grep -rhoE -- '--[a-z0-9-]+' resources/components/*.stx | sort -u) \
-  <(grep -ohE -- '--[a-z0-9-]+' config/crosswind.ts | sort -u)
+  <(grep -ohE -- '--[a-z0-9-]+' config/css.ts | sort -u)
 ```
 
 ---
@@ -5683,20 +5683,20 @@ comm -23 \
 
 **WHY.** `public/marketing.css` is 273 lines / 16 KB defining 121 bespoke classes (`.btn`, `.panel`, `.cell`, `.chip`, `.hero`, `.cmp-cell`, …) linked by 26 pages (`resources/views/index.stx:39`). Every one of those is a utility composition, i.e. a `shortcut`. Worse, it is a render-blocking external stylesheet that the SPA router must special-case: because the app→marketing boundary arrives without it, `config/ui.ts:38-42` documents `data-no-router` as the workaround.
 
-Crosswind already emits the reset — `includePreflight` defaults true and the render path hardcodes `toCSS(true, false)` (`dev-server/crosswind.js:318`). Confirmed output includes `*,::before,::after{box-sizing:border-box}`, `[hidden]{display:none}`, `img{max-width:100%;height:auto}`.
+Css already emits the reset — `includePreflight` defaults true and the render path hardcodes `toCSS(true, false)` (`dev-server/ts-css.js:318`). Confirmed output includes `*,::before,::after{box-sizing:border-box}`, `[hidden]{display:none}`, `img{max-width:100%;height:auto}`.
 
 **What legitimately stays hand-written CSS, and where it goes:**
 
 | Category | Example | Where |
 |---|---|---|
 | Design tokens | `:root { --bg: … }` | `preflights` (rule 11.2) |
-| `@font-face` / web fonts | Space Grotesk, JetBrains Mono | `fonts: { google: [...], display: 'swap' }` — `@cwcss/crosswind/dist/types.d.ts:20-25` emits the `@import`/`@font-face` for you |
+| `@font-face` / web fonts | Space Grotesk, JetBrains Mono | `fonts: { google: [...], display: 'swap' }` — `@stacksjs/ts-css/dist/types.d.ts:20-25` emits the `@import`/`@font-face` for you |
 | Named `@keyframes` beyond the built-ins | `@keyframes autofix-shimmer` | `preflights` |
 | Pseudo-elements no utility reaches | `::-webkit-scrollbar`, `summary::-webkit-details-marker`, `::selection` | `preflights` (verified: a `preflights` entry emitting `::selection{…}` reaches the sheet) |
 | Third-party widget overrides | none in bughq | `preflights` |
 | Anything else | — | **utilities or a shortcut. No exceptions.** |
 
-Everything in that table lands inside the single `<style data-crosswind="generated">` tag, which is the only style tag the SPA router preserves and merges rather than destroys (`stx-router/dist/client.js:517-529`).
+Everything in that table lands inside the single `<style data-css="generated">` tag, which is the only style tag the SPA router preserves and merges rather than destroys (`stx-router/dist/client.js:517-529`).
 
 **CHECK.**
 ```bash
@@ -5709,7 +5709,7 @@ ls public/*.css 2>/dev/null                                     # must print not
 
 #### 11.8 MUST make `dark:` work before using a component that ships it
 
-**WHY.** Crosswind's `darkMode` defaults to `'class'`. Verified: `dark:bg-red-900` compiles to `.dark .dark\:bg-red-900 { … }` with the default and to `@media (prefers-color-scheme: dark){ .dark\:bg-red-900 { … } }` with `darkMode: 'media'` (`@cwcss/crosswind/dist/types.d.ts:34`). bughq's theme switch writes `data-theme` on `<html>` and never a `dark` class (`resources/views/dashboard.stx:312-315`). Every `dark:` utility in the shipped library — `Badge.stx:9-16` alone has fourteen — is therefore dead in bughq today.
+**WHY.** Css's `darkMode` defaults to `'class'`. Verified: `dark:bg-red-900` compiles to `.dark .dark\:bg-red-900 { … }` with the default and to `@media (prefers-color-scheme: dark){ .dark\:bg-red-900 { … } }` with `darkMode: 'media'` (`@stacksjs/ts-css/dist/types.d.ts:34`). bughq's theme switch writes `data-theme` on `<html>` and never a `dark` class (`resources/views/dashboard.stx:312-315`). Every `dark:` utility in the shipped library — `Badge.stx:9-16` alone has fourteen — is therefore dead in bughq today.
 
 bughq's own markup does not need `dark:` at all: the semantic tokens flip under `[data-theme]` and `prefers-color-scheme`, so `bg-panel` is correct in both modes with one class. That is the intended pattern and MUST be preserved.
 
@@ -6032,7 +6032,7 @@ bun -e 'const c=(await import("./config/ui.ts")).default; if(c.strict==null){con
 
 **RULE.** The only linter is pickier. Never invoke `eslint`. A change is not done until `bunx --bun pickier . --max-warnings 0` exits 0.
 
-**WHY.** `AGENTS.md:16-17` states it as a project law ("Use **pickier** for linting, never eslint directly"), and `.claude/skills/stacks-lint/SKILL.md` repeats it as CRITICAL RULE 1. It is not stylistic: pickier lints `.stx` files, and its `pickier/sort-tailwind-classes` rule is the machine enforcement of the Crosswind-only requirement. Measured on this tree, `bunx --bun pickier resources config app` reports **470 problems, 100% of them `pickier/sort-tailwind-classes` in `.stx` files** — all auto-fixable. eslint cannot see a `.stx` file at all, so running it produces a false green.
+**WHY.** `AGENTS.md:16-17` states it as a project law ("Use **pickier** for linting, never eslint directly"), and `.claude/skills/stacks-lint/SKILL.md` repeats it as CRITICAL RULE 1. It is not stylistic: pickier lints `.stx` files, and its `pickier/sort-tailwind-classes` rule is the machine enforcement of the Css-only requirement. Measured on this tree, `bunx --bun pickier resources config app` reports **470 problems, 100% of them `pickier/sort-tailwind-classes` in `.stx` files** — all auto-fixable. eslint cannot see a `.stx` file at all, so running it produces a false green.
 
 Default exit is 0 even with warnings; `--max-warnings <n>` (pickier 0.1.44) is what makes it a gate. Verified: `pickier resources` → exit 0; `pickier resources --max-warnings 0` → exit 1.
 
@@ -6041,7 +6041,7 @@ Default exit is 0 even with warnings; `--max-warnings <n>` (pickier 0.1.44) is w
 **RIGHT:**
 
 ```bash
-bunx --bun pickier . --fix          # auto-sort Crosswind classes, fix what is fixable
+bunx --bun pickier . --fix          # auto-sort Css classes, fix what is fixable
 bunx --bun pickier . --max-warnings 0   # then gate; must exit 0
 ```
 

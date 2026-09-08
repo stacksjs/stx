@@ -8,7 +8,7 @@
  * that reported every route `Cached`, exited 0, and shipped the previous
  * build's JavaScript.
  *
- * The same shape as the Crosswind config bug (#1940), and it fails the same
+ * The same shape as the Css config bug (#1940), and it fails the same
  * way: green build, correct source on disk, browser running code that no
  * longer exists. Nothing downstream looks wrong, so the time goes on debugging
  * the application instead of the build - which is exactly what happened.

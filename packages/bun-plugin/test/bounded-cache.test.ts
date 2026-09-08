@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { boundedCache } from '../src/serve'
 
 /**
- * The cache behind the generated Crosswind CSS.
+ * The cache behind the generated Css CSS.
  *
  * It is keyed by the *rendered page's* class set, not by the template's - a
  * page carrying `search-state-open` and one carrying `search-state-closed` are

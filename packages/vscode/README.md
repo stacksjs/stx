@@ -395,7 +395,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for recent changes and version history.
 
 This extension is built with love by the Stacks team and powered by:
 
-- **[@cwcss/crosswind](https://github.com/cwcss/crosswind)** - Utility-first CSS engine
+- **[@stacksjs/ts-css](https://github.com/cwcss/css)** - Utility-first CSS engine
 - **TypeScript** - Language support and type checking
 - **VS Code Language Server** - IntelliSense and diagnostics
 

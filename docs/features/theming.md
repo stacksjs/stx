@@ -67,12 +67,12 @@ rather than to nothing.
 
 ## 1. Redefine a shade — build time, works today, no opt-in
 
-A project's `crosswind.config.ts` `theme.colors` **deep-merges** over the base
+A project's `css.config.ts` `theme.colors` **deep-merges** over the base
 palette, and stx generates CSS by scanning the rendered page. So redefining a
 shade re-themes every component that names it, with no component edits:
 
 ```ts
-// crosswind.config.ts
+// css.config.ts
 export default {
   theme: {
     colors: {
@@ -99,9 +99,9 @@ rebuilds the palette so every themed shade resolves through one, with today's
 value as the fallback:
 
 ```ts
-// crosswind.config.ts
+// css.config.ts
 import { stxThemePreset } from '@stacksjs/components/theme'
-import { defaultConfig } from '@cwcss/crosswind'
+import { defaultConfig } from '@stacksjs/ts-css/engine'
 
 export default {
   theme: {

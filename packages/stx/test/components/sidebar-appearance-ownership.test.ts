@@ -6,7 +6,7 @@ import { processDirectives } from '../../src/process'
  * Who owns the document's color scheme.
  *
  * The Sidebar mirrors `prefers-color-scheme` onto the root element's `dark`
- * class, because a native sidebar follows the system appearance and Crosswind's
+ * class, because a native sidebar follows the system appearance and Css's
  * `dark:` variants are class-based. That is defensible only while nothing else
  * wants the job — and an app with its own light/dark control very much does.
  *

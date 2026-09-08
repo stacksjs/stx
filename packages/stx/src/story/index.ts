@@ -76,8 +76,8 @@ export * from './figma-export'
 // Generator
 export * from './generator'
 
-// Crosswind CSS
-export * from './crosswind'
+// Css CSS
+export * from './ts-css'
 
 // HMR
 export * from './hmr'

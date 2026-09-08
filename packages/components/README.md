@@ -197,7 +197,7 @@ const { isDark, toggle } = useDarkMode()
 The components use headwind for utility classes. You can customize the design system by creating a `headwind.config.ts` file:
 
 ```typescript
-import type { HeadwindConfig } from '@cwcss/crosswind'
+import type { HeadwindConfig } from '@stacksjs/ts-css/engine'
 
 export default {
   theme: {

@@ -17,13 +17,13 @@ import { stateDir } from '../state-dir'
 import { plugin as stxPlugin } from '../plugin'
 import { clearComponentCache } from '../utils'
 import {
-  buildCrosswindCSS,
+  buildCss,
   colors,
   extractSidebarConfig,
   findAvailablePort,
-  injectCrosswindCSS,
+  injectCss,
   openNativeWindow,
-  rebuildCrosswindCSS,
+  rebuildCss,
   setupKeyboardShortcuts,
 } from './index'
 import { serveMarkdownFile } from './serve-markdown'
@@ -124,9 +124,9 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
     return false
   }
 
-  // Build Crosswind CSS if config exists
+  // Build Css CSS if config exists
   const cwd = path.dirname(absolutePath)
-  await buildCrosswindCSS(cwd)
+  await buildCss(cwd)
 
   // Find an available port (with fallback)
   let actualPort = port
@@ -233,9 +233,9 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
   
         // Serve the main HTML for the root path
         if (url.pathname === '/') {
-          // Inject Crosswind CSS for utility classes (async)
+          // Inject Css CSS for utility classes (async)
           const processedContent = async () => {
-            let content = await injectCrosswindCSS(htmlContent || '')
+            let content = await injectCss(htmlContent || '')
             // Inject HMR client script if hot reload is enabled
             if (hotReload) {
               content = injectHotReload(content, actualHmrPort)
@@ -563,8 +563,8 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
         clearComponentCache()
         const success = await buildFile()
 
-        // Rebuild Crosswind CSS
-        await rebuildCrosswindCSS(cwd)
+        // Rebuild Css CSS
+        await rebuildCss(cwd)
 
         // Notify connected browsers via HMR
         if (hotReload && hmrServer) {

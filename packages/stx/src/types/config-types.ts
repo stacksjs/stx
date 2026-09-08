@@ -575,7 +575,7 @@ export interface StxConfig {
 
   /**
    * Where stx keeps its generated state: the compiled-template cache, the
-   * Crosswind CSS cache, the client-script bundle cache and temp dir, the
+   * Css CSS cache, the client-script bundle cache and temp dir, the
    * generated route manifest and route types, dev-server output, SSG and media
    * caches, story snapshots.
    *
@@ -757,8 +757,8 @@ export interface StxConfig {
   /** Environment variable prefix for client-side exposure (e.g. 'STX_PUBLIC_') */
   envPrefix?: string
   /**
-   * Path to a `crosswind.config.*` file, or an inline Crosswind config. The
-   * inline object accepts any Crosswind field (`theme`, `fonts`, `safelist`,
+   * Path to a `css.config.*` file, or an inline Css config. The
+   * inline object accepts any Css field (`theme`, `fonts`, `safelist`,
    * `shortcuts`, …) — e.g. load web fonts with
    * `css: { fonts: { google: ['Inter:wght@400;700'] } }`.
    */

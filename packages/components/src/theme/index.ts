@@ -8,12 +8,12 @@
  *
  * ## What already works, without this module
  *
- * A project's `crosswind.config.ts` `theme.colors` **deep-merges** over the base
+ * A project's `css.config.ts` `theme.colors` **deep-merges** over the base
  * palette, and stx generates CSS by scanning the rendered page — so redefining
  * a shade re-themes every component that names it, with no component edits:
  *
  * ```ts
- * // crosswind.config.ts
+ * // css.config.ts
  * export default { theme: { colors: { gray: { 600: '#3f3f46' } } } }
  * ```
  *
@@ -26,7 +26,7 @@
  *
  * `stxThemePreset()` returns a `theme.colors` fragment in which every themed
  * shade resolves through a CSS custom property with today's value as the
- * fallback. Spread it into your crosswind config and nothing changes visually;
+ * fallback. Spread it into your css config and nothing changes visually;
  * set a variable and every component follows, without a rebuild:
  *
  * ROLE tokens are not here. `packages/stx/src/theme-tokens.ts` puts those in the
@@ -36,7 +36,7 @@
  * exists to avoid rather than to introduce.
  *
  * ```ts
- * // crosswind.config.ts
+ * // css.config.ts
  * import { stxThemePreset } from '@stacksjs/components/theme'
  * export default { theme: { colors: stxThemePreset() } }
  * ```
@@ -46,7 +46,7 @@
  * .dark { --stx-color-gray-600: #a1a1aa; }
  * ```
  *
- * The fallbacks are read from crosswind's own default palette rather than
+ * The fallbacks are read from css's own default palette rather than
  * copied, so this cannot drift from the values the components are drawn
  * against — a hand-copied table is the failure mode this whole file exists to
  * remove, and duplicating it here would reintroduce it one level up.
@@ -61,7 +61,7 @@
  * @module theme
  */
 
-/** A crosswind palette entry: one colour, or a map of shades. */
+/** A css palette entry: one colour, or a map of shades. */
 export type PaletteValue = string | Record<string, string>
 export type Palette = Record<string, PaletteValue>
 
@@ -86,7 +86,7 @@ function cssVar(name: string, fallback?: string): string {
 /**
  * Build the palette fragment.
  *
- * @param defaults - Crosswind's default `theme.colors`. Pass the one your
+ * @param defaults - Css's default `theme.colors`. Pass the one your
  * project resolves; omitted, the returned entries carry no fallback, which is
  * only useful if you intend to define every variable yourself.
  */

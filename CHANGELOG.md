@@ -712,7 +712,7 @@
 ## 🔧 Chores
 
 - release v0.2.236 ([5147a60](https://github.com/stacksjs/stx/commit/5147a60)) _(by Chris <chrisbreuer93@gmail.com>)_
-- **deps**: crosswind 0.2.19 ([51185e9](https://github.com/stacksjs/stx/commit/51185e9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: css 0.2.19 ([51185e9](https://github.com/stacksjs/stx/commit/51185e9)) _(by Chris <chrisbreuer93@gmail.com>)_
 
 ## Contributors
 
@@ -788,7 +788,7 @@
 - **ssr**: ctx.setCookie reaches the response, and every cookie survives ([905f33f](https://github.com/stacksjs/stx/commit/905f33f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1944](https://github.com/stacksjs/stx/issues/1944), [#1944](https://github.com/stacksjs/stx/issues/1944))
 - **desktop**: typecheck focus and screenSharing against craft's real types ([3aed786](https://github.com/stacksjs/stx/commit/3aed786)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **cloak**: a reactive mustache hides its own element, not its ancestors ([9a9ae6a](https://github.com/stacksjs/stx/commit/9a9ae6a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1946](https://github.com/stacksjs/stx/issues/1946), [#1946](https://github.com/stacksjs/stx/issues/1946), [#1771](https://github.com/stacksjs/stx/issues/1771))
-- **serve**: type Crosswind from the engine, not from a stub that shadowed it ([e1b2705](https://github.com/stacksjs/stx/commit/e1b2705)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **serve**: type Css from the engine, not from a stub that shadowed it ([e1b2705](https://github.com/stacksjs/stx/commit/e1b2705)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 
 ## ⚡ Performance Improvements
 
@@ -2011,7 +2011,7 @@
 - **dev**: store and composable edits reach the browser without a restart ([4e98218](https://github.com/stacksjs/stx/commit/4e98218)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **config**: one resolution pass, so the two loaders stop disagreeing ([ae486b4](https://github.com/stacksjs/stx/commit/ae486b4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **build**: fail the build when a client script does not bundle ([c33162a](https://github.com/stacksjs/stx/commit/c33162a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- **crosswind**: one merge for the config, so it means the same thing everywhere ([1514556](https://github.com/stacksjs/stx/commit/1514556)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **css**: one merge for the config, so it means the same thing everywhere ([1514556](https://github.com/stacksjs/stx/commit/1514556)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **ssg**: components aren't public URLs, and the sitemap knows the site's domain ([04ca349](https://github.com/stacksjs/stx/commit/04ca349)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **signals**: only a function is an effect cleanup ([fd5fdb6](https://github.com/stacksjs/stx/commit/fd5fdb6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **forms**: expose field errors to assistive tech (aria-invalid + describedby) ([c7c5e6e](https://github.com/stacksjs/stx/commit/c7c5e6e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
@@ -2425,8 +2425,8 @@
 ## 🧹 Chores
 
 - release v0.2.140 ([2d1c9d1](https://github.com/stacksjs/stx/commit/2d1c9d1)) _(by Chris <chrisbreuer93@gmail.com>)_
-- **deps**: update crosswind to 0.2.14 ([7bc21c2](https://github.com/stacksjs/stx/commit/7bc21c2)) _(by Chris <chrisbreuer93@gmail.com>)_
-- **deps**: update crosswind to 0.2.13 ([4ae615c](https://github.com/stacksjs/stx/commit/4ae615c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: update css to 0.2.14 ([7bc21c2](https://github.com/stacksjs/stx/commit/7bc21c2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: update css to 0.2.13 ([4ae615c](https://github.com/stacksjs/stx/commit/4ae615c)) _(by Chris <chrisbreuer93@gmail.com>)_
 
 ## Contributors
 
@@ -2514,7 +2514,7 @@
 
 ## ⚡ Performance Improvements
 
-- **serve**: cache generated crosswind assets ([e0fed41](https://github.com/stacksjs/stx/commit/e0fed41)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **serve**: cache generated css assets ([e0fed41](https://github.com/stacksjs/stx/commit/e0fed41)) _(by Chris <chrisbreuer93@gmail.com>)_
 
 ## 🧹 Chores
 
@@ -2703,7 +2703,7 @@
 - **render**: give the client-script bundler the template path ([4352d2b](https://github.com/stacksjs/stx/commit/4352d2b)) _(by Chris <chrisbreuer93@gmail.com>)_
 - **native**: compile the template and ship a launcher that works off-machine ([e520284](https://github.com/stacksjs/stx/commit/e520284)) _(by Chris <chrisbreuer93@gmail.com>)_
 - **test**: add the workspace happy-dom preload three packages point at ([46dc10c](https://github.com/stacksjs/stx/commit/46dc10c)) _(by Chris <chrisbreuer93@gmail.com>)_
-- **crosswind**: use Crosswind's extractor instead of a weaker copy ([725a892](https://github.com/stacksjs/stx/commit/725a892)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **css**: use Css's extractor instead of a weaker copy ([725a892](https://github.com/stacksjs/stx/commit/725a892)) _(by Chris <chrisbreuer93@gmail.com>)_
 
 ## 🧹 Chores
 
@@ -2719,7 +2719,7 @@
 
 - **components**: let an app keep ownership of its color scheme ([36d541d](https://github.com/stacksjs/stx/commit/36d541d)) _(by Chris <chrisbreuer93@gmail.com>)_
 - **composables**: add scroll locking ([3b5546e](https://github.com/stacksjs/stx/commit/3b5546e)) _(by Chris <chrisbreuer93@gmail.com>)_
-- **dev**: allow explicit Crosswind source ([4cf4f5f](https://github.com/stacksjs/stx/commit/4cf4f5f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **dev**: allow explicit Css source ([4cf4f5f](https://github.com/stacksjs/stx/commit/4cf4f5f)) _(by Chris <chrisbreuer93@gmail.com>)_
 - **components**: take Arc chrome color from the panel ([62ed1e1](https://github.com/stacksjs/stx/commit/62ed1e1)) _(by Chris <chrisbreuer93@gmail.com>)_
 - **craft**: wrap the native spaces sidebar ([a6fa95a](https://github.com/stacksjs/stx/commit/a6fa95a)) _(by Chris <chrisbreuer93@gmail.com>)_
 - **components**: accept spaces on Sidebar ([5002376](https://github.com/stacksjs/stx/commit/5002376)) _(by Chris <chrisbreuer93@gmail.com>)_
@@ -2996,7 +2996,7 @@
 
 ## 🐛 Bug Fixes
 
-- **stx**: load the crosswind the served project installed, not stx's own ([1cca08e](https://github.com/stacksjs/stx/commit/1cca08e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: load the css the served project installed, not stx's own ([1cca08e](https://github.com/stacksjs/stx/commit/1cca08e)) _(by Chris <chrisbreuer93@gmail.com>)_
 
 ## 🧹 Chores
 
@@ -3588,8 +3588,8 @@
 - release v0.2.73 ([1589f9c](https://github.com/stacksjs/stx/commit/1589f9c)) _(by Chris <chrisbreuer93@gmail.com>)_
 - wip ([1201e11](https://github.com/stacksjs/stx/commit/1201e11)) _(by Chris <chrisbreuer93@gmail.com>)_
 - **config**: move stx.config.ts to config/stx.ts ([d77bb9c](https://github.com/stacksjs/stx/commit/d77bb9c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- **config**: move crosswind.config.ts to config/crosswind.ts ([41b7110](https://github.com/stacksjs/stx/commit/41b7110)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- **deps**: upgrade @cwcss/crosswind to 0.2.6 ([0bb61e7](https://github.com/stacksjs/stx/commit/0bb61e7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **config**: move css.config.ts to config/css.ts ([41b7110](https://github.com/stacksjs/stx/commit/41b7110)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: upgrade @stacksjs/ts-css to 0.2.6 ([0bb61e7](https://github.com/stacksjs/stx/commit/0bb61e7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 
 ## Contributors
 
@@ -3671,7 +3671,7 @@
 - **islands**: hydrate deferred islands reached via SPA navigation (#1746) ([bafdefd](https://github.com/stacksjs/stx/commit/bafdefd)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
 - **islands**: cancel a pending island trigger on SPA navigation (#1746) ([38a6164](https://github.com/stacksjs/stx/commit/38a6164)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
 - **islands**: fire a deferred component's onMount on hydration, not page load (#1746) ([7ab1245](https://github.com/stacksjs/stx/commit/7ab1245)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1746](https://github.com/stacksjs/stx/issues/1746), [#1746](https://github.com/stacksjs/stx/issues/1746))
-- **crosswind**: regenerate (not skip) CSS when a page composes into a shell (#1749) ([29b6093](https://github.com/stacksjs/stx/commit/29b6093)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1749](https://github.com/stacksjs/stx/issues/1749), [#1749](https://github.com/stacksjs/stx/issues/1749))
+- **css**: regenerate (not skip) CSS when a page composes into a shell (#1749) ([29b6093](https://github.com/stacksjs/stx/commit/29b6093)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1749](https://github.com/stacksjs/stx/issues/1749), [#1749](https://github.com/stacksjs/stx/issues/1749))
 - **signals**: preserve {{ }} in component x-for + unmangle runtime regexes (#1748) ([4c5fb05](https://github.com/stacksjs/stx/commit/4c5fb05)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1748](https://github.com/stacksjs/stx/issues/1748), [#1748](https://github.com/stacksjs/stx/issues/1748))
 - **i18n,test**: resilient ts-i18n loading + kill the signals mock leak ([cb14bd8](https://github.com/stacksjs/stx/commit/cb14bd8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **serve**: clear stx framework caches on source edit (#1745 item C) ([73abece](https://github.com/stacksjs/stx/commit/73abece)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1745](https://github.com/stacksjs/stx/issues/1745), [#1745](https://github.com/stacksjs/stx/issues/1745))
@@ -3726,7 +3726,7 @@
 
 ### 🐛 Bug Fixes
 
-- **crosswind**: preserve all fields from an inline css config ([5c75796](https://github.com/stacksjs/stx/commit/5c75796)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **css**: preserve all fields from an inline css config ([5c75796](https://github.com/stacksjs/stx/commit/5c75796)) _(by Chris <chrisbreuer93@gmail.com>)_
 - **signals**: nested scopes survive :if toggles (#1737) + bindIfChain subscribes narrowly (#1738) ([429f31f](https://github.com/stacksjs/stx/commit/429f31f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1737](https://github.com/stacksjs/stx/issues/1737), [#1738](https://github.com/stacksjs/stx/issues/1738), [#1737](https://github.com/stacksjs/stx/issues/1737), [#1738](https://github.com/stacksjs/stx/issues/1738))
 
 ### 📚 Documentation
@@ -3819,7 +3819,7 @@
 
 ### 🐛 Bug Fixes
 
-- **dev**: quiet STX/Crosswind logs until buddy ready banner ([d0ff3d0](https://github.com/stacksjs/stx/commit/d0ff3d0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **dev**: quiet STX/Css logs until buddy ready banner ([d0ff3d0](https://github.com/stacksjs/stx/commit/d0ff3d0)) _(by Chris <chrisbreuer93@gmail.com>)_
 - **scripts**: stop double-generating CHANGELOG on release ([7fd05c5](https://github.com/stacksjs/stx/commit/7fd05c5)) _(by Glenn Michael Torregosa <gtorregosa@gmail.com>)_
 - **components**: avoid accordion item type collision ([f2eddae](https://github.com/stacksjs/stx/commit/f2eddae)) _(by Chris <chrisbreuer93@gmail.com>)_
 - **stx**: run pre middleware before comment masking ([3eac657](https://github.com/stacksjs/stx/commit/3eac657)) _(by Chris <chrisbreuer93@gmail.com>)_
@@ -4216,7 +4216,7 @@
 - **includes**: bundle user imports in signal scripts before IIFE wrap ([24946fe](https://github.com/stacksjs/stx/commit/24946fe)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **bundler**: resolve ~/ alias alongside @/ in client-script imports ([71ad3b1](https://github.com/stacksjs/stx/commit/71ad3b1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **router**: don't block-wrap page scripts that contain top-level imports ([cc96cb6](https://github.com/stacksjs/stx/commit/cc96cb6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- **crosswind**: probe pantry/ alongside node_modules/ in the cwd walk ([8ab15a0](https://github.com/stacksjs/stx/commit/8ab15a0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **css**: probe pantry/ alongside node_modules/ in the cwd walk ([8ab15a0](https://github.com/stacksjs/stx/commit/8ab15a0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **bun-plugin**: mirror ServeOptions.onRequest widening in bun-plugin-stx ([a389e8d](https://github.com/stacksjs/stx/commit/a389e8d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **serve**: widen ServeOptions.onRequest to allow async fall-through ([bf1875e](https://github.com/stacksjs/stx/commit/bf1875e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **signals**: shim definePageMeta in client setup so hydration doesn't crash ([ab65910](https://github.com/stacksjs/stx/commit/ab65910)) _(by glennmichael123 <gtorregosa@gmail.com>)_
@@ -4248,7 +4248,7 @@
 - **includes**: bundle user imports in signal scripts before IIFE wrap ([24946fe](https://github.com/stacksjs/stx/commit/24946fe)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **bundler**: resolve ~/ alias alongside @/ in client-script imports ([71ad3b1](https://github.com/stacksjs/stx/commit/71ad3b1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **router**: don't block-wrap page scripts that contain top-level imports ([cc96cb6](https://github.com/stacksjs/stx/commit/cc96cb6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- **crosswind**: probe pantry/ alongside node_modules/ in the cwd walk ([8ab15a0](https://github.com/stacksjs/stx/commit/8ab15a0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **css**: probe pantry/ alongside node_modules/ in the cwd walk ([8ab15a0](https://github.com/stacksjs/stx/commit/8ab15a0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **bun-plugin**: mirror ServeOptions.onRequest widening in bun-plugin-stx ([a389e8d](https://github.com/stacksjs/stx/commit/a389e8d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **serve**: widen ServeOptions.onRequest to allow async fall-through ([bf1875e](https://github.com/stacksjs/stx/commit/bf1875e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **signals**: shim definePageMeta in client setup so hydration doesn't crash ([ab65910](https://github.com/stacksjs/stx/commit/ab65910)) _(by glennmichael123 <gtorregosa@gmail.com>)_
@@ -4279,7 +4279,7 @@
 - **includes**: bundle user imports in signal scripts before IIFE wrap ([24946fe](https://github.com/stacksjs/stx/commit/24946fe)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **bundler**: resolve ~/ alias alongside @/ in client-script imports ([71ad3b1](https://github.com/stacksjs/stx/commit/71ad3b1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **router**: don't block-wrap page scripts that contain top-level imports ([cc96cb6](https://github.com/stacksjs/stx/commit/cc96cb6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- **crosswind**: probe pantry/ alongside node_modules/ in the cwd walk ([8ab15a0](https://github.com/stacksjs/stx/commit/8ab15a0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **css**: probe pantry/ alongside node_modules/ in the cwd walk ([8ab15a0](https://github.com/stacksjs/stx/commit/8ab15a0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **bun-plugin**: mirror ServeOptions.onRequest widening in bun-plugin-stx ([a389e8d](https://github.com/stacksjs/stx/commit/a389e8d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **serve**: widen ServeOptions.onRequest to allow async fall-through ([bf1875e](https://github.com/stacksjs/stx/commit/bf1875e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **signals**: shim definePageMeta in client setup so hydration doesn't crash ([ab65910](https://github.com/stacksjs/stx/commit/ab65910)) _(by glennmichael123 <gtorregosa@gmail.com>)_
@@ -4458,7 +4458,7 @@
 
 ### ⚡ Performance Improvements
 
-- **crosswind**: persist CSS cache to disk + LRU eviction ([2e4bf99](https://github.com/stacksjs/stx/commit/2e4bf99)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **css**: persist CSS cache to disk + LRU eviction ([2e4bf99](https://github.com/stacksjs/stx/commit/2e4bf99)) _(by Chris <chrisbreuer93@gmail.com>)_
 
 ### 📚 Documentation
 
@@ -4489,7 +4489,7 @@
 
 ### ⚡ Performance Improvements
 
-- **crosswind**: persist CSS cache to disk + LRU eviction ([2e4bf99](https://github.com/stacksjs/stx/commit/2e4bf99)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **css**: persist CSS cache to disk + LRU eviction ([2e4bf99](https://github.com/stacksjs/stx/commit/2e4bf99)) _(by Chris <chrisbreuer93@gmail.com>)_
 
 ### 📚 Documentation
 
@@ -5168,8 +5168,8 @@
 
 ### 🐛 Bug Fixes
 
-- **crosswind**: scan layout classes when rendering layout-wrapped templates ([b71ad35](https://github.com/stacksjs/stx/commit/b71ad35)) _(by Chris <chrisbreuer93@gmail.com>)_
-- silence ConfigNotFoundError in crosswind config loader ([cadab72](https://github.com/stacksjs/stx/commit/cadab72)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **css**: scan layout classes when rendering layout-wrapped templates ([b71ad35](https://github.com/stacksjs/stx/commit/b71ad35)) _(by Chris <chrisbreuer93@gmail.com>)_
+- silence ConfigNotFoundError in css config loader ([cadab72](https://github.com/stacksjs/stx/commit/cadab72)) _(by Chris <chrisbreuer93@gmail.com>)_
 
 ### 🧹 Chores
 
@@ -5191,7 +5191,7 @@
 
 ### 🐛 Bug Fixes
 
-- **crosswind**: scan layout classes when rendering layout-wrapped templates ([fd85149](https://github.com/stacksjs/stx/commit/fd85149)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **css**: scan layout classes when rendering layout-wrapped templates ([fd85149](https://github.com/stacksjs/stx/commit/fd85149)) _(by Chris <chrisbreuer93@gmail.com>)_
 
 ### 🧹 Chores
 
@@ -5205,7 +5205,7 @@
 
 ### 🐛 Bug Fixes
 
-- **crosswind**: scan layout classes when rendering layout-wrapped templates ([fd85149](https://github.com/stacksjs/stx/commit/fd85149)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **css**: scan layout classes when rendering layout-wrapped templates ([fd85149](https://github.com/stacksjs/stx/commit/fd85149)) _(by Chris <chrisbreuer93@gmail.com>)_
 
 ### Contributors
 
@@ -5220,7 +5220,7 @@
 
 ### 🐛 Bug Fixes
 
-- silence ConfigNotFoundError in crosswind config loader ([e79685f](https://github.com/stacksjs/stx/commit/e79685f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- silence ConfigNotFoundError in css config loader ([e79685f](https://github.com/stacksjs/stx/commit/e79685f)) _(by Chris <chrisbreuer93@gmail.com>)_
 - **components**: add `bun` condition to package exports ([b93559a](https://github.com/stacksjs/stx/commit/b93559a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **signals**: remove x-cloak from :if subtrees after deferred processing (#1689) ([0016332](https://github.com/stacksjs/stx/commit/0016332)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1689](https://github.com/stacksjs/stx/issues/1689), [#1689](https://github.com/stacksjs/stx/issues/1689))
 - **bun-plugin/serve**: invalidate route cache when view files are added ([c72f512](https://github.com/stacksjs/stx/commit/c72f512)) _(by Chris <chrisbreuer93@gmail.com>)_
@@ -5260,7 +5260,7 @@
 
 ### 🐛 Bug Fixes
 
-- silence ConfigNotFoundError in crosswind config loader ([e79685f](https://github.com/stacksjs/stx/commit/e79685f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- silence ConfigNotFoundError in css config loader ([e79685f](https://github.com/stacksjs/stx/commit/e79685f)) _(by Chris <chrisbreuer93@gmail.com>)_
 - **components**: add `bun` condition to package exports ([b93559a](https://github.com/stacksjs/stx/commit/b93559a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **signals**: remove x-cloak from :if subtrees after deferred processing (#1689) ([0016332](https://github.com/stacksjs/stx/commit/0016332)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1689](https://github.com/stacksjs/stx/issues/1689), [#1689](https://github.com/stacksjs/stx/issues/1689))
 - **bun-plugin/serve**: invalidate route cache when view files are added ([c72f512](https://github.com/stacksjs/stx/commit/c72f512)) _(by Chris <chrisbreuer93@gmail.com>)_
@@ -5571,7 +5571,7 @@
 - add achievements.stx example — single-file coach profile site ([3bc2fb5](https://github.com/stacksjs/stx/commit/3bc2fb5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - Alpine x-data reactive bridge, x-for scoping, runtime fixes ([7772178](https://github.com/stacksjs/stx/commit/7772178)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - add publicDir, envFile, envPrefix config fields ([cba6866](https://github.com/stacksjs/stx/commit/cba6866)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- css config field in stx.config.ts for explicit Crosswind config path ([13e7541](https://github.com/stacksjs/stx/commit/13e7541)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- css config field in stx.config.ts for explicit Css config path ([13e7541](https://github.com/stacksjs/stx/commit/13e7541)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - stx plugin/module system with definePlugin and auto-loading ([c7b6d60](https://github.com/stacksjs/stx/commit/c7b6d60)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - complete v-memo, error boundaries, and lazy route support ([2a4a7c0](https://github.com/stacksjs/stx/commit/2a4a7c0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - wire async components — /_stx/component/ endpoint + signal processing ([3909b95](https://github.com/stacksjs/stx/commit/3909b95)) _(by glennmichael123 <gtorregosa@gmail.com>)_
@@ -5645,13 +5645,13 @@
 - await async processClientScript in component rendering ([ee3f58a](https://github.com/stacksjs/stx/commit/ee3f58a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - resolve typecheck and lint errors ([76c62e8](https://github.com/stacksjs/stx/commit/76c62e8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - expose all composables in <script> setup function context ([699c660](https://github.com/stacksjs/stx/commit/699c660)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- include Crosswind utility CSS (without Preflight) in SPA fragments ([4be647d](https://github.com/stacksjs/stx/commit/4be647d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- include Css utility CSS (without Preflight) in SPA fragments ([4be647d](https://github.com/stacksjs/stx/commit/4be647d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - router click handler must target [data-stx-link] not <stx-link> ([fb65982](https://github.com/stacksjs/stx/commit/fb65982)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- exclude Crosswind CSS from SPA fragments ([1d1f32b](https://github.com/stacksjs/stx/commit/1d1f32b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- inject Crosswind CSS after document shell so bodyClass is scanned ([032d634](https://github.com/stacksjs/stx/commit/032d634)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- inject Crosswind CSS only at top level — not per-component ([7767278](https://github.com/stacksjs/stx/commit/7767278)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- prevent duplicate Crosswind CSS injection from recursive layout processing ([b59a45c](https://github.com/stacksjs/stx/commit/b59a45c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- remove duplicate Crosswind CSS injection in serve.ts ([a8c3754](https://github.com/stacksjs/stx/commit/a8c3754)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- exclude Css CSS from SPA fragments ([1d1f32b](https://github.com/stacksjs/stx/commit/1d1f32b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- inject Css CSS after document shell so bodyClass is scanned ([032d634](https://github.com/stacksjs/stx/commit/032d634)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- inject Css CSS only at top level — not per-component ([7767278](https://github.com/stacksjs/stx/commit/7767278)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- prevent duplicate Css CSS injection from recursive layout processing ([b59a45c](https://github.com/stacksjs/stx/commit/b59a45c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- remove duplicate Css CSS injection in serve.ts ([a8c3754](https://github.com/stacksjs/stx/commit/a8c3754)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - run processComponents after includes to expand StxLink in partials ([976b987](https://github.com/stacksjs/stx/commit/976b987)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - chain pantry publish:commit calls for single-arg CLI ([a7667d1](https://github.com/stacksjs/stx/commit/a7667d1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - resolve all pickier lint errors in new modules ([0acf35c](https://github.com/stacksjs/stx/commit/0acf35c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
@@ -5812,7 +5812,7 @@
 - add achievements.stx example — single-file coach profile site ([3bc2fb5](https://github.com/stacksjs/stx/commit/3bc2fb5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - Alpine x-data reactive bridge, x-for scoping, runtime fixes ([7772178](https://github.com/stacksjs/stx/commit/7772178)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - add publicDir, envFile, envPrefix config fields ([cba6866](https://github.com/stacksjs/stx/commit/cba6866)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- css config field in stx.config.ts for explicit Crosswind config path ([13e7541](https://github.com/stacksjs/stx/commit/13e7541)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- css config field in stx.config.ts for explicit Css config path ([13e7541](https://github.com/stacksjs/stx/commit/13e7541)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - stx plugin/module system with definePlugin and auto-loading ([c7b6d60](https://github.com/stacksjs/stx/commit/c7b6d60)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - complete v-memo, error boundaries, and lazy route support ([2a4a7c0](https://github.com/stacksjs/stx/commit/2a4a7c0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - wire async components — /_stx/component/ endpoint + signal processing ([3909b95](https://github.com/stacksjs/stx/commit/3909b95)) _(by glennmichael123 <gtorregosa@gmail.com>)_
@@ -5886,13 +5886,13 @@
 - await async processClientScript in component rendering ([ee3f58a](https://github.com/stacksjs/stx/commit/ee3f58a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - resolve typecheck and lint errors ([76c62e8](https://github.com/stacksjs/stx/commit/76c62e8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - expose all composables in <script> setup function context ([699c660](https://github.com/stacksjs/stx/commit/699c660)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- include Crosswind utility CSS (without Preflight) in SPA fragments ([4be647d](https://github.com/stacksjs/stx/commit/4be647d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- include Css utility CSS (without Preflight) in SPA fragments ([4be647d](https://github.com/stacksjs/stx/commit/4be647d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - router click handler must target [data-stx-link] not <stx-link> ([fb65982](https://github.com/stacksjs/stx/commit/fb65982)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- exclude Crosswind CSS from SPA fragments ([1d1f32b](https://github.com/stacksjs/stx/commit/1d1f32b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- inject Crosswind CSS after document shell so bodyClass is scanned ([032d634](https://github.com/stacksjs/stx/commit/032d634)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- inject Crosswind CSS only at top level — not per-component ([7767278](https://github.com/stacksjs/stx/commit/7767278)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- prevent duplicate Crosswind CSS injection from recursive layout processing ([b59a45c](https://github.com/stacksjs/stx/commit/b59a45c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- remove duplicate Crosswind CSS injection in serve.ts ([a8c3754](https://github.com/stacksjs/stx/commit/a8c3754)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- exclude Css CSS from SPA fragments ([1d1f32b](https://github.com/stacksjs/stx/commit/1d1f32b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- inject Css CSS after document shell so bodyClass is scanned ([032d634](https://github.com/stacksjs/stx/commit/032d634)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- inject Css CSS only at top level — not per-component ([7767278](https://github.com/stacksjs/stx/commit/7767278)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- prevent duplicate Css CSS injection from recursive layout processing ([b59a45c](https://github.com/stacksjs/stx/commit/b59a45c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- remove duplicate Css CSS injection in serve.ts ([a8c3754](https://github.com/stacksjs/stx/commit/a8c3754)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - run processComponents after includes to expand StxLink in partials ([976b987](https://github.com/stacksjs/stx/commit/976b987)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - chain pantry publish:commit calls for single-arg CLI ([a7667d1](https://github.com/stacksjs/stx/commit/a7667d1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - resolve all pickier lint errors in new modules ([0acf35c](https://github.com/stacksjs/stx/commit/0acf35c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
@@ -6046,7 +6046,7 @@
 - release v0.2.10 ([991cfd0](https://github.com/stacksjs/stx/commit/991cfd0)) _(by Chris <chrisbreuer93@gmail.com>)_
 - wip ([a403e59](https://github.com/stacksjs/stx/commit/a403e59)) _(by Chris <chrisbreuer93@gmail.com>)_
 - update better-dx to ^0.2.7 ([0a878bf](https://github.com/stacksjs/stx/commit/0a878bf)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- update CLAUDE.md with project context and crosswind details ([81eb3df](https://github.com/stacksjs/stx/commit/81eb3df)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update CLAUDE.md with project context and css details ([81eb3df](https://github.com/stacksjs/stx/commit/81eb3df)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 
 ### Contributors
 
@@ -6063,7 +6063,7 @@
 
 - wip ([a403e59](https://github.com/stacksjs/stx/commit/a403e59)) _(by Chris <chrisbreuer93@gmail.com>)_
 - update better-dx to ^0.2.7 ([0a878bf](https://github.com/stacksjs/stx/commit/0a878bf)) _(by glennmichael123 <gtorregosa@gmail.com>)_
-- update CLAUDE.md with project context and crosswind details ([81eb3df](https://github.com/stacksjs/stx/commit/81eb3df)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update CLAUDE.md with project context and css details ([81eb3df](https://github.com/stacksjs/stx/commit/81eb3df)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 
 ### Contributors
 

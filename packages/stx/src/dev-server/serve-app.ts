@@ -34,13 +34,13 @@ import { extractPageMetaFromSource } from '../page-meta'
 import { clearComponentCache } from '../utils'
 import { extractPageResponseStatus, readResponseHeaders, readResponseStatus } from '../page-response'
 import {
-  buildCrosswindCSS,
+  buildCss,
   colors,
   extractSidebarConfig,
   findAvailablePort,
-  injectCrosswindCSS,
+  injectCss,
   openNativeWindow,
-  rebuildCrosswindCSS,
+  rebuildCss,
   setupKeyboardShortcuts,
 } from './index'
 
@@ -591,8 +591,8 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
     return false
   }
 
-  // Build Crosswind CSS if config exists
-  await buildCrosswindCSS(absoluteAppDir)
+  // Build Css CSS if config exists
+  await buildCss(absoluteAppDir)
 
   // Find available port
   let actualPort = port
@@ -639,7 +639,7 @@ catch {
       const url = new URL(request.url)
 
       // Static-file routing across the three search roots (public/, the
-      // app dir for Crosswind dist output, and outputDir).
+      // app dir for Css dist output, and outputDir).
       //
       // Previously this did three sequential `existsSync + statSync`
       // pairs — six sync syscalls on the request thread, ~3ms of added
@@ -754,7 +754,7 @@ catch {
               const custom404 = await renderErrorPage(404)
               if (custom404) {
                 let content = custom404
-                content = await injectCrosswindCSS(content, absoluteAppDir)
+                content = await injectCss(content, absoluteAppDir)
                 if (hotReload) {
                   content = injectHotReload(content, actualHmrPort)
                 }
@@ -836,9 +836,9 @@ catch {
             if (Object.keys(routeMatch.params).length > 0) {
               content = injectRouteParams(content, routeMatch.params)
             }
-            // Generate Crosswind CSS for this page's utility classes and include in fragment
+            // Generate Css CSS for this page's utility classes and include in fragment
             // Without this, SPA-navigated pages have no CSS for their utility classes
-            content = await injectCrosswindCSS(content, absoluteAppDir)
+            content = await injectCss(content, absoluteAppDir)
             // Extract only the router container's inner content. The processed
             // template includes the full layout (nav + main + footer). If we
             // return it all, the router injects nav/footer INSIDE <main>,
@@ -882,8 +882,8 @@ catch {
             content = injectRouteParams(content, routeMatch.params)
           }
 
-          // Inject Crosswind CSS
-          content = await injectCrosswindCSS(content, absoluteAppDir)
+          // Inject Css CSS
+          content = await injectCss(content, absoluteAppDir)
 
           // Inject HMR client
           if (hotReload) {
@@ -915,7 +915,7 @@ catch {
 
           // Streaming SSR (#1746 Phase 3): when the page exported
           // streamBoundaries, flush the shell (`content`, fully pipelined —
-          // layout/Crosswind/HMR already applied) immediately, then stream each
+          // layout/Css/HMR already applied) immediately, then stream each
           // boundary as its server-side async render resolves. Full-page loads
           // only; SPA fragment nav returned earlier.
           if (builtPage.boundaries && builtPage.boundaries.length > 0) {
@@ -966,7 +966,7 @@ catch {
               content = injectRouteParams(content, pluginMatch.params)
             }
 
-            content = await injectCrosswindCSS(content, absoluteAppDir)
+            content = await injectCss(content, absoluteAppDir)
 
             if (hotReload) {
               content = injectHotReload(content, actualHmrPort)
@@ -994,7 +994,7 @@ catch {
               if (shell) {
                 content = composeShellWithPage(shell, content)
               }
-              content = await injectCrosswindCSS(content, absoluteAppDir)
+              content = await injectCss(content, absoluteAppDir)
               if (hotReload) {
                 content = injectHotReload(content, actualHmrPort)
               }
@@ -1015,7 +1015,7 @@ catch {
       const indexPage = builtPages.get('/')
       if (indexPage) {
         let content = indexPage.content
-        content = await injectCrosswindCSS(content, absoluteAppDir)
+        content = await injectCss(content, absoluteAppDir)
         if (hotReload) {
           content = injectHotReload(content, actualHmrPort)
         }
@@ -1043,7 +1043,7 @@ catch {
       const custom404 = await renderErrorPage(404)
       if (custom404) {
         let content = custom404
-        content = await injectCrosswindCSS(content, absoluteAppDir)
+        content = await injectCss(content, absoluteAppDir)
         if (hotReload) {
           content = injectHotReload(content, actualHmrPort)
         }
@@ -1177,7 +1177,7 @@ catch {
             }
           }
           await buildAllPages()
-          await rebuildCrosswindCSS(absoluteAppDir)
+          await rebuildCss(absoluteAppDir)
 
           if (hotReload && hmrServer) {
             hmrServer.reload(filename)

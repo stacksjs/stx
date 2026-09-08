@@ -133,7 +133,7 @@ describe('serve shared STX assets', () => {
 
     expect(html).toContain('<script data-stx-runtime src="/_stx/runtime.js"></script>')
     expect(html).toContain('<script data-stx-router src="/_stx/router.js"></script>')
-    expect(html).toMatch(/<link data-crosswind="generated" rel="stylesheet" href="\/_stx\/crosswind\.[a-f0-9]{16}\.css">/)
+    expect(html).toMatch(/<link data-css="generated" rel="stylesheet" href="\/_stx\/css\.[a-f0-9]{16}\.css">/)
     expect(html).not.toContain('window.stx.state')
     expect(html).not.toContain('__stxRouter=true')
   })
@@ -166,9 +166,9 @@ describe('serve shared STX assets', () => {
     expect(await revalidated.text()).toBe('')
   })
 
-  it('serves content-addressed Crosswind CSS immutably', async () => {
+  it('serves content-addressed Css CSS immutably', async () => {
     const html = await (await fetch(BASE)).text()
-    const href = html.match(/href="(\/_stx\/crosswind\.[a-f0-9]{16}\.css)"/)?.[1]
+    const href = html.match(/href="(\/_stx\/css\.[a-f0-9]{16}\.css)"/)?.[1]
     expect(href).toBeTruthy()
 
     const response = await fetch(`${BASE}${href}`)

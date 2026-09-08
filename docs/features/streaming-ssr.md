@@ -58,7 +58,7 @@ export const streamBoundaries = {
 
 The server:
 
-1. Renders the full page shell (layout, Crosswind CSS, HMR — the normal pipeline)
+1. Renders the full page shell (layout, Css CSS, HMR — the normal pipeline)
    with the `data-suspense` placeholders, and **flushes it first**.
 2. Runs each `streamBoundaries` function. As each resolves, it streams a small
    script that swaps the matching placeholder for the rendered HTML — in

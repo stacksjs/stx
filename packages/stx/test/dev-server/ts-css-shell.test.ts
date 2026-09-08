@@ -1,16 +1,16 @@
 /**
- * Regression for stacksjs/stx#1749: the dev-server crosswind pass dropped a
+ * Regression for stacksjs/stx#1749: the dev-server css pass dropped a
  * page's own utilities (`grid`, `grid-cols-*`) when the page was composed into a
  * pre-processed app shell.
  *
  * Cause: `processShell` runs the shell through `processDirectives` top-level, so
- * the shell already carries a `<style data-crosswind="generated">` covering the
+ * the shell already carries a `<style data-css="generated">` covering the
  * SHELL's classes. After `composeShellWithPage`, the page-level
- * `injectCrosswindCSS` saw that marker and early-returned — so the page's own
+ * `injectCss` saw that marker and early-returned — so the page's own
  * classes were never scanned. `.gap-4` (used by the shell nav) survived while
  * `.grid` (only on the page) was missing → cards laid out as `display:block`.
  *
- * Fix: injectCrosswindCSS regenerates from the full composed content and replaces
+ * Fix: injectCss regenerates from the full composed content and replaces
  * the existing generated style, emitting the union of shell + page classes with a
  * single Preflight reset.
  */
@@ -19,16 +19,16 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { composeShellWithPage, processShell } from '../../src/app-shell'
-import { getCrosswindServeAsset, injectCrosswindCSS } from '../../src/dev-server/crosswind'
+import { getCssServeAsset, injectCss } from '../../src/dev-server/ts-css'
 
-describe('crosswind + app shell composition (#1749)', () => {
+describe('css + app shell composition (#1749)', () => {
   let dir: string
   let shellPath: string
 
   beforeAll(async () => {
     dir = await mkdtemp(join(tmpdir(), 'stx-1749-'))
     shellPath = join(dir, 'shell.stx')
-    // A shell whose nav uses gap-4 (so the shell's own crosswind pass emits it).
+    // A shell whose nav uses gap-4 (so the shell's own css pass emits it).
     await writeFile(
       shellPath,
       `<!DOCTYPE html>\n<html>\n<head><title>App</title></head>\n<body>\n  <nav class="flex gap-4 p-4">Nav</nav>\n  <main><slot /></main>\n</body>\n</html>\n`,
@@ -42,16 +42,16 @@ describe('crosswind + app shell composition (#1749)', () => {
   async function serve(pageHtml: string): Promise<string> {
     const shell = await processShell(shellPath, {})
     expect(shell).not.toBeNull()
-    // The shell carries its own generated crosswind style — this is the
+    // The shell carries its own generated css style — this is the
     // precondition that used to trigger the early-return bug.
-    expect(shell!.beforeSlot.includes('data-crosswind="generated"')).toBe(true)
+    expect(shell!.beforeSlot.includes('data-css="generated"')).toBe(true)
     const composed = composeShellWithPage(shell!, pageHtml)
-    return injectCrosswindCSS(composed)
+    return injectCss(composed)
   }
 
-  it("emits the page's grid utilities even though the shell pre-injected crosswind", async () => {
+  it("emits the page's grid utilities even though the shell pre-injected css", async () => {
     const out = await serve('<div class="grid grid-cols-6 gap-4">cards</div>')
-    const css = (out.match(/<style data-crosswind="generated">[\s\S]*?<\/style>/g) || []).join('')
+    const css = (out.match(/<style data-css="generated">[\s\S]*?<\/style>/g) || []).join('')
     // The page's own utilities must be present...
     expect(css).toMatch(/\.grid\s*\{[^}]*display:\s*grid/)
     expect(css).toMatch(/grid-template-columns/)
@@ -61,7 +61,7 @@ describe('crosswind + app shell composition (#1749)', () => {
 
   it('emits exactly one generated style with a single Preflight reset', async () => {
     const out = await serve('<div class="grid grid-cols-3">x</div>')
-    const tags = out.match(/<style data-crosswind="generated">/g) || []
+    const tags = out.match(/<style data-css="generated">/g) || []
     expect(tags.length).toBe(1)
     // Preflight (box-sizing reset) must appear once, not duplicated.
     const resets = out.match(/box-sizing:\s*border-box/g) || []
@@ -69,24 +69,24 @@ describe('crosswind + app shell composition (#1749)', () => {
   })
 
   it('registers content-addressed CSS in serve mode', async () => {
-    const out = await injectCrosswindCSS(
+    const out = await injectCss(
       '<html><head></head><body><div class="flex gap-4">x</div></body></html>',
       undefined,
       true,
     )
-    const match = out.match(/href="\/_stx\/crosswind\.([a-f0-9]{16})\.css"/)
+    const match = out.match(/href="\/_stx\/css\.([a-f0-9]{16})\.css"/)
 
     expect(match).not.toBeNull()
-    expect(out).not.toContain('<style data-crosswind="generated">')
+    expect(out).not.toContain('<style data-css="generated">')
 
     /*
      * Whitespace-insensitive: this asserts that the utility COMPILED, and
-     * whether the output is minified is decided by a crosswind config found
+     * whether the output is minified is decided by a css config found
      * relative to the working directory. The same correct CSS satisfied
      * `'display: flex'` from the repo root and failed from `packages/stx` -
      * where this package's own `test` script runs - on `display:flex`.
      */
-    const served = getCrosswindServeAsset(match![1]!).replace(/\s+/g, '')
+    const served = getCssServeAsset(match![1]!).replace(/\s+/g, '')
     expect(served).toContain('.flex{display:flex')
   })
 })

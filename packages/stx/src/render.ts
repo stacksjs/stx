@@ -58,7 +58,7 @@ export interface RenderOptions {
   wrapInDocument?: boolean
   /** Document title (used when wrapInDocument is true) */
   title?: string
-  /** Whether to auto-inject Crosswind CSS from Tailwind classes. Default: false */
+  /** Whether to auto-inject Css CSS from Tailwind classes. Default: false */
   injectCSS?: boolean
   /**
    * Layout template file path. When set, the page content is rendered first,
@@ -480,14 +480,14 @@ export async function renderTemplateString(
     }
   }
 
-  // Optionally inject Crosswind CSS from Tailwind utility classes
+  // Optionally inject Css CSS from Tailwind utility classes
   if (renderOptions.injectCSS) {
     try {
-      const { injectCrosswindCSS } = await import('./dev-server/crosswind')
-      output = await injectCrosswindCSS(output)
+      const { injectCss } = await import('./dev-server/ts-css')
+      output = await injectCss(output)
     }
     catch {
-      // Crosswind not available, skip CSS injection
+      // Css not available, skip CSS injection
     }
   }
 

@@ -1,5 +1,5 @@
 import type * as vscode from 'vscode'
-import type { CrosswindContext } from './context'
+import type { CssContext } from './context'
 import { extractClassesFromDocument } from './utils/class-matcher'
 import { extractColorFromCSS, isColorClass } from './utils/color-extractor'
 
@@ -8,7 +8,7 @@ import { extractColorFromCSS, isColorClass } from './utils/color-extractor'
  */
 export async function registerColorDecorations(
   vscodeModule: typeof vscode,
-  context: CrosswindContext,
+  context: CssContext,
   extensionContext: vscode.ExtensionContext,
 ): Promise<void> {
   const config = vscodeModule.workspace.getConfiguration('stx.utilityClasses')
@@ -78,7 +78,7 @@ export async function registerColorDecorations(
         }
       }
       catch (error) {
-        console.error(`[Crosswind] Error processing color class "${className}":`, error)
+        console.error(`[ts-css] Error processing color class "${className}":`, error)
       }
     }
 

@@ -1,5 +1,5 @@
 /**
- * One merge for the crosswind config, used by every render path.
+ * One merge for the css config, used by every render path.
  *
  * There were two, and they disagreed (stacksjs/stx#1867). The dev-server path
  * read only `theme.extend` and pinned the result after the user spread, so a
@@ -25,7 +25,7 @@
  * So base and user theme keys deep-merge, and `extend` is passed through
  * untouched for CSSGenerator to apply on top.
  *
- * @module crosswind-config
+ * @module ts-css-config
  */
 
 import { semanticColors, semanticTokenCSS } from './theme-tokens'
@@ -52,7 +52,7 @@ export function deepMergeThemes(target: Dict, source: Dict): Dict {
   return out
 }
 
-export interface MergedCrosswindConfig {
+export interface MergedCssConfig {
   /** Ready to hand to `new CSSGenerator(...)`. */
   config: Dict
   /** Merged safelist, also needed by callers to pre-generate those classes. */
@@ -79,13 +79,13 @@ export interface MergedCrosswindConfig {
 }
 
 /**
- * Merge a project's crosswind config over the package defaults.
+ * Merge a project's css config over the package defaults.
  *
  * `content` and `output` are stx-owned and pinned last: classes come from
  * scanning the rendered page, not from globbing, and the CSS is returned rather
  * than written to disk (#1822).
  */
-export function mergeCrosswindConfig(base: Dict = {}, user: Dict = {}): MergedCrosswindConfig {
+export function mergeCssConfig(base: Dict = {}, user: Dict = {}): MergedCssConfig {
   const baseTheme: Dict = base.theme || {}
   const userTheme: Dict = user.theme || {}
 

@@ -267,10 +267,10 @@ export type { StxPlugin, PluginContext, PluginSetupContext } from './plugin-syst
 
 // These modules are exported first to establish their types
 export * from './render'
-export { extractClassNames, generateCrosswindCSS, getCrosswindServeAsset, injectCrosswindCSS } from './dev-server/crosswind'
+export { extractClassNames, generateCss, getCssServeAsset, injectCss } from './dev-server/ts-css'
 
-// One crosswind merge shared by every render path (#1867)
-export { deepMergeThemes, mergeCrosswindConfig, type MergedCrosswindConfig } from './crosswind-config'
+// One css merge shared by every render path (#1867)
+export { deepMergeThemes, mergeCssConfig, type MergedCssConfig } from './ts-css-config'
 
 // Dev-mode invalidation for the store/composable bundles (#1877)
 export { clearStoreCache, getStoreScript } from './store-loader'

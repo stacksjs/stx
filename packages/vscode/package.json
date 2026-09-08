@@ -80,8 +80,8 @@
         "title": "Stacks: Sort Utility Classes"
       },
       {
-        "command": "crosswind.reload",
-        "title": "Crosswind: Reload Configuration"
+        "command": "css.reload",
+        "title": "Css: Reload Configuration"
       }
     ],
     "iconThemes": [
@@ -592,7 +592,7 @@
           "default": true,
           "description": "Enable autocomplete for utility classes"
         },
-        "crosswind.remToPxRatio": {
+        "css.remToPxRatio": {
           "type": "number",
           "default": 16,
           "description": "Rem to px conversion ratio for hover previews"
@@ -616,7 +616,7 @@
     "theme": "light"
   },
   "dependencies": {
-    "@cwcss/crosswind": "^0.2.19",
+    "@stacksjs/ts-css": "^0.3.1",
     "prettier": "^3.8.1"
   },
   "devDependencies": {

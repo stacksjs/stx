@@ -32,7 +32,7 @@ const dir = join(import.meta.dir, '..', 'fixtures')
 async function render(template: string): Promise<string> {
   const options = { ...defaultConfig, componentsDir: dir } as any
   const out = await processDirectives(template, {}, join(dir, 'probe.stx'), options, new Set<string>())
-  // The injected crosswind <style> and the runtime <script> are not evidence
+  // The injected css <style> and the runtime <script> are not evidence
   // that anything rendered; assert on markup the component itself can emit.
   return out.replace(/<style[\s\S]*?<\/style>/g, '').replace(/<script[\s\S]*?<\/script>/g, '').trim()
 }

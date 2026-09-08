@@ -247,7 +247,7 @@ my-app/
   stores/         ← state management
   public/         ← default publicDir (static assets)
   stx.config.ts
-  crosswind.config.ts  ← auto-discovered next to stx.config.ts
+  css.config.ts  ← auto-discovered next to stx.config.ts
 ```
 
 Minimal config (all defaults):
@@ -274,7 +274,7 @@ export default {
 - `partialsDir` - Partials directory (default: `partials`)
 - `storesDir` - Stores directory (default: `stores`)
 - `publicDir` - Static assets directory (default: `public`)
-- `css` - Path to Crosswind config or inline CSS config (default: auto-discovers `crosswind.config.ts`)
+- `css` - Path to Css config or inline CSS config (default: auto-discovers `css.config.ts`)
 - `envPrefix` - Env var prefix for template exposure (default: `STX_PUBLIC_`)
 - `envFile` - Path to .env file (Bun loads `.env` automatically)
 - `plugins` - Plugin/module array (npm packages, local paths, or `[path, options]` tuples)
@@ -494,7 +494,7 @@ stx doctor [--json]
 
 ## Additional Documentation
 
-- **[Theming](docs/features/theming.md)** — how an app redirects `@stacksjs/components`' colours: crosswind palette override (build time), `stxThemePreset` CSS variables + role tokens (runtime), and what is not migrated yet
+- **[Theming](docs/features/theming.md)** — how an app redirects `@stacksjs/components`' colours: css palette override (build time), `stxThemePreset` CSS variables + role tokens (runtime), and what is not migrated yet
 - **[Lazy Hydration](docs/features/lazy-hydration.md)** — `stx-hydrate` attribute documentation with trigger types and usage examples
 - **[Sidebar Spaces](docs/features/sidebar-spaces.md)** — Arc-style swipeable sidebar scenes: `<Sidebar :spaces>`, per-space color, gestures, and the Craft wrapping
 - **[Deployment](docs/features/deployment.md)** — Deployment guide for static sites and SSR apps
@@ -512,8 +512,8 @@ stx doctor [--json]
 - Use **stx** for templating — use signals/composables in `<script>` or `<script client>` tags
 - Use `<script server>` for server-side data fetching — this is the ONLY script type that runs on the server
 - Bare `<script>` and `<script client>` blocks run client-side. Browser APIs (`localStorage`, `document`, `window`) work here — but **reach for an stx primitive first**; see "Reach for stx primitives before vanilla JS" below for the cheat sheet
-- Use **crosswind** as the default CSS framework which enables standard Tailwind-like utility classes
-- If you see an abundance of custom styling or utility classes in `<style>` blocks, that's wrong — use Crosswind utility classes in the HTML instead. Custom CSS should be rare (only for things Tailwind can't express).
+- Use **css** as the default CSS framework which enables standard Tailwind-like utility classes
+- If you see an abundance of custom styling or utility classes in `<style>` blocks, that's wrong — use Css utility classes in the HTML instead. Custom CSS should be rare (only for things Tailwind can't express).
 - **`:html=` is the framework's `v-html` / `dangerouslySetInnerHTML` equivalent — opt-in raw HTML.** It writes the bound value directly to `innerHTML` with no escaping. Only use it for content you control (server-rendered markdown, sanitizer output). If the value could ever come from user input or an untrusted API, sanitize upstream (`@stacksjs/sanitizer`) or use `:text=` (auto-escapes). When in doubt, `:text=`.
 
 ## Reach for stx primitives before vanilla JS

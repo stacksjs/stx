@@ -150,9 +150,9 @@
           <div class="start-menu-item-icon">⌨️</div>
           <div>Clapp</div>
         </button>
-        <button class="start-menu-item" onclick="window.open('https://github.com/cwcss/crosswind', '_blank')">
+        <button class="start-menu-item" onclick="window.open('https://github.com/cwcss/css', '_blank')">
           <div class="start-menu-item-icon">💨</div>
-          <div>crosswind</div>
+          <div>css</div>
         </button>
         <button class="start-menu-item" onclick="window.open('https://github.com/stacksjs/launchpad', '_blank')">
           <div class="start-menu-item-icon">🚀</div>
