@@ -154,6 +154,34 @@ describe('Accessibility Features', () => {
       expect(violations[0].type).toBe('missing-lang')
     })
 
+    test('should detect a right-to-left lang without dir="rtl"', async () => {
+      const violations = await checkA11y(`<html lang="ar"><body><main>محتوى</main></body></html>`, 'test.stx')
+
+      expect(violations.map(v => v.type)).toContain('missing-dir')
+    })
+
+    test('should detect a right-to-left lang whose dir points the wrong way', async () => {
+      const violations = await checkA11y(`<html lang="he" dir="ltr"><body><main>תוכן</main></body></html>`, 'test.stx')
+
+      expect(violations.map(v => v.type)).toContain('missing-dir')
+    })
+
+    test('should accept a right-to-left lang paired with dir="rtl"', async () => {
+      const violations = await checkA11y(`<html lang="fa" dir="rtl"><body><main>محتوا</main></body></html>`, 'test.stx')
+
+      expect(violations.map(v => v.type)).not.toContain('missing-dir')
+    })
+
+    test('should not ask a left-to-right document for a dir attribute', async () => {
+      // `ltr` is the initial value, so its absence changes nothing — and `ha`
+      // is ordinarily written in Latin, so the language alone is not a signal.
+      for (const lang of ['en', 'de', 'ha', 'ku']) {
+        const violations = await checkA11y(`<html lang="${lang}"><body><main>Content</main></body></html>`, 'test.stx')
+
+        expect(violations.map(v => v.type)).not.toContain('missing-dir')
+      }
+    })
+
     test('should not report issues for accessible content', async () => {
       const html = `
       <html lang="en">

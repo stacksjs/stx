@@ -18,9 +18,11 @@
  * - Form inputs have associated labels
  * - Heading hierarchy is maintained
  * - Document has lang attribute
+ * - A right-to-left lang is paired with dir="rtl"
  */
 import type { CustomDirective, StxOptions } from './types'
 import path from 'node:path'
+import { getLocaleDirection } from './i18n'
 import { resolveStxTargets } from './resolve-stx-targets'
 
 // =============================================================================
@@ -30,6 +32,22 @@ import { resolveStxTargets } from './resolve-stx-targets'
 /**
  * Accessibility violation found during a11y checks
  */
+/**
+ * A document declaring a right-to-left language still lays out left-to-right
+ * unless `dir` says otherwise — `lang` carries no direction of its own. The
+ * result is a page whose text is Arabic or Hebrew but whose columns, list
+ * markers, and form fields all run the wrong way, which is why this is a
+ * violation rather than a style preference.
+ *
+ * Only flagged when the language is actually RTL: a missing `dir` on an
+ * English document is harmless, since `ltr` is the initial value.
+ */
+function rtlLangMissingDir(lang: string | null | undefined, dir: string | null | undefined): boolean {
+  if (!lang || getLocaleDirection(lang) !== 'rtl')
+    return false
+  return !dir || dir.trim().toLowerCase() !== 'rtl'
+}
+
 export interface A11yViolation {
   /** Type/category of violation */
   type: string
@@ -385,6 +403,19 @@ export function checkA11yWithRegex(html: string, _filePath: string): A11yViolati
     })
   }
 
+  // Check 6b: Right-to-left language without dir="rtl"
+  const htmlOpenTag = html.match(/<html\b([^>]*)>/i)
+  if (htmlOpenTag && rtlLangMissingDir(attributeValue(htmlOpenTag[1], 'lang'), attributeValue(htmlOpenTag[1], 'dir'))) {
+    violations.push({
+      type: 'missing-dir',
+      element: htmlOpenTag[0].substring(0, 100),
+      message: `Document language is right-to-left but dir="rtl" is not set`,
+      impact: 'serious',
+      help: 'Add dir="rtl" to the html element so the layout mirrors the text',
+      helpUrl: 'https://www.w3.org/International/questions/qa-html-dir',
+    })
+  }
+
   // Check 7: Tables without headers
   const tableRegex = /<table([^>]*)>([\s\S]*?)<\/table>/gi
   match = tableRegex.exec(html)
@@ -592,6 +623,18 @@ export async function checkA11y(html: string, filePath: string): Promise<A11yVio
         impact: 'serious',
         help: 'Add lang attribute to the html element',
         helpUrl: 'https://web.dev/learn/accessibility/more-html/#language',
+      })
+    }
+
+    // Check 5b: Right-to-left language without dir="rtl"
+    if (htmlElement && rtlLangMissingDir(htmlElement.getAttribute('lang'), htmlElement.getAttribute('dir'))) {
+      violations.push({
+        type: 'missing-dir',
+        element: '<html>',
+        message: `Document language is right-to-left but dir="rtl" is not set`,
+        impact: 'serious',
+        help: 'Add dir="rtl" to the html element so the layout mirrors the text',
+        helpUrl: 'https://www.w3.org/International/questions/qa-html-dir',
       })
     }
 
@@ -873,6 +916,8 @@ export interface A11yAutoFixConfig {
   fixTableHeaders?: boolean
   /** Add lang attribute to html element */
   fixMissingLang?: boolean
+  /** Add dir="rtl" when the html element's lang is a right-to-left language */
+  fixMissingDir?: boolean
   /** Fix positive tabindex values */
   fixPositiveTabindex?: boolean
   /** Fix custom buttons without tabindex */
@@ -887,6 +932,7 @@ const defaultAutoFixConfig: A11yAutoFixConfig = {
   fixMissingFormLabels: true,
   fixTableHeaders: true,
   fixMissingLang: true,
+  fixMissingDir: true,
   fixPositiveTabindex: true,
   fixButtonFocusable: true,
   defaultLang: 'en',
@@ -1029,6 +1075,32 @@ export function autoFixA11y(
           type: 'missing-lang',
           description: `Added lang="${mergedConfig.defaultLang}" to html element`,
           before,
+          after,
+        })
+        return after
+      },
+    )
+  }
+
+  // Fix 4b: Right-to-left lang without dir. Runs after the lang fix so a
+  // document that just had `lang` filled in is judged on its final value.
+  if (mergedConfig.fixMissingDir) {
+    fixed = fixed.replace(
+      /<html([^>]*)>/gi,
+      (match, attrs) => {
+        const lang = attributeValue(attrs, 'lang')
+        if (!rtlLangMissingDir(lang, attributeValue(attrs, 'dir')))
+          return match
+
+        // An existing dir= is wrong rather than absent, so replace it in place
+        // instead of appending a second one the parser would ignore.
+        const after = /\bdir\s*=/i.test(attrs)
+          ? `<html${attrs.replace(/\bdir\s*=\s*(["'])[^"']*\1/i, 'dir="rtl"')}>`
+          : `<html${attrs} dir="rtl">`
+        fixes.push({
+          type: 'missing-dir',
+          description: `Added dir="rtl" to html element (lang="${lang}" is right-to-left)`,
+          before: match,
           after,
         })
         return after
