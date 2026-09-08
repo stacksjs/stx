@@ -1090,16 +1090,24 @@ export function processExpressions(template: string, context: Record<string, any
     }
   })
 
-  // Restore protected <script> blocks
-  // Use a function replacement to avoid $& / $` / $' special patterns
-  for (let i = 0; i < scriptBlocks.length; i++) {
-    output = output.replace(`<!--__STX_SCRIPT_EXPR_${i}__-->`, () => scriptBlocks[i])
-  }
+  // Restore the protected <script> and <style> blocks, one pass each.
+  //
+  // This was a loop with one whole-document replace PER block, so N masked
+  // blocks meant N rebuilds of the page and only the last one was doing work
+  // that had to happen: 3.6MB per render on a component-dense page, where 74
+  // blocks survive to here (#1945). A global replace restores all of them in
+  // one rebuild.
+  //
+  // The FUNCTION form of the replacement is not optional -- a string
+  // replacement would reinterpret $& / $` / $' inside a script body, the bug
+  // fixed in 8ebb172b2a. `?? match` keeps an out-of-range index as the literal
+  // placeholder, which is what the old loop left behind; returning '' instead
+  // would silently delete content.
+  if (scriptBlocks.length > 0)
+    output = output.replace(/<!--__STX_SCRIPT_EXPR_(\d+)__-->/g, (match, i) => scriptBlocks[Number(i)] ?? match)
 
-  // Restore protected <style> blocks
-  for (let i = 0; i < styleBlocks.length; i++) {
-    output = output.replace(`<!--__STX_STYLE_${i}__-->`, () => styleBlocks[i])
-  }
+  if (styleBlocks.length > 0)
+    output = output.replace(/<!--__STX_STYLE_(\d+)__-->/g, (match, i) => styleBlocks[Number(i)] ?? match)
 
   return output
 }
