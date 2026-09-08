@@ -1,5 +1,41 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.281...v0.2.282)
+
+## 💥 Breaking Changes
+
+- refactor!: drop crosswind, resolve CSS through @stacksjs/ts-css ([20cf44a](https://github.com/stacksjs/stx/commit/20cf44a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✨ Features
+
+- **crosswind**: resolve the CSS engine from @stacksjs/ts-css ([1c98a69](https://github.com/stacksjs/stx/commit/1c98a69)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **a11y**: flag a right-to-left lang that is missing dir="rtl" ([9915363](https://github.com/stacksjs/stx/commit/9915363)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **i18n**: resolve text direction from a locale ([eda89a0](https://github.com/stacksjs/stx/commit/eda89a0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **test**: resolve componentsDir relative to the test, not to my laptop ([ca4d00a](https://github.com/stacksjs/stx/commit/ca4d00a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: an HTML tag SHOUTED in caps is an element, not a component ([a69c916](https://github.com/stacksjs/stx/commit/a69c916)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **desktop**: green up typecheck and format:check on main ([dfa8630](https://github.com/stacksjs/stx/commit/dfa8630)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **components**: opt ten components into the fragment cache (#1945) ([c9395e0](https://github.com/stacksjs/stx/commit/c9395e0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **components**: assemble the page once, not once per component tag (#1945) ([b823248](https://github.com/stacksjs/stx/commit/b823248)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **head**: decide the charset hoist without copying the head first (#1945) ([5dc2f3a](https://github.com/stacksjs/stx/commit/5dc2f3a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **evaluator**: compile each expression once, not once per evaluation (#1945) ([e632ef2](https://github.com/stacksjs/stx/commit/e632ef2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **expressions**: restore all masked blocks in one pass, not one per block (#1945) ([eecdeed](https://github.com/stacksjs/stx/commit/eecdeed)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **cloak**: locate a script's closing tag without lower-casing the page (#1945) ([43651be](https://github.com/stacksjs/stx/commit/43651be)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945), [#1730](https://github.com/stacksjs/stx/issues/1730), [#1730](https://github.com/stacksjs/stx/issues/1730))
+
+## 🔧 Chores
+
+- release v0.2.282 ([4af5e66](https://github.com/stacksjs/stx/commit/4af5e66)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.279...v0.2.280)
 
 ## ✨ Features
