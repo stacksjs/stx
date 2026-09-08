@@ -430,6 +430,10 @@ const CONDITIONAL_DIRECTIVE_RE
  * SSR-side additive pass; hand-written x-cloak is preserved (we skip tags
  * that already have it).
  */
+/** Exact closing tags, case-insensitive, matched in place. Global: set lastIndex before every use. */
+const SCRIPT_CLOSE_TAG = /<\/script>/gi
+const STYLE_CLOSE_TAG = /<\/style>/gi
+
 export function addCloakToConditionalDirectives(html: string): string {
   const tagStartRe = /<[a-z][\w-]*/gi
   let result = ''
@@ -447,10 +451,19 @@ export function addCloakToConditionalDirectives(html: string): string {
     // the component-scanner fix in stacksjs/stx#1730. Advance the regex
     // cursor past the matching close tag.
     if (tagName === 'script' || tagName === 'style') {
-      const closeTag = `</${tagName}>`
-      const closeIdx = html.toLowerCase().indexOf(closeTag, tagOpenStart)
-      if (closeIdx !== -1)
-        tagStartRe.lastIndex = closeIdx + closeTag.length
+      // Searched in place. Lower-casing the whole document to locate one
+      // closing tag copied the page once per script and once per style: 3.9MB
+      // per render on a component-dense page (#1945). These match the exact
+      // literal, case-insensitively, which is what the old
+      // toLowerCase().indexOf did -- NOT a whitespace-tolerant `</script >`,
+      // which would start closing skips that stay open today. One regex per
+      // tag name, never a combined alternation: a literal `</style>` inside a
+      // JS string would end a script skip early.
+      const closeRe = tagName === 'script' ? SCRIPT_CLOSE_TAG : STYLE_CLOSE_TAG
+      closeRe.lastIndex = tagOpenStart
+      const close = closeRe.exec(html)
+      if (close !== null)
+        tagStartRe.lastIndex = close.index + close[0].length
       continue
     }
 
