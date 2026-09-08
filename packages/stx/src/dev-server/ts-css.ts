@@ -221,11 +221,16 @@ function findDevCssPaths(): string[] {
 
   // The engine lives under the toolkit package of the ts-css monorepo, whose
   // working-copy directory is still named after the project it grew out of.
+  // The repository moved to stacksjs/ts-css; a working copy cloned before the
+  // move still sits in a directory named after the project it grew out of, so
+  // both spellings are probed.
   const checkouts = [
+    homeDir && path.join(homeDir, 'Code', 'Tools', 'ts-css'),
     homeDir && path.join(homeDir, 'Code', 'Tools', 'crosswind'),
+    homeDir && path.join(homeDir, 'repos', 'stacks-org', 'ts-css'),
     homeDir && path.join(homeDir, 'repos', 'stacks-org', 'crosswind'),
-    path.join(process.cwd(), '..', 'crosswind'),
     path.join(process.cwd(), '..', 'ts-css'),
+    path.join(process.cwd(), '..', 'crosswind'),
   ].filter(Boolean) as string[]
 
   for (const checkout of checkouts) {
