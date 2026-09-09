@@ -96,7 +96,7 @@ jobs:
 
       - name: Attach the extension to the release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: packages/devtools-extension/stacks-devtools-*.zip
         env:
