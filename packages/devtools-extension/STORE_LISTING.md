@@ -101,14 +101,21 @@ DevTools panel; it does not read page content otherwise.
 
 ## Screenshots
 
-`bun run preview` renders the panel against fixture data for clean captures.
-The store wants 1280×800 or 640×400. Worth capturing, in this order:
+Generated — `store-assets/`, five PNGs at 1280×800, upload in this order:
 
-1. The signals/scopes tree with a scope expanded
-2. The reactive graph with a filter applied
-3. The `:if` decision trace
-4. The store panel
-5. The query timeline
+1. `1-signals-tree.png` — the scope tree
+2. `2-reactive-graph.png` — signals and derived values, with set counts and subscribers
+3. `3-if-trace.png` — the `:if` decision trace
+4. `4-store-panel.png` — registered stores and one store's state
+5. `5-query-timeline.png` — the query timeline, including a failed request
+
+Regenerate with `bun run shots`. It renders each view alone (not the whole
+preview page — the carousel shows these at roughly a third size, where a
+full-page dump of every panel is illegible), captures at 1280×800, resamples if
+the display's scale factor inflated the capture, and fails loudly if a PNG is
+not exactly 1280×800. The store accepts 1280×800 or 640×400 and nothing else.
+
+`bun run preview` is the separate, unsized iteration view for working on the UI.
 
 ## Also worth listing
 

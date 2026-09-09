@@ -6,7 +6,7 @@
  */
 import { renderGraph, renderIfTrace, renderMutations, renderQueries, renderScope, renderStats, renderStores, renderTree } from '../src/render'
 
-const tree = [
+export const tree = [
   { scopeId: 'AppShell', tag: 'div', children: [
     { scopeId: 'Header', tag: 'header', children: [] },
     { scopeId: 'CartDrawer', tag: 'aside', children: [
@@ -16,7 +16,7 @@ const tree = [
   { scopeId: 'Footer', tag: 'footer', children: [] },
 ]
 
-const graph = [
+export const graph = [
   { scopeId: 'CartDrawer', nodes: [
     { name: 'items', type: 'signal', value: [{ id: 1 }, { id: 2 }, { id: 3 }], setCount: 7, subscribers: 4 },
     { name: 'total', type: 'derived', value: 59.97, setCount: 0, subscribers: 2 },
@@ -27,29 +27,29 @@ const graph = [
   ] },
 ]
 
-const queries = [
+export const queries = [
   { source: 'useFetch', url: '/api/products?q=shoes', method: 'GET', status: 200, ok: true, ms: 84.3 },
   { source: 'useQuery', url: '/api/cart', method: 'GET', status: 200, ok: true, ms: 41.1 },
   { source: 'useMutation', url: '/api/cart/add', method: 'POST', status: 201, ok: true, ms: 120.6 },
   { source: 'useFetch', url: '/api/reviews/16', method: 'GET', status: 0, ok: false, ms: 5002, error: 'timed out' },
 ]
 
-const ifTrace = [
+export const ifTrace = [
   { scopeId: 'CartDrawer', branches: [':if', ':else'], picked: 0, pickedAttr: ':if' },
   { scopeId: 'Header', branches: [':if', ':else-if', ':else'], picked: 2, pickedAttr: ':else' },
   { scopeId: 'CartItem', branches: [':if'], picked: -1, pickedAttr: null },
 ]
 
-const stats = { signalSets: 42, effectRuns: 117, tracking: true }
+export const stats = { signalSets: 42, effectRuns: 117, tracking: true }
 
-const scope = {
+export const scope = {
   signals: { items: [{ id: 1 }, { id: 2 }], open: true },
   derived: { total: 59.97 },
   values: { currency: 'USD' },
   methods: ['add', 'remove', 'clear'],
 }
 
-const CSS = `
+export const CSS = `
   body { font: 12px/1.5 ui-monospace, monospace; margin: 0; color: #ddd; background: #1e1e1e; }
   h2 { color: #4ec9b0; font-size: 12px; margin: 16px 8px 4px; padding-top: 8px; border-top: 1px solid #333; }
   .out { padding: 4px 8px 8px; }
@@ -73,7 +73,7 @@ const CSS = `
   .pill.bad { background: #4a2326; color: #f48771; }
 `
 
-const views: [string, string][] = [
+export const views: [string, string][] = [
   ['Tree', renderTree(tree)],
   ['Graph', renderGraph(graph)],
   ['Queries', renderQueries(queries)],
@@ -90,11 +90,22 @@ const views: [string, string][] = [
   ['Store (cart) — state', renderScope({ signals: { items: [{ id: 1 }, { id: 2 }], open: true }, derived: { total: 59.97, count: 2 }, methods: ['add', 'remove', 'clear'] })],
 ]
 
-const html = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Stacks DevTools — preview</title><style>${CSS}</style></head>
-<body>${views.map(([t, h]) => `<h2>${t}</h2><div class="out">${h}</div>`).join('\n')}</body></html>`
+/** One panel page in the extension's dark theme. */
+export function page(title: string, body: string): string {
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>${title}</title><style>${CSS}</style></head>
+<body>${body}</body></html>`
+}
 
-const outFile = process.argv[2] || `${import.meta.dir}/../preview.html`
-await Bun.write(outFile, html)
-// eslint-disable-next-line no-console
-console.log(`wrote ${outFile}`)
+// Guarded so gen-store-shots.ts can import the fixtures and the theme without
+// this script writing a file as a side effect of the import.
+if (import.meta.main) {
+  const html = page(
+    'Stacks DevTools — preview',
+    views.map(([t, h]) => `<h2>${t}</h2><div class="out">${h}</div>`).join('\n'),
+  )
+  const outFile = process.argv[2] || `${import.meta.dir}/../preview.html`
+  await Bun.write(outFile, html)
+  // eslint-disable-next-line no-console
+  console.log(`wrote ${outFile}`)
+}

@@ -30,6 +30,7 @@
   "scripts": {
     "build": "bun --bun build.ts",
     "preview": "bun scripts/gen-preview.ts",
+    "shots": "bun scripts/gen-store-shots.ts",
     "test": "bun test",
     "package": "bun --bun build.ts --pack"
   }
