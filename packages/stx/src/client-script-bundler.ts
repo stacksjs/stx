@@ -308,6 +308,40 @@ export function hasUserImports(code: string): boolean {
 }
 
 /**
+ * The file an import specifier actually names, or undefined.
+ *
+ * A specifier rarely carries its extension, so the bare path is tried first
+ * and then the standard JS/TS ones, then `index.*` for a directory. Shared by
+ * the relative and absolute resolvers so both agree on what "this module
+ * exists" means — they disagreed once, and an absolute path to a real module
+ * was silently externalised.
+ */
+function probeModuleFile(basePath: string): string | undefined {
+  const candidates = [
+    basePath,
+    `${basePath}.ts`,
+    `${basePath}.tsx`,
+    `${basePath}.js`,
+    `${basePath}.mjs`,
+    `${basePath}.jsx`,
+    path.join(basePath, 'index.ts'),
+    path.join(basePath, 'index.tsx'),
+    path.join(basePath, 'index.js'),
+    path.join(basePath, 'index.mjs'),
+  ]
+
+  for (const candidate of candidates) {
+    try {
+      if (fs.existsSync(candidate) && fs.statSync(candidate, { throwIfNoEntry: false })?.isFile())
+        return candidate
+    }
+    catch {}
+  }
+
+  return undefined
+}
+
+/**
  * Create the Bun.build plugin that marks stx/stores as external,
  * resolves @/ paths to the project root, and — critically — rebases
  * `./` and `../` imports against the original `<script client>`
@@ -336,26 +370,7 @@ function createBundlePlugin(
     // module's own dirname — only the entry's relatives get rebased.
     const fromDir = importer === tmpEntry ? templateDir : path.dirname(importer)
     const resolved = path.resolve(fromDir, request)
-    const candidates = [
-      resolved,
-      `${resolved}.ts`,
-      `${resolved}.tsx`,
-      `${resolved}.js`,
-      `${resolved}.mjs`,
-      `${resolved}.jsx`,
-      path.join(resolved, 'index.ts'),
-      path.join(resolved, 'index.tsx'),
-      path.join(resolved, 'index.js'),
-      path.join(resolved, 'index.mjs'),
-    ]
-    for (const candidate of candidates) {
-      try {
-        if (fs.existsSync(candidate) && fs.statSync(candidate, { throwIfNoEntry: false })?.isFile())
-          return candidate
-      }
-      catch {}
-    }
-    return resolved
+    return probeModuleFile(resolved) ?? resolved
   }
 
   return {
@@ -380,9 +395,27 @@ function createBundlePlugin(
       // browser bundle so the application's HTTP server can resolve them.
       // Preserve genuine absolute filesystem imports when the target exists.
       build.onResolve({ filter: /^\// }, (args) => {
-        if (fs.existsSync(args.path))
-          return { path: args.path }
+        // Extensions are probed, not just the literal path. A specifier
+        // written `../composables/useApp` and pinned to an absolute path (see
+        // `absolutizeTemplateImports`, which is how a layout's imports survive
+        // being merged into a page) names a real module with no extension on
+        // it. Matching only the exact path left those marked external, so the
+        // browser was handed a filesystem path to fetch — a 404 at runtime in
+        // place of a resolution error at build time.
+        const resolved = probeModuleFile(args.path)
+        if (resolved) {
+          // Not the temp entry. Bun resolves the entrypoint through this hook
+          // too, and it is an absolute path that exists — recording it would
+          // put a file whose name changes every build into the cache-key
+          // inputs, so no cached bundle could ever be reused.
+          if (resolved !== tmpEntry)
+            inputFiles.add(resolved)
+          return { path: resolved }
+        }
 
+        // Browser-rooted URLs belong to the host application, not the local
+        // filesystem: `/__deps/charts.js` stays in the bundle for the app's
+        // HTTP server to answer.
         return {
           path: args.path,
           external: true,

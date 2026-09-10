@@ -78,6 +78,7 @@ import { importOnce } from './lazy-module'
 // Re-export public API from extracted modules (preserves backwards compatibility)
 export { injectRouterScript } from './runtime-injection'
 import { injectSignalsRuntime, injectTooltipRuntime, outputNeedsSignalsRuntime, pageShipsSignalsRuntime } from './runtime-injection'
+import { absolutizeTemplateImports } from './import-rebase'
 export { processJsonDirective, processOnceDirective } from './misc-directives'
 export { validateClientScript } from './script-validation'
 
@@ -1211,7 +1212,7 @@ async function processDirectivesInternal(
       }
 
       // Read the layout content with error handling
-      const layoutContent = await safeExecuteAsync(
+      let layoutContent = await safeExecuteAsync(
         () => Bun.file(layoutFullPath).text(),
         '',
         () => {
@@ -1224,6 +1225,20 @@ async function processDirectivesInternal(
           )
         },
       )
+
+      // The layout's own relative imports, pinned to the layout's directory
+      // before its content is merged into the page.
+      //
+      // Everything below composes the layout INTO the page, after which there
+      // is a single file path for the result — the page's, chosen a few
+      // hundred lines down so page-authored `./` imports resolve. That choice
+      // can only be right about one of the two: a layout's
+      // `../composables/useFoo` was then resolved from the page's directory
+      // and failed, quietly, for every page using that layout. Absolute
+      // specifiers resolve identically from either directory, so neither side
+      // has to lose — and nested layouts stay correct however many times their
+      // content is moved.
+      layoutContent = absolutizeTemplateImports(layoutContent, layoutFullPath)
 
       // Check if the layout itself extends another layout (@layout or @extends)
       const nestedLayoutMatch = layoutContent.match(/@(?:layout|extends)\(\s*['"]([^'"]+)['"]\s*\)/)
