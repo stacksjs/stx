@@ -1,5 +1,28 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.284...v0.2.285)
+
+## 🐛 Bug Fixes
+
+- **bundler**: resolve a layout's relative imports against the layout ([49629eb](https://github.com/stacksjs/stx/commit/49629eb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **css**: find a ts-css checkout under its new repository name ([f4a4370](https://github.com/stacksjs/stx/commit/f4a4370)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.285 ([82d639b](https://github.com/stacksjs/stx/commit/82d639b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **devtools-extension**: generate the five store screenshots (#1754) ([245d94c](https://github.com/stacksjs/stx/commit/245d94c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1754](https://github.com/stacksjs/stx/issues/1754), [#1754](https://github.com/stacksjs/stx/issues/1754), [#1754](https://github.com/stacksjs/stx/issues/1754))
+- **deps**: update softprops/action-gh-release to v3 ([9362861](https://github.com/stacksjs/stx/commit/9362861)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1900](https://github.com/stacksjs/stx/issues/1900))
+- **deps**: update dependency markdown-it to 15.0.1 (updated) (#1790) ([a1376c0](https://github.com/stacksjs/stx/commit/a1376c0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1790](https://github.com/stacksjs/stx/issues/1790), [#1790](https://github.com/stacksjs/stx/issues/1790))
+- **deps**: update dependency isomorphic-dompurify to 4.2.0 (updated) (#1950) ([c05411f](https://github.com/stacksjs/stx/commit/c05411f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_ ([#1950](https://github.com/stacksjs/stx/issues/1950), [#1950](https://github.com/stacksjs/stx/issues/1950))
+- **deps**: update actions/cache action to v6 (#1764) ([11b83a7](https://github.com/stacksjs/stx/commit/11b83a7)) _(by [renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot]))_ ([#1764](https://github.com/stacksjs/stx/issues/1764), [#1764](https://github.com/stacksjs/stx/issues/1764))
+- **deps**: update actions/checkout action to v7 (#1761) ([9e1ce5e](https://github.com/stacksjs/stx/commit/9e1ce5e)) _(by [renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot]))_ ([#1761](https://github.com/stacksjs/stx/issues/1761), [#1761](https://github.com/stacksjs/stx/issues/1761))
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _[renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot])_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.283...v0.2.284)
 
 ## 🔧 Chores
