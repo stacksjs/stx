@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.285...v0.2.286)
+
+## 🐛 Bug Fixes
+
+- **bundler**: a name declared twice must not blank the page ([da9e2a2](https://github.com/stacksjs/stx/commit/da9e2a2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.286 ([80b65d5](https://github.com/stacksjs/stx/commit/80b65d5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.284...v0.2.285)
 
 ## 🐛 Bug Fixes
