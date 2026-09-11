@@ -729,7 +729,19 @@ async function buildBundle(
   // We strip the exports from the output after bundling. Skip names that are
   // already exported — re-exporting them causes `Multiple exports with the same
   // name` errors at bundle time.
-  const declNames: string[] = []
+  //
+  // A Set, because the same name can legitimately be written twice in one
+  // script: a top-level binding and a local inside a callback, or two locals
+  // in two different functions. The scan cannot tell those apart — see the
+  // note on indentation below — so it finds both, and a list with a name in it
+  // twice is exactly the `Multiple exports with the same name` error this
+  // comment warns about, arrived at from the other direction.
+  //
+  // The consequence is not a warning. The bundle fails, the raw `import`
+  // survives into the inline script, the browser throws `Cannot use import
+  // statement outside a module`, and the page renders blank — a whole page
+  // lost to one repeated `const`.
+  const declNames = new Set<string>()
   // `[ \t]*` after the line anchor is load-bearing. A `<script client>` body
   // is indented inside its template, and only some call paths dedent it before
   // getting here — the signal-aware path transpiles first, the plain one does
@@ -745,15 +757,15 @@ async function buildBundle(
     if (dm[1]) continue // already exported — don't duplicate
     if (dm[2]) {
       // Destructured: const { a, b: renamed, c = 1, ...rest } = ...
-      dm[2].split(',').forEach((n) => { const t = destructuredLocalName(n); if (t) declNames.push(t) })
+      dm[2].split(',').forEach((n) => { const t = destructuredLocalName(n); if (t) declNames.add(t) })
     }
-    else if (dm[3]) declNames.push(dm[3])
+    else if (dm[3]) declNames.add(dm[3])
   }
   while ((dm = funcRegex.exec(code)) !== null) {
     if (dm[1]) continue // already exported
-    declNames.push(dm[2])
+    declNames.add(dm[2])
   }
-  const exportLine = declNames.length > 0 ? `\nexport { ${declNames.join(', ')} }` : ''
+  const exportLine = declNames.size > 0 ? `\nexport { ${[...declNames].join(', ')} }` : ''
 
   await Bun.write(tmpEntry, code + exportLine)
 
@@ -880,7 +892,7 @@ ${publicAssignments}`.trim()
     // Not caching it is the important half: an empty bundle written to disk
     // outlives whatever transient condition caused it, and every later request
     // is served the same emptiness with no error to explain it.
-    if (declNames.length > 0 && exposedBindings.length === 0) {
+    if (declNames.size > 0 && exposedBindings.length === 0) {
       console.warn(
         `[stx:bundler] dropped every binding for ${path.basename(filePath)} (${hash}); `
         + 'serving the unbundled source and not caching this result',
