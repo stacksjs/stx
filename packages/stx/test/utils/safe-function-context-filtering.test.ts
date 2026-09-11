@@ -39,6 +39,19 @@ describe('createSafeFunction — context key filtering', () => {
     expect(fn(2, 3)).toBe(5)
   })
 
+  it('preserves caller value positions when canonicalising context keys', () => {
+    const reverse = createSafeFunction('alpha + beta', ['beta', 'alpha'])
+    const forward = createSafeFunction('alpha + beta', ['alpha', 'beta'])
+
+    expect(reverse(2, 40)).toBe(42)
+    expect(forward(40, 2)).toBe(42)
+  })
+
+  it('keeps projected values aligned after retrying a missing identifier', () => {
+    const fn = createSafeFunction('missing ? missing : alpha + beta', ['beta', 'data-id', 'alpha'])
+    expect(fn(2, 'row-1', 40)).toBe(42)
+  })
+
   it('drops `class` (reserved word) — common HTML attribute name', () => {
     const fn = createSafeFunction('disabled', ['disabled', 'class', 'for'])
     expect(fn(true, 'btn-primary', 'email-input')).toBe(true)

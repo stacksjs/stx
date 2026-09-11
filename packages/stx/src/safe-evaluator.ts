@@ -649,15 +649,22 @@ export function createSafeFunction(expression: string, contextKeys: string[]): (
   // no syntax to read `class` or `passed-class` as identifiers in user
   // code — so dropping is both safe and what callers expect.
   const validIdent = /^[A-Za-z_$][\w$]*$/
-  const validIndices: number[] = []
-  const filteredKeys: string[] = []
+  const validEntries: Array<{ key: string, index: number }> = []
   for (let i = 0; i < contextKeys.length; i++) {
     const key = contextKeys[i]
     if (!validIdent.test(key)) continue
     if (RESERVED_PARAM_NAMES.has(key)) continue
-    validIndices.push(i)
-    filteredKeys.push(key)
+    validEntries.push({ key, index: i })
   }
+
+  // Object insertion order is not part of an expression's semantics, but it
+  // used to be part of the compile-cache key. Component contexts containing
+  // the same bindings in different orders therefore produced separate JSC
+  // code objects. Canonicalise the parameter order and project the caller's
+  // positional values back onto it so equivalent scopes share one compile.
+  validEntries.sort((a, b) => a.key.localeCompare(b.key))
+  const filteredKeys = validEntries.map(entry => entry.key)
+  const validIndices = validEntries.map(entry => entry.index)
 
   const buildFunc = (extraParams: string[]): (...args: unknown[]) => unknown =>
     compileFunctionBody([...filteredKeys, ...extraParams], `
@@ -677,7 +684,8 @@ catch (e) {
   let func = buildFunc([])
 
   // Fast path when nothing was filtered: skip the value-projection pass.
-  if (filteredKeys.length === contextKeys.length) {
+  const alreadyCanonical = validEntries.every((entry, index) => entry.index === index)
+  if (filteredKeys.length === contextKeys.length && alreadyCanonical) {
     return wrapWithMissingIdentifierRetry(func, filteredKeys, buildFunc)
   }
 
@@ -755,8 +763,10 @@ function wrapWithMissingIdentifierRetry(
         }
         knownNames.add(missingName)
         extraParams.push(missingName)
-        func = buildFunc(extraParams)
-        onRebuild?.(extraParams)
+        if (onRebuild)
+          onRebuild(extraParams)
+        else
+          func = buildFunc(extraParams)
         // `args` doesn't include a value for the newly-added trailing
         // param, so it's naturally `undefined` on the next call — retry.
       }
