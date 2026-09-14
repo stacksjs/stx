@@ -655,6 +655,13 @@ const VOID_ELEMENT_TAGS = new Set([
   'link', 'meta', 'param', 'source', 'track', 'wbr',
 ])
 
+// Raw-text markers used by findElementEnd. Sticky/global matching keeps the
+// scan on the original document; lower-casing the whole rendered page once per
+// literal conditional or client loop was a full-size temporary copy (#1945).
+const RAW_TEXT_OPEN_TAG = /<(script|style)\b/iy
+const SCRIPT_CLOSE_PREFIX = /<\/script/gi
+const STYLE_CLOSE_PREFIX = /<\/style/gi
+
 /**
  * Find the end index of `<tag ...>...</tag>` whose start tag begins at
  * `output[startIdx]`. Tracks nested same-tag depth so
@@ -672,7 +679,6 @@ const VOID_ELEMENT_TAGS = new Set([
 function findElementEnd(output: string, startIdx: number, tag: string, startTagEnd: number): number {
   if (VOID_ELEMENT_TAGS.has(tag.toLowerCase())) return startTagEnd
   const lower = tag.toLowerCase()
-  const lowerOut = output.toLowerCase()
   const len = output.length
   let depth = 1
   let i = startTagEnd
@@ -691,7 +697,8 @@ function findElementEnd(output: string, startIdx: number, tag: string, startTagE
 
     // Raw-text element (<script> / <style>) — skip its entire body, since a
     // `</tag>` inside it is text, not markup.
-    const raw = /^<(script|style)\b/i.exec(output.slice(i, i + 8))
+    RAW_TEXT_OPEN_TAG.lastIndex = i
+    const raw = RAW_TEXT_OPEN_TAG.exec(output)
     if (raw) {
       const startGt = output.indexOf('>', i)
       if (startGt === -1) return -1
@@ -706,9 +713,11 @@ function findElementEnd(output: string, startIdx: number, tag: string, startTagE
         i = startGt + 1
         continue
       }
-      const close = lowerOut.indexOf(`</${raw[1].toLowerCase()}`, i)
-      if (close === -1) return -1
-      const gt = output.indexOf('>', close)
+      const closeRe = raw[1].toLowerCase() === 'script' ? SCRIPT_CLOSE_PREFIX : STYLE_CLOSE_PREFIX
+      closeRe.lastIndex = i
+      const close = closeRe.exec(output)
+      if (close === null) return -1
+      const gt = output.indexOf('>', close.index)
       if (gt === -1) return -1
       i = gt + 1
       continue

@@ -285,4 +285,9 @@ describe('preEvalLiteralReactiveIfs — self-closed <script/> / <style/> in a fa
   it('a normal <script>…</script> with a body still tracks its real close tag', () => {
     expect(preEvalLiteralReactiveIfs('<div :if="false"><script>let a = 1</script></div>after')).toBe('after')
   })
+
+  it('matches raw-text tags case-insensitively without lower-casing the page', () => {
+    const html = '<div :if="false"><ScRiPt>const s = "</div>"</sCrIpT></div>after'
+    expect(preEvalLiteralReactiveIfs(html)).toBe('after')
+  })
 })
