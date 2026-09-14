@@ -1932,10 +1932,19 @@ else {
       while (rangeEnd < output.length && /\s/.test(output[rangeEnd])) rangeEnd++
       serverRemoveRanges.push({ start: script.start, end: rangeEnd })
     }
-    // Remove in reverse order to preserve indices
-    for (let ri = serverRemoveRanges.length - 1; ri >= 0; ri--) {
-      const { start, end } = serverRemoveRanges[ri]
-      output = output.substring(0, start) + output.substring(end)
+    // Preserve all non-server ranges in one forward rebuild. Removing each
+    // script separately rebuilt the remaining document once per script, so a
+    // page with N server blocks materialized N page-sized strings (#1945).
+    if (serverRemoveRanges.length > 0) {
+      const kept = new Array<string>(serverRemoveRanges.length + 1)
+      let cursor = 0
+      for (let ri = 0; ri < serverRemoveRanges.length; ri++) {
+        const { start, end } = serverRemoveRanges[ri]
+        kept[ri] = output.slice(cursor, start)
+        cursor = end
+      }
+      kept[serverRemoveRanges.length] = output.slice(cursor)
+      output = kept.join('')
     }
   }
 
