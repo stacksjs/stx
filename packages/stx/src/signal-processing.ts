@@ -1238,6 +1238,97 @@ function dedupeTopLevelDeclarations(code: string): string {
   return out.join('')
 }
 
+interface SignalScriptRange {
+  start: number
+  end: number
+}
+
+const SETUP_MARKER_SKIP_TAGS = new Set(['script', 'style', 'html', 'head', 'meta', 'link', 'title', '!doctype'])
+
+function overlapsSignalScript(start: number, end: number, ranges: readonly SignalScriptRange[]): boolean {
+  for (const range of ranges) {
+    if (range.start >= end)
+      return false
+    if (range.end > start)
+      return true
+  }
+  return false
+}
+
+function hasTextOutsideSignalScripts(template: string, text: string, ranges: readonly SignalScriptRange[]): boolean {
+  let from = 0
+  while (from < template.length) {
+    const index = template.indexOf(text, from)
+    if (index === -1)
+      return false
+    if (!overlapsSignalScript(index, index + text.length, ranges))
+      return true
+    from = index + text.length
+  }
+  return false
+}
+
+/** Locate the insertion point before `>` using the same matching rules as the old replace pass. */
+function findSetupMarkerInsertion(template: string, ranges: readonly SignalScriptRange[]): number | null {
+  // Preserve the existing case-sensitive body preference. When any lowercase
+  // `<body` text remains, the old path attempted only the body replacement and
+  // did not fall back to another element if that text was malformed.
+  if (hasTextOutsideSignalScripts(template, '<body', ranges)) {
+    const bodyTagRe = new RegExp(`<body(${TAG_ATTR_RUN})>`, 'g')
+    let match: RegExpExecArray | null
+    while ((match = bodyTagRe.exec(template)) !== null) {
+      if (!overlapsSignalScript(match.index, match.index + match[0].length, ranges))
+        return match.index + match[0].length - 1
+    }
+    return null
+  }
+
+  const openingTagRe = new RegExp(`<([a-zA-Z][a-zA-Z0-9-]*)\\b(${TAG_ATTR_RUN})>`, 'gi')
+  let match: RegExpExecArray | null
+  while ((match = openingTagRe.exec(template)) !== null) {
+    if (overlapsSignalScript(match.index, match.index + match[0].length, ranges))
+      continue
+    if (SETUP_MARKER_SKIP_TAGS.has(match[1].toLowerCase()))
+      continue
+    return match.index + match[0].length - 1
+  }
+
+  return null
+}
+
+/** Remove known script ranges and insert the owner marker in one materializing rebuild. */
+function rebuildSetupOwner(
+  template: string,
+  ranges: readonly SignalScriptRange[],
+  markerAt: number | null,
+  setupFnName: string,
+): string {
+  const chunks: string[] = []
+  const marker = ` data-stx="${setupFnName}"`
+  let cursor = 0
+  let markerWritten = false
+
+  const appendThrough = (end: number): void => {
+    if (markerAt !== null && !markerWritten && markerAt >= cursor && markerAt <= end) {
+      chunks.push(template.slice(cursor, markerAt), marker, template.slice(markerAt, end))
+      markerWritten = true
+    }
+    else {
+      chunks.push(template.slice(cursor, end))
+    }
+  }
+
+  for (const range of ranges) {
+    if (range.start < cursor)
+      continue
+    appendThrough(range.start)
+    cursor = range.end
+  }
+  appendThrough(template.length)
+
+  return chunks.join('')
+}
+
 export async function processScriptSetup(template: string, filePath?: string, serverData?: Record<string, unknown>): Promise<{ output: string, setupCode: string | null }> {
   // Walk the template like a browser: find each `<script>` opening tag, then
   // the FIRST `</script>` that closes it — don't re-scan for nested `<script`
@@ -1263,7 +1354,7 @@ export async function processScriptSetup(template: string, filePath?: string, se
   // old first-script-only behavior that left subsequent signal scripts for
   // processClientScript to stx.mount() wrap — which set __stx_scope on the
   // sibling <main> and blocked processElement from walking page content.
-  const signalScripts: { fullMatch: string, attrs: string, content: string, bundled?: string }[] = []
+  const signalScripts: { content: string, start: number, end: number, bundled?: string }[] = []
 
   const { hasUserImports, bundleClientScript } = await importOnce('stx/client-script-bundler', () => import('./client-script-bundler'))
 
@@ -1273,7 +1364,7 @@ export async function processScriptSetup(template: string, filePath?: string, se
       content = transpileTypeScript(content)
     }
     if (SIGNAL_API_RE.test(content)) {
-      signalScripts.push({ fullMatch: s.fullMatch, attrs: s.attrs, content })
+      signalScripts.push({ content, start: s.start, end: s.end })
       continue
     }
 
@@ -1293,7 +1384,7 @@ export async function processScriptSetup(template: string, filePath?: string, se
         projectRoot: process.cwd(),
       })
       if (SIGNAL_API_RE.test(bundled))
-        signalScripts.push({ fullMatch: s.fullMatch, attrs: s.attrs, content, bundled })
+        signalScripts.push({ content, start: s.start, end: s.end, bundled })
     }
     catch {
       // A script that cannot be bundled is not a signal script we can prove.
@@ -1387,33 +1478,11 @@ window.__stx_latestSetup=${setupFnName};
 if(window.stx)window.stx._latestSetup=${setupFnName};
 </script>`
 
-  // Remove ALL matched original scripts, then tag body with data-stx so the
-  // runtime invokes the merged setup once on DOMContentLoaded.
-  let output = template
-  for (const s of signalScripts) {
-    output = output.split(s.fullMatch).join('')
-  }
-
-  if (output.includes('<body')) {
-    output = output.replace(new RegExp(`<body(${TAG_ATTR_RUN})>`), `<body$1 data-stx="${setupFnName}">`)
-  }
-  else {
-    // Mark the first *non-skip* top-level element so the client runtime's
-    // startup walk reaches the real content on a bare page (no <body>). The
-    // regex must be GLOBAL: with a non-global regex `.replace()` inspects only
-    // the first tag and stops, so a page that opens with a skip-tag (a leading
-    // <style> or <script>, e.g. `<script client>…</script><style>…</style>
-    // <div><form @submit>…`) never gets a marker and its directives are never
-    // hydrated. The `marked` guard keeps us to just the first eligible element.
-    const skipTags = ['script', 'style', 'html', 'head', 'meta', 'link', 'title', '!doctype']
-    let marked = false
-    output = output.replace(new RegExp(`<([a-zA-Z][a-zA-Z0-9-]*)\\b(${TAG_ATTR_RUN})>`, 'gi'), (match, tag, attrs) => {
-      if (marked || skipTags.includes(tag.toLowerCase()))
-        return match
-      marked = true
-      return `<${tag}${attrs} data-stx="${setupFnName}">`
-    })
-  }
+  // The scanner already knows every source range. Remove those exact scripts
+  // positionally and add the owner marker during the same rebuild, instead of
+  // split+join once per script followed by a second page-wide replace (#1945).
+  const markerAt = findSetupMarkerInsertion(template, signalScripts)
+  const output = rebuildSetupOwner(template, signalScripts, markerAt, setupFnName)
 
   return { output, setupCode }
 }

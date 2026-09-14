@@ -796,6 +796,34 @@ describe('processScriptSetup — multi-script merge', () => {
     expect(result.output).toMatch(/<div class="wrap" data-stx="__stx_setup_/)
     expect(result.output).not.toMatch(/<style[^>]*data-stx=/)
   })
+
+  it('ignores body-looking text inside a removed signal script', async () => {
+    const template = `<script client>
+      const example = '<body class="fake">'
+      const count = state(0)
+    </script><body class="real"><main></main></body>`
+    const result = await processScriptSetup(template, '/app/page.stx')
+
+    expect(result.output).toMatch(/^<body class="real" data-stx="__stx_setup_/)
+    expect(result.output).not.toContain('class="fake"')
+  })
+
+  it('preserves an identical script literal outside the scanned source range', async () => {
+    const script = '<script client>const count = state(0)</script>'
+    const result = await processScriptSetup(`<!--${script}-->${script}<body><main></main></body>`, '/app/page.stx')
+    const setupName = result.setupCode?.match(/function (__stx_setup_\w+)\(/)?.[1]
+
+    expect(setupName).toBeTruthy()
+    expect(result.output).toBe(`<!--${script}--><body data-stx="${setupName}"><main></main></body>`)
+  })
+
+  it('preserves mixed-case body markup while adding the owner marker', async () => {
+    const template = '<script client>const count = state(0)</script><BODY class="page"><main></main></BODY>'
+    const result = await processScriptSetup(template, '/app/page.stx')
+
+    expect(result.output).toMatch(/^<BODY class="page" data-stx="__stx_setup_/)
+    expect(result.output).toEndWith('</BODY>')
+  })
 })
 
 describe('processSignals — body ownership marker', () => {
