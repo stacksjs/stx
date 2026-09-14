@@ -276,6 +276,11 @@ export function templateHasReactiveContext(template: string, filePath?: string):
   // sample is text, and counting it shipped the runtime to pages that never
   // use it (#1835).
   const live = blankInertHtmlRegions(template)
+  return liveTemplateHasReactiveContext(live, filePath)
+}
+
+/** Test a template whose inert text regions have already been blanked. */
+function liveTemplateHasReactiveContext(live: string, filePath?: string): boolean {
   if (TEMPLATE_REACTIVE_PATTERNS.some(pattern => pattern.test(live)))
     return true
   // Every reactive runtime global, not just the handful spelled out above.
@@ -321,8 +326,10 @@ export function templateNeedsRuntime(template: string, filePath?: string): boole
   if (!template)
     return false
   // Blanked for the same reason as above: `@click="go()"` inside a code sample
-  // is documentation, not a handler (#1835).
-  return HAS_EVENT_HANDLER.test(blankInertHtmlRegions(template)) || templateHasReactiveContext(template, filePath)
+  // is documentation, not a handler (#1835). Share this copy with the reactive
+  // context test instead of rebuilding the complete page a second time (#1945).
+  const live = blankInertHtmlRegions(template)
+  return HAS_EVENT_HANDLER.test(live) || liveTemplateHasReactiveContext(live, filePath)
 }
 
 /**
@@ -426,6 +433,8 @@ export function runtimeHandledXAttrsLiteral(): string {
  */
 export function blankInertHtmlRegions(html: string): string {
   if (!html)
+    return html
+  if (!html.includes('<!--') && !/<(?:pre|code)\b/i.test(html))
     return html
 
   const blankText = (segment: string): string =>

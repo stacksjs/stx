@@ -113,6 +113,13 @@ describe('blankInertHtmlRegions', () => {
     expect(blankInertHtmlRegions(html)).toBe(html)
   })
 
+  it('recognizes inert regions case-insensitively on the fast-path guard', () => {
+    const html = '<PRE><CODE>&lt;div :if="open"&gt;</CODE></PRE>'
+
+    expect(blankInertHtmlRegions(html)).not.toContain(':if=')
+    expect(templateHasReactiveContext(html)).toBe(false)
+  })
+
   it('preserves length, so nothing downstream shifts', () => {
     for (const sample of [
       '<pre><code>&lt;div :if="x"&gt;</code></pre>',
