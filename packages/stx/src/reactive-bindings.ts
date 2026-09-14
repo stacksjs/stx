@@ -74,6 +74,13 @@ function hasStoreRefs(expression: string): boolean {
  * Detects {{ $store.value }} patterns in attribute values
  */
 export function processReactiveBindings(html: string): ProcessedBindings {
+  // Both tokens are required by every binding this pass can consume. Most
+  // rendered pages have ordinary tags but no store interpolation; avoid a
+  // whole-document tag replacement whose callbacks all return unchanged text.
+  if (!html.includes('{{') || !/\$\w+\./.test(html)) {
+    return { html, bindings: [], stores: new Set<string>() }
+  }
+
   const bindings: BindingInfo[] = []
   const stores = new Set<string>()
 
