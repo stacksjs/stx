@@ -550,7 +550,7 @@ export async function processDirectives(
         result = ensureDocumentShell(result, headConfig, {
           ...(titleIsHtml && { titleIsHtml: true }),
           ...((options as any).app?.colorMode && { colorMode: (options as any).app.colorMode }),
-        })
+        }, alreadyShelled)
         if (alreadyShelled) {
           result = injectConfigHeadTags(result, baseHeadConfig)
           // …and the same for <html> attributes: generateDocumentShell was a

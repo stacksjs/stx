@@ -40,6 +40,16 @@ describe('Document Shell', () => {
       const html = `<style>body{margin:0}</style><html><body></body></html>`
       expect(hasDocumentShell(html)).toBe(true)
     })
+
+    it('steps over mixed-case script and style preambles', () => {
+      const html = '<STYLE>body{margin:0}</STYLE><ScRiPt>boot()</sCrIpT><!doctype html><html></html>'
+      expect(hasDocumentShell(html)).toBe(true)
+    })
+
+    it('does not widen the exact raw-text close-tag contract', () => {
+      const html = '<style>body{margin:0}</style ><html><body></body></html>'
+      expect(hasDocumentShell(html)).toBe(false)
+    })
   })
 
   describe('generateDocumentShell', () => {
@@ -120,6 +130,11 @@ describe('Document Shell', () => {
       const doc = '<!DOCTYPE html><html><head></head><body><h1>Hello</h1></body></html>'
       const result = ensureDocumentShell(doc)
       expect(result).toBe(doc)
+    })
+
+    it('accepts a shell decision the caller already made', () => {
+      const html = '<h1>Already classified</h1>'
+      expect(ensureDocumentShell(html, {}, {}, true)).toBe(html)
     })
   })
 

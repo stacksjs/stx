@@ -555,18 +555,29 @@ ${bodyParts.join('\n')}
  * complete document, so leaning towards "yes, it's a document" is the safe
  * direction. Here a false positive shreds a fragment, so it leans the other way.
  */
+// Sticky prefix matchers inspect the original document at `lastIndex`. The old
+// scanner sliced the whole remaining page for every prefix token, then
+// lower-cased the complete page once per leading script/style just to find its
+// close tag. On a rendered page those temporary strings are much larger than
+// the handful of bytes this predicate needs to inspect (#1945).
+const DOCUMENT_PREFIX_WHITESPACE = /\s+/y
+const DOCUMENT_PREFIX_PREAMBLE = /<(script|style)\b[^>]*>/iy
+const DOCUMENT_PREFIX_SCRIPT_CLOSE = /<\/script>/gi
+const DOCUMENT_PREFIX_STYLE_CLOSE = /<\/style>/gi
+const DOCUMENT_PREFIX_DOCTYPE = /<!DOCTYPE\b/iy
+const DOCUMENT_PREFIX_HTML = /<html[\s>]/iy
+
 export function startsDocument(html: string): boolean {
   let i = 0
   while (i < html.length) {
-    const rest = html.slice(i)
-
-    const ws = rest.match(/^\s+/)
+    DOCUMENT_PREFIX_WHITESPACE.lastIndex = i
+    const ws = DOCUMENT_PREFIX_WHITESPACE.exec(html)
     if (ws) {
-      i += ws[0].length
+      i = DOCUMENT_PREFIX_WHITESPACE.lastIndex
       continue
     }
 
-    if (rest.startsWith('<!--')) {
+    if (html.startsWith('<!--', i)) {
       const end = html.indexOf('-->', i)
       if (end === -1)
         return false
@@ -577,17 +588,27 @@ export function startsDocument(html: string): boolean {
     // Step over leading <script> and <style>. Both legitimately precede the
     // wrapper in real output (an injected boot script, a hoisted style), and
     // treating such a document as a fragment would wrap it and nest <html>.
-    const preamble = rest.match(/^<(script|style)\b[^>]*>/i)
+    DOCUMENT_PREFIX_PREAMBLE.lastIndex = i
+    const preamble = DOCUMENT_PREFIX_PREAMBLE.exec(html)
     if (preamble) {
-      const closeTag = `</${preamble[1].toLowerCase()}>`
-      const end = html.toLowerCase().indexOf(closeTag, i + preamble[0].length)
-      if (end === -1)
+      // Match the same exact close tags as before, case-insensitively. A
+      // whitespace-tolerant close would change whether a shell is detected.
+      const close = preamble[1].toLowerCase() === 'script'
+        ? DOCUMENT_PREFIX_SCRIPT_CLOSE
+        : DOCUMENT_PREFIX_STYLE_CLOSE
+      close.lastIndex = DOCUMENT_PREFIX_PREAMBLE.lastIndex
+      const end = close.exec(html)
+      if (end === null)
         return false
-      i = end + closeTag.length
+      i = end.index + end[0].length
       continue
     }
 
-    return /^<!DOCTYPE\b/i.test(rest) || /^<html[\s>]/i.test(rest)
+    DOCUMENT_PREFIX_DOCTYPE.lastIndex = i
+    if (DOCUMENT_PREFIX_DOCTYPE.test(html))
+      return true
+    DOCUMENT_PREFIX_HTML.lastIndex = i
+    return DOCUMENT_PREFIX_HTML.test(html)
   }
   return false
 }
@@ -686,8 +707,9 @@ export function ensureDocumentShell(
   html: string,
   headConfig: AppHeadConfig = {},
   options: Parameters<typeof generateDocumentShell>[2] = {},
+  alreadyHasShell?: boolean,
 ): string {
-  if (hasDocumentShell(html)) {
+  if (alreadyHasShell ?? hasDocumentShell(html)) {
     return html
   }
   return generateDocumentShell(html, headConfig, options)
