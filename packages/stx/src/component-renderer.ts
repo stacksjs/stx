@@ -1329,7 +1329,10 @@ export async function processComponents(
 ): Promise<string> {
   // Step 1: Register builtins once
   if (!builtinsRegistered) {
-    registerBuiltins()
+    // Register into the exact registry this renderer queries. A source checkout
+    // can coexist with an installed stx package in the same build, giving the
+    // builtin barrel and renderer different module realms (#1951).
+    registerBuiltins(registry)
     builtinsRegistered = true
   }
 

@@ -20,6 +20,7 @@ export { getTooltipRuntime } from './tooltip'
 export { SuspenseBuiltin } from './suspense'
 export { TransitionGroupBuiltin } from './transition-group'
 
+import type { ComponentRegistry } from '../component-registry'
 import { registry } from '../component-registry'
 import { StxLinkBuiltin } from './stx-link'
 import { StxImageBuiltin } from './stx-image'
@@ -33,18 +34,18 @@ import { SuspenseBuiltin } from './suspense'
 import { TransitionGroupBuiltin } from './transition-group'
 
 /**
- * Register all builtin components with the singleton registry.
- * Call this once during framework initialization.
+ * Register all builtin components with the supplied registry, or with the
+ * package singleton when no target is supplied.
  */
-export function registerBuiltins(): void {
-  registry.registerBuiltin(StxLinkBuiltin)
-  registry.registerBuiltin(StxImageBuiltin)
-  registry.registerBuiltin(SafeImageBuiltin)
-  registry.registerBuiltin(StxLoadingIndicatorBuiltin)
-  registry.registerBuiltin(StxToastBuiltin)
-  registry.registerBuiltin(StxModalBuiltin)
-  registry.registerBuiltin(StxDrawerBuiltin)
-  registry.registerBuiltin(IconBuiltin)
-  registry.registerBuiltin(SuspenseBuiltin)
-  registry.registerBuiltin(TransitionGroupBuiltin)
+export function registerBuiltins(target: ComponentRegistry = registry): void {
+  target.registerBuiltin(StxLinkBuiltin)
+  target.registerBuiltin(StxImageBuiltin)
+  target.registerBuiltin(SafeImageBuiltin)
+  target.registerBuiltin(StxLoadingIndicatorBuiltin)
+  target.registerBuiltin(StxToastBuiltin)
+  target.registerBuiltin(StxModalBuiltin)
+  target.registerBuiltin(StxDrawerBuiltin)
+  target.registerBuiltin(IconBuiltin)
+  target.registerBuiltin(SuspenseBuiltin)
+  target.registerBuiltin(TransitionGroupBuiltin)
 }
