@@ -647,7 +647,10 @@ export async function processESImports(
   options: StxOptions,
   dependencies: Set<string>,
 ): Promise<string> {
-  if (!template.includes('import')) return template
+  // The import parser below requires whitespace after the keyword. A broad
+  // substring check also sent ordinary CSS such as `!important` through a
+  // document-wide script replacement whose callbacks changed nothing (#1945).
+  if (!/import\s/.test(template)) return template
 
   if (!context.__importedComponents) {
     context.__importedComponents = new Map<string, string>()
@@ -655,11 +658,12 @@ export async function processESImports(
   const registered = context.__importedComponents as Map<string, string>
 
   const fromDir = path.dirname(filePath)
-  let output = template
+  const replacements: Array<{ start: number, end: number, value: string }> = []
 
   // Find all <script ...>...</script> blocks
   const scriptRe = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
-  output = output.replace(scriptRe, (full, attrs: string, body: string) => {
+  for (const scriptMatch of template.matchAll(scriptRe)) {
+    const [full, attrs, body] = scriptMatch
     // import { A, B as C } from 'spec'
     // import Default from 'spec'
     // (also matches multi-line forms)
@@ -755,14 +759,30 @@ export async function processESImports(
     }
 
     // Remove consumed imports from script body (in reverse to preserve indices)
-    if (removals.length === 0) return full
+    if (removals.length === 0) continue
     for (let i = removals.length - 1; i >= 0; i--) {
       newBody = newBody.slice(0, removals[i].start) + newBody.slice(removals[i].end)
     }
-    return `<script${attrs}>${newBody}</script>`
-  })
+    replacements.push({
+      start: scriptMatch.index,
+      end: scriptMatch.index + full.length,
+      value: `<script${attrs}>${newBody}</script>`,
+    })
+  }
 
-  return output
+  // Scanning is still required for component registration and dependency
+  // tracking, but unchanged scripts should not force a new page-sized string.
+  if (replacements.length === 0) return template
+
+  const chunks: string[] = []
+  let cursor = 0
+  for (const replacement of replacements) {
+    chunks.push(template.slice(cursor, replacement.start), replacement.value)
+    cursor = replacement.end
+  }
+  chunks.push(template.slice(cursor))
+
+  return chunks.join('')
 }
 
 /**
