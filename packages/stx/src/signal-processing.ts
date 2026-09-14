@@ -1749,26 +1749,25 @@ export async function processSignals(template: string, options: StxOptions, file
     }
   }
 
-  // If no setup code but has signals syntax, add data-stx-auto to body for auto-processing
-  // Check if body already has data-stx attribute (not just any occurrence in the template).
-  // Crucially, scan for `<body` only outside of <script> and <style> blocks — embedded
-  // JS often contains regex literals like `/<body[^>]*>/` and corrupting those into
-  // `<body data-stx-auto[^>]*>` breaks the entire page (the malformed character class
-  // throws "Invalid regular expression: Range out of order in character class").
-  const stripped = output.replace(/<script\b[\s\S]*?<\/script>/gi, '').replace(/<style\b[\s\S]*?<\/style>/gi, '')
-  const bodyMatch = stripped.match(/<body([^>]*)>/i)
-  const bodyHasDataStx = bodyMatch && /data-stx/.test(bodyMatch[1])
+  if (!setupCode) {
+    // With setup code, processScriptSetup already stamps the owning element and
+    // this body scan has no consumer. Avoid stripping every script and style
+    // from the complete rendered page only to discard the temporary copy (#1945).
+    const stripped = output.replace(/<script\b[\s\S]*?<\/script>/gi, '').replace(/<style\b[\s\S]*?<\/style>/gi, '')
+    const bodyMatch = stripped.match(/<body([^>]*)>/i)
+    const bodyHasDataStx = bodyMatch && /data-stx/.test(bodyMatch[1])
 
-  if (!setupCode && !bodyHasDataStx && bodyMatch && !/data-stx-auto/.test(bodyMatch[1])) {
-    // Locate the real body tag, skipping <script>/<style> regions so we don't
-    // corrupt a regex literal such as `/<body[^>]*>/` inside embedded JS.
-    const bodyTagRe = /<body[^>]*>/i
-    const bodyIdx = findMarkupIndexOutsideScripts(output, bodyTagRe)
+    if (!bodyHasDataStx && bodyMatch && !/data-stx-auto/.test(bodyMatch[1])) {
+      // Locate the real body tag, skipping <script>/<style> regions so we don't
+      // corrupt a regex literal such as `/<body[^>]*>/` inside embedded JS.
+      const bodyTagRe = /<body[^>]*>/i
+      const bodyIdx = findMarkupIndexOutsideScripts(output, bodyTagRe)
 
-    if (bodyIdx !== -1) {
-      const before = output.slice(0, bodyIdx)
-      const after = output.slice(bodyIdx).replace(bodyTagRe, m => m.replace(/^<body([^>]*)>$/i, '<body$1 data-stx-auto>'))
-      output = before + after
+      if (bodyIdx !== -1) {
+        const before = output.slice(0, bodyIdx)
+        const after = output.slice(bodyIdx).replace(bodyTagRe, m => m.replace(/^<body([^>]*)>$/i, '<body$1 data-stx-auto>'))
+        output = before + after
+      }
     }
   }
 

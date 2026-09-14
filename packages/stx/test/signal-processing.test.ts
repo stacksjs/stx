@@ -10,7 +10,8 @@
  */
 
 import { describe, expect, it } from 'bun:test'
-import { convertSignalDirectivesToAttributes, convertSignalLoopsToAttributes, parseLoopExpression, processScriptSetup } from '../src/signal-processing'
+import { defaultConfig } from '../src/config'
+import { convertSignalDirectivesToAttributes, convertSignalLoopsToAttributes, findMarkupIndexOutsideScripts, parseLoopExpression, processScriptSetup, processSignals } from '../src/signal-processing'
 
 describe('parseLoopExpression', () => {
   it('parses Blade-style "items as item"', () => {
@@ -794,6 +795,28 @@ describe('processScriptSetup — multi-script merge', () => {
     const result = await processScriptSetup(template)
     expect(result.output).toMatch(/<div class="wrap" data-stx="__stx_setup_/)
     expect(result.output).not.toMatch(/<style[^>]*data-stx=/)
+  })
+})
+
+describe('processSignals — body ownership marker', () => {
+  function bodyTag(html: string): string {
+    const index = findMarkupIndexOutsideScripts(html, /<body[^>]*>/i)
+    return index === -1 ? '' : /<body[^>]*>/i.exec(html.slice(index))?.[0] ?? ''
+  }
+
+  it('keeps setup-owned pages on their data-stx marker', async () => {
+    const html = '<html><body><script client>const count = state(0)</script><button :text="count"></button></body></html>'
+    const output = await processSignals(html, defaultConfig)
+
+    expect(bodyTag(output)).toMatch(/^<body data-stx="__stx_setup_/)
+    expect(bodyTag(output)).not.toContain('data-stx-auto')
+  })
+
+  it('adds data-stx-auto when reactive markup has no setup function', async () => {
+    const html = '<html><body><button @click="doIt()">go</button></body></html>'
+    const output = await processSignals(html, defaultConfig)
+
+    expect(bodyTag(output)).toBe('<body data-stx-auto>')
   })
 })
 
