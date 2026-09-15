@@ -250,6 +250,23 @@ const NO_CLOAK_RE = /(?:^|\s)x-no-cloak(?:=|\s|\/|>|$)/
  * Index of the `>` that closes the tag starting at `from`, ignoring any `>`
  * inside a quoted attribute value. -1 when the tag never closes.
  */
+/** Tag name at a given offset, matched without copying the tag out. */
+const TAG_NAME_AT = /<\/?\s*([a-z][\w-]*)/iy
+
+/** Whitespace exactly as `\s` defines it, tested one character at a time. */
+const WHITESPACE = /\s/
+
+/**
+ * Whether the tag closing at `tagEnd` is self-closing: a `/` before the `>`,
+ * with optional whitespace between. The offset form of `/\/\s*>$/` on the tag.
+ */
+function isSelfClosingBefore(html: string, tagEnd: number): boolean {
+  let j = tagEnd - 1
+  while (j >= 0 && WHITESPACE.test(html[j]))
+    j--
+  return j >= 0 && html[j] === '/'
+}
+
 function findTagEnd(html: string, from: number): number {
   let inSingleQuote = false
   let inDoubleQuote = false
@@ -352,15 +369,21 @@ function ownTextContainsMustache(html: string, contentStart: number): boolean {
     const tagEnd = findTagEnd(html, i)
     if (tagEnd === -1) break
 
-    const tag = html.slice(i, tagEnd + 1)
-    const name = /^<\/?\s*([a-z][\w-]*)/i.exec(tag)?.[1]?.toLowerCase() ?? ''
+    // Read the tag in place. This walk visits every tag in the subtree and
+    // slicing each one out just to run two regexes over it allocated 545KB
+    // across 7,326 calls on one render of form-examples -- the single largest
+    // site on that page. Small slices really are copies: JSC only shares a
+    // parent's buffer for LARGE ones (see string-cost-model.ts), so a tag-sized
+    // slice per tag is a tag-sized allocation per tag.
+    TAG_NAME_AT.lastIndex = i
+    const name = TAG_NAME_AT.exec(html)?.[1]?.toLowerCase() ?? ''
 
-    if (tag[1] === '/') {
+    if (html[i + 1] === '/') {
       // Our own closing tag — anything past it belongs to an ancestor.
       if (depth === 0) break
       depth--
     }
-    else if (!/\/\s*>$/.test(tag) && !VOID_TAGS.has(name)) {
+    else if (!isSelfClosingBefore(html, tagEnd) && !VOID_TAGS.has(name)) {
       depth++
     }
 

@@ -10,8 +10,11 @@ import { heapStats, memoryUsage } from 'bun:jsc'
 import { renderView } from '../../src/build-views'
 
 const root = path.resolve(import.meta.dir, '../../../..')
-const page = path.join(root, 'packages/components/examples/sidebar-arc-spaces.stx')
-const componentsDir = path.join(root, 'packages/components/src/ui/sidebar')
+// Overridable to match render-view-allocation-probe.ts, so the proxy and the
+// ground truth can be pointed at the same page. A drop in the probe that this
+// does not follow has moved work out of view rather than removed it.
+const page = path.join(root, process.env.STX_BENCH_FIXTURE ?? 'packages/components/examples/sidebar-arc-spaces.stx')
+const componentsDir = path.join(root, process.env.STX_BENCH_COMPONENTS ?? 'packages/components/src/ui/sidebar')
 const options = { componentsDir }
 const warmups = Number(process.env.STX_BENCH_WARMUPS ?? 10)
 const samples = Number(process.env.STX_BENCH_SAMPLES ?? 40)
