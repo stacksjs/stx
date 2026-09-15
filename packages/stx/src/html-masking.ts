@@ -233,6 +233,51 @@ export function mightContainOwnTextMustache(html: string): boolean {
 }
 
 /**
+ * Drop the oldest entries until there is room for one more.
+ *
+ * Wholesale `clear()` was the first version and it made the caches useless: a
+ * render cycles through more distinct documents than the cap, so hitting the cap
+ * wiped the entry that was about to be reused. Measured on the #1945 fixture, one
+ * key-and-content pair missed 24 times in a row — computed every time, hit never.
+ * A Map iterates in insertion order, so the first key is the oldest.
+ */
+function evictOldest(cache: Map<string, unknown>, maxEntries: number): void {
+  while (cache.size >= maxEntries) {
+    const oldest = cache.keys().next()
+    if (oldest.done)
+      return
+    cache.delete(oldest.value)
+  }
+}
+
+/**
+ * Opt-in memo for callers that mask the same document repeatedly.
+ *
+ * `maskAtElementPosition` cannot decide this for itself: the result depends on
+ * the `placeholder` callback, which is a closure the cache cannot inspect. So
+ * the caller supplies a key that fully determines that callback's behaviour —
+ * for the comment mask in component-renderer.ts that is the placeholder prefix
+ * plus the index offset — and takes responsibility for its uniqueness. No key,
+ * no caching.
+ *
+ * Worth it because the component pipeline re-enters over unchanged content: the
+ * comment mask alone rebuilds 3.1MB of document across 34 calls in one render of
+ * the #1945 fixture, twelve of them byte-identical at the same offset.
+ *
+ * Bounded and large-inputs-only, like the stash cache below it, and for the same
+ * reason: this holds documents alive, and caching the small majority of calls
+ * would make that unbounded.
+ */
+const MASK_CACHE_MIN_BYTES = 65536
+const MASK_CACHE_MAX_ENTRIES = 12
+const maskCache = new Map<string, { output: string, tokens: string[] }>()
+
+/** Drop cached mask results. Dev/HMR calls this when templates change. */
+export function clearMaskCache(): void {
+  maskCache.clear()
+}
+
+/**
  * Mask every token (per `match`) that begins at element position, replacing it
  * with `placeholder(token, index)`. Returns the rewritten string plus the ordered
  * list of removed tokens. Restore by replacing each placeholder with `tokens[i]`.
@@ -244,7 +289,22 @@ export function maskAtElementPosition(
   html: string,
   match: TokenMatcher,
   placeholder: (token: string, index: number) => string,
+  /**
+   * Opt in to memoisation. Must fully determine what `placeholder` returns for
+   * a given index — two calls sharing a key MUST be interchangeable.
+   */
+  cacheKey?: string,
 ): { output: string, tokens: string[] } {
+  const cacheable = cacheKey !== undefined && html.length >= MASK_CACHE_MIN_BYTES
+  const key = cacheable ? `${cacheKey}\u0000${html}` : ''
+  if (cacheable) {
+    const hit = maskCache.get(key)
+    // Tokens copied out: callers spread this array into their own, and a shared
+    // one would let a later mutation reach an earlier caller's restore.
+    if (hit)
+      return { output: hit.output, tokens: hit.tokens.slice() }
+  }
+
   const matches = scanAtElementPosition(html, match)
   if (matches.length === 0)
     return { output: html, tokens: [] }
@@ -259,6 +319,12 @@ export function maskAtElementPosition(
     cursor = item.end
   }
   output += html.slice(cursor)
+
+  if (cacheable) {
+    evictOldest(maskCache, MASK_CACHE_MAX_ENTRIES)
+    maskCache.set(key, { output, tokens })
+    return { output, tokens: tokens.slice() }
+  }
 
   return { output, tokens }
 }
@@ -317,8 +383,7 @@ export function stashScriptElements(html: string): { output: string, scripts: st
     // Cleared wholesale rather than evicted one at a time: this holds a couple
     // of documents for one render's shape, and the next shape wants different
     // ones. An LRU's bookkeeping would cost more than it saves at this size.
-    if (stashCache.size >= STASH_CACHE_MAX_ENTRIES)
-      stashCache.clear()
+    evictOldest(stashCache, STASH_CACHE_MAX_ENTRIES)
     stashCache.set(html, { output, scripts: tokens })
     return { output, scripts: tokens.slice() }
   }

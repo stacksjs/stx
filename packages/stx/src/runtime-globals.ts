@@ -480,8 +480,14 @@ export function blankInertHtmlRegions(html: string): string {
     .replace(/<!--[\s\S]*?-->/g, match => ' '.repeat(match.length))
 
   if (cacheable) {
-    if (blankCache.size >= BLANK_CACHE_MAX_ENTRIES)
-      blankCache.clear()
+    // Oldest out, not everything out: a wholesale clear evicts the entry about
+    // to be reused, which made an earlier version of this cache miss every time.
+    while (blankCache.size >= BLANK_CACHE_MAX_ENTRIES) {
+      const oldest = blankCache.keys().next()
+      if (oldest.done)
+        break
+      blankCache.delete(oldest.value)
+    }
     blankCache.set(html, blanked)
   }
 

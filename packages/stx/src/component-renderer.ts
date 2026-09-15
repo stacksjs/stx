@@ -1378,10 +1378,16 @@ export async function processComponents(
   // every component instance.
   const nestedComments: string[] = []
   for (let pass = 0; pass < 3; pass++) {
+    // The key names everything the placeholder depends on: the prefix, which is
+    // fixed here, and the offset it counts from. Two masks sharing it produce
+    // the same placeholders for the same input, which is what makes the result
+    // interchangeable.
+    const commentOffset = nestedComments.length
     const masked = maskAtElementPosition(
       output,
       matchHtmlComment,
-      (_token, index) => `\x00STX_COMPONENT_COMMENT_${nestedComments.length + index}\x00`,
+      (_token, index) => `\x00STX_COMPONENT_COMMENT_${commentOffset + index}\x00`,
+      `STX_COMPONENT_COMMENT:${commentOffset}`,
     )
     nestedComments.push(...masked.tokens)
 
