@@ -121,6 +121,14 @@ import { contentKey, renderMemo } from './render-memo'
 const transpiledServerScripts = renderMemo<string>(128)
 
 /**
+ * A server script's compiled code depends on its converted source and the
+ * ordered parameter names, not on their VALUES. Execute it afresh per render,
+ * but do not ask JSC to parse/allocate the same code object again (#1945).
+ * The bounded memo is cleared with other dev render memos.
+ */
+const compiledServerScripts = renderMemo<(...args: unknown[]) => Promise<Record<string, unknown>>>(64)
+
+/**
  * Extract declared variable names from converted CommonJS script.
  * Only extracts top-level declarations (brace depth 0).
  * Used to re-sync variables after async operations.
@@ -1003,21 +1011,24 @@ catch {
       scriptContextValues.push(filteredContextValues[i])
     }
 
-    // eslint-disable-next-line no-new-func
-    const scriptFn = new Function(
-      // Positionally paired with the argument list below — see
-      // STX_ENGINE_BINDING_NAMES.
-      ...STX_ENGINE_BINDING_NAMES,
-      ...propArgNames,
-      ...scriptContextKeys,
-      // Wrap in async IIFE to support top-level await
-      // Re-sync variables at end to capture any async reassignments
-      `return (async () => {
+    // Positionally paired with the argument list below — see
+    // STX_ENGINE_BINDING_NAMES. Values change per render, but this signature
+    // and source stay unchanged for an unchanged component/page.
+    const scriptParams = [...STX_ENGINE_BINDING_NAMES, ...propArgNames, ...scriptContextKeys]
+    // Wrap in async IIFE to support top-level await; re-sync variables at end
+    // to capture any async reassignments.
+    const scriptBody = `return (async () => {
         ${convertedScript}
         ${reSyncCode}
         return module.exports
       })()`
-    )
+    const compileKey = contentKey(scriptBody, scriptParams.join('\0'))
+    let scriptFn = compiledServerScripts.get(compileKey)
+    if (!scriptFn) {
+      // eslint-disable-next-line no-new-func
+      scriptFn = new Function(...scriptParams, scriptBody) as (...args: unknown[]) => Promise<Record<string, unknown>>
+      compiledServerScripts.set(compileKey, scriptFn)
+    }
     const result = await scriptFn(
       module, exports, requireFn, propsObj, $props, defineProps, withDefaults,
       defineClientPayload,
