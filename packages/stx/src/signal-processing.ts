@@ -17,7 +17,7 @@ import { escapeScriptBody } from './script-emit'
 import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { injectSignalsRuntime } from './runtime-injection'
-import { matchScriptElement, scanAtElementPosition } from './html-masking'
+import { evictOldest, matchScriptElement, scanAtElementPosition } from './html-masking'
 import { importOnce } from './lazy-module'
 
 // Counter for unique signal setup function names (avoids Date.now() collisions)
@@ -65,33 +65,87 @@ const SINGLE_ELEMENT_RE = /^<([a-zA-Z][a-zA-Z0-9-]*)\b((?:\s+[^=\s>]+(?:=(?:"[^"
  * `skipAttrs` lets callers drop tags whose attribute string contains certain
  * patterns (e.g. `server`, `src=`, `data-stx-scoped`).
  */
-export function scanScriptTags(
-  html: string,
-  opts: { skipAttrs?: RegExp } = {},
-): Array<{ fullMatch: string, attrs: string, body: string, start: number, end: number }> {
-  const out: Array<{ fullMatch: string, attrs: string, body: string, start: number, end: number }> = []
+export interface ScannedScriptTag {
+  readonly fullMatch: string
+  readonly attrs: string
+  readonly body: string
+  readonly start: number
+  readonly end: number
+}
+
+/**
+ * Scans for the few large documents a render walks more than once.
+ *
+ * One render of the #1945 fixture scans the SAME document three times: twice at
+ * full size from `processOtherDirectives` (the server-script sweep and the
+ * client-script sweep) and once from `processScriptSetup`. Each walk sliced out
+ * every script tag and then sliced each body out of that — 481KB of token text
+ * per render to answer the same question three times.
+ *
+ * Keyed on the document itself, like the stash cache: a hash collision here
+ * would hand one page's script bodies to another, and the key has to be
+ * retained to compare against anyway. Small inputs are not cached — they are
+ * cheap to redo, and caching them would make the retention unbounded.
+ */
+const SCRIPT_SCAN_CACHE_MIN_BYTES = 65536
+const SCRIPT_SCAN_CACHE_MAX_ENTRIES = 4
+const scriptScanCache = new Map<string, readonly ScannedScriptTag[]>()
+
+/** Drop cached script scans. Dev/HMR calls this when templates change on disk. */
+export function clearScriptScanCache(): void {
+  scriptScanCache.clear()
+}
+
+function scanScriptTagsUncached(html: string): ScannedScriptTag[] {
+  const out: ScannedScriptTag[] = []
   for (const item of scanAtElementPosition(html, matchScriptElement)) {
     const opening = item.token.match(/^<script\b([^>]*)>/i)
     const closing = item.token.match(/<\/script\s*>$/i)
     if (!opening || !closing)
       continue
 
-    const attrs = opening[1]
-    if (opts.skipAttrs) {
-      opts.skipAttrs.lastIndex = 0
-      if (opts.skipAttrs.test(attrs))
-        continue
-    }
-
     const bodyStart = opening[0].length
     const bodyEnd = item.token.length - closing[0].length
-    out.push({
+    // Frozen because a cache hit hands the SAME record to every later caller.
+    // A mutation would otherwise travel silently into an unrelated scan; this
+    // makes it throw at the write instead.
+    out.push(Object.freeze({
       fullMatch: item.token,
-      attrs,
+      attrs: opening[1],
       body: item.token.slice(bodyStart, bodyEnd),
       start: item.start,
       end: item.end,
-    })
+    }))
+  }
+  return out
+}
+
+export function scanScriptTags(
+  html: string,
+  opts: { skipAttrs?: RegExp } = {},
+): ScannedScriptTag[] {
+  // `skipAttrs` filters what the walk already found, so it is applied after the
+  // memo rather than being part of its key — three callers with three different
+  // filters still share one walk.
+  const cacheable = html.length >= SCRIPT_SCAN_CACHE_MIN_BYTES
+  let all = cacheable ? scriptScanCache.get(html) : undefined
+  if (all === undefined) {
+    all = scanScriptTagsUncached(html)
+    if (cacheable) {
+      evictOldest(scriptScanCache, SCRIPT_SCAN_CACHE_MAX_ENTRIES)
+      scriptScanCache.set(html, all)
+    }
+  }
+
+  const skip = opts.skipAttrs
+  if (!skip)
+    return all.slice()
+
+  const out: ScannedScriptTag[] = []
+  for (const tag of all) {
+    skip.lastIndex = 0
+    if (!skip.test(tag.attrs))
+      out.push(tag)
   }
   return out
 }
@@ -1414,7 +1468,7 @@ export async function processScriptSetup(template: string, filePath?: string, se
    * would be. That is why this one can be a pure hash while the component scope
    * id above cannot.
    */
-  const setupIdentity = `${filePath ?? ''} ${signalScripts.map(s => s.content).join(' ')}`
+  const setupIdentity = `${filePath ?? ''}\u0000${signalScripts.map(s => s.content).join('\u0000')}`
   const setupFnName = `__stx_setup_${Bun.hash(setupIdentity).toString(36).slice(0, 10)}`
 
   // Bundle user imports and resolve store imports for each script, then

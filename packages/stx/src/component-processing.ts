@@ -943,8 +943,9 @@ export async function processCustomElements(
   const lowercasePattern = /[a-z][a-z0-9]*/
   output = await processComponentsWithParser(output, lowercasePattern, false, htmlTags)
 
-  // Restore the stashed <script> blocks.
-  output = restoreStashedScripts(output, stashed.scripts)
+  // Restore the stashed <script> blocks. A pass that resolved no component
+  // tags gets the original document back without rebuilding it.
+  output = stashed.restore(output)
 
   return output
 

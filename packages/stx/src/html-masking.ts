@@ -241,7 +241,7 @@ export function mightContainOwnTextMustache(html: string): boolean {
  * key-and-content pair missed 24 times in a row — computed every time, hit never.
  * A Map iterates in insertion order, so the first key is the oldest.
  */
-function evictOldest(cache: Map<string, unknown>, maxEntries: number): void {
+export function evictOldest(cache: Map<string, unknown>, maxEntries: number): void {
   while (cache.size >= maxEntries) {
     const oldest = cache.keys().next()
     if (oldest.done)
@@ -362,7 +362,37 @@ const STASH_CACHE_MIN_BYTES = 65536
 const STASH_CACHE_MAX_ENTRIES = 4
 const stashCache = new Map<string, { output: string, scripts: string[] }>()
 
-export function stashScriptElements(html: string): { output: string, scripts: string[] } {
+export interface StashedScripts {
+  /** The document with each `<script>` element replaced by a NUL sentinel. */
+  output: string
+  /** The removed script elements, in placeholder order. */
+  scripts: string[]
+  /**
+   * Put the scripts back.
+   *
+   * Returns the pre-stash document unchanged when `html` is still the masked
+   * output. Stashing replaces each script with a sentinel and restoring puts
+   * exactly those scripts back at exactly those sentinels, so when nothing
+   * edited the masked document in between, the replace pass can only rebuild,
+   * character by character, a string the caller already handed us.
+   *
+   * That is the common case, not a corner: one render of the #1945 fixture
+   * reaches this having changed nothing in FOUR of five passes, rebuilding
+   * 445,208 bytes to arrive back where it started. The component loop stashes
+   * on every pass but only the first pass resolves anything.
+   */
+  restore: (html: string) => string
+}
+
+function stashResult(input: string, output: string, scripts: string[]): StashedScripts {
+  return {
+    output,
+    scripts,
+    restore: html => (html === output ? input : restoreStashedScripts(html, scripts)),
+  }
+}
+
+export function stashScriptElements(html: string): StashedScripts {
   const cacheable = html.length >= STASH_CACHE_MIN_BYTES
   if (cacheable) {
     const hit = stashCache.get(html)
@@ -370,7 +400,7 @@ export function stashScriptElements(html: string): { output: string, scripts: st
     // shared array would let one caller's mutation reach another's restore;
     // the strings inside are shared, so this is a handful of pointers.
     if (hit)
-      return { output: hit.output, scripts: hit.scripts.slice() }
+      return stashResult(html, hit.output, hit.scripts.slice())
   }
 
   const { output, tokens } = maskAtElementPosition(
@@ -380,15 +410,12 @@ export function stashScriptElements(html: string): { output: string, scripts: st
   )
 
   if (cacheable) {
-    // Cleared wholesale rather than evicted one at a time: this holds a couple
-    // of documents for one render's shape, and the next shape wants different
-    // ones. An LRU's bookkeeping would cost more than it saves at this size.
     evictOldest(stashCache, STASH_CACHE_MAX_ENTRIES)
     stashCache.set(html, { output, scripts: tokens })
-    return { output, scripts: tokens.slice() }
+    return stashResult(html, output, tokens.slice())
   }
 
-  return { output, scripts: tokens }
+  return stashResult(html, output, tokens)
 }
 
 /** Drop cached stash results. Dev/HMR calls this when templates change on disk. */

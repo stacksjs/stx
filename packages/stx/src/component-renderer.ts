@@ -1050,8 +1050,9 @@ async function processCustomElementTags(
   const lowercasePattern = /[a-z][a-z0-9]*/
   output = await processTagsWithParser(output, lowercasePattern, false, htmlTags)
 
-  // Restore the stashed <script> blocks.
-  output = restoreStashedScripts(output, stashed.scripts)
+  // Restore the stashed <script> blocks. A pass that resolved no component
+  // tags gets the original document back without rebuilding it.
+  output = stashed.restore(output)
 
   return output
 
@@ -1166,7 +1167,7 @@ async function processCustomElementTags(
         // caller-owned slot before rendering the component; otherwise the
         // slot pipeline never sees the script and cannot hoist it back into
         // the caller's page scope.
-        restoreStashedScripts(tag.content, stashed.scripts),
+        stashed.restore(tag.content),
         componentsDir,
         context,
         filePath,
