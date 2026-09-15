@@ -288,18 +288,57 @@ function findTagEnd(html: string, from: number): number {
  * first child happened to be.
  *
  * Text after a child element still counts — `<p><b>hi</b> {{ name }}</p>` is
- * p's own text and does need the cloak.
+ * p's own text and does need the cloak. We seek delimiters in those text
+ * segments rather than allocating the concatenated text on every candidate.
  */
-function ownText(html: string, contentStart: number): string {
+function ownTextContainsMustache(html: string, contentStart: number): boolean {
+  // The delimiters can straddle child elements (see the test below), so a
+  // document-wide `includes('{{')` guard is unsound. A lack of either brace
+  // anywhere AFTER this element's opening tag, however, is conclusive.
+  if (html.indexOf('{', contentStart) === -1 || html.indexOf('}', contentStart) === -1)
+    return false
+
   let depth = 0
-  let text = ''
   let i = contentStart
+  let openingBrace = false
+  let opened = false
+  let closingBrace = false
 
   while (i < html.length) {
-    const ch = html[i]
-    if (ch !== '<') {
-      if (depth === 0) text += ch
-      i++
+    const nextTag = html.indexOf('<', i)
+    const textEnd = nextTag === -1 ? html.length : nextTag
+    if (textEnd > i) {
+      if (depth === 0) {
+        // Seek only braces in this OWN text segment. The old ownText() joined
+        // every character into a new string before testing it; this keeps the
+        // same state across child subtrees without copying their parent text.
+        while (i < textEnd) {
+          const brace = html.indexOf(opened ? '}' : '{', i)
+          if (brace === -1 || brace >= textEnd) {
+            if (opened) closingBrace = false
+            else openingBrace = false
+            break
+          }
+          if (brace > i) {
+            if (opened) closingBrace = false
+            else openingBrace = false
+          }
+          if (opened) {
+            if (closingBrace)
+              return true
+            closingBrace = true
+          }
+          else if (openingBrace) {
+            opened = true
+            closingBrace = false
+          }
+          else {
+            openingBrace = true
+          }
+          i = brace + 1
+        }
+      }
+      i = textEnd
       continue
     }
 
@@ -327,7 +366,7 @@ function ownText(html: string, contentStart: number): string {
     i = tagEnd + 1
   }
 
-  return text
+  return false
 }
 
 /**
@@ -337,7 +376,7 @@ function ownText(html: string, contentStart: number): string {
  * so the raw mustache never flashes.
  *
  * Only the element that actually holds the expression is stamped — see
- * `ownText` for why that scoping is the fix rather than a refinement. An
+ * `ownTextContainsMustache` for why that scoping is the fix rather than a refinement. An
  * element carrying `x-no-cloak` is left visible regardless.
  */
 export function addCloakToUnresolvedExpressions(html: string): string {
@@ -394,9 +433,7 @@ export function addCloakToUnresolvedExpressions(html: string): string {
     // This element's own text only. A mustache in a DESCENDANT belongs to the
     // descendant; cloaking the ancestor hides content that has nothing to do
     // with the expression.
-    const textContent = ownText(html, tagCloseIdx + 1)
-
-    if (/\{\{[\s\S]*?\}\}/.test(textContent)) {
+    if (ownTextContainsMustache(html, tagCloseIdx + 1)) {
       // Insert x-cloak before the closing >
       result += html.slice(lastIndex, tagCloseIdx) + ' x-cloak>'
       lastIndex = tagCloseIdx + 1

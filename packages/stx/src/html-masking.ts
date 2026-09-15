@@ -87,18 +87,21 @@ function matchOpaqueRegion(html: string, i: number): number {
     return end === -1 ? html.length : end
   }
 
-  for (const [open, close] of [
-    [SCRIPT_OPEN, SCRIPT_CLOSE],
-    [STYLE_OPEN, STYLE_CLOSE],
-  ] as const) {
-    open.lastIndex = i
-    const opening = open.exec(html)
-    if (!opening || opening.index !== i)
-      continue
+  // No short-lived pair array/iterator for every ordinary opening tag.
+  SCRIPT_OPEN.lastIndex = i
+  const scriptOpen = SCRIPT_OPEN.exec(html)
+  if (scriptOpen?.index === i) {
+    SCRIPT_CLOSE.lastIndex = SCRIPT_OPEN.lastIndex
+    const close = SCRIPT_CLOSE.exec(html)
+    return close ? close.index + close[0].length : html.length
+  }
 
-    close.lastIndex = open.lastIndex
-    const closing = close.exec(html)
-    return closing ? closing.index + closing[0].length : html.length
+  STYLE_OPEN.lastIndex = i
+  const styleOpen = STYLE_OPEN.exec(html)
+  if (styleOpen?.index === i) {
+    STYLE_CLOSE.lastIndex = STYLE_OPEN.lastIndex
+    const close = STYLE_CLOSE.exec(html)
+    return close ? close.index + close[0].length : html.length
   }
 
   return -1
@@ -136,7 +139,12 @@ export function scanAtElementPosition(html: string, match: TokenMatcher): Elemen
     }
 
     if (ch !== '<') {
-      i++
+      // Most pages are text (or a large inlined runtime). Seek the next tag
+      // in native code instead of indexing one JS character at a time.
+      const next = html.indexOf('<', i + 1)
+      if (next === -1)
+        break
+      i = next
       continue
     }
 
@@ -153,7 +161,10 @@ export function scanAtElementPosition(html: string, match: TokenMatcher): Elemen
       continue
     }
 
-    if (/^<\/?[a-zA-Z]/.test(html.slice(i, i + 2)))
+    // Preserve the old two-character anchored test: it did not enter tag
+    // state for a closing `</...>` because the slash occupied that span.
+    const letter = html.charCodeAt(i + 1)
+    if ((letter >= 65 && letter <= 90) || (letter >= 97 && letter <= 122))
       inTag = true
     i++
   }

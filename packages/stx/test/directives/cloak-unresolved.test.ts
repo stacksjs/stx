@@ -132,6 +132,31 @@ describe('elements with nothing to cloak', () => {
     expect(addCloakToUnresolvedExpressions(html)).toBe(html)
   })
 
+  it('does not walk nested elements on a resolved document', () => {
+    const html = `<main>${'<section><p>Resolved text</p></section>'.repeat(100)}</main>`
+
+    expect(addCloakToUnresolvedExpressions(html)).toBe(html)
+  })
+
+  it('recognizes a mustache split by a child subtree', () => {
+    const out = addCloakToUnresolvedExpressions('<p>{<b>child</b>{ name }<i>child</i>}</p>')
+
+    expect(out).toContain('<p x-cloak>')
+    expect(out).not.toContain('<b x-cloak>')
+  })
+
+  it('does not treat braces inside attributes or client scripts as own text', () => {
+    const html = '<main title="{{ attr }}"><script>const marker = "{{ client }}"</script><p>Ready</p></main>'
+
+    expect(addCloakToUnresolvedExpressions(html)).toBe(html)
+  })
+
+  it('does not cloak an unfinished own-text expression', () => {
+    const html = '<p>{{ name</p>'
+
+    expect(addCloakToUnresolvedExpressions(html)).toBe(html)
+  })
+
   it('are not double-stamped when already cloaked by hand', () => {
     const out = addCloakToUnresolvedExpressions(`<span x-cloak>{{ name }}</span>`)
 
