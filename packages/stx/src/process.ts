@@ -375,6 +375,29 @@ function placeSignalsRuntimeBeforeScripts(html: string): string {
   if (firstScript === -1 || firstScript === runtime.start)
     return html
 
+  // When the first script sits BEFORE the runtime, the destination is already
+  // known and the document can be reassembled in one pass.
+  //
+  // The slow path below builds the document-without-the-runtime, scans THAT for
+  // the insertion point, and splits it again — three documents' worth of slices
+  // to move one tag, 486KB per render on the #1945 fixture where the runtime is
+  // itself 170KB. Removing a block that sits AFTER `firstScript` cannot move
+  // `firstScript`, so in that direction the rescan can only return the offset we
+  // already have.
+  //
+  // The other direction genuinely needs the rescan and keeps it. Taking the fast
+  // path there was an earlier version of this function: removing a runtime that
+  // sits EARLIER shifts everything after it, and the arithmetic silently placed
+  // the runtime inside a <style> block three tests away from here. The
+  // asymmetry is the point — one direction is provable, the other is not.
+  if (firstScript < runtime.start) {
+    return html.slice(0, firstScript)
+      + html.slice(runtime.start, runtime.end)
+      + '\n'
+      + html.slice(firstScript, runtime.start)
+      + html.slice(runtime.end)
+  }
+
   const runtimeTag = html.slice(runtime.start, runtime.end)
   const withoutRuntime = html.slice(0, runtime.start) + html.slice(runtime.end)
   const insertionPoint = findFirstScriptTag(withoutRuntime)
