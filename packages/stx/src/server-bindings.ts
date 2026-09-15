@@ -144,6 +144,11 @@ export function processServerBindings(
   // Match opening tags with colon-prefixed attributes
   const tagRegex = /<([a-zA-Z][a-zA-Z0-9-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)\s*\/?>/g
   const replacements: Array<{ start: number, end: number, replacement: string }> = []
+  // A binding's generated function closes over no render data: values are
+  // passed positionally on every call. Reuse identical expression/scope-shape
+  // compiles within this render, but retain nothing across renders (#1945).
+  const compiledBindings = new Map<string, (...args: unknown[]) => unknown>()
+  const maxCompiledBindings = 256
 
   // eslint-disable-next-line no-cond-assign
   while ((match = tagRegex.exec(output)) !== null) {
@@ -198,9 +203,18 @@ export function processServerBindings(
           continue
         }
 
-        // Evaluate the expression
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(...contextKeys, `return (${expression})`)
+        // Preserve parameter order in the key: the caller supplies values in
+        // the corresponding Object.values order, and expressions may mutate
+        // the context's shape between bindings.
+        const compileKey = JSON.stringify([contextKeys, expression])
+        let fn = compiledBindings.get(compileKey)
+        if (!fn) {
+          // eslint-disable-next-line no-new-func
+          fn = new Function(...contextKeys, `return (${expression})`) as (...args: unknown[]) => unknown
+          if (compiledBindings.size >= maxCompiledBindings)
+            compiledBindings.clear()
+          compiledBindings.set(compileKey, fn)
+        }
         const value = fn(...contextValues)
 
         // Handle :class specially (supports object/array syntax)
@@ -270,10 +284,20 @@ export function processServerBindings(
     }
   }
 
-  // Apply replacements in reverse order to preserve positions
-  for (let i = replacements.length - 1; i >= 0; i--) {
-    const { start, end, replacement } = replacements[i]
-    output = output.slice(0, start) + replacement + output.slice(end)
+  // The tag scanner emitted disjoint ranges in source order. Preserve their
+  // gaps and apply all resolved tags in one rebuild instead of materializing
+  // the whole page once per binding-bearing tag (#1945).
+  if (replacements.length > 0) {
+    const chunks = new Array<string>(replacements.length * 2 + 1)
+    let cursor = 0
+    for (let i = 0; i < replacements.length; i++) {
+      const { start, end, replacement } = replacements[i]
+      chunks[i * 2] = output.slice(cursor, start)
+      chunks[i * 2 + 1] = replacement
+      cursor = end
+    }
+    chunks[replacements.length * 2] = output.slice(cursor)
+    output = chunks.join('')
   }
 
   return output
