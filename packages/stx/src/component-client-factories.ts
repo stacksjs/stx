@@ -44,16 +44,43 @@ export function injectComponentClientFactories(
   if (!registry?.size)
     return html
 
-  let output = html
+  // One pass over the document, not one per factory.
+  //
+  // This was a whole-document `replace` inside the registry loop, so a page with
+  // three inlinable factories rebuilt its own markup three times — 427KB per
+  // render on the #1945 fixture. The invocations are disjoint (each names
+  // exactly one id), so a single alternation resolves all of them in one
+  // rebuild.
+  //
+  // Ids are escaped for the regex, which the per-id version did not do: it
+  // interpolated `JSON.stringify(id)` straight into the pattern, so an id
+  // carrying a regex metacharacter silently failed to match and its factory was
+  // never inlined. Nothing generates such an id today; escaping means nothing
+  // starts to.
+  const inlinable = new Map<string, string>()
   for (const [id, factory] of registry) {
-    if (factory.instances !== 1)
-      continue
+    if (factory.instances === 1)
+      inlinable.set(id, factory.body)
+  }
 
+  let output = html
+  if (inlinable.size > 0) {
+    const alternation = [...inlinable.keys()]
+      .map(id => JSON.stringify(id).replace(/[$()*+.?[\\\]^{|}]/g, '\\$&'))
+      .join('|')
     const invocation = new RegExp(
-      `window\\.__stxComponentFactories\\[${JSON.stringify(id)}\\]\\(("[^"]+")\\);`,
+      `window\\.__stxComponentFactories\\[(${alternation})\\]\\(("[^"]+")\\);`,
       'g',
     )
-    output = output.replace(invocation, (_match, scopeId: string) => `(${factory.body})(${scopeId});`)
+    // A replacement is never rescanned, so an inlined body that happens to
+    // contain another factory invocation is left alone. The per-id loop would
+    // have rewritten inside it on a later iteration; not doing that is the safer
+    // of the two, and matches how the other batched restores in this pipeline
+    // behave.
+    output = output.replace(invocation, (match, idLiteral: string, scopeId: string) => {
+      const body = inlinable.get(JSON.parse(idLiteral) as string)
+      return body === undefined ? match : `(${body})(${scopeId});`
+    })
   }
 
   const repeatedFactories = [...registry].filter(([, factory]) => factory.instances > 1)
