@@ -431,17 +431,59 @@ export function runtimeHandledXAttrsLiteral(): string {
  * would lose its runtime and break, which is worse than shipping bytes it does
  * not need.
  */
+/**
+ * Blanked results for the few large documents a render asks about repeatedly.
+ *
+ * `templateHasReactiveContext` and `templateNeedsRuntime` are asked once each
+ * per pipeline pass, and on the #1945 fixture that is 24 calls per render
+ * carrying the SAME 161,610-byte document — the pipeline re-enters over content
+ * that has not changed. Each call rebuilt the blanked copy from scratch.
+ *
+ * Same trade, and same bound, as the stash cache in html-masking.ts: a couple of
+ * documents held alive so they are not re-derived. Retention bought with
+ * allocation, stated rather than hidden. Small inputs are not cached — they are
+ * cheap to redo and caching them would make the retention unbounded.
+ *
+ * Keyed on the input string, not a hash: this decides whether a page ships the
+ * signals runtime, and a collision would answer for the wrong document.
+ */
+const BLANK_CACHE_MIN_BYTES = 65536
+const BLANK_CACHE_MAX_ENTRIES = 4
+const blankCache = new Map<string, string>()
+
+/** Drop cached blanked documents. Dev/HMR calls this when templates change. */
+export function clearBlankCache(): void {
+  blankCache.clear()
+}
+
 export function blankInertHtmlRegions(html: string): string {
   if (!html)
     return html
+  // Nothing inert to blank: the same string comes back, which costs nothing and
+  // must not take a cache slot.
   if (!html.includes('<!--') && !/<(?:pre|code)\b/i.test(html))
     return html
+
+  const cacheable = html.length >= BLANK_CACHE_MIN_BYTES
+  if (cacheable) {
+    const hit = blankCache.get(html)
+    if (hit !== undefined)
+      return hit
+  }
 
   const blankText = (segment: string): string =>
     segment.replace(/(<[^>]*>)|([^<]+)/g, (_match, tag: string, text: string) => tag ?? ' '.repeat(text.length))
 
-  return html
+  const blanked = html
     .replace(/(<pre\b[^>]*>)([\s\S]*?)(<\/pre>)/gi, (_m, open: string, body: string, close: string) => open + blankText(body) + close)
     .replace(/(<code\b[^>]*>)([\s\S]*?)(<\/code>)/gi, (_m, open: string, body: string, close: string) => open + blankText(body) + close)
     .replace(/<!--[\s\S]*?-->/g, match => ' '.repeat(match.length))
+
+  if (cacheable) {
+    if (blankCache.size >= BLANK_CACHE_MAX_ENTRIES)
+      blankCache.clear()
+    blankCache.set(html, blanked)
+  }
+
+  return blanked
 }

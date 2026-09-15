@@ -269,13 +269,66 @@ export function maskAtElementPosition(
  * `div.innerHTML = '<v:shape>'`) as component references (stacksjs/stx#1730), and
  * so an attribute-embedded `<script>` is never pulled out and restored unescaped.
  */
+/**
+ * Stash results for the few large documents a render masks over and over.
+ *
+ * One render of the #1945 fixture calls `stashScriptElements` 60 times on
+ * documents over 100KB — and those 60 calls carry exactly TWO distinct inputs,
+ * one 113,034 bytes seen 48 times and one 161,610 bytes seen 12 times. The
+ * component pipeline re-enters over content that has not changed, so 58 of the
+ * 60 rebuild a document that was already built.
+ *
+ * Keyed on the input string itself rather than a hash: a hash collision here
+ * would restore the wrong script bodies into a page, and the input has to be
+ * retained to compare against anyway.
+ *
+ * The trade is explicit. This holds a small number of documents alive — bounded
+ * below, roughly 340KB at the cap on this fixture — to stop re-deriving them.
+ * That is retention bought with allocation, which is worth stating plainly
+ * rather than burying: the win is real for a server rendering the same view
+ * repeatedly, and it is a cost, not a free lunch.
+ *
+ * Small inputs are not cached. They are cheap to redo, they are the vast
+ * majority of calls (518 per render), and caching them would make the retention
+ * unbounded in the thing it is meant to bound.
+ */
+const STASH_CACHE_MIN_BYTES = 65536
+const STASH_CACHE_MAX_ENTRIES = 4
+const stashCache = new Map<string, { output: string, scripts: string[] }>()
+
 export function stashScriptElements(html: string): { output: string, scripts: string[] } {
+  const cacheable = html.length >= STASH_CACHE_MIN_BYTES
+  if (cacheable) {
+    const hit = stashCache.get(html)
+    // The array is copied out. Callers receive it as `stashed.scripts` and a
+    // shared array would let one caller's mutation reach another's restore;
+    // the strings inside are shared, so this is a handful of pointers.
+    if (hit)
+      return { output: hit.output, scripts: hit.scripts.slice() }
+  }
+
   const { output, tokens } = maskAtElementPosition(
     html,
     matchScriptElement,
     (_token, index) => `\x00STX_SCRIPT_${index}\x00`,
   )
+
+  if (cacheable) {
+    // Cleared wholesale rather than evicted one at a time: this holds a couple
+    // of documents for one render's shape, and the next shape wants different
+    // ones. An LRU's bookkeeping would cost more than it saves at this size.
+    if (stashCache.size >= STASH_CACHE_MAX_ENTRIES)
+      stashCache.clear()
+    stashCache.set(html, { output, scripts: tokens })
+    return { output, scripts: tokens.slice() }
+  }
+
   return { output, scripts: tokens }
+}
+
+/** Drop cached stash results. Dev/HMR calls this when templates change on disk. */
+export function clearStashCache(): void {
+  stashCache.clear()
 }
 
 /** Restore scripts stashed by {@link stashScriptElements}. */
