@@ -6,6 +6,7 @@
  * the x-cloak utility for unresolved expressions.
  */
 import { errorLogger } from './error-handling'
+import { mightContainOwnTextMustache } from './html-masking'
 import { createSafeFunction, isExpressionSafe } from './safe-evaluator'
 
 /**
@@ -380,6 +381,12 @@ function ownTextContainsMustache(html: string, contentStart: number): boolean {
  * element carrying `x-no-cloak` is left visible regardless.
  */
 export function addCloakToUnresolvedExpressions(html: string): string {
+  // A full preflight is cheaper than the nested own-text walk on assembled
+  // documents, but not on tiny component fragments. Keep those on the normal
+  // path; this threshold changes only how we decide, never what we cloak.
+  if (html.length >= 32 * 1024 && !mightContainOwnTextMustache(html))
+    return html
+
   // Add x-cloak to elements whose text content contains {{ }} expressions.
   // We parse tag boundaries carefully to avoid breaking attributes that contain ">".
   const tagNames = 'div|span|p|h[1-6]|td|th|li|a|button|label|section|article|header|footer|main|nav|aside|dd|dt|figcaption|summary|caption|blockquote|pre|code|em|strong|small|sub|sup|time|mark|abbr|cite|q|s|u|b|i'

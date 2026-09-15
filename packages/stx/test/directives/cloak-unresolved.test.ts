@@ -145,6 +145,14 @@ describe('elements with nothing to cloak', () => {
     expect(out).not.toContain('<b x-cloak>')
   })
 
+  it('keeps a split mustache on a document above the preflight threshold', () => {
+    const html = `<main>${'<section><p>Static text</p></section>'.repeat(1100)}<p>{<b>x</b>{ name }<i>x</i>}</p></main>`
+    const out = addCloakToUnresolvedExpressions(html)
+
+    expect(html.length).toBeGreaterThan(32 * 1024)
+    expect(out).toContain('<p x-cloak>{<b>x</b>{ name }<i>x</i>}</p>')
+  })
+
   it('does not treat braces inside attributes or client scripts as own text', () => {
     const html = '<main title="{{ attr }}"><script>const marker = "{{ client }}"</script><p>Ready</p></main>'
 

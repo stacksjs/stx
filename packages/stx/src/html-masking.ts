@@ -173,6 +173,66 @@ export function scanAtElementPosition(html: string, match: TokenMatcher): Elemen
 }
 
 /**
+ * Cheap, conservative preflight for the unresolved-expression cloak pass.
+ *
+ * A mustache in an element's own text needs at least two opening and two
+ * closing braces outside tags, comments, and script/style raw text. They may
+ * be separated by child elements, so looking only for contiguous `{{` is NOT
+ * sufficient. False positives merely run the normal cloak scan; false
+ * negatives would leave an unresolved expression visible.
+ */
+export function mightContainOwnTextMustache(html: string): boolean {
+  let opening = 0
+  let closing = 0
+  let i = 0
+  let inTag = false
+  let quote: string | null = null
+
+  while (i < html.length) {
+    if (inTag) {
+      const ch = html[i]
+      if (quote) {
+        if (ch === quote) quote = null
+      }
+      else if (ch === '"' || ch === '\'') {
+        quote = ch
+      }
+      else if (ch === '>') {
+        inTag = false
+      }
+      i++
+      continue
+    }
+
+    const lt = html.indexOf('<', i)
+    const textEnd = lt === -1 ? html.length : lt
+    while (i < textEnd) {
+      const ch = html[i++]
+      if (ch === '{') opening++
+      else if (ch === '}') closing++
+      if (opening >= 2 && closing >= 2)
+        return true
+    }
+    if (lt === -1)
+      break
+
+    const opaqueEnd = matchOpaqueRegion(html, lt)
+    if (opaqueEnd > lt) {
+      i = opaqueEnd
+      continue
+    }
+
+    const first = html.charCodeAt(lt + 1)
+    const letter = first === 47 ? html.charCodeAt(lt + 2) : first
+    if ((letter >= 65 && letter <= 90) || (letter >= 97 && letter <= 122))
+      inTag = true
+    i = lt + 1
+  }
+
+  return false
+}
+
+/**
  * Mask every token (per `match`) that begins at element position, replacing it
  * with `placeholder(token, index)`. Returns the rewritten string plus the ordered
  * list of removed tokens. Restore by replacing each placeholder with `tokens[i]`.

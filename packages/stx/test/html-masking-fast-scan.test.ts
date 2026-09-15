@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { scanAtElementPosition } from '../src/html-masking'
+import { mightContainOwnTextMustache, scanAtElementPosition } from '../src/html-masking'
 
 function markTokens(html: string): string[] {
   return scanAtElementPosition(html, (source, i) =>
@@ -21,5 +21,21 @@ describe('element-position mask scan', () => {
 
   it('treats an unclosed script as opaque through the document end', () => {
     expect(markTokens('<script>const x = "<mark>"')).toEqual([])
+  })
+})
+
+describe('mustache preflight', () => {
+  it('ignores browser scripts, styles, comments, and attributes', () => {
+    const html = '<main title="{{ attr }}"><!-- {{ note }} --><script>const x = "{{ runtime }}"</script><style>.x { color: red }</style>Ready</main>'
+
+    expect(mightContainOwnTextMustache(html)).toBe(false)
+  })
+
+  it('keeps delimiters split across child elements on the cloak path', () => {
+    expect(mightContainOwnTextMustache('<p>{<b>x</b>{ name }<i>x</i>}</p>')).toBe(true)
+  })
+
+  it('is conservative across unrelated text nodes', () => {
+    expect(mightContainOwnTextMustache('<p>{{ start</p><p>end }}</p>')).toBe(true)
   })
 })
