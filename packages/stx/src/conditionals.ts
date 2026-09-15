@@ -331,7 +331,11 @@ function processConditionalsIn(template: string, context: Record<string, any>, f
       return false
     }
 
-    // Process from end to start to preserve positions
+    // Evaluate from end to start as before, including any side effects in
+    // conditions. The parsed outer blocks are disjoint, so their replacements
+    // can then be applied with one forward rebuild instead of one page-sized
+    // rebuild per block (#1945).
+    const replacements = new Array<string>(ifBlocks.length)
     for (let i = ifBlocks.length - 1; i >= 0; i--) {
       const block = ifBlocks[i]
 
@@ -378,15 +382,24 @@ function processConditionalsIn(template: string, context: Record<string, any>, f
           }
         }
 
-        // Replace the block with the result
-        output = output.substring(0, block.start) + result + output.substring(block.end)
+        replacements[i] = result
       }
       catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error)
-        const errorMessage = inlineError('If', `Error processing @if block: ${msg}`, ErrorCodes.EVALUATION_ERROR)
-        output = output.substring(0, block.start) + errorMessage + output.substring(block.end)
+        replacements[i] = inlineError('If', `Error processing @if block: ${msg}`, ErrorCodes.EVALUATION_ERROR)
       }
     }
+
+    const chunks = new Array<string>(ifBlocks.length * 2 + 1)
+    let cursor = 0
+    for (let i = 0; i < ifBlocks.length; i++) {
+      const block = ifBlocks[i]
+      chunks[i * 2] = output.slice(cursor, block.start)
+      chunks[i * 2 + 1] = replacements[i]
+      cursor = block.end
+    }
+    chunks[ifBlocks.length * 2] = output.slice(cursor)
+    output = chunks.join('')
 
     return true
   }
