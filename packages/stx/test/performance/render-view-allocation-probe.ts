@@ -180,8 +180,11 @@ export async function measureAllocation<T>(
 if (import.meta.main) {
   const { renderView } = await import('../../src/build-views')
   const root = path.resolve(import.meta.dir, '../../../..')
-  const page = path.join(root, 'packages/components/examples/sidebar-arc-spaces.stx')
-  const options = { componentsDir: path.join(root, 'packages/components/src/ui/sidebar') }
+  // Overridable so the same instrument can be pointed at another page. The
+  // caches added for #1945 only engage above 64KB of intermediate document, so
+  // a number measured on one fixture says nothing about a smaller one.
+  const page = path.join(root, process.env.STX_BENCH_FIXTURE ?? 'packages/components/examples/sidebar-arc-spaces.stx')
+  const options = { componentsDir: path.join(root, process.env.STX_BENCH_COMPONENTS ?? 'packages/components/src/ui/sidebar') }
   const warmups = Number(process.env.STX_BENCH_WARMUPS ?? 10)
   const showSites = process.env.STX_BENCH_SITES === '1'
 
