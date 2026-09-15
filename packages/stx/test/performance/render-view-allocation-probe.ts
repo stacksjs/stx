@@ -34,8 +34,41 @@
  *   - compiled code objects from `new Function`
  *   - anything inside native code (Bun.Transpiler, Bun.build)
  *
+ * ## It counts materialised CONTENT, not allocated BYTES
+ *
+ * A large `slice` allocates nothing. JSC backs it with a substring that shares
+ * the parent's buffer, and a concatenation is a rope that holds its operands
+ * without copying them. The bytes are allocated later, when something forces
+ * the rope FLAT -- a regex, an indexOf, anything that needs contiguous
+ * characters. Measured on this build by `string-cost-model.ts`, sitting next to
+ * this file:
+ *
+ *     20 large slices, 763MB of "content"      rss +0.4MB
+ *     20 concatenations, left unflattened      rss +0.1MB
+ *     the same 20 concatenations, flattened    rss +742MB
+ *
+ * So this counter attributes bytes to the slice that produced them, while the
+ * machine pays at the flatten that consumes them. It stays a useful proxy
+ * because of the shape the pipeline actually has: a stage splices a document as
+ * `slice + insert + slice`, the next stage reads it and forces the flatten, and
+ * the slices it counted sum to roughly the length that then gets allocated. One
+ * counted document is about one allocated document.
+ *
+ * The proxy misleads in two directions, and both matter when reading a diff:
+ *
+ *   - AVOIDING A LARGE SLICE IS NOT A WIN. Holding a string to skip re-slicing
+ *     it out of a document drops this counter by the slice's length and saves
+ *     nothing, because the slice was free. Optimise away whole-document
+ *     REBUILDS, scans, and regex passes -- work the engine has to do -- not
+ *     slice arithmetic.
+ *   - A rope built from many small pieces and flattened repeatedly costs more
+ *     than this counter shows.
+ *
  * It is therefore a measure of EXPLICIT STRING MATERIALISATION, which is the
- * category #1945's work targets, not a total heap figure. Reported as such.
+ * category #1945's work targets, not a total heap figure, and not a count of
+ * allocated bytes. Reported as such. LATENCY IS THE GROUND TRUTH: a drop here
+ * that is not matched by `render-view-allocation.bench.ts` moving the same way
+ * has not removed work, only moved it out of view.
  */
 import path from 'node:path'
 
@@ -169,7 +202,7 @@ if (import.meta.main) {
 
   // eslint-disable-next-line no-console
   console.log(JSON.stringify({
-    metric: 'explicit string materialisation via String.prototype, one steady-state render',
+    metric: 'explicit string materialisation via String.prototype, one steady-state render (a proxy for allocation, not allocated bytes -- see the module comment)',
     fixture: path.relative(root, page),
     outputBytes: Buffer.byteLength(html),
     outputSha256: digest(html),
