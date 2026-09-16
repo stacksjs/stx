@@ -36,8 +36,11 @@
  *
  * ## It counts materialised CONTENT, not allocated BYTES
  *
- * A large `slice` allocates nothing. JSC backs it with a substring that shares
- * the parent's buffer, and a concatenation is a rope that holds its operands
+ * A `slice` copies no characters, at any size measured. JSC backs it with a
+ * substring that shares the parent's buffer -- down to at least 256 bytes on
+ * real markup, where a forced copy of the same slices costs 7x the resident
+ * memory (string-cost-model.ts) -- so what a slice allocates is one string
+ * object, not its length. A concatenation is a rope that holds its operands
  * without copying them. The bytes are allocated later, when something forces
  * the rope FLAT -- a regex, an indexOf, anything that needs contiguous
  * characters. Measured on this build by `string-cost-model.ts`, sitting next to
@@ -56,9 +59,9 @@
  *
  * The proxy misleads in two directions, and both matter when reading a diff:
  *
- *   - AVOIDING A LARGE SLICE IS NOT A WIN. Holding a string to skip re-slicing
- *     it out of a document drops this counter by the slice's length and saves
- *     nothing, because the slice was free. Optimise away whole-document
+ *   - AVOIDING A SLICE SAVES ITS OBJECT, NEVER ITS LENGTH. Holding a string to
+ *     skip re-slicing it out of a document drops this counter by the slice's
+ *     length and saves one small object, because the characters were shared. Optimise away whole-document
  *     REBUILDS, scans, and regex passes -- work the engine has to do -- not
  *     slice arithmetic.
  *   - A rope built from many small pieces and flattened repeatedly costs more

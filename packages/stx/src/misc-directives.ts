@@ -369,12 +369,17 @@ function ownTextContainsMustache(html: string, contentStart: number): boolean {
     const tagEnd = findTagEnd(html, i)
     if (tagEnd === -1) break
 
-    // Read the tag in place. This walk visits every tag in the subtree and
-    // slicing each one out just to run two regexes over it allocated 545KB
-    // across 7,326 calls on one render of form-examples -- the single largest
-    // site on that page. Small slices really are copies: JSC only shares a
-    // parent's buffer for LARGE ones (see string-cost-model.ts), so a tag-sized
-    // slice per tag is a tag-sized allocation per tag.
+    // Read the tag in place. This walk visits every tag in the subtree -- 7,326
+    // on one render of form-examples -- and used to slice each one out to run
+    // two regexes over the copy. Reading it at the offset instead cut that
+    // page's median render from 70.95ms to 64.92ms.
+    //
+    // Not because the slices copied the tags: they did not. JSC shares the
+    // parent's buffer for slices of every size measured, down to 256 bytes
+    // (string-cost-model.ts). What each one still costs is a string OBJECT --
+    // roughly 87 bytes resident per retained slice at that size -- and the
+    // regexes that then ran over it. Which of those two dominated here was not
+    // isolated.
     TAG_NAME_AT.lastIndex = i
     const name = TAG_NAME_AT.exec(html)?.[1]?.toLowerCase() ?? ''
 
