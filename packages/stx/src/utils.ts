@@ -232,10 +232,46 @@ export function getSharedTranspiler(options: ConstructorParameters<typeof Bun.Tr
 }
 
 /**
+ * Transpiled output per transpiler, keyed on the source.
+ *
+ * The same component scripts are transpiled on every render: one render of
+ * form-examples calls this 74 times, and the native `transformSync` behind it
+ * was the hottest self-time entry in a CPU profile of that page -- more than any
+ * function stx itself defines.
+ *
+ * Keyed through the TRANSPILER rather than on the source alone, and that is what
+ * makes it sound. The output depends on the source and on `define`, which bakes
+ * `STX_PUBLIC_*` env values in. `getSharedTranspiler` already pools on the full
+ * options, define included, so a changed env yields a different transpiler and
+ * therefore a different -- empty -- result map. Nothing here has to know which
+ * inputs matter.
+ *
+ * A WeakMap, so a transpiler dropped from the pool takes its results with it.
+ * Failed transpiles are not cached: they return the input unchanged, which is
+ * cheap to redo and keeps the error path exactly as it was.
+ */
+const transpileResults = new WeakMap<Bun.Transpiler, Map<string, string>>()
+const TRANSPILE_RESULTS_MAX_ENTRIES = 256
+
+/**
  * Transpile TypeScript code to JavaScript using Bun (sync version)
  */
 export function transpileTypeScript(code: string): string {
   try {
+    const transpiler = getSharedTranspiler({
+      loader: 'ts',
+      target: 'browser',
+      define: getPublicEnvDefine(),
+    })
+    let results = transpileResults.get(transpiler)
+    if (!results) {
+      results = new Map()
+      transpileResults.set(transpiler, results)
+    }
+    const cached = results.get(code)
+    if (cached !== undefined)
+      return cached
+
     // Strip .stx component imports before transpiling - these are handled by STX component resolution
     let processedCode = code.replace(/^\s*import\s+\w+\s+from\s+['"][^'"]*\.stx['"]\s*;?\s*$/gm, '')
     // Also strip side-effect .stx imports
@@ -267,12 +303,6 @@ export function transpileTypeScript(code: string): string {
       return `"__STX_EXPR_${idx}__"`
     })
 
-    // Use Bun's transpiler directly for inline code
-    const transpiler = getSharedTranspiler({
-      loader: 'ts',
-      target: 'browser',
-      define: getPublicEnvDefine(),
-    })
     let result = transpiler.transformSync(processedCode)
 
     // Restore STX template expressions (handle both quote styles since
@@ -282,6 +312,13 @@ export function transpileTypeScript(code: string): string {
       result = result.replace(`'__STX_EXPR_${i}__'`, placeholders[i])
     }
 
+    // Oldest first: a Map iterates in insertion order.
+    if (results.size >= TRANSPILE_RESULTS_MAX_ENTRIES) {
+      const oldest = results.keys().next()
+      if (!oldest.done)
+        results.delete(oldest.value)
+    }
+    results.set(code, result)
     return result
   }
   catch (e) {
