@@ -272,7 +272,15 @@ const MASK_CACHE_MIN_BYTES = 65536
 const MASK_CACHE_MAX_ENTRIES = 12
 const maskCache = new Map<string, { output: string, tokens: string[] }>()
 
-/** Drop cached mask results. Dev/HMR calls this when templates change. */
+/**
+ * Drop cached mask results.
+ *
+ * Nothing in the framework calls this, and nothing needs to. Entries are keyed
+ * on the input document itself plus the caller's placeholder key, so an edited
+ * template is a different key and can never be answered with a stale result --
+ * there is no invalidation to perform. It exists for callers that want a cold
+ * cache, such as tests.
+ */
 export function clearMaskCache(): void {
   maskCache.clear()
 }
@@ -418,7 +426,14 @@ export function stashScriptElements(html: string): StashedScripts {
   return stashResult(html, output, tokens)
 }
 
-/** Drop cached stash results. Dev/HMR calls this when templates change on disk. */
+/**
+ * Drop cached stash results.
+ *
+ * Nothing in the framework calls this, and nothing needs to. Entries are keyed
+ * on the input document itself, so an edited template is a different key and
+ * can never be answered with a stale result -- there is no invalidation to
+ * perform. It exists for callers that want a cold cache, such as tests.
+ */
 export function clearStashCache(): void {
   stashCache.clear()
 }

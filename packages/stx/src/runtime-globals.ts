@@ -451,7 +451,14 @@ const BLANK_CACHE_MIN_BYTES = 65536
 const BLANK_CACHE_MAX_ENTRIES = 4
 const blankCache = new Map<string, string>()
 
-/** Drop cached blanked documents. Dev/HMR calls this when templates change. */
+/**
+ * Drop cached blanked documents.
+ *
+ * Nothing in the framework calls this, and nothing needs to. Entries are keyed
+ * on the input document itself, so an edited template is a different key and
+ * can never be answered with a stale result -- there is no invalidation to
+ * perform. It exists for callers that want a cold cache, such as tests.
+ */
 export function clearBlankCache(): void {
   blankCache.clear()
 }

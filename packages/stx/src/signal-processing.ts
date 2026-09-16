@@ -91,7 +91,14 @@ const SCRIPT_SCAN_CACHE_MIN_BYTES = 65536
 const SCRIPT_SCAN_CACHE_MAX_ENTRIES = 4
 const scriptScanCache = new Map<string, readonly ScannedScriptTag[]>()
 
-/** Drop cached script scans. Dev/HMR calls this when templates change on disk. */
+/**
+ * Drop cached script scans.
+ *
+ * Nothing in the framework calls this, and nothing needs to. Entries are keyed
+ * on the input document itself, so an edited template is a different key and
+ * can never be answered with a stale result -- there is no invalidation to
+ * perform. It exists for callers that want a cold cache, such as tests.
+ */
 export function clearScriptScanCache(): void {
   scriptScanCache.clear()
 }
