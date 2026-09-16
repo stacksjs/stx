@@ -377,7 +377,7 @@ function ownTextContainsMustache(html: string, contentStart: number): boolean {
     // Not because the slices copied the tags: they did not. JSC shares the
     // parent's buffer for slices of every size measured, down to 256 bytes
     // (string-cost-model.ts). What each one still costs is a string OBJECT --
-    // roughly 87 bytes resident per retained slice at that size -- and the
+    // roughly 90 bytes resident per retained slice at that size -- and the
     // regexes that then ran over it. Which of those two dominated here was not
     // isolated.
     TAG_NAME_AT.lastIndex = i

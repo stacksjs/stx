@@ -35,7 +35,7 @@
  *      23000B              rss   +1.8MB             rss  +69.0MB
  *
  * What a small slice does cost is its string object: +17.1MB over 196,608
- * retained 256-byte slices is about 87 bytes each, which at small sizes can
+ * retained 256-byte slices is about 90 bytes each, which at small sizes can
  * exceed the characters themselves.
  *
  * The two conclusions that change how an optimisation is judged:
