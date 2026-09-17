@@ -840,7 +840,16 @@ finally {
     if (options.immediate !== false) runEffect();
     const dispose = () => {
       isDisposed = true;
-      if (cleanup) cleanup();
+      // Idempotent. A removed :for row is disposed on removal, and the page
+      // tracker that collected its effects on first render still holds the
+      // same disposer, which cleanupContainer calls on SPA navigation (#1954).
+      // Clearing cleanup before calling it stops that second call running it
+      // twice.
+      if (cleanup) {
+        const pending = cleanup;
+        cleanup = undefined;
+        pending();
+      }
     };
     // Auto-register with active tracker
     if (activeDisposers) activeDisposers.push(dispose);
@@ -3837,9 +3846,10 @@ else {
     const removeGroup = (group) => {
       const liveNodes = liveGroupNodes(group);
       const liveSet = new Set(liveNodes);
-      liveNodes.forEach(e => { disposeSubtreeScopes(e); e.remove(); });
+      liveNodes.forEach(e => { disposeSubtreeEffects(e); disposeSubtreeScopes(e); e.remove(); });
       group.forEach(groupNode => {
         if (liveSet.has(groupNode)) return;
+        disposeSubtreeEffects(groupNode);
         disposeSubtreeScopes(groupNode);
         groupNode.remove();
       });
@@ -3924,13 +3934,15 @@ catch (e) {
       if (emptyTemplate) {
         emptyElement = emptyTemplate.cloneNode(true);
         parent.insertBefore(emptyElement, placeholder);
-        processElement(emptyElement);
+        const shownEmpty = emptyElement;
+        shownEmpty.__stx_effect_disposers = trackEffects(function() { processElement(shownEmpty); });
       }
     };
 
     // Helper to hide empty state
     const hideEmpty = () => {
       if (emptyElement) {
+        disposeSubtreeEffects(emptyElement);
         emptyElement.remove();
         emptyElement = null;
       }
@@ -4201,8 +4213,11 @@ catch (e) {
             if (el.nodeType === 1) {
               var itemScope = el.__stx_for_scope || passedScope;
               delete el.__stx_for_scope;
+              // Tracked so removeGroup can dispose the row's effects (#1954). Kept
+              // off __stx_disposers, which marks a hydrated component root here
+              // and in the deferred :if pass.
               if (!el.__stx_disposers && el.tagName !== 'SCRIPT')
-                processElement(el, itemScope);
+                el.__stx_effect_disposers = trackEffects(function() { processElement(el, itemScope); });
               el.removeAttribute('x-cloak');
               el.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
             }
@@ -4225,12 +4240,14 @@ catch (e) {
               const liveNodes = liveGroupNodes(group);
               const transitioned = new Set();
               liveNodes.forEach((el) => {
+                disposeSubtreeEffects(el);
                 disposeSubtreeScopes(el);
                 if (tgLeave(el, tgName)) transitioned.add(el);
                 else el.remove();
               });
               group.forEach((el) => {
                 if (transitioned.has(el) || liveNodes.includes(el)) return;
+                disposeSubtreeEffects(el);
                 disposeSubtreeScopes(el);
                 el.remove();
               });
@@ -4579,7 +4596,7 @@ catch (e2) {
       hydrateComponentScopes(nodes, childScope);
       nodes.forEach(node => {
         if (!node.__stx_disposers && node.tagName !== 'SCRIPT')
-          processElement(node, childScope);
+          node.__stx_effect_disposers = trackEffects(function() { processElement(node, childScope); });
         if (node.nodeType === 1) {
           node.removeAttribute('x-cloak');
           node.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
@@ -4616,8 +4633,10 @@ catch (e2) {
 else if (!value && isInserted) {
           // Remove all current nodes. Do NOT disposeSubtreeScopes — :if is a
           // toggle, not a permanent unmount; see the single-element branch
-          // below and #1737.
-          currentNodes.forEach(node => node.remove());
+          // below and #1737. Effects are disposed, though: these clones are never
+          // reused, and a re-show clones afresh, so leaving them bound only
+          // accumulates work (#1954).
+          currentNodes.forEach(node => { disposeSubtreeEffects(node); node.remove(); });
           currentNodes = [];
           isInserted = false;
           childrenProcessed = false;
@@ -4639,6 +4658,7 @@ else {
           console.log('[stx] bindIf INSERTING element for :if=' + expr);
           const insertionAnchor = placeholder.nextSibling;
           currentNodes.forEach(node => parent.insertBefore(node, insertionAnchor));
+          if (parent && parent.__stx_detached_if) currentNodes.forEach(node => parent.__stx_detached_if.delete(node));
           el.__stx_shown_at = performance.now();
           isInserted = true;
         }
@@ -4654,6 +4674,13 @@ else if (!value && isInserted) {
           // and cleanupContainer (SPA navigation). The double-bind guards make
           // re-show idempotent, so toggling doesn't leak.
           currentNodes.forEach(node => node.remove());
+          // Detached nodes are out of reach of a DOM walk, so an ancestor row or
+          // branch removed while this is hidden could not dispose their effects
+          // (#1954). Record them on the parent that keeps the placeholder.
+          if (parent) {
+            if (!parent.__stx_detached_if) parent.__stx_detached_if = new Set();
+            currentNodes.forEach(node => parent.__stx_detached_if.add(node));
+          }
           isInserted = false;
           console.log('[stx] bindIf REMOVED, el.isConnected:', el.isConnected);
         }
@@ -4672,6 +4699,14 @@ else if (!value && isInserted) {
           // in a :if binds a macrotask after the synchronous stx:load audit (#1773).
           el.__stx_if_pending = true;
           setTimeout(function() {
+            // Removed with its row, or hidden again, before this ran. Hydrating
+            // a detached element now creates effects nothing will dispose
+            // (#1954). Leave it unprocessed so the next show schedules the pass.
+            if (!el.isConnected) {
+              childrenProcessed = false;
+              el.__stx_if_pending = false;
+              return;
+            }
             var childScope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
             // A false single-element conditional is detached before the
             // DOMContentLoaded component-scope pass. When it becomes visible,
@@ -4680,8 +4715,11 @@ else if (!value && isInserted) {
             // the same lifecycle as components inserted by template :if.
             var wasTrackedBeforeConditionalHydration = !!el.__stx_disposers;
             hydrateComponentScopes(currentNodes, childScope);
+            // Tracked on its own property so an ancestor row or branch removal
+            // reaches these effects too (#1954). This runs after the enclosing
+            // tracker has closed, so nothing else would collect them.
             if (wasTrackedBeforeConditionalHydration || !el.__stx_disposers)
-              processElement(el, childScope);
+              el.__stx_if_disposers = trackEffects(function() { processElement(el, childScope); });
             // Remove x-cloak from the inserted subtree — the initial
             // cloak removal (after processElement on the root) already
             // ran before this deferred processing, so newly-inserted
@@ -7613,6 +7651,51 @@ catch (e) {
   // indefinitely. Now bindIf, bindFor, and cleanupContainer all funnel
   // through this helper so the cleanup is symmetric regardless of who
   // initiated the removal.
+  // Dispose the EFFECTS bound inside a subtree leaving the page for good: a
+  // removed :for row, a hidden template :if clone, a hidden :for empty
+  // placeholder, or a container on SPA navigation (#1954).
+  // disposeSubtreeScopes only releases scope registrations. Without this, the
+  // effects that bound the subtree stay subscribed to every signal they read
+  // and keep running, so work per update grows with every removal.
+  // Descendants first, then the root, the order cleanupContainer always used.
+  function disposeSubtreeEffects(root) {
+    if (!root) return;
+    var nodes = [];
+    if (root.querySelectorAll) {
+      var all = root.querySelectorAll('*');
+      for (var i = 0; i < all.length; i++) nodes.push(all[i]);
+    }
+    nodes.push(root);
+    var owned = ['__stx_disposers', '__stx_effect_disposers', '__stx_if_disposers'];
+    for (var n = 0; n < nodes.length; n++) {
+      var el = nodes[n];
+      if (typeof el.__stx_hydration_cancel === 'function') {
+        try { el.__stx_hydration_cancel(); } catch (e) { /* noop */ }
+        el.__stx_hydration_cancel = null;
+      }
+      if (Array.isArray(el.__stx_destroy)) {
+        var hooks = el.__stx_destroy;
+        el.__stx_destroy = null;
+        hooks.forEach(function(fn) {
+          try { fn(); }
+          catch (e) { console.warn('[stx] destroy hook error:', e); }
+        });
+      }
+      if (el.__stx_detached_if) {
+        var detached = el.__stx_detached_if;
+        el.__stx_detached_if = null;
+        detached.forEach(function(node) { disposeSubtreeEffects(node); });
+      }
+      for (var k = 0; k < owned.length; k++) {
+        var disposeOwned = el[owned[k]];
+        if (typeof disposeOwned === 'function') {
+          el[owned[k]] = null;
+          disposeOwned();
+        }
+      }
+    }
+  }
+
   function disposeSubtreeScopes(root) {
     if (!root || !window.stx || !window.stx._scopes) return;
     // Build the list of nodes to inspect: root + descendants with the
@@ -7901,43 +7984,11 @@ catch (e) {
       if (el.__stx_scope) Object.assign(componentScope, el.__stx_scope);
     });
 
-    // 1. Walk all child elements — fire destroy hooks and dispose effects
-    container.querySelectorAll('*').forEach(function(el) {
-      // Cancel a still-pending island hydration trigger (#1746) so its
-      // observer/timer/listener doesn't fire on this detached element.
-      if (typeof el.__stx_hydration_cancel === 'function') {
-        try { el.__stx_hydration_cancel(); } catch (e) { /* noop */ }
-        el.__stx_hydration_cancel = null;
-      }
-      if (el.__stx_destroy && Array.isArray(el.__stx_destroy)) {
-        el.__stx_destroy.forEach(function(fn) {
-          try { fn(); }
-catch (e) { console.warn('[stx] destroy hook error:', e); }
-        });
-        el.__stx_destroy = null;
-      }
-      if (el.__stx_disposers && typeof el.__stx_disposers === 'function') {
-        el.__stx_disposers();
-        el.__stx_disposers = null;
-      }
-    });
-
-    // 2. Check container itself
-    if (typeof container.__stx_hydration_cancel === 'function') {
-      try { container.__stx_hydration_cancel(); } catch (e) { /* noop */ }
-      container.__stx_hydration_cancel = null;
-    }
-    if (container.__stx_destroy) {
-      container.__stx_destroy.forEach(function(fn) {
-        try { fn(); }
-catch (e) { console.warn('[stx] destroy hook error:', e); }
-      });
-      container.__stx_destroy = null;
-    }
-    if (container.__stx_disposers) {
-      container.__stx_disposers();
-      container.__stx_disposers = null;
-    }
+    // 1-2. Every descendant, then the container: cancel pending island
+    // hydration (#1746), fire destroy hooks, dispose effects. Shared with
+    // :for row removal and template :if hide so all three release the same
+    // trackers, including the row and branch ones added for #1954.
+    disposeSubtreeEffects(container);
     // Clear __stx_scope so _handleStxLoad's processElement guard doesn't skip it
     container.__stx_scope = null;
 

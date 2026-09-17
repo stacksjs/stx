@@ -447,10 +447,16 @@ finally {
     runEffect()
   }
 
-  // Return cleanup function that fully disposes the effect
+  // Return cleanup function that fully disposes the effect. Idempotent, to
+  // match the client runtime (stacksjs/stx#1954): cleanup is cleared before it
+  // runs, so a second dispose -- or a cleanup that throws -- never runs it again.
   return () => {
     isDisposed = true
-    if (cleanup) cleanup()
+    if (cleanup) {
+      const pending = cleanup
+      cleanup = undefined
+      pending()
+    }
   }
 }
 
