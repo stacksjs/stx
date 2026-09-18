@@ -4437,7 +4437,16 @@ catch (e2) {
       // still handled by bindFor (item removal) and cleanupContainer (SPA nav).
       if (currentIdx !== -1) {
         chain[currentIdx].el.__stx_chain_active = false;
-        chain[currentIdx].nodes.forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
+        chain[currentIdx].nodes.forEach(function (n) {
+          if (!n.parentNode) return;
+          // Detached nodes are out of reach of a DOM walk, so a row removed
+          // while this branch is hidden could not dispose the effects it was
+          // processed with (#1954). Same registry the single-element :if uses.
+          var host = n.parentNode;
+          if (!host.__stx_detached_if) host.__stx_detached_if = new Set();
+          host.__stx_detached_if.add(n);
+          host.removeChild(n);
+        });
       }
 
       // Insert + process the newly-picked branch.
@@ -4447,7 +4456,11 @@ catch (e2) {
         // Insert this branch's node(s) before the placeholder's next sibling.
         // The anchor is captured once so the nodes stack in source order.
         var anchor = pick.placeholder.nextSibling;
-        pick.nodes.forEach(function (n) { pick.placeholder.parentNode.insertBefore(n, anchor); });
+        pick.nodes.forEach(function (n) {
+          var host = pick.placeholder.parentNode;
+          if (host.__stx_detached_if) host.__stx_detached_if.delete(n);
+          host.insertBefore(n, anchor);
+        });
         pick.el.__stx_shown_at = performance.now();
         if (!pick.childrenProcessed) {
           pick.childrenProcessed = true;
@@ -4457,6 +4470,10 @@ catch (e2) {
           // to process projected slot expressions without the loop caller
           // scope. peek() keeps this synchronous pass from subscribing child
           // reads to the current chain effect.
+          // Tracked on the branch element: this runs inside the chain effect,
+          // where no tracker is active, so without a handle the effects of a
+          // branch picked after render survive their row's removal (#1954).
+          pick.el.__stx_chain_disposers = trackEffects(function () {
           peek(function () {
             var childScope = { ...globalHelpers, ...capturedComponentScope, ...(pick.capturedElementScope || {}) };
             // Components compiled inside any branch of an if/else-if/else
@@ -4482,6 +4499,7 @@ catch (e2) {
               n.removeAttribute('x-cloak');
               n.querySelectorAll('[x-cloak]').forEach(function (c) { c.removeAttribute('x-cloak'); });
             });
+          });
           });
         }
       }
@@ -7666,7 +7684,7 @@ catch (e) {
       for (var i = 0; i < all.length; i++) nodes.push(all[i]);
     }
     nodes.push(root);
-    var owned = ['__stx_disposers', '__stx_effect_disposers', '__stx_if_disposers'];
+    var owned = ['__stx_disposers', '__stx_effect_disposers', '__stx_if_disposers', '__stx_chain_disposers'];
     for (var n = 0; n < nodes.length; n++) {
       var el = nodes[n];
       if (typeof el.__stx_hydration_cancel === 'function') {
