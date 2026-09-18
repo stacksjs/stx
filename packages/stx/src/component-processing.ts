@@ -433,6 +433,61 @@ export function decodeStxProp(attrValue: string, options?: { debug?: boolean }):
  * @param attributesStr - The attributes string (may be multiline)
  * @returns Object mapping attribute names to values
  */
+/**
+ * Read a `{...}` attribute value whole, from `start`, matching nested braces and
+ * ignoring braces inside quotes. Returns the text including both outer braces;
+ * an unterminated value returns the rest of the string rather than throwing,
+ * so a malformed tag degrades to one bad prop instead of a shattered tag.
+ */
+export function readBracedValue(source: string, start: number): string {
+  let depth = 0
+  let quote = ''
+  let pos = start
+  while (pos < source.length) {
+    const char = source[pos]
+    if (quote) {
+      if (char === '\\') pos++
+      else if (char === quote) quote = ''
+    }
+    else if (char === '"' || char === '\'' || char === '`') {
+      quote = char
+    }
+    else if (char === '{') {
+      depth++
+    }
+    else if (char === '}') {
+      depth--
+      if (depth === 0)
+        return source.slice(start, pos + 1)
+    }
+    pos++
+  }
+  return source.slice(start)
+}
+
+/** Seen `prop={expr}` spellings, so a page warns once rather than per render. */
+const warnedJsxStyleProps = new Set<string>()
+
+/**
+ * A `prop={expr}` value is kept verbatim, braces included, so the component
+ * receives a STRING. That is almost never what the author meant, and it is
+ * otherwise silent -- a handler arrives as "{onSubmit}", an object as
+ * "{{ ... }}" -- so say so once per spelling (stacksjs/stx#1956).
+ */
+export function warnJsxStyleProp(name: string, value: string): void {
+  const key = name + '=' + value
+  if (warnedJsxStyleProps.has(key))
+    return
+  warnedJsxStyleProps.add(key)
+  const inner = value.replace(/^\{+|\}+$/g, '').trim().replace(/\s+/g, ' ')
+  const preview = inner.length > 40 ? inner.slice(0, 40) + '...' : inner
+  const shown = value.length > 48 ? value.slice(0, 48) + '...' : value
+  console.warn(
+    `[stx] ${name}={...} is not stx syntax, so ${name} is passed as the literal string ${JSON.stringify(shown)}. `
+    + `Use :${name}="${preview}" for a server-evaluated value, or ${name}="..." for a plain string.`,
+  )
+}
+
 export function parseMultilineAttributes(attributesStr: string): Record<string, string> {
   const props: Record<string, string> = {}
   let pos = 0
@@ -516,6 +571,19 @@ export function parseMultilineAttributes(attributesStr: string): Record<string, 
           pos++
         }
       }
+      else if (attributesStr[pos] === '{') {
+        // A JSX-style `prop={expr}` value. Not stx syntax (`:prop="expr"` is),
+        // but it has to be consumed as ONE token regardless (stacksjs/stx#1956).
+        // Reading to the next whitespace ended the value at `{{` and turned the
+        // rest of the object literal into attribute NAMES -- `name:`, `'John`,
+        // `Doe'`, `notifications:`, `true`, `}}` -- which became context keys.
+        // `true` is identifier-shaped but reserved, so it reached new Function
+        // as a parameter name and took down the component's whole
+        // <script server> (that half fixed in ffeaec7058).
+        value = readBracedValue(attributesStr, pos)
+        pos += value.length
+        warnJsxStyleProp(name, value)
+      }
       else {
         // Unquoted value (read until whitespace)
         while (pos < len && !/\s/.test(attributesStr[pos])) {
@@ -592,6 +660,19 @@ export function parseAttributes(attributesStr: string): ParsedAttribute[] {
           pos++
         }
         if (pos < len) pos++ // Skip closing quote (with bounds check)
+      }
+      else if (attributesStr[pos] === '{') {
+        // A JSX-style `prop={expr}` value. Not stx syntax (`:prop="expr"` is),
+        // but it has to be consumed as ONE token regardless (stacksjs/stx#1956).
+        // Reading to the next whitespace ended the value at `{{` and turned the
+        // rest of the object literal into attribute NAMES -- `name:`, `'John`,
+        // `Doe'`, `notifications:`, `true`, `}}` -- which became context keys.
+        // `true` is identifier-shaped but reserved, so it reached new Function
+        // as a parameter name and took down the component's whole
+        // <script server> (that half fixed in ffeaec7058).
+        value = readBracedValue(attributesStr, pos)
+        pos += value.length
+        warnJsxStyleProp(name, value)
       }
       else {
         // Unquoted value (read until whitespace)

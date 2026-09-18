@@ -23,7 +23,7 @@ import type { ResolvedProps, RenderContext } from './component-registry'
 import { registry } from './component-registry'
 import { processConditionals } from './conditionals'
 import { registerBuiltins } from './builtins'
-import { decodeAttributeEntities, decodeStxProp, findComponentTags, parseMultilineAttributes, pascalToKebab, restoreStashedScripts, stashScriptElements, uppercaseHtmlTagSkip } from './component-processing'
+import { decodeAttributeEntities, decodeStxProp, findComponentTags, parseMultilineAttributes, pascalToKebab, readBracedValue, restoreStashedScripts, stashScriptElements, uppercaseHtmlTagSkip, warnJsxStyleProp } from './component-processing'
 import { maskAtElementPosition, matchHtmlComment } from './html-masking'
 import { renderComponentWithSlot, userComponentFileExists } from './utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluateObject, freeIdentifiers } from './safe-evaluator'
@@ -482,6 +482,15 @@ function parseAllAttributes(attributesStr: string): Record<string, string> {
           value += char
           pos++
         }
+      }
+      else if (attributesStr[pos] === '{') {
+        // JSX-style `prop={expr}`, consumed whole so the rest of the object
+        // literal cannot become attribute names (stacksjs/stx#1956). This is
+        // the parser the component render path uses, so it is the one that
+        // decides what a component actually receives.
+        value = readBracedValue(attributesStr, pos)
+        pos += value.length
+        warnJsxStyleProp(name, value)
       }
       else {
         // Unquoted value (read until whitespace)
