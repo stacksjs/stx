@@ -47,4 +47,44 @@ describe('extractVariables context key sanitisation', () => {
 
     expect(context.shout).toBe('SIDEBAR')
   })
+  it('runs the script when context carries RESERVED-WORD keys', async () => {
+    // `true` is shaped like an identifier, so an identifier-only filter lets it
+    // through -- and JS then rejects it as a parameter name, throwing before
+    // the script runs. Six shipped components hit this on every render: a
+    // JSX-style object prop was split into fragments, one of which was `true`.
+    const script = `
+      function double(list) { return list.map(n => n * 2) }
+      export const doubled = double([1, 2, 3])
+    `
+    const context: Record<string, unknown> = {
+      true: 1,
+      false: 0,
+      null: null,
+      class: 'btn',
+      let: 'x',
+      static: 'y',
+      arguments: 'z',
+      title: 'Kept',
+    }
+
+    await extractVariables(script, context, fixture)
+
+    // Static extraction cannot call a helper, so this proves the script ran.
+    expect(context.doubled).toEqual([2, 4, 6])
+    expect(context.title).toBe('Kept')
+  })
+
+  it('runs the script when a PROP is named with a reserved word', async () => {
+    const script = `
+      function shout(text) { return text.toUpperCase() }
+      export const label = shout('ok')
+    `
+    const context: Record<string, unknown> = {
+      props: { true: 1, class: 'btn', name: 'Ada' },
+    }
+
+    await extractVariables(script, context, fixture)
+
+    expect(context.label).toBe('OK')
+  })
 })

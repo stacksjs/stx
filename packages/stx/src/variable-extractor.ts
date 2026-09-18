@@ -110,7 +110,7 @@ const STX_RUNTIME_SPECIFIERS = new Set(['stx', '@stacksjs/stx'])
 import { findMatchingDelimiter } from './parser/tokenizer'
 import { mergeHeadConfigs, seoMetaToHeadConfig } from './head'
 import { getPublicEnvDefine } from './public-env'
-import { safeEvaluate } from './safe-evaluator'
+import { isUsableParamName, safeEvaluate } from './safe-evaluator'
 import { responseBindings } from './page-response'
 import { contentKey, renderMemo } from './render-memo'
 
@@ -928,9 +928,12 @@ catch {
     // the static-extraction fallback: exports computed by calling a helper
     // came back undefined and the component rendered empty. Props were already
     // screened this way; context was not.
-    const isIdentifier = (key: string) => /^[a-z_$][\w$]*$/i.test(key)
+    // isUsableParamName, not a local identifier test: a key shaped like an
+    // identifier can still be a reserved word. `true` reached `new Function`
+    // here and threw before the script ran, so every binding in the file came
+    // back undefined and the component silently rendered from the fallback.
     const filteredContextKeys = Object.keys(context).filter(key =>
-      !propsKeys.has(key) && !CONTEXT_RESERVED_BINDINGS.has(key) && isIdentifier(key))
+      !propsKeys.has(key) && !CONTEXT_RESERVED_BINDINGS.has(key) && isUsableParamName(key))
     const filteredContextValues = filteredContextKeys.map(key => context[key])
 
     /*
@@ -967,19 +970,20 @@ catch {
     // and skipped when the script text already declares a same-named const
     // (inner `const` legally shadows an outer param, but our convertToCommonJS
     // pass may reorder declarations, so we play it safe).
-    const jsReserved = new Set([
-      'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger', 'default',
-      'delete', 'do', 'else', 'export', 'extends', 'finally', 'for', 'function',
-      'if', 'import', 'in', 'instanceof', 'let', 'new', 'return', 'super', 'switch',
-      'this', 'throw', 'try', 'typeof', 'var', 'void', 'while', 'with', 'yield',
-      'enum', 'await', 'async', 'module', 'exports', 'require', 'params',
+    // Only the stx-specific exclusions live here: engine bindings and globals a
+    // script would shadow. Whether JS accepts the name as a parameter at all is
+    // isUsableParamName's job -- this set used to carry its own copy of the
+    // reserved words and omitted the literals, so a prop named `true` was
+    // handed to new Function and threw before the script ran.
+    const stxShadowedNames = new Set([
+      'async', 'module', 'exports', 'require', 'params',
       'window', 'document', 'console', 'state', 'derived', 'effect',
     ])
     const propArgNames: string[] = []
     const propArgValues: unknown[] = []
     for (const [key, value] of Object.entries(propsObj)) {
-      if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key)) continue // must be a valid JS identifier
-      if (jsReserved.has(key)) continue
+      if (!isUsableParamName(key)) continue // JS rejects it as a parameter name
+      if (stxShadowedNames.has(key)) continue
       // Skip names the script redeclares at the top level (shadowing would work,
       // but convertToCommonJS rewrites may leave them at the same scope).
       const redeclareRegex = new RegExp(`(?:^|[\\s;{])(?:const|let|var|function)\\s+${key}\\b`)
@@ -2338,16 +2342,20 @@ function evaluateFallbackExpression(expression: string, context: Record<string, 
     return undefined
 
   const processEnvContext = { ...context, process: Object.freeze({ env: { ...process.env } }) }
+  // Same filter as the main path: an unusable key would throw while building
+  // the function, which this catch would then read as "the expression failed".
+  const envKeys = Object.keys(processEnvContext).filter(isUsableParamName)
+  const envValues = envKeys.map(key => (processEnvContext as Record<string, unknown>)[key])
   try {
     // eslint-disable-next-line no-new-func
-    const fn = new Function(...Object.keys(processEnvContext), `'use strict'; return (${expression});`)
-    return fn(...Object.values(processEnvContext))
+    const fn = new Function(...envKeys, `'use strict'; return (${expression});`)
+    return fn(...envValues)
   }
   catch {
     try {
       // eslint-disable-next-line no-new-func
-      const fn = new Function(...Object.keys(processEnvContext), `'use strict'; return ${expression};`)
-      return fn(...Object.values(processEnvContext))
+      const fn = new Function(...envKeys, `'use strict'; return ${expression};`)
+      return fn(...envValues)
     }
     catch {
       return undefined

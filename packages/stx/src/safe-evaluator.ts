@@ -625,6 +625,26 @@ export function freeIdentifiers(expression: string): string[] {
   return withoutKeys.match(/\b[a-zA-Z_$][\w$]*\b/g) || []
 }
 
+const VALID_PARAM_IDENT = /^[A-Za-z_$][\w$]*$/
+
+/**
+ * Whether `name` can be a `new Function` parameter name.
+ *
+ * Rejects the three classes JS refuses: non-identifiers (`data-id`, `1bad`),
+ * reserved words (`class`, `true`, `if`) and strict-mode-reserved words
+ * (`let`, `static`) -- the bodies here are always strict.
+ *
+ * Exported because every caller that spreads a template context into
+ * `new Function` needs exactly this test, and a near-miss copy is worse than
+ * none: an `isIdentifier`-only filter in variable-extractor.ts let `true`
+ * through, and one such key threw before the function was built, so the whole
+ * server script of six shipped components fell back to static extraction on
+ * every render (stacksjs/stx#1945 profiling, found via the fallback's cost).
+ */
+export function isUsableParamName(name: string): boolean {
+  return VALID_PARAM_IDENT.test(name) && !RESERVED_PARAM_NAMES.has(name)
+}
+
 export function createSafeFunction(expression: string, contextKeys: string[]): (...args: unknown[]) => unknown {
   // Validate the expression first
   const sanitizedExpr = sanitizeExpression(expression)
@@ -648,13 +668,10 @@ export function createSafeFunction(expression: string, contextKeys: string[]): (
   // Dropped keys can't be referenced from the expression anyway — JS has
   // no syntax to read `class` or `passed-class` as identifiers in user
   // code — so dropping is both safe and what callers expect.
-  const validIdent = /^[A-Za-z_$][\w$]*$/
   const validEntries: Array<{ key: string, index: number }> = []
   for (let i = 0; i < contextKeys.length; i++) {
-    const key = contextKeys[i]
-    if (!validIdent.test(key)) continue
-    if (RESERVED_PARAM_NAMES.has(key)) continue
-    validEntries.push({ key, index: i })
+    if (!isUsableParamName(contextKeys[i])) continue
+    validEntries.push({ key: contextKeys[i], index: i })
   }
 
   // Object insertion order is not part of an expression's semantics, but it
@@ -808,8 +825,11 @@ export function safeEvaluateCode(code: string, context: Record<string, unknown>)
     }
 
     const safeContext = createSafeContext(context)
-    const keys = Object.keys(safeContext)
-    const values = Object.values(safeContext)
+    // Filtered for the same reason as createSafeFunction: one key JS rejects as
+    // a parameter name throws while BUILDING the function, so the whole block
+    // fails rather than the one binding nobody could reference anyway.
+    const keys = Object.keys(safeContext).filter(isUsableParamName)
+    const values = keys.map(key => safeContext[key])
 
     // eslint-disable-next-line no-new-func
     const func = new Function(...keys, `

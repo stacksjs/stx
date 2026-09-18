@@ -32,6 +32,7 @@ import { transformStoreImports } from './store-imports'
 import { LRUCache } from './performance-utils'
 import { processDirectives } from './process'
 import { getPublicEnvDefine } from './public-env'
+import { isUsableParamName } from './safe-evaluator'
 import { processScopedStyles } from './style-scoping'
 import { findSfcTemplateBlock } from './sfc-template'
 import { importOnce } from './lazy-module'
@@ -615,7 +616,9 @@ function applyDestructuredPropDefaults(
       if (!expr)
         continue
       try {
-        const keys = Object.keys(ctx)
+        // Filtered: a context key JS rejects as a parameter name would throw
+        // while building the function, losing the whole expression.
+        const keys = Object.keys(ctx).filter(isUsableParamName)
         // eslint-disable-next-line no-new-func
         const fn = new Function(...keys, `"use strict"; return (${expr});`)
         ctx[name] = fn(...keys.map(k => ctx[k]))
