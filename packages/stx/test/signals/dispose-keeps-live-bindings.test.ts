@@ -76,6 +76,28 @@ describe('#1954 disposal keeps live bindings live', () => {
     }
   })
 
+  it('removes rows of a <template :for> placed DIRECTLY under a hidden <template :if>', async () => {
+    // Unwrapped on purpose: the rendered rows are siblings of the :for clone,
+    // not descendants of anything the :if tracks, so hiding the branch has to
+    // reach them some other way. The earlier #1954 attempt left them on screen.
+    const shown = window.stx.state(true)
+    const items = window.stx.state([1, 2, 3])
+    const page = await mount(`
+      <div id="host"><template :if="shown()"><template :for="i in items" :key="i"><b class="row" x-class="probe(i)">{{ i }}</b></template></template></div>`, { shown, items })
+
+    expect(hits('#host .row')).toBe(3)
+    for (let cycle = 0; cycle < 5; cycle++) {
+      shown.set(false)
+      await settle()
+      expect(document.querySelectorAll('#host .row').length).toBe(0)
+      expect(await page.oneUpdate()).toBe(0)
+      shown.set(true)
+      await settle()
+      expect(hits('#host .row')).toBe(3)
+      expect(await page.oneUpdate()).toBe(3)
+    }
+  })
+
   it('keeps surviving keyed rows bound after a middle row is removed', async () => {
     const items = window.stx.state([1, 2, 3, 4])
     const page = await mount(`

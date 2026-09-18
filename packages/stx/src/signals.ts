@@ -4523,6 +4523,14 @@ catch (e2) {
     }
 
     const placeholder = document.createComment('stx-if');
+    // Marks where this branch's rendered content ENDS (stacksjs/stx#1955).
+    // Hiding used to remove only the cloned nodes, but a structural directive
+    // directly inside the template renders its own output as siblings that are
+    // not among those clones -- a <template :for> at the top level of a
+    // <template :if> left every row on screen after the branch went false.
+    // Only the template branch needs it; the single-element branch owns exactly
+    // the node it was bound to.
+    let endMarker = null;
     let isInserted = true;
 
     // Handle <template> elements specially - clone their content
@@ -4549,6 +4557,13 @@ catch (e2) {
       // multi-root template branch.
       const initialAnchor = placeholder.nextSibling;
       currentNodes.forEach(node => parent.insertBefore(node, initialAnchor));
+      // The end of this branch's range, bound at the same time as the content
+      // it closes (#1955). Needed here too, not only on re-show: the first
+      // hide of a branch that was never toggled removes THIS content, and a
+      // nested :for renders rows that are siblings of these clones rather than
+      // among them.
+      endMarker = document.createComment('stx-if-end');
+      parent.insertBefore(endMarker, initialAnchor);
       el.remove(); // Remove the template element itself
     }
 
@@ -4642,6 +4657,10 @@ catch (e2) {
           currentNodes = Array.from(el.content.childNodes).map(n => n.cloneNode(true));
           const insertionAnchor = placeholder.nextSibling;
           currentNodes.forEach(node => parent.insertBefore(node, insertionAnchor));
+          // Bound AFTER the clones, so hiding can remove whatever a nested
+          // structural directive rendered as their sibling (#1955).
+          if (!endMarker) endMarker = document.createComment('stx-if-end');
+          parent.insertBefore(endMarker, insertionAnchor);
           processTemplateNodes(currentNodes);
           childrenProcessed = true;
           // Stamp insertion time for click propagation guard
@@ -4654,6 +4673,24 @@ else if (!value && isInserted) {
           // below and #1737. Effects are disposed, though: these clones are never
           // reused, and a re-show clones afresh, so leaving them bound only
           // accumulates work (#1954).
+          //
+          // Everything between the placeholder and the end marker goes, not
+          // just the clones: a nested :for or :if renders siblings of its own
+          // that no clone list contains (#1955).
+          // Only walk the range when THIS binding inserted the content and
+          // left its marker. Without that guard the walk ran to the end of the
+          // parent and took a sibling <template :if> with it -- the initial
+          // server-rendered state has no marker to stop at.
+          if (endMarker && endMarker.parentNode === parent) {
+            var doomed = placeholder.nextSibling;
+            while (doomed && doomed !== endMarker) {
+              var nextDoomed = doomed.nextSibling;
+              disposeSubtreeEffects(doomed);
+              doomed.remove();
+              doomed = nextDoomed;
+            }
+            endMarker.remove();
+          }
           currentNodes.forEach(node => { disposeSubtreeEffects(node); node.remove(); });
           currentNodes = [];
           isInserted = false;
