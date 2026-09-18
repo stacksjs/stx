@@ -1,5 +1,63 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.286...HEAD)
+
+## 🚀 Features
+
+- **components**: prop={expr} on a component means :prop="expr" (#1956) ([59e6dd5](https://github.com/stacksjs/stx/commit/59e6dd5)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1956](https://github.com/stacksjs/stx/issues/1956), [#1956](https://github.com/stacksjs/stx/issues/1956), [#1956](https://github.com/stacksjs/stx/issues/1956))
+
+## 🐛 Bug Fixes
+
+- **signals**: hide a template :if by its whole rendered range (#1955) ([7fc1393](https://github.com/stacksjs/stx/commit/7fc1393)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1955](https://github.com/stacksjs/stx/issues/1955), [#1955](https://github.com/stacksjs/stx/issues/1955), [#1954](https://github.com/stacksjs/stx/issues/1954), [#1955](https://github.com/stacksjs/stx/issues/1955), [#1955](https://github.com/stacksjs/stx/issues/1955), [#1954](https://github.com/stacksjs/stx/issues/1954))
+- **bridge**: only a TOP-LEVEL re-declaration withholds a payload name (#1953) ([700a219](https://github.com/stacksjs/stx/commit/700a219)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1953](https://github.com/stacksjs/stx/issues/1953), [#1953](https://github.com/stacksjs/stx/issues/1953))
+- **components**: read a braced attribute value as one token (#1956) ([75aed77](https://github.com/stacksjs/stx/commit/75aed77)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1956](https://github.com/stacksjs/stx/issues/1956), [#1956](https://github.com/stacksjs/stx/issues/1956), [#1956](https://github.com/stacksjs/stx/issues/1956))
+- **signals**: dispose if/else CHAIN branches with the row that held them (#1954) ([1e82602](https://github.com/stacksjs/stx/commit/1e82602)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1954](https://github.com/stacksjs/stx/issues/1954), [#1954](https://github.com/stacksjs/stx/issues/1954), [#1954](https://github.com/stacksjs/stx/issues/1954), [#1954](https://github.com/stacksjs/stx/issues/1954), [#1737](https://github.com/stacksjs/stx/issues/1737))
+- **ssr**: one rule for what can be a generated function's parameter name ([ffeaec7](https://github.com/stacksjs/stx/commit/ffeaec7)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945))
+- **signals**: dispose the effects of removed :for rows and hidden template :if (#1954) ([5b8dedd](https://github.com/stacksjs/stx/commit/5b8dedd)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1954](https://github.com/stacksjs/stx/issues/1954), [#1954](https://github.com/stacksjs/stx/issues/1954))
+- **components**: bind builtins to renderer registry (#1951) ([613cd55](https://github.com/stacksjs/stx/commit/613cd55)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1951](https://github.com/stacksjs/stx/issues/1951), [#1951](https://github.com/stacksjs/stx/issues/1951))
+
+## ⚡ Performance Improvements
+
+- **ssr**: memoise TypeScript transpiles per transpiler (#1945) ([157c1fa](https://github.com/stacksjs/stx/commit/157c1fa)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **ssr**: read tags in place in the x-cloak own-text walk (#1945) ([b8761b4](https://github.com/stacksjs/stx/commit/b8761b4)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **bench**: let the allocation probe target any page (#1945) ([83c12e0](https://github.com/stacksjs/stx/commit/83c12e0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **ssr**: stop re-deriving restores and script scans (#1945) ([5b47385](https://github.com/stacksjs/stx/commit/5b47385)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **ssr**: memoise the comment mask across pipeline re-entries (#1945) ([196d777](https://github.com/stacksjs/stx/commit/196d777)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **ssr**: stop re-deriving the same document 58 times per render (#1945) ([fe94e54](https://github.com/stacksjs/stx/commit/fe94e54)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **ssr**: inline single-use client factories in one pass (#1945) ([c173a9c](https://github.com/stacksjs/stx/commit/c173a9c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **ssr**: move the runtime tag with one pass when the destination is known (#1945) ([b763eef](https://github.com/stacksjs/stx/commit/b763eef)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **ssr**: reuse compiled server scripts without caching results (#1945) ([37194e1](https://github.com/stacksjs/stx/commit/37194e1)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **ssr**: skip cloak walk when only raw scripts carry braces (#1945) ([daa6c31](https://github.com/stacksjs/stx/commit/daa6c31)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **ssr**: avoid own-text string churn and masking scan allocations (#1945) ([128ac7d](https://github.com/stacksjs/stx/commit/128ac7d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **bindings**: reuse compiles and rebuild resolved tags once (#1945) ([1397b63](https://github.com/stacksjs/stx/commit/1397b63)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **conditionals**: batch sibling if rewrites (#1945) ([0bb8268](https://github.com/stacksjs/stx/commit/0bb8268)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **ssr**: strip server scripts in one rebuild (#1945) ([4931fd6](https://github.com/stacksjs/stx/commit/4931fd6)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **signals**: remove scripts and stamp owner in one rebuild (#1945) ([5da2119](https://github.com/stacksjs/stx/commit/5da2119)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **components**: preserve pages with no consumed imports (#1945) ([10146af](https://github.com/stacksjs/stx/commit/10146af)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **runtime**: blank inert markup once per detection (#1945) ([5ef626c](https://github.com/stacksjs/stx/commit/5ef626c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **bindings**: bypass inert document rewrites (#1945) ([94889e5](https://github.com/stacksjs/stx/commit/94889e5)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **signals**: skip unused body scan for setup pages (#1945) ([dd69e43](https://github.com/stacksjs/stx/commit/dd69e43)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **signals**: find raw-text closes without copying the page (#1945) ([5b6c6c5](https://github.com/stacksjs/stx/commit/5b6c6c5)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **shell**: classify documents without copying the page (#1945) ([81314a2](https://github.com/stacksjs/stx/commit/81314a2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **evaluator**: share compiles across equivalent contexts (#1945) ([fa6f59b](https://github.com/stacksjs/stx/commit/fa6f59b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+
+## 📚 Documentation
+
+- **perf**: a retained 256-byte slice is ~90 bytes, not 87 (#1945) ([db32fc6](https://github.com/stacksjs/stx/commit/db32fc6)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **perf**: slices share their buffer at every size, not just large ones (#1945) ([1ad088c](https://github.com/stacksjs/stx/commit/1ad088c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **ssr**: the cache-clear functions are not called, and need not be (#1945) ([f8c9b41](https://github.com/stacksjs/stx/commit/f8c9b41)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **perf**: the allocation probe counts content, not allocated bytes (#1945) ([3786601](https://github.com/stacksjs/stx/commit/3786601)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+
+## 🧪 Tests
+
+- **signals**: pin #1954 disposal on the remaining paths, and what it must not dispose ([092ed2d](https://github.com/stacksjs/stx/commit/092ed2d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1954](https://github.com/stacksjs/stx/issues/1954), [#1954](https://github.com/stacksjs/stx/issues/1954), [#1954](https://github.com/stacksjs/stx/issues/1954))
+- **ssr**: pin the restore inverse and the shared script walk (#1945) ([b8d79ef](https://github.com/stacksjs/stx/commit/b8d79ef)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+- **perf**: measure render allocation deterministically, since nothing exposes it (#1945) ([a594450](https://github.com/stacksjs/stx/commit/a594450)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.285...v0.2.286)
 
 ## 🐛 Bug Fixes
