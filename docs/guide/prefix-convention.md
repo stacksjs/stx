@@ -32,6 +32,29 @@ In stx:
 > listener. See the conditionals section below for how `@if`, `v-if`, and `:if`
 > relate.
 
+## Component props: `prop={expr}` is `:prop="expr"`
+
+On a **component tag**, a braced attribute value is the JSX spelling of a
+dynamic prop. stx rewrites it to the colon form before evaluating, so the two
+below are identical:
+
+```html
+<Form :initialValues="{ name: 'John Doe', notifications: true }" />
+<Form initialValues={{ name: 'John Doe', notifications: true }} />
+```
+
+The outer braces delimit the expression; `={{ ... }}` therefore unwraps to the
+object literal `{ ... }`. Nested braces and braces inside quotes are handled,
+and the value may span lines.
+
+It is a **prop, not an event**. A server-evaluated prop cannot reference a
+function that only exists in a `<script client>` block, so a handler still uses
+the event prefix:
+
+```html
+<Form @submit="handleEditProfile" />   <!-- not onSubmit={handleEditProfile} -->
+```
+
 ## Conditionals: `@if`, `v-if`, `:if` are the same thing in different syntax
 
 `@if`, `v-if`, `:if`, and `x-if` are **interchangeable sugar for one

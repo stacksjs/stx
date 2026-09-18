@@ -23,7 +23,7 @@ import type { ResolvedProps, RenderContext } from './component-registry'
 import { registry } from './component-registry'
 import { processConditionals } from './conditionals'
 import { registerBuiltins } from './builtins'
-import { decodeAttributeEntities, decodeStxProp, findComponentTags, parseMultilineAttributes, pascalToKebab, readBracedValue, restoreStashedScripts, stashScriptElements, uppercaseHtmlTagSkip, warnJsxStyleProp } from './component-processing'
+import { decodeAttributeEntities, decodeStxProp, findComponentTags, parseMultilineAttributes, pascalToKebab, readBracedValue, restoreStashedScripts, stashScriptElements, unwrapBracedExpression, uppercaseHtmlTagSkip } from './component-processing'
 import { maskAtElementPosition, matchHtmlComment } from './html-masking'
 import { renderComponentWithSlot, userComponentFileExists } from './utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluateObject, freeIdentifiers } from './safe-evaluator'
@@ -484,13 +484,21 @@ function parseAllAttributes(attributesStr: string): Record<string, string> {
         }
       }
       else if (attributesStr[pos] === '{') {
-        // JSX-style `prop={expr}`, consumed whole so the rest of the object
-        // literal cannot become attribute names (stacksjs/stx#1956). This is
-        // the parser the component render path uses, so it is the one that
-        // decides what a component actually receives.
+        // JSX-style `prop={expr}`: consumed whole so the rest of an object
+        // literal cannot become attribute names, and recorded as the colon
+        // form so it evaluates exactly like `:prop="expr"` (stacksjs/stx#1956).
+        //
+        // The rewrite belongs HERE, not after parsing: only the parser knows
+        // the braces were unquoted. Rewriting any fully-braced value later also
+        // caught `prop="{{ expr }}"` -- ordinary interpolation -- and turned it
+        // into an object literal, which rendered href="[object Object]".
         value = readBracedValue(attributesStr, pos)
         pos += value.length
-        warnJsxStyleProp(name, value)
+        const expression = unwrapBracedExpression(value)
+        if (expression !== null) {
+          props[`:${name}`] = expression
+          continue
+        }
       }
       else {
         // Unquoted value (read until whitespace)

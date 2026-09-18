@@ -174,6 +174,14 @@ stx uses three distinct prefixes:
 | `x-` | **Attribute bindings & content** | `x-class`, `x-style`, `x-href`, `x-src`, `x-text`, `x-html`, `x-model`, `x-cloak` |
 | `@` | **Event listeners** (as an attribute) | `@click`, `@submit`, `@keydown.enter` |
 
+**On a component tag, `prop={expr}` is the same as `:prop="expr"`** — the JSX
+spelling is rewritten to the colon form before props are categorised, so it is
+server-evaluated like any other dynamic prop (`config={{ a: 1 }}` unwraps to the
+object literal `{ a: 1 }`). It is a prop, not an event: a handler still wants
+`@submit="onSubmit"`, since a server-evaluated prop cannot reference a client
+function. Before #1956 the value was read only up to the next whitespace, which
+shattered a multi-line object into junk attribute names.
+
 **`@if` / `v-if` / `:if` / `x-if` are the same conditional in different syntax** — interchangeable sugar, **not** separate lifecycles. `v-if` compiles to `@if` (`vue-template.ts`); `x-if` is the same as `:if`.
 
 | Form | Relationship |
