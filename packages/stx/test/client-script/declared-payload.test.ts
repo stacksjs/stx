@@ -65,6 +65,58 @@ describe('declared payload (#1868)', () => {
     expect(out).not.toContain('var range')
   })
 
+  it('publishes a name a NESTED scope re-declares, which only shadows', () => {
+    // The pair to the test above (stacksjs/stx#1953). A depth-0 `const range`
+    // would collide, so it is withheld; one inside a function, an `else if` or
+    // a loop head merely shadows the bridge's binding inside that scope.
+    // Withholding it there is what broke a production page: the declared name
+    // never arrived and the first top-level use threw
+    // `ReferenceError: range is not defined`, with nothing at build time.
+    const ctx = { range: '30d', __stxClientPayload: { range: '30d' } }
+
+    const nestedInFunction = bridge(ctx, [
+      'function later() {',
+      '  const range = "7d"',
+      '  return range',
+      '}',
+      'console.log(range)',
+    ].join('\n'))
+    expect(nestedInFunction).toContain('var range = "30d"')
+
+    // The shape the bug was found in: a local two functions away, in a branch.
+    const nestedInElseIf = bridge(ctx, [
+      'if (first.ok) {',
+      '}',
+      'else if (first.status === 413) {',
+      '  const range = first.data.range',
+      '}',
+      'navigate(range)',
+    ].join('\n'))
+    expect(nestedInElseIf).toContain('var range = "30d"')
+
+    // A loop head is its own scope too, even though no brace precedes it.
+    const loopHead = bridge(ctx, 'for (const range of rows) { use(range) }\nconsole.log(range)')
+    expect(loopHead).toContain('var range = "30d"')
+
+    // Nested destructuring is a declaration like any other.
+    const nestedDestructure = bridge(ctx, 'function f() {\n  const { range } = opts\n  return range\n}\nuse(range)')
+    expect(nestedDestructure).toContain('var range = "30d"')
+  })
+
+  it('does not let the word const inside a string claim a name', () => {
+    const out = bridge(
+      { range: '30d', __stxClientPayload: { range: '30d' } },
+      'console.log("const range = 1")\nconsole.log(range)',
+    )
+    expect(out).toContain('var range = "30d"')
+  })
+
+  it('still withholds a top-level destructured or function declaration', () => {
+    const ctx = { range: '30d', __stxClientPayload: { range: '30d' } }
+    expect(bridge(ctx, 'const { range } = opts\nuse(range)')).not.toContain('var range')
+    expect(bridge(ctx, 'function range() {}\nuse(range)')).not.toContain('var range')
+  })
+
   it('drops a function from the declared set', () => {
     const out = bridge(
       { fn: () => 1, n: 2, __stxClientPayload: { fn: () => 1, n: 2 } },

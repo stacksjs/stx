@@ -867,16 +867,61 @@ function extractDestructuredBindings(pattern: string, objectPattern: boolean): S
  * `var title = ...` immediately before
  * `const { title } = defineProps()`, which is a parse-time error.
  */
-function declaresClientIdentifier(code: string, name: string): boolean {
-  if (new RegExp(`(?:const|let|var|function|class)\\s+${name}\\b`).test(code))
-    return true
+/**
+ * Bracket nesting at each index of `stripped`, so a declaration can be told
+ * apart from one nested inside a function, block or loop head. Parens and
+ * square brackets count too: `for (const range of rows)` is scoped to the loop,
+ * so it does not own the top-level name either.
+ */
+function bracketDepths(stripped: string): Uint16Array {
+  const depths = new Uint16Array(stripped.length)
+  let depth = 0
+  for (let i = 0; i < stripped.length; i++) {
+    const char = stripped[i]
+    if (char === ')' || char === ']' || char === '}')
+      depth = depth > 0 ? depth - 1 : 0
+    depths[i] = depth
+    if (char === '(' || char === '[' || char === '{')
+      depth++
+  }
+  return depths
+}
 
-  for (const match of code.matchAll(/(?:const|let|var)\s*\{([^}]*)\}/g)) {
-    if (extractDestructuredBindings(match[1], true).has(name))
+/**
+ * Does the client block declare `name` AT THE TOP LEVEL, so the bridge would
+ * clobber it?
+ *
+ * Only a depth-0 declaration counts (stacksjs/stx#1953). Emitting `var range`
+ * beside a top-level `const range` is a duplicate-binding SyntaxError, so that
+ * name is left alone. A declaration nested in a function, an `else if`, or a
+ * loop head merely SHADOWS the bridge's binding inside its own scope, and
+ * withholding the value there is what broke the page: a declared payload name
+ * silently never arrived and the first top-level use threw
+ * `ReferenceError: range is not defined`, with nothing at build time.
+ *
+ * Comments and string/template literals are stripped first, so the word
+ * `const` inside a message cannot claim ownership of anything.
+ */
+function declaresClientIdentifier(code: string, name: string): boolean {
+  const stripped = stripCommentsAndLiterals(code)
+  const depths = bracketDepths(stripped)
+
+  // The declaration is captured so depth is read at the KEYWORD. Reading it at
+  // match.index instead put `for (const range of rows)` at depth 0, because the
+  // character the boundary consumed was the `(` whose own depth is still 0.
+  const keyword = new RegExp(`(?:^|[^\\w$.])((?:const|let|var|function|class)\\s+${name}\\b)`, 'g')
+  for (const match of stripped.matchAll(keyword)) {
+    const keywordIndex = (match.index ?? 0) + match[0].length - match[1].length
+    if (depths[keywordIndex] === 0)
       return true
   }
-  for (const match of code.matchAll(/(?:const|let|var)\s*\[([^\]]*)\]/g)) {
-    if (extractDestructuredBindings(match[1], false).has(name))
+
+  for (const match of stripped.matchAll(/(?:const|let|var)\s*\{([^}]*)\}/g)) {
+    if (depths[match.index ?? 0] === 0 && extractDestructuredBindings(match[1], true).has(name))
+      return true
+  }
+  for (const match of stripped.matchAll(/(?:const|let|var)\s*\[([^\]]*)\]/g)) {
+    if (depths[match.index ?? 0] === 0 && extractDestructuredBindings(match[1], false).has(name))
       return true
   }
   return false
@@ -974,9 +1019,23 @@ export function generateServerDataBridge(code: string, serverData?: Record<strin
     // the declaration exists to remove (#1868).
     if (!declaredPayload && !referencesIdentifier(searchable, name))
       continue
-    // …and does not itself declare (never clobber a client-owned name).
-    if (declaresClientIdentifier(code, name))
+    // …and does not itself declare it at the top level (never clobber a
+    // client-owned name). A nested declaration only shadows, so it no longer
+    // suppresses the value (#1953).
+    if (declaresClientIdentifier(code, name)) {
+      // An explicitly declared payload name that the client also declares at
+      // the top level is a contract the page cannot honour: it asked for the
+      // value and then made it unreachable. Silence here is what cost a
+      // production page every site switch, so say it out loud.
+      if (declaredPayload) {
+        console.warn(
+          `[stx] defineClientPayload declares "${name}", but this client block also declares `
+          + `"${name}" at the top level, so the server value is not published (emitting it would be a `
+          + `duplicate binding). Rename the local, or drop "${name}" from defineClientPayload.`,
+        )
+      }
       continue
+    }
     let json: string | undefined
     try {
       json = JSON.stringify(value)
