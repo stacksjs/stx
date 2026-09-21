@@ -258,11 +258,10 @@ function extractExports(setupContent: string): string {
  * teardown, and isolate everything in an IIFE so multiple component
  * scripts on the same page don't collide on top-level identifiers.
  *
- * Returns the bare wrapper — used by both `transformSignalScript`
- * (which then appends scope registration) and the non-signal branch
- * (which just needs the runtime globals available). Keeping the
- * destructure list in one place means a new global only needs to be
- * added here, not in two parallel sites.
+ * Returns the bare wrapper: `transformScopedScript` appends the scope
+ * registration and runs it under `wrapScopedInclude`, for the signal and the
+ * non-signal branch alike. Keeping the destructure list in one place means a
+ * new global only needs to be added here, not in two parallel sites.
  */
 function wrapClientScript(scriptContent: string, tail = ''): string {
   const localNames = extractExports(scriptContent).split(',').map(name => name.trim()).filter(Boolean)
@@ -314,10 +313,16 @@ function buildScopeRegistrationTail(scriptContent: string, scopeId: string): str
   // Use real window.stx APIs (signals runtime is injected in <head>, runs before this script).
   // No polyfill fallbacks — they create signals without ._isSignal which breaks auto-unwrap
   // and effect tracking in the signals runtime.
+  //
+  // The entry already exists when wrapScopedInclude found the root and
+  // registered it ahead of the body, and it already holds the lifecycle hooks
+  // the body queued on it. Replacing it here would drop them. The fallback is
+  // the rootless shape, whose hooks went to the runtime's global queues and
+  // are kept on __destroyHooks as well.
   return `
   // Register scope variables for STX runtime
   if (!window.stx._scopes) window.stx._scopes = {};
-  var __scopeRegistration = { __destroyCallbacks: __destroyHooks };
+  var __scopeRegistration = window.stx._scopes['${scopeId}'] || { __destroyCallbacks: __destroyHooks };
 ${scopeAssign}
   // #1767: when the bundler renamed a component const that collided with an
   // inlined import (foo -> foo2), rebind the ORIGINAL template name to the
@@ -328,26 +333,54 @@ ${scopeAssign}
 `
 }
 
-function transformSignalScript(scriptContent: string, scopeId: string): string {
+/**
+ * The scope-registering IIFE a partial's `<script client>` ships as, for the
+ * signal and the non-signal branch alike.
+ */
+function transformScopedScript(scriptContent: string, scopeId: string): string {
   const tail = buildScopeRegistrationTail(scriptContent, scopeId)
-  // Set __STX_CURRENT_ELEMENT__ to this scope's root element while the body runs,
-  // so element-aware primitives invoked at partial-scope time — useQuery/useFetch
-  // ({ suspense: true }) registering with the nearest <Suspense> boundary,
-  // defineProps/defineEmits — resolve against the right element (#1742). The
-  // scope element is already in the DOM when this inline script executes. The
-  // try/finally wraps the IIFE call so __STX_CURRENT_ELEMENT__ is always restored.
+  return wrapScopedInclude(wrapClientScript(scriptContent, tail), scopeId)
+}
+
+/**
+ * Run `body` with the partial's root as the current element, and with its
+ * scope already registered.
+ *
+ * Set __STX_CURRENT_ELEMENT__ to this scope's root element while the body runs,
+ * so element-aware primitives invoked at partial-scope time — useQuery/useFetch
+ * ({ suspense: true }) registering with the nearest <Suspense> boundary,
+ * defineProps/defineEmits — resolve against the right element (#1742). The
+ * scope element is already in the DOM when this inline script executes. The
+ * try/finally wraps the IIFE call so __STX_CURRENT_ELEMENT__ is always restored.
+ *
+ * The scope is registered BEFORE the body, not only by the tail after it
+ * (#1958). The runtime's onMount and onDestroy attach a hook to the current
+ * element's scope only when that scope is already registered, and fall back to
+ * the global queues otherwise. With the entry written only by the tail, every
+ * hook a partial registered went global, and the next stx:load drains the
+ * global destroy queue wholesale: an in-container partial had its NEW
+ * instance's onDestroy run before its onMount on every navigation, and a
+ * partial whose root outlives the navigation lost its listeners at the first
+ * one. The entry starts empty, as the tail's wholesale replacement always
+ * made it, so a stale __mounted from an earlier instance cannot carry over.
+ */
+function wrapScopedInclude(body: string, scopeId: string): string {
   const head = `
 (function() {
   var __stxScopeEl = (typeof document !== 'undefined') ? document.querySelector('[data-stx-scope="${scopeId}"]') : null;
   var __stxPrevEl = (typeof window !== 'undefined') ? window.__STX_CURRENT_ELEMENT__ : undefined;
   if (__stxScopeEl && typeof window !== 'undefined') window.__STX_CURRENT_ELEMENT__ = __stxScopeEl;
+  if (__stxScopeEl && typeof window !== 'undefined' && window.stx) {
+    if (!window.stx._scopes) window.stx._scopes = {};
+    window.stx._scopes['${scopeId}'] = {};
+  }
   try {`
   const foot = `
   } finally {
     if (typeof window !== 'undefined') window.__STX_CURRENT_ELEMENT__ = __stxPrevEl;
   }
 })();`
-  return head + wrapClientScript(scriptContent, tail) + foot
+  return head + body + foot
 }
 
 /**
@@ -1187,7 +1220,7 @@ catch (error: unknown) {
           const resolvedContent = transformStoreImports(scriptContent)
           // Transform the script to register scope variables
           // Add data-stx-scoped attribute to prevent re-processing by processScriptSetup
-          const transformedScript = transformSignalScript(resolvedContent, signalScopeId)
+          const transformedScript = transformScopedScript(resolvedContent, signalScopeId)
           preservedScript += `${vendorStyleTags}<script data-stx-scoped data-stx-run="always">${transformedScript}</script>\n`
           continue
         }
@@ -1242,10 +1275,13 @@ catch (e) {
           // `''` and every handler inert, with no console output. Uses the
           // SAME builder as the signal branch so the two can't drift; it also
           // emits the `window.stx._scopes['...']` single-quote form verbatim,
-          // which the downstream `preservedScript.replace()` merge step below
-          // pattern-matches on.
-          const tail = buildScopeRegistrationTail(resolvedContent, signalScopeId)
-          const wrapped = wrapClientScript(resolvedContent, tail)
+          // which the downstream merge step below rewrites.
+          //
+          // And the same scoped shell (#1958): the root as the current element
+          // and the scope registered up front, so this branch's onMount and
+          // onDestroy land on its own scope instead of the global queues that
+          // every stx:load drains.
+          const wrapped = transformScopedScript(resolvedContent, signalScopeId)
           preservedScript += `${vendorStyleTags}<script data-stx-scoped data-stx-run="always"${extraAttrs ? ` ${extraAttrs}` : ''}>${wrapped}</script>\n`
         }
       }
@@ -1257,12 +1293,21 @@ catch (e) {
         workingContent = scopeResult.html
         if (scopeResult.mergedIntoExisting) {
           // Root element already has a scope — update the script to register
-          // signals under the existing scope ID instead of the new one
-          preservedScript = preservedScript.replace(
-            `window.stx._scopes['${signalScopeId}']`,
-            `window.stx._scopes['${scopeResult.mergedIntoExisting}']`,
-          )
-          signalScopeId = scopeResult.mergedIntoExisting
+          // signals under the existing scope ID instead of the new one.
+          //
+          // Every quoted occurrence, not only the first registration: the
+          // script also looks its root up by id and registers the scope ahead
+          // of the body (#1958), and a lookup left on the old id finds nothing,
+          // so its hooks went to the global queues. Quoted, because the bare
+          // id is a prefix of a longer one (stx_scope_x_1 of stx_scope_x_12).
+          const from = signalScopeId
+          const to = scopeResult.mergedIntoExisting
+          preservedScript = preservedScript
+            .split(`'${from}'`)
+            .join(`'${to}'`)
+            .split(`"${from}"`)
+            .join(`"${to}"`)
+          signalScopeId = to
         }
         else if (!scopeResult.stamped) {
           // The script registers `window.stx._scopes[id]` and the runtime
