@@ -949,11 +949,26 @@ finally {
     mountCallbacks.push(fn);
   }
 
+  // Where an onDestroy called from inside a running mount callback belongs:
+  // the queue runMountCallbacks is parking cleanups on, which is the mounting
+  // component's own. Null outside a flush.
+  //
+  // Without it such a call, typically a composable like useEventListener
+  // invoked in onMount, found no current element and went to the global
+  // queue, and every stx:load drains that queue. A component that stays on
+  // the page across navigations (one the layout renders) lost the listener at
+  // the first navigation while its markup stayed bound (#1958).
+  var activeDestroySink = null;
+
   function onDestroy(fn) {
     var scope = currentLifecycleScope();
     if (scope) {
       scope.__destroyCallbacks = scope.__destroyCallbacks || [];
       scope.__destroyCallbacks.push(fn);
+      return;
+    }
+    if (activeDestroySink) {
+      activeDestroySink.push(fn);
       return;
     }
     destroyCallbacks.push(fn);
@@ -985,12 +1000,22 @@ finally {
     // onMount honest: the new one queues for the next flush instead of being
     // swallowed by the clear or replayed by the next caller.
     var batch = list.splice(0, list.length);
-    for (var i = 0; i < batch.length; i++) {
-      try {
-        var cleanup = batch[i]();
-        if (typeof cleanup === 'function') target.push(cleanup);
+    // An onDestroy registered while the batch runs joins the same queue as a
+    // returned cleanup. Saved and restored, so a mount that mounts something
+    // else (stx.mount inside onMount) hands the outer sink back afterwards.
+    var previousSink = activeDestroySink;
+    activeDestroySink = target;
+    try {
+      for (var i = 0; i < batch.length; i++) {
+        try {
+          var cleanup = batch[i]();
+          if (typeof cleanup === 'function') target.push(cleanup);
+        }
+        catch (e) { console.error('[stx] onMount error:', e); }
       }
-      catch (e) { console.error('[stx] onMount error:', e); }
+    }
+    finally {
+      activeDestroySink = previousSink;
     }
   }
 
@@ -7001,7 +7026,13 @@ catch (e) {} }
         var mountStart = mountCallbacks.length;
         var destroyStart = destroyCallbacks.length;
 
-        var scope = setupFn();
+        // The setup's hooks are collected off the global queues below, so an
+        // outer flush's destroy sink must not catch them first (see mount).
+        var outerSink = activeDestroySink;
+        activeDestroySink = null;
+        var scope;
+        try { scope = setupFn(); }
+        finally { activeDestroySink = outerSink; }
 
         // Restore previous context (supports nested components)
         window.__STX_CURRENT_PROPS__ = prevProps;
@@ -7024,13 +7055,9 @@ catch (e) {} }
         root.removeAttribute('x-cloak');
         root.querySelectorAll('[x-cloak]').forEach(function(el) { el.removeAttribute('x-cloak'); });
 
-        localMountHooks.forEach(function(fn) {
-          try {
-            var cleanup = fn();
-            if (typeof cleanup === 'function') localDestroyHooks.push(cleanup);
-          }
-catch (e) { console.error('[stx] onMount error:', e); }
-        });
+        // Through runMountCallbacks, so an onDestroy called inside one of
+        // them lands here too rather than on the global queue (#1958).
+        runMountCallbacks(localMountHooks, localDestroyHooks);
 
         root.__stx_destroy = localDestroyHooks;
       }
@@ -7156,7 +7183,19 @@ else {
         var destroyStart = destroyCallbacks.length;
 
         // Run setup function — returns scope object with declarations
-        var scope = setupFn();
+        //
+        // With no outer destroy sink (#1958). This can run inside another
+        // component's onMount, where runMountCallbacks has pointed onDestroy at
+        // THAT component's queue. The setup's own teardown (a composable such
+        // as useEventListener registers its removal with onDestroy) must land
+        // on the global queue, where the splice below collects it for this
+        // root. Otherwise it belonged to the outer component and outlived this
+        // root: mounted on a :for row, removing the row left its listener in.
+        var outerSink = activeDestroySink;
+        activeDestroySink = null;
+        var scope;
+        try { scope = setupFn(); }
+        finally { activeDestroySink = outerSink; }
         console.log('[mount] root:', root.tagName, 'scope keys:', scope ? Object.keys(scope).slice(0, 10) : 'null');
 
         // Restore previous context (supports nested components)
@@ -7186,13 +7225,9 @@ else {
         root.querySelectorAll('[x-cloak]').forEach(function(el) { el.removeAttribute('x-cloak'); });
 
         // Fire mount hooks
-        localMountHooks.forEach(function(fn) {
-          try {
-            var cleanup = fn();
-            if (typeof cleanup === 'function') localDestroyHooks.push(cleanup);
-          }
-catch (e) { console.error('[stx] onMount error:', e); }
-        });
+        // Through runMountCallbacks, so an onDestroy called inside one of
+        // them lands here too rather than on the global queue (#1958).
+        runMountCallbacks(localMountHooks, localDestroyHooks);
 
         // Store cleanup on element for auto-destroy
         root.__stx_destroy = localDestroyHooks;
