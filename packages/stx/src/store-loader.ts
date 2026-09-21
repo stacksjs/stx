@@ -165,7 +165,11 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
       // runtime ReferenceErrors. STX runtime imports remain external and are
       // resolved from window.stx by the existing transform below.
       if (hasUserImports(code))
-        code = await bundleClientScript(code, file, { projectRoot: process.cwd() })
+        // Inlined, not served by the page module registry (#1957). The store
+        // bundle is already one per page, and it is also fetched on its own
+        // for store HMR (/_stx/stores.js) -- where a store edited to add an
+        // import would read a module the running page never registered.
+        code = await bundleClientScript(code, file, { projectRoot: process.cwd(), externalizeUserModules: false })
 
       // A bundled dependency may import the same STX runtime names as the
       // store entry. Bun keeps that external import and renames the dependency

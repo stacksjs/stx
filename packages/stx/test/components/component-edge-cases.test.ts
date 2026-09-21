@@ -260,7 +260,10 @@ Usage:
         new Set(),
       )
 
-      expect(result).toContain('loaded from helper')
+      // Resolved, not left as a raw import. Since #1957 the helper is served by
+      // the page module registry rather than inlined into the component, so it
+      // is referenced by id here and bundled once, at the page level.
+      expect(result).toMatch(/__stxModules\["[^"]*delivery-helper\.ts"\]/)
       expect(result).not.toContain(`from './delivery-helper'`)
       expect(result).not.toContain(`from '@stacksjs/stx'`)
       expect(result).not.toMatch(/^\s*import\s/m)

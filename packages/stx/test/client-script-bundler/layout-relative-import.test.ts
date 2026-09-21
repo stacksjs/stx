@@ -4,6 +4,13 @@ import path from 'node:path'
 import { bundleClientScript } from '../../src/client-script-bundler'
 import { absolutizeTemplateImports } from '../../src/import-rebase'
 
+// These tests exercise the bundler's INLINING mechanics -- import resolution,
+// rebasing, dependency tracking, binding exposure. Since stacksjs/stx#1957 a
+// component's own imports are served by the page-level module registry rather
+// than inlined, so these mechanics run in the registry build, which calls the
+// bundler with externalizeUserModules: false. The tests target that mode
+// directly; component-bundles-share-modules.test.ts covers the other side.
+
 /**
  * A layout's relative imports, after its content is merged into a page.
  *
@@ -61,7 +68,7 @@ describe('layout-authored relative imports', () => {
     const script = merged.replace(/<\/?script[^>]*>/g, '')
 
     // Bundled under the PAGE's path, which is the situation that broke it.
-    const output = await bundleClientScript(script, pageFile, { projectRoot })
+    const output = await bundleClientScript(script, pageFile, { projectRoot, externalizeUserModules: false })
 
     expect(output).toContain('booted')
     expect(output).not.toContain('resources/views/composables')
@@ -79,7 +86,7 @@ describe('layout-authored relative imports', () => {
     const output = await bundleClientScript(
       [`import { LOCAL_MARKER } from './local'`, 'const used = LOCAL_MARKER'].join('\n'),
       pageFile,
-      { projectRoot },
+      { projectRoot, externalizeUserModules: false },
     )
 
     expect(output).toContain('page-local')
@@ -107,7 +114,7 @@ describe('layout-authored relative imports', () => {
         'const used = LOCAL_MARKER',
       ].join('\n'),
       pageFile,
-      { projectRoot },
+      { projectRoot, externalizeUserModules: false },
     )
 
     expect(output).toContain('booted')

@@ -366,6 +366,34 @@ function findFirstScriptTag(html: string): number {
  * runtime's original contract explicit: it must execute before every other
  * script, including setup, store, and composable bundles.
  */
+/**
+ * The page-level module registry tag for whatever `sources` read, or null
+ * (stacksjs/stx#1957). Tagged data-stx-scoped so SPA navigation carries it
+ * into the next page along with the component scripts that depend on it.
+ */
+async function buildModulesTag(
+  sources: Array<string | null>,
+  options: StxOptions,
+): Promise<string | null> {
+  try {
+    const { registeredModuleIdsIn, buildModuleRegistryScript } = await importOnce(
+      'stx/client-module-registry',
+      () => import('./client-module-registry'),
+    )
+    const code = await buildModuleRegistryScript(registeredModuleIdsIn(...sources), {
+      minify: options.buildMode === 'compile',
+    })
+    if (!code)
+      return null
+    // A module's own string literal can contain the closing tag; escaped, it
+    // means the same thing to JavaScript and nothing to the HTML parser.
+    return `<script data-stx-scoped data-stx-run="always" data-stx-modules>${code.replace(/<\/script/gi, '<\\/script')}</script>`
+  }
+  catch {
+    return null
+  }
+}
+
 function placeSignalsRuntimeBeforeScripts(html: string): string {
   const runtime = findScriptBlockByAttribute(html, 'data-stx-runtime')
   if (!runtime)
@@ -682,6 +710,7 @@ export async function processDirectives(
       if (isTopLevel) {
         const runtime = findScriptBlockByAttribute(result, 'data-stx-runtime')
         if (runtime) {
+          let modulesTag: string | null = null
           let storeTag: string | null = null
           let composableTag: string | null = null
           let frameworkScript: string | null = null
@@ -699,6 +728,11 @@ export async function processDirectives(
           catch {
             // Store loading is optional
           }
+
+          // The page-level module registry (#1957): every module a component or
+          // store imports, bundled and evaluated ONCE for the page, so module
+          // state is shared instead of duplicated per component bundle.
+          modulesTag = await buildModulesTag([result, storeTag], options)
 
           // Framework composables the page actually calls but the runtime does
           // not provide (#1805). Bundled from the real modules rather than
@@ -734,7 +768,7 @@ export async function processDirectives(
           try {
             const { getComposableScript } = await importOnce('stx/composable-loader', () => import('./composable-loader'))
             const resolvedComposablesDir = (options as any).composablesDir as string | undefined
-            const pending = [storeTag, frameworkScript].filter((text): text is string => text !== null)
+            const pending = [modulesTag, storeTag, frameworkScript].filter((text): text is string => text !== null)
             const composableCode = await getComposableScript(resolvedComposablesDir, result, pending)
             if (composableCode)
               composableTag = `<script data-stx-composables>${composableCode}</script>`
@@ -748,12 +782,25 @@ export async function processDirectives(
           // in last ended up first. Reproduced rather than corrected -- the
           // comment on the framework block claims the opposite order, and
           // deciding which is right is a behaviour change, not a perf one.
-          const tags = [storeTag, composableTag, frameworkScript]
+          // The module registry leads: stores, composables and every component
+          // script read from it, so it has to have run before any of them.
+          const tags = [modulesTag, storeTag, composableTag, frameworkScript]
             .filter((text): text is string => text !== null)
             .map(tag => `\n${tag}`)
             .join('')
           if (tags)
             result = result.slice(0, runtime.end) + tags + result.slice(runtime.end)
+        }
+        else {
+          // No runtime to anchor to, but a client script can still import a
+          // module. Put the registry directly ahead of the first script that
+          // reads it; without it those scripts throw naming the module.
+          const modulesTag = await buildModulesTag([result], options)
+          if (modulesTag) {
+            const firstReader = result.search(/<script\b[^>]*>(?:(?!<\/script>)[\s\S])*?__stxModules\[/i)
+            if (firstReader !== -1)
+              result = result.slice(0, firstReader) + modulesTag + '\n' + result.slice(firstReader)
+          }
         }
       }
 

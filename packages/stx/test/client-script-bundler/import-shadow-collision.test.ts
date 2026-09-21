@@ -19,6 +19,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { bundleClientScript } from '../../src/client-script-bundler'
 
+// These tests exercise the bundler's INLINING mechanics -- import resolution,
+// rebasing, dependency tracking, binding exposure. Since stacksjs/stx#1957 a
+// component's own imports are served by the page-level module registry rather
+// than inlined, so these mechanics run in the registry build, which calls the
+// bundler with externalizeUserModules: false. The tests target that mode
+// directly; component-bundles-share-modules.test.ts covers the other side.
+
 const TMP = path.join(import.meta.dir, 'temp-shadow')
 
 describe('client-script-bundler: import/local name shadow (#1767)', () => {
@@ -41,7 +48,7 @@ describe('client-script-bundler: import/local name shadow (#1767)', () => {
     // The component aliases the import (`allItems`) yet still declares a local
     // `const items` that collides with data.ts's `export const items`.
     const script = `import { items as allItems } from './data'\nconst items = derived(() => allItems.map(x => ({ ...x, extra: 'computed' })))`
-    const out = await bundleClientScript(script, templatePath, { projectRoot })
+    const out = await bundleClientScript(script, templatePath, { projectRoot, externalizeUserModules: false })
 
     // Bun renamed the component's local:
     expect(out).toMatch(/\bitems2\b/)
@@ -54,7 +61,7 @@ describe('client-script-bundler: import/local name shadow (#1767)', () => {
 
   it('emits no rename map when there is no name collision', async () => {
     const script = `import { items as allItems } from './data'\nconst list = derived(() => allItems.map(x => x))`
-    const out = await bundleClientScript(script, templatePath, { projectRoot })
+    const out = await bundleClientScript(script, templatePath, { projectRoot, externalizeUserModules: false })
     expect(out).not.toContain('"items": items2')
   })
 })

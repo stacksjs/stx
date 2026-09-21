@@ -1441,11 +1441,18 @@ export async function processScriptSetup(template: string, filePath?: string, se
       continue
 
     try {
-      const bundled = await bundleClientScript(injectBrowserCoreAutoImports(content).code, filePath || '', {
+      // Inlined, for the QUESTION only (#1957). A component bundle no longer
+      // contains the modules it imports -- the page registry serves them -- so
+      // the default bundle would hide the very state() calls this is looking
+      // for, and a page whose signals live in a module would render static
+      // again. The inlined build is a question, never the emitted script, so
+      // it is not reused below.
+      const inlined = await bundleClientScript(injectBrowserCoreAutoImports(content).code, filePath || '', {
         projectRoot: process.cwd(),
+        externalizeUserModules: false,
       })
-      if (SIGNAL_API_RE.test(bundled))
-        signalScripts.push({ content, start: s.start, end: s.end, bundled })
+      if (SIGNAL_API_RE.test(inlined))
+        signalScripts.push({ content, start: s.start, end: s.end })
     }
     catch {
       // A script that cannot be bundled is not a signal script we can prove.

@@ -3,6 +3,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { bundleClientScript } from '../../src/client-script-bundler'
 
+// These tests exercise the bundler's INLINING mechanics -- import resolution,
+// rebasing, dependency tracking, binding exposure. Since stacksjs/stx#1957 a
+// component's own imports are served by the page-level module registry rather
+// than inlined, so these mechanics run in the registry build, which calls the
+// bundler with externalizeUserModules: false. The tests target that mode
+// directly; component-bundles-share-modules.test.ts covers the other side.
+
 const TMP = path.join(import.meta.dir, 'temp-browser-root')
 
 describe('client-script-bundler browser-root imports', () => {
@@ -28,7 +35,7 @@ describe('client-script-bundler browser-root imports', () => {
       `const total = stats.reduce((sum, value) => sum + value, 0)`,
     ].join('\n')
 
-    const output = await bundleClientScript(script, templatePath, { projectRoot })
+    const output = await bundleClientScript(script, templatePath, { projectRoot, externalizeUserModules: false })
 
     expect(output).not.toContain(`from "./stats"`)
     expect(output).toContain('var stats = [1, 2, 3]')

@@ -20,7 +20,7 @@ import { config } from './config'
 import type { DepSnapshot } from './render-memo'
 import { depsUnchanged, renderMemo } from './render-memo'
 
-const BUNDLE_CACHE_VERSION = 5
+const BUNDLE_CACHE_VERSION = 6
 const BUNDLE_CACHE_METADATA_VERSION = 1
 
 interface BundleCacheMetadata {
@@ -308,6 +308,95 @@ export function hasUserImports(code: string): boolean {
 }
 
 /**
+ * Specifier prefix for an import the PAGE serves rather than the bundle
+ * inlines (stacksjs/stx#1957).
+ *
+ * Every component's `<script client>` used to be bundled with its imports
+ * inlined, one Bun.build per script. Two components importing one module each
+ * carried their own copy of it, so module state -- a cache, a registry, an
+ * in-flight promise -- existed once per component instead of once per page,
+ * and the page shipped the same code several times. A real page made five
+ * `GET /api/me` calls on load because its auth module had five copies.
+ *
+ * A component's direct imports are now externalised to `stx-module:<id>` and
+ * rewritten into reads of `globalThis.__stxModules`, which one page-level
+ * bundle populates (see client-module-registry.ts): each imported module is
+ * bundled once and evaluated once per page.
+ *
+ * The id is the path relative to the project root, or `npm:<specifier>` for a
+ * package. Never an absolute path: that would put the server's filesystem
+ * layout into every page's HTML.
+ */
+export const MODULE_SPECIFIER_PREFIX = 'stx-module:'
+
+/** What the registry serves: JS/TS and JSON. Anything else stays inlined. */
+const REGISTRY_MODULE_EXTENSION = /\.(?:[cm]?[jt]sx?|json)$/i
+
+export function registryIdForPath(projectRoot: string, resolved: string): string {
+  return path.relative(projectRoot, resolved).split(path.sep).join('/')
+}
+
+/**
+ * Rewrite each `import … from "stx-module:<id>"` Bun left in a bundle into
+ * reads of the page registry, returning the declarations to put at the top
+ * of the bundle's scope. The page collects the ids it has to serve by scanning
+ * for these reads, so their shape -- `globalThis.__stxModules["<id>"]` -- is a
+ * contract with client-module-registry.ts.
+ *
+ * A missing entry throws with the id named: a component whose module never
+ * loaded should fail at its first line, not later with an undefined binding.
+ */
+export function rewriteRegistryImports(code: string, reads: string[]): string {
+  let counter = 0
+  const moduleVar = (id: string): string => {
+    const name = `__stxMod${counter++}`
+    const key = JSON.stringify(id)
+    reads.push(
+      `var ${name} = globalThis.__stxModules && globalThis.__stxModules[${key}];`,
+      `if (${name} === undefined) throw new Error("[stx] module " + ${JSON.stringify(key)} + " is not registered on this page (#1957)");`,
+    )
+    return name
+  }
+  const bindNamed = (list: string, mod: string): void => {
+    for (const raw of list.split(',')) {
+      const part = raw.trim()
+      if (!part)
+        continue
+      const match = part.match(/^("(?:[^"\\]|\\.)*"|[\w$]+)(?:\s+as\s+([\w$]+))?$/)
+      if (!match)
+        continue
+      const imported = match[1].startsWith('"') ? JSON.parse(match[1]) as string : match[1]
+      const local = match[2] ?? imported
+      reads.push(`var ${local} = ${mod}[${JSON.stringify(imported)}];`)
+    }
+  }
+
+  code = code.replace(/^[ \t]*import\s+([^;"']*?)\s+from\s+["'](stx-module:[^"']+)["'];?[ \t]*$/gm, (_all, rawClause: string, spec: string) => {
+    const id = spec.slice(MODULE_SPECIFIER_PREFIX.length)
+    const mod = moduleVar(id)
+    let clause = rawClause.trim()
+    const leadingDefault = clause.match(/^([\w$]+)\s*(?:,\s*|$)/)
+    if (leadingDefault && !clause.startsWith('{') && !clause.startsWith('*')) {
+      reads.push(`var ${leadingDefault[1]} = ${mod}.default;`)
+      clause = clause.slice(leadingDefault[0].length).trim()
+    }
+    const namespace = clause.match(/^\*\s*as\s+([\w$]+)$/)
+    if (namespace)
+      reads.push(`var ${namespace[1]} = ${mod};`)
+    else if (clause.startsWith('{'))
+      bindNamed(clause.replace(/^\{|\}$/g, ''), mod)
+    return ''
+  })
+  // A side-effect import: the page bundle already evaluated it, so only the
+  // presence check is emitted.
+  code = code.replace(/^[ \t]*import\s+["'](stx-module:[^"']+)["'];?[ \t]*$/gm, (_all, spec: string) => {
+    moduleVar(spec.slice(MODULE_SPECIFIER_PREFIX.length))
+    return ''
+  })
+  return code
+}
+
+/**
  * The file an import specifier actually names, or undefined.
  *
  * A specifier rarely carries its extension, so the bare path is tried first
@@ -357,7 +446,30 @@ function createBundlePlugin(
   templateDir: string,
   tmpEntry: string,
   inputFiles: Set<string>,
+  externalizeUserModules: boolean,
 ): BunPlugin {
+  // A direct import of the script being bundled goes to the page registry
+  // instead of being inlined (#1957). Only the ENTRY's imports: the modules
+  // themselves are never loaded here, so nothing transitive reaches this.
+  // Still recorded as an input so HMR keeps watching the file.
+  const toRegistry = (importer: string, resolved: string): { path: string, external: true } | null => {
+    if (!externalizeUserModules || importer !== tmpEntry || !REGISTRY_MODULE_EXTENSION.test(resolved))
+      return null
+    try {
+      if (!fs.statSync(resolved, { throwIfNoEntry: false })?.isFile())
+        return null
+    }
+    catch {
+      return null
+    }
+    inputFiles.add(resolved)
+    // Encoded against process.cwd(), not projectRoot: the page registry
+    // decodes ids against the same root, and callers do not all agree on
+    // projectRoot. Every caller passes cwd today; pinning it here makes the
+    // pair correct even if one stops.
+    return { path: `${MODULE_SPECIFIER_PREFIX}${registryIdForPath(process.cwd(), resolved)}`, external: true }
+  }
+
   // Resolve a relative import against `templateDir`, returning the
   // first existing file with one of the standard JS/TS extensions or
   // an `index.{ts,js}` fallback. Falls back to the bare path so
@@ -404,6 +516,9 @@ function createBundlePlugin(
         // place of a resolution error at build time.
         const resolved = probeModuleFile(args.path)
         if (resolved) {
+          const registered = toRegistry(args.importer, resolved)
+          if (registered)
+            return registered
           // Not the temp entry. Bun resolves the entrypoint through this hook
           // too, and it is an absolute path that exists — recording it would
           // put a file whose name changes every build into the cache-key
@@ -428,6 +543,9 @@ function createBundlePlugin(
       // the cache key (stacksjs/stx#1723).
       build.onResolve({ filter: /^\.\.?\// }, (args) => {
         const resolved = resolveRelative(args.importer, args.path)
+        const registered = toRegistry(args.importer, resolved)
+        if (registered)
+          return registered
         inputFiles.add(resolved)
         return { path: resolved }
       })
@@ -453,6 +571,9 @@ function createBundlePlugin(
         ]
         for (const candidate of candidates) {
           if (fs.existsSync(candidate) && fs.statSync(candidate, { throwIfNoEntry: false })?.isFile()) {
+            const registered = toRegistry(args.importer, candidate)
+            if (registered)
+              return registered
             logBundlerDiagnostic(`resolved ${args.path[0]}/ import:`, args.path, '→', candidate)
             inputFiles.add(candidate)
             return { path: candidate }
@@ -460,6 +581,16 @@ function createBundlePlugin(
         }
         console.warn(`[stx:bundler] could not resolve ${args.path[0]}/ import:`, args.path)
         return { path: resolved }
+      })
+
+      // A bare package import from the script itself goes to the page registry
+      // too, keyed by its specifier (#1957): two components importing one
+      // package share one instance, exactly as for a local module. Registered
+      // after the stx, @stores, alias and path hooks, which all take priority.
+      build.onResolve({ filter: /^(?!node:|bun:)(?:@[\w.-]+\/)?[\w.-]/ }, (args) => {
+        if (!externalizeUserModules || args.importer !== tmpEntry)
+          return undefined
+        return { path: `${MODULE_SPECIFIER_PREFIX}npm:${args.path}`, external: true }
       })
 
       // Feed source modules to Bun from a normal filesystem read. Bun's
@@ -584,10 +715,17 @@ export async function bundleClientScript(
      * hands each caller its own answer.
      */
     collectInputs?: string[]
+    /**
+     * Serve the script's own imports from the page registry instead of
+     * inlining them (#1957). Default true; the registry's own build turns it
+     * off, since that bundle is where the modules are actually inlined.
+     */
+    externalizeUserModules?: boolean
   } = {},
 ): Promise<string> {
   const projectRoot = options.projectRoot || process.cwd()
   const minify = options.minify ?? false
+  const externalizeUserModules = options.externalizeUserModules ?? true
   const cacheDir = options.cacheDir || stateDir(projectRoot, 'bundle-cache')
 
   // Content-hash for caching and temp file naming. The hash covers only
@@ -600,7 +738,7 @@ export async function bundleClientScript(
   // stacksjs/stx#1723 for the bug this addresses (helper edits silently
   // failed to invalidate the bundle).
   const hasher = new Bun.CryptoHasher('md5')
-  hasher.update(`${BUNDLE_CACHE_VERSION}\0${code}\0${filePath}`)
+  hasher.update(`${BUNDLE_CACHE_VERSION}\0${externalizeUserModules ? 'registry' : 'inline'}\0${code}\0${filePath}`)
   const hash = hasher.digest('hex').slice(0, 12)
 
   // Check cache. A cache hit requires both the bundled JS to exist AND
@@ -687,7 +825,7 @@ export async function bundleClientScript(
   }
 
   const build = queueClientBundleBuild(() =>
-    buildBundle(code, filePath, { projectRoot, minify, cacheDir, hash, cachePath, depsPath, collectInputs: options.collectInputs }),
+    buildBundle(code, filePath, { projectRoot, minify, cacheDir, hash, cachePath, depsPath, collectInputs: options.collectInputs, externalizeUserModules }),
   )
   inFlightBundles.set(hash, build)
   try {
@@ -709,9 +847,10 @@ async function buildBundle(
     cachePath: string
     depsPath: string
     collectInputs?: string[]
+    externalizeUserModules: boolean
   },
 ): Promise<string> {
-  const { projectRoot, minify, cacheDir, hash, cachePath, depsPath } = options
+  const { projectRoot, minify, cacheDir, hash, cachePath, depsPath, externalizeUserModules } = options
 
   // Write temp entry file (Bun.build needs a real file)
   const tmpDir = stateDir(projectRoot, 'bundle-tmp')
@@ -783,7 +922,7 @@ async function buildBundle(
       target: 'browser',
       format: 'esm',
       minify,
-      plugins: [createBundlePlugin(projectRoot, templateDir, tmpEntry, inputFiles)],
+      plugins: [createBundlePlugin(projectRoot, templateDir, tmpEntry, inputFiles, externalizeUserModules)],
       define: {
         'process.env.NODE_ENV': minify ? '"production"' : '"development"',
         ...getPublicEnvDefine(),
@@ -835,6 +974,12 @@ async function buildBundle(
       }
     }
 
+    // Registry imports become reads of the page registry (#1957). Done before
+    // the external-import extraction below, which would otherwise hoist them
+    // out of the bundle scope as imports the browser cannot resolve.
+    const registryReads: string[] = []
+    bundled = rewriteRegistryImports(bundled, registryReads)
+
     // External runtime imports must remain at top level so the downstream
     // auto-import transform can replace them with window.stx bindings.
     const externalImports = bundled.match(/^\s*import\s+[^;]+;?\s*$/gm) || []
@@ -872,6 +1017,7 @@ async function buildBundle(
     bundled = `${externalImports.join('\n')}
 ${publicDeclarations}
 var ${namespace} = (function() {
+${registryReads.join('\n')}
 ${bundled}
 return { ${returnedBindings} };
 })();

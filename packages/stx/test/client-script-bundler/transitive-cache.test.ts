@@ -18,6 +18,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { bundleClientScript } from '../../src/client-script-bundler'
 
+// These tests exercise the bundler's INLINING mechanics -- import resolution,
+// rebasing, dependency tracking, binding exposure. Since stacksjs/stx#1957 a
+// component's own imports are served by the page-level module registry rather
+// than inlined, so these mechanics run in the registry build, which calls the
+// bundler with externalizeUserModules: false. The tests target that mode
+// directly; component-bundles-share-modules.test.ts covers the other side.
+
 const TMP = path.join(import.meta.dir, 'temp-bundler')
 
 describe('client-script-bundler transitive cache (#1723)', () => {
@@ -51,7 +58,7 @@ describe('client-script-bundler transitive cache (#1723)', () => {
   it('rebundles when a transitively-imported helper changes', async () => {
     await Bun.write(helperPath, 'export function formatPrice(n: number) { return `$${n}.00 V1` }')
 
-    const first = await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir })
+    const first = await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir, externalizeUserModules: false })
     expect(first).toContain('V1')
 
     // Edit the helper. Bump the mtime so the cache invalidation check
@@ -61,7 +68,7 @@ describe('client-script-bundler transitive cache (#1723)', () => {
     await Bun.write(helperPath, 'export function formatPrice(n: number) { return `$${n}.00 V2` }')
     fs.utimesSync(helperPath, future, future)
 
-    const second = await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir })
+    const second = await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir, externalizeUserModules: false })
     expect(second).toContain('V2')
     expect(second).not.toContain('V1')
   })
@@ -69,20 +76,20 @@ describe('client-script-bundler transitive cache (#1723)', () => {
   it('hits cache when nothing changed (no spurious rebundles)', async () => {
     await Bun.write(helperPath, 'export function formatPrice(n: number) { return `$${n}.00 STABLE` }')
 
-    const first = await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir })
+    const first = await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir, externalizeUserModules: false })
     expect(first).toContain('STABLE')
 
     // No edits — second call must be byte-identical AND a cache hit.
     // We can't directly observe "was cache hit" from the return value,
     // but identical output is a necessary condition.
-    const second = await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir })
+    const second = await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir, externalizeUserModules: false })
     expect(second).toBe(first)
   })
 
   it('persists a .deps.json sidecar alongside the bundle', async () => {
     await Bun.write(helperPath, 'export function formatPrice(n: number) { return `$${n}` }')
 
-    await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir })
+    await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir, externalizeUserModules: false })
 
     // There should be exactly one .js + one .deps.json in the cache dir.
     const entries = await fs.promises.readdir(cacheDir)
@@ -101,7 +108,7 @@ describe('client-script-bundler transitive cache (#1723)', () => {
 
   it('rebuilds legacy cache entries without versioned metadata', async () => {
     await Bun.write(helperPath, 'export function formatPrice(n: number) { return `$${n}.00 FRESH` }')
-    await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir })
+    await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir, externalizeUserModules: false })
 
     const entries = await fs.promises.readdir(cacheDir)
     const jsFile = entries.find(entry => entry.endsWith('.js'))
@@ -112,14 +119,14 @@ describe('client-script-bundler transitive cache (#1723)', () => {
     await Bun.write(path.join(cacheDir, jsFile!), 'var stale_bundle = true')
     await Bun.write(path.join(cacheDir, depsFile!), JSON.stringify({ files: [] }))
 
-    const rebuilt = await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir })
+    const rebuilt = await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir, externalizeUserModules: false })
     expect(rebuilt).toContain('FRESH')
     expect(rebuilt).not.toContain('stale_bundle')
   })
 
   it('invalidates when a recorded dep is deleted (defensive)', async () => {
     await Bun.write(helperPath, 'export function formatPrice(n: number) { return `$${n}.00 X` }')
-    await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir })
+    await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir, externalizeUserModules: false })
 
     // Delete the helper. Next bundle must miss cache (helper gone),
     // surface the bundle failure, and not silently return the cached
@@ -128,7 +135,7 @@ describe('client-script-bundler transitive cache (#1723)', () => {
     // is the cache lookup does NOT hit and serve a stale bundle.
     fs.rmSync(helperPath)
 
-    const second = await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir })
+    const second = await bundleClientScript(scriptCode, templatePath, { projectRoot, cacheDir, externalizeUserModules: false })
     // Either fallback to original `scriptCode` OR a fresh bundle attempt
     // (which will fail). Either way, the stale `X` must NOT be in the
     // result.

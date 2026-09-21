@@ -3,6 +3,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { bundleClientScript } from '../../src/client-script-bundler'
 
+// These tests exercise the bundler's INLINING mechanics -- import resolution,
+// rebasing, dependency tracking, binding exposure. Since stacksjs/stx#1957 a
+// component's own imports are served by the page-level module registry rather
+// than inlined, so these mechanics run in the registry build, which calls the
+// bundler with externalizeUserModules: false. The tests target that mode
+// directly; component-bundles-share-modules.test.ts covers the other side.
+
 /**
  * A name declared twice in one script must not destroy the page.
  *
@@ -54,7 +61,7 @@ describe('duplicate declaration names', () => {
         `}`,
       ].join('\n'),
       pageFile,
-      { projectRoot },
+      { projectRoot, externalizeUserModules: false },
     )
 
     expect(output).not.toContain('import { useHelper }')
@@ -70,7 +77,7 @@ describe('duplicate declaration names', () => {
         `function b() { const value = 2; return value }`,
       ].join('\n'),
       pageFile,
-      { projectRoot },
+      { projectRoot, externalizeUserModules: false },
     )
 
     // A surviving `import` means the bundle failed and the raw source came
@@ -90,7 +97,7 @@ describe('duplicate declaration names', () => {
         `const solo = useHelper()`,
       ].join('\n'),
       pageFile,
-      { projectRoot },
+      { projectRoot, externalizeUserModules: false },
     )
 
     expect(output).not.toContain(`from './helper'`)
