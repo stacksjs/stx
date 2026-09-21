@@ -334,6 +334,18 @@ ${scopeAssign}
 }
 
 /**
+ * Drop the data-stx-owner stamp from every partial script except the one that
+ * registers `ownerId`'s scope. Only the stamp as the emitters above write it,
+ * right after data-stx-run in the opening tag, is touched.
+ */
+function keepOwnerStampOf(scripts: string, ownerId: string | null): string {
+  return scripts.replace(
+    /<script data-stx-scoped data-stx-run="always" data-stx-owner="([^"]*)"/g,
+    (tag, id: string) => id === ownerId ? tag : '<script data-stx-scoped data-stx-run="always"',
+  )
+}
+
+/**
  * The scope-registering IIFE a partial's `<script client>` ships as, for the
  * signal and the non-signal branch alike.
  */
@@ -1221,7 +1233,7 @@ catch (error: unknown) {
           // Transform the script to register scope variables
           // Add data-stx-scoped attribute to prevent re-processing by processScriptSetup
           const transformedScript = transformScopedScript(resolvedContent, signalScopeId)
-          preservedScript += `${vendorStyleTags}<script data-stx-scoped data-stx-run="always">${transformedScript}</script>\n`
+          preservedScript += `${vendorStyleTags}<script data-stx-scoped data-stx-run="always" data-stx-owner="${signalScopeId}">${transformedScript}</script>\n`
           continue
         }
 
@@ -1282,7 +1294,7 @@ catch (e) {
           // onDestroy land on its own scope instead of the global queues that
           // every stx:load drains.
           const wrapped = transformScopedScript(resolvedContent, signalScopeId)
-          preservedScript += `${vendorStyleTags}<script data-stx-scoped data-stx-run="always"${extraAttrs ? ` ${extraAttrs}` : ''}>${wrapped}</script>\n`
+          preservedScript += `${vendorStyleTags}<script data-stx-scoped data-stx-run="always" data-stx-owner="${signalScopeId}"${extraAttrs ? ` ${extraAttrs}` : ''}>${wrapped}</script>\n`
         }
       }
 
@@ -1320,6 +1332,17 @@ catch (e) {
             + `so nothing in it will hydrate. Wrap the partial's markup in a single root element.`,
           )
         }
+
+        // Each script was stamped data-stx-owner with its own id, and only the
+        // one whose id the root now carries binds a root on the page. Keep
+        // that stamp and drop the rest (#1958). The router skips an owned
+        // script whose root stayed on the page, which is what keeps a partial
+        // the LAYOUT includes from being set up again on every navigation; a
+        // script whose root is elsewhere or nowhere (a partial with two client
+        // scripts gets two ids and one root) must keep running as it always
+        // has. The merge rewrite above already moved the owning script's stamp
+        // to the merged id.
+        preservedScript = keepOwnerStampOf(preservedScript, scopeResult.stamped ? signalScopeId : null)
       }
 
       // Process the partial content
