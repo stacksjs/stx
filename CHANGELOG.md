@@ -1,5 +1,29 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.287...v0.2.288)
+
+## ✨ Features
+
+- **bundler**: components share one instance of each module they import (#1957) ([166d36b](https://github.com/stacksjs/stx/commit/166d36b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1957](https://github.com/stacksjs/stx/issues/1957), [#1957](https://github.com/stacksjs/stx/issues/1957))
+
+## 🐛 Bug Fixes
+
+- **router**: don't re-run a layout component that stayed on the page (#1958) ([e9a59e7](https://github.com/stacksjs/stx/commit/e9a59e7)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1958](https://github.com/stacksjs/stx/issues/1958), [#1958](https://github.com/stacksjs/stx/issues/1958))
+- **bundler**: export only TOP-LEVEL declarations from a bundle entry (#1959) ([aa3162f](https://github.com/stacksjs/stx/commit/aa3162f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1959](https://github.com/stacksjs/stx/issues/1959), [#1959](https://github.com/stacksjs/stx/issues/1959), [#1953](https://github.com/stacksjs/stx/issues/1953), [#1957](https://github.com/stacksjs/stx/issues/1957))
+
+## ✅ Tests
+
+- **bundler**: pin one module instance per page, executed not just inspected (#1957) ([580498b](https://github.com/stacksjs/stx/commit/580498b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1957](https://github.com/stacksjs/stx/issues/1957), [#1957](https://github.com/stacksjs/stx/issues/1957))
+
+## 🔧 Chores
+
+- release v0.2.288 ([8224f10](https://github.com/stacksjs/stx/commit/8224f10)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- generate changelog for v0.2.288 ([0e7b682](https://github.com/stacksjs/stx/commit/0e7b682)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.287...HEAD)
 
 ## 🚀 Features
