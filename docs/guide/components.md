@@ -346,6 +346,25 @@ Use lifecycle hooks to run code at specific times:
 @endcomponent
 ```
 
+### Components in a layout
+
+A component the layout renders (a nav, a sidebar, a sign-in sheet) sits outside the router's container, so SPA navigation between pages that share the layout leaves it on screen, and leaves it running. Its `<script client>` ran once, on the page that loaded first, and it is not set up again on the next page: its state, its listeners, its DOM, focus and scroll all carry over, and whatever it sets later still renders.
+
+- To follow the route, listen for the router's `stx:navigate` event rather than relying on the component running again:
+
+  ```html
+  <script client>
+    const path = state(location.pathname)
+    useEventListener('stx:navigate', () => path.set(location.pathname))
+  </script>
+  ```
+
+- `onDestroy` runs when the component actually leaves the page: when a navigation lands on a page with a different layout, which replaces the whole body.
+- Teardown you register while the component mounts belongs to it: a composable such as `useEventListener` called inside `onMount` is removed when the component is destroyed, not at the next navigation.
+- Teardown registered later, after an `await` or in a timer, by a composable (or by `onDestroy` in an `@include`d partial) goes to the page-wide queue that every navigation drains. Register it while the component sets up or mounts.
+
+This applies to component tags and `@include`d partials alike. A component inside the container is part of the page: it is destroyed and set up again on every navigation.
+
 ### State Management
 
 Manage component state:

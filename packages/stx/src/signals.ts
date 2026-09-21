@@ -7822,6 +7822,10 @@ catch (e) {
   // querySelectorAll. Each round-trip re-ran the include scripts under fresh
   // scope ids while the previous ids stayed in window.stx._scopes — ~4 orphans
   // per hop, unbounded, each retaining that scope's vars, signals and closures.
+  // Since #1958 a same-layout navigation no longer re-runs the layout's
+  // component scripts, and a layout change cleans up the whole body first, so
+  // navigation should no longer produce the first shape; the sweep stays for
+  // the second, and as the backstop for anything that still does.
   //
   // The sweep is deliberately CONSERVATIVE — an over-eager delete is the #1737
   // failure (a scope removed from the registry cannot be recreated: its setup
