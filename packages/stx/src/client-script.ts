@@ -38,7 +38,7 @@ import fs from 'node:fs'
 import type { ParsedEvent, EventModifiers } from './events'
 import { asInvocableStatement } from './events'
 import { transformStoreImports } from './store-imports'
-import { findInterpolationEnd, stripCommentsAndLiterals } from './strip-literals'
+import { bracketDepths, findInterpolationEnd, stripCommentsAndLiterals } from './strip-literals'
 // Re-exported from its old home. It moved to `strip-literals.ts` so the
 // editor-facing extractor could share it without pulling the bundler in behind
 // it, and the runtime bridge and `stx typecheck` MUST agree on what counts as a
@@ -867,25 +867,6 @@ function extractDestructuredBindings(pattern: string, objectPattern: boolean): S
  * `var title = ...` immediately before
  * `const { title } = defineProps()`, which is a parse-time error.
  */
-/**
- * Bracket nesting at each index of `stripped`, so a declaration can be told
- * apart from one nested inside a function, block or loop head. Parens and
- * square brackets count too: `for (const range of rows)` is scoped to the loop,
- * so it does not own the top-level name either.
- */
-function bracketDepths(stripped: string): Uint16Array {
-  const depths = new Uint16Array(stripped.length)
-  let depth = 0
-  for (let i = 0; i < stripped.length; i++) {
-    const char = stripped[i]
-    if (char === ')' || char === ']' || char === '}')
-      depth = depth > 0 ? depth - 1 : 0
-    depths[i] = depth
-    if (char === '(' || char === '[' || char === '{')
-      depth++
-  }
-  return depths
-}
 
 /**
  * Does the client block declare `name` AT THE TOP LEVEL, so the bridge would
@@ -904,7 +885,11 @@ function bracketDepths(stripped: string): Uint16Array {
  */
 function declaresClientIdentifier(code: string, name: string): boolean {
   const stripped = stripCommentsAndLiterals(code)
-  const depths = bracketDepths(stripped)
+  const { depths, balanced } = bracketDepths(stripped)
+  // Unbalanced brackets (a regex literal holding a brace) make every depth
+  // suspect. Treat each declaration as top-level then -- the behaviour before
+  // #1953, which withholds the value rather than risk a duplicate binding.
+  const atTopLevel = (index: number): boolean => !balanced || depths[index] === 0
 
   // The declaration is captured so depth is read at the KEYWORD. Reading it at
   // match.index instead put `for (const range of rows)` at depth 0, because the
@@ -912,16 +897,16 @@ function declaresClientIdentifier(code: string, name: string): boolean {
   const keyword = new RegExp(`(?:^|[^\\w$.])((?:const|let|var|function|class)\\s+${name}\\b)`, 'g')
   for (const match of stripped.matchAll(keyword)) {
     const keywordIndex = (match.index ?? 0) + match[0].length - match[1].length
-    if (depths[keywordIndex] === 0)
+    if (atTopLevel(keywordIndex))
       return true
   }
 
   for (const match of stripped.matchAll(/(?:const|let|var)\s*\{([^}]*)\}/g)) {
-    if (depths[match.index ?? 0] === 0 && extractDestructuredBindings(match[1], true).has(name))
+    if (atTopLevel(match.index ?? 0) && extractDestructuredBindings(match[1], true).has(name))
       return true
   }
   for (const match of stripped.matchAll(/(?:const|let|var)\s*\[([^\]]*)\]/g)) {
-    if (depths[match.index ?? 0] === 0 && extractDestructuredBindings(match[1], false).has(name))
+    if (atTopLevel(match.index ?? 0) && extractDestructuredBindings(match[1], false).has(name))
       return true
   }
   return false

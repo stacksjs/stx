@@ -19,6 +19,7 @@ import { describeBuildFailure, formatBuildFailure } from './build-message'
 import { config } from './config'
 import type { DepSnapshot } from './render-memo'
 import { depsUnchanged, renderMemo } from './render-memo'
+import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 
 const BUNDLE_CACHE_VERSION = 6
 const BUNDLE_CACHE_METADATA_VERSION = 1
@@ -889,19 +890,41 @@ async function buildBundle(
   // all of its state from a composable, say). Nothing was exported, Bun
   // tree-shook the entry down to its side effects, and the page rendered with
   // every expression referring to an undefined name.
+  //
+  // But indentation cannot say whether a declaration is TOP-LEVEL, and only a
+  // top-level one can be exported (stacksjs/stx#1959). A local on its own line
+  // inside a callback matched too, and a script whose top level was only a
+  // call -- `onMount(async () => {` with `const data = …` inside, the ordinary
+  // shape -- had its nested local put in the export list. Bun exposes nothing
+  // for it, so the check below read that as a build that dropped every
+  // binding, served the unbundled source, and the browser rejected the whole
+  // script on its raw `import`.
+  //
+  // So the scan runs over the comment- and literal-stripped text and keeps a
+  // match only at bracket depth zero. When the brackets do not balance -- a
+  // regex literal can hold a brace the stripper does not know about -- depth
+  // is not trusted and every match is kept, which is what this did before:
+  // never worse than the old scan, only better when it can be sure.
   const declRegex = /^[ \t]*(export\s+)?(?:const|let|var)\s+(?:\{([^}]+)\}|(\w+))/gm
   const funcRegex = /^[ \t]*(export\s+)?(?:async\s+)?function\s+(\w+)/gm
+  const strippedForScan = stripCommentsAndLiterals(code)
+  const { depths: scanDepths, balanced: scanBalanced } = bracketDepths(strippedForScan)
+  // A match's index is the start of its line, and only spaces or tabs precede
+  // the keyword, so the depth there is the keyword's depth.
+  const isTopLevel = (index: number): boolean => !scanBalanced || scanDepths[index] === 0
   let dm: RegExpExecArray | null
-  while ((dm = declRegex.exec(code)) !== null) {
+  while ((dm = declRegex.exec(strippedForScan)) !== null) {
     if (dm[1]) continue // already exported — don't duplicate
+    if (!isTopLevel(dm.index)) continue
     if (dm[2]) {
       // Destructured: const { a, b: renamed, c = 1, ...rest } = ...
       dm[2].split(',').forEach((n) => { const t = destructuredLocalName(n); if (t) declNames.add(t) })
     }
     else if (dm[3]) declNames.add(dm[3])
   }
-  while ((dm = funcRegex.exec(code)) !== null) {
+  while ((dm = funcRegex.exec(strippedForScan)) !== null) {
     if (dm[1]) continue // already exported
+    if (!isTopLevel(dm.index)) continue
     declNames.add(dm[2])
   }
   const exportLine = declNames.size > 0 ? `\nexport { ${[...declNames].join(', ')} }` : ''

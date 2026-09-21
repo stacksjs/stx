@@ -192,3 +192,38 @@ export function stripCommentsAndLiterals(code: string): string {
 
   return out
 }
+
+/**
+ * Bracket nesting at each index of already-stripped source, so a declaration
+ * can be told apart from one nested inside a function, block or loop head.
+ * Parens and square brackets count too: `for (const x of rows)` is scoped to
+ * the loop, not the file.
+ *
+ * `balanced` is false when the brackets do not close out cleanly -- they go
+ * negative, or end above zero. stripCommentsAndLiterals does not recognise
+ * regex literals, so `/\\{/` leaves a brace behind, and every depth after it is
+ * off by one. A caller must not trust `depths` then, and should fall back to
+ * whatever it did before it knew about nesting: acting on a wrong depth can
+ * hide a real top-level binding, which is worse than the bug depth fixes.
+ *
+ * Shared by the payload bridge (#1953) and the bundler's export scan (#1959),
+ * which asked the same question with the same blind spot.
+ */
+export function bracketDepths(stripped: string): { depths: Uint16Array, balanced: boolean } {
+  const depths = new Uint16Array(stripped.length)
+  let depth = 0
+  let balanced = true
+  for (let i = 0; i < stripped.length; i++) {
+    const char = stripped[i]
+    if (char === ')' || char === ']' || char === '}') {
+      if (depth === 0)
+        balanced = false
+      else
+        depth--
+    }
+    depths[i] = depth
+    if (char === '(' || char === '[' || char === '{')
+      depth++
+  }
+  return { depths, balanced: balanced && depth === 0 }
+}

@@ -117,6 +117,18 @@ describe('declared payload (#1868)', () => {
     expect(bridge(ctx, 'function range() {}\nuse(range)')).not.toContain('var range')
   })
 
+  it('falls back to withholding when a regex brace makes depth untrustworthy', () => {
+    // /\{/ leaves a brace the literal stripper cannot see, so every later depth
+    // reads one too deep. Rather than act on that, ownership falls back to the
+    // pre-#1953 textual rule and withholds -- the conservative side, since a
+    // wrong "not declared" would emit a duplicate binding (#1959).
+    const out = bridge(
+      { range: '30d', __stxClientPayload: { range: '30d' } },
+      'const pattern = /\\{/\nfunction later() {\n  const range = "7d"\n  return range\n}\nuse(range)',
+    )
+    expect(out).not.toContain('var range')
+  })
+
   it('drops a function from the declared set', () => {
     const out = bridge(
       { fn: () => 1, n: 2, __stxClientPayload: { fn: () => 1, n: 2 } },
