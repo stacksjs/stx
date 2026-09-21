@@ -1216,6 +1216,13 @@ else {
         log('[router] full body swap for layout change');
         // Replace entire body content — layout chrome and all
         var bodyHTML=newBody.innerHTML;
+        // The outgoing chrome's components are destroyed with it (#1958).
+        // They are no longer re-run on every navigation, so they live as long
+        // as their layout does, and _cleanupContainer above only covered the
+        // container: their onDestroy and their scopes waited for the next
+        // navigation's orphan sweep, and their effects were never disposed.
+        // Before the swap, while the old markup is still here to walk.
+        if(window.stx&&window.stx._cleanupContainer)window.stx._cleanupContainer(document.body);
         document.body.innerHTML=bodyHTML;
         // Copy body attributes (class, data-stx, etc.)
         Array.from(newBody.attributes).forEach(function(attr){document.body.setAttribute(attr.name,attr.value)});

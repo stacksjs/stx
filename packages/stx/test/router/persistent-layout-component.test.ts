@@ -729,6 +729,28 @@ for (const serve of MODES) {
       expect(text(browser, '#badge-text')).toBe('open')
     })
 
+    it('a different layout destroys the outgoing layout\'s components at the swap', async () => {
+      const browser = await open('/')
+      const repro = browser.window.__repro as Counters
+      const badge = browser.window.__badge as Counters
+
+      await browser.navigate('/login')
+      // Destroyed with the chrome it belonged to, and gone from the registry:
+      // the only scope left is the new layout's.
+      expect(counts(repro)).toBe('setups 1, mounts 1, destroys 1')
+      const scopes = Object.values(browser.window.stx._scopes) as any[]
+      expect(scopes.map(scope => !!scope.__el?.querySelector('[id="badge"]'))).toEqual([true])
+
+      await browser.navigate('/other')
+      expect({ repro: counts(repro), badge: counts(badge) })
+        .toEqual({ repro: 'setups 2, mounts 2, destroys 1', badge: 'setups 1, mounts 1, destroys 1' })
+
+      // Same layout from here on: the new instance is the one that stays.
+      await browser.navigate('/third')
+      expect(counts(repro)).toBe('setups 2, mounts 2, destroys 1')
+      expect(scopeCount(browser)).toBe(1)
+    })
+
     it('coming back to the first layout sets its component up again, bound', async () => {
       const browser = await open('/')
       await browser.navigate('/login')

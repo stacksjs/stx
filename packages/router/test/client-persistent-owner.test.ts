@@ -216,3 +216,37 @@ describe('router: a layout component with no scope root, full-document responses
     expect(injected(window, 'SENTINEL_UNSTAMPED')).toBe(1)
   })
 })
+
+describe('router: a layout change destroys the outgoing chrome (#1958)', () => {
+  // Layout components are no longer re-run on every navigation, so they live
+  // as long as their layout does. A layout change replaces the whole body, so
+  // it has to destroy them: _cleanupContainer only ever covered the container.
+  it('cleans up the whole body before swapping it, while the old chrome is still there to walk', async () => {
+    const window = installRouter(
+      `<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="stx-layout" content="layouts/auth.stx">
+    <meta name="stx-layout-group" content="auth">
+  </head>
+  <body><header>auth</header><main>Login</main></body>
+</html>`,
+      { persistentId: 'stx_nav_1_firstpage', bound: true, fullDocument: true },
+    )
+    const cleaned: Array<{ target: string, chrome: boolean }> = []
+    ;(window as any).stx._cleanupContainer = (el: any) => {
+      cleaned.push({
+        target: el === window.document.body ? 'body' : String(el?.tagName).toLowerCase(),
+        chrome: !!window.document.querySelector('[data-stx-scope="stx_nav_1_firstpage"]'),
+      })
+    }
+    await navigate(window, '/login')
+
+    expect(window.document.querySelector('header')?.textContent).toBe('auth')
+    // The container first, as before; then the body, with the old chrome in it.
+    expect(cleaned).toEqual([
+      { target: 'main', chrome: true },
+      { target: 'body', chrome: true },
+    ])
+  })
+})
