@@ -303,6 +303,54 @@ describe('App Shell', () => {
       expect(result).toContain('<h1>Job</h1>')
       expect(result).not.toContain('<nav>')
     })
+
+    describe('component instance scripts (#1958)', () => {
+      // The layout's chrome keeps its instances across a same-layout
+      // navigation, so their scripts stay out of the fragment. Everything the
+      // incoming page needs stays in.
+      const doc = `<!DOCTYPE html>
+<html>
+<head>
+  <script data-stx-route-params>window.__stx_rp = { id: 'job-15' }</script>
+</head>
+<body>
+  <script data-stx-scoped data-stx-run="always" data-stx-component-factories>PRELUDE()</script>
+  <nav>
+    <div data-stx-scope="stx_nav_1_a">Nav</div>
+    <script data-stx-scoped data-stx-run="always" data-stx-owner="stx_nav_1_a" client>NAV_TAG()</script>
+    <script data-stx-scoped data-stx-run="always" data-stx-instance="stx_plain_2_a">NAV_PLAIN()</script>
+    <script data-stx-scoped data-stx-run="always" data-stx-owner="stx_ext_3_a" src="/nav.js"></script>
+    <script data-stx-scoped data-stx-run="always" data-stx-owner-note="x">NOT_A_STAMP()</script>
+  </nav>
+  <script>function __stx_setup_page() { return {} }</script>
+  <main>
+    <div data-stx-scope="stx_card_4_a">Card</div>
+    <script data-stx-scoped data-stx-run="always" data-stx-owner="stx_card_4_a" client>PAGE_TAG()</script>
+    <script data-stx-scoped data-stx-run="always" data-stx-instance="stx_plain_5_a">PAGE_PLAIN()</script>
+  </main>
+  <footer><script data-stx-scoped data-stx-run="always" data-stx-owner="stx_foot_6_a">FOOT_TAG()</script></footer>
+</body>
+</html>`
+
+      it('drops the ones outside the container, before and after it, src or inline', () => {
+        const result = extractContainerContent(doc)
+        expect(result).not.toContain('NAV_TAG()')
+        expect(result).not.toContain('NAV_PLAIN()')
+        expect(result).not.toContain('/nav.js')
+        expect(result).not.toContain('FOOT_TAG()')
+      })
+
+      it('keeps the page\'s own, and every unstamped script outside', () => {
+        const result = extractContainerContent(doc)
+        expect(result).toContain('PAGE_TAG()')
+        expect(result).toContain('PAGE_PLAIN()')
+        expect(result).toContain('PRELUDE()')
+        expect(result).toContain('__stx_setup_page')
+        expect(result).toContain('data-stx-route-params')
+        // A longer attribute name that begins with the stamp is not the stamp.
+        expect(result).toContain('NOT_A_STAMP()')
+      })
+    })
   })
 
   describe('page head preservation through shell composition (#1756)', () => {

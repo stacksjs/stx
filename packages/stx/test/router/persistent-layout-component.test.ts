@@ -32,6 +32,7 @@
  * through the real router.
  */
 import { afterAll, afterEach, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
+import { extractContainerContent } from '../../src/app-shell'
 import type { Browser, Counters, ServeMode, SpaApp } from './spa-harness'
 import { boot, closeBrowser, counts, dispatch, find, layout, page, renderApp, settle, shown, sleep, text } from './spa-harness'
 
@@ -198,6 +199,24 @@ const OUTER = `<script client>
 <div class="outer"><span class="outer-text">{{ o() }}</span><Multi /></div>
 `
 
+/** No signals: emitted as a plain script by processClientScript. */
+const PLAIN = `<script client>
+  window.__plain.runs++
+  document.addEventListener('click', () => { window.__plain.clicks++ })
+</script>
+
+<div class="plain">plain</div>
+`
+
+/** No signals, but its template binds a declaration: wrapped in stx.mount. */
+const MOUNTED = `<script client>
+  window.__mounted.runs++
+  function label() { return 'mounted' }
+</script>
+
+<div class="mounted" :text="label()">x</div>
+`
+
 /** No signals, through @include: the partial's non-signal branch. */
 const NSIG = `<script client>
   window.__nsig.setups++
@@ -231,6 +250,8 @@ const FILES: Record<string, string> = {
   'components/Multi.stx': MULTI,
   'components/Outer.stx': OUTER,
   'components/Lsn.stx': LSN,
+  'components/Plain.stx': PLAIN,
+  'components/Mounted.stx': MOUNTED,
   // The same source again, for a layout that @includes it instead of using
   // the tag. The two emit different scripts (utils.ts vs includes.ts), with
   // different lifecycle plumbing, so both ways in are covered.
@@ -245,6 +266,8 @@ const FILES: Record<string, string> = {
   'layouts/nested.stx': layout('<nav><Outer /></nav>'),
   'layouts/nsig.stx': layout(`<nav>@include('nsig')</nav>`),
   'layouts/lsn.stx': layout('<nav><Lsn /></nav>'),
+  'layouts/plain.stx': layout('<nav><Plain /></nav>'),
+  'layouts/mounted.stx': layout('<nav><Mounted /></nav>'),
   // Bare pages: nothing but the layout's components carries a script.
   'pages/index.stx': page('default', '<h1>Home</h1>'),
   'pages/other.stx': page('default', '<h1>Other</h1>'),
@@ -257,6 +280,8 @@ const FILES: Record<string, string> = {
   'pages/c/one.stx': page('default', `<h1>One</h1>\n<Inner />\n@include('tally')`),
   'pages/c/two.stx': page('default', `<h1>Two</h1>\n<Inner />\n@include('tally')`),
   'pages/c/three.stx': page('default', `<h1>Three</h1>\n<Inner />\n@include('tally')`),
+  'pages/q/one.stx': page('plain', '<h1>Q1</h1>\n<Plain />'),
+  'pages/q/two.stx': page('plain', '<h1>Q2</h1>\n<Plain />'),
   // One page per probed layout shape.
   'pages/b/one.stx': page('both', '<h1>B1</h1>\n<Dual />'),
   'pages/b/two.stx': page('both', '<h1>B2</h1>\n<Dual />'),
@@ -269,6 +294,10 @@ const FILES: Record<string, string> = {
   'pages/n/two.stx': page('nsig', '<h1>N2</h1>'),
   'pages/l/one.stx': page('lsn', '<h1>L1</h1>'),
   'pages/l/two.stx': page('lsn', '<h1>L2</h1>'),
+  'pages/p/one.stx': page('plain', '<h1>P1</h1>'),
+  'pages/p/two.stx': page('plain', '<h1>P2</h1>'),
+  'pages/o/one.stx': page('mounted', '<section class="page-one"><h1>O1</h1></section>'),
+  'pages/o/two.stx': page('mounted', '<section class="page-two"><h1>O2</h1></section>'),
 }
 
 const ROUTES: Record<string, string> = {
@@ -282,6 +311,8 @@ const ROUTES: Record<string, string> = {
   '/c/one': 'pages/c/one.stx',
   '/c/two': 'pages/c/two.stx',
   '/c/three': 'pages/c/three.stx',
+  '/q/one': 'pages/q/one.stx',
+  '/q/two': 'pages/q/two.stx',
   '/b/one': 'pages/b/one.stx',
   '/b/two': 'pages/b/two.stx',
   '/m/one': 'pages/m/one.stx',
@@ -293,6 +324,10 @@ const ROUTES: Record<string, string> = {
   '/n/two': 'pages/n/two.stx',
   '/l/one': 'pages/l/one.stx',
   '/l/two': 'pages/l/two.stx',
+  '/p/one': 'pages/p/one.stx',
+  '/p/two': 'pages/p/two.stx',
+  '/o/one': 'pages/o/one.stx',
+  '/o/two': 'pages/o/two.stx',
 }
 
 let app: SpaApp
@@ -318,6 +353,8 @@ function counters(): Record<string, unknown> {
     __multi: fresh(),
     __outer: fresh(),
     __nsig: fresh(),
+    __plain: { runs: 0, clicks: 0 },
+    __mounted: { runs: 0 },
   }
 }
 
@@ -543,6 +580,33 @@ for (const serve of MODES) {
       expect(text(browser, '.multi-text')).toBe('open')
     })
 
+    it('a layout component with no signals runs its script once', async () => {
+      const browser = await open('/p/one')
+      const plain = browser.window.__plain
+      const runs = [plain.runs]
+      const perClick = [clickCount(browser, plain)]
+      for (const to of ['/p/two', '/p/one', '/p/two']) {
+        await browser.navigate(to)
+        runs.push(plain.runs)
+        perClick.push(clickCount(browser, plain))
+      }
+      expect({ runs, perClick }).toEqual({ runs: [1, 1, 1, 1], perClick: [1, 1, 1, 1] })
+    })
+
+    it('a layout component mounted through stx.mount keeps its own root, and only that', async () => {
+      expect(app.documents.get('/o/one')).toMatch(/<script\b[^>]*\bdata-stx-instance="[^"]+"[^>]*>\s*window\.stx\.mount\(/)
+      const browser = await open('/o/one')
+      await browser.navigate('/o/two')
+      // Re-run from the navigation, the wrapper mounted onto the incoming
+      // page's content: its section on a fragment, the container itself on a
+      // whole document.
+      const holders = Array.from(browser.document.querySelectorAll('*'))
+        .filter((el: any) => el.__stx_scope && typeof el.__stx_scope.label === 'function')
+        .map((el: any) => el.className || el.tagName)
+      expect({ runs: browser.window.__mounted.runs, holders }).toEqual({ runs: 1, holders: ['mounted'] })
+      expect(text(browser, '.mounted')).toBe('mounted')
+    })
+
     it('an @include with no signals in the layout', async () => {
       const browser = await open('/n/one')
       const seen = [counts(browser.window.__nsig)]
@@ -626,6 +690,18 @@ for (const serve of MODES) {
       }
     })
 
+    it('a component with no signals inside the swap container runs on every visit', async () => {
+      const browser = await open('/q/one')
+      const plain = browser.window.__plain
+      const runs = [plain.runs]
+      for (const to of ['/q/two', '/q/one']) {
+        await browser.navigate(to)
+        runs.push(plain.runs)
+      }
+      // The layout's instance ran once; the page's runs per visit.
+      expect(runs).toEqual([2, 3, 4])
+    })
+
     it('the layout\'s links still follow the route', async () => {
       const browser = await open('/')
       const here = () => Array.from(browser.document.querySelectorAll('nav a.is-here')).map((a: any) => a.getAttribute('href'))
@@ -667,3 +743,26 @@ for (const serve of MODES) {
     })
   })
 }
+
+describe('what a fragment carries', () => {
+  const fragment = (route: string) => extractContainerContent(app.documents.get(route)!, 'main')
+  const stamps = (html: string) => html.match(/data-stx-(?:owner|instance)="[^"]*"/g) ?? []
+
+  it('leaves out the layout components\' own scripts', () => {
+    // Tag, @include, a pair through the factory, no signals, stx.mount, and a
+    // non-signal @include: none of their scripts reaches a fragment.
+    for (const route of ['/other', '/i/other', '/m/two', '/p/two', '/o/two', '/n/two'])
+      expect({ route, stamps: stamps(fragment(route)) }).toEqual({ route, stamps: [] })
+    expect(fragment('/other')).not.toContain('window.__repro.setups++')
+    expect(fragment('/i/other')).not.toContain('window.__repro.setups++')
+  })
+
+  it('keeps the page\'s own instances, and the factory prelude the layout\'s pair needed', () => {
+    // Inner and the tally partial, both inside the container.
+    expect(stamps(fragment('/c/two'))).toHaveLength(2)
+    expect(fragment('/c/two')).toContain('window.__inner.setups++')
+    expect(fragment('/c/two')).toContain('window.__tally.runs++')
+    // Unstamped, so still carried: it registers factories, not an instance.
+    expect(fragment('/m/two')).toContain('data-stx-component-factories')
+  })
+})

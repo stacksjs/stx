@@ -1301,6 +1301,13 @@ else {
           if(isSignalsRuntimeScript(s,text))return;
           if(text.indexOf('__stxRouter')!==-1)return;
           if(newContent.contains(s))return;
+          // A component with no scope root has no root for the owner check,
+          // so its script is marked data-stx-instance instead. Out here it
+          // belongs to the layout chrome, which this swap leaves in place with
+          // its instance running; running it again set up a second one, and a
+          // stx.mount wrapper re-run from here mounted onto the container, the
+          // incoming page's content (#1958). Fragments leave these out.
+          if(s.hasAttribute('data-stx-instance'))return;
           if(text.indexOf('__stx_setup_')===-1&&!s.hasAttribute('data-stx-scoped')&&!s.hasAttribute('data-stx-page')&&!s.hasAttribute('data-stx-route-params'))return;
           var key=text.substring(0,80);
           if(seenSetups[key])return;

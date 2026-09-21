@@ -339,6 +339,17 @@ export function stripDocumentWrapper(html: string, options: { preserveHead?: boo
 }
 
 /**
+ * A script that sets up one component instance (stacksjs/stx#1958), matched in
+ * its opening tag: data-stx-owner names the scope root it binds, and
+ * data-stx-instance marks one whose component has no scope root. Whole
+ * attribute names only.
+ *
+ * bun-plugin's serve.ts assembles its fragments separately and carries the
+ * same test (INSTANCE_SCRIPT_OPEN_TAG there).
+ */
+const COMPONENT_INSTANCE_SCRIPT = /^<script\b[^>]*\sdata-stx-(?:owner|instance)(?=[\s=/>])/i
+
+/**
  * Check if a request is an SPA navigation request (from the stx router).
  */
 export function isSpaNavigation(request: Request): boolean {
@@ -397,6 +408,12 @@ export function extractContainerContent(html: string, containerSelector: string 
   // SPA navigation swaps the fragment into <main> but never re-registers the
   // page's signals, so reactive :for / :text / :if directives find no data.
   // The router extracts and re-runs scripts from the fragment on navigation.
+  //
+  // Except a component instance's own script (#1958). Out here it belongs to
+  // the layout's chrome, which a same-layout navigation leaves in place,
+  // instance and bindings included, so running it again set up a second
+  // instance the markup never saw. A fragment is only ever swapped in when
+  // the layout is unchanged; a layout change fetches the whole document.
   const bodyScripts: string[] = []
   const bodyOpenMatch = trimmed.match(/<body\b[^>]*>/i)
   const bodyCloseIdx = trimmed.lastIndexOf('</body>')
@@ -414,6 +431,8 @@ export function extractContainerContent(html: string, containerSelector: string 
       let sm: RegExpExecArray | null
       scriptRe.lastIndex = 0
       while ((sm = scriptRe.exec(region)) !== null) {
+        if (COMPONENT_INSTANCE_SCRIPT.test(sm[0]))
+          continue
         bodyScripts.push(sm[0])
       }
     }

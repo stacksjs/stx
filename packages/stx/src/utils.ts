@@ -1617,7 +1617,10 @@ export async function renderComponentWithSlot(
         // running any side-effectful setup like fetches) only when the trigger
         // fires. Keep data-stx-scoped so the build passes don't reprocess it.
         if (hydrateTrigger) {
-          return `${vendorStyleTags}<script type="stx/island" data-stx-island="${scopeId}" data-stx-scoped${attrs}>${wrappedContent}</script>`
+          // data-stx-owner as on the eager form below (#1958): outside the
+          // container this is the layout's island, which a same-layout
+          // navigation leaves in place, so fragments leave it out.
+          return `${vendorStyleTags}<script type="stx/island" data-stx-island="${scopeId}" data-stx-scoped data-stx-owner="${scopeId}"${attrs}>${wrappedContent}</script>`
         }
         // run="always": this CALL is what registers window.stx._scopes[scopeId],
         // and disposeSubtreeScopes deletes that on the way out of every SPA
@@ -1666,7 +1669,9 @@ else {
         const transformedScripts = await Promise.all(clientScripts.map(async (fullScript: string) => {
           const contentMatch = fullScript.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)
           if (!contentMatch) return fullScript
-          return await processClientScript(contentMatch[1], { eventBindings, templateContent: output, filePath: componentFilePath, projectRoot: process.cwd(), serverData })
+          // No scope root for data-stx-owner to name, so the instance is
+          // named on its own (#1958; see ClientScriptOptions.instanceId).
+          return await processClientScript(contentMatch[1], { eventBindings, templateContent: output, filePath: componentFilePath, projectRoot: process.cwd(), serverData, instanceId: componentUid })
         }))
         output += '\n' + transformedScripts.join('\n')
         // Clear bindings after use

@@ -179,3 +179,40 @@ describe('router — components that stayed on the page, full-document responses
     expect(injected(window, 'SENTINEL_PAGE')).toBe(1)
   })
 })
+
+describe('router: a layout component with no scope root, full-document responses (#1958)', () => {
+  // A component with no signals has no scope root for the owner check, so its
+  // script carries data-stx-instance instead, and the side of the container it
+  // sits on decides. Outside, it is the layout's chrome, still running; a
+  // stx.mount wrapper re-run from there mounted onto the incoming page.
+  const instanceScript = (id: string, sentinel: string): string =>
+    `<script data-stx-scoped data-stx-run="always" data-stx-instance="${id}">${sentinel}()<\/script>`
+
+  it('skips its script collected from outside the container', async () => {
+    const window = installRouter(
+      fullDocument(`<nav>${instanceScript('stx_plain_1_samepage', 'SENTINEL_CHROME')}</nav>`, '<section>Body</section>'),
+      { fullDocument: true },
+    )
+    await navigate(window)
+    expect(window.document.querySelector('main')?.textContent).toContain('Body')
+    expect(injected(window, 'SENTINEL_CHROME')).toBe(0)
+  })
+
+  it('still runs one that arrived inside the container', async () => {
+    const window = installRouter(
+      fullDocument('', `<section>Body</section>${instanceScript('stx_plain_1_nextpage', 'SENTINEL_INSIDE')}`),
+      { fullDocument: true },
+    )
+    await navigate(window)
+    expect(injected(window, 'SENTINEL_INSIDE')).toBe(1)
+  })
+
+  it('still runs an unstamped scoped script from outside the container', async () => {
+    const window = installRouter(
+      fullDocument('<script data-stx-scoped data-stx-run="always">SENTINEL_UNSTAMPED()<\/script>', '<section>Body</section>'),
+      { fullDocument: true },
+    )
+    await navigate(window)
+    expect(injected(window, 'SENTINEL_UNSTAMPED')).toBe(1)
+  })
+})

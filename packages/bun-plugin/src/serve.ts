@@ -59,6 +59,16 @@ interface BuildErrorPayload {
 type CssEngine = Pick<typeof import('@stacksjs/ts-css/engine'), 'CSSGenerator' | 'config'>
 
 /**
+ * A script that sets up one component instance (stacksjs/stx#1958), matched in
+ * its opening tag: data-stx-owner names the scope root it binds, and
+ * data-stx-instance marks one whose component has no scope root. The same
+ * test as COMPONENT_INSTANCE_SCRIPT in stx's app-shell.ts, which cuts the
+ * fragments the production builder writes; the fragment assembly below uses
+ * it to leave the layout chrome's instances out.
+ */
+const INSTANCE_SCRIPT_OPEN_TAG = /^<script\b[^>]*\sdata-stx-(?:owner|instance)(?=[\s=/>])/i
+
+/**
  * Where the utility-CSS engine can be found inside a package store.
  *
  * The engine ships inside `@stacksjs/ts-css`, at its `engine` subpath. Both
@@ -3748,6 +3758,14 @@ function __stxOverlay(errs){
                         && offset >= mainContentStart
                         && offset < mainContentEnd
                       if (insideMain || pageSetupScriptOffsets.has(offset))
+                        return
+                      // A component instance's own script outside the container
+                      // belongs to the layout's chrome, which this fragment leaves
+                      // in place, instance and bindings included; running it again
+                      // set up a second instance the markup never saw (#1958).
+                      // Only with a container: without one every script counts as
+                      // outside, the page's own instances too.
+                      if (mainContentStart !== -1 && INSTANCE_SCRIPT_OPEN_TAG.test(match[0]))
                         return
                       pageSetupScriptOffsets.add(offset)
                       pageSetupScripts.push(match[0])

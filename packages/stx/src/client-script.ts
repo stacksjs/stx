@@ -503,6 +503,18 @@ export interface ClientScriptOptions {
    * round-trip fetch. Functions/non-serializable values are skipped.
    */
   serverData?: Record<string, unknown>
+  /**
+   * The component instance this script sets up, stamped on the emitted tag as
+   * data-stx-instance (#1958). Passed only by the component renderer, for a
+   * component with no scope root: a component with one names it in
+   * data-stx-owner instead. A page's own script runs on every navigation, so
+   * it is never stamped.
+   *
+   * Outside the router's container the stamp marks the script as part of the
+   * layout's chrome, whose instance a same-layout navigation leaves running:
+   * fragments leave it out, and the router's full-document path skips it.
+   */
+  instanceId?: string
 }
 
 // =============================================================================
@@ -1484,11 +1496,12 @@ export async function processClientScript(
   // 5. Build the output script tag
   const attrs = (options.attrs || '').trim()
   const isModule = /\btype\s*=\s*["']module["']/i.test(attrs)
+  const instance = options.instanceId ? ` data-stx-instance="${options.instanceId}"` : ''
 
   if (isModule) {
     // Module scripts: preserve type="module", no IIFE wrapping
     const extraAttrs = attrs.replace(/\btype\s*=\s*["']module["']/i, '').trim()
-    const attrStr = `type="module" data-stx-scoped${extraAttrs ? ` ${extraAttrs}` : ''}`
+    const attrStr = `type="module" data-stx-scoped${instance}${extraAttrs ? ` ${extraAttrs}` : ''}`
     return `${vendorStyleTags}<script ${attrStr}>
 ${escapeScriptBody(`${autoImportCode}${code}\n${eventCode}`)}
 </script>`
@@ -1515,7 +1528,7 @@ ${escapeScriptBody(`${autoImportCode}${code}\n${eventCode}`)}
       ? `\n  return { ${declarations.join(', ')} };`
       : ''
 
-    return `${vendorStyleTags}<script data-stx-scoped data-stx-run="always">
+    return `${vendorStyleTags}<script data-stx-scoped data-stx-run="always"${instance}>
 window.stx.mount(function() {
   'use strict';
 ${escapeScriptBody(`${autoImportCode}${code}\n${eventCode}${returnStmt}`)}
@@ -1543,7 +1556,7 @@ ${escapeScriptBody(`${autoImportCode}${code}\n${eventCode}${returnStmt}`)}
   }
 
   // Fallback: legacy IIFE (no template bindings, or explicit mount, or SFC-wrapped)
-  return `${vendorStyleTags}<script data-stx-scoped data-stx-run="always">
+  return `${vendorStyleTags}<script data-stx-scoped data-stx-run="always"${instance}>
 ;(function() {
   'use strict';
 ${escapeScriptBody(`${autoImportCode}${code}\n${eventCode}`)}
