@@ -348,6 +348,23 @@ export function getRouterScript(): string {
     var head=code.trimStart();
     return head.charAt(0)==='('||head.charAt(0)===';';
   }
+  // A component scope script names the root it binds in data-stx-owner (#1958).
+  // On navigation it runs only for a root that just ARRIVED: one swapped in
+  // with the new content, which is not bound yet. A layout component that
+  // stayed on screen is skipped, in both shapes that reach here:
+  //   - its root is gone: it keeps its first render's id while the fragment
+  //     carries the next page's id for it (ids are page-keyed on purpose), so
+  //     the script has no markup of its own;
+  //   - its root is present and already bound: the same page file on both
+  //     sides of the navigation gives the same id.
+  // Either way running it built a second instance of a component whose markup
+  // stays bound to the first -- setup and its side effects repeated on every
+  // navigation. Scripts without an owner are unaffected.
+  function ownerStays(owner){
+    if(!owner)return false;
+    var root=document.querySelector('[data-stx-scope="'+owner+'"]');
+    return !root||typeof root.__stx_disposers==='function';
+  }
   function hashScript(code){
     var h=0;for(var i=0;i<code.length;i++){h=((h<<5)-h)+code.charCodeAt(i);h|=0}
     return h;
@@ -845,7 +862,8 @@ else {
             var slot='fragment-'+(++fragScriptId);
             var scoped=/(?:^|\\s)data-stx-scoped(?:\\s|=|$)/i.test(attrs);
             var runDecl=(attrs.match(/data-stx-run\\s*=\\s*["']?(always|once)["']?/i)||[])[1];
-            fragScripts.push({text:code,slot:slot,setupName:generatedSetupName(code),scoped:scoped,run:runDecl?runDecl.toLowerCase():''});
+            var ownerDecl=(attrs.match(/data-stx-owner\\s*=\\s*["']([^"']+)["']/i)||[])[1]||'';
+            fragScripts.push({text:code,slot:slot,setupName:generatedSetupName(code),scoped:scoped,run:runDecl?runDecl.toLowerCase():'',owner:ownerDecl});
             // Retain scoped setup code in its inert placeholder. A placeholder
             // inside template.content is unreachable through document, so the
             // repeated component runtime must execute it for each clone.
@@ -960,6 +978,10 @@ else {
           // declarations would throw "Identifier has already been declared"
           // on re-execution. Setup functions (__stx_setup_) must always
           // re-execute because each page has its own setup.
+          if(ownerStays(entry.owner)){
+            log('[router] skipping component that stayed on the page:', entry.owner);
+            return;
+          }
           var h=hashScript(code);
           var isSetup=code.indexOf('__stx_setup_')!==-1;
           // Self-contained scope scripts must re-execute on every navigation:
@@ -1183,7 +1205,7 @@ else {
           var slot='document-'+(++routedBodyScriptId);
           var setupName=generatedSetupName(text);
           if(setupName)incomingSetupName=setupName;
-          routedBodyScripts.push({text:text,runAlways:true,slot:slot,setupName:setupName,run:s.getAttribute('data-stx-run')||''});
+          routedBodyScripts.push({text:text,runAlways:true,slot:slot,setupName:setupName,run:s.getAttribute('data-stx-run')||'',owner:s.getAttribute('data-stx-owner')||''});
           s.textContent='';
           s.setAttribute('type','application/stx-pending');
           s.setAttribute('data-stx-route-script',slot);
@@ -1252,8 +1274,8 @@ else {
       document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
 
       var scripts=routedBodyScripts.slice();
-      function addScript(text, runAlways, slot){
-        scripts.push({text:text,runAlways:!!runAlways,slot:slot||''});
+      function addScript(text, runAlways, slot, owner){
+        scripts.push({text:text,runAlways:!!runAlways,slot:slot||'',owner:owner||''});
       }
       if(isLayoutChange){
         // Also collect setup functions from <head>
@@ -1283,7 +1305,9 @@ else {
           var key=text.substring(0,80);
           if(seenSetups[key])return;
           seenSetups[key]=1;
-          addScript(text,true);
+          // A layout component outside the container carries its owner, so
+          // execScripts skips it when it stayed on the page (#1958).
+          addScript(text,true,'',s.getAttribute('data-stx-owner')||'');
         });
       }
       // Component setup scripts also assign window.stx._latestSetup. Run the
@@ -1354,6 +1378,7 @@ else {
         scripts.forEach(function(entry){
           var text=typeof entry==='string'?entry:entry.text;
           var runAlways=typeof entry==='string'?false:entry.runAlways;
+          if(typeof entry!=='string'&&ownerStays(entry.owner))return;
           // Skip scripts that were already executed (layout-level partials
           // like theme.stx). Their top-level const/function declarations
           // would throw "Identifier has already been declared" on re-execution.

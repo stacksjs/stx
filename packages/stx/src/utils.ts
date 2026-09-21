@@ -1635,7 +1635,15 @@ export async function renderComponentWithSlot(
         // Only the multi-instance form was affected: a component used once is
         // inlined as `(factoryBody)(scopeId)`, which the sniff accepts by its
         // leading paren. Two of the same component on one page took this path.
-        return `${vendorStyleTags}<script data-stx-scoped data-stx-run="always"${attrs}>${wrappedContent}</script>`
+        //
+        // data-stx-owner names the root this script binds (#1958), so the
+        // router can tell a layout component that stayed on screen from one
+        // that just arrived. It skips the script when that root is gone (a
+        // different page gives the layout component a different id -- ids are
+        // page-keyed on purpose) or is still here and already bound. Running
+        // it anyway built a second instance: setup and its side effects on
+        // every navigation, for markup still bound to the first.
+        return `${vendorStyleTags}<script data-stx-scoped data-stx-run="always" data-stx-owner="${scopeId}"${attrs}>${wrappedContent}</script>`
       }))
 
       // Emit setup immediately after its root. The browser still executes it
