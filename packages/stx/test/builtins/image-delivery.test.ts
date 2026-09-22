@@ -125,6 +125,67 @@ describe('build-time Image delivery', () => {
     expect(second.fingerprint).toBe(first.fingerprint)
   })
 
+  it('only probes a corrupt raster once, then skips it on later runs', async () => {
+    // A corrupt file makes the catalog build reject the whole batch. Recovery
+    // decodes every file to find the bad one and then builds the catalog a
+    // second time — and the file is still corrupt next boot, so without a
+    // record of it the server pays that twice-over forever.
+    const outDir = join(tempDir, 'releases', 'ddddddd', 'delivery')
+    const broken = join(publicDir, 'images', 'corrupt-once.png')
+    await writeFile(broken, 'not image bytes')
+
+    const warnings: string[] = []
+    const realWarn = console.warn
+    console.warn = (...args: unknown[]) => { warnings.push(args.join(' ')) }
+
+    try {
+      clearImageDeliveryCatalog()
+      const first = await prepareImageDelivery(publicDir, outDir)
+      // The probe ran, found it, and said so.
+      expect(warnings.some(line => line.includes('corrupt-once.png'))).toBe(true)
+
+      warnings.length = 0
+      clearImageDeliveryCatalog()
+      const second = await prepareImageDelivery(publicDir, outDir)
+
+      // Second run filtered it out up front: no probe, so no warning, and the
+      // same catalog either way.
+      expect(warnings.some(line => line.includes('corrupt-once.png'))).toBe(false)
+      expect(second.count).toBe(first.count)
+      expect(second.fingerprint).toBe(first.fingerprint)
+    }
+    finally {
+      console.warn = realWarn
+      await rm(broken, { force: true })
+    }
+  })
+
+  it('retries a file that was corrupt once its bytes change', async () => {
+    // The record is keyed by stat identity, so replacing a bad file with a
+    // good one must not leave it permanently excluded.
+    const outDir = join(tempDir, 'releases', 'eeeeeee', 'delivery')
+    const file = join(publicDir, 'images', 'fixed-later.png')
+    await writeFile(file, 'not image bytes')
+
+    try {
+      clearImageDeliveryCatalog()
+      const broken = await prepareImageDelivery(publicDir, outDir)
+
+      const width = 16
+      const height = 16
+      const pixels = new Uint8Array(width * height * 4).fill(200)
+      await writeFile(file, await encode({ data: pixels, width, height, channels: 4 }, 'png'))
+
+      clearImageDeliveryCatalog()
+      const repaired = await prepareImageDelivery(publicDir, outDir)
+
+      expect(repaired.count).toBe(broken.count + 1)
+    }
+    finally {
+      await rm(file, { force: true })
+    }
+  })
+
   it('reuses variants already on disk instead of re-encoding them', async () => {
     const outDir = join(tempDir, 'releases', 'ccccccc', 'delivery')
 

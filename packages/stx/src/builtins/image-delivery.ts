@@ -131,6 +131,63 @@ async function decodableFiles(files: RasterFile[]): Promise<RasterFile[]> {
   return supported
 }
 
+/**
+ * Rasters that could not be decoded last time, by path and stat identity.
+ *
+ * A single corrupt file makes `createImageDeliveryCatalog` reject the whole
+ * batch, and the recovery below costs a full decode of every file plus a
+ * second catalog build. Nothing about that changes on the next boot — the file
+ * is still corrupt — so without a record the server pays it forever. This is
+ * that record: the next boot filters the known-bad out before the first
+ * attempt and takes the single-pass path.
+ *
+ * Keyed by mtime and size like the placeholder cache, so replacing a bad file
+ * with a good one retries it.
+ */
+interface UndecodableRecord { mtimeMs: number, size: number }
+type UndecodableCache = Record<string, UndecodableRecord>
+
+/**
+ * Sits beside the variant directory rather than inside it: everything under
+ * `<outputDir>/_stx/images` is served at `/_stx/images`, and this is internal
+ * bookkeeping, not a public asset.
+ */
+function undecodableCachePath(outputDir: string): string {
+  return path.join(outputDir, 'undecodable.json')
+}
+
+function readUndecodableCache(outputDir: string): UndecodableCache {
+  try {
+    const raw = fs.readFileSync(undecodableCachePath(outputDir), 'utf-8')
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed as UndecodableCache : {}
+  }
+  catch {
+    // Absent, unreadable or corrupt: worth nothing, costs a slow boot at most.
+    return {}
+  }
+}
+
+function writeUndecodableCache(outputDir: string, cache: UndecodableCache): void {
+  try {
+    fs.mkdirSync(path.dirname(undecodableCachePath(outputDir)), { recursive: true })
+    fs.writeFileSync(undecodableCachePath(outputDir), JSON.stringify(cache))
+  }
+  catch {
+    // A cache we cannot persist is a slower boot, not a failure.
+  }
+}
+
+function statIdentity(absolutePath: string): UndecodableRecord | undefined {
+  try {
+    const stats = fs.statSync(absolutePath)
+    return { mtimeMs: stats.mtimeMs, size: stats.size }
+  }
+  catch {
+    return undefined
+  }
+}
+
 function normalizeLookupSource(src: string): string | undefined {
   if (!src || src.startsWith('data:') || src.startsWith('blob:') || /^https?:\/\//i.test(src) || src.startsWith('//')) return undefined
   const sourcePath = src.split(/[?#]/, 1)[0]
@@ -171,7 +228,23 @@ export async function prepareImageDelivery(
     return { count: 0, fingerprint: '' }
   }
 
-  const files = await collectRasterImages(publicDir)
+  const allFiles = await collectRasterImages(publicDir)
+  if (allFiles.length === 0) {
+    clearImageDeliveryCatalog()
+    return { count: 0, fingerprint: '' }
+  }
+
+  // Drop rasters a previous run already proved undecodable, so one corrupt
+  // file does not buy a full decode pass and a second catalog build on every
+  // boot for the rest of the project's life. A file whose bytes changed is no
+  // longer the file that failed, so it goes back in the batch.
+  const undecodable = readUndecodableCache(outputDir)
+  const files = allFiles.filter((file) => {
+    const known = undecodable[file.relativePath]
+    if (!known) return true
+    const identity = statIdentity(file.absolutePath)
+    return !identity || identity.mtimeMs !== known.mtimeMs || identity.size !== known.size
+  })
   if (files.length === 0) {
     clearImageDeliveryCatalog()
     return { count: 0, fingerprint: '' }
@@ -208,6 +281,20 @@ export async function prepareImageDelivery(
     // failure into an unoptimized build.
     if (optimizedFiles.length === files.length)
       throw error
+
+    // Record what failed, so the next boot skips straight to the single pass.
+    const survived = new Set(optimizedFiles.map(file => file.relativePath))
+    let changed = false
+    for (const file of files) {
+      if (survived.has(file.relativePath)) continue
+      const identity = statIdentity(file.absolutePath)
+      if (!identity) continue
+      undecodable[file.relativePath] = identity
+      changed = true
+    }
+    if (changed)
+      writeUndecodableCache(outputDir, undecodable)
+
     if (optimizedFiles.length === 0) {
       clearImageDeliveryCatalog()
       return { count: 0, fingerprint: '' }
