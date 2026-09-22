@@ -412,8 +412,10 @@ export function extractContainerContent(html: string, containerSelector: string 
   // Except a component instance's own script (#1958). Out here it belongs to
   // the layout's chrome, which a same-layout navigation leaves in place,
   // instance and bindings included, so running it again set up a second
-  // instance the markup never saw. A fragment is only ever swapped in when
-  // the layout is unchanged; a layout change fetches the whole document.
+  // instance the markup never saw. Navigation swaps a fragment in only when
+  // the layout is unchanged; a layout change fetches the whole document. A
+  // form the router submits still swaps a fragment response in without that
+  // check, so a form that lands on another layout is not covered here.
   const bodyScripts: string[] = []
   const bodyOpenMatch = trimmed.match(/<body\b[^>]*>/i)
   const bodyCloseIdx = trimmed.lastIndexOf('</body>')

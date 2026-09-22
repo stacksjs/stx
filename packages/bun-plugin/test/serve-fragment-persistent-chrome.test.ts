@@ -2,8 +2,8 @@
  * A fragment leaves the layout chrome's component scripts out
  * (stacksjs/stx#1958), end-to-end against a real serve() subprocess.
  *
- * A fragment is only swapped in when the layout is unchanged, so the chrome it
- * leaves out is the chrome already on screen: the layout's components are
+ * Navigation swaps a fragment in only when the layout is unchanged, so the
+ * chrome it leaves out is the chrome already on screen: the layout's components are
  * still set up and bound there. Carrying their scripts made the router set
  * each of them up a second time on every navigation, an instance the markup
  * never saw. The page's own components are inside the container and must
