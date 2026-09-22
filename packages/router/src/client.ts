@@ -1308,6 +1308,11 @@ else {
           if(isSignalsRuntimeScript(s,text))return;
           if(text.indexOf('__stxRouter')!==-1)return;
           if(newContent.contains(s))return;
+          // Code only, as prepareRoutedBodyScripts takes it. A layout island's
+          // type="stx/island" script is hydrated by its own trigger, and one
+          // collected here was set up on every navigation, the trigger or not.
+          var scriptType=(s.getAttribute('type')||'').trim().toLowerCase();
+          if(scriptType&&scriptType!=='text/javascript'&&scriptType!=='application/javascript'&&scriptType!=='module')return;
           // A component with no scope root has no root for the owner check,
           // so its script is marked data-stx-instance instead. Out here it
           // belongs to the layout chrome, which this swap leaves in place with

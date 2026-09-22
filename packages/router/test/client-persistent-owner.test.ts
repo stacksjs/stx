@@ -178,6 +178,21 @@ describe('router — components that stayed on the page, full-document responses
     await navigate(window)
     expect(injected(window, 'SENTINEL_PAGE')).toBe(1)
   })
+
+  it('leaves a layout island to its own trigger', async () => {
+    // An island's root is on the page and not bound until its trigger fires,
+    // so the owner rule alone let its script through on every navigation.
+    const window = installRouter(
+      fullDocument(
+        `<div data-stx-scope="stx_isl_1_samepage">nav</div><script type="stx/island" data-stx-island="stx_isl_1_samepage" data-stx-scoped data-stx-owner="stx_isl_1_samepage">SENTINEL_ISLAND()<\/script>`,
+        '<section>Body</section>',
+      ),
+      { persistentId: 'stx_isl_1_samepage', fullDocument: true },
+    )
+    await navigate(window)
+    expect(window.document.querySelector('main')?.textContent).toContain('Body')
+    expect(injected(window, 'SENTINEL_ISLAND')).toBe(0)
+  })
 })
 
 describe('router: a layout component with no scope root, full-document responses (#1958)', () => {
