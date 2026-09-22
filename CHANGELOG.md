@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.288...v0.2.289)
+
+## 🐛 Bug Fixes
+
+- **images**: name delivery variants independently of the output path (#1961) ([26b8bde](https://github.com/stacksjs/stx/commit/26b8bde)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1961](https://github.com/stacksjs/stx/issues/1961), [#1961](https://github.com/stacksjs/stx/issues/1961))
+
+## 🔧 Chores
+
+- release v0.2.289 ([3b01ed0](https://github.com/stacksjs/stx/commit/3b01ed0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: ts-images 0.2.18 ([836e150](https://github.com/stacksjs/stx/commit/836e150)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.287...v0.2.288)
 
 ## ✨ Features
