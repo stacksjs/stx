@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { encode } from 'ts-images'
@@ -102,5 +102,47 @@ describe('build-time Image delivery', () => {
     expect(html).toMatch(/<img[^>]*:src="avatarUrl"/)
     expect(html).toContain(':src="avatarUrl"')
     expect(html).not.toContain('<picture')
+  })
+
+  it('names variants the same from any output directory, so releases reuse the cache', async () => {
+    // An atomic-release deploy runs the exact same build from a new absolute
+    // path each time. If the output directory leaks into the variant names,
+    // every release re-encodes the whole public directory and the previous
+    // release's output is dead weight on disk.
+    const releaseOne = join(tempDir, 'releases', 'aaaaaaa', 'delivery')
+    const releaseTwo = join(tempDir, 'releases', 'bbbbbbb', 'delivery')
+
+    clearImageDeliveryCatalog()
+    const first = await prepareImageDelivery(publicDir, releaseOne)
+    const firstNames = (await readdir(join(releaseOne, '_stx', 'images'))).sort()
+
+    clearImageDeliveryCatalog()
+    const second = await prepareImageDelivery(publicDir, releaseTwo)
+    const secondNames = (await readdir(join(releaseTwo, '_stx', 'images'))).sort()
+
+    expect(firstNames.length).toBeGreaterThan(0)
+    expect(secondNames).toEqual(firstNames)
+    expect(second.fingerprint).toBe(first.fingerprint)
+  })
+
+  it('reuses variants already on disk instead of re-encoding them', async () => {
+    const outDir = join(tempDir, 'releases', 'ccccccc', 'delivery')
+
+    clearImageDeliveryCatalog()
+    await prepareImageDelivery(publicDir, outDir)
+    const written = join(outDir, '_stx', 'images')
+    const before = await Promise.all(
+      (await readdir(written)).sort().map(async name => [name, (await stat(join(written, name))).mtimeMs] as const),
+    )
+
+    clearImageDeliveryCatalog()
+    await prepareImageDelivery(publicDir, outDir)
+    const after = await Promise.all(
+      (await readdir(written)).sort().map(async name => [name, (await stat(join(written, name))).mtimeMs] as const),
+    )
+
+    // Same names and untouched mtimes: the second pass found every variant and
+    // wrote nothing. A miss would rewrite the file and move the mtime.
+    expect(after).toEqual(before)
   })
 })

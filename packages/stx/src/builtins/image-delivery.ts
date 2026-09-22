@@ -1,4 +1,4 @@
-import type { ImageDeliveryManifest } from 'ts-images/delivery'
+import type { ImageDeliveryManifest, ImageDeliveryStorage } from 'ts-images/delivery'
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -23,6 +23,63 @@ function catalogName(relativePath: string): string {
     .replace(/^-+|-+$/g, '')
   const pathHash = createHash('sha256').update(relativePath).digest('hex').slice(0, 8)
   return `${readable || 'image'}-${pathHash}`
+}
+
+/**
+ * Where delivery variants are written, and — crucially — under what identity.
+ *
+ * ts-images folds `storage.cacheNamespace` into the content hash that names
+ * every variant, and its built-in local adapter builds that namespace out of
+ * the absolute output directory. That is stable for a checkout that lives in
+ * one place forever and wrong for anything deploying atomic releases, where
+ * the same tree is served from a new absolute path every time:
+ *
+ *   releases/<sha-1>/…/_stx/images  ->  hero-6f21e0aa-44338d78039b57e4-640.webp
+ *   releases/<sha-2>/…/_stx/images  ->  hero-6f21e0aa-301f828bdc402f4a-640.webp
+ *
+ * Same bytes, same encode options, different filename — so `stat()` misses for
+ * every variant, a warm cache carried over from the previous release is never
+ * read, and each deploy re-encodes the entire public directory while the old
+ * generation stays on disk forever. On a site with a couple of hundred source
+ * images that is minutes of CPU during which the server is bound but cannot
+ * answer, repeated per deploy, plus unbounded disk growth.
+ *
+ * The namespace below describes what the variant *is* — the URL space it is
+ * published into — and not where this particular release happens to write it.
+ * Two builds of identical bytes therefore agree on the filename, which is what
+ * makes the on-disk cache reusable at all.
+ */
+function deliveryStorage(outDir: string): ImageDeliveryStorage {
+  const url = (key: string) => `${DELIVERY_URL}/${key.split('/').map(encodeURIComponent).join('/')}`
+
+  return {
+    cacheNamespace: `stx:${DELIVERY_URL}`,
+    async stat(key) {
+      const file = path.join(outDir, key)
+      try {
+        const stats = await fs.promises.stat(file)
+        // A zero-byte file is a half-finished write from a previous run that
+        // was killed mid-encode. Treat it as absent so it gets rewritten
+        // rather than served as a broken image forever.
+        return stats.size > 0 ? { bytes: stats.size, path: file, url: url(key) } : null
+      }
+      catch {
+        return null
+      }
+    },
+    async write(key, bytes) {
+      const file = path.join(outDir, key)
+      await fs.promises.mkdir(path.dirname(file), { recursive: true })
+      // Write-then-rename: a reader that arrives mid-write sees either the
+      // old file or the new one, never a truncated one. The delivery directory
+      // is commonly shared between a running server and a build.
+      const pending = `${file}.${process.pid}.tmp`
+      await fs.promises.writeFile(pending, bytes)
+      await fs.promises.rename(pending, file)
+      return { bytes: bytes.byteLength, path: file, url: url(key) }
+    },
+    url,
+  }
 }
 
 async function collectRasterImages(root: string, directory = root): Promise<Array<{ absolutePath: string, relativePath: string }>> {
@@ -122,6 +179,7 @@ export async function prepareImageDelivery(
 
   const catalogOptions = {
     outDir: path.join(outputDir, '_stx', 'images'),
+    storage: deliveryStorage(path.join(outputDir, '_stx', 'images')),
     baseUrl: DELIVERY_URL,
     widths: DEFAULT_WIDTHS,
     formats: ['avif', 'webp'] as const,
