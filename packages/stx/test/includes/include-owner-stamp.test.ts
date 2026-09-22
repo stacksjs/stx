@@ -10,6 +10,10 @@
  * Exactly one script may carry it: the one whose id the root carries. A
  * partial with two client scripts gets two ids and one root, and the script
  * whose id is on no element must keep running as it always has.
+ *
+ * The router reads a missing root as one that stayed, so an owner no element
+ * carries is skipped on every navigation. A partial whose root is a component
+ * tag is that case: the component renders in the tag's place without the id.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { mkdtemp, rm } from 'node:fs/promises'
@@ -27,9 +31,19 @@ beforeAll(async () => {
     'merged.stx': `<script client>\n  const hits = state(0)\n</script>\n<div data-stx-scope="shared_root">{{ hits() }}</div>\n`,
     'two.stx': `<script client>\n  const first = state(1)\n</script>\n<script client>\n  const second = state(2)\n</script>\n<div class="two">{{ second() }}</div>\n`,
     'rootless.stx': `<script client>\n  const hits = state(0)\n</script>\njust text\n`,
+    'pascal-root.stx': `<script client>\n  const hits = state(0)\n</script>\n<Card><span>{{ hits() }}</span></Card>\n`,
+    'kebab-root.stx': `<script client>\n  const hits = state(0)\n</script>\n<info-card><span>{{ hits() }}</span></info-card>\n`,
+    'word-root.stx': `<script client>\n  const hits = state(0)\n</script>\n<widget><span>{{ hits() }}</span></widget>\n`,
   }
   for (const [file, source] of Object.entries(partials))
     await Bun.write(path.join(dir, 'partials', file), source)
+  const components: Record<string, string> = {
+    'Card.stx': `<article class="card"><slot /></article>\n`,
+    'info-card.stx': `<article class="info-card"><slot /></article>\n`,
+    'widget.stx': `<article class="widget"><slot /></article>\n`,
+  }
+  for (const [file, source] of Object.entries(components))
+    await Bun.write(path.join(dir, 'components', file), source)
 })
 
 afterAll(async () => {
@@ -85,4 +99,18 @@ describe('an @include\'s script names the root it binds (#1958)', () => {
     expect(roots(html)).toEqual([])
     expect(owners(html)).toEqual([])
   })
+
+  for (const [shape, name, rendered] of [
+    ['PascalCase', 'pascal-root', 'card'],
+    ['kebab-case', 'kebab-root', 'info-card'],
+    ['single-word', 'word-root', 'widget'],
+  ] as const) {
+    it(`stamps nothing when the root is a ${shape} component`, async () => {
+      const html = await render(name)
+      // The component rendered, and the script still ships.
+      expect(html).toContain(`<article class="${rendered}">`)
+      expect(html).toMatch(/<script\b[^>]*\bdata-stx-run="always"[^>]*>[\s\S]*?const hits = state\(0\)/)
+      expect(owners(html)).toEqual([])
+    })
+  }
 })

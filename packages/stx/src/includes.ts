@@ -74,6 +74,7 @@ import { isProduction, isTest } from './env'
 import { findBodyOpenTag, replaceBodyOpenTag } from './find-body-tag'
 import { processExpressions, usesSignalsInScript } from './expressions'
 import { buildRuntimeGlobalsDestructure } from './runtime-globals'
+import { rendersAsElement } from './component-renderer'
 import { LRUCache } from './performance-utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
 import { transformStoreImports } from './store-imports'
@@ -403,7 +404,7 @@ function wrapScopedInclude(body: string, scopeId: string): string {
  * script and then never found by `document.querySelector`, so every binding in
  * the partial stays inert with nothing logged.
  */
-function addScopeToRootElement(html: string, scopeId: string): { html: string, mergedIntoExisting: string | null, stamped: boolean } {
+function addScopeToRootElement(html: string, scopeId: string): { html: string, mergedIntoExisting: string | null, stamped: boolean, root: string | null } {
   // A partial that carries the page skeleton opens with `<!DOCTYPE html>` and
   // `<html>`, neither of which is a scope root: the doctype is not an element
   // at all, and `<html>` is replaced wholesale when the document is assembled.
@@ -418,12 +419,13 @@ function addScopeToRootElement(html: string, scopeId: string): { html: string, m
     const bodyTag = findBodyOpenTag(html)!
     const existingBodyScope = bodyTag.tag.match(/data-stx-scope="([^"]*)"/)
     if (existingBodyScope)
-      return { html, mergedIntoExisting: existingBodyScope[1], stamped: true }
+      return { html, mergedIntoExisting: existingBodyScope[1], stamped: true, root: 'body' }
 
     return {
       html: replaceBodyOpenTag(html, (_tag, attrs) => `<body${attrs} data-stx-scope="${scopeId}">`),
       mergedIntoExisting: null,
       stamped: true,
+      root: 'body',
     }
   }
 
@@ -432,12 +434,13 @@ function addScopeToRootElement(html: string, scopeId: string): { html: string, m
   const elementMatch = html.match(/^(\s*(?:(?:<!--[\s\S]*?-->|\x00STX_HTML_COMMENT_\d+\x00)\s*)*)(<[a-zA-Z][a-zA-Z0-9-]*)(\s[^>]*>|>)/s)
   if (elementMatch) {
     const rootTag = elementMatch[2] + elementMatch[3]
+    const root = elementMatch[2].slice(1)
     // Check if root element already has data-stx-scope (from x-data reactive bridge)
     const existingScope = rootTag.match(/data-stx-scope="([^"]*)"/)
     if (existingScope) {
       // Don't add a duplicate — return the existing scope ID so the caller
       // can register signals under that scope instead
-      return { html, mergedIntoExisting: existingScope[1], stamped: true }
+      return { html, mergedIntoExisting: existingScope[1], stamped: true, root }
     }
     const before = elementMatch[1]
     const tagStart = elementMatch[2]
@@ -446,9 +449,10 @@ function addScopeToRootElement(html: string, scopeId: string): { html: string, m
       html: `${before}${tagStart} data-stx-scope="${scopeId}"${afterTag}${html.slice(elementMatch[0].length)}`,
       mergedIntoExisting: null,
       stamped: true,
+      root,
     }
   }
-  return { html, mergedIntoExisting: null, stamped: false }
+  return { html, mergedIntoExisting: null, stamped: false, root: null }
 }
 
 // Counter for generating unique scope IDs
@@ -1342,7 +1346,13 @@ catch (e) {
         // scripts gets two ids and one root) must keep running as it always
         // has. The merge rewrite above already moved the owning script's stamp
         // to the merged id.
-        preservedScript = keepOwnerStampOf(preservedScript, scopeResult.stamped ? signalScopeId : null)
+        //
+        // A root that is a component tag keeps no stamp either: the component
+        // renders in its place without the id, so no element carries it, and
+        // the router reads a missing root as one that stayed. The partial's
+        // script would then run on a full load only, even inside the container.
+        const ownsRoot = scopeResult.stamped && scopeResult.root !== null && rendersAsElement(scopeResult.root)
+        preservedScript = keepOwnerStampOf(preservedScript, ownsRoot ? signalScopeId : null)
       }
 
       // Process the partial content

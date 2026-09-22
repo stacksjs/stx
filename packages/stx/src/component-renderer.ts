@@ -86,6 +86,23 @@ const htmlTags = new Set([
 ])
 
 /**
+ * Whether `tagName` certainly reaches the page as the element it names, by the
+ * three passes of `processComponents` below. A component tag is replaced by
+ * the component's markup, and attributes stamped on the tag do not survive it.
+ * A kebab-case tag is a component when a file of that name exists, which this
+ * cannot know, so it never counts as certain.
+ */
+export function rendersAsElement(tagName: string): boolean {
+  if (tagName.includes('-') || tagName === 'component')
+    return false
+  if (/^[A-Z]/.test(tagName))
+    return uppercaseHtmlTagSkip(htmlTags)(tagName)
+  // Lowercase words outside the set are components. A camelCase name such as
+  // clipPath matches none of the three patterns, so it stays an element.
+  return htmlTags.has(tagName) || /[A-Z]/.test(tagName)
+}
+
+/**
  * Parse raw attribute key/value pairs into categorized `ResolvedProps`.
  *
  * Categories:
