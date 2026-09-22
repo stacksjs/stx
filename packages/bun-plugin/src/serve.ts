@@ -707,6 +707,22 @@ export interface ServeOptions {
    */
   prewarmRenderCache?: boolean | number
   /**
+   * How long a request will wait for the startup image pass, in milliseconds.
+   * Defaults to 1000. Zero disables the wait entirely.
+   *
+   * On boot the server derives placeholders and builds the responsive image
+   * catalog. Requests that land during that window can either wait for it or
+   * render without it — `<StxImage>` falls back to a flat colour and the
+   * delivery lookup falls back to the original file, both by design.
+   *
+   * A short wait buys the first visitor the good version on a site whose pass
+   * takes a moment. An unbounded one is how a photo-heavy site answers nothing
+   * at all for thirty seconds and then gets its connection closed. Raise it
+   * only if the pass is reliably fast and placeholders matter more than the
+   * first paint.
+   */
+  imageWarmupGraceMs?: number
+  /**
    * Public directory served at the URL root, like Nuxt/Vite/Next/Astro.
    * Any file under this directory is reachable at the matching URL path —
    * `public/images/hero.jpg` → `GET /images/hero.jpg`.
@@ -1167,6 +1183,45 @@ export async function serve(options: ServeOptions): Promise<void> {
   const placeholdersReady = new Promise<void>((resolve) => {
     markPlaceholdersReady = resolve
   })
+  // Whether that pass has finished. Reads as `false` for the whole warm-up,
+  // which is also what tells the render cache not to keep a page built while
+  // the catalogs were still empty.
+  let placeholdersAreReady = false
+
+  // How long a request is willing to wait for the warm-up before rendering
+  // without it.
+  //
+  // Waiting at all is a quality choice, not a correctness one: both catalogs
+  // degrade by design — `<StxImage>` falls back to a flat colour, and the
+  // delivery lookup falls back to the original file. Blocking is worth a beat
+  // on a small site, where the pass finishes in well under a second and the
+  // first visitor gets the good version.
+  //
+  // Blocking *indefinitely* is not. The pass decodes every raster under
+  // `public/`, so on a photo-heavy site it is tens of seconds, and this
+  // handler is the only thing between the bound socket and an answer. Bun
+  // closes a production connection after `idleTimeout` (30s) — having sent
+  // nothing, which the browser reports as ERR_EMPTY_RESPONSE. So every
+  // visitor who arrived during a restart got a broken page in exchange for
+  // placeholders on the one that eventually loaded. Cap it.
+  const imageWarmupGraceMs = Math.max(0, options.imageWarmupGraceMs ?? 1000)
+
+  /** Resolve once the warm-up finishes, or once the grace runs out. */
+  function awaitImageWarmup(): Promise<void> | undefined {
+    // Steady state, which is almost every request: nothing to await, and no
+    // microtask hop to get there.
+    if (placeholdersAreReady || imageWarmupGraceMs === 0)
+      return undefined
+    return new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, imageWarmupGraceMs)
+      // Do not hold the process open for a grace timer nobody is waiting on.
+      timer.unref?.()
+      void placeholdersReady.then(() => {
+        clearTimeout(timer)
+        resolve()
+      })
+    })
+  }
 
   // The stx module to use for processDirectives / extractVariables / etc.
   // When the caller passed an explicit override, prefer it — it's how a
@@ -2542,6 +2597,11 @@ function __stxOverlay(errs){
       // read the guard above prevents.
         && !isMutating
         && isRenderableCacheCandidate(output)
+      // A render that beat the image warm-up used the fallbacks — flat colour,
+      // original file. That is fine to serve and wrong to keep: the cache is
+      // invalidated by template mtimes, which the warm-up finishing does not
+      // touch, so the degraded copy would outlive the condition that caused it.
+        && placeholdersAreReady
     ) {
       const signature = await buildTemplateSignature(filePath, dependencies)
       htmlCache.set(htmlCacheKey(filePath, reqCtx), { html: output, signature, status: reqCtx?.responseStatus ?? 200, headers: reqCtx?.responseHeaders })
@@ -3080,10 +3140,14 @@ function __stxOverlay(errs){
         // no good reason to enforce request timeouts.
         idleTimeout: production ? 30 : 0,
         async fetch(req, server) {
-          // See `placeholdersReady`: the port is already bound, and this is
-          // where the wait actually belongs — before anything renders, not
-          // before anything listens. Settled after the first request.
-          await placeholdersReady
+          // See `awaitImageWarmup`: the port is already bound, and this is
+          // where the wait belongs — before anything renders, not before
+          // anything listens. Bounded, because answering beats answering with
+          // placeholders, and returns undefined once warm so the steady-state
+          // request does not even await.
+          const warmup = awaitImageWarmup()
+          if (warmup)
+            await warmup
 
           // Compression at the boundary, so it covers all thirty-nine exits from
           // this handler rather than the one that happens to converge. Hot reload
@@ -4245,6 +4309,7 @@ function __stxOverlay(errs){
       // No codec or no public directory. <StxImage> falls back to a flat colour.
     }
     finally {
+      placeholdersAreReady = true
       markPlaceholdersReady()
     }
   })()
