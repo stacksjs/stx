@@ -76,6 +76,49 @@ export async function resolveInlinePath(assetPath: string, templateDir: string, 
  * @param dependencies - Set to track included file dependencies
  * @returns Template with local assets inlined
  */
+/**
+ * Marker for the one error in this file that must not be swallowed.
+ *
+ * The inlining below runs inside a try/catch whose job is to tolerate a
+ * missing file and leave the tag alone. That catch is right for ENOENT and
+ * wrong for a bundle we produced and know is broken, so the check throws this
+ * and the catch re-throws it.
+ */
+const IMPORT_META_ERROR = Symbol.for('stx.inline-assets.import-meta')
+
+/**
+ * Refuse to inline browser code that still references `import.meta`.
+ *
+ * What gets written below is a classic `<script>`, not `type="module"`, and
+ * `import.meta` there is a SyntaxError. That is a PARSE error: it cannot be
+ * guarded, defaulted or caught, so the entire script fails and every feature
+ * on the page goes with it — not just the line that used it.
+ *
+ * The failure is almost impossible to read from the outside. A page whose
+ * client script never ran still renders its server HTML, so it looks alive
+ * while doing nothing, and a public page built this way sat on a loading
+ * spinner with one cryptic console line to explain it.
+ *
+ * `import.meta.env.STX_PUBLIC_*` is substituted before this point and never
+ * reaches here. What does reach here is everything else: `import.meta.glob`
+ * from a dependency, `import.meta.url`, `import.meta.dir`. Those are module
+ * syntax that a classic script cannot hold, and the honest answer is to say
+ * so at build time rather than ship a dead page.
+ */
+function assertInlinableForClassicScript(code: string, source: string): void {
+  if (!code.includes('import.meta'))
+    return
+
+  const error = new Error(
+    `[stx] ${source} still references \`import.meta\` after bundling, and it is being inlined as a classic <script> where that is a SyntaxError — the whole script fails to parse, taking every other script on the page with it.\n`
+    + `  \`import.meta.env.STX_PUBLIC_*\` is substituted at build time and is safe; anything else is not.\n`
+    + `  Fix it by moving the module-only code (\`import.meta.glob\`, \`import.meta.url\`) into its own module, or by resolving the value without \`import.meta\`.`,
+  ) as Error & { [key: symbol]: boolean }
+  error[IMPORT_META_ERROR] = true
+
+  throw error
+}
+
 export async function processInlineAssets(
   template: string,
   filePath: string,
@@ -114,6 +157,7 @@ export async function processInlineAssets(
           })
           if (result.outputs.length > 0) {
             fileContent = await result.outputs[0].text()
+            assertInlinableForClassicScript(fileContent, srcPath)
           }
         }
 
@@ -125,6 +169,12 @@ export async function processInlineAssets(
         scriptRegex.lastIndex = 0
       }
       catch (error) {
+        // A missing file is tolerated: the tag is left alone for other build
+        // tooling to handle. A bundle we produced and know cannot parse is
+        // not, or this catch would restore exactly the silent failure the
+        // check above exists to prevent.
+        if ((error as Record<symbol, boolean> | null)?.[IMPORT_META_ERROR])
+          throw error
         // File doesn't exist - leave the tag as-is (might be handled by build tooling)
       }
     }
