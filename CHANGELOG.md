@@ -1,5 +1,33 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.289...v0.2.290)
+
+## 🐛 Bug Fixes
+
+- **serve**: bound the wait on the startup image pass ([ac32505](https://github.com/stacksjs/stx/commit/ac32505)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **images**: remember rasters that cannot be decoded ([aed26b9](https://github.com/stacksjs/stx/commit/aed26b9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **router**: collect only code from outside the container on a whole-document navigation (#1958) ([abee130](https://github.com/stacksjs/stx/commit/abee130)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1958](https://github.com/stacksjs/stx/issues/1958), [#1958](https://github.com/stacksjs/stx/issues/1958))
+- **includes**: keep no owner stamp on a partial whose root is a component (#1958) ([b612f62](https://github.com/stacksjs/stx/commit/b612f62)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1958](https://github.com/stacksjs/stx/issues/1958), [#1958](https://github.com/stacksjs/stx/issues/1958), [#1958](https://github.com/stacksjs/stx/issues/1958))
+- **router**: destroy the outgoing layout's components at a layout change (#1958) ([dc70d73](https://github.com/stacksjs/stx/commit/dc70d73)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1958](https://github.com/stacksjs/stx/issues/1958), [#1958](https://github.com/stacksjs/stx/issues/1958))
+- **router**: leave the layout chrome's component scripts out of fragments, those with no scope root too (#1958) ([2e5474f](https://github.com/stacksjs/stx/commit/2e5474f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1958](https://github.com/stacksjs/stx/issues/1958), [#1958](https://github.com/stacksjs/stx/issues/1958))
+- **includes**: stamp an @include's script with the root it binds, so a layout partial is not re-run (#1958) ([b16fc15](https://github.com/stacksjs/stx/commit/b16fc15)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1958](https://github.com/stacksjs/stx/issues/1958), [#1958](https://github.com/stacksjs/stx/issues/1958))
+- **signals**: keep an onDestroy registered inside onMount with its component (#1958) ([1918ef9](https://github.com/stacksjs/stx/commit/1918ef9)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1958](https://github.com/stacksjs/stx/issues/1958), [#1958](https://github.com/stacksjs/stx/issues/1958), [#1857](https://github.com/stacksjs/stx/issues/1857))
+- **includes**: attach an @include's onMount and onDestroy to its own scope (#1958) ([f18eb1d](https://github.com/stacksjs/stx/commit/f18eb1d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1958](https://github.com/stacksjs/stx/issues/1958), [#1958](https://github.com/stacksjs/stx/issues/1958), [#1958](https://github.com/stacksjs/stx/issues/1958))
+
+## 📝 Documentation
+
+- say which fragment swaps check the layout (#1958) ([6fbf599](https://github.com/stacksjs/stx/commit/6fbf599)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1958](https://github.com/stacksjs/stx/issues/1958), [#1958](https://github.com/stacksjs/stx/issues/1958))
+- describe how a layout's components persist across navigation (#1958) ([1bc5486](https://github.com/stacksjs/stx/commit/1bc5486)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1958](https://github.com/stacksjs/stx/issues/1958), [#1958](https://github.com/stacksjs/stx/issues/1958))
+
+## 🔧 Chores
+
+- release v0.2.290 ([7396fe8](https://github.com/stacksjs/stx/commit/7396fe8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.288...v0.2.289)
 
 ## 🐛 Bug Fixes
