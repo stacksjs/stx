@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.291...v0.2.292)
+
+## 🐛 Bug Fixes
+
+- **router**: keep the current page's generated stylesheet last in the cascade ([ceffb49](https://github.com/stacksjs/stx/commit/ceffb49)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.292 ([13592c8](https://github.com/stacksjs/stx/commit/13592c8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.290...v0.2.291)
 
 ## 🐛 Bug Fixes
