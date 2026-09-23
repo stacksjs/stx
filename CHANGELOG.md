@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.299...v0.2.300)
+
+## 🐛 Bug Fixes
+
+- **release**: point the release script at @stacksjs/bumpx ([630ee1b](https://github.com/stacksjs/stx/commit/630ee1b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: never take stx's own components as a user override ([797122f](https://github.com/stacksjs/stx/commit/797122f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.300 ([d0f6dd1](https://github.com/stacksjs/stx/commit/d0f6dd1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.296...v0.2.297)
 
 ## 🐛 Bug Fixes
