@@ -714,6 +714,17 @@ else {
     };
 
     signal.update = (fn) => signal.set(fn(value));
+    // Notify as if the value changed, for an array or object mutated in place.
+    // set() cannot do it: the value is the same reference, so Object.is skips.
+    signal.trigger = () => {
+      subscribers.forEach(cb => cb(value, value));
+      if (isBatching) {
+        effects.forEach(effect => pendingEffects.add(effect));
+      }
+else {
+        effects.forEach(effect => effect());
+      }
+    };
     signal.subscribe = (cb) => {
       subscribers.add(cb);
       return () => subscribers.delete(cb);
@@ -6652,6 +6663,60 @@ catch (e) {} }
               })(gKey, opts.getters[gKey]);
             }
           }
+          // An action that mutates state in place — this.list.push(x),
+          // this.list[i] = x, delete this.map[k] — never went through set(),
+          // so nothing that read the list re-ran. A detail page upserting the
+          // record it had just fetched kept rendering "not found" until some
+          // unrelated action happened to reassign the whole list.
+          //
+          // So an array or plain object read through this comes back as a
+          // view that notifies its signal on write. The view is shallow:
+          // elements read through it are the raw ones, so identity checks
+          // (includes, indexOf, ===) still hold.
+          var mutatingArrayMethods = { push: 1, pop: 1, shift: 1, unshift: 1, splice: 1, sort: 1, reverse: 1, fill: 1, copyWithin: 1 };
+          var viewRaw = new WeakMap();
+          var viewCache = new WeakMap();
+          var unwrapView = function(v) {
+            return (v && typeof v === 'object' && viewRaw.has(v)) ? viewRaw.get(v) : v;
+          };
+          var isPlainContainer = function(v) {
+            if (!v || typeof v !== 'object') return false;
+            if (Array.isArray(v)) return true;
+            var proto = Object.getPrototypeOf(v);
+            return proto === Object.prototype || proto === null;
+          };
+          var mutableView = function(sig, raw) {
+            var cached = viewCache.get(raw);
+            if (cached && cached.sig === sig) return cached.view;
+            var view = new Proxy(raw, {
+              get: function(target, p) {
+                if (Array.isArray(target) && typeof p === 'string' && mutatingArrayMethods[p]) {
+                  // One notification per call, not one per index it writes.
+                  return function() {
+                    var args = Array.prototype.map.call(arguments, unwrapView);
+                    var out = Array.prototype[p].apply(target, args);
+                    sig.trigger();
+                    return out === target ? view : out;
+                  };
+                }
+                return Reflect.get(target, p, target);
+              },
+              set: function(target, p, v) {
+                target[p] = unwrapView(v);
+                sig.trigger();
+                return true;
+              },
+              deleteProperty: function(target, p) {
+                var had = Object.prototype.hasOwnProperty.call(target, p);
+                delete target[p];
+                if (had) sig.trigger();
+                return true;
+              }
+            });
+            viewRaw.set(view, raw);
+            viewCache.set(raw, { sig: sig, view: view });
+            return view;
+          };
           // Bind actions with proxy for this.propName access
           if (opts.actions) {
             for (var aKey in opts.actions) {
@@ -6659,12 +6724,17 @@ catch (e) {} }
                 result[actionKey] = function() {
                   var proxy = new Proxy({}, {
                     get: function(_, p) {
-                      if (result[p] && result[p]._isSignal) return result[p]();
+                      if (result[p] && result[p]._isSignal) {
+                        var current = result[p]();
+                        return (typeof result[p].trigger === 'function' && isPlainContainer(current))
+                          ? mutableView(result[p], current)
+                          : current;
+                      }
                       if (result[p]) return result[p];
                       return undefined;
                     },
                     set: function(_, p, v) {
-                      if (result[p] && result[p]._isSignal) { result[p].set(v); return true; }
+                      if (result[p] && result[p]._isSignal) { result[p].set(unwrapView(v)); return true; }
                       return false;
                     }
                   });
