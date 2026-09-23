@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.295...v0.2.296)
+
+## 🐛 Bug Fixes
+
+- **bundler**: rewrite registry imports whichever form Bun prints them in ([da6bef4](https://github.com/stacksjs/stx/commit/da6bef4)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.296 ([515d125](https://github.com/stacksjs/stx/commit/515d125)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.294...v0.2.295)
 
 ## ✨ Features
