@@ -131,8 +131,8 @@ describe('serve shared STX assets', () => {
   it('references shared runtime and router scripts from rendered pages', async () => {
     const html = await (await fetch(BASE)).text()
 
-    expect(html).toContain('<script data-stx-runtime src="/_stx/runtime.js"></script>')
-    expect(html).toContain('<script data-stx-router src="/_stx/router.js"></script>')
+    expect(html).toMatch(/<script data-stx-runtime src="\/_stx\/runtime\.[0-9a-f]{16}\.js"><\/script>/)
+    expect(html).toMatch(/<script data-stx-router src="\/_stx\/router\.[0-9a-f]{16}\.js"><\/script>/)
     expect(html).toMatch(/<link data-css="generated" rel="stylesheet" href="\/_stx\/css\.[a-f0-9]{16}\.css">/)
     expect(html).not.toContain('window.stx.state')
     expect(html).not.toContain('__stxRouter=true')
@@ -144,13 +144,29 @@ describe('serve shared STX assets', () => {
 
     expect(runtime.status).toBe(200)
     expect(runtime.headers.get('content-type')).toBe('application/javascript; charset=utf-8')
-    expect(runtime.headers.get('cache-control')).toBe('public, max-age=0, must-revalidate')
+    expect(runtime.headers.get('cache-control')).toBe('no-cache')
     expect(runtime.headers.get('etag')).toBeTruthy()
     expect(await runtime.text()).toContain('window.stx')
 
     expect(router.status).toBe(200)
     expect(router.headers.get('etag')).toBeTruthy()
     expect(await router.text()).toContain('__stxRouter')
+  })
+
+  it('serves the hashed scripts the page links, immutably and past application hooks', async () => {
+    const html = await (await fetch(BASE)).text()
+    const urls = [...html.matchAll(/src="(\/_stx\/(?:runtime|router)\.[0-9a-f]{16}\.js)"/g)].map(m => m[1])
+    expect(urls).toHaveLength(2)
+
+    for (const url of urls) {
+      const response = await fetch(`${BASE}${url}`)
+      const body = await response.text()
+      expect(response.status).toBe(200)
+      expect(response.headers.get('cache-control')).toBe('public, max-age=31536000, immutable')
+      // The URL is the content's own hash, so the ETag and the name agree.
+      expect(url).toContain(response.headers.get('etag')!.replaceAll('"', ''))
+      expect(body.length).toBeGreaterThan(1000)
+    }
   })
 
   it('revalidates shared scripts with ETags', async () => {

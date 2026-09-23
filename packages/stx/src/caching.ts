@@ -164,6 +164,48 @@ export async function getCachedRouterScript(): Promise<string> {
   return _cachedRouterScript!
 }
 
+/** A shared client script as serve mode references and serves it. */
+export interface ServeClientAsset {
+  content: string
+  /** 16 hex characters, the same width the serve path uses for CSS. */
+  hash: string
+  /** `/_stx/<kind>.<hash>.js` */
+  url: string
+}
+
+export type ServeClientAssetKind = 'runtime' | 'router'
+
+/** Last content hashed per kind, so a render does not rehash ~100KB it hashed already. */
+const _clientAssetHashes: Record<string, { content: string, hash: string }> = {}
+
+/**
+ * The signals runtime or the router, with the content-addressed URL serve mode
+ * links it under.
+ *
+ * Both used to be served at fixed URLs (`/_stx/runtime.js`, `/_stx/router.js`)
+ * with an hour's cache and a day of stale-while-revalidate. A fix to either one
+ * then took hours to reach anybody: a CDN in front (Cloudflare raises a short
+ * max-age to its own four-hour default) and every browser kept serving the old
+ * file under the unchanged URL, so freshly rendered HTML ran against the
+ * previous release's router. Naming the file after its content makes every
+ * change a new URL, and lets an unchanged one be cached forever.
+ *
+ * The page and the endpoint both go through here, so the hash a page links to
+ * is always the hash of what the endpoint returns for it.
+ */
+export async function getServeClientAsset(kind: ServeClientAssetKind, debug = false): Promise<ServeClientAsset> {
+  const content = kind === 'runtime'
+    ? await getCachedSignalsRuntime(debug)
+    : await getCachedRouterScript()
+  const memoKey = kind === 'runtime' && debug ? 'runtime-debug' : kind
+  let memo = _clientAssetHashes[memoKey]
+  if (!memo || memo.content !== content) {
+    memo = { content, hash: Bun.hash(content).toString(16).padStart(16, '0').slice(0, 16) }
+    _clientAssetHashes[memoKey] = memo
+  }
+  return { content, hash: memo.hash, url: `/_stx/${kind}.${memo.hash}.js` }
+}
+
 /**
  * Clear all dev caches. Called during full rebuild or HMR reset.
  */

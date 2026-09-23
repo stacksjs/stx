@@ -466,6 +466,29 @@ export function staticCacheControl(pathname: string, production: boolean = isPro
   return fingerprinted ? 'public, max-age=31536000, immutable' : 'public, max-age=3600'
 }
 
+/** `/_stx/runtime.js`, `/_stx/router.<16 hex>.js`, … — the shared client scripts. */
+export const SHARED_SCRIPT_PATH = /^\/_stx\/(runtime|router)(?:\.([0-9a-f]{16}))?\.js$/
+
+/**
+ * `Cache-Control` for the shared runtime and router scripts.
+ *
+ * Pages link them by content hash (getServeClientAsset), so a request whose
+ * hash is the current content's can never see different bytes under that URL:
+ * cache it for a year.
+ *
+ * Anything else is answered with today's content but must not be kept. The
+ * unhashed URL is what HTML rendered before content addressing still points
+ * at, and a stale hash is a page from the previous deploy; either one caching
+ * the current bytes would pin them there. `no-cache`, not a short max-age:
+ * Cloudflare raises a max-age below its browser-TTL setting (four hours by
+ * default) to that setting, which is exactly how the old fixed URL served a
+ * previous release's router for hours after a deploy. It leaves `no-cache`
+ * alone, and the ETag keeps the revalidation to a 304.
+ */
+export function sharedScriptCacheControl(requestedHash: string | undefined, currentHash: string): string {
+  return requestedHash === currentHash ? 'public, max-age=31536000, immutable' : 'no-cache'
+}
+
 /**
  * Render the built-in fallback 404 page.
  *
@@ -3389,19 +3412,23 @@ function __stxOverlay(errs){
 
                 // Shared STX client assets. Serve mode references these from
                 // every rendered document instead of inlining the same runtime
-                // and router payload on every page. ETag revalidation keeps
-                // package changes correct across dev-server restarts.
-                if (path === '/_stx/runtime.js' || path === '/_stx/router.js') {
+                // and router payload on every page, by content hash, so a
+                // release reaches browsers and CDNs on the next page load
+                // (see sharedScriptCacheControl). The unhashed and stale-hash
+                // URLs still answer with the current script, for HTML
+                // rendered before this or before the last deploy.
+                const sharedScript = path.match(SHARED_SCRIPT_PATH)
+                if (sharedScript) {
                   const stx = await stxModule
-                  const content = path === '/_stx/runtime.js'
-                    ? await stx.getCachedSignalsRuntime(stxConfig.debug === true)
-                    : await stx.getCachedRouterScript()
-                  const etag = `"${Bun.hash(content).toString(16)}"`
+                  const asset = await stx.getServeClientAsset(
+                    sharedScript[1] as 'runtime' | 'router',
+                    sharedScript[1] === 'runtime' && stxConfig.debug === true,
+                  )
+                  const content = asset.content
+                  const etag = `"${asset.hash}"`
                   const headers = {
                     'Content-Type': 'application/javascript; charset=utf-8',
-                    'Cache-Control': production
-                      ? 'public, max-age=3600, stale-while-revalidate=86400'
-                      : 'public, max-age=0, must-revalidate',
+                    'Cache-Control': sharedScriptCacheControl(sharedScript[2], asset.hash),
                     'ETag': etag,
                     ...corsHeaders,
                   }

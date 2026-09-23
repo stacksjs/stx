@@ -281,10 +281,12 @@ export async function injectSignalsRuntime(template: string, options: StxOptions
   }
 
   // Serve mode: reference the shared runtime instead of repeating it in every
-  // rendered document. The Bun serve adapter owns this endpoint and returns
-  // the same cached runtime with ETag revalidation.
+  // rendered document, under a content-addressed URL the Bun serve adapter
+  // answers immutably (see getServeClientAsset for why it is not a fixed one).
   if (options.buildMode === 'serve') {
-    return placeRuntimeTag(template, `<script data-stx-runtime src="/_stx/runtime.js"></script>`)
+    const { getServeClientAsset } = await import('./caching')
+    const { url } = await getServeClientAsset('runtime', options.debug === true)
+    return placeRuntimeTag(template, `<script data-stx-runtime src="${url}"></script>`)
   }
 
   // Build mode: emit a placeholder reference instead of inlining the full runtime.
@@ -457,11 +459,12 @@ export async function injectRouterScript(template: string, options?: StxOptions)
   }
 
   // Build mode: emit a placeholder reference instead of inlining the full router script.
-  const { getCachedRouterScript } = await import('./caching')
+  // Serve mode links the content-addressed router (see getServeClientAsset).
+  const { getCachedRouterScript, getServeClientAsset } = await import('./caching')
   const routerScript = options?.buildMode === 'compile'
     ? `<script data-stx-router src="/__stx/router.__STX_HASH__.js"></script>`
     : options?.buildMode === 'serve'
-      ? `<script data-stx-router src="/_stx/router.js"></script>`
+      ? `<script data-stx-router src="${(await getServeClientAsset('router')).url}"></script>`
       : `<script data-stx-router>${await getCachedRouterScript()}</script>`
 
   // Use string concatenation to avoid $-interpretation in .replace()

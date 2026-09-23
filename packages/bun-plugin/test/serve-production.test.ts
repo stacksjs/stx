@@ -66,18 +66,48 @@ describe('production serve', () => {
 
     expect(response.headers.get('content-encoding')).toBe('gzip')
     expect(response.headers.get('vary')).toContain('Accept-Encoding')
-    expect(html).toContain('src="/_stx/runtime.js"')
-    expect(html).toContain('src="/_stx/router.js"')
+    expect(html).toMatch(/src="\/_stx\/runtime\.[0-9a-f]{16}\.js"/)
+    expect(html).toMatch(/src="\/_stx\/router\.[0-9a-f]{16}\.js"/)
     expect(html).not.toContain('window.stx.state')
   })
 
-  it('lets browsers reuse shared runtimes between page views', async () => {
+  it('caches the content-addressed runtime and router forever', async () => {
+    const html = await (await fetch(BASE)).text()
+    const runtimeUrl = html.match(/src="(\/_stx\/runtime\.[0-9a-f]{16}\.js)"/)?.[1]
+    const routerUrl = html.match(/src="(\/_stx\/router\.[0-9a-f]{16}\.js)"/)?.[1]
+    expect(runtimeUrl).toBeTruthy()
+    expect(routerUrl).toBeTruthy()
+
+    const runtime = await fetch(`${BASE}${runtimeUrl}`)
+    const router = await fetch(`${BASE}${routerUrl}`)
+
+    expect(runtime.headers.get('cache-control')).toBe('public, max-age=31536000, immutable')
+    expect(router.headers.get('cache-control')).toBe('public, max-age=31536000, immutable')
+    expect(await router.text()).toContain('__stxRouter')
+  })
+
+  it('keeps the fixed URLs working for HTML rendered before hashing, without letting them be kept', async () => {
+    // `no-cache`, not a short max-age: Cloudflare raises a short max-age to its
+    // own four-hour browser TTL, which is how the old URL served a previous
+    // release's router for hours after a deploy.
     const runtime = await fetch(`${BASE}/_stx/runtime.js`)
     const router = await fetch(`${BASE}/_stx/router.js`)
 
-    expect(runtime.headers.get('cache-control')).toBe('public, max-age=3600, stale-while-revalidate=86400')
-    expect(router.headers.get('cache-control')).toBe('public, max-age=3600, stale-while-revalidate=86400')
+    expect(runtime.status).toBe(200)
+    expect(router.status).toBe(200)
+    expect(runtime.headers.get('cache-control')).toBe('no-cache')
+    expect(router.headers.get('cache-control')).toBe('no-cache')
     expect(runtime.headers.get('etag')).toBeTruthy()
     expect(router.headers.get('etag')).toBeTruthy()
+  })
+
+  it('answers a previous release\'s hash with the current script, uncached', async () => {
+    // A page from before the deploy still loads a working router; the bytes
+    // must not be cached under a hash they do not match.
+    const router = await fetch(`${BASE}/_stx/router.0123456789abcdef.js`)
+
+    expect(router.status).toBe(200)
+    expect(router.headers.get('cache-control')).toBe('no-cache')
+    expect(await router.text()).toContain('__stxRouter')
   })
 })

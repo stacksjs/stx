@@ -381,8 +381,8 @@ export function getRouterScript(): string {
   // Unlike a fragment, a document holds the answer directly, so there is
   // nothing to infer from markers or ask the server for: look for the script.
   // Both emitted shapes carry data-stx-runtime — inline, and the serve-mode
-  // src="/_stx/runtime.js" — with the content sniff behind it for a document
-  // rendered by a server old enough not to stamp the attribute.
+  // src="/_stx/runtime.<hash>.js" — with the content sniff behind it for a
+  // document rendered by a server old enough not to stamp the attribute.
   function documentShipsRuntime(doc,html){
     if(doc&&doc.querySelector&&doc.querySelector('script[data-stx-runtime]'))return true;
     return html.indexOf("'use strict';var cloakStyle")!==-1
@@ -392,6 +392,22 @@ export function getRouterScript(): string {
     return !!(script&&script.hasAttribute&&script.hasAttribute('data-stx-runtime'))
       ||(code.indexOf('_cleanupContainer')!==-1&&code.indexOf('signals runtime loading')!==-1)
       ||code.indexOf("'use strict';var cloakStyle")!==-1;
+  }
+  // The runtime and the router themselves, as external script tags.
+  //
+  // Serve mode links both by content hash, so after a deploy the incoming
+  // page's copy has a different URL from the one this document loaded. Every
+  // path below that loads a script[src] it has not seen yet would then run a
+  // second router and a second runtime over the live ones — two click
+  // handlers on every link, a fresh window.stx under scopes created by the
+  // old one. A new version is picked up by the build-skew reload instead; it
+  // is never loaded into a running page. The attrs form is for the fragment
+  // path, which sees a tag as text.
+  function isSharedClientScript(el){
+    return !!(el&&el.hasAttribute&&(el.hasAttribute('data-stx-runtime')||el.hasAttribute('data-stx-router')));
+  }
+  function isSharedClientScriptAttrs(attrs){
+    return /(?:^|\\s)data-stx-(?:runtime|router)(?:[\\s=]|$)/i.test(attrs||'');
   }
   // A fragment never carries the signals runtime: the server strips the runtime
   // IIFE out of it, and every re-execution path here filters it out again. So a
@@ -949,7 +965,7 @@ else {
           // file is where the page's factory usually lives.
           var srcMatch=attrs.match(/\\bsrc\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))/i);
           var fragSrc=srcMatch&&(srcMatch[1]||srcMatch[2]||srcMatch[3]);
-          if(fragSrc){fragExternalScripts.push(fragSrc);return ''}
+          if(fragSrc){if(!isSharedClientScriptAttrs(attrs))fragExternalScripts.push(fragSrc);return ''}
           if(code&&code.trim()&&!isSignalsRuntimeScript({hasAttribute:function(name){return name==='data-stx-runtime'&&attrs.indexOf('data-stx-runtime')!==-1}},code)){
             var slot='fragment-'+(++fragScriptId);
             var scoped=/(?:^|\\s)data-stx-scoped(?:\\s|=|$)/i.test(attrs);
@@ -1297,7 +1313,8 @@ else {
           var text=s.textContent||'';
           // Not discarded: queued against docBase, so a relative src resolves
           // against the page being navigated to rather than the current URL.
-          if(s.hasAttribute('src')){routedExternalScripts.push(s.getAttribute('src'));s.remove();return}
+          // The runtime and router are dropped, not queued: see isSharedClientScript.
+          if(s.hasAttribute('src')){if(!isSharedClientScript(s))routedExternalScripts.push(s.getAttribute('src'));s.remove();return}
           var type=(s.getAttribute('type')||'').trim().toLowerCase();
           var executable=!type||type==='text/javascript'||type==='application/javascript'||type==='module';
           if(!executable||!text.trim())return;
@@ -1354,6 +1371,7 @@ else {
       document.querySelectorAll('head script[src]').forEach(function(s){loadedSrcs[s.src]=1});
       var extPromises=[];
       doc.querySelectorAll('head script[src]').forEach(function(s){
+        if(isSharedClientScript(s))return;
         // Fetched-document script: resolve against the page being navigated to
         // (docBase), not the origin root — same rationale as the <link> reconcile (#1777).
         var src=new URL(s.getAttribute('src'),docBase).href;

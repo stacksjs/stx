@@ -118,8 +118,23 @@ describe('Build Assets', () => {
         buildMode: 'serve',
       }, new Set())
 
-      expect(result).toContain('<script data-stx-runtime src="/_stx/runtime.js"></script>')
+      // Content-addressed, so a release is a new URL rather than a stale cache hit.
+      expect(result).toMatch(/<script data-stx-runtime src="\/_stx\/runtime\.[0-9a-f]{16}\.js"><\/script>/)
       expect(result).not.toContain('window.stx.state')
+    })
+
+    it('links the runtime under the hash of the content it will be served', async () => {
+      const { getServeClientAsset } = await import('../../src/caching')
+      const html = `<script>const count = state(0)</script><div>{{ count() }}</div>`
+      const result = await processDirectives(html, {}, '/test.stx', {
+        ...defaultConfig,
+        ...defaultOpts,
+        buildMode: 'serve',
+      }, new Set())
+
+      const asset = await getServeClientAsset('runtime')
+      expect(result).toContain(`src="${asset.url}"`)
+      expect(asset.hash).toBe(Bun.hash(asset.content).toString(16).padStart(16, '0').slice(0, 16))
     })
   })
 })
