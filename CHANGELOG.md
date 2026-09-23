@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.292...v0.2.293)
+
+## 🐛 Bug Fixes
+
+- **serve**: bind after the image pass in production ([25de269](https://github.com/stacksjs/stx/commit/25de269)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.293 ([d052921](https://github.com/stacksjs/stx/commit/d052921)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.291...v0.2.292)
 
 ## 🐛 Bug Fixes
