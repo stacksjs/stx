@@ -564,8 +564,14 @@ export function transformAutoImports(code: string): AutoImportResult {
   // Strip all `import type` statements from any source — these are type-only
   // and will be erased during TypeScript transpilation, but we strip them early
   // to prevent interference with auto-import detection and IIFE wrapping
+  //
+  // The whitespace around the statement is `[ \t]*`, not `\s*`: under /m, `\s`
+  // also matches line breaks, so a match could take the newline before or
+  // after it. Two rewrites either side of a blank line then shared one line,
+  // and the `//` comment the first one left commented out the second —
+  // `var state2 = state` vanished and the page threw on `state2(...)`.
   transformedCode = transformedCode.replace(
-    /^\s*import\s+type\s+\{[^}]*\}\s+from\s+['"][^'"]+['"]\s*;?\s*$/gm,
+    /^[ \t]*import\s+type\s+\{[^}]*\}\s+from\s+['"][^'"]+['"][ \t]*;?[ \t]*$/gm,
     '// [type import stripped]',
   )
 
@@ -574,8 +580,9 @@ export function transformAutoImports(code: string): AutoImportResult {
 
   // Pattern to match import statements from the stx runtime or browser
   // package. Both `stx` and its canonical package name resolve to the same
-  // injected browser runtime.
-  const importRegex = /^\s*import\s+(?:type\s+)?{\s*([^}]+)\s*}\s+from\s+['"](@stacksjs\/browser|@stacksjs\/stx|stx)['"]\s*;?\s*$/gm
+  // injected browser runtime. Surrounding whitespace is `[ \t]*` for the
+  // reason given at the type-import strip above.
+  const importRegex = /^[ \t]*import\s+(?:type\s+)?{\s*([^}]+)\s*}\s+from\s+['"](@stacksjs\/browser|@stacksjs\/stx|stx)['"][ \t]*;?[ \t]*$/gm
 
   let match
   while ((match = importRegex.exec(code)) !== null) {
