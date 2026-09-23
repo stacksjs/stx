@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.301...v0.2.302)
+
+## 🐛 Bug Fixes
+
+- **serve**: attach a minted CSRF token to pages only, not assets ([cacade4](https://github.com/stacksjs/stx/commit/cacade4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **iconify**: an icon named after a reserved word cannot be its own export ([c3fb765](https://github.com/stacksjs/stx/commit/c3fb765)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.302 ([8769de3](https://github.com/stacksjs/stx/commit/8769de3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.300...v0.2.301)
 
 ## 🐛 Bug Fixes
