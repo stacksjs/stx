@@ -32,6 +32,49 @@ export const SPA_NAV_HEADER = 'X-STX-Router'
  */
 export const FRAGMENT_CACHE_CONTROL = 'private, no-store'
 
+/**
+ * The text a rendered `<title>` element represents, as a string.
+ *
+ * The title header is built by reading the rendered page's `<title>` back out
+ * of the HTML, where the renderer has already escaped it: a title of
+ * `founder & skyrunner` is sitting in the markup as `founder &amp; skyrunner`.
+ * `encodeURIComponent` then protects that escape rather than resolving it, and
+ * the router assigns the result straight to `document.title`, which is a
+ * string and not markup. The tab ends up reading `founder &amp; skyrunner`,
+ * but only after a client-side navigation - a full load parses the same
+ * `<title>` as HTML and gets it right, so the two disagree about the name of
+ * the same page.
+ *
+ * Only the escapes an HTML escaper produces, plus numeric references, are
+ * resolved. A `<title>` holds character data and cannot contain elements, so
+ * there is nothing else in there to decode, and a full named-entity table is a
+ * lot of surface to carry for a tab label. `&amp;` is resolved last so that a
+ * literal `&amp;lt;` in a title survives as `&lt;` instead of becoming `<`.
+ */
+export function decodeTitleEntities(title: string): string {
+  return title
+    .replace(/&#(\d+);/g, (match, code) => codePoint(Number(code), match))
+    .replace(/&#x([0-9a-f]+);/gi, (match, code) => codePoint(Number.parseInt(code, 16), match))
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, '\'')
+    .replace(/&amp;/g, '&')
+}
+
+/** One numeric character reference, or the reference itself when it names no character. */
+function codePoint(code: number, original: string): string {
+  if (!Number.isInteger(code) || code < 0 || code > 0x10FFFF)
+    return original
+
+  try {
+    return String.fromCodePoint(code)
+  }
+  catch {
+    return original
+  }
+}
+
 /** Whether this request is the SPA router asking for a fragment. */
 export function isSpaNavRequest(request: { headers: { get: (name: string) => string | null } }): boolean {
   return request.headers.get(SPA_NAV_HEADER) === 'true'

@@ -17,7 +17,7 @@ import {
 import { partialsCache } from '../includes'
 import { pageShipsSignalsRuntime } from '../runtime-injection'
 import { BUILD_ID_HEADER, getBuildId } from '../build-id'
-import { FRAGMENT_CACHE_CONTROL, spaNavVaryHeaders } from '../spa-nav'
+import { decodeTitleEntities, FRAGMENT_CACHE_CONTROL, spaNavVaryHeaders } from '../spa-nav'
 import { stateDir } from '../state-dir'
 import { plugin as stxPlugin } from '../plugin'
 import { createRouter, matchRoute, formatRoutes, findErrorPage } from '../router'
@@ -831,7 +831,9 @@ catch {
             // swap (fragments carry no <head>). URI-encoded so any title text
             // is header-safe.
             const titleMatch = content.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
-            const pageTitle = titleMatch ? titleMatch[1].trim() : ''
+            // Escaped text in the markup, a plain string on the other end:
+            // an `&amp;` left in here is what the tab ends up reading (#1893).
+            const pageTitle = titleMatch ? decodeTitleEntities(titleMatch[1].trim()) : ''
             // Inject route params into fragment
             if (Object.keys(routeMatch.params).length > 0) {
               content = injectRouteParams(content, routeMatch.params)

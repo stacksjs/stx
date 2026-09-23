@@ -21,7 +21,7 @@ import nodeFs from 'node:fs/promises'
 import nodePath from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
-import { BUILD_ID_HEADER, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, mergeCssConfig, readResponseHeaders, readResponseStatus, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
+import { BUILD_ID_HEADER, decodeTitleEntities, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, mergeCssConfig, readResponseHeaders, readResponseStatus, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
 import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { extractLayoutMetadata } from 'stx-router/layout-metadata'
@@ -3983,8 +3983,11 @@ function __stxOverlay(errs){
                     // Carry the page <title> (from the full page, before it was
                     // reduced to the <main> fragment) so the SPA router can keep
                     // document.title in sync on swap. URI-encoded for header safety.
+                    // Decoded first: what comes out of the markup is escaped
+                    // text, and document.title is assigned a string, so an
+                    // `&amp;` left in here reaches the tab verbatim (#1893).
                     const titleMatch = content.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
-                    const pageTitle = titleMatch ? titleMatch[1].trim() : ''
+                    const pageTitle = titleMatch ? decodeTitleEntities(titleMatch[1].trim()) : ''
 
                     // Whether the destination needs the signals runtime — read off
                     // the FULL page, since the runtime script lives in <head> and
