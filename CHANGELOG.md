@@ -1,5 +1,26 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.300...v0.2.301)
+
+## 🐛 Bug Fixes
+
+- **client-script**: keep auto-import rewrites on their own lines ([2400731](https://github.com/stacksjs/stx/commit/2400731)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **release**: trusted publishers cannot be scripted, so print them instead ([551276b](https://github.com/stacksjs/stx/commit/551276b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **ssr**: batch final document rebuilds (#1945) ([7d93c4c](https://github.com/stacksjs/stx/commit/7d93c4c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945), [#1945](https://github.com/stacksjs/stx/issues/1945))
+
+## 🔧 Chores
+
+- release v0.2.301 ([62a7c65](https://github.com/stacksjs/stx/commit/62a7c65)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **release**: register every package as a trusted publisher ([3ec2f00](https://github.com/stacksjs/stx/commit/3ec2f00)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.299...v0.2.300)
 
 ## 🐛 Bug Fixes
