@@ -3114,6 +3114,56 @@ function __stxOverlay(errs){
     })
   }
 
+  /** Derive placeholders and build the responsive image catalog. Settles `placeholdersReady`. */
+  async function runImageWarmup(): Promise<void> {
+    try {
+      const stx = await stxModule
+      const publicRoot = nodePath.resolve(process.cwd(), publicDir)
+      const [placeholderResult, deliveryResult] = await Promise.allSettled([
+        stx.warmImagePlaceholders(publicRoot, {
+          cachePath: stateDir(process.cwd(), 'image-placeholders.json'),
+        }),
+        stx.prepareImageDelivery(publicRoot, imageDeliveryOutputDir),
+      ])
+      const derived = placeholderResult.status === 'fulfilled' ? placeholderResult.value : 0
+      if (derived > 0 && !production)
+        console.log(`[stx] derived ${derived} image placeholder(s)`)
+      if (deliveryResult.status === 'fulfilled' && deliveryResult.value.count > 0 && !production)
+        console.log(`[stx] optimized ${deliveryResult.value.count} image(s) for responsive delivery`)
+    }
+    catch {
+      // No codec or no public directory. <StxImage> falls back to a flat colour.
+    }
+    finally {
+      placeholdersAreReady = true
+      markPlaceholdersReady()
+    }
+  }
+
+  // Production binds only once the images are ready.
+  //
+  // This used to run after the bind, because running it before starved the
+  // loop so thoroughly that the bind itself never got to happen and a health
+  // check restarted the unit. Two things changed. The catalog now hands the
+  // loop a turn between images (ts-images), so a warming process stays
+  // responsive to everything except serving pages it has not warmed for. And
+  // a zero-downtime deploy overlaps releases on one port via SO_REUSEPORT —
+  // which is exactly why binding early is wrong now. The moment this process
+  // binds, the kernel starts giving it real visitors, and it was taking them
+  // before it could answer: the previous release was still up and perfectly
+  // able to serve, and roughly half the traffic went to the instance that
+  // could not.
+  //
+  // Not binding is the only way to refuse that traffic. An unbound instance
+  // simply is not in the kernel's rotation, so every request goes to the
+  // release that can serve it, and this one joins when it is ready.
+  //
+  // What makes it safe is that nothing now concludes "dead" from "not yet
+  // listening": the deploy polls for a served response rather than asking
+  // once, and the liveness probe allows three misses a minute apart.
+  if (production)
+    await runImageWarmup()
+
   // Allow callers to disable port auto-increment (Vite-style) — when the
   // requested port is in use, probe `port + 1`, `port + 2`, … and bind to
   // the first free one. Defaults to 10 attempts.
@@ -4284,35 +4334,11 @@ function __stxOverlay(errs){
     console.warn(`\x1b[33m[stx]\x1b[0m port ${port} in use — using \x1b[1m${actualPort}\x1b[0m instead`)
   }
 
-  // Now that the socket is listening, derive placeholders and prepare the
-  // responsive image catalog. Ordering
-  // is the whole point: the health check only asks whether something is bound,
-  // and the first request waits on `placeholdersReady` anyway — so this costs
-  // nothing a visitor sees, and no longer costs the deploy.
-  void (async () => {
-    try {
-      const stx = await stxModule
-      const publicRoot = nodePath.resolve(process.cwd(), publicDir)
-      const [placeholderResult, deliveryResult] = await Promise.allSettled([
-        stx.warmImagePlaceholders(publicRoot, {
-          cachePath: stateDir(process.cwd(), 'image-placeholders.json'),
-        }),
-        stx.prepareImageDelivery(publicRoot, imageDeliveryOutputDir),
-      ])
-      const derived = placeholderResult.status === 'fulfilled' ? placeholderResult.value : 0
-      if (derived > 0 && !production)
-        console.log(`[stx] derived ${derived} image placeholder(s)`)
-      if (deliveryResult.status === 'fulfilled' && deliveryResult.value.count > 0 && !production)
-        console.log(`[stx] optimized ${deliveryResult.value.count} image(s) for responsive delivery`)
-    }
-    catch {
-      // No codec or no public directory. <StxImage> falls back to a flat colour.
-    }
-    finally {
-      placeholdersAreReady = true
-      markPlaceholdersReady()
-    }
-  })()
+  // In development the pass runs behind the bind, so `stx dev` comes up at
+  // once and the first pages render against the fallbacks. In production it
+  // already ran, before the socket existed — see `runImageWarmup`.
+  if (!production)
+    void runImageWarmup()
 
   if (ENABLE_HTML_CACHE && options.prewarmRenderCache) {
     const requestedConcurrency = typeof options.prewarmRenderCache === 'number'

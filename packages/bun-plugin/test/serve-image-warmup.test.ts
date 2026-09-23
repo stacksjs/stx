@@ -49,7 +49,11 @@ serve({
 
     proc = Bun.spawn(['bun', 'driver.ts'], {
       cwd: dir,
-      env: { ...process.env, APP_ENV: 'production', NODE_ENV: 'production' },
+      // Development, because that is where this matters now: dev binds
+      // straight away and serves while the pass runs behind it. Production
+      // finishes the pass before it binds at all (see
+      // serve-bind-after-warmup.test.ts), so there is no window to test.
+      env: { ...process.env, APP_ENV: 'development', NODE_ENV: 'development' },
       stdout: 'pipe',
       stderr: 'pipe',
     })
@@ -90,10 +94,8 @@ serve({
     expect(res.status).toBe(200)
     expect(await res.text()).toContain('warm')
 
-    // The request may pay the grace; it must not pay the pass. Blocking on the
-    // pass is what closed production connections after Bun's 30s idleTimeout
-    // having sent nothing — an ERR_EMPTY_RESPONSE for everyone who arrived
-    // during a restart.
+    // The request may pay the grace; it must not pay the pass. An unbounded
+    // wait here is what left a bound socket answering nothing.
     expect(elapsed).toBeLessThan(WARMUP_MS / 2)
   })
 })
