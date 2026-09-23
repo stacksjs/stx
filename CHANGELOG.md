@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.296...v0.2.297)
+
+## 🐛 Bug Fixes
+
+- **bundler**: retire bundles cached before the registry fix ([6500819](https://github.com/stacksjs/stx/commit/6500819)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.297 ([be67114](https://github.com/stacksjs/stx/commit/be67114)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.295...v0.2.296)
 
 ## 🐛 Bug Fixes
