@@ -73,7 +73,7 @@
     "format:check": "bun x --bun pickier run --mode format --check --config .config/code-style.ts",
     "changelog": "bun x logsmith --verbose",
     "changelog:generate": "bun x logsmith --output CHANGELOG.md",
-    "release": "bun x --bun bumpx prompt --recursive",
+    "release": "bun x --bun @stacksjs/bumpx prompt --recursive",
     "release:patch": "bun x --bun bumpx patch --recursive --yes",
     "release:changed": "bun x --bun bumpx patch --recursive --yes --only-changed-since",
     "release:all": "bun x --bun bumpx patch --recursive --yes",
@@ -102,6 +102,7 @@
     "very-happy-dom": "^0.1.10"
   },
   "devDependencies": {
+    "@stacksjs/bumpx": "^0.2.17",
     "@iconify/json": "^2.2.516",
     "better-dx": "^0.2.22"
   },
