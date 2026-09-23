@@ -338,6 +338,36 @@ export function registryIdForPath(projectRoot: string, resolved: string): string
 }
 
 /**
+ * Put the `stx-module:` specifier back on imports Bun printed with the one the
+ * source was written with.
+ *
+ * The plugin sends a direct import to the registry by resolving it to
+ * `{ path: "stx-module:<id>", external: true }`. Bun 1.4 prints that path in
+ * the bundle; Bun 1.3 prints the ORIGINAL specifier (`./first`,
+ * `@stacksjs/mobile`) instead. rewriteRegistryImports only recognises the
+ * former, so on 1.3 every import survived as a bare ES import inside a
+ * classic `<script>` — "Cannot use import statement outside a module", and a
+ * page where nothing hydrated. The plugin records what it resolved, keyed by
+ * the specifier as written, and this maps each such import onto its registry
+ * specifier, so the output is the same whichever form Bun printed.
+ *
+ * Only import statements are touched, and only specifiers the plugin itself
+ * sent to the registry: an import it left alone (stx, a store, a browser URL)
+ * keeps the form the later passes expect.
+ */
+export function normalizeRegistrySpecifiers(code: string, registered: ReadonlyMap<string, string>): string {
+  if (registered.size === 0)
+    return code
+  return code.replace(
+    /^([ \t]*import\s+(?:[^;"']*?\s+from\s+)?)(["'])([^"']+)\2/gm,
+    (whole, head: string, quote: string, spec: string) => {
+      const target = registered.get(spec)
+      return target && !spec.startsWith(MODULE_SPECIFIER_PREFIX) ? `${head}${quote}${target}${quote}` : whole
+    },
+  )
+}
+
+/**
  * Rewrite each `import … from "stx-module:<id>"` Bun left in a bundle into
  * reads of the page registry, returning the declarations to put at the top
  * of the bundle's scope. The page collects the ids it has to serve by scanning
@@ -448,12 +478,13 @@ function createBundlePlugin(
   tmpEntry: string,
   inputFiles: Set<string>,
   externalizeUserModules: boolean,
+  registrySpecifiers: Map<string, string> = new Map(),
 ): BunPlugin {
   // A direct import of the script being bundled goes to the page registry
   // instead of being inlined (#1957). Only the ENTRY's imports: the modules
   // themselves are never loaded here, so nothing transitive reaches this.
   // Still recorded as an input so HMR keeps watching the file.
-  const toRegistry = (importer: string, resolved: string): { path: string, external: true } | null => {
+  const toRegistry = (importer: string, resolved: string, specifier: string): { path: string, external: true } | null => {
     if (!externalizeUserModules || importer !== tmpEntry || !REGISTRY_MODULE_EXTENSION.test(resolved))
       return null
     try {
@@ -468,7 +499,11 @@ function createBundlePlugin(
     // decodes ids against the same root, and callers do not all agree on
     // projectRoot. Every caller passes cwd today; pinning it here makes the
     // pair correct even if one stops.
-    return { path: `${MODULE_SPECIFIER_PREFIX}${registryIdForPath(process.cwd(), resolved)}`, external: true }
+    const registryPath = `${MODULE_SPECIFIER_PREFIX}${registryIdForPath(process.cwd(), resolved)}`
+    // What the source wrote, for the Bun versions that print it instead of
+    // the path returned here (see normalizeRegistrySpecifiers).
+    registrySpecifiers.set(specifier, registryPath)
+    return { path: registryPath, external: true }
   }
 
   // Resolve a relative import against `templateDir`, returning the
@@ -517,7 +552,7 @@ function createBundlePlugin(
         // place of a resolution error at build time.
         const resolved = probeModuleFile(args.path)
         if (resolved) {
-          const registered = toRegistry(args.importer, resolved)
+          const registered = toRegistry(args.importer, resolved, args.path)
           if (registered)
             return registered
           // Not the temp entry. Bun resolves the entrypoint through this hook
@@ -544,7 +579,7 @@ function createBundlePlugin(
       // the cache key (stacksjs/stx#1723).
       build.onResolve({ filter: /^\.\.?\// }, (args) => {
         const resolved = resolveRelative(args.importer, args.path)
-        const registered = toRegistry(args.importer, resolved)
+        const registered = toRegistry(args.importer, resolved, args.path)
         if (registered)
           return registered
         inputFiles.add(resolved)
@@ -572,7 +607,7 @@ function createBundlePlugin(
         ]
         for (const candidate of candidates) {
           if (fs.existsSync(candidate) && fs.statSync(candidate, { throwIfNoEntry: false })?.isFile()) {
-            const registered = toRegistry(args.importer, candidate)
+            const registered = toRegistry(args.importer, candidate, args.path)
             if (registered)
               return registered
             logBundlerDiagnostic(`resolved ${args.path[0]}/ import:`, args.path, '→', candidate)
@@ -591,7 +626,9 @@ function createBundlePlugin(
       build.onResolve({ filter: /^(?!node:|bun:)(?:@[\w.-]+\/)?[\w.-]/ }, (args) => {
         if (!externalizeUserModules || args.importer !== tmpEntry)
           return undefined
-        return { path: `${MODULE_SPECIFIER_PREFIX}npm:${args.path}`, external: true }
+        const registryPath = `${MODULE_SPECIFIER_PREFIX}npm:${args.path}`
+        registrySpecifiers.set(args.path, registryPath)
+        return { path: registryPath, external: true }
       })
 
       // Feed source modules to Bun from a normal filesystem read. Bun's
@@ -937,6 +974,8 @@ async function buildBundle(
   // is an absolute path that contributed to the bundle; we snapshot
   // their mtimes after a successful build to gate future cache hits.
   const inputFiles = new Set<string>()
+  // Specifier as written → `stx-module:` path, filled by the same hooks.
+  const registrySpecifiers = new Map<string, string>()
 
   try {
     const result = await Bun.build({
@@ -945,7 +984,7 @@ async function buildBundle(
       target: 'browser',
       format: 'esm',
       minify,
-      plugins: [createBundlePlugin(projectRoot, templateDir, tmpEntry, inputFiles, externalizeUserModules)],
+      plugins: [createBundlePlugin(projectRoot, templateDir, tmpEntry, inputFiles, externalizeUserModules, registrySpecifiers)],
       define: {
         'process.env.NODE_ENV': minify ? '"production"' : '"development"',
         ...getPublicEnvDefine(),
@@ -1001,7 +1040,7 @@ async function buildBundle(
     // the external-import extraction below, which would otherwise hoist them
     // out of the bundle scope as imports the browser cannot resolve.
     const registryReads: string[] = []
-    bundled = rewriteRegistryImports(bundled, registryReads)
+    bundled = rewriteRegistryImports(normalizeRegistrySpecifiers(bundled, registrySpecifiers), registryReads)
 
     // External runtime imports must remain at top level so the downstream
     // auto-import transform can replace them with window.stx bindings.
