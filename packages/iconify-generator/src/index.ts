@@ -858,18 +858,47 @@ export async function generatePackage(
 }
 
 /**
+ * Words that cannot be a binding name, so an icon named after one cannot be
+ * exported under that name.
+ *
+ * Every reserved word, plus the ones reserved only in strict mode, because a
+ * module is always strict. `eval` and `arguments` are in here for the same
+ * reason: they are not reserved words, but binding either of them in strict
+ * mode is a syntax error just the same.
+ */
+const RESERVED_WORDS = new Set([
+  'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger', 'default',
+  'delete', 'do', 'else', 'enum', 'export', 'extends', 'false', 'finally',
+  'for', 'function', 'if', 'import', 'in', 'instanceof', 'new', 'null',
+  'return', 'super', 'switch', 'this', 'throw', 'true', 'try', 'typeof', 'var',
+  'void', 'while', 'with',
+  'let', 'static', 'yield', 'implements', 'interface', 'package', 'private',
+  'protected', 'public', 'await',
+  'eval', 'arguments',
+])
+
+/**
  * Convert kebab-case to a valid JS identifier in camelCase form.
  * Iconify allows names that start with digits (e.g. "2", "3d-move") and
  * names containing dots/slashes — none of which are legal JS identifiers.
  * Prefix with `_` when the first char isn't [A-Za-z_$], and replace any
  * remaining illegal chars with `_` so downstream `export { default as X }`
  * always parses.
+ *
+ * A name that survives all of that and still lands on a reserved word gets a
+ * trailing `_`. Iconify collections really do contain icons called `switch`,
+ * `export`, `class` and `delete`, and each one generated
+ * `export const switch: IconData` followed by `export default switch`, which
+ * does not parse. The package's own prepublish build then failed, so the
+ * collection never published: 95 of 218 were stuck this way, mdi among them.
  */
 export function toCamelCase(str: string): string {
   let camel = str.replace(/-([a-z0-9])/g, g => g[1].toUpperCase())
   camel = camel.replace(/[^a-zA-Z0-9_$]/g, '_')
   if (/^[0-9]/.test(camel))
     camel = `_${camel}`
+  if (RESERVED_WORDS.has(camel))
+    camel = `${camel}_`
   return camel
 }
 
