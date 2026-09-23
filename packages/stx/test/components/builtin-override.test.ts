@@ -66,6 +66,36 @@ describe('component override resolution is cwd-independent', () => {
     expect(exists).toBe(false)
   })
 
+  it('does NOT report a builtin as a user override when the root is the stx package itself', async () => {
+    // The default config root is '.', which resolves to wherever the process
+    // started. From packages/stx that makes `<root>/src/components` stx's own
+    // built-in directory, and its legacy StxLink.stx then shadowed the
+    // builtin: every <StxLink> rendered "[Circular component reference:
+    // stx-link]". Pinned here with an explicit root so it does not depend on
+    // which directory the suite happens to run from.
+    const stxPackage = join(import.meta.dir, '..', '..')
+    const exists = await userComponentFileExists(
+      'stx-link',
+      'components',
+      {},
+      join(stxPackage, 'src', 'page.stx'),
+      { root: stxPackage, debug: false } as any,
+    )
+    expect(exists).toBe(false)
+  })
+
+  it('never counts stx\'s own components directory, however it is reached', async () => {
+    const ownComponents = join(import.meta.dir, '..', '..', 'src', 'components')
+    const exists = await userComponentFileExists(
+      'StxLink',
+      ownComponents,
+      {},
+      join(ownComponents, 'Page.stx'),
+      { componentsDir: ownComponents, debug: false } as any,
+    )
+    expect(exists).toBe(false)
+  })
+
   it('honors a user override under an explicitly configured root', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'stx-root-override-'))
     await mkdir(join(dir, 'components'), { recursive: true })

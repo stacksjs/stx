@@ -718,13 +718,35 @@ export async function userComponentFileExists(
     return fileExists(path.resolve(path.dirname(parentFilePath), `${baseName}.stx`))
   }
 
+  // stx's own components directory is where built-ins keep their legacy .stx
+  // files, and a built-in's own file is never a user override. The convention
+  // directories above cannot guarantee that on their own: the default root is
+  // '.', so with the process started inside packages/stx `src/components` IS
+  // this directory, StxLink.stx counted as the user's, and its `<stx-link>`
+  // resolved back to StxLink — "[Circular component reference: stx-link]" in
+  // place of every link. Compared by real path, so a symlinked install is
+  // recognised too.
+  const ownComponentsDir = realDir(path.resolve(import.meta.dir, 'components'))
+
   for (const dir of searchDirs) {
     const resolvedDir = path.isAbsolute(dir) ? dir : path.resolve(resolveBase, dir)
+    if (realDir(resolvedDir) === ownComponentsDir)
+      continue
     for (const variant of variants) {
       if (await fileExists(path.join(resolvedDir, variant))) return true
     }
   }
   return false
+}
+
+/** The directory's real path, or the path as given when it does not exist. */
+function realDir(dir: string): string {
+  try {
+    return fs.realpathSync(dir)
+  }
+  catch {
+    return dir
+  }
 }
 
 /**
