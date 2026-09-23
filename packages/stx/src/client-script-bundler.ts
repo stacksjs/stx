@@ -21,7 +21,11 @@ import type { DepSnapshot } from './render-memo'
 import { depsUnchanged, renderMemo } from './render-memo'
 import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 
-const BUNDLE_CACHE_VERSION = 6
+// 7: bundles written on Bun 1.3 before normalizeRegistrySpecifiers kept their
+// imports raw, and the cache served them after the fix — the upgrade looked
+// like it had changed nothing. A new version is the only thing that retires
+// them, because the key is the source and that did not change.
+const BUNDLE_CACHE_VERSION = 7
 const BUNDLE_CACHE_METADATA_VERSION = 1
 
 interface BundleCacheMetadata {
