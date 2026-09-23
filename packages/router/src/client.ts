@@ -42,7 +42,7 @@ export function getRouterScript(): string {
   if(window.__stxRouter&&window.__stxRouter.__rev===ROUTER_REV)return;
 
   // ── Configuration ──
-  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false,prefetchCacheMax:50,routeFocus:true,announceRoute:true,interceptForms:false};
+  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false,prefetchCacheMax:50,routeFocus:true,announceRoute:true,interceptForms:false,cssLoadTimeout:1500};
   var o=Object.assign({},defaults,window.__stxRouterConfig||{},window.STX_ROUTER_OPTIONS||{});
   var containerSel=o.container;
   var debug=!!o.debug;
@@ -806,6 +806,99 @@ else {
     try{target.focus({preventScroll:true})}catch(e){try{target.focus()}catch(e2){}}
   }
 
+  // ── Generated utility stylesheets ──
+  // Every page ships its own content-addressed utility sheet as
+  // <link data-css="generated">, and none of them is ever removed on a
+  // navigation, so they pile up in <head>. Two of them can define the same
+  // class at the same specificity, which makes their ORDER decide the cascade:
+  // the later sheet wins. Deduping alone left that order as "first seen", so
+  // after Records → Feed → Records the Feed sheet still sat after the Records
+  // one and its .flex-col beat Records' own responsive sm:flex-row — the header
+  // stacked into a column on desktop. The current page's complete sheet has to
+  // be the last one, every navigation, not just the first time it is seen.
+  function findGeneratedCss(abs){
+    var found=null;
+    document.querySelectorAll('head link[data-css][href]').forEach(function(link){
+      if(new URL(link.getAttribute('href'),location.href).href!==abs)return;
+      // Collapse duplicates, so moving one copy to the end can never leave an
+      // older copy of the same sheet behind to fight it.
+      if(found){link.parentNode.removeChild(link);return}
+      found=link;
+    });
+    return found;
+  }
+
+  // Before the swap: add each sheet the page does not have yet, as
+  // media="print" so it downloads without restyling the page still on screen.
+  // Returns a promise for them to finish (load OR error, capped at
+  // cssLoadTimeout so a slow or missing sheet never stalls navigation), or null
+  // when nothing new is needed and the swap can go ahead in the same turn.
+  function preloadGeneratedCss(hrefs,base){
+    var pending=[];
+    hrefs.forEach(function(href){
+      var abs;
+      try{abs=new URL(href,base).href}catch(e){return}
+      var link=findGeneratedCss(abs);
+      if(link){
+        // Still downloading for a navigation that never swapped — wait on it
+        // rather than on nothing.
+        if(link.__stxCssReady)pending.push(link.__stxCssReady);
+        return;
+      }
+      link=document.createElement('link');
+      link.setAttribute('data-css','generated');
+      link.setAttribute('rel','stylesheet');
+      link.setAttribute('href',new URL(href,location.href).href===abs?href:abs);
+      link.setAttribute('media','print');
+      link.setAttribute('data-stx-css-pending','');
+      link.__stxCssReady=new Promise(function(resolve){
+        var timer=setTimeout(finish,o.cssLoadTimeout);
+        function finish(){clearTimeout(timer);link.onload=null;link.onerror=null;link.__stxCssReady=null;resolve()}
+        link.onload=finish;
+        link.onerror=finish;
+      });
+      pending.push(link.__stxCssReady);
+      document.head.appendChild(link);
+    });
+    return pending.length?Promise.all(pending):null;
+  }
+
+  // At the swap: make the destination's sheets live and move them to the end
+  // of <head>. appendChild on a node that is already there MOVES it — no
+  // duplicate, and the browser keeps the parsed sheet rather than refetching.
+  // Only generated sheets are reordered; app and font stylesheets keep the
+  // order they were declared in.
+  function promoteGeneratedCss(hrefs,base){
+    hrefs.forEach(function(href){
+      var abs;
+      try{abs=new URL(href,base).href}catch(e){return}
+      var link=findGeneratedCss(abs);
+      if(!link){
+        preloadGeneratedCss([href],base);
+        link=findGeneratedCss(abs);
+        if(!link)return;
+      }
+      if(link.hasAttribute('data-stx-css-pending')){
+        link.removeAttribute('data-stx-css-pending');
+        link.removeAttribute('media');
+      }
+      document.head.appendChild(link);
+    });
+  }
+
+  // The generated-sheet hrefs a fragment carries. Scripts are skipped so a
+  // <link> written inside a string in page code is not mistaken for one.
+  function fragmentCssHrefs(html){
+    var hrefs=[];
+    html.replace(new RegExp('<scr'+'ipt\\\\b[^>]*>[\\\\s\\\\S]*?<\\\\/scr'+'ipt>','gi'),'').replace(new RegExp('<link\\\\b([^>]*)>','gi'),function(m,attrs){
+      if(attrs.indexOf('data-css')===-1)return m;
+      var hrefMatch=attrs.match(/\\bhref=(["'])(.*?)\\1/i);
+      if(hrefMatch&&hrefMatch[2])hrefs.push(hrefMatch[2]);
+      return m;
+    });
+    return hrefs;
+  }
+
   function swap(html,url,pushState,hash){
     var fragMark=/^<!--stx-fragment(?: rt=([01]))?-->/.exec(html);
     var isFragment=!!fragMark;
@@ -826,7 +919,6 @@ else {
         location.href=url;
         return Promise.resolve(false);
       }
-      if(window.stx&&window.stx._cleanupContainer)window.stx._cleanupContainer(currentContent);
       function doFragSwap(){
         // Extract scripts from fragment before injecting HTML
         var fragScripts=[];
@@ -903,19 +995,9 @@ else {
             document.head.appendChild(cw);
           }
         }
-        fragCssHrefs.forEach(function(href){
-          var absolute=new URL(href,location.href).href;
-          var exists=false;
-          document.querySelectorAll('head link[data-css][href]').forEach(function(link){
-            if(new URL(link.getAttribute('href'),location.href).href===absolute)exists=true;
-          });
-          if(exists)return;
-          var link=document.createElement('link');
-          link.setAttribute('data-css','generated');
-          link.setAttribute('rel','stylesheet');
-          link.setAttribute('href',href);
-          document.head.appendChild(link);
-        });
+        // Already present ones are MOVED last, not skipped — see
+        // promoteGeneratedCss for why their order is the whole bug.
+        promoteGeneratedCss(fragCssHrefs,location.href);
         // Add new page styles
         fragStyles.forEach(function(s){
           var el=document.createElement('style');
@@ -1034,16 +1116,25 @@ else {
         if(fragPending.length)Promise.all(fragPending).then(runFragScripts).catch(runFragScripts);
         else runFragScripts();
       }
-      return new Promise(function(resolve,reject){
-        function completeFragSwap(){
-          try{
-            doFragSwap();
-            resolve(true);
-          }catch(err){reject(err)}
-        }
-        if(runViewTransition(completeFragSwap)){}
-        else{currentContent.style.transition='opacity 0.12s ease-out';currentContent.style.opacity='0';setTimeout(function(){completeFragSwap();currentContent.style.opacity='1';setTimeout(function(){currentContent.style.transition=''},150)},120)}
-      });
+      function startFragSwap(){
+        if(window.stx&&window.stx._cleanupContainer)window.stx._cleanupContainer(currentContent);
+        return new Promise(function(resolve,reject){
+          function completeFragSwap(){
+            try{
+              doFragSwap();
+              resolve(true);
+            }catch(err){reject(err)}
+          }
+          if(runViewTransition(completeFragSwap)){}
+          else{currentContent.style.transition='opacity 0.12s ease-out';currentContent.style.opacity='0';setTimeout(function(){completeFragSwap();currentContent.style.opacity='1';setTimeout(function(){currentContent.style.transition=''},150)},120)}
+        });
+      }
+      // A stylesheet this page has never loaded is fetched BEFORE the content
+      // swaps, or the new markup paints once without its utilities and then
+      // jumps. Cleanup waits with it so the outgoing page stays live meanwhile.
+      // With nothing new to load this runs in the same turn, as it always did.
+      var fragCssReady=preloadGeneratedCss(fragmentCssHrefs(html),location.href);
+      return fragCssReady?fragCssReady.then(startFragSwap):startFragSwap();
     }
 
     // Full document mode: parse with DOMParser and extract container content
@@ -1073,10 +1164,13 @@ else {
     var newContent=doc.querySelector(containerSel)||doc.querySelector('[data-stx-content]')||doc.querySelector('main');
     if(!newContent){location.href=url;return Promise.resolve(false)}
 
-    // Clean up existing signals/effects
-    if(window.stx&&window.stx._cleanupContainer){
-      window.stx._cleanupContainer(currentContent);
-    }
+    // The destination's generated utility sheets, resolved against the page
+    // being navigated to. Loaded before the swap and moved last during it —
+    // same reasons as the fragment path (promoteGeneratedCss).
+    var docCssBase;
+    try{docCssBase=new URL(url,location.href).href}catch(e){docCssBase=location.href}
+    var docCssHrefs=[];
+    doc.querySelectorAll('head link[data-css][href]').forEach(function(l){docCssHrefs.push(l.getAttribute('href'))});
 
     function doSwap(){
       // ── Swap <head> styles ──
@@ -1143,6 +1237,9 @@ else {
       doc.querySelectorAll('head '+linkSel).forEach(function(l){
         var href=l.getAttribute('href');
         if(!href)return;
+        // Generated utility sheets are not additive-only: promoteGeneratedCss
+        // below also reorders them.
+        if(l.hasAttribute('data-css'))return;
         var abs=new URL(href,docBase).href;
         if(curLinks[abs])return;
         curLinks[abs]=1;
@@ -1150,6 +1247,9 @@ else {
         Array.from(l.attributes).forEach(function(a){nl.setAttribute(a.name,a.value)});
         document.head.appendChild(nl);
       });
+      // After every other stylesheet link, so the destination's complete
+      // utility sheet is last in the cascade.
+      promoteGeneratedCss(docCssHrefs,docBase);
 
       // ── Swap content ──
       // For layout changes: swap the entire <body> to replace layout chrome (nav, footer, etc.)
@@ -1443,26 +1543,34 @@ else {
       }
     }
 
-    return new Promise(function(resolve,reject){
-      function completeSwap(){
-        try{
-          doSwap();
-          resolve(true);
-        }catch(err){reject(err)}
+    function startSwap(){
+      // Clean up existing signals/effects
+      if(window.stx&&window.stx._cleanupContainer){
+        window.stx._cleanupContainer(currentContent);
       }
-      if(runViewTransition(completeSwap)){
-      }
-else {
-        // Fallback fade for browsers without View Transitions API
-        currentContent.style.transition='opacity 0.12s ease-out';
-        currentContent.style.opacity='0';
-        setTimeout(function(){
-          completeSwap();
-          currentContent.style.opacity='1';
-          setTimeout(function(){currentContent.style.transition=''},150);
-        },120);
-      }
-    });
+      return new Promise(function(resolve,reject){
+        function completeSwap(){
+          try{
+            doSwap();
+            resolve(true);
+          }catch(err){reject(err)}
+        }
+        if(runViewTransition(completeSwap)){
+        }
+        else {
+          // Fallback fade for browsers without View Transitions API
+          currentContent.style.transition='opacity 0.12s ease-out';
+          currentContent.style.opacity='0';
+          setTimeout(function(){
+            completeSwap();
+            currentContent.style.opacity='1';
+            setTimeout(function(){currentContent.style.transition=''},150);
+          },120);
+        }
+      });
+    }
+    var docCssReady=preloadGeneratedCss(docCssHrefs,docCssBase);
+    return docCssReady?docCssReady.then(startSwap):startSwap();
   }
 
   // ── Link interception ──
