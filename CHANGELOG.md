@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.302...v0.2.303)
+
+## 🐛 Bug Fixes
+
+- **store**: notify when an action mutates state in place ([d116f32](https://github.com/stacksjs/stx/commit/d116f32)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.303 ([7b562d0](https://github.com/stacksjs/stx/commit/7b562d0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.301...v0.2.302)
 
 ## 🐛 Bug Fixes
