@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.294...v0.2.295)
+
+## ✨ Features
+
+- **serve**: let a project skip the startup image pass ([e62e42c](https://github.com/stacksjs/stx/commit/e62e42c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.295 ([a83dc8c](https://github.com/stacksjs/stx/commit/a83dc8c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.293...v0.2.294)
 
 ## 🐛 Bug Fixes
