@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.293...v0.2.294)
+
+## 🐛 Bug Fixes
+
+- **serve**: content-address the shared runtime and router ([f22d4ad](https://github.com/stacksjs/stx/commit/f22d4ad)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.294 ([8211225](https://github.com/stacksjs/stx/commit/8211225)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.292...v0.2.293)
 
 ## 🐛 Bug Fixes
