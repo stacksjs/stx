@@ -280,6 +280,22 @@ export function csrfTokenToMint(req: Request, cookies: Record<string, string>): 
   return [...bytes].map(byte => byte.toString(16).padStart(2, '0')).join('')
 }
 
+/**
+ * Whether the finished response is a page, the only thing a minted token is for.
+ *
+ * The mint is decided before the render, from the request, and the request
+ * cannot say reliably what it is asking for: browsers send a wildcard (any
+ * type) in the Accept of a stylesheet, a script and an image alike, so every asset a first-time
+ * visitor loaded went out with its own `Set-Cookie: X-CSRF-Token`. That made
+ * each one a response no shared cache will store - behind Cloudflare a whole
+ * site's assets came back `cf-cache-status: BYPASS` - and handed out a fresh
+ * token per asset while the page had embedded another. The response knows.
+ */
+export function responseTakesCsrfCookie(response: Response): boolean {
+  const type = ((response.headers.get('content-type') || '').split(';')[0] ?? '').trim().toLowerCase()
+  return type === 'text/html' || type === 'application/xhtml+xml'
+}
+
 /** The `Set-Cookie` value for a minted token. Readable by script, as double-submit requires. */
 export function csrfCookieHeader(token: string, secure: boolean): string {
   return [
@@ -4339,8 +4355,9 @@ function __stxOverlay(errs){
             // The token the render embedded, sent to the browser. Appended so it
             // coexists with any cookie the page set itself; failing to attach it
             // is not worth failing the response over, since the page still
-            // rendered and the next request mints another.
-            if (mintedCsrfToken) {
+            // rendered and the next request mints another. Pages only: see
+            // `responseTakesCsrfCookie` for why the request cannot decide this.
+            if (mintedCsrfToken && responseTakesCsrfCookie(_finalResp)) {
               try {
                 _finalResp.headers.append('Set-Cookie', csrfCookieHeader(mintedCsrfToken, req.url.startsWith('https://')))
               }

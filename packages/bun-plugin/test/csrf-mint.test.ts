@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { CSRF_COOKIE, csrfCookieHeader, csrfTokenToMint } from '../src/serve'
+import { CSRF_COOKIE, csrfCookieHeader, csrfTokenToMint, responseTakesCsrfCookie } from '../src/serve'
 
 /**
  * The token has to exist before the page that embeds it is rendered.
@@ -82,5 +82,25 @@ describe('csrfCookieHeader', () => {
   it('is Secure over HTTPS and not over plain HTTP, so localhost works', () => {
     expect(csrfCookieHeader('abc', true)).toContain('Secure')
     expect(csrfCookieHeader('abc', false)).not.toContain('Secure')
+  })
+})
+
+describe('responseTakesCsrfCookie', () => {
+  const typed = (type: string): Response => new Response('x', { headers: { 'Content-Type': type } })
+
+  it('attaches the token to a page, whatever charset it declares', () => {
+    expect(responseTakesCsrfCookie(typed('text/html'))).toBe(true)
+    expect(responseTakesCsrfCookie(typed('text/html; charset=utf-8'))).toBe(true)
+  })
+
+  /**
+   * chrisbreuer.me, 2026-09-23: browsers accept any type when fetching assets, so
+   * the request-side check minted for every one and none could be cached.
+   */
+  it('never attaches it to an asset, even one whose request accepts anything', () => {
+    const asset = request({ accept: 'text/css,*/*;q=0.1' })
+    expect(csrfTokenToMint(asset, {})).not.toBeNull()
+    for (const type of ['text/css', 'application/javascript', 'image/png', 'image/svg+xml', 'font/woff2', 'application/json'])
+      expect(responseTakesCsrfCookie(typed(type))).toBe(false)
   })
 })
