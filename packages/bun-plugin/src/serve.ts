@@ -746,6 +746,18 @@ export interface ServeOptions {
    */
   imageWarmupGraceMs?: number
   /**
+   * Derive image placeholders and build the responsive delivery catalog on
+   * startup. Defaults to true. Also settable as `imageWarmup` in the project's
+   * stx/ui config.
+   *
+   * Turn it off when the project renders no `<StxImage>` and no `@image`:
+   * those are the only things that read what the pass produces, so without
+   * them it is a full decode of every raster under `public/` for output
+   * nothing asks for. In production the server waits for this before binding,
+   * so it is also how long a deploy keeps two releases alive at once.
+   */
+  imageWarmup?: boolean
+  /**
    * Public directory served at the URL root, like Nuxt/Vite/Next/Astro.
    * Any file under this directory is reachable at the matching URL path —
    * `public/images/hero.jpg` → `GET /images/hero.jpg`.
@@ -1210,6 +1222,18 @@ export async function serve(options: ServeOptions): Promise<void> {
   // which is also what tells the render cache not to keep a page built while
   // the catalogs were still empty.
   let placeholdersAreReady = false
+
+  // Whether to derive image placeholders and build the responsive delivery
+  // catalog at all.
+  //
+  // On by default, and worth leaving on for anything using `<StxImage>` or
+  // `@image`. A project using neither gets nothing from it and still pays for
+  // it at every boot: the pass decodes every raster under `public/`, which on
+  // a photo-heavy site is a minute or more of startup and hundreds of
+  // megabytes of variants that are never requested. Since the server now
+  // waits for this before it binds, that cost is also how long a deploy's two
+  // releases overlap.
+  const imageWarmupEnabled = (options.imageWarmup ?? (stxConfig as { imageWarmup?: boolean }).imageWarmup ?? true) !== false
 
   // How long a request is willing to wait for the warm-up before rendering
   // without it.
@@ -3139,6 +3163,14 @@ function __stxOverlay(errs){
 
   /** Derive placeholders and build the responsive image catalog. Settles `placeholdersReady`. */
   async function runImageWarmup(): Promise<void> {
+    if (!imageWarmupEnabled) {
+      // Nothing to wait for, and nothing to fall back from: every lookup
+      // misses, which is the same answer it would give before the pass
+      // finished.
+      placeholdersAreReady = true
+      markPlaceholdersReady()
+      return
+    }
     try {
       const stx = await stxModule
       const publicRoot = nodePath.resolve(process.cwd(), publicDir)

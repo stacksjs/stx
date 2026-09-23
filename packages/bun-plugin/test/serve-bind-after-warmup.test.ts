@@ -19,7 +19,7 @@ afterAll(async () => {
  * Boot serve() in a subprocess with a deliberately slow image pass, and report
  * how long the port took to accept a connection.
  */
-async function timeToBind(env: Record<string, string>, port: number): Promise<number> {
+async function timeToBind(env: Record<string, string>, port: number, extra: Record<string, unknown> = {}): Promise<number> {
   const dir = await mkdtemp(path.join(tmpdir(), 'stx-bind-'))
   dirs.push(dir)
   await Bun.write(path.join(dir, 'views', 'index.stx'), '<main>bound</main>')
@@ -35,7 +35,7 @@ const stxModule = {
   },
 }
 
-serve({ patterns: ['views'], port: ${port}, stxModule: stxModule as any })
+serve({ patterns: ['views'], port: ${port}, stxModule: stxModule as any, ...${JSON.stringify(extra)} })
 `)
 
   const proc = Bun.spawn(['bun', 'driver.ts'], {
@@ -72,6 +72,18 @@ describe('startup image pass and the bind', () => {
   it('does not bind in production until the pass is done', async () => {
     const elapsed = await timeToBind({ APP_ENV: 'production', NODE_ENV: 'production' }, 45_910 + (process.pid % 20))
     expect(elapsed).toBeGreaterThan(WARMUP_MS * 0.7)
+  })
+
+  // A project that renders no <StxImage> and no @image gets nothing from the
+  // pass, and in production pays for it twice: once in startup, and again in
+  // how long a deploy keeps two releases overlapping.
+  it('binds immediately in production when the pass is turned off', async () => {
+    const elapsed = await timeToBind(
+      { APP_ENV: 'production', NODE_ENV: 'production' },
+      45_950 + (process.pid % 20),
+      { imageWarmup: false },
+    )
+    expect(elapsed).toBeLessThan(WARMUP_MS / 2)
   })
 
   // Development wants the server now; the fallbacks are fine until it warms.
