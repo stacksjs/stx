@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.290...v0.2.291)
+
+## 🐛 Bug Fixes
+
+- **inline-assets**: refuse to inline import.meta into a classic script ([6dae0ca](https://github.com/stacksjs/stx/commit/6dae0ca)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.291 ([943af8d](https://github.com/stacksjs/stx/commit/943af8d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.289...v0.2.290)
 
 ## 🐛 Bug Fixes
