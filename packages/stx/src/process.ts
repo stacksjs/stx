@@ -394,14 +394,17 @@ async function buildModulesTag(
   }
 }
 
-function placeSignalsRuntimeBeforeScripts(html: string): string {
+function placeSignalsRuntimeBeforeScripts(html: string, afterRuntime = ''): string {
   const runtime = findScriptBlockByAttribute(html, 'data-stx-runtime')
   if (!runtime)
     return html
 
   const firstScript = findFirstScriptTag(html)
-  if (firstScript === -1 || firstScript === runtime.start)
-    return html
+  if (firstScript === -1 || firstScript === runtime.start) {
+    if (!afterRuntime)
+      return html
+    return html.slice(0, runtime.end) + afterRuntime + html.slice(runtime.end)
+  }
 
   // When the first script sits BEFORE the runtime, the destination is already
   // known and the document can be reassembled in one pass.
@@ -421,6 +424,7 @@ function placeSignalsRuntimeBeforeScripts(html: string): string {
   if (firstScript < runtime.start) {
     return html.slice(0, firstScript)
       + html.slice(runtime.start, runtime.end)
+      + afterRuntime
       + '\n'
       + html.slice(firstScript, runtime.start)
       + html.slice(runtime.end)
@@ -431,10 +435,11 @@ function placeSignalsRuntimeBeforeScripts(html: string): string {
   const insertionPoint = findFirstScriptTag(withoutRuntime)
 
   if (insertionPoint === -1)
-    return runtimeTag + '\n' + withoutRuntime
+    return runtimeTag + afterRuntime + '\n' + withoutRuntime
 
   return withoutRuntime.slice(0, insertionPoint)
     + runtimeTag
+    + afterRuntime
     + '\n'
     + withoutRuntime.slice(insertionPoint)
 }
@@ -694,7 +699,6 @@ export async function processDirectives(
         const colorModeConfig = (options as any).app?.colorMode
         if (colorModeConfig)
           result = injectColorModeBootScript(result, colorModeConfig)
-        result = placeSignalsRuntimeBeforeScripts(result)
       }
 
       // The store bundle, the framework-composable bundle and the user
@@ -788,8 +792,9 @@ export async function processDirectives(
             .filter((text): text is string => text !== null)
             .map(tag => `\n${tag}`)
             .join('')
-          if (tags)
-            result = result.slice(0, runtime.end) + tags + result.slice(runtime.end)
+          // Move the runtime and attach its dependent bundles in the same
+          // rebuild. These used to be two consecutive page-sized splices.
+          result = placeSignalsRuntimeBeforeScripts(result, tags)
         }
         else {
           // No runtime to anchor to, but a client script can still import a
@@ -823,10 +828,14 @@ export async function processDirectives(
       // page render injects first, the early-return in injectCss fires on
       // the outer render, and layout-only utility classes never get scanned.
       if (isTopLevel && context.__stx_inject_css !== false) {
-        result = await injectCss(result, undefined, options.buildMode === 'serve')
+        // Component-dense pages need both duplicate scoped-style removal and
+        // generated-CSS injection. Apply both edits in one forward rebuild;
+        // separate calls materialised the whole document twice (#1945).
+        result = await injectCss(result, undefined, options.buildMode === 'serve', true)
       }
-
-      if (isTopLevel) {
+      else if (isTopLevel) {
+        // Inner layout renders deliberately skip generated CSS, but still need
+        // the same scoped-style deduplication contract.
         result = dedupeScopedStyles(result)
       }
 

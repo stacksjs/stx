@@ -9,7 +9,9 @@ import path from 'node:path'
 import { heapStats, memoryUsage } from 'bun:jsc'
 import { renderView } from '../../src/build-views'
 
-const root = path.resolve(import.meta.dir, '../../../..')
+const root = process.env.STX_BENCH_ROOT
+  ? path.resolve(process.env.STX_BENCH_ROOT)
+  : path.resolve(import.meta.dir, '../../../..')
 // Overridable to match render-view-allocation-probe.ts, so the proxy and the
 // ground truth can be pointed at the same page. A drop in the probe that this
 // does not follow has moved work out of view rather than removed it.
@@ -19,12 +21,17 @@ const options = { componentsDir }
 const warmups = Number(process.env.STX_BENCH_WARMUPS ?? 10)
 const samples = Number(process.env.STX_BENCH_SAMPLES ?? 40)
 
+function normalize(html: string): string {
+  return html.replace(/<meta name="stx-build" content="[^"]*"\s*\/?>/g, '<meta name="stx-build" content="MASKED">')
+}
+
 function digest(html: string): string {
-  const normalized = html.replace(/<meta name="stx-build" content="[^"]*"\s*\/?>/g, '<meta name="stx-build" content="MASKED">')
-  return new Bun.CryptoHasher('sha256').update(normalized).digest('hex')
+  return new Bun.CryptoHasher('sha256').update(normalize(html)).digest('hex')
 }
 
 const first = await renderView(page, {}, options)
+if (process.env.STX_BENCH_OUTPUT)
+  await Bun.write(process.env.STX_BENCH_OUTPUT, normalize(first))
 for (let i = 0; i < warmups; i++)
   await renderView(page, {}, options)
 
@@ -61,9 +68,17 @@ console.log(JSON.stringify({
   p90MsPerRender: timings[Math.floor(samples * 0.9)],
   rssBefore: before.rss,
   rssAfter: after.rss,
+  jscCurrentBefore: before.jsc.current,
+  jscCurrentAfter: after.jsc.current,
+  jscPeakBefore: before.jsc.peak,
+  jscPeakAfter: after.jsc.peak,
   jscCommitBefore: before.jsc.currentCommit,
   jscCommitAfter: after.jsc.currentCommit,
   jscPeakCommitAfter: after.jsc.peakCommit,
   heapBefore: before.heap.heapSize,
   heapAfter: after.heap.heapSize,
+  extraMemoryBefore: before.heap.extraMemorySize,
+  extraMemoryAfter: after.heap.extraMemorySize,
+  objectsBefore: before.heap.objectCount,
+  objectsAfter: after.heap.objectCount,
 }, null, 2))

@@ -37,6 +37,7 @@ const STYLE_OPEN_TAG = /<style\s+([^>]*)>/gi
 const STYLE_TAG_WITH_ATTRS = /<style\s+([^>]*)>([\s\S]*?)<\/style>/gi
 const SCOPED_ATTR_IN_TAG = new RegExp(SCOPED_STYLE_ATTR, 'i')
 const SCOPED_ATTR_EVERYWHERE = new RegExp(SCOPED_STYLE_ATTR, 'gi')
+const RENDERED_SCOPED_STYLE = /<style\b[^>]*\bdata-stx-scoped(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?[^>]*>[\s\S]*?<\/style>\s*/gi
 
 function hasScopedStyleTag(template: string): boolean {
   STYLE_OPEN_TAG.lastIndex = 0
@@ -56,6 +57,35 @@ export interface ScopedStyleResult {
   hasScoped: boolean
 }
 
+export interface SourceRange {
+  start: number
+  end: number
+}
+
+/**
+ * Locate repeated rendered scoped styles without rebuilding the document.
+ * The ranges include the same trailing whitespace consumed by the standalone
+ * dedupe pass, so callers can fold the removals into another document edit.
+ */
+export function findDuplicateScopedStyleRanges(html: string): SourceRange[] {
+  const seen = new Set<string>()
+  const duplicates: SourceRange[] = []
+  RENDERED_SCOPED_STYLE.lastIndex = 0
+
+  let match = RENDERED_SCOPED_STYLE.exec(html)
+  while (match !== null) {
+    const key = match[0].trim()
+    if (seen.has(key))
+      duplicates.push({ start: match.index, end: match.index + match[0].length })
+    else
+      seen.add(key)
+
+    match = RENDERED_SCOPED_STYLE.exec(html)
+  }
+
+  return duplicates
+}
+
 /**
  * Keep one copy of each rendered scoped stylesheet.
  *
@@ -65,19 +95,19 @@ export interface ScopedStyleResult {
  * payload and CSS parse work.
  */
 export function dedupeScopedStyles(html: string): string {
-  const seen = new Set<string>()
+  const duplicates = findDuplicateScopedStyleRanges(html)
+  if (duplicates.length === 0)
+    return html
 
-  return html.replace(
-    /<style\b[^>]*\bdata-stx-scoped(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?[^>]*>[\s\S]*?<\/style>\s*/gi,
-    (styleBlock) => {
-      const key = styleBlock.trim()
-      if (seen.has(key))
-        return ''
-
-      seen.add(key)
-      return styleBlock
-    },
-  )
+  const kept = new Array<string>(duplicates.length + 1)
+  let cursor = 0
+  for (let i = 0; i < duplicates.length; i++) {
+    const duplicate = duplicates[i]
+    kept[i] = html.slice(cursor, duplicate.start)
+    cursor = duplicate.end
+  }
+  kept[duplicates.length] = html.slice(cursor)
+  return kept.join('')
 }
 
 /**

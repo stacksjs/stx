@@ -19,6 +19,7 @@ import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { injectSignalsRuntime } from './runtime-injection'
 import { evictOldest, matchScriptElement, scanAtElementPosition } from './html-masking'
 import { importOnce } from './lazy-module'
+import { findBodyOpenTag } from './find-body-tag'
 
 // Counter for unique signal setup function names (avoids Date.now() collisions)
 let signalSetupCounter = 0
@@ -1855,6 +1856,17 @@ export async function processSignals(template: string, options: StxOptions, file
   const { output: processedOutput, setupCode } = await processScriptSetup(output, filePath, serverData)
   output = processedOutput
 
+  if (!setupCode) {
+    // Locate and inspect the real body tag in place. Stripping every script and
+    // style first rebuilt this document twice, then slicing its tail and running
+    // another replace rebuilt it again just to add one attribute (#1945).
+    const body = findBodyOpenTag(output)
+    if (body && !/data-stx/.test(body.attrs) && !/data-stx-auto/.test(body.attrs)) {
+      const stamped = body.tag.replace(/^<body([^>]*)>$/i, '<body$1 data-stx-auto>')
+      output = output.slice(0, body.index) + stamped + output.slice(body.index + body.tag.length)
+    }
+  }
+
   // Inject the signals runtime
   output = await injectSignalsRuntime(output, options)
 
@@ -1883,28 +1895,6 @@ export async function processSignals(template: string, options: StxOptions, file
     }
     else {
       output = `${output}\n${setupCode}`
-    }
-  }
-
-  if (!setupCode) {
-    // With setup code, processScriptSetup already stamps the owning element and
-    // this body scan has no consumer. Avoid stripping every script and style
-    // from the complete rendered page only to discard the temporary copy (#1945).
-    const stripped = output.replace(/<script\b[\s\S]*?<\/script>/gi, '').replace(/<style\b[\s\S]*?<\/style>/gi, '')
-    const bodyMatch = stripped.match(/<body([^>]*)>/i)
-    const bodyHasDataStx = bodyMatch && /data-stx/.test(bodyMatch[1])
-
-    if (!bodyHasDataStx && bodyMatch && !/data-stx-auto/.test(bodyMatch[1])) {
-      // Locate the real body tag, skipping <script>/<style> regions so we don't
-      // corrupt a regex literal such as `/<body[^>]*>/` inside embedded JS.
-      const bodyTagRe = /<body[^>]*>/i
-      const bodyIdx = findMarkupIndexOutsideScripts(output, bodyTagRe)
-
-      if (bodyIdx !== -1) {
-        const before = output.slice(0, bodyIdx)
-        const after = output.slice(bodyIdx).replace(bodyTagRe, m => m.replace(/^<body([^>]*)>$/i, '<body$1 data-stx-auto>'))
-        output = before + after
-      }
     }
   }
 

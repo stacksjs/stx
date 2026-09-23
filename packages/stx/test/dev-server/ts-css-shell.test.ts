@@ -20,6 +20,7 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { composeShellWithPage, processShell } from '../../src/app-shell'
 import { getCssServeAsset, injectCss } from '../../src/dev-server/ts-css'
+import { dedupeScopedStyles } from '../../src/style-scoping'
 
 describe('css + app shell composition (#1749)', () => {
   let dir: string
@@ -88,5 +89,16 @@ describe('css + app shell composition (#1749)', () => {
      */
     const served = getCssServeAsset(match![1]!).replace(/\s+/g, '')
     expect(served).toContain('.flex{display:flex')
+  })
+
+  it('combines generated CSS injection with scoped-style deduplication', async () => {
+    const scoped = '<style data-stx-scoped="stx-card">.card { color: red; }</style>\n'
+    const html = `<html><head></head><body><div class="flex card">one</div>${scoped}<div class="card">two</div>${scoped}</body></html>`
+
+    const sequential = await injectCss(dedupeScopedStyles(html))
+    const combined = await injectCss(html, undefined, false, true)
+
+    expect(combined).toBe(sequential)
+    expect(combined.match(/data-stx-scoped="stx-card"/g)).toHaveLength(1)
   })
 })

@@ -182,7 +182,9 @@ export async function measureAllocation<T>(
 
 if (import.meta.main) {
   const { renderView } = await import('../../src/build-views')
-  const root = path.resolve(import.meta.dir, '../../../..')
+  const root = process.env.STX_BENCH_ROOT
+    ? path.resolve(process.env.STX_BENCH_ROOT)
+    : path.resolve(import.meta.dir, '../../../..')
   // Overridable so the same instrument can be pointed at another page. The
   // caches added for #1945 only engage above 64KB of intermediate document, so
   // a number measured on one fixture says nothing about a smaller one.

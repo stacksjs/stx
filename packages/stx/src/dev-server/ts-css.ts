@@ -8,6 +8,7 @@ import path from 'node:path'
 import { hasLocalConfig } from 'bunfig'
 import { mergeCssConfig } from '../ts-css-config'
 import { stateDir } from '../state-dir'
+import { dedupeScopedStyles, findDuplicateScopedStyleRanges } from '../style-scoping'
 import { colors } from './terminal-colors'
 import { contentKey, renderMemo } from '../render-memo'
 
@@ -847,7 +848,12 @@ async function generateCssUncached(htmlContent: string, appDir?: string): Promis
  * Inject generated CSS into HTML content
  * Tries to inject before </head>, falls back to <body> or prepends
  */
-export async function injectCss(htmlContent: string, appDir?: string, serveMode = false): Promise<string> {
+export async function injectCss(
+  htmlContent: string,
+  appDir?: string,
+  serveMode = false,
+  dedupeRenderedScopedStyles = false,
+): Promise<string> {
   // Generate CSS for ALL utility classes in the (possibly shell-composed)
   // content. We must NOT early-return just because a `data-css="generated"`
   // style already exists: when a page is composed into a pre-processed app shell,
@@ -863,12 +869,15 @@ export async function injectCss(htmlContent: string, appDir?: string, serveMode 
   if (!css) {
     // Nothing to emit (no classes, or css unavailable). Leave any existing
     // generated style in place rather than stripping it.
-    return htmlContent
+    return dedupeRenderedScopedStyles ? dedupeScopedStyles(htmlContent) : htmlContent
   }
 
   const assetTag = serveMode
     ? `<link data-css="generated" rel="stylesheet" href="/_stx/css.${registerServeCss(css)}.css">`
     : `<style data-css="generated">\n${css}\n</style>`
+
+  if (dedupeRenderedScopedStyles)
+    return injectCssAndDedupeScopedStyles(htmlContent, assetTag)
 
   // If one or more generated styles already exist (e.g. from the composed
   // shell, or a recursive layout render), replace the first with the complete
@@ -895,5 +904,97 @@ export async function injectCss(htmlContent: string, appDir?: string, serveMode 
   }
 
   // Last resort: prepend to content
+  return assetTag + htmlContent
+}
+
+interface HtmlEdit {
+  start: number
+  end: number
+  replacement: string
+}
+
+/**
+ * Apply generated-CSS injection and repeated scoped-style removal in one
+ * forward rebuild. Component-dense pages need both edits on every render;
+ * doing them separately materialises the whole document twice.
+ */
+function injectCssAndDedupeScopedStyles(html: string, assetTag: string): string {
+  const edits: HtmlEdit[] = findDuplicateScopedStyleRanges(html)
+    .map(range => ({ ...range, replacement: '' }))
+
+  const existing = /(?:<style\b[^>]*\bdata-css=(?:"generated"|'generated')[^>]*>[\s\S]*?<\/style>|<link\b[^>]*\bdata-css=(?:"generated"|'generated')[^>]*>)/g
+  let existingMatch = existing.exec(html)
+  if (existingMatch !== null) {
+    let first = true
+    while (existingMatch !== null) {
+      edits.push({
+        start: existingMatch.index,
+        end: existingMatch.index + existingMatch[0].length,
+        replacement: first ? assetTag : '',
+      })
+      first = false
+      existingMatch = existing.exec(html)
+    }
+  }
+  else {
+    const headClose = html.indexOf('</head>')
+    if (headClose !== -1) {
+      edits.push({ start: headClose, end: headClose, replacement: `${assetTag}\n` })
+    }
+    else {
+      const bodyOpen = html.match(/<body([^>]*)>/)
+      if (bodyOpen?.index !== undefined) {
+        edits.push({
+          start: bodyOpen.index,
+          end: bodyOpen.index + bodyOpen[0].length,
+          replacement: `${bodyOpen[0]}\n${assetTag}`,
+        })
+      }
+      else {
+        edits.push({ start: 0, end: 0, replacement: assetTag })
+      }
+    }
+  }
+
+  edits.sort((a, b) => a.start - b.start || a.end - b.end)
+
+  // A generated style carrying data-stx-scoped is malformed, but the old
+  // sequential operations still had deterministic behaviour for it. Preserve
+  // that edge case instead of applying overlapping edits.
+  for (let i = 1; i < edits.length; i++) {
+    if (edits[i].start < edits[i - 1].end)
+      return injectCssIntoHtml(dedupeScopedStyles(html), assetTag)
+  }
+
+  const chunks = new Array<string>(edits.length * 2 + 1)
+  let cursor = 0
+  let chunk = 0
+  for (const edit of edits) {
+    chunks[chunk++] = html.slice(cursor, edit.start)
+    chunks[chunk++] = edit.replacement
+    cursor = edit.end
+  }
+  chunks[chunk] = html.slice(cursor)
+  return chunks.join('')
+}
+
+function injectCssIntoHtml(htmlContent: string, assetTag: string): string {
+  const existing = /(?:<style\b[^>]*\bdata-css=(?:"generated"|'generated')[^>]*>[\s\S]*?<\/style>|<link\b[^>]*\bdata-css=(?:"generated"|'generated')[^>]*>)/g
+  if (existing.test(htmlContent)) {
+    let placed = false
+    return htmlContent.replace(existing, () => {
+      if (placed)
+        return ''
+      placed = true
+      return assetTag
+    })
+  }
+
+  if (htmlContent.includes('</head>'))
+    return htmlContent.replace('</head>', `${assetTag}\n</head>`)
+
+  if (htmlContent.includes('<body'))
+    return htmlContent.replace(/<body([^>]*)>/, `<body$1>\n${assetTag}`)
+
   return assetTag + htmlContent
 }

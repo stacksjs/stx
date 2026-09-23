@@ -63,7 +63,7 @@ export function injectComponentClientFactories(
       inlinable.set(id, factory.body)
   }
 
-  let output = html
+  const edits: Array<{ start: number, end: number, replacement: string }> = []
   if (inlinable.size > 0) {
     const alternation = [...inlinable.keys()]
       .map(id => JSON.stringify(id).replace(/[$()*+.?[\\\]^{|}]/g, '\\$&'))
@@ -77,15 +77,23 @@ export function injectComponentClientFactories(
     // have rewritten inside it on a later iteration; not doing that is the safer
     // of the two, and matches how the other batched restores in this pipeline
     // behave.
-    output = output.replace(invocation, (match, idLiteral: string, scopeId: string) => {
-      const body = inlinable.get(JSON.parse(idLiteral) as string)
-      return body === undefined ? match : `(${body})(${scopeId});`
-    })
+    let match = invocation.exec(html)
+    while (match !== null) {
+      const body = inlinable.get(JSON.parse(match[1]) as string)
+      if (body !== undefined) {
+        edits.push({
+          start: match.index,
+          end: match.index + match[0].length,
+          replacement: `(${body})(${match[2]});`,
+        })
+      }
+      match = invocation.exec(html)
+    }
   }
 
   const repeatedFactories = [...registry].filter(([, factory]) => factory.instances > 1)
   if (repeatedFactories.length === 0)
-    return output
+    return applyFactoryEdits(html, edits)
 
   // Each definition is isolated (stacksjs/stx#1773, D4). These all share one
   // <script>, so a single throw while evaluating one factory body aborted the
@@ -104,11 +112,38 @@ ${definitions}
 })();
 </script>`
 
-  const firstScopedScript = output.search(/<script\b(?=[^>]*\bdata-stx-scoped\b)/i)
-  if (firstScopedScript < 0)
-    return `${prelude}\n${output}`
+  // Every generated invocation already sits inside a scoped component script,
+  // so its opening tag precedes its replacement and keeps the same offset.
+  const firstScopedScript = html.search(/<script\b(?=[^>]*\bdata-stx-scoped\b)/i)
+  const insertionPoint = firstScopedScript < 0 ? 0 : firstScopedScript
+  edits.push({
+    start: insertionPoint,
+    end: insertionPoint,
+    replacement: `${prelude}\n`,
+  })
+  return applyFactoryEdits(html, edits)
+}
 
-  return `${output.slice(0, firstScopedScript)}${prelude}\n${output.slice(firstScopedScript)}`
+function applyFactoryEdits(
+  html: string,
+  edits: Array<{ start: number, end: number, replacement: string }>,
+): string {
+  if (edits.length === 0)
+    return html
+
+  // Inline one-off calls and insert the shared prelude in one forward rebuild.
+  // These were consecutive whole-document replacements on mixed pages (#1945).
+  edits.sort((a, b) => a.start - b.start || a.end - b.end)
+  const chunks = new Array<string>(edits.length * 2 + 1)
+  let cursor = 0
+  let chunk = 0
+  for (const edit of edits) {
+    chunks[chunk++] = html.slice(cursor, edit.start)
+    chunks[chunk++] = edit.replacement
+    cursor = edit.end
+  }
+  chunks[chunk] = html.slice(cursor)
+  return chunks.join('')
 }
 
 /**
