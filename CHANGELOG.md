@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.304...v0.2.305)
+
+## 🐛 Bug Fixes
+
+- **includes**: pass a partial's JSON-LD through as data ([f646bc8](https://github.com/stacksjs/stx/commit/f646bc8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.305 ([cbb730b](https://github.com/stacksjs/stx/commit/cbb730b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.303...v0.2.304)
 
 ## ✨ Features
