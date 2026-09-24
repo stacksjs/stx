@@ -111,9 +111,11 @@ describe('bun-plugin-stx serving', () => {
     if (htmlOutput) {
       const content = await htmlOutput.text()
 
-      // Check for SEO meta tags
+      // Check for SEO meta tags. The fixture writes its own <title>, so the
+      // injected block leaves out <meta name="title"> rather than repeating it
+      // (packages/stx/src/seo.ts, injectSeoTags); the social tags still ship.
       expect(content).toContain('<!-- stx SEO Tags -->')
-      expect(content).toContain('<meta name="title"')
+      expect(content).not.toContain('<meta name="title"')
       expect(content).toContain('<meta property="og:title"')
       expect(content).toContain('<meta name="twitter:card"')
     }
