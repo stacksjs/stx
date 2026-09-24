@@ -10,8 +10,7 @@
  * @module component-registry
  */
 
-import path from 'node:path'
-import fs from 'node:fs'
+import { componentFileCandidates, importedComponentPath } from './component-resolution'
 import { fileExists } from './utils'
 import type { StxOptions } from './types'
 
@@ -159,111 +158,13 @@ export class ComponentRegistry {
     options: StxOptions,
     parentContext?: Record<string, any>,
   ): Promise<string | null> {
-    const baseName = name.endsWith('.stx') ? name.slice(0, -4) : name
-
-    // 1. Check explicitly imported components
-    const importedComponents = parentContext?.__importedComponents as Map<string, string> | undefined
-    if (importedComponents) {
-      const namesToTry = [
-        baseName,
-        baseName.toLowerCase(),
-        kebabToPascal(baseName),
-        pascalToKebab(baseName),
-      ]
-      for (const n of namesToTry) {
-        if (importedComponents.has(n)) {
-          return importedComponents.get(n)!
-        }
-      }
+    const imported = importedComponentPath(name, parentContext)
+    if (imported !== undefined)
+      return imported
+    for (const candidate of componentFileCandidates(name, fromFile, options, parentContext)) {
+      if (await fileExists(candidate))
+        return candidate
     }
-
-    // 2. Generate file name variants
-    const fileVariants = [...new Set([
-      `${baseName}.stx`,
-      `${kebabToPascal(baseName)}.stx`,
-      `${pascalToKebab(baseName)}.stx`,
-    ])]
-
-    // Handle relative paths (./foo or ../foo)
-    if (baseName.startsWith('./') || baseName.startsWith('../')) {
-      const resolved = path.resolve(path.dirname(fromFile), `${baseName}.stx`)
-      if (await fileExists(resolved)) {
-        return resolved
-      }
-      return null
-    }
-
-    // 3. Build search directories in priority order
-    const searchDirs: string[] = []
-    const componentsDir = options.componentsDir || ''
-
-    // Page-relative components/ (when rendering within a layout)
-    const originalFilePath = parentContext?.__originalFilePath as string | undefined
-    if (originalFilePath) {
-      searchDirs.push(path.join(path.dirname(originalFilePath), 'components'))
-    }
-
-    // Global componentsDir from options
-    if (componentsDir) {
-      searchDirs.push(componentsDir)
-    }
-
-    // Parent-relative components/
-    const parentRelative = path.join(path.dirname(fromFile), 'components')
-    if (!searchDirs.includes(parentRelative)) {
-      searchDirs.push(parentRelative)
-    }
-
-    // Project root fallback directories
-    const projectRoot = process.cwd()
-    const fallbackDirs = [
-      path.resolve(projectRoot, 'src/components'),
-      path.resolve(projectRoot, 'components'),
-      // Built-in STX components directory
-      path.resolve(import.meta.dir, 'components'),
-    ]
-    for (const fallback of fallbackDirs) {
-      if (!searchDirs.includes(fallback)) {
-        searchDirs.push(fallback)
-      }
-    }
-
-    // 4. Search each directory with all naming variants
-    for (const dir of searchDirs) {
-      if (!dir) continue
-
-      // Try direct file matches
-      for (const variant of fileVariants) {
-        const tryPath = path.join(dir, variant)
-        if (await fileExists(tryPath)) {
-          return tryPath
-        }
-      }
-
-      // Search subdirectories one level deep
-      try {
-        const dirStat = fs.statSync(dir, { throwIfNoEntry: false })
-        if (!dirStat?.isDirectory()) continue
-
-        const entries = fs.readdirSync(dir, { withFileTypes: true })
-        for (const entry of entries) {
-          if (entry.isDirectory()) {
-            const subDir = path.join(dir, entry.name)
-            for (const variant of fileVariants) {
-              const tryPath = path.join(subDir, variant)
-              if (await fileExists(tryPath)) {
-                return tryPath
-              }
-            }
-          }
-        }
-      }
-      catch {
-        // Ignore directory read errors
-      }
-    }
-
-    // 5. Not found
     return null
   }
 }

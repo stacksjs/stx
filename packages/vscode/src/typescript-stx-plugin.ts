@@ -1,4 +1,5 @@
 import type * as ts from 'typescript/lib/tsserverlibrary'
+import path from 'node:path'
 import type { VirtualFile } from '../../stx/src/stx-virtual-ts'
 // Imported by relative path on purpose. The plugin is bundled (see build.ts),
 // so this module is inlined; declaring `@stacksjs/stx` as a dependency would
@@ -68,10 +69,10 @@ function isHandled(fileName: string): boolean {
   return isStx(fileName) || fileName.endsWith('.md')
 }
 
-function buildDocument(fileName: string, source: string, version: string): StxDocument {
+function buildDocument(fileName: string, source: string, version: string, readComponent?: (file: string) => string | undefined, componentsDir?: string, projectRoot?: string): StxDocument {
   // Markdown is not a template: its `{{ }}` are usually documentation OF stx
   // syntax, so checking them would invent errors in every doc page.
-  const virtual = buildVirtualTypeScript(source, { templateExpressions: isStx(fileName) })
+  const virtual = buildVirtualTypeScript(source, { templateExpressions: isStx(fileName), originDir: path.dirname(fileName), filePath: fileName, readComponent, componentsDir, projectRoot })
   return {
     version,
     source,
@@ -100,15 +101,20 @@ function init(modules: { typescript: typeof ts }): ts.server.PluginModule {
       const originalGetScriptVersion = languageServiceHost.getScriptVersion?.bind(languageServiceHost)
 
       const documents = new Map<string, StxDocument>()
+      const readComponent = (file: string): string | undefined => {
+        const snapshot = originalGetScriptSnapshot?.(file)
+        return snapshot ? snapshot.getText(0, snapshot.getLength()) : tsLib.sys.readFile(file)
+      }
 
       /** The parsed form of a `.stx` file, rebuilt when its version changes. */
       const documentFor = (fileName: string): StxDocument | undefined => {
         if (!isHandled(fileName) || !originalGetScriptSnapshot)
           return undefined
 
-        const version = originalGetScriptVersion?.(fileName) || '0'
+        const version = `${originalGetScriptVersion?.(fileName) || '0'}:${languageServiceHost.getProjectVersion?.() || ''}`
         const cached = documents.get(fileName)
-        if (cached && cached.version === version)
+        if (cached && cached.version === version
+          && [...(cached.virtual.componentDependencies || [])].every(([file, text]) => readComponent(file) === text))
           return cached
 
         const snapshot = originalGetScriptSnapshot(fileName)
@@ -116,7 +122,11 @@ function init(modules: { typescript: typeof ts }): ts.server.PluginModule {
           return undefined
 
         try {
-          const document = buildDocument(fileName, snapshot.getText(0, snapshot.getLength()), version)
+          const projectRoot = info.project.getCurrentDirectory?.()
+          const componentsDir = projectRoot
+            ? path.resolve(projectRoot, typeof info.config?.componentsDir === 'string' ? info.config.componentsDir : 'components')
+            : undefined
+          const document = buildDocument(fileName, snapshot.getText(0, snapshot.getLength()), version, readComponent, componentsDir, projectRoot)
           documents.set(fileName, document)
           return document
         }

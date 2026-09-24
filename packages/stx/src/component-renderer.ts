@@ -17,7 +17,7 @@
  *
  * @module component-renderer
  */
-
+import { buildStxIndex, componentImportCandidates, resolvePackageDir } from './component-resolution'
 import type { StxOptions } from './types'
 import type { ResolvedProps, RenderContext } from './component-registry'
 import { registry } from './component-registry'
@@ -43,64 +43,8 @@ let builtinsRegistered = false
  * Standard HTML tags to exclude from component processing.
  * Any tag whose lowercase name appears here is treated as a native HTML element.
  */
-const htmlTags = new Set([
-  'a', 'abbr', 'address', 'area', 'article', 'aside', 'audio',
-  'b', 'base', 'bdi', 'bdo', 'blockquote', 'body', 'br', 'button',
-  'canvas', 'caption', 'cite', 'code', 'col', 'colgroup',
-  // `component` is not an HTML element, but it IS stx's dynamic-component tag.
-  // Without it here the static scan resolves <component :is> to a file named
-  // component.stx and emits an error string containing absolute server paths
-  // (#1817). The dynamic pass owns this tag; anything it leaves behind is not
-  // ours to guess at.
-  'component',
-  'data', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'div', 'dl', 'dt',
-  'em', 'embed',
-  'fieldset', 'figcaption', 'figure', 'footer', 'form',
-  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr', 'html',
-  'i', 'iframe', 'img', 'input', 'ins',
-  'kbd',
-  'label', 'legend', 'li', 'link',
-  'main', 'map', 'mark', 'menu', 'meta', 'meter',
-  'nav', 'noscript',
-  'object', 'ol', 'optgroup', 'option', 'output',
-  'p', 'param', 'picture', 'pre', 'progress',
-  'q',
-  'rp', 'rt', 'ruby',
-  's', 'samp', 'script', 'section', 'select', 'slot', 'small', 'source', 'span', 'strong', 'style', 'sub', 'summary', 'sup', 'svg',
-  'table', 'tbody', 'td', 'template', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 'tr', 'track',
-  'u', 'ul',
-  'var', 'video',
-  'wbr',
-  // SVG elements
-  'path', 'circle', 'rect', 'line', 'polygon', 'polyline', 'ellipse',
-  'text', 'tspan', 'textPath',
-  'g', 'defs', 'use', 'symbol', 'image',
-  'clipPath', 'mask', 'pattern', 'marker',
-  'linearGradient', 'radialGradient', 'stop',
-  'filter', 'feBlend', 'feColorMatrix', 'feComponentTransfer', 'feComposite', 'feConvolveMatrix',
-  'feDiffuseLighting', 'feDisplacementMap', 'feDropShadow', 'feFlood', 'feGaussianBlur',
-  'feImage', 'feMerge', 'feMergeNode', 'feMorphology', 'feOffset', 'feSpecularLighting',
-  'feTile', 'feTurbulence', 'foreignObject',
-  'animate', 'animateMotion', 'animateTransform', 'set', 'mpath',
-  'desc', 'metadata', 'switch', 'view',
-])
-
-/**
- * Whether `tagName` certainly reaches the page as the element it names, by the
- * three passes of `processComponents` below. A component tag is replaced by
- * the component's markup, and attributes stamped on the tag do not survive it.
- * A kebab-case tag is a component when a file of that name exists, which this
- * cannot know, so it never counts as certain.
- */
-export function rendersAsElement(tagName: string): boolean {
-  if (tagName.includes('-') || tagName === 'component')
-    return false
-  if (/^[A-Z]/.test(tagName))
-    return uppercaseHtmlTagSkip(htmlTags)(tagName)
-  // Lowercase words outside the set are components. A camelCase name such as
-  // clipPath matches none of the three patterns, so it stays an element.
-  return htmlTags.has(tagName) || /[A-Z]/.test(tagName)
-}
+import { htmlTags } from './component-tags'
+export { rendersAsElement } from './component-tags'
 
 /**
  * Parse raw attribute key/value pairs into categorized `ResolvedProps`.
@@ -580,83 +524,6 @@ function findUnresolvedBuiltinTags(template: string): string[] {
 }
 
 /**
- * Resolve a `.stx` file inside a package directory by component name.
- *
- * Looks for `<Name>.stx` (PascalCase) anywhere under `pkgDir/src/` or `pkgDir/dist/`,
- * preferring shallower matches. Returns the absolute path or null.
- *
- * Cache keyed by pkgDir so repeated lookups don't re-walk the tree.
- */
-const pkgStxIndexCache = new Map<string, Map<string, string>>()
-
-function buildStxIndex(pkgDir: string): Map<string, string> {
-  const cached = pkgStxIndexCache.get(pkgDir)
-  if (cached) return cached
-
-  const index = new Map<string, string>()
-  const roots = [path.join(pkgDir, 'src'), path.join(pkgDir, 'dist'), pkgDir]
-
-  function walk(dir: string, depth: number) {
-    if (depth > 6) return
-    let entries: fs.Dirent[]
-    try {
-      entries = fs.readdirSync(dir, { withFileTypes: true })
-    }
-    catch {
-      return
-    }
-    for (const entry of entries) {
-      const full = path.join(dir, entry.name)
-      if (entry.isDirectory()) {
-        if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue
-        walk(full, depth + 1)
-      }
-      else if (entry.isFile() && entry.name.endsWith('.stx')) {
-        const base = entry.name.slice(0, -4)
-        // Prefer shallower matches — only set if not already present
-        if (!index.has(base)) index.set(base, full)
-        const lower = base.toLowerCase()
-        if (!index.has(lower)) index.set(lower, full)
-        const kebab = base.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
-        if (!index.has(kebab)) index.set(kebab, full)
-      }
-    }
-  }
-
-  for (const root of roots) {
-    walk(root, 0)
-    if (index.size > 0) break
-  }
-
-  pkgStxIndexCache.set(pkgDir, index)
-  return index
-}
-
-/**
- * Resolve a module specifier (e.g. '@stacksjs/components' or './foo') to a
- * package directory on disk, walking up node_modules from `fromDir`.
- */
-function resolvePackageDir(spec: string, fromDir: string): string | null {
-  // Handle relative paths — caller should resolve those before calling here
-  if (spec.startsWith('.') || spec.startsWith('/')) return null
-
-  // Walk up looking for node_modules/<spec>
-  let dir = fromDir
-  while (true) {
-    const candidate = path.join(dir, 'node_modules', spec)
-    try {
-      if (fs.statSync(candidate).isDirectory()) return candidate
-    }
-    catch {
-      // Not here — keep walking
-    }
-    const parent = path.dirname(dir)
-    if (parent === dir) return null
-    dir = parent
-  }
-}
-
-/**
  * Process ES `import { A, B } from '<spec>'` statements inside `<script>` tags
  * for component tag registration. Registers each named import as a tag pointing
  * at the matching `.stx` file (resolved by component name within the package or
@@ -869,16 +736,7 @@ async function processImports(
       let resolvedPath: string | null = null
 
       // Try different resolution strategies
-      const possiblePaths = [
-        // Relative to current file
-        path.resolve(path.dirname(filePath), `${componentPath}.stx`),
-        path.resolve(path.dirname(filePath), componentPath),
-        // Relative to components dir
-        path.resolve(options.componentsDir || 'components', `${componentPath}.stx`),
-        path.resolve(options.componentsDir || 'components', componentPath),
-        // Absolute path
-        componentPath.endsWith('.stx') ? componentPath : `${componentPath}.stx`,
-      ]
+      const possiblePaths = componentImportCandidates(componentPath, filePath, options)
 
       for (const tryPath of possiblePaths) {
         try {

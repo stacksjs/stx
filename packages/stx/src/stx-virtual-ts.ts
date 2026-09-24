@@ -47,6 +47,7 @@ import { BROWSER_CORE_IMPORTS } from './browser-core-imports'
 import path from 'node:path'
 import { stripCommentsAndLiterals } from './strip-literals'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
+import { componentContractChecks } from './component-contract-checks'
 
 export type ScriptKind = 'server' | 'client' | 'plain'
 
@@ -62,6 +63,8 @@ export interface ScriptBlock {
 
 /** A `{{ }}` interpolation or a directive attribute value. */
 export interface TemplateExpression {
+  /** A generated contract check anchors at its source value, not its TS wrapper. */
+  anchor?: boolean
   /** The expression text, with any filter chain already removed. */
   code: string
   /** 1-based line of the expression's first character. */
@@ -97,6 +100,7 @@ export interface MappedLine {
 
 export interface VirtualFile {
   text: string
+  componentDependencies?: Map<string, string>
   /**
    * Virtual 1-based line → where it came from.
    *
@@ -1362,6 +1366,11 @@ export function absolutizeRelativeSpecifiers(code: string, originDir: string): s
 }
 
 export interface BuildVirtualOptions {
+  /** Enables component call-site checks using the renderer's file lookup. */
+  filePath?: string
+  componentsDir?: string
+  projectRoot?: string
+  readComponent?: (file: string) => string | undefined
   /** Append `{{ }}` and directive expressions. Default true. */
   templateExpressions?: boolean
   /**
@@ -1400,6 +1409,15 @@ export function buildVirtualTypeScript(
   const sourceLines = source.split('\n')
   const lines: string[] = Array.from({ length: sourceLines.length }, () => '')
   const lineMap = new Map<number, MappedLine>()
+  const components = options.filePath && options.templateExpressions !== false
+    ? componentContractChecks(source, maskNonTemplateRegions(source), {
+        filePath: options.filePath,
+        componentsDir: options.componentsDir,
+        projectRoot: options.projectRoot,
+        readComponent: options.readComponent,
+        scriptCode: (text, file) => extractScriptBlocks(text).map(block => absolutizeRelativeSpecifiers(block.code, path.dirname(file))).join('\n'),
+      })
+    : undefined
 
   for (const block of blocks) {
     // Line-count preserving, so every body line still lands on its own line (#1928).
@@ -1412,9 +1430,11 @@ export function buildVirtualTypeScript(
   }
 
   const append = (text: string, origin?: MappedLine): void => {
-    lines.push(text)
-    if (origin)
-      lineMap.set(lines.length, origin)
+    for (const [index, line] of text.split('\n').entries()) {
+      lines.push(line)
+      if (origin)
+        lineMap.set(lines.length, index === 0 ? origin : { ...origin, line: origin.line + index, column: 1, prefixLength: 0 })
+    }
   }
 
   if (options.globals !== false) {
@@ -1466,10 +1486,28 @@ export function buildVirtualTypeScript(
   }
 
   if (options.templateExpressions !== false) {
+    if (components?.declarations) {
+      for (const line of components.declarations.split('\n'))
+        append(line)
+    }
     const statements = extractTemplateExpressions(source)
-      .map(expression => ({ expression, statement: expressionStatement(expression) }))
+      .map((expression) => {
+        const payload = components?.events.get(expression.offset ?? -1)
+        if (payload) {
+          expression.anchor = true
+          const code = expression.code.trim()
+          const assignment = /^([\w$]+)\s*=\s*([^=][\s\S]*)$/.exec(code)
+          const body = assignment
+            ? `void ((${assignment[2]}) satisfies __StxAssignedValue<typeof ${assignment[1]}>)`
+            : /^[\w$]+(?:\.[\w$]+)*$/.test(code) ? `${code}($event)` : code
+          const prefix = `;(($event: ${payload}): void => { `
+          return { expression, statement: { text: `${prefix}${body} });`, prefixLength: prefix.length } }
+        }
+        return { expression, statement: expressionStatement(expression) }
+      })
       .filter((entry): entry is { expression: TemplateExpression, statement: { text: string, prefixLength: number } } =>
         entry.statement !== null)
+    statements.push(...(components?.checks || []))
 
     if (statements.length > 0) {
       // Re-type the script blocks' own bindings for the template's reading of
@@ -1533,7 +1571,7 @@ export function buildVirtualTypeScript(
   // lib.dom happens to claim — `name`, `status`, `length`, `close` — hits this.
   append('export {}')
 
-  return { text: lines.join('\n'), lineMap, sourceLineCount: sourceLines.length }
+  return { text: lines.join('\n'), lineMap, sourceLineCount: sourceLines.length, componentDependencies: components?.dependencies }
 }
 
 /** Offsets at which each 1-based line starts. */
@@ -1593,7 +1631,7 @@ export function resolvePosition(
     return line <= virtual.sourceLineCount ? { line, column } : null
   }
 
-  const within = Math.max(0, column - 1 - (mapped.prefixLength ?? 0))
+  const within = mapped.expression?.anchor ? 0 : Math.max(0, column - 1 - (mapped.prefixLength ?? 0))
   return {
     line: mapped.line,
     column: mapped.column + within,

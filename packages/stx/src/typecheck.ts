@@ -38,6 +38,7 @@ import type { ComposableModule } from './composable-loader'
 import { listComposableModules } from './composable-loader'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 import { stateDir } from './state-dir'
+import { loadStxConfig } from './config'
 import {
   absolutizeRelativeSpecifiers,
   buildVirtualTypeScript,
@@ -73,6 +74,8 @@ export interface TypecheckDiagnostic {
 }
 
 export interface TypecheckOptions {
+  /** Component directory, using the same lookup rules as rendering. */
+  componentsDir?: string
   /** Extra ambient declaration files to include (e.g. an app's own types). */
   extraLibs?: string[]
   /** Check `<script client>` and bare `<script>` blocks. Default true. */
@@ -485,6 +488,7 @@ export async function typecheckStxFiles(
   const checkClient = options.client !== false
   const checkServer = options.server !== false
   const checkTemplates = options.templates !== false
+  const componentsDir = options.componentsDir ?? (checkTemplates ? (await loadStxConfig()).componentsDir : undefined)
 
   interface VirtualEntry {
     source: string
@@ -548,7 +552,7 @@ export async function typecheckStxFiles(
     const originDir = path.dirname(path.resolve(file))
 
     const templateBuffer = checkTemplates
-      ? buildVirtualTypeScript(source, { runtimeGlobals: !runtimeTypes, originDir })
+      ? buildVirtualTypeScript(source, { runtimeGlobals: !runtimeTypes, originDir, filePath: path.resolve(file), componentsDir })
       : null
     const expressions = templateBuffer
       ? [...templateBuffer.lineMap.values()].filter(m => m.expression).length
@@ -721,7 +725,8 @@ export async function typecheckStxFiles(
   const unparseable = new Set<string>()
 
   const parseTscOutput = (text: string): void => {
-  for (const rawLine of text.split("\n")) {
+  // Preserve TypeScript's indented explanation (e.g. the missing prop name).
+  for (const rawLine of text.replace(/\n[\t ]+([^\n]*)/g, ' $1').split("\n")) {
     const m = rawLine.match(TSC_LINE_RE)
     if (!m)
       continue

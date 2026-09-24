@@ -15,6 +15,9 @@
  */
 import type * as ts from 'typescript/lib/tsserverlibrary'
 import { describe, expect, test } from 'bun:test'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { buildVirtualTypeScript, lineStarts, positionToOffset } from '../../stx/src/stx-virtual-ts'
 import init from '../src/typescript-stx-plugin'
 
@@ -36,12 +39,13 @@ interface Harness {
   setDiagnostics: (diagnostics: Partial<ts.Diagnostic>[]) => void
 }
 
-function harness(fileName: string, source: string): Harness {
+function harness(fileName: string, source: string, components = new Map<string, string>()): Harness {
   let diagnostics: Partial<ts.Diagnostic>[] = []
 
   const host = {
     getScriptSnapshot: (name: string) =>
-      name === fileName ? tsLib.ScriptSnapshot.fromString(source) : undefined,
+      name === fileName ? tsLib.ScriptSnapshot.fromString(source)
+        : components.has(name) ? tsLib.ScriptSnapshot.fromString(components.get(name)!) : undefined,
     getScriptVersion: () => '1',
   } as unknown as ts.LanguageServiceHost
 
@@ -80,6 +84,26 @@ const PAGE = [
 ].join('\n')
 
 describe('the virtual buffer', () => {
+  test('uses the shared contracts and refreshes when an unsaved child declaration changes', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'stx-editor-contract-'))
+    try {
+      const child = join(dir, 'components/Counter.stx')
+      const source = '<Counter count="bad" />'
+      const file = join(dir, 'page.stx')
+      const components = new Map([[child, '<script client>const p = defineProps<{ count: number }>()</script>']])
+      await Bun.write(child, components.get(child)!)
+      const { host } = harness(file, source, components)
+      const first = host.getScriptSnapshot!(file)!
+      expect(first.getText(0, first.getLength())).toContain('count: number')
+      components.set(child, '<script client>const p = defineProps<{ count: string }>()</script>')
+      const next = host.getScriptSnapshot!(file)!
+      expect(next.getText(0, next.getLength())).toContain('count: string')
+      expect(next.getText(0, next.getLength())).not.toContain('count: number')
+    }
+    finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
   test('keeps every script line at the line it already occupies', () => {
     const { host } = harness('/p.stx', PAGE)
 
