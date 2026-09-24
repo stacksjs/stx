@@ -11,6 +11,7 @@
 import { state, derived, effect, batch, onMount, onDestroy, isSignal, isDerived, untrack, peek } from './signals-api'
 import { runtimeHandledXAttrsLiteral } from './runtime-globals'
 import { createModelSignal } from './component-model'
+import { readHydratedData, clearServerData } from './composables/use-fetch'
 
 export * from './signals-api'
 
@@ -1185,20 +1186,25 @@ finally {
   // Declarative Data Fetching (Feature #6 - useFetch)
   // ==========================================================================
 
+  var readHydratedData = ${readHydratedData.toString()};
+  var clearServerData = ${clearServerData.toString()};
+
   function useFetch(urlOrFn, options = {}) {
-    const data = state(options.initialData ?? null);
+    const hydrated = readHydratedData(options.key, options.hydrate !== false, options.transform);
+    const initial = hydrated ? hydrated.data : (options.initialData ?? null);
+    const data = state(initial);
     // Starts false when nothing will be requested. It used to start true
     // unconditionally while the only thing clearing it was the fetch that
     // immediate:false suppresses — so the documented way to declare a deferred
     // request produced a composable stuck loading forever, which is exactly the
     // case where a template is most likely driving a spinner off it (#1818).
-    const immediate = options.immediate !== false;
+    const immediate = options.immediate !== false && !hydrated;
     const loading = state(immediate);
     // Any request in flight, background ones included. loading answers "is
     // there nothing to show yet"; isFetching answers "is a request open" — and
     // a background refresh is the case where those two stop agreeing (#1929).
     const isFetching = state(immediate);
-    const error = state(null);
+    const error = state(hydrated ? (hydrated.error || null) : null);
     if (options.suspense) registerSuspense(loading, error);
 
     // A superseded or unmounted request must not resolve into a torn-down
@@ -6504,6 +6510,7 @@ catch (e) {} }
     onBeforeUnmount: onDestroy,
     onUnmounted: onDestroy,
     useFetch,
+    clearServerData,
     useRef,
     navigate,
     refresh,
@@ -7340,6 +7347,7 @@ else {
   window.onMount = onMount;
   window.onDestroy = onDestroy;
   window.useFetch = useFetch;
+  window.clearServerData = clearServerData;
   window.useRef = useRef;
   window.navigate = navigate;
   window.goBack = goBack;

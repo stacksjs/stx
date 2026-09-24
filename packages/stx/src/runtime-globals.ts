@@ -43,7 +43,7 @@ import { importsSignalDeclarations } from './imported-signals'
  * plumbing, not part of the authoring surface.
  */
 export const STX_RUNTIME_GLOBALS: readonly string[] = [
-  'batch', 'computed', 'configureFetch', 'defineEmits', 'defineExpose', 'definePageMeta', 'defineProps',
+  'batch', 'clearServerData', 'computed', 'configureFetch', 'defineEmits', 'defineExpose', 'definePageMeta', 'defineProps',
   'defineSlots', 'defineStore', 'derived', 'effect', 'goBack', 'goForward', 'inject',
   'invalidateRoute', 'isDerived', 'isSignal', 'navigate',
   'nextTick', 'onBeforeMount', 'onBeforeUnmount', 'onDestroy', 'onMount', 'onMounted', 'onUnmounted',
@@ -146,6 +146,7 @@ export type NonClientCategory =
   | 'isomorphic-import'
 
 export const NON_CLIENT_PRIMITIVES: Readonly<Record<string, { category: NonClientCategory, reason: string }>> = {
+  useServerData: { category: 'server-only', reason: 'loads and serializes request-scoped data from <script server>; clients consume it through a keyed useFetch/useAsyncData.' },
   // Server-only: returns/needs a Response or build context. The client
   // equivalent of redirect() is navigate(), which IS a runtime global.
   redirect: { category: 'server-only', reason: 'returns an HTTP Response for <script server>/edge/build; use navigate() on the client.' },

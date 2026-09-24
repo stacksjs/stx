@@ -6,6 +6,8 @@
 
 // Explicit re-exports to resolve wildcard ambiguities
 export { type BuildResult } from './build-optimizer'
+export { useServerData } from './server-data'
+export { clearServerData } from './composables/use-fetch'
 // Exported for servers as well as the static build: SSR inlines the runtime
 // once per *request*, which is the same waste in a worse form.
 export { EXTERNALIZED_ASSET_DIR, externalizeHtml, externalizeSharedAssets, type ExternalizedAsset, type ExternalizeHtmlResult, type ExternalizeResult } from './build-externalize'

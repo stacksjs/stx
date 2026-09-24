@@ -48,6 +48,14 @@ export function getRouterScript(): string {
   var debug=!!o.debug;
   function log(){if(debug&&typeof console!=='undefined'&&console.log)console.log.apply(console,arguments)}
 
+  // Replace, never merge: absent payloads must forget the outgoing page's data.
+  // Run at the committed swap, not during prefetch or a superseded navigation.
+  function hydrateServerData(html){
+    window.__STX_DATA__={};
+    var match=html.match(/<script\\b[^>]*\\bdata-stx-server-data\\b[^>]*>([\\s\\S]*?)<\\/script>/i);
+    if(match){try{var values=JSON.parse(match[1]);if(values&&typeof values==='object'&&!Array.isArray(values))window.__STX_DATA__=values}catch(e){}}
+  }
+
   // ── Build skew (stacksjs/stx#1772) ──
   // The build that rendered THIS document, and therefore the build the runtime
   // executing right now came from. Under bun --watch a save restarts the server,
@@ -936,6 +944,7 @@ else {
         return Promise.resolve(false);
       }
       function doFragSwap(){
+        hydrateServerData(html);
         // Extract scripts from fragment before injecting HTML
         var fragScripts=[];
         var fragScriptId=0;
@@ -1365,6 +1374,10 @@ else {
         currentContent.innerHTML=cleanHTML;
         if(incomingSetupName)document.body.setAttribute('data-stx',incomingSetupName);
       }
+
+      // Teardown (including outgoing layout chrome) has finished. Its destroy
+      // callbacks must not be able to invalidate the incoming page's snapshot.
+      hydrateServerData(html);
 
       // ── Load new external <head> scripts ──
       var loadedSrcs={};

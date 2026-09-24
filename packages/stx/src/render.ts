@@ -34,6 +34,7 @@ import { findSfcTemplateBlock } from './sfc-template'
 import type { StxOptions } from './types'
 import { isMarkdownPath, renderMarkdownView } from './markdown-view'
 import { responseBindings, syncRecordedResponse } from './page-response'
+import { serverDataScope } from './server-data'
 
 // ============================================================================
 // Types
@@ -260,12 +261,16 @@ export async function renderTemplate(
 
     // Render page content (without layout, without CSS injection yet)
     const { layout, injectCSS, ...pageOptions } = renderOptions
-    const pageHtml = await renderTemplateString(content, resolvedPath, { ...pageOptions, injectCSS: false })
+    const sharedContext = { ...(renderOptions.context || {}) }
+    serverDataScope(sharedContext)
+    const pageHtml = await renderTemplateString(content, resolvedPath, {
+      ...pageOptions, context: { ...sharedContext, __stx_defer_server_data: true }, injectCSS: false,
+    })
 
     // Render layout with page content injected as `content`
     const layoutContent = await layoutFile.text()
     const layoutContext = {
-      ...(renderOptions.context || {}),
+      ...sharedContext,
       content: pageHtml,
     }
     const layoutOptions: RenderOptions = {

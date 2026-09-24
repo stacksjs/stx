@@ -283,6 +283,10 @@ interface StxMutationResult<T> {
 }
 
 declare function useFetch<T = any>(_url: string, _options?: any): StxFetchResult<T>
+/** Server-only, keyed JSON data exposed to this render's client hydration. */
+declare function useServerData<T>(_key: string, _loader: () => T | Promise<T>): Promise<T>
+/** Clear a hydration snapshot without changing existing signals. */
+declare function clearServerData(_key?: string): void
 declare function useQuery<T = any>(_url: string, _options?: any): StxQueryResult<T>
 declare function useMutation<T = any>(_url: string, _options?: any): StxMutationResult<T>
 
@@ -841,6 +845,7 @@ interface StxRuntimeRegistry {
 
   // Composables
   useFetch: typeof useFetch
+  clearServerData: typeof clearServerData
   useRef: typeof useRef
   useQuery: typeof useQuery
   useMutation: typeof useMutation

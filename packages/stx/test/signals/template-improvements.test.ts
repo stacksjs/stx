@@ -248,11 +248,12 @@ describe('Feature #6: Declarative data fetching (useFetch)', () => {
 
   it('should return data, loading, and error signals', () => {
     const runtime = generateSignalsRuntimeDev()
-    expect(runtime).toContain('const data = state(options.initialData')
+    // Initial data may now come from a server hydration snapshot (#1963).
+    expect(runtime).toContain('const data = state(initial)')
     // `state(immediate)`, not `state(true)`: a deferred request must not start
     // in a loading state, or a spinner bound to it never clears (#1818).
     expect(runtime).toContain('const loading = state(immediate)')
-    expect(runtime).toContain('const error = state(null)')
+    expect(runtime).toContain('const error = state(hydrated ? (hydrated.error || null) : null)')
   })
 
   it('should have fetchData async function', () => {

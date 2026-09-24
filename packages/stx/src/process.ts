@@ -60,6 +60,7 @@ import { injectColorModeBootScript, normalizeCriticalHeadOrder } from './color-m
 import { buildIdFragment } from './build-id'
 import type { HeadInjections } from './head-injection'
 import { applyHeadInjections, createHeadInjections } from './head-injection'
+import { serverDataScope, serverDataTag } from './server-data'
 import { applyHtmlAttrs, cloakStyleFragment, ensureDocumentShell, hasDocumentShell, injectConfigHeadTags, mergeHtmlAttrs, metaDedupKey, startsDocument } from './document-shell'
 
 // Extracted modules
@@ -490,6 +491,7 @@ export async function processDirectives(
     context.__stx_signals_gate = usesSignalsInScript(template, filePath)
 
   const isTopLevel = !context.__stxProcessingDepth
+  serverDataScope(context)
   if (isTopLevel) {
     initializeComponentClientFactories(context)
     // Open the render's head collection before the pipeline runs, not after it,
@@ -842,6 +844,15 @@ export async function processDirectives(
       // Restore @@ escape placeholders to literal @ AFTER all directive processing
       result = result.replace(/\x00STX_ESCAPED_AT\x00/g, '@')
 
+      if (isTopLevel && !context.__stx_defer_server_data) {
+        const dataTag = serverDataTag(context)
+        if (dataTag) {
+          // Before any client code, even when the view has no document shell.
+          const head = /<head\b[^>]*>/i.exec(result)
+          const at = head ? head.index + head[0].length : 0
+          result = result.slice(0, at) + dataTag + result.slice(at)
+        }
+      }
       return result
     })
   }

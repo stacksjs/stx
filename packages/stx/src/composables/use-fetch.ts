@@ -37,6 +37,47 @@
 import type { Signal } from '../signals-api'
 import { state } from '../signals-api'
 
+/** @internal Closure-free: also embedded in the generated browser runtime. */
+export function readHydratedData(key?: string, hydrate = true, transform?: (data: any) => unknown): { data: unknown, error?: Error } | undefined {
+  if (!hydrate || !key || typeof window === 'undefined')
+    return undefined
+  const host = window as unknown as { __STX_DATA__?: Record<string, unknown> }
+  if (!host.__STX_DATA__) {
+    const tag = document.querySelector('script[data-stx-server-data]')
+    try {
+      const parsed = JSON.parse(tag?.textContent || '{}')
+      host.__STX_DATA__ = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+    }
+    catch {
+      host.__STX_DATA__ = {}
+    }
+  }
+  const values = host.__STX_DATA__
+  if (values && Object.prototype.hasOwnProperty.call(values, key)) {
+    try { return { data: transform ? transform(values[key]) : values[key] } }
+    catch (error) { return { data: null, error: error instanceof Error ? error : new Error(String(error)) } }
+  }
+  return undefined
+}
+
+/** Forget a hydration snapshot; existing signals change only on explicit refresh. */
+export function clearServerData(key?: string): void {
+  if (typeof window === 'undefined') return
+  const host = window as unknown as { __STX_DATA__?: Record<string, unknown> }
+  if (key === undefined) host.__STX_DATA__ = {}
+  else {
+    // Initialize before deleting, otherwise the next reader reloads the tag.
+    if (!host.__STX_DATA__) {
+      try {
+        const parsed = JSON.parse(document.querySelector('script[data-stx-server-data]')?.textContent || '{}')
+        host.__STX_DATA__ = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+      }
+      catch { host.__STX_DATA__ = {} }
+    }
+    if (host.__STX_DATA__) delete host.__STX_DATA__[key]
+  }
+}
+
 export interface FetchOptions<T = unknown> extends Omit<RequestInit, 'body'> {
   /** Request body (will be JSON stringified if object) */
   body?: BodyInit | Record<string, unknown> | null
@@ -58,6 +99,8 @@ export interface FetchOptions<T = unknown> extends Omit<RequestInit, 'body'> {
   retryDelay?: number
   /** Cache key for deduplication */
   key?: string
+  /** Reuse matching useServerData data for the initial load (default: true). */
+  hydrate?: boolean
   /** Cache time in milliseconds (0 = no cache) */
   cacheTime?: number
   /** Refetch on document visibility change (default: false) */
@@ -137,6 +180,7 @@ export function useFetch<T = unknown>(
     retry = 0,
     retryDelay = 1000,
     key,
+    hydrate = true,
     cacheTime = 0,
     refetchOnFocus = false,
     refetchInterval,
@@ -147,10 +191,12 @@ export function useFetch<T = unknown>(
     ...fetchOptions
   } = options
 
-  const data = state<T | null>(initialData)
+  const hydrated = readHydratedData(key, hydrate, transform)
+  const hydratedValue = hydrated ? hydrated.data as T : initialData
+  const data = state<T | null>(hydratedValue)
   const loading = state(false)
   const isFetching = state(false)
-  const error = state<Error | null>(null)
+  const error = state<Error | null>(hydrated?.error ?? null)
   const status = state<number | null>(null)
   const statusText = state<string | null>(null)
 
@@ -326,7 +372,7 @@ export function useFetch<T = unknown>(
   }
 
   if (immediate) {
-    void doFetch()
+    if (!hydrated) void doFetch()
     setupRefetchOnFocus()
     setupRefetchInterval()
   }
@@ -369,6 +415,7 @@ export function useAsyncData<T>(
     transform?: (data: T) => T
     initialData?: T | null
     key?: string
+    hydrate?: boolean
     cacheTime?: number
   } = {},
 ): FetchRef<T> {
@@ -377,13 +424,16 @@ export function useAsyncData<T>(
     transform,
     initialData = null as T | null,
     key,
+    hydrate = true,
     cacheTime = 0,
   } = options
 
-  const data = state<T | null>(initialData)
+  const hydrated = readHydratedData(key, hydrate, transform)
+  const hydratedValue = hydrated ? hydrated.data as T : initialData
+  const data = state<T | null>(hydratedValue)
   const loading = state(false)
   const isFetching = state(false)
-  const error = state<Error | null>(null)
+  const error = state<Error | null>(hydrated?.error ?? null)
   // status / statusText are not meaningful for arbitrary async fetchers,
   // but exposed for shape parity with useFetch.
   const status = state<number | null>(null)
@@ -445,7 +495,7 @@ export function useAsyncData<T>(
     }
   }
 
-  if (immediate)
+  if (immediate && !hydrated)
     void doFetch()
 
   return {

@@ -155,6 +155,7 @@ export {
   useAsyncData,
   usePost,
   clearFetchCache,
+  clearServerData,
   prefetch,
   type FetchOptions,
   type FetchRef,
