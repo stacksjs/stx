@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.305...v0.2.306)
+
+## 🐛 Bug Fixes
+
+- **seo**: derive default social tags from the page's own title and description ([1a9ffb3](https://github.com/stacksjs/stx/commit/1a9ffb3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **expressions**: warn when the safe evaluator empties a template expression ([e7304af](https://github.com/stacksjs/stx/commit/e7304af)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.306 ([34adaab](https://github.com/stacksjs/stx/commit/34adaab)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.304...v0.2.305)
 
 ## 🐛 Bug Fixes
