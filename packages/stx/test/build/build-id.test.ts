@@ -37,6 +37,17 @@ describe('getBuildId', () => {
     }
   })
 
+  it('is the same in every copy of the module loaded into the process', async () => {
+    // An app that loads stx twice (a top-level copy rendering pages and one
+    // nested under bun-plugin-stx answering fragments) must not stamp two ids,
+    // or every SPA navigation reads as build skew and becomes a full load.
+    __setBuildIdForTest(null)
+    const first = getBuildId()
+    const copy = await import('../../src/build-id.ts?second-copy') as typeof import('../../src/build-id')
+    expect(copy.getBuildId).not.toBe(getBuildId)
+    expect(copy.getBuildId()).toBe(first)
+  })
+
   it('produces something URL- and header-safe', () => {
     __setBuildIdForTest(null)
     expect(getBuildId()).toMatch(/^[a-z0-9]+$/)

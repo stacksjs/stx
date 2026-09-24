@@ -30,29 +30,47 @@ export const BUILD_ID_META = 'stx-build'
 /** Response header carrying the id that rendered an SPA fragment. */
 export const BUILD_ID_HEADER = 'X-STX-Build'
 
-let cached: string | null = null
+/**
+ * Where the id lives: one slot per process, not one per module instance.
+ *
+ * An app can load stx twice. chrisbreuer.me had @stacksjs/stx 0.2.302 at the
+ * top level, rendering pages and stamping the meta, and 0.2.307 nested under
+ * bun-plugin-stx, answering SPA fragments with the header. A module-level
+ * variable gave each copy its own random id, so the router saw every fragment
+ * as coming from another build and turned every navigation into a full page
+ * load. A registered symbol on globalThis is shared by every copy.
+ */
+const BUILD_ID_SLOT = Symbol.for('stx.buildId')
+
+type BuildIdHolder = { [BUILD_ID_SLOT]?: string }
 
 /**
  * The current process's build id.
  *
  * Stable for the lifetime of the process, which is the unit that matters: a
  * `bun --watch` restart produces a new process and therefore a new id, while a
- * production build stamps every page it renders with one value.
+ * production build stamps every page it renders with one value. Every copy of
+ * this module loaded into the process returns the same id.
  *
  * `STX_BUILD_ID` overrides it, for deployments that render across several
  * processes and need them to agree.
  */
 export function getBuildId(): string {
-  if (cached === null) {
-    cached = process.env.STX_BUILD_ID
+  const holder = globalThis as BuildIdHolder
+  if (!holder[BUILD_ID_SLOT]) {
+    holder[BUILD_ID_SLOT] = process.env.STX_BUILD_ID
       || `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
   }
-  return cached
+  return holder[BUILD_ID_SLOT]!
 }
 
 /** @internal test-only — force the id, or with `null` restore generation. */
 export function __setBuildIdForTest(id: string | null): void {
-  cached = id
+  const holder = globalThis as BuildIdHolder
+  if (id === null)
+    delete holder[BUILD_ID_SLOT]
+  else
+    holder[BUILD_ID_SLOT] = id
 }
 
 /**
