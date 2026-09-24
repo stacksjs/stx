@@ -16,6 +16,7 @@ import { processDirectives } from './process'
 import { extractVariables } from './utils'
 import { compressResponse } from './compression'
 import { readResponseHeaders, readResponseStatus } from './page-response'
+import { createServerApi, isServerApiSource } from './server-api'
 
 export interface ServeOptions {
   /** Server port */
@@ -133,6 +134,8 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
   // differently depending on which one started it.
   //
   const stxOptions = await resolveStxOptions(options)
+  const apiRoot = path.resolve(options.configDir ?? process.cwd())
+  const handleApi = await createServerApi(apiRoot, stxOptions.serverApi)
 
   // Cache for processed files
   /** A rendered page plus whatever it decided about its own response. */
@@ -332,10 +335,19 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
         }
       }
 
+      if (stxOptions.apiRouter) {
+        const response = await stxOptions.apiRouter.handleRequest(request)
+        if (response.status !== 404) return response
+      }
+      if (stxOptions.apiRoutes?.[url.pathname])
+        return stxOptions.apiRoutes[url.pathname](request)
+      const apiResponse = await handleApi(request)
+      if (apiResponse) return apiResponse
+
       // Resolve file path
       const filePath = resolveRequestPath(url.pathname)
 
-      if (!filePath) {
+      if (!filePath || isServerApiSource(filePath, apiRoot, stxOptions.serverApi)) {
         // 404
         if (on404) {
           return await on404(request)

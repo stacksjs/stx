@@ -27,6 +27,7 @@ import { injectCss } from './dev-server/ts-css'
 import { loadStxConfig } from './config'
 import { createRouteRuleResolver, type RouteRules } from './route-rules'
 import { hydrateTemplateStream } from './template-hydrator'
+import { buildServerApi, discoverServerApi, type ServerApiOptions } from './server-api'
 
 /**
  * Production build configuration.
@@ -55,6 +56,7 @@ export interface ProductionBuildOptions {
    */
   publicDir?: string
   routeRules?: RouteRules
+  serverApi?: boolean | ServerApiOptions
 }
 
 /**
@@ -180,6 +182,9 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
   const routerContainer: string = projectConfig.router?.container || 'main'
   const routeRules = options.routeRules ?? projectConfig.routeRules ?? {}
   const resolveRule = createRouteRuleResolver(routeRules)
+  const serverApi = options.serverApi ?? projectConfig.serverApi
+  const apiOptions = typeof serverApi === 'object' ? serverApi : {}
+  if (serverApi) discoverServerApi(root, apiOptions) // fail before deleting the previous output
 
   // ── 1. Clean output directory ──
   if (fs.existsSync(outputDir)) {
@@ -391,6 +396,8 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
   const manifest = generateManifest(manifestRoutes, assets, outputDir)
   manifest.routeRules = routeRules
   manifest.routerContainer = routerContainer
+  if (serverApi)
+    manifest.apiRoutes = await buildServerApi(root, outputDir, apiOptions)
   writeManifest(manifest, outputDir)
 
   const duration = Date.now() - startTime

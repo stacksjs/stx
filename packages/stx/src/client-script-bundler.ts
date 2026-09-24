@@ -16,7 +16,8 @@ import type { BuildFailureDetail } from './build-message'
 import { getPublicEnvDefine } from './public-env'
 import { stateDir } from './state-dir'
 import { describeBuildFailure, formatBuildFailure } from './build-message'
-import { config } from './config'
+import { config, loadStxConfig } from './config'
+import { isServerApiSource, type ServerApiOptions } from './server-api'
 import type { DepSnapshot } from './render-memo'
 import { depsUnchanged, renderMemo } from './render-memo'
 import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
@@ -25,7 +26,8 @@ import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 // imports raw, and the cache served them after the fix — the upgrade looked
 // like it had changed nothing. A new version is the only thing that retires
 // them, because the key is the source and that did not change.
-const BUNDLE_CACHE_VERSION = 7
+// 8: server API sources must not survive in an older browser bundle cache.
+const BUNDLE_CACHE_VERSION = 8
 const BUNDLE_CACHE_METADATA_VERSION = 1
 
 interface BundleCacheMetadata {
@@ -483,12 +485,17 @@ function createBundlePlugin(
   inputFiles: Set<string>,
   externalizeUserModules: boolean,
   registrySpecifiers: Map<string, string> = new Map(),
+  serverApi?: boolean | ServerApiOptions,
 ): BunPlugin {
   // A direct import of the script being bundled goes to the page registry
   // instead of being inlined (#1957). Only the ENTRY's imports: the modules
   // themselves are never loaded here, so nothing transitive reaches this.
   // Still recorded as an input so HMR keeps watching the file.
   const toRegistry = (importer: string, resolved: string, specifier: string): { path: string, external: true } | null => {
+    // Let onLoad reject it now, rather than externalizing a private endpoint
+    // into a later registry build with a potentially different project root.
+    if (isServerApiSource(resolved, projectRoot, serverApi))
+      return null
     if (!externalizeUserModules || importer !== tmpEntry || !REGISTRY_MODULE_EXTENSION.test(resolved))
       return null
     try {
@@ -645,6 +652,8 @@ function createBundlePlugin(
       // relative and aliased imports handled above, so their mtimes participate
       // in cache validation.
       build.onLoad({ filter: /\.(?:[cm]?[jt]sx?|json)$/ }, (args) => {
+        if (isServerApiSource(args.path, projectRoot, serverApi))
+          throw new Error(`Server-only API source cannot be imported by a client script: ${args.path}`)
         const extension = path.extname(args.path).toLowerCase()
         const loader = extension === '.json'
           ? 'json'
@@ -766,6 +775,7 @@ export async function bundleClientScript(
   } = {},
 ): Promise<string> {
   const projectRoot = options.projectRoot || process.cwd()
+  const serverApi = (await loadStxConfig(projectRoot)).serverApi
   const minify = options.minify ?? false
   const externalizeUserModules = options.externalizeUserModules ?? true
   const cacheDir = options.cacheDir || stateDir(projectRoot, 'bundle-cache')
@@ -780,7 +790,7 @@ export async function bundleClientScript(
   // stacksjs/stx#1723 for the bug this addresses (helper edits silently
   // failed to invalidate the bundle).
   const hasher = new Bun.CryptoHasher('md5')
-  hasher.update(`${BUNDLE_CACHE_VERSION}\0${externalizeUserModules ? 'registry' : 'inline'}\0${code}\0${filePath}`)
+  hasher.update(`${BUNDLE_CACHE_VERSION}\0${JSON.stringify(serverApi ?? false)}\0${externalizeUserModules ? 'registry' : 'inline'}\0${code}\0${filePath}`)
   const hash = hasher.digest('hex').slice(0, 12)
 
   // Check cache. A cache hit requires both the bundled JS to exist AND
@@ -797,7 +807,7 @@ export async function bundleClientScript(
   // hand one project's bundle to another. The path carries both.
   const remembered = bundleMemo.get(cachePath)
   if (remembered) {
-    if (depsUnchanged(remembered.files)) {
+    if (depsUnchanged(remembered.files) && remembered.files.every(dep => !isServerApiSource(dep.path, projectRoot, serverApi))) {
       logBundlerDiagnostic('memo hit:', hash)
       const paths = remembered.files.map(dep => dep.path)
       recordBundleInputs(filePath, paths)
@@ -811,7 +821,7 @@ export async function bundleClientScript(
   const cacheFile = Bun.file(cachePath)
   if (await cacheFile.exists()) {
     const depsFile = Bun.file(depsPath)
-    let depsValid = true
+    let depsValid = false
     // What the sidecar recorded, kept for the memo so a later hit re-stats the
     // same files without opening the sidecar again.
     let storedFiles: DepSnapshot[] | null = null
@@ -820,11 +830,13 @@ export async function bundleClientScript(
         const stored = JSON.parse(await depsFile.text()) as BundleCacheMetadata
         if (stored.metadataVersion !== BUNDLE_CACHE_METADATA_VERSION || !Array.isArray(stored.files))
           depsValid = false
-        else
+        else {
           storedFiles = stored.files
+          depsValid = true
+        }
 
         // A dep deleted since the build counts as changed.
-        if (storedFiles && !depsUnchanged(storedFiles))
+        if (storedFiles && (!depsUnchanged(storedFiles) || storedFiles.some(dep => isServerApiSource(dep.path, projectRoot, serverApi))))
           depsValid = false
       }
       catch {
@@ -867,7 +879,7 @@ export async function bundleClientScript(
   }
 
   const build = queueClientBundleBuild(() =>
-    buildBundle(code, filePath, { projectRoot, minify, cacheDir, hash, cachePath, depsPath, collectInputs: options.collectInputs, externalizeUserModules }),
+    buildBundle(code, filePath, { projectRoot, minify, cacheDir, hash, cachePath, depsPath, collectInputs: options.collectInputs, externalizeUserModules, serverApi }),
   )
   inFlightBundles.set(hash, build)
   try {
@@ -890,6 +902,7 @@ async function buildBundle(
     depsPath: string
     collectInputs?: string[]
     externalizeUserModules: boolean
+    serverApi?: boolean | ServerApiOptions
   },
 ): Promise<string> {
   const { projectRoot, minify, cacheDir, hash, cachePath, depsPath, externalizeUserModules } = options
@@ -988,7 +1001,7 @@ async function buildBundle(
       target: 'browser',
       format: 'esm',
       minify,
-      plugins: [createBundlePlugin(projectRoot, templateDir, tmpEntry, inputFiles, externalizeUserModules, registrySpecifiers)],
+      plugins: [createBundlePlugin(projectRoot, templateDir, tmpEntry, inputFiles, externalizeUserModules, registrySpecifiers, options.serverApi)],
       define: {
         'process.env.NODE_ENV': minify ? '"production"' : '"development"',
         ...getPublicEnvDefine(),

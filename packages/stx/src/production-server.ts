@@ -23,6 +23,7 @@ import { actionRedirectResponse, isActionableMethod } from './page-action'
 import { FRAGMENT_CACHE_CONTROL, isSpaNavRequest, spaNavVaryHeaders } from './spa-nav'
 import { createRouteRuleResolver } from './route-rules'
 import { RouteResponseCache } from './route-response-cache'
+import { productionApiDispatcher } from './server-api'
 
 /**
  * Production server configuration.
@@ -36,6 +37,8 @@ export interface ProductionServerOptions {
   onRequest?: (req: Request) => Response | Promise<Response> | null | Promise<null>
   /** Custom API routes */
   apiRoutes?: Record<string, (req: Request) => Response | Promise<Response>>
+  /** Existing host router runs before manual/discovered endpoints; 404 falls through. */
+  apiRouter?: { handleRequest: (request: Request) => Response | Promise<Response> }
 }
 
 /**
@@ -101,6 +104,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
   console.log(`[stx] Production server loading ${manifest.routes.length} routes...`)
   const resolveRule = createRouteRuleResolver(manifest.routeRules)
   const responseCache = new RouteResponseCache()
+  const handleApi = productionApiDispatcher(outputDir, manifest.apiRoutes ?? [])
 
   // Pre-load compiled templates into memory
   const compiledTemplates = new Map<string, CompiledTemplate>()
@@ -163,9 +167,15 @@ export async function startProductionServer(options: ProductionServerOptions = {
           const response = await options.onRequest(request)
           if (response) return response
         }
+        if (options.apiRouter) {
+          const response = await options.apiRouter.handleRequest(request)
+          if (response.status !== 404) return response
+        }
         if (options.apiRoutes?.[pathname]) {
           return options.apiRoutes[pathname](request)
         }
+        const apiResponse = await handleApi(request)
+        if (apiResponse) return apiResponse
   
         // ── Static assets from public/ ──
         // Mounted at the URL root: .output/public/images/hero.jpg → /images/hero.jpg

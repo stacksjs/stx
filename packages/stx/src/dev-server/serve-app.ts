@@ -138,6 +138,9 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
   // `stx <app-dir>` is run from outside the app. Without this, a stray
   // stx.config.ts in a parent directory would shadow the app's own config.
   const projectConfig = await loadStxConfig(absoluteAppDir)
+  const { createServerApi, isServerApiSource } = await import('../server-api')
+  const serverApi = options.stxOptions?.serverApi ?? projectConfig.serverApi
+  const handleApi = await createServerApi(absoluteAppDir, serverApi)
   const stxRoot = projectConfig.root && projectConfig.root !== '.'
     ? path.join(absoluteAppDir, projectConfig.root)
     : absoluteAppDir
@@ -652,14 +655,16 @@ catch {
       const publicPath = path.join(absoluteAppDir, publicDirName, url.pathname)
       const distPath = path.join(absoluteAppDir, url.pathname)
       const outputPath = path.join(outputDir, url.pathname)
+      if ([publicPath, distPath, outputPath].some(file => isServerApiSource(file, absoluteAppDir, serverApi)))
+        return new Response('Not Found', { status: 404 })
       const [publicStat, distStat, outputStat] = await Promise.all([
         fs.promises.stat(publicPath).catch(() => null),
         fs.promises.stat(distPath).catch(() => null),
         fs.promises.stat(outputPath).catch(() => null),
       ])
-      if (publicStat?.isFile()) return serveStaticFile(publicPath)
-      if (distStat?.isFile()) return serveStaticFile(distPath)
-      if (outputStat?.isFile()) return serveStaticFile(outputPath)
+      if (publicStat?.isFile() && !isServerApiSource(publicPath, absoluteAppDir, serverApi)) return serveStaticFile(publicPath)
+      if (distStat?.isFile() && !isServerApiSource(distPath, absoluteAppDir, serverApi)) return serveStaticFile(distPath)
+      if (outputStat?.isFile() && !isServerApiSource(outputPath, absoluteAppDir, serverApi)) return serveStaticFile(outputPath)
 
       // Serve async components — renders a component and returns HTML fragment
       if (url.pathname.startsWith('/_stx/component/')) {
@@ -713,6 +718,9 @@ catch {
           })
         }
       }
+
+      const apiResponse = await handleApi(request)
+      if (apiResponse) return apiResponse
 
       // Match route
       const routeMatch = matchRoute(url.pathname, routes)

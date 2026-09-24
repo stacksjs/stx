@@ -48,6 +48,8 @@ export async function buildApp(options: UnifiedBuildOptions = {}): Promise<Unifi
   validateRouteRules(rules)
   if (!config.ssr && Object.keys(rules).length)
     throw new Error('routeRules require ssr: true and the production server; flat SSG output cannot apply request/cache policies')
+  if (!config.ssr && (options.ssr?.serverApi ?? config.serverApi))
+    throw new Error('serverApi requires ssr: true; flat SSG output cannot execute API endpoints')
   const mode: BuildMode = config.ssr ? 'ssr' : 'ssg'
 
   console.log(`[stx build] Mode: ${mode.toUpperCase()}${config.ssr ? ' (ssr: true in stx.config.ts)' : ' (default — ssr is false)'}`)

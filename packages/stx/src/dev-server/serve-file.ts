@@ -151,9 +151,11 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
   // Load API routes and custom router from stx.config.ts
   let apiRoutes: Record<string, (request: Request) => Response | Promise<Response>> = {}
   let customRouter: { handleRequest: (request: Request) => Response | Promise<Response> } | null = null
+  let serverApi: import('../types').StxOptions['serverApi']
   try {
     const { loadStxConfig } = await import('../')
     const projectConfig = await loadStxConfig()
+    serverApi = options.stxOptions?.serverApi ?? projectConfig.serverApi
     if (projectConfig?.apiRouter) {
       customRouter = projectConfig?.apiRouter
       console.log(`${colors.blue}Using custom router for API handling${colors.reset}`)
@@ -192,6 +194,8 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
     }
   }
   catch { /* no config or no apiRoutes */ }
+  const { createServerApi, isServerApiSource } = await import('../server-api')
+  const handleApi = await createServerApi(process.cwd(), serverApi)
 
   // Start a server
   console.log(`${colors.blue}Starting server on ${colors.cyan}http://localhost:${actualPort}/${colors.reset}...`)
@@ -206,6 +210,8 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
       // constructed below. See src/compression.ts.
       return compressResponse(request, await (async () => {
         const url = new URL(request.url)
+        if ([outputDir, path.dirname(absolutePath), path.join(process.cwd(), 'public')].some(directory => isServerApiSource(path.join(directory, url.pathname), process.cwd(), serverApi)))
+          return new Response('Not Found', { status: 404 })
   
         // Handle requests via custom router (e.g. @stacksjs/bun-router)
         if (customRouter) {
@@ -231,6 +237,9 @@ export async function serveStxFile(filePath: string, options: DevServerOptions =
           }
         }
   
+        const apiResponse = await handleApi(request)
+        if (apiResponse) return apiResponse
+
         // Serve the main HTML for the root path
         if (url.pathname === '/') {
           // Inject Css CSS for utility classes (async)

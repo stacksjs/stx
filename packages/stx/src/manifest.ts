@@ -10,6 +10,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import type { RouteRules } from './route-rules'
+import type { ServerApiRoute } from './server-api'
 
 /**
  * A route entry in the build manifest.
@@ -57,6 +58,7 @@ export interface BuildManifest {
   outputDir: string
   routeRules?: RouteRules
   routerContainer?: string
+  apiRoutes?: ServerApiRoute[]
 }
 
 /**

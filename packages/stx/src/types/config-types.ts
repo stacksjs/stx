@@ -10,6 +10,7 @@ import type { CspConfig } from './csp-types'
 import type { HeatmapConfig } from '../heatmap'
 import type { MediaConfig } from '../media/types'
 import type { RouteRules } from '../route-rules'
+import type { ServerApiOptions } from '../server-api'
 
 /**
  * Internationalization (i18n) configuration
@@ -909,6 +910,8 @@ export interface StxConfig {
   apiRoutes?: Record<string, (request: Request) => Response | Promise<Response>>
   /** Per-route production rendering and anonymous origin-cache policies. */
   routeRules?: RouteRules
+  /** Opt-in file-based API endpoints, relative to the config/project directory. */
+  serverApi?: boolean | ServerApiOptions
 
   /**
    * Client-side router configuration
