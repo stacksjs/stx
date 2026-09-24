@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.307...v0.2.308)
+
+## 🐛 Bug Fixes
+
+- **router**: one build id per process, however many copies of stx it loads ([0855940](https://github.com/stacksjs/stx/commit/0855940)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.308 ([d4eab74](https://github.com/stacksjs/stx/commit/d4eab74)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.306...v0.2.307)
 
 ## ✨ Features
