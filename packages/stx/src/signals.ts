@@ -2411,7 +2411,11 @@ catch (e) {
           value = undefined;
         }
 
-        if (value === false || value === null || value === undefined) {
+        // ARIA states are strings, unlike HTML boolean attributes.
+        if (name.startsWith('aria-') && typeof value === 'boolean') {
+          el.setAttribute(name, String(value));
+        }
+        else if (value === false || value === null || value === undefined) {
           el.removeAttribute(name);
         }
         else if (value === true) {
@@ -2872,7 +2876,10 @@ catch (e2) {
             }
             return;
           }
-          if (v === false || v === null || v === undefined) {
+          if (attrName.startsWith('aria-') && typeof v === 'boolean') {
+            el.setAttribute(attrName, String(v));
+          }
+          else if (v === false || v === null || v === undefined) {
             el.removeAttribute(attrName);
           }
 else if (v === true) {
