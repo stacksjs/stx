@@ -1112,6 +1112,9 @@ export async function renderComponentWithSlot(
       // through nested component renders so a static prop with the same name
       // cannot make `{{ signalName() }}` look server-evaluable and erase it.
       '__stx_client_signal_names',
+      // A shared component belongs to the host render, not the layer whose
+      // source directory happens to contain its server script.
+      '__stx_runtime_config',
       /*
        * The request, which a component is part of serving.
        *
@@ -1339,6 +1342,9 @@ export async function renderComponentWithSlot(
         slot: slotContent,
         buildMode: options.buildMode ?? '',
         skipEventDirectives: options.skipEventDirectives === true,
+        // One shared source can resolve different named children in each app.
+        // Props/slots alone cannot distinguish those resource namespaces.
+        layers: options._layerGraph?.layers.map(layer => layer.configFile),
         // The scope id is stamped through the output and drawn from a sequence,
         // so two instances of one component on a page render different bytes
         // and must not share an entry. Between renders of the same page the

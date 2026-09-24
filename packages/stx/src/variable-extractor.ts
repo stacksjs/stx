@@ -1,5 +1,6 @@
 import path from 'node:path'
 import process from 'node:process'
+import type { StxOptions } from './types'
 import { useServerData, withServerData } from './server-data'
 import { prepareRuntimeConfig } from './runtime-config-loader'
 import { currentRuntimeConfig, resolveRuntimeConfig, useRuntimeConfig, useServerRuntimeConfig, withRuntimeConfig, type ResolvedRuntimeConfig } from './runtime-config-server'
@@ -1036,8 +1037,9 @@ catch {
       scriptFn = new Function(...scriptParams, scriptBody) as (...args: unknown[]) => Promise<Record<string, unknown>>
       compiledServerScripts.set(compileKey, scriptFn)
     }
-    if (/\buse(?:Server)?RuntimeConfig\b/.test(jsContent))
-      await prepareRuntimeConfig(context, filePath)
+    const hostRuntimeConfig = (context.__stx_options as StxOptions | undefined)?.runtimeConfig
+    if (hostRuntimeConfig || /\buse(?:Server)?RuntimeConfig\b/.test(jsContent))
+      await prepareRuntimeConfig(context, filePath, hostRuntimeConfig)
     const result = await withRuntimeConfig((context.__stx_runtime_config as ResolvedRuntimeConfig | undefined) ?? currentRuntimeConfig() ?? resolveRuntimeConfig(), () => withServerData(context, () => scriptFn(
       module, exports, requireFn, propsObj, $props, defineProps, withDefaults,
       defineClientPayload, useServerData, useRuntimeConfig, useServerRuntimeConfig,

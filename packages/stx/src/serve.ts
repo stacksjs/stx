@@ -212,6 +212,7 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
     const context: Record<string, any> = {
       __filename: filePath,
       __dirname: path.dirname(filePath),
+      __stx_options: stxOptions,
     }
 
     // Extract variables from server-side script content
@@ -523,7 +524,7 @@ export async function serveFile(
           const scriptContent = serverScriptContents.join('\n')
           const templateContent = fileContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
 
-          const context: Record<string, any> = {}
+          const context: Record<string, any> = { __stx_options: stxOptions }
           if (scriptContent.trim()) {
             await extractVariables(scriptContent, context, absolutePath)
           }

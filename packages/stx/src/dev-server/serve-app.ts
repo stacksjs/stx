@@ -436,6 +436,7 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
       const context: Record<string, any> = {
         __filename: route.filePath,
         __dirname: path.dirname(route.filePath),
+        __stx_options: merged,
         params: requestParams ?? {},
         __stx_runtime_head: {},
       }

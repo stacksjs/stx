@@ -1178,6 +1178,8 @@ export async function serve(options: ServeOptions): Promise<void> {
     const stxMod = options.stxModule ? options.stxModule : await defaultStxModule
     if (stxMod && typeof (stxMod as any).loadStxConfig === 'function') {
       const pluginLoaded = await (stxMod as any).loadStxConfig() as Record<string, any>
+      if (pluginLoaded?.runtimeConfig)
+        stxConfig.runtimeConfig = pluginLoaded.runtimeConfig
       if (pluginLoaded?._pluginComponentDirs)
         stxConfig._pluginComponentDirs = pluginLoaded._pluginComponentDirs
       if (pluginLoaded?._pluginPageDirs)
@@ -2537,6 +2539,7 @@ function __stxOverlay(errs){
     const context: Record<string, any> = {
       __filename: filePath,
       __dirname: nodePath.dirname(filePath),
+      __stx_options: stxConfig,
       __stx_runtime_head: {},
     }
 
@@ -2579,6 +2582,7 @@ function __stxOverlay(errs){
       buildMode: 'serve' as const,
       ssr: stxConfig.ssr ?? defaultStxConfig.ssr ?? true,
       app: stxConfig.app || {},
+      runtimeConfig: stxConfig.runtimeConfig,
       ...('strict' in stxConfig && { strict: stxConfig.strict }),
       ...('router' in stxConfig && { router: stxConfig.router }),
       // Forward debug so `debug: true` in stx.config.ts turns on the verbose
@@ -2939,6 +2943,7 @@ function __stxOverlay(errs){
     // injectServeRequestContext), so every dynamic route silently never
     // saw `host`/`cookies`/`ip`/`__stxServeSearch` until this fix.
     injectServeRequestContext(context, reqCtx)
+    context.__stx_options = stxConfig
     for (const scriptBody of dynServerScripts) {
       await extractVariables(scriptBody, context, filePath)
     }
@@ -2960,6 +2965,7 @@ function __stxOverlay(errs){
       buildMode: 'serve' as const,
       ssr: stxConfig.ssr ?? defaultStxConfig.ssr ?? true,
       app: stxConfig.app || {},
+      runtimeConfig: stxConfig.runtimeConfig,
       ...('strict' in stxConfig && { strict: stxConfig.strict }),
       ...('router' in stxConfig && { router: stxConfig.router }),
       ...('debug' in stxConfig && { debug: stxConfig.debug }),
