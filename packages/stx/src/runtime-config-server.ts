@@ -43,6 +43,15 @@ export function useRuntimeConfig(): Readonly<PublicRuntimeConfig> {
 /** Resolve ONLY declared keys. Double underscores separate path segments. */
 export function resolveRuntimeConfig(defaults: RuntimeConfigDefaults = {}, env: Record<string, string | undefined> = process.env): ResolvedRuntimeConfig {
   const names = new Set<string>()
+  function matchesDefault(value: RuntimeConfigValue, shape: RuntimeConfigValue): boolean {
+    if (shape === null) return value === null
+    if (Array.isArray(shape))
+      return Array.isArray(value) && (!shape.length || value.every(item => shape.some(sample => matchesDefault(item, sample))))
+    if (typeof shape === 'object')
+      return value !== null && typeof value === 'object' && !Array.isArray(value)
+        && Object.entries(shape).every(([key, sample]) => Object.hasOwn(value, key) && matchesDefault(value[key], sample))
+    return typeof value === typeof shape
+  }
   function visit(value: RuntimeConfigValue, path: string[]): RuntimeConfigValue {
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       if (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null)
@@ -64,7 +73,7 @@ export function resolveRuntimeConfig(defaults: RuntimeConfigDefaults = {}, env: 
     if (raw !== undefined) {
       try { resolved = typeof value === 'string' ? raw : JSON.parse(raw) }
       catch { throw new TypeError(`Invalid runtime config override: ${name}`) }
-      if (value !== null && (Array.isArray(value) ? !Array.isArray(resolved) : typeof resolved !== typeof value))
+      if (!matchesDefault(resolved, value))
         throw new TypeError(`Wrong runtime config override type: ${name}`)
     }
     function clone(entry: RuntimeConfigValue): RuntimeConfigValue {

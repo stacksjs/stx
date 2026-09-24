@@ -34,6 +34,10 @@ it('validates overrides without exposing values in errors and freezes isolated s
   expect(Object.isFrozen(config.private)).toBe(true)
   expect(() => resolveRuntimeConfig(defaults, { STX_RUNTIME_PUBLIC__COUNT: '"secret-value"' })).toThrow('Wrong runtime config override type: STX_RUNTIME_PUBLIC__COUNT')
   expect(() => resolveRuntimeConfig({ public: { apiUrl: '', api_url: '' } })).toThrow('Ambiguous')
+  for (const [value, override] of [[null, '1'], [[1], '["wrong"]'], [[{ enabled: true }], '[{"enabled":"wrong"}]']] as const) {
+    expect(() => resolveRuntimeConfig({ public: { value: value as any } }, { STX_RUNTIME_PUBLIC__VALUE: override })).toThrow('Wrong runtime config override type')
+  }
+  expect(resolveRuntimeConfig({ public: { values: [1, 'two'], unknown: [] } }, { STX_RUNTIME_PUBLIC__VALUES: '["one",2]', STX_RUNTIME_PUBLIC__UNKNOWN: '[true,null]' }).public).toEqual({ values: ['one', 2], unknown: [true, null] })
   const results = await Promise.all(['a', 'b'].map(token => withRuntimeConfig(resolveRuntimeConfig({ private: { token } }), async () => {
     await Bun.sleep(1)
     const value = useServerRuntimeConfig()

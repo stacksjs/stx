@@ -52,6 +52,9 @@ Keys must be declared in the defaults. Convert each camelCase segment to
 UPPER_SNAKE_CASE; separate nested segments with **two underscores**. For example,
 `public.api.timeout` becomes `STX_RUNTIME_PUBLIC__API__TIMEOUT`.
 Strings are literal; booleans, numbers, arrays and null use JSON syntax.
+Array elements must match a shape present in the default array; an empty default
+array accepts arbitrary JSON elements (`unknown[]`). A null default accepts only
+null; declare a concrete default for an overridable non-null value.
 Wrong primitive/container types and ambiguous environment names fail startup
 without printing their values. Undeclared environment variables are ignored.
 
