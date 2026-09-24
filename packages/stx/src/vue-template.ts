@@ -455,80 +455,40 @@ function transformVModel(html: string): string {
     if (!tag)
       break
 
-    // Check for named v-model(s): v-model:name="expr"
-    // Process ALL named v-models on this tag before moving on
-    let currentAttrs = tag.attrs
-    let hadNamedVModel = false
-    const namedVModelRegex = /v-model:([a-zA-Z_][a-zA-Z0-9_]*)(?:\.([a-zA-Z.]+))?\s*=\s*"([^"]*)"/
-    let namedMatch = currentAttrs.match(namedVModelRegex)
-    while (namedMatch) {
-      hadNamedVModel = true
-      const propName = namedMatch[1]
-      const _modifiers = namedMatch[2] // Future: handle .trim, .number, .lazy
-      const expr = namedMatch[3]
+    const isNative = NATIVE_ELEMENTS.has(tag.tag)
+    // Consume complete attributes, including their quoted values. A v-model
+    // example inside a title attribute must not become a real binding.
+    const newAttrs = tag.attrs.replace(/([^\s=]+)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s]+))?/g, (attribute, name: string, value: string | undefined) => {
+      const model = /^v-model(?::([a-zA-Z_][a-zA-Z0-9_]*))?((?:\.[a-zA-Z]+)*)$/.exec(name)
+      if (!model || !value || !/^["']/.test(value))
+        return attribute
 
-      currentAttrs = currentAttrs.replace(namedMatch[0], '')
-      currentAttrs += ` :${propName}="${expr}" @update:${propName}="${expr} = $event"`
-      namedMatch = currentAttrs.match(namedVModelRegex)
-    }
+      const prop = model[1] || 'modelValue'
+      const suffix = model[2]
+      if (isNative && !model[1])
+        return `@model${suffix}=${value}`
 
-    if (hadNamedVModel) {
-      const range = getElementRange(result, tag)
-      const element = result.slice(range.outerStart, range.outerEnd)
-      const newElement = replaceTagAttrs(element, {
-        ...tag,
-        start: 0,
-        end: tag.end - tag.start,
-      }, currentAttrs)
+      const quote = value[0]
+      const expression = value.slice(1, -1)
+      let binding = `:${prop}=${value} @update:${prop}=${quote}${expression} = $event${quote}`
+      if (suffix) {
+        const modifierProp = model[1] ? `${prop}Modifiers` : 'modelModifiers'
+        // Component authors receive every modifier, including custom ones.
+        // Coercion and event timing belong to the component model helper.
+        const modifiers = suffix.slice(1).split('.').map(modifier => `${modifier}: true`).join(', ')
+        binding += ` :${modifierProp}="{ ${modifiers} }"`
+      }
+      return binding
+    })
 
-      result = result.slice(0, range.outerStart) + newElement + result.slice(range.outerEnd)
-      searchFrom = range.outerStart + newElement.length
-      continue
-    }
-
-    // Check for basic v-model="expr"
-    const modelValue = extractDirectiveValue(tag.attrs, 'v-model')
-    if (modelValue === null) {
+    if (newAttrs === tag.attrs) {
       searchFrom = tag.end
       continue
     }
-
-    const isNative = NATIVE_ELEMENTS.has(tag.tag)
-
-    if (isNative) {
-      // Native element: convert to @model
-      const newAttrs = tag.attrs
-        .replace(/\s*v-model="[^"]*"/g, '')
-        + ` @model="${modelValue}"`
-
-      const range = getElementRange(result, tag)
-      const element = result.slice(range.outerStart, range.outerEnd)
-      const newElement = replaceTagAttrs(element, {
-        ...tag,
-        start: 0,
-        end: tag.end - tag.start,
-      }, newAttrs)
-
-      result = result.slice(0, range.outerStart) + newElement + result.slice(range.outerEnd)
-      searchFrom = range.outerStart + newElement.length
-    }
-    else {
-      // Component: convert to :modelValue + @update:modelValue
-      let newAttrs = tag.attrs
-        .replace(/\s*v-model="[^"]*"/g, '')
-      newAttrs += ` :modelValue="${modelValue}" @update:modelValue="${modelValue} = $event"`
-
-      const range = getElementRange(result, tag)
-      const element = result.slice(range.outerStart, range.outerEnd)
-      const newElement = replaceTagAttrs(element, {
-        ...tag,
-        start: 0,
-        end: tag.end - tag.start,
-      }, newAttrs)
-
-      result = result.slice(0, range.outerStart) + newElement + result.slice(range.outerEnd)
-      searchFrom = range.outerStart + newElement.length
-    }
+    const opening = replaceTagAttrs(tag.full, { ...tag, start: 0, end: tag.full.length }, newAttrs)
+    result = result.slice(0, tag.start) + opening + result.slice(tag.end)
+    // Visit descendants too: a model on a parent must not skip child models.
+    searchFrom = tag.start + opening.length
   }
 
   return result

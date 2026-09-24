@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'bun:test'
 import { generateSignalsRuntimeDev } from '../../src/signals'
+import { processVueTemplate } from '../../src/vue-template'
 import { installNodeConstants, shimAttributes } from '../../test-utils/dom-runtime-shim'
 
 // eslint-disable-next-line ts/no-explicit-any
@@ -12,6 +13,34 @@ describe('form model submission', () => {
     installNodeConstants()
     // eslint-disable-next-line no-new-func
     new Function(generateSignalsRuntimeDev())()
+  })
+
+  it('preserves Vue model trim/number/lazy behavior through transformation and hydration', async () => {
+    const amount = window.stx.state(1)
+    window.__stx_setup_vue_model_modifiers = () => ({ amount })
+    const transformed = processVueTemplate('<input v-model.trim.number.lazy="amount">')
+    const binding = transformed.match(/(@model[.\w]*)="([^"]*)"/)!
+    // The test DOM parser does not accept @ attributes in innerHTML; install
+    // the exact compiler output via setAttribute, as the other runtime tests do.
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_vue_model_modifiers">
+        <input>
+      </main>
+    `
+    document.querySelector('input').setAttribute(binding[1], binding[2])
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    const input = document.querySelector('input')
+    input.value = '  42  '
+    input.dispatchEvent(new window.Event('input', { bubbles: true }))
+    expect(amount()).toBe(1)
+    input.dispatchEvent(new window.Event('change', { bubbles: true }))
+    expect(amount()).toBe(42)
+    input.value = '  invalid  '
+    input.dispatchEvent(new window.Event('change', { bubbles: true }))
+    expect(amount()).toBe('invalid')
   })
 
   it('commits a trimmed text model before a prevented form submit', async () => {

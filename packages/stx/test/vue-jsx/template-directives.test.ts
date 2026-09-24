@@ -276,6 +276,33 @@ describe('Directive Transform: v-model', () => {
   })
 
   describe('component v-model', () => {
+    it('preserves default and named modifiers independently on the same component', () => {
+      const result = processVueTemplate('<Editor v-model.trim="text" v-model:count.number.lazy="count" v-model:title.capitalize="title" />')
+      expect(result).toContain(':modelValue="text"')
+      expect(result).toContain('@update:modelValue="text = $event"')
+      expect(result).toContain(':modelModifiers="{ trim: true }"')
+      expect(result).toContain(':count="count"')
+      expect(result).toContain('@update:count="count = $event"')
+      expect(result).toContain(':countModifiers="{ number: true, lazy: true }"')
+      expect(result).toContain(':titleModifiers="{ capitalize: true }"')
+      expect(result).not.toContain('v-model')
+    })
+
+    it('transforms nested models and preserves native modifier event semantics', () => {
+      const result = processVueTemplate('<Editor v-model="text"><input v-model.trim.lazy="text"><Other v-model:value.number="count" /></Editor>')
+      expect(result).toContain('@model.trim.lazy="text"')
+      expect(result).toContain(':valueModifiers="{ number: true }"')
+      expect(result).not.toContain('v-model')
+    })
+
+    it('accepts single-quoted expressions without rewriting model examples in other attributes', () => {
+      const result = processVueTemplate(`<Editor title='example v-model="fake"' v-model:title.trim='titles["main"]' />`)
+      expect(result).toContain(`title='example v-model="fake"'`)
+      expect(result).toContain(`:title='titles["main"]'`)
+      expect(result).toContain(`@update:title='titles["main"] = $event'`)
+      expect(result).not.toContain(':modelValue="fake"')
+    })
+
     it('should transform default v-model on component', () => {
       const result = processVueTemplate('<MyComponent v-model="value">content</MyComponent>')
       expect(result).toContain(':modelValue="value"')
