@@ -616,3 +616,59 @@ describe('SEO Regression Tests', () => {
     expect(result).toContain('twitter:card')
   })
 })
+
+// =============================================================================
+// Open Graph fields a real share card needs (profile, locale, image type, alt)
+// =============================================================================
+
+describe('@seo profile, locale and image metadata', () => {
+  const template = `@seo({
+    title: pageTitle,
+    description: 'Stand-up comedian.',
+    canonical: origin + '/',
+    openGraph: {
+      type: 'profile',
+      image: origin + '/og.jpg',
+      imageAlt: 'On stage',
+      imageWidth: 1200,
+      imageHeight: 630,
+      imageType: 'image/jpeg',
+      siteName: 'Mario Adrion',
+      locale: 'en_US',
+      profile: { firstName: 'Mario', lastName: 'Adrion', username: 'marioadrion' }
+    },
+    twitter: { card: 'summary_large_image', site: '@marioadrion', creator: '@marioadrion' }
+  })`
+  const result = processSeoDirective(template, { pageTitle: 'Mario Adrion - Tour', origin: 'https://example.com' }, 'test.stx', defaultOptions)
+
+  it('reads values from the template context', () => {
+    expect(result).toContain('<title>Mario Adrion - Tour</title>')
+    expect(result).toContain('<meta property="og:url" content="https://example.com/">')
+    expect(result).toContain('<meta property="og:image" content="https://example.com/og.jpg">')
+  })
+
+  it('emits og:image:type and og:locale', () => {
+    expect(result).toContain('<meta property="og:image:type" content="image/jpeg">')
+    expect(result).toContain('<meta property="og:locale" content="en_US">')
+  })
+
+  it('emits the profile:* properties a profile type calls for', () => {
+    expect(result).toContain('<meta property="profile:first_name" content="Mario">')
+    expect(result).toContain('<meta property="profile:last_name" content="Adrion">')
+    expect(result).toContain('<meta property="profile:username" content="marioadrion">')
+    expect(result).not.toContain('profile:gender')
+  })
+
+  it('gives the card image the Open Graph alt text when it reuses that image', () => {
+    expect(result).toContain('<meta name="twitter:image" content="https://example.com/og.jpg">')
+    expect(result).toContain('<meta name="twitter:image:alt" content="On stage">')
+  })
+
+  it('does not borrow the Open Graph alt for a different card image', () => {
+    const own = processSeoDirective(`@seo({
+      openGraph: { image: '/a.jpg', imageAlt: 'A' },
+      twitter: { image: '/b.jpg' }
+    })`, {}, 'test.stx', defaultOptions)
+    expect(own).not.toContain('twitter:image:alt')
+  })
+})

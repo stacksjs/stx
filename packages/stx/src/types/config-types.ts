@@ -126,8 +126,27 @@ export interface OpenGraphConfig {
   imageWidth?: number
   /** Height of the OG image */
   imageHeight?: number
+  /** MIME type of the OG image (`image/jpeg`), so a scraper need not sniff it */
+  imageType?: string
   /** Site name for Open Graph */
   siteName?: string
+  /** Locale of the page, `language_TERRITORY` (`en_US`) */
+  locale?: string
+  /**
+   * The `profile:*` properties. Open Graph defines them for `type: 'profile'`,
+   * and a profile without them says whose profile it is nowhere.
+   */
+  profile?: OpenGraphProfile
+}
+
+/**
+ * Open Graph `profile` object properties.
+ */
+export interface OpenGraphProfile {
+  firstName?: string
+  lastName?: string
+  username?: string
+  gender?: string
 }
 
 /**
@@ -142,6 +161,8 @@ export interface TwitterConfig {
   description?: string
   /** Image URL for Twitter card */
   image?: string
+  /** Alt text for the card image. Defaults to the Open Graph `imageAlt`. */
+  imageAlt?: string
   /** Twitter site handle */
   site?: string
   /** Twitter creator handle */

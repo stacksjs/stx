@@ -327,10 +327,31 @@ export function processSeoDirective(
           if (og.imageHeight) {
             metaTags += `<meta property="og:image:height" content="${escapeHtml(String(og.imageHeight))}">\n`
           }
+
+          if (og.imageType) {
+            metaTags += `<meta property="og:image:type" content="${escapeHtml(og.imageType)}">\n`
+          }
         }
 
         if (og.siteName) {
           metaTags += `<meta property="og:site_name" content="${escapeHtml(og.siteName)}">\n`
+        }
+
+        if (og.locale) {
+          metaTags += `<meta property="og:locale" content="${escapeHtml(og.locale)}">\n`
+        }
+
+        if (og.profile) {
+          const profile: [string, string | undefined][] = [
+            ['first_name', og.profile.firstName],
+            ['last_name', og.profile.lastName],
+            ['username', og.profile.username],
+            ['gender', og.profile.gender],
+          ]
+          for (const [key, value] of profile) {
+            if (value)
+              metaTags += `<meta property="profile:${key}" content="${escapeHtml(value)}">\n`
+          }
         }
       }
 
@@ -352,6 +373,13 @@ export function processSeoDirective(
         if (twitter.image || (config.openGraph && config.openGraph.image)) {
           const twitterImage = twitter.image || (config.openGraph ? config.openGraph.image : '') || ''
           metaTags += `<meta name="twitter:image" content="${escapeHtml(twitterImage)}">\n`
+
+          // A card image with no alt text is announced as "image" and nothing
+          // else. The Open Graph alt describes the same picture whenever the
+          // card falls back to the Open Graph image.
+          const twitterImageAlt = twitter.imageAlt || (!twitter.image && config.openGraph ? config.openGraph.imageAlt : undefined)
+          if (twitterImageAlt)
+            metaTags += `<meta name="twitter:image:alt" content="${escapeHtml(twitterImageAlt)}">\n`
         }
 
         if (twitter.site) {

@@ -5081,14 +5081,23 @@ useSeoMeta({
   ogTitle: 'Custom OG Title',
   ogDescription: 'Custom OG description',
   ogImage: 'https://example.com/og.png',
+  ogImageAlt: 'What the image shows', // also the card's alt when it reuses ogImage
+  ogImageWidth: 1200,
+  ogImageHeight: 630,
+  ogImageType: 'image/png',
   ogUrl: 'https://example.com/page',
   ogType: 'article',
   ogSiteName: 'My Site',
+  ogLocale: 'en_US',
+
+  // Profile (for ogType: 'profile')
+  // profileFirstName, profileLastName, profileUsername
 
   // Twitter (auto-inherits from OG if not set)
   twitterCard: 'summary_large_image',
   twitterSite: '@mysite',
   twitterCreator: '@author',
+  // twitterImage, twitterImageAlt
 
   // Article metadata
   articleAuthor: 'Jane Doe',

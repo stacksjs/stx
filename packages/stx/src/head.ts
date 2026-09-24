@@ -85,15 +85,28 @@ export interface SeoMeta {
   ogTitle?: string
   ogDescription?: string
   ogImage?: string
+  /** Describes the image for people who cannot see it. Also the card's alt. */
+  ogImageAlt?: string
+  /** Pixel size, so a scraper can lay the card out before fetching the image. */
+  ogImageWidth?: number
+  ogImageHeight?: number
+  /** MIME type, `image/jpeg` */
+  ogImageType?: string
   ogUrl?: string
   ogType?: string
   ogSiteName?: string
   ogLocale?: string
+  // Profile (for `ogType: 'profile'`, which is otherwise nobody's profile)
+  profileFirstName?: string
+  profileLastName?: string
+  profileUsername?: string
   // Twitter
   twitterCard?: 'summary' | 'summary_large_image' | 'app' | 'player'
   twitterTitle?: string
   twitterDescription?: string
   twitterImage?: string
+  /** Defaults to `ogImageAlt` when the card falls back to `ogImage`. */
+  twitterImageAlt?: string
   twitterSite?: string
   twitterCreator?: string
   // Article (for blog posts)
@@ -294,6 +307,17 @@ export function seoMetaToHeadConfig(config: SeoMeta): HeadConfig {
   }
   if (config.ogImage) {
     meta.push({ property: 'og:image', content: config.ogImage })
+
+    // Structured properties follow the og:image they describe; a scraper
+    // attaches each one to the most recent og:image before it.
+    if (config.ogImageType)
+      meta.push({ property: 'og:image:type', content: config.ogImageType })
+    if (config.ogImageWidth)
+      meta.push({ property: 'og:image:width', content: String(config.ogImageWidth) })
+    if (config.ogImageHeight)
+      meta.push({ property: 'og:image:height', content: String(config.ogImageHeight) })
+    if (config.ogImageAlt)
+      meta.push({ property: 'og:image:alt', content: config.ogImageAlt })
   }
   if (config.ogUrl) {
     meta.push({ property: 'og:url', content: config.ogUrl })
@@ -306,6 +330,15 @@ export function seoMetaToHeadConfig(config: SeoMeta): HeadConfig {
   }
   if (config.ogLocale) {
     meta.push({ property: 'og:locale', content: config.ogLocale })
+  }
+  if (config.profileFirstName) {
+    meta.push({ property: 'profile:first_name', content: config.profileFirstName })
+  }
+  if (config.profileLastName) {
+    meta.push({ property: 'profile:last_name', content: config.profileLastName })
+  }
+  if (config.profileUsername) {
+    meta.push({ property: 'profile:username', content: config.profileUsername })
   }
 
   // Twitter
@@ -324,6 +357,12 @@ export function seoMetaToHeadConfig(config: SeoMeta): HeadConfig {
   }
   if (twitterImage) {
     meta.push({ name: 'twitter:image', content: twitterImage })
+
+    // The Open Graph alt describes a different picture when the card has its
+    // own image, so it is only borrowed when the card falls back to ogImage.
+    const twitterImageAlt = config.twitterImageAlt ?? (config.twitterImage ? undefined : config.ogImageAlt)
+    if (twitterImageAlt)
+      meta.push({ name: 'twitter:image:alt', content: twitterImageAlt })
   }
   if (config.twitterSite) {
     meta.push({ name: 'twitter:site', content: config.twitterSite })

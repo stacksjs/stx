@@ -88,6 +88,7 @@ export type {
   LoopConfig,
   MarkdownConfig,
   OpenGraphConfig,
+  OpenGraphProfile,
   SeoConfig,
   SeoFeatureConfig,
   StreamingConfig,
