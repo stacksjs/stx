@@ -522,7 +522,7 @@ export function usesSignalsInScript(template: string, filePath?: string): boolea
     if (!match || /\bserver\b|\bsrc\s*=/.test(match[1]))
       continue
     const content = match[2]
-    if (/\b(state|derived|effect|ref|reactive|computed|watch|watchEffect)\s*(?:<[^>]*>)?\s*\(/.test(content)) {
+    if (/\b(state|derived|effect|ref|reactive|computed|watch|watchEffect|useModel)\s*(?:<[^>]*>)?\s*\(/.test(content)) {
       return true
     }
     // `const { signal } = makeProbe()` names no signal API, so the scan above

@@ -305,7 +305,7 @@ function extractClientSignalNames(template: string): Set<string> {
   const names = new Set<string>()
   // Non-server, non-src <script> blocks only — same gating as usesSignalsInScript.
   const scriptRe = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi
-  const declRe = /\b(?:const|let|var)\s+([a-zA-Z_$][\w$]*)\s*=\s*(?:state|derived|computed|ref|reactive|signal)\s*(?:<[^>]*>)?\s*\(/g
+  const declRe = /\b(?:const|let|var)\s+([a-zA-Z_$][\w$]*)\s*=\s*(?:state|derived|computed|ref|reactive|signal|useModel)\s*(?:<[^>]*>)?\s*\(/g
   let scriptMatch: RegExpExecArray | null
   while ((scriptMatch = scriptRe.exec(template)) !== null) {
     const body = scriptMatch[1]
@@ -1405,7 +1405,7 @@ export async function processScriptSetup(template: string, filePath?: string, se
   // APIs without bare state/derived calls, and we still want those merged
   // into the single setup function so their reactivity wires into the same
   // componentScope as the page's bindings.
-  const SIGNAL_API_RE = /\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect|useStore|useLocalStorage|useSessionStorage|useCookie|useId|useReactiveProp|useFetch|useRef|useEventListener|useDebounce|useDebouncedValue|useThrottle|useInterval|useTimeout|useToggle|useCounter|useClickOutside|useFocus|useAsync|useColorMode|useDark|useMediaQuery|useScrollLock|usePreferredDark|usePreferredLight|usePreferredReducedMotion|usePreferredContrast|useWebSocket|useRoute|useSearchParams|onMount|onDestroy|defineProps|withDefaults|defineEmits|defineExpose|defineSlots|useOptimistic)\s*(?:<[^>]*>)?\s*\(/
+  const SIGNAL_API_RE = /\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect|useStore|useLocalStorage|useSessionStorage|useCookie|useId|useModel|useReactiveProp|useFetch|useRef|useEventListener|useDebounce|useDebouncedValue|useThrottle|useInterval|useTimeout|useToggle|useCounter|useClickOutside|useFocus|useAsync|useColorMode|useDark|useMediaQuery|useScrollLock|usePreferredDark|usePreferredLight|usePreferredReducedMotion|usePreferredContrast|useWebSocket|useRoute|useSearchParams|onMount|onDestroy|defineProps|withDefaults|defineEmits|defineExpose|defineSlots|useOptimistic)\s*(?:<[^>]*>)?\s*\(/
   // (useSessionStorage was already in SIGNAL_API_RE before the runtime
   // shipped — strict-mode hinted at it; the runtime implementation just
   // landed alongside this.)

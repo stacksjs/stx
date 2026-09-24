@@ -785,10 +785,11 @@ const current = state(1)
     const checks: Array<[string, string]> = [
       ['dialog/Dialog.stx', "useReactiveProp('open',"],
       ['drawer/Drawer.stx', "useReactiveProp('open',"],
-      ['switch/Switch.stx', "useReactiveProp('checked',"],
+      // useModel retains the useReactiveProp bridge and adds update events.
+      ['switch/Switch.stx', "useModel('checked',"],
       ['checkbox/Checkbox.stx', "useReactiveProp('checked',"],
       ['radio/Radio.stx', "useReactiveProp('checked',"],
-      ['input/TextInput.stx', "useReactiveProp('value',"],
+      ['input/TextInput.stx', "useModel('value',"],
       ['input/PasswordInput.stx', "useReactiveProp('value',"],
       ['input/NumberInput.stx', "useReactiveProp('value',"],
       ['select/Select.stx', "useReactiveProp('value',"],

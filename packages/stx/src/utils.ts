@@ -793,7 +793,7 @@ export function slotContentHasExpressions(slotContent: string): boolean {
  */
 export function componentClientSignalNames(scripts: string[]): string[] {
   const names = new Set<string>()
-  const declaration = /\b(?:const|let|var)\s+([a-zA-Z_$][\w$]*)\s*=\s*(?:state|derived|computed|ref|reactive|signal|useReactiveProp|useLocalStorage|useSessionStorage|useCookie|useDebouncedValue)\s*(?:<[^>]*>)?\s*\(/g
+  const declaration = /\b(?:const|let|var)\s+([a-zA-Z_$][\w$]*)\s*=\s*(?:state|derived|computed|ref|reactive|signal|useModel|useReactiveProp|useLocalStorage|useSessionStorage|useCookie|useDebouncedValue)\s*(?:<[^>]*>)?\s*\(/g
 
   for (const script of scripts) {
     let match: RegExpExecArray | null
@@ -1511,7 +1511,7 @@ export async function renderComponentWithSlot(
     // Check if component has signal scripts - if so, skip event directive processing
     // because the runtime will handle @click, @keydown etc. via processElement()
     const hasSignalScripts = clientScripts.some(s =>
-      /\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect|useReactiveProp|defineProps|withDefaults|defineEmits|defineExpose|defineSlots)\s*(?:<[^<>()]*>)?\s*\(/.test(s),
+      /\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect|useModel|useReactiveProp|defineProps|withDefaults|defineEmits|defineExpose|defineSlots)\s*(?:<[^<>()]*>)?\s*\(/.test(s),
     )
     const clientSignalNames = componentClientSignalNames(clientScripts)
     const inheritedClientSignalNames = Array.isArray(componentContext.__stx_client_signal_names)

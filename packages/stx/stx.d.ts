@@ -116,6 +116,21 @@ declare function useReactiveProp<T = unknown>(
   _defaultValue?: T,
   _options?: { parse?: (_value: string) => T },
 ): StxSignal<T>
+interface StxModelOptions<T> {
+  default?: T
+  parse?: (value: string) => T
+  get?: (value: T) => T
+  set?: (value: T, modifiers: Readonly<Record<string, boolean>>) => T
+}
+interface StxModelSignal<T> extends StxSignal<T> {
+  readonly modifiers: Readonly<Record<string, boolean>>
+  input(value: T): void
+  change(value: T): void
+}
+declare function useModel<T>(options: StxModelOptions<T> & { default: T }): StxModelSignal<T>
+declare function useModel<T>(name: string, options: StxModelOptions<T> & { default: T }): StxModelSignal<T>
+declare function useModel<T = unknown>(name?: string, options?: StxModelOptions<T>): StxModelSignal<T | undefined>
+declare function useModel<T = unknown>(options?: StxModelOptions<T>): StxModelSignal<T | undefined>
 /**
  * A template ref. Read it however the surrounding code reads things: `ref()`
  * like every other stx accessor, or `ref.current` / `ref.value` for the
@@ -872,6 +887,7 @@ interface StxRuntimeRegistry {
   useClickOutside: typeof useClickOutside
   useFocus: typeof useFocus
   useAsync: typeof useAsync
+  useModel: typeof useModel
   useLocalStorage: typeof useLocalStorage
   useSessionStorage: typeof useSessionStorage
   useEventListener: typeof useEventListener

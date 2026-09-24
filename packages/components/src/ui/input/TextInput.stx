@@ -39,14 +39,17 @@ export const inputId = `input-${label}`
 
 <script client>
 const emit = defineEmits()
-// Reactive prop binding so the parent can drive `value` via signals.
-// Parent listens to @input to push user changes back into its signal.
-// See stacksjs/stx#1704.
-const inputValue = useReactiveProp('value', {{ value }}, { parse: (v) => v == null ? '' : String(v) })
+// v-model:value supports modifiers; @input remains available to existing callers.
+const inputValue = useModel('value', { default: {{ value }}, parse: (v) => v == null ? '' : String(v) })
 
 function onInput(event) {
-  inputValue.set(event.target.value)
-  emit('input', inputValue())
+  inputValue.input(event.target.value)
+  if (!inputValue.modifiers.lazy) emit('input', inputValue())
+}
+
+function onChange(event) {
+  inputValue.change(event.target.value)
+  if (inputValue.modifiers.lazy) emit('input', inputValue())
 }
 
 function onClear() {
@@ -55,8 +58,8 @@ function onClear() {
   emit('clear')
 }
 
-const hasValue = derived(() => inputValue().length > 0)
-const charCount = derived(() => `${inputValue().length} / {{ maxLength || 0 }}`)
+const hasValue = derived(() => String(inputValue()).length > 0)
+const charCount = derived(() => `${String(inputValue()).length} / {{ maxLength || 0 }}`)
 
 defineExpose({ value: inputValue, clear: onClear })
 </script>
@@ -89,6 +92,7 @@ defineExpose({ value: inputValue, clear: onClear })
       @if(required)required@endif
       @if(maxLength)maxlength="{{ maxLength }}"@endif
       @input="onInput($event)"
+      @change="onChange($event)"
       :aria-invalid="{{ error ? 'true' : 'false' }}"
       @if(helperText)aria-describedby="helper-text"@endif
     />

@@ -43,7 +43,7 @@ import path from 'node:path'
  * expressions.ts and signal-processing.ts by being the same shape: a call to
  * one of the reactive primitives, optionally with a type argument.
  */
-const SIGNAL_API_CALL = /\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect)\s*(?:<[^<>()]*>)?\s*\(/
+const SIGNAL_API_CALL = /\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect|useModel)\s*(?:<[^<>()]*>)?\s*\(/
 
 /**
  * Specifiers a script can reach that resolve to a file we can read.

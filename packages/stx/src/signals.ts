@@ -10,6 +10,7 @@
 
 import { state, derived, effect, batch, onMount, onDestroy, isSignal, isDerived, untrack, peek } from './signals-api'
 import { runtimeHandledXAttrsLiteral } from './runtime-globals'
+import { createModelSignal } from './component-model'
 
 export * from './signals-api'
 
@@ -2023,7 +2024,7 @@ catch (e) {
 
   function expressionUsesSignalMethod(expression, name) {
     var escapedName = name.replace(/[-/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&');
-    return new RegExp('(?:^|[^\\\\w$])' + escapedName + '\\\\s*\\\\.\\\\s*(?:set|update|subscribe|toggle)\\\\s*\\\\(').test(expression);
+    return new RegExp('(?:^|[^\\\\w$])' + escapedName + '\\\\s*\\\\.\\\\s*(?:set|update|subscribe|toggle|input|change)\\\\s*\\\\(').test(expression);
   }
 
   function expressionUsesSignalValue(expression, name) {
@@ -2920,7 +2921,12 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
       else if (name.startsWith('@') || name.startsWith(':')) {
         // Event handlers: @click, :click, @submit.prevent, :keydown.enter, etc.
         const parts = name.slice(1).split('.');
-        const eventName = parts[0];
+        // HTML folds attribute names to lowercase; the forwarding metadata
+        // retains the declared event spelling (e.g. update:modelValue).
+        const parentEventNames = (el.getAttribute && el.getAttribute('data-stx-parent-events') || '').split(/\\s+/);
+        const eventName = parentEventNames.find(function(event) {
+          return event.toLowerCase() === parts[0].toLowerCase();
+        }) || parts[0];
         const modifiers = parts.slice(1);
 
         // Skip special directives (already handled above or in processElement)
@@ -2934,7 +2940,6 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
         el[eventKey] = true;
 
         // Capture scope at setup time so @for loop variables are available when event fires
-        const parentEventNames = (el.getAttribute && el.getAttribute('data-stx-parent-events') || '').split(/\\s+/);
         const isForwardedComponentEvent = !!(el.__stx_parent_scope && parentEventNames.includes(eventName));
         const eventCapturedScope = isForwardedComponentEvent
           ? { ...globalHelpers, ...el.__stx_parent_scope }
@@ -5692,6 +5697,18 @@ catch (e) {} }
     return normalizedPrefix + '-' + __stxGeneratedIdCounter;
   }
 
+  var createModelSignal = ${createModelSignal.toString()};
+  function useModel(name, options) {
+    if (typeof name !== 'string') { options = name || {}; name = 'modelValue'; }
+    options = options || {};
+    var source = useReactiveProp(name, options.default, { parse: options.parse });
+    var modifierName = name === 'modelValue' ? 'modelModifiers' : name + 'Modifiers';
+    var modifiers = useReactiveProp(modifierName, {});
+    var emit = window.stx.defineEmits(['update:' + name]);
+    return createModelSignal(source, function() { return modifiers() || {}; },
+      function(value) { emit('update:' + name, value); }, options, onDestroy);
+  }
+
   // Reactive prop binding. Bridges the gap between a parent's clientReactive
   // attribute (e.g. :open="modalOpen()" on a component) and the component's
   // internal state. Returns a signal whose value tracks the named attribute
@@ -6526,6 +6543,7 @@ catch (e) {} }
     useCookie,
     useId,
     useReactiveProp,
+    useModel,
     useEventListener,
     useWebSocket,
     useColorMode,

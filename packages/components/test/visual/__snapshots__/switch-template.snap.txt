@@ -31,9 +31,8 @@ const trackBase = {{ trackBaseClasses }}
 const trackDisabled = {{ trackDisabledClasses }}
 const thumbBase = {{ thumbBaseClasses }}
 const extraClass = {{ className }}
-// Reactive prop binding so the parent can drive `checked` via signals.
-// See stacksjs/stx#1704.
-const isChecked = useReactiveProp('checked', {{ checked }})
+// v-model:checked adds two-way binding; keep @change for existing callers.
+const isChecked = useModel('checked', { default: {{ checked }} })
 
 function toggle() {
   if (isDisabled) return
