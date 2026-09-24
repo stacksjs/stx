@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.306...v0.2.307)
+
+## ✨ Features
+
+- **seo**: describe the share image and profile in useSeoMeta and @seo ([aadb905](https://github.com/stacksjs/stx/commit/aadb905)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **bun-plugin**: expect no meta title beside the page's own <title> ([c88727f](https://github.com/stacksjs/stx/commit/c88727f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.307 ([ace39bf](https://github.com/stacksjs/stx/commit/ace39bf)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.305...v0.2.306)
 
 ## 🐛 Bug Fixes
