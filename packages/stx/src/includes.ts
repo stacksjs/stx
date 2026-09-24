@@ -69,6 +69,7 @@
 import type { StxOptions } from './types'
 import { findSfcTemplateBlock } from './sfc-template'
 import path from 'node:path'
+import { existsSync } from 'node:fs'
 import { processConditionals } from './conditionals'
 import { isProduction, isTest } from './env'
 import { findBodyOpenTag, replaceBodyOpenTag } from './find-body-tag'
@@ -866,6 +867,11 @@ catch (error: unknown) {
 
       // If it's a relative path without ./ or ../, assume it's in the partials directory
       if (!includeFilePath.startsWith('./') && !includeFilePath.startsWith('../')) {
+        for (const directory of options._layerPartialDirs ?? []) {
+          const candidate = path.resolve(directory, includeFilePath)
+          if (candidate.startsWith(`${path.resolve(directory)}${path.sep}`) && existsSync(candidate))
+            return candidate
+        }
         resolvedPath = path.resolve(partialsDir, includeFilePath)
       }
       else {

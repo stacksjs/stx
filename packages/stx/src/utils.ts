@@ -705,6 +705,7 @@ export async function userComponentFileExists(
     push(path.resolve(configuredRoot, 'src/components'))
     push(path.resolve(configuredRoot, 'components'))
   }
+  for (const dir of options._layerComponentDirs ?? []) push(dir)
   const pluginDirs = (options as any)._pluginComponentDirs
   if (Array.isArray(pluginDirs)) {
     for (const dir of pluginDirs) push(typeof dir === 'string' ? dir : null)
@@ -899,6 +900,9 @@ export async function renderComponentWithSlot(
       // Page-specific components should take precedence over global componentsDir
       const originalFilePath = parentContext.__originalFilePath as string | undefined
       const searchDirs: string[] = []
+      // Named layer resources follow app-first precedence, even when a shared
+      // page happens to have sibling components. Explicit imports stay local.
+      searchDirs.push(...(options._layerComponentDirs ?? []))
 
       if (originalFilePath) {
         const originalDir = path.join(path.dirname(originalFilePath), 'components')
@@ -1833,7 +1837,7 @@ export async function resolveTemplatePath(
   const safeUnderCwd = assertInsideRoot(result, process.cwd())
   if (safeUnderCwd) return safeUnderCwd
 
-  const trustedDirs = [options.root, options.layoutsDir, options.fallbackLayoutsDir, options.componentsDir, options.partialsDir, options.pagesDir]
+  const trustedDirs = [options.root, options.layoutsDir, options.fallbackLayoutsDir, options.componentsDir, options.partialsDir, options.pagesDir, ...(options._layerLayoutDirs ?? [])]
     .filter((d): d is string => typeof d === 'string' && d.length > 0)
   for (const dir of trustedDirs) {
     const resolvedDir = path.isAbsolute(dir) ? dir : path.resolve(process.cwd(), dir)
@@ -1925,6 +1929,7 @@ async function resolveTemplatePathInner(
   // which is what lets `pages/requests/[id].stx` find `pages/layouts/default.stx`
   // with no configuration at all.
   const layoutSearchDirs: string[] = []
+  layoutSearchDirs.push(...(options._layerLayoutDirs ?? []))
 
   if (options.layoutsDir) {
     layoutSearchDirs.push(

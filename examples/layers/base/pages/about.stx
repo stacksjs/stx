@@ -1,0 +1,4 @@
+@extends('default')
+@section('content')
+<p class="my-4">Shared about page.</p>
+@endsection

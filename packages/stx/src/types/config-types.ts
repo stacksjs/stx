@@ -914,6 +914,15 @@ export interface StxConfig {
   serverApi?: boolean | ServerApiOptions
   /** Deployment-time values. Only public is serialized for browsers. */
   runtimeConfig?: import('../runtime-config-server').RuntimeConfigDefaults
+  /** Local paths or installed application-layer packages, highest priority first. */
+  extends?: string[]
+  /** @internal Resolved application-layer provenance and resource search roots. */
+  _layerGraph?: import('../application-layers').ApplicationLayerGraph
+  _layerPageDirs?: string[]
+  _layerComponentDirs?: string[]
+  _layerLayoutDirs?: string[]
+  _layerPartialDirs?: string[]
+  _layerComposableDirs?: string[]
 
   /**
    * Client-side router configuration

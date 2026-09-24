@@ -125,21 +125,24 @@ export interface ComposableModule {
  * Returns an empty array when there is no composables directory, which is the
  * common case and not an error.
  */
-export async function listComposableModules(composablesDir?: string): Promise<ComposableModule[]> {
-  const resolvedDir = await resolveComposablesDir(composablesDir)
-  if (!resolvedDir) return []
-
-  const files: string[] = []
-  try {
+async function composableSources(input?: string | string[]): Promise<{ key: string, files: string[] }> {
+  const dirs = Array.isArray(input) ? input : input ? [path.resolve(input)] : (await loadStxConfig())._layerComposableDirs ?? [await resolveComposablesDir()].filter((dir): dir is string => !!dir)
+  const selected = new Map<string, string>()
+  for (const dir of dirs) {
     const glob = new Bun.Glob('**/*.ts')
-    for await (const file of glob.scan({ cwd: resolvedDir, absolute: true })) {
-      if (!isSkippedFile(file)) files.push(file)
+    try {
+      for await (const file of glob.scan({ cwd: dir, absolute: true })) {
+        const relative = path.relative(dir, file)
+        if (!isSkippedFile(file) && !selected.has(relative)) selected.set(relative, file)
+      }
     }
+    catch {} // A layer may have no composables.
   }
-  catch {
-    return []
-  }
-  files.sort()
+  return { key: dirs.join('\0'), files: [...selected.values()].sort() }
+}
+
+export async function listComposableModules(composablesDir?: string | string[]): Promise<ComposableModule[]> {
+  const { files } = await composableSources(composablesDir)
 
   const transpiler = getSharedTranspiler({ loader: 'ts', target: 'browser', define: getPublicEnvDefine() })
   const modules: ComposableModule[] = []
@@ -237,7 +240,7 @@ function selectReachable(
  * hand needs.
  */
 export async function getComposableScript(
-  composablesDir?: string,
+  composablesDir?: string | string[],
   pageSource?: string,
   /**
    * Text that is not (yet) part of `pageSource` but will ship with the page --
@@ -249,27 +252,13 @@ export async function getComposableScript(
    */
   extraSources?: readonly string[],
 ): Promise<string | null> {
-  const resolvedDir = await resolveComposablesDir(composablesDir)
+  const { key: resolvedDir, files: composableFiles } = await composableSources(composablesDir)
   if (!resolvedDir) return null
 
   // Scan BEFORE the cache lookup so the memo can be keyed on the sources. It
   // used to be permanent, and nothing outside tests called
   // `clearComposableCache()`, so a dev server served the first build for the
   // life of the process (#1877).
-  const composableFiles: string[] = []
-  try {
-    const glob = new Bun.Glob('**/*.ts')
-    for await (const file of glob.scan({ cwd: resolvedDir, absolute: true })) {
-      if (isSkippedFile(file)) continue
-      composableFiles.push(file)
-    }
-  }
-  catch {
-    // composablesDir doesn't exist — nothing to load.
-    writeSigned(_cachedComposableScripts, resolvedDir, '', '')
-    return null
-  }
-
   const signature = sourceSignature(composableFiles)
 
   if (composableFiles.length === 0) {

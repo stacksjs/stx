@@ -103,7 +103,6 @@ async function resolveStxOptions(options: ServeOptions): Promise<StxOptions> {
   // A project without a config is an ordinary case, not a failure — fall back
   // to the caller's options alone rather than refusing to start.
   const projectConfig = await loadStxConfig(options.configDir ?? process.cwd())
-    .catch(() => ({} as StxOptions))
   return { ...projectConfig, ...(options.stxOptions ?? {}) }
 }
 
@@ -304,10 +303,13 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
       path.join(relPath, 'index.html'),
     ]
 
-    for (const possiblePath of possiblePaths) {
-      const fullPath = path.join(rootDir, possiblePath)
-      if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-        return fullPath
+    for (const directory of [rootDir, ...(stxOptions._layerPageDirs ?? [])]) {
+      for (const possiblePath of possiblePaths) {
+        const fullPath = path.resolve(directory, possiblePath)
+        if (!fullPath.startsWith(`${path.resolve(directory)}${path.sep}`)) continue
+        if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+          return fullPath
+        }
       }
     }
 
@@ -318,6 +320,15 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
    * Handle a request
    */
   async function handleRequest(request: Request): Promise<Response> {
+    if (stxOptions._layerGraph) {
+      // Layer configs/resources may live outside the app's file watcher.
+      // loadStxConfig validates the graph signature before returning its cache.
+      const fresh = await resolveStxOptions(options)
+      if (fresh._layerGraph !== stxOptions._layerGraph) {
+        Object.assign(stxOptions, fresh)
+        fileCache.clear()
+      }
+    }
     const url = new URL(request.url)
 
     // Apply middleware

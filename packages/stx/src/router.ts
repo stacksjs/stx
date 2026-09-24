@@ -8,6 +8,7 @@ export { findErrorPage, formatRoutes, generateRouteManifest, generateRouteTypes,
 // Backwards-compatible createRouter that returns Route[] (original signature)
 export interface RouterOptions {
   pagesDir?: string
+  pagesDirs?: string[]
   extensions?: string[]
 }
 

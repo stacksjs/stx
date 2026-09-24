@@ -78,11 +78,16 @@ export class Router {
     this.routes = []
     for (const dir of this.pagesDirs) {
       const files = scanDirectory(dir, extensions)
+      const localPatterns = new Map<string, string>()
       for (const filePath of files) {
         const pattern = filePathToPattern(filePath, dir)
-        if (seenPatterns.has(pattern))
+        const identity = config.pagesDirs ? pattern.replace(/:[\w]+/g, ':param') : pattern
+        if (config.pagesDirs && localPatterns.has(identity))
+          throw new Error(`Conflicting layer pages for ${pattern}: ${localPatterns.get(identity)} and ${filePath}`)
+        localPatterns.set(identity, filePath)
+        if (seenPatterns.has(identity))
           continue
-        seenPatterns.add(pattern)
+        seenPatterns.add(identity)
 
         const { regex, params } = patternToRegex(pattern)
         const layouts = config.layouts !== false ? resolveLayoutChain(filePath, dir) : []

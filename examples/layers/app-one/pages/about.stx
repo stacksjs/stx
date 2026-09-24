@@ -1,0 +1,4 @@
+@extends('default')
+@section('content')
+<p class="my-4">App one overrides this page but keeps the shared layout.</p>
+@endsection

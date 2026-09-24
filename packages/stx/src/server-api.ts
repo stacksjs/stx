@@ -6,6 +6,7 @@ import { stateDir } from './state-dir'
 import type { ApiHandlerContext } from './api-handler'
 import type { ApiMethod } from './api-client'
 import { resolveRuntimeConfig, withRuntimeConfig } from './runtime-config-server'
+import { isLayerConfigSource } from './application-layers'
 
 export interface ServerApiOptions {
   /** Relative to the project/config directory, not the template root. */
@@ -199,6 +200,7 @@ export async function createServerApi(root: string, enabled: boolean | ServerApi
 
 /** Never expose endpoint source through a server that also serves the project root. */
 export function isServerApiSource(filePath: string, root: string, enabled: boolean | ServerApiOptions | undefined): boolean {
+  if (isLayerConfigSource(filePath)) return true
   const privateName = /^(?:(?:stx|ui)\.config\.[cm]?[jt]s|runtime-config-(?:server|loader)\.[cm]?[jt]s)$/
   if (privateName.test(path.basename(filePath))) return true
   try { if (privateName.test(path.basename(fs.realpathSync(filePath)))) return true }

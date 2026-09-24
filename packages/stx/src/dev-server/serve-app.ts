@@ -150,7 +150,7 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
   const pagesDir = path.join(stxRoot, pagesDirName)
 
   // Check if pages directory exists
-  if (!fs.existsSync(pagesDir)) {
+  if (!fs.existsSync(pagesDir) && !projectConfig._layerPageDirs?.some(dir => fs.existsSync(dir))) {
     // Name the path that was actually looked at. The old message read as
     // scaffolding advice ("create a pages/ directory"), but the common case is
     // an existing project run from one directory off — so lead with where it
@@ -166,7 +166,7 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
   // Create router from stx root (where pages/ lives). pagesDirName is passed
   // explicitly so a --pages override reaches route discovery too — createRouter
   // otherwise re-reads pagesDir from config and would scan the wrong directory.
-  const routes = createRouter(stxRoot, { pagesDir: pagesDirName })
+  const routes = createRouter(stxRoot, { pagesDir: pagesDirName, pagesDirs: projectConfig._layerPageDirs ? [pagesDir, ...projectConfig._layerPageDirs.slice(1)] : undefined })
 
   if (routes.length === 0) {
     console.error(`${colors.red}Error: No page files found in ${colors.bright}${pagesDir}${colors.reset}`)
@@ -1155,10 +1155,39 @@ catch {
     }
 
     // eslint-disable-next-line pickier/no-unused-vars
-    const watcher = fs.watch(absoluteAppDir, { recursive: true }, async (eventType, filename) => {
+    const watchers = new Map<string, fs.FSWatcher>()
+    const syncWatchers = (): void => {
+      const roots = new Set([absoluteAppDir, ...(projectConfig._layerGraph?.layers.map(layer => layer.root) ?? []), ...(projectConfig._layerGraph?.configDependencies.map(file => path.dirname(file)) ?? [])].filter(root => fs.existsSync(root)).map(root => fs.realpathSync(root)))
+      for (const layer of projectConfig._layerGraph?.layers ?? []) {
+        for (const directory of Object.values(layer.resources)) {
+          if (!fs.existsSync(directory)) continue
+          const root = fs.realpathSync(directory)
+          if (![...roots].some(parent => root === parent || root.startsWith(`${parent}${path.sep}`))) roots.add(root)
+        }
+      }
+      for (const [root, watcher] of watchers) {
+        if (!roots.has(root)) { watcher.close(); watchers.delete(root) }
+      }
+      for (const root of roots) {
+        if (!watchers.has(root) && fs.existsSync(root))
+          watchers.set(root, fs.watch(root, { recursive: true }, (event, file) => { void changed(root, event, file).catch(error => console.error('[stx] Layer rebuild failed:', error)) }))
+      }
+    }
+    let rebuildQueue = Promise.resolve()
+    const changed = (watchRoot: string, eventType: string, filename: string | null): Promise<void> => {
+      rebuildQueue = rebuildQueue.catch(() => {}).then(() => onChange(watchRoot, eventType, filename))
+      return rebuildQueue
+    }
+    const onChange = async (watchRoot: string, eventType: string, filename: string | null): Promise<void> => {
       if (!filename || shouldIgnoreFile(filename)) return
 
       if (shouldReloadOnChange(filename)) {
+        if (projectConfig._layerGraph) {
+          const fresh = await loadStxConfig(absoluteAppDir)
+          Object.assign(projectConfig, fresh)
+          routes.splice(0, routes.length, ...createRouter(stxRoot, { pagesDir: pagesDirName, pagesDirs: fresh._layerPageDirs ? [pagesDir, ...fresh._layerPageDirs.slice(1)] : undefined }))
+          syncWatchers()
+        }
         // For static assets (public/), just trigger reload without rebuilding
         if (isStaticAsset(filename)) {
           console.log(`${colors.cyan}${filename} changed${colors.reset}`)
@@ -1174,13 +1203,13 @@ catch {
           clearComponentCache()
           try {
             const { invalidateFileCache, templateCache } = await import('../caching')
-            invalidateFileCache(path.resolve(absoluteAppDir, filename))
-            templateCache.delete(path.resolve(absoluteAppDir, filename))
+            invalidateFileCache(path.resolve(watchRoot, filename))
+            templateCache.delete(path.resolve(watchRoot, filename))
           }
           catch {}
           // Rebuild shell if shell file changed
           if (shellPath && filename) {
-            const changedPath = path.resolve(absoluteAppDir, filename)
+            const changedPath = path.resolve(watchRoot, filename)
             if (changedPath === shellPath || path.basename(shellPath) === filename) {
               const newShell = await processShell(shellPath, options.stxOptions || {})
               if (newShell) shell = newShell
@@ -1201,8 +1230,8 @@ catch {
           clearComponentCache()
           try {
             const { invalidateFileCache, templateCache } = await import('../caching')
-            invalidateFileCache(path.resolve(absoluteAppDir, filename))
-            templateCache.delete(path.resolve(absoluteAppDir, filename))
+            invalidateFileCache(path.resolve(watchRoot, filename))
+            templateCache.delete(path.resolve(watchRoot, filename))
           }
           catch {}
           await buildAllPages()
@@ -1218,10 +1247,11 @@ else if (isCssOnlyChange(filename)) {
           hmrServer.updateCss(filename)
         }
       }
-    })
+    }
+    syncWatchers()
 
     process.on('SIGINT', () => {
-      watcher.close()
+      for (const watcher of watchers.values()) watcher.close()
       if (hmrServer) stopHmrServer()
       server.stop()
       process.exit(0)

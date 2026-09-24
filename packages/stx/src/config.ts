@@ -16,6 +16,7 @@ import { pwaDirectives } from './pwa/directives'
 import { metaDirective, structuredDataDirective } from './seo'
 import { DEFAULT_STATE_DIR, rebaseOntoStateDir, setStateDir, stateDirName } from './state-dir'
 import { webComponentDirectiveHandler } from './web-components'
+import { layerConfigSignature, layerSignature, refreshLayerDiagnostics, resolveApplicationLayers, type ApplicationLayerGraph } from './application-layers'
 
 export const defaultConfig: StxConfig = {
   enabled: true,
@@ -645,6 +646,7 @@ function applyStateDir(loaded: StxConfig): void {
 // This makes imports near-instant instead of taking 2-3 seconds
 let _config: StxConfig | null = null
 const _cwdConfigCache = new Map<string, Promise<StxConfig>>()
+const _layerSnapshots = new Map<string, { graph: ApplicationLayerGraph, signature: string, configSignature: string }>()
 let _configPromise: Promise<StxConfig> | null = null
 
 /**
@@ -658,6 +660,32 @@ let _configPromise: Promise<StxConfig> | null = null
  * Results are cached per cwd so repeated calls don't re-read disk.
  */
 export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
+  const effectiveCwd = cwd ? path.resolve(cwd) : process.cwd()
+  const snapshot = _layerSnapshots.get(effectiveCwd)
+  if (snapshot && snapshot.signature !== layerSignature(snapshot.graph)) {
+    const previous = _cwdConfigCache.get(effectiveCwd)
+    _cwdConfigCache.delete(effectiveCwd)
+    _layerSnapshots.delete(effectiveCwd)
+    if (!cwd) { _config = null; _configPromise = null }
+    const { clearComponentCache } = await import('./utils')
+    const { partialsCache } = await import('./includes')
+    clearComponentCache()
+    partialsCache.clear()
+    if (previous && snapshot.configSignature === layerConfigSignature(snapshot.graph)) {
+      // Resource edits must not re-run plugin setup and duplicate external
+      // listeners/connections. Refresh provenance and resource caches only.
+      const refreshed = previous.then(async (loaded) => {
+        const graph = { ...snapshot.graph }
+        await refreshLayerDiagnostics(graph, effectiveCwd)
+        _layerSnapshots.set(effectiveCwd, { graph, signature: layerSignature(graph), configSignature: layerConfigSignature(graph) })
+        const result = { ...loaded, _layerGraph: graph }
+        if (!cwd) _config = result
+        return result
+      })
+      _cwdConfigCache.set(effectiveCwd, refreshed)
+      return refreshed
+    }
+  }
   // Backwards-compatible path: no cwd → use the module-level cache.
   if (!cwd) {
     if (_config)
@@ -666,7 +694,6 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
       return _configPromise
   }
 
-  const effectiveCwd = cwd ? path.resolve(cwd) : process.cwd()
   const cached = _cwdConfigCache.get(effectiveCwd)
   if (cached) return cached
 
@@ -678,7 +705,12 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
       defaultConfig,
       verbose: false,
     })
-    const loaded = configResult.config
+    let loaded = configResult.config
+    if (loaded.extends !== undefined || snapshot) {
+      const resolved = await resolveApplicationLayers(effectiveCwd, defaultConfig)
+      loaded = resolved.config as StxConfig
+      _layerSnapshots.set(effectiveCwd, { graph: resolved.graph, signature: layerSignature(resolved.graph), configSignature: layerConfigSignature(resolved.graph) })
+    }
     if (loaded.runtimeConfig) {
       const { resolveRuntimeConfig } = await import('./runtime-config-server')
       resolveRuntimeConfig(loaded.runtimeConfig, {})
@@ -714,7 +746,7 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
             pluginDir = path.dirname(require.resolve(pluginPath))
           }
           catch {
-            const resolvedPath = path.resolve(process.cwd(), pluginPath)
+            const resolvedPath = path.resolve(effectiveCwd, pluginPath)
             pluginModule = await import(resolvedPath)
             pluginDir = path.dirname(resolvedPath)
           }
@@ -793,6 +825,7 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
   })()
 
   _cwdConfigCache.set(effectiveCwd, promise)
+  promise.catch(() => { if (_cwdConfigCache.get(effectiveCwd) === promise) _cwdConfigCache.delete(effectiveCwd) })
 
   // Preserve the legacy module-level cache when no explicit cwd was passed,
   // so callers that rely on `config` proxy / later plain `loadStxConfig()`

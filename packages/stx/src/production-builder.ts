@@ -30,6 +30,7 @@ import { hydrateTemplateStream } from './template-hydrator'
 import { buildServerApi, discoverServerApi, type ServerApiOptions } from './server-api'
 import { resolveRuntimeConfig } from './runtime-config-server'
 import { generateRuntimeConfigTypes } from './runtime-config-loader'
+import { layerManifest } from './application-layers'
 
 /**
  * Production build configuration.
@@ -201,7 +202,7 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
 
   // ── 2. Discover routes ──
   console.log('[stx build] Discovering routes...')
-  const allRoutes = createRouter(root)
+  const allRoutes = createRouter(root, { pagesDirs: projectConfig._layerPageDirs })
   // Filter out non-page files (components, layouts, partials)
   const excludeDirs = ['components', 'layouts', 'partials']
   const routes = allRoutes.filter(r => {
@@ -399,6 +400,8 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
     await Bun.write(path.join(outputDir, 'server/runtime-config.json'), JSON.stringify(projectConfig.runtimeConfig))
     await generateRuntimeConfigTypes(root, projectConfig.runtimeConfig)
   }
+  if (projectConfig._layerGraph)
+    await Bun.write(path.join(outputDir, 'server/layers.json'), JSON.stringify(layerManifest(projectConfig._layerGraph), null, 2))
   writeManifest(manifest, outputDir)
 
   const duration = Date.now() - startTime

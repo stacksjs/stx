@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><title>Layer example</title></head>
+<body>
+  <main class="mx-auto max-w-2xl p-8">
+    <LayerHeader />
+    @yield('content')
+    <StxLink to="/">Home</StxLink>
+    <StxLink to="/about">About</StxLink>
+  </main>
+</body>
+</html>

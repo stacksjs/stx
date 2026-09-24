@@ -494,6 +494,7 @@ export async function processDirectives(
 
   const isTopLevel = !context.__stxProcessingDepth
   serverDataScope(context)
+  for (const dependency of options._layerGraph?.configDependencies ?? []) dependencies.add(dependency)
   if (isTopLevel && options.runtimeConfig)
     await prepareRuntimeConfig(context, filePath, options.runtimeConfig)
   if (isTopLevel) {
@@ -779,7 +780,7 @@ export async function processDirectives(
             const { getComposableScript } = await importOnce('stx/composable-loader', () => import('./composable-loader'))
             const resolvedComposablesDir = (options as any).composablesDir as string | undefined
             const pending = [modulesTag, storeTag, frameworkScript].filter((text): text is string => text !== null)
-            const composableCode = await getComposableScript(resolvedComposablesDir, result, pending)
+            const composableCode = await getComposableScript(options._layerComposableDirs ?? resolvedComposablesDir, result, pending)
             if (composableCode)
               composableTag = `<script data-stx-composables>${composableCode}</script>`
           }

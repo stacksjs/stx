@@ -1238,7 +1238,7 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     generateLayoutTypes((stxConfig as any)?.layoutsDir, stateDir(process.cwd()))
 
     // Discover routes
-    const routes = createRouter('.', { pagesDir: cfg.pagesDir })
+    const routes = createRouter('.', { pagesDir: cfg.pagesDir, pagesDirs: stxConfig?._layerPageDirs })
     console.log(`Found ${routes.length} routes`)
 
     // Collect all pages to generate
