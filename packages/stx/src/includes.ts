@@ -460,6 +460,15 @@ function addScopeToRootElement(html: string, scopeId: string): { html: string, m
 let scopeIdCounter = 0
 
 // Cache for partials to avoid repeated file reads (LRU with max 500 entries)
+
+/**
+ * A script the browser treats as data rather than code: any `type` other than
+ * the three that execute. Same rule the page pipeline applies in process.ts.
+ */
+function isDataBlockScript(attrs: string): boolean {
+  return /\btype\s*=\s*["'](?!(?:text\/javascript|application\/javascript|module)["'])[^"']*["']/i.test(attrs)
+}
+
 export const partialsCache: LRUCache<string, string> = new LRUCache<string, string>(500)
 
 // Global store to track what has been included via @once
@@ -1087,8 +1096,28 @@ catch (error: unknown) {
         preservedStyle = `<style${styleMatch[1]}>${styleMatch[2]}</style>`
       }
 
-      // Remove script and style tags from working content
-      workingContent = workingContent.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+      // Remove script and style tags from working content - except data
+      // blocks. A `<script type="application/ld+json">` (or `application/json`,
+      // `importmap`, `speculationrules`, ...) is not code: the browser never
+      // runs it, and the page pipeline passes it through verbatim for that
+      // reason. Here it used to be stripped and re-emitted through the
+      // client-script branch below, wrapped in the scope IIFE, so every JSON-LD
+      // block in a partial - the usual place for a shared <head> - shipped as
+      // JavaScript that no search engine could parse. Left in the markup, its
+      // `{!! !!}` and any `@if` around it resolve like the rest of the partial.
+      //
+      // It is parked behind a placeholder rather than left as-is, because its
+      // body still needs `{{ }}` / `{!! !!}` resolving and template expressions
+      // do not reach inside <script>. That has to wait until the loop below has
+      // run the partial's own <script server>, so the placeholder goes back
+      // after it; any @if around it is resolved later, like the rest.
+      const dataBlocks: { attrs: string, body: string }[] = []
+      workingContent = workingContent.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi, (_tag, attrs: string, body: string) => {
+        if (!isDataBlockScript(attrs))
+          return ''
+        dataBlocks.push({ attrs, body })
+        return `__STX_DATA_BLOCK_${dataBlocks.length - 1}__`
+      })
       workingContent = workingContent.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
 
       // Create a new context with local variables
@@ -1115,6 +1144,10 @@ catch (error: unknown) {
       for (const scriptMatch of scriptMatches) {
         const scriptAttrs = scriptMatch[1] || ''
         let scriptContent = scriptMatch[2] || ''
+
+        // Data blocks stayed in `workingContent` above; nothing here applies.
+        if (isDataBlockScript(scriptAttrs))
+          continue
 
         const isServerScript = scriptAttrs.includes('server')
         const shouldTranspile = shouldTranspileTypeScript(scriptAttrs)
@@ -1306,6 +1339,14 @@ catch (e) {
           const wrapped = transformScopedScript(resolvedContent, signalScopeId)
           preservedScript += `${vendorStyleTags}<script data-stx-scoped data-stx-run="always" data-stx-owner="${signalScopeId}"${extraAttrs ? ` ${extraAttrs}` : ''}>${wrapped}</script>\n`
         }
+      }
+
+      if (dataBlocks.length > 0) {
+        const { interpolateScriptExpressions } = await import('./expressions')
+        workingContent = workingContent.replace(/__STX_DATA_BLOCK_(\d+)__/g, (_token, index: string) => {
+          const block = dataBlocks[Number(index)]!
+          return `<script${block.attrs}>${interpolateScriptExpressions(block.body, includeContext)}</script>`
+        })
       }
 
       // If we have a signal script, add data-stx-scope to the root element
