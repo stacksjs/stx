@@ -9,6 +9,7 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import type { RouteRules } from './route-rules'
 
 /**
  * A route entry in the build manifest.
@@ -24,6 +25,8 @@ export interface ManifestRoute {
   isDynamic: boolean
   /** Whether this is a dynamic route with params (e.g. [id].stx) */
   hasParams: boolean
+  /** This artifact was fully rendered at build time. */
+  prerendered?: boolean
 }
 
 /**
@@ -52,6 +55,8 @@ export interface BuildManifest {
   assets: ManifestAssets
   /** Output directory (relative to project root) */
   outputDir: string
+  routeRules?: RouteRules
+  routerContainer?: string
 }
 
 /**

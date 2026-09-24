@@ -25,6 +25,8 @@ import { applyHtmlAttrs, ensureDocumentShell } from './document-shell'
 import { extractContainerContent } from './app-shell'
 import { injectCss } from './dev-server/ts-css'
 import { loadStxConfig } from './config'
+import { createRouteRuleResolver, type RouteRules } from './route-rules'
+import { hydrateTemplateStream } from './template-hydrator'
 
 /**
  * Production build configuration.
@@ -52,6 +54,7 @@ export interface ProductionBuildOptions {
    * Default: stx.config publicDir → 'public'
    */
   publicDir?: string
+  routeRules?: RouteRules
 }
 
 /**
@@ -162,19 +165,21 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
   // Resolution order for each setting: explicit option → config file → default
   let projectConfig: Record<string, any> = {}
   try {
-    projectConfig = (await loadStxConfig()) as Record<string, any>
+    projectConfig = (await loadStxConfig(root)) as Record<string, any>
   }
   catch {
     // No config file — use defaults
   }
 
-  const componentsDir = options.componentsDir ?? projectConfig.componentsDir ?? 'components'
-  const partialsDir = options.partialsDir ?? projectConfig.partialsDir ?? 'partials'
-  const layoutsDir = options.layoutsDir ?? projectConfig.layoutsDir ?? 'layouts'
+  const componentsDir = path.resolve(root, options.componentsDir ?? projectConfig.componentsDir ?? 'components')
+  const partialsDir = path.resolve(root, options.partialsDir ?? projectConfig.partialsDir ?? 'partials')
+  const layoutsDir = path.resolve(root, options.layoutsDir ?? projectConfig.layoutsDir ?? 'layouts')
   const publicDir = options.publicDir ?? projectConfig.publicDir ?? 'public'
   const headConfigDefault = projectConfig.app?.head || {}
   const colorModeConfig = projectConfig.app?.colorMode
   const routerContainer: string = projectConfig.router?.container || 'main'
+  const routeRules = options.routeRules ?? projectConfig.routeRules ?? {}
+  const resolveRule = createRouteRuleResolver(routeRules)
 
   // ── 1. Clean output directory ──
   if (fs.existsSync(outputDir)) {
@@ -227,8 +232,13 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
   const manifestRoutes: ManifestRoute[] = []
 
   for (const route of routes) {
+    const rule = resolveRule(route.pattern)
+    const prerendered = rule.rendering === 'prerender'
+    if (prerendered && (route.pattern.includes(':') || route.pattern.includes('[')))
+      throw new Error(`Cannot prerender parameter route ${route.pattern}; use dynamic rendering (explicit path enumeration is not supported here)`)
     try {
       const compiled = await compileTemplate(route.filePath, route.pattern, {
+        configDir: root,
         componentsDir,
         partialsDir,
         layoutsDir,
@@ -289,6 +299,22 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
       compiled.html = compiled.html.replace(/<style data-css="generated">[\s\S]*?<\/style>\s*/g, '')
       compiled.html = await injectCss(compiled.html)
 
+      if (prerendered) {
+        const rendered = await hydrateTemplateStream(compiled, {
+          params: {},
+          request: new Request(`http://stx.build${route.pattern}`),
+          method: 'GET',
+          __stx_strict_hydration: true,
+        })
+        if (rendered.redirect || rendered.cookies?.length || rendered.boundaries?.length || (rendered.headers && Object.keys(rendered.headers).length))
+          throw new Error(`Prerendered route ${route.pattern} cannot set response headers/cookies, redirect or stream`)
+        compiled.html = rendered.html
+        compiled.status = rendered.status ?? compiled.status
+        compiled.hasServerScripts = false
+        compiled.serverScriptContent = []
+        compiled.placeholders = {}
+      }
+
       // Extract fragment AFTER shell wrapping — must contain ONLY the router
       // container's inner content, not the full body. The SPA router injects
       // fragments into the container via innerHTML, so anything outside the
@@ -315,11 +341,14 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
         fragmentPath,
         isDynamic: compiled.hasServerScripts,
         hasParams: route.pattern.includes(':') || route.pattern.includes('['),
+        prerendered,
       })
 
       console.log(`[stx build]   ✓ ${route.pattern}`)
     }
     catch (error) {
+      if (Object.keys(rule).length)
+        throw error
       console.error(`[stx build]   ✗ ${route.pattern}:`, error instanceof Error ? error.message : error)
     }
   }
@@ -360,6 +389,8 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
   }
 
   const manifest = generateManifest(manifestRoutes, assets, outputDir)
+  manifest.routeRules = routeRules
+  manifest.routerContainer = routerContainer
   writeManifest(manifest, outputDir)
 
   const duration = Date.now() - startTime

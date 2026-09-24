@@ -13,14 +13,16 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { serve } from 'bun'
 import { loadManifest, type BuildManifest, type ManifestRoute } from './manifest'
-import { hydrateTemplateStream, hydrateFragment } from './template-hydrator'
+import { hydrateTemplateStream } from './template-hydrator'
 import type { CompiledTemplate } from './template-compiler'
-import { extractLayoutMetadata, type LayoutMetadata } from './app-shell'
+import { extractContainerContent, extractLayoutMetadata, type LayoutMetadata } from './app-shell'
 import { pageShipsSignalsRuntime } from './runtime-injection'
 import { patternToRegex } from 'stx-router'
 import { compressResponse } from './compression'
 import { actionRedirectResponse, isActionableMethod } from './page-action'
 import { FRAGMENT_CACHE_CONTROL, isSpaNavRequest, spaNavVaryHeaders } from './spa-nav'
+import { createRouteRuleResolver } from './route-rules'
+import { RouteResponseCache } from './route-response-cache'
 
 /**
  * Production server configuration.
@@ -85,9 +87,9 @@ const MIME_TYPES: Record<string, string> = {
  * - Static pages: served directly (zero processing)
  * - Dynamic pages: hydrated with request-time data
  */
-export async function startProductionServer(options: ProductionServerOptions = {}): Promise<{ port: number, stop: () => void }> {
+export async function startProductionServer(options: ProductionServerOptions = {}): Promise<{ port: number, stop: () => void, invalidate: (pathname?: string) => void }> {
   const outputDir = path.resolve(options.outputDir || '.output')
-  const port = options.port || 3000
+  const port = options.port ?? 3000
 
   // Load build manifest
   const manifest = loadManifest(outputDir)
@@ -97,6 +99,8 @@ export async function startProductionServer(options: ProductionServerOptions = {
   }
 
   console.log(`[stx] Production server loading ${manifest.routes.length} routes...`)
+  const resolveRule = createRouteRuleResolver(manifest.routeRules)
+  const responseCache = new RouteResponseCache()
 
   // Pre-load compiled templates into memory
   const compiledTemplates = new Map<string, CompiledTemplate>()
@@ -256,12 +260,17 @@ export async function startProductionServer(options: ProductionServerOptions = {
           return new Response('Not Found', { status: 404 })
         }
   
-        // ── SPA fragment response ──
-        if (isSpaNav) {
+        const rule = resolveRule(pathname)
+        const controlled = Object.keys(rule).length > 0
+        return responseCache.respond(request, rule.cache, async () => {
+        // ── SPA fragment response (only genuinely static artifacts) ──
+        const candidate = compiledTemplates.get(matchedRoute.pattern)
+        if (isSpaNav && request.method === 'GET' && candidate && !candidate.hasServerScripts && Object.keys(candidate.placeholders).length === 0) {
           const fragment = fragmentCache.get(matchedRoute.pattern)
           if (fragment) {
             const layoutMetadata = layoutMetadataCache.get(matchedRoute.pattern)
             return new Response(fragment, {
+              status: candidate.status ?? 200,
               headers: {
                 'Content-Type': 'text/html',
                 'X-STX-Fragment': 'true',
@@ -285,7 +294,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
                 // everyone; a stored fragment leaves every visitor on a page
                 // with no doctype, stylesheet or nav (#1958).
                 ...spaNavVaryHeaders(),
-                'Cache-Control': FRAGMENT_CACHE_CONTROL,
+                ...(rule.cache ? {} : { 'Cache-Control': FRAGMENT_CACHE_CONTROL }),
               },
             })
           }
@@ -313,6 +322,8 @@ export async function startProductionServer(options: ProductionServerOptions = {
           }
           return new Response('Internal Server Error', { status: 500 })
         }
+        if (matchedRoute.prerendered && isMutating)
+          return new Response('Prerendered pages do not accept actions', { status: 405, headers: { Allow: 'GET, HEAD' } })
   
         // Static page — serve pre-rendered HTML directly (zero processing).
         // A submission never takes this path: a `Cache-Control: max-age=60`
@@ -345,6 +356,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
             params,
             request,
             method: request.method,
+            __stx_strict_hydration: controlled,
           })
 
           // A page action asked for a redirect (#1847). 303 rather than 302:
@@ -356,9 +368,19 @@ export async function startProductionServer(options: ProductionServerOptions = {
           // its shell first, then each boundary as its server-side data resolves.
           if (boundaries && boundaries.length > 0) {
             const { renderStreamingPage, streamToResponse } = await import('./streaming')
-            return streamToResponse(renderStreamingPage(html, boundaries, { timeoutMs: 30000 }), {
+            const headers = new Headers({ ...spaNavVaryHeaders(), ...pageHeaders, 'Cache-Control': 'private, no-store' })
+            for (const cookie of cookies ?? [])
+              headers.append('Set-Cookie', cookie)
+            if (isSpaNav && !isMutating) {
+              const layout = extractLayoutMetadata(html)
+              headers.set('X-STX-Fragment', 'true')
+              headers.set('X-STX-Runtime', pageShipsSignalsRuntime(html) ? 'true' : 'false')
+              headers.set('X-STX-Layout', layout.layout)
+              headers.set('X-STX-Layout-Group', layout.group)
+            }
+            return streamToResponse(renderStreamingPage(isSpaNav && !isMutating ? extractContainerContent(html, manifest.routerContainer || 'main') : html, boundaries, { timeoutMs: 30000 }), {
               status: status ?? compiled.status ?? 200,
-              headers: { 'Cache-Control': 'no-cache', ...pageHeaders },
+              headers,
             })
           }
           /*
@@ -374,12 +396,21 @@ export async function startProductionServer(options: ProductionServerOptions = {
           const headers = new Headers({
             'Content-Type': 'text/html',
             ...spaNavVaryHeaders(),
-            'Cache-Control': 'no-cache',
+            ...(rule.cache ? {} : { 'Cache-Control': 'private, no-store' }),
           })
           for (const cookie of cookies ?? [])
             headers.append('Set-Cookie', cookie)
           for (const [name, value] of Object.entries(pageHeaders ?? {}))
             headers.set(name, value)
+          headers.set('Vary', spaNavVaryHeaders(headers.get('Vary')).Vary)
+          if (isSpaNav && !isMutating) {
+            const layout = extractLayoutMetadata(html)
+            headers.set('X-STX-Fragment', 'true')
+            headers.set('X-STX-Runtime', pageShipsSignalsRuntime(html) ? 'true' : 'false')
+            headers.set('X-STX-Layout', layout.layout)
+            headers.set('X-STX-Layout-Group', layout.group)
+            return new Response(extractContainerContent(html, manifest.routerContainer || 'main'), { status: status ?? compiled.status ?? 200, headers })
+          }
 
           /*
            * The status the page decided for itself (stacksjs/stx#1990).
@@ -395,17 +426,20 @@ export async function startProductionServer(options: ProductionServerOptions = {
         }
         catch (error) {
           console.error(`[stx] Hydration error for ${pathname}:`, error)
+          if (controlled)
+            return new Response('Internal Server Error', { status: 500 })
           // Fallback to pre-rendered HTML
           return new Response(compiled.html, {
             headers: { 'Content-Type': 'text/html' },
           })
         }
+        })
       })())
     },
   })
 
-  console.log(`[stx] Production server running at http://localhost:${port}`)
+  console.log(`[stx] Production server running at http://localhost:${server.port}`)
   console.log(`[stx] Serving ${manifest.routes.length} routes (${compiledTemplates.size} pre-loaded)`)
 
-  return { port, stop: () => server.stop() }
+  return { port: server.port!, stop: () => { responseCache.invalidate(); server.stop() }, invalidate: pathname => responseCache.invalidate(pathname) }
 }

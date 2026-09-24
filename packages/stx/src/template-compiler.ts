@@ -105,6 +105,7 @@ export async function compileTemplate(
   filePath: string,
   route: string,
   options: {
+    configDir?: string
     componentsDir?: string
     partialsDir?: string
     layoutsDir?: string
@@ -121,7 +122,7 @@ export async function compileTemplate(
   // Load project config
   let projectConfig: Record<string, any> = {}
   try {
-    projectConfig = await loadStxConfig()
+    projectConfig = await loadStxConfig(options.configDir)
   }
   catch {
     // No config file — use defaults

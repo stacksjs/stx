@@ -14,6 +14,7 @@ import { evaluateExpression, escapeHtmlValue } from './expressions'
 import { replacePlaceholders, hasPlaceholders } from './placeholder'
 import { runPageAction } from './page-action'
 import { readResponseHeaders, readResponseStatus } from './page-response'
+import { serverDataTag } from './server-data'
 
 /**
  * Hydrate a pre-compiled template with request-time data.
@@ -115,6 +116,8 @@ async function runHydration(
       await extractVariables(scriptContent, context, compiled.sourceFile)
     }
     catch (error) {
+      if (requestContext.__stx_strict_hydration)
+        throw error
       console.warn(`[stx] Server script error in ${compiled.sourceFile}:`, error)
     }
   }
@@ -139,13 +142,23 @@ async function runHydration(
     cookies: (requestContext.cookies ?? {}) as Record<string, string>,
   })
 
+  // Build-time payloads are not request data. Replace them after server scripts
+  // have loaded this request's values, before extracting an SPA fragment.
+  const withServerData = (html: string): string => {
+    const clean = html.replace(/<script\b[^>]*\bdata-stx-server-data\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    const tag = serverDataTag(context)
+    if (!tag) return clean
+    const head = clean.indexOf('</head>')
+    return head < 0 ? tag + clean : clean.slice(0, head) + tag + clean.slice(head)
+  }
+
   if (action.redirect)
     return { html: compiled.html, context, redirect: action.redirect, cookies: action.cookies }
 
   // If no placeholders, server scripts only needed to populate context
   // for side effects (e.g., setting headers). Return HTML as-is.
   if (!hasPlaceholders(compiled.html)) {
-    return { html: compiled.html, context, cookies: action.cookies }
+    return { html: withServerData(compiled.html), context, cookies: action.cookies }
   }
 
   // Resolve expression placeholders
@@ -162,13 +175,15 @@ async function runHydration(
           values.set(token, value !== undefined && value !== null ? escapeHtmlValue(String(value)) : '')
         }
       }
-      catch {
+      catch (error) {
+        if (requestContext.__stx_strict_hydration)
+          throw error
         values.set(token, '')
       }
     }
   }
 
-  return { html: replacePlaceholders(compiled.html, values), context, cookies: action.cookies }
+  return { html: withServerData(replacePlaceholders(compiled.html, values)), context, cookies: action.cookies }
 }
 
 /**

@@ -9,6 +9,7 @@ import type { PwaConfig } from './pwa-types'
 import type { CspConfig } from './csp-types'
 import type { HeatmapConfig } from '../heatmap'
 import type { MediaConfig } from '../media/types'
+import type { RouteRules } from '../route-rules'
 
 /**
  * Internationalization (i18n) configuration
@@ -906,6 +907,8 @@ export interface StxConfig {
    * Handlers receive the standard Request and return a Response.
    */
   apiRoutes?: Record<string, (request: Request) => Response | Promise<Response>>
+  /** Per-route production rendering and anonymous origin-cache policies. */
+  routeRules?: RouteRules
 
   /**
    * Client-side router configuration

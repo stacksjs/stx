@@ -1075,6 +1075,10 @@ catch {
     }
   }
   catch (primaryError) {
+    // Policy-controlled production renders must not cache static fallback
+    // values after a failed server script (including background refreshes).
+    if (context.__stx_strict_hydration)
+      throw primaryError
     // The server <script> IIFE failed to execute, so we fall back to static
     // extraction below. This is sometimes legitimate (pages that only use
     // client-only APIs like reactive()/Chart.js), but a genuine server-script

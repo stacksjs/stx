@@ -3,6 +3,7 @@ import type { SSGConfig, SSGResult } from './ssg'
 import type { BuildMode } from './build-mode-detector'
 import path from 'node:path'
 import { loadStxConfig } from './config'
+import { validateRouteRules } from './route-rules'
 
 export interface UnifiedBuildOptions {
   /** Project root directory (default: process.cwd()) */
@@ -42,7 +43,11 @@ export async function buildApp(options: UnifiedBuildOptions = {}): Promise<Unifi
   const root = options.root || process.cwd()
 
   // ── Step 1: Read build mode from config ───────────────────────────
-  const config = await loadStxConfig()
+  const config = await loadStxConfig(root)
+  const rules = options.ssr?.routeRules ?? config.routeRules ?? {}
+  validateRouteRules(rules)
+  if (!config.ssr && Object.keys(rules).length)
+    throw new Error('routeRules require ssr: true and the production server; flat SSG output cannot apply request/cache policies')
   const mode: BuildMode = config.ssr ? 'ssr' : 'ssg'
 
   console.log(`[stx build] Mode: ${mode.toUpperCase()}${config.ssr ? ' (ssr: true in stx.config.ts)' : ' (default — ssr is false)'}`)
@@ -84,6 +89,7 @@ export async function buildApp(options: UnifiedBuildOptions = {}): Promise<Unifi
   else {
     const { buildForProduction } = await import('./production-builder')
     ssrResult = await buildForProduction({
+      root,
       outputDir: '.output',
       debug: options.debug,
       ...options.ssr,
