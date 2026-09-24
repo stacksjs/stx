@@ -6,7 +6,7 @@
  * the x-cloak utility for unresolved expressions.
  */
 import { errorLogger } from './error-handling'
-import { mightContainOwnTextMustache } from './html-masking'
+import { mightContainOwnTextMustache, scanAtElementPosition } from './html-masking'
 import { createSafeFunction, isExpressionSafe } from './safe-evaluator'
 
 /**
@@ -218,6 +218,48 @@ export function processRefAttributes(template: string): string {
   // Avoid matching ref= in text content by ensuring it follows a tag attr pattern
   result = result.replace(/(<[a-zA-Z][a-zA-Z0-9-]*\b[^>]*?)\sref="([^"]+)"/g, '$1 data-stx-ref="$2"')
   return result
+}
+
+/** Keep the caller of a projected ref explicit after slot content is flattened. */
+export function markProjectedRefs(template: string, receiver: string): string {
+  if (!/\bref\s*=/.test(template)) return template
+  const tagPattern = /<\/?([a-zA-Z][\w-]*)\b(?:"[^"]*"|'[^']*'|[^'">])*>/y
+  const tags = scanAtElementPosition(template, (html, index) => {
+    tagPattern.lastIndex = index
+    const match = tagPattern.exec(html)
+    if (!match || /^(?:script|style)$/i.test(match[1])) return -1
+    return tagPattern.lastIndex
+  })
+  const ancestors: Array<{ name: string, scoped: boolean }> = []
+  let scopedDepth = 0
+  let cursor = 0
+  const output: string[] = []
+  for (const { start, end, token } of tags) {
+    const name = /^<\/?([\w-]+)/.exec(token)![1].toLowerCase()
+    if (token.startsWith('</')) {
+      let ancestor
+      while ((ancestor = ancestors.pop())) {
+        if (ancestor.scoped) scopedDepth--
+        if (ancestor.name === name) break
+      }
+      continue
+    }
+    // Kebab-case children may already have rendered before their parent.
+    // Their refs belong to that child, not to this newly projected slot.
+    const scoped = /\sdata-stx-scope\s*=/.test(token)
+    if (!scopedDepth && !scoped
+      && /\s(?:ref|@ref|:ref|x-ref|data-stx-ref)\s*=/.test(token)
+      && !/\sdata-stx-ref-caller\s*=/.test(token)) {
+      output.push(template.slice(cursor, start), token.replace(/\s*\/?>$/, ending => ` data-stx-ref-caller="${receiver}"${ending}`))
+      cursor = end
+    }
+    if (!VOID_TAGS.has(name) && !/\/>$/.test(token)) {
+      ancestors.push({ name, scoped })
+      if (scoped) scopedDepth++
+    }
+  }
+  output.push(template.slice(cursor))
+  return output.join('')
 }
 
 // Elements that never have a closing tag, so they never open a subtree while

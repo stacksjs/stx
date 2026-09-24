@@ -1335,6 +1335,7 @@ else if (immediate) {
     // from the getter made an early component resolve refs from whichever
     // component happened to hydrate last.
     var ownerScope = currentLifecycleScope() || componentScope;
+    var ownerRefs = ownerScope.$refs || (ownerScope.$refs = {});
 
     // Callable, as well as .current / .value.
     //
@@ -1349,7 +1350,7 @@ else if (immediate) {
     //
     // No backticks in here: this whole runtime is a template literal.
     var read = function () {
-      return (ownerScope.$refs && ownerScope.$refs[name]) || null;
+      return ownerRefs[name] || null;
     };
     Object.defineProperty(read, 'current', { get: read, enumerable: true });
     Object.defineProperty(read, 'value', { get: read, enumerable: true });
@@ -2919,14 +2920,36 @@ else if (name === '@html' || name === ':html' || name === 'x-html') {
         el.removeAttribute(name);
       }
 else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data-stx-ref') {
-        // Store ref in scope.$refs and componentScope.$refs
-        if (scope.$refs) scope.$refs[value] = el;
-        if (componentScope.$refs) componentScope.$refs[value] = el;
+        // A page ref can be projected through a component whose own $refs
+        // replaced the compatibility scope's map. The compiler retains the
+        // receiver boundary so named and signal refs use the same caller.
+        var refRoot = el.closest && el.closest('[data-stx-scope]');
+        var refCaller = el.getAttribute('data-stx-ref-caller');
+        var refOwnerScope = findElementScope(el);
+        if (refCaller) {
+          var receiver = refRoot;
+          while (receiver && receiver.getAttribute('data-stx-scope') !== refCaller
+            && receiver.getAttribute('data-stx-template-scope') !== refCaller) {
+            receiver = receiver.parentElement && receiver.parentElement.closest('[data-stx-scope]');
+          }
+          refOwnerScope = receiver && receiver.__stx_parent_scope;
+        }
+        // Only projected refs may reach outside their component. Caller
+        // snapshots exclude unrelated, previously hydrated siblings.
+        if (refCaller && refOwnerScope) {
+          if (refOwnerScope.$refs) refOwnerScope.$refs[value] = el;
+        }
+        else {
+          if (scope.$refs) scope.$refs[value] = el;
+          if (componentScope.$refs) componentScope.$refs[value] = el;
+        }
         // Also fill a same-named signal declared in the script block, so the
         // documented ref() + x-ref pair works and reading the signal returns
         // the element. Without this the signal stayed empty and every read of
         // it silently returned undefined.
-        var refTarget = (scope && scope[value]) || componentScope[value];
+        var refTarget = refCaller && refOwnerScope
+          ? refOwnerScope[value]
+          : (scope && scope[value]) || componentScope[value];
         if (refTarget && typeof refTarget === 'function' && refTarget._isSignal && typeof refTarget.set === 'function') {
           refTarget.set(el);
         }

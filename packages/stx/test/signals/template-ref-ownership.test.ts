@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { markProjectedRefs } from '../../src/misc-directives'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import { setupStxTestDom } from '../../src/testing'
 
@@ -15,6 +16,47 @@ describe('template ref ownership', () => {
   beforeEach(() => {
     bootRuntime()
     document.body.innerHTML = ''
+  })
+
+  afterEach(() => {
+    window.__STX_CURRENT_ELEMENT__ = null
+    window.stx._cleanupContainer(document.body)
+    document.body.innerHTML = ''
+    delete window.__stx_setup_projected_ref
+  })
+
+  it('marks projected refs without claiming existing component or opaque content', () => {
+    const template = `<section>
+<input ref="page" title="a > b">
+<div data-stx-scope="child"><div><input ref="child"></div></div>
+<button x-ref='footer'></button>
+<!-- <input ref="comment"> -->
+<script>const html = '<input ref="script">'</script>
+<input ref="forwarded" data-stx-ref-caller="original">
+</section>`
+    expect(markProjectedRefs(template, 'shell')).toBe(`<section>
+<input ref="page" title="a > b" data-stx-ref-caller="shell">
+<div data-stx-scope="child"><div><input ref="child"></div></div>
+<button x-ref='footer' data-stx-ref-caller="shell"></button>
+<!-- <input ref="comment"> -->
+<script>const html = '<input ref="script">'</script>
+<input ref="forwarded" data-stx-ref-caller="original">
+</section>`)
+  })
+
+  it('binds a page accessor to its captured map after a shell replaces the compatibility scope', () => {
+    document.body.innerHTML = '<main data-stx="__stx_setup_projected_ref"><section data-stx-scope="shell"><button data-stx-ref="control" data-stx-ref-caller="shell">Page</button></section></main>'
+    window.__STX_CURRENT_ELEMENT__ = null
+    let pageRef: { current: HTMLElement | null } | undefined
+    window.__stx_setup_projected_ref = () => {
+      pageRef = window.stx.useRef('control')
+      return { pageRef }
+    }
+    window.stx._scopes.shell = { $refs: {} }
+
+    window.__stxDomReadyHandler()
+
+    expect(pageRef?.current).toBe(document.querySelector('button'))
   })
 
   it('keeps each useRef bound to the component scope that created it', () => {

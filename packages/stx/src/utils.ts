@@ -37,6 +37,7 @@ import { processScopedStyles } from './style-scoping'
 import { findSfcTemplateBlock } from './sfc-template'
 import { importOnce } from './lazy-module'
 import { stashScriptElements } from './html-masking'
+import { markProjectedRefs } from './misc-directives'
 
 // Re-export from extracted modules for backward compatibility
 export {
@@ -1500,8 +1501,17 @@ export async function renderComponentWithSlot(
     const { applySlots } = await importOnce('stx/slots', () => import('./slots'))
     const { defaultSlot, namedSlots } = parsedSlotContent
 
+    // Only signal components introduce a registered scope boundary.
+    const hasSignalScripts = clientScripts.some(s =>
+      /\b(?:state|derived|effect|ref|useRef|reactive|computed|watch|watchEffect|useModel|useReactiveProp|defineProps|withDefaults|defineEmits|defineExpose|defineSlots)\s*(?:<[^<>()]*>)?\s*\(/.test(s),
+    )
+    const projectRefs = (content: string) => hasSignalScripts ? markProjectedRefs(content, componentUid) : content
     // Apply slots to the template (handles named slots, scoped slots, and default slots)
-    templateContent = await applySlots(templateContent, defaultSlot, namedSlots, componentContext)
+    const projectedSlots = new Map([...namedSlots].map(([name, slot]) => [name, {
+      ...slot,
+      content: projectRefs(slot.content),
+    }]))
+    templateContent = await applySlots(templateContent, projectRefs(defaultSlot), projectedSlots, componentContext)
 
     // Entity decoding used to happen here, over every string in the component's
     // context, on the theory that a value which "looks like HTML" must have been
@@ -1520,9 +1530,6 @@ export async function renderComponentWithSlot(
 
     // Check if component has signal scripts - if so, skip event directive processing
     // because the runtime will handle @click, @keydown etc. via processElement()
-    const hasSignalScripts = clientScripts.some(s =>
-      /\b(?:state|derived|effect|ref|reactive|computed|watch|watchEffect|useModel|useReactiveProp|defineProps|withDefaults|defineEmits|defineExpose|defineSlots)\s*(?:<[^<>()]*>)?\s*\(/.test(s),
-    )
     const clientSignalNames = componentClientSignalNames(clientScripts)
     const inheritedClientSignalNames = Array.isArray(componentContext.__stx_client_signal_names)
       ? componentContext.__stx_client_signal_names as string[]
