@@ -1,6 +1,8 @@
 import path from 'node:path'
 import process from 'node:process'
 import { useServerData, withServerData } from './server-data'
+import { prepareRuntimeConfig } from './runtime-config-loader'
+import { currentRuntimeConfig, resolveRuntimeConfig, useRuntimeConfig, useServerRuntimeConfig, withRuntimeConfig, type ResolvedRuntimeConfig } from './runtime-config-server'
 import { getSharedTranspiler } from './utils'
 
 /**
@@ -26,7 +28,7 @@ import { getSharedTranspiler } from './utils'
  */
 export const STX_ENGINE_BINDING_NAMES = [
   'module', 'exports', 'require', 'props', '$props', 'defineProps', 'withDefaults',
-  'defineClientPayload', 'useServerData',
+  'defineClientPayload', 'useServerData', 'useRuntimeConfig', 'useServerRuntimeConfig',
   'state', 'derived', 'effect', 'batch', 'onMount', 'onDestroy',
   'definePageMeta', 'useRoute', 'useRouter', 'useHead', 'useSeoMeta',
   // Deciding the response. Engine bindings rather than per-host context keys
@@ -1034,9 +1036,11 @@ catch {
       scriptFn = new Function(...scriptParams, scriptBody) as (...args: unknown[]) => Promise<Record<string, unknown>>
       compiledServerScripts.set(compileKey, scriptFn)
     }
-    const result = await withServerData(context, () => scriptFn(
+    if (/\buse(?:Server)?RuntimeConfig\b/.test(jsContent))
+      await prepareRuntimeConfig(context, filePath)
+    const result = await withRuntimeConfig((context.__stx_runtime_config as ResolvedRuntimeConfig | undefined) ?? currentRuntimeConfig() ?? resolveRuntimeConfig(), () => withServerData(context, () => scriptFn(
       module, exports, requireFn, propsObj, $props, defineProps, withDefaults,
-      defineClientPayload, useServerData,
+      defineClientPayload, useServerData, useRuntimeConfig, useServerRuntimeConfig,
       state, derived, effect, batch, onMount, onDestroy,
       definePageMeta, useRoute, useRouter, useHead, useSeoMeta,
       responseApi.setResponseStatus, responseApi.setResponseHeader, responseApi.notFound,
@@ -1047,7 +1051,7 @@ catch {
       paramsObj,
       ...propArgValues,
       ...scriptContextValues,
-    ))
+    )))
 
     // Copy results to context. `preserveExisting` is set by the
     // layout/partial extraction path so a stub like

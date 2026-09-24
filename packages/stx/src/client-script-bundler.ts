@@ -27,7 +27,12 @@ import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 // like it had changed nothing. A new version is the only thing that retires
 // them, because the key is the source and that did not change.
 // 8: server API sources must not survive in an older browser bundle cache.
-const BUNDLE_CACHE_VERSION = 8
+const BUNDLE_CACHE_VERSION = 9
+
+function isPrivateClientSource(file: string, root: string, serverApi: boolean | ServerApiOptions | undefined): boolean {
+  return /^(?:(?:stx|ui)\.config\.[cm]?[jt]s|runtime-config-(?:server|loader)\.[cm]?[jt]s)$/.test(path.basename(file))
+    || isServerApiSource(file, root, serverApi)
+}
 const BUNDLE_CACHE_METADATA_VERSION = 1
 
 interface BundleCacheMetadata {
@@ -494,7 +499,7 @@ function createBundlePlugin(
   const toRegistry = (importer: string, resolved: string, specifier: string): { path: string, external: true } | null => {
     // Let onLoad reject it now, rather than externalizing a private endpoint
     // into a later registry build with a potentially different project root.
-    if (isServerApiSource(resolved, projectRoot, serverApi))
+    if (isPrivateClientSource(resolved, projectRoot, serverApi))
       return null
     if (!externalizeUserModules || importer !== tmpEntry || !REGISTRY_MODULE_EXTENSION.test(resolved))
       return null
@@ -652,7 +657,7 @@ function createBundlePlugin(
       // relative and aliased imports handled above, so their mtimes participate
       // in cache validation.
       build.onLoad({ filter: /\.(?:[cm]?[jt]sx?|json)$/ }, (args) => {
-        if (isServerApiSource(args.path, projectRoot, serverApi))
+        if (isPrivateClientSource(args.path, projectRoot, serverApi))
           throw new Error(`Server-only API source cannot be imported by a client script: ${args.path}`)
         const extension = path.extname(args.path).toLowerCase()
         const loader = extension === '.json'
@@ -807,7 +812,7 @@ export async function bundleClientScript(
   // hand one project's bundle to another. The path carries both.
   const remembered = bundleMemo.get(cachePath)
   if (remembered) {
-    if (depsUnchanged(remembered.files) && remembered.files.every(dep => !isServerApiSource(dep.path, projectRoot, serverApi))) {
+    if (depsUnchanged(remembered.files) && remembered.files.every(dep => !isPrivateClientSource(dep.path, projectRoot, serverApi))) {
       logBundlerDiagnostic('memo hit:', hash)
       const paths = remembered.files.map(dep => dep.path)
       recordBundleInputs(filePath, paths)
@@ -836,7 +841,7 @@ export async function bundleClientScript(
         }
 
         // A dep deleted since the build counts as changed.
-        if (storedFiles && (!depsUnchanged(storedFiles) || storedFiles.some(dep => isServerApiSource(dep.path, projectRoot, serverApi))))
+        if (storedFiles && (!depsUnchanged(storedFiles) || storedFiles.some(dep => isPrivateClientSource(dep.path, projectRoot, serverApi))))
           depsValid = false
       }
       catch {

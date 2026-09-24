@@ -7,6 +7,8 @@
 // Explicit re-exports to resolve wildcard ambiguities
 export { type BuildResult } from './build-optimizer'
 export { useServerData } from './server-data'
+export { useRuntimeConfig, useServerRuntimeConfig } from './runtime-config-server'
+export type { RuntimeConfigDefaults, PublicRuntimeConfig } from './runtime-config-types'
 export { clearServerData } from './composables/use-fetch'
 // Exported for servers as well as the static build: SSR inlines the runtime
 // once per *request*, which is the same waste in a worse form.

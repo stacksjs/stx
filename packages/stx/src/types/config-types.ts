@@ -912,6 +912,8 @@ export interface StxConfig {
   routeRules?: RouteRules
   /** Opt-in file-based API endpoints, relative to the config/project directory. */
   serverApi?: boolean | ServerApiOptions
+  /** Deployment-time values. Only public is serialized for browsers. */
+  runtimeConfig?: import('../runtime-config-server').RuntimeConfigDefaults
 
   /**
    * Client-side router configuration

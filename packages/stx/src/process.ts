@@ -61,6 +61,8 @@ import { buildIdFragment } from './build-id'
 import type { HeadInjections } from './head-injection'
 import { applyHeadInjections, createHeadInjections } from './head-injection'
 import { serverDataScope, serverDataTag } from './server-data'
+import { prepareRuntimeConfig } from './runtime-config-loader'
+import { injectRuntimeConfig } from './runtime-config-server'
 import { applyHtmlAttrs, cloakStyleFragment, ensureDocumentShell, hasDocumentShell, injectConfigHeadTags, mergeHtmlAttrs, metaDedupKey, startsDocument } from './document-shell'
 
 // Extracted modules
@@ -492,6 +494,8 @@ export async function processDirectives(
 
   const isTopLevel = !context.__stxProcessingDepth
   serverDataScope(context)
+  if (isTopLevel && options.runtimeConfig)
+    await prepareRuntimeConfig(context, filePath, options.runtimeConfig)
   if (isTopLevel) {
     initializeComponentClientFactories(context)
     // Open the render's head collection before the pipeline runs, not after it,
@@ -844,6 +848,8 @@ export async function processDirectives(
       // Restore @@ escape placeholders to literal @ AFTER all directive processing
       result = result.replace(/\x00STX_ESCAPED_AT\x00/g, '@')
 
+      if (isTopLevel && context.__stx_runtime_config)
+        result = injectRuntimeConfig(result, context.__stx_runtime_config)
       if (isTopLevel && !context.__stx_defer_server_data) {
         const dataTag = serverDataTag(context)
         if (dataTag) {

@@ -293,6 +293,8 @@ export function stripDocumentWrapper(html: string, options: { preserveHead?: boo
     }
     const dataTag = headContent.match(/<script\b[^>]*data-stx-server-data[^>]*>[\s\S]*?<\/script>/i)
     if (dataTag) headStyles.push(dataTag[0])
+    const runtimeTag = headContent.match(/<script\b[^>]*data-stx-runtime-config[^>]*>[\s\S]*?<\/script>/i)
+    if (runtimeTag) headStyles.push(runtimeTag[0])
   }
 
   // preserveHead (#1756): carry the page's <title>/<meta>/<link> through the
@@ -394,7 +396,7 @@ export function extractContainerContent(html: string, containerSelector: string 
       // it with the payload, but don't remount persistent layout components
       // or reinstall the shared runtime during a fragment navigation.
       if (COMPONENT_INSTANCE_SCRIPT.test(m[0]) || m[0].includes('__stx_early_mounts')
-        || /^<script\b[^>]*\bdata-stx-runtime\b/i.test(m[0])) continue
+        || /^<script\b[^>]*\bdata-stx-runtime(?=[\s=>])/i.test(m[0])) continue
       headScripts.push(m[0])
     }
   }

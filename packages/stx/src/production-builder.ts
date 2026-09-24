@@ -28,6 +28,8 @@ import { loadStxConfig } from './config'
 import { createRouteRuleResolver, type RouteRules } from './route-rules'
 import { hydrateTemplateStream } from './template-hydrator'
 import { buildServerApi, discoverServerApi, type ServerApiOptions } from './server-api'
+import { resolveRuntimeConfig } from './runtime-config-server'
+import { generateRuntimeConfigTypes } from './runtime-config-loader'
 
 /**
  * Production build configuration.
@@ -165,13 +167,7 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
 
   // ── 0. Load stx.config.ts once ──
   // Resolution order for each setting: explicit option → config file → default
-  let projectConfig: Record<string, any> = {}
-  try {
-    projectConfig = (await loadStxConfig(root)) as Record<string, any>
-  }
-  catch {
-    // No config file — use defaults
-  }
+  const projectConfig = (await loadStxConfig(root)) as Record<string, any>
 
   const componentsDir = path.resolve(root, options.componentsDir ?? projectConfig.componentsDir ?? 'components')
   const partialsDir = path.resolve(root, options.partialsDir ?? projectConfig.partialsDir ?? 'partials')
@@ -185,6 +181,7 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
   const serverApi = options.serverApi ?? projectConfig.serverApi
   const apiOptions = typeof serverApi === 'object' ? serverApi : {}
   if (serverApi) discoverServerApi(root, apiOptions) // fail before deleting the previous output
+  if (projectConfig.runtimeConfig) resolveRuntimeConfig(projectConfig.runtimeConfig, {})
 
   // ── 1. Clean output directory ──
   if (fs.existsSync(outputDir)) {
@@ -398,6 +395,10 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
   manifest.routerContainer = routerContainer
   if (serverApi)
     manifest.apiRoutes = await buildServerApi(root, outputDir, apiOptions)
+  if (projectConfig.runtimeConfig) {
+    await Bun.write(path.join(outputDir, 'server/runtime-config.json'), JSON.stringify(projectConfig.runtimeConfig))
+    await generateRuntimeConfigTypes(root, projectConfig.runtimeConfig)
+  }
   writeManifest(manifest, outputDir)
 
   const duration = Date.now() - startTime

@@ -24,6 +24,7 @@ import { FRAGMENT_CACHE_CONTROL, isSpaNavRequest, spaNavVaryHeaders } from './sp
 import { createRouteRuleResolver } from './route-rules'
 import { RouteResponseCache } from './route-response-cache'
 import { productionApiDispatcher } from './server-api'
+import { injectRuntimeConfig, resolveRuntimeConfig, withRuntimeConfig, type RuntimeConfigDefaults } from './runtime-config-server'
 
 /**
  * Production server configuration.
@@ -33,6 +34,8 @@ export interface ProductionServerOptions {
   outputDir?: string
   /** Server port (default: 3000) */
   port?: number
+  /** Optional defaults override; environment overrides are read at startup. */
+  runtimeConfig?: RuntimeConfigDefaults
   /** Custom request handler for API routes (runs before page routing) */
   onRequest?: (req: Request) => Response | Promise<Response> | null | Promise<null>
   /** Custom API routes */
@@ -105,6 +108,9 @@ export async function startProductionServer(options: ProductionServerOptions = {
   const resolveRule = createRouteRuleResolver(manifest.routeRules)
   const responseCache = new RouteResponseCache()
   const handleApi = productionApiDispatcher(outputDir, manifest.apiRoutes ?? [])
+  const configFile = Bun.file(path.join(outputDir, 'server/runtime-config.json'))
+  const runtimeDefaults = options.runtimeConfig ?? (await configFile.exists() ? await configFile.json() : undefined)
+  const runtimeConfig = runtimeDefaults ? resolveRuntimeConfig(runtimeDefaults) : undefined
 
   // Pre-load compiled templates into memory
   const compiledTemplates = new Map<string, CompiledTemplate>()
@@ -118,6 +124,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
     try {
       const compiledPath = path.join(outputDir, route.compiledPath)
       const compiled = JSON.parse(await Bun.file(compiledPath).text()) as CompiledTemplate
+      if (runtimeConfig) compiled.html = injectRuntimeConfig(compiled.html, runtimeConfig)
       compiledTemplates.set(route.pattern, compiled)
       layoutMetadataCache.set(route.pattern, extractLayoutMetadata(compiled.html))
       runtimeCache.set(route.pattern, pageShipsSignalsRuntime(compiled.html))
@@ -125,7 +132,8 @@ export async function startProductionServer(options: ProductionServerOptions = {
       // Pre-load fragments
       const fragmentPath = path.join(outputDir, route.fragmentPath)
       if (await Bun.file(fragmentPath).exists()) {
-        fragmentCache.set(route.pattern, await Bun.file(fragmentPath).text())
+        const fragment = await Bun.file(fragmentPath).text()
+        fragmentCache.set(route.pattern, runtimeConfig ? injectRuntimeConfig(fragment, runtimeConfig) : fragment)
       }
     }
     catch (error) {
@@ -158,7 +166,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
       // Every response leaves through here, so compression is applied once at
       // the boundary rather than at each of the two dozen places a Response is
       // constructed below. See src/compression.ts.
-      return compressResponse(request, await (async () => {
+      return compressResponse(request, await withRuntimeConfig(runtimeConfig ?? resolveRuntimeConfig(), async () => {
         const url = new URL(request.url)
         const pathname = url.pathname
   
@@ -367,6 +375,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
             request,
             method: request.method,
             __stx_strict_hydration: controlled,
+            __stx_runtime_config: runtimeConfig,
           })
 
           // A page action asked for a redirect (#1847). 303 rather than 302:
@@ -444,7 +453,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
           })
         }
         })
-      })())
+      }))
     },
   })
 

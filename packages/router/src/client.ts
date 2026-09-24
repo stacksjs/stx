@@ -51,6 +51,9 @@ export function getRouterScript(): string {
   // Replace, never merge: absent payloads must forget the outgoing page's data.
   // Run at the committed swap, not during prefetch or a superseded navigation.
   function hydrateServerData(html){
+    window.__STX_RUNTIME_CONFIG__={};
+    var configMatch=html.match(/<script\\b[^>]*\\bdata-stx-runtime-config\\b[^>]*>([\\s\\S]*?)<\\/script>/i);
+    if(configMatch){try{var configValues=JSON.parse(configMatch[1]);if(configValues&&typeof configValues==='object'&&!Array.isArray(configValues))window.__STX_RUNTIME_CONFIG__=configValues}catch(e){}}
     window.__STX_DATA__={};
     var match=html.match(/<script\\b[^>]*\\bdata-stx-server-data\\b[^>]*>([\\s\\S]*?)<\\/script>/i);
     if(match){try{var values=JSON.parse(match[1]);if(values&&typeof values==='object'&&!Array.isArray(values))window.__STX_DATA__=values}catch(e){}}

@@ -679,6 +679,12 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
       verbose: false,
     })
     const loaded = configResult.config
+    if (loaded.runtimeConfig) {
+      const { resolveRuntimeConfig } = await import('./runtime-config-server')
+      resolveRuntimeConfig(loaded.runtimeConfig, {})
+      const { generateRuntimeConfigTypes } = await import('./runtime-config-loader')
+      await generateRuntimeConfigTypes(effectiveCwd, loaded.runtimeConfig)
+    }
 
     detachMutableContainers(loaded)
 
@@ -820,7 +826,7 @@ export const config: StxConfig = new Proxy(defaultConfig, {
 /**
  * Helper function to define stx configuration
  */
-export function defineStxConfig(config: StxOptions): StxOptions {
+export function defineStxConfig<T extends StxOptions>(config: T): T {
   return config
 }
 

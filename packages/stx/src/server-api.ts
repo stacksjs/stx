@@ -5,6 +5,7 @@ import { patternToRegex } from 'stx-router'
 import { stateDir } from './state-dir'
 import type { ApiHandlerContext } from './api-handler'
 import type { ApiMethod } from './api-client'
+import { resolveRuntimeConfig, withRuntimeConfig } from './runtime-config-server'
 
 export interface ServerApiOptions {
   /** Relative to the project/config directory, not the template root. */
@@ -177,7 +178,9 @@ export async function createServerApi(root: string, enabled: boolean | ServerApi
     try {
       const routes = discoverServerApi(root, options)
       await generateApiTypes(root, routes)
-      return await createApiDispatcher(routes, async (route) => {
+      const { loadStxConfig } = await import('./config')
+      const runtimeConfig = resolveRuntimeConfig((await loadStxConfig(root)).runtimeConfig)
+      return await withRuntimeConfig(runtimeConfig, () => createApiDispatcher(routes, async (route) => {
         const build = await Bun.build({ entrypoints: [route.filePath], target: 'bun', format: 'esm', splitting: false })
         if (!build.success) throw new Error(build.logs.join('\n'))
         const output = build.outputs.find(file => file.kind === 'entry-point')
@@ -185,7 +188,7 @@ export async function createServerApi(root: string, enabled: boolean | ServerApi
         // Content-addressed import: changed helper contents produce a new module,
         // unchanged requests share one. No generated code is served to browsers.
         return (await import(`data:text/javascript;base64,${Buffer.from(await output.text()).toString('base64')}`)).default
-      })(request)
+      })(request))
     }
     catch (error) {
       console.error('[stx] API discovery failed:', error)
@@ -196,6 +199,10 @@ export async function createServerApi(root: string, enabled: boolean | ServerApi
 
 /** Never expose endpoint source through a server that also serves the project root. */
 export function isServerApiSource(filePath: string, root: string, enabled: boolean | ServerApiOptions | undefined): boolean {
+  const privateName = /^(?:(?:stx|ui)\.config\.[cm]?[jt]s|runtime-config-(?:server|loader)\.[cm]?[jt]s)$/
+  if (privateName.test(path.basename(filePath))) return true
+  try { if (privateName.test(path.basename(fs.realpathSync(filePath)))) return true }
+  catch {}
   if (discoveredSources.has(path.resolve(filePath))) return true
   if (!enabled) return false
   const apiDir = path.resolve(root, typeof enabled === 'object' ? enabled.dir ?? 'server/api' : 'server/api')
