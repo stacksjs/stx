@@ -765,6 +765,73 @@ describe('injectSeoTags', () => {
     const result = injectSeoTags(html, { title: 'Test' }, defaultOptions)
     expect(result).toContain('<!-- stx SEO Tags -->')
   })
+  // A page that writes its own <title> and description but no og/twitter tags
+  // used to get "stx Project" as its og:title and twitter:title, and a second,
+  // placeholder <meta name="description"> ahead of its own. The page's own
+  // values now rank below the render context and above every configured default.
+  describe('page-authored title and description', () => {
+    const pageHtml = '<html><head><title>Mario Adrion</title>'
+      + '<meta name="description" content="Mario Adrion is up and running."></head><body></body></html>'
+
+    it('derives the social tags from the page title and description when the context has none', () => {
+      const result = injectSeoTags(pageHtml, {}, defaultOptions)
+      expect(result).toContain('<meta property="og:title" content="Mario Adrion">')
+      expect(result).toContain('<meta name="twitter:title" content="Mario Adrion">')
+      expect(result).toContain('<meta property="og:description" content="Mario Adrion is up and running.">')
+      expect(result).toContain('<meta name="twitter:description" content="Mario Adrion is up and running.">')
+      expect(result).not.toContain('stx Project')
+      expect(result).not.toContain('A website built with stx templating engine')
+      expect((result.match(/<meta name="description"/g) || []).length).toBe(1)
+      // The page already has a <title>, so no <meta name="title"> restating it.
+      expect(result).not.toContain('<meta name="title"')
+      expect((result.match(/<title>/g) || []).length).toBe(1)
+    })
+
+    it('reads the page title, and falls back to config for a description the page lacks', () => {
+      const html = '<html><head><title>Only A Title</title></head><body></body></html>'
+      const opts: StxOptions = {
+        seo: { enabled: true, defaultConfig: { title: 'Config Title', description: 'Config Desc' } },
+      }
+      const result = injectSeoTags(html, {}, opts)
+      expect(result).toContain('<meta property="og:title" content="Only A Title">')
+      expect(result).toContain('<meta name="twitter:title" content="Only A Title">')
+      expect(result).not.toContain('Config Title')
+      // No page description, so ours is the only one and it comes from config.
+      expect(result).toContain('<meta name="description" content="Config Desc">')
+      expect(result).toContain('<meta property="og:description" content="Config Desc">')
+    })
+
+    it('still prefers the context title and description over the page\'s own', () => {
+      const result = injectSeoTags(pageHtml, { title: 'Context Title', description: 'Context Desc' }, defaultOptions)
+      expect(result).toContain('<meta property="og:title" content="Context Title">')
+      expect(result).toContain('<meta name="twitter:title" content="Context Title">')
+      expect(result).toContain('<meta property="og:description" content="Context Desc">')
+      // The page's own tags are left alone and not duplicated.
+      expect(result).toContain('<title>Mario Adrion</title>')
+      expect((result.match(/<meta name="description"/g) || []).length).toBe(1)
+    })
+
+    it('reads a description whose content attribute comes before name', () => {
+      const html = '<html><head><meta content="Reordered" name="description"></head><body></body></html>'
+      const result = injectSeoTags(html, {}, defaultOptions)
+      expect(result).toContain('<meta property="og:description" content="Reordered">')
+      expect((result.match(/name="description"/g) || []).length).toBe(1)
+    })
+
+    it('ignores an empty page title and a <title> outside the head', () => {
+      const html = '<html><head><title>  </title></head><body><svg><title>Icon</title></svg></body></html>'
+      const opts: StxOptions = { defaultTitle: 'Fallback Title', seo: { enabled: true } }
+      const result = injectSeoTags(html, {}, opts)
+      expect(result).toContain('<meta property="og:title" content="Fallback Title">')
+      expect(result).not.toContain('content="Icon"')
+    })
+
+    it('does not double-escape entities already in the page title', () => {
+      const html = '<html><head><title>Tom &amp; Jerry</title></head><body></body></html>'
+      const result = injectSeoTags(html, {}, defaultOptions)
+      expect(result).toContain('<meta property="og:title" content="Tom &amp; Jerry">')
+    })
+  })
 })
 
 // =============================================================================

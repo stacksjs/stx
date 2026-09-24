@@ -454,6 +454,16 @@ export function injectSeoTags(
   // Check if title is already set
   const hasTitle = html.includes('<title>') || html.includes('</title>')
 
+  // The page's own <title> and <meta name="description"> rank below anything
+  // the render context supplies but above every configured default. A page that
+  // writes a plain <title> and description without og/twitter tags used to get
+  // "stx Project" as its og:title and twitter:title, plus a second, placeholder
+  // <meta name="description"> ahead of its own -- so link previews and search
+  // engines saw the placeholder instead of what the page says about itself.
+  const pageHead = headSection(html)
+  const pageTitle = readPageTitle(pageHead)
+  const pageDescription = readPageDescription(pageHead)
+
   // Get the title from context or fallback
   let title = ''
   if (context.title) {
@@ -461,6 +471,9 @@ export function injectSeoTags(
   }
   else if (context.meta && context.meta.title) {
     title = context.meta.title
+  }
+  else if (pageTitle) {
+    title = pageTitle
   }
   else if (options.seo?.defaultConfig?.title) {
     title = options.seo.defaultConfig.title
@@ -476,6 +489,9 @@ export function injectSeoTags(
   }
   else if (context.meta && context.meta.description) {
     description = context.meta.description
+  }
+  else if (pageDescription) {
+    description = pageDescription
   }
   else if (options.seo?.defaultConfig?.description) {
     description = options.seo.defaultConfig.description
@@ -502,11 +518,16 @@ export function injectSeoTags(
     image = options.defaultImage
   }
 
-  // Build basic SEO tags
+  // Build basic SEO tags.
+  //
+  // <meta name="title"> and <meta name="description"> are left out when the
+  // page already states them: a second description is a duplicate that
+  // crawlers resolve by taking the first one, which used to be ours. The
+  // og/twitter tags are still emitted -- they are what the page lacked.
+  const titleTag = hasTitle ? '' : `\n<meta name="title" content="${escapeHtml(title)}">`
+  const descriptionTag = hasPageDescription(pageHead) ? '' : `\n<meta name="description" content="${escapeHtml(description)}">`
   let seoTagsMinimal = `
-<!-- stx SEO Tags -->
-<meta name="title" content="${escapeHtml(title)}">
-<meta name="description" content="${escapeHtml(description)}">
+<!-- stx SEO Tags -->${titleTag}${descriptionTag}
 <meta property="og:title" content="${escapeHtml(title)}">
 <meta property="og:description" content="${escapeHtml(description)}">
 <meta property="og:type" content="website">
@@ -562,6 +583,58 @@ export function injectSeoTags(
 // =============================================================================
 // Utilities
 // =============================================================================
+
+/**
+ * The document's <head>, so a <title> inside an inline SVG or a description
+ * meta in body content is never mistaken for the page's own. A document whose
+ * head is never closed is searched whole.
+ */
+function headSection(html: string): string {
+  const end = html.search(/<\/head\s*>/i)
+  return end === -1 ? html : html.slice(0, end)
+}
+
+/**
+ * Undo the five entities escapeHtml produces. The page's own title and
+ * description arrive already escaped and are escaped again on the way out,
+ * so without this `Tom &amp; Jerry` would be emitted as `Tom &amp;amp; Jerry`.
+ * `&amp;` goes last so `&amp;lt;` stays the literal text `&lt;`.
+ */
+function unescapeBasicEntities(str: string): string {
+  return str
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0*39;|&apos;/g, '\'')
+    .replace(/&amp;/g, '&')
+}
+
+/** Text of the page's own <title>, trimmed; empty when there is none. */
+function readPageTitle(head: string): string {
+  const match = head.match(/<title(?:\s[^>]*)?>([\s\S]*?)<\/title\s*>/i)
+  return match ? unescapeBasicEntities(match[1].trim()) : ''
+}
+
+/** Every `<meta name="description" ...>` in the head, in either attribute order. */
+function descriptionMetaTags(head: string): string[] {
+  return (head.match(/<meta\s[^>]*>/gi) || [])
+    .filter(tag => /\sname\s*=\s*["']description["']/i.test(tag))
+}
+
+function hasPageDescription(head: string): boolean {
+  return descriptionMetaTags(head).length > 0
+}
+
+/** Content of the page's own description meta, trimmed; empty when absent or blank. */
+function readPageDescription(head: string): string {
+  for (const tag of descriptionMetaTags(head)) {
+    const match = tag.match(/\scontent\s*=\s*(?:"([^"]*)"|'([^']*)')/i)
+    const content = (match?.[1] ?? match?.[2] ?? '').trim()
+    if (content)
+      return unescapeBasicEntities(content)
+  }
+  return ''
+}
 
 /**
  * Escape HTML entities in a string.
