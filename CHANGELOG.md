@@ -1,5 +1,40 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.303...v0.2.304)
+
+## ✨ Features
+
+- **config**: reusable application layers with deterministic overrides (#1969) ([840659a](https://github.com/stacksjs/stx/commit/840659a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1969](https://github.com/stacksjs/stx/issues/1969), [#1969](https://github.com/stacksjs/stx/issues/1969))
+- **config**: deployment-time public and private runtime config (#1968) ([89ba777](https://github.com/stacksjs/stx/commit/89ba777)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1968](https://github.com/stacksjs/stx/issues/1968), [#1968](https://github.com/stacksjs/stx/issues/1968))
+- **server**: discover and package typed file-based API endpoints (#1967) ([8fbde39](https://github.com/stacksjs/stx/commit/8fbde39)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1967](https://github.com/stacksjs/stx/issues/1967), [#1967](https://github.com/stacksjs/stx/issues/1967))
+- **rendering**: integrate per-route production and cache policies (#1966) ([d50692d](https://github.com/stacksjs/stx/commit/d50692d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1966](https://github.com/stacksjs/stx/issues/1966), [#1966](https://github.com/stacksjs/stx/issues/1966))
+- **data**: hydrate request-scoped server data without duplicate fetching (#1963) ([ab902b6](https://github.com/stacksjs/stx/commit/ab902b6)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1963](https://github.com/stacksjs/stx/issues/1963), [#1963](https://github.com/stacksjs/stx/issues/1963))
+- **typecheck**: validate component contracts at template call sites (#1964) ([b0912f2](https://github.com/stacksjs/stx/commit/b0912f2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1964](https://github.com/stacksjs/stx/issues/1964), [#1964](https://github.com/stacksjs/stx/issues/1964))
+- **components**: add signal-based useModel with modifier support (#1965) ([5d5f3fa](https://github.com/stacksjs/stx/commit/5d5f3fa)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1965](https://github.com/stacksjs/stx/issues/1965), [#1965](https://github.com/stacksjs/stx/issues/1965))
+
+## 🐛 Bug Fixes
+
+- **data**: echo the CSRF cookie on same-origin mutations ([a03c77f](https://github.com/stacksjs/stx/commit/a03c77f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **refs**: preserve caller ownership through component slots ([6a94340](https://github.com/stacksjs/stx/commit/6a94340)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2793](https://github.com/stacksjs/stx/issues/2793))
+- **signals**: preserve boolean ARIA attribute values ([c1119f8](https://github.com/stacksjs/stx/commit/c1119f8)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2794](https://github.com/stacksjs/stx/issues/2794))
+- **config**: isolate shared layer renders by host application (#1968, #1969) ([1fbb3a0](https://github.com/stacksjs/stx/commit/1fbb3a0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1968](https://github.com/stacksjs/stx/issues/1968), [#1969](https://github.com/stacksjs/stx/issues/1969), [#1968](https://github.com/stacksjs/stx/issues/1968), [#1969](https://github.com/stacksjs/stx/issues/1969))
+- **config**: validate runtime overrides against inferred value shapes (#1968) ([d3edc01](https://github.com/stacksjs/stx/commit/d3edc01)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1968](https://github.com/stacksjs/stx/issues/1968), [#1968](https://github.com/stacksjs/stx/issues/1968))
+- **model**: preserve default and named v-model modifiers (#1965) ([3717fe7](https://github.com/stacksjs/stx/commit/3717fe7)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1965](https://github.com/stacksjs/stx/issues/1965), [#1965](https://github.com/stacksjs/stx/issues/1965))
+
+## ✅ Tests
+
+- **data**: keep browser asset requests out of SSR fetch counts (#1963) ([450e61a](https://github.com/stacksjs/stx/commit/450e61a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1963](https://github.com/stacksjs/stx/issues/1963), [#1963](https://github.com/stacksjs/stx/issues/1963))
+- stop two test files from leaking into later ones ([1d06a15](https://github.com/stacksjs/stx/commit/1d06a15)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.304 ([3669d81](https://github.com/stacksjs/stx/commit/3669d81)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.302...v0.2.303)
 
 ## 🐛 Bug Fixes
