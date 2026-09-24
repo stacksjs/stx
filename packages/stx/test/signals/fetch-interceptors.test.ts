@@ -335,3 +335,74 @@ describe('onResponseError recovers a failed request (#1855)', () => {
     expect(hit).toContain('useMutation')
   })
 })
+
+/**
+ * Double-submit CSRF is echoed without anyone asking.
+ *
+ * Stacks rejects every POST whose `X-CSRF-Token` header does not repeat the
+ * cookie of the same name. Nothing in the data layer repeated it, so a form
+ * posting through `useMutation` - and the framework's own CMS form block -
+ * failed with 403 "CSRF token mismatch" on a stock install.
+ */
+describe('CSRF echo', () => {
+  beforeEach(() => {
+    document.cookie = 'X-CSRF-Token=tok%2Fen; path=/'
+  })
+
+  afterEach(() => {
+    document.cookie = 'X-CSRF-Token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
+    g.window.stx.configureFetch({ csrf: {} })
+  })
+
+  it('adds the cookie as a header on a same-origin mutation', async () => {
+    await g.window.stx.useMutation('/api/forms/x/submissions').mutate({ city: 'Munich' })
+    expect(headerOf(seen[0], 'X-CSRF-Token')).toBe('tok/en')
+  })
+
+  it('leaves safe methods alone', async () => {
+    g.window.stx.useFetch('/api/a', { immediate: false }).refetch()
+    await settle()
+    expect(headerOf(seen[0], 'X-CSRF-Token')).toBeUndefined()
+  })
+
+  it('never sends the token to another origin', async () => {
+    await g.window.stx.useMutation('https://elsewhere.example/hook').mutate({})
+    expect(headerOf(seen[0], 'X-CSRF-Token')).toBeUndefined()
+  })
+
+  it('keeps a token the caller set, whatever its case', async () => {
+    await g.window.stx.useMutation('/api/x', { headers: { 'x-csrf-token': 'mine' } }).mutate({})
+    expect(headerOf(seen[0], 'x-csrf-token')).toBe('mine')
+    expect(headerOf(seen[0], 'X-CSRF-Token')).toBeUndefined()
+  })
+
+  it('survives an app installing its own hooks, and can be turned off', async () => {
+    g.window.stx.configureFetch({ onRequest: (ctx: any) => { ctx.options.headers.Authorization = 'Bearer t' } })
+    await g.window.stx.useMutation('/api/x').mutate({})
+    expect(headerOf(seen[0], 'X-CSRF-Token')).toBe('tok/en')
+    expect(headerOf(seen[0], 'Authorization')).toBe('Bearer t')
+
+    g.window.stx.configureFetch({ csrf: false })
+    await g.window.stx.useMutation('/api/x').mutate({})
+    expect(headerOf(seen[1], 'X-CSRF-Token')).toBeUndefined()
+  })
+})
+
+describe('useMutation bodies', () => {
+  it('sends FormData as-is, with no JSON content type, and still echoes CSRF', async () => {
+    document.cookie = 'X-CSRF-Token=abc; path=/'
+    const form = new FormData()
+    form.append('field', 'resume')
+    await g.window.stx.useMutation('/api/forms/x/uploads').mutate(form)
+    expect(seen[0].opts.body).toBe(form)
+    expect(headerOf(seen[0], 'Content-Type')).toBeUndefined()
+    expect(headerOf(seen[0], 'X-CSRF-Token')).toBe('abc')
+    document.cookie = 'X-CSRF-Token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
+  })
+
+  it('still sends a plain object as JSON', async () => {
+    await g.window.stx.useMutation('/api/x').mutate({ a: 1 })
+    expect(seen[0].opts.body).toBe('{"a":1}')
+    expect(headerOf(seen[0], 'Content-Type')).toBe('application/json')
+  })
+})

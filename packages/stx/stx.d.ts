@@ -333,6 +333,13 @@ declare function configureFetch(_config: {
   onRequest?: (_ctx: StxFetchRequestContext) => void | Promise<void>
   onResponse?: (_ctx: StxFetchResponseContext) => void | Promise<void>
   onResponseError?: (_ctx: StxFetchErrorContext) => void | Response | Promise<void | Response>
+  /**
+   * Double-submit CSRF. By default every same-origin POST/PUT/PATCH/DELETE
+   * repeats the `X-CSRF-Token` cookie in an `X-CSRF-Token` header, which is
+   * what a Stacks server checks. Rename either side, or pass `false` to stop.
+   * Unlike the hooks, this persists across calls that do not mention it.
+   */
+  csrf?: false | { cookie?: string, header?: string }
 }): void
 
 declare function useOptimistic<T = any, A = any>(

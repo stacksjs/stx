@@ -179,6 +179,13 @@ console.log('[stx] entering IIFE');
   // The body is attached rather than only interpolated: err.data is what a
   // caller needs to render field errors, and err.status is what it needs to
   // tell 401 from 500 without parsing the message.
+  function __stxRawBody(body) {
+    return (typeof FormData !== 'undefined' && body instanceof FormData)
+      || (typeof Blob !== 'undefined' && body instanceof Blob)
+      || (typeof URLSearchParams !== 'undefined' && body instanceof URLSearchParams)
+      || (typeof ArrayBuffer !== 'undefined' && (body instanceof ArrayBuffer || ArrayBuffer.isView(body)));
+  }
+
   async function __stxHttpError(response) {
     var body = null;
     var text = '';
@@ -213,8 +220,63 @@ console.log('[stx] entering IIFE');
   // hook fails the request, which is what a token-refresh flow wants.
   var __stxFetchHooks = { onRequest: null, onResponse: null, onResponseError: null };
 
+  // Double-submit CSRF, echoed for every same-origin unsafe request. A server
+  // using the pattern (Stacks does, by default, on every POST/PUT/PATCH/DELETE)
+  // plants a readable cookie and rejects any unsafe request whose header does
+  // not repeat it. Nothing here repeated it, so a form posting through
+  // useMutation - or the framework's own CMS form block - got 403 "CSRF token
+  // mismatch" on a stock install. The same thing axios does for XSRF-TOKEN.
+  // Only same-origin: the token must never leave for another host.
+  var __stxCsrf = { cookie: 'X-CSRF-Token', header: 'X-CSRF-Token' };
+
+  function __stxCookie(name) {
+    if (typeof document === 'undefined' || !document.cookie) return null;
+    var parts = document.cookie.split(';');
+    for (var i = 0; i < parts.length; i++) {
+      var at = parts[i].indexOf('=');
+      if (at === -1) continue;
+      if (parts[i].slice(0, at).trim() !== name) continue;
+      var value = parts[i].slice(at + 1).trim();
+      try { return value ? decodeURIComponent(value) : null; } catch (e) { return value || null; }
+    }
+    return null;
+  }
+
+  function __stxApplyCsrf(url, opts) {
+    if (!__stxCsrf) return;
+    var method = String((opts && opts.method) || 'GET').toUpperCase();
+    if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return;
+    // A path is same-origin by definition; only an absolute URL needs its
+    // origin compared, and one that cannot be parsed is not trusted.
+    var target = String(url);
+    if (/^[a-z][a-z0-9+.-]*:/i.test(target) || target.slice(0, 2) === '//') {
+      if (typeof location === 'undefined') return;
+      try {
+        if (new URL(target).origin !== location.origin) return;
+      } catch (e) { return; }
+    }
+    var token = __stxCookie(__stxCsrf.cookie);
+    if (!token) return;
+    var headers = __stxHeaders(opts.headers);
+    var wanted = __stxCsrf.header.toLowerCase();
+    for (var key in headers) {
+      // A token the caller set on purpose wins.
+      if (key.toLowerCase() === wanted) return;
+    }
+    headers[__stxCsrf.header] = token;
+    opts.headers = headers;
+  }
+
   function configureFetch(cfg) {
     cfg = cfg || {};
+    // Unlike the hooks below, CSRF settings persist unless named: an app that
+    // installs an Authorization hook has not asked to stop sending the token.
+    // \`csrf: false\` turns it off; \`{ cookie, header }\` renames either side.
+    if (Object.prototype.hasOwnProperty.call(cfg, 'csrf')) {
+      __stxCsrf = cfg.csrf === false || cfg.csrf === null
+        ? null
+        : { cookie: (cfg.csrf && cfg.csrf.cookie) || 'X-CSRF-Token', header: (cfg.csrf && (cfg.csrf.header || cfg.csrf.cookie)) || 'X-CSRF-Token' };
+    }
     // Replace rather than stack: a module re-evaluated by hot reload or by a
     // SPA script re-run must not end up with the same interceptor installed
     // twice, sending two Authorization headers or counting a 401 twice.
@@ -240,6 +302,8 @@ console.log('[stx] entering IIFE');
   async function __stxFetch(source, url, opts) {
     var t0 = __stxDevtoolsNow();
     opts = opts || {};
+    // Before the hooks, so an onRequest hook sees (and may override) it.
+    __stxApplyCsrf(url, opts);
     if (__stxFetchHooks.onRequest) {
       // Normalised first so a hook can write ctx.options.headers.Authorization
       // without having to create the bag itself.
@@ -1794,8 +1858,11 @@ finally {
         var resolvedUrl = typeof url === 'function' ? url() : url;
         var fetchOpts = {
           method: options.method || 'POST',
-          headers: { 'Content-Type': 'application/json', ...__stxHeaders(options.headers) },
-          body: typeof body === 'string' ? body : JSON.stringify(body)
+          // A file upload is a FormData body. Stringifying it sent "{}", and
+          // the browser has to write its own multipart Content-Type (the
+          // boundary lives there), so raw bodies pass through untouched.
+          headers: __stxRawBody(body) ? __stxHeaders(options.headers) : { 'Content-Type': 'application/json', ...__stxHeaders(options.headers) },
+          body: typeof body === 'string' || __stxRawBody(body) ? body : JSON.stringify(body)
         };
         var response = await __stxFetch('useMutation', resolvedUrl, fetchOpts);
         if (!response.ok) throw await __stxHttpError(response);
