@@ -31,8 +31,10 @@
  * i18n: translate, pluralize, date
  */
 
+import fs from 'node:fs'
+import { isDevelopment } from './env'
 import { stripCommentsAndLiterals } from './strip-literals'
-import { createSafeFunction, isExpressionSafe, safeEvaluate } from './safe-evaluator'
+import { createSafeFunction, getExpressionSafetyRule, safeEvaluate } from './safe-evaluator'
 import { createDetailedErrorMessage } from './utils'
 import { createPlaceholder } from './placeholder'
 import { maskAtElementPosition, matchScriptElement, matchStyleElement, restoreStashedScripts, stashScriptElements, type TokenMatcher } from './html-masking'
@@ -566,7 +568,10 @@ export function usesSignalsInScript(template: string, filePath?: string): boolea
  * Returns true if ALL identifiers in the expression are in context or are JS built-ins
  */
 function expressionUsesOnlyContextVars(expr: string, context: Record<string, any>): boolean {
-  const jsBuiltins = ['parseInt', 'parseFloat', 'String', 'Number', 'Boolean', 'Array', 'Object', 'JSON', 'Math', 'Date', 'encodeURIComponent', 'decodeURIComponent', 'encodeURI', 'decodeURI', 'true', 'false', 'null', 'undefined', 'NaN', 'Infinity', 'isNaN', 'isFinite', 'window', 'document', 'console']
+  // Operator keywords are listed too. They read like identifiers to the scan
+  // below, and `new` in `{{ new Date().getFullYear() }}` was taken for a
+  // client-only variable, which shipped the raw mustache to the browser.
+  const jsBuiltins = ['parseInt', 'parseFloat', 'String', 'Number', 'Boolean', 'Array', 'Object', 'JSON', 'Math', 'Date', 'URL', 'URLSearchParams', 'Intl', 'encodeURIComponent', 'decodeURIComponent', 'encodeURI', 'decodeURI', 'true', 'false', 'null', 'undefined', 'NaN', 'Infinity', 'isNaN', 'isFinite', 'window', 'document', 'console', 'new', 'typeof', 'instanceof', 'in', 'void']
 
   // Extract all identifiers from the expression (words that aren't numbers or inside strings)
   // This is a simplified check - remove strings first, then find identifiers
@@ -909,7 +914,7 @@ export function processExpressions(template: string, context: Record<string, any
   // Replace triple curly braces with unescaped expressions {{{ expr }}} - similar to {!! expr !!}
   output = output.replace(/\{\{\{([\s\S]*?)\}\}\}/g, (match, expr, offset) => {
     try {
-      const value = evaluateExpression(expr, context)
+      const value = evaluateExpression(expr, context, false, r => warnRejectedExpression(r, match, filePath, template))
       // Return raw content without escaping
       return value !== undefined && value !== null ? String(value) : ''
     }
@@ -929,7 +934,10 @@ export function processExpressions(template: string, context: Record<string, any
   // Replace {!! expr !!} with unescaped expressions
   output = output.replace(/\{!!([\s\S]*?)!!\}/g, (match, expr, offset) => {
     try {
-      const value = evaluateExpression(expr, context)
+      // Compile mode turns an undefined value into a request-time placeholder,
+      // but the rejection is a property of the text, so the request will
+      // reject it too. Warn either way.
+      const value = evaluateExpression(expr, context, false, r => warnRejectedExpression(r, match, filePath, template))
       // In compile mode: undefined raw expressions become placeholders
       if (value === undefined && context.__stx_buildMode === 'compile') {
         return createPlaceholder('raw', expr.trim())
@@ -1001,8 +1009,11 @@ export function processExpressions(template: string, context: Record<string, any
 
     // Try evaluation first - this allows user-defined helper functions to work
     // Only preserve for client-side if evaluation fails AND it looks like a signal
+    let rejection: ExpressionRejection | undefined
     try {
-      const value = evaluateExpression(expr, context)
+      const value = evaluateExpression(expr, context, false, (r) => {
+        rejection = r
+      })
 
       // A component prop can have a static server value and then be shadowed
       // by a client signal with the same name:
@@ -1050,6 +1061,11 @@ export function processExpressions(template: string, context: Record<string, any
        * build time against the real values, which is why the server block is
        * executed here at all.
        */
+      // Not preserved for the client, so a rejected expression is about to
+      // render as nothing, here or at request time via its placeholder.
+      if (rejection)
+        warnRejectedExpression(rejection, match, filePath, template)
+
       if (context.__stx_buildMode === 'compile' && !hasSignals
         && (value === undefined || expressionReadsServerBinding(trimmedExpr, context))) {
         return createPlaceholder('expr', trimmedExpr)
@@ -1371,13 +1387,85 @@ function findFilterPipeIndex(expr: string): number {
 }
 
 /**
+ * An expression the safe evaluator refused to run, and the rule that refused it.
+ */
+export interface ExpressionRejection {
+  expression: string
+  rule: string
+}
+
+/**
+ * `file\0expression` pairs already reported, so a rejected expression in a
+ * layout or a loop warns once rather than once per render or iteration.
+ */
+const reportedRejections = new Set<string>()
+const REPORTED_REJECTION_LIMIT = 1000
+
+/** Forget which rejections were reported. For tests. */
+export function resetRejectedExpressionWarnings(): void {
+  reportedRejections.clear()
+}
+
+/**
+ * Warn that a template expression rendered empty because the safe evaluator
+ * rejected it.
+ *
+ * The rejection itself is policy and stays: the output is an empty string,
+ * exactly as before. What changes is that it is no longer silent. A footer's
+ * `{{ new Date().getFullYear() }}` used to vanish with nothing in the output
+ * to say why (stacksjs/stx, found building marioadrion). Development only,
+ * since a production server would repeat it for every process it starts.
+ */
+function warnRejectedExpression(
+  rejection: ExpressionRejection,
+  written: string,
+  filePath: string,
+  template: string,
+): void {
+  if (!isDevelopment())
+    return
+
+  const key = `${filePath}\u0000${rejection.expression}`
+  if (reportedRejections.has(key))
+    return
+  if (reportedRejections.size >= REPORTED_REJECTION_LIMIT)
+    reportedRejections.clear()
+  reportedRejections.add(key)
+
+  // The line in the file as written, when it can be read. The template this
+  // pass sees has already had includes and components expanded, so its line
+  // numbers only approximate the author's.
+  let location = filePath
+  let source = template
+  try {
+    if (filePath && fs.existsSync(filePath))
+      source = fs.readFileSync(filePath, 'utf8')
+  }
+  catch {}
+  const at = source.indexOf(written)
+  if (at >= 0)
+    location = `${filePath}:${source.slice(0, at).split('\n').length}`
+
+  console.warn(
+    `${location}: stx warning: ${written} rendered as an empty string. `
+    + `The safe evaluator rejected \`${rejection.expression}\` (${rejection.rule}). `
+    + 'Compute the value in <script server> and interpolate the variable instead.',
+  )
+}
+
+/**
  * Evaluate an expression within the given context
  * @param {string} expression - The expression to evaluate
  * @param {Record<string, any>} context - The context object containing variables
  * @param {boolean} silent - Whether to silently handle errors (return undefined) or throw
  * @returns The evaluated result
  */
-export function evaluateExpression(expression: string, context: Record<string, any>, silent: boolean = false): any {
+export function evaluateExpression(
+  expression: string,
+  context: Record<string, any>,
+  silent: boolean = false,
+  onReject?: (rejection: ExpressionRejection) => void,
+): any {
   try {
     const trimmedExpr = expression.trim()
 
@@ -1390,18 +1478,21 @@ export function evaluateExpression(expression: string, context: Record<string, a
       const filterExpr = trimmedExpr.substring(filterPipeIndex + 1).trim()
 
       // Evaluate the base expression
-      const baseValue = evaluateExpression(baseExpr, context, true)
+      const baseValue = evaluateExpression(baseExpr, context, true, onReject)
 
       // Apply filters to the result
       return applyFilters(baseValue, filterExpr, context)
     }
 
-    // Use safe evaluator for potentially unsafe expressions
-    if (!isExpressionSafe(trimmedExpr)) {
-      if (!silent) {
-        console.warn(`Potentially unsafe expression detected, using safe evaluator: ${trimmedExpr}`)
-      }
-      return safeEvaluate(trimmedExpr, context)
+    // An expression the security policy rejects evaluates to undefined. It
+    // used to be handed to `safeEvaluate` instead, which applies the same
+    // policy and so could only ever return undefined too; the warning that
+    // came with it named neither the file nor the rule. The caller that knows
+    // where the expression came from reports it, via `onReject`.
+    const rule = getExpressionSafetyRule(trimmedExpr)
+    if (rule !== null) {
+      onReject?.({ expression: trimmedExpr, rule })
+      return undefined
     }
 
     // For safe expressions, evaluate using createSafeFunction for consistent safety

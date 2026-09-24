@@ -114,6 +114,11 @@ const _ALLOWED_GLOBALS = new Set([
  * 7. Generators/Iterators: potential for infinite loops
  * 8. Dunder methods: __anything__
  */
+const NEW_OPERATOR_PATTERN = /\bnew\s+/
+
+/** The parameter that carries SAFE_CONSTRUCTORS into a compiled expression. */
+const SAFE_CTOR_PARAM = '__stx_safe_ctors'
+
 const DANGEROUS_PATTERNS = [
   // Code execution
   /\b(eval|Function|setTimeout|setInterval|setImmediate)\b/,
@@ -135,8 +140,9 @@ const DANGEROUS_PATTERNS = [
   /__\w+__/,
   // Bind/call/apply (can change execution context)
   /\.(bind|call|apply)\s*\(/,
-  // Object creation (can invoke arbitrary constructors)
-  /\bnew\s+/,
+  // Object creation (can invoke arbitrary constructors). Template expressions
+  // get a narrow exception, see SAFE_CONSTRUCTORS.
+  NEW_OPERATOR_PATTERN,
   // Delete operator (can modify object structure)
   /\bdelete\s+/,
   // this keyword (can access execution context)
@@ -171,6 +177,9 @@ const DANGEROUS_IDENTIFIERS = new Set([
   'AsyncGenerator',
   'delete',
   'this',
+  // The evaluator's own binding for SAFE_CONSTRUCTORS. An expression naming it
+  // could reach around the allowlist, so only the rewrite may write it.
+  SAFE_CTOR_PARAM,
 ])
 
 const DANGEROUS_BRACKET_KEYS = new Set([
@@ -193,9 +202,13 @@ const BRACKET_NOTATION_PATTERN = /[\w)\]]\s*\[\s*['"]/
  *
  * IMPORTANT: Template literal interpolations (${...}) are preserved because
  * they execute code and must still be checked for dangerous patterns.
+ *
+ * `map[i]` is the index in `expr` of the stripped text's character `i`, so a
+ * match found in the stripped text can be located in the original.
  */
-function stripStringLiterals(expr: string): string {
+function stripStringLiteralsWithMap(expr: string): { text: string, map: number[] } {
   let result = ''
+  const map: number[] = []
   let inString: string | null = null
   let escaped = false
   for (let i = 0; i < expr.length; i++) {
@@ -210,7 +223,7 @@ function stripStringLiterals(expr: string): string {
         while (i < expr.length && tplDepth > 0) {
           if (expr[i] === '{') tplDepth++
           else if (expr[i] === '}') tplDepth--
-          if (tplDepth > 0) { result += expr[i]; i++ }
+          if (tplDepth > 0) { result += expr[i]; map.push(i); i++ }
         }
         continue
       }
@@ -219,8 +232,156 @@ function stripStringLiterals(expr: string): string {
     }
     if (ch === '"' || ch === '\'' || ch === '`') { inString = ch; continue }
     result += ch
+    map.push(i)
   }
-  return result
+  return { text: result, map }
+}
+
+function stripStringLiterals(expr: string): string {
+  return stripStringLiteralsWithMap(expr).text
+}
+
+// =============================================================================
+// Allowlisted Constructors
+// =============================================================================
+
+/**
+ * The constructors a template expression may call with `new`.
+ *
+ * `new` is otherwise rejected outright, because `new Function('...')()` is
+ * code execution and `new (x.constructor)(...)` reaches it from any value. But
+ * a blanket ban also rejected `{{ new Date().getFullYear() }}`, which is how a
+ * copyright year gets written, and the rejection rendered as an empty string.
+ *
+ * Each entry builds a value object, runs no code it is handed, and exposes
+ * nothing that reaches `Function`: every route there goes through
+ * `constructor`, `__proto__` or `prototype`, which stay banned as properties.
+ *
+ * The expression never names these directly. The rewrite in
+ * {@link rewriteSafeConstructors} turns `new Date(` into
+ * `new __stx_safe_ctors.Date(`, so the constructor called is always the one
+ * captured here, whatever the template's context binds `Date` or `Intl` to.
+ */
+const INTL_CONSTRUCTORS = [
+  'Collator',
+  'DateTimeFormat',
+  'DisplayNames',
+  'ListFormat',
+  'Locale',
+  'NumberFormat',
+  'PluralRules',
+  'RelativeTimeFormat',
+  'Segmenter',
+] as const
+
+const SAFE_CONSTRUCTORS: Readonly<Record<string, unknown>> = (() => {
+  const ctors: Record<string, unknown> = { Date, URL, URLSearchParams }
+  const intl = Intl as unknown as Record<string, unknown>
+  for (const name of INTL_CONSTRUCTORS) {
+    if (typeof intl[name] === 'function')
+      ctors[`Intl_${name}`] = intl[name]
+  }
+  return Object.freeze(Object.assign(Object.create(null), ctors))
+})()
+
+/**
+ * `new`, then an allowlisted constructor, then its argument list. The `(` is
+ * required: without it, `new Date.now` or `new Intl.DateTimeFormat.x` would
+ * change what is being constructed.
+ */
+const SAFE_NEW_RE = /^new(\s+)(Date|URLSearchParams|URL|Intl\s*\.\s*([A-Z_a-z]\w*))\s*\(/
+
+/** A `new` keyword token, not part of a longer identifier like `renew` or `$new`. */
+const NEW_TOKEN_RE = /(?<![\w$])new(?![\w$])/g
+
+/** Human-readable rule for a rejected `new`, used in error messages. */
+const SAFE_NEW_RULE = `only new Date(), new URL(), new URLSearchParams() and new Intl.{${INTL_CONSTRUCTORS.join(',')}}() are allowed`
+
+/**
+ * Vet every `new` in `expression` against {@link SAFE_CONSTRUCTORS} and return
+ * the expression with each one bound to the captured constructor.
+ *
+ * Rejects (throws) any `new` that is not immediately an allowlisted
+ * constructor call. That includes `new Function(...)`, `new (x.constructor)(...)`,
+ * `new x.Date(...)`, `new Date` without parentheses, and a `new` whose
+ * constructor name is spliced together around a string literal.
+ *
+ * `obj.new` is a property name, not the operator, and is left alone.
+ */
+function rewriteSafeConstructors(expression: string): { source: string, usesSafeConstructors: boolean } {
+  const { text, map } = stripStringLiteralsWithMap(expression)
+  const replacements: Array<{ start: number, end: number, key: string }> = []
+
+  NEW_TOKEN_RE.lastIndex = 0
+  let match: RegExpExecArray | null
+  while ((match = NEW_TOKEN_RE.exec(text)) !== null) {
+    const at = match.index
+    // `a.new` / `a?.new` / `a. new` is member access, never the operator.
+    // A spread's `...new Set()` is the operator, hence the single dot.
+    if (/(?<!\.)\.\s*$/.test(text.slice(0, at)))
+      continue
+
+    const tail = SAFE_NEW_RE.exec(text.slice(at))
+    const intlName = tail?.[3]
+    const key = !tail ? null : intlName ? `Intl_${intlName}` : tail[2]
+
+    if (!tail || !key || !(key in SAFE_CONSTRUCTORS))
+      throw new UnsafeExpressionError(`matched /${NEW_OPERATOR_PATTERN.source}/; ${SAFE_NEW_RULE}`, expression)
+
+    // The vetted span must appear verbatim in the original. Stripping deletes
+    // string literals, so `new ''Date(` would read as `new Date(` above; it is
+    // a syntax error, but the check must not rely on that.
+    const spanEnd = at + tail[0].length
+    const originalStart = map[at]
+    const originalEnd = map[spanEnd - 1] + 1
+    if (expression.slice(originalStart, originalEnd) !== text.slice(at, spanEnd))
+      throw new UnsafeExpressionError(`matched /${NEW_OPERATOR_PATTERN.source}/; ${SAFE_NEW_RULE}`, expression)
+
+    const nameStart = originalStart + 3 + tail[1].length
+    replacements.push({ start: nameStart, end: nameStart + tail[2].length, key })
+  }
+
+  let source = expression
+  for (let i = replacements.length - 1; i >= 0; i--) {
+    const r = replacements[i]
+    source = `${source.slice(0, r.start)}${SAFE_CTOR_PARAM}.${r.key}${source.slice(r.end)}`
+  }
+
+  return { source, usesSafeConstructors: replacements.length > 0 }
+}
+
+/**
+ * Thrown when an expression breaks the evaluator's security policy.
+ *
+ * `rule` names what rejected it, on its own, so a caller reporting the failure
+ * can say why without re-parsing the message.
+ */
+export class UnsafeExpressionError extends Error {
+  readonly rule: string
+  readonly expression: string
+
+  constructor(rule: string, expression: string, message?: string) {
+    super(message ?? `Potentially unsafe expression (${rule}): ${expression}`)
+    this.name = 'UnsafeExpressionError'
+    this.rule = rule
+    this.expression = expression
+  }
+}
+
+/**
+ * The rule an expression breaks, or `null` when it is safe to evaluate.
+ *
+ * Unlike {@link getExpressionSafetyReason}, this is the rule alone, without the
+ * expression repeated after it.
+ */
+export function getExpressionSafetyRule(expression: string): string | null {
+  try {
+    prepareExpression(expression)
+    return null
+  }
+  catch (e) {
+    return e instanceof UnsafeExpressionError ? e.rule : (e instanceof Error ? e.message : String(e))
+  }
 }
 
 function assertNoUnsafeIdentifierTokens(strippedExpression: string, originalExpression: string): void {
@@ -232,11 +393,11 @@ function assertNoUnsafeIdentifierTokens(strippedExpression: string, originalExpr
     const previous = strippedExpression[match.index - 1]
 
     if (DANGEROUS_IDENTIFIERS.has(identifier)) {
-      throw new Error(`Potentially unsafe expression (matched /\\b${identifier}\\b/; identifier ${identifier}): ${originalExpression}`)
+      throw new UnsafeExpressionError(`matched /\\b${identifier}\\b/; identifier ${identifier}`, originalExpression)
     }
 
     if (previous === '.' && DANGEROUS_BRACKET_KEYS.has(identifier)) {
-      throw new Error(`Potentially unsafe expression (matched /.${identifier}/; property ${identifier}): ${originalExpression}`)
+      throw new UnsafeExpressionError(`matched /.${identifier}/; property ${identifier}`, originalExpression)
     }
   }
 }
@@ -255,15 +416,18 @@ function assertSafeBracketLiteralKeys(expression: string): void {
     const isComputedObjectKey = (previousNonSpace === '{' || previousNonSpace === ',') && nextNonSpace === ':'
 
     if (!isComputedObjectKey) {
-      throw new Error(`Potentially unsafe expression (bracket key ${match[2]}): ${expression}`)
+      throw new UnsafeExpressionError(`bracket key ${match[2]}`, expression)
     }
   }
 }
 
 /**
- * Sanitize an expression by checking for dangerous patterns
+ * Validate an expression and produce the source that will actually run.
+ *
+ * The source differs from the input only in that each allowlisted `new` is
+ * bound to the evaluator's own constructor (see {@link SAFE_CONSTRUCTORS}).
  */
-export function sanitizeExpression(expression: string): string {
+function prepareExpression(expression: string): { source: string, usesSafeConstructors: boolean } {
   const trimmed = expression.trim()
 
   // Strip string literals before checking patterns to avoid false positives
@@ -277,17 +441,32 @@ export function sanitizeExpression(expression: string): string {
   // to identify WHICH rule rejected their expression instead of guessing —
   // e.g. whether they tripped the `eval` filter or the `__proto__` filter.
   for (const pattern of DANGEROUS_PATTERNS) {
+    // `new` is vetted token by token below rather than banned outright.
+    if (pattern === NEW_OPERATOR_PATTERN)
+      continue
     if (pattern.test(stripped)) {
-      throw new Error(`Potentially unsafe expression (matched /${pattern.source}/): ${trimmed}`)
+      throw new UnsafeExpressionError(`matched /${pattern.source}/`, trimmed)
     }
   }
 
   // Check bracket notation based on configuration
   if (!currentConfig.allowBracketNotation && BRACKET_NOTATION_PATTERN.test(trimmed)) {
-    throw new Error(`Bracket notation with strings not allowed: ${trimmed}. Enable with configureSafeEvaluator({ allowBracketNotation: true })`)
+    throw new UnsafeExpressionError(
+      'bracket notation with a string key; enable with configureSafeEvaluator({ allowBracketNotation: true })',
+      trimmed,
+      `Bracket notation with strings not allowed: ${trimmed}. Enable with configureSafeEvaluator({ allowBracketNotation: true })`,
+    )
   }
 
-  return trimmed
+  return rewriteSafeConstructors(trimmed)
+}
+
+/**
+ * Sanitize an expression by checking for dangerous patterns
+ */
+export function sanitizeExpression(expression: string): string {
+  prepareExpression(expression)
+  return expression.trim()
 }
 
 /**
@@ -647,7 +826,7 @@ export function isUsableParamName(name: string): boolean {
 
 export function createSafeFunction(expression: string, contextKeys: string[]): (...args: unknown[]) => unknown {
   // Validate the expression first
-  const sanitizedExpr = sanitizeExpression(expression)
+  const { source: sanitizedExpr, usesSafeConstructors } = prepareExpression(expression)
 
   // Drop context keys that JS rejects as function-parameter names BEFORE
   // handing them to `new Function(...keys, body)`. Three classes of
@@ -671,6 +850,8 @@ export function createSafeFunction(expression: string, contextKeys: string[]): (
   const validEntries: Array<{ key: string, index: number }> = []
   for (let i = 0; i < contextKeys.length; i++) {
     if (!isUsableParamName(contextKeys[i])) continue
+    // Only the evaluator binds this name; a context key must not shadow it.
+    if (contextKeys[i] === SAFE_CTOR_PARAM) continue
     validEntries.push({ key: contextKeys[i], index: i })
   }
 
@@ -683,8 +864,7 @@ export function createSafeFunction(expression: string, contextKeys: string[]): (
   const filteredKeys = validEntries.map(entry => entry.key)
   const validIndices = validEntries.map(entry => entry.index)
 
-  const buildFunc = (extraParams: string[]): (...args: unknown[]) => unknown =>
-    compileFunctionBody([...filteredKeys, ...extraParams], `
+  const body = `
     'use strict';
     try {
       return ${sanitizedExpr};
@@ -695,8 +875,33 @@ catch (e) {
       }
       throw e;
     }
-  `)
+  `
 
+  // An allowlisted `new` reads its constructor from one extra parameter,
+  // placed first so the missing-identifier retry can keep appending after the
+  // context columns. The caller never supplies it; it is bound here.
+  const buildFunc = usesSafeConstructors
+    ? (extraParams: string[]): (...args: unknown[]) => unknown => {
+        const compiled = compileFunctionBody([SAFE_CTOR_PARAM, ...filteredKeys, ...extraParams], body)
+        return (...args: unknown[]) => compiled(SAFE_CONSTRUCTORS, ...args)
+      }
+    : (extraParams: string[]): (...args: unknown[]) => unknown =>
+        compileFunctionBody([...filteredKeys, ...extraParams], body)
+
+  return bindProjection(buildFunc, filteredKeys, contextKeys, validEntries, validIndices)
+}
+
+/**
+ * Wrap a compiled expression so it accepts values aligned with the caller's
+ * ORIGINAL context keys, and retries once per missing identifier.
+ */
+function bindProjection(
+  buildFunc: (extraParams: string[]) => (...args: unknown[]) => unknown,
+  filteredKeys: string[],
+  contextKeys: string[],
+  validEntries: Array<{ key: string, index: number }>,
+  validIndices: number[],
+): (...args: unknown[]) => unknown {
   // Create the function with strict mode
   let func = buildFunc([])
 

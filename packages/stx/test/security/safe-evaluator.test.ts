@@ -1349,8 +1349,12 @@ describe('Safe Evaluator Comprehensive Security Tests', () => {
     })
 
     it('expression with `new` keyword should be blocked', () => {
-      const result = isExpressionSafe('new Date()')
+      const result = isExpressionSafe('new Map()')
       expect(result).toBe(false)
+    })
+
+    it('`new` on an allowlisted constructor is allowed', () => {
+      expect(isExpressionSafe('new Date()')).toBe(true)
     })
 
     it('expression with assignment: `x = 5` - check safety', () => {
