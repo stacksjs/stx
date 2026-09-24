@@ -19,6 +19,10 @@ for (const mode of ['document', 'fragment', 'layout'] as const) {
         await Bun.sleep(5)
         return Response.json({ user, count: counts.get(user) })
       }
+      // Browsers can request /favicon.ico independently. Rendering a page for that
+      // unrelated URL would itself run the server loader and inflate counts.
+      if (url.pathname !== '/page' && url.pathname !== '/missing')
+        return new Response('Not found', { status: 404 })
       const endpoint = `${url.origin}/api?user=${user}`
       const source = `<!doctype html><html><head><meta name="stx-layout" content="${mode === 'layout' ? user : 'same'}"></head><body>
 ${url.pathname === '/missing' ? '' : `<script server>
@@ -52,6 +56,8 @@ window.pageData = { fetched, asyncData, empty, marker }
       throw new Error(`Hydration did not finish for ${user}: ${await view.evaluate('JSON.stringify({marker:window.pageData?.marker(),data:window.pageData?.fetched.data(),payload:window.__STX_DATA__})')}`)
     }
     try {
+      expect((await fetch(`${server.url}favicon.ico`)).status).toBe(404)
+      expect(counts.size).toBe(0)
       await view.navigate(`${server.url}page?user=a`)
       await ready('a')
       await Bun.sleep(100)
