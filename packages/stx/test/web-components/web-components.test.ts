@@ -38,6 +38,12 @@ describe('stx Web Components', () => {
   })
 
   afterAll(async () => {
+    // TEMP_DIR/components is shared. Left behind, this button.stx is what a
+    // later file's <Button /> resolves to on a case-sensitive filesystem, even
+    // after that file writes its own Button.stx next to it.
+    await fs.promises.rm(path.join(COMPONENTS_DIR, 'button.stx'), { force: true })
+    await fs.promises.rm(path.join(COMPONENTS_DIR, 'card.stx'), { force: true })
+
     try {
       // Check if directory exists before trying to remove it
       const dirExists = await fs.promises.stat(WEB_COMPONENTS_DIR)

@@ -1,4 +1,4 @@
-import { describe, expect, it, spyOn } from 'bun:test'
+import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test'
 import {
   AVAILABLE_COMPONENTS,
   createButton,
@@ -7,6 +7,11 @@ import {
 } from '../src/components'
 
 describe('Components', () => {
+  // A console.warn spy left in place outlives this file: the next file's
+  // spyOn(console, 'warn') gets this same mock back, calls and all, so its
+  // "no warning" assertion sees a warning some other file emitted.
+  afterEach(() => mock.restore())
+
   describe('AVAILABLE_COMPONENTS', () => {
     it('should export array of component names', () => {
       expect(AVAILABLE_COMPONENTS).toBeDefined()
