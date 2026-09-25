@@ -8418,8 +8418,13 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
       el.__stx_parent_scope = el.__stx_parent_scope
         || resolveComponentCallerScope(el, spaPageScopeSnapshot);
       bindParentComponentProps(el, el.__stx_parent_scope);
-      Object.assign(componentScope, scopeVars);
+      // Already bound: a layout component that stayed on the page. Its
+      // bindings are live and read its own scope, so there is nothing to
+      // merge — and merging it AFTER the destination page's setup let a name
+      // the two share take the component's value for the page. The offline
+      // banner's connected flag read as a Settings card's "Connected".
       if (el.__stx_disposers) return;
+      Object.assign(componentScope, scopeVars);
       var disposeEffects = trackEffects(function() { processElement(el, componentScope); });
       el.__stx_disposers = disposeEffects;
     });
