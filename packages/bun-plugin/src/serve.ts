@@ -763,16 +763,20 @@ export interface ServeOptions {
   imageWarmupGraceMs?: number
   /**
    * Derive image placeholders and build the responsive delivery catalog on
-   * startup. Defaults to true. Also settable as `imageWarmup` in the project's
-   * stx/ui config.
+   * startup. Also settable as `imageWarmup` in the project's stx/ui config.
    *
-   * Turn it off when the project renders no `<StxImage>` and no `@image`:
-   * those are the only things that read what the pass produces, so without
-   * them it is a full decode of every raster under `public/` for output
-   * nothing asks for. In production the server waits for this before binding,
-   * so it is also how long a deploy keeps two releases alive at once.
+   * Defaults to `'auto'`: the pass runs only when a `.stx` template in the
+   * project uses `<StxImage>` (or its `Image`/`stx-image`/`stx-img` aliases)
+   * or `@image`. Those are the only things that read what the pass produces,
+   * so without them it is a full decode of every raster under `public/` for
+   * output nothing asks for. In production the server waits for it before
+   * binding, so on a photo-heavy site that used to be minutes of startup and a
+   * failed deploy health check. `true` and `false` force it either way.
+   *
+   * The pass keeps its variants under `STX_IMAGE_CACHE_DIR` when that is set,
+   * so a deploy that points it outside the release directory starts warm.
    */
-  imageWarmup?: boolean
+  imageWarmup?: boolean | 'auto'
   /**
    * Public directory served at the URL root, like Nuxt/Vite/Next/Astro.
    * Any file under this directory is reachable at the matching URL path —
@@ -1251,7 +1255,7 @@ export async function serve(options: ServeOptions): Promise<void> {
   // megabytes of variants that are never requested. Since the server now
   // waits for this before it binds, that cost is also how long a deploy's two
   // releases overlap.
-  const imageWarmupEnabled = (options.imageWarmup ?? (stxConfig as { imageWarmup?: boolean }).imageWarmup ?? true) !== false
+  const imageWarmupSetting = options.imageWarmup ?? (stxConfig as { imageWarmup?: boolean | 'auto' }).imageWarmup ?? 'auto'
 
   // How long a request is willing to wait for the warm-up before rendering
   // without it.
@@ -1295,7 +1299,17 @@ export async function serve(options: ServeOptions): Promise<void> {
   const stxModule = options.stxModule
     ? Promise.resolve(options.stxModule)
     : defaultStxModule
-  const imageDeliveryOutputDir = stateDir(process.cwd(), 'image-delivery')
+  // Outside the state directory when the deploy says so. A release directory
+  // is new on every deploy, and with the variants inside it every release
+  // re-encoded every image before it could bind. Variants are named by content
+  // hash, so one directory shared by every release is safe and starts warm.
+  const imageCacheDir = process.env.STX_IMAGE_CACHE_DIR?.trim()
+  const imageDeliveryOutputDir = imageCacheDir
+    ? nodePath.resolve(imageCacheDir, 'image-delivery')
+    : stateDir(process.cwd(), 'image-delivery')
+  const imagePlaceholderCachePath = imageCacheDir
+    ? nodePath.resolve(imageCacheDir, 'image-placeholders.json')
+    : stateDir(process.cwd(), 'image-placeholders.json')
   const imageDeliveryRoot = nodePath.join(imageDeliveryOutputDir, '_stx', 'images')
 
   // Synchronously-reachable handle to the resolved stx module, so the file
@@ -3185,6 +3199,9 @@ function __stxOverlay(errs){
 
   /** Derive placeholders and build the responsive image catalog. Settles `placeholdersReady`. */
   async function runImageWarmup(): Promise<void> {
+    const imageWarmupEnabled = imageWarmupSetting === 'auto'
+      ? await projectUsesImageBuiltins(process.cwd())
+      : imageWarmupSetting !== false
     if (!imageWarmupEnabled) {
       // Nothing to wait for, and nothing to fall back from: every lookup
       // misses, which is the same answer it would give before the pass
@@ -3198,7 +3215,7 @@ function __stxOverlay(errs){
       const publicRoot = nodePath.resolve(process.cwd(), publicDir)
       const [placeholderResult, deliveryResult] = await Promise.allSettled([
         stx.warmImagePlaceholders(publicRoot, {
-          cachePath: stateDir(process.cwd(), 'image-placeholders.json'),
+          cachePath: imagePlaceholderCachePath,
         }),
         stx.prepareImageDelivery(publicRoot, imageDeliveryOutputDir),
       ])
@@ -4538,4 +4555,52 @@ async function main() {
 // Only run main() if this file is being executed directly (not imported)
 if (import.meta.main) {
   main().catch(console.error)
+}
+
+/** Template syntax that reads the image pass's output. */
+const IMAGE_BUILTIN_PATTERN = /<(?:StxImage|Image|stx-image|stx-img)[\s/>]|@image\s*\(/
+
+/** Directories a template scan never needs to enter. */
+const TEMPLATE_SCAN_SKIP = new Set(['node_modules', 'dist', 'build', 'coverage', 'vendor'])
+
+/**
+ * Whether any `.stx` template under `root` uses `<StxImage>` or `@image`.
+ *
+ * Stops at the first hit. Skips dependencies, build output and hidden
+ * directories (the stx state directory among them), so it reads the project's
+ * own templates, including a framework's templates vendored into it.
+ */
+export async function projectUsesImageBuiltins(root: string): Promise<boolean> {
+  const { readdir, readFile } = await import('node:fs/promises')
+  const pending = [root]
+  while (pending.length > 0) {
+    const dir = pending.pop()!
+    let entries: import('node:fs').Dirent[]
+    try {
+      entries = await readdir(dir, { withFileTypes: true })
+    }
+    catch {
+      continue
+    }
+    for (const entry of entries) {
+      if (entry.name.startsWith('.'))
+        continue
+      const full = nodePath.join(dir, entry.name)
+      if (entry.isDirectory()) {
+        if (!TEMPLATE_SCAN_SKIP.has(entry.name))
+          pending.push(full)
+        continue
+      }
+      if (!entry.isFile() || !entry.name.endsWith('.stx'))
+        continue
+      try {
+        if (IMAGE_BUILTIN_PATTERN.test(await readFile(full, 'utf8')))
+          return true
+      }
+      catch {
+        // Unreadable template: it cannot render an image either.
+      }
+    }
+  }
+  return false
 }
