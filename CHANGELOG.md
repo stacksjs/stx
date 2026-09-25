@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.311...v0.2.312)
+
+## ✨ Features
+
+- **fetch**: prime the CSRF cookie for pages served from a cache ([f65e668](https://github.com/stacksjs/stx/commit/f65e668)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.312 ([51029d3](https://github.com/stacksjs/stx/commit/51029d3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.310...v0.2.311)
 
 ## 🐛 Bug Fixes
