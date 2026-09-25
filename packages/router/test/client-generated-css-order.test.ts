@@ -219,4 +219,26 @@ describe('router generated stylesheet order', () => {
     expect(window.document.querySelector('main')?.textContent).toContain('Feed')
     expect(window.document.querySelector(`head link[href="${CSS_B}"]`)?.hasAttribute('media')).toBeFalse()
   })
+
+  it('loads the page in full instead of swapping in markup whose sheet failed', async () => {
+    // Seen on wildloop.org: the server answered 520 for the profile page's
+    // sheet, the router swapped anyway, and the profile rendered with only
+    // the utilities the previous page happened to share.
+    const window = installRouter(SHELL, async () => fragment(CSS_B, 'Feed'), { cssLoadTimeout: 5000 })
+
+    const nav = window.stxRouter.navigate('/b')
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    const pending = window.document.querySelector(`head link[href="${CSS_B}"]`) as any
+    expect(pending).not.toBeNull()
+    pending.onerror()
+    await nav
+    await waitForRouterSwap()
+
+    // The unstyled markup never replaced the page on screen, the dead link is
+    // gone so the reload fetches it again, and the browser was sent there.
+    expect(window.document.querySelector('main')?.textContent).toBe('Home')
+    expect(window.document.querySelector(`head link[href="${CSS_B}"]`)).toBeNull()
+    expect(String(window.location.href)).toEndWith('/b')
+  })
 })

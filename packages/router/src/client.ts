@@ -858,8 +858,10 @@ else {
   // Before the swap: add each sheet the page does not have yet, as
   // media="print" so it downloads without restyling the page still on screen.
   // Returns a promise for them to finish (load OR error, capped at
-  // cssLoadTimeout so a slow or missing sheet never stalls navigation), or null
-  // when nothing new is needed and the swap can go ahead in the same turn.
+  // cssLoadTimeout so a slow sheet never stalls navigation), or null when
+  // nothing new is needed and the swap can go ahead in the same turn. The
+  // promise resolves false when a sheet failed outright, and the caller then
+  // navigates in full rather than swap in markup that has no styles.
   function preloadGeneratedCss(hrefs,base){
     var pending=[];
     hrefs.forEach(function(href){
@@ -880,14 +882,34 @@ else {
       link.setAttribute('data-stx-css-pending','');
       link.__stxCssReady=new Promise(function(resolve){
         var timer=setTimeout(finish,o.cssLoadTimeout);
-        function finish(){clearTimeout(timer);link.onload=null;link.onerror=null;link.__stxCssReady=null;resolve()}
-        link.onload=finish;
-        link.onerror=finish;
+        function finish(failed){
+          clearTimeout(timer);link.onload=null;link.onerror=null;link.__stxCssReady=null;
+          // A sheet that failed (a 5xx, a dropped connection) is gone for good:
+          // swapping anyway painted the page with only the utilities the
+          // previous page happened to share, which reads as a broken layout.
+          // Drop the dead <link> so a retry fetches it again, and report it.
+          if(failed===true&&link.parentNode)link.parentNode.removeChild(link);
+          resolve(failed!==true);
+        }
+        link.onload=function(){finish(false)};
+        link.onerror=function(){finish(true)};
       });
       pending.push(link.__stxCssReady);
       document.head.appendChild(link);
     });
-    return pending.length?Promise.all(pending):null;
+    return pending.length?Promise.all(pending).then(function(results){return results.every(function(ok){return ok!==false})}):null;
+  }
+
+  // Swap once the destination's sheets are in, or hand the navigation to the
+  // browser when one could not be fetched — a full load retries the sheet.
+  function afterCss(ready,url,swapNow){
+    if(!ready)return swapNow();
+    return ready.then(function(ok){
+      if(ok)return swapNow();
+      log('[router] stylesheet failed to load — full navigation to:',url);
+      location.href=url;
+      return false;
+    });
   }
 
   // At the swap: make the destination's sheets live and move them to the end
@@ -1162,7 +1184,7 @@ else {
       // jumps. Cleanup waits with it so the outgoing page stays live meanwhile.
       // With nothing new to load this runs in the same turn, as it always did.
       var fragCssReady=preloadGeneratedCss(fragmentCssHrefs(html),location.href);
-      return fragCssReady?fragCssReady.then(startFragSwap):startFragSwap();
+      return afterCss(fragCssReady,url,startFragSwap);
     }
 
     // Full document mode: parse with DOMParser and extract container content
@@ -1604,7 +1626,7 @@ else {
       });
     }
     var docCssReady=preloadGeneratedCss(docCssHrefs,docCssBase);
-    return docCssReady?docCssReady.then(startSwap):startSwap();
+    return afterCss(docCssReady,url,startSwap);
   }
 
   // ── Link interception ──
