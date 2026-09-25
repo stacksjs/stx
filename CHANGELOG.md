@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.312...v0.2.313)
+
+## 🐛 Bug Fixes
+
+- **serve**: stop keeping every rendered page for the life of the server ([ec0c01a](https://github.com/stacksjs/stx/commit/ec0c01a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.313 ([d4f24bd](https://github.com/stacksjs/stx/commit/d4f24bd)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.311...v0.2.312)
 
 ## ✨ Features
