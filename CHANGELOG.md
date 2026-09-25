@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.308...v0.2.309)
+
+## 🐛 Bug Fixes
+
+- **serve**: only warm images a template can use, and let the cache outlive a release ([de89422](https://github.com/stacksjs/stx/commit/de89422)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.309 ([c9ae8ef](https://github.com/stacksjs/stx/commit/c9ae8ef)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.307...v0.2.308)
 
 ## 🐛 Bug Fixes
