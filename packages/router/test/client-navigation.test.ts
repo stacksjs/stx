@@ -570,3 +570,86 @@ describe('aria-current across fragment swaps', () => {
     expect(links[2]?.getAttribute('aria-current')).toBe('step')
   })
 })
+
+describe('which links are current', () => {
+  /** A page at `url`, with the router initialised on it. */
+  function at(url: string, links: string, wrapper = 'nav') {
+    const window = new Window({ url })
+    window.document.write(`<html><head></head><body><${wrapper} class="links">${links}</${wrapper}><main>page</main></body></html>`)
+    ;(window as any).stx = {}
+    ;(window as any).__stxRouterConfig = { cache: true, prefetch: false, progress: false, viewTransitions: false }
+    Object.assign(globalThis, {
+      window,
+      document: window.document,
+      location: window.location,
+      history: window.history,
+      fetch: async () => new Response(''),
+      CustomEvent: window.CustomEvent,
+      Event: window.Event,
+      DOMParser: window.DOMParser,
+    })
+    new Function(getRouterScript())()
+    return [...window.document.querySelectorAll('.links a')] as any[]
+  }
+  const current = (a: any) => a.getAttribute('aria-current')
+  const cls = (a: any) => String(a.getAttribute('class') ?? '').split(/\s+/).filter(Boolean).sort().join(' ')
+
+  it('keeps the server\'s mark on a query-only link to the page being shown', () => {
+    // A range picker: five links to this same path that differ only in query.
+    // Comparing the raw href with location.pathname matched none of them, so
+    // the active range lost aria-current="page" on every load.
+    const links = at('http://localhost/dashboard?site=1&range=24h', `
+      <a data-stx-link href="?site=1&range=24h" aria-current="page">24h</a>
+      <a data-stx-link href="?site=1&range=7d">7d</a>
+    `)
+    expect(current(links[0])).toBe('page')
+    expect(cls(links[0])).toBe('active exact-active')
+    expect(current(links[1])).toBeNull()
+    expect(cls(links[1])).toBe('')
+  })
+
+  it('matches a link with a query only when its params are on the current URL', () => {
+    const links = at('http://localhost/dashboard?site=1&range=7d&country=US', `
+      <a data-stx-link href="/dashboard?site=1&range=7d">7d</a>
+      <a data-stx-link href="/dashboard?site=1&range=30d">30d</a>
+      <a data-stx-link href="/dashboard">Dashboard</a>
+    `)
+    // Extra params on the page (a filter) do not unmark the range it is on.
+    expect(current(links[0])).toBe('page')
+    expect(current(links[1])).toBeNull()
+    // A link with no query matches on its path, so the nav entry stays current.
+    expect(current(links[2])).toBe('page')
+  })
+
+  it('resolves same-origin absolute URLs and trailing slashes', () => {
+    const links = at('http://localhost/docs/', `
+      <a data-stx-link href="http://localhost/docs">Docs</a>
+      <a data-stx-link href="/docs/">Docs, slashed</a>
+    `)
+    expect(current(links[0])).toBe('page')
+    expect(current(links[1])).toBe('page')
+  })
+
+  it('treats a parent path as active, but not a path that merely shares a prefix', () => {
+    // Outside a <nav>: links inside one stay exact-only (updateNav), as before.
+    const links = at('http://localhost/blog/hello', `
+      <a data-stx-link href="/blog">Blog</a>
+      <a data-stx-link href="/blo">Blo</a>
+      <a data-stx-link href="/">Home</a>
+    `, 'div')
+    expect(cls(links[0])).toBe('active')
+    expect(current(links[0])).toBeNull()
+    expect(cls(links[1])).toBe('')
+    expect(cls(links[2])).toBe('')
+  })
+
+  it('leaves links it does not own exactly as rendered', () => {
+    const links = at('http://localhost/pricing', `
+      <a data-stx-link href="https://example.com/pricing" class="active" aria-current="page">Elsewhere</a>
+      <a data-stx-link href="#plans" class="active">Plans</a>
+    `)
+    expect(current(links[0])).toBe('page')
+    expect(cls(links[0])).toBe('active')
+    expect(cls(links[1])).toBe('active')
+  })
+})

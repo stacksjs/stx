@@ -1063,7 +1063,7 @@ else {
         // Remove old page scripts
         document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
         if(pushState!==false)writeHistory(pushState,url+(hash||''));
-        updateNav(url);
+        updateNav();
         updateActiveLinks();
         if(o.scrollToTop&&!hash)window.scrollTo({top:0,behavior:'instant'});
         else if(hash){var el=document.querySelector(hash);if(el)el.scrollIntoView({behavior:'smooth'})}
@@ -1500,7 +1500,7 @@ else {
       if(pushState!==false)writeHistory(pushState,url+(hash||''));
 
       // Update active nav links
-      updateNav(url);
+      updateNav();
       updateActiveLinks();
 
       // Scroll
@@ -1897,33 +1897,59 @@ else {
   }
 
   // ── Active link management ──
-  function updateNav(url){
+  // Which links point at the page being shown. Every href is resolved against
+  // the current URL first, because comparing the raw attribute with
+  // location.pathname got most real links wrong:
+  //   - a query-only href (?range=24h, the shape of every range picker and tab
+  //     bar) never equalled a pathname, so the active one lost its classes and
+  //     had the server's aria-current="page" stripped on every load;
+  //   - /dashboard?site=1 was never an exact match for /dashboard;
+  //   - http://same-origin/x and /x/ were never matches for /x;
+  //   - /blog was "active" on /blogging, a prefix that is not a parent.
+  // Null for links the router does not own (another origin, a bare #fragment,
+  // anything unparseable), which are left exactly as the server rendered them.
+  function normPath(p){return p.length>1&&p.charAt(p.length-1)==='/'?p.slice(0,-1):p}
+  function linkState(href){
+    if(!href||href.charAt(0)==='#')return null;
+    var u;
+    try{u=new URL(href,location.href)}catch(e){return null}
+    if(u.origin!==location.origin)return null;
+    var path=normPath(u.pathname),cur=normPath(location.pathname);
+    // A link with no query matches on its path, so a nav entry stays current
+    // while the page adds filters. A link WITH a query is current only when
+    // every param it names has that value here: of five range links that all
+    // point at this path, exactly one is.
+    var have=new URLSearchParams(location.search),q=true;
+    u.searchParams.forEach(function(v,k){if(have.getAll(k).indexOf(v)===-1)q=false});
+    return {
+      exact:q&&path===cur,
+      active:q&&(path==='/'?cur==='/':(cur===path||cur.indexOf(path+'/')===0))
+    };
+  }
+
+  function updateNav(){
     document.querySelectorAll('nav a[href], #mobileNav a[href], [data-stx-nav] a[href]').forEach(function(a){
-      var href=a.getAttribute('href');
-      if(!href||href.startsWith('#')||href.startsWith('http'))return;
-      var isActive=(href===url)||(href==='/'&&url==='/');
-      if(a.hasAttribute('data-stx-link')){
-        var ac=a.getAttribute('data-stx-active-class')||'active';
-        if(isActive)ac.split(' ').forEach(function(cls){if(cls)a.classList.add(cls)});else ac.split(' ').forEach(function(cls){if(cls)a.classList.remove(cls)});
-      }
+      if(!a.hasAttribute('data-stx-link'))return;
+      var st=linkState(a.getAttribute('href'));
+      if(!st)return;
+      var ac=a.getAttribute('data-stx-active-class')||'active';
+      if(st.exact)ac.split(' ').forEach(function(cls){if(cls)a.classList.add(cls)});else ac.split(' ').forEach(function(cls){if(cls)a.classList.remove(cls)});
     });
   }
 
   function updateActiveLinks(){
     // Update active classes on <stx-link> elements (and legacy data-stx-link)
     var links=document.querySelectorAll('[data-stx-link]');
-    var cur=location.pathname;
     links.forEach(function(link){
-      var href=link.getAttribute('to')||link.getAttribute('href')||'';
+      var st=linkState(link.getAttribute('to')||link.getAttribute('href')||'');
+      if(!st)return;
       var ac=link.getAttribute('active-class')||link.getAttribute('data-stx-active-class')||'active';
       var eac=link.getAttribute('exact-active-class')||link.getAttribute('data-stx-exact-active-class')||'exact-active';
       ac.split(' ').forEach(function(cls){if(cls)link.classList.remove(cls)});
       eac.split(' ').forEach(function(cls){if(cls)link.classList.remove(cls)});
-      var isExact=cur===href;
-      var isActive=href!=='/'?cur.startsWith(href):cur==='/';
-      if(isExact)eac.split(' ').forEach(function(cls){if(cls)link.classList.add(cls)});
-      if(isActive)ac.split(' ').forEach(function(cls){if(cls)link.classList.add(cls)});
-      markCurrent(link,isExact);
+      if(st.exact)eac.split(' ').forEach(function(cls){if(cls)link.classList.add(cls)});
+      if(st.active)ac.split(' ').forEach(function(cls){if(cls)link.classList.add(cls)});
+      markCurrent(link,st.exact);
     });
   }
 
@@ -2047,7 +2073,7 @@ else {
     injectStyles();
     injectViewTransitionCSS();
     updateActiveLinks();
-    updateNav(location.pathname);
+    updateNav();
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
