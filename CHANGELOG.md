@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.313...v0.2.314)
+
+## 🐛 Bug Fixes
+
+- **router**: resolve link hrefs before deciding which one is current ([0998232](https://github.com/stacksjs/stx/commit/0998232)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.314 ([2678d9d](https://github.com/stacksjs/stx/commit/2678d9d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.312...v0.2.313)
 
 ## 🐛 Bug Fixes
