@@ -163,6 +163,41 @@ export function extractServerScriptsFromTemplate(content: string): {
 }
 
 /**
+ * Stands in for a dynamic route's params in a cached shell. Not valid
+ * JavaScript on its own, so a shell that escaped without being filled fails
+ * loudly instead of running with somebody else's params.
+ */
+export const ROUTE_PARAMS_PLACEHOLDER = '__STX_ROUTE_PARAMS__'
+
+/** The params as a script-safe object literal. */
+export function serializeRouteParams(params: Record<string, string>): string {
+  return JSON.stringify(params)
+    .replace(/</g, '\\u003C')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029')
+}
+
+/** Put one request's params into a cached dynamic-route shell. */
+export function fillRouteParams(html: string, params: Record<string, string>): string {
+  const serialized = serializeRouteParams(params)
+  // A function replacer: `$&` and friends in a param value are literal text.
+  return html.replace(ROUTE_PARAMS_PLACEHOLDER, () => serialized)
+}
+
+/**
+ * Whether a page's server scripts read its route params — `params`, or a
+ * segment by its bare name (`[id].stx` binds `id`). Such a page renders per
+ * record and must not share one cached render across them. Deliberately
+ * coarse: a comment or an unrelated local spelled the same only costs the
+ * cache, never correctness.
+ */
+export function serverScriptsReadParams(serverScripts: string[], paramNames: string[]): boolean {
+  const names = ['params', ...paramNames].map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  const pattern = new RegExp(`(?:^|[^\\w$.])(?:${names.join('|')})(?![\\w$])`)
+  return serverScripts.some(script => pattern.test(script))
+}
+
+/**
  * Build the candidate regexes for a dynamic route file (stacksjs/stx#1927).
  *
  * `fileRouteBase` is the route path with the file extension already
@@ -2913,14 +2948,6 @@ function __stxOverlay(errs){
     // Extract server scripts only — client scripts stay for processDirectives to transform
     const { serverScripts: dynServerScripts, templateContent } = extractServerScriptsFromTemplate(content)
 
-    // Build context with dynamic params
-    const context: Record<string, any> = {
-      __filename: filePath,
-      __dirname: nodePath.dirname(filePath),
-      __route: routePath,
-      __stx_runtime_head: {},
-    }
-
     // Name→value map of the dynamic segments, URL-decoded (path segments
     // arrive percent-encoded; scripts want `café`, not `caf%C3%A9`). Single
     // source of truth for the ambient bindings below, the server-script
@@ -2937,6 +2964,46 @@ function __stxOverlay(errs){
       paramsObj[paramNames[i]] = value
     }
 
+    // With `renderCacheVary: 'source'` a dynamic route is one shell for every
+    // value of its segments: `trail/[id].stx` renders the same markup for all
+    // of its records and loads the record on the client. It used to be
+    // rendered from scratch on every request anyway — only static routes
+    // consulted the cache — so a crawler walking a sitemap of dynamic pages
+    // kept the main thread busy on identical renders until the server stopped
+    // answering at all. Render once, with a placeholder where the params go,
+    // and fill it per request.
+    //
+    // Not when a server script reads its params: that page genuinely renders
+    // per record, and one record's output must never be served for another.
+    const isMutating = !!reqCtx && reqCtx.method !== 'GET' && reqCtx.method !== 'HEAD'
+    const skipCacheHint = /(?:^|[^\w$])__stx_skip_cache\s*=\s*true/.test(content)
+    const cacheShell = ENABLE_HTML_CACHE
+      && RENDER_CACHE_VARY === 'source'
+      && paramNames.length > 0
+      && !isMutating
+      && !skipCacheHint
+      && !serverScriptsReadParams(dynServerScripts, paramNames)
+    if (reqCtx)
+      reqCtx.params = paramsObj
+    if (cacheShell) {
+      const cachedEntry = htmlCache.get(filePath)
+      if (cachedEntry && await templateSignatureFresh(cachedEntry.signature)) {
+        if (reqCtx) {
+          reqCtx.responseStatus = cachedEntry.status
+          reqCtx.responseHeaders = cachedEntry.headers
+        }
+        return fillRouteParams(cachedEntry.html, paramsObj)
+      }
+    }
+
+    // Build context with dynamic params
+    const context: Record<string, any> = {
+      __filename: filePath,
+      __dirname: nodePath.dirname(filePath),
+      __route: routePath,
+      __stx_runtime_head: {},
+    }
+
     // Add each param to context as a bare identifier (`[id].stx` → `id`)...
     for (const name of paramNames) {
       context[name] = paramsObj[name]
@@ -2946,8 +3013,6 @@ function __stxOverlay(errs){
     // but the serve path never set it, so `params.id` was always `{}`
     // (stacksjs/stacks#1967).
     context.params = paramsObj
-    if (reqCtx)
-      reqCtx.params = paramsObj
 
     const { processDirectives, extractVariables, defaultConfig, injectRouterScript: injectRouter } = await stxModule
     injectServeLocaleContext(context)
@@ -3006,10 +3071,8 @@ function __stxOverlay(errs){
     // Inject route params for client-side useRoute().params — the same
     // decoded paramsObj the server script saw, so both sides agree.
     if (paramNames.length > 0) {
-      const serializedParams = JSON.stringify(paramsObj)
-        .replace(/</g, '\\u003C')
-        .replace(/\u2028/g, '\\u2028')
-        .replace(/\u2029/g, '\\u2029')
+      // A cached shell keeps the placeholder and each request fills it.
+      const serializedParams = cacheShell ? ROUTE_PARAMS_PLACEHOLDER : serializeRouteParams(paramsObj)
       const paramsScript = `<script data-stx-route-params>(function(){var p=${serializedParams};window.__stx_rp=p;if(window.stx){window.stx._rp=p;if(window.stx.setRouteParams)window.stx.setRouteParams(p)}})()</script>`
       if (output.includes('</head>')) {
         output = output.replace('</head>', `${paramsScript}\n</head>`)
@@ -3033,7 +3096,23 @@ function __stxOverlay(errs){
     // Client scripts are already handled by processDirectives (transformed into data-stx-scoped)
     // Css CSS is already injected by processDirectives() — no duplicate injection needed.
 
-    return output
+    if (!cacheShell)
+      return output
+
+    // The same conditions the static path stores under, plus one of its own:
+    // a render that recorded a response (a redirect, a notFound()) is about
+    // this record, so it is served and not kept.
+    const recordedResponse = readResponseStatus(context) !== undefined || !!readResponseHeaders(context)
+    if (
+      !context.__stx_skip_cache
+      && !recordedResponse
+      && isRenderableCacheCandidate(output)
+      && placeholdersAreReady
+    ) {
+      const signature = await buildTemplateSignature(filePath, dependencies)
+      htmlCache.set(filePath, { html: output, signature, status: reqCtx?.responseStatus ?? 200, headers: reqCtx?.responseHeaders })
+    }
+    return fillRouteParams(output, paramsObj)
   }
 
   // Start server immediately - processing happens on-demand

@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { access, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { isRenderableCacheCandidate } from '../src/serve'
+import { fillRouteParams, isRenderableCacheCandidate, ROUTE_PARAMS_PLACEHOLDER, serverScriptsReadParams } from '../src/serve'
 
 const PORT = 43_000 + (process.pid % 1000)
 const BASE = `http://localhost:${PORT}`
@@ -42,6 +42,19 @@ await Bun.write('prewarmed.txt', 'ready')
 const marker = crypto.randomUUID()
 </script>
 <main>prewarm-marker:{{ marker }}</main>
+`)
+  // A source-derived shell: one render serves every record.
+  await Bun.write(path.join(fixtureDir, 'views', 'trail', '[id].stx'), `<script server>
+const marker = crypto.randomUUID()
+</script>
+<main>shell-marker:{{ marker }}</main>
+`)
+  // A page that renders its record server-side must not share a render.
+  await Bun.write(path.join(fixtureDir, 'views', 'post', '[slug].stx'), `<script server>
+const heading = 'post-' + params.slug
+const marker = crypto.randomUUID()
+</script>
+<main>{{ heading }} marker:{{ marker }}</main>
 `)
   await Bun.write(path.join(fixtureDir, 'components', 'CompilerProbe.stx'), `<script server>
 const { label = '' } = defineProps()
@@ -163,5 +176,46 @@ const manifest = await Bun.file('data/manifest.json').text()
 
     const after = await waitForContent('updated-cache-marker:')
     expect(after).toContain('data:bravo')
+  })
+
+  test('renders a dynamic route shell once and fills each request\'s params', async () => {
+    const markerOf = (html: string) => /shell-marker:([\w-]+)/.exec(html)?.[1]
+    const [one, two] = await Promise.all(['1', '2'].map(async (id) => {
+      const response = await fetch(`${BASE}/trail/${id}`)
+      expect(response.status).toBe(200)
+      return await response.text()
+    }))
+    const again = await (await fetch(`${BASE}/trail/2`)).text()
+
+    // One render: the server script ran once for both records.
+    expect(markerOf(one)).toBeDefined()
+    expect(markerOf(again)).toBe(markerOf(two))
+    // ...and each response still carries its own params.
+    expect(one).toContain('var p={"id":"1"}')
+    expect(two).toContain('var p={"id":"2"}')
+    expect(again).toContain('var p={"id":"2"}')
+    expect(two).not.toContain(ROUTE_PARAMS_PLACEHOLDER)
+  })
+
+  test('renders a page whose server script reads its params per record', async () => {
+    const first = await (await fetch(`${BASE}/post/alpha`)).text()
+    const second = await (await fetch(`${BASE}/post/bravo`)).text()
+
+    expect(first).toContain('post-alpha')
+    expect(second).toContain('post-bravo')
+  })
+
+  test('decides which server scripts read params', () => {
+    expect(serverScriptsReadParams(['const x = params.id'], ['id'])).toBe(true)
+    expect(serverScriptsReadParams(['const t = await load(id)'], ['id'])).toBe(true)
+    expect(serverScriptsReadParams(['const m = crypto.randomUUID()'], ['id'])).toBe(false)
+    // A property of the same name is not the param.
+    expect(serverScriptsReadParams(['const n = club.id'], ['id'])).toBe(false)
+    expect(serverScriptsReadParams([], ['id'])).toBe(false)
+  })
+
+  test('fills params literally, whatever they contain', () => {
+    const shell = `<script>var p=${ROUTE_PARAMS_PLACEHOLDER};</script>`
+    expect(fillRouteParams(shell, { id: '$&</script>' })).toBe('<script>var p={"id":"$&\\u003C/script>"};</script>')
   })
 })
