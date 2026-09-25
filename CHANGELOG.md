@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.310...v0.2.311)
+
+## 🐛 Bug Fixes
+
+- **signals**: keep a page's names when a layout component shares them ([37ab888](https://github.com/stacksjs/stx/commit/37ab888)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.311 ([b7cc38a](https://github.com/stacksjs/stx/commit/b7cc38a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.309...v0.2.310)
 
 ## 🐛 Bug Fixes
