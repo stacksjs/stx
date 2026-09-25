@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.309...v0.2.310)
+
+## 🐛 Bug Fixes
+
+- **serve**: cache dynamic route shells under renderCacheVary 'source' ([6ecfbca](https://github.com/stacksjs/stx/commit/6ecfbca)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **router**: load the page in full when its stylesheet fails ([48db412](https://github.com/stacksjs/stx/commit/48db412)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.310 ([954ecc8](https://github.com/stacksjs/stx/commit/954ecc8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.308...v0.2.309)
 
 ## 🐛 Bug Fixes
