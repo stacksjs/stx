@@ -1383,8 +1383,6 @@ export async function serve(options: ServeOptions): Promise<void> {
     throw new Error('No file patterns provided')
   }
 
-  // Lazy-load: Cache for processed templates
-  const routes = new Map<string, string>()
   let sourceFiles: string[] | null = null
   /** Route paths derived from discovered `.stx` views — used to rewrite `<a href>` for non-default locales. */
   let discoveredPagePaths: Set<string> | null = null
@@ -1643,7 +1641,6 @@ function __stxOverlay(errs){
         if (isStxLike || isCode || isData) {
           if (isStxLike)
             sourceFiles = null
-          routes.clear()
           // Wipe the rendered-HTML cache and Css CSS cache too. The
           // signature check should catch most edits, but it relies on every
           // dependency being tracked correctly during the previous render —
@@ -2836,7 +2833,6 @@ function __stxOverlay(errs){
       `/${fileRoute}.html` === requestPath ||
       (isIndexFile && isRootRequest)) {
         const output = await processTemplate(filePath, reqCtx)
-        routes.set(requestPath, output)
         return output
       }
 
@@ -2847,7 +2843,6 @@ function __stxOverlay(errs){
         if (`/${prettyRoute}` === requestPath ||
         prettyRoute === normalizedPath) {
           const output = await processTemplate(filePath, reqCtx)
-          routes.set(requestPath, output)
           return output
         }
       }
@@ -2923,7 +2918,6 @@ function __stxOverlay(errs){
 
           // Process template with dynamic params in context
           const output = await processTemplateDynamic(filePath, paramNames, paramValues, normalizedPath, reqCtx)
-          routes.set(requestPath, output)
           return output
         }
       }

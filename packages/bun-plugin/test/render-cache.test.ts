@@ -43,11 +43,13 @@ const marker = crypto.randomUUID()
 </script>
 <main>prewarm-marker:{{ marker }}</main>
 `)
-  // A source-derived shell: one render serves every record.
+  // A source-derived shell: one render serves every record. Padded to the
+  // size of a real page so a per-request copy is measurable in the heap.
   await Bun.write(path.join(fixtureDir, 'views', 'trail', '[id].stx'), `<script server>
 const marker = crypto.randomUUID()
 </script>
 <main>shell-marker:{{ marker }}</main>
+<p hidden>${'x'.repeat(200_000)}</p>
 `)
   // A page that renders its record server-side must not share a render.
   await Bun.write(path.join(fixtureDir, 'views', 'post', '[slug].stx'), `<script server>
@@ -82,6 +84,13 @@ serve({
   renderCacheVary: 'source',
   prewarmRenderCache: 8,
   watchDirs: ['data'],
+  routes: {
+    // The server's own heap, after a full collection, for the leak test.
+    '/__heap': () => {
+      Bun.gc(true)
+      return Response.json({ heapSize: require('bun:jsc').heapStats().heapSize })
+    },
+  },
 })
 `)
 
@@ -218,4 +227,24 @@ const manifest = await Bun.file('data/manifest.json').text()
     const shell = `<script>var p=${ROUTE_PARAMS_PLACEHOLDER};</script>`
     expect(fillRouteParams(shell, { id: '$&</script>' })).toBe('<script>var p={"id":"$&\\u003C/script>"};</script>')
   })
+
+  test('keeps nothing per URL: a crawler walking distinct pages does not grow the heap', async () => {
+    // Every rendered page used to be stored in a map keyed by its URL that
+    // nothing ever read, and only a source edit cleared it. A crawler walking
+    // ~600k trail URLs grew wildloop.org's server by ~1 MB a page until the
+    // kernel throttled it into answering nothing.
+    const heap = async () => (await (await fetch(`${BASE}/__heap`)).json()).heapSize as number
+    const walk = async (from: number, count: number) => {
+      for (let id = from; id < from + count; id++)
+        await (await fetch(`${BASE}/trail/${id}`)).text()
+    }
+
+    await walk(10_000, 20)
+    const before = await heap()
+    await walk(20_000, 300)
+    const after = await heap()
+
+    // 300 pages of ~200 KB is ~60 MB (more as UTF-16) if each is kept.
+    expect(after - before).toBeLessThan(20 * 1024 * 1024)
+  }, 60_000)
 })
