@@ -339,7 +339,16 @@ declare function configureFetch(_config: {
    * what a Stacks server checks. Rename either side, or pass `false` to stop.
    * Unlike the hooks, this persists across calls that do not mention it.
    */
-  csrf?: false | { cookie?: string, header?: string }
+  csrf?: false | {
+    cookie?: string
+    header?: string
+    /**
+     * A same-origin GET that sets the CSRF cookie, requested once before an
+     * unsafe request finds no cookie. Needed on a page served from a CDN
+     * cache, which cannot carry Set-Cookie. Any safe Stacks route seeds it.
+     */
+    prime?: string
+  }
 }): void
 
 declare function useOptimistic<T = any, A = any>(

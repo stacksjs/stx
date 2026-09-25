@@ -406,3 +406,58 @@ describe('useMutation bodies', () => {
     expect(headerOf(seen[0], 'Content-Type')).toBe('application/json')
   })
 })
+
+/**
+ * A page served from a CDN cache has no CSRF cookie: the edge strips
+ * Set-Cookie from anything it caches. `csrf.prime` fetches one before the
+ * first unsafe request that needs it, so a cached page can still post.
+ */
+describe('CSRF prime', () => {
+  const clear = () => { document.cookie = 'X-CSRF-Token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/' }
+
+  beforeEach(() => {
+    clear()
+    globalThis.fetch = (async (url: string, opts: any) => {
+      seen.push({ url: String(url), opts })
+      // The prime route answers by setting the cookie, as a Stacks GET does.
+      if (String(url) === '/api/forms/abc')
+        document.cookie = 'X-CSRF-Token=primed; path=/'
+      return new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } })
+    }) as never
+  })
+
+  afterEach(clear)
+
+  it('fetches the cookie first when there is none, then echoes it', async () => {
+    g.window.stx.configureFetch({ csrf: { prime: '/api/forms/abc' } })
+    await g.window.stx.useMutation('/api/forms/abc/submissions').mutate({ city: 'Boise' })
+
+    expect(seen.map(entry => entry.url)).toEqual(['/api/forms/abc', '/api/forms/abc/submissions'])
+    expect(headerOf(seen[1]!, 'X-CSRF-Token')).toBe('primed')
+  })
+
+  it('does nothing extra when the page already has a cookie', async () => {
+    document.cookie = 'X-CSRF-Token=have; path=/'
+    g.window.stx.configureFetch({ csrf: { prime: '/api/forms/abc' } })
+    await g.window.stx.useMutation('/api/x').mutate({})
+
+    expect(seen.map(entry => entry.url)).toEqual(['/api/x'])
+    expect(headerOf(seen[0]!, 'X-CSRF-Token')).toBe('have')
+  })
+
+  it('never primes for a safe request or another origin', async () => {
+    g.window.stx.configureFetch({ csrf: { prime: '/api/forms/abc' } })
+    await g.window.stx.useFetch('/api/y')
+    await g.window.stx.useMutation('https://elsewhere.example/api').mutate({})
+    await settle()
+
+    expect(seen.some(entry => entry.url === '/api/forms/abc')).toBe(false)
+  })
+
+  it('is off unless configured', async () => {
+    g.window.stx.configureFetch({ csrf: {} })
+    await g.window.stx.useMutation('/api/x').mutate({})
+
+    expect(seen.map(entry => entry.url)).toEqual(['/api/x'])
+  })
+})

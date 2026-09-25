@@ -242,19 +242,44 @@ console.log('[stx] entering IIFE');
     return null;
   }
 
-  function __stxApplyCsrf(url, opts) {
-    if (!__stxCsrf) return;
+  // Whether this request should carry the token: unsafe, and same-origin.
+  function __stxWantsCsrf(url, opts) {
+    if (!__stxCsrf) return false;
     var method = String((opts && opts.method) || 'GET').toUpperCase();
-    if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return;
+    if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return false;
     // A path is same-origin by definition; only an absolute URL needs its
     // origin compared, and one that cannot be parsed is not trusted.
     var target = String(url);
     if (/^[a-z][a-z0-9+.-]*:/i.test(target) || target.slice(0, 2) === '//') {
-      if (typeof location === 'undefined') return;
+      if (typeof location === 'undefined') return false;
       try {
-        if (new URL(target).origin !== location.origin) return;
-      } catch (e) { return; }
+        if (new URL(target).origin !== location.origin) return false;
+      } catch (e) { return false; }
     }
+    return true;
+  }
+
+  // Fetch the cookie before the first unsafe request, when the page did not
+  // bring one. A page served from a CDN cache cannot: the edge strips
+  // Set-Cookie from a cached response, or it would hand one visitor's token to
+  // everyone. So the only pages that could post a form were the ones nobody
+  // cached. \`csrf.prime\` names a same-origin GET that sets the cookie (any
+  // safe Stacks route does); one request, shared by concurrent callers, and
+  // only when the cookie is missing.
+  var __stxCsrfPriming = null;
+  async function __stxPrimeCsrf(url, opts) {
+    if (!__stxCsrf || !__stxCsrf.prime || !__stxWantsCsrf(url, opts)) return;
+    if (__stxCookie(__stxCsrf.cookie)) return;
+    if (!__stxCsrfPriming) {
+      __stxCsrfPriming = fetch(__stxCsrf.prime, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+        .then(function () {}, function () {})
+        .then(function () { __stxCsrfPriming = null; });
+    }
+    await __stxCsrfPriming;
+  }
+
+  function __stxApplyCsrf(url, opts) {
+    if (!__stxWantsCsrf(url, opts)) return;
     var token = __stxCookie(__stxCsrf.cookie);
     if (!token) return;
     var headers = __stxHeaders(opts.headers);
@@ -275,7 +300,7 @@ console.log('[stx] entering IIFE');
     if (Object.prototype.hasOwnProperty.call(cfg, 'csrf')) {
       __stxCsrf = cfg.csrf === false || cfg.csrf === null
         ? null
-        : { cookie: (cfg.csrf && cfg.csrf.cookie) || 'X-CSRF-Token', header: (cfg.csrf && (cfg.csrf.header || cfg.csrf.cookie)) || 'X-CSRF-Token' };
+        : { cookie: (cfg.csrf && cfg.csrf.cookie) || 'X-CSRF-Token', header: (cfg.csrf && (cfg.csrf.header || cfg.csrf.cookie)) || 'X-CSRF-Token', prime: (cfg.csrf && typeof cfg.csrf.prime === 'string' && cfg.csrf.prime) || null };
     }
     // Replace rather than stack: a module re-evaluated by hot reload or by a
     // SPA script re-run must not end up with the same interceptor installed
@@ -303,6 +328,7 @@ console.log('[stx] entering IIFE');
     var t0 = __stxDevtoolsNow();
     opts = opts || {};
     // Before the hooks, so an onRequest hook sees (and may override) it.
+    await __stxPrimeCsrf(url, opts);
     __stxApplyCsrf(url, opts);
     if (__stxFetchHooks.onRequest) {
       // Normalised first so a hook can write ctx.options.headers.Authorization
