@@ -116,15 +116,15 @@
   },
   "dependencies": {
     "@stacksjs/ts-css": "^0.3.2",
-    "@stacksjs/clapp": "^0.2.14",
+    "@stacksjs/clapp": "^0.2.16",
     "@stacksjs/desktop": "workspace:*",
     "@stacksjs/sanitizer": "workspace:*",
     "@stacksjs/ts-i18n": "^0.1.11",
     "bun-plugin-stx": "workspace:*",
-    "bunfig": "^0.15.17",
+    "bunfig": "^0.15.19",
     "stx-router": "workspace:*",
-    "ts-broadcasting": "^0.0.9",
-    "ts-images": "^0.2.18",
+    "ts-broadcasting": "^0.0.10",
+    "ts-images": "^0.2.21",
     "ts-syntax-highlighter": "^0.2.1"
   }
 }

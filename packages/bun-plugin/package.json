@@ -75,6 +75,6 @@
   },
   "dependencies": {
     "@stacksjs/stx": "^0.2.227",
-    "stx-router": "^0.2.227"
+    "stx-router": "^0.2.316"
   }
 }
