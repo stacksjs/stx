@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.314...v0.2.315)
+
+## 🐛 Bug Fixes
+
+- **process**: a view's server script imports relative to the view under @extends ([2254da1](https://github.com/stacksjs/stx/commit/2254da1)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1698](https://github.com/stacksjs/stx/issues/1698))
+
+## 🔧 Chores
+
+- release v0.2.315 ([050e25f](https://github.com/stacksjs/stx/commit/050e25f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.313...v0.2.314)
 
 ## 🐛 Bug Fixes
