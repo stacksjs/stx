@@ -10,6 +10,8 @@ export interface RouterOptions {
   pagesDir?: string
   pagesDirs?: string[]
   extensions?: string[]
+  /** Write the route manifest and types. Default true; see RouterConfig.emit. */
+  emit?: boolean
 }
 
 export function createRouter(baseDir: string, options: RouterOptions = {}): Route[] {

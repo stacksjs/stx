@@ -30,6 +30,7 @@
  * @module owned-routes
  */
 
+import path from 'node:path'
 import { createRouter } from './router'
 import { loadStxConfig } from './config'
 
@@ -43,20 +44,33 @@ const _cache = new Map<string, string[]>()
  * and leave interception alone, never as "owns nothing". Shipping an empty list
  * as authoritative would disable SPA navigation for a whole site, which is a
  * far worse failure than the double-fetch this fixes.
+ *
+ * `pagesDir` is relative to stx's `root`, the way the config states it, so it
+ * is resolved against `root` here. It used to be resolved against the working
+ * directory, which in a Stacks app (root `resources`, pagesDir `views`) found
+ * no `./views`, discovered nothing, and shipped no matchers at all.
+ *
+ * Discovery is read-only: the router is built with `emit: false`. Building it
+ * used to rewrite the project's route manifest and route types as a side
+ * effect, and because of the directory bug above, rewrite them EMPTY, on every
+ * page render.
  */
-export async function getOwnedRouteMatchers(pagesDir?: string): Promise<string[]> {
+export async function getOwnedRouteMatchers(pagesDir?: string, root?: string): Promise<string[]> {
   let dir = pagesDir
-  if (!dir) {
+  let base = root
+  if (!dir || !base) {
     try {
-      const config = await loadStxConfig()
-      dir = (config as any)?.pagesDir || 'pages'
+      const config = await loadStxConfig() as { pagesDir?: string, root?: string } | undefined
+      dir ||= config?.pagesDir || 'pages'
+      base ||= config?.root || '.'
     }
     catch {
-      dir = 'pages'
+      dir ||= 'pages'
+      base ||= '.'
     }
   }
 
-  const key = dir as string
+  const key = path.isAbsolute(dir as string) ? dir as string : path.join(base as string, dir as string)
   const cached = _cache.get(key)
   if (cached)
     return cached
@@ -65,7 +79,7 @@ export async function getOwnedRouteMatchers(pagesDir?: string): Promise<string[]
   try {
     // `Route.regex` is the same matcher the server routes with, so the client
     // cannot disagree with it about what is a page.
-    sources = createRouter('.', { pagesDir: key })
+    sources = createRouter('.', { pagesDir: key, emit: false })
       .map(route => route.regex.source)
       .filter(Boolean)
   }

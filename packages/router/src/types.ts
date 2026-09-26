@@ -43,6 +43,15 @@ export interface RouterConfig {
    * environment variable rather than depending on stx to tell it.
    */
   stateDir?: string
+  /**
+   * Write the route manifest and route types into `stateDir`. Default: true.
+   *
+   * A caller that only wants to READ the routes (to match against, or to ship
+   * matchers to the client) sets this to false. Constructing a router used to
+   * rewrite both files every time, so a probe of the wrong directory replaced
+   * a project's committed manifest with an empty one.
+   */
+  emit?: boolean
   extensions?: string[]
   layouts?: boolean
   middleware?: boolean

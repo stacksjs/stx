@@ -433,7 +433,7 @@ export async function injectRouterScript(template: string, options?: StxOptions)
     // keeps its old behaviour, where an empty list would read as "owns nothing"
     // and kill SPA navigation site-wide.
     try {
-      const owned = await getOwnedRouteMatchers((options as any)?.pagesDir)
+      const owned = await getOwnedRouteMatchers((options as any)?.pagesDir, (options as any)?.root)
       if (owned.length > 0)
         configObj.ownedRoutes = owned
     }

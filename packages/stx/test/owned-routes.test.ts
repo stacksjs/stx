@@ -117,3 +117,47 @@ describe('what reaches the page', () => {
     expect(config.ownedRoutes.length).toBeGreaterThan(0)
   })
 })
+
+describe('discovering in a project whose pages sit under a root', () => {
+  // A Stacks app: stx infers root `resources` and pagesDir `views`, so the
+  // pages are resources/views, not ./views.
+  beforeEach(() => {
+    fs.mkdirSync(path.join(dir, 'resources', 'views', 'blog'), { recursive: true })
+    fs.mkdirSync(path.join(dir, 'resources', 'layouts'), { recursive: true })
+    fs.writeFileSync(path.join(dir, 'resources', 'views', 'index.stx'), '<main>Home</main>\n')
+    fs.writeFileSync(path.join(dir, 'resources', 'views', 'about.stx'), '<main>About</main>\n')
+    fs.writeFileSync(path.join(dir, 'resources', 'views', 'blog', '[slug].stx'), '<main>Post</main>\n')
+  })
+
+  it('resolves pagesDir against the root, the way the config states it', async () => {
+    const sources = await getOwnedRouteMatchers('views', 'resources')
+
+    expect(owns(sources, '/about')).toBe(true)
+    expect(owns(sources, '/blog/both-halves')).toBe(true)
+  })
+
+  it('leaves the committed route manifest alone', async () => {
+    // What a project commits, and what discovery used to overwrite on every
+    // render: with the root ignored it found nothing, and wrote that.
+    const stateDir = path.join(dir, 'state')
+    fs.mkdirSync(stateDir)
+    const manifest = '// the committed manifest\n'
+    fs.writeFileSync(path.join(stateDir, 'routes.ts'), manifest)
+
+    const previous = process.env.STX_DIR
+    process.env.STX_DIR = stateDir
+    try {
+      await getOwnedRouteMatchers('views', 'resources')
+      await getOwnedRouteMatchers('views', '.')
+    }
+    finally {
+      if (previous === undefined)
+        delete process.env.STX_DIR
+      else
+        process.env.STX_DIR = previous
+    }
+
+    expect(fs.readFileSync(path.join(stateDir, 'routes.ts'), 'utf8')).toBe(manifest)
+    expect(fs.existsSync(path.join(stateDir, 'route-types.d.ts'))).toBe(false)
+  })
+})
