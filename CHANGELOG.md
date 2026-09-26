@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.315...v0.2.316)
+
+## 🐛 Bug Fixes
+
+- **router**: owned-route discovery reads the right pages and rewrites nothing ([2803068](https://github.com/stacksjs/stx/commit/2803068)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.316 ([6ac262f](https://github.com/stacksjs/stx/commit/6ac262f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.314...v0.2.315)
 
 ## 🐛 Bug Fixes
