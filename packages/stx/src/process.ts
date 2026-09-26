@@ -1206,7 +1206,7 @@ async function processDirectivesInternal(
       /\x00STX_(SCRIPT|ORPHAN_STYLE)_(\d+)\x00/g,
       (_match, kind: string, index: string) => {
         const token = kind === 'SCRIPT'
-          ? scripts.scripts[Number(index)]
+          ? tagServerScriptSource(scripts.scripts[Number(index)], filePath)
           : styles.tokens[Number(index)]
         if (token)
           orphans.push(token)
@@ -1491,6 +1491,34 @@ async function runViewComposersForTemplate(filePath: string, context: Record<str
   )
 }
 
+/**
+ * The attribute a salvaged view script carries its own file path in.
+ *
+ * A view that extends a layout has its top-level scripts moved into the
+ * layout's content section (#1698), and the combined layout is processed with
+ * the LAYOUT's path. Its server script then resolved relative imports against
+ * the layouts directory, so a view nested deeper than its layout could not
+ * name a sibling module at all: the path that worked on the servers (which
+ * extract the view's script with the view's path first) failed in the static
+ * build, and the other way round. Tagging the script with where it came from
+ * lets extraction resolve against the view wherever the script ends up.
+ */
+const SCRIPT_SOURCE_ATTR = 'data-stx-source'
+
+function tagServerScriptSource(token: string | undefined, filePath: string): string | undefined {
+  if (!token)
+    return token
+  const open = /^<script\b([^>]*)>/i.exec(token)
+  if (!open || !/\bserver\b/.test(open[1]) || open[1].includes(SCRIPT_SOURCE_ATTR))
+    return token
+  return `<script ${SCRIPT_SOURCE_ATTR}="${encodeURIComponent(filePath)}"${token.slice('<script'.length)}`
+}
+
+function scriptSourceOf(attrs: string): string | undefined {
+  const match = new RegExp(`${SCRIPT_SOURCE_ATTR}="([^"]*)"`).exec(attrs)
+  return match ? decodeURIComponent(match[1]) : undefined
+}
+
 async function extractServerScriptVariables(output: string, context: Record<string, any>, filePath: string): Promise<void> {
   const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
   let scriptMatch: RegExpExecArray | null
@@ -1503,6 +1531,9 @@ async function extractServerScriptVariables(output: string, context: Record<stri
     if (!isServerScript || !scriptContent.trim())
       continue
 
+    // A view script salvaged into its layout resolves against the view.
+    const sourcePath = scriptSourceOf(attrs) ?? filePath
+
     try {
       const { extractVariables } = await importOnce('stx/variable-extractor', () => import('./variable-extractor'))
       /* Layouts and partials extracted here run AFTER the child page's
@@ -1510,12 +1541,12 @@ async function extractServerScriptVariables(output: string, context: Record<stri
          `preserveExisting` means a layout-level stub like
          `const user = { avatarInitials: 'JD' }` no longer clobbers the
          full object the page declared on the same name. */
-      await extractVariables(scriptContent, context, filePath, { preserveExisting: true })
+      await extractVariables(scriptContent, context, sourcePath, { preserveExisting: true })
     }
     catch (e) {
       const err = e instanceof Error ? e : new Error(String(e))
-      errorLogger.log(err, { filePath, phase: 'server-script-extraction' }, 'warning')
-      console.warn(`[stx] server <script> extraction failed in ${filePath}: ${err.message}`)
+      errorLogger.log(err, { filePath: sourcePath, phase: 'server-script-extraction' }, 'warning')
+      console.warn(`[stx] server <script> extraction failed in ${sourcePath}: ${err.message}`)
     }
   }
 }
