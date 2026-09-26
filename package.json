@@ -102,9 +102,9 @@
     "very-happy-dom": "^0.1.10"
   },
   "devDependencies": {
-    "@stacksjs/bumpx": "^0.2.17",
-    "@iconify/json": "^2.2.516",
-    "better-dx": "^0.2.22"
+    "@stacksjs/bumpx": "^0.2.18",
+    "@iconify/json": "^2.2.534",
+    "better-dx": "^0.2.25"
   },
   "overrides": {
     "bunfig": "0.15.17",

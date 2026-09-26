@@ -616,16 +616,16 @@
     "theme": "light"
   },
   "dependencies": {
-    "@stacksjs/ts-css": "^0.3.2",
-    "prettier": "^3.8.1"
+    "@stacksjs/ts-css": "^0.3.6",
+    "prettier": "^3.9.9"
   },
   "devDependencies": {
-    "@types/vscode": "^1.110.0",
+    "@types/vscode": "^1.138.0",
     "@vscode/vsce": "^3.7.2-13",
     "typescript": "^7.0.2",
     "vscode-html-languageservice": "^5.6.2",
-    "vscode-languageclient": "^10.1.0",
-    "vscode-languageserver-textdocument": "^1.0.12",
-    "vscode-languageserver-types": "^3.17.5"
+    "vscode-languageclient": "^10.1.2",
+    "vscode-languageserver-textdocument": "^1.0.15",
+    "vscode-languageserver-types": "^3.18.4"
   }
 }

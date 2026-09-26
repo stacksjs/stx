@@ -19,17 +19,17 @@
     "bench:regression:check": "bun run src/regression.ts --baseline baseline.json"
   },
   "dependencies": {
-    "@11ty/eleventy": "^3.1.5",
+    "@11ty/eleventy": "^3.1.6",
     "@stacksjs/sanitizer": "workspace:*",
-    "dompurify": "^3.4.13",
+    "dompurify": "^3.4.16",
     "ejs": "^6.0.1",
     "gray-matter": "^4.0.3",
     "handlebars": "^4.7.9",
-    "isomorphic-dompurify": "^4.2.0",
-    "js-yaml": "^5.2.2",
+    "isomorphic-dompurify": "^4.4.0",
+    "js-yaml": "^5.4.2",
     "liquidjs": "^10.29.0",
-    "markdown-it": "^15.0.1",
-    "marked": "^18.0.7",
+    "markdown-it": "^15.0.2",
+    "marked": "^18.0.14",
     "mitata": "^1.0.34",
     "nunjucks": "^3.2.4",
     "pug": "^3.0.4",
@@ -37,12 +37,12 @@
     "remark-html": "^16.0.1",
     "sanitize-html": "^2.17.7",
     "showdown": "^2.1.0",
-    "tinybench": "^6.0.0",
+    "tinybench": "^6.2.0",
     "xss": "^1.0.15"
   },
   "devDependencies": {
     "@types/marked": "^6.0.0",
     "@types/sanitize-html": "^2.16.1",
-    "jsdom": "^30.0.0"
+    "jsdom": "^30.1.1"
   }
 }
