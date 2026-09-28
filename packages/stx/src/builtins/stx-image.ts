@@ -29,7 +29,7 @@
 import type { ImageDeliveryManifest } from 'ts-images/delivery'
 import type { BuiltinComponentDef, ResolvedProps, RenderContext } from '../component-registry'
 import { forwardResolvedAttrs, forwardStaticAttrs } from './attrs'
-import { getImageDelivery } from './image-delivery'
+import { getImageDelivery, isTransparentImage } from './image-delivery'
 import { getImagePlaceholder } from './image-placeholder'
 
 // Default responsive breakpoints (matching Tailwind defaults)
@@ -207,6 +207,24 @@ function transformSrc(
 }
 
 /**
+ * The `onload` handler that takes a placeholder away once the image is there.
+ *
+ * Only the longhands the placeholder set are cleared, so a background the
+ * author wrote into `style` for their own reasons survives. An inline handler
+ * rather than a listener for the same reason `<SafeImage>` uses one: the
+ * parser attaches it with the element, before the request goes out, so an
+ * image that is already cached (or decoded before any script runs) still
+ * fires it. A listener added at hydration misses exactly those.
+ *
+ * Opaque images covered their placeholder anyway, but not every image fills
+ * its box (`object-fit: contain`, a filter, a rounded frame), and a
+ * placeholder that outlives its image is simply wrong.
+ */
+function placeholderCleanup(properties: string[]): string {
+  return `var s=this.style;${properties.map(property => `s.${property}=''`).join(';')}`
+}
+
+/**
  * Generate a tiny SVG placeholder for blur-up effect
  */
 function generateBlurPlaceholder(width: number, height: number, color = '#e5e7eb'): string {
@@ -228,7 +246,12 @@ export const StxImageBuiltin: BuiltinComponentDef = {
     const srcset = resolveProp(props, 'srcset')
     const densities = resolveProp(props, 'densities')
     const format = resolveProp(props, 'format')
-    const placeholder = resolveProp(props, 'placeholder') || (delivery ? 'thumbhash' : undefined)
+    // A transparent image shows whatever is painted behind it, for as long as
+    // it is there. A placeholder is exactly that, so a transparent image gets
+    // none by default — and none derived from its pixels even when asked,
+    // since the derived ones are solid by construction.
+    const transparent = isTransparentImage(src) || getImagePlaceholder(src)?.transparent === true
+    const placeholder = resolveProp(props, 'placeholder') || (delivery && !transparent ? 'thumbhash' : undefined)
     const placeholderColor = resolveProp(props, 'placeholderColor') || '#e5e7eb'
     const provider = resolveProp(props, 'provider')
     const className = resolveProp(props, 'class') || resolveProp(props, 'className') || ''
@@ -285,13 +308,20 @@ export const StxImageBuiltin: BuiltinComponentDef = {
     // than the mesh. All three fall back to `placeholderColor` when no warm has
     // run, which keeps a build without the image codec working exactly as it
     // did before.
-    if (placeholder === 'blur' || placeholder === 'color' || placeholder === 'thumbhash') {
+    // The background longhands the placeholder paints, cleared again on load.
+    const placeholderProperties: string[] = []
+
+    const derivedPlaceholder = placeholder === 'blur' || placeholder === 'color' || placeholder === 'thumbhash'
+
+    // See `transparent` above: nothing solid goes behind a transparent image.
+    if (derivedPlaceholder && !transparent) {
       const derived = delivery?.placeholder
         ? { dataUrl: delivery.placeholder.dataUrl, color: placeholderColor }
         : getImagePlaceholder(src)
 
       if (derived && placeholder === 'color') {
         styles.push(`background-color:${derived.color}`)
+        placeholderProperties.push('backgroundColor')
       }
       else if (derived) {
         // The average colour sits under the mesh so the slot is never blank,
@@ -300,6 +330,7 @@ export const StxImageBuiltin: BuiltinComponentDef = {
         styles.push(`background-image:url(${derived.dataUrl})`)
         styles.push('background-size:cover')
         styles.push('background-repeat:no-repeat')
+        placeholderProperties.push('backgroundColor', 'backgroundImage')
       }
       else {
         const placeholderUrl = generateBlurPlaceholder(
@@ -310,15 +341,17 @@ export const StxImageBuiltin: BuiltinComponentDef = {
         styles.push(`background-image:url(${placeholderUrl})`)
         styles.push('background-size:cover')
         styles.push('background-repeat:no-repeat')
+        placeholderProperties.push('backgroundImage')
       }
     }
-    else if (placeholder && placeholder !== 'empty' && placeholder !== 'none') {
+    else if (!derivedPlaceholder && placeholder && placeholder !== 'empty' && placeholder !== 'none') {
       // Custom placeholder URL — accept any dataURL the consumer pre-computed
       // (e.g. a real thumbhash run through ts-images' `generatePlaceholder`
       // at build time).
       styles.push(`background-image:url(${escapeAttr(placeholder)})`)
       styles.push('background-size:cover')
       styles.push('background-repeat:no-repeat')
+      placeholderProperties.push('backgroundImage')
     }
 
     // ── Transform src for provider ───────────────────────────────
@@ -347,6 +380,15 @@ export const StxImageBuiltin: BuiltinComponentDef = {
       'placeholder', 'placeholderColor', 'class', 'className', 'style',
       'format', 'provider', 'quality', 'densities', 'preload', 'priority', 'picture', 'loading', 'decoding',
     ])
+
+    if (placeholderProperties.length > 0) {
+      // An author's own static `onload` runs after ours rather than being
+      // emitted as a second attribute, which the parser would ignore.
+      const authorOnload = typeof props.static.onload === 'string' ? props.static.onload : ''
+      const handler = placeholderCleanup(placeholderProperties) + (authorOnload ? `;${authorOnload}` : '')
+      imgAttrs.push(`onload="${escapeAttr(handler)}"`)
+      consumedStatic.add('onload')
+    }
     imgAttrs.push(...forwardStaticAttrs(props, consumedStatic))
     imgAttrs.push(...forwardResolvedAttrs(props, consumedStatic))
 

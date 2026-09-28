@@ -31,6 +31,11 @@ export interface ImagePlaceholder {
   dataUrl: string
   /** `#rrggbb` average, painted under the mesh and used alone as a fallback. */
   color: string
+  /**
+   * The image has transparent pixels. A placeholder painted behind it would
+   * show through for as long as it stayed, so the component renders none.
+   */
+  transparent?: boolean
 }
 
 /** Extensions worth deriving a placeholder from. */
@@ -79,6 +84,14 @@ export function clearImagePlaceholders(): void {
 export function setImagePlaceholder(urlPath: string, placeholder: ImagePlaceholder): void {
   placeholders.set(urlPath, placeholder)
   warmed = true
+}
+
+/** Whether decoded thumbhash pixels carry any transparency. */
+function hasTransparency(rgba: Uint8Array | Uint8ClampedArray | number[]): boolean {
+  for (let i = 3; i < rgba.length; i += 4) {
+    if (rgba[i] < 255) return true
+  }
+  return false
 }
 
 /** Average colour of a decoded thumbhash, as `#rrggbb`. */
@@ -158,6 +171,8 @@ interface CacheEntry {
   size: number
   dataUrl: string
   color: string
+  /** Absent in entries written before transparency was recorded; those are re-derived. */
+  transparent?: boolean
 }
 
 function readCache(cachePath: string): Record<string, CacheEntry> {
@@ -265,8 +280,8 @@ export async function warmImagePlaceholders(
     if (stat.size > maxBytes) return
 
     const cached = cache[urlPath]
-    if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) {
-      placeholders.set(urlPath, { dataUrl: cached.dataUrl, color: cached.color })
+    if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size && typeof cached.transparent === 'boolean') {
+      placeholders.set(urlPath, { dataUrl: cached.dataUrl, color: cached.color, transparent: cached.transparent })
       return
     }
 
@@ -277,6 +292,7 @@ export async function warmImagePlaceholders(
       const placeholder: ImagePlaceholder = {
         dataUrl: svgDataUrl(meshSvg(rgba, w, h)),
         color: averageColor(rgba),
+        transparent: hasTransparency(rgba),
       }
       placeholders.set(urlPath, placeholder)
       cache[urlPath] = { mtimeMs: stat.mtimeMs, size: stat.size, ...placeholder }

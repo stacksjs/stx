@@ -2,14 +2,33 @@ import type { ImageDeliveryManifest, ImageDeliveryStorage } from 'ts-images/deli
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { generateThumbHash } from 'ts-images'
+import { decode, generateThumbHash } from 'ts-images'
 import { createImageDeliveryCatalog } from 'ts-images/delivery'
 
 const RASTER_EXTENSIONS = new Set(['.avif', '.jpeg', '.jpg', '.png', '.webp'])
 const DEFAULT_WIDTHS = [320, 640, 960, 1280, 1920] as const
 const DELIVERY_URL = '/_stx/images'
 
+/**
+ * Namespace for sources that can carry transparency.
+ *
+ * Variant filenames hash the source bytes and the encode options, not the
+ * encoder, so a WebP written by an encoder that dropped alpha (ts-webp before
+ * 0.1.6 wrote a plain lossy `VP8 ` frame) kept its name after the encoder was
+ * fixed. The delivery directory reused it on every boot, and a browser or CDN
+ * that had fetched it holds it for a year under `immutable`. Giving alpha
+ * sources their own namespace moves them to new URLs once, which neither the
+ * disk cache nor any HTTP cache has ever seen an opaque copy of.
+ */
+const ALPHA_NAMESPACE = `stx:${DELIVERY_URL}:alpha-1`
+
 let deliveryCatalog = new Map<string, ImageDeliveryManifest>()
+
+/** Catalog keys whose source has visible transparency. */
+let transparentSources = new Set<string>()
+
+/** Stale-variant warnings already printed, so a watch rebuild does not repeat them. */
+const warnedOpaqueWebp = new Set<string>()
 
 function publicUrl(relativePath: string): string {
   return `/${relativePath.split(path.sep).map(encodeURIComponent).join('/')}`
@@ -49,11 +68,11 @@ function catalogName(relativePath: string): string {
  * Two builds of identical bytes therefore agree on the filename, which is what
  * makes the on-disk cache reusable at all.
  */
-function deliveryStorage(outDir: string): ImageDeliveryStorage {
+function deliveryStorage(outDir: string, cacheNamespace = `stx:${DELIVERY_URL}`): ImageDeliveryStorage {
   const url = (key: string) => `${DELIVERY_URL}/${key.split('/').map(encodeURIComponent).join('/')}`
 
   return {
-    cacheNamespace: `stx:${DELIVERY_URL}`,
+    cacheNamespace,
     async stat(key) {
       const file = path.join(outDir, key)
       try {
@@ -101,12 +120,163 @@ async function collectRasterImages(root: string, directory = root): Promise<Arra
 
 type RasterFile = Awaited<ReturnType<typeof collectRasterImages>>[number]
 
-function deliveryEntries(files: RasterFile[]) {
+function deliveryEntries(files: RasterFile[], alphaStorage: ImageDeliveryStorage) {
   return files.map(file => ({
     key: publicUrl(file.relativePath),
     input: file.absolutePath,
     name: catalogName(file.relativePath),
+    ...(mayHaveAlpha(file.absolutePath) ? { options: { storage: alphaStorage } } : {}),
   }))
+}
+
+function readAt(fd: number, position: number, length: number): Buffer {
+  const buffer = Buffer.alloc(length)
+  const read = fs.readSync(fd, buffer, 0, length, position)
+  return buffer.subarray(0, read)
+}
+
+/**
+ * Whether a WebP header declares an alpha channel.
+ *
+ * A simple `VP8 ` frame cannot hold one at all; `VP8X` says so in its flags and
+ * `VP8L` in the `alpha_is_used` bit after the dimensions.
+ */
+export function webpHeaderHasAlpha(header: Uint8Array): boolean {
+  if (header.length < 25) return false
+  const text = (start: number, end: number) => String.fromCharCode(...header.subarray(start, end))
+  if (text(0, 4) !== 'RIFF' || text(8, 12) !== 'WEBP') return false
+  const chunk = text(12, 16)
+  if (chunk === 'VP8X') return (header[20] & 0x10) !== 0
+  if (chunk === 'VP8L') {
+    const bits = header[21] | (header[22] << 8) | (header[23] << 16) | (header[24] << 24)
+    return ((bits >>> 28) & 1) === 1
+  }
+  return false
+}
+
+/**
+ * Whether a source file can carry transparency, from its header alone.
+ *
+ * Read before the catalog is built, since the answer picks the namespace the
+ * variants are named under. PNG says so with its colour type or a `tRNS` chunk
+ * (which must precede the first `IDAT`, so the walk stops there and never reads
+ * pixel data). JPEG cannot; AVIF is left to the decode that follows.
+ */
+function mayHaveAlpha(file: string): boolean {
+  let fd: number | undefined
+  try {
+    fd = fs.openSync(file, 'r')
+    const head = readAt(fd, 0, 33)
+    if (head.length >= 26 && head[0] === 0x89 && head.toString('latin1', 1, 4) === 'PNG') {
+      const colorType = head[25]
+      if (colorType === 4 || colorType === 6) return true
+      let offset = 8
+      for (let i = 0; i < 64; i++) {
+        const chunk = readAt(fd, offset, 8)
+        if (chunk.length < 8) return false
+        const type = chunk.toString('latin1', 4, 8)
+        if (type === 'tRNS') return true
+        if (type === 'IDAT' || type === 'IEND') return false
+        offset += 12 + chunk.readUInt32BE(0)
+      }
+      return false
+    }
+    if (head.length >= 25 && head.toString('latin1', 0, 4) === 'RIFF')
+      return webpHeaderHasAlpha(head)
+    return false
+  }
+  catch {
+    return false
+  }
+  finally {
+    if (fd !== undefined) fs.closeSync(fd)
+  }
+}
+
+function hasVisibleAlpha(rgba: Uint8Array | Uint8ClampedArray): boolean {
+  for (let i = 3; i < rgba.length; i += 4) {
+    if (rgba[i] !== 255) return true
+  }
+  return false
+}
+
+/**
+ * Which catalog entries are really transparent, not just alpha-capable.
+ *
+ * ts-images falls back to PNG exactly when the decoded source has an alpha
+ * channel, so only those are candidates; plenty of them are RGBA exports with
+ * every pixel opaque. The smallest PNG variant answers that for a fraction of
+ * the cost of the source.
+ */
+async function findTransparent(entries: Record<string, ImageDeliveryManifest>): Promise<Set<string>> {
+  const candidates = Object.entries(entries).filter(([, manifest]) => manifest.fallback.format === 'png')
+  const transparent = new Set<string>()
+  const concurrency = 8
+
+  for (let offset = 0; offset < candidates.length; offset += concurrency) {
+    await Promise.all(candidates.slice(offset, offset + concurrency).map(async ([key, manifest]) => {
+      const smallest = manifest.variants
+        .filter(variant => variant.format === 'png')
+        .sort((a, b) => a.width - b.width)[0]
+      try {
+        // The ambient `ts-images` declaration (ts-images.d.ts) still types
+        // `decode` as returning bytes; at runtime it is RGBA ImageData.
+        const image = await decode(new Uint8Array(await fs.promises.readFile(smallest?.path ?? manifest.fallback.path))) as unknown as { data: Uint8Array }
+        if (hasVisibleAlpha(image.data)) transparent.add(key)
+      }
+      catch {
+        // Unreadable here means unknown. Assume transparent: the cost of being
+        // wrong is a missing placeholder, not an opaque box over the page.
+        transparent.add(key)
+      }
+    }))
+  }
+
+  return transparent
+}
+
+/**
+ * Drop WebP variants of a transparent source that cannot show transparency.
+ *
+ * An encoder without alpha support writes a plain `VP8 ` frame and the
+ * browser, picking the first `<source>` it understands, paints the
+ * transparent pixels solid. The PNG fallback is always right, so serve that
+ * instead. Returns the keys that lost their WebP family.
+ */
+function dropOpaqueWebp(entries: Record<string, ImageDeliveryManifest>, transparent: Set<string>): string[] {
+  const dropped: string[] = []
+
+  for (const key of transparent) {
+    const manifest = entries[key]
+    const webp = manifest?.variants.filter(variant => variant.format === 'webp') ?? []
+    if (!manifest || webp.length === 0) continue
+
+    const opaque = webp.some((variant) => {
+      let fd: number | undefined
+      try {
+        fd = fs.openSync(variant.path, 'r')
+        return !webpHeaderHasAlpha(readAt(fd, 0, 32))
+      }
+      catch {
+        return true
+      }
+      finally {
+        if (fd !== undefined) fs.closeSync(fd)
+      }
+    })
+    if (!opaque) continue
+
+    manifest.variants = manifest.variants.filter(variant => variant.format !== 'webp')
+    delete manifest.sources.webp
+    dropped.push(key)
+
+    if (!warnedOpaqueWebp.has(key)) {
+      warnedOpaqueWebp.add(key)
+      console.warn(`[stx-images] ${key} is transparent but its WebP variants have no alpha channel; serving PNG instead. Upgrade @stacksjs/ts-webp to 0.1.6 or later.`)
+    }
+  }
+
+  return dropped
 }
 
 async function decodableFiles(files: RasterFile[]): Promise<RasterFile[]> {
@@ -207,9 +377,21 @@ export function getImageDelivery(src: string): ImageDeliveryManifest | undefined
   return key ? deliveryCatalog.get(key) : undefined
 }
 
+/**
+ * Whether the delivered image at `src` has transparent pixels.
+ *
+ * Anything painted behind such an image shows through it for as long as it is
+ * there, so a placeholder has to stay out of it entirely.
+ */
+export function isTransparentImage(src: string): boolean {
+  const key = normalizeLookupSource(src)
+  return key ? transparentSources.has(key) : false
+}
+
 /** Clear process-global delivery state between builds and tests. */
 export function clearImageDeliveryCatalog(): void {
   deliveryCatalog = new Map()
+  transparentSources = new Set()
 }
 
 /**
@@ -250,6 +432,7 @@ export async function prepareImageDelivery(
     return { count: 0, fingerprint: '' }
   }
 
+  const alphaStorage = deliveryStorage(path.join(outputDir, '_stx', 'images'), ALPHA_NAMESPACE)
   const catalogOptions = {
     outDir: path.join(outputDir, '_stx', 'images'),
     storage: deliveryStorage(path.join(outputDir, '_stx', 'images')),
@@ -271,7 +454,7 @@ export async function prepareImageDelivery(
   try {
     catalog = await createImageDeliveryCatalog({
       ...catalogOptions,
-      entries: deliveryEntries(files),
+      entries: deliveryEntries(files, alphaStorage),
     })
   }
   catch (error) {
@@ -302,13 +485,28 @@ export async function prepareImageDelivery(
 
     catalog = await createImageDeliveryCatalog({
       ...catalogOptions,
-      entries: deliveryEntries(optimizedFiles),
+      entries: deliveryEntries(optimizedFiles, alphaStorage),
     })
   }
 
   // Swap the complete catalog in atomically. The production server may refresh
   // this after a watched public image changes; clearing it before codecs finish
   // creates a window where concurrent renders silently fall back to originals.
+  const transparent = await findTransparent(catalog.entries)
+  const droppedWebp = dropOpaqueWebp(catalog.entries, transparent)
+
   deliveryCatalog = new Map(Object.entries(catalog.entries))
-  return { count: optimizedFiles.length, fingerprint: catalog.fingerprint }
+  transparentSources = transparent
+
+  // Both decisions change the markup — no placeholder, no WebP <source> —
+  // without changing a single variant name, so they have to reach the key
+  // the rendered HTML is cached under as well.
+  const fingerprint = transparent.size === 0 && droppedWebp.length === 0
+    ? catalog.fingerprint
+    : createHash('sha256')
+        .update(catalog.fingerprint)
+        .update(JSON.stringify({ transparent: [...transparent].sort(), droppedWebp: droppedWebp.sort() }))
+        .digest('hex')
+
+  return { count: optimizedFiles.length, fingerprint }
 }
