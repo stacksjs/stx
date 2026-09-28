@@ -404,8 +404,9 @@ export function injectBrowserCoreAutoImports(code: string): BrowserCoreAutoImpor
   const imports = BROWSER_CORE_IMPORTS.filter((symbol) => {
     if (explicitlyImported.has(symbol) || locallyDeclared.has(symbol))
       return false
-    // Followed by a `(` — a call, not a mention.
-    return new RegExp(`\\b${symbol}\\s*\\(`).test(searchable)
+    // Followed by a `(` — a call, not a mention — and not a method on
+    // something else (`timer.delay(…)`).
+    return referencesName(searchable, symbol, true)
   })
 
   const models = detectModelUsage(searchable).filter(model =>
@@ -707,8 +708,7 @@ export function transformAutoImports(code: string): AutoImportResult {
 
   for (const symbol of BROWSER_CORE_IMPORTS) {
     if (existingImports.has(symbol) || locallyDeclared.has(symbol) || importedFromAnywhere.has(symbol)) continue
-    const symbolRegex = new RegExp(`\\b${symbol}\\b`, 'g')
-    if (symbolRegex.test(searchableForBrowser)) {
+    if (referencesName(searchableForBrowser, symbol)) {
       usedBrowserImports.add(symbol)
     }
   }
@@ -726,6 +726,39 @@ export function transformAutoImports(code: string): AutoImportResult {
     stxImports: Array.from(usedStxImports),
     browserImports: Array.from(usedBrowserImports),
   }
+}
+
+/**
+ * Whether `name` is used as a binding in `code`: not a property of something
+ * else (`timer.delay`, `options?.delay`) and not an object key
+ * (`{ ...rest, delay: wait }`). With `call`, only a call counts.
+ *
+ * A bare word match counted both. A bundled library that built
+ * `{ delay: wait }` — Craft's notification helper, pulled in by
+ * `@stacksjs/mobile` — had `delay` auto-imported from @stacksjs/browser,
+ * which does not provide it, and every page reported it as a name the client
+ * runtime is missing.
+ */
+export function referencesName(code: string, name: string, call = false): boolean {
+  const pattern = new RegExp(`\\b${name.replace(/[$]/g, '\\$')}\\b`, 'g')
+  for (const match of code.matchAll(pattern)) {
+    const start = match.index ?? 0
+    const end = start + name.length
+    let before = start - 1
+    while (before >= 0 && /\s/.test(code[before]!)) before--
+    // `x.name`, `x?.name` — a property, not the binding. (A spread, `...name`,
+    // is three dots and the binding itself.)
+    if (code[before] === '.' && code.slice(Math.max(0, before - 2), before + 1) !== '...') continue
+    let after = end
+    while (after < code.length && /\s/.test(code[after]!)) after++
+    // `{ name: value }` / `, name: value` — a key. A ternary's `? name :` is not.
+    if (code[after] === ':' && code[after + 1] !== ':' && (code[before] === '{' || code[before] === ','))
+      continue
+    if (call && !/^\s*(?:<[^>]*>)?\s*\(/.test(code.slice(end)))
+      continue
+    return true
+  }
+  return false
 }
 
 /**

@@ -53,4 +53,20 @@ describe('browser auto-import detection reads code, not prose', () => {
   it('still detects a class used through new', () => {
     expect(browserImportsFor('throw new BrowserQueryError("nope")')).toContain('BrowserQueryError')
   })
+
+  it('ignores a name used as an object key or as a property of something else', () => {
+    // The reported shape: a bundled library building `{ ...rest, delay: wait }`
+    // got `delay` auto-imported, and every page said the runtime lacked it.
+    expect(browserImportsFor('const options = { ...rest, delay: wait }')).not.toContain('delay')
+    expect(browserImportsFor('const o = {\n  delay : 5,\n}')).not.toContain('delay')
+    expect(browserImportsFor('timer.delay(20)')).not.toContain('delay')
+    expect(browserImportsFor('const d = options?.delay')).not.toContain('delay')
+  })
+
+  it('still counts the binding itself, in a ternary, a spread, a shorthand or a call', () => {
+    expect(browserImportsFor('await delay(20)')).toContain('delay')
+    expect(browserImportsFor('const run = fast ? delay : later')).toContain('delay')
+    expect(browserImportsFor('const helpers = { delay }')).toContain('delay')
+    expect(browserImportsFor('const all = [...delay]')).toContain('delay')
+  })
 })
