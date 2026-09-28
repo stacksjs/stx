@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.323...v0.2.324)
+
+## 🐛 Bug Fixes
+
+- **image**: start the image worker without the global Worker, and log a failed warm-up ([c675984](https://github.com/stacksjs/stx/commit/c675984)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.324 ([ffa51d5](https://github.com/stacksjs/stx/commit/ffa51d5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.322...v0.2.323)
 
 ## 🐛 Bug Fixes
