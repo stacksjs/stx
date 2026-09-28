@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.324...v0.2.325)
+
+## 🐛 Bug Fixes
+
+- **serve**: stop cached pages from starving the tab's sockets with HMR streams ([3512607](https://github.com/stacksjs/stx/commit/3512607)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.325 ([59f399d](https://github.com/stacksjs/stx/commit/59f399d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.323...v0.2.324)
 
 ## 🐛 Bug Fixes
