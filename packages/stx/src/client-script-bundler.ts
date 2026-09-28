@@ -895,6 +895,17 @@ export async function bundleClientScript(
   }
 }
 
+let tmpBuildCounter = 0
+
+/**
+ * The name one build's temp entry and output directory go by: the script's
+ * hash, this process and a count, so no other build — here or in another dev
+ * server on the same checkout — shares them. See where they are made.
+ */
+export function tempBuildName(hash: string): string {
+  return `${hash}-${process.pid}-${++tmpBuildCounter}`
+}
+
 async function buildBundle(
   code: string,
   filePath: string,
@@ -912,10 +923,17 @@ async function buildBundle(
 ): Promise<string> {
   const { projectRoot, minify, cacheDir, hash, cachePath, depsPath, externalizeUserModules } = options
 
-  // Write temp entry file (Bun.build needs a real file)
+  // Write temp entry file (Bun.build needs a real file).
+  //
+  // Named per build, not per script. Keyed on the content hash alone, two
+  // builds of the same script at once — two requests for one page, or two dev
+  // servers on one checkout — shared a file, and the first to finish deleted
+  // it under the second: "No such file or directory: writing chunk", and the
+  // page shipped its script unbundled.
   const tmpDir = stateDir(projectRoot, 'bundle-tmp')
-  const tmpEntry = path.join(tmpDir, `${hash}.ts`)
-  const tmpOutDir = path.join(tmpDir, 'out', hash)
+  const tmpName = tempBuildName(hash)
+  const tmpEntry = path.join(tmpDir, `${tmpName}.ts`)
+  const tmpOutDir = path.join(tmpDir, 'out', tmpName)
 
   fs.mkdirSync(tmpDir, { recursive: true })
   fs.mkdirSync(tmpOutDir, { recursive: true })

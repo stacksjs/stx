@@ -23,7 +23,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
-import { bundleClientScript } from '../../src/client-script-bundler'
+import { bundleClientScript, tempBuildName } from '../../src/client-script-bundler'
 
 const TMP = path.join(import.meta.dir, 'temp-concurrent')
 
@@ -90,6 +90,18 @@ describe('client-script-bundler concurrency', () => {
       expect(body).not.toMatch(/return\s*\{\s*\}\s*;?\s*\}\)\(\)/)
       expect(body).toContain('greet')
     }
+  })
+
+  it('gives every build temp files of its own, so another dev server cannot delete them', () => {
+    // Two servers on one checkout bundle the same script under the same hash,
+    // and each removes its temp files when it finishes. Named by hash alone
+    // they were shared, and the first to finish failed the other with "No such
+    // file or directory: writing chunk".
+    const first = tempBuildName('10c4462b39cf')
+    const second = tempBuildName('10c4462b39cf')
+    expect(first).not.toBe(second)
+    expect(first.startsWith('10c4462b39cf-')).toBe(true)
+    expect(first).toContain(`-${process.pid}-`)
   })
 
   it('serves the same bundle on a later call, from cache', async () => {
