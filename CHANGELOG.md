@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.325...v0.2.326)
+
+## 🐛 Bug Fixes
+
+- **router**: keep nav links exact after in-app navigation, and let a link name its detail paths ([91ce001](https://github.com/stacksjs/stx/commit/91ce001)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.326 ([72c1979](https://github.com/stacksjs/stx/commit/72c1979)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.324...v0.2.325)
 
 ## 🐛 Bug Fixes
