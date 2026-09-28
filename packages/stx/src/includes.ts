@@ -459,6 +459,22 @@ function addScopeToRootElement(html: string, scopeId: string): { html: string, m
 // Counter for generating unique scope IDs
 let scopeIdCounter = 0
 
+/**
+ * Partials already warned about having signals and no root element.
+ *
+ * The condition is a property of the file, not of the render: a layout
+ * partial is expanded on every request, and repeating the same sentence
+ * per page view buries every other line in the log. Once per file per
+ * process is enough to be read; editing the partial does not reset it,
+ * but a restart does, and that is when a fix gets checked anyway.
+ */
+const warnedUnscopedSignalPartials = new Set<string>()
+
+/** Forget which partials were warned about, for tests. */
+export function resetUnscopedSignalWarnings(): void {
+  warnedUnscopedSignalPartials.clear()
+}
+
 // Cache for partials to avoid repeated file reads (LRU with max 500 entries)
 
 /**
@@ -1140,6 +1156,10 @@ catch (error: unknown) {
       const scriptMatches = [...partialContent.matchAll(scriptRegex)]
       let preservedScript = ''
       let signalScopeId: string | null = null
+      // Whether any script here actually uses the signal API. A plain script
+      // gets a scope id too (so useRef and friends can bind), which is why
+      // `signalScopeId` alone cannot answer this.
+      let declaresSignals = false
 
       for (const scriptMatch of scriptMatches) {
         const scriptAttrs = scriptMatch[1] || ''
@@ -1267,6 +1287,7 @@ catch (error: unknown) {
 
         // Handle signal scripts - transform them for client-side reactivity
         if (isSignalScript && !isServerScript) {
+          declaresSignals = true
           // Generate unique scope ID for this component
           signalScopeId = `stx_scope_${path.basename(includeFilePath, '.stx').replace(/[^a-zA-Z0-9]/g, '_')}_${++scopeIdCounter}`
 
@@ -1372,12 +1393,19 @@ catch (e) {
             .join(`"${to}"`)
           signalScopeId = to
         }
-        else if (!scopeResult.stamped) {
+        else if (!scopeResult.stamped && declaresSignals && !warnedUnscopedSignalPartials.has(includeFilePath)) {
           // The script registers `window.stx._scopes[id]` and the runtime
           // resolves it with `document.querySelector('[data-stx-scope="id"]')`.
           // With nothing stamped, that query returns null and every binding in
           // the partial is inert — no error, no console output, a page that
           // renders its static half and looks like a data problem. Say so.
+          //
+          // Only when a script really declares signals. A partial that is
+          // nothing but a plain <script> (an IntersectionObserver, a theme
+          // toggle) has no bindings to lose, and warning about it on every
+          // render of every page that includes it was pure noise. And only
+          // once per file: see `warnedUnscopedSignalPartials`.
+          warnedUnscopedSignalPartials.add(includeFilePath)
           console.warn(
             `[stx] ${path.relative(process.cwd(), includeFilePath)} declares signals but has no element to scope them to, `
             + `so nothing in it will hydrate. Wrap the partial's markup in a single root element.`,
