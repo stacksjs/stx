@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.327...v0.2.328)
+
+## 🐛 Bug Fixes
+
+- **router**: no focus ring around the page the router focuses after a navigation ([58284d6](https://github.com/stacksjs/stx/commit/58284d6)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.328 ([4b3c8ae](https://github.com/stacksjs/stx/commit/4b3c8ae)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.326...v0.2.327)
 
 ## 🐛 Bug Fixes
