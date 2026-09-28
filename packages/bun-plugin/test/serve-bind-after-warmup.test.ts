@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { encode } from 'ts-images'
-import { DEFAULT_IMAGE_WARMUP_BIND_BUDGET_MS, resolveImageWarmupBindBudget, settleWithin } from '../src/serve'
+import { DEFAULT_IMAGE_WARMUP_BIND_BUDGET_MS, projectUsesImageBuiltins, resolveImageWarmupBindBudget, settleWithin } from '../src/serve'
 
 setDefaultTimeout(60_000)
 
@@ -300,6 +300,55 @@ serve({ patterns: ['views'], port: ${port}, stxModule: stxModule as any, imageWa
     finally {
       proc.kill()
     }
+  })
+})
+
+describe('projectUsesImageBuiltins', () => {
+  async function project(files: Record<string, string>): Promise<string> {
+    const dir = await mkdtemp(path.join(tmpdir(), 'stx-uses-image-'))
+    dirs.push(dir)
+    for (const [name, content] of Object.entries(files))
+      await Bun.write(path.join(dir, name), content)
+    return dir
+  }
+
+  const IMAGE_COMPONENT = '<script server>const { src } = props</script>\n<StxImage src="{{ src }}" alt="" />\n'
+
+  it('counts a page, layout or partial that uses the syntax', async () => {
+    expect(await projectUsesImageBuiltins(await project({ 'resources/views/index.stx': USES_IMAGE }))).toBe(true)
+    expect(await projectUsesImageBuiltins(await project({ 'resources/layouts/default.stx': '@image(\'/a.jpg\')' }))).toBe(true)
+    expect(await projectUsesImageBuiltins(await project({ 'resources/views/index.stx': NO_IMAGE }))).toBe(false)
+  })
+
+  // Stacks vendors its Image.stx component into every app, twice. Reading
+  // that definition as a use ran the pass for every Stacks app, including
+  // ones that only ever wrote <img>: 213MB of variants, seven minutes a boot.
+  it('does not count a component that wraps <StxImage> but is never rendered', async () => {
+    const root = await project({
+      'resources/views/index.stx': '<main><img src="/a.jpg" alt=""></main>',
+      'storage/framework/defaults/resources/components/Image.stx': IMAGE_COMPONENT,
+      'pantry/@stacksjs/defaults/resources/components/Image.stx': IMAGE_COMPONENT,
+      // The SVG element, not the component.
+      'resources/views/logo.stx': '<svg><image href="/logo.png" /></svg>',
+    })
+    expect(await projectUsesImageBuiltins(root)).toBe(false)
+  })
+
+  it('counts such a component once a template renders it, through any number of wrappers', async () => {
+    expect(await projectUsesImageBuiltins(await project({
+      'resources/components/Photo.stx': IMAGE_COMPONENT,
+      'resources/views/index.stx': '<main><Photo src="/a.jpg" /></main>',
+    }))).toBe(true)
+    expect(await projectUsesImageBuiltins(await project({
+      'resources/components/HeroPhoto.stx': IMAGE_COMPONENT,
+      'resources/components/Hero.stx': '<section><hero-photo src="/a.jpg" /></section>',
+      'resources/views/index.stx': '<main><Hero /></main>',
+    }))).toBe(true)
+    expect(await projectUsesImageBuiltins(await project({
+      'resources/components/HeroPhoto.stx': IMAGE_COMPONENT,
+      'resources/components/Hero.stx': '<section><HeroPhoto src="/a.jpg" /></section>',
+      'resources/views/index.stx': NO_IMAGE,
+    }))).toBe(false)
   })
 })
 

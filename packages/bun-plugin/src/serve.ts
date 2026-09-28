@@ -4844,15 +4844,50 @@ const IMAGE_BUILTIN_PATTERN = /<(?:StxImage|Image|stx-image|stx-img)[\s/>]|@imag
 /** Directories a template scan never needs to enter. */
 const TEMPLATE_SCAN_SKIP = new Set(['node_modules', 'dist', 'build', 'coverage', 'vendor'])
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/** `ImageCard` -> `image-card`, the other spelling a template may use. */
+function kebabCase(name: string): string {
+  return name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').replace(/([A-Z])([A-Z][a-z])/g, '$1-$2').toLowerCase()
+}
+
+/**
+ * Whether `source` renders the component `name`, as a tag or through
+ * `@component`. The kebab spelling only counts with a hyphen in it: a bare
+ * `<image>` is the SVG element, not the `Image` component.
+ */
+function usesComponent(source: string, name: string): boolean {
+  const kebab = kebabCase(name)
+  const spellings = (kebab.includes('-') ? [name, kebab] : [name]).map(escapeRegExp).join('|')
+  return new RegExp(`<(?:${spellings})[\\s/>]|@component\\(\\s*['"](?:${spellings})['"]`).test(source)
+}
+
+interface ScannedTemplate {
+  source: string
+  /** The component this file defines, when it lives under a `components/` directory. */
+  component?: string
+}
+
 /**
  * Whether any `.stx` template under `root` uses `<StxImage>` or `@image`.
  *
- * Stops at the first hit. Skips dependencies, build output and hidden
- * directories (the stx state directory among them), so it reads the project's
- * own templates, including a framework's templates vendored into it.
+ * Skips dependencies, build output and hidden directories (the stx state
+ * directory among them), so it reads the project's own templates, including a
+ * framework's templates vendored into it.
+ *
+ * A component that wraps `<StxImage>` counts only when something renders it.
+ * Stacks vendors its `Image.stx` component into every app, twice (the
+ * framework defaults and the pantry install tree), so reading a definition as
+ * a use turned the pass on for every Stacks app: one that only ever wrote
+ * plain `<img>` tags spent over seven minutes of each cold boot encoding
+ * 213MB of variants that no page could ask for. A use is followed through
+ * wrappers of wrappers, and a page, layout or partial using one counts.
  */
 export async function projectUsesImageBuiltins(root: string): Promise<boolean> {
   const { readdir, readFile } = await import('node:fs/promises')
+  const templates: ScannedTemplate[] = []
   const pending = [root]
   while (pending.length > 0) {
     const dir = pending.pop()!
@@ -4874,12 +4909,43 @@ export async function projectUsesImageBuiltins(root: string): Promise<boolean> {
       }
       if (!entry.isFile() || !entry.name.endsWith('.stx'))
         continue
+      let source: string
       try {
-        if (IMAGE_BUILTIN_PATTERN.test(await readFile(full, 'utf8')))
-          return true
+        source = await readFile(full, 'utf8')
       }
       catch {
         // Unreadable template: it cannot render an image either.
+        continue
+      }
+      const inComponents = nodePath.relative(root, dir).split(nodePath.sep).includes('components')
+      const component = inComponents ? entry.name.slice(0, -'.stx'.length) : undefined
+      // A page, layout or partial that uses the syntax itself: done.
+      if (!component && IMAGE_BUILTIN_PATTERN.test(source))
+        return true
+      templates.push({ source, component })
+    }
+  }
+
+  // Components that render an image, directly or through another such
+  // component. Each counts only once a non-component template renders it.
+  const imageComponents = new Set<string>()
+  const queue: string[] = []
+  for (const template of templates) {
+    if (template.component && IMAGE_BUILTIN_PATTERN.test(template.source) && !imageComponents.has(template.component)) {
+      imageComponents.add(template.component)
+      queue.push(template.component)
+    }
+  }
+  while (queue.length > 0) {
+    const name = queue.shift()!
+    for (const template of templates) {
+      if (template.component === name || !usesComponent(template.source, name))
+        continue
+      if (!template.component)
+        return true
+      if (!imageComponents.has(template.component)) {
+        imageComponents.add(template.component)
+        queue.push(template.component)
       }
     }
   }
