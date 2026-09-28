@@ -72,4 +72,13 @@ describe('builtin attribute forwarding', () => {
     expect(anchor).not.toContain(' active-class=')
     expect(anchor).not.toContain('activeClass=')
   })
+
+  it('carries activeMatch to the router as data-stx-active-match', async () => {
+    const output = await render('<StxLink to="/m/calendar" activeMatch="/m/workout">Calendar</StxLink>')
+    const anchor = output.match(/<a\s[^>]*>/)?.[0] || ''
+
+    expect(anchor).toContain('data-stx-active-match="/m/workout"')
+    expect(anchor).not.toContain('activeMatch=')
+    expect(anchor).not.toContain(' activematch=')
+  })
 })

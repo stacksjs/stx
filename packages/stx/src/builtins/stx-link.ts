@@ -93,8 +93,14 @@ export const StxLinkBuiltin: BuiltinComponentDef = {
       attrs.push('data-stx-prefetch')
     }
 
+    // More paths that make the link current, e.g. a tab's detail screens.
+    const activeMatch = typeof props.static.activeMatch === 'string' ? props.static.activeMatch.trim() : ''
+    if (activeMatch) {
+      attrs.push(`data-stx-active-match="${escapeAttr(activeMatch)}"`)
+    }
+
     // Forward any extra static attributes that are not consumed props
-    const consumedStatic = new Set(['to', 'class', 'className', 'activeClass', 'exactActiveClass', 'prefetch'])
+    const consumedStatic = new Set(['to', 'class', 'className', 'activeClass', 'exactActiveClass', 'activeMatch', 'prefetch'])
     attrs.push(...forwardStaticAttrs(props, consumedStatic))
     // …and the server-evaluated `:prop` bindings, which were resolved and then
     // dropped, so `<StxLink to="/x" :title="pageTitle">` emitted no title (#1930).

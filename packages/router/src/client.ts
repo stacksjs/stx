@@ -1072,8 +1072,7 @@ else {
         // Remove old page scripts
         document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
         if(pushState!==false)writeHistory(pushState,url+(hash||''));
-        updateNav();
-        updateActiveLinks();
+        refreshCurrentLinks();
         if(o.scrollToTop&&!hash)window.scrollTo({top:0,behavior:'instant'});
         else if(hash){var el=document.querySelector(hash);if(el)el.scrollIntoView({behavior:'smooth'})}
         window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url}}));
@@ -1523,8 +1522,7 @@ else {
       if(pushState!==false)writeHistory(pushState,url+(hash||''));
 
       // Update active nav links
-      updateNav();
-      updateActiveLinks();
+      refreshCurrentLinks();
 
       // Scroll
       if(o.scrollToTop&&!hash)window.scrollTo({top:0,behavior:'instant'});
@@ -1932,7 +1930,14 @@ else {
   // Null for links the router does not own (another origin, a bare #fragment,
   // anything unparseable), which are left exactly as the server rendered them.
   function normPath(p){return p.length>1&&p.charAt(p.length-1)==='/'?p.slice(0,-1):p}
-  function linkState(href){
+  // Paths beyond the link's own that make it current: a tab bar's Calendar
+  // tab stays lit on a workout opened from it (data-stx-active-match, a
+  // space-separated list of path prefixes).
+  function matchesAny(list,cur){
+    if(!list)return false;
+    return list.split(/\\s+/).some(function(p){p=normPath(p);return p&&(cur===p||cur.indexOf(p+'/')===0)});
+  }
+  function linkState(href,also){
     if(!href||href.charAt(0)==='#')return null;
     var u;
     try{u=new URL(href,location.href)}catch(e){return null}
@@ -1944,27 +1949,39 @@ else {
     // point at this path, exactly one is.
     var have=new URLSearchParams(location.search),q=true;
     u.searchParams.forEach(function(v,k){if(have.getAll(k).indexOf(v)===-1)q=false});
+    var matched=matchesAny(also,cur);
     return {
       exact:q&&path===cur,
-      active:q&&(path==='/'?cur==='/':(cur===path||cur.indexOf(path+'/')===0))
+      active:q&&(path==='/'?cur==='/':(cur===path||cur.indexOf(path+'/')===0))||matched,
+      matched:matched
     };
   }
 
   function updateNav(){
     document.querySelectorAll('nav a[href], #mobileNav a[href], [data-stx-nav] a[href]').forEach(function(a){
       if(!a.hasAttribute('data-stx-link'))return;
-      var st=linkState(a.getAttribute('href'));
+      var st=linkState(a.getAttribute('href'),a.getAttribute('data-stx-active-match'));
       if(!st)return;
       var ac=a.getAttribute('data-stx-active-class')||'active';
-      if(st.exact)ac.split(' ').forEach(function(cls){if(cls)a.classList.add(cls)});else ac.split(' ').forEach(function(cls){if(cls)a.classList.remove(cls)});
+      if(st.exact||st.matched)ac.split(' ').forEach(function(cls){if(cls)a.classList.add(cls)});else ac.split(' ').forEach(function(cls){if(cls)a.classList.remove(cls)});
     });
+  }
+
+  // Both passes, always in this order. A link inside a <nav> is current only on
+  // its own page (or one it names in data-stx-active-match), so updateNav has
+  // the last word. Navigation used to run them the other way round, which lit
+  // a nav's parent links by prefix after an in-app navigation but not after a
+  // full load of the same URL.
+  function refreshCurrentLinks(){
+    updateActiveLinks();
+    updateNav();
   }
 
   function updateActiveLinks(){
     // Update active classes on <stx-link> elements (and legacy data-stx-link)
     var links=document.querySelectorAll('[data-stx-link]');
     links.forEach(function(link){
-      var st=linkState(link.getAttribute('to')||link.getAttribute('href')||'');
+      var st=linkState(link.getAttribute('to')||link.getAttribute('href')||'',link.getAttribute('data-stx-active-match'));
       if(!st)return;
       var ac=link.getAttribute('active-class')||link.getAttribute('data-stx-active-class')||'active';
       var eac=link.getAttribute('exact-active-class')||link.getAttribute('data-stx-exact-active-class')||'exact-active';
@@ -2095,8 +2112,7 @@ else {
   function init(){
     injectStyles();
     injectViewTransitionCSS();
-    updateActiveLinks();
-    updateNav();
+    refreshCurrentLinks();
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();

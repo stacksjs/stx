@@ -571,6 +571,32 @@ describe('aria-current across fragment swaps', () => {
   })
 })
 
+describe('nav links after an in-app navigation', () => {
+  it('stay exact-only, as they are on a full load of the same URL', async () => {
+    const window = installRouter(`
+      <html>
+        <head></head>
+        <body>
+          <nav>
+            <a data-stx-link href="/m">Today</a>
+            <a data-stx-link href="/m/calendar">Calendar</a>
+          </nav>
+          <main>Today</main>
+        </body>
+      </html>
+    `, async () => response('<section>A workout</section>', { 'X-STX-Fragment': 'true', 'X-STX-Layout': '', 'X-STX-Layout-Group': 'app' }))
+
+    await window.stxRouter.navigate('/m/workout/42')
+    await waitForRouterSwap()
+
+    const links = [...window.document.querySelectorAll('nav a')] as any[]
+    // /m is a prefix of the page, but inside a <nav> only the page itself is
+    // current. Navigation used to update in the other order and light it.
+    expect(links[0].classList.contains('active')).toBe(false)
+    expect(links[1].classList.contains('active')).toBe(false)
+  })
+})
+
 describe('which links are current', () => {
   /** A page at `url`, with the router initialised on it. */
   function at(url: string, links: string, wrapper = 'nav') {
@@ -641,6 +667,21 @@ describe('which links are current', () => {
     expect(current(links[0])).toBeNull()
     expect(cls(links[1])).toBe('')
     expect(cls(links[2])).toBe('')
+  })
+
+  it('lights a link on the paths it names in data-stx-active-match, in a nav too', () => {
+    // A phone tab bar: Today is /m, and a workout opened from the calendar
+    // belongs to the Calendar tab.
+    const links = at('http://localhost/m/workout/42', `
+      <a data-stx-link data-stx-active-class="on" href="/m">Today</a>
+      <a data-stx-link data-stx-active-class="on" href="/m/calendar" data-stx-active-match="/m/workout /m/day">Calendar</a>
+      <a data-stx-link data-stx-active-class="on" href="/m/me">Me</a>
+    `)
+    expect(cls(links[0])).toBe('')
+    expect(cls(links[1])).toBe('on')
+    expect(cls(links[2])).toBe('')
+    // Matched, not the page itself: aria-current stays with an exact match.
+    expect(current(links[1])).toBeNull()
   })
 
   it('leaves links it does not own exactly as rendered', () => {
