@@ -20,11 +20,76 @@ const DELIVERY_URL = '/_stx/images'
  * encoder, so a WebP written by an encoder that dropped alpha (ts-webp before
  * 0.1.6 wrote a plain lossy `VP8 ` frame) kept its name after the encoder was
  * fixed. The delivery directory reused it on every boot, and a browser or CDN
- * that had fetched it holds it for a year under `immutable`. Giving alpha
- * sources their own namespace moves them to new URLs once, which neither the
- * disk cache nor any HTTP cache has ever seen an opaque copy of.
+ * that had fetched it holds it for a year under `immutable`.
+ *
+ * Moving alpha sources to a fresh namespace once (`alpha-1`) was not enough:
+ * a release that still resolved the old encoder wrote opaque WebPs under the
+ * new names too, into a variant cache shared by every release, and every
+ * later release found them there and fell back to PNG for good. So the
+ * namespace now carries the encoders' identity ({@link imageEncoderIdentity}),
+ * and an encoder upgrade moves these variants to URLs that nothing, on disk or
+ * in any HTTP cache, has seen written by an older encoder.
+ *
+ * Only for alpha-capable sources. They are the ones an encoder's alpha
+ * handling decides the correctness of, and they are few (logos, icons,
+ * cut-outs). Keying every photo by encoder version would re-encode a whole
+ * site on each encoder patch release: the cold-cache boot that failed deploys.
  */
 const ALPHA_NAMESPACE = `stx:${DELIVERY_URL}:alpha-1`
+
+/** The packages that write delivery variants, as ts-images resolves them. */
+const ENCODER_PACKAGES = ['@stacksjs/ts-webp', '@stacksjs/ts-avif'] as const
+
+let encoderIdentity: string | undefined
+
+function packageVersion(specifier: string, fromDir: string): string | undefined {
+  let dir = path.dirname(Bun.resolveSync(specifier, fromDir))
+  while (dir !== path.dirname(dir)) {
+    const manifest = path.join(dir, 'package.json')
+    if (fs.existsSync(manifest)) {
+      const pkg = JSON.parse(fs.readFileSync(manifest, 'utf8')) as { name?: string, version?: string }
+      if (pkg.name === specifier)
+        return pkg.version
+    }
+    dir = path.dirname(dir)
+  }
+  return undefined
+}
+
+/**
+ * Which encoders this process writes variants with, e.g.
+ * `ts-webp@0.1.6+ts-avif@0.1.4`. Resolved the way ts-images resolves them,
+ * so a vendored or hoisted copy reports the copy that actually runs. An
+ * encoder that cannot be identified reads as `unknown`, which is still a
+ * namespace no older release wrote into.
+ */
+/**
+ * Override {@link imageEncoderIdentity}, or with no argument go back to
+ * resolving it. For tests that need a variant cache written by another
+ * encoder than the one installed.
+ */
+export function setImageEncoderIdentity(identity?: string): void {
+  encoderIdentity = identity
+}
+
+export function imageEncoderIdentity(): string {
+  if (encoderIdentity !== undefined)
+    return encoderIdentity
+  let from: string | undefined
+  try {
+    from = path.dirname(Bun.resolveSync('ts-images', import.meta.dir))
+  }
+  catch {}
+  encoderIdentity = ENCODER_PACKAGES.map((specifier) => {
+    let version: string | undefined
+    try {
+      version = from ? packageVersion(specifier, from) : undefined
+    }
+    catch {}
+    return `${specifier.replace('@stacksjs/', '')}@${version ?? 'unknown'}`
+  }).join('+')
+  return encoderIdentity
+}
 
 let deliveryCatalog = new Map<string, ImageDeliveryManifest>()
 
@@ -422,7 +487,7 @@ export async function prepareImageDelivery(
     return { count: 0, fingerprint: '' }
   }
 
-  const alphaStorage = deliveryStorage(path.join(outputDir, '_stx', 'images'), ALPHA_NAMESPACE)
+  const alphaStorage = deliveryStorage(path.join(outputDir, '_stx', 'images'), `${ALPHA_NAMESPACE}:${imageEncoderIdentity()}`)
   const catalogOptions = {
     outDir: path.join(outputDir, '_stx', 'images'),
     storage: deliveryStorage(path.join(outputDir, '_stx', 'images')),

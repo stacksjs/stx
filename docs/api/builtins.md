@@ -217,6 +217,8 @@ That wait is capped. A cold variant cache (a first deploy, a cleared `STX_IMAGE_
 
 The decoding and encoding run on a worker thread (at most two, and one on a two-core machine, so serving keeps a core), and the finished catalog is handed to the serving thread in one piece. Requests that arrive mid-pass are answered at normal speed rather than queueing behind the encoders. `prepareImageDelivery(publicDir, outDir, { offThread: true })` and `warmImagePlaceholders(publicDir, { offThread: true })` expose the same thing to other long-lived servers; without a worker available they run in-thread.
 
+Variants of sources that can carry transparency are named with the WebP and AVIF encoder versions in their hash, so an encoder upgrade re-encodes those few (logos, icons, cut-outs) under new URLs instead of reusing what an older encoder wrote into a shared `STX_IMAGE_CACHE_DIR`. Opaque photos keep their names across encoder upgrades.
+
 With `'auto'`, a component that wraps `<StxImage>` (Stacks vendors one as `Image.stx`) turns the pass on only when some page, layout or partial renders it.
 
 | Setting | Where | Default | What it does |

@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, readdir, rm, stat, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { encode } from 'ts-images'
-import { clearImageDeliveryCatalog, prepareImageDelivery } from '../../src/builtins/image-delivery'
+import { clearImageDeliveryCatalog, getImageDelivery, imageEncoderIdentity, prepareImageDelivery, setImageEncoderIdentity, webpHeaderHasAlpha } from '../../src/builtins/image-delivery'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
 
@@ -205,5 +205,77 @@ describe('build-time Image delivery', () => {
     // Same names and untouched mtimes: the second pass found every variant and
     // wrote nothing. A miss would rewrite the file and move the mtime.
     expect(after).toEqual(before)
+  })
+})
+
+describe('variants written by an older encoder', () => {
+  let tempDir: string
+
+  afterAll(async () => {
+    setImageEncoderIdentity()
+    clearImageDeliveryCatalog()
+    await rm(tempDir, { recursive: true, force: true })
+  })
+
+  // A release that still resolved ts-webp 0.1.3 wrote opaque WebPs for
+  // transparent sources into the variant cache every release shares. The
+  // names hashed the source and the options, not the encoder, so every later
+  // release found them, and with a fixed encoder still served PNG forever.
+  it('does not reuse them once the encoder changes', async () => {
+    tempDir = await mkdtemp(join(tmpdir(), 'stx-image-encoder-'))
+    const publicDir = join(tempDir, 'public')
+    const sharedCache = join(tempDir, 'shared-cache')
+    await mkdir(publicDir, { recursive: true })
+
+    const width = 48
+    const height = 48
+    const pixels = new Uint8Array(width * height * 4)
+    for (let i = 0; i < pixels.length; i += 4) {
+      pixels[i] = 200
+      pixels[i + 1] = 40
+      pixels[i + 2] = 90
+      pixels[i + 3] = (i / 4) % width < width / 2 ? 0 : 255
+    }
+    await writeFile(join(publicDir, 'logo.png'), await encode({ data: pixels, width, height, channels: 4 }, 'png'))
+
+    // The old release: every WebP it wrote is opaque.
+    const opaque = await encode({ data: new Uint8Array(width * height * 4).fill(255), width, height, channels: 4 }, 'webp')
+    setImageEncoderIdentity('ts-webp@0.1.3+ts-avif@0.1.4')
+    await prepareImageDelivery(publicDir, sharedCache)
+    const imagesDir = join(sharedCache, '_stx', 'images')
+    const oldNames = (await readdir(imagesDir)).filter(name => name.endsWith('.webp'))
+    expect(oldNames.length).toBeGreaterThan(0)
+    for (const name of oldNames)
+      await writeFile(join(imagesDir, name), opaque)
+
+    const warn = console.warn
+    console.warn = () => {}
+    try {
+      // Same encoder, same names: the stale variants are all it can find.
+      clearImageDeliveryCatalog()
+      await prepareImageDelivery(publicDir, sharedCache)
+      expect(getImageDelivery('/logo.png')?.sources.webp).toBeUndefined()
+
+      // The fixed encoder writes under names the old one never used.
+      setImageEncoderIdentity()
+      clearImageDeliveryCatalog()
+      await prepareImageDelivery(publicDir, sharedCache)
+    }
+    finally {
+      console.warn = warn
+    }
+    const manifest = getImageDelivery('/logo.png')
+    expect(manifest?.sources.webp).toBeDefined()
+    const webp = manifest!.variants.filter(variant => variant.format === 'webp')
+    expect(webp.length).toBeGreaterThan(0)
+    for (const variant of webp) {
+      expect(oldNames).not.toContain(variant.path.split('/').pop())
+      expect(webpHeaderHasAlpha((await readFile(variant.path)).subarray(0, 32))).toBe(true)
+    }
+  })
+
+  it('names the encoders it resolves', () => {
+    setImageEncoderIdentity()
+    expect(imageEncoderIdentity()).toMatch(/^ts-webp@\d+\.\d+\.\d+\+ts-avif@\d+\.\d+\.\d+$/)
   })
 })
