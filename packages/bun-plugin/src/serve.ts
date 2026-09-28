@@ -400,6 +400,42 @@ export function routeSpecificity(fileRouteBase: string): number {
 }
 
 /**
+ * A discovered page's path relative to the page root holding it, and that
+ * root's position in `patterns`.
+ *
+ * Specificity has to be measured on the relative path. Measured on the whole
+ * path, a root's own directory segments count as static segments, so a page
+ * under a deeper root outranks the same route under a shallower one: Stacks
+ * passes `['resources/views', '<framework>/defaults/resources/views']`, and a
+ * framework default `password/reset/[token].stx` beat the app's own file at
+ * the same path purely because its root sits more directories down.
+ */
+export function pageRootOf(filePath: string, patterns: string[]): { relative: string, root: number } {
+  const normalized = filePath.replace(/^\.\//, '').replace(/\\/g, '/')
+  for (let root = 0; root < patterns.length; root++) {
+    const base = patterns[root].replace(/\\/g, '/').replace(/\/$/, '')
+    if (normalized.startsWith(`${base}/`))
+      return { relative: normalized.slice(base.length + 1), root }
+  }
+  return { relative: normalized, root: patterns.length }
+}
+
+/**
+ * Order dynamic route files the way `getRoute` tries them: most specific
+ * route first (see {@link routeSpecificity}), and between equally specific
+ * routes, the earlier page root first. Earlier roots are the overrides - an
+ * app's own views are listed before the framework defaults they replace - so
+ * a tie must never go to the later root. Discovery order breaks any remaining
+ * tie, which keeps the order deterministic.
+ */
+export function orderDynamicRouteFiles(files: string[], patterns: string[]): string[] {
+  return files
+    .map((file, index) => ({ file, index, ...pageRootOf(file, patterns) }))
+    .sort((a, b) => routeSpecificity(b.relative) - routeSpecificity(a.relative) || a.root - b.root || a.index - b.index)
+    .map(entry => entry.file)
+}
+
+/**
  * True when a request path is for a STATIC ASSET (a non-page file extension like
  * `.jpg`/`.css`/`.js`) rather than a page. Used so a catch-all page can never
  * shadow an asset request that publicDir should serve — `getRoute` runs before
@@ -1854,31 +1890,53 @@ function __stxOverlay(errs){
 
   /**
    * Scan a page source for `definePageMeta({ middleware: [...] })` and
-   * record the named middleware for that route. Cheap regex parse —
-   * runs once at startup, not on every request.
+   * return the named middleware (empty when it declares none). Cheap regex
+   * parse — runs once at startup, not on every request.
    */
-  async function detectPageMiddleware(file: string) {
+  async function detectPageMiddleware(file: string): Promise<string[]> {
     try {
 
       const src = await nodeFs.readFile(file, 'utf-8')
       const meta = src.match(/definePageMeta\s*\(\s*\{[\s\S]*?\}\s*\)/)
-      if (!meta) return
+      if (!meta) return []
       const mw = meta[0].match(/middleware\s*:\s*(\[[^\]]*\]|['"][^'"]+['"])/)
-      if (!mw) return
-      const names = mw[1].startsWith('[')
+      if (!mw) return []
+      return mw[1].startsWith('[')
         ? Array.from(mw[1].matchAll(/['"]([^'"]+)['"]/g)).map(m => m[1])
         : [mw[1].replace(/['"]/g, '')]
-      if (names.length === 0) return
-      const urlPath = urlPathFromFile(file)
-      if (urlPath.includes('[')) {
-        const { re, names: paramNames } = compileRoutePattern(urlPath)
-        pageMiddlewarePatterns.push({ re, names: paramNames, middleware: names })
-      }
-      else {
-        pageMiddlewareByPath.set(urlPath, names)
-      }
     }
-    catch { /* unreadable file — skip */ }
+    catch { return [] /* unreadable file — no middleware */ }
+  }
+
+  /**
+   * Index each route's middleware from the page that actually serves it.
+   *
+   * Every page is recorded, including one that declares nothing, and the
+   * first page root to hold a route owns it: an app page overriding a
+   * framework default carries its own middleware, not the default's.
+   * Recording only the pages that declared some, from reads that finished in
+   * whatever order, let a default's `middleware: ['auth']` land on the app
+   * page replacing it - or an app's own `auth` be overwritten by a default's
+   * `guest` - depending on which file was read last. Dynamic routes are
+   * indexed in the order `getRoute` tries them.
+   */
+  async function indexPageMiddleware(files: string[]): Promise<void> {
+    pageMiddlewareByPath.clear()
+    pageMiddlewarePatterns.length = 0
+    const detected = await Promise.all(files.map(f => detectPageMiddleware(f)))
+    const middlewareOf = new Map(files.map((f, i) => [f, detected[i]]))
+    const dynamic: string[] = []
+    for (const file of files) {
+      const urlPath = urlPathFromFile(file)
+      if (urlPath.includes('['))
+        dynamic.push(file)
+      else if (!pageMiddlewareByPath.has(urlPath))
+        pageMiddlewareByPath.set(urlPath, middlewareOf.get(file) ?? [])
+    }
+    for (const file of orderDynamicRouteFiles(dynamic, patterns)) {
+      const { re, names } = compileRoutePattern(urlPathFromFile(file))
+      pageMiddlewarePatterns.push({ re, names, middleware: middlewareOf.get(file) ?? [] })
+    }
   }
 
   function resolveRouteMiddleware(path: string): { names: string[], params: Record<string, string> } {
@@ -2260,9 +2318,7 @@ function __stxOverlay(errs){
     rebuildDiscoveredPagePaths(kept)
 
     // Build the page-middleware index (Laravel-style named middleware).
-    pageMiddlewareByPath.clear()
-    pageMiddlewarePatterns.length = 0
-    await Promise.all(kept.map(f => detectPageMiddleware(f)))
+    await indexPageMiddleware(kept)
 
     // Generate route manifest and type declarations into the state directory.
     // Pass ALL patterns as a stack of page roots so frameworks can ship
@@ -2929,8 +2985,7 @@ function __stxOverlay(errs){
     // publicDir was unreachable. A real file at exactly this path is a
     // stronger signal than any route pattern.
     const isAssetRequest = publicFileExists(`/${normalizedPath}`, publicDir)
-    const dynamicFiles = files
-      .filter((f) => {
+    const dynamicFiles = files.filter((f) => {
       const nf = f.replace(/^\.\//, '').replace(/\\/g, '/')
       if (!nf.includes('['))
         return false
@@ -2938,8 +2993,10 @@ function __stxOverlay(errs){
         return false
       return true
     })
-      .sort((a, b) => routeSpecificity(b) - routeSpecificity(a))
-    for (const filePath of dynamicFiles) {
+    // Ranked on each file's path relative to its page root, with ties going to
+    // the earlier root, so an app page overrides a framework default at the
+    // same dynamic path (see orderDynamicRouteFiles).
+    for (const filePath of orderDynamicRouteFiles(dynamicFiles, patterns)) {
       const normalizedFilePath = filePath.replace(/^\.\//, '').replace(/\\/g, '/')
 
       // Extract the relative path from patterns
