@@ -882,6 +882,27 @@ export interface ServeOptions {
    */
   imageWarmupGraceMs?: number
   /**
+   * How long a production server holds its bind for the startup image pass,
+   * in milliseconds. Defaults to 45000. Also settable as
+   * `imageWarmupBindBudgetMs` in the project's stx/ui config.
+   *
+   * In production the server does not bind until the pass is done, so a
+   * zero-downtime deploy keeps sending visitors to the previous release
+   * instead of to one that cannot serve them the good version yet. That is
+   * right for a warm cache, where the pass is seconds. A cold one -- first
+   * deploy, a wiped `STX_IMAGE_CACHE_DIR`, or an encoder change that renames
+   * the variants -- re-encodes every raster, which on a photo-heavy site is
+   * minutes, and a deploy tool gives up on a release that never binds (ts-cloud
+   * waits 180s).
+   *
+   * So the wait is capped. Once the budget is spent the server binds anyway and
+   * the pass carries on in the background; requests that land before it
+   * finishes get the per-request grace (`imageWarmupGraceMs`) and then the
+   * designed fallbacks. Zero binds at once. Keep it comfortably under your
+   * deploy tool's own limit.
+   */
+  imageWarmupBindBudgetMs?: number
+  /**
    * Derive image placeholders and build the responsive delivery catalog on
    * startup. Also settable as `imageWarmup` in the project's stx/ui config.
    *
@@ -890,8 +911,9 @@ export interface ServeOptions {
    * or `@image`. Those are the only things that read what the pass produces,
    * so without them it is a full decode of every raster under `public/` for
    * output nothing asks for. In production the server waits for it before
-   * binding, so on a photo-heavy site that used to be minutes of startup and a
-   * failed deploy health check. `true` and `false` force it either way.
+   * binding (up to `imageWarmupBindBudgetMs`), so on a photo-heavy site that
+   * used to be minutes of startup and a failed deploy health check. `true` and
+   * `false` force it either way.
    *
    * The pass keeps its variants under `STX_IMAGE_CACHE_DIR` when that is set,
    * so a deploy that points it outside the release directory starts warm.
@@ -1260,6 +1282,45 @@ export async function bundleBrowserAsset(entrypoint: string): Promise<Response> 
   })
 }
 
+/** Default for `imageWarmupBindBudgetMs`: well inside ts-cloud's 180s bind window. */
+export const DEFAULT_IMAGE_WARMUP_BIND_BUDGET_MS = 45_000
+
+/**
+ * The bind budget from an option or config value. Anything that is not a
+ * finite, non-negative number falls back to the default rather than to
+ * "forever", since an unbounded wait is the failure the budget exists to stop.
+ */
+export function resolveImageWarmupBindBudget(value: unknown): number {
+  const ms = typeof value === 'string' && value.trim() !== '' ? Number(value) : value
+  return typeof ms === 'number' && Number.isFinite(ms) && ms >= 0
+    ? ms
+    : DEFAULT_IMAGE_WARMUP_BIND_BUDGET_MS
+}
+
+/**
+ * Whether `promise` settles within `ms`. It is not cancelled either way: the
+ * caller decides what to do with work that is still running.
+ */
+export async function settleWithin(promise: Promise<unknown>, ms: number): Promise<boolean> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const settled = promise.then(() => true, () => true)
+  try {
+    return await Promise.race([
+      settled,
+      new Promise<boolean>((resolve) => {
+        timer = setTimeout(resolve, ms, false)
+      }),
+    ])
+  }
+  finally {
+    clearTimeout(timer)
+  }
+}
+
+function formatSeconds(ms: number): string {
+  return `${(ms / 1000).toFixed(ms < 10_000 ? 1 : 0)}s`
+}
+
 /**
  * Start the STX development server
  * @param options Server options with patterns and port
@@ -1394,6 +1455,13 @@ export async function serve(options: ServeOptions): Promise<void> {
   // visitor who arrived during a restart got a broken page in exchange for
   // placeholders on the one that eventually loaded. Cap it.
   const imageWarmupGraceMs = Math.max(0, options.imageWarmupGraceMs ?? 1000)
+
+  // How long a production start holds its bind for that pass. See
+  // `imageWarmupBindBudgetMs` on ServeOptions: unbounded, a cold image cache
+  // meant a release that never bound inside its deploy's window.
+  const imageWarmupBindBudgetMs = resolveImageWarmupBindBudget(
+    options.imageWarmupBindBudgetMs ?? (stxConfig as { imageWarmupBindBudgetMs?: unknown }).imageWarmupBindBudgetMs,
+  )
 
   /** Resolve once the warm-up finishes, or once the grace runs out. */
   function awaitImageWarmup(): Promise<void> | undefined {
@@ -3439,8 +3507,29 @@ function __stxOverlay(errs){
   // What makes it safe is that nothing now concludes "dead" from "not yet
   // listening": the deploy polls for a served response rather than asking
   // once, and the liveness probe allows three misses a minute apart.
-  if (production)
-    await runImageWarmup()
+  //
+  // Up to a budget. A cold variant cache re-encodes every raster, and a
+  // release that is still encoding when its deploy's window closes is a
+  // failed deploy -- the old release keeps serving and this one is thrown
+  // away having done nothing wrong but start without a cache. After the budget
+  // the pass keeps going behind the bind, and requests degrade exactly as
+  // they do in development: a bounded grace, then the fallbacks.
+  if (production) {
+    const warmupStartedAt = performance.now()
+    const warmup = runImageWarmup()
+    const bound = await settleWithin(warmup, imageWarmupBindBudgetMs)
+    if (!bound) {
+      console.warn(
+        `[stx] image warm-up still running after ${formatSeconds(imageWarmupBindBudgetMs)}; `
+        + `binding now and finishing it in the background. Images fall back to the original files `
+        + `until it completes. A cold image cache (first deploy, a cleared STX_IMAGE_CACHE_DIR, an `
+        + `encoder upgrade) is the usual cause; the next start reuses what this one encodes.`,
+      )
+      void warmup.then(() => {
+        console.log(`[stx] image warm-up finished after ${formatSeconds(performance.now() - warmupStartedAt)}`)
+      })
+    }
+  }
 
   // Allow callers to disable port auto-increment (Vite-style) — when the
   // requested port is in use, probe `port + 1`, `port + 2`, … and bind to
@@ -4622,7 +4711,8 @@ function __stxOverlay(errs){
 
   // In development the pass runs behind the bind, so `stx dev` comes up at
   // once and the first pages render against the fallbacks. In production it
-  // already ran, before the socket existed — see `runImageWarmup`.
+  // already ran before the socket existed, or is still finishing behind it
+  // because it outlasted `imageWarmupBindBudgetMs` — see `runImageWarmup`.
   if (!production)
     void runImageWarmup()
 

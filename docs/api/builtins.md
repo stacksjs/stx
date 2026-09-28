@@ -209,6 +209,26 @@ Renders:
 
 The blur placeholder generates a tiny SVG rectangle with the specified color, set as a `background-image`. It shows through while the real image loads.
 
+### The startup image pass
+
+When a template uses `<StxImage>` or `@image`, the server derives placeholders and encodes the responsive variants for every raster under `public/` when it starts. In production it holds its bind until that pass is done, so a zero-downtime deploy keeps sending visitors to the previous release instead of one that cannot serve them the optimized images yet.
+
+That wait is capped. A cold variant cache (a first deploy, a cleared `STX_IMAGE_CACHE_DIR`, an encoder upgrade that renames variants) re-encodes everything, which on a photo-heavy site can take minutes, and a deploy tool gives up on a release that never binds. After the budget the server binds anyway and finishes the pass in the background. Until it finishes, `<StxImage>` falls back to a flat colour and the delivery lookup to the original file.
+
+| Setting | Where | Default | What it does |
+|---------|-------|---------|--------------|
+| `imageWarmupBindBudgetMs` | `serve()` option or `stx.config.ts` | `45000` | How long a production start holds its bind for the pass. `0` binds at once. Keep it under your deploy tool's own limit (ts-cloud waits 180s). |
+| `imageWarmupGraceMs` | `serve()` option | `1000` | How long a request that arrives mid-pass waits before rendering with the fallbacks. |
+| `imageWarmup` | `serve()` option or `stx.config.ts` | `'auto'` | Run the pass only when a template uses `<StxImage>` or `@image` (`'auto'`), always (`true`), or never (`false`). |
+| `STX_IMAGE_CACHE_DIR` | environment | unset | Keep the variants outside the release directory, so the next deploy starts warm. |
+
+```ts
+// stx.config.ts
+export default {
+  imageWarmupBindBudgetMs: 30_000,
+}
+```
+
 ### CLS Prevention
 
 When both `width` and `height` are provided, an `aspect-ratio` style is added to prevent Cumulative Layout Shift:
