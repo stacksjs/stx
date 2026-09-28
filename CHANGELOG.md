@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.322...v0.2.323)
+
+## 🐛 Bug Fixes
+
+- **image**: find the image worker entry when stx is bundled into the server ([54f86b3](https://github.com/stacksjs/stx/commit/54f86b3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.323 ([edba842](https://github.com/stacksjs/stx/commit/edba842)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.321...v0.2.322)
 
 ## 🐛 Bug Fixes
