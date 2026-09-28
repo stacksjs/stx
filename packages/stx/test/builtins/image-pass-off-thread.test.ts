@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { encode } from 'ts-images'
 import { clearImageDeliveryCatalog, getImageDelivery, isTransparentImage, prepareImageDelivery } from '../../src/builtins/image-delivery'
 import { clearImagePlaceholders, getImagePlaceholder, placeholdersWarmed, warmImagePlaceholders } from '../../src/builtins/image-placeholder'
-import { imageWorkerSlots } from '../../src/builtins/image-worker'
+import { imageWorkerSlots, resetImageWorkerWarning } from '../../src/builtins/image-worker'
 
 setDefaultTimeout(120_000)
 
@@ -124,6 +124,48 @@ describe('image pass off the serving thread', () => {
     expect(offThread).toBe(inThread)
   })
 
+  /**
+   * A Stacks app's preloader copies `@stacksjs/queue`'s exports onto
+   * `globalThis`, its queue `Worker` class among them. The pass used to build
+   * its thread with the global, so it built a queue worker, threw on the first
+   * `addEventListener`, and the warm-up produced nothing, silently.
+   */
+  it('does not depend on the global Worker', async () => {
+    const original = globalThis.Worker
+    let constructed = 0
+    class QueueWorker {
+      constructor(public queue: string) {
+        constructed++
+      }
+
+      process(): void {}
+    }
+    ;(globalThis as any).Worker = QueueWorker
+
+    const warnings: string[] = []
+    const warn = console.warn
+    console.warn = (...parts: unknown[]) => {
+      warnings.push(parts.join(' '))
+    }
+    resetImageWorkerWarning()
+    try {
+      const offThread = await pass(true, 'polluted-global')
+      expect(constructed).toBe(0)
+      expect(offThread.delivery.count).toBe(3)
+      expect(offThread.variants.length).toBeGreaterThan(6)
+      expect(offThread.catalog.every(entry => entry !== null)).toBe(true)
+      expect(offThread.placeholders.every(entry => entry !== undefined)).toBe(true)
+      expect(offThread.transparent).toEqual([false, false, true])
+      // Still on a worker, not quietly back on this thread.
+      expect(offThread.longestStall).toBeLessThan(150)
+      expect(warnings.filter(line => line.includes('image worker'))).toEqual([])
+    }
+    finally {
+      console.warn = warn
+      globalThis.Worker = original
+    }
+  })
+
   // Serving needs a core of its own.
   it('leaves a core for serving', () => {
     expect(imageWorkerSlots(1)).toBe(1)
@@ -199,5 +241,43 @@ console.log(JSON.stringify({ entry: imageWorkerEntry(), result, catalogued: !!ge
     expect(report.result.count).toBe(1)
     expect(report.catalogued).toBe(true)
     expect(report.longestStall).toBeLessThan(150)
+  })
+
+  // With no entry to start, the pass still happens, on this thread, and the
+  // log says so once instead of leaving slow first pages unexplained.
+  it('falls back to the serving thread, and says why once, when there is no entry to start', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'stx-image-no-entry-'))
+    try {
+      const src = join(import.meta.dir, '..', '..', 'src')
+      const pixels = new Uint8Array(64 * 64 * 4).fill(200)
+      await mkdir(join(dir, 'public'), { recursive: true })
+      await writeFile(join(dir, 'public', 'flat.png'), await encode({ data: pixels, width: 64, height: 64, channels: 4 }, 'png'))
+      await writeFile(join(dir, 'entry.ts'), `import { getImageDelivery, prepareImageDelivery } from ${JSON.stringify(join(src, 'builtins', 'image-delivery.ts'))}
+import { getImagePlaceholder, warmImagePlaceholders } from ${JSON.stringify(join(src, 'builtins', 'image-placeholder.ts'))}
+
+const [placeholders, result] = await Promise.all([
+  warmImagePlaceholders('public', { offThread: true }),
+  prepareImageDelivery('public', 'out', { offThread: true }),
+])
+console.log(JSON.stringify({ placeholders, result, catalogued: !!getImageDelivery('/flat.png'), placeholder: !!getImagePlaceholder('/flat.png') }))
+`)
+      // Bundled, and no install beside it: nothing to start.
+      const build = await Bun.build({ entrypoints: [join(dir, 'entry.ts')], outdir: join(dir, 'runtime'), target: 'bun', naming: { entry: 'serve.js' } })
+      expect(build.success).toBe(true)
+
+      const run = Bun.spawnSync(['bun', join(dir, 'runtime', 'serve.js')], { cwd: dir, stdout: 'pipe', stderr: 'pipe' })
+      const report = JSON.parse(run.stdout.toString().trim().split('\n').at(-1)!)
+      expect(report.result.count).toBe(1)
+      expect(report.catalogued).toBe(true)
+      expect(report.placeholders).toBe(1)
+      expect(report.placeholder).toBe(true)
+
+      const warnings = run.stderr.toString().split('\n').filter(line => line.includes('image worker unavailable'))
+      expect(warnings).toHaveLength(1)
+      expect(warnings[0]).toContain('no image-warmup-worker entry')
+    }
+    finally {
+      await rm(dir, { recursive: true, force: true })
+    }
   })
 })

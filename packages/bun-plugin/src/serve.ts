@@ -3449,6 +3449,25 @@ function __stxOverlay(errs){
     })
   }
 
+  /**
+   * Say that part of the image pass failed, and what that costs.
+   *
+   * The pass used to swallow every failure, so a broken warm-up looked like a
+   * working one: <StxImage> quietly served the original full-size files with
+   * no placeholders, and nothing in the log said so. A missing public
+   * directory is not a failure (the pass returns nothing), so anything that
+   * reaches here is worth a line.
+   */
+  function reportImageWarmupFailure(stage: string, error: unknown): void {
+    const message = error instanceof Error ? error.message : String(error)
+    console.warn(
+      `\x1b[33m[stx]\x1b[0m ${stage} failed during the image warm-up: ${message}. `
+      + `<StxImage> serves the original files without them until a start where the warm-up succeeds.`,
+    )
+    if (!production && error instanceof Error && error.stack)
+      console.warn(`\x1b[2m${error.stack}\x1b[0m`)
+  }
+
   /** Derive placeholders and build the responsive image catalog. Settles `placeholdersReady`. */
   async function runImageWarmup(): Promise<void> {
     const imageWarmupEnabled = imageWarmupSetting === 'auto'
@@ -3477,14 +3496,18 @@ function __stxOverlay(errs){
         }),
         stx.prepareImageDelivery(publicRoot, imageDeliveryOutputDir, { offThread: true }),
       ])
+      if (placeholderResult.status === 'rejected')
+        reportImageWarmupFailure('image placeholders', placeholderResult.reason)
+      if (deliveryResult.status === 'rejected')
+        reportImageWarmupFailure('responsive image variants', deliveryResult.reason)
       const derived = placeholderResult.status === 'fulfilled' ? placeholderResult.value : 0
       if (derived > 0 && !production)
         console.log(`[stx] derived ${derived} image placeholder(s)`)
       if (deliveryResult.status === 'fulfilled' && deliveryResult.value.count > 0 && !production)
         console.log(`[stx] optimized ${deliveryResult.value.count} image(s) for responsive delivery`)
     }
-    catch {
-      // No codec or no public directory. <StxImage> falls back to a flat colour.
+    catch (error) {
+      reportImageWarmupFailure('image warm-up', error)
     }
     finally {
       placeholdersAreReady = true

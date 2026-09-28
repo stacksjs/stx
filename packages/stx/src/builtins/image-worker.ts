@@ -10,9 +10,17 @@
  * receives the finished catalog.
  *
  * The worker is the mechanism, not a requirement. Where one cannot start (no
- * `Worker` in the runtime, or no entry file beside a bundled copy and no
- * installed one to fall back on), {@link runImageTask} reports that and the
- * caller runs the pass in-thread exactly as before.
+ * entry file beside a bundled copy and no installed one to fall back on, or a
+ * worker that dies before it is ready), {@link runImageTask} reports that, the
+ * caller runs the pass in-thread exactly as before, and one warning says why.
+ *
+ * The thread comes from `node:worker_threads`, never the global `Worker`. The
+ * global is whatever the app left on `globalThis`, and a Stacks app's preloader
+ * copies `@stacksjs/queue`'s exports there, including a queue `Worker` class.
+ * `new Worker(entry)` then built a queue worker, the first `addEventListener`
+ * threw, and the pass failed before a single image was touched. A module
+ * import cannot be replaced that way. In Bun both constructors start the same
+ * thread with the same structured clone, so the results are unchanged.
  *
  * @module builtins/image-worker
  */
@@ -20,6 +28,7 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import { fileURLToPath } from 'node:url'
+import { Worker as ThreadWorker } from 'node:worker_threads'
 
 /** Tasks the worker entry knows how to run. */
 export type ImageTask = 'delivery' | 'placeholders'
@@ -94,6 +103,35 @@ interface WorkerReply {
   error?: { name?: string, message: string, stack?: string }
 }
 
+let warnedUnavailable = false
+
+/**
+ * Say, once per process, that the pass is back on the serving thread and why.
+ *
+ * The fallback keeps the results right but costs the serving thread the whole
+ * pass, which is what the worker exists to avoid; a deploy that silently lost
+ * it would only show up as slow first pages.
+ */
+function unavailable(reason: string): typeof WORKER_UNAVAILABLE {
+  if (!warnedUnavailable) {
+    warnedUnavailable = true
+    console.warn(
+      `[stx] image worker unavailable (${reason}); running the image pass on the serving thread instead. `
+      + `Results are the same, but requests may stall while it runs.`,
+    )
+  }
+  return WORKER_UNAVAILABLE
+}
+
+/** Forget that the fallback warning was printed. For tests. */
+export function resetImageWorkerWarning(): void {
+  warnedUnavailable = false
+}
+
+function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
 /**
  * Run `task` with `args` on a worker thread and resolve with what it posts
  * back, or with {@link WORKER_UNAVAILABLE} when no worker could be started.
@@ -103,21 +141,21 @@ interface WorkerReply {
  * mid-pass is never silently re-run on the serving thread.
  */
 export async function runImageTask<T>(task: ImageTask, args: unknown): Promise<T | typeof WORKER_UNAVAILABLE> {
-  if (typeof Worker === 'undefined')
-    return WORKER_UNAVAILABLE
+  if (typeof ThreadWorker !== 'function')
+    return unavailable('node:worker_threads has no Worker in this runtime')
   const entry = imageWorkerEntry()
   if (!entry)
-    return WORKER_UNAVAILABLE
+    return unavailable('no image-warmup-worker entry beside this module or in the installed @stacksjs/stx')
 
   await acquire()
   try {
     return await new Promise<T | typeof WORKER_UNAVAILABLE>((resolve, reject) => {
-      let worker: Worker
+      let worker: ThreadWorker
       try {
-        worker = new Worker(entry)
+        worker = new ThreadWorker(entry)
       }
-      catch {
-        resolve(WORKER_UNAVAILABLE)
+      catch (error) {
+        resolve(unavailable(`could not start ${entry}: ${messageOf(error)}`))
         return
       }
 
@@ -128,11 +166,10 @@ export async function runImageTask<T>(task: ImageTask, args: unknown): Promise<T
           return
         settled = true
         settle()
-        worker.terminate()
+        void worker.terminate()
       }
 
-      worker.addEventListener('message', (event: MessageEvent<WorkerReply>) => {
-        const reply = event.data
+      worker.on('message', (reply: WorkerReply) => {
         if (reply.type === 'ready') {
           ready = true
           worker.postMessage({ task, args })
@@ -149,15 +186,15 @@ export async function runImageTask<T>(task: ImageTask, args: unknown): Promise<T
           error.stack = reply.error.stack
         finish(() => reject(error))
       })
-      worker.addEventListener('error', (event: ErrorEvent) => {
+      worker.on('error', (error: unknown) => {
         finish(() => ready
-          ? reject(event.error instanceof Error ? event.error : new Error(event.message || 'image worker crashed'))
-          : resolve(WORKER_UNAVAILABLE))
+          ? reject(error instanceof Error ? error : new Error(messageOf(error) || 'image worker crashed'))
+          : resolve(unavailable(`the worker failed before it was ready: ${messageOf(error)}`)))
       })
-      worker.addEventListener('close', () => {
+      worker.on('exit', (code: number) => {
         finish(() => ready
           ? reject(new Error('image worker exited before it finished'))
-          : resolve(WORKER_UNAVAILABLE))
+          : resolve(unavailable(`the worker exited with code ${code} before it was ready`)))
       })
     })
   }
