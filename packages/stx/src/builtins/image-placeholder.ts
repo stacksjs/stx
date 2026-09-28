@@ -25,6 +25,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { sourceAlpha } from './image-alpha'
+import { runImageTask, WORKER_UNAVAILABLE } from './image-worker'
 
 /** A placeholder ready to be dropped into markup. */
 export interface ImagePlaceholder {
@@ -76,6 +77,11 @@ export function placeholdersWarmed(): boolean {
 export function clearImagePlaceholders(): void {
   placeholders.clear()
   warmed = false
+}
+
+/** Every placeholder this thread holds, in a form `postMessage` can carry. */
+export function snapshotImagePlaceholders(): Array<[string, ImagePlaceholder]> {
+  return [...placeholders]
 }
 
 /**
@@ -225,6 +231,13 @@ export interface WarmOptions {
   maxBytes?: number
   /** Stop after this many images, so an enormous asset tree cannot stall a build. */
   limit?: number
+  /**
+   * Decode on a worker thread and merge the results here. For a long-lived
+   * server, whose event loop has requests to answer while a cold cache
+   * decodes every image. Same placeholders, same cache file; falls back to
+   * running in-thread where no worker can start.
+   */
+  offThread?: boolean
 }
 
 /**
@@ -241,11 +254,24 @@ export async function warmImagePlaceholders(
   publicDir: string,
   options: WarmOptions = {},
 ): Promise<number> {
-  const { cachePath, maxBytes = 32 * 1024 * 1024, limit = 2000 } = options
+  const { cachePath, maxBytes = 32 * 1024 * 1024, limit = 2000, offThread } = options
 
   if (!publicDir || !fs.existsSync(publicDir)) {
     warmed = true
     return placeholders.size
+  }
+
+  if (offThread) {
+    const reply = await runImageTask<{ placeholders: Array<[string, ImagePlaceholder]> }>(
+      'placeholders',
+      { publicDir, options: { cachePath, maxBytes, limit } },
+    )
+    if (reply !== WORKER_UNAVAILABLE) {
+      for (const [urlPath, placeholder] of reply.placeholders)
+        placeholders.set(urlPath, placeholder)
+      warmed = true
+      return placeholders.size
+    }
   }
 
   let tsImages: typeof import('ts-images')

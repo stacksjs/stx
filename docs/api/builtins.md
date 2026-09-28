@@ -215,6 +215,8 @@ When a template uses `<StxImage>` or `@image`, the server derives placeholders a
 
 That wait is capped. A cold variant cache (a first deploy, a cleared `STX_IMAGE_CACHE_DIR`, an encoder upgrade that renames variants) re-encodes everything, which on a photo-heavy site can take minutes, and a deploy tool gives up on a release that never binds. After the budget the server binds anyway and finishes the pass in the background. Until it finishes, `<StxImage>` falls back to a flat colour and the delivery lookup to the original file.
 
+The decoding and encoding run on a worker thread (at most two, and one on a two-core machine, so serving keeps a core), and the finished catalog is handed to the serving thread in one piece. Requests that arrive mid-pass are answered at normal speed rather than queueing behind the encoders. `prepareImageDelivery(publicDir, outDir, { offThread: true })` and `warmImagePlaceholders(publicDir, { offThread: true })` expose the same thing to other long-lived servers; without a worker available they run in-thread.
+
 | Setting | Where | Default | What it does |
 |---------|-------|---------|--------------|
 | `imageWarmupBindBudgetMs` | `serve()` option or `stx.config.ts` | `45000` | How long a production start holds its bind for the pass. `0` binds at once. Keep it under your deploy tool's own limit (ts-cloud waits 180s). |

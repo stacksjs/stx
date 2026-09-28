@@ -5,6 +5,7 @@ import path from 'node:path'
 import { decode, generateThumbHash } from 'ts-images'
 import { createImageDeliveryCatalog } from 'ts-images/delivery'
 import { readAt, sourceAlpha, webpHeaderHasAlpha } from './image-alpha'
+import { runImageTask, WORKER_UNAVAILABLE } from './image-worker'
 
 export { webpHeaderHasAlpha }
 
@@ -344,6 +345,33 @@ export function clearImageDeliveryCatalog(): void {
   transparentSources = new Set()
 }
 
+/** The catalog as plain data, for a worker to post back to the thread that serves. */
+export interface ImageDeliverySnapshot {
+  entries: Array<[string, ImageDeliveryManifest]>
+  transparent: string[]
+}
+
+/** What this thread's catalog holds, in a form `postMessage` can carry. */
+export function snapshotImageDelivery(): ImageDeliverySnapshot {
+  return { entries: [...deliveryCatalog], transparent: [...transparentSources] }
+}
+
+/** Swap in a catalog built elsewhere, whole, as the in-thread pass does. */
+export function installImageDelivery(snapshot: ImageDeliverySnapshot): void {
+  deliveryCatalog = new Map(snapshot.entries)
+  transparentSources = new Set(snapshot.transparent)
+}
+
+export interface PrepareImageDeliveryOptions {
+  /**
+   * Decode and encode on a worker thread, and install the finished catalog
+   * here. For a long-lived server, whose event loop has requests to answer
+   * while a cold cache re-encodes every raster. Same files, same names, same
+   * catalog; falls back to running in-thread where no worker can start.
+   */
+  offThread?: boolean
+}
+
 /**
  * Optimize every raster in the public directory before templates render.
  *
@@ -354,10 +382,22 @@ export function clearImageDeliveryCatalog(): void {
 export async function prepareImageDelivery(
   publicDir: string,
   outputDir: string,
+  options: PrepareImageDeliveryOptions = {},
 ): Promise<{ count: number, fingerprint: string }> {
   if (!publicDir || !fs.existsSync(publicDir)) {
     clearImageDeliveryCatalog()
     return { count: 0, fingerprint: '' }
+  }
+
+  if (options.offThread) {
+    const reply = await runImageTask<{ result: { count: number, fingerprint: string }, state: ImageDeliverySnapshot }>(
+      'delivery',
+      { publicDir, outputDir },
+    )
+    if (reply !== WORKER_UNAVAILABLE) {
+      installImageDelivery(reply.state)
+      return reply.result
+    }
   }
 
   const allFiles = await collectRasterImages(publicDir)

@@ -3465,11 +3465,17 @@ function __stxOverlay(errs){
     try {
       const stx = await stxModule
       const publicRoot = nodePath.resolve(process.cwd(), publicDir)
+      // Off the serving thread. Every decode and encode here is synchronous
+      // pure TypeScript, and a cold cache is minutes of them: in-thread, each
+      // `await` a request made queued behind the next image, so pages took
+      // seconds and a proxy saw empty responses for as long as the pass ran.
+      // A worker computes the same catalog and hands it over when done.
       const [placeholderResult, deliveryResult] = await Promise.allSettled([
         stx.warmImagePlaceholders(publicRoot, {
           cachePath: imagePlaceholderCachePath,
+          offThread: true,
         }),
-        stx.prepareImageDelivery(publicRoot, imageDeliveryOutputDir),
+        stx.prepareImageDelivery(publicRoot, imageDeliveryOutputDir, { offThread: true }),
       ])
       const derived = placeholderResult.status === 'fulfilled' ? placeholderResult.value : 0
       if (derived > 0 && !production)
@@ -3490,9 +3496,10 @@ function __stxOverlay(errs){
   //
   // This used to run after the bind, because running it before starved the
   // loop so thoroughly that the bind itself never got to happen and a health
-  // check restarted the unit. Two things changed. The catalog now hands the
-  // loop a turn between images (ts-images), so a warming process stays
-  // responsive to everything except serving pages it has not warmed for. And
+  // check restarted the unit. Two things changed. The decoding and encoding
+  // now run on a worker thread (see `runImageWarmup`), so a warming process
+  // stays responsive to everything except serving pages it has not warmed
+  // for. And
   // a zero-downtime deploy overlaps releases on one port via SO_REUSEPORT —
   // which is exactly why binding early is wrong now. The moment this process
   // binds, the kernel starts giving it real visitors, and it was taking them

@@ -1,7 +1,8 @@
 import { afterAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { encode } from 'ts-images'
 import { DEFAULT_IMAGE_WARMUP_BIND_BUDGET_MS, resolveImageWarmupBindBudget, settleWithin } from '../src/serve'
 
 setDefaultTimeout(60_000)
@@ -208,6 +209,97 @@ describe('the bind budget', () => {
   it('binds at once with a budget of zero', async () => {
     const elapsed = await timeToBind(PRODUCTION, 46_070 + (process.pid % 20), { imageWarmupBindBudgetMs: 0 })
     expect(elapsed).toBeLessThan(WARMUP_MS / 2)
+  })
+})
+
+describe('serving while the pass runs', () => {
+  /** Noise, so the encoders have real work to do and nothing compresses away. */
+  function noise(width: number, height: number, seed: number): Uint8Array {
+    const pixels = new Uint8Array(width * height * 4)
+    for (let i = 0; i < pixels.length; i++) {
+      seed = (seed * 1103515245 + 12345) >>> 0
+      pixels[i] = i % 4 === 3 ? 255 : seed >>> 24
+    }
+    return pixels
+  }
+
+  // The real pass, not a stand-in that sleeps: what starved requests was CPU,
+  // every decode and encode synchronous on the thread that answers them. A
+  // cold cache after a deploy kept pages at 14-18s and the proxy in front saw
+  // empty responses for the minutes the pass took.
+  it('answers a page quickly while a cold pass is still encoding', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'stx-busy-'))
+    dirs.push(dir)
+    const port = 46_090 + (process.pid % 20)
+    await Bun.write(path.join(dir, 'views', 'index.stx'), '<main><StxImage src="/photo-0.png" alt="Photo" /></main>')
+    await Bun.write(path.join(dir, 'views', 'simple.stx'), '<main>simple</main>')
+    await mkdir(path.join(dir, 'public'), { recursive: true })
+    for (let i = 0; i < 6; i++)
+      await writeFile(path.join(dir, 'public', `photo-${i}.png`), await encode({ data: noise(1200, 800, i + 1), width: 1200, height: 800, channels: 4 }, 'png'))
+    await Bun.write(path.join(dir, 'driver.ts'), `import * as stxModule from ${JSON.stringify(STX_SRC)}
+import { serve } from ${JSON.stringify(SERVE_SRC)}
+
+// No grace: every request renders at once against the fallbacks, so what is
+// measured is the thread, not the designed wait.
+serve({ patterns: ['views'], port: ${port}, stxModule: stxModule as any, imageWarmupBindBudgetMs: 0, imageWarmupGraceMs: 0 })
+`)
+
+    let finished = false
+    const proc = Bun.spawn(['bun', 'driver.ts'], {
+      cwd: dir,
+      env: { ...process.env, ...PRODUCTION, STX_IMAGE_CACHE_DIR: path.join(dir, 'image-cache') },
+      stdout: 'pipe',
+      stderr: 'pipe',
+    })
+    void (async () => {
+      const decoder = new TextDecoder()
+      for await (const chunk of proc.stdout) {
+        if (decoder.decode(chunk).includes('image warm-up finished'))
+          finished = true
+      }
+    })()
+
+    try {
+      const deadline = Date.now() + 30_000
+      while (true) {
+        try {
+          const socket = await Bun.connect({ hostname: 'localhost', port, socket: { data() {}, error() {} } })
+          socket.end()
+          break
+        }
+        catch {
+          if (Date.now() > deadline)
+            throw new Error('never bound')
+          await Bun.sleep(50)
+        }
+      }
+
+      // Several requests, all inside the pass, starting with the page that
+      // renders the image. With the pass on this thread the first took over
+      // 3s and later ones most of a second each; on a production box a
+      // liveness probe gave up on it and restarted the unit mid-pass.
+      const timings: number[] = []
+      for (let i = 0; i < 6 && !finished; i++) {
+        const started = performance.now()
+        const res = await fetch(`http://localhost:${port}${i % 2 ? '/simple' : '/'}`)
+        expect(await res.text()).toContain('<main>')
+        timings.push(performance.now() - started)
+        await Bun.sleep(100)
+      }
+      expect(finished).toBe(false)
+      expect(timings.length).toBe(6)
+      expect(Math.max(...timings)).toBeLessThan(1000)
+
+      // And the pass still completes and is installed.
+      for (let i = 0; i < 1200 && !finished; i++)
+        await Bun.sleep(50)
+      expect(finished).toBe(true)
+      const html = await (await fetch(`http://localhost:${port}/`)).text()
+      expect(html).toContain('/_stx/images/')
+    }
+    finally {
+      proc.kill()
+    }
   })
 })
 
