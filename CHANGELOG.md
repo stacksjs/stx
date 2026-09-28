@@ -1,5 +1,26 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.320...v0.2.321)
+
+## 🐛 Bug Fixes
+
+- **deps**: require ts-images 0.2.22, so transparent images keep their WebP ([c6c7c38](https://github.com/stacksjs/stx/commit/c6c7c38)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **serve**: bind within a budget when the startup image pass runs long ([fdc43da](https://github.com/stacksjs/stx/commit/fdc43da)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **loops**: warn that a collection is not iterable only in a branch that is taken ([467d746](https://github.com/stacksjs/stx/commit/467d746)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **runtime**: never place the signals runtime inside a <template> ([41da463](https://github.com/stacksjs/stx/commit/41da463)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **image**: keep legacy placeholder cache entries whose answer is already known ([fe37c70](https://github.com/stacksjs/stx/commit/fe37c70)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.321 ([15f7e76](https://github.com/stacksjs/stx/commit/15f7e76)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.319...v0.2.320)
 
 ## 🐛 Bug Fixes
