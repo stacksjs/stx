@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.328...v0.2.329)
+
+## 🐛 Bug Fixes
+
+- **auto-imports**: an object key or someone else's property is not a use of a browser helper ([28c91f9](https://github.com/stacksjs/stx/commit/28c91f9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.329 ([bc17f2c](https://github.com/stacksjs/stx/commit/bc17f2c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.327...v0.2.328)
 
 ## 🐛 Bug Fixes
