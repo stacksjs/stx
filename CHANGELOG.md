@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.326...v0.2.327)
+
+## 🐛 Bug Fixes
+
+- **bundler**: give each build its own temp files, so a second dev server cannot delete them ([f14b8d7](https://github.com/stacksjs/stx/commit/f14b8d7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.327 ([9a1bb93](https://github.com/stacksjs/stx/commit/9a1bb93)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.325...v0.2.326)
 
 ## 🐛 Bug Fixes
