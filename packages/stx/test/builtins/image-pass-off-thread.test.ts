@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
+import { realpathSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { encode } from 'ts-images'
@@ -129,5 +130,74 @@ describe('image pass off the serving thread', () => {
     expect(imageWorkerSlots(2)).toBe(1)
     expect(imageWorkerSlots(3)).toBe(2)
     expect(imageWorkerSlots(64)).toBe(2)
+  })
+})
+
+/**
+ * A Stacks deploy runs a bundle: `storage/framework/runtime/production/serve.js`
+ * with stx inlined into a chunk. Bun's bundler does not follow a worker URL,
+ * so the entry beside the source is not beside the chunk, and the pass went
+ * back to the serving thread in exactly the deployments it was moved for.
+ */
+describe('image pass from a bundled server', () => {
+  let tempDir: string
+
+  afterAll(async () => {
+    await rm(tempDir, { recursive: true, force: true })
+  })
+
+  it('still runs on a worker, using the installed package entry', async () => {
+    tempDir = await mkdtemp(join(tmpdir(), 'stx-image-bundled-'))
+    const src = join(import.meta.dir, '..', '..', 'src')
+
+    // The app's install: `@stacksjs/stx` with its `./*` export, pointing at
+    // the source this test runs against.
+    const pkg = join(tempDir, 'node_modules', '@stacksjs', 'stx')
+    await mkdir(pkg, { recursive: true })
+    await writeFile(join(pkg, 'package.json'), JSON.stringify({ name: '@stacksjs/stx', type: 'module', exports: { './*': './src/*.ts' } }))
+    await symlink(src, join(pkg, 'src'))
+
+    const pixels = new Uint8Array(900 * 600 * 4)
+    let seed = 99
+    for (let i = 0; i < pixels.length; i++) {
+      seed = (seed * 1103515245 + 12345) >>> 0
+      pixels[i] = i % 4 === 3 ? 255 : seed >>> 24
+    }
+    await mkdir(join(tempDir, 'public'), { recursive: true })
+    await writeFile(join(tempDir, 'public', 'noise.png'), await encode({ data: pixels, width: 900, height: 600, channels: 4 }, 'png'))
+
+    await writeFile(join(tempDir, 'entry.ts'), `import { imageWorkerEntry } from ${JSON.stringify(join(src, 'builtins', 'image-worker.ts'))}
+import { getImageDelivery, prepareImageDelivery } from ${JSON.stringify(join(src, 'builtins', 'image-delivery.ts'))}
+
+let longestStall = 0
+let last = performance.now()
+const ticker = setInterval(() => {
+  const now = performance.now()
+  longestStall = Math.max(longestStall, now - last)
+  last = now
+}, 5)
+const result = await prepareImageDelivery('public', 'out', { offThread: true })
+clearInterval(ticker)
+console.log(JSON.stringify({ entry: imageWorkerEntry(), result, catalogued: !!getImageDelivery('/noise.png'), longestStall }))
+`)
+    const build = await Bun.build({
+      entrypoints: [join(tempDir, 'entry.ts')],
+      outdir: join(tempDir, 'runtime', 'production'),
+      target: 'bun',
+      splitting: true,
+      naming: { entry: 'serve.js', chunk: 'chunks/[name]-[hash].js' },
+    })
+    expect(build.success).toBe(true)
+
+    const run = Bun.spawnSync(['bun', join(tempDir, 'runtime', 'production', 'serve.js')], { cwd: tempDir, stdout: 'pipe', stderr: 'pipe' })
+    const lines = run.stdout.toString().trim().split('\n')
+    const report = JSON.parse(lines.at(-1)!)
+
+    // Not beside the chunk (there is nothing there), but the installed one.
+    expect(realpathSync(report.entry)).toBe(realpathSync(join(pkg, 'src', 'builtins', 'image-warmup-worker.ts')))
+    expect(report.entry.startsWith(join(tempDir, 'runtime'))).toBe(false)
+    expect(report.result.count).toBe(1)
+    expect(report.catalogued).toBe(true)
+    expect(report.longestStall).toBeLessThan(150)
   })
 })

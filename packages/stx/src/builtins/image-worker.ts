@@ -10,9 +10,9 @@
  * receives the finished catalog.
  *
  * The worker is the mechanism, not a requirement. Where one cannot start (no
- * `Worker` in the runtime, or the entry file missing because stx was bundled
- * into something else), {@link runImageTask} reports that and the caller runs
- * the pass in-thread exactly as before.
+ * `Worker` in the runtime, or no entry file beside a bundled copy and no
+ * installed one to fall back on), {@link runImageTask} reports that and the
+ * caller runs the pass in-thread exactly as before.
  *
  * @module builtins/image-worker
  */
@@ -56,15 +56,32 @@ function release(): void {
   waiting.shift()?.()
 }
 
+/** How the installed package exposes the worker entry (its `./*` export). */
+const INSTALLED_WORKER_ENTRY = '@stacksjs/stx/builtins/image-warmup-worker'
+
 /**
- * The worker entry beside this module: `.ts` when running from source, `.js`
- * from the published `dist/`, which mirrors `src/` file for file.
+ * The worker entry to start.
+ *
+ * Beside this module when stx runs as published or from source: `.ts` from
+ * `src/`, `.js` from `dist/`, which mirrors `src/` file for file.
+ *
+ * Otherwise stx has been bundled into the app's server. A Stacks deploy
+ * builds `storage/framework/runtime/production/serve.js` with every
+ * dependency inlined, and Bun's bundler does not follow a `new Worker(new
+ * URL(...))`, so nothing sits beside the chunk this code landed in. The same
+ * install the bundle was built from is still on disk, though, so the entry is
+ * resolved from the app's root.
  */
-function workerEntry(): URL | undefined {
+export function imageWorkerEntry(root = process.cwd()): string | undefined {
   const extension = import.meta.url.endsWith('.ts') ? 'ts' : 'js'
-  const url = new URL(`./image-warmup-worker.${extension}`, import.meta.url)
   try {
-    return url.protocol === 'file:' && fs.existsSync(fileURLToPath(url)) ? url : undefined
+    const sibling = new URL(`./image-warmup-worker.${extension}`, import.meta.url)
+    if (sibling.protocol === 'file:' && fs.existsSync(fileURLToPath(sibling)))
+      return fileURLToPath(sibling)
+  }
+  catch {}
+  try {
+    return typeof Bun !== 'undefined' ? Bun.resolveSync(INSTALLED_WORKER_ENTRY, root) : undefined
   }
   catch {
     return undefined
@@ -88,7 +105,7 @@ interface WorkerReply {
 export async function runImageTask<T>(task: ImageTask, args: unknown): Promise<T | typeof WORKER_UNAVAILABLE> {
   if (typeof Worker === 'undefined')
     return WORKER_UNAVAILABLE
-  const entry = workerEntry()
+  const entry = imageWorkerEntry()
   if (!entry)
     return WORKER_UNAVAILABLE
 
