@@ -352,6 +352,15 @@ export function getRouterScript(): string {
   // navigation, leaking a listener and an observer each time and resetting the
   // instance registry — trading a silent missing component for a silent leak.
   var REGISTERS_SCOPE=/window\\.stx\\.mount|_scopes\\s*\\[|\\.initScope\\s*\\(|__stxComponentFactories\\s*\\[/;
+  // The page's module registry (#1957): the bundle every component that
+  // imports a local module reads from, so on navigation it has to run before
+  // any of them. Marked data-stx-modules; the text test also finds it where
+  // only a script's text survives. Its wrapper names __stxModuleBundles, which
+  // no component script does -- they read __stxModules.
+  var REGISTRY_TEXT=/__stxModuleBundles/;
+  function isModuleRegistryScript(s){
+    return !!s&&((s.hasAttribute&&s.hasAttribute('data-stx-modules'))||REGISTRY_TEXT.test(s.textContent||''));
+  }
   function runsAlways(declared, code){
     if(declared==='always')return true;
     if(declared==='once')return false;
@@ -1356,7 +1365,7 @@ else {
           var slot='document-'+(++routedBodyScriptId);
           var setupName=generatedSetupName(text);
           if(setupName)incomingSetupName=setupName;
-          routedBodyScripts.push({text:text,runAlways:true,slot:slot,setupName:setupName,run:s.getAttribute('data-stx-run')||'',owner:s.getAttribute('data-stx-owner')||''});
+          routedBodyScripts.push({text:text,runAlways:true,slot:slot,setupName:setupName,run:s.getAttribute('data-stx-run')||'',owner:s.getAttribute('data-stx-owner')||'',registry:isModuleRegistryScript(s)});
           s.textContent='';
           s.setAttribute('type','application/stx-pending');
           s.setAttribute('data-stx-route-script',slot);
@@ -1438,16 +1447,24 @@ else {
 
       var scripts=routedBodyScripts.slice();
       function addScript(text, runAlways, slot, owner){
-        scripts.push({text:text,runAlways:!!runAlways,slot:slot||'',owner:owner||''});
+        scripts.push({text:text,runAlways:!!runAlways,slot:slot||'',owner:owner||'',registry:REGISTRY_TEXT.test(text)});
       }
       if(isLayoutChange){
-        // Also collect setup functions from <head>
+        // Also collect setup functions from <head>, and the page's module
+        // registry (#1957). The registry is anchored to the signals runtime,
+        // and a layout with its own <head> script (analytics, say) pulls the
+        // runtime -- and the registry with it -- into <head>. Collecting only
+        // setups there dropped it, so every component that imports a local
+        // module threw "is not registered on this page" and its template
+        // hydrated against globals: an <input id="email"> bound to
+        // :model="email" showed "[object HTMLInputElement]".
         doc.querySelectorAll('head script').forEach(function(s){
           var text=s.textContent||'';
           if(s.hasAttribute('src'))return;
           if(!text.trim())return;
           if(isSignalsRuntimeScript(s,text))return;
-          if(text.indexOf('__stx_setup_')!==-1)addScript(text,true);
+          if(isModuleRegistryScript(s))addScript(text,true,'','');
+          else if(text.indexOf('__stx_setup_')!==-1)addScript(text,true);
         });
       } else {
         // Collect page scripts from <head> AND <body> (outside container).
@@ -1495,6 +1512,12 @@ else {
           return aPage-bPage;
         });
       }
+      // The module registry runs before anything that reads it (#1957). The
+      // container's own scripts are collected first and head scripts after,
+      // so without this a component in the page body could run ahead of the
+      // registry it imports from. Stable: the order within each group holds.
+      var registryFirst=scripts.filter(function(e){return e.registry});
+      if(registryFirst.length)scripts=registryFirst.concat(scripts.filter(function(e){return !e.registry}));
 
       // Push history state (before active link updates so location.pathname is current)
       if(pushState!==false)writeHistory(pushState,url+(hash||''));
