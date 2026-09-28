@@ -44,7 +44,7 @@ import { processBasicFormDirectives, processErrorDirective, processFormInputDire
 import { processTranslateDirective } from './i18n'
 import { processIncludes, processStackPushDirectives, processStackReplacements } from './includes'
 import { processJsDirectives, processTsDirectives } from './js-ts'
-import { processLoops } from './loops'
+import { processLoops, reportDeferredLoopWarnings } from './loops'
 import { processMarkdownDirectives } from './markdown'
 import { processMethodDirectives } from './method-spoofing'
 import { runPostProcessingMiddleware, runPreProcessingMiddleware } from './middleware'
@@ -1574,7 +1574,9 @@ async function processOtherDirectives(
 
   // Process loops FIRST - BEFORE components so that loop variables are evaluated
   // when components are processed, not after components have already been expanded
-  output = processLoops(output, context, filePath, opts)
+  // Warnings deferred until the conditionals below have decided which branches
+  // are part of the page, so a loop in a losing branch does not warn.
+  output = processLoops(output, context, filePath, opts, true)
 
 
   // Dynamic components FIRST (#1817). The static pass resolves any unknown
@@ -1709,6 +1711,7 @@ async function processOtherDirectives(
 
   // Process conditionals (@if, @unless, etc.) - AFTER loops to allow loop variables in scope
   output = processConditionals(output, context, filePath)
+  output = reportDeferredLoopWarnings(output)
 
   // @status(code) — the page's own HTTP status.
   //

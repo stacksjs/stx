@@ -711,7 +711,73 @@ export function parseLoopBinding(params: string): { arrayExpr: string, itemVar: 
   return itemVar && arrayExpr ? { arrayExpr, itemVar } : null
 }
 
-export function processLoops(template: string, context: Record<string, any>, filePath: string, options?: StxOptions): string {
+/**
+ * A marker standing in for the "not iterable" build warning until it is known
+ * whether the loop is actually part of the page.
+ *
+ * Loops expand before the conditionals around them are decided: nested loops
+ * inside an iteration run before that iteration's `@if`, and page-level loops
+ * run before the page's `@if` (both so loop variables are in scope). A loop in
+ * an `@elseif` branch that loses is therefore still evaluated, against a value
+ * that only exists in the branch that wins -- `@foreach(block.items)` for a
+ * block that is a heading, not a list. The output was right, because the
+ * conditional removed the branch, but the warning had already been printed:
+ * 131 of them per crawl on a real legal page, every one of them false.
+ *
+ * So the warning rides along in the markup instead. A branch that loses takes
+ * the marker with it; `reportDeferredLoopWarnings` prints whatever survives the
+ * conditionals and strips the markers. The text is carried in the marker
+ * itself, so there is no registry to leak when a branch discards one.
+ */
+const NOT_ITERABLE_PREFIX = '<!--stx:foreach-not-iterable:'
+const NOT_ITERABLE_MARK = /<!--stx:foreach-not-iterable:([^|>]*)\|([^>]*?)-->/g
+
+function notIterableMark(arrayExpr: string, filePath: string): string {
+  // encodeURIComponent escapes `>` and `|`, so neither half can end the
+  // comment or split the pair early.
+  return `${NOT_ITERABLE_PREFIX}${encodeURIComponent(arrayExpr)}|${encodeURIComponent(filePath)}-->`
+}
+
+function warnNotIterable(arrayExpr: string, filePath: string): void {
+  // The inline comment is only visible to someone already reading the built
+  // HTML, and the reported case was found exactly that way -- by inspecting
+  // dist for an attribute that never arrived, after a build that reported
+  // success (#1842).
+  //
+  // The overwhelmingly common cause is naming a value that is not server data:
+  // a plain <script> is CLIENT-side in stx, so its `const` is not in scope
+  // here, and only <script server> is.
+  console.warn(
+    `[stx] @foreach(${arrayExpr}) in ${filePath}: `
+    + `${arrayExpr} is not iterable server-side, so the loop rendered nothing. `
+    + `Values a server loop reads must come from <script server> or the page context — `
+    + `a plain <script> runs in the browser.`,
+  )
+}
+
+/**
+ * Print the "not iterable" warning for every loop still in `html`, and strip
+ * the markers. Call it after the conditionals around the loops are decided.
+ */
+export function reportDeferredLoopWarnings(html: string): string {
+  if (!html.includes(NOT_ITERABLE_PREFIX))
+    return html
+  return html.replace(NOT_ITERABLE_MARK, (_, arrayExpr: string, filePath: string) => {
+    warnNotIterable(decodeURIComponent(arrayExpr), decodeURIComponent(filePath))
+    return ''
+  })
+}
+
+/**
+ * Expand `@forelse`, `@foreach`, `@for` and `@while`.
+ *
+ * `deferWarnings` is for callers that decide the surrounding conditionals
+ * afterwards: the "not iterable" warning is then left in the output as a marker
+ * for `reportDeferredLoopWarnings`, so a loop in a branch that loses stays
+ * quiet. Without it the warning is reported before this returns, still
+ * skipping loops whose branch lost inside an enclosing iteration.
+ */
+export function processLoops(template: string, context: Record<string, any>, filePath: string, options?: StxOptions, deferWarnings = false): string {
   let output = template
 
   // Process @forelse loops using balanced parsing (handles nested parens and nested @forelse)
@@ -854,21 +920,11 @@ export function processLoops(template: string, context: Record<string, any>, fil
             isObjectEntries = true
           }
           else {
-            // Also say it at build time. The inline comment is only visible to
-            // someone already reading the built HTML, and the reported case was
-            // found exactly that way — by inspecting dist for an attribute that
-            // never arrived, after a build that reported success (#1842).
-            //
-            // The overwhelmingly common cause is naming a value that is not
-            // server data: a plain <script> is CLIENT-side in stx, so its
-            // `const` is not in scope here, and only <script server> is.
-            console.warn(
-              `[stx] @foreach(${trimmedArrayExpr}) in ${filePath}: `
-              + `${trimmedArrayExpr} is not iterable server-side, so the loop rendered nothing. `
-              + `Values a server loop reads must come from <script server> or the page context — `
-              + `a plain <script> runs in the browser.`,
-            )
-            const errorMsg = inlineError('Foreach', `Error in @foreach: ${trimmedArrayExpr} is not iterable`, ErrorCodes.TYPE_ERROR)
+            // Also say it at build time (#1842) -- but only once the branch
+            // this loop sits in is known to have been taken. See
+            // `notIterableMark`.
+            const errorMsg = notIterableMark(trimmedArrayExpr, filePath)
+              + inlineError('Foreach', `Error in @foreach: ${trimmedArrayExpr} is not iterable`, ErrorCodes.TYPE_ERROR)
             result = result.substring(0, start) + errorMsg + result.substring(end)
             continue
           }
@@ -1087,7 +1143,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
   const maxWhileIterations = options?.loops?.maxWhileIterations ?? DEFAULT_MAX_WHILE_ITERATIONS
   output = processWhileLoops(output, context, maxWhileIterations)
 
-  return output
+  return deferWarnings ? output : reportDeferredLoopWarnings(output)
 }
 
 // =============================================================================

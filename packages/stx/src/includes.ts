@@ -1437,11 +1437,12 @@ catch (e) {
       }
 
       // Process loops first to handle array iterations
-      const { processLoops } = await import('./loops')
-      let processedContent = processLoops(workingContent, includeContext, includeFilePath)
+      const { processLoops, reportDeferredLoopWarnings } = await import('./loops')
+      let processedContent = processLoops(workingContent, includeContext, includeFilePath, undefined, true)
 
-      // Process conditionals
+      // Process conditionals, then warn about the loops that survived them.
       processedContent = processConditionals(processedContent, includeContext, includeFilePath)
+      processedContent = reportDeferredLoopWarnings(processedContent)
 
       // Process expressions.
       // The partial's <script> was stripped above (line ~925) so the style/script
