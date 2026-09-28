@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.319...v0.2.320)
+
+## 🐛 Bug Fixes
+
+- **image**: never paint a placeholder behind a transparent image, and clear it on load ([98593a9](https://github.com/stacksjs/stx/commit/98593a9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **includes**: only warn about unscoped signals when a partial declares them ([265ff40](https://github.com/stacksjs/stx/commit/265ff40)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.320 ([c189da1](https://github.com/stacksjs/stx/commit/c189da1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.318...v0.2.319)
 
 ## 🐛 Bug Fixes
