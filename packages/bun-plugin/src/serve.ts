@@ -1619,8 +1619,18 @@ export async function serve(options: ServeOptions): Promise<void> {
   | { type: 'build-error', errors: BuildErrorPayload[] }
   const hmrClients = new Set<ReadableStreamDefaultController<Uint8Array>>()
   const hmrEncoder = new TextEncoder()
+  // Counts the changes this server has pushed. A page is rendered with the
+  // version it was built at, every event carries the version it moves the
+  // page to, and the stream's opening line says where the server is now — so
+  // a client that reconnects after being away (back/forward cache, a dropped
+  // stream, a restarted server that starts again at 0) can tell it missed
+  // something and reload instead of staying stale. Build errors do not count:
+  // the overlay is replayed on connect anyway.
+  let hmrVersion = 0
   function broadcastHmr(event: HmrEvent): void {
-    const payload = hmrEncoder.encode(`data: ${JSON.stringify(event)}\n\n`)
+    if (event.type !== 'build-error')
+      hmrVersion++
+    const payload = hmrEncoder.encode(`data: ${JSON.stringify({ ...event, version: hmrVersion })}\n\n`)
     for (const c of hmrClients) {
       try { c.enqueue(payload) }
       catch { hmrClients.delete(c) }
@@ -1633,6 +1643,15 @@ export async function serve(options: ServeOptions): Promise<void> {
   // browser re-fetches without dropping JS state. EventSource auto-reconnects
   // for transient failures; the `onerror` guard also reloads if the server
   // restarted entirely (readyState transitions to CLOSED).
+  //
+  // The stream is closed on `pagehide` and reopened on a `pageshow` that
+  // restores the page. Chrome keeps pages you navigate away from alive in the
+  // back/forward cache WITH their EventSource connected, and HTTP/1.1 gives a
+  // host six sockets: after a handful of page loads in one tab every request
+  // the live page makes — its API calls, its images — queued behind streams
+  // held by pages nobody was looking at, and the page hung on its spinner.
+  // Reopening compares versions (see `hmrVersion`), so a page restored after
+  // an edit reloads rather than showing what it was cached with.
   // The build-error overlay (#1884 ask 2). Kept out of the one-liner below
   // because it is the only part anyone will need to read.
   //
@@ -1681,7 +1700,7 @@ function __stxOverlay(errs){
 }
 `
 
-  const HMR_CLIENT_SCRIPT = `<script data-stx-hmr>(()=>{if(window.__stxHmr)return;window.__stxHmr=1;${HMR_OVERLAY_JS}function bust(){var ls=document.querySelectorAll('link[rel="stylesheet"]');for(var i=0;i<ls.length;i++){var l=ls[i];var u=new URL(l.href,location.href);u.searchParams.set('v',Date.now().toString(36));l.href=u.toString()}}var es=new EventSource('/_stx/hmr');function swapFragment(){var r=window.stxRouter;if(r&&typeof r.refresh==='function'){try{return r.refresh().then(function(ok){if(!ok)location.reload()},function(){location.reload()})}catch(_){location.reload()}}else{location.reload()}}function reloadStores(){var s=window.stx;if(!s||typeof s.__hmrReplaceStores!=='function'){location.reload();return}fetch('/_stx/stores.js',{cache:'no-store'}).then(function(r){return r.ok?r.text():null}).then(function(code){if(code===null){location.reload();return}s.__hmrReplaceStores(code)}).catch(function(){location.reload()})}es.onmessage=function(e){try{var m=JSON.parse(e.data);if(m.type==='reload')location.reload();else if(m.type==='css')bust();else if(m.type==='fragment')swapFragment();else if(m.type==='store')reloadStores();else if(m.type==='build-error')__stxOverlay(m.errors)}catch(_){}};es.onerror=function(){if(es.readyState===2){setTimeout(function(){location.reload()},400)}}})()</script>`
+  const HMR_CLIENT_SCRIPT = `<script data-stx-hmr>(()=>{if(window.__stxHmr)return;window.__stxHmr=1;${HMR_OVERLAY_JS}function bust(){var ls=document.querySelectorAll('link[rel="stylesheet"]');for(var i=0;i<ls.length;i++){var l=ls[i];var u=new URL(l.href,location.href);u.searchParams.set('v',Date.now().toString(36));l.href=u.toString()}}var version=__STX_HMR_VERSION__,es=null;function swapFragment(){var r=window.stxRouter;if(r&&typeof r.refresh==='function'){try{return r.refresh().then(function(ok){if(!ok)location.reload()},function(){location.reload()})}catch(_){location.reload()}}else{location.reload()}}function reloadStores(){var s=window.stx;if(!s||typeof s.__hmrReplaceStores!=='function'){location.reload();return}fetch('/_stx/stores.js',{cache:'no-store'}).then(function(r){return r.ok?r.text():null}).then(function(code){if(code===null){location.reload();return}s.__hmrReplaceStores(code)}).catch(function(){location.reload()})}function connect(){var source=new EventSource('/_stx/hmr');es=source;source.onmessage=function(e){try{var m=JSON.parse(e.data);if(m.type==='connected'){if(typeof m.version==='number'&&m.version!==version)location.reload();return}if(typeof m.version==='number')version=m.version;if(m.type==='reload')location.reload();else if(m.type==='css')bust();else if(m.type==='fragment')swapFragment();else if(m.type==='store')reloadStores();else if(m.type==='build-error')__stxOverlay(m.errors)}catch(_){}};source.onerror=function(){if(es===source&&source.readyState===2){setTimeout(function(){location.reload()},400)}}}connect();addEventListener('pagehide',function(){if(es){es.close();es=null}});addEventListener('pageshow',function(e){if(e.persisted&&!es)connect()})})()</script>`
   // Append the HMR client just before </body>. Uses `lastIndexOf` per
   // CLAUDE.md item 24 — the first `</body>` in the document can live inside
   // a `<script>` string (e.g. the router/runtime bundle) and `replace` would
@@ -1691,12 +1710,15 @@ function __stxOverlay(errs){
     // Whatever the render just recorded is what the overlay should show. Fired
     // and forgotten: the response must not wait on reading source files.
     void refreshBuildErrors()
+    // The version this document was rendered at, so the client can tell on
+    // connect whether a change landed before its stream opened.
+    const client = HMR_CLIENT_SCRIPT.replace('__STX_HMR_VERSION__', String(hmrVersion))
     const closeBody = html.lastIndexOf('</body>')
     if (closeBody === -1) {
       // No `</body>` (fragment / non-document response). Append.
-      return html + HMR_CLIENT_SCRIPT
+      return html + client
     }
-    return html.slice(0, closeBody) + HMR_CLIENT_SCRIPT + html.slice(closeBody)
+    return html.slice(0, closeBody) + client + html.slice(closeBody)
   }
 
   /**
@@ -3743,7 +3765,7 @@ function __stxOverlay(errs){
                       hmrClients.add(c)
                       // Initial line — proves the connection is live to the browser
                       // and gives the readyState a definite "open" before any change.
-                      c.enqueue(hmrEncoder.encode('data: {"type":"connected"}\n\n'))
+                      c.enqueue(hmrEncoder.encode(`data: {"type":"connected","version":${hmrVersion}}\n\n`))
                       // Replay the current build errors. On a full page load the
                       // response is sent before this EventSource exists, so a
                       // broadcast alone reaches only the PREVIOUS page's
