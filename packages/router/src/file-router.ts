@@ -71,13 +71,35 @@ export class Router {
 
     const extensions = config.extensions || ['.stx']
 
+    // Resolved against `baseDir` like the roots, compared as real paths so a
+    // symlinked spelling of the same directory still matches, and matched as
+    // a file or a directory prefix.
+    const canonical = (entry: string): string => {
+      const resolved = path.resolve(baseDir, entry)
+      try {
+        return fs.realpathSync(resolved)
+      }
+      catch {
+        return resolved
+      }
+    }
+    const excluded = (config.exclude ?? [])
+      .filter(entry => typeof entry === 'string' && entry.trim() !== '')
+      .map(canonical)
+    const isExcluded = (file: string): boolean => {
+      if (excluded.length === 0)
+        return false
+      const real = canonical(file)
+      return excluded.some(root => real === root || real.startsWith(`${root}${path.sep}`))
+    }
+
     // Scan each root and bucket files by their resulting URL pattern.
     // Earlier roots win, so a user's `resources/views/cart.stx` shadows
     // the framework's `storage/framework/defaults/resources/views/cart.stx`.
     const seenPatterns = new Set<string>()
     this.routes = []
     for (const dir of this.pagesDirs) {
-      const files = scanDirectory(dir, extensions)
+      const files = scanDirectory(dir, extensions).filter(file => !isExcluded(file))
       const localPatterns = new Map<string, string>()
       for (const filePath of files) {
         const pattern = filePathToPattern(filePath, dir)

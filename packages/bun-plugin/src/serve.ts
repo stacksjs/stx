@@ -16,7 +16,7 @@
 import type { CssConfig } from '@stacksjs/ts-css/engine'
 import type { SQLQueryBindings } from 'bun:sqlite'
 import { serve as bunServe, Glob } from 'bun'
-import { existsSync, watch as fsWatch, statSync } from 'node:fs'
+import { existsSync, watch as fsWatch, realpathSync, statSync } from 'node:fs'
 import nodeFs from 'node:fs/promises'
 import nodePath from 'node:path'
 import process from 'node:process'
@@ -712,8 +712,57 @@ export function boundedCache<T>(limit: number): {
   }
 }
 
+/**
+ * A predicate over discovered page files for {@link ServeOptions.exclude}.
+ *
+ * Paths are compared resolved, because patterns and exclusions reach serve()
+ * spelled however the caller built them - relative, absolute, with a trailing
+ * slash - and a spelling mismatch must not quietly put a page back.
+ */
+export function pageExcluder(exclude: readonly string[] | undefined, cwd: string = process.cwd()): (file: string) => boolean {
+  // Real paths where they exist. The working directory is usually already
+  // resolved and an absolute entry usually is not - macOS hands out
+  // `/var/...` for what the process sees as `/private/var/...` - and the two
+  // spellings of one directory must still match.
+  const canonical = (entry: string): string => {
+    const resolved = nodePath.resolve(cwd, entry)
+    try {
+      return realpathSync(resolved)
+    }
+    catch {
+      return resolved
+    }
+  }
+  const roots = (exclude ?? [])
+    .filter(entry => typeof entry === 'string' && entry.trim() !== '')
+    .map(canonical)
+  if (roots.length === 0)
+    return () => false
+  return (file: string) => {
+    const resolved = canonical(file)
+    return roots.some(root => resolved === root || resolved.startsWith(`${root}${nodePath.sep}`))
+  }
+}
+
 export interface ServeOptions {
   patterns: string[]
+  /**
+   * Page files to leave out of routing even though a pattern directory holds
+   * them. Each entry is a file, or a directory whose whole subtree is left
+   * out, absolute or relative to the working directory.
+   *
+   * A pattern is a page ROOT: a file's URL is its path relative to the
+   * pattern that holds it. So a framework shipping a tree of default pages
+   * could only take all of a root or none of it, and an app wanting the
+   * framework's `/404` without its `/login` had no way to say so. Dropping
+   * `login.stx` from the patterns is not an option either - listed on its own
+   * it is no longer under a root, and its URL becomes its file path.
+   *
+   * An excluded file is not a route, is not in the route manifest, and is
+   * not listed on the development 404 page. It can still be included,
+   * extended or rendered by path like any other template.
+   */
+  exclude?: string[]
   port?: number
   /**
    * Initial same-origin path opened by the `o + Enter` browser shortcut.
@@ -1384,6 +1433,7 @@ export async function serve(options: ServeOptions): Promise<void> {
   }
 
   let sourceFiles: string[] | null = null
+  const isExcludedPage = pageExcluder(options.exclude)
   /** Route paths derived from discovered `.stx` views — used to rewrite `<a href>` for non-default locales. */
   let discoveredPagePaths: Set<string> | null = null
   let assetsInitialized = false
@@ -2202,13 +2252,17 @@ function __stxOverlay(errs){
       }
     }
 
-    sourceFiles = files
-    rebuildDiscoveredPagePaths(files)
+    // After discovery rather than inside each branch, so a directory, a glob
+    // and a file pattern all honour the same list.
+    const kept = files.filter(f => !isExcludedPage(f))
+
+    sourceFiles = kept
+    rebuildDiscoveredPagePaths(kept)
 
     // Build the page-middleware index (Laravel-style named middleware).
     pageMiddlewareByPath.clear()
     pageMiddlewarePatterns.length = 0
-    await Promise.all(files.map(f => detectPageMiddleware(f)))
+    await Promise.all(kept.map(f => detectPageMiddleware(f)))
 
     // Generate route manifest and type declarations into the state directory.
     // Pass ALL patterns as a stack of page roots so frameworks can ship
@@ -2218,7 +2272,7 @@ function __stxOverlay(errs){
     try {
       const { Router } = await import('stx-router')
       const pagesDirs = patterns.map(p => p.replace(/\/$/, '')).filter(Boolean)
-      const router = new Router(process.cwd(), { pagesDirs, stateDir: stateDirName() })
+      const router = new Router(process.cwd(), { pagesDirs, stateDir: stateDirName(), exclude: options.exclude })
       if (!options.quiet)
         console.log(`[stx] Generated ${router.routes.length} routes → ${nodePath.join(stateDirName(), 'routes.ts')}`)
     }
@@ -2226,7 +2280,7 @@ function __stxOverlay(errs){
       // Non-fatal — route generation is optional
     }
 
-    return files
+    return kept
   }
 
   // Lazy asset copy function

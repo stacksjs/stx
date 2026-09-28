@@ -52,6 +52,13 @@ export interface RouterConfig {
    * a project's committed manifest with an empty one.
    */
   emit?: boolean
+  /**
+   * Page files left out of the route table even though a page root holds
+   * them: a file, or a directory whose subtree is left out, absolute or
+   * relative to `baseDir`. The same list stx-serve's `exclude` takes, so the
+   * manifest describes the routes the server actually answers.
+   */
+  exclude?: string[]
   extensions?: string[]
   layouts?: boolean
   middleware?: boolean
