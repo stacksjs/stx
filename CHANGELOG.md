@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.318...v0.2.319)
+
+## 🐛 Bug Fixes
+
+- **serve**: an earlier page root wins at a dynamic path too ([8c60cb8](https://github.com/stacksjs/stx/commit/8c60cb8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.319 ([dfba1a0](https://github.com/stacksjs/stx/commit/dfba1a0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.317...v0.2.318)
 
 ## ✨ Features
