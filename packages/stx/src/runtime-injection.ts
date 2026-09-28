@@ -13,6 +13,7 @@ import { BROWSER_CORE_IMPORTS } from './browser-core-imports'
 import { getOwnedRouteMatchers } from './owned-routes'
 import { toScriptJson } from './script-json'
 import { findBodyOpenTag, replaceBodyOpenTag } from './find-body-tag'
+import { findFirstScriptTag } from './first-script-tag'
 // Static: `builtins/tooltip` exports one pure function and imports nothing, so
 // there is no cycle and no cost to pulling it in here.
 import { getTooltipRuntime } from './builtins/tooltip'
@@ -238,7 +239,9 @@ export function outputNeedsSignalsRuntime(html: string): boolean {
  * the document.
  */
 function placeRuntimeTag(template: string, runtimeScript: string): string {
-  const firstScript = template.indexOf('<script')
+  // Not `indexOf('<script')`: the first `<script` can be inert template
+  // content, and a runtime placed beside it never runs (see first-script-tag).
+  const firstScript = findFirstScriptTag(template)
   const doctype = template.search(/<!doctype\b/i)
 
   if (firstScript !== -1 && (doctype === -1 || firstScript > doctype))
