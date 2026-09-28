@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.317...v0.2.318)
+
+## ✨ Features
+
+- **serve**: exclude page files a pattern root holds ([85d3a4b](https://github.com/stacksjs/stx/commit/85d3a4b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.318 ([130be6e](https://github.com/stacksjs/stx/commit/130be6e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.316...v0.2.317)
 
 ## 🐛 Bug Fixes
