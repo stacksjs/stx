@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.321...v0.2.322)
+
+## 🐛 Bug Fixes
+
+- **image**: name alpha-capable variants by encoder, so an encoder fix reaches them ([203b56d](https://github.com/stacksjs/stx/commit/203b56d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **serve**: count a <StxImage> wrapper component only when something renders it ([71d8c23](https://github.com/stacksjs/stx/commit/71d8c23)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **serve**: run the startup image pass on a worker thread ([faa6e27](https://github.com/stacksjs/stx/commit/faa6e27)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.322 ([826623b](https://github.com/stacksjs/stx/commit/826623b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.320...v0.2.321)
 
 ## 🐛 Bug Fixes
