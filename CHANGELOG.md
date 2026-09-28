@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.316...v0.2.317)
+
+## 🐛 Bug Fixes
+
+- **router**: a layout change carries the page's module registry ([1ff156f](https://github.com/stacksjs/stx/commit/1ff156f)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1957](https://github.com/stacksjs/stx/issues/1957))
+
+## 🔧 Chores
+
+- release v0.2.317 ([e9674f1](https://github.com/stacksjs/stx/commit/e9674f1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.315...v0.2.316)
 
 ## 🐛 Bug Fixes
