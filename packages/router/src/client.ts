@@ -836,7 +836,7 @@ else {
     if(!target||!target.focus)return;
     // The container is not naturally focusable. tabindex="-1" makes it
     // programmatically focusable without inserting it into the tab order.
-    if(!target.hasAttribute('tabindex'))target.setAttribute('tabindex','-1');
+    if(!target.hasAttribute('tabindex')){target.setAttribute('tabindex','-1');target.setAttribute('data-stx-route-focus','')}
     // preventScroll because scroll position is already decided just above —
     // focusing would otherwise fight scrollToTop and the hash scrollIntoView.
     try{target.focus({preventScroll:true})}catch(e){try{target.focus()}catch(e2){}}
@@ -2029,7 +2029,10 @@ else {
       var sanitize=function(v){return String(v).replace(/[;{}()"'\\\\<>\\n\\r\\t]/g,'')};
       var pc=sanitize(o.progressColor);
       var ph=sanitize(o.progressHeight);
-      var css='.stx-navigating{cursor:wait}.stx-navigating a,.stx-navigating button{pointer-events:none}#stx-router-progress{position:fixed;top:0;left:0;right:0;height:'+ph+';background:'+pc+';box-shadow:0 0 8px '+pc+',0 0 4px '+pc+';transform:scaleX(0);transform-origin:left;transition:transform .18s ease-out,opacity .26s ease;opacity:0;pointer-events:none;z-index:999999}';
+      // The container the router focuses after a navigation is not a
+      // control, so it draws no focus ring: Safari drew one around the whole
+      // page, a blue line along its bottom edge on every screen.
+      var css='[data-stx-route-focus]:focus{outline:none}.stx-navigating{cursor:wait}.stx-navigating a,.stx-navigating button{pointer-events:none}#stx-router-progress{position:fixed;top:0;left:0;right:0;height:'+ph+';background:'+pc+';box-shadow:0 0 8px '+pc+',0 0 4px '+pc+';transform:scaleX(0);transform-origin:left;transition:transform .18s ease-out,opacity .26s ease;opacity:0;pointer-events:none;z-index:999999}';
       if(o.viewTransitions&&'startViewTransition' in document){
         var dur=(o.viewTransitionDuration||220)+'ms';
         var ease=o.viewTransitionEasing||'cubic-bezier(0.16, 1, 0.3, 1)';

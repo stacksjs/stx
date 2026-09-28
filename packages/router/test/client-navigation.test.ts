@@ -571,6 +571,28 @@ describe('aria-current across fragment swaps', () => {
   })
 })
 
+describe('focus after an in-app navigation', () => {
+  it('focuses the new page without drawing a ring around it', async () => {
+    const window = installRouter(`
+      <html>
+        <head></head>
+        <body>
+          <nav><a data-stx-link href="/next">Next</a></nav>
+          <main>First</main>
+        </body>
+      </html>
+    `, async () => response('<section><h1>Next</h1></section>', { 'X-STX-Fragment': 'true', 'X-STX-Layout': '', 'X-STX-Layout-Group': 'app' }))
+
+    await window.stxRouter.navigate('/next')
+    await waitForRouterSwap()
+
+    const main = window.document.querySelector('main')!
+    expect(main.getAttribute('tabindex')).toBe('-1')
+    expect(main.hasAttribute('data-stx-route-focus')).toBe(true)
+    expect(window.document.getElementById('stx-r-css')?.textContent).toContain('[data-stx-route-focus]:focus{outline:none}')
+  })
+})
+
 describe('nav links after an in-app navigation', () => {
   it('stay exact-only, as they are on a full load of the same URL', async () => {
     const window = installRouter(`
