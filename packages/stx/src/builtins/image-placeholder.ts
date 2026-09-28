@@ -24,6 +24,7 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import { sourceAlpha } from './image-alpha'
 
 /** A placeholder ready to be dropped into markup. */
 export interface ImagePlaceholder {
@@ -280,9 +281,25 @@ export async function warmImagePlaceholders(
     if (stat.size > maxBytes) return
 
     const cached = cache[urlPath]
-    if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size && typeof cached.transparent === 'boolean') {
-      placeholders.set(urlPath, { dataUrl: cached.dataUrl, color: cached.color, transparent: cached.transparent })
-      return
+    if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) {
+      // An entry written before transparency was recorded has everything but
+      // that answer. For a source whose header rules alpha out -- every JPEG,
+      // and most PNG and WebP -- the answer is already known to be `false`,
+      // which is exactly what a re-derive would compute, so the entry is
+      // upgraded in place instead of decoding the whole file again. Only the
+      // sources that may really be transparent pay for the decode. Every
+      // deployed app hit this on its first start after the field was added,
+      // with its whole image tree going cold at once.
+      let transparent = cached.transparent
+      if (typeof transparent !== 'boolean' && sourceAlpha(filePath) === 'none') {
+        transparent = false
+        cache[urlPath] = { ...cached, transparent }
+        cacheDirty = true
+      }
+      if (typeof transparent === 'boolean') {
+        placeholders.set(urlPath, { dataUrl: cached.dataUrl, color: cached.color, transparent })
+        return
+      }
     }
 
     try {

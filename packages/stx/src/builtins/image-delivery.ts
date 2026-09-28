@@ -4,6 +4,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { decode, generateThumbHash } from 'ts-images'
 import { createImageDeliveryCatalog } from 'ts-images/delivery'
+import { readAt, sourceAlpha, webpHeaderHasAlpha } from './image-alpha'
+
+export { webpHeaderHasAlpha }
 
 const RASTER_EXTENSIONS = new Set(['.avif', '.jpeg', '.jpg', '.png', '.webp'])
 const DEFAULT_WIDTHS = [320, 640, 960, 1280, 1920] as const
@@ -129,68 +132,15 @@ function deliveryEntries(files: RasterFile[], alphaStorage: ImageDeliveryStorage
   }))
 }
 
-function readAt(fd: number, position: number, length: number): Buffer {
-  const buffer = Buffer.alloc(length)
-  const read = fs.readSync(fd, buffer, 0, length, position)
-  return buffer.subarray(0, read)
-}
-
-/**
- * Whether a WebP header declares an alpha channel.
- *
- * A simple `VP8 ` frame cannot hold one at all; `VP8X` says so in its flags and
- * `VP8L` in the `alpha_is_used` bit after the dimensions.
- */
-export function webpHeaderHasAlpha(header: Uint8Array): boolean {
-  if (header.length < 25) return false
-  const text = (start: number, end: number) => String.fromCharCode(...header.subarray(start, end))
-  if (text(0, 4) !== 'RIFF' || text(8, 12) !== 'WEBP') return false
-  const chunk = text(12, 16)
-  if (chunk === 'VP8X') return (header[20] & 0x10) !== 0
-  if (chunk === 'VP8L') {
-    const bits = header[21] | (header[22] << 8) | (header[23] << 16) | (header[24] << 24)
-    return ((bits >>> 28) & 1) === 1
-  }
-  return false
-}
-
 /**
  * Whether a source file can carry transparency, from its header alone.
  *
  * Read before the catalog is built, since the answer picks the namespace the
- * variants are named under. PNG says so with its colour type or a `tRNS` chunk
- * (which must precede the first `IDAT`, so the walk stops there and never reads
- * pixel data). JPEG cannot; AVIF is left to the decode that follows.
+ * variants are named under. Only a header that declares alpha counts: JPEG
+ * cannot carry it, and AVIF is left to the decode that follows.
  */
 function mayHaveAlpha(file: string): boolean {
-  let fd: number | undefined
-  try {
-    fd = fs.openSync(file, 'r')
-    const head = readAt(fd, 0, 33)
-    if (head.length >= 26 && head[0] === 0x89 && head.toString('latin1', 1, 4) === 'PNG') {
-      const colorType = head[25]
-      if (colorType === 4 || colorType === 6) return true
-      let offset = 8
-      for (let i = 0; i < 64; i++) {
-        const chunk = readAt(fd, offset, 8)
-        if (chunk.length < 8) return false
-        const type = chunk.toString('latin1', 4, 8)
-        if (type === 'tRNS') return true
-        if (type === 'IDAT' || type === 'IEND') return false
-        offset += 12 + chunk.readUInt32BE(0)
-      }
-      return false
-    }
-    if (head.length >= 25 && head.toString('latin1', 0, 4) === 'RIFF')
-      return webpHeaderHasAlpha(head)
-    return false
-  }
-  catch {
-    return false
-  }
-  finally {
-    if (fd !== undefined) fs.closeSync(fd)
-  }
+  return sourceAlpha(file) === 'possible'
 }
 
 function hasVisibleAlpha(rgba: Uint8Array | Uint8ClampedArray): boolean {
