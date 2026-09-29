@@ -16,6 +16,52 @@ stx automatically escapes output by default:
 <div>&#123;&#123;&#123; trustedHtml &#125;&#125;&#125;</div>
 ```
 
+### URL schemes in attributes
+
+Escaping stops a value from breaking out of its attribute. It does nothing about
+what the attribute *means*: `javascript:alert(1)` contains no character an HTML
+escape touches, so escaping alone left `<a href="{{ url }}">` clickable when the
+URL came from a database row or an API.
+
+A value that lands where a URL attribute's scheme is read is checked, and a
+scheme that can run script is refused -- prefixed `unsafe:`, which is an unknown
+scheme, so the browser does nothing with it, and the value stays readable to
+whoever is debugging it:
+
+```stx
+<!-- href="unsafe:javascript:alert(1)" -->
+<a href="{{ url }}">Profile</a>
+
+<!-- Same for the components that write a URL for you -->
+<StxLink :to="user.website">Website</StxLink>
+<StxImage :src="row.avatar" alt="" />
+
+<!-- And for a URL bound at runtime -->
+<a x-href="profileUrl">Profile</a>
+```
+
+What is deliberately *not* checked matters as much:
+
+| Case | Behaviour | Why |
+|---|---|---|
+| `title="{{ text }}"`, `<p>{{ text }}</p>` | untouched | not a URL |
+| `href="/search?q={{ term }}"` | untouched | a scheme can only be at the start of a URL |
+| `{!! url !!}` | untouched | the raw form is how a template says it vouches for a value |
+| `src="data:image/..."` | still loads | inline images are a normal pattern; only data URLs carrying a *document* are refused |
+
+Refused schemes: `javascript:`, `vbscript:`, `livescript:`, `mocha:`,
+`view-source:`, and the data URLs that carry a document (`data:text/html`,
+`data:application/xhtml+xml`, plus `data:image/svg+xml` where it would be
+navigated to rather than loaded as an image). Spelling does not help an
+attacker: whitespace, control characters and case are normalised first, so
+`java\tscript:` and `JavaScript:` are read as what they are, and an
+entity-encoded spelling never becomes a scheme because the HTML escape runs
+first.
+
+The rules live in one module, `packages/stx/src/url-safety.ts`, because four
+places need to agree on them: template interpolation, the signals runtime,
+`<StxLink>` and `<StxImage>`.
+
 ### CSRF Protection
 
 Built-in CSRF token generation and validation:
