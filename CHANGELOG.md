@@ -1,5 +1,26 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.337...v0.2.338)
+
+## 🐛 Bug Fixes
+
+- **server-script**: say so when a <script server> does not parse ([2830ed4](https://github.com/stacksjs/stx/commit/2830ed4)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **router**: the shipped script carries no debug logging ([338c066](https://github.com/stacksjs/stx/commit/338c066)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.338 ([641ce2b](https://github.com/stacksjs/stx/commit/641ce2b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release through @stacksjs/bumpx, not the unrelated npm 'bumpx' ([80202c3](https://github.com/stacksjs/stx/commit/80202c3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **bench**: cap the router script at 52KB, with the history behind it ([066b3c3](https://github.com/stacksjs/stx/commit/066b3c3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.336...v0.2.337)
 
 ## ✨ Features
