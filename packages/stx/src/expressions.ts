@@ -37,6 +37,7 @@ import { stripCommentsAndLiterals } from './strip-literals'
 import { createSafeFunction, getExpressionSafetyRule, safeEvaluate } from './safe-evaluator'
 import { createDetailedErrorMessage } from './utils'
 import { createPlaceholder } from './placeholder'
+import { neutralizeTemplateSyntax } from './template-syntax-escape'
 import { maskAtElementPosition, matchScriptElement, matchStyleElement, restoreStashedScripts, stashScriptElements, type TokenMatcher } from './html-masking'
 import { importsSignalDeclarations } from './imported-signals'
 
@@ -574,11 +575,7 @@ export function escapeHtml(unsafe: string): string {
  * decodes references before anything reads them.
  */
 export function escapeHtmlValue(unsafe: string): string {
-  return escapeHtml(unsafe)
-    // A run, not a single brace: `{{{ x }}}` with only its first brace encoded
-    // still leaves `{{ x }}` behind for the next pass to evaluate.
-    .replace(/\{{2,}/g, match => joinBraces(match.length))
-    .replace(/\{(?=!)/g, `&#123;${WORD_JOINER}`)
+  return neutralizeTemplateSyntax(escapeHtml(unsafe))
 }
 
 /**
@@ -596,13 +593,6 @@ export function escapeHtmlValue(unsafe: string): string {
  * to bind only what the compiler recorded, which is the better shape and a much
  * larger change than a security fix should carry.
  */
-const WORD_JOINER = '&#8288;'
-
-/** `{{` as `{` + joiner + `{`, so neither pass can read the run as syntax. */
-function joinBraces(length: number): string {
-  return Array.from({ length }, () => '&#123;').join(WORD_JOINER)
-}
-
 /**
  * Check if a template uses signals (state, derived, effect) in its script blocks
  * or has reactive attributes (@if, @for) with function call expressions
@@ -861,12 +851,9 @@ export function interpolateScriptAttributes(
       const value = evaluateExpression(expr, context)
       if (value === undefined) return match
       if (value === null) return ''
-      return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
+      // escapeHtmlValue escapes both quote characters, and neutralises the
+      // template syntax this attribute would otherwise hand to a later pass.
+      return escapeHtmlValue(String(value))
     }
     catch {
       return match
