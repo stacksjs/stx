@@ -1,5 +1,26 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.339...HEAD)
+
+## 🐛 Bug Fixes
+
+- **builtins**: StxLink and StxImage refuse a script scheme too ([ada04fb](https://github.com/stacksjs/stx/commit/ada04fb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: a bound URL cannot carry a script scheme either ([3a1cd21](https://github.com/stacksjs/stx/commit/3a1cd21)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **security**: a substituted value cannot introduce a URL scheme ([8a4e212](https://github.com/stacksjs/stx/commit/8a4e212)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 📚 Documentation
+
+- **security**: document what a URL attribute refuses, and what it does not ([ab8d5f8](https://github.com/stacksjs/stx/commit/ab8d5f8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧹 Chores
+
+- run @stacksjs/logsmith, not the unrelated npm 'logsmith' ([e8e8d0b](https://github.com/stacksjs/stx/commit/e8e8d0b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.338...v0.2.339)
 
 ## ✨ Features
