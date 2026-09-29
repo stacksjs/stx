@@ -1444,6 +1444,17 @@ catch (e) {
       processedContent = processConditionals(processedContent, includeContext, includeFilePath)
       processedContent = reportDeferredLoopWarnings(processedContent)
 
+      // The SEO directives read variables, and a head partial is where those
+      // are computed: the canonical URL, this page's preview card, structured
+      // data. Left for the page-level pass they were evaluated against the
+      // page's context, where the partial's own variables do not exist, and
+      // every tag naming one was dropped without a word. Resolve them here,
+      // in the partial's scope, like its expressions.
+      const { processMetaDirectives, processSeoDirective, processStructuredData } = await import('./seo')
+      processedContent = processMetaDirectives(processedContent, includeContext, includeFilePath, options)
+      processedContent = processStructuredData(processedContent, includeContext, includeFilePath)
+      processedContent = processSeoDirective(processedContent, includeContext, includeFilePath, options)
+
       // Process expressions.
       // The partial's <script> was stripped above (line ~925) so the style/script
       // extractors and the parent's client-script pipeline don't double-process it.
