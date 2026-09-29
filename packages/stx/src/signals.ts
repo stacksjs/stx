@@ -2878,6 +2878,33 @@ catch (e2) {
 
     // Known directive names to exclude from generic :attr binding
     var DIRECTIVE_NAMES = {class:1, style:1, text:1, html:1, show:1, model:1, 'if':1, ref:1};
+
+    // A bound value cannot introduce a URL scheme the page did not ask for.
+    // This is the client half of url-safety.ts: the server refuses a scheme
+    // substituted into an href, and x-href over a signal reaches the same
+    // attribute by another road. Same policy, same unsafe: prefix, so a page
+    // behaves the same whether the value arrived at render or at runtime.
+    var URL_NAV_ATTR = {href:1, 'xlink:href':1, action:1, formaction:1, ping:1, cite:1, manifest:1, data:1, to:1};
+    var URL_FETCH_ATTR = {src:1, srcset:1, poster:1, background:1};
+    var urlRefusalWarned = false;
+    function safeUrlAttr(attrName, value) {
+      var navigable = URL_NAV_ATTR[attrName];
+      if (!navigable && !URL_FETCH_ATTR[attrName]) return value;
+      if (typeof value !== 'string' || !value) return value;
+      // Browsers ignore ASCII whitespace and controls inside a scheme and match
+      // it case-insensitively, so the spellings collapse before the test.
+      var probe = value.replace(/[\\u0000-\\u0020\\u00a0\\u2000-\\u200f\\u2028\\u2029\\ufeff]+/g, '').toLowerCase();
+      var refused = /^(?:javascript|vbscript|livescript|mocha|view-source):/.test(probe)
+        || (navigable
+          ? /^data:(?:text\\/html|text\\/xml|application\\/xhtml\\+xml|application\\/xml|image\\/svg\\+xml)/.test(probe)
+          : /^data:(?:text\\/html|application\\/xhtml\\+xml)/.test(probe));
+      if (!refused) return value;
+      if (!urlRefusalWarned) {
+        urlRefusalWarned = true;
+        console.warn('[stx] refused a ' + attrName + ' value whose scheme can run script: ' + probe.slice(0, 24));
+      }
+      return 'unsafe:' + value;
+    }
     // SVG attributes are case-sensitive, but the HTML parser lowercases
     // prefixed attribute names — ':viewBox' arrives as ':viewbox' because
     // the spec's "adjust SVG attributes" step only covers unprefixed names.
@@ -2985,7 +3012,7 @@ else {
               try { attrValue = JSON.stringify(v); }
               catch (e) { attrValue = String(v); }
             }
-            el.setAttribute(attrName, attrValue);
+            el.setAttribute(attrName, safeUrlAttr(attrName, attrValue));
           }
         });
         el.removeAttribute(name);

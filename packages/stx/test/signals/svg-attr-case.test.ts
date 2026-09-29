@@ -41,7 +41,11 @@ describe('signals runtime — SVG attribute case adjustment', () => {
     expect(bindIdx).toBeGreaterThan(-1)
     // The adjustment happens before the effect that applies the live value.
     const effectIdx = runtime.indexOf('effect(', bindIdx)
-    const setAttributeIdx = runtime.indexOf('el.setAttribute(attrName, attrValue)', effectIdx)
+    // Matched by shape, not by the exact argument text: this assertion once
+    // anchored on `el.setAttribute(attrName, attrValue)` and broke when the
+    // value gained a URL-scheme guard, which is not what it is testing.
+    const setAttributeIdx = runtime.slice(effectIdx).search(/el\.setAttribute\(attrName,[^)]*attrValue/)
+      + effectIdx
     expect(effectIdx).toBeGreaterThan(bindIdx)
     expect(setAttributeIdx).toBeGreaterThan(effectIdx)
   })
