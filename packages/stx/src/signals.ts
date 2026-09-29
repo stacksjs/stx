@@ -4520,9 +4520,27 @@ catch (e) {
       // branch rendered blank the moment the markup was well-formed enough to
       // survive as a real <template> (the #1784 markup fix). See #1784.
       b.isTemplate = b.el.tagName === 'TEMPLATE';
-      b.nodes = b.isTemplate
-        ? Array.prototype.slice.call(b.el.content.cloneNode(true).childNodes)
-        : [b.el];
+      // A template branch renders CLONES, re-cloned on every show, and marks
+      // where they end -- the same contract the single-template :if got in
+      // #1955. Its content was cloned once here and that one node set was
+      // toggled in and out, which broke two ways as soon as the branch held a
+      // structural directive: a :for inside it replaces its own source element
+      // with a placeholder comment and renders rows as SIBLINGS, so hiding
+      // removed neither (the rows were never in this list, and the source node
+      // it did hold was already detached, so the parentNode guard skipped it)
+      // and both branches stayed on screen at once. Re-showing then re-inserted
+      // that source element, painting the literal text of its interpolations.
+      // An element branch still owns exactly the node it was bound to: whatever
+      // a directive inside it renders is inside that element.
+      // Snapshot the content BEFORE anything processes it, and clone each show
+      // from the snapshot rather than from the live template. A nested :for
+      // does not leave content pristine -- processing moves its row source out
+      // and the attributes it consumed (x-model, :id) do not come back -- so a
+      // second clone taken from the element would arrive already stripped, with
+      // no binding and no way to acquire one.
+      b.pristine = b.isTemplate ? b.el.content.cloneNode(true) : null;
+      b.nodes = b.isTemplate ? [] : [b.el];
+      b.endMarker = null;
       b.el.remove();
       b.childrenProcessed = false;
     });
@@ -4606,17 +4624,53 @@ catch (e2) {
       // components under reactive conditionals (#1737). Permanent disposal is
       // still handled by bindFor (item removal) and cleanupContainer (SPA nav).
       if (currentIdx !== -1) {
-        chain[currentIdx].el.__stx_chain_active = false;
-        chain[currentIdx].nodes.forEach(function (n) {
-          if (!n.parentNode) return;
-          // Detached nodes are out of reach of a DOM walk, so a row removed
-          // while this branch is hidden could not dispose the effects it was
-          // processed with (#1954). Same registry the single-element :if uses.
-          var host = n.parentNode;
-          if (!host.__stx_detached_if) host.__stx_detached_if = new Set();
-          host.__stx_detached_if.add(n);
-          host.removeChild(n);
-        });
+        var gone = chain[currentIdx];
+        gone.el.__stx_chain_active = false;
+
+        if (gone.isTemplate) {
+          // Everything this branch rendered goes, not just the clones it owns:
+          // a nested :for or :if renders siblings of its own that no clone list
+          // contains. The marker bounds the range, so a sibling that belongs to
+          // a later branch or to ordinary markup is never touched.
+          if (gone.endMarker && gone.endMarker.parentNode) {
+            var host = gone.endMarker.parentNode;
+            var doomed = gone.placeholder.nextSibling;
+            while (doomed && doomed !== gone.endMarker) {
+              var nextDoomed = doomed.nextSibling;
+              disposeSubtreeEffects(doomed);
+              host.removeChild(doomed);
+              doomed = nextDoomed;
+            }
+            gone.endMarker.remove();
+            gone.endMarker = null;
+          }
+          gone.nodes.forEach(function (n) {
+            if (!n.parentNode) return;
+            disposeSubtreeEffects(n);
+            n.parentNode.removeChild(n);
+          });
+          // The next show clones afresh and processes again, so these effects
+          // are finished with; leaving them bound only accumulates work (#1954).
+          if (typeof gone.el.__stx_chain_disposers === 'function') {
+            try { gone.el.__stx_chain_disposers(); }
+catch (e) { /* a disposer of its own is not this branch's problem */ }
+            gone.el.__stx_chain_disposers = null;
+          }
+          gone.nodes = [];
+          gone.childrenProcessed = false;
+        }
+        else {
+          gone.nodes.forEach(function (n) {
+            if (!n.parentNode) return;
+            // Detached nodes are out of reach of a DOM walk, so a row removed
+            // while this branch is hidden could not dispose the effects it was
+            // processed with (#1954). Same registry the single-element :if uses.
+            var host = n.parentNode;
+            if (!host.__stx_detached_if) host.__stx_detached_if = new Set();
+            host.__stx_detached_if.add(n);
+            host.removeChild(n);
+          });
+        }
       }
 
       // Insert + process the newly-picked branch.
@@ -4626,11 +4680,19 @@ catch (e2) {
         // Insert this branch's node(s) before the placeholder's next sibling.
         // The anchor is captured once so the nodes stack in source order.
         var anchor = pick.placeholder.nextSibling;
+        var pickHost = pick.placeholder.parentNode;
+        if (pick.isTemplate && pick.nodes.length === 0)
+          pick.nodes = Array.prototype.slice.call(pick.pristine.cloneNode(true).childNodes);
         pick.nodes.forEach(function (n) {
-          var host = pick.placeholder.parentNode;
-          if (host.__stx_detached_if) host.__stx_detached_if.delete(n);
-          host.insertBefore(n, anchor);
+          if (pickHost.__stx_detached_if) pickHost.__stx_detached_if.delete(n);
+          pickHost.insertBefore(n, anchor);
         });
+        // Bound AFTER the clones, so hiding can remove whatever a structural
+        // directive inside the branch renders as their sibling.
+        if (pick.isTemplate) {
+          if (!pick.endMarker) pick.endMarker = document.createComment('stx-if-chain-end');
+          pickHost.insertBefore(pick.endMarker, anchor);
+        }
         pick.el.__stx_shown_at = performance.now();
         if (!pick.childrenProcessed) {
           pick.childrenProcessed = true;
