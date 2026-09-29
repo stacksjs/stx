@@ -5651,6 +5651,19 @@ catch (e) {} }
     return matches;
   }
 
+  // 'visible' or 'hidden', kept current: whether the page is on screen (the
+  // app in the foreground, the tab in front). Built in rather than taken from
+  // @stacksjs/browser, whose bundle a page then carried in full (~180KB) for
+  // this one listener.
+  function useDocumentVisibility() {
+    var visibility = state(typeof document !== 'undefined' ? document.visibilityState : 'visible');
+    if (typeof document === 'undefined') return visibility;
+    var onChange = function() { visibility.set(document.visibilityState); };
+    document.addEventListener('visibilitychange', onChange);
+    onDestroy(function() { document.removeEventListener('visibilitychange', onChange); });
+    return visibility;
+  }
+
   var scrollLockStates = new WeakMap();
 
   function resolveScrollLockTarget(target) {
@@ -6792,6 +6805,7 @@ catch (e) {} }
     useColorMode,
     useDark,
     useMediaQuery,
+    useDocumentVisibility,
     useScrollLock,
     usePreferredDark,
     usePreferredLight,

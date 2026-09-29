@@ -15,6 +15,7 @@
  */
 import { describe, expect, it } from 'bun:test'
 import { BROWSER_CORE_IMPORTS } from '../../src/client-script'
+import { STX_RUNTIME_GLOBALS } from '../../src/runtime-globals'
 import {
   buildVirtualTypeScript,
   collectBlockDeclarations,
@@ -378,8 +379,10 @@ describe('the names stx auto-imports into a client script are declared', () => {
 
   it('covers the ones a real component reached for', () => {
     // Each of these was a diagnostic in the Stacks dashboard components.
-    for (const name of ['useTimeoutFn', 'useDocumentVisibility', 'debounce'])
+    for (const name of ['useTimeoutFn', 'debounce'])
       expect(BROWSER_CORE_IMPORTS).toContain(name)
+    // Now provided by the signals runtime itself.
+    expect(STX_RUNTIME_GLOBALS).toContain('useDocumentVisibility')
   })
 })
 

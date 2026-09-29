@@ -95,14 +95,23 @@ const result = retry(() => 'ready')
     const output = injectBrowserCoreAutoImports(`
 const load = debounce(() => {}, 250)
 const activeElement = useActiveElement()
-const visibility = useDocumentVisibility()
 const controls = useIntervalFn(load, 15000)
 const timeout = useTimeoutFn(load, 5000, { immediate: false })
 `)
 
-    expect(output.imports).toEqual(['debounce', 'useActiveElement', 'useDocumentVisibility', 'useIntervalFn', 'useTimeoutFn'])
+    expect(output.imports).toEqual(['debounce', 'useActiveElement', 'useIntervalFn', 'useTimeoutFn'])
     expect(output.models).toEqual([])
-    expect(output.code).toContain(`import { debounce, useActiveElement, useDocumentVisibility, useIntervalFn, useTimeoutFn } from '@stacksjs/browser'`)
+    expect(output.code).toContain(`import { debounce, useActiveElement, useIntervalFn, useTimeoutFn } from '@stacksjs/browser'`)
+  })
+
+  it('leaves useDocumentVisibility to the runtime rather than bundling @stacksjs/browser for it', () => {
+    // A page reaching for it alone carried the whole @stacksjs/browser bundle
+    // (~180KB) on every navigation; the signals runtime provides it now.
+    const output = injectBrowserCoreAutoImports(`
+const visibility = useDocumentVisibility()
+`)
+    expect(output.imports).toEqual([])
+    expect(output.code).not.toContain('@stacksjs/browser')
   })
 
   it('does not shadow locally declared browser helper names', () => {

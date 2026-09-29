@@ -49,7 +49,7 @@ export const STX_RUNTIME_GLOBALS: readonly string[] = [
   'nextTick', 'onBeforeMount', 'onBeforeUnmount', 'onDestroy', 'onMount', 'onMounted', 'onUnmounted',
   'peek', 'provide', 'reactive',
   'ref', 'refresh', 'registerStoresClient', 'setRouteParams', 'state', 'untrack', 'useAsync', 'useClickOutside', 'useColorMode',
-  'useCookie', 'useCounter', 'useDark', 'useDebounce', 'useDebouncedValue', 'useEventListener',
+  'useCookie', 'useCounter', 'useDark', 'useDebounce', 'useDebouncedValue', 'useDocumentVisibility', 'useEventListener',
   'useFetch', 'useFocus', 'useHead', 'useId', 'useInterval', 'useLocalStorage', 'useMediaQuery',
   'useModel', 'useMutation', 'useOptimistic', 'usePreferredContrast', 'usePreferredDark',
   'usePreferredLight', 'usePreferredReducedMotion', 'useQuery', 'useReactiveProp',

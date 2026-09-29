@@ -592,6 +592,10 @@ declare function usePreferredDark(): ReturnType<typeof useMediaQuery>
 declare function usePreferredLight(): ReturnType<typeof useMediaQuery>
 declare function usePreferredReducedMotion(): ReturnType<typeof useMediaQuery>
 declare function usePreferredContrast(): ReturnType<typeof useMediaQuery>
+/** `document.visibilityState`, kept current; `'visible'` or `'hidden'`. */
+declare function useDocumentVisibility(): StxSignal<DocumentVisibilityState> & {
+  readonly value: DocumentVisibilityState
+}
 
 // ============================================================================
 // Head / SEO
