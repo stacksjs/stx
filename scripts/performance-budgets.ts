@@ -9,7 +9,14 @@ const budgets = {
   simpleCompileMs: 8 * multiplier,
   productGridCompileMs: 40 * multiplier,
   expressionBatchMs: 45 * multiplier,
-  routerScriptBytes: 48 * 1024,
+  // The shipped router script (debug logging stripped -- see getRouterScript).
+  // It was 45.7KB when this cap was written, grew past it on real features
+  // (CSS-flash handling, server data, build-skew reload), and the dev/prod
+  // split plus call-site hoisting brought it back to ~49KB. 52KB leaves room
+  // for a feature without leaving room for an accident: 3KB of slack, where
+  // the split alone recovered 3.2KB. If this trips, measure before raising it
+  // -- identifier mangling via Bun.build is the next real win (~25%).
+  routerScriptBytes: 52 * 1024,
 }
 
 async function measure<T>(fn: () => T | Promise<T>, iterations: number): Promise<number> {
