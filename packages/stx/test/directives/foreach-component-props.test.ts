@@ -32,6 +32,10 @@ const { item } = defineProps()
 <template><div class="row">[name={{ item && item.name }}|n={{ item && item.n }}|first={{ (item && item.lines && item.lines[0] && item.lines[0].text) || 'NONE' }}]</div></template>
 `,
     )
+    await writeFile(
+      join(componentsDir, 'feature.stx'),
+      '<div class="feature">[{{ title }}|{{ icon }}|{{ typeof feature }}]</div>\n',
+    )
   })
 
   const render = async (template: string): Promise<string> => {
@@ -85,5 +89,45 @@ const items = [
     expect(result).toContain('name=a|n=|first=line &quot;with&quot; quote')
     expect(result).toContain('name=b|n=|first=plain')
     expect(result).not.toContain('first=NONE')
+  })
+
+  /**
+   * CLAUDE.md note 30 used to call this a known limitation and told readers to
+   * inline the markup instead of using a component. It works; the note was
+   * stale. A scalar prop takes a different path from the object props above --
+   * it is evaluated in the loop's own context rather than serialised -- so it
+   * needs its own test to stay fixed.
+   */
+  it('evaluates a scalar prop against the loop variable', async () => {
+    const template = `<script server>
+const features = [
+  { title: 'Fast', icon: 'bolt' },
+  { title: 'Small', icon: 'leaf' },
+]
+</script>
+@foreach(features as feature)
+<Feature :title="feature.title" :icon="feature.icon" />
+@endforeach`
+
+    const result = await render(template)
+
+    expect(result).toContain('[Fast|bolt|')
+    expect(result).toContain('[Small|leaf|')
+    // The loop variable itself is not leaked into the component's scope.
+    expect(result).toContain('|undefined]')
+  })
+
+  it('reads the loop index and the loop meta in a prop', async () => {
+    const template = `<script server>
+const features = [{ title: 'Fast' }, { title: 'Small' }]
+</script>
+@foreach(features as feature, i)
+<Feature :title="feature.title" :icon="i + ':' + loop.iteration" />
+@endforeach`
+
+    const result = await render(template)
+
+    expect(result).toContain('[Fast|0:1|')
+    expect(result).toContain('[Small|1:2|')
   })
 })
