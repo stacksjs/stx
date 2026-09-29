@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.329...v0.2.330)
+
+## 🐛 Bug Fixes
+
+- **router**: run a fragment's module registry before its components ([b2a7bf8](https://github.com/stacksjs/stx/commit/b2a7bf8)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1957](https://github.com/stacksjs/stx/issues/1957))
+
+## 🔧 Chores
+
+- release v0.2.330 ([9e25278](https://github.com/stacksjs/stx/commit/9e25278)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.328...v0.2.329)
 
 ## 🐛 Bug Fixes
