@@ -14,7 +14,7 @@
  * no warning. `{{ "a}}b" }}` broke the same way on a `}}` inside a string.
  */
 import { describe, expect, it } from 'bun:test'
-import { findInterpolationEnd, replaceInterpolations } from '../../src/expressions'
+import { findMustacheEnd, replaceInterpolations } from '../../src/expressions'
 import { processDirectives } from '../../src/process'
 
 const render = async (template: string, context: Record<string, unknown> = {}): Promise<string> =>
@@ -51,8 +51,8 @@ describe('nested braces inside an interpolation', () => {
   })
 })
 
-describe('findInterpolationEnd', () => {
-  const end = (s: string) => findInterpolationEnd(s, s.indexOf('{{'))
+describe('findMustacheEnd', () => {
+  const end = (s: string) => findMustacheEnd(s, s.indexOf('{{'))
 
   it('returns the index of the closing brace pair', () => {
     expect(end('{{ a }}')).toBe(5)

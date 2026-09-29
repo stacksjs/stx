@@ -438,8 +438,11 @@ export function clearCustomFilters(): void {
 }
 
 /**
- * The index of the `}` that starts the `}}` closing an interpolation opened at
+ * The index of the `}` that starts the `}}` closing a mustache span opened at
  * `openIndex` (the index of its first `{`), or -1 when nothing closes it.
+ *
+ * Not to be confused with strip-literals' findInterpolationEnd, which closes a
+ * JS `${ ... }` interpolation on a single brace.
  *
  * Braces inside the expression are counted and string literals are skipped, so
  * the span is read whole. The matchers here were `/\{\{([\s\S]*?)\}\}/`, which
@@ -454,7 +457,7 @@ export function clearCustomFilters(): void {
  * including inside attribute values, with no error and no warning. A `}}` in a
  * string (`{{ "a}}b" }}`) ended it early the same way.
  */
-export function findInterpolationEnd(input: string, openIndex: number): number {
+export function findMustacheEnd(input: string, openIndex: number): number {
   let depth = 0
   let quote: string | null = null
 
@@ -494,7 +497,7 @@ export function findInterpolationEnd(input: string, openIndex: number): number {
 
 /**
  * Replace every `{{ expr }}` span in `input`, each read whole by
- * findInterpolationEnd.
+ * findMustacheEnd.
  *
  * `replacer` receives what String.replace passed before: the full matched text,
  * the expression between the braces, and the offset of the match in `input`.
@@ -515,7 +518,7 @@ export function replaceInterpolations(
     if (open === -1)
       break
 
-    const close = findInterpolationEnd(input, open)
+    const close = findMustacheEnd(input, open)
     if (close === -1)
       break
 
