@@ -438,6 +438,95 @@ export function clearCustomFilters(): void {
 }
 
 /**
+ * The index of the `}` that starts the `}}` closing an interpolation opened at
+ * `openIndex` (the index of its first `{`), or -1 when nothing closes it.
+ *
+ * Braces inside the expression are counted and string literals are skipped, so
+ * the span is read whole. The matchers here were `/\{\{([\s\S]*?)\}\}/`, which
+ * is lazy and knows neither, so ONE level of object nesting ended the
+ * expression early:
+ *
+ *   {{ JSON.stringify({a:1}) }}      worked
+ *   {{ JSON.stringify({a:{b:1}}) }}  became `JSON.stringify({a:{b:1`
+ *
+ * The truncated expression failed to evaluate, which yields empty, and the rest
+ * of it leaked as literal text -- pages shipped `) }}` where a value belonged,
+ * including inside attribute values, with no error and no warning. A `}}` in a
+ * string (`{{ "a}}b" }}`) ended it early the same way.
+ */
+export function findInterpolationEnd(input: string, openIndex: number): number {
+  let depth = 0
+  let quote: string | null = null
+
+  for (let i = openIndex + 2; i < input.length; i++) {
+    const character = input[i]
+
+    if (quote) {
+      if (character === '\\') {
+        i++
+        continue
+      }
+      if (character === quote)
+        quote = null
+      continue
+    }
+
+    if (character === '"' || character === '\'' || character === '`') {
+      quote = character
+      continue
+    }
+    if (character === '{') {
+      depth++
+      continue
+    }
+    if (character === '}') {
+      if (depth > 0) {
+        depth--
+        continue
+      }
+      if (input[i + 1] === '}')
+        return i
+    }
+  }
+
+  return -1
+}
+
+/**
+ * Replace every `{{ expr }}` span in `input`, each read whole by
+ * findInterpolationEnd.
+ *
+ * `replacer` receives what String.replace passed before: the full matched text,
+ * the expression between the braces, and the offset of the match in `input`.
+ * An unterminated `{{` is left alone, as the old lazy regex also left it.
+ */
+export function replaceInterpolations(
+  input: string,
+  replacer: (match: string, expr: string, offset: number) => string,
+): string {
+  if (!input.includes('{{'))
+    return input
+
+  let output = ''
+  let cursor = 0
+
+  for (;;) {
+    const open = input.indexOf('{{', cursor)
+    if (open === -1)
+      break
+
+    const close = findInterpolationEnd(input, open)
+    if (close === -1)
+      break
+
+    output += input.slice(cursor, open) + replacer(input.slice(open, close + 2), input.slice(open + 2, close), open)
+    cursor = close + 2
+  }
+
+  return cursor === 0 ? input : output + input.slice(cursor)
+}
+
+/**
  * HTML escape function to prevent XSS
  */
 export function escapeHtml(unsafe: string): string {
@@ -695,7 +784,7 @@ export function interpolateScriptExpressions(
   })
 
   // {{ expr }} — safe JSON-stringified value (JS-aware, unlike HTML escaping)
-  output = output.replace(/\{\{([\s\S]*?)\}\}/g, (match, expr) => {
+  output = replaceInterpolations(output, (match, expr) => {
     const trimmed = expr.trim()
     // Preserve build-time placeholders (e.g. __TITLE__) — they're resolved later
     if (/^__[A-Z_]+__$/.test(trimmed)) return match
@@ -757,7 +846,7 @@ export function interpolateScriptAttributes(
 
   // {{ expr }} — HTML-escaped, including both quote characters, because the
   // value lands inside an attribute whose delimiter we do not control.
-  output = output.replace(/\{\{([\s\S]*?)\}\}/g, (match, expr) => {
+  output = replaceInterpolations(output, (match, expr) => {
     const trimmed = expr.trim()
     // Build-time placeholders (__TITLE__) are resolved by a later pass.
     if (/^__[A-Z_]+__$/.test(trimmed)) return match
@@ -971,7 +1060,7 @@ export function processExpressions(template: string, context: Record<string, any
   output = maskInto(output, styleMatcher, styleBlocks, n => `<!--__STX_STYLE_${n}__-->`)
 
   // Replace {{ expr }} with escaped expressions
-  output = output.replace(/\{\{([\s\S]*?)\}\}/g, (match, expr, offset) => {
+  output = replaceInterpolations(output, (match, expr, offset) => {
     const trimmedExpr = expr.trim()
 
     // A nested component has already classified these expressions as
