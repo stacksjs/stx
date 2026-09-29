@@ -4192,8 +4192,13 @@ function __stxOverlay(errs){
                     // The router's doFragSwap injects these into <head> during SPA swap
                     const headStyles: string[] = []
                     const headMatch = content.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)
+                    // A <style> inside a script is a string the script owns (a web
+                    // component's shadow-DOM CSS, say), not a page style. Shipped as
+                    // one, the router puts it in <head> and its bare `button` rule
+                    // restyles every button in the document. Scan without scripts.
+                    const withoutScripts = (html: string): string => html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
                     if (headMatch) {
-                      const headContent = headMatch[1]
+                      const headContent = withoutScripts(headMatch[1])
                       let styleMatch: RegExpExecArray | null
                       const styleRe = /<style\b[^>]*>[\s\S]*?<\/style>/gi
                       while ((styleMatch = styleRe.exec(headContent)) !== null) {
@@ -4254,7 +4259,7 @@ function __stxOverlay(errs){
                       if (bodyMatch) {
                         const bodyStart = bodyMatch.index! + bodyMatch[0].length
                         const mainIdx = mainOpenMatch.index!
-                        const beforeMain = content.slice(bodyStart, mainIdx)
+                        const beforeMain = withoutScripts(content.slice(bodyStart, mainIdx))
                         let bodyStyleMatch: RegExpExecArray | null
                         const bodyStyleRe = /<style\b[^>]*>[\s\S]*?<\/style>/gi
                         while ((bodyStyleMatch = bodyStyleRe.exec(beforeMain)) !== null) {
