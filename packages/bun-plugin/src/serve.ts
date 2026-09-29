@@ -556,6 +556,9 @@ export function staticCacheControl(pathname: string, production: boolean = isPro
 /** `/_stx/runtime.js`, `/_stx/router.<16 hex>.js`, … — the shared client scripts. */
 export const SHARED_SCRIPT_PATH = /^\/_stx\/(runtime|router)(?:\.([0-9a-f]{16}))?\.js$/
 
+/** `/_stx/modules.<16 hex>.js` — a page's module bundle, named by its content. */
+export const MODULE_BUNDLE_PATH = /^\/_stx\/modules\.([0-9a-f]{16})\.js$/
+
 /**
  * `Cache-Control` for the shared runtime and router scripts.
  *
@@ -3813,6 +3816,29 @@ function __stxOverlay(errs){
                 // (see sharedScriptCacheControl). The unhashed and stale-hash
                 // URLs still answer with the current script, for HTML
                 // rendered before this or before the last deploy.
+                // A page's module bundle, linked by content hash
+                // (registerServeModuleBundle): the same bytes forever under
+                // its URL, so cached immutably.
+                const moduleBundle = path.match(MODULE_BUNDLE_PATH)
+                if (moduleBundle) {
+                  const stx = await stxModule
+                  const content = stx.getServeModuleBundle(moduleBundle[1])
+                  if (content === undefined)
+                    return new Response('/* stx: unknown module bundle */', { status: 404, headers: { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-store', ...corsHeaders } })
+                  const etag = `"${moduleBundle[1]}"`
+                  const headers = {
+                    'Content-Type': 'application/javascript; charset=utf-8',
+                    'Cache-Control': 'public, max-age=31536000, immutable',
+                    'ETag': etag,
+                    ...corsHeaders,
+                  }
+                  if (req.headers.get('if-none-match') === etag)
+                    return new Response(null, { status: 304, headers })
+                  if (req.method === 'HEAD')
+                    return new Response(null, { headers })
+                  return new Response(content, { headers })
+                }
+
                 const sharedScript = path.match(SHARED_SCRIPT_PATH)
                 if (sharedScript) {
                   const stx = await stxModule

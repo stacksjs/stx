@@ -330,6 +330,14 @@ async function buildModulesTag(
     })
     if (!code)
       return null
+    // Serve mode links the bundle as a content-addressed file the Bun serve
+    // adapter answers immutably (see registerServeModuleBundle), so it is
+    // downloaded once rather than with every page and SPA fragment. A static
+    // build has no server to answer that URL and keeps it inline.
+    if (options.buildMode === 'serve') {
+      const { registerServeModuleBundle } = await import('./caching')
+      return `<script data-stx-scoped data-stx-run="always" data-stx-modules src="${registerServeModuleBundle(code)}"></script>`
+    }
     // A module's own string literal can contain the closing tag; escaped, it
     // means the same thing to JavaScript and nothing to the HTML parser.
     return `<script data-stx-scoped data-stx-run="always" data-stx-modules>${code.replace(/<\/script/gi, '<\\/script')}</script>`

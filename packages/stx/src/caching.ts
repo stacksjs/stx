@@ -4,6 +4,7 @@ import path from 'node:path'
 import { clearComponentCache, fileExists } from './utils'
 import { clearRenderMemos } from './render-memo'
 import { cacheEngineFingerprint } from './engine-fingerprint'
+import { stateDir } from './state-dir'
 
 /**
  * Cache entry structure
@@ -205,6 +206,64 @@ export async function getServeClientAsset(kind: ServeClientAssetKind, debug = fa
     _clientAssetHashes[memoKey] = memo
   }
   return { content, hash: memo.hash, url: `/_stx/${kind}.${memo.hash}.js` }
+}
+
+/**
+ * Page module bundles (#1957) by content hash, for serve mode to answer at
+ * `/_stx/modules.<hash>.js`.
+ *
+ * Inlined, a page's bundle travelled in its HTML and in every SPA fragment of
+ * it: a phone re-downloaded and re-parsed up to ~250KB on each navigation and
+ * could cache none of it. As a file named by its content, it is fetched once
+ * and cached for good; a page reached again, or one sharing its modules, costs
+ * nothing. Bounded, oldest first: a long dev session with HMR mints new hashes.
+ */
+const MODULE_BUNDLE_LIMIT = 500
+const _moduleBundles = new Map<string, string>()
+
+/** Where module bundles are also written, so every server process can answer. */
+function moduleBundleFile(hash: string): string {
+  return stateDir(process.cwd(), 'module-bundles', `${hash}.js`)
+}
+
+/** Registers a module bundle and returns the URL a page links it under. */
+export function registerServeModuleBundle(code: string): string {
+  const hash = Bun.hash(code).toString(16).padStart(16, '0').slice(0, 16)
+  const known = _moduleBundles.has(hash)
+  if (known)
+    _moduleBundles.delete(hash)
+  _moduleBundles.set(hash, code)
+  while (_moduleBundles.size > MODULE_BUNDLE_LIMIT)
+    _moduleBundles.delete(_moduleBundles.keys().next().value as string)
+  // On disk too: behind a load balancer the page can be rendered by one
+  // process and its bundle requested from another. Best effort; memory still
+  // answers for this process when the disk cannot be written.
+  if (!known) {
+    try {
+      const file = moduleBundleFile(hash)
+      if (!fs.existsSync(file)) {
+        fs.mkdirSync(path.dirname(file), { recursive: true })
+        fs.writeFileSync(file, code)
+      }
+    }
+    catch {}
+  }
+  return `/_stx/modules.${hash}.js`
+}
+
+/** A module bundle by hash, or undefined for one never rendered on this machine. */
+export function getServeModuleBundle(hash: string): string | undefined {
+  if (!/^[0-9a-f]{16}$/.test(hash))
+    return undefined
+  const cached = _moduleBundles.get(hash)
+  if (cached !== undefined)
+    return cached
+  try {
+    return fs.readFileSync(moduleBundleFile(hash), 'utf8')
+  }
+  catch {
+    return undefined
+  }
 }
 
 /**

@@ -18,6 +18,7 @@ import path from 'node:path'
 import { bundleClientScript, rewriteRegistryImports } from '../../src/client-script-bundler'
 import { buildModuleRegistryScript, registeredModuleIdsIn } from '../../src/client-module-registry'
 import { processDirectives } from '../../src/process'
+import { getServeModuleBundle } from '../../src/caching'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 
 // eslint-disable-next-line ts/no-explicit-any
@@ -57,9 +58,22 @@ async function render(dir: string, page = 'page.stx'): Promise<string> {
   )
 }
 
-/** Run every inline script in document order, the way a browser would. */
+/**
+ * Run every script in document order, the way a browser would: inline ones as
+ * written, and the page's module bundle, which serve mode links as a file,
+ * from what the /_stx/modules endpoint would answer.
+ */
 function execute(html: string): void {
   for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
+    const bundle = match[1].match(/\bsrc="\/_stx\/modules\.([0-9a-f]{16})\.js"/)
+    if (bundle) {
+      const code = getServeModuleBundle(bundle[1])
+      if (code === undefined)
+        throw new Error(`module bundle ${bundle[1]} was linked but never registered`)
+      // eslint-disable-next-line no-eval
+      ;(0, eval)(code)
+      continue
+    }
     if (/\bsrc=/.test(match[1]))
       continue
     // eslint-disable-next-line no-eval
@@ -92,8 +106,11 @@ describe('components share one module instance per page (#1957)', () => {
     })
     const html = await render(dir)
 
-    // Shipped once, in the page registry, not once per component.
-    expect(html.match(/counter-module-body/g)).toHaveLength(1)
+    // Shipped once, in the page registry, not once per component. Serve mode
+    // links the registry as a file, so count across the page and that file.
+    const hash = html.match(/\/_stx\/modules\.([0-9a-f]{16})\.js/)?.[1]
+    const shipped = html + (hash ? getServeModuleBundle(hash) ?? '' : '')
+    expect(shipped.match(/counter-module-body/g)).toHaveLength(1)
     execute(html)
     // One instance: the second component sees the first one's increment.
     expect(win.__probe).toEqual([['alpha', 1], ['beta', 2]])
@@ -195,6 +212,51 @@ window.__probe = TAG
     expect(html).not.toContain('</script><b>injected</b>')
     execute(html)
     expect(win.__probe).toBe('</script><b>injected</b>')
+  })
+})
+
+describe('the page module bundle as a file (serve mode)', () => {
+  // Inlined, a page's bundle travelled in its HTML and in every SPA fragment:
+  // a phone re-downloaded and re-parsed it on each navigation and could cache
+  // none of it. Served as a file named by its content, it is fetched once.
+  const files = {
+    'functions/counter.ts': COUNTER,
+    'components/First.stx': counterComponent('first'),
+    'components/Second.stx': counterComponent('second'),
+    'page.stx': '<First />\n<Second />\n',
+    'other.stx': '<Second />\n<First />\n',
+  }
+
+  it('links the bundle by content hash instead of inlining it', async () => {
+    const html = await render(project(files))
+    const tag = html.match(/<script\b[^>]*data-stx-modules[^>]*>([\s\S]*?)<\/script>/)
+    expect(tag).not.toBeNull()
+    expect(tag![0]).toMatch(/src="\/_stx\/modules\.[0-9a-f]{16}\.js"/)
+    expect(tag![1]).toBe('')
+    expect(html).not.toContain('counter-module-body')
+  })
+
+  it('gives two pages that need the same modules the same file, so it is cached once', async () => {
+    const dir = project(files)
+    const url = (html: string) => html.match(/\/_stx\/modules\.[0-9a-f]{16}\.js/)![0]
+    expect(url(await render(dir, 'page.stx'))).toBe(url(await render(dir, 'other.stx')))
+  })
+
+  it('answers the file from disk as well, for a process that never rendered the page', async () => {
+    const html = await render(project(files))
+    const hash = html.match(/\/_stx\/modules\.([0-9a-f]{16})\.js/)![1]
+    const { stateDir } = await import('../../src/state-dir')
+    const onDisk = await Bun.file(stateDir(process.cwd(), 'module-bundles', `${hash}.js`)).text()
+    expect(onDisk).toBe(getServeModuleBundle(hash)!)
+    expect(getServeModuleBundle('not-a-hash')).toBeUndefined()
+  })
+
+  it('keeps the bundle inline outside serve mode, where no server answers the URL', async () => {
+    const dir = project(files)
+    const source = await Bun.file(path.join(dir, 'page.stx')).text()
+    const html = await processDirectives(source, {}, path.join(dir, 'page.stx'), { componentsDir: path.join(dir, 'components'), root: dir }, new Set<string>())
+    expect(html).not.toContain('/_stx/modules.')
+    expect(html).toContain('counter-module-body')
   })
 })
 
