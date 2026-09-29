@@ -1036,6 +1036,16 @@ else {
           }
           return '';
         });
+        // A <style> inside a script is a string the script owns — a web
+        // component's shadow-DOM CSS, typically — not a page style. Lifted into
+        // <head> it restyles the whole document (its bare button rule shrank
+        // every button on the page) and the component loses it. Hold scripts
+        // aside while the fragment's own styles are collected.
+        var heldScripts=[];
+        cleanFrag=cleanFrag.replace(new RegExp('<scr'+'ipt\\\\b[^>]*>[\\\\s\\\\S]*?<\\\\/scr'+'ipt>','gi'),function(m){
+          heldScripts.push(m);
+          return '<!--stx-held-script-'+(heldScripts.length-1)+'-->';
+        });
         cleanFrag=cleanFrag.replace(new RegExp('<sty'+'le\\\\b([^>]*)>([\\\\s\\\\S]*?)<\\\\/sty'+'le>','gi'),function(m,attrs,css){
           if(attrs.indexOf('data-css')!==-1){
             fragCss=css;
@@ -1050,6 +1060,7 @@ else {
           if(hrefMatch&&hrefMatch[2])fragCssHrefs.push(hrefMatch[2]);
           return '';
         });
+        cleanFrag=cleanFrag.replace(new RegExp('<!--stx-held-script-(\\\\d+)-->','g'),function(m,i){return heldScripts[Number(i)]});
         // Remove old page styles (not css — that gets merged)
         document.querySelectorAll('style[data-stx-page]').forEach(function(s){s.remove()});
         // Merge css CSS from fragment into existing css style
