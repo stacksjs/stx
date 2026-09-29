@@ -16,6 +16,7 @@ import path from 'node:path'
 import { classifyAllScripts } from './script-classifier'
 import { startsDocument } from './document-shell'
 import { findContainerRegion } from './fragment-container'
+import { isDevelopment } from './env'
 import { isSpaNavRequest } from './spa-nav'
 export { extractLayoutMetadata } from 'stx-router/layout-metadata'
 export type { LayoutMetadata } from 'stx-router/layout-metadata'
@@ -25,18 +26,26 @@ export type { LayoutMetadata } from 'stx-router/layout-metadata'
 const PAGE_HEAD_MARKER = 'stx-page-head:'
 const PAGE_HEAD_MARKER_RE = /<!--stx-page-head:([A-Za-z0-9+/=]+)-->\n?/
 
-// Cache router script at module level (loaded once)
-let _cachedRouterScript: string | null = null
+// Cache router script at module level (loaded once), per variant: the shipped
+// script has its debug logging stripped, and development keeps it so the
+// router's own trace is still there to read. Same split as the signals runtime
+// (generateSignalsRuntime vs generateSignalsRuntimeDev).
+const _cachedRouterScripts: Record<'dev' | 'prod', string | null> = { dev: null, prod: null }
 function getRouterScriptCached(): string {
-  if (_cachedRouterScript !== null) return _cachedRouterScript
+  const variant = isDevelopment() ? 'dev' : 'prod'
+  const cached = _cachedRouterScripts[variant]
+  if (cached !== null) return cached
   try {
-    const { getRouterScript } = require('stx-router')
-    _cachedRouterScript = `<script>${getRouterScript()}</script>`
+    const router = require('stx-router')
+    const generate = variant === 'dev' && typeof router.getRouterScriptDev === 'function'
+      ? router.getRouterScriptDev
+      : router.getRouterScript
+    _cachedRouterScripts[variant] = `<script>${generate()}</script>`
   }
   catch {
-    _cachedRouterScript = ''
+    _cachedRouterScripts[variant] = ''
   }
-  return _cachedRouterScript
+  return _cachedRouterScripts[variant] as string
 }
 
 /**

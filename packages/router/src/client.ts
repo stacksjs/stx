@@ -18,6 +18,78 @@
  *   - Configurable via window.STX_ROUTER_OPTIONS or window.__stxRouterConfig
  */
 let cachedRouterScript: string | undefined
+let cachedRouterScriptDev: string | undefined
+
+/**
+ * Remove every call to the router's own `log()` helper.
+ *
+ * The helper is gated on `debug`, so the calls print nothing in an ordinary
+ * page -- but they ship to every page regardless, and they had grown to 32
+ * sites and 2.3KB of the delivered script. The dev build keeps them
+ * (getRouterScriptDev), the same way the signals runtime keeps its
+ * console.log calls in generateSignalsRuntimeDev and strips them for the
+ * shipped build.
+ *
+ * Each call becomes `0`, a valid expression statement, so a call that stood
+ * alone as a statement leaves valid code behind. String contents and nested
+ * parentheses are respected, so a `(` inside a logged message cannot confuse
+ * the matcher. `console.log.apply` inside the helper's own definition is left
+ * alone: the needle only matches `log(` that no identifier character or dot
+ * precedes.
+ */
+function stripRouterLogs(source: string): string {
+  const out: string[] = []
+  const needle = 'log('
+  let i = 0
+
+  while (i < source.length) {
+    const hit = source.indexOf(needle, i)
+    if (hit === -1) {
+      out.push(source.slice(i))
+      break
+    }
+
+    // `dialog(`, `catalog(`, `console.log(` -- not the helper. Nor the
+    // helper's own declaration, `function log()`, which has to survive: the
+    // calls become `0`, but `function 0(){}` is not a program.
+    const before = hit > 0 ? source[hit - 1] : ' '
+    const isDeclaration = /\bfunction\s+$/.test(source.slice(Math.max(0, hit - 16), hit))
+    if (/[\w$.]/.test(before) || isDeclaration) {
+      out.push(source.slice(i, hit + needle.length))
+      i = hit + needle.length
+      continue
+    }
+
+    out.push(source.slice(i, hit))
+
+    let depth = 1
+    let j = hit + needle.length
+    while (j < source.length && depth > 0) {
+      const character = source[j]
+      if (character === '"' || character === '\'' || character === '`') {
+        const quote = character
+        j++
+        while (j < source.length && source[j] !== quote) {
+          if (source[j] === '\\')
+            j++
+          j++
+        }
+        j++
+        continue
+      }
+      if (character === '(')
+        depth++
+      else if (character === ')')
+        depth--
+      j++
+    }
+
+    out.push('0')
+    i = j
+  }
+
+  return out.join('')
+}
 
 function minifyRouterScript(source: string): string {
   try {
@@ -31,11 +103,9 @@ function minifyRouterScript(source: string): string {
   }
 }
 
-export function getRouterScript(): string {
-  if (cachedRouterScript)
-    return cachedRouterScript
-
-  const source = `
+/** The router script as written, before stripping or minification. */
+function routerSource(): string {
+  return `
 ;(function(){
   'use strict';
   var ROUTER_REV=7;
@@ -47,6 +117,17 @@ export function getRouterScript(): string {
   var containerSel=o.container;
   var debug=!!o.debug;
   function log(){if(debug&&typeof console!=='undefined'&&console.log)console.log.apply(console,arguments)}
+
+  // Shorthands for the document-rooted queries this script makes ~33 times.
+  // Every page carries these bytes, and the budget in
+  // scripts/performance-budgets.ts is what noticed.
+  var LAYOUT_META='meta[name="stx-layout"]';
+  var LAYOUT_GROUP_META='meta[name="stx-layout-group"]';
+  var BUILD_META='meta[name="stx-build"]';
+  function qs(sel){return document.querySelector(sel)}
+  function qsa(sel){return document.querySelectorAll(sel)}
+  function ce(tag){return document.createElement(tag)}
+  function dhead(){return document.head}
 
   // Replace, never merge: absent payloads must forget the outgoing page's data.
   // Run at the committed swap, not during prefetch or a superseded navigation.
@@ -70,7 +151,7 @@ export function getRouterScript(): string {
   // Conservative on purpose: act only when BOTH ids are known. A missing id is
   // "no information", never "mismatch", so statically hosted output (no headers)
   // and older servers behave exactly as before.
-  var buildMeta=document.querySelector('meta[name="stx-build"]');
+  var buildMeta=qs(BUILD_META);
   var loadedBuild=buildMeta?(buildMeta.getAttribute('content')||''):'';
   window.__stxBuild=loadedBuild;
   function isBuildSkew(incoming){
@@ -218,7 +299,7 @@ export function getRouterScript(): string {
   function parseContainerAttrs(attrStr){
     var map={};
     if(!attrStr)return map;
-    var probe=document.createElement('div');
+    var probe=ce('div');
     probe.innerHTML='<i '+attrStr+'></i>';
     var src=probe.firstChild;
     // getAttributeNames first: it is the same standard DOM answer and it is
@@ -307,7 +388,7 @@ export function getRouterScript(): string {
   }
 
   function getContainer(){
-    return document.querySelector(containerSel)||document.querySelector('[data-stx-content]')||document.querySelector('main');
+    return qs(containerSel)||qs('[data-stx-content]')||qs('main');
   }
 
   // ── Navigation ──
@@ -391,7 +472,7 @@ export function getRouterScript(): string {
   // navigation. Scripts without an owner are unaffected.
   function ownerStays(owner){
     if(!owner)return false;
-    var root=document.querySelector('[data-stx-scope="'+owner+'"]');
+    var root=qs('[data-stx-scope="'+owner+'"]');
     return !root||typeof root.__stx_disposers==='function';
   }
   function hashScript(code){
@@ -558,7 +639,7 @@ export function getRouterScript(): string {
     if(!key||loadedExternalScripts[key])return null;
     loadedExternalScripts[key]=1;
     return new Promise(function(resolve){
-      var el=document.createElement('script');
+      var el=ce('script');
       el.src=key;
       // Deliberately NOT data-stx-page: both swap paths clear those on every
       // navigation, which would sweep this away and — since it is never loaded
@@ -567,12 +648,12 @@ export function getRouterScript(): string {
       el.setAttribute('data-stx-external','');
       el.onload=function(){resolve()};
       el.onerror=function(){log('[router] container script failed:',key);resolve()};
-      document.head.appendChild(el);
+      dhead().appendChild(el);
     });
   }
 
   // Record scripts from the initial page load
-  document.querySelectorAll('script').forEach(function(s){
+  qsa('script').forEach(function(s){
     var text=s.textContent||'';
     if(s.hasAttribute('src'))rememberExternalScript(s.getAttribute('src'));
     else if(text.trim())executedScriptHashes[hashScript(text)]=1;
@@ -599,17 +680,17 @@ export function getRouterScript(): string {
     return part?part.replace(/\\.stx$/i,''):'app';
   }
   function getCurrentLayoutGroup(){
-    var meta=document.querySelector('meta[name="stx-layout-group"]');
+    var meta=qs(LAYOUT_GROUP_META);
     if(meta&&meta.getAttribute('content'))return meta.getAttribute('content');
-    var layout=document.querySelector('meta[name="stx-layout"]');
+    var layout=qs(LAYOUT_META);
     return defaultLayoutGroup(layout?layout.getAttribute('content'):'');
   }
   function getDocLayoutGroup(doc,layout){
-    var meta=doc&&doc.querySelector?doc.querySelector('meta[name="stx-layout-group"]'):null;
+    var meta=doc&&doc.querySelector?doc.querySelector(LAYOUT_GROUP_META):null;
     return meta&&meta.getAttribute('content')?meta.getAttribute('content'):defaultLayoutGroup(layout||'');
   }
   function checkLayoutChange(newLayout,targetUrl,newGroup){
-    var currentLayout=document.querySelector('meta[name="stx-layout"]');
+    var currentLayout=qs(LAYOUT_META);
     var curLayoutName=currentLayout?currentLayout.getAttribute('content'):'';
     var curGroup=getCurrentLayoutGroup();
     var nextGroup=newGroup||defaultLayoutGroup(newLayout);
@@ -662,7 +743,7 @@ export function getRouterScript(): string {
 
     if(t.pathname===location.pathname&&t.hash){
       if(pushState!==false)writeHistory(pushState,t.href);
-      var el=document.querySelector(t.hash);
+      var el=qs(t.hash);
       if(el)el.scrollIntoView({behavior:'smooth'});
       return Promise.resolve(true);
     }
@@ -807,7 +888,7 @@ else {
   function routeAnnouncer(){
     var el=document.getElementById('stx-route-announcer');
     if(el)return el;
-    el=document.createElement('div');
+    el=ce('div');
     el.id='stx-route-announcer';
     el.setAttribute('aria-live','polite');
     el.setAttribute('role','status');
@@ -840,7 +921,7 @@ else {
   function focusAfterNavigation(hash){
     if(o.routeFocus===false)return;
     var target=null;
-    if(hash){try{target=document.querySelector(hash)}catch(e){target=null}}
+    if(hash){try{target=qs(hash)}catch(e){target=null}}
     if(!target)target=getContainer();
     if(!target||!target.focus)return;
     // The container is not naturally focusable. tabindex="-1" makes it
@@ -863,7 +944,7 @@ else {
   // be the last one, every navigation, not just the first time it is seen.
   function findGeneratedCss(abs){
     var found=null;
-    document.querySelectorAll('head link[data-css][href]').forEach(function(link){
+    qsa('head link[data-css][href]').forEach(function(link){
       if(new URL(link.getAttribute('href'),location.href).href!==abs)return;
       // Collapse duplicates, so moving one copy to the end can never leave an
       // older copy of the same sheet behind to fight it.
@@ -892,7 +973,7 @@ else {
         if(link.__stxCssReady)pending.push(link.__stxCssReady);
         return;
       }
-      link=document.createElement('link');
+      link=ce('link');
       link.setAttribute('data-css','generated');
       link.setAttribute('rel','stylesheet');
       link.setAttribute('href',new URL(href,location.href).href===abs?href:abs);
@@ -913,7 +994,7 @@ else {
         link.onerror=function(){finish(true)};
       });
       pending.push(link.__stxCssReady);
-      document.head.appendChild(link);
+      dhead().appendChild(link);
     });
     return pending.length?Promise.all(pending).then(function(results){return results.every(function(ok){return ok!==false})}):null;
   }
@@ -949,7 +1030,7 @@ else {
         link.removeAttribute('data-stx-css-pending');
         link.removeAttribute('media');
       }
-      document.head.appendChild(link);
+      dhead().appendChild(link);
     });
   }
 
@@ -1062,18 +1143,18 @@ else {
         });
         cleanFrag=cleanFrag.replace(new RegExp('<!--stx-held-script-(\\\\d+)-->','g'),function(m,i){return heldScripts[Number(i)]});
         // Remove old page styles (not css — that gets merged)
-        document.querySelectorAll('style[data-stx-page]').forEach(function(s){s.remove()});
+        qsa('style[data-stx-page]').forEach(function(s){s.remove()});
         // Merge css CSS from fragment into existing css style
         if(fragCss){
-          var curCss=document.querySelector('head style[data-css]');
+          var curCss=qs('head style[data-css]');
           if(curCss){
             var merged=mergeCss(curCss.textContent||'',fragCss);
             if(merged)curCss.textContent=merged;
           }else{
-            var cw=document.createElement('style');
+            var cw=ce('style');
             cw.setAttribute('data-css','generated');
             cw.textContent=fragCss;
-            document.head.appendChild(cw);
+            dhead().appendChild(cw);
           }
         }
         // Already present ones are MOVED last, not skipped — see
@@ -1081,10 +1162,10 @@ else {
         promoteGeneratedCss(fragCssHrefs,location.href);
         // Add new page styles
         fragStyles.forEach(function(s){
-          var el=document.createElement('style');
+          var el=ce('style');
           el.textContent=s.css;
           el.setAttribute('data-stx-page','');
-          document.head.appendChild(el);
+          dhead().appendChild(el);
         });
         // Swap content — apply the destination container's own attributes first
         // so the incoming markup lands in a correctly-laid-out container instead
@@ -1092,11 +1173,11 @@ else {
         applyContainerAttrs(currentContent,pendingContainerAttrs);
         currentContent.innerHTML=cleanFrag;
         // Remove old page scripts
-        document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
+        qsa('script[data-stx-page]').forEach(function(s){s.remove()});
         if(pushState!==false)writeHistory(pushState,url+(hash||''));
         refreshCurrentLinks();
         if(o.scrollToTop&&!hash)window.scrollTo({top:0,behavior:'instant'});
-        else if(hash){var el=document.querySelector(hash);if(el)el.scrollIntoView({behavior:'smooth'})}
+        else if(hash){var el=qs(hash);if(el)el.scrollIntoView({behavior:'smooth'})}
         window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url}}));
         // Before page scripts run, so a page that focuses its own control on
         // mount still wins — its script executes after this.
@@ -1106,7 +1187,7 @@ else {
         setTimeout(announceRoute,0);
         // Execute page scripts FIRST — they define setup functions and set _latestSetup
         log('[router] frag scripts:', fragScripts.length);
-        document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
+        qsa('script[data-stx-page]').forEach(function(s){s.remove()});
         // The page's module registry first (#1957), setups last. A fragment
         // lists its scripts in document order, and the registry is emitted
         // after the content it serves: a component that imports a package ran
@@ -1118,11 +1199,11 @@ else {
         fragScripts.forEach(function(entry){
           var code=entry.text;
           log('[router] exec script len:', code.length, 'has __stx_setup:', code.indexOf('__stx_setup')>-1);
-          var placeholder=document.querySelector('script[data-stx-route-script="'+entry.slot+'"]');
+          var placeholder=qs('script[data-stx-route-script="'+entry.slot+'"]');
           var nestedScopedTemplate=false;
           var scopedLoopSetup=false;
           if(entry.scoped&&placeholder){
-            document.querySelectorAll('template').forEach(function(template){
+            qsa('template').forEach(function(template){
               if(template.contains(placeholder)||(template.content&&template.content.contains(placeholder)))
                 nestedScopedTemplate=true;
             });
@@ -1165,7 +1246,7 @@ else {
             return;
           }
           executedScriptHashes[h]=1;
-          var ns=document.createElement('script');
+          var ns=ce('script');
           var hasImport=hasStaticImport(code);
           if(hasImport){
             ns.type='module';
@@ -1228,7 +1309,7 @@ else {
     var doc=parser.parseFromString(html,'text/html');
     // Full documents carry the build id as a meta rather than a header, and
     // this path also serves cached HTML, so check here too (#1772).
-    var docBuildMeta=doc.querySelector('meta[name="stx-build"]');
+    var docBuildMeta=doc.querySelector(BUILD_META);
     var docBuild=docBuildMeta?(docBuildMeta.getAttribute('content')||''):'';
     if(isBuildSkew(docBuild)){reloadForSkew(url,docBuild);return Promise.resolve(false)}
     // Same hand-off as the fragment path, for the same reason (#1809, #1839).
@@ -1262,12 +1343,12 @@ else {
       // ── Swap <head> styles ──
       // Inject new styles FIRST, then remove old to prevent unstyled flash
       var keepIds={'stx-view-transitions':1,'stx-r-css':1};
-      var curStyles=document.querySelectorAll('head style');
+      var curStyles=qsa('head style');
       var newStyles=doc.querySelectorAll('head style');
 
       // Merge css styles instead of replacing — persistent elements
       // (nav, footer) outside <main> still need their utility classes
-      var curCss=document.querySelector('head style[data-css]');
+      var curCss=qs('head style[data-css]');
       var newCss=null;
       newStyles.forEach(function(s){if(s.getAttribute('data-css'))newCss=s});
 
@@ -1279,20 +1360,20 @@ else {
       var incoming=[];
       newStyles.forEach(function(s){
         if(!keepIds[s.id]&&!s.getAttribute('data-css')){
-          var ns=document.createElement('style');
+          var ns=ce('style');
           ns.textContent=s.textContent;
           ns.setAttribute('data-stx-incoming','');
-          document.head.appendChild(ns);
+          dhead().appendChild(ns);
           incoming.push(ns);
         }
       });
 
       // If no existing css but new page has one, add it
       if(!curCss&&newCss){
-        var ns=document.createElement('style');
+        var ns=ce('style');
         ns.textContent=newCss.textContent;
         ns.setAttribute('data-css',newCss.getAttribute('data-css'));
-        document.head.appendChild(ns);
+        dhead().appendChild(ns);
       }
 
       // Remove old styles (except persistent ones, css, and incoming)
@@ -1319,7 +1400,7 @@ else {
       try{docBase=new URL(url,location.href).href}catch(e){docBase=location.href}
       var linkSel='link[rel="stylesheet"],link[rel="preconnect"]';
       var curLinks={};
-      document.querySelectorAll('head '+linkSel).forEach(function(l){var h=l.getAttribute('href');if(h)curLinks[new URL(h,location.href).href]=1});
+      qsa('head '+linkSel).forEach(function(l){var h=l.getAttribute('href');if(h)curLinks[new URL(h,location.href).href]=1});
       doc.querySelectorAll('head '+linkSel).forEach(function(l){
         var href=l.getAttribute('href');
         if(!href)return;
@@ -1329,9 +1410,9 @@ else {
         var abs=new URL(href,docBase).href;
         if(curLinks[abs])return;
         curLinks[abs]=1;
-        var nl=document.createElement('link');
+        var nl=ce('link');
         Array.from(l.attributes).forEach(function(a){nl.setAttribute(a.name,a.value)});
-        document.head.appendChild(nl);
+        dhead().appendChild(nl);
       });
       // After every other stylesheet link, so the destination's complete
       // utility sheet is last in the cascade.
@@ -1345,8 +1426,8 @@ else {
       var declaredLayout=pendingLayoutDecl;
       pendingLayoutDecl=null;
       if(newBody){
-        var newMeta=doc.querySelector('meta[name="stx-layout"]');
-        var curMeta=document.querySelector('meta[name="stx-layout"]');
+        var newMeta=doc.querySelector(LAYOUT_META);
+        var curMeta=qs(LAYOUT_META);
         var curLayout=curMeta?curMeta.getAttribute('content'):'';
         // The server's answer wins over the document's metas. We are only here
         // because checkLayoutChange already said the group changed, based on
@@ -1414,16 +1495,16 @@ else {
         // Copy body attributes (class, data-stx, etc.)
         Array.from(newBody.attributes).forEach(function(attr){document.body.setAttribute(attr.name,attr.value)});
         // Update layout meta tag
-        var oldMeta=document.querySelector('meta[name="stx-layout"]');
-        var freshMeta=doc.querySelector('meta[name="stx-layout"]');
+        var oldMeta=qs(LAYOUT_META);
+        var freshMeta=doc.querySelector(LAYOUT_META);
         if(oldMeta&&freshMeta)oldMeta.setAttribute('content',freshMeta.getAttribute('content')||'');
-        else if(freshMeta){var m=document.createElement('meta');m.name='stx-layout';m.content=freshMeta.getAttribute('content')||'';document.head.appendChild(m)}
-        var oldGroupMeta=document.querySelector('meta[name="stx-layout-group"]');
-        var freshGroupMeta=doc.querySelector('meta[name="stx-layout-group"]');
+        else if(freshMeta){var m=ce('meta');m.name='stx-layout';m.content=freshMeta.getAttribute('content')||'';dhead().appendChild(m)}
+        var oldGroupMeta=qs(LAYOUT_GROUP_META);
+        var freshGroupMeta=doc.querySelector(LAYOUT_GROUP_META);
         if(oldGroupMeta&&freshGroupMeta)oldGroupMeta.setAttribute('content',freshGroupMeta.getAttribute('content')||'');
-        else if(freshGroupMeta){var gm=document.createElement('meta');gm.name='stx-layout-group';gm.content=freshGroupMeta.getAttribute('content')||'';document.head.appendChild(gm)}
+        else if(freshGroupMeta){var gm=ce('meta');gm.name='stx-layout-group';gm.content=freshGroupMeta.getAttribute('content')||'';dhead().appendChild(gm)}
         // Update container reference for script execution below
-        currentContent=document.querySelector(containerSel)||document.querySelector('main')||document.body;
+        currentContent=qs(containerSel)||qs('main')||document.body;
       } else {
         // Same layout — swap only container content. Carry the destination
         // container's attributes across too (same reason as the fragment path:
@@ -1442,7 +1523,7 @@ else {
 
       // ── Load new external <head> scripts ──
       var loadedSrcs={};
-      document.querySelectorAll('head script[src]').forEach(function(s){loadedSrcs[s.src]=1});
+      qsa('head script[src]').forEach(function(s){loadedSrcs[s.src]=1});
       var extPromises=[];
       doc.querySelectorAll('head script[src]').forEach(function(s){
         if(isSharedClientScript(s))return;
@@ -1452,11 +1533,11 @@ else {
         if(loadedSrcs[src])return;
         loadedSrcs[src]=1;
         extPromises.push(new Promise(function(resolve,reject){
-          var ns=document.createElement('script');
+          var ns=ce('script');
           ns.src=src;
           ns.onload=resolve;
           ns.onerror=reject;
-          document.head.appendChild(ns);
+          dhead().appendChild(ns);
         }));
       });
 
@@ -1470,7 +1551,7 @@ else {
 
       // ── Script re-execution ──
       // Remove previously injected page scripts
-      document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
+      qsa('script[data-stx-page]').forEach(function(s){s.remove()});
 
       var scripts=routedBodyScripts.slice();
       function addScript(text, runAlways, slot, owner){
@@ -1555,7 +1636,7 @@ else {
 
       // Scroll
       if(o.scrollToTop&&!hash)window.scrollTo({top:0,behavior:'instant'});
-      else if(hash){var el=document.querySelector(hash);if(el)el.scrollIntoView({behavior:'smooth'})}
+      else if(hash){var el=qs(hash);if(el)el.scrollIntoView({behavior:'smooth'})}
 
       // Update title
       var newTitle=doc.querySelector('title');
@@ -1616,7 +1697,7 @@ else {
           if(!runAlways&&!isSetup&&executedScriptHashes[h])return;
           executedScriptHashes[h]=1;
           // Wrap scripts with import statements as modules (Bug 3 fix)
-          var ns=document.createElement('script');
+          var ns=ce('script');
           if(hasImport){
             ns.type='module';
           }
@@ -1629,7 +1710,7 @@ else {
           var alreadyScoped=runsAlways(typeof entry==='string'?'':entry.run,text);
           ns.textContent=(hasImport||alreadyScoped)?text:'{'+text+'}';
           ns.setAttribute('data-stx-page','');
-          var placeholder=entry.slot?document.querySelector('script[data-stx-route-script="'+entry.slot+'"]'):null;
+          var placeholder=entry.slot?qs('script[data-stx-route-script="'+entry.slot+'"]'):null;
           if(placeholder&&placeholder.parentNode){
             ns.setAttribute('data-stx-positioned','');
             placeholder.parentNode.replaceChild(ns,placeholder);
@@ -1987,7 +2068,7 @@ else {
   }
 
   function updateNav(){
-    document.querySelectorAll('nav a[href], #mobileNav a[href], [data-stx-nav] a[href]').forEach(function(a){
+    qsa('nav a[href], #mobileNav a[href], [data-stx-nav] a[href]').forEach(function(a){
       if(!a.hasAttribute('data-stx-link'))return;
       var st=linkState(a.getAttribute('href'),a.getAttribute('data-stx-active-match'));
       if(!st)return;
@@ -2008,7 +2089,7 @@ else {
 
   function updateActiveLinks(){
     // Update active classes on <stx-link> elements (and legacy data-stx-link)
-    var links=document.querySelectorAll('[data-stx-link]');
+    var links=qsa('[data-stx-link]');
     links.forEach(function(link){
       var st=linkState(link.getAttribute('to')||link.getAttribute('href')||'',link.getAttribute('data-stx-active-match'));
       if(!st)return;
@@ -2050,7 +2131,7 @@ else {
   // the cascade, or opt out entirely with viewTransitions:false.
   function injectStyles(){
     if(!document.getElementById('stx-r-css')){
-      var s=document.createElement('style');s.id='stx-r-css';
+      var s=ce('style');s.id='stx-r-css';
       // Strip characters that could escape our CSS block and inject new
       // declarations: ; { } ( ) " ' \\ < > plus whitespace control chars.
       // This keeps the value safe to concat into a stylesheet even if a
@@ -2072,10 +2153,10 @@ else {
         css+='@media (prefers-reduced-motion: reduce){::view-transition-old(root),::view-transition-new(root){animation-duration:0s;animation-name:none}}';
       }
       s.textContent=css;
-      document.head.appendChild(s);
+      dhead().appendChild(s);
     }
     if(o.progress&&!document.getElementById('stx-router-progress')){
-      var el=document.createElement('div');
+      var el=ce('div');
       el.id='stx-router-progress';
       el.setAttribute('role','progressbar');
       el.setAttribute('aria-hidden','true');
@@ -2092,7 +2173,7 @@ else {
 
   function injectViewTransitionCSS(){
     if(document.getElementById('stx-view-transitions'))return;
-    var s=document.createElement('style');s.id='stx-view-transitions';
+    var s=ce('style');s.id='stx-view-transitions';
     s.textContent='::view-transition-group(root){animation:none}::view-transition-old(root){animation:none}::view-transition-new(root){animation:none}main,#app-content,[data-stx-content]{view-transition-name:stx-content}::view-transition-old(stx-content){animation:stx-fade-out .15s ease-out both}::view-transition-new(stx-content){animation:stx-fade-in .15s ease-in .1s both}@keyframes stx-fade-out{from{opacity:1}to{opacity:0}}@keyframes stx-fade-in{from{opacity:0}to{opacity:1}}::view-transition{background:transparent}::view-transition-group(stx-content){background:inherit;overflow:hidden}';
     (document.head||document.documentElement).appendChild(s);
   }
@@ -2150,6 +2231,34 @@ else {
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 `
-  cachedRouterScript = minifyRouterScript(source)
+}
+
+/**
+ * The router script as it ships: debug logging removed, then minified.
+ *
+ * Every page carries this, so the 32 `log()` call sites -- 2.3KB of the
+ * delivered bytes, printing nothing unless `debug` is set -- are not part of
+ * it. Stripping happens outside the try, as in generateSignalsRuntime: losing
+ * minification makes the script bigger, losing the strip would ship the logs.
+ */
+export function getRouterScript(): string {
+  if (cachedRouterScript)
+    return cachedRouterScript
+
+  cachedRouterScript = minifyRouterScript(stripRouterLogs(routerSource()))
   return cachedRouterScript
+}
+
+/**
+ * The router script with its `log()` calls intact, for development.
+ *
+ * Set `debug` in the router config to see them. Minified the same way, so what
+ * a developer runs behaves exactly like what ships.
+ */
+export function getRouterScriptDev(): string {
+  if (cachedRouterScriptDev)
+    return cachedRouterScriptDev
+
+  cachedRouterScriptDev = minifyRouterScript(routerSource())
+  return cachedRouterScriptDev
 }

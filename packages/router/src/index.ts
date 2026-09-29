@@ -38,7 +38,7 @@ export { generateRouteTypes, generateRouteManifest } from './codegen'
 export { NON_PAGE_DIRS, isNonPageRoutePath, isNonPageRoutePattern } from './page-routes'
 
 // Client-side SPA navigation
-export { getRouterScript } from './client'
+export { getRouterScript, getRouterScriptDev } from './client'
 
 // Types
 export type {
