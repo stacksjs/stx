@@ -27,6 +27,7 @@
 
 import fs from 'node:fs'
 import os from 'node:os'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Worker as ThreadWorker } from 'node:worker_threads'
 
@@ -90,11 +91,41 @@ export function imageWorkerEntry(root = process.cwd()): string | undefined {
   }
   catch {}
   try {
-    return typeof Bun !== 'undefined' ? Bun.resolveSync(INSTALLED_WORKER_ENTRY, root) : undefined
+    const resolved = typeof Bun !== 'undefined' ? Bun.resolveSync(INSTALLED_WORKER_ENTRY, root) : undefined
+    return resolved && isInstalledEntry(resolved) ? resolved : undefined
   }
   catch {
     return undefined
   }
+}
+
+/**
+ * Whether a resolved entry is the app's own install rather than a copy in
+ * Bun's global package cache.
+ *
+ * With no `node_modules` to look in, Bun's resolver falls back to
+ * auto-install and answers with a copy in `~/.bun/install/cache` - whatever
+ * version of stx happens to be there, not the one the server was built from,
+ * and without its dependencies installed. A worker started from it dies
+ * before it is ready (`Cannot find package 'ts-images'`), after the server
+ * has already waited on it. Having no entry is the honest answer there, and
+ * the pass runs on the serving thread with a warning that says so.
+ *
+ * Refuses the cache rather than requiring `node_modules` in the path: Bun
+ * resolves symlinks, so a linked install (a workspace, `bun link`) answers
+ * with its real path, which need not contain `node_modules` at all.
+ */
+export function isInstalledEntry(path: string, env: Record<string, string | undefined> = process.env): boolean {
+  const normalized = path.replace(/\\/g, '/')
+  // Cache entries are named `<name>@<version>@@@<n>` (with the registry host
+  // between the @@ when it is not the default one).
+  if (normalized.split('/').some(segment => /@\d[^/]*@@@\d+$/.test(segment)))
+    return false
+  const caches = [
+    env.BUN_INSTALL_CACHE_DIR,
+    join(env.BUN_INSTALL || join(os.homedir(), '.bun'), 'install', 'cache'),
+  ].filter((dir): dir is string => !!dir).map(dir => `${dir.replace(/\\/g, '/').replace(/\/$/, '')}/`)
+  return !caches.some(cache => normalized.startsWith(cache))
 }
 
 interface WorkerReply {

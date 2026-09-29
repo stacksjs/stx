@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { encode } from 'ts-images'
 import { clearImageDeliveryCatalog, getImageDelivery, isTransparentImage, prepareImageDelivery } from '../../src/builtins/image-delivery'
 import { clearImagePlaceholders, getImagePlaceholder, placeholdersWarmed, warmImagePlaceholders } from '../../src/builtins/image-placeholder'
-import { imageWorkerSlots, resetImageWorkerWarning } from '../../src/builtins/image-worker'
+import { imageWorkerSlots, isInstalledEntry, resetImageWorkerWarning } from '../../src/builtins/image-worker'
 
 setDefaultTimeout(120_000)
 
@@ -279,5 +279,38 @@ console.log(JSON.stringify({ placeholders, result, catalogued: !!getImageDeliver
     finally {
       await rm(dir, { recursive: true, force: true })
     }
+  })
+})
+
+/**
+ * A bundled server with no `node_modules` must not start the worker from
+ * Bun's global package cache. Bun's resolver falls back to auto-install there
+ * and answered on CI with ~/.bun/install/cache/@stacksjs/stx@0.2.331 - another
+ * version than the server was built from, with none of its dependencies - and
+ * the worker died on `Cannot find package 'ts-images'` before it was ready.
+ */
+describe('which worker entry counts as installed', () => {
+  const env = { BUN_INSTALL: '/home/runner/.bun' }
+
+  it('accepts the entry from an app\'s node_modules', () => {
+    expect(isInstalledEntry('/srv/app/node_modules/@stacksjs/stx/dist/builtins/image-warmup-worker.js', env)).toBe(true)
+    expect(isInstalledEntry('C:\\app\\node_modules\\@stacksjs\\stx\\dist\\builtins\\image-warmup-worker.js', env)).toBe(true)
+  })
+
+  it('accepts a linked install, which Bun reports by its real path', () => {
+    // A workspace or `bun link`: no node_modules in the resolved path at all.
+    expect(isInstalledEntry('/Users/me/Code/stx/packages/stx/src/builtins/image-warmup-worker.ts', env)).toBe(true)
+  })
+
+  it('refuses a copy in Bun\'s global package cache', () => {
+    expect(isInstalledEntry('/home/runner/.bun/install/cache/@stacksjs/stx@0.2.331@@@1/dist/builtins/image-warmup-worker.js', env)).toBe(false)
+  })
+
+  it('refuses the cache wherever BUN_INSTALL_CACHE_DIR puts it', () => {
+    expect(isInstalledEntry('/var/cache/bun/@stacksjs/stx/dist/builtins/image-warmup-worker.js', { ...env, BUN_INSTALL_CACHE_DIR: '/var/cache/bun' })).toBe(false)
+  })
+
+  it('refuses a cache entry by its name, registry-qualified too', () => {
+    expect(isInstalledEntry('/elsewhere/@stacksjs/stx@0.2.198@@registry.npmjs.org@@@1/dist/builtins/image-warmup-worker.js', env)).toBe(false)
   })
 })
