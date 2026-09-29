@@ -187,6 +187,148 @@ function findTagEnd(content: string, startIndex: number): number {
 }
 
 /**
+ * The index just past the close tag matching an element opened at
+ * `startIndex` (the index just past its own open tag), or -1.
+ *
+ * Nested tags of the same name are counted, and each tag is consumed through
+ * findTagEnd so a `>` inside a quoted attribute value does not end it early.
+ */
+function findMatchingElementClose(content: string, tagName: string, startIndex: number): number {
+  const wanted = tagName.toLowerCase()
+  let depth = 1
+  let cursor = startIndex
+
+  while (cursor < content.length) {
+    const tagStart = content.indexOf('<', cursor)
+    if (tagStart === -1)
+      return -1
+
+    if (content.startsWith('<!--', tagStart)) {
+      const commentEnd = content.indexOf('-->', tagStart + 4)
+      cursor = commentEnd === -1 ? content.length : commentEnd + 3
+      continue
+    }
+
+    const tagEnd = findTagEnd(content, tagStart + 1)
+    if (tagEnd === -1)
+      return -1
+
+    const tag = content.slice(tagStart, tagEnd)
+    const tagMatch = tag.match(/^<\s*(\/?)\s*([a-zA-Z][\w-]*)/)
+    if (tagMatch && tagMatch[2].toLowerCase() === wanted) {
+      if (tagMatch[1] === '/') {
+        depth--
+        if (depth === 0)
+          return tagEnd
+      }
+      else if (!/\/\s*>$/.test(tag)) {
+        depth++
+      }
+    }
+    cursor = tagEnd
+  }
+  return -1
+}
+
+interface SlotAttrRange {
+  start: number
+  end: number
+  slotName: string
+  element: string
+}
+
+/**
+ * A `slot="name"` attribute names a slot of the component the element is a
+ * DIRECT child of -- the rule findDirectNamedSlotTemplates already applies to
+ * `<template #name>`.
+ *
+ * Two global regexes used to collect every `slot=` descendant at any depth, so
+ * the outermost component consumed slots belonging to a nested one:
+ * `<Outer><Card><i slot="t">X</i>body</Card></Outer>` dropped X entirely, and
+ * when Outer declared a slot of the same name it rendered X in Outer instead.
+ * An element carrying `slot=` inside a plain wrapper was likewise hoisted out
+ * of the wrapper, which was then left empty. That reaches every nesting of two
+ * slot-taking components, which is the ordinary Dialog/DialogPanel shape.
+ *
+ * Returned in source order, which is the order the children must render in.
+ */
+function findDirectSlotAttrElements(content: string): SlotAttrRange[] {
+  const found: SlotAttrRange[] = []
+  const stack: string[] = []
+  const slotAttrPattern = /\bslot\s*=\s*(?:"([^"]+)"|'([^']+)')/i
+  let cursor = 0
+
+  while (cursor < content.length) {
+    const tagStart = content.indexOf('<', cursor)
+    if (tagStart === -1)
+      break
+
+    if (content.startsWith('<!--', tagStart)) {
+      const commentEnd = content.indexOf('-->', tagStart + 4)
+      cursor = commentEnd === -1 ? content.length : commentEnd + 3
+      continue
+    }
+
+    const tagEnd = findTagEnd(content, tagStart + 1)
+    if (tagEnd === -1)
+      break
+
+    const tag = content.slice(tagStart, tagEnd)
+    const tagMatch = tag.match(/^<\s*(\/?)\s*([a-zA-Z][\w-]*)/)
+    if (!tagMatch) {
+      cursor = tagEnd
+      continue
+    }
+
+    const tagName = tagMatch[2].toLowerCase()
+    if (tagMatch[1] === '/') {
+      const matchingIndex = stack.lastIndexOf(tagName)
+      if (matchingIndex !== -1)
+        stack.splice(matchingIndex)
+      cursor = tagEnd
+      continue
+    }
+
+    const selfClosing = /\/\s*>$/.test(tag)
+    const slotMatch = stack.length === 0 ? tag.match(slotAttrPattern) : null
+    if (slotMatch) {
+      const slotName = slotMatch[1] || slotMatch[2]
+      // The element keeps its own open tag, minus the slot= attribute that
+      // addressed it. Rebuilding the tag from parsed attributes instead used to
+      // reflow whitespace and drop the original quoting.
+      const openTag = tag.replace(slotAttrPattern, '').replace(/\s+(?=\/?>$)/, '').replace(/\s{2,}/g, ' ')
+      const closeEnd = selfClosing || VOID_ELEMENTS.has(tagName)
+        ? -1
+        : findMatchingElementClose(content, tagName, tagEnd)
+
+      if (closeEnd === -1) {
+        found.push({ start: tagStart, end: tagEnd, slotName, element: openTag })
+        cursor = tagEnd
+      }
+      else {
+        found.push({ start: tagStart, end: closeEnd, slotName, element: openTag + content.slice(tagEnd, closeEnd) })
+        cursor = closeEnd
+      }
+      continue
+    }
+
+    if (!selfClosing && !VOID_ELEMENTS.has(tagName)) {
+      stack.push(tagName)
+      if (tagName === 'script' || tagName === 'style') {
+        const rawClose = content.toLowerCase().indexOf(`</${tagName}>`, tagEnd)
+        if (rawClose !== -1) {
+          cursor = rawClose
+          continue
+        }
+      }
+    }
+    cursor = tagEnd
+  }
+
+  return found
+}
+
+/**
  * Named slot templates belong to the component they are direct children of.
  * A global regex also collected templates owned by nested components. Removing
  * both an outer slot and one of its nested slots with source indices from the
@@ -299,34 +441,11 @@ export function parseSlots(childContent: string): ParsedSlots {
 
   // Pass 2: Extract slot="name" attributes on direct children (Web Component style)
   // e.g., <h1 slot="header">Title</h1> or <img slot="icon" src="..." />
-  const slotAttrElements: { start: number, end: number, slotName: string, element: string }[] = []
+  const slotAttrElements = findDirectSlotAttrElements(workingContent)
 
-  // Match paired elements with slot="name"
-  const pairedSlotAttrRegex = /<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*?)\bslot="([^"]+)"([^>]*)>([\s\S]*?)<\/\1>/gi
-  let slotAttrMatch
-  while ((slotAttrMatch = pairedSlotAttrRegex.exec(workingContent)) !== null) {
-    const [fullMatch, tag, before, slotName, after, inner] = slotAttrMatch
-    // Reconstruct element WITHOUT the slot= attribute
-    const cleanBefore = before.replace(/\s*slot="[^"]*"\s*/, ' ').trimEnd()
-    const cleanAfter = after.replace(/\s*slot="[^"]*"\s*/, ' ').trimEnd()
-    const attrs = (cleanBefore + cleanAfter).trim()
-    const element = `<${tag}${attrs ? ' ' + attrs : ''}>${inner}</${tag}>`
-    slotAttrElements.push({ start: slotAttrMatch.index, end: slotAttrMatch.index + fullMatch.length, slotName, element })
-  }
-
-  // Match self-closing elements with slot="name"
-  const selfClosingSlotAttrRegex = /<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*?)\bslot="([^"]+)"([^>]*?)\/>/gi
-  while ((slotAttrMatch = selfClosingSlotAttrRegex.exec(workingContent)) !== null) {
-    const [fullMatch, tag, before, slotName, after] = slotAttrMatch
-    const cleanBefore = before.replace(/\s*slot="[^"]*"\s*/, ' ').trimEnd()
-    const cleanAfter = after.replace(/\s*slot="[^"]*"\s*/, ' ').trimEnd()
-    const attrs = (cleanBefore + cleanAfter).trim()
-    const element = `<${tag}${attrs ? ' ' + attrs : ''} />`
-    slotAttrElements.push({ start: slotAttrMatch.index, end: slotAttrMatch.index + fullMatch.length, slotName, element })
-  }
-
-  // Add to named slots and remove from working content (reverse order)
-  slotAttrElements.sort((a, b) => b.start - a.start)
+  // Accumulate in SOURCE order. Several children may target one slot, and they
+  // have to arrive in the order they were written; this loop used to run over
+  // the descending sort below, which rendered them backwards.
   for (const item of slotAttrElements) {
     const existing = result.named.get(item.slotName)
     if (existing) {
@@ -335,6 +454,11 @@ export function parseSlots(childContent: string): ParsedSlots {
     else {
       result.named.set(item.slotName, { name: item.slotName, content: item.element })
     }
+  }
+
+  // Remove from working content back-to-front, so earlier indices stay valid.
+  for (let i = slotAttrElements.length - 1; i >= 0; i--) {
+    const item = slotAttrElements[i]
     workingContent = workingContent.slice(0, item.start) + workingContent.slice(item.end)
   }
 
