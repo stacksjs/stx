@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.334...v0.2.335)
+
+## 🐛 Bug Fixes
+
+- **email**: keep the template's own <style> blocks in renderEmail ([8a64051](https://github.com/stacksjs/stx/commit/8a64051)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.335 ([7e78350](https://github.com/stacksjs/stx/commit/7e78350)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.333...v0.2.334)
 
 ## 🐛 Bug Fixes
