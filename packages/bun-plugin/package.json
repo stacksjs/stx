@@ -74,7 +74,7 @@
     "typecheck": "bun tsc --noEmit"
   },
   "dependencies": {
-    "@stacksjs/stx": "^0.2.227",
-    "stx-router": "^0.2.227"
+    "@stacksjs/stx": "workspace:*",
+    "stx-router": "workspace:*"
   }
 }
