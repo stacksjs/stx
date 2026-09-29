@@ -2096,26 +2096,58 @@ else {
     navigate(location.pathname+location.search+location.hash,false);
   });
 
-  // ── Prefetch on hover ──
+  // ── Prefetch ──
+  // A link's page, fetched before it is followed into the cache navigate
+  // reads, so following it is a swap rather than a round trip.
+  function prefetchLink(link){
+    // Same opt-out set as the click path. Without it, hovering a link the
+    // router is not allowed to claim still fired a real GET at it — a
+    // logout or OAuth URL was requested on hover alone.
+    if(isRouterExcluded(link))return;
+    var href=withCurrentLocale(link.getAttribute('href'));
+    var key=cacheKey(href);
+    if(cache[key]||prefetching[key])return;
+    prefetching[key]=true;
+    var wantsFragment=shouldUseFragmentResponse();
+    fetch(href,{headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
+      return readPrefetchResponse(r,wantsFragment);
+    }).then(function(result){
+      if(result&&o.cache)setCache(key,result.html,result.layout,result.layoutGroup,result.title,result.containerAttrs);
+    }).catch(function(){}).finally(function(){delete prefetching[key]});
+  }
+
+  // Links marked data-stx-prefetch="eager", fetched once the page is idle, so
+  // even their first tap is served from the cache: the way a phone's tab bar
+  // switches instantly. Not on a connection that asked to save data.
+  var eagerQueued=false;
+  function prefetchEager(){
+    if(!o.prefetch||!o.cache||eagerQueued)return;
+    eagerQueued=true;
+    var run=function(){
+      eagerQueued=false;
+      var connection=navigator.connection;
+      if(connection&&(connection.saveData||/2g/.test(connection.effectiveType||'')))return;
+      var here=cacheKey(location.pathname+location.search);
+      var links=document.querySelectorAll('[data-stx-link][data-stx-prefetch="eager"]');
+      for(var i=0;i<links.length;i++){
+        var href=links[i].getAttribute('href');
+        if(href&&cacheKey(withCurrentLocale(href))!==here)prefetchLink(links[i]);
+      }
+    };
+    if(window.requestIdleCallback)window.requestIdleCallback(run,{timeout:2000});
+    else setTimeout(run,300);
+  }
+
   if(o.prefetch){
-    document.addEventListener('mouseover',function(e){
+    // A mouse hovers before it clicks. A finger does not hover, but it
+    // touches down a tap's length before the click: start the fetch there.
+    var onIntent=function(e){
       if(!e.target||!e.target.closest)return;
-      var link=e.target.closest('[data-stx-link]');
-      // Same opt-out set as the click path. Without it, hovering a link the
-      // router is not allowed to claim still fired a real GET at it — a
-      // logout or OAuth URL was requested on hover alone.
-      if(isRouterExcluded(link))return;
-      var href=withCurrentLocale(link.getAttribute('href'));
-      var key=cacheKey(href);
-      if(cache[key]||prefetching[key])return;
-      prefetching[key]=true;
-      var wantsFragment=shouldUseFragmentResponse();
-      fetch(href,{headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
-        return readPrefetchResponse(r,wantsFragment);
-      }).then(function(result){
-        if(result&&o.cache)setCache(key,result.html,result.layout,result.layoutGroup,result.title,result.containerAttrs);
-      }).catch(function(){}).finally(function(){delete prefetching[key]});
-    },true);
+      prefetchLink(e.target.closest('[data-stx-link]'));
+    };
+    document.addEventListener('mouseover',onIntent,true);
+    document.addEventListener('touchstart',onIntent,{capture:true,passive:true});
+    window.addEventListener('stx:load',prefetchEager);
   }
 
   // ── Active link management ──
@@ -2317,6 +2349,7 @@ else {
     injectStyles();
     injectViewTransitionCSS();
     refreshCurrentLinks();
+    prefetchEager();
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
