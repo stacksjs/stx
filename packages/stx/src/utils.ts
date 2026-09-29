@@ -38,6 +38,7 @@ import { findSfcTemplateBlock } from './sfc-template'
 import { importOnce } from './lazy-module'
 import { stashScriptElements } from './html-masking'
 import { markProjectedRefs } from './misc-directives'
+import { collectBlockDeclarations } from './stx-virtual-ts'
 
 // Re-export from extracted modules for backward compatibility
 export {
@@ -1387,6 +1388,9 @@ export async function renderComponentWithSlot(
       }
     }
 
+    // Names this component's own `<script server>` declares; see the client
+    // signal names below.
+    const ownServerNames = new Set<string>()
     for (const match of scriptMatches) {
       const attrs = match[1] || ''
       let content = match[2] || ''
@@ -1402,6 +1406,8 @@ export async function renderComponentWithSlot(
       // Extract variables ONLY from <script server> — all other scripts are client-side.
       // <script>, <script client>, <script type="module"> are all client.
       if (isServerScript && content) {
+        for (const name of collectBlockDeclarations(content))
+          ownServerNames.add(name)
         try {
           await extractVariables(content, componentContext, componentFilePath)
         }
@@ -1531,11 +1537,21 @@ export async function renderComponentWithSlot(
     // Check if component has signal scripts - if so, skip event directive processing
     // because the runtime will handle @click, @keydown etc. via processElement()
     const clientSignalNames = componentClientSignalNames(clientScripts)
-    const inheritedClientSignalNames = Array.isArray(componentContext.__stx_client_signal_names)
+    // Client names from the scopes around this one travel down so that slot
+    // content keeps `{{ signal() }}` for the browser. They are not this
+    // component's names, though: one its own server script declares is its
+    // own, and its template means that value. Inherited unfiltered, a host's
+    // client `title` (NativeSheet's) left a child's `{{ title }}` (Video's
+    // aria-label) unrendered, and the browser, which has no such name in the
+    // child's scope, showed the braces. A name the component redeclares on the
+    // client still counts: that is the reactive-prop shadowing case.
+    const inheritedClientSignalNames = (Array.isArray(componentContext.__stx_client_signal_names)
       ? componentContext.__stx_client_signal_names as string[]
-      : []
+      : []).filter(name => !ownServerNames.has(name))
     if (clientSignalNames.length > 0 || inheritedClientSignalNames.length > 0)
       componentContext.__stx_client_signal_names = [...new Set([...inheritedClientSignalNames, ...clientSignalNames])]
+    else
+      delete componentContext.__stx_client_signal_names
 
     // First, process any nested components in this component
     const componentOptions = {
