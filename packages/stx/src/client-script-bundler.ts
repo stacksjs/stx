@@ -15,6 +15,7 @@ import type { BunPlugin } from 'bun'
 import type { BuildFailureDetail } from './build-message'
 import { getPublicEnvDefine } from './public-env'
 import { stateDir } from './state-dir'
+import { cacheEngineFingerprint } from './engine-fingerprint'
 import { describeBuildFailure, formatBuildFailure } from './build-message'
 import { config, loadStxConfig } from './config'
 import { isServerApiSource, type ServerApiOptions } from './server-api'
@@ -639,13 +640,26 @@ function createBundlePlugin(
       // too, keyed by its specifier (#1957): two components importing one
       // package share one instance, exactly as for a local module. Registered
       // after the stx, @stores, alias and path hooks, which all take priority.
-      build.onResolve({ filter: /^(?!node:|bun:)(?:@[\w.-]+\/)?[\w.-]/ }, (args) => {
-        if (!externalizeUserModules || args.importer !== tmpEntry)
-          return undefined
-        const registryPath = `${MODULE_SPECIFIER_PREFIX}npm:${args.path}`
-        registrySpecifiers.set(args.path, registryPath)
-        return { path: registryPath, external: true }
-      })
+      //
+      // Only when this build externalizes. The registry's own build, which
+      // inlines the packages, used to register it anyway and pass every bare
+      // import through with `undefined` - and Bun 1.4.0, handed that back for
+      // a re-export out of a `sideEffects: false` package, bundled the
+      // re-exporting module without the package behind it. @stacksjs/browser
+      // re-exports its composables from @stacksjs/composables: the registry
+      // bundle called useStorage() at load with nothing defining it, threw
+      // before registering, and every page auto-importing a browser
+      // composable (useDocumentVisibility, useIntervalFn, ...) failed to
+      // hydrate on "module is not registered on this page".
+      if (externalizeUserModules) {
+        build.onResolve({ filter: /^(?!node:|bun:)(?:@[\w.-]+\/)?[\w.-]/ }, (args) => {
+          if (args.importer !== tmpEntry)
+            return undefined
+          const registryPath = `${MODULE_SPECIFIER_PREFIX}npm:${args.path}`
+          registrySpecifiers.set(args.path, registryPath)
+          return { path: registryPath, external: true }
+        })
+      }
 
       // Feed source modules to Bun from a normal filesystem read. Bun's
       // internal reader can intermittently report "Unseekable reading file"
@@ -794,8 +808,13 @@ export async function bundleClientScript(
   // pattern as the SSG build cache fix in stacksjs/stx#1717. See
   // stacksjs/stx#1723 for the bug this addresses (helper edits silently
   // failed to invalidate the bundle).
+  //
+  // Keyed on the stx that built it, too. Every input file can be unchanged
+  // while the bundler that read them is not: a registry bundle built by a
+  // release with a resolution bug kept being served after the fix shipped,
+  // because nothing it recorded had moved.
   const hasher = new Bun.CryptoHasher('md5')
-  hasher.update(`${BUNDLE_CACHE_VERSION}\0${JSON.stringify(serverApi ?? false)}\0${externalizeUserModules ? 'registry' : 'inline'}\0${code}\0${filePath}`)
+  hasher.update(`${BUNDLE_CACHE_VERSION}\0${cacheEngineFingerprint()}\0${JSON.stringify(serverApi ?? false)}\0${externalizeUserModules ? 'registry' : 'inline'}\0${code}\0${filePath}`)
   const hash = hasher.digest('hex').slice(0, 12)
 
   // Check cache. A cache hit requires both the bundled JS to exist AND
