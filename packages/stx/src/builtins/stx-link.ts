@@ -10,6 +10,7 @@
 
 import type { BuiltinComponentDef, ResolvedProps, RenderContext } from '../component-registry'
 import { forwardResolvedAttrs, forwardStaticAttrs } from './attrs'
+import { sanitizeUrlValue } from '../url-safety'
 
 /**
  * Escape a string for safe use inside an HTML attribute value.
@@ -75,10 +76,15 @@ export const StxLinkBuiltin: BuiltinComponentDef = {
 
     // href — reactive or static
     if (to.reactive) {
+      // An expression, not a value: the runtime sanitizes what it evaluates to
+      // when it writes the attribute.
       attrs.push(`:href="${escapeAttr(to.value)}"`)
     }
     else {
-      attrs.push(`href="${escapeAttr(to.value)}"`)
+      // A resolved value, and `to` is a URL the browser will navigate to, so a
+      // scheme that runs script is refused here exactly as it is for
+      // `href="{{ url }}"`. See url-safety.ts.
+      attrs.push(`href="${escapeAttr(sanitizeUrlValue(to.value, 'navigable'))}"`)
     }
 
     if (className) {

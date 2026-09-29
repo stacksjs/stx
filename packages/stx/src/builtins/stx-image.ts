@@ -31,6 +31,7 @@ import type { BuiltinComponentDef, ResolvedProps, RenderContext } from '../compo
 import { forwardResolvedAttrs, forwardStaticAttrs } from './attrs'
 import { getImageDelivery, isTransparentImage } from './image-delivery'
 import { getImagePlaceholder } from './image-placeholder'
+import { sanitizeUrlValue } from '../url-safety'
 
 // Default responsive breakpoints (matching Tailwind defaults)
 const DEFAULT_BREAKPOINTS: Record<string, number> = {
@@ -360,7 +361,10 @@ export const StxImageBuiltin: BuiltinComponentDef = {
     // ── Build <img> attributes ───────────────────────────────────
     const imgAttrs: string[] = []
 
-    imgAttrs.push(`src="${escapeAttr(finalSrc)}"`)
+    // A fetched subresource: data:image/... stays, since this component inlines
+    // its own placeholder that way, and a document data URL does not. See
+    // url-safety.ts.
+    imgAttrs.push(`src="${escapeAttr(sanitizeUrlValue(finalSrc, 'fetched'))}"`)
     imgAttrs.push(`alt="${escapeAttr(alt)}"`)
 
     if (width) imgAttrs.push(`width="${escapeAttr(width)}"`)
@@ -371,7 +375,7 @@ export const StxImageBuiltin: BuiltinComponentDef = {
     imgAttrs.push(`decoding="${escapeAttr(decoding)}"`)
     if (className) imgAttrs.push(`class="${escapeAttr(className)}"`)
     if (styles.length > 0) imgAttrs.push(`style="${escapeAttr(styles.join(';'))}"`)
-    if (finalSrcset) imgAttrs.push(`srcset="${escapeAttr(finalSrcset)}"`)
+    if (finalSrcset) imgAttrs.push(`srcset="${escapeAttr(sanitizeUrlValue(finalSrcset, 'fetched'))}"`)
     if (finalSizes) imgAttrs.push(`sizes="${escapeAttr(finalSizes)}"`)
 
     // Forward extra static attributes not consumed above
