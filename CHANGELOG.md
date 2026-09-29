@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.330...v0.2.331)
+
+## 🐛 Bug Fixes
+
+- **bun-plugin**: pin stx and stx-router to the release it ships with ([68469ce](https://github.com/stacksjs/stx/commit/68469ce)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.331 ([b25e491](https://github.com/stacksjs/stx/commit/b25e491)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.329...v0.2.330)
 
 ## 🐛 Bug Fixes
