@@ -361,6 +361,15 @@ export function getRouterScript(): string {
   function isModuleRegistryScript(s){
     return !!s&&((s.hasAttribute&&s.hasAttribute('data-stx-modules'))||REGISTRY_TEXT.test(s.textContent||''));
   }
+  // The page's composables (resources/functions and friends), published as
+  // globals its templates call. Each page ships the ones it reaches, so the
+  // next page can need one the first never loaded: it runs right after the
+  // registry, before anything that calls into it. Guarded per bundle, so a
+  // repeat is a no-op.
+  var COMPOSABLES_TEXT=/__stxComposableBundles/;
+  function isComposablesScript(s){
+    return !!s&&((s.hasAttribute&&s.hasAttribute('data-stx-composables'))||COMPOSABLES_TEXT.test(s.textContent||''));
+  }
   function runsAlways(declared, code){
     if(declared==='always')return true;
     if(declared==='once')return false;
@@ -1015,7 +1024,8 @@ else {
             var runDecl=(attrs.match(/data-stx-run\\s*=\\s*["']?(always|once)["']?/i)||[])[1];
             var ownerDecl=(attrs.match(/data-stx-owner\\s*=\\s*["']([^"']+)["']/i)||[])[1]||'';
             var registry=/(?:^|\\s)data-stx-modules(?:\\s|=|$)/i.test(attrs)||REGISTRY_TEXT.test(code);
-            fragScripts.push({text:code,slot:slot,setupName:generatedSetupName(code),scoped:scoped,run:runDecl?runDecl.toLowerCase():'',owner:ownerDecl,registry:registry});
+            var composables=/(?:^|\\s)data-stx-composables(?:\\s|=|$)/i.test(attrs)||COMPOSABLES_TEXT.test(code);
+            fragScripts.push({text:code,slot:slot,setupName:generatedSetupName(code),scoped:scoped,run:runDecl?runDecl.toLowerCase():'',owner:ownerDecl,registry:registry,composables:composables});
             // Retain scoped setup code in its inert placeholder. A placeholder
             // inside template.content is unreachable through document, so the
             // repeated component runtime must execute it for each clone.
@@ -1091,7 +1101,7 @@ else {
         // after the content it serves: a component that imports a package ran
         // ahead of it and threw "is not registered on this page". The full
         // document path orders them the same way (registryFirst, below).
-        function fragOrder(entry){return entry.registry?0:entry.setupName?2:1}
+        function fragOrder(entry){return entry.registry?0:entry.composables?1:entry.setupName?3:2}
         fragScripts.sort(function(a,b){return fragOrder(a)-fragOrder(b)});
         function runFragScripts(){
         fragScripts.forEach(function(entry){
@@ -1371,7 +1381,7 @@ else {
           var slot='document-'+(++routedBodyScriptId);
           var setupName=generatedSetupName(text);
           if(setupName)incomingSetupName=setupName;
-          routedBodyScripts.push({text:text,runAlways:true,slot:slot,setupName:setupName,run:s.getAttribute('data-stx-run')||'',owner:s.getAttribute('data-stx-owner')||'',registry:isModuleRegistryScript(s)});
+          routedBodyScripts.push({text:text,runAlways:true,slot:slot,setupName:setupName,run:s.getAttribute('data-stx-run')||'',owner:s.getAttribute('data-stx-owner')||'',registry:isModuleRegistryScript(s),composables:isComposablesScript(s)});
           s.textContent='';
           s.setAttribute('type','application/stx-pending');
           s.setAttribute('data-stx-route-script',slot);
@@ -1453,7 +1463,7 @@ else {
 
       var scripts=routedBodyScripts.slice();
       function addScript(text, runAlways, slot, owner){
-        scripts.push({text:text,runAlways:!!runAlways,slot:slot||'',owner:owner||'',registry:REGISTRY_TEXT.test(text)});
+        scripts.push({text:text,runAlways:!!runAlways,slot:slot||'',owner:owner||'',registry:REGISTRY_TEXT.test(text),composables:COMPOSABLES_TEXT.test(text)});
       }
       if(isLayoutChange){
         // Also collect setup functions from <head>, and the page's module
@@ -1469,7 +1479,7 @@ else {
           if(s.hasAttribute('src'))return;
           if(!text.trim())return;
           if(isSignalsRuntimeScript(s,text))return;
-          if(isModuleRegistryScript(s))addScript(text,true,'','');
+          if(isModuleRegistryScript(s)||isComposablesScript(s))addScript(text,true,'','');
           else if(text.indexOf('__stx_setup_')!==-1)addScript(text,true);
         });
       } else {
@@ -1523,7 +1533,8 @@ else {
       // so without this a component in the page body could run ahead of the
       // registry it imports from. Stable: the order within each group holds.
       var registryFirst=scripts.filter(function(e){return e.registry});
-      if(registryFirst.length)scripts=registryFirst.concat(scripts.filter(function(e){return !e.registry}));
+      var composablesNext=scripts.filter(function(e){return !e.registry&&e.composables});
+      if(registryFirst.length||composablesNext.length)scripts=registryFirst.concat(composablesNext,scripts.filter(function(e){return !e.registry&&!e.composables}));
 
       // Push history state (before active link updates so location.pathname is current)
       if(pushState!==false)writeHistory(pushState,url+(hash||''));

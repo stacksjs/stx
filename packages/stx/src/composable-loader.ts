@@ -360,8 +360,10 @@ export async function getComposableScript(
   // Assign through a try/catch per name: a file that failed to transpile leaves
   // its declaration missing, and a bare `{ a, b }` would throw a ReferenceError
   // that takes the whole registration — and every other composable — with it.
+  // A name already published by an earlier bundle keeps that instance, so a
+  // composable a page has been using does not change under it (see below).
   const assignments = [...exportedNames]
-    .map(name => `  try { __c[${JSON.stringify(name)}] = ${name}; } catch (e) {}`)
+    .map(name => `  try { if (!(${JSON.stringify(name)} in __c)) __c[${JSON.stringify(name)}] = ${name}; } catch (e) {}`)
     .join('\n')
 
   // Publish each composable as a bare global so pages can just call
@@ -383,7 +385,17 @@ export async function getComposableScript(
     .filter(name => !declaredNames.has(name) && new RegExp(`\\b${name}\\b`).test(joinedChunks))
     .map(name => `var ${name} = __stx[${JSON.stringify(name)}];`)
     .join('\n')
+  // Each page ships the composables IT reaches, so a navigation can arrive at
+  // a page needing one the first page never loaded: the router runs the new
+  // page's bundle too. The same bundle runs once, and a name an earlier bundle
+  // published is skipped without the "already defines" warning, which is about
+  // someone else's property, not our own from a previous page.
+  const bundleKey = JSON.stringify(new Bun.CryptoHasher('md5').update(`${globalNames}\0${joinedChunks}`).digest('hex').slice(0, 12))
   const code = `;(function(){
+var __bundles = window.__stxComposableBundles || (window.__stxComposableBundles = {});
+if (__bundles[${bundleKey}]) return;
+__bundles[${bundleKey}] = true;
+var __published = window.__stxComposableGlobals || (window.__stxComposableGlobals = {});
 window.__composables = window.__composables || {};
 var __c = window.__composables;
 var __stx = window.stx || {};
@@ -393,7 +405,7 @@ ${assignments}
   var __names = ${globalNames};
   for (var __i = 0; __i < __names.length; __i++) {
     var __n = __names[__i];
-    if (!(__n in __c)) continue;
+    if (!(__n in __c) || __published[__n]) continue;
     var __takenByBuiltin = !!(window.stx && __n in window.stx);
     if (__takenByBuiltin || __n in window) {
       console.warn('[stx] composable "' + __n + '" is not available as a bare identifier: '
@@ -402,6 +414,7 @@ ${assignments}
       continue;
     }
     window[__n] = __c[__n];
+    __published[__n] = true;
   }
 })();`
 

@@ -96,7 +96,7 @@ describe('stx#1780: composables directory populates window.__composables', () =>
     const out = await processDirectives(page, {}, 'page.stx', { composablesDir: dir, debug: false } as any, new Set())
 
     // 1. The bundle is injected...
-    expect(out).toContain('<script data-stx-composables>')
+    expect(out).toContain('<script data-stx-scoped data-stx-run="always" data-stx-composables>')
     // 2. ...the import compiled to a destructure of the global...
     expect(out).toMatch(/const \{\s*useOpConfirm\s*\} = window\.__composables/)
     // 3. ...and the names the directives reference are returned from the page
@@ -173,7 +173,7 @@ describe('stx#1780: composables directory populates window.__composables', () =>
     const out = await processDirectives(page, {}, 'page.stx', { composablesDir: dir, debug: false } as any, new Set())
 
     const runtimeIdx = out.indexOf('data-stx-runtime')
-    const composablesIdx = out.indexOf('<script data-stx-composables>')
+    const composablesIdx = out.indexOf('<script data-stx-scoped data-stx-run="always" data-stx-composables>')
     expect(runtimeIdx).toBeGreaterThanOrEqual(0)
     expect(composablesIdx).toBeGreaterThan(runtimeIdx)
   })
@@ -205,7 +205,7 @@ const ready = state(true)
 
       const runtimeIdx = out.indexOf('data-stx-runtime')
       const setupIdx = out.indexOf('function __stx_setup_')
-      const composablesIdx = out.indexOf('<script data-stx-composables>')
+      const composablesIdx = out.indexOf('<script data-stx-scoped data-stx-run="always" data-stx-composables>')
 
       expect(runtimeIdx).toBeGreaterThanOrEqual(0)
       expect(setupIdx).toBeGreaterThan(runtimeIdx)
@@ -236,6 +236,53 @@ const ready = state(true)
     finally {
       clearComposableCache()
       await fs.promises.rm(mediaDir, { recursive: true, force: true })
+    }
+  })
+})
+
+// Each page ships the composables it reaches, and the router runs the next
+// page's bundle on navigation: from a page that used only useA to one that
+// also calls useB, useB has to become available without useA being replaced
+// or warned about.
+describe('a later page\'s composables arrive on navigation', () => {
+  it('publishes what is new, keeps what an earlier page published, and runs a bundle once', async () => {
+    const first = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-nav-a-'))
+    const second = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-nav-b-'))
+    try {
+      const useA = `export function useA() { return 'a' }\n`
+      await Bun.write(path.join(first, 'use-a.ts'), useA)
+      await Bun.write(path.join(second, 'use-a.ts'), useA)
+      await Bun.write(path.join(second, 'use-b.ts'), `export function useB() { return 'b' }\nexport const LOADED = (globalThis.__loads = (globalThis.__loads || 0) + 1)\n`)
+      clearComposableCache()
+      const pageA = await getComposableScript(first)
+      clearComposableCache()
+      const pageB = await getComposableScript(second)
+
+      const warnings: string[] = []
+      const console = { warn: (...a: unknown[]) => warnings.push(a.join(' ')) }
+      const win: any = {}
+      // eslint-disable-next-line no-new-func
+      const run = (code: string) => new Function('window', 'console', code)(win, console)
+      run(pageA!)
+      const firstUseA = win.useA
+      expect(typeof win.useB).toBe('undefined')
+
+      run(pageB!)
+      expect(win.useA).toBe(firstUseA)
+      expect(win.useB()).toBe('b')
+      expect(warnings).toEqual([])
+
+      // Back and forth again: each bundle has already run.
+      run(pageA!)
+      run(pageB!)
+      expect(globalThis.__loads).toBe(1)
+      expect(warnings).toEqual([])
+    }
+    finally {
+      delete (globalThis as any).__loads
+      clearComposableCache()
+      await fs.promises.rm(first, { recursive: true, force: true })
+      await fs.promises.rm(second, { recursive: true, force: true })
     }
   })
 })

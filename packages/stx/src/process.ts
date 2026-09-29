@@ -724,7 +724,10 @@ export async function processDirectives(
             const pending = [modulesTag, storeTag, frameworkScript].filter((text): text is string => text !== null)
             const composableCode = await getComposableScript(options._layerComposableDirs ?? resolvedComposablesDir, result, pending)
             if (composableCode)
-              composableTag = `<script data-stx-composables>${composableCode}</script>`
+              // Scoped and always-run like the module registry, so a fragment
+              // navigation carries it and the router runs it: the next page may
+              // call a composable this one never loaded.
+              composableTag = `<script data-stx-scoped data-stx-run="always" data-stx-composables>${composableCode}</script>`
           }
           catch {
             // Composable loading is optional

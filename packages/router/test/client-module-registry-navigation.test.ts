@@ -139,7 +139,23 @@ async function runOrder(responseHtml: string): Promise<string[]> {
     })
 }
 
+/** loginDocument with the composables bundle in <head>, where the runtime pulled it. */
+function loginDocumentWithComposables(): string {
+  return loginDocument(true).replace('<script>window.analyticsLoaded = true<\/script>', `<script data-stx-scoped data-stx-run="always" data-stx-composables>${COMPOSABLES_HEAD}<\/script>\n    <script>window.analyticsLoaded = true<\/script>`)
+}
+
+const COMPOSABLES_HEAD = `;(function(){
+var __bundles = window.__stxComposableBundles || (window.__stxComposableBundles = {});
+if (__bundles["abc999"]) return;
+__bundles["abc999"] = true;
+})();`
+
 describe('router: a layout change carries the module registry (#1957)', () => {
+  it('and the page\'s composables, run after the registry and before the setup', async () => {
+    const order = await runOrder(loginDocumentWithComposables())
+    expect(order).toEqual(['registry', 'other', 'setup'])
+  })
+
   it('runs a registry that sits in <head>, before the page setup that imports from it', async () => {
     expect(await runOrder(loginDocument(true))).toEqual(['registry', 'setup'])
   })
@@ -160,11 +176,20 @@ describe('router: a layout change carries the module registry (#1957)', () => {
 const COMPONENT = `var __stxMod0 = globalThis.__stxModules && globalThis.__stxModules["npm:ts-video-player/elements"];
 if (__stxMod0 === undefined) throw new Error("not registered");`
 
+/** The page's composables bundle (composable-loader), reduced to its shape. */
+const COMPOSABLES = `;(function(){
+var __bundles = window.__stxComposableBundles || (window.__stxComposableBundles = {});
+if (__bundles["def456"]) return;
+__bundles["def456"] = true;
+window.timerLabel = function (s) { return String(s) };
+})();`
+
 const FRAGMENT = `<div data-stx-scope="stx_video_1"><video-player></video-player></div>
 <script data-stx-scoped data-stx-run="always" data-stx-instance="stx_video_1">${COMPONENT}<\/script>
 <script data-stx-page>function __stx_setup_video() { return {} }
 window.stx._latestSetup = __stx_setup_video<\/script>
-<script data-stx-scoped data-stx-run="always" data-stx-modules>${REGISTRY}<\/script>`
+<script data-stx-scoped data-stx-run="always" data-stx-modules>${REGISTRY}<\/script>
+<script data-stx-scoped data-stx-run="always" data-stx-composables>${COMPOSABLES}<\/script>`
 
 async function fragmentRunOrder(): Promise<string[]> {
   const window = new Window({ url: 'http://localhost/' })
@@ -215,6 +240,7 @@ async function fragmentRunOrder(): Promise<string[]> {
     .map((s) => {
       const text = String(s.textContent || '')
       if (text.includes('__stxModuleBundles')) return 'registry'
+      if (text.includes('__stxComposableBundles')) return 'composables'
       if (text.includes('__stx_setup_video')) return 'setup'
       if (text.includes('ts-video-player/elements')) return 'component'
       return 'other'
@@ -223,6 +249,6 @@ async function fragmentRunOrder(): Promise<string[]> {
 
 describe('router: a fragment runs the module registry first (#1957)', () => {
   it('runs the registry before the components that import from it, and the page setup last', async () => {
-    expect(await fragmentRunOrder()).toEqual(['registry', 'component', 'setup'])
+    expect(await fragmentRunOrder()).toEqual(['registry', 'composables', 'component', 'setup'])
   })
 })
