@@ -1,5 +1,38 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.336...v0.2.337)
+
+## ✨ Features
+
+- **loops**: @foreach binds an object-destructured item ([7af589b](https://github.com/stacksjs/stx/commit/7af589b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **components**: a slot host's client names stop at the child's own server values ([0156c02](https://github.com/stacksjs/stx/commit/0156c02)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **seo**: resolve @seo, @structuredData and @metaTag in a partial's own scope ([954cac3](https://github.com/stacksjs/stx/commit/954cac3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **lint**: drop three type imports nothing uses ([a4c6b53](https://github.com/stacksjs/stx/commit/a4c6b53)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **expressions**: a substituted value cannot be read as a directive ([2258879](https://github.com/stacksjs/stx/commit/2258879)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#64](https://github.com/stacksjs/stx/issues/64))
+- **signals,expressions**: a string @empty goes away, and {{{ }}} reads its span whole ([4d12456](https://github.com/stacksjs/stx/commit/4d12456)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: a :for with repeated keys renders one row per item ([3179cbb](https://github.com/stacksjs/stx/commit/3179cbb)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1882](https://github.com/stacksjs/stx/issues/1882))
+- **signals**: an if/else branch removes everything it rendered ([5f79fb1](https://github.com/stacksjs/stx/commit/5f79fb1)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1955](https://github.com/stacksjs/stx/issues/1955))
+- **expressions**: name the mustache scanner findMustacheEnd ([c807193](https://github.com/stacksjs/stx/commit/c807193)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **expressions**: read a {{ }} span whole, braces and strings included ([b51af84](https://github.com/stacksjs/stx/commit/b51af84)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **slots**: a slot= child belongs to the component it is written in ([a948cdf](https://github.com/stacksjs/stx/commit/a948cdf)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ✅ Tests
+
+- **security**: assert directive text in a value by what it renders as ([3dfd8d3](https://github.com/stacksjs/stx/commit/3dfd8d3)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#64](https://github.com/stacksjs/stx/issues/64))
+
+## 🔧 Chores
+
+- release v0.2.337 ([2ba463a](https://github.com/stacksjs/stx/commit/2ba463a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: update all non-major dependencies (updated) ([8f66ad6](https://github.com/stacksjs/stx/commit/8f66ad6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.335...v0.2.336)
 
 ## 🐛 Bug Fixes
