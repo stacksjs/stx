@@ -3300,9 +3300,9 @@ function __stxOverlay(errs){
     const recordedResponse = readResponseStatus(context) !== undefined || !!readResponseHeaders(context)
     if (
       !context.__stx_skip_cache
-      && !recordedResponse
-      && isRenderableCacheCandidate(output)
-      && placeholdersAreReady
+        && !recordedResponse
+        && isRenderableCacheCandidate(output)
+        && placeholdersAreReady
     ) {
       const signature = await buildTemplateSignature(filePath, dependencies)
       htmlCache.set(filePath, { html: output, signature, status: reqCtx?.responseStatus ?? 200, headers: reqCtx?.responseHeaders })
