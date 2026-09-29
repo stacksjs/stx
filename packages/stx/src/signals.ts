@@ -4118,18 +4118,16 @@ catch (e) {
       }
     };
 
-    // Map of key → item signal. When a keyed item is reused and its data
-    // changes, we update the signal — all bindings (:text, :if, :class)
-    // that track it automatically re-evaluate.
-    const itemSignalMap = new Map();
-
     // Helper: create DOM element(s) for a single list item.
-    // The item is wrapped in a signal so bindings track it reactively.
+    // The item is wrapped in a signal so bindings track it reactively. The pair
+    // rides on the returned group, so reuse always reaches the signals the
+    // bindings of THAT row actually read. A Map from key to signals could not:
+    // two rows sharing a key overwrote each other in it, and the row that
+    // reused the surviving entry was then bound to a signal nothing updated.
     const createItemElements = (item, index, key) => {
       const itemSignal = state(item);
       itemSignal._isStxLoopItem = true;
       const indexSignal = state(index);
-      if (key) itemSignalMap.set(key, { item: itemSignal, index: indexSignal });
 
       const itemScope = { ...globalHelpers, ...passedScope, ...(capturedScope || {}) };
       itemScope[itemName] = itemSignal;
@@ -4157,6 +4155,7 @@ catch (e) {
         });
       }
       remapForComponentScopes(elements);
+      elements.__stx_signals = { item: itemSignal, index: indexSignal };
       return elements;
     };
 
@@ -4306,7 +4305,15 @@ catch (e) {
       // Build new element list, reusing existing DOM nodes by key
       const newElements = [];
       const newGroups = [];
-      const usedKeys = new Set();
+      // Keys seen in THIS pass, for the duplicate warning only. Reuse is decided
+      // by whether a group under the key is still unconsumed, not by whether the
+      // key has been seen: gating it on the key made every duplicate occurrence
+      // build a NEW group, while the removal pass below skipped the key as used
+      // and left the old ones in the document. The list grew by one row on every
+      // update, without bound, and the first duplicate stayed bound to a signal
+      // the reconciliation never wrote to.
+      const seenKeys = new Set();
+      let warnedDuplicateKey = false;
 
       // Minimal-move reconciliation.
       //
@@ -4333,7 +4340,13 @@ catch (e) {
         const key = newKeys[i];
         const existing = oldKeyMap.get(key);
 
-        if (existing && existing.length > 0 && !usedKeys.has(key)) {
+        if (seenKeys.has(key) && !warnedDuplicateKey) {
+          warnedDuplicateKey = true;
+          console.warn('[STX] :for has more than one item with the key ' + key + '. Rows are matched in order, so give each item a key of its own.');
+        }
+        seenKeys.add(key);
+
+        if (existing && existing.length > 0) {
           // Reuse this item's nodes — move the whole group into position, in
           // order, so a multi-node row stays contiguous and correctly ordered.
           // A structural directive may intentionally have detached one of the
@@ -4357,11 +4370,10 @@ catch (e) {
           }
           newElements.push(...group);
           newGroups.push(group);
-          usedKeys.add(key);
           // Update the item signal so bindings re-evaluate with new data.
           // This is the fix for #1669 — without this, reused elements show
           // stale data because the old bindings captured the old item via closure.
-          const signals = itemSignalMap.get(key);
+          const signals = group.__stx_signals;
           if (signals) {
             signals.item.set(list[i]);
             signals.index.set(i);
@@ -4400,8 +4412,12 @@ catch (e) {
       // Remove old elements whose keys are no longer in the list.
       // Dispose any scopes registered inside removed items before the
       // remove() call (#1727).
-      for (const [key, groups] of oldKeyMap) {
-        if (!usedKeys.has(key)) {
+      // Whatever is still in here was not consumed above -- either the key left
+      // the list, or the list now has fewer rows under that key than it did.
+      // The test used to be "this key was never used", which could not see the
+      // second case, so a duplicate key's leftover rows stayed on screen.
+      for (const groups of oldKeyMap.values()) {
+        if (groups.length > 0) {
           // In a transition group, run the leave animation and let it remove the
           // node; otherwise remove immediately. Scopes are disposed up-front
           // either way (their destroy hooks shouldn't wait on a CSS transition).
@@ -4426,7 +4442,8 @@ catch (e) {
               removeGroup(group);
             }
           });
-          itemSignalMap.delete(key);
+          // The row's signals went with its group, so there is no key-indexed
+          // map left to prune here.
         }
       }
 
