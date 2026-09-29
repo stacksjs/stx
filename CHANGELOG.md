@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.335...v0.2.336)
+
+## 🐛 Bug Fixes
+
+- **email**: keep styles, the head and hidden preheaders out of the text version ([6437d1a](https://github.com/stacksjs/stx/commit/6437d1a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.336 ([439333d](https://github.com/stacksjs/stx/commit/439333d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.334...v0.2.335)
 
 ## 🐛 Bug Fixes
