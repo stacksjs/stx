@@ -4867,6 +4867,7 @@ grep -rn "from 'stx/routes'" --include='*.ts' . | grep -v 'import type'   # must
 | `prefetch` | `:325` | `:106` | `client.js:830` | `true` |
 | `cache` | `:326` | `:108` | `client.js:312`, `365`, `847` | `true` |
 | `scrollToTop` | `:324` | `:104` | `client.js:449`, `712` | `true` |
+| `scrollRestoration` | `config-types.ts` | yes (next to `scrollToTop`) | `applyScroll`, the popstate handler | `true` |
 | `viewTransitions` | `:321` | `:98` | `client.js:15`, `901` | `true` |
 | `viewTransitionDuration` | `:322` | `:100` | `client.js:902` | `220` |
 | `viewTransitionEasing` | `:323` | `:102` | `client.js:903` | `cubic-bezier(0.16,1,0.3,1)` |
@@ -4878,6 +4879,8 @@ grep -rn "from 'stx/routes'" --include='*.ts' . | grep -v 'import type'   # must
 | `cacheTTL` | `:327` | **no** | never | — |
 | `skipSelectors` | `:328` | **no** | never | — |
 | `viewTransitionCSS` | `:329` | **no** | never | — |
+
+`scrollRestoration` is why back and forward return to where an entry was left rather than to the top: it switches `history.scrollRestoration` to manual and keeps positions in `sessionStorage`, keyed by a token in each history entry. Setting it to `false` restores the old always-top behaviour and hands reload restoration back to the browser.
 
 Two keys are only reachable through `window.__stxRouterConfig` directly, not through `config/ui.ts`: `loadingClass` (`client.js:9`, `303`, `310`) and `prefetchCacheMax` (`client.js:9`, `86`).
 
