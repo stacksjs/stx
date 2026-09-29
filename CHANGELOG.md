@@ -1,5 +1,26 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.340...v0.2.341)
+
+## ⚡ Performance Improvements
+
+- touch and wheel directives listen passively by default ([3b3c4e7](https://github.com/stacksjs/stx/commit/3b3c4e7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- useDocumentVisibility is built into the runtime ([20f700a](https://github.com/stacksjs/stx/commit/20f700a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- serve a page's module bundle as an immutable file in dev ([d473bef](https://github.com/stacksjs/stx/commit/d473bef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **router**: prefetch on touchstart, and eager links while idle ([d7eb120](https://github.com/stacksjs/stx/commit/d7eb120)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 📝 Documentation
+
+- touch and wheel listeners are passive by default; .nonpassive ([93dd268](https://github.com/stacksjs/stx/commit/93dd268)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.341 ([3dd5a70](https://github.com/stacksjs/stx/commit/3dd5a70)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.339...v0.2.340)
 
 ## 🐛 Bug Fixes
