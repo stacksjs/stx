@@ -1,4 +1,4 @@
-import type { AbortNavigationResult, CookieManager, CookieOptions, MiddlewareContext, MiddlewareMode, MiddlewareOptions, MiddlewareResult, NavigateToOptions, NavigateToResult, NavigationError, NavigationResult, RouteLocation, RouteMiddlewareDefinition, RouteMiddlewareHandler, StorageManager } from './types'
+import type { AbortNavigationResult, CookieManager, CookieOptions, MiddlewareContext, MiddlewareOptions, MiddlewareResult, NavigateToOptions, NavigateToResult, NavigationError, RouteLocation, RouteMiddlewareDefinition, RouteMiddlewareHandler, StorageManager } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
 

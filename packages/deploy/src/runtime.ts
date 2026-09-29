@@ -1,4 +1,4 @@
-import type { RuntimeInfo, RuntimePlatform } from './types'
+import type { RuntimeInfo } from './types'
 
 export function detectRuntime(): RuntimeInfo {
   // Cloudflare Workers
