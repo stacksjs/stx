@@ -35,6 +35,7 @@ const originalGlobals = {
   CustomEvent: globalThis.CustomEvent,
   Event: globalThis.Event,
   DOMParser: globalThis.DOMParser,
+  Node: globalThis.Node,
 }
 
 afterEach(() => {
@@ -145,5 +146,83 @@ describe('router: a layout change carries the module registry (#1957)', () => {
 
   it('still runs one that sits in <body>, first', async () => {
     expect(await runOrder(loginDocument(false))).toEqual(['registry', 'setup'])
+  })
+})
+
+/**
+ * A same-layout navigation takes the fragment path, which lists the scripts
+ * in document order. The registry is emitted after the content it serves, so
+ * a component that imports a package (the default `<Video>`, reading
+ * `ts-video-player/elements`) ran ahead of it and threw "is not registered on
+ * this page": the player element was never defined. Seen on hq.training's
+ * phone app, navigating from Today to a page with a video.
+ */
+const COMPONENT = `var __stxMod0 = globalThis.__stxModules && globalThis.__stxModules["npm:ts-video-player/elements"];
+if (__stxMod0 === undefined) throw new Error("not registered");`
+
+const FRAGMENT = `<div data-stx-scope="stx_video_1"><video-player></video-player></div>
+<script data-stx-scoped data-stx-run="always" data-stx-instance="stx_video_1">${COMPONENT}<\/script>
+<script data-stx-page>function __stx_setup_video() { return {} }
+window.stx._latestSetup = __stx_setup_video<\/script>
+<script data-stx-scoped data-stx-run="always" data-stx-modules>${REGISTRY}<\/script>`
+
+async function fragmentRunOrder(): Promise<string[]> {
+  const window = new Window({ url: 'http://localhost/' })
+  window.document.write(`
+    <html>
+      <head>
+        <meta name="stx-layout" content="layouts/mobile.stx">
+        <meta name="stx-layout-group" content="mobile">
+      </head>
+      <body><main>Today</main></body>
+    </html>
+  `)
+  ;(window as any).stx = {}
+  ;(window as any).__stxRouterConfig = { cache: false, prefetch: false, progress: false, viewTransitions: false }
+  const created: any[] = []
+  const createElement = window.document.createElement.bind(window.document)
+  ;(window.document as any).createElement = (tag: string, ...rest: any[]) => {
+    const el = (createElement as any)(tag, ...rest)
+    if (String(tag).toLowerCase() === 'script')
+      created.push(el)
+    return el
+  }
+  Object.assign(globalThis, {
+    window,
+    document: window.document,
+    location: window.location,
+    history: window.history,
+    CustomEvent: window.CustomEvent,
+    Event: window.Event,
+    DOMParser: window.DOMParser,
+    Node: window.Node,
+    fetch: async () => new Response(FRAGMENT, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html',
+        'X-STX-Fragment': 'true',
+        'X-STX-Layout': 'layouts/mobile.stx',
+        'X-STX-Layout-Group': 'mobile',
+        'X-STX-Runtime': 'true',
+      },
+    }),
+  })
+  new Function(getRouterScript())()
+  await (window as any).stxRouter.navigate('/m/video')
+  await new Promise(r => setTimeout(r, 200))
+  return created
+    .filter(s => s.hasAttribute && s.hasAttribute('data-stx-page'))
+    .map((s) => {
+      const text = String(s.textContent || '')
+      if (text.includes('__stxModuleBundles')) return 'registry'
+      if (text.includes('__stx_setup_video')) return 'setup'
+      if (text.includes('ts-video-player/elements')) return 'component'
+      return 'other'
+    })
+}
+
+describe('router: a fragment runs the module registry first (#1957)', () => {
+  it('runs the registry before the components that import from it, and the page setup last', async () => {
+    expect(await fragmentRunOrder()).toEqual(['registry', 'component', 'setup'])
   })
 })

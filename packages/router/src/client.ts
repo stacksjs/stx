@@ -1014,7 +1014,8 @@ else {
             var scoped=/(?:^|\\s)data-stx-scoped(?:\\s|=|$)/i.test(attrs);
             var runDecl=(attrs.match(/data-stx-run\\s*=\\s*["']?(always|once)["']?/i)||[])[1];
             var ownerDecl=(attrs.match(/data-stx-owner\\s*=\\s*["']([^"']+)["']/i)||[])[1]||'';
-            fragScripts.push({text:code,slot:slot,setupName:generatedSetupName(code),scoped:scoped,run:runDecl?runDecl.toLowerCase():'',owner:ownerDecl});
+            var registry=/(?:^|\\s)data-stx-modules(?:\\s|=|$)/i.test(attrs)||REGISTRY_TEXT.test(code);
+            fragScripts.push({text:code,slot:slot,setupName:generatedSetupName(code),scoped:scoped,run:runDecl?runDecl.toLowerCase():'',owner:ownerDecl,registry:registry});
             // Retain scoped setup code in its inert placeholder. A placeholder
             // inside template.content is unreachable through document, so the
             // repeated component runtime must execute it for each clone.
@@ -1085,7 +1086,13 @@ else {
         // Execute page scripts FIRST — they define setup functions and set _latestSetup
         log('[router] frag scripts:', fragScripts.length);
         document.querySelectorAll('script[data-stx-page]').forEach(function(s){s.remove()});
-        fragScripts.sort(function(a,b){return (a.setupName?1:0)-(b.setupName?1:0)});
+        // The page's module registry first (#1957), setups last. A fragment
+        // lists its scripts in document order, and the registry is emitted
+        // after the content it serves: a component that imports a package ran
+        // ahead of it and threw "is not registered on this page". The full
+        // document path orders them the same way (registryFirst, below).
+        function fragOrder(entry){return entry.registry?0:entry.setupName?2:1}
+        fragScripts.sort(function(a,b){return fragOrder(a)-fragOrder(b)});
         function runFragScripts(){
         fragScripts.forEach(function(entry){
           var code=entry.text;
