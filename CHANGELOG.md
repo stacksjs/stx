@@ -1,5 +1,29 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.338...v0.2.339)
+
+## ✨ Features
+
+- **router**: back and forward return to where the entry was left ([7b7d2eb](https://github.com/stacksjs/stx/commit/7b7d2eb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **bundler**: bundle what a registry package re-exports ([ddbee08](https://github.com/stacksjs/stx/commit/ddbee08)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 📝 Documentation
+
+- **agent-guide**: list scrollRestoration among the router keys that reach the browser ([935a1e5](https://github.com/stacksjs/stx/commit/935a1e5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **claude**: note 30 described a limitation that no longer exists ([6639d39](https://github.com/stacksjs/stx/commit/6639d39)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.339 ([f2aafe9](https://github.com/stacksjs/stx/commit/f2aafe9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.337...v0.2.338)
 
 ## 🐛 Bug Fixes
