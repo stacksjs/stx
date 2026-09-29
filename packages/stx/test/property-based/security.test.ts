@@ -5,6 +5,11 @@ import { resetCsrfToken } from '../../src/csrf'
 import { processDirectives } from '../../src/process'
 import { cleanupTestDirs, setupTestDirs } from '../utils'
 
+// A directive in a VALUE is neutralised by encoding its `@` as `&#64;`, so no
+// later pass can act on it. That renders exactly as written, so these tests
+// decode the reference before asserting the text survived as data.
+const decodeCharRefs = (html: string): string => html.replace(/&#64;/g, '@')
+
 const defaultOptions: StxOptions = {
   debug: false,
   componentsDir: 'components',
@@ -265,7 +270,7 @@ describe('Property-Based Security Tests', () => {
         })
 
         // The content should be escaped, not evaluated
-        expect(result).toContain('@if(true)')
+        expect(decodeCharRefs(result)).toContain('@if(true)')
         expect(result).not.toContain('SECRET DATA')
       }
     })

@@ -22,6 +22,11 @@ import {
   sanitizeExpression,
 } from '../../src/safe-evaluator'
 
+// A directive in a VALUE is neutralised by encoding its `@` as `&#64;`, so no
+// later pass can act on it. That renders exactly as written, so these tests
+// decode the reference before asserting the text survived as data.
+const decodeCharRefs = (html: string): string => html.replace(/&#64;/g, '@')
+
 const defaultOptions: StxOptions = { debug: false, componentsDir: 'components' }
 
 async function processTemplate(template: string, context: Record<string, any> = {}): Promise<string> {
@@ -765,7 +770,7 @@ describe('XSS in Template Expressions', () => {
       userContent: '@if(true)INJECTED@endif',
     })
     // Directives in user content should be treated as literal text
-    expect(result).toContain('@if(true)')
+    expect(decodeCharRefs(result)).toContain('@if(true)')
   })
 
   it('should escape </script> in context to prevent script tag breakout', async () => {

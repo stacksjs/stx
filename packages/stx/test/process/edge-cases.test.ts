@@ -10,6 +10,11 @@ import { processBasicFormDirectives } from '../../src/forms'
 import { processForms } from '../../src/forms'
 import { processDirectives } from '../../src/process'
 
+// A directive in a VALUE is neutralised by encoding its `@` as `&#64;`, so no
+// later pass can act on it. That renders exactly as written, so these tests
+// decode the reference before asserting the text survived as data.
+const decodeCharRefs = (html: string): string => html.replace(/&#64;/g, '@')
+
 const defaultOptions: StxOptions = {
   debug: false,
   componentsDir: 'components',
@@ -173,7 +178,7 @@ describe('Process Pipeline Stress Tests', () => {
   it('template with raw HTML that looks like directives but is inside strings', async () => {
     const template = `<div>{{ text }}</div>`
     const result = await processTemplate(template, { text: '@if(true)fake@endif' })
-    expect(result).toContain('@if(true)fake@endif')
+    expect(decodeCharRefs(result)).toContain('@if(true)fake@endif')
   })
 
   it('template where same variable is used in multiple scopes', async () => {
