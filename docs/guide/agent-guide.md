@@ -3645,7 +3645,7 @@ The only modifier implementation that applies is the signals runtime, `signals.j
 
 | Supported | Not supported (silently ignored) |
 |---|---|
-| `.prevent` `.stop` `.self` `.capture` `.passive` `.once` | `.debounce` `.debounce.300` `.throttle` |
+| `.prevent` `.stop` `.self` `.capture` `.passive` `.nonpassive` `.once` | `.debounce` `.debounce.300` `.throttle` |
 | `.ctrl` `.alt` `.shift` `.meta` | `.esc` (only `escape` is in `KEY_MAP`, `signals.js:1763`) |
 | `.enter` `.tab` `.escape` `.space` `.up` `.down` `.left` `.right` `.delete` `.backspace` | `.middle` — and `.left` / `.right` are **key** modifiers |
 

@@ -410,7 +410,7 @@ Bind event handlers directly in the template:
 <input @keydown.enter="search()" />
 ```
 
-Supported modifiers: `.prevent`, `.stop`, `.self`, `.once`, `.capture`, `.passive`, `.ctrl`, `.alt`, `.shift`, `.meta`, `.enter`, `.escape`, `.space`, `.tab`
+Supported modifiers: `.prevent`, `.stop`, `.self`, `.once`, `.capture`, `.passive`, `.nonpassive` (touch and wheel listeners are passive by default), `.ctrl`, `.alt`, `.shift`, `.meta`, `.enter`, `.escape`, `.space`, `.tab`
 
 #### Conditional Rendering (`@if`, `@show`)
 

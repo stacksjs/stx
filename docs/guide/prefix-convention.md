@@ -401,7 +401,8 @@ Modifiers are chained after the event name with dots.
 | `.stop` | Calls `event.stopPropagation()` | `@click.stop="handle()"` |
 | `.once` | Fires handler only once | `@click.once="init()"` |
 | `.self` | Only fires if target is the element itself | `@click.self="close()"` |
-| `.passive` | Passive event listener (performance) | `@scroll.passive="onScroll()"` |
+| `.passive` | Passive event listener (performance). Touch and wheel events are passive by default | `@scroll.passive="onScroll()"` |
+| `.nonpassive` | A blocking touch or wheel listener, for a handler that calls `preventDefault()` | `@wheel.nonpassive="zoom($event)"` |
 | `.capture` | Use capture mode | `@click.capture="log()"` |
 
 Combine modifiers:

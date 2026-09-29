@@ -506,11 +506,17 @@ const emailValidation = {
 <!-- Passive listener -->
 <div @scroll.passive="handleScroll">
 
+<!-- Touch and wheel listeners are passive already; opt out to call preventDefault() -->
+<div @touchstart="startSwipe">
+<canvas @wheel.nonpassive="zoom">
+
 <!-- Key modifiers -->
 <input @keyup.enter="search">
 <input @keyup.esc="clearSearch">
 <input @keyup.ctrl.s="save">
 ```
+
+`@touchstart`, `@touchmove` and `@wheel` listen passively by default, so a scroll that starts on the element never waits for the handler. `.prevent` keeps a blocking listener, since it calls `preventDefault()`; write `.nonpassive` when the handler calls it itself.
 
 ### Model Modifiers
 
