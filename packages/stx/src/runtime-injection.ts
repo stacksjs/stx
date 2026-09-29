@@ -424,6 +424,7 @@ export async function injectRouterScript(template: string, options?: StxOptions)
       if (routerConfig.viewTransitionDuration !== undefined) configObj.viewTransitionDuration = routerConfig.viewTransitionDuration
       if (routerConfig.viewTransitionEasing !== undefined) configObj.viewTransitionEasing = routerConfig.viewTransitionEasing
       if (routerConfig.scrollToTop !== undefined) configObj.scrollToTop = routerConfig.scrollToTop
+      if (routerConfig.scrollRestoration !== undefined) configObj.scrollRestoration = routerConfig.scrollRestoration
       if (routerConfig.prefetch !== undefined) configObj.prefetch = routerConfig.prefetch
       if (routerConfig.cache !== undefined) configObj.cache = routerConfig.cache
       if (routerConfig.progressColor !== undefined) configObj.progressColor = routerConfig.progressColor

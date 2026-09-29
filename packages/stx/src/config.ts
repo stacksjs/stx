@@ -124,6 +124,7 @@ export const defaultConfig: StxConfig = {
     linkSelector: 'a[href]',
     viewTransitions: true,
     scrollToTop: true,
+    scrollRestoration: true,
     prefetch: true,
     cache: true,
     cacheTTL: 5 * 60 * 1000, // 5 minutes

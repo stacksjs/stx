@@ -970,6 +970,14 @@ export interface StxConfig {
      */
     viewTransitionEasing?: string
     scrollToTop?: boolean
+    /**
+     * Return to the position an entry was left at on back/forward, instead of
+     * the top of the page. Switches history.scrollRestoration to manual and
+     * keeps the positions in sessionStorage, keyed per history entry, which
+     * also covers the reload the browser would otherwise have handled itself.
+     * Default: true.
+     */
+    scrollRestoration?: boolean
     prefetch?: boolean
     cache?: boolean
     cacheTTL?: number

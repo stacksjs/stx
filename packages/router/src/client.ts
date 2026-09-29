@@ -112,7 +112,7 @@ function routerSource(): string {
   if(window.__stxRouter&&window.__stxRouter.__rev===ROUTER_REV)return;
 
   // ── Configuration ──
-  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false,prefetchCacheMax:50,routeFocus:true,announceRoute:true,interceptForms:false,cssLoadTimeout:1500};
+  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false,prefetchCacheMax:50,routeFocus:true,announceRoute:true,interceptForms:false,cssLoadTimeout:1500,scrollRestoration:true};
   var o=Object.assign({},defaults,window.__stxRouterConfig||{},window.STX_ROUTER_OPTIONS||{});
   var containerSel=o.container;
   var debug=!!o.debug;
@@ -128,6 +128,84 @@ function routerSource(): string {
   function qsa(sel){return document.querySelectorAll(sel)}
   function ce(tag){return document.createElement(tag)}
   function dhead(){return document.head}
+
+  // ── Scroll position ──
+  // Forward navigation goes to the top, or to the hash. Back and forward return
+  // to where the entry was left -- the browser cannot do that for us, because
+  // by the time it would restore, the content of the entry has not been fetched
+  // yet, so it clamps to whatever height the outgoing page happened to have.
+  // history.scrollRestoration therefore goes to manual and the positions are
+  // kept here, keyed by a token written into each history entry (two entries
+  // for the same URL keep their own positions, which is the point).
+  //
+  // Manual restoration also takes the browser's reload behaviour away, so the
+  // positions are mirrored into sessionStorage: a reload, or a return to the
+  // tab, finds the entry's token already in history.state and restores from
+  // there. sessionStorage is per tab and dies with it, same as the history.
+  var SCROLL_TOKEN='__stxScroll';
+  var SCROLL_STORE='stx:scroll:';
+  var scrollSeq=0;
+  var pendingScroll=null;
+  var restoreScroll=!!o.scrollRestoration;
+  function newScrollToken(){return 's'+(++scrollSeq)+'-'+Date.now()}
+  var scrollToken=(history.state&&history.state[SCROLL_TOKEN])||newScrollToken();
+  // sessionStorage is the only store: it is synchronous, it is per tab, it dies
+  // with the tab exactly as the history does, and it is the one that survives a
+  // reload. A private window that refuses it degrades to scrolling to the top.
+  function readScroll(token){
+    try{
+      var parts=(window.sessionStorage.getItem(SCROLL_STORE+token)||'').split(',');
+      return parts.length===2?[parseFloat(parts[0])||0,parseFloat(parts[1])||0]:null;
+    }catch(e){return null}
+  }
+  // Called while the outgoing entry is still the current one, so the position
+  // read here belongs to the token being written.
+  function rememberScroll(){
+    if(!restoreScroll)return;
+    try{window.sessionStorage.setItem(SCROLL_STORE+scrollToken,(window.pageXOffset||window.scrollX||0)+','+(window.pageYOffset||window.scrollY||0))}catch(e){}
+  }
+  // One place decides where a swap leaves the viewport, so the fragment path
+  // and the whole-document path cannot drift apart.
+  function applyScroll(hash){
+    if(pendingScroll){
+      var at=pendingScroll;
+      pendingScroll=null;
+      window.scrollTo({left:at[0],top:at[1],behavior:'instant'});
+      return;
+    }
+    if(o.scrollToTop&&!hash){window.scrollTo({top:0,behavior:'instant'});return}
+    if(hash){var el=qs(hash);if(el)el.scrollIntoView({behavior:'smooth'})}
+  }
+  // Keeps whatever another script put in the entry; only adds the token.
+  function stampScrollToken(){
+    var state={};
+    var current=history.state;
+    if(current&&typeof current==='object')for(var key in current)state[key]=current[key];
+    state[SCROLL_TOKEN]=scrollToken;
+    try{history.replaceState(state,'',location.href)}catch(e){}
+  }
+  if(restoreScroll){
+    try{history.scrollRestoration='manual'}catch(e){}
+    // A token already in the entry means this document is a reload or a
+    // restore of an entry visited before, so its position is worth asking for.
+    var known=history.state&&history.state[SCROLL_TOKEN];
+    if(known){
+      var saved=readScroll(scrollToken);
+      if(saved&&(saved[0]||saved[1])){
+        var restoreAt=function(){window.scrollTo({left:saved[0],top:saved[1],behavior:'instant'})};
+        if(document.readyState==='complete')restoreAt();
+        else window.addEventListener('load',restoreAt,{once:true});
+      }
+    }
+    else{
+      stampScrollToken();
+    }
+    // A reload or a link out of the app never calls writeHistory, so this is
+    // the only chance to record where the page was left. pagehide fires for
+    // both, and unlike beforeunload it does not keep the page out of the
+    // back/forward cache.
+    window.addEventListener('pagehide',rememberScroll);
+  }
 
   // Replace, never merge: absent payloads must forget the outgoing page's data.
   // Run at the committed swap, not during prefetch or a superseded navigation.
@@ -719,9 +797,14 @@ function routerSource(): string {
   // through swap() to each of the three history sites would have been the
   // alternative (#1807).
   function writeHistory(mode,href){
-    if(mode==='replace')history.replaceState({},'',href);
-    else history.pushState({},'',href);
+    // The position belongs to the entry being left, and scrollToken still
+    // names it here.
+    rememberScroll();
+    if(mode==='replace'){history.replaceState(tokenState(),'',href);return}
+    scrollToken=newScrollToken();
+    history.pushState(tokenState(),'',href);
   }
+  function tokenState(){var state={};state[SCROLL_TOKEN]=scrollToken;return state}
 
   // Second arg accepts the legacy pushState boolean OR an options object
   // { replace }. Callers inside this file still pass the boolean.
@@ -1176,8 +1259,7 @@ else {
         qsa('script[data-stx-page]').forEach(function(s){s.remove()});
         if(pushState!==false)writeHistory(pushState,url+(hash||''));
         refreshCurrentLinks();
-        if(o.scrollToTop&&!hash)window.scrollTo({top:0,behavior:'instant'});
-        else if(hash){var el=qs(hash);if(el)el.scrollIntoView({behavior:'smooth'})}
+        applyScroll(hash);
         window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url}}));
         // Before page scripts run, so a page that focuses its own control on
         // mount still wins — its script executes after this.
@@ -1635,8 +1717,7 @@ else {
       refreshCurrentLinks();
 
       // Scroll
-      if(o.scrollToTop&&!hash)window.scrollTo({top:0,behavior:'instant'});
-      else if(hash){var el=qs(hash);if(el)el.scrollIntoView({behavior:'smooth'})}
+      applyScroll(hash);
 
       // Update title
       var newTitle=doc.querySelector('title');
@@ -2002,6 +2083,16 @@ else {
 
   // ── Back/forward ──
   window.addEventListener('popstate',function(){
+    // Nothing has scrolled yet (restoration is manual), so the viewport still
+    // shows the entry being left: save it under its own token before adopting
+    // the popped entry's, and hand the swap the position to land on.
+    rememberScroll();
+    if(restoreScroll){
+      var popped=history.state&&history.state[SCROLL_TOKEN];
+      scrollToken=popped||newScrollToken();
+      if(!popped)stampScrollToken();
+      pendingScroll=readScroll(scrollToken);
+    }
     navigate(location.pathname+location.search+location.hash,false);
   });
 
