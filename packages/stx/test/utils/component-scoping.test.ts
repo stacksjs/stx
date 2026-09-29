@@ -51,8 +51,12 @@ describe('Component scoping', () => {
     it('should capture template ref ownership when useRef is created', () => {
       const runtime = generateSignalsRuntimeDev()
 
+      // The owner is read once, when useRef runs, and so is its ref map: a
+      // later read goes to that map, never to whichever component
+      // `componentScope` points at by then (stacksjs/stacks#2793).
       expect(runtime).toContain('var ownerScope = currentLifecycleScope() || componentScope')
-      expect(runtime).toContain('return (ownerScope.$refs && ownerScope.$refs[name]) || null')
+      expect(runtime).toContain('var ownerRefs = ownerScope.$refs || (ownerScope.$refs = {})')
+      expect(runtime).toContain('return ownerRefs[name] || null')
     })
   })
 
