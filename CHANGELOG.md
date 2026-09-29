@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.333...v0.2.334)
+
+## 🐛 Bug Fixes
+
+- **serve**: leave the styles inside scripts out of a fragment's page styles ([ee45f81](https://github.com/stacksjs/stx/commit/ee45f81)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.334 ([02e80a5](https://github.com/stacksjs/stx/commit/02e80a5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.332...v0.2.333)
 
 ## 🐛 Bug Fixes
