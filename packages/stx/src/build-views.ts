@@ -280,8 +280,14 @@ export async function renderEmail(
   // Strip <script> tags (email should have no JS)
   html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
 
-  // Strip <style> blocks (already inlined)
-  html = html.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
+  // Strip the stylesheets stx generated itself - utility CSS (now inlined
+  // above), the x-cloak rule, vendor CSS - and keep the ones the template's
+  // author wrote. Stripping every <style> block took `@media` rules with it:
+  // dark mode and phone layouts cannot be inlined, so an email could not have
+  // either, and a caller's own CSS inliner (Stacks runs one after this) was
+  // handed nothing to work on.
+  html = html.replace(/<style\b([^>]*)>[\s\S]*?<\/style>/gi, (block, attrs: string) =>
+    /\bdata-(?:css=["']generated["']|stx-)/i.test(attrs) ? '' : block)
 
   // Strip stx SEO comment blocks
   html = html.replace(/<!--\s*stx SEO Tags\s*-->/gi, '')
