@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.331...v0.2.332)
+
+## 🐛 Bug Fixes
+
+- **composables**: carry a page's composables across navigation ([9811e63](https://github.com/stacksjs/stx/commit/9811e63)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.332 ([b8d9594](https://github.com/stacksjs/stx/commit/b8d9594)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.330...v0.2.331)
 
 ## 🐛 Bug Fixes
