@@ -36,7 +36,7 @@
 import path from 'node:path'
 import fs from 'node:fs'
 import type { ParsedEvent, EventModifiers } from './events'
-import { asInvocableStatement } from './events'
+import { asInvocableStatement, listensPassively } from './events'
 import { transformStoreImports } from './store-imports'
 import { bracketDepths, findInterpolationEnd, stripCommentsAndLiterals } from './strip-literals'
 // Re-exported from its old home. It moved to `strip-literals.ts` so the
@@ -1163,7 +1163,7 @@ function generateSingleEventBinding(binding: ParsedEvent, index: number): string
   const options: string[] = []
   if (modifiers.once) options.push('once: true')
   if (modifiers.capture) options.push('capture: true')
-  if (modifiers.passive) options.push('passive: true')
+  if (listensPassively(event, modifiers)) options.push('passive: true')
   const optionsStr = options.length > 0 ? `, { ${options.join(', ')} }` : ''
 
   // Build the handler body

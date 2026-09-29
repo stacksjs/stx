@@ -38,6 +38,8 @@
  * @module hydration
  */
 
+import { listensPassively } from './events'
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -627,7 +629,14 @@ catch (error) {
     // Set up listener options based on modifiers
     const options: AddEventListenerOptions = {}
     if (event.modifiers?.includes('once')) options.once = true
-    if (event.modifiers?.includes('passive')) options.passive = true
+    const modifiers = event.modifiers ?? []
+    if (listensPassively(event.type, {
+      passive: modifiers.includes('passive'),
+      prevent: modifiers.includes('prevent') || event.preventDefault,
+      nonpassive: modifiers.includes('nonpassive'),
+    })) {
+      options.passive = true
+    }
     if (event.modifiers?.includes('capture')) options.capture = true
 
     el.addEventListener(event.type, wrappedHandler, options)

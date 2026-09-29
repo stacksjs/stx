@@ -80,6 +80,8 @@ export interface EventModifiers {
   self: boolean
   /** Passive event listener */
   passive: boolean
+  /** Not passive, for a scroll-blocking event whose handler calls preventDefault() itself */
+  nonpassive: boolean
   /** Key modifiers (enter, escape, space, etc.) */
   keys: string[]
   /** System modifiers (ctrl, alt, shift, meta) */
@@ -90,6 +92,26 @@ export interface EventModifiers {
   debounce: number | null
   /** Throttle delay in ms */
   throttle: number | null
+}
+
+/**
+ * Events the browser waits on before it scrolls. A listener for one that is not
+ * passive holds every scroll starting on its element until the main thread has
+ * run it, which on a phone is a visible stall at the start of the gesture.
+ */
+export const SCROLL_BLOCKING_EVENTS: ReadonlySet<string> = new Set(['touchstart', 'touchmove', 'wheel', 'mousewheel'])
+
+/**
+ * Whether a directive's listener is passive. `.passive` always is; a
+ * scroll-blocking event is by default, unless `.prevent` needs preventDefault()
+ * or `.nonpassive` says the handler calls it itself.
+ */
+export function listensPassively(event: string, modifiers: Partial<Pick<EventModifiers, 'passive' | 'prevent' | 'nonpassive'>>): boolean {
+  if (modifiers.passive)
+    return true
+  if (modifiers.prevent || modifiers.nonpassive)
+    return false
+  return SCROLL_BLOCKING_EVENTS.has(event.toLowerCase())
 }
 
 interface ElementWithEvents {
@@ -171,6 +193,7 @@ function parseModifiers(parts: string[]): EventModifiers {
     capture: false,
     self: false,
     passive: false,
+    nonpassive: false,
     keys: [],
     systemKeys: [],
     mouse: null,
@@ -198,6 +221,9 @@ function parseModifiers(parts: string[]): EventModifiers {
     }
     else if (lowerPart === 'passive') {
       modifiers.passive = true
+    }
+    else if (lowerPart === 'nonpassive') {
+      modifiers.nonpassive = true
     }
     else if (SYSTEM_KEYS.has(lowerPart)) {
       modifiers.systemKeys.push(lowerPart)
@@ -401,7 +427,7 @@ function generateEventListener(event: ParsedEvent): string {
   const options: string[] = []
   if (modifiers.once) options.push('once: true')
   if (modifiers.capture) options.push('capture: true')
-  if (modifiers.passive) options.push('passive: true')
+  if (listensPassively(event.event, modifiers)) options.push('passive: true')
   const optionsStr = options.length > 0 ? `, { ${options.join(', ')} }` : ''
 
   // Escape the handler for use in string

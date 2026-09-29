@@ -3210,7 +3210,12 @@ catch (e) {
           }
         }, {
           capture: modifiers.includes('capture'),
-          passive: modifiers.includes('passive'),
+          // A touch or wheel listener that is not passive holds every scroll
+          // starting on the element until this thread has run it. Passive
+          // unless .prevent needs preventDefault() or .nonpassive asks.
+          passive: modifiers.includes('passive')
+            || (/^(touchstart|touchmove|wheel|mousewheel)$/i.test(eventName)
+              && !modifiers.includes('prevent') && !modifiers.includes('nonpassive')),
           once: modifiers.includes('once')
         });
         el.removeAttribute(name);
