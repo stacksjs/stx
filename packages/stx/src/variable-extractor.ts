@@ -450,6 +450,13 @@ export function isModuleResolutionFailure(message: string): boolean {
  * as a correct answer rather than as a failure, which is exactly the shape that
  * is expensive to find.
  */
+export function isSyntaxFailure(error: unknown): boolean {
+  if (error instanceof SyntaxError)
+    return true
+  const message = error instanceof Error ? error.message : String(error)
+  return /SyntaxError|Unexpected (token|identifier|string|number|keyword|end of)|Unterminated|Expected .+ but found/i.test(message)
+}
+
 export function isMissingBindingFailure(message: string): boolean {
   if (!/is not defined|can't find variable/i.test(message))
     return false
@@ -1111,6 +1118,15 @@ catch {
     if (isModuleResolutionFailure(msg)) {
       console.warn(
         `[stx] server <script> in ${filePath ?? '<unknown>'} imports a module that does not resolve, `
+        + `so every variable in that script is undefined. Cause: ${msg}`,
+      )
+    }
+    else if (isSyntaxFailure(primaryError)) {
+      // Never the client-only case: a script that does not parse has no
+      // bindings at all, and the page's loops and conditionals then report
+      // the symptom (an empty @foreach) rather than this line.
+      console.warn(
+        `[stx] server <script> in ${filePath ?? '<unknown>'} does not parse, `
         + `so every variable in that script is undefined. Cause: ${msg}`,
       )
     }
