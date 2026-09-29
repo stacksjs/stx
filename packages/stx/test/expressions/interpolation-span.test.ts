@@ -51,6 +51,20 @@ describe('nested braces inside an interpolation', () => {
   })
 })
 
+describe('{{{ raw }}} reads its span the same way', () => {
+  it('serializes a nested object, unescaped', async () => {
+    expect(await render('{{{ JSON.stringify({a:{b:1}}) }}}')).toBe('{"a":{"b":1}}')
+  })
+
+  it('keeps a }}} that lives inside a string literal', async () => {
+    expect(await render('{{{ "a}}}b" }}}')).toBe('a}}}b')
+  })
+
+  it('still emits raw markup, and leaves a following {{ }} to the escaped pass', async () => {
+    expect(await render('{{{ raw }}} and {{ n }}', { raw: '<i>x</i>', n: 5 })).toBe('<i>x</i> and 5')
+  })
+})
+
 describe('findMustacheEnd', () => {
   const end = (s: string) => findMustacheEnd(s, s.indexOf('{{'))
 
@@ -77,6 +91,13 @@ describe('findMustacheEnd', () => {
   it('reports -1 when nothing closes it', () => {
     expect(end('{{ a')).toBe(-1)
     expect(end('{{ f({a:1) }')).toBe(-1)
+  })
+
+  it('wants all three braces when asked for three', () => {
+    const triple = '{{{ f({a:1}) }}}'
+    expect(findMustacheEnd(triple, 0, 3)).toBe(triple.length - 3)
+    // Two closing braces do not end a triple span.
+    expect(findMustacheEnd('{{{ a }}', 0, 3)).toBe(-1)
   })
 })
 

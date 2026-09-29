@@ -457,11 +457,11 @@ export function clearCustomFilters(): void {
  * including inside attribute values, with no error and no warning. A `}}` in a
  * string (`{{ "a}}b" }}`) ended it early the same way.
  */
-export function findMustacheEnd(input: string, openIndex: number): number {
+export function findMustacheEnd(input: string, openIndex: number, braces: number = 2): number {
   let depth = 0
   let quote: string | null = null
 
-  for (let i = openIndex + 2; i < input.length; i++) {
+  for (let i = openIndex + braces; i < input.length; i++) {
     const character = input[i]
 
     if (quote) {
@@ -487,7 +487,9 @@ export function findMustacheEnd(input: string, openIndex: number): number {
         depth--
         continue
       }
-      if (input[i + 1] === '}')
+      let run = 0
+      while (input[i + run] === '}') run++
+      if (run >= braces)
         return i
     }
   }
@@ -506,24 +508,26 @@ export function findMustacheEnd(input: string, openIndex: number): number {
 export function replaceInterpolations(
   input: string,
   replacer: (match: string, expr: string, offset: number) => string,
+  braces: number = 2,
 ): string {
-  if (!input.includes('{{'))
+  const opener = '{'.repeat(braces)
+  if (!input.includes(opener))
     return input
 
   let output = ''
   let cursor = 0
 
   for (;;) {
-    const open = input.indexOf('{{', cursor)
+    const open = input.indexOf(opener, cursor)
     if (open === -1)
       break
 
-    const close = findMustacheEnd(input, open)
+    const close = findMustacheEnd(input, open, braces)
     if (close === -1)
       break
 
-    output += input.slice(cursor, open) + replacer(input.slice(open, close + 2), input.slice(open + 2, close), open)
-    cursor = close + 2
+    output += input.slice(cursor, open) + replacer(input.slice(open, close + braces), input.slice(open + braces, close), open)
+    cursor = close + braces
   }
 
   return cursor === 0 ? input : output + input.slice(cursor)
@@ -1004,7 +1008,7 @@ export function processExpressions(template: string, context: Record<string, any
   )
 
   // Replace triple curly braces with unescaped expressions {{{ expr }}} - similar to {!! expr !!}
-  output = output.replace(/\{\{\{([\s\S]*?)\}\}\}/g, (match, expr, offset) => {
+  output = replaceInterpolations(output, (match, expr, offset) => {
     try {
       const value = evaluateExpression(expr, context, false, r => warnRejectedExpression(r, match, filePath, template))
       // Return raw content without escaping
@@ -1021,7 +1025,7 @@ export function processExpressions(template: string, context: Record<string, any
         match,
       )
     }
-  })
+  }, 3)
 
   // Replace {!! expr !!} with unescaped expressions
   output = output.replace(/\{!!([\s\S]*?)!!\}/g, (match, expr, offset) => {

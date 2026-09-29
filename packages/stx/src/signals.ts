@@ -4112,7 +4112,8 @@ catch (e) {
     // Helper to hide empty state
     const hideEmpty = () => {
       if (emptyElement) {
-        disposeSubtreeEffects(emptyElement);
+        // A string @empty renders a text node, which has no subtree to dispose.
+        if (emptyElement.nodeType === 1) disposeSubtreeEffects(emptyElement);
         emptyElement.remove();
         emptyElement = null;
       }
@@ -4268,10 +4269,16 @@ catch (e) {
         clearRenderedItems();
         if (emptyExpr) {
           const emptyContent = evalLazy(emptyExpr);
+          // Held in the same slot the @for-empty template uses, so hideEmpty
+          // takes it away when the list fills and a second empty render
+          // replaces it instead of stacking another one. It used to go into
+          // currentElements, which teardown does not walk -- it walks
+          // currentGroups -- so the text stayed in the document forever: an
+          // empty list that filled read "Nothing herea".
+          hideEmpty();
           if (emptyContent && typeof emptyContent === 'string') {
-            const textNode = document.createTextNode(emptyContent);
-            parent.insertBefore(textNode, placeholder);
-            currentElements.push(textNode);
+            emptyElement = document.createTextNode(emptyContent);
+            parent.insertBefore(emptyElement, placeholder);
           }
         } else if (emptyTemplate) {
           showEmpty();
