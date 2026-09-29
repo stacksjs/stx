@@ -398,6 +398,13 @@ function parseCssToMap(css: string): Map<string, string> {
  */
 function htmlToPlainText(html: string): string {
   return html
+    // What a reader never sees stays out of the text version: the head (title
+    // and styles), any style or script, and hidden elements such as an inbox
+    // preheader. Now that renderEmail keeps the author's style blocks, the
+    // text version otherwise opened with a page of CSS.
+    .replace(/<head\b[\s\S]*?<\/head>/gi, '')
+    .replace(/<(style|script)\b[\s\S]*?<\/\1>/gi, '')
+    .replace(/<(div|span|p)\b[^>]*\bstyle="[^"]*display:\s*none[^"]*"[^>]*>[\s\S]*?<\/\1>/gi, '')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/(p|div|h[1-6]|li|tr)>/gi, '\n')
     .replace(/<\/td>/gi, '\t')

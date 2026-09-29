@@ -41,3 +41,12 @@ describe('renderEmail <style> blocks', () => {
     expect(html).not.toContain('<script')
   })
 })
+
+describe('renderEmail plain text', () => {
+  it('leaves out what a reader never sees: styles, the head and a hidden preheader', async () => {
+    const file = join(dir, 'text.stx')
+    writeFileSync(file, `<html><head><title>Subject line</title><style>@media (prefers-color-scheme: dark) { .x { color: red } }</style></head><body><div style="display:none;max-height:0;">Preview text</div><p>Hello there.</p></body></html>`)
+    const { text } = await renderEmail(file, {})
+    expect(text).toBe('Hello there.')
+  })
+})
