@@ -1028,6 +1028,25 @@ export function processLoops(template: string, context: Record<string, any>, fil
               itemContext[itemName] = item
             }
           }
+          // Object destructuring: @foreach(items as {id, name}), and
+          // @foreach(items as {id: key}) to rename. The binding was bound under
+          // its own literal text, so every name inside it read as undefined and
+          // the row rendered blank -- no error, no warning. `{` was already
+          // reserved by the comma split above for exactly this.
+          else if (itemName.startsWith('{') && itemName.endsWith('}')) {
+            const fields = itemName.slice(1, -1).split(',').map(field => field.trim()).filter(Boolean)
+            if (item !== null && typeof item === 'object') {
+              fields.forEach((field) => {
+                const separator = field.indexOf(':')
+                const property = (separator === -1 ? field : field.slice(0, separator)).trim()
+                const alias = separator === -1 ? property : field.slice(separator + 1).trim()
+                if (property && alias) itemContext[alias] = (item as Record<string, any>)[property]
+              })
+            }
+            else {
+              itemContext[itemName] = item
+            }
+          }
           else {
             itemContext[itemName] = item
           }
