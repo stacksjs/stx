@@ -154,9 +154,10 @@ describe('stx Security Tests', () => {
         url: 'javascript:alert("XSS")',
       })
 
-      // JavaScript URL might be present but should be escaped
+      // The quotes are escaped, and the scheme is refused outright: escaping
+      // alone leaves a quote-free javascript: URL perfectly clickable.
       expect(result).not.toContain('javascript:alert("XSS")')
-      expect(result).toContain('javascript:alert(&quot;XSS&quot;)')
+      expect(result).toContain('href="unsafe:javascript:alert(&quot;XSS&quot;)"')
     })
 
     it('should escape nested XSS vectors', async () => {

@@ -702,17 +702,16 @@ describe('XSS in Template Expressions', () => {
     expect(result).toContain('&lt;img')
   })
 
-  it('should pass through javascript: protocol when no HTML-special chars present', async () => {
-    // NOTE: escapeHtml only escapes & < > " ' characters.
-    // "javascript:alert(1)" contains none of those, so it passes through unchanged.
-    // This is a known limitation: {{ }} escaping prevents HTML injection but does NOT
-    // sanitize URL protocols. Href sanitization requires separate URL validation logic.
+  it('should refuse a javascript: protocol, which no HTML escape can catch', async () => {
+    // escapeHtml only touches & < > " ' -- "javascript:alert(1)" holds none of
+    // them, so escaping alone left this clickable. url-safety.ts is what reads
+    // the value as a URL rather than as text; full coverage lives in
+    // test/security/url-scheme.test.ts.
     const template = '<a href="{{ url }}">Link</a>'
     const result = await processTemplate(template, {
       url: 'javascript:alert(1)',
     })
-    // Without dedicated URL sanitization, the javascript: protocol passes through
-    expect(result).toContain('javascript:alert(1)')
+    expect(result).toContain('href="unsafe:javascript:alert(1)"')
   })
 
   it('should escape javascript: protocol with quotes in alert', async () => {

@@ -38,6 +38,7 @@ import { createSafeFunction, getExpressionSafetyRule, safeEvaluate } from './saf
 import { createDetailedErrorMessage } from './utils'
 import { createPlaceholder } from './placeholder'
 import { neutralizeTemplateSyntax } from './template-syntax-escape'
+import { sanitizeSubstitutedUrl, schemeWindow } from './url-safety'
 import { maskAtElementPosition, matchScriptElement, matchStyleElement, restoreStashedScripts, stashScriptElements, type TokenMatcher } from './html-masking'
 import { importsSignalDeclarations } from './imported-signals'
 
@@ -781,7 +782,7 @@ export function interpolateScriptExpressions(
   })
 
   // {{ expr }} — safe JSON-stringified value (JS-aware, unlike HTML escaping)
-  output = replaceInterpolations(output, (match, expr) => {
+  output = replaceInterpolations(output, (match, expr, offset) => {
     const trimmed = expr.trim()
     // Preserve build-time placeholders (e.g. __TITLE__) — they're resolved later
     if (/^__[A-Z_]+__$/.test(trimmed)) return match
@@ -843,7 +844,7 @@ export function interpolateScriptAttributes(
 
   // {{ expr }} — HTML-escaped, including both quote characters, because the
   // value lands inside an attribute whose delimiter we do not control.
-  output = replaceInterpolations(output, (match, expr) => {
+  output = replaceInterpolations(output, (match, expr, offset) => {
     const trimmed = expr.trim()
     // Build-time placeholders (__TITLE__) are resolved by a later pass.
     if (/^__[A-Z_]+__$/.test(trimmed)) return match
@@ -852,8 +853,10 @@ export function interpolateScriptAttributes(
       if (value === undefined) return match
       if (value === null) return ''
       // escapeHtmlValue escapes both quote characters, and neutralises the
-      // template syntax this attribute would otherwise hand to a later pass.
-      return escapeHtmlValue(String(value))
+      // template syntax this attribute would otherwise hand to a later pass;
+      // sanitizeSubstitutedUrl covers the one thing escaping cannot, a scheme.
+      const raw = String(value)
+      return sanitizeSubstitutedUrl(schemeWindow(output, offset), raw, escapeHtmlValue(raw))
     }
     catch {
       return match
@@ -1159,7 +1162,13 @@ export function processExpressions(template: string, context: Record<string, any
        * expression pass over this same output would otherwise evaluate what
        * was just substituted. See `escapeHtmlValue`.
        */
-      return value !== undefined && value !== null ? escapeHtmlValue(String(value)) : ''
+      if (value === undefined || value === null)
+        return ''
+      const raw = String(value)
+      // A value in the scheme position of a URL attribute cannot introduce a
+      // scheme the page did not ask for -- escaping leaves `javascript:`
+      // untouched, since it holds no character escaping cares about.
+      return sanitizeSubstitutedUrl(schemeWindow(output, offset), raw, escapeHtmlValue(raw))
     }
     catch (error: unknown) {
       if (firstVarIsClientSignal)
