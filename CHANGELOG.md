@@ -1,5 +1,29 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.332...v0.2.333)
+
+## 🐛 Bug Fixes
+
+- **router**: leave the styles inside scripts where they are ([92b6460](https://github.com/stacksjs/stx/commit/92b6460)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **cache**: a cached render belongs to the stx that produced it ([f284e49](https://github.com/stacksjs/stx/commit/f284e49)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **images**: never start the image worker from Bun's global cache ([64ef20b](https://github.com/stacksjs/stx/commit/64ef20b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 💄 Styles
+
+- **serve**: format serve.ts ([d475ce4](https://github.com/stacksjs/stx/commit/d475ce4)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **refs**: assert useRef's owner the way the runtime now keeps it ([8715833](https://github.com/stacksjs/stx/commit/8715833)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.333 ([86f1976](https://github.com/stacksjs/stx/commit/86f1976)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.331...v0.2.332)
 
 ## 🐛 Bug Fixes
