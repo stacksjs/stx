@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.342...v0.2.343)
+
+## 🐛 Bug Fixes
+
+- **seo**: SEO directives take expressions and report what they cannot use ([931266c](https://github.com/stacksjs/stx/commit/931266c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.343 ([b8ca4f8](https://github.com/stacksjs/stx/commit/b8ca4f8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.341...v0.2.342)
 
 ## 🐛 Bug Fixes
