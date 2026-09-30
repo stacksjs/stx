@@ -394,6 +394,28 @@ function parseCssToMap(css: string): Map<string, string> {
 }
 
 /**
+ * A link as plain text: its words, then where it goes.
+ *
+ * Stripping the tags alone kept "Reset your password" and threw away the one
+ * thing a reader of the text version needs from it, the address. Every button
+ * in a sign-in, reset or receipt email was a dead label there. A link whose
+ * words already are its address (a bare URL, a mailto showing the address) is
+ * written once; a fragment or script link has nowhere to go and keeps its words.
+ */
+function linkAsText(href: string, inner: string): string {
+  const label = inner.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+  const target = href.replace(/&amp;/g, '&').trim()
+  if (!target || target.startsWith('#') || /^javascript:/i.test(target))
+    return label
+  const shown = target.replace(/^mailto:/i, '').replace(/^https?:\/\//i, '').replace(/\/$/, '')
+  if (!label)
+    return target.replace(/^mailto:/i, '')
+  if (label.replace(/^https?:\/\//i, '').replace(/\/$/, '') === shown)
+    return label
+  return `${label} (${target.replace(/^mailto:/i, '')})`
+}
+
+/**
  * Convert HTML to plain text for email text/plain part
  */
 function htmlToPlainText(html: string): string {
@@ -405,6 +427,7 @@ function htmlToPlainText(html: string): string {
     .replace(/<head\b[\s\S]*?<\/head>/gi, '')
     .replace(/<(style|script)\b[\s\S]*?<\/\1>/gi, '')
     .replace(/<(div|span|p)\b[^>]*\bstyle="[^"]*display:\s*none[^"]*"[^>]*>[\s\S]*?<\/\1>/gi, '')
+    .replace(/<a\b[^>]*?\bhref\s*=\s*(?:"([^"]*)"|'([^']*)')[^>]*>([\s\S]*?)<\/a>/gi, (_, double: string | undefined, single: string | undefined, inner: string) => linkAsText(double ?? single ?? '', inner))
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/(p|div|h[1-6]|li|tr)>/gi, '\n')
     .replace(/<\/td>/gi, '\t')

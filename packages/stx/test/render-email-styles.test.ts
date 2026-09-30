@@ -50,3 +50,29 @@ describe('renderEmail plain text', () => {
     expect(text).toBe('Hello there.')
   })
 })
+
+describe('renderEmail plain text links', () => {
+  async function text(body: string) {
+    const file = join(dir, `l${Math.random().toString(36).slice(2)}.stx`)
+    writeFileSync(file, `<html><head></head><body>${body}</body></html>`)
+    return (await renderEmail(file, {})).text
+  }
+
+  it('keeps where a button goes, which is all a text reader needs from it', async () => {
+    expect(await text(`<p><a href="https://example.com/reset?token=a&amp;b=1" style="color:#fff">Reset your password</a></p>`))
+      .toBe('Reset your password (https://example.com/reset?token=a&b=1)')
+  })
+
+  it('writes an address once when the words already are the address', async () => {
+    expect(await text(`<p>Write to <a href="mailto:help@example.com">help@example.com</a> or see <a href="https://example.com/">https://example.com</a>.</p>`))
+      .toBe('Write to help@example.com or see https://example.com.')
+  })
+
+  it('keeps the words of a link that goes nowhere', async () => {
+    expect(await text(`<p><a href="#top">Back to top</a></p>`)).toBe('Back to top')
+  })
+
+  it('names a link with no words by its address', async () => {
+    expect(await text(`<p><a href='https://example.com/x'><img src="x.png" alt=""></a></p>`)).toBe('https://example.com/x')
+  })
+})
