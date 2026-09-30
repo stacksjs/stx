@@ -111,11 +111,22 @@ function openModal() {
 
 ## Features
 
-- Focus trap
-- Backdrop overlay
-- Keyboard support (ESC to close)
+- Focus trap: Tab and Shift+Tab cycle within the panel, and focus is pulled
+  back in if it is outside
+- Initial focus into the panel on open, restored to whatever opened it on close
+- Body scroll lock while open, with the scrollbar's width replaced as padding
+  so the page does not jump sideways
+- Escape closes it, bound on the document so it works before you click into
+  the dialog
+- Backdrop overlay, and clicking it closes the dialog
 - Dark mode support
-- Accessible (WAI-ARIA)
+- Accessible (WAI-ARIA): `role="dialog"` with `aria-modal="true"`, which the
+  focus trap above makes true rather than merely asserted
 - Customizable with headwind classes
 - Multiple sizes
 - Scrollable content support
+
+This list was aspirational until stacksjs/stx#1973 and #1978: the focus trap,
+the scroll lock, the focus restore and a working Escape were all documented
+here and none was implemented. They are pinned now by
+`test/dialog-modal-behaviour.test.ts`, which drives the real runtime.

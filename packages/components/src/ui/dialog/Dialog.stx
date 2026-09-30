@@ -4,24 +4,249 @@ export const className = $props.className || ''
 
 const baseClasses = 'relative z-50'
 export const dialogClasses = `${baseClasses} ${className}`.trim()
+
+/*
+ * This dialog's own id.
+ *
+ * Every lookup below is scoped to it, so two dialogs on one page - a list and
+ * the confirmation for deleting from it - do not take each other's panel or
+ * each other's Escape. Same idiom as Drawer, Dropdown and Popover.
+ */
+export const dialogInstanceId = $uid
 </script>
 
 <script client>
 const emit = defineEmits()
+const dialogInstanceId = {{ dialogInstanceId }}
 // useReactiveProp wires `:open="parentSignal()"` from the parent into our
 // local `isOpen` signal — when the parent's signal changes, bindAttr
 // updates the root's `open` attribute, our MutationObserver picks it up,
 // and isOpen flips. See stacksjs/stx#1704.
 const isOpen = useReactiveProp('open', {{ open }})
+const rootRef = useRef('rootRef')
+
+/*
+ * Whether hydration has run.
+ *
+ * Everything below reaches into the DOM through rootRef, and an effect's first
+ * run happens while this setup function is still executing - before x-ref is
+ * wired, when the ref can only be null. A dialog rendered open on first paint
+ * would otherwise get no scroll lock and no focus. See #1979 for the same
+ * mistake in Tabs.
+ */
+const mounted = state(false)
+
+onMount(() => {
+  mounted.set(true)
+})
 
 function close() {
   isOpen.set(false)
   emit('close')
 }
 
-function onBackdropKey(event) {
-  if (event.key === 'Escape') close()
+/** The panel, or the dialog root if this dialog has no DialogPanel in it. */
+function panelEl() {
+  const root = rootRef.value
+  if (!root) return null
+  return root.querySelector('[data-stx-dialog-panel]') || root
 }
+
+function focusable() {
+  const panel = panelEl()
+  if (!panel) return []
+  return Array.from(panel.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+    .filter(el => el.offsetParent !== null || el === document.activeElement)
+}
+
+/*
+ * Escape closes it from anywhere, not just from inside the dialog.
+ *
+ * It used to be a @keydown on the root element, which only fires once focus is
+ * already inside - and nothing moved focus there on open. So in the ordinary
+ * case (click a trigger, dialog appears) Escape did nothing at all, and the
+ * two omissions hid each other: no initial focus made the handler unreachable,
+ * and the unreachable handler made the missing focus look harmless.
+ * stacksjs/stx#1973, #1978
+ */
+function onDocumentKey(event) {
+  if (!isOpen()) return
+
+  if (event.key === 'Escape') {
+    close()
+    return
+  }
+
+  if (event.key !== 'Tab') return
+
+  /*
+   * The focus trap.
+   *
+   * aria-modal="true" tells assistive technology that the rest of the page is
+   * inert. Without containment that is not a missing feature but an active
+   * misstatement to AT, so the attribute and this handler belong together: six
+   * Tab presses used to walk focus out of a delete-confirmation dialog and
+   * onto the page behind it.
+   */
+  const items = focusable()
+  if (items.length === 0) {
+    // Nothing to land on inside: keep focus on the panel rather than letting
+    // Tab leave.
+    event.preventDefault()
+    panelEl()?.focus?.()
+    return
+  }
+
+  const first = items[0]
+  const last = items[items.length - 1]
+  const active = document.activeElement
+  const inside = panelEl()?.contains(active)
+
+  if (!inside) {
+    event.preventDefault()
+    ;(event.shiftKey ? last : first).focus()
+    return
+  }
+
+  if (event.shiftKey && active === first) {
+    event.preventDefault()
+    last.focus()
+  }
+  else if (!event.shiftKey && active === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
+/*
+ * A click on the backdrop closes it.
+ *
+ * The backdrop is a child component, so this listens on the dialog root and
+ * asks whether the click landed on the marker DialogBackdrop renders. Checking
+ * the target rather than comparing against the panel means a click inside the
+ * panel is not a backdrop click even though the backdrop is behind it.
+ */
+function onRootClick(event) {
+  const target = event.target
+  if (target && target.closest && target.closest('[data-stx-dialog-backdrop]')) close()
+}
+
+/*
+ * Hold the page still behind the dialog.
+ *
+ * Without this the page scrolls under the overlay, which on a phone means a
+ * drag anywhere over the dialog scrolls what is behind it. The scrollbar's
+ * width is replaced as padding so the page does not jump sideways when it
+ * disappears. Same implementation as Drawer.
+ */
+let restoreScroll = null
+
+function lockScroll() {
+  if (restoreScroll) return
+
+  const gap = window.innerWidth - document.documentElement.clientWidth
+  const previous = { overflow: document.body.style.overflow, paddingRight: document.body.style.paddingRight }
+
+  document.body.style.overflow = 'hidden'
+  if (gap > 0) document.body.style.paddingRight = `${gap}px`
+
+  restoreScroll = () => {
+    document.body.style.overflow = previous.overflow
+    document.body.style.paddingRight = previous.paddingRight
+    restoreScroll = null
+  }
+}
+
+function unlockScroll() {
+  if (restoreScroll) restoreScroll()
+}
+
+/*
+ * Focus moves in on open and back on close.
+ *
+ * A dialog that leaves focus behind is unreachable by keyboard: Tab walks the
+ * page underneath it, and a screen reader never learns anything opened. Focus
+ * returns to whatever opened it on the way out, so closing does not dump the
+ * reader at the top of the document.
+ */
+let opener = null
+
+/*
+ * The next chance to try, whichever comes first.
+ *
+ * requestAnimationFrame is the right signal when the page is painting and is
+ * suspended entirely when it is not - a background tab, a parked window - so a
+ * timer races it and the first to arrive wins.
+ */
+function soon(callback) {
+  let done = false
+
+  const once = () => {
+    if (done) return
+    done = true
+    callback()
+  }
+
+  requestAnimationFrame(once)
+  setTimeout(once, 32)
+}
+
+/*
+ * Retried across frames, because focus is refused before the dialog is shown.
+ *
+ * `:show` toggles display, and that has not happened yet on the frame the
+ * effect runs: focus() on a display:none element is a silent no-op, so a single
+ * attempt left focus on the body every time. Bounded, so a dialog with nothing
+ * focusable cannot spin - the panel carries tabindex=-1 and takes focus in that
+ * case - and it stops if the dialog closed in the meantime.
+ */
+function focusFirst(attempts) {
+  if (!isOpen()) return
+
+  const panel = panelEl()
+  if (!panel) return
+
+  const target = panel.querySelector('[autofocus]') || focusable()[0] || panel
+
+  target.focus?.()
+
+  if (document.activeElement === target) return
+  if (attempts > 0) soon(() => focusFirst(attempts - 1))
+}
+
+function captureFocus() {
+  opener = document.activeElement
+
+  soon(() => focusFirst(10))
+}
+
+function releaseFocus() {
+  const target = opener
+  opener = null
+  if (target && typeof target.focus === 'function') target.focus()
+}
+
+effect(() => {
+  if (!mounted()) return
+
+  if (isOpen()) {
+    lockScroll()
+    captureFocus()
+    document.addEventListener('keydown', onDocumentKey)
+  }
+  else {
+    unlockScroll()
+    releaseFocus()
+    document.removeEventListener('keydown', onDocumentKey)
+  }
+})
+
+onDestroy(() => {
+  // A dialog removed while open would otherwise leave the page locked, with no
+  // dialog left to unlock it.
+  unlockScroll()
+  document.removeEventListener('keydown', onDocumentKey)
+})
 
 defineExpose({
   open: () => isOpen.set(true),
@@ -31,11 +256,13 @@ defineExpose({
 </script>
 
 <div
+  x-ref="rootRef"
   :show="isOpen()"
   class="{{ dialogClasses }}"
+  data-stx-dialog="{{ dialogInstanceId }}"
   role="dialog"
   aria-modal="true"
-  @keydown="onBackdropKey($event)"
+  @click="onRootClick($event)"
 >
   <slot />
 </div>

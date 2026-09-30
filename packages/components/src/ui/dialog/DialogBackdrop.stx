@@ -6,4 +6,7 @@ const baseClasses = 'fixed inset-0 bg-black/25 dark:bg-black/50 transition-opaci
 const backdropClasses = `${baseClasses} ${className}`.trim()
 </script>
 
-<component :is="{{ as }}" class="{{ backdropClasses }}" aria-hidden="true" />
+<!-- The marker is what Dialog reads to tell a backdrop click from a click
+     inside the panel: the backdrop is behind the panel, so comparing the
+     click target against the panel is not the same question. -->
+<component :is="{{ as }}" class="{{ backdropClasses }}" data-stx-dialog-backdrop aria-hidden="true" />

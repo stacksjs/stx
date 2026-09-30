@@ -9,7 +9,10 @@ const panelClasses = `transform overflow-hidden rounded-lg bg-white dark:bg-neut
 
 <component :is="{{ as }}" class="{{ baseClasses }}">
   <div class="{{ panelWrapperClasses }}">
-    <div class="{{ panelClasses }}">
+    <!-- data-stx-dialog-panel is what Dialog scopes its focus trap and its
+         initial focus to; tabindex=-1 lets the panel itself take focus when
+         it contains nothing focusable, so Tab cannot leave a modal dialog. -->
+    <div class="{{ panelClasses }}" data-stx-dialog-panel tabindex="-1">
       <slot />
     </div>
   </div>
