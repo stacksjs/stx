@@ -4,12 +4,27 @@ export const separator = $props.separator || '/'
 export const maxItems = $props.maxItems || 0
 export const className = $props.className || ''
 
-// Handle collapse if maxItems is set
+/*
+ * Collapse to exactly maxItems crumbs: first + ellipsis + tail.
+ *
+ * The ellipsis was not counted against the budget - the tail was
+ * `items.slice(-(maxItems - 1))` taken AFTER the first item - so the result
+ * was maxItems + 1 crumbs at every setting. maxItems: 2 was the only value
+ * that kept its promise, and it did so by coincidence.
+ *
+ * maxItems: 1 was the sharp edge: `-(1 - 1)` is `-0`, and `slice(-0)` is
+ * `slice(0)`, so the tail was the WHOLE array. Asking for one crumb rendered
+ * a five-item trail as seven, with the first crumb appearing both before and
+ * after the ellipsis. stacksjs/stx#1999
+ *
+ * At maxItems: 1 there is no room for a tail, so it renders `first …` - the
+ * most honest thing a one-slot breadcrumb can show.
+ */
 let displayItems = items
 if (maxItems > 0 && items.length > maxItems) {
-  const firstItems = items.slice(0, 1)
-  const lastItems = items.slice(-(maxItems - 1))
-  displayItems = [...firstItems, { label: '...', href: '#', collapsed: true }, ...lastItems]
+  const tailCount = Math.max(0, maxItems - 2)
+  const tail = tailCount > 0 ? items.slice(-tailCount) : []
+  displayItems = [items[0], { label: '...', href: '#', collapsed: true }, ...tail]
 }
 
 // Separator element
@@ -38,7 +53,7 @@ export const collapsedClasses = `text-fg-subtle cursor-default`.trim()
             <span class="{{ activeItemClasses }}" aria-current="page">
               @if(item.icon)
                 <span class="inline-flex items-center gap-1.5">
-                  <span innerHTML="{!! item.icon !!}"></span>
+                  <span>{!! item.icon !!}</span>
                   <span>{{ item.label }}</span>
                 </span>
               @else
@@ -53,7 +68,7 @@ export const collapsedClasses = `text-fg-subtle cursor-default`.trim()
             >
               @if(item.icon)
                 <span class="inline-flex items-center gap-1.5">
-                  <span innerHTML="{!! item.icon !!}"></span>
+                  <span>{!! item.icon !!}</span>
                   <span>{{ item.label }}</span>
                 </span>
               @else
