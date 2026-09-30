@@ -11,7 +11,10 @@ const sizeConfig = {
   lg: { track: 'h-12 w-24', thumb: 'h-11 w-11', translate: 'translate-x-12' },
 }
 
-export const config = sizeConfig[size]
+// Falls back rather than indexing to undefined: `size="huge"` is a typo, and
+// without this it became `const config = {{ config }}` in the client script --
+// a SyntaxError that killed the whole component rather than mis-sizing it.
+export const config = sizeConfig[size] || sizeConfig.md
 
 export const trackBaseClasses = 'relative inline-flex shrink-0 cursor-pointer border-2 border-transparent rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-300 dark:focus-visible:ring-offset-neutral-700'
 export const trackDisabledClasses = disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''

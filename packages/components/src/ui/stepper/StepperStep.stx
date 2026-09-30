@@ -1,5 +1,10 @@
 <script server>
-export const stepNumber = $props.stepNumber
+// Defaulted, and not only for tidiness: this value is spliced into the client
+// script below as `const stepNumber = {{ stepNumber }}`. An undefined server
+// value leaves the mustache in the JavaScript, which is a SyntaxError that
+// takes the whole scoped script down -- onClick included. `??` rather than
+// `||` so an explicit 0 (the first step) survives.
+export const stepNumber = $props.stepNumber ?? 0
 export const currentStep = $props.currentStep || 0
 export const label = $props.label || ''
 export const description = $props.description || ''
