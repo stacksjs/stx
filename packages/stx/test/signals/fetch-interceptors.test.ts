@@ -49,6 +49,28 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  // Destroy what this test created, before the next test installs its mock.
+  //
+  // These primitives are built outside any scope, so their onDestroy lands on
+  // the runtime's global queue -- and nothing in a test ever drains it. A
+  // useFetch therefore kept its AbortController, a useQuery kept its
+  // refetchInterval and its visibilitychange listener, and both went on firing
+  // into whichever fetch mock was installed next. The next test then saw a
+  // request it never made: `expect(seen).toHaveLength(1)` receiving 2, or
+  // seen[0] belonging to an earlier test entirely.
+  //
+  // In an application this queue is drained for you -- a scope tears its own
+  // callbacks down, and stx:load drains the global ones -- which is why the
+  // leak only shows up here, and only when the order puts the wrong pair
+  // together. See stacksjs/stx#2003.
+  const pending = g.window.stx._destroyCallbacks
+  if (pending) {
+    for (const fn of pending.splice(0)) {
+      try { fn() }
+      catch { /* a teardown that throws must not hide the test's own result */ }
+    }
+  }
+
   globalThis.fetch = realFetch
   // Hooks are global. Leaving one installed would leak into the next test and,
   // worse, into unrelated suites sharing this runtime instance.
@@ -426,7 +448,23 @@ describe('CSRF prime', () => {
     }) as never
   })
 
-  afterEach(clear)
+  afterEach(() => {
+    clear()
+    // csrf is sticky by design: configureFetch({}) resets the hooks but keeps
+    // the token settings, because installing an Authorization hook is not a
+    // request to stop sending the token. So the outer afterEach cannot clear
+    // the prime URL this block installs, and the block has to.
+    //
+    // Left installed, a later test's mutation issues a priming GET to
+    // /api/forms/abc before its own request -- so that test sees two calls and
+    // seen[0] is not its own. In file order this block runs last and nothing
+    // follows it; under --randomize it does not (stacksjs/stx#2003).
+    //
+    // Restored to enabled-with-defaults, not to `csrf: false`: the block above
+    // leaves it that way and a later test expects the token to still be echoed.
+    // Turning it off here traded one order dependency for another.
+    g.window.stx.configureFetch({ csrf: {} })
+  })
 
   it('fetches the cookie first when there is none, then echoes it', async () => {
     g.window.stx.configureFetch({ csrf: { prime: '/api/forms/abc' } })
