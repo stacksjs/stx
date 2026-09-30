@@ -229,8 +229,12 @@ describe('@for directive enhancements', () => {
 
     it('should clone and show loading template', () => {
       const runtime = generateSignalsRuntimeDev()
-      expect(runtime).toContain('loadingTemplate.cloneNode(true)')
-      expect(runtime).toContain('parent.insertBefore(loadingElement, placeholder)')
+      // By shape, not by the exact call: these writes moved behind the host
+      // adapter (stacksjs/stx#1984), and this test is about the loading
+      // template being cloned and inserted at the placeholder, not about which
+      // object performs it.
+      expect(runtime).toMatch(/(?:host\.clone\(loadingTemplate\)|loadingTemplate\.cloneNode\(true\))/)
+      expect(runtime).toMatch(/insert(?:Before)?\((?:parent, )?loadingElement, placeholder\)/)
     })
   })
 

@@ -71,7 +71,9 @@ describe('disposeSubtreeScopes (#1727)', () => {
       const occurrences = runtime.match(/disposeSubtreeScopes\(\w+\)/g) || []
       // 4 bindFor sites (loading, ifExpr, empty, oldKeyMap) + cleanupContainer.
       expect(occurrences.length).toBeGreaterThanOrEqual(4)
-      expect(runtime).toMatch(/disposeSubtreeScopes\(e\);\s*e\.remove\(\);/)
+      // The pairing is the point -- dispose immediately before the removal --
+      // and the removal itself moved behind the host adapter (#1984).
+      expect(runtime).toMatch(/disposeSubtreeScopes\(e\);\s*(?:e\.remove\(\)|host\.remove\(e\));/)
     })
 
     it('cleanupContainer routes through the helper (SPA-nav teardown)', () => {

@@ -136,7 +136,23 @@ console.log('[stx] entering IIFE');
   var host = window.__stx_host || {
     setText: function(node, value) { node.textContent = value; },
     setAttribute: function(node, name, value) { node.setAttribute(name, value); },
-    removeAttribute: function(node, name) { node.removeAttribute(name); }
+    removeAttribute: function(node, name) { node.removeAttribute(name); },
+
+    // Structural operations, for the bindings that build rows rather than
+    // update one node (#1984).
+    //
+    // anchor() is a position in the child list that survives the nodes around
+    // it moving -- a comment node here, since the document has one; a native
+    // host keeps an index or a zero-size sentinel.
+    //
+    // clone() is the one that does not carry over as-is: a DOM subtree can be
+    // deep-copied, a native view hierarchy cannot. A native host materialises a
+    // fresh subtree from the template it was given instead of copying views,
+    // which is why the row template is passed rather than a node to duplicate.
+    anchor: function(label) { return document.createComment(label); },
+    clone: function(node) { return node.cloneNode(true); },
+    insert: function(parent, node, before) { parent.insertBefore(node, before); },
+    remove: function(node) { if (node.parentNode) node.parentNode.removeChild(node); }
   };
 
   // Inject x-cloak CSS to prevent FOUC (Flash of Unstyled Content)
@@ -3929,7 +3945,7 @@ else if (typeof value === 'string') {
       return;
     }
 
-    const placeholder = document.createComment('stx-for');
+    const placeholder = host.anchor('stx-for');
     const isTemplate = el.tagName === 'TEMPLATE';
     const componentSetupTemplates = [];
     if (!isTemplate && el.hasAttribute('data-stx-scope')) {
@@ -3951,8 +3967,8 @@ else if (typeof value === 'string') {
           && setupSibling.hasAttribute('data-stx-scoped')
           && ((setupSibling.textContent || '').indexOf(componentScopeId) !== -1
             || (componentTemplateScopeId && (setupSibling.textContent || '').indexOf(componentTemplateScopeId) !== -1))) {
-          componentSetupTemplates.push(setupSibling.cloneNode(true));
-          setupSibling.remove();
+          componentSetupTemplates.push(host.clone(setupSibling));
+          host.remove(setupSibling);
           setupSibling = nextSetupSibling;
           continue;
         }
@@ -3975,16 +3991,16 @@ else if (typeof value === 'string') {
     let sibling = el.nextElementSibling;
     while (sibling) {
       if (sibling.hasAttribute('@for-loading')) {
-        loadingTemplate = sibling.cloneNode(true);
+        loadingTemplate = host.clone(sibling);
         loadingTemplate.removeAttribute('@for-loading');
-        sibling.remove();
+        host.remove(sibling);
         sibling = el.nextElementSibling;
         continue;
       }
       if (sibling.hasAttribute('@for-empty')) {
-        emptyTemplate = sibling.cloneNode(true);
+        emptyTemplate = host.clone(sibling);
         emptyTemplate.removeAttribute('@for-empty');
-        sibling.remove();
+        host.remove(sibling);
         sibling = el.nextElementSibling;
         continue;
       }
@@ -3994,13 +4010,13 @@ else if (typeof value === 'string') {
     // Capture the scope NOW before element is removed from DOM
     const capturedScope = findElementScope(el) || findElementScope(parent);
 
-    parent.insertBefore(placeholder, el);
+    host.insert(parent, placeholder, el);
     // Component setup scripts execute while the server-rendered loop source is
     // still in the document. That source becomes a template, not a live
     // instance, so reclaim all registered scopes before removing it. Every
     // rendered iteration receives remapped setup scripts and fresh scopes.
     disposeSubtreeScopes(el);
-    parent.removeChild(el);
+    host.remove(el);
 
     // Capture :key expression BEFORE removing the attribute
     const keyExpr = el.getAttribute(':key') || el.getAttribute('x-bind:key');
@@ -4011,7 +4027,7 @@ else if (typeof value === 'string') {
       templateContent = el.content;
     }
 else {
-      const wrapper = el.cloneNode(true);
+      const wrapper = host.clone(el);
       wrapper.removeAttribute('@for');
       wrapper.removeAttribute(':for');
       wrapper.removeAttribute('x-for');
@@ -4064,12 +4080,12 @@ else {
     const removeGroup = (group) => {
       const liveNodes = liveGroupNodes(group);
       const liveSet = new Set(liveNodes);
-      liveNodes.forEach(e => { disposeSubtreeEffects(e); disposeSubtreeScopes(e); e.remove(); });
+      liveNodes.forEach(e => { disposeSubtreeEffects(e); disposeSubtreeScopes(e); host.remove(e); });
       group.forEach(groupNode => {
         if (liveSet.has(groupNode)) return;
         disposeSubtreeEffects(groupNode);
         disposeSubtreeScopes(groupNode);
-        groupNode.remove();
+        host.remove(groupNode);
       });
     };
 
@@ -4132,15 +4148,15 @@ catch (e) {
       hideLoading();
       hideEmpty();
       if (loadingTemplate) {
-        loadingElement = loadingTemplate.cloneNode(true);
-        parent.insertBefore(loadingElement, placeholder);
+        loadingElement = host.clone(loadingTemplate);
+        host.insert(parent, loadingElement, placeholder);
       }
     };
 
     // Helper to hide loading state
     const hideLoading = () => {
       if (loadingElement) {
-        loadingElement.remove();
+        host.remove(loadingElement);
         loadingElement = null;
       }
     };
@@ -4150,8 +4166,8 @@ catch (e) {
       hideLoading();
       hideEmpty();
       if (emptyTemplate) {
-        emptyElement = emptyTemplate.cloneNode(true);
-        parent.insertBefore(emptyElement, placeholder);
+        emptyElement = host.clone(emptyTemplate);
+        host.insert(parent, emptyElement, placeholder);
         const shownEmpty = emptyElement;
         shownEmpty.__stx_effect_disposers = trackEffects(function() { processElement(shownEmpty); });
       }
@@ -4162,7 +4178,7 @@ catch (e) {
       if (emptyElement) {
         // A string @empty renders a text node, which has no subtree to dispose.
         if (emptyElement.nodeType === 1) disposeSubtreeEffects(emptyElement);
-        emptyElement.remove();
+        host.remove(emptyElement);
         emptyElement = null;
       }
     };
@@ -4184,9 +4200,9 @@ catch (e) {
 
       const elements = [];
       if (isTemplate) {
-        elements.push(document.createComment('stx-for-item-start'));
+        elements.push(host.anchor('stx-for-item-start'));
         Array.from(templateContent.childNodes).forEach(node => {
-          const clone = node.cloneNode(true);
+          const clone = host.clone(node);
           if (clone.nodeType === 1) {
             // Structural directives need a live parent. Keep the iteration
             // scope on the clone until the keyed diff inserts it, then bind.
@@ -4194,13 +4210,13 @@ catch (e) {
           }
           elements.push(clone);
         });
-        elements.push(document.createComment('stx-for-item-end'));
+        elements.push(host.anchor('stx-for-item-end'));
       } else {
-        const clone = templateContent.cloneNode(true);
+        const clone = host.clone(templateContent);
         clone.__stx_for_scope = itemScope;
         elements.push(clone);
         componentSetupTemplates.forEach(function(setupTemplate) {
-          elements.push(setupTemplate.cloneNode(true));
+          elements.push(host.clone(setupTemplate));
         });
       }
       remapForComponentScopes(elements);
@@ -4326,7 +4342,7 @@ catch (e) {
           hideEmpty();
           if (emptyContent && typeof emptyContent === 'string') {
             emptyElement = document.createTextNode(emptyContent);
-            parent.insertBefore(emptyElement, placeholder);
+            host.insert(parent, emptyElement, placeholder);
           }
         } else if (emptyTemplate) {
           showEmpty();
@@ -4420,7 +4436,7 @@ catch (e) {
               // Moves without detaching. The cursor does not advance: this node
               // is now behind it, and the cursor still marks the next position
               // to fill.
-              parent.insertBefore(groupNode, cursor || placeholder);
+              host.insert(parent, groupNode, cursor || placeholder);
             }
           }
           newElements.push(...group);
@@ -4440,7 +4456,7 @@ catch (e) {
             // Before the cursor, not before the placeholder: a new row inserted
             // in the MIDDLE of the list must land at its own position, without
             // forcing every row after it to be moved to get back in order.
-            parent.insertBefore(el, cursor || placeholder);
+            host.insert(parent, el, cursor || placeholder);
             if (tgReady && el.isConnected) tgEnter(el, tgName);
           });
           hydrateComponentScopes(elements, elements.find(function(node) {
@@ -4484,13 +4500,13 @@ catch (e) {
                 disposeSubtreeEffects(el);
                 disposeSubtreeScopes(el);
                 if (tgLeave(el, tgName)) transitioned.add(el);
-                else el.remove();
+                else host.remove(el);
               });
               group.forEach((el) => {
                 if (transitioned.has(el) || liveNodes.includes(el)) return;
                 disposeSubtreeEffects(el);
                 disposeSubtreeScopes(el);
-                el.remove();
+                host.remove(el);
               });
             }
             else {

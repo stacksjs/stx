@@ -36,6 +36,28 @@ function recordingHost(ops: Op[]) {
     setAttribute: (node: any, attr: string, value: unknown) => ops.push({ op: 'setAttribute', node: name(node), args: [attr, value] }),
     // eslint-disable-next-line ts/no-explicit-any
     removeAttribute: (node: any, attr: string) => ops.push({ op: 'removeAttribute', node: name(node), args: [attr] }),
+    // Structural. These still build real nodes -- the recorder is watching the
+    // operation stream, not replacing the tree -- so the list keeps working
+    // while every insert and removal is observed.
+    anchor: (label: string) => {
+      ops.push({ op: 'anchor', node: label, args: [] })
+      return document.createComment(label)
+    },
+    // eslint-disable-next-line ts/no-explicit-any
+    clone: (node: any) => {
+      ops.push({ op: 'clone', node: name(node), args: [] })
+      return node.cloneNode(true)
+    },
+    // eslint-disable-next-line ts/no-explicit-any
+    insert: (parent: any, node: any, before: any) => {
+      ops.push({ op: 'insert', node: name(node), args: [name(parent)] })
+      parent.insertBefore(node, before)
+    },
+    // eslint-disable-next-line ts/no-explicit-any
+    remove: (node: any) => {
+      ops.push({ op: 'remove', node: name(node), args: [] })
+      if (node.parentNode) node.parentNode.removeChild(node)
+    },
   }
 }
 
@@ -103,6 +125,34 @@ describe('the runtime writes through a host', () => {
 
     expect(ops).toContainEqual({ op: 'setAttribute', node: 'a', args: ['title', 'changed'] })
     expect(ops).toContainEqual({ op: 'removeAttribute', node: 'b', args: ['title'] })
+  })
+
+  it('builds a list through the host: an anchor, a clone and an insert per row', async () => {
+    const items = window.stx.state([{ id: 1, label: 'a' }, { id: 2, label: 'b' }])
+    await boot('<ul data-id="list"><li data-id="row" :for="row in items" :key="row.id">x</li></ul>', { items })
+
+    // The row template is cloned rather than the runtime building nodes itself,
+    // which is the operation a native host cannot take literally: it has to
+    // materialise a subtree from the template instead of copying views.
+    expect(ops.filter(o => o.op === 'anchor').length).toBeGreaterThan(0)
+    expect(ops.filter(o => o.op === 'clone').length).toBeGreaterThanOrEqual(2)
+    expect(ops.filter(o => o.op === 'insert').length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('reconciles through the host: growing the list inserts, shrinking removes', async () => {
+    const items = window.stx.state([{ id: 1, label: 'a' }])
+    await boot('<ul data-id="l2"><li data-id="r2" :for="row in items" :key="row.id">x</li></ul>', { items })
+    ops.length = 0
+
+    items.set([{ id: 1, label: 'a' }, { id: 2, label: 'b' }, { id: 3, label: 'c' }])
+    await settle()
+    const grew = ops.filter(o => o.op === 'insert').length
+    expect(grew).toBeGreaterThanOrEqual(2)
+
+    ops.length = 0
+    items.set([{ id: 1, label: 'a' }])
+    await settle()
+    expect(ops.filter(o => o.op === 'remove').length).toBeGreaterThanOrEqual(2)
   })
 
   it('carries a derived value through, so the graph is intact behind the host', async () => {
