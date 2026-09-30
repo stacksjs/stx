@@ -11,6 +11,18 @@ const SERVE_SRC = path.join(import.meta.dir, '..', 'src', 'serve.ts')
 const STX_SRC = path.join(import.meta.dir, '..', '..', 'stx', 'src', 'index.ts')
 const WARMUP_MS = 5000
 
+/**
+ * The ceiling for "bound without waiting for the image pass".
+ *
+ * Waiting for the pass means elapsed >= WARMUP_MS, so any ceiling below that
+ * proves the bind did not wait -- the discriminating power is in the gap to
+ * 5000ms, not in how tight the number is. It used to be WARMUP_MS / 2, which
+ * put a 2.5-second wall-clock ceiling on booting a subprocess, and this suite
+ * runs alongside 13,000 other tests: on a loaded machine that is a test which
+ * fails for being busy rather than for being wrong.
+ */
+const BOUND_WITHOUT_WAITING_MS = WARMUP_MS * 0.8
+
 const dirs: string[] = []
 
 afterAll(async () => {
@@ -111,13 +123,13 @@ describe('startup image pass and the bind', () => {
       45_950 + (process.pid % 20),
       { imageWarmup: false },
     )
-    expect(elapsed).toBeLessThan(WARMUP_MS / 2)
+    expect(elapsed).toBeLessThan(BOUND_WITHOUT_WAITING_MS)
   })
 
   // Development wants the server now; the fallbacks are fine until it warms.
   it('binds immediately in development', async () => {
     const elapsed = await timeToBind({ APP_ENV: 'development', NODE_ENV: 'development' }, 45_930 + (process.pid % 20))
-    expect(elapsed).toBeLessThan(WARMUP_MS / 2)
+    expect(elapsed).toBeLessThan(BOUND_WITHOUT_WAITING_MS)
   })
 
   // The default: nothing in the project reads the pass, so it does not run
@@ -130,7 +142,7 @@ describe('startup image pass and the bind', () => {
       {},
       NO_IMAGE,
     )
-    expect(elapsed).toBeLessThan(WARMUP_MS / 2)
+    expect(elapsed).toBeLessThan(BOUND_WITHOUT_WAITING_MS)
   })
 
   it('still runs the pass when forced on, whatever the templates use', async () => {
@@ -172,7 +184,7 @@ describe('the bind budget', () => {
     const booted = await boot(PRODUCTION, 46_030 + (process.pid % 20), { imageWarmupBindBudgetMs: BUDGET_MS })
     try {
       expect(booted.elapsed).toBeGreaterThan(BUDGET_MS * 0.7)
-      expect(booted.elapsed).toBeLessThan(WARMUP_MS * 0.7)
+      expect(booted.elapsed).toBeLessThan(BOUND_WITHOUT_WAITING_MS)
 
       // Bound while the pass is still running, and serving: the per-request
       // grace runs out and the page renders against the fallbacks.
@@ -208,7 +220,7 @@ describe('the bind budget', () => {
 
   it('binds at once with a budget of zero', async () => {
     const elapsed = await timeToBind(PRODUCTION, 46_070 + (process.pid % 20), { imageWarmupBindBudgetMs: 0 })
-    expect(elapsed).toBeLessThan(WARMUP_MS / 2)
+    expect(elapsed).toBeLessThan(BOUND_WITHOUT_WAITING_MS)
   })
 })
 
