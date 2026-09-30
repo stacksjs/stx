@@ -2707,7 +2707,41 @@ catch (e) {
     return scripts;
   }
 
-  function processElement(el, scope = componentScope) {
+  /**
+   * Bind what the server said carries a binding, instead of looking for it.
+   *
+   * The walk exists because the runtime does not know where the bindings are.
+   * The server does -- it rendered them -- so when it ships that list the
+   * runtime stops searching: resolve each id, bind that element, never touch
+   * its children. An element with no bindings is never visited at all.
+   *
+   * This is the piece a native host needs. A view hierarchy has no attributes
+   * to read and no selector to match, so discovery cannot happen there; handed
+   * the list, it does not have to. On the DOM the ids resolve by attribute,
+   * which is one query per entry rather than a full traversal.
+   *
+   * Absent a manifest nothing changes: the walk is still the default, and a
+   * page that ships no list hydrates exactly as it did.
+   */
+  function processFromManifest(root, scope, manifest) {
+    if (!root || !manifest || !manifest.length) return false;
+    for (var i = 0; i < manifest.length; i++) {
+      var entry = manifest[i];
+      var id = entry && entry.id;
+      if (id === undefined || id === null) continue;
+      var node = root.getAttribute && root.getAttribute('data-stx-b') === String(id)
+        ? root
+        : (root.querySelector ? root.querySelector('[data-stx-b="' + id + '"]') : null);
+      if (!node) continue;
+      processElement(node, scope, true);
+    }
+    return true;
+  }
+
+  // skipChildren: this element's bindings only, because something else already
+  // knows where the rest are. The manifest path passes it for every entry, so
+  // the tree is never walked; see processFromManifest.
+  function processElement(el, scope = componentScope, skipChildren) {
     // Lazy hydration: if this element has stx-hydrate and hasn't been hydrated
     // yet, defer its subtree processing until the trigger fires.
     if (el.nodeType === Node.ELEMENT_NODE && el.hasAttribute && el.hasAttribute('stx-hydrate') && !el.__stx_hydrated) {
@@ -3300,7 +3334,7 @@ catch (e) {
 
     // Process children (skip script/style elements — their text content is not template markup)
     // Skip elements that are roots of nested stx.mount() components — those have their own scope
-    if (el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
+    if (!skipChildren && el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
       var children = Array.from(el.childNodes);
       children.forEach(function(child) {
         if (child.nodeType !== Node.ELEMENT_NODE) { processElement(child, scope); return; }
@@ -7974,7 +8008,10 @@ else {
     // Bind page roots after child components have registered their local scope.
     document.querySelectorAll('[data-stx]').forEach(el => {
       console.log('[DOMContentLoaded] processElement on:', el.tagName, 'scope keys:', Object.keys(componentScope).slice(0, 10));
-      var disposeEffects = trackEffects(function() { processElement(el); });
+      var disposeEffects = trackEffects(function() {
+        // The server's list when the page shipped one, the walk otherwise.
+        if (!processFromManifest(el, componentScope, window.__stx_bindings)) processElement(el);
+      });
       el.__stx_disposers = disposeEffects;
 
       // Remove x-cloak after bindings are applied (prevents FOUC)
