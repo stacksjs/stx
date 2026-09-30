@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.341...v0.2.342)
+
+## 🐛 Bug Fixes
+
+- **email**: the plain-text part keeps where each link goes ([81f2b73](https://github.com/stacksjs/stx/commit/81f2b73)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.342 ([ea1aaee](https://github.com/stacksjs/stx/commit/ea1aaee)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.340...v0.2.341)
 
 ## ⚡ Performance Improvements
