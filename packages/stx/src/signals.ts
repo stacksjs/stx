@@ -123,6 +123,22 @@ console.log('[stx] entering IIFE');
 (function() {
   'use strict';
 
+  // ── Host ──
+  //
+  // The tree this runtime mutates. Every write the binding layer makes to a
+  // node goes through here, so the same runtime can drive something that is not
+  // the document -- native views over a bridge (stacksjs/stx#1984).
+  //
+  // Signals never touch a node, so nothing above this line needs to change; the
+  // coupling is entirely in the bind layer. A host is swapped in by assigning
+  // window.__stx_host before the runtime executes, which keeps the web path
+  // exactly as it was: same calls, one property lookup earlier.
+  var host = window.__stx_host || {
+    setText: function(node, value) { node.textContent = value; },
+    setAttribute: function(node, name, value) { node.setAttribute(name, value); },
+    removeAttribute: function(node, name) { node.removeAttribute(name); }
+  };
+
   // Inject x-cloak CSS to prevent FOUC (Flash of Unstyled Content)
   // Elements with x-cloak are hidden until the runtime removes the attribute after mount
   var cloakStyle = document.getElementById ? document.getElementById('stx-cloak-style') : null;
@@ -3001,7 +3017,7 @@ catch (e2) {
             el.setAttribute(attrName, String(v));
           }
           else if (v === false || v === null || v === undefined) {
-            el.removeAttribute(attrName);
+            host.removeAttribute(el, attrName);
           }
 else if (v === true) {
             el.setAttribute(attrName, '');
@@ -3012,7 +3028,7 @@ else {
               try { attrValue = JSON.stringify(v); }
               catch (e) { attrValue = String(v); }
             }
-            el.setAttribute(attrName, safeUrlAttr(attrName, attrValue));
+            host.setAttribute(el, attrName, safeUrlAttr(attrName, attrValue));
           }
         });
         el.removeAttribute(name);
@@ -3027,7 +3043,7 @@ else if (name === '@style' || name === ':style' || name === 'x-style') {
       }
 else if (name === '@text' || name === ':text' || name === 'x-text') {
         effect(() => {
-          el.textContent = evalAttrExpr(value);
+          host.setText(el, evalAttrExpr(value));
         });
         el.removeAttribute(name);
       }
