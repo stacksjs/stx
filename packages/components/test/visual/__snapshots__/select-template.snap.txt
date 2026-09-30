@@ -17,13 +17,13 @@ export const required = $props.required || false
 export const className = $props.className || ''
 
 const sizeClasses = { sm: 'px-3 py-1.5 text-sm h-8', md: 'px-4 py-2 text-base h-10', lg: 'px-5 py-3 text-lg h-12' }
-const baseClasses = 'block w-full border-0 rounded-md shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset dark:bg-blue-gray-700 dark:text-gray-100'
+const baseClasses = 'block w-full border-0 rounded-md shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset dark:bg-neutral-700 dark:text-gray-100'
 const stateClasses = error
   ? 'ring-red-300 dark:ring-red-600 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-500 focus:ring-red-500 dark:focus:ring-red-400'
   : 'ring-line-strong text-fg placeholder-fg-subtle focus:ring-accent'
 const disabledClasses = disabled
   ? 'opacity-50 cursor-not-allowed bg-surface'
-  : 'bg-white dark:bg-blue-gray-700 cursor-pointer hover:ring-gray-400 dark:hover:ring-gray-500'
+  : 'bg-white dark:bg-neutral-700 cursor-pointer hover:ring-gray-400 dark:hover:ring-gray-500'
 
 export const selectClasses = `${baseClasses} ${sizeClasses[size]} ${stateClasses} ${disabledClasses} ${className}`.trim()
 export const labelClasses = `block text-sm font-medium leading-6 ${error ? 'text-danger' : 'text-fg'}`.trim()
@@ -99,7 +99,7 @@ border-0
 change
 cursor-not-allowed
 cursor-pointer
-dark:bg-blue-gray-700
+dark:bg-neutral-700
 dark:focus:ring-red-400
 dark:hover:ring-gray-500
 dark:placeholder-red-500

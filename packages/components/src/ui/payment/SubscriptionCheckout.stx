@@ -10,7 +10,7 @@ export const className = $props.className || ''
 export const subtotal = products.reduce((sum, product) => sum + (product.price * (product.quantity || 1)), 0)
 export const total = subtotal + shipping + taxes
 
-export const containerClasses = `bg-gray-50 dark:bg-blue-gray-900 ${className}`.trim()
+export const containerClasses = `bg-gray-50 dark:bg-neutral-900 ${className}`.trim()
 </script>
 
 <script client>
@@ -130,7 +130,7 @@ onMount(() => initializeStripe())
                 name="email-address"
                 autocomplete="email"
                 required
-                class="block w-full border border-line-strong rounded-md p-2 shadow-sm bg-white dark:bg-blue-gray-700 text-fg focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                class="block w-full border border-line-strong rounded-md p-2 shadow-sm bg-white dark:bg-neutral-700 text-fg focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm focus:ring-indigo-500 dark:focus:ring-indigo-400"
               />
             </div>
           </div>
@@ -154,14 +154,14 @@ onMount(() => initializeStripe())
                   name="card-name"
                   autocomplete="cc-name"
                   required
-                  class="block w-full border border-line-strong rounded-md p-2 shadow-sm bg-white dark:bg-blue-gray-700 text-fg focus:border-indigo-500 sm:text-sm focus:ring-indigo-500"
+                  class="block w-full border border-line-strong rounded-md p-2 shadow-sm bg-white dark:bg-neutral-700 text-fg focus:border-indigo-500 sm:text-sm focus:ring-indigo-500"
                 />
               </div>
             </div>
 
             <!-- Stripe Element Mount Point -->
             <div class="sm:col-span-2">
-              <div id="payment-element" class="mt-2 border border-line-strong rounded-md bg-white dark:bg-blue-gray-700 p-3"></div>
+              <div id="payment-element" class="mt-2 border border-line-strong rounded-md bg-white dark:bg-neutral-700 p-3"></div>
             </div>
           </div>
         </div>
@@ -198,7 +198,7 @@ onMount(() => initializeStripe())
           Order summary
         </h2>
 
-        <div class="mt-4 border border-line rounded-lg bg-white dark:bg-blue-gray-800 shadow-sm">
+        <div class="mt-4 border border-line rounded-lg bg-white dark:bg-neutral-800 shadow-sm">
           <h3 class="sr-only">Items in your cart</h3>
 
           <!-- Product List -->
@@ -237,7 +237,7 @@ onMount(() => initializeStripe())
                       <div class="ml-4 flow-root flex-shrink-0">
                         <button
                           type="button"
-                          class="flex items-center justify-center bg-white dark:bg-blue-gray-700 p-2.5 text-fg-subtle -m-2.5 hover:text-fg-soft"
+                          class="flex items-center justify-center bg-white dark:bg-neutral-700 p-2.5 text-fg-subtle -m-2.5 hover:text-fg-soft"
                           @click="onRemoveProduct('{{ product.id }}')"
                           title="Remove"
                         >
@@ -260,7 +260,7 @@ onMount(() => initializeStripe())
                       <select
                         id="quantity-{{ product.id }}"
                         name="quantity"
-                        class="border border-line-strong rounded-md text-left text-base text-fg-strong font-medium shadow-sm bg-white dark:bg-blue-gray-700 focus:border-indigo-500 sm:text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        class="border border-line-strong rounded-md text-left text-base text-fg-strong font-medium shadow-sm bg-white dark:bg-neutral-700 focus:border-indigo-500 sm:text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                       >
                         <option value="1" {{ (product.quantity || 1) === 1 ? 'selected' : '' }}>1</option>
                         <option value="2" {{ (product.quantity || 1) === 2 ? 'selected' : '' }}>2</option>

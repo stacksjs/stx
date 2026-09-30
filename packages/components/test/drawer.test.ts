@@ -231,7 +231,7 @@ describe('Drawer theming', () => {
   test('still paints itself when the app says nothing', () => {
     // An app that passes no palette must not get a transparent panel with the
     // page showing through its own text.
-    expect(source).toContain("panelClass || 'bg-white dark:bg-blue-gray-800'")
+    expect(source).toContain("panelClass || 'bg-white dark:bg-neutral-800'")
   })
 
   test('lets the app tone the backdrop', () => {

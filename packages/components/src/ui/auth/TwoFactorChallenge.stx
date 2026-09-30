@@ -6,7 +6,7 @@ export const codeLength = $props.codeLength || 6
 export const showRecoveryCode = $props.showRecoveryCode ?? true
 export const className = $props.className || ''
 
-export const containerClasses = `py-32 dark:bg-blue-gray-900 ${className}`.trim()
+export const containerClasses = `py-32 dark:bg-neutral-900 ${className}`.trim()
 </script>
 
 <script client>
@@ -53,7 +53,7 @@ function onRecoveryCode(event) {
 </script>
 
 <div class="{{ containerClasses }}">
-  <div class="mx-auto max-w-sm rounded-md px-8 py-4 shadow-md bg-white dark:bg-blue-gray-800">
+  <div class="mx-auto max-w-sm rounded-md px-8 py-4 shadow-md bg-white dark:bg-neutral-800">
     <div class="card-body">
       <div>
         <h3 class="text-center text-sm text-fg font-semibold">
@@ -71,7 +71,7 @@ function onRecoveryCode(event) {
                 maxlength="1"
                 name="code-{{ i }}"
                 placeholder="-"
-                class="block w-full border-0 rounded-md px-2 py-2 text-center text-fg ring-1 ring-line-strong ring-inset sm:text-sm placeholder:text-fg-subtle sm:leading-6 focus:ring-2 focus:ring-indigo-600 focus:ring-inset dark:bg-blue-gray-700"
+                class="block w-full border-0 rounded-md px-2 py-2 text-center text-fg ring-1 ring-line-strong ring-inset sm:text-sm placeholder:text-fg-subtle sm:leading-6 focus:ring-2 focus:ring-indigo-600 focus:ring-inset dark:bg-neutral-700"
                 @input="onCodeInput($event, {{ i }})"
                 @keydown="onKeyDown($event, {{ i }})"
               />
