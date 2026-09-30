@@ -131,9 +131,12 @@ console.log('[stx] entering IIFE');
   //
   // Signals never touch a node, so nothing above this line needs to change; the
   // coupling is entirely in the bind layer. A host is swapped in by assigning
-  // window.__stx_host before the runtime executes, which keeps the web path
+  // window.__stx_host before the runtime executes. The name is stxHost, not
+  // host, because the runtime already calls two local DOM nodes host -- a
+  // shadowed adapter fails as node.anchor is not a function, deep inside a
+  // branch swap, and nowhere near the line that caused it, which keeps the web path
   // exactly as it was: same calls, one property lookup earlier.
-  var host = window.__stx_host || {
+  var stxHost = window.__stx_host || {
     setText: function(node, value) { node.textContent = value; },
     setAttribute: function(node, name, value) { node.setAttribute(name, value); },
     removeAttribute: function(node, name) { node.removeAttribute(name); },
@@ -3033,7 +3036,7 @@ catch (e2) {
             el.setAttribute(attrName, String(v));
           }
           else if (v === false || v === null || v === undefined) {
-            host.removeAttribute(el, attrName);
+            stxHost.removeAttribute(el, attrName);
           }
 else if (v === true) {
             el.setAttribute(attrName, '');
@@ -3044,7 +3047,7 @@ else {
               try { attrValue = JSON.stringify(v); }
               catch (e) { attrValue = String(v); }
             }
-            host.setAttribute(el, attrName, safeUrlAttr(attrName, attrValue));
+            stxHost.setAttribute(el, attrName, safeUrlAttr(attrName, attrValue));
           }
         });
         el.removeAttribute(name);
@@ -3059,7 +3062,7 @@ else if (name === '@style' || name === ':style' || name === 'x-style') {
       }
 else if (name === '@text' || name === ':text' || name === 'x-text') {
         effect(() => {
-          host.setText(el, evalAttrExpr(value));
+          stxHost.setText(el, evalAttrExpr(value));
         });
         el.removeAttribute(name);
       }
@@ -3945,7 +3948,7 @@ else if (typeof value === 'string') {
       return;
     }
 
-    const placeholder = host.anchor('stx-for');
+    const placeholder = stxHost.anchor('stx-for');
     const isTemplate = el.tagName === 'TEMPLATE';
     const componentSetupTemplates = [];
     if (!isTemplate && el.hasAttribute('data-stx-scope')) {
@@ -3967,8 +3970,8 @@ else if (typeof value === 'string') {
           && setupSibling.hasAttribute('data-stx-scoped')
           && ((setupSibling.textContent || '').indexOf(componentScopeId) !== -1
             || (componentTemplateScopeId && (setupSibling.textContent || '').indexOf(componentTemplateScopeId) !== -1))) {
-          componentSetupTemplates.push(host.clone(setupSibling));
-          host.remove(setupSibling);
+          componentSetupTemplates.push(stxHost.clone(setupSibling));
+          stxHost.remove(setupSibling);
           setupSibling = nextSetupSibling;
           continue;
         }
@@ -3991,16 +3994,16 @@ else if (typeof value === 'string') {
     let sibling = el.nextElementSibling;
     while (sibling) {
       if (sibling.hasAttribute('@for-loading')) {
-        loadingTemplate = host.clone(sibling);
+        loadingTemplate = stxHost.clone(sibling);
         loadingTemplate.removeAttribute('@for-loading');
-        host.remove(sibling);
+        stxHost.remove(sibling);
         sibling = el.nextElementSibling;
         continue;
       }
       if (sibling.hasAttribute('@for-empty')) {
-        emptyTemplate = host.clone(sibling);
+        emptyTemplate = stxHost.clone(sibling);
         emptyTemplate.removeAttribute('@for-empty');
-        host.remove(sibling);
+        stxHost.remove(sibling);
         sibling = el.nextElementSibling;
         continue;
       }
@@ -4010,13 +4013,13 @@ else if (typeof value === 'string') {
     // Capture the scope NOW before element is removed from DOM
     const capturedScope = findElementScope(el) || findElementScope(parent);
 
-    host.insert(parent, placeholder, el);
+    stxHost.insert(parent, placeholder, el);
     // Component setup scripts execute while the server-rendered loop source is
     // still in the document. That source becomes a template, not a live
     // instance, so reclaim all registered scopes before removing it. Every
     // rendered iteration receives remapped setup scripts and fresh scopes.
     disposeSubtreeScopes(el);
-    host.remove(el);
+    stxHost.remove(el);
 
     // Capture :key expression BEFORE removing the attribute
     const keyExpr = el.getAttribute(':key') || el.getAttribute('x-bind:key');
@@ -4027,7 +4030,7 @@ else if (typeof value === 'string') {
       templateContent = el.content;
     }
 else {
-      const wrapper = host.clone(el);
+      const wrapper = stxHost.clone(el);
       wrapper.removeAttribute('@for');
       wrapper.removeAttribute(':for');
       wrapper.removeAttribute('x-for');
@@ -4080,12 +4083,12 @@ else {
     const removeGroup = (group) => {
       const liveNodes = liveGroupNodes(group);
       const liveSet = new Set(liveNodes);
-      liveNodes.forEach(e => { disposeSubtreeEffects(e); disposeSubtreeScopes(e); host.remove(e); });
+      liveNodes.forEach(e => { disposeSubtreeEffects(e); disposeSubtreeScopes(e); stxHost.remove(e); });
       group.forEach(groupNode => {
         if (liveSet.has(groupNode)) return;
         disposeSubtreeEffects(groupNode);
         disposeSubtreeScopes(groupNode);
-        host.remove(groupNode);
+        stxHost.remove(groupNode);
       });
     };
 
@@ -4148,15 +4151,15 @@ catch (e) {
       hideLoading();
       hideEmpty();
       if (loadingTemplate) {
-        loadingElement = host.clone(loadingTemplate);
-        host.insert(parent, loadingElement, placeholder);
+        loadingElement = stxHost.clone(loadingTemplate);
+        stxHost.insert(parent, loadingElement, placeholder);
       }
     };
 
     // Helper to hide loading state
     const hideLoading = () => {
       if (loadingElement) {
-        host.remove(loadingElement);
+        stxHost.remove(loadingElement);
         loadingElement = null;
       }
     };
@@ -4166,8 +4169,8 @@ catch (e) {
       hideLoading();
       hideEmpty();
       if (emptyTemplate) {
-        emptyElement = host.clone(emptyTemplate);
-        host.insert(parent, emptyElement, placeholder);
+        emptyElement = stxHost.clone(emptyTemplate);
+        stxHost.insert(parent, emptyElement, placeholder);
         const shownEmpty = emptyElement;
         shownEmpty.__stx_effect_disposers = trackEffects(function() { processElement(shownEmpty); });
       }
@@ -4178,7 +4181,7 @@ catch (e) {
       if (emptyElement) {
         // A string @empty renders a text node, which has no subtree to dispose.
         if (emptyElement.nodeType === 1) disposeSubtreeEffects(emptyElement);
-        host.remove(emptyElement);
+        stxHost.remove(emptyElement);
         emptyElement = null;
       }
     };
@@ -4200,9 +4203,9 @@ catch (e) {
 
       const elements = [];
       if (isTemplate) {
-        elements.push(host.anchor('stx-for-item-start'));
+        elements.push(stxHost.anchor('stx-for-item-start'));
         Array.from(templateContent.childNodes).forEach(node => {
-          const clone = host.clone(node);
+          const clone = stxHost.clone(node);
           if (clone.nodeType === 1) {
             // Structural directives need a live parent. Keep the iteration
             // scope on the clone until the keyed diff inserts it, then bind.
@@ -4210,13 +4213,13 @@ catch (e) {
           }
           elements.push(clone);
         });
-        elements.push(host.anchor('stx-for-item-end'));
+        elements.push(stxHost.anchor('stx-for-item-end'));
       } else {
-        const clone = host.clone(templateContent);
+        const clone = stxHost.clone(templateContent);
         clone.__stx_for_scope = itemScope;
         elements.push(clone);
         componentSetupTemplates.forEach(function(setupTemplate) {
-          elements.push(host.clone(setupTemplate));
+          elements.push(stxHost.clone(setupTemplate));
         });
       }
       remapForComponentScopes(elements);
@@ -4342,7 +4345,7 @@ catch (e) {
           hideEmpty();
           if (emptyContent && typeof emptyContent === 'string') {
             emptyElement = document.createTextNode(emptyContent);
-            host.insert(parent, emptyElement, placeholder);
+            stxHost.insert(parent, emptyElement, placeholder);
           }
         } else if (emptyTemplate) {
           showEmpty();
@@ -4436,7 +4439,7 @@ catch (e) {
               // Moves without detaching. The cursor does not advance: this node
               // is now behind it, and the cursor still marks the next position
               // to fill.
-              host.insert(parent, groupNode, cursor || placeholder);
+              stxHost.insert(parent, groupNode, cursor || placeholder);
             }
           }
           newElements.push(...group);
@@ -4456,7 +4459,7 @@ catch (e) {
             // Before the cursor, not before the placeholder: a new row inserted
             // in the MIDDLE of the list must land at its own position, without
             // forcing every row after it to be moved to get back in order.
-            host.insert(parent, el, cursor || placeholder);
+            stxHost.insert(parent, el, cursor || placeholder);
             if (tgReady && el.isConnected) tgEnter(el, tgName);
           });
           hydrateComponentScopes(elements, elements.find(function(node) {
@@ -4500,13 +4503,13 @@ catch (e) {
                 disposeSubtreeEffects(el);
                 disposeSubtreeScopes(el);
                 if (tgLeave(el, tgName)) transitioned.add(el);
-                else host.remove(el);
+                else stxHost.remove(el);
               });
               group.forEach((el) => {
                 if (transitioned.has(el) || liveNodes.includes(el)) return;
                 disposeSubtreeEffects(el);
                 disposeSubtreeScopes(el);
-                host.remove(el);
+                stxHost.remove(el);
               });
             }
             else {
@@ -4596,8 +4599,8 @@ catch (e) {
       b.el.__stx_chain_member = true;
       b.el.__stx_chain_active = false;
       b.capturedElementScope = findElementScope(b.el);
-      b.placeholder = document.createComment('stx-if-chain');
-      parent.insertBefore(b.placeholder, b.el);
+      b.placeholder = stxHost.anchor('stx-if-chain');
+      stxHost.insert(parent, b.placeholder, b.el);
       b.el.removeAttribute(b.attr);
       // A <template> branch (the wrapper convertSignalDirectivesToAttributes
       // emits for a multi-child / text branch) is INERT — inserting the element
@@ -4626,10 +4629,10 @@ catch (e) {
       // and the attributes it consumed (x-model, :id) do not come back -- so a
       // second clone taken from the element would arrive already stripped, with
       // no binding and no way to acquire one.
-      b.pristine = b.isTemplate ? b.el.content.cloneNode(true) : null;
+      b.pristine = b.isTemplate ? stxHost.clone(b.el.content) : null;
       b.nodes = b.isTemplate ? [] : [b.el];
       b.endMarker = null;
-      b.el.remove();
+      stxHost.remove(b.el);
       b.childrenProcessed = false;
     });
 
@@ -4721,21 +4724,20 @@ catch (e2) {
           // contains. The marker bounds the range, so a sibling that belongs to
           // a later branch or to ordinary markup is never touched.
           if (gone.endMarker && gone.endMarker.parentNode) {
-            var host = gone.endMarker.parentNode;
             var doomed = gone.placeholder.nextSibling;
             while (doomed && doomed !== gone.endMarker) {
               var nextDoomed = doomed.nextSibling;
               disposeSubtreeEffects(doomed);
-              host.removeChild(doomed);
+              stxHost.remove(doomed);
               doomed = nextDoomed;
             }
-            gone.endMarker.remove();
+            stxHost.remove(gone.endMarker);
             gone.endMarker = null;
           }
           gone.nodes.forEach(function (n) {
             if (!n.parentNode) return;
             disposeSubtreeEffects(n);
-            n.parentNode.removeChild(n);
+            stxHost.remove(n);
           });
           // The next show clones afresh and processes again, so these effects
           // are finished with; leaving them bound only accumulates work (#1954).
@@ -4753,10 +4755,10 @@ catch (e) { /* a disposer of its own is not this branch's problem */ }
             // Detached nodes are out of reach of a DOM walk, so a row removed
             // while this branch is hidden could not dispose the effects it was
             // processed with (#1954). Same registry the single-element :if uses.
-            var host = n.parentNode;
-            if (!host.__stx_detached_if) host.__stx_detached_if = new Set();
-            host.__stx_detached_if.add(n);
-            host.removeChild(n);
+            var parentEl = n.parentNode;
+            if (!parentEl.__stx_detached_if) parentEl.__stx_detached_if = new Set();
+            parentEl.__stx_detached_if.add(n);
+            stxHost.remove(n);
           });
         }
       }
@@ -4770,16 +4772,16 @@ catch (e) { /* a disposer of its own is not this branch's problem */ }
         var anchor = pick.placeholder.nextSibling;
         var pickHost = pick.placeholder.parentNode;
         if (pick.isTemplate && pick.nodes.length === 0)
-          pick.nodes = Array.prototype.slice.call(pick.pristine.cloneNode(true).childNodes);
+          pick.nodes = Array.prototype.slice.call(stxHost.clone(pick.pristine).childNodes);
         pick.nodes.forEach(function (n) {
           if (pickHost.__stx_detached_if) pickHost.__stx_detached_if.delete(n);
-          pickHost.insertBefore(n, anchor);
+          stxHost.insert(pickHost, n, anchor);
         });
         // Bound AFTER the clones, so hiding can remove whatever a structural
         // directive inside the branch renders as their sibling.
         if (pick.isTemplate) {
-          if (!pick.endMarker) pick.endMarker = document.createComment('stx-if-chain-end');
-          pickHost.insertBefore(pick.endMarker, anchor);
+          if (!pick.endMarker) pick.endMarker = stxHost.anchor('stx-if-chain-end');
+          stxHost.insert(pickHost, pick.endMarker, anchor);
         }
         pick.el.__stx_shown_at = performance.now();
         if (!pick.childrenProcessed) {
@@ -4842,7 +4844,7 @@ catch (e) { /* a disposer of its own is not this branch's problem */ }
       return;
     }
 
-    const placeholder = document.createComment('stx-if');
+    const placeholder = stxHost.anchor('stx-if');
     // Marks where this branch's rendered content ENDS (stacksjs/stx#1955).
     // Hiding used to remove only the cloned nodes, but a structural directive
     // directly inside the template renders its own output as siblings that are
@@ -4864,27 +4866,27 @@ catch (e) { /* a disposer of its own is not this branch's problem */ }
     const capturedComponentScope = { ...passedScope };
 
     preserveConditionalComponentScopes(el, capturedComponentScope);
-    parent.insertBefore(placeholder, el);
+    stxHost.insert(parent, placeholder, el);
     el.removeAttribute(attrName);
 
     if (isTemplate) {
       // For templates, we need to handle the content fragment
       const content = el.content;
-      currentNodes = Array.from(content.childNodes).map(n => n.cloneNode(true));
+      currentNodes = Array.from(content.childNodes).map(n => stxHost.clone(n));
       // Insert cloned content initially
       // Capture the anchor once. Re-reading placeholder.nextSibling after
       // every insertion points at the node just inserted and reverses a
       // multi-root template branch.
       const initialAnchor = placeholder.nextSibling;
-      currentNodes.forEach(node => parent.insertBefore(node, initialAnchor));
+      currentNodes.forEach(node => stxHost.insert(parent, node, initialAnchor));
       // The end of this branch's range, bound at the same time as the content
       // it closes (#1955). Needed here too, not only on re-show: the first
       // hide of a branch that was never toggled removes THIS content, and a
       // nested :for renders rows that are siblings of these clones rather than
       // among them.
-      endMarker = document.createComment('stx-if-end');
-      parent.insertBefore(endMarker, initialAnchor);
-      el.remove(); // Remove the template element itself
+      endMarker = stxHost.anchor('stx-if-end');
+      stxHost.insert(parent, endMarker, initialAnchor);
+      stxHost.remove(el); // Remove the template element itself
     }
 
     // Helper to evaluate with captured scope (auto-unwraps signals).
@@ -4974,13 +4976,13 @@ catch (e2) {
       if (isTemplate) {
         if (value && !isInserted) {
           // Re-insert cloned content
-          currentNodes = Array.from(el.content.childNodes).map(n => n.cloneNode(true));
+          currentNodes = Array.from(el.content.childNodes).map(n => stxHost.clone(n));
           const insertionAnchor = placeholder.nextSibling;
-          currentNodes.forEach(node => parent.insertBefore(node, insertionAnchor));
+          currentNodes.forEach(node => stxHost.insert(parent, node, insertionAnchor));
           // Bound AFTER the clones, so hiding can remove whatever a nested
           // structural directive rendered as their sibling (#1955).
-          if (!endMarker) endMarker = document.createComment('stx-if-end');
-          parent.insertBefore(endMarker, insertionAnchor);
+          if (!endMarker) endMarker = stxHost.anchor('stx-if-end');
+          stxHost.insert(parent, endMarker, insertionAnchor);
           processTemplateNodes(currentNodes);
           childrenProcessed = true;
           // Stamp insertion time for click propagation guard
@@ -5006,12 +5008,12 @@ else if (!value && isInserted) {
             while (doomed && doomed !== endMarker) {
               var nextDoomed = doomed.nextSibling;
               disposeSubtreeEffects(doomed);
-              doomed.remove();
+              stxHost.remove(doomed);
               doomed = nextDoomed;
             }
-            endMarker.remove();
+            stxHost.remove(endMarker);
           }
-          currentNodes.forEach(node => { disposeSubtreeEffects(node); node.remove(); });
+          currentNodes.forEach(node => { disposeSubtreeEffects(node); stxHost.remove(node); });
           currentNodes = [];
           isInserted = false;
           childrenProcessed = false;
@@ -5032,7 +5034,7 @@ else {
         if (value && !isInserted) {
           console.log('[stx] bindIf INSERTING element for :if=' + expr);
           const insertionAnchor = placeholder.nextSibling;
-          currentNodes.forEach(node => parent.insertBefore(node, insertionAnchor));
+          currentNodes.forEach(node => stxHost.insert(parent, node, insertionAnchor));
           if (parent && parent.__stx_detached_if) currentNodes.forEach(node => parent.__stx_detached_if.delete(node));
           el.__stx_shown_at = performance.now();
           isInserted = true;
@@ -5048,7 +5050,7 @@ else if (!value && isInserted) {
           // once (#1737). Permanent disposal stays in bindFor (item removal)
           // and cleanupContainer (SPA navigation). The double-bind guards make
           // re-show idempotent, so toggling doesn't leak.
-          currentNodes.forEach(node => node.remove());
+          currentNodes.forEach(node => stxHost.remove(node));
           // Detached nodes are out of reach of a DOM walk, so an ancestor row or
           // branch removed while this is hidden could not dispose their effects
           // (#1954). Record them on the parent that keeps the placeholder.

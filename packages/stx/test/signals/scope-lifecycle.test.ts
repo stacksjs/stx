@@ -240,7 +240,7 @@ describe('Directive bindings', () => {
       // By shape, not by the exact write: the text write moved behind the host
       // adapter (stacksjs/stx#1984) and this assertion, which is about the
       // directive being wired at all, failed on a change it does not test.
-      expect(runtime).toMatch(/(?:host\.setText\(el,|el\.textContent =)\s*evalAttrExpr/)
+      expect(runtime).toMatch(/(?:setText\(el,|el\.textContent =)\s*evalAttrExpr/)
     })
 
     it('should handle @html', () => {

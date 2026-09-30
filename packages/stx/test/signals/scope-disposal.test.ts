@@ -73,7 +73,7 @@ describe('disposeSubtreeScopes (#1727)', () => {
       expect(occurrences.length).toBeGreaterThanOrEqual(4)
       // The pairing is the point -- dispose immediately before the removal --
       // and the removal itself moved behind the host adapter (#1984).
-      expect(runtime).toMatch(/disposeSubtreeScopes\(e\);\s*(?:e\.remove\(\)|host\.remove\(e\));/)
+      expect(runtime).toMatch(/disposeSubtreeScopes\(e\);\s*(?:e\.remove\(\)|\w+\.remove\(e\));/)
     })
 
     it('cleanupContainer routes through the helper (SPA-nav teardown)', () => {
