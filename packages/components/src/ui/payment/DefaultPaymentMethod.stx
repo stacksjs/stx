@@ -21,7 +21,7 @@ export const containerClasses = `mt-16 w-2/3 bg-white dark:bg-neutral-800 px-8 p
 
   @if(isLoading)
     <!-- Loading skeleton -->
-    <div class="mt-8 animate-pulse">
+    <div class="mt-8 motion-safe:animate-pulse">
       <div class="h-20 bg-surface-sunken rounded-lg"></div>
     </div>
   @else

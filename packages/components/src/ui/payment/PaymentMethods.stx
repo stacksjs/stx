@@ -32,7 +32,7 @@ function onDelete(methodId) {
 
 <div class="{{ containerClasses }}">
   @if(isLoading)
-    <div class="animate-pulse">
+    <div class="motion-safe:animate-pulse">
       <div class="h-24 bg-surface-sunken rounded-lg"></div>
     </div>
   @else

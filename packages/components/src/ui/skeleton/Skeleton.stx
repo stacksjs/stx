@@ -19,7 +19,7 @@ const variantClasses = {
 }
 
 // Animation classes
-const animationClasses = animate ? 'animate-pulse' : ''
+const animationClasses = animate ? 'motion-safe:animate-pulse' : ''
 
 // Build base classes
 const baseClasses = circle ? 'rounded-full' : variantClasses[variant] || variantClasses.text
