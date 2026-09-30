@@ -26,8 +26,8 @@ const arrowClasses = {
   right: 'right-full top-1/2 -translate-y-1/2 border-r-gray-900 dark:border-r-gray-700',
 }
 
-export const tooltipClasses = `absolute z-50 px-3 py-2 text-sm font-medium text-white bg-gray-900 dark:bg-gray-700 rounded-lg shadow-lg whitespace-nowrap pointer-events-none transition-opacity duration-200 ${positionClasses[position]} ${className}`.trim()
-export const arrowClass = `absolute w-0 h-0 border-4 border-transparent ${arrowClasses[position]}`.trim()
+export const tooltipClasses = `absolute z-50 px-3 py-2 text-sm font-medium text-white bg-gray-900 dark:bg-gray-700 rounded-lg shadow-lg whitespace-nowrap pointer-events-none transition-opacity duration-200 ${positionClasses[position] || positionClasses.top} ${className}`.trim()
+export const arrowClass = `absolute w-0 h-0 border-4 border-transparent ${arrowClasses[position] || arrowClasses.top}`.trim()
 </script>
 <script client>
   const delay = {{ delay }}

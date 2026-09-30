@@ -28,9 +28,9 @@ export const containerClasses = variant === 'linear'
   ? `w-full ${className}`.trim()
   : `inline-flex items-center justify-center ${className}`.trim()
 
-export const linearTrackClasses = `w-full ${linearSizeClasses[size]} bg-surface-sunken rounded-full overflow-hidden`.trim()
-export const linearBarClasses = `h-full ${colorClasses[color]} transition-all duration-300 ease-in-out ${indeterminate ? 'animate-progress-indeterminate' : ''}`.trim()
-export const circularSizeClass = circularSizeClasses[size]
+export const linearTrackClasses = `w-full ${linearSizeClasses[size] || linearSizeClasses.md} bg-surface-sunken rounded-full overflow-hidden`.trim()
+export const linearBarClasses = `h-full ${colorClasses[color] || colorClasses.primary} transition-all duration-300 ease-in-out ${indeterminate ? 'animate-progress-indeterminate' : ''}`.trim()
+export const circularSizeClass = circularSizeClasses[size] || circularSizeClasses.md
 export const labelClasses = `text-sm font-medium text-fg-strong mb-2`.trim()
 export const circularTrackColor = 'stroke-gray-200 dark:stroke-gray-700'
 export const circularBarColor = color === 'primary' ? 'stroke-info'

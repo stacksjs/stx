@@ -22,7 +22,7 @@ const variantClasses = {
 const animationClasses = animate ? 'animate-pulse' : ''
 
 // Build base classes
-const baseClasses = circle ? 'rounded-full' : variantClasses[variant]
+const baseClasses = circle ? 'rounded-full' : variantClasses[variant] || variantClasses.text
 
 // Build style object
 let styleString = ''

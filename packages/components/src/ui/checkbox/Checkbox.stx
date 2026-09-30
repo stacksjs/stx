@@ -16,7 +16,7 @@ const baseClasses = 'rounded border-line-strong text-accent focus:ring-accent fo
 const stateClasses = error ? 'border-red-300 dark:border-red-600 text-danger focus:ring-red-500 dark:focus:ring-red-400' : ''
 const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
 
-export const checkboxClasses = `${baseClasses} ${sizeClasses[size]} ${stateClasses} ${disabledClasses}`.trim()
+export const checkboxClasses = `${baseClasses} ${sizeClasses[size] || sizeClasses.md} ${stateClasses} ${disabledClasses}`.trim()
 export const labelClasses = `text-sm font-medium ${error ? 'text-danger' : 'text-fg'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`.trim()
 export const descriptionClasses = `text-sm ${error ? 'text-red-500 dark:text-red-400' : 'text-fg-soft'}`.trim()
 export const inputId = `checkbox-${value || label}`

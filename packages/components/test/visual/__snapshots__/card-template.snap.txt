@@ -24,9 +24,9 @@ const paddingClasses = { none: 'p-0', sm: 'p-3', default: 'p-6', lg: 'p-8' }
 const hoverClasses = hover ? 'transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5' : ''
 const clickableClasses = clickable ? 'cursor-pointer' : ''
 
-export const cardClasses = `rounded-lg overflow-hidden ${variantClasses[variant]} ${paddingClasses[image ? 'none' : padding]} ${hoverClasses} ${clickableClasses} ${className}`.trim()
+export const cardClasses = `rounded-lg overflow-hidden ${variantClasses[variant] || variantClasses.default} ${paddingClasses[image ? 'none' : padding] || paddingClasses.default} ${hoverClasses} ${clickableClasses} ${className}`.trim()
 export const imageClasses = `w-full h-48 object-cover`.trim()
-export const contentClasses = `${image ? paddingClasses[padding] : ''}`.trim()
+export const contentClasses = `${image ? paddingClasses[padding] || paddingClasses.default : ''}`.trim()
 </script>
 <script client>
   const emit = defineEmits()

@@ -47,9 +47,9 @@ const closeButtonPosition = {
   bottom: 'right-0 -mr-8',
 }
 
-export const containerClasses = `pointer-events-none fixed ${positionClasses[position]} flex max-w-full`.trim()
-export const panelClasses = `pointer-events-auto relative ${sizeClasses[position]} ${className}`.trim()
-export const closeButtonClasses = `absolute top-0 ${closeButtonPosition[position]} flex pt-4 pr-2 sm:pr-4`.trim()
+export const containerClasses = `pointer-events-none fixed ${positionClasses[position] || positionClasses.right} flex max-w-full`.trim()
+export const panelClasses = `pointer-events-auto relative ${sizeClasses[position] || sizeClasses.right} ${className}`.trim()
+export const closeButtonClasses = `absolute top-0 ${closeButtonPosition[position] || closeButtonPosition.right} flex pt-4 pr-2 sm:pr-4`.trim()
 
 /*
  * This drawer's own id.

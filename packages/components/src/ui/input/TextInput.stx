@@ -30,10 +30,10 @@ const disabledClasses = disabled
     : 'bg-white dark:bg-neutral-700'
 const paddingClasses = leftIcon ? 'pl-10' : rightIcon || clearable ? 'pr-10' : ''
 
-export const inputClasses = `${baseClasses} ${sizeClasses[size]} ${stateClasses} ${disabledClasses} ${paddingClasses} ${inputClassName}`.trim()
+export const inputClasses = `${baseClasses} ${sizeClasses[size] || sizeClasses.md} ${stateClasses} ${disabledClasses} ${paddingClasses} ${inputClassName}`.trim()
 export const labelClasses = `block text-sm font-medium leading-6 mb-2 ${error ? 'text-danger' : 'text-fg'}`.trim()
 export const helperClasses = `mt-2 text-sm ${error ? 'text-danger' : 'text-fg-soft'}`.trim()
-export const iconClasses = iconSizeClasses[size]
+export const iconClasses = iconSizeClasses[size] || iconSizeClasses.md
 export const inputId = `input-${label}`
 </script>
 

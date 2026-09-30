@@ -30,8 +30,8 @@ const baseClasses = 'inline-flex items-center justify-center font-semibold round
 const widthClasses = fullWidth ? 'w-full' : ''
 export const isDisabled = disabled || loading
 
-export const buttonClasses = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${widthClasses} ${className}`.trim()
-export const iconClasses = iconSizeClasses[size]
+export const buttonClasses = `${baseClasses} ${variantClasses[variant] || variantClasses.primary} ${sizeClasses[size] || sizeClasses.md} ${widthClasses} ${className}`.trim()
+export const iconClasses = iconSizeClasses[size] || iconSizeClasses.md
 export const spinnerClasses = `animate-spin ${iconClasses}`.trim()
 </script>
 

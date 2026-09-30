@@ -41,10 +41,10 @@ const statusColorClasses = {
 }
 
 export const containerClasses = `relative inline-block ${className}`.trim()
-export const avatarClasses = `flex items-center justify-center overflow-hidden bg-surface-sunken ${sizeClasses[size]} ${shapeClasses[shape]}`.trim()
+export const avatarClasses = `flex items-center justify-center overflow-hidden bg-surface-sunken ${sizeClasses[size] || sizeClasses.md} ${shapeClasses[shape] || shapeClasses.circle}`.trim()
 export const imageClasses = `w-full h-full object-cover`.trim()
 export const initialsClasses = `font-medium text-fg-muted uppercase select-none`.trim()
-export const statusClasses = status ? `absolute bottom-0 right-0 ${statusSizeClasses[size]} ${statusColorClasses[status]} ${shapeClasses[shape]} border-white dark:border-gray-900`.trim() : ''
+export const statusClasses = status ? `absolute bottom-0 right-0 ${statusSizeClasses[size] || statusSizeClasses.md} ${statusColorClasses[status] || statusColorClasses.offline} ${shapeClasses[shape] || shapeClasses.circle} border-white dark:border-gray-900`.trim() : ''
 export const displayInitials = initials || (alt ? alt.split(' ').map(n => n[0]).join('').substring(0, 2) : '?')
 </script>
 <script client>

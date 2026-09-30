@@ -27,8 +27,8 @@ const dotColorClasses = {
   info: 'bg-cyan-500 dark:bg-cyan-400',
 }
 
-export const badgeClasses = `inline-flex items-center gap-1.5 font-medium rounded-full ${variantClasses[variant]} ${sizeClasses[size]} ${className}`.trim()
-export const dotClasses = `w-2 h-2 rounded-full ${dotColorClasses[variant]}`.trim()
+export const badgeClasses = `inline-flex items-center gap-1.5 font-medium rounded-full ${variantClasses[variant] || variantClasses.default} ${sizeClasses[size] || sizeClasses.md} ${className}`.trim()
+export const dotClasses = `w-2 h-2 rounded-full ${dotColorClasses[variant] || dotColorClasses.default}`.trim()
 export const removeButtonClasses = `ml-0.5 -mr-1 text-current hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-0.5 transition-colors duration-150`.trim()
 </script>
 

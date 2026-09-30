@@ -37,8 +37,8 @@ const variantClasses = {
   enclosed: 'border-line',
 }
 
-export const containerClasses = `flex ${orientationClasses[orientation]} ${className}`.trim()
-export const tabListClasses = `flex ${tabListOrientationClasses[orientation]} ${variantClasses[variant]}`.trim()
+export const containerClasses = `flex ${orientationClasses[orientation] || orientationClasses.horizontal} ${className}`.trim()
+export const tabListClasses = `flex ${tabListOrientationClasses[orientation] || tabListOrientationClasses.horizontal} ${variantClasses[variant] || variantClasses.line}`.trim()
 export const tabPanelClasses = `p-4 focus:outline-none`.trim()
 // True when the parent passes a non-empty `tabs` array — switches to the
 // legacy render path so existing snapshots stay byte-identical.

@@ -26,7 +26,7 @@ const disabledClasses = disabled
     ? 'bg-surface cursor-default'
     : 'bg-white dark:bg-neutral-700'
 
-export const textareaClasses = `${baseClasses} ${stateClasses} ${disabledClasses} ${resizeClasses[resize]} ${className}`.trim()
+export const textareaClasses = `${baseClasses} ${stateClasses} ${disabledClasses} ${resizeClasses[resize] || resizeClasses.vertical} ${className}`.trim()
 export const labelClasses = `block text-sm font-medium leading-6 mb-2 ${error ? 'text-danger' : 'text-fg'}`.trim()
 export const helperClasses = `mt-2 text-sm ${error ? 'text-danger' : 'text-fg-soft'}`.trim()
 </script>

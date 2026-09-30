@@ -249,7 +249,14 @@ describe('Drawer theming', () => {
   test('keeps className landing on the wrapper it always did', () => {
     // Changing where an existing prop applies would silently restyle every
     // drawer already shipped.
-    expect(source).toContain('export const panelClasses = `pointer-events-auto relative ${sizeClasses[position]} ${className}`')
+    //
+    // Matched by shape rather than verbatim: this used to pin the whole line
+    // including `${sizeClasses[position]}`, so guarding that lookup against an
+    // unknown position (#2001) failed a test about where className lands.
+    const panelClasses = source.match(/export const panelClasses = `([^`]*)`/)
+
+    expect(panelClasses?.[1]).toContain('pointer-events-auto relative')
+    expect(panelClasses?.[1]).toContain('${className}')
   })
 })
 

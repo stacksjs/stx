@@ -33,7 +33,7 @@ const colorClasses = {
 }
 
 export const containerClasses = `inline-flex flex-col items-center gap-2 ${className}`.trim()
-export const spinnerClasses = `${sizeClasses[size]} ${colorClasses[color]} animate-spin`.trim()
+export const spinnerClasses = `${sizeClasses[size] || sizeClasses.md} ${colorClasses[color] || colorClasses.primary} animate-spin`.trim()
 export const labelClasses = `text-sm font-medium text-fg-strong`.trim()
 
 // Dots size classes
@@ -56,7 +56,7 @@ const dotsColorClasses = {
   gray: 'bg-gray-600 dark:bg-gray-400',
 }
 
-export const dotClasses = `${dotsSizeClasses[size]} ${dotsColorClasses[color]} rounded-full`.trim()
+export const dotClasses = `${dotsSizeClasses[size] || dotsSizeClasses.md} ${dotsColorClasses[color] || dotsColorClasses.primary} rounded-full`.trim()
 </script>
 <div class="{{ containerClasses }}" role="status" aria-live="polite" aria-busy="true">
   @if(variant === 'circle')

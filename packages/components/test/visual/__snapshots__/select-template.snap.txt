@@ -25,7 +25,7 @@ const disabledClasses = disabled
   ? 'opacity-50 cursor-not-allowed bg-surface'
   : 'bg-white dark:bg-neutral-700 cursor-pointer hover:ring-gray-400 dark:hover:ring-gray-500'
 
-export const selectClasses = `${baseClasses} ${sizeClasses[size]} ${stateClasses} ${disabledClasses} ${className}`.trim()
+export const selectClasses = `${baseClasses} ${sizeClasses[size] || sizeClasses.md} ${stateClasses} ${disabledClasses} ${className}`.trim()
 export const labelClasses = `block text-sm font-medium leading-6 ${error ? 'text-danger' : 'text-fg'}`.trim()
 export const helperClasses = `mt-2 text-sm ${error ? 'text-danger' : 'text-fg-soft'}`.trim()
 export const selectId = `select-${value}`
