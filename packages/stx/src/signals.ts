@@ -152,6 +152,14 @@ console.log('[stx] entering IIFE');
     // deep-copied, a native view hierarchy cannot. A native host materialises a
     // fresh subtree from the template it was given instead of copying views,
     // which is why the row template is passed rather than a node to duplicate.
+    // A native host registers the handler against the view and has the platform
+    // call it; nothing about the binding layer changes, which is the point.
+    // The options argument carries passive/capture/once. A native host has no use for
+    // passive -- there is no scroll thread to block -- but dropping the
+    // parameter silently makes every touch listener blocking again, so it stays
+    // in the signature and each host decides what to do with it.
+    listen: function(node, event, handler, options) { node.addEventListener(event, handler, options); },
+
     anchor: function(label) { return document.createComment(label); },
     clone: function(node) { return node.cloneNode(true); },
     insert: function(parent, node, before) { parent.insertBefore(node, before); },
@@ -3136,7 +3144,7 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
           ? { ...globalHelpers, ...el.__stx_parent_scope }
           : { ...globalHelpers, ...scope, ...(findElementScope(el) || {}) };
 
-        el.addEventListener(eventName, (event) => {
+        stxHost.listen(el, eventName, (event) => {
           // Vue-style component listeners fall through to the rendered native
           // root unless the child emits the same event. Signal components use
           // a scope wrapper, so native events arrive here from a descendant.
@@ -3459,7 +3467,7 @@ catch (e) {
       };
       el.__stx_model_sync = syncCheckbox;
       effect(syncCheckbox);
-      el.addEventListener('change', () => {
+      stxHost.listen(el, 'change', () => {
         var current = getValue();
         if (!Array.isArray(current)) {
           setValue(el.checked);
@@ -3476,7 +3484,7 @@ catch (e) {
       var syncRadio = () => { el.checked = String(getValue()) === String(el.value); };
       el.__stx_model_sync = syncRadio;
       effect(syncRadio);
-      el.addEventListener('change', () => {
+      stxHost.listen(el, 'change', () => {
         if (el.checked) setValue(coerceValue(el.value));
       });
     }
@@ -3502,7 +3510,7 @@ catch (e) {
           el.__stx_model_observer = null;
         });
       }
-      el.addEventListener('change', () => setValue(coerceValue(el.value)));
+      stxHost.listen(el, 'change', () => setValue(coerceValue(el.value)));
     }
 else {
       // Writing el.value moves the text cursor to the END of the control, and
@@ -3540,7 +3548,7 @@ else {
           catch (e) { /* type does not support selection */ }
         }
       });
-      el.addEventListener(modifiers.includes('lazy') ? 'change' : 'input', () => setValue(coerceValue(el.value)));
+      stxHost.listen(el, modifiers.includes('lazy') ? 'change' : 'input', () => setValue(coerceValue(el.value)));
     }
 
     el.removeAttribute(attrName);

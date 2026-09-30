@@ -58,14 +58,25 @@ function recordingHost(ops: Op[]) {
       ops.push({ op: 'remove', node: name(node), args: [] })
       if (node.parentNode) node.parentNode.removeChild(node)
     },
+    // eslint-disable-next-line ts/no-explicit-any
+    listen: (node: any, event: string, handler: any, options?: unknown) => {
+      ops.push({ op: 'listen', node: name(node), args: [event, options] })
+      node.addEventListener(event, handler, options)
+    },
   }
 }
 
 let booted = 0
-async function boot(markup: string, scope: Record<string, unknown>): Promise<void> {
+async function boot(
+  markup: string,
+  scope: Record<string, unknown>,
+  // eslint-disable-next-line ts/no-explicit-any
+  afterParse?: (root: any) => void,
+): Promise<void> {
   const name = `host_${++booted}`
   window[`__stx_setup_${name}`] = () => scope
   document.body.innerHTML = `<main data-stx="__stx_setup_${name}">${markup}</main>`
+  if (afterParse) afterParse(document.body)
   shimAttributes(document.body)
   document.dispatchEvent(new window.Event('DOMContentLoaded'))
   await settle()
@@ -153,6 +164,34 @@ describe('the runtime writes through a host', () => {
     items.set([{ id: 1, label: 'a' }])
     await settle()
     expect(ops.filter(o => o.op === 'remove').length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('registers event handlers through the host, with their options', async () => {
+    let clicked = 0
+    // very-happy-dom's parser stops reading attributes at an `@` name, so an
+    // @event written into innerHTML never reaches the element. The runtime only
+    // ever reads these through getAttribute, so attaching them after parsing is
+    // faithful -- it is the parser that cannot represent them, not the runtime.
+    await boot(
+      '<button data-id="btn">go</button><div data-id="scroller"></div>',
+      { bump: () => { clicked += 1 } },
+      (root: any) => {
+        root.querySelector('[data-id="btn"]').setAttribute('@click', 'bump()')
+        root.querySelector('[data-id="scroller"]').setAttribute('@touchstart', 'bump()')
+      },
+    )
+
+    const listens = ops.filter(o => o.op === 'listen')
+    expect(listens.map(o => o.args[0])).toEqual(['click', 'touchstart'])
+    // The options channel matters: dropping it silently makes every touch
+    // listener blocking again.
+    expect((listens.find(o => o.args[0] === 'touchstart')?.args[1] as any)?.passive).toBe(true)
+    expect((listens.find(o => o.args[0] === 'click')?.args[1] as any)?.passive).toBe(false)
+
+    // And the handler the host registered is the one that runs.
+    document.querySelector('[data-id="btn"]').click()
+    await settle()
+    expect(clicked).toBe(1)
   })
 
   it('carries a derived value through, so the graph is intact behind the host', async () => {
