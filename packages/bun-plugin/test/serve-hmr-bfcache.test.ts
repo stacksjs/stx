@@ -105,13 +105,26 @@ async function editAndAwait(file: string, contents: string): Promise<any> {
   return seen.slice(before).find(event => event.type !== 'connected' && event.type !== 'build-error')
 }
 
-async function waitFor<T>(read: () => Promise<T> | T, timeout = 10_000): Promise<T> {
+/**
+ * Poll until `read` returns something truthy, or throw saying what did not
+ * happen.
+ *
+ * It used to return the falsy value on timeout, which meant the timeout was
+ * reported by whatever ran next rather than by the wait. A CI runner where
+ * Chrome took longer than the deadline to open its debugging port failed with
+ * ENOENT on a profile file two lines later - an error that says nothing about
+ * Chrome, on a suite about bfcache. Naming the wait is the difference between
+ * an hour of reading and a glance.
+ */
+async function waitFor<T>(what: string, read: () => Promise<T> | T, timeout = 10_000): Promise<T> {
   const started = Date.now()
   let value = await read()
   while (!value && Date.now() - started < timeout) {
     await Bun.sleep(100)
     value = await read()
   }
+  if (!value)
+    throw new Error(`timed out after ${Date.now() - started}ms waiting for ${what}`)
   return value
 }
 
@@ -158,12 +171,24 @@ async function launchChrome(): Promise<Browser> {
   const profile = mkdtempSync(path.join(tmpdir(), 'stx-hmr-chrome-'))
   const chrome = Bun.spawn([CHROME!, '--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', 'about:blank'], { stdout: 'ignore', stderr: 'ignore' })
   const portFile = path.join(profile, 'DevToolsActivePort')
-  await waitFor(() => existsSync(portFile))
+
+  /*
+   * 60s, not 10. Chrome's first start on a shared CI runner - cold page cache,
+   * a fresh profile directory to populate, and the rest of this suite's
+   * servers competing for the box - has taken longer than ten seconds there
+   * while taking well under one locally. That is a slow machine, not a broken
+   * browser, and failing on it says nothing true about the code.
+   */
+  await waitFor(
+    `Chrome to report a debugging port in ${portFile}`,
+    () => existsSync(portFile) || (chrome.exitCode !== null ? Promise.reject(new Error(`Chrome exited with code ${chrome.exitCode} before opening a debugging port`)) : false),
+    60_000,
+  )
   const port = Number(readFileSync(portFile, 'utf8').split('\n')[0])
-  const targets = await waitFor(async () => {
+  const targets = await waitFor(`a Chrome page target on port ${port}`, async () => {
     const list = await fetch(`http://127.0.0.1:${port}/json/list`).then(res => res.json()).catch(() => []) as any[]
     return list.length ? list : null
-  })
+  }, 30_000)
   const socket = new WebSocket(targets!.find((target: any) => target.type === 'page').webSocketDebuggerUrl)
   await new Promise(resolve => socket.addEventListener('open', resolve, { once: true }))
   let id = 0
@@ -201,7 +226,7 @@ async function launchChrome(): Promise<Browser> {
 
 async function open(browser: Browser, route: string, heading: string): Promise<void> {
   await browser.send('Page.navigate', { url: `${BASE}${route}` })
-  await waitFor(() => browser.evaluate<boolean>(`document.readyState === 'complete' && document.querySelector('h1')?.textContent === ${JSON.stringify(heading)}`))
+  await waitFor(`the page to finish loading with heading ${JSON.stringify(heading)}`, () => browser.evaluate<boolean>(`document.readyState === 'complete' && document.querySelector('h1')?.textContent === ${JSON.stringify(heading)}`))
 }
 
 async function back(browser: Browser): Promise<void> {
@@ -244,7 +269,7 @@ describe.skipIf(!CHROME)('in a real browser', () => {
     await browser.evaluate('window.__kept = true')
     await open(browser, '/b', 'b')
     await back(browser)
-    await waitFor(() => browser.evaluate<boolean>(`document.querySelector('h1')?.textContent === 'a'`))
+    await waitFor('the heading to read a', () => browser.evaluate<boolean>(`document.querySelector('h1')?.textContent === 'a'`))
 
     // Still the same document: the back/forward cache restored it and the
     // version check found nothing to reload for.
@@ -253,7 +278,7 @@ describe.skipIf(!CHROME)('in a real browser', () => {
     // And its stream is open again, so the next edit reaches it.
     await Bun.sleep(300)
     await editAndAwait('views/a.stx', page('a', ' live'))
-    expect(await waitFor(() => browser.evaluate<boolean>(`document.querySelector('h1')?.textContent === 'a live'`))).toBe(true)
+    expect(await waitFor('the live edit to reach the heading', () => browser.evaluate<boolean>(`document.querySelector('h1')?.textContent === 'a live'`))).toBe(true)
   })
 
   it('reloads a cached page that missed an edit while it was away', async () => {
@@ -263,7 +288,7 @@ describe.skipIf(!CHROME)('in a real browser', () => {
     await editAndAwait('views/b.stx', page('b', ' while away'))
     await back(browser)
 
-    expect(await waitFor(() => browser.evaluate<boolean>(`document.querySelector('h1')?.textContent === 'b while away'`))).toBe(true)
+    expect(await waitFor('the edit made while the page was hidden to reach the heading', () => browser.evaluate<boolean>(`document.querySelector('h1')?.textContent === 'b while away'`))).toBe(true)
     expect(await browser.evaluate<boolean>('window.__stale === true')).toBe(false)
   })
 })
