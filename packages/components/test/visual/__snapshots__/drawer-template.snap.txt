@@ -34,10 +34,37 @@ const positionClasses = {
   bottom: 'inset-x-0 bottom-0 pt-10',
 }
 
-// `size` widens a side drawer without the app having to know that the width
-// lives on the wrapper rather than the panel. Ignored for top/bottom, which
-// are constrained by height instead.
-const width = $props.size ? `max-w-${$props.size}` : 'max-w-md'
+/*
+ * `size` widens a side drawer without the app having to know that the width
+ * lives on the wrapper rather than the panel. Ignored for top/bottom, which
+ * are constrained by height instead.
+ *
+ * Spelled out as a map because the class name has to exist as a literal in
+ * this file. It was built by interpolation - `max-w-${size}` - which means the
+ * string `max-w-xl` appeared nowhere in the source tree, so a content-scanning
+ * CSS engine never saw it and emitted no rule for it. The panel then fell back
+ * to `w-screen`: full width, the one thing `size` is there to prevent. The
+ * default worked, because `'max-w-md'` was a literal in that same expression,
+ * so the prop was broken only once you passed it (stacksjs/stx#2002).
+ */
+export const size = $props.size || 'md'
+
+const widthClasses = {
+  xs: 'max-w-xs',
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+  '2xl': 'max-w-2xl',
+  '3xl': 'max-w-3xl',
+  '4xl': 'max-w-4xl',
+  '5xl': 'max-w-5xl',
+  '6xl': 'max-w-6xl',
+  '7xl': 'max-w-7xl',
+  full: 'max-w-full',
+}
+
+const width = widthClasses[size] || widthClasses.md
 
 const sizeClasses = {
   right: `${width} w-screen`,
@@ -56,6 +83,30 @@ const closeButtonPosition = {
 export const containerClasses = `pointer-events-none fixed ${positionClasses[position] || positionClasses.right} flex max-w-full`.trim()
 export const panelClasses = `pointer-events-auto relative ${sizeClasses[position] || sizeClasses.right} ${className}`.trim()
 export const closeButtonClasses = `absolute top-0 ${closeButtonPosition[position] || closeButtonPosition.right} flex pt-4 pr-2 sm:pr-4`.trim()
+
+/*
+ * Which slide-in to run, decided here rather than in the stylesheet.
+ *
+ * There was one `@keyframes slideIn` whose `from` transform was a mustache
+ * over `position`. A component style block is lifted out of the source before
+ * expressions run, so that mustache shipped verbatim, the declaration was
+ * invalid, and the browser dropped it - leaving an empty 0% frame. The panel
+ * did not slide in from its edge, it appeared in place, and nothing reported
+ * it (stacksjs/stx#1982). `fadeIn` in the same block was fine, because it had
+ * nothing to interpolate.
+ *
+ * So the four offsets are four static keyframes and the choice is an animation
+ * NAME in a style attribute, which is an ordinary attribute and does
+ * interpolate.
+ */
+const slideAnimations = {
+  right: 'slideInRight',
+  left: 'slideInLeft',
+  top: 'slideInTop',
+  bottom: 'slideInBottom',
+}
+
+export const slideAnimation = slideAnimations[position] || slideAnimations.right
 
 /*
  * This drawer's own id.
@@ -244,11 +295,11 @@ defineExpose({
       <div class="{{ containerClasses }}">
         <div
           class="{{ panelClasses }}"
-          style="animation: slideIn 0.5s ease-in-out"
+          style="animation: {{ slideAnimation }} 0.5s ease-in-out"
           data-stx-drawer-panel="{{ drawerInstanceId }}"
           role="dialog"
           aria-modal="true"
-          {{ title ? 'aria-label="' + title + '"' : '' }}
+          aria-label="{{ title }}"
           tabindex="-1"
         >
           <div class="{{ closeButtonClasses }}">
@@ -290,13 +341,27 @@ defineExpose({
   to { opacity: 1; }
 }
 
-@keyframes slideIn {
-  from {
-    transform: {{ position === 'right' ? 'translateX(100%)' : position === 'left' ? 'translateX(-100%)' : position === 'top' ? 'translateY(-100%)' : 'translateY(100%)' }};
-  }
-  to {
-    transform: translate(0, 0);
-  }
+/* One per edge, so nothing in here needs interpolating. A mustache inside a
+   component style block is always dead: it is extracted before
+   expressions run. */
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translate(0, 0); }
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translate(0, 0); }
+}
+
+@keyframes slideInTop {
+  from { transform: translateY(-100%); }
+  to { transform: translate(0, 0); }
+}
+
+@keyframes slideInBottom {
+  from { transform: translateY(100%); }
+  to { transform: translate(0, 0); }
 }
 </style>
 
@@ -330,8 +395,18 @@ inset-x-0
 inset-y-0
 keydown
 left-0
+max-w-2xl
+max-w-3xl
+max-w-4xl
+max-w-5xl
+max-w-6xl
+max-w-7xl
 max-w-full
+max-w-lg
 max-w-md
+max-w-sm
+max-w-xl
+max-w-xs
 mt-6
 open
 overflow-hidden
@@ -351,6 +426,10 @@ relative
 right-0
 rounded-md
 shadow-xl
+slideInBottom
+slideInLeft
+slideInRight
+slideInTop
 sm:-ml-10
 sm:-mr-10
 sm:pl-16
