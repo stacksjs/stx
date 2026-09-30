@@ -223,22 +223,42 @@ const newItem = state('')
 ```html
 <script server>
 const page = await fetchPage(props.slug)
+
+useSeoMeta({
+  title: page.title,
+  description: page.excerpt,
+  ogImage: page.ogImage,
+})
 </script>
 
 <template>
-  @seo({
-    title: page.title,
-    description: page.excerpt,
-    image: page.ogImage,
-    url: `https://example.com/${page.slug}`
-  })
-
   <article>
     <h1>{{ page.title }}</h1>
     {!! page.content !!}
   </article>
 </template>
 ```
+
+`useSeoMeta()` in `<script server>` always reaches `<head>`. In a layout or a
+head partial, which already sit inside `<head>`, `@seo(...)` does the same job.
+It takes any expression that evaluates to an object:
+
+```html
+<!-- partials/head.stx, included inside the layout's <head> -->
+<script server>
+const seo = {
+  title: page.title,
+  description: page.excerpt,
+  canonical: `https://example.com/${page.slug}`,
+  openGraph: { image: page.ogImage },
+}
+</script>
+
+@seo(seo)
+```
+
+`@seo` writes its tags where it sits, so in a page's body they would land in
+`<body>`, where crawlers ignore them.
 
 ### Structured Data
 

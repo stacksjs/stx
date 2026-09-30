@@ -1680,7 +1680,7 @@ async function processOtherDirectives(
     context.__stx_head_raw = `${(context.__stx_head_raw as string) || ''}${headResult.headContent}\n`
   }
   output = processTitleDirective(output, context)
-  output = processMetaDirective(output, context)
+  output = processMetaDirective(output, context, filePath)
 
   // Process route directives
   output = processRouteDirectives(output)

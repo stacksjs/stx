@@ -1,4 +1,5 @@
 import type { CustomDirective, StxOptions } from './types'
+import { findDirectiveCalls, splitTopLevelArgs } from './directive-arguments'
 import { ErrorCodes, inlineError } from './error-handling'
 import { getCachedRegex } from './performance-utils'
 
@@ -84,8 +85,9 @@ async function processDirectiveWithEndTag(
     const startIndex = match.index || 0
 
     try {
-      // Parse parameters (strip quotes from values)
-      const params = paramString ? parseDirectiveParams(paramString) : []
+      // Parse parameters (strip quotes from values, unless the directive
+      // evaluates them and needs them as written)
+      const params = paramString ? parseParams(directive, paramString) : []
 
       // Trim the content to remove extra whitespace
       const trimmedContent = content.trim()
@@ -140,23 +142,36 @@ async function processDirectiveWithoutEndTag(
   const { name, handler } = directive
   let output = template
 
-  // Create a pattern that matches directives with parameters
-  // e.g., @uppercase(text) or @uppercase('text')
-  // Use balanced parenthesis matching for nested parens in params
-  const pattern = getCachedRegex(`@${name}\\s*\\(([^()]*(?:\\([^)]*\\)[^()]*)*)\\)`, 'g')
-
   // Keep track of replacements
   const replacements: Array<{ original: string, processed: string, startIndex: number }> = []
 
-  // Find all directive patterns with parameters
-  let match = pattern.exec(output)
-  while (match !== null) {
-    const [fullMatch, paramString = ''] = match
-    const startIndex = match.index || 0
+  // Find all directive calls with parameters, e.g. @uppercase(text) or
+  // @uppercase('text'). A directive that evaluates its arguments is matched by
+  // balance, so parens inside a string or a nested call stay in the call; the
+  // pattern below allows one level of nesting and does not know about quotes.
+  const calls: Array<{ fullMatch: string, paramString: string, startIndex: number }> = []
+  if (directive.rawParams) {
+    for (const call of findDirectiveCalls(output, getCachedRegex(`(?<![\\w$@])@${name}\\s*\\(`, 'g'))) {
+      // An unclosed call is left for whoever owns the directive to report.
+      if (call.end !== -1)
+        calls.push({ fullMatch: call.call, paramString: call.args, startIndex: call.start })
+    }
+  }
+  else {
+    // Use balanced parenthesis matching for nested parens in params
+    const pattern = getCachedRegex(`@${name}\\s*\\(([^()]*(?:\\([^)]*\\)[^()]*)*)\\)`, 'g')
+    pattern.lastIndex = 0
+    let match = pattern.exec(output)
+    while (match !== null) {
+      calls.push({ fullMatch: match[0], paramString: match[1] ?? '', startIndex: match.index || 0 })
+      match = pattern.exec(output)
+    }
+  }
 
+  for (const { fullMatch, paramString, startIndex } of calls) {
     try {
       // Parse parameters
-      const params = parseDirectiveParams(paramString)
+      const params = parseParams(directive, paramString)
 
       // Apply the directive handler with empty content (since this directive type
       // doesn't have content between start and end tags)
@@ -182,9 +197,6 @@ async function processDirectiveWithoutEndTag(
         startIndex,
       })
     }
-
-    // Get the next match
-    match = pattern.exec(output)
   }
 
   // Also handle bare directives without parameters (e.g., @stxRouter)
@@ -225,6 +237,14 @@ async function processDirectiveWithoutEndTag(
   }
 
   return output
+}
+
+/**
+ * A directive's parameters: as written for a `rawParams` directive, otherwise
+ * with their quotes stripped.
+ */
+function parseParams(directive: CustomDirective, paramString: string): string[] {
+  return directive.rawParams ? splitTopLevelArgs(paramString) : parseDirectiveParams(paramString)
 }
 
 /**

@@ -1321,7 +1321,8 @@ describe('registerSeoDirectives', () => {
     const directives = registerSeoDirectives()
     const meta = directives.find(d => d.name === 'meta')!
     const context: Record<string, any> = {}
-    const result = meta.handler('', ['description', 'Test desc'], context, 'test.stx')
+    // `rawParams`: the handler receives arguments as written, quotes included.
+    const result = meta.handler('', ['\'description\'', '\'Test desc\''], context, 'test.stx')
     expect(result).toBe('')
     expect(context.__stx_runtime_head.meta).toEqual([{ name: 'description', content: 'Test desc' }])
   })

@@ -554,18 +554,53 @@ Translation file format:
 
 ## SEO & Meta
 
+Every SEO directive takes expressions, evaluated against the template's context
+(`<script server>` variables, the render context, and a partial's own
+`<script server>` when the directive sits in a partial). A directive that cannot
+produce its tag says so: an HTML comment where the tag would have been, such as
+`<!-- [SEO Error [1101]]: @seo(seo): "seo" is not defined here... -->`, and a
+`[stx]` console warning naming the file. It never renders nothing without a word.
+
 ### @meta
 
-Generate meta tags.
+Generate a meta tag. The first argument is the name, the second the content.
 
 ```html
-@meta('description', 'Page description here')
-@meta('og:title', pageTitle)
+@meta('description', 'Page description here')   <!-- quoted: literal text -->
+@meta('author', author)                         <!-- a variable -->
+@meta('og:title', post.title)                   <!-- any expression -->
+@meta('keywords', tags)                         <!-- an array joins with ", " -->
+@meta('og:site_name', `${site.name} Docs`)
+@meta('og:title')                               <!-- one argument: reads `title`, then `openGraph.title` -->
+```
+
+- A quoted value is always literal text. It is never looked up in the context, so
+  `@meta('description', 'title')` writes the word "title".
+- An unquoted value is an expression. `null`, `undefined`, `false` and `''` render
+  no tag; a name the template does not have is reported (quote it if you meant
+  the text).
+- The name may be quoted, a bare name (`@meta(og:image, '/og.png')`), or an
+  expression (`@meta(tag.name, tag.value)`).
+- `og:`, `article:`, `profile:` and the other Open Graph namespaces are written
+  as `property`; everything else, including `twitter:`, as `name`.
+
+In a page, `@meta` tags are placed in `<head>` wherever the directive sits. In a
+partial they are written in place, which suits a head partial.
+
+### @metaTag
+
+A meta tag with full control over its attributes. The argument is any
+expression that evaluates to `{ name?, property?, httpEquiv?, content }`.
+
+```html
+@metaTag({ httpEquiv: 'refresh', content: '30' })
+@metaTag(themeColorTag)
 ```
 
 ### @seo
 
-Comprehensive SEO generation.
+Comprehensive SEO generation. The argument is any expression that evaluates to
+an object:
 
 ```html
 @seo({
@@ -580,13 +615,33 @@ Comprehensive SEO generation.
   twitter: {
     card: 'summary_large_image',
     site: '@username'
-  }
+  },
+  structuredData: { '@type': 'Article', headline: 'Page Title' }
 })
+
+@seo(seo)                              <!-- a variable from <script server> -->
+@seo({ ...seo, title: post.title })    <!-- spread and override -->
+@seo(buildSeo(post))                   <!-- a function call -->
+@seo(page.seo ?? {})                   <!-- a variable only some pages define -->
 ```
+
+`@seo` reads `title`, `description`, `keywords`, `robots`, `canonical`,
+`openGraph`, `twitter` and `structuredData`. Any other key is ignored with a
+warning that says where it belongs (`image` is `openGraph.image`, `url` is
+`canonical` or `openGraph.url`, `type` is `openGraph.type`). `structuredData`
+gets `"@context": "https://schema.org"` when it has none.
+
+A variable that exists but holds `null` or `undefined` renders nothing. A
+variable that does not exist, or a value that is not an object, is reported.
+
+`@seo` writes its tags where it sits, so put it inside `<head>`: in the layout,
+or in a head partial. At the top of a page body the tags land in `<body>`, where
+crawlers ignore them; use `useSeoMeta()` in `<script server>` there instead.
 
 ### @structuredData
 
-JSON-LD structured data.
+JSON-LD structured data. The argument is any expression that evaluates to an
+object, or an array of objects; `@context` defaults to `https://schema.org`.
 
 ```html
 @structuredData({
@@ -597,7 +652,12 @@ JSON-LD structured data.
     name: article.author
   }
 })
+
+@structuredData(product)
+@structuredData(buildSchema(post))
 ```
+
+`</script>` inside a value is escaped, so data cannot close the block.
 
 ---
 

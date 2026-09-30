@@ -349,6 +349,7 @@ Built-in form directives with CSRF protection, validation, and old value preserv
 })
 
 @meta('author', 'John Doe')
+@meta('og:title', post.title)   <!-- unquoted arguments are expressions -->
 
 @structuredData({
   "@type": "Product",
@@ -357,6 +358,11 @@ Built-in form directives with CSRF protection, validation, and old value preserv
   "offers": { "@type": "Offer", "price": "29.99" }
 })
 ```
+
+Every SEO directive argument is an expression, so `@seo(seo)`,
+`@seo({ ...seo, title })` and `@structuredData(product)` work as well as a
+literal. One that cannot produce its tag leaves an HTML comment in its place and
+logs a `[stx]` warning naming the file.
 
 Programmatic sitemap and robots.txt generation:
 

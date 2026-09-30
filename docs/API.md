@@ -542,14 +542,23 @@ Parent listens via CustomEvent:
 ```html
 @meta('description', 'Page description here')
 @meta('keywords', 'stx, templating, framework')
+@meta('author', post.author)            <!-- unquoted: an expression -->
 
 @seo({
   title: 'Page Title',
   description: 'Page description',
-  image: '/og-image.jpg',
-  type: 'article'
+  openGraph: { image: '/og-image.jpg', type: 'article' }
 })
+
+@seo(seo)                                <!-- any expression that evaluates to an object -->
+@structuredData(product)
 ```
+
+Arguments are expressions evaluated against the template's context; a quoted
+string is literal text. A directive that cannot produce its tag (a variable that
+is not defined, a value of the wrong type) leaves an HTML comment in its place
+and logs a `[stx]` warning naming the file. See the
+[directives reference](./api/directives.md).
 
 ---
 

@@ -289,6 +289,7 @@ function createCacheOptionsSignature(options: StxOptions): string {
     customDirectives: (options.customDirectives ?? []).map(directive => ({
       name: directive.name,
       hasEndTag: directive.hasEndTag === true,
+      rawParams: directive.rawParams === true,
       handler: String(directive.handler),
     })),
   }

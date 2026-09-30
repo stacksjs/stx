@@ -336,6 +336,18 @@ export interface CustomDirective {
   handler: CustomDirectiveHandler
   /** Whether the directive has a closing tag (e.g., @directive...@enddirective) */
   hasEndTag?: boolean
+  /**
+   * Pass each argument exactly as written, quotes included, split only at
+   * top-level commas, instead of with its quotes stripped.
+   *
+   * Stripping quotes erases the difference between `'title'` (the word) and
+   * `title` (a variable), and splitting at every comma breaks `fn(a, b)` apart,
+   * so a directive that evaluates its arguments needs this. The call is also
+   * matched by balance rather than a pattern, so `'Smile :)'` and nested calls
+   * stay inside it. Parse a literal with `parseStringLiteral` and evaluate the
+   * rest with `evaluateDirectiveArgument` (directive-arguments.ts).
+   */
+  rawParams?: boolean
   /** Optional description for documentation */
   description?: string
 }

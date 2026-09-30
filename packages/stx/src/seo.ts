@@ -2,10 +2,15 @@
  * SEO (Search Engine Optimization) Module
  *
  * Provides directives and utilities for generating SEO-related HTML:
- * - `@meta('name', 'content')` - Generate meta tags
+ * - `@meta('name', 'content')` / `@meta('name', expression)` - Generate meta tags
  * - `@metaTag({ name, property, content })` - Meta tags with full control
- * - `@structuredData({ ... })` - JSON-LD structured data
- * - `@seo({ title, description, ... })` - Comprehensive SEO generation
+ * - `@structuredData({ ... })` / `@structuredData(expression)` - JSON-LD structured data
+ * - `@seo({ title, description, ... })` / `@seo(expression)` - Comprehensive SEO generation
+ *
+ * Every argument is an expression evaluated against the template's context, so
+ * a variable, a spread or a function call works wherever a literal does. A
+ * directive that cannot produce its tag says so: an inline comment where the
+ * tag would have been and a console warning naming the file.
  *
  * Also provides:
  * - Automatic SEO tag injection via `injectSeoTags()`
@@ -56,9 +61,19 @@
  */
 import type { CustomDirective, SeoConfig, StxOptions } from './types'
 import type { HeadConfig } from './head'
+import type { MetaTagAttrs } from './meta-arguments'
+import {
+  describeValue,
+  evaluateDirectiveArgument,
+  isPlainRecord,
+  replaceDirectiveCalls,
+  reportDirectiveFailure,
+  splitTopLevelArgs,
+  warnDirective,
+} from './directive-arguments'
 import { ErrorCodes, inlineError } from './error-handling'
 import { mergeHeadConfigs } from './head'
-import { safeEvaluateObject } from './safe-evaluator'
+import { resolveMetaArguments } from './meta-arguments'
 
 // =============================================================================
 // Types
@@ -71,89 +86,86 @@ interface MetaTag {
   httpEquiv?: string
 }
 
-interface StructuredData {
-  '@context': string
-  '@type': string
-  [key: string]: any
-}
-
 // =============================================================================
 // Meta Tag Processing
 // =============================================================================
 
 /**
- * Process @meta directive for generating meta tags.
- * Supports both simple `@meta('name', 'content')` and
- * OpenGraph `@meta('og:title')` formats.
+ * `@name(` at a directive boundary. The lookbehind keeps an address such as
+ * `hello@seo(...)` and an escaped `@@meta` from being read as a call.
+ */
+const META_CALL = /(?<![\w$@])@meta\s*\(/g
+const META_TAG_CALL = /(?<![\w$@])@metaTag\s*\(/g
+const STRUCTURED_DATA_CALL = /(?<![\w$@])@structuredData\s*\(/g
+const SEO_CALL = /(?<![\w$@])@seo\s*\(/g
+
+function unterminated(label: string, filePath: string): (call: string) => string {
+  return call => reportDirectiveFailure(label, call, 'the call has no closing parenthesis', filePath, ErrorCodes.INVALID_DIRECTIVE_SYNTAX)
+}
+
+function renderMetaTag(tag: MetaTagAttrs): string {
+  return 'property' in tag
+    ? `<meta property="${escapeHtml(tag.property)}" content="${escapeHtml(tag.content)}">`
+    : `<meta name="${escapeHtml(tag.name)}" content="${escapeHtml(tag.content)}">`
+}
+
+/**
+ * Process `@meta(...)` and `@metaTag({...})` in place, emitting the tags where
+ * the directives sit.
+ *
+ * This is the pass a partial's directives go through (a head partial is inside
+ * `<head>` already), and the page-level catch-all for any `@meta` the staging
+ * directive did not take. Arguments are resolved by `resolveMetaArguments`:
+ * `@meta('author', 'Jane')`, `@meta('author', author)`,
+ * `@meta('og:title', post.title)`, and the one-argument `@meta('og:title')`.
  */
 export function processMetaDirectives(
   template: string,
   context: Record<string, any>,
-  _filePath: string,
+  filePath: string,
   _options: StxOptions,
 ): string {
-  let output = template
+  if (!template.includes('@meta'))
+    return template
 
-  // Process @meta directive
-  output = output.replace(/@meta\(\s*['"]([^'"]+)['"](?:,\s*['"]([^'"]+)['"]\s*)?\)/g, (_, name, content) => {
-    if (!content && name.includes(':')) {
-      // For @meta('og:title') format, extract from context using key after colon
-      const parts = name.split(':')
-      const property = name
-      const contextKey = parts.length > 1 ? parts[1] : ''
+  let output = replaceDirectiveCalls(template, META_CALL, (args, call) => {
+    const resolved = resolveMetaArguments(splitTopLevelArgs(args), context)
+    if (resolved.kind === 'tag')
+      return renderMetaTag(resolved.tag)
+    if (resolved.kind === 'empty')
+      return ''
+    return reportDirectiveFailure('Meta', call, resolved.message, filePath, resolved.code)
+  }, unterminated('Meta', filePath))
 
-      // Look for the key in context
-      if (contextKey && context[contextKey]) {
-        content = context[contextKey]
-      }
-      else if (property.startsWith('og:') && context.openGraph && context.openGraph[parts[1]]) {
-        // Check if defined in openGraph context property
-        content = context.openGraph[parts[1]]
-      }
-      else {
-        content = ''
-      }
-
-      return content ? `<meta property="${escapeHtml(property)}" content="${escapeHtml(content)}">` : ''
+  output = replaceDirectiveCalls(output, META_TAG_CALL, (args, call) => {
+    const result = evaluateDirectiveArgument(args, context)
+    if (!result.ok)
+      return reportDirectiveFailure('MetaTag', call, result.message, filePath, result.code)
+    if (result.value === undefined || result.value === null)
+      return ''
+    if (!isPlainRecord(result.value)) {
+      return reportDirectiveFailure('MetaTag', call, `expected an object such as { name, content }, got ${describeValue(result.value)}`, filePath, ErrorCodes.TYPE_ERROR)
     }
 
-    return content
-      ? `<meta name="${escapeHtml(name)}" content="${escapeHtml(content)}">`
-      : ''
-  })
+    const attrs = result.value as Partial<Record<keyof MetaTag, unknown>>
+    if (!attrs.name && !attrs.property && !attrs.httpEquiv) {
+      return reportDirectiveFailure('MetaTag', call, 'the tag needs a name, property or httpEquiv', filePath, ErrorCodes.INVALID_DIRECTIVE_SYNTAX)
+    }
+    // A tag with nothing to say is left out, as @meta does, rather than
+    // shipped as an empty `<meta name="author">`.
+    if (attrs.content === undefined || attrs.content === null || attrs.content === '' || attrs.content === false)
+      return ''
 
-  // Process extended meta directive with balanced paren/brace matching
-  const metaTagPat = /@metaTag\s*\(/g
-  let metaMatch: RegExpExecArray | null
-  while ((metaMatch = metaTagPat.exec(output)) !== null) {
-    const mtStart = metaMatch.index
-    const openP = mtStart + metaMatch[0].length - 1
-    let d = 1, p = openP + 1
-    while (p < output.length && d > 0) { if (output[p] === '(') d++; else if (output[p] === ')') { d--; if (d === 0) break } p++ }
-    if (d !== 0) break
-    const attrObject = output.substring(openP + 1, p).trim()
-    const fullEnd = p + 1
-    const mtReplacement = (() => {
-      try {
-        const attrs = safeEvaluateObject(attrObject, context) as unknown as MetaTag
-        if (!attrs) return ''
-        let tag = '<meta'
-        if (attrs.name) tag += ` name="${escapeHtml(String(attrs.name))}"`
-        if (attrs.property) tag += ` property="${escapeHtml(String(attrs.property))}"`
-        if (attrs.httpEquiv) tag += ` http-equiv="${escapeHtml(String(attrs.httpEquiv))}"`
-        if (attrs.content) tag += ` content="${escapeHtml(String(attrs.content))}"`
-        tag += '>'
-        return tag
-      }
-      catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        return inlineError('MetaTag', errorMessage, ErrorCodes.EVALUATION_ERROR)
-      }
-    })()
-
-    output = output.substring(0, mtStart) + mtReplacement + output.substring(fullEnd)
-    metaTagPat.lastIndex = 0
-  }
+    let tag = '<meta'
+    if (attrs.name)
+      tag += ` name="${escapeHtml(attrs.name)}"`
+    if (attrs.property)
+      tag += ` property="${escapeHtml(attrs.property)}"`
+    if (attrs.httpEquiv)
+      tag += ` http-equiv="${escapeHtml(attrs.httpEquiv)}"`
+    tag += ` content="${escapeHtml(attrs.content)}">`
+    return tag
+  }, unterminated('MetaTag', filePath))
 
   return output
 }
@@ -163,254 +175,287 @@ export function processMetaDirectives(
 // =============================================================================
 
 /**
- * Process @structuredData directive for JSON-LD.
- * Automatically adds schema.org context if not provided.
+ * JSON-LD with `@context` filled in where it is missing, or `null` when the
+ * value is not something JSON-LD can hold. Copies rather than mutating: the
+ * object usually belongs to the page's server script, and another directive
+ * may read it after this one.
+ */
+function withSchemaContext(value: unknown): Record<string, unknown> | Record<string, unknown>[] | null {
+  const fill = (item: Record<string, unknown>): Record<string, unknown> =>
+    item['@context'] ? { ...item } : { ...item, '@context': 'https://schema.org' }
+
+  if (isPlainRecord(value))
+    return fill(value)
+  if (Array.isArray(value) && value.length > 0 && value.every(isPlainRecord))
+    return value.map(fill)
+  return null
+}
+
+/**
+ * The JSON-LD `<script>` for `data`.
+ *
+ * `</` is escaped so a value containing `</script>` cannot close the block and
+ * open markup of its own; `</` would do too, but `<\/` is what every
+ * existing page already ships.
+ */
+function jsonLdScript(data: unknown): string {
+  const json = JSON.stringify(data).replace(/<\//g, '<\\/')
+  return `<script type="application/ld+json">${json}</script>`
+}
+
+/**
+ * Process `@structuredData(...)` for JSON-LD.
+ *
+ * The argument is any expression that evaluates to an object, or an array of
+ * objects: `@structuredData({ '@type': 'Product', name })`,
+ * `@structuredData(product)`, `@structuredData(buildSchema(post))`. schema.org
+ * is filled in as the `@context` when the data has none.
  */
 export function processStructuredData(
   template: string,
   context: Record<string, any>,
-  _filePath: string,
+  filePath: string,
 ): string {
-  let output = template
+  if (!template.includes('@structuredData'))
+    return template
 
-  // Process @structuredData directive with balanced paren/brace matching
-  const structuredDataPattern = /@structuredData\s*\(/g
-  let sdMatch: RegExpExecArray | null
-  while ((sdMatch = structuredDataPattern.exec(output)) !== null) {
-    const sdStart = sdMatch.index
-    const openParen = sdStart + sdMatch[0].length - 1
-    let depth = 1
-    let pos = openParen + 1
-    while (pos < output.length && depth > 0) {
-      if (output[pos] === '(') depth++
-      else if (output[pos] === ')') { depth--; if (depth === 0) break }
-      pos++
+  return replaceDirectiveCalls(template, STRUCTURED_DATA_CALL, (args, call) => {
+    const result = evaluateDirectiveArgument(args, context)
+    if (!result.ok)
+      return reportDirectiveFailure('StructuredData', call, result.message, filePath, result.code)
+    if (result.value === undefined || result.value === null)
+      return ''
+
+    const data = withSchemaContext(result.value)
+    if (!data) {
+      return reportDirectiveFailure('StructuredData', call, `expected an object or an array of objects, got ${describeValue(result.value)}`, filePath, ErrorCodes.TYPE_ERROR)
     }
-    if (depth !== 0) break
-    const dataObject = output.substring(openParen + 1, pos).trim()
-    const fullEnd = pos + 1
 
-    const replacement = (() => {
-      try {
-        const data = safeEvaluateObject(dataObject, context) as StructuredData
-        if (!data) return ''
-        if (!data['@context']) data['@context'] = 'https://schema.org'
-        // Escape </script> sequences to prevent breaking out of the JSON-LD block
-        const jsonStr = JSON.stringify(data).replace(/<\//g, '<\\/')
-        return `<script type="application/ld+json">${jsonStr}</script>`
-      }
-      catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        return inlineError('StructuredData', errorMessage, ErrorCodes.EVALUATION_ERROR)
-      }
-    })()
-
-    output = output.substring(0, sdStart) + replacement + output.substring(fullEnd)
-    structuredDataPattern.lastIndex = 0
-  }
-
-  return output
+    try {
+      return jsonLdScript(data)
+    }
+    catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      return reportDirectiveFailure('StructuredData', call, `the data cannot be written as JSON: ${message}`, filePath, ErrorCodes.EVALUATION_ERROR)
+    }
+  }, unterminated('StructuredData', filePath))
 }
 
 // =============================================================================
 // SEO Directive
 // =============================================================================
 
+/** Every key `@seo` reads. Anything else is ignored, so it is reported. */
+const SEO_KEYS = new Set(['title', 'description', 'keywords', 'robots', 'canonical', 'openGraph', 'twitter', 'structuredData'])
+
+/** Where the keys people reach for first actually live. */
+const SEO_KEY_HINTS: Record<string, string> = {
+  image: 'openGraph.image',
+  url: 'canonical or openGraph.url',
+  type: 'openGraph.type',
+  siteName: 'openGraph.siteName',
+  locale: 'openGraph.locale',
+  og: 'openGraph',
+  author: '@meta(\'author\', ...)',
+}
+
 /**
- * Process @seo directive for automatic meta tag generation.
- * Generates title, description, Open Graph, Twitter, and structured data tags.
+ * Process `@seo(...)` for title, description, Open Graph, Twitter and
+ * structured data tags.
+ *
+ * The argument is any expression that evaluates to an object:
+ * `@seo({ title, description })`, `@seo(seo)`, `@seo({ ...seo, title })`,
+ * `@seo(buildSeo(page))`. `null` or `undefined` from a variable that exists
+ * renders nothing; a variable that does not exist, a value that is not an
+ * object, and keys `@seo` does not read are all reported.
  */
 export function processSeoDirective(
   template: string,
   context: Record<string, any>,
-  _filePath: string,
+  filePath: string,
   _options: StxOptions,
 ): string {
-  let output = template
+  if (!template.includes('@seo'))
+    return template
 
-  // Process @seo directive using balanced brace matching for nested objects
-  const seoPat = /@seo\s*\(\s*\{/g
-  let seoMatch: RegExpExecArray | null
-  while ((seoMatch = seoPat.exec(output)) !== null) {
-    const braceStart = output.indexOf('{', seoMatch.index + '@seo'.length)
-    let depth = 1
-    let pos = braceStart + 1
-    let inStr: string | null = null
-    let esc = false
-    while (pos < output.length && depth > 0) {
-      const c = output[pos]
-      if (esc) { esc = false; pos++; continue }
-      if (c === '\\' && inStr) { esc = true; pos++; continue }
-      if (inStr) { if (c === inStr) inStr = null; pos++; continue }
-      if (c === '"' || c === '\'' || c === '`') { inStr = c; pos++; continue }
-      if (c === '{') depth++
-      else if (c === '}') depth--
-      pos++
+  return replaceDirectiveCalls(template, SEO_CALL, (args, call) => {
+    if (!args.trim()) {
+      return reportDirectiveFailure('SEO', call, 'expected an object: @seo({ title, description }) or @seo(seoVariable)', filePath, ErrorCodes.INVALID_DIRECTIVE_SYNTAX)
     }
-    if (depth !== 0) break
-    // pos is now one past the closing brace
-    // Find the closing paren after the brace
-    const afterBrace = output.substring(pos).match(/^\s*\)/)
-    if (!afterBrace) break
-    const fullEnd = pos + afterBrace[0].length
-    const seoConfig = output.substring(braceStart, pos)
-    // eslint-disable-next-line pickier/no-unused-vars
-    const fullMatch = output.substring(seoMatch.index, fullEnd)
 
-    const replacement = ((cfg: string) => {
+    const result = evaluateDirectiveArgument(args, context)
+    if (!result.ok)
+      return reportDirectiveFailure('SEO', call, result.message, filePath, result.code)
+    if (result.value === undefined || result.value === null)
+      return ''
+    if (!isPlainRecord(result.value)) {
+      return reportDirectiveFailure('SEO', call, `expected an object such as { title, description }, got ${describeValue(result.value)}`, filePath, ErrorCodes.TYPE_ERROR)
+    }
+
     try {
-      // Parse the SEO configuration object using safe evaluation
-      const config = safeEvaluateObject(cfg, context) as Partial<SeoConfig>
-
-      if (!config)
-        return ''
-
-      // Generate meta tags based on the configuration
-      let metaTags = ''
-
-      // Basic meta tags
-      if (config.title) {
-        metaTags += `<title>${escapeHtml(config.title)}</title>\n`
-        metaTags += `<meta name="title" content="${escapeHtml(config.title)}">\n`
-      }
-
-      if (config.description) {
-        metaTags += `<meta name="description" content="${escapeHtml(config.description)}">\n`
-      }
-
-      if (config.keywords) {
-        const keywordsStr = Array.isArray(config.keywords)
-          ? config.keywords.join(', ')
-          : config.keywords
-        metaTags += `<meta name="keywords" content="${escapeHtml(keywordsStr)}">\n`
-      }
-
-      if (config.robots) {
-        metaTags += `<meta name="robots" content="${escapeHtml(config.robots)}">\n`
-      }
-
-      if (config.canonical) {
-        metaTags += `<link rel="canonical" href="${escapeHtml(config.canonical)}">\n`
-      }
-
-      // Open Graph / Facebook
-      if (config.openGraph) {
-        const og = config.openGraph
-        metaTags += `<meta property="og:type" content="${escapeHtml(og.type || 'website')}">\n`
-
-        if (og.title || config.title) {
-          const ogTitle = og.title || config.title || ''
-          metaTags += `<meta property="og:title" content="${escapeHtml(ogTitle)}">\n`
-        }
-
-        if (og.description || config.description) {
-          const ogDescription = og.description || config.description || ''
-          metaTags += `<meta property="og:description" content="${escapeHtml(ogDescription)}">\n`
-        }
-
-        if (og.url || config.canonical) {
-          const ogUrl = og.url || config.canonical || ''
-          metaTags += `<meta property="og:url" content="${escapeHtml(ogUrl)}">\n`
-        }
-
-        if (og.image) {
-          metaTags += `<meta property="og:image" content="${escapeHtml(og.image)}">\n`
-
-          if (og.imageAlt) {
-            metaTags += `<meta property="og:image:alt" content="${escapeHtml(og.imageAlt)}">\n`
-          }
-
-          if (og.imageWidth) {
-            metaTags += `<meta property="og:image:width" content="${escapeHtml(String(og.imageWidth))}">\n`
-          }
-
-          if (og.imageHeight) {
-            metaTags += `<meta property="og:image:height" content="${escapeHtml(String(og.imageHeight))}">\n`
-          }
-
-          if (og.imageType) {
-            metaTags += `<meta property="og:image:type" content="${escapeHtml(og.imageType)}">\n`
-          }
-        }
-
-        if (og.siteName) {
-          metaTags += `<meta property="og:site_name" content="${escapeHtml(og.siteName)}">\n`
-        }
-
-        if (og.locale) {
-          metaTags += `<meta property="og:locale" content="${escapeHtml(og.locale)}">\n`
-        }
-
-        if (og.profile) {
-          const profile: [string, string | undefined][] = [
-            ['first_name', og.profile.firstName],
-            ['last_name', og.profile.lastName],
-            ['username', og.profile.username],
-            ['gender', og.profile.gender],
-          ]
-          for (const [key, value] of profile) {
-            if (value)
-              metaTags += `<meta property="profile:${key}" content="${escapeHtml(value)}">\n`
-          }
-        }
-      }
-
-      // Twitter
-      if (config.twitter) {
-        const twitter = config.twitter
-        metaTags += `<meta name="twitter:card" content="${escapeHtml(twitter.card || 'summary_large_image')}">\n`
-
-        if (twitter.title || config.title) {
-          const twitterTitle = twitter.title || config.title || ''
-          metaTags += `<meta name="twitter:title" content="${escapeHtml(twitterTitle)}">\n`
-        }
-
-        if (twitter.description || config.description) {
-          const twitterDesc = twitter.description || config.description || ''
-          metaTags += `<meta name="twitter:description" content="${escapeHtml(twitterDesc)}">\n`
-        }
-
-        if (twitter.image || (config.openGraph && config.openGraph.image)) {
-          const twitterImage = twitter.image || (config.openGraph ? config.openGraph.image : '') || ''
-          metaTags += `<meta name="twitter:image" content="${escapeHtml(twitterImage)}">\n`
-
-          // A card image with no alt text is announced as "image" and nothing
-          // else. The Open Graph alt describes the same picture whenever the
-          // card falls back to the Open Graph image.
-          const twitterImageAlt = twitter.imageAlt || (!twitter.image && config.openGraph ? config.openGraph.imageAlt : undefined)
-          if (twitterImageAlt)
-            metaTags += `<meta name="twitter:image:alt" content="${escapeHtml(twitterImageAlt)}">\n`
-        }
-
-        if (twitter.site) {
-          metaTags += `<meta name="twitter:site" content="${escapeHtml(twitter.site)}">\n`
-        }
-
-        if (twitter.creator) {
-          metaTags += `<meta name="twitter:creator" content="${escapeHtml(twitter.creator)}">\n`
-        }
-      }
-
-      // Structured data
-      if (config.structuredData) {
-        // Escape </script> sequences to prevent breaking out of the JSON-LD block
-        const jsonStr = JSON.stringify(config.structuredData).replace(/<\//g, '<\\/')
-        metaTags += `<script type="application/ld+json">${jsonStr}</script>\n`
-      }
-
-      return metaTags.trim()
+      return renderSeoTags(result.value as Partial<SeoConfig>, call, filePath)
     }
     catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return inlineError('SEO', `Error processing @seo directive: ${errorMessage}`, ErrorCodes.EVALUATION_ERROR)
+      const message = error instanceof Error ? error.message : String(error)
+      return reportDirectiveFailure('SEO', call, `Error processing @seo directive: ${message}`, filePath, ErrorCodes.EVALUATION_ERROR)
     }
-  })(seoConfig)
+  }, unterminated('SEO', filePath))
+}
 
-    output = output.substring(0, seoMatch.index) + replacement + output.substring(fullEnd)
-    seoPat.lastIndex = seoMatch.index + replacement.length
+/** The value of an optional nested object, reporting one of the wrong shape. */
+function nestedConfig<T>(config: Record<string, unknown>, key: string, call: string, filePath: string): T | undefined {
+  const value = config[key]
+  if (value === undefined || value === null || value === false)
+    return undefined
+  if (isPlainRecord(value))
+    return value as T
+  warnDirective(call, `${key} must be an object, got ${describeValue(value)}; its tags were left out`, filePath)
+  return undefined
+}
+
+function renderSeoTags(config: Partial<SeoConfig>, call: string, filePath: string): string {
+  const unknown = Object.keys(config).filter(key => !SEO_KEYS.has(key))
+  if (unknown.length > 0) {
+    const described = unknown.map(key => SEO_KEY_HINTS[key] ? `${key} (use ${SEO_KEY_HINTS[key]})` : key).join(', ')
+    warnDirective(call, `@seo does not read ${described}; ${unknown.length === 1 ? 'it was' : 'they were'} ignored`, filePath)
   }
 
-  return output
+  let metaTags = ''
+
+  // Basic meta tags
+  if (config.title) {
+    metaTags += `<title>${escapeHtml(config.title)}</title>\n`
+    metaTags += `<meta name="title" content="${escapeHtml(config.title)}">\n`
+  }
+
+  if (config.description) {
+    metaTags += `<meta name="description" content="${escapeHtml(config.description)}">\n`
+  }
+
+  if (config.keywords) {
+    const keywordsStr = Array.isArray(config.keywords)
+      ? config.keywords.join(', ')
+      : config.keywords
+    metaTags += `<meta name="keywords" content="${escapeHtml(keywordsStr)}">\n`
+  }
+
+  if (config.robots) {
+    metaTags += `<meta name="robots" content="${escapeHtml(config.robots)}">\n`
+  }
+
+  if (config.canonical) {
+    metaTags += `<link rel="canonical" href="${escapeHtml(config.canonical)}">\n`
+  }
+
+  // Open Graph / Facebook
+  const og = nestedConfig<NonNullable<SeoConfig['openGraph']>>(config, 'openGraph', call, filePath)
+  if (og) {
+    metaTags += `<meta property="og:type" content="${escapeHtml(og.type || 'website')}">\n`
+
+    if (og.title || config.title) {
+      const ogTitle = og.title || config.title || ''
+      metaTags += `<meta property="og:title" content="${escapeHtml(ogTitle)}">\n`
+    }
+
+    if (og.description || config.description) {
+      const ogDescription = og.description || config.description || ''
+      metaTags += `<meta property="og:description" content="${escapeHtml(ogDescription)}">\n`
+    }
+
+    if (og.url || config.canonical) {
+      const ogUrl = og.url || config.canonical || ''
+      metaTags += `<meta property="og:url" content="${escapeHtml(ogUrl)}">\n`
+    }
+
+    if (og.image) {
+      metaTags += `<meta property="og:image" content="${escapeHtml(og.image)}">\n`
+
+      if (og.imageAlt) {
+        metaTags += `<meta property="og:image:alt" content="${escapeHtml(og.imageAlt)}">\n`
+      }
+
+      if (og.imageWidth) {
+        metaTags += `<meta property="og:image:width" content="${escapeHtml(String(og.imageWidth))}">\n`
+      }
+
+      if (og.imageHeight) {
+        metaTags += `<meta property="og:image:height" content="${escapeHtml(String(og.imageHeight))}">\n`
+      }
+
+      if (og.imageType) {
+        metaTags += `<meta property="og:image:type" content="${escapeHtml(og.imageType)}">\n`
+      }
+    }
+
+    if (og.siteName) {
+      metaTags += `<meta property="og:site_name" content="${escapeHtml(og.siteName)}">\n`
+    }
+
+    if (og.locale) {
+      metaTags += `<meta property="og:locale" content="${escapeHtml(og.locale)}">\n`
+    }
+
+    if (og.profile) {
+      const profile: [string, string | undefined][] = [
+        ['first_name', og.profile.firstName],
+        ['last_name', og.profile.lastName],
+        ['username', og.profile.username],
+        ['gender', og.profile.gender],
+      ]
+      for (const [key, value] of profile) {
+        if (value)
+          metaTags += `<meta property="profile:${key}" content="${escapeHtml(value)}">\n`
+      }
+    }
+  }
+
+  // Twitter
+  const twitter = nestedConfig<NonNullable<SeoConfig['twitter']>>(config, 'twitter', call, filePath)
+  if (twitter) {
+    metaTags += `<meta name="twitter:card" content="${escapeHtml(twitter.card || 'summary_large_image')}">\n`
+
+    if (twitter.title || config.title) {
+      const twitterTitle = twitter.title || config.title || ''
+      metaTags += `<meta name="twitter:title" content="${escapeHtml(twitterTitle)}">\n`
+    }
+
+    if (twitter.description || config.description) {
+      const twitterDesc = twitter.description || config.description || ''
+      metaTags += `<meta name="twitter:description" content="${escapeHtml(twitterDesc)}">\n`
+    }
+
+    if (twitter.image || (og && og.image)) {
+      const twitterImage = twitter.image || (og ? og.image : '') || ''
+      metaTags += `<meta name="twitter:image" content="${escapeHtml(twitterImage)}">\n`
+
+      // A card image with no alt text is announced as "image" and nothing
+      // else. The Open Graph alt describes the same picture whenever the
+      // card falls back to the Open Graph image.
+      const twitterImageAlt = twitter.imageAlt || (!twitter.image && og ? og.imageAlt : undefined)
+      if (twitterImageAlt)
+        metaTags += `<meta name="twitter:image:alt" content="${escapeHtml(twitterImageAlt)}">\n`
+    }
+
+    if (twitter.site) {
+      metaTags += `<meta name="twitter:site" content="${escapeHtml(twitter.site)}">\n`
+    }
+
+    if (twitter.creator) {
+      metaTags += `<meta name="twitter:creator" content="${escapeHtml(twitter.creator)}">\n`
+    }
+  }
+
+  // Structured data. Filled in the same way @structuredData fills it: JSON-LD
+  // with no @context is not schema.org to anything that reads it.
+  if (config.structuredData !== undefined && config.structuredData !== null) {
+    const data = withSchemaContext(config.structuredData)
+    if (data)
+      metaTags += `${jsonLdScript(data)}\n`
+    else
+      warnDirective(call, `structuredData must be an object or an array of objects, got ${describeValue(config.structuredData)}; it was left out`, filePath)
+  }
+
+  return metaTags.trim()
 }
 
 // =============================================================================
@@ -665,11 +710,15 @@ function readPageDescription(head: string): string {
 }
 
 /**
- * Escape HTML entities in a string.
+ * Escape HTML entities in a value.
  * Local copy to avoid circular dependencies with expressions module.
+ *
+ * Takes anything, not just strings: a title that arrives as a number (a year,
+ * a product id) used to throw `str.replace is not a function` out of the whole
+ * render, or out of @seo as an error comment in place of every tag.
  */
-function escapeHtml(str: string): string {
-  return str
+function escapeHtml(value: unknown): string {
+  return String(value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -682,27 +731,6 @@ function escapeHtml(str: string): string {
 // =============================================================================
 
 /**
- * Namespaces whose tags are addressed by `property`, not `name`.
- *
- * Open Graph and its relatives are RDFa vocabularies, so the attribute is
- * `property`; a `<meta name="og:title">` is ignored by every scraper that
- * implements the spec. Twitter cards are the exception people expect to be a
- * property and are not: the card spec says `name`.
- */
-const PROPERTY_NAMESPACES = ['og:', 'article:', 'book:', 'profile:', 'fb:', 'music:', 'video:']
-
-/** Strip one matching pair of surrounding quotes, leaving inner ones alone. */
-function unquoteParam(raw: string): { value: string, quoted: boolean } {
-  const text = raw.trim()
-  const first = text[0]
-
-  if ((first === '\'' || first === '"' || first === '`') && text.length > 1 && text.at(-1) === first)
-    return { value: text.slice(1, -1), quoted: true }
-
-  return { value: text, quoted: false }
-}
-
-/**
  * SEO meta directive.
  *
  * Stages the tag on the render's head rather than returning markup. A `<meta>`
@@ -713,44 +741,25 @@ function unquoteParam(raw: string): { value: string, quoted: boolean } {
  *
  * This directive shadows `processMetaDirective` in head.ts, since custom
  * directives run first. It therefore has to do that function's job, which is
- * why it resolves unquoted arguments from the context and separates `property`
- * from `name` here rather than leaving it to a later pass that will never see
- * the directive.
+ * why it takes its arguments as written (`rawParams`) and resolves them with
+ * the same `resolveMetaArguments` the other two @meta passes use: a quoted
+ * value is text, anything else is an expression.
  */
 export const metaDirective: CustomDirective = {
   name: 'meta',
-  handler: (_content, params, context, _filePath) => {
-    if (params.length < 1) {
-      return inlineError('Meta', 'meta directive requires at least the meta name', ErrorCodes.INVALID_DIRECTIVE_SYNTAX)
-    }
+  rawParams: true,
+  handler: (_content, params, context, filePath) => {
+    const resolved = resolveMetaArguments(params, context ?? {})
 
-    const name = unquoteParam(params[0]).value
-    let metaContent: string
-
-    if (params.length > 1) {
-      // An unquoted argument is a context expression: `@meta('og:image', ogImage)`
-      // must send the URL, not the word "ogImage".
-      const arg = unquoteParam(params[1])
-      metaContent = arg.quoted ? arg.value : String(context?.[arg.value] ?? arg.value)
-    }
-    else {
-      // The one-argument form reads the value out of the context, either by the
-      // segment after the colon or from an `openGraph` object.
-      const segment = name.includes(':') ? name.slice(name.indexOf(':') + 1) : name
-      const openGraph = context?.openGraph as Record<string, unknown> | undefined
-      metaContent = String(context?.[segment] ?? openGraph?.[segment] ?? '')
-    }
-
-    if (!metaContent)
+    if (resolved.kind === 'error')
+      return reportDirectiveFailure('Meta', `@meta(${params.join(', ')})`, resolved.message, filePath, resolved.code)
+    if (resolved.kind === 'empty')
       return ''
-
-    const usesProperty = PROPERTY_NAMESPACES.some(prefix => name.startsWith(prefix))
-    const tag = usesProperty ? { property: name, content: metaContent } : { name, content: metaContent }
 
     if (context) {
       context.__stx_runtime_head = mergeHeadConfigs(
         (context.__stx_runtime_head as HeadConfig) ?? {},
-        { meta: [tag] },
+        { meta: [resolved.tag] },
       )
     }
 
@@ -760,7 +769,9 @@ export const metaDirective: CustomDirective = {
 }
 
 /**
- * SEO structured data directive for JSON-LD generation
+ * SEO structured data directive for JSON-LD generation, the block form:
+ * `@structuredData { ... } @endstructuredData`. The body is JSON, not an
+ * expression; `@structuredData(expression)` is the form that reads variables.
  */
 export const structuredDataDirective: CustomDirective = {
   name: 'structuredData',
@@ -782,8 +793,9 @@ export const structuredDataDirective: CustomDirective = {
         return inlineError('StructuredData', 'structuredData requires @type property', ErrorCodes.INVALID_DIRECTIVE_SYNTAX)
       }
 
-      // Return JSON-LD script tag
-      return `<script type="application/ld+json">${JSON.stringify(data)}</script>`
+      // Escaped like the expression form: a `</script>` inside a value used to
+      // end this block and render whatever followed it as markup.
+      return jsonLdScript(data)
     }
     catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)

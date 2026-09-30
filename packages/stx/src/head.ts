@@ -28,6 +28,9 @@
  * })
  * ```
  */
+import { replaceDirectiveCalls, reportDirectiveFailure, splitTopLevelArgs } from './directive-arguments'
+import { ErrorCodes } from './error-handling'
+import { resolveMetaArguments } from './meta-arguments'
 
 // =============================================================================
 // Types
@@ -702,34 +705,36 @@ export function processTitleDirective(
 /**
  * Process @meta directive.
  *
+ * Stages each tag on the render's head. Reached only when the render has no
+ * custom directives, since the registered `metaDirective` (seo.ts) takes every
+ * `@meta` first; both resolve their arguments with `resolveMetaArguments`, so
+ * a quoted value is text and anything else is an expression.
+ *
  * @example
  * ```html
  * @meta('description', 'Page description')
  * @meta('og:image', ogImageUrl)
+ * @meta('author', post.author)
  * ```
  */
 export function processMetaDirective(
   content: string,
-  context: Record<string, unknown>
+  context: Record<string, unknown>,
+  filePath: string = '',
 ): string {
-  return content.replace(
-    /@meta\s*\(\s*(['"`])(.+?)\1\s*,\s*(?:(['"`])(.+?)\3|([^)]+))\s*\)/g,
-    (_, _q1, name, q2, quotedValue, unquotedValue) => {
-      const value = q2 ? quotedValue : unquotedValue
-      const resolvedValue = q2
-        ? value
-        : (context[(value || '').trim()] as string) ?? value
+  if (!content.includes('@meta'))
+    return content
 
-      const isProperty = name.includes(':')
-      const meta: MetaTag = isProperty
-        ? { property: name, content: resolvedValue }
-        : { name, content: resolvedValue }
-
+  return replaceDirectiveCalls(content, /(?<![\w$@])@meta\s*\(/g, (args, call) => {
+    const resolved = resolveMetaArguments(splitTopLevelArgs(args), context)
+    if (resolved.kind === 'error')
+      return reportDirectiveFailure('Meta', call, resolved.message, filePath, resolved.code)
+    if (resolved.kind === 'tag') {
       const existing = (context.__stx_runtime_head as HeadConfig | undefined) ?? {}
-      context.__stx_runtime_head = mergeHeadConfigs(existing, { meta: [meta] })
-      return ''
+      context.__stx_runtime_head = mergeHeadConfigs(existing, { meta: [resolved.tag] })
     }
-  )
+    return ''
+  }, call => reportDirectiveFailure('Meta', call, 'the call has no closing parenthesis', filePath, ErrorCodes.INVALID_DIRECTIVE_SYNTAX))
 }
 
 // =============================================================================
