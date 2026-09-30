@@ -637,6 +637,49 @@ function applyDestructuredPropDefaults(
 }
 
 /**
+ * Elements whose parent's content model rejects a `<div>`.
+ *
+ * A wrapper emitted here does not stay here: the HTML parser moves it out of
+ * the table, list or select, taking the component's scope - and therefore its
+ * client behaviour - somewhere else on the page.
+ */
+const WRAPPER_HOISTED_OUT_BY_PARSER: ReadonlySet<string> = new Set([
+  'tr', 'td', 'th', 'thead', 'tbody', 'tfoot', 'caption', 'colgroup', 'col',
+  'option', 'optgroup',
+  'li', 'dt', 'dd',
+])
+
+/**
+ * Put `attrs` on the markup's own root element, or return null to say a
+ * wrapper is fine.
+ *
+ * Returns null unless the markup is a single element of a kind whose parent
+ * would reject a wrapper: leading comments and whitespace are skipped, the tag
+ * name is checked against the set above, and the element has to be the only one
+ * of its kind at the top level, closing at the end.
+ */
+export function scopeOnRootElement(html: string, attrs: string): string | null {
+  const opening = html.match(/^(\s*(?:(?:<!--[\s\S]*?-->|\x00STX_HTML_COMMENT_\d+\x00)\s*)*)<([a-zA-Z][a-zA-Z0-9-]*)/s)
+  if (!opening)
+    return null
+
+  const tag = opening[2].toLowerCase()
+  if (!WRAPPER_HOISTED_OUT_BY_PARSER.has(tag))
+    return null
+
+  // One element, not a run of siblings: exactly one opening tag of this name,
+  // and the markup ends with its close.
+  const openings = html.match(new RegExp(`<${tag}(?=[\\s/>])`, 'gi')) ?? []
+  if (openings.length !== 1)
+    return null
+  if (!new RegExp(`</${tag}>\\s*$`, 'i').test(html))
+    return null
+
+  const insertAt = opening[0].length
+  return html.slice(0, insertAt) + attrs + html.slice(insertAt)
+}
+
+/**
  * Does a project-authored component file exist for `componentPath`?
  *
  * Used to let a user component (e.g. `components/Icon.stx`) take precedence
@@ -1656,7 +1699,29 @@ export async function renderComponentWithSlot(
         }
       }
       const hydrateJson = hydrateTrigger ? ` stx-hydrate="${escapeAttr(hydrateTrigger)}"` : ''
-      output = `<div data-stx-scope="${scopeId}"${propsJson}${hydrateJson}>${result}</div>`
+      const scopeAttrs = ` data-stx-scope="${scopeId}"${propsJson}${hydrateJson}`
+      /*
+       * The scope goes ON the component's root element when a wrapper would be
+       * illegal there, and in a <div> around it otherwise.
+       *
+       * A <div> between <tr> and <th> is not permitted by the table content
+       * model, so the HTML parser hoists it out of the table entirely - it
+       * lands as an empty div before the <table>, in the parent element. The
+       * <th> itself survives in the right place, so the markup looks correct;
+       * what moved is the scope, and with it the component's client behaviour.
+       * `<TableHeader sortable>` registered its @click on a wrapper that was no
+       * longer anywhere near the cell a reader clicks, so sorting a table by
+       * its header could not work, and nothing said why (stacksjs/stx#1980).
+       *
+       * Same content model problem for <option> inside <select>, <li> inside a
+       * list, and <dt>/<dd> inside <dl>.
+       *
+       * Only a component whose output is a SINGLE element of one of those kinds
+       * takes this path. Several table-section siblings from one component
+       * would need a scope per sibling rather than one moved attribute, and
+       * nothing in the library does that.
+       */
+      output = scopeOnRootElement(result, scopeAttrs) ?? `<div${scopeAttrs}>${result}</div>`
 
       // Modify client scripts to register variables in this scope
       const scopedScripts = await Promise.all(clientScripts.map(async (script) => {
