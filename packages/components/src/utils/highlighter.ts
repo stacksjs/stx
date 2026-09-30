@@ -1,5 +1,20 @@
 import type { Highlighter as TSHighlighter } from 'ts-syntax-highlighter'
-import { createHighlighter } from 'ts-syntax-highlighter'
+
+// Imported at call time, not at module load. A static import here made the
+// highlighter's own resolution a load-time dependency of this module, so
+// anything importing it -- CodeBlock's <script server> -- died with it, and a
+// server block that throws renders the component as nothing at all. 0.2.17
+// ships a bundle that imports `bunfig` while declaring no dependencies, which
+// is exactly the resolution failure that has to stay survivable.
+async function loadCreateHighlighter(): Promise<typeof import('ts-syntax-highlighter')['createHighlighter'] | null> {
+  try {
+    const mod = await import('ts-syntax-highlighter')
+    return mod.createHighlighter
+  }
+  catch {
+    return null
+  }
+}
 
 let highlighterInstance: TSHighlighter | null = null
 
@@ -12,8 +27,23 @@ export interface HighlighterOptions {
 
 export interface HighlightResult {
   html: string
+  /**
+   * The token styles for `html`. Nothing else in this package ships styles for
+   * the highlighter's class names, so a block rendered without this CSS is
+   * correctly marked up and visually plain.
+   */
+  css: string
   language: string
   theme: string
+}
+
+/** The code itself, escaped, for when highlighting is unavailable. */
+function plainCodeHtml(code: string): string {
+  const escaped = code
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+  return `<pre class="syntax"><code>${escaped}</code></pre>`
 }
 
 /**
@@ -21,6 +51,9 @@ export interface HighlightResult {
  */
 export async function getHighlighter(): Promise<TSHighlighter> {
   if (!highlighterInstance) {
+    const createHighlighter = await loadCreateHighlighter()
+    if (!createHighlighter)
+      throw new Error('ts-syntax-highlighter could not be loaded')
     highlighterInstance = await createHighlighter({
       theme: 'github-light',
     })
@@ -42,17 +75,45 @@ export async function highlight(
     wrapLines: _wrapLines = true,
   } = options
 
-  const highlighter = await getHighlighter()
+  // A highlighter that cannot load must not take the code with it. Highlighting
+   // is decoration; the code is the content. ts-syntax-highlighter@0.2.17 ships a
+   // bundle that imports `bunfig` while declaring no dependencies, so it throws
+   // outright wherever that package is not reachable -- and a <script server>
+   // that throws renders the whole component as nothing, with no error logged.
+   // Escaped plain text is the floor.
+  let highlighter: TSHighlighter
+  try {
+    highlighter = await getHighlighter()
+  }
+  catch {
+    return { html: plainCodeHtml(code), css: '', language, theme: 'github-light' }
+  }
 
   // Auto-detect theme based on system preference
   const effectiveTheme = theme === 'auto'
     ? (globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'github-dark' : 'github-light')
     : theme === 'dark' ? 'github-dark' : 'github-light'
 
-  const html = await highlighter.highlight(code, language)
+  // ts-syntax-highlighter returns { html, css, tokens, ansi }. This read the
+  // whole result as if it were the HTML string, and the `String(...)` meant to
+  // be defensive turned the object into the literal text [object Object] --
+  // which is what every CodeBlock rendered, instead of the code. A fallback
+  // that stringifies anything cannot tell a wrong shape from a right one.
+  let result: unknown
+  try {
+    result = await highlighter.highlight(code, language)
+  }
+  catch {
+    return { html: plainCodeHtml(code), css: '', language, theme: effectiveTheme }
+  }
+  const shaped = result as { html?: string, css?: string } | string | null
+  const highlighted = typeof shaped === 'string'
+    ? { html: shaped, css: '' }
+    : { html: shaped?.html ?? plainCodeHtml(code), css: shaped?.css ?? '' }
 
   return {
-    html: typeof html === 'string' ? html : String(html),
+    html: highlighted.html,
+    css: highlighted.css,
     language,
     theme: effectiveTheme,
   }

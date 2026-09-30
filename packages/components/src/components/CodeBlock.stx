@@ -10,6 +10,12 @@ export const className = $props.className || ''
 
 const result = await highlight(code, { language, theme, lineNumbers })
 export const highlightedCode = applyHeadwindClasses(result.html, className)
+// Exported, not rendered: no stylesheet in this package covers the
+// highlighter's class names, so a consumer needs these rules to see colour --
+// but a <style> inside a component is extracted from the component's source
+// before interpolation runs, so emitting it here ships an empty tag. Until that
+// is fixed in stx, an app includes this itself (or sets its own token styles).
+export const highlightCss = result.css
 </script>
 
 <script client>
