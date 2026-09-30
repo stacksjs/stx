@@ -1452,8 +1452,18 @@ export async function renderComponentWithSlot(
       }
     }
 
-    // Extract <style> content if present
-    const styleMatch = componentContent.match(/<style\b([^>]*)>([\s\S]*?)<\/style>/i)
+    // Extract <style> content if present.
+    //
+    // Searched with the component's scripts stashed out, because a style tag
+    // NAMED inside a script - in a comment, or in a string - is not a style
+    // element. Matched against the raw source, the name was read as the start
+    // of the component's stylesheet and everything from there to the real
+    // closing tag was hoisted: the template went with it, and the server
+    // script's own source shipped into the page as visible text. Silent, and
+    // triggered by nothing more than a comment explaining how style blocks
+    // work. See stacksjs/stx#2005.
+    const styleSearchSource = stashScriptElements(componentContent).output
+    const styleMatch = styleSearchSource.match(/<style\b([^>]*)>([\s\S]*?)<\/style>/i)
     const styleAttrs = styleMatch ? styleMatch[1] : ''
     const styleContent = styleMatch ? styleMatch[2] : ''
     let preservedStyle = ''
