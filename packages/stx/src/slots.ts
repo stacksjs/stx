@@ -676,12 +676,36 @@ export async function processSlots(
     return await renderSlot(slotDef, props, defaultFallback, context)
   })
 
-  // Process default slot: <slot /> or <slot></slot> or <slot>default</slot>
-  const defaultSlotRegex = /<slot\s*(?:\/>|>([\s\S]*?)<\/slot>)/gi
+  /*
+   * The default slot: <slot />, <slot></slot>, <slot>fallback</slot>, and the
+   * same three carrying bound props - <slot :striped="striped" />.
+   *
+   * The pattern used to be /<slot\s*(?:\/>|>…)/, which requires the tag name to
+   * be followed by nothing but whitespace. A default slot with any attribute
+   * therefore matched neither this nor the named-slot pattern above, which
+   * requires name=. So it was never substituted: the caller's children were
+   * dropped and a literal <slot …> element was emitted into the page. Nine
+   * components in @stacksjs/components are written that way, so nine rendered
+   * as empty shells - <Table> produced a <table> with no rows in it no matter
+   * what you put inside. Silent: no throw, no warning. stacksjs/stx#1975
+   *
+   * Quoted attribute values are consumed as a unit so a > inside one cannot
+   * end the tag early, the same way the component tag matcher does it (#1771).
+   *
+   * The bound values are not exposed to the slotted content, because
+   * `parsedSlots.default` is already-rendered markup with no binding to expose
+   * them through - only a named slot taken as <template #name="{ x }"> has
+   * one. The components that bind them do not read them; rendering the
+   * children is the whole of what they need.
+   */
+  const defaultSlotRegex = /<slot\b((?:"[^"]*"|'[^']*'|[^>"'])*?)\s*(?:\/>|>([\s\S]*?)<\/slot>)/gi
 
-  result = result.replace(defaultSlotRegex, (match, defaultContent) => {
-    // Check if this is NOT a named slot (we already processed those)
-    if (match.includes('name=')) return match
+  result = result.replace(defaultSlotRegex, (match, attrs: string, defaultContent) => {
+    // Named slots are handled above. Tested on the ATTRIBUTES rather than on
+    // the whole match, which includes the fallback content: a default slot
+    // whose fallback contained an input with a name attribute used to be
+    // skipped as though it were a named slot.
+    if (/\bname\s*=/.test(attrs || '')) return match
 
     const fallback = defaultContent?.trim() || ''
     return parsedSlots.default || fallback
