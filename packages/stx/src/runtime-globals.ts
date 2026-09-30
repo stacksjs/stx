@@ -411,6 +411,46 @@ export function runtimeHandledXAttrsLiteral(): string {
 }
 
 /**
+ * The colon names that route to their own binder rather than to the generic
+ * attribute binding: `:text` is a text binding, `:title` is an attribute.
+ *
+ * Shared for the same reason the `x-` table is. Anything that has to decide
+ * what an attribute *means* -- the runtime's dispatch, and the compile-time
+ * binding manifest that has to find every binding the runtime would -- needs
+ * this list, and two copies of it disagree eventually.
+ */
+export const RUNTIME_DIRECTIVE_NAMES: readonly string[] = [
+  'class', 'style', 'text', 'html', 'show', 'model', 'if', 'ref',
+]
+
+/** The `DIRECTIVE_NAMES` lookup the generated runtime embeds, as JS source. */
+export function runtimeDirectiveNamesLiteral(): string {
+  return `{${RUNTIME_DIRECTIVE_NAMES.map(n => (n === 'if' ? `'if':1` : `${n}:1`)).join(',')}}`
+}
+
+/**
+ * Event names a bare `:name` or `@name` is read as a listener for.
+ *
+ * Prefix-matched, so `click` also covers `click.stop` and `click.prevent`.
+ */
+export const RUNTIME_EVENT_NAMES: readonly string[] = [
+  'click', 'dblclick', 'mousedown', 'mouseup', 'mousemove', 'mouseenter', 'mouseleave',
+  'keydown', 'keyup', 'keypress', 'input', 'change', 'submit', 'focus', 'blur',
+  'scroll', 'resize', 'touchstart', 'touchend', 'touchmove', 'contextmenu', 'wheel',
+  'pointerdown', 'pointerup', 'pointermove',
+]
+
+/** The `EVENT_RE` the generated runtime embeds, as JS source. */
+export function runtimeEventRegexLiteral(): string {
+  return `/^(${RUNTIME_EVENT_NAMES.join('|')})/`
+}
+
+/** Does this name begin with an event the runtime binds as a listener? */
+export function isRuntimeEventName(name: string): boolean {
+  return RUNTIME_EVENT_NAMES.some(event => name === event || name.startsWith(`${event}.`))
+}
+
+/**
  * Blank the parts of an HTML template that cannot carry a live directive,
  * for DETECTION only — never for output.
  *
