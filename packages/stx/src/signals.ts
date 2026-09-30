@@ -160,6 +160,39 @@ console.log('[stx] entering IIFE');
     // in the signature and each host decides what to do with it.
     listen: function(node, event, handler, options) { node.addEventListener(event, handler, options); },
 
+    // Returns the PREVIOUS visibility. bindShow needs to know whether it just
+    // revealed something, and asking the node afterwards is the one read-back
+    // in the binding layer -- a native host cannot answer what a UIView's
+    // display value was, because it has none. A write that reports what it
+    // replaced removes the question: the DOM host reads its own style, a native
+    // host reads isHidden, and the binder reads neither.
+    //
+    // Restoring an explicit display (a flex row, an inline-block) is the host's
+    // business too; it records it the first time it hides the node.
+    // The scope root a node belongs to: nearest ancestor-or-self that owns a
+    // scope, or null. Three binding paths need it -- ref ownership, and an
+    // if-chain finding the scope its branch belongs to.
+    //
+    // Not a query method. A host is never handed a selector, because a native
+    // view tree has nothing to match one against: the DOM host walks with
+    // closest(), a native host reads the node-to-scope map it maintains as it
+    // creates views. The from flag skips the node itself, which the ref path needs
+    // when it walks outward past a receiver it has already rejected.
+    scopeOf: function(node, from) {
+      var start = from ? (node && node.parentElement) : node;
+      return (start && start.closest) ? start.closest('[data-stx-scope]') : null;
+    },
+
+    setVisible: function(node, visible) {
+      if (node.__stx_display === undefined) {
+        var d = node.style.display;
+        node.__stx_display = (d && d !== 'none') ? d : '';
+      }
+      var was = node.style.display !== 'none';
+      node.style.display = visible ? node.__stx_display : 'none';
+      return was;
+    },
+
     anchor: function(label) { return document.createComment(label); },
     clone: function(node) { return node.cloneNode(true); },
     insert: function(parent, node, before) { parent.insertBefore(node, before); },
@@ -3086,14 +3119,14 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
         // A page ref can be projected through a component whose own $refs
         // replaced the compatibility scope's map. The compiler retains the
         // receiver boundary so named and signal refs use the same caller.
-        var refRoot = el.closest && el.closest('[data-stx-scope]');
+        var refRoot = stxHost.scopeOf(el);
         var refCaller = el.getAttribute('data-stx-ref-caller');
         var refOwnerScope = findElementScope(el);
         if (refCaller) {
           var receiver = refRoot;
           while (receiver && receiver.getAttribute('data-stx-scope') !== refCaller
             && receiver.getAttribute('data-stx-template-scope') !== refCaller) {
-            receiver = receiver.parentElement && receiver.parentElement.closest('[data-stx-scope]');
+            receiver = stxHost.scopeOf(receiver, true);
           }
           refOwnerScope = receiver && receiver.__stx_parent_scope;
         }
@@ -3345,8 +3378,6 @@ catch (e) {
     if (el.__stx_show_bound) return;
     el.__stx_show_bound = true;
 
-    const currentDisplay = el.style.display;
-    const originalDisplay = (currentDisplay && currentDisplay !== 'none') ? currentDisplay : '';
     const capturedScope = { ...globalHelpers, ...passedScope, ...(findElementScope(el) || {}) };
 
     // Check if the expression is a simple signal reference (most common case for :show)
@@ -3356,7 +3387,7 @@ catch (e) {
       effect(() => {
         const value = directSignal();
 
-        el.style.display = value ? originalDisplay : 'none';
+        stxHost.setVisible(el, !!value);
       });
     } else {
       // Complex expression path — use createAutoUnwrapProxy with fallback,
@@ -3381,16 +3412,15 @@ catch (e) {
             // or object may not be ready yet on the first effect run, and
             // the next pass will re-evaluate once data arrives.
             if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Show expression error:', expr, e2);
-            el.style.display = 'none';
+            stxHost.setVisible(el, false);
             return;
           }
         }
-        var wasHidden = el.style.display === 'none';
-        el.style.display = value ? originalDisplay : 'none';
+        var wasVisible = stxHost.setVisible(el, !!value);
         // When transitioning from hidden to visible, stamp the element so
         // @click handlers can ignore clicks from the same frame (prevents
         // modal backdrop from catching the click that opened the modal)
-        if (value && wasHidden) {
+        if (value && !wasVisible) {
           el.__stx_shown_at = performance.now();
         }
       });
@@ -4704,7 +4734,7 @@ catch (e2) {
       console.log('[stx] bindIfChain pick:', pickedIdx, 'of', chain.length, '(', pickedIdx >= 0 ? chain[pickedIdx].attr : 'none', ') prev:', currentIdx);
       if (__stxDevtoolsTracking) {
         var __ifScope = null;
-        try { __ifScope = (head && head.closest) ? head.closest('[data-stx-scope]') : null; } catch (e) { __ifScope = null; }
+        try { __ifScope = stxHost.scopeOf(head); } catch (e) { __ifScope = null; }
         __stxDevtoolsRecordIf({
           scopeId: __ifScope ? __ifScope.getAttribute('data-stx-scope') : null,
           branches: chain.map(function(c) { return c.attr; }),

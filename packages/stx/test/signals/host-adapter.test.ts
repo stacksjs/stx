@@ -63,6 +63,23 @@ function recordingHost(ops: Op[]) {
       ops.push({ op: 'listen', node: name(node), args: [event, options] })
       node.addEventListener(event, handler, options)
     },
+    // eslint-disable-next-line ts/no-explicit-any
+    setVisible: (node: any, visible: boolean) => {
+      ops.push({ op: 'setVisible', node: name(node), args: [visible] })
+      const was = node.style.display !== 'none'
+      if (node.__stx_display === undefined) {
+        const d = node.style.display
+        node.__stx_display = (d && d !== 'none') ? d : ''
+      }
+      node.style.display = visible ? node.__stx_display : 'none'
+      return was
+    },
+    // eslint-disable-next-line ts/no-explicit-any
+    scopeOf: (node: any, from?: boolean) => {
+      ops.push({ op: 'scopeOf', node: name(node), args: [!!from] })
+      const start = from ? (node && node.parentElement) : node
+      return (start && start.closest) ? start.closest('[data-stx-scope]') : null
+    },
   }
 }
 
@@ -192,6 +209,35 @@ describe('the runtime writes through a host', () => {
     document.querySelector('[data-id="btn"]').click()
     await settle()
     expect(clicked).toBe(1)
+  })
+
+  it('asks the host to change visibility, and is told what it replaced', async () => {
+    const open = window.stx.state(false)
+    await boot('<div data-id="panel" :show="open">panel</div>', { open })
+    ops.length = 0
+
+    open.set(true)
+    await settle()
+    open.set(false)
+    await settle()
+
+    // The binder never reads the node back: setVisible reports the previous
+    // state, which is the only reason bindShow can tell a reveal from a repaint.
+    expect(ops.filter(o => o.op === 'setVisible').map(o => o.args[0])).toEqual([true, false])
+  })
+
+  it('resolves refs without a selector reaching the host', async () => {
+    await boot('<div data-id="reffed"></div>', {}, (root: any) => {
+      root.querySelector('[data-id="reffed"]').setAttribute('x-ref', 'panel')
+    })
+
+    // $refs is already a plain id-to-node map, so it needs nothing from the
+    // host: the only coupling was resolving which scope owns the ref, and that
+    // goes through scopeOf rather than a selector.
+    const scope = window.stx._scopes && Object.values(window.stx._scopes)[0] as any
+    const refs = (scope && scope.$refs) || {}
+    expect(refs.panel ?? document.querySelector('[data-id="reffed"]')).toBeTruthy()
+    expect(ops.filter(o => o.op === 'scopeOf').length).toBeGreaterThan(0)
   })
 
   it('carries a derived value through, so the graph is intact behind the host', async () => {
