@@ -76,11 +76,11 @@ export async function highlight(
   } = options
 
   // A highlighter that cannot load must not take the code with it. Highlighting
-   // is decoration; the code is the content. ts-syntax-highlighter@0.2.17 ships a
-   // bundle that imports `bunfig` while declaring no dependencies, so it throws
-   // outright wherever that package is not reachable -- and a <script server>
-   // that throws renders the whole component as nothing, with no error logged.
-   // Escaped plain text is the floor.
+  // is decoration; the code is the content. ts-syntax-highlighter@0.2.17 ships a
+  // bundle that imports `bunfig` while declaring no dependencies, so it throws
+  // outright wherever that package is not reachable -- and a <script server>
+  // that throws renders the whole component as nothing, with no error logged.
+  // Escaped plain text is the floor.
   let highlighter: TSHighlighter
   try {
     highlighter = await getHighlighter()

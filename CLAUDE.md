@@ -520,6 +520,7 @@ stx doctor [--json]
 
 - Use **pickier** for linting — never use eslint directly
 - Run `bunx --bun pickier .` to lint, `bunx --bun pickier . --fix` to auto-fix
+- **CI checks formatting separately from linting.** `bun run lint` passing is not enough: the lint job also runs `bun run format:check`, which fails on things the linter says nothing about (a comment block indented one space too far is enough). Run `bun run format:check` before pushing, and `bun run format:fix` to apply it.
 - When fixing unused variable warnings, prefer `// eslint-disable-next-line` comments over prefixing with `_`
 
 ## Frontend
