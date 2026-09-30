@@ -50,7 +50,12 @@ const tabs = {{ tabs }}
 const variant = {{ variant }}
 const orientation = {{ orientation }}
 const hasPropTabs = {{ hasPropTabs }}
-const containerRef = useRef()
+// useRef takes the NAME the x-ref attribute uses. Called with no
+// argument it read $refs[undefined], which nothing ever fills, so
+// containerRef.value was null forever - the mount hook found no panels,
+// the list stayed empty, and the component rendered nothing.
+// stacksjs/stx#1979
+const containerRef = useRef('containerRef')
 // In slot mode, `discoveredTabs` is populated from child
     <TabPanel>
       data
@@ -58,6 +63,19 @@ const containerRef = useRef()
 // rendering loop works the same in both modes.
 const discoveredTabs = state(hasPropTabs ? tabs : [])
 const activeTab = state({{ defaultTab }})
+/*
+ * Whether the mount hook has run.
+ *
+ * The effect below reaches into the DOM through containerRef, and an effect's
+ * first run happens while the setup function is still executing - before
+ * hydration has wired x-ref, so containerRef.value is null and the query can
+ * only come back empty. Nothing else it reads ever changed afterwards, so it
+ * never ran again and the DOM was never touched: every panel kept the hidden
+ * attribute it was served with, forever. Reading this makes the effect re-run
+ * once the DOM is actually reachable. stacksjs/stx#1979
+ */
+const mounted = state(false)
+
 
 // Walk only direct descendants of THIS container (not nested Tabs').
 function findOwnPanels() {
@@ -79,12 +97,14 @@ onMount(() => {
     icon: p.dataset.icon || '',
   }))
   discoveredTabs.set(list)
+  mounted.set(true)
 })
 
 // In slot mode, toggle each panel's `hidden` attribute as activeTab changes.
 // Prop mode is handled inline by the @foreach loop's :show binding below.
 effect(() => {
   if (hasPropTabs) return
+  if (!mounted()) return
   const panels = findOwnPanels()
   const idx = activeTab()
   panels.forEach((p, i) => {
