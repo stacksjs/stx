@@ -11,7 +11,7 @@ const brandIcons = {
   default: '💳',
 }
 
-export const containerClasses = `mt-16 w-2/3 bg-white dark:bg-blue-gray-800 px-8 py-6 shadow ring-1 ring-black dark:ring-gray-700 ring-opacity-5 sm:rounded-lg ${className}`.trim()
+export const containerClasses = `mt-16 w-2/3 bg-white dark:bg-blue-gray-800 px-8 py-6 shadow ring-1 ring-black/5 dark:ring-gray-700 sm:rounded-lg ${className}`.trim()
 </script>
 
 <div class="{{ containerClasses }}">

@@ -3,7 +3,7 @@ export const className = $props.className || ''
 export const as = $props.as || 'button'
 export const disabled = $props.disabled || false
 
-const baseClasses = 'inline-flex justify-center items-center rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75'
+const baseClasses = 'inline-flex justify-center items-center rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75'
 export const buttonClasses = `${baseClasses} ${className}`.trim()
 </script>
 

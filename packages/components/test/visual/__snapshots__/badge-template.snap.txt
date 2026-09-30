@@ -35,7 +35,7 @@ const dotColorClasses = {
 
 export const badgeClasses = `inline-flex items-center gap-1.5 font-medium rounded-full ${variantClasses[variant]} ${sizeClasses[size]} ${className}`.trim()
 export const dotClasses = `w-2 h-2 rounded-full ${dotColorClasses[variant]}`.trim()
-export const removeButtonClasses = `ml-0.5 -mr-1 text-current hover:bg-black hover:bg-opacity-10 dark:hover:bg-white dark:hover:bg-opacity-10 rounded-full p-0.5 transition-colors duration-150`.trim()
+export const removeButtonClasses = `ml-0.5 -mr-1 text-current hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-0.5 transition-colors duration-150`.trim()
 </script>
 <script client>
   const emit = defineEmits()
@@ -94,8 +94,6 @@ dark:bg-red-400
 dark:bg-red-900
 dark:bg-yellow-400
 dark:bg-yellow-900
-dark:hover:bg-opacity-10
-dark:hover:bg-white
 dark:text-blue-200
 dark:text-cyan-200
 dark:text-gray-300
@@ -108,8 +106,6 @@ duration-150
 font-medium
 h-2
 h-3
-hover:bg-black
-hover:bg-opacity-10
 inline-flex
 items-center
 px-2
