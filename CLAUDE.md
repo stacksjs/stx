@@ -535,7 +535,9 @@ stx doctor [--json]
 
 Agents (this one included) repeatedly write code that the framework already gives them — reinventing a Toast component, hand-rolling `addEventListener` plumbing, hard-coding `localStorage` reads, plain `<a href>` for SPA-eligible links, plain `<img>` for local assets. Before adding any of those, check the four sources below.
 
-### 1. `@stacksjs/components` — ~50 ready-made components
+### 1. `@stacksjs/components` — 102 ready-made components
+
+**Full guide: [docs/guide/using-components.md](docs/guide/using-components.md)** — every tag with its props, events and slots (generated from source), plus the failure modes that are specific to this library. Read it before building anything UI-shaped.
 
 Shipped with every stx app via `node_modules/@stacksjs/components`. Each `.stx` file's basename is the tag name (PascalCase) and tags are globally available in `.stx` files — no import needed. Run `ls node_modules/@stacksjs/components/src/ui/` to refresh the inventory before you build anything UI-shaped. As of writing:
 
@@ -635,12 +637,13 @@ stx flips reactivity syntax between scripts and templates, and the failure mode 
 <!-- ✅ Template: bare name; the proxy unwraps it -->
 <div :if="flag">Visible when flag is true</div>
 
-<!-- ❌ Template: this tries to CALL the unwrapped value (false), which throws
-     TypeError. Several directives swallow the error and just hide the element. -->
+<!-- ✅ Template: ALSO works. The runtime reads the expression text, sees the
+     name being called, and hands the expression the signal instead of the
+     unwrapped value (expressionCallsSignal, signals.ts). -->
 <div :if="flag()">…</div>
 ```
 
-**The silent-failure mode:** if you accidentally write `:if="flag()"` (or `:show="!flag()"`), the auto-unwrap proxy returns `false` (the unwrapped value) and you call `false()` → `TypeError: flag is not a function`. Most directive binders catch and suppress these errors during async init (a signal may not be ready on the first effect pass). The element silently stays hidden and you have no warning.
+**Both template spellings work — do not "fix" one into the other.** This section used to say `:if="flag()"` threw a TypeError and silently hid the element. It does not, and two independent layers see to that: `createExpressionAutoUnwrapProxy` preserves the signal for any name the expression *calls* (`expressionCallsSignal`), and `evalAttrExpr` retries the whole expression against the raw scope if the unwrapped attempt throws. Disabling either one alone changes nothing — both forms still evaluate and both stay reactive, negation and ternaries included. Verified against the runtime in `test/signals/called-signal-in-template.test.ts`. ~13 call sites in `@stacksjs/components` use the called form (`Dialog`, `Drawer`, `Notification`, `Avatar`, `CommandPalette`, …) and are correct; rewriting them is churn. Prefer the bare name in new markup for consistency, and keep calling the getter inside scripts, where the bare name really is just the function.
 
 **Exception — function references:** when the template attribute is naming a *function* in scope (not a signal), call it the same way you would in script:
 
