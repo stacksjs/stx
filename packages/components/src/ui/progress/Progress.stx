@@ -11,8 +11,8 @@ export const className = $props.className || ''
 const linearSizeClasses = { sm: 'h-1', md: 'h-2', lg: 'h-3' }
 const circularSizeClasses = { sm: 'w-12 h-12', md: 'w-16 h-16', lg: 'w-24 h-24' }
 const colorClasses = {
-  primary: 'bg-info-solid',
-  secondary: 'bg-purple-600 dark:bg-purple-500',
+  primary: 'bg-accent-solid',
+  secondary: 'bg-secondary-solid',
   success: 'bg-success-solid',
   warning: 'bg-warning-solid',
   danger: 'bg-danger-solid',
@@ -33,8 +33,8 @@ export const linearBarClasses = `h-full ${colorClasses[color] || colorClasses.pr
 export const circularSizeClass = circularSizeClasses[size] || circularSizeClasses.md
 export const labelClasses = `text-sm font-medium text-fg-strong mb-2`.trim()
 export const circularTrackColor = 'stroke-line'
-export const circularBarColor = color === 'primary' ? 'stroke-info'
-  : color === 'secondary' ? 'stroke-purple-600 dark:stroke-purple-500'
+export const circularBarColor = color === 'primary' ? 'stroke-accent'
+  : color === 'secondary' ? 'stroke-secondary-solid'
   : color === 'success' ? 'stroke-success'
   : color === 'warning' ? 'stroke-warning-solid'
   : color === 'danger' ? 'stroke-danger'

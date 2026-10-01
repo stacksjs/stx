@@ -123,8 +123,8 @@ function dayClasses(day) {
   let cls = base
   cls += day.isCurrentMonth ? 'text-fg' : 'text-fg-subtle'
   cls += disabled ? ' opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-surface-raised'
-  if (isSelected) cls += 'bg-info-solid text-white hover:bg-blue-700 dark:hover:bg-blue-600'
-  if (isTodayDate && highlightToday && !isSelected) cls += 'border-2 border-info'
+  if (isSelected) cls += 'bg-accent-solid text-white hover:bg-blue-700 dark:hover:bg-blue-600'
+  if (isTodayDate && highlightToday && !isSelected) cls += 'border-2 border-accent'
   return cls
 }
 
@@ -179,7 +179,7 @@ defineExpose({ selectedDate, currentMonth, selectDate })
     <div class="mt-4 flex justify-center">
       <button
         type="button"
-        class="px-4 py-2 text-sm font-medium text-info hover:bg-blue-50 dark:hover:bg-neutral-700 rounded-control transition-colors"
+        class="px-4 py-2 text-sm font-medium text-accent hover:bg-blue-50 dark:hover:bg-neutral-700 rounded-control transition-colors"
         @click="goToToday()"
       >
         Today

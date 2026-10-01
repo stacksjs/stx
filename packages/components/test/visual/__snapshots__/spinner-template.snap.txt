@@ -22,8 +22,8 @@ const sizeClasses = {
 
 // Color classes
 const colorClasses = {
-  primary: 'text-info',
-  secondary: 'text-purple-600 dark:text-purple-500',
+  primary: 'text-accent',
+  secondary: 'text-secondary-solid',
   success: 'text-success',
   warning: 'text-warning-solid',
   danger: 'text-danger',
@@ -46,8 +46,8 @@ const dotsSizeClasses = {
 }
 
 const dotsColorClasses = {
-  primary: 'bg-info-solid',
-  secondary: 'bg-purple-600 dark:bg-purple-500',
+  primary: 'bg-accent-solid',
+  secondary: 'bg-secondary-solid',
   success: 'bg-success-solid',
   warning: 'bg-warning-solid',
   danger: 'bg-danger-solid',
@@ -125,21 +125,19 @@ export const dotClasses = `${dotsSizeClasses[size] || dotsSizeClasses.md} ${dots
 </style>
 
 === Extracted Classes ===
+bg-accent-solid
 bg-current
 bg-cyan-600
 bg-danger-solid
-bg-info-solid
 bg-neutral-600
-bg-purple-600
+bg-secondary-solid
 bg-success-solid
 bg-warning-solid
 bg-white
 containerClasses
 dark:bg-cyan-500
 dark:bg-neutral-400
-dark:bg-purple-500
 dark:text-cyan-500
-dark:text-purple-500
 dotClasses
 flex
 flex-col
@@ -162,12 +160,12 @@ rounded-full
 solid
 spinnerClasses
 sr-only
+text-accent
 text-cyan-600
 text-danger
 text-fg-muted
 text-fg-strong
-text-info
-text-purple-600
+text-secondary-solid
 text-sm
 text-success
 text-warning-solid

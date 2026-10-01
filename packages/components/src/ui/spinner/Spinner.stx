@@ -16,8 +16,8 @@ const sizeClasses = {
 
 // Color classes
 const colorClasses = {
-  primary: 'text-info',
-  secondary: 'text-purple-600 dark:text-purple-500',
+  primary: 'text-accent',
+  secondary: 'text-secondary-solid',
   success: 'text-success',
   warning: 'text-warning-solid',
   danger: 'text-danger',
@@ -40,8 +40,8 @@ const dotsSizeClasses = {
 }
 
 const dotsColorClasses = {
-  primary: 'bg-info-solid',
-  secondary: 'bg-purple-600 dark:bg-purple-500',
+  primary: 'bg-accent-solid',
+  secondary: 'bg-secondary-solid',
   success: 'bg-success-solid',
   warning: 'bg-warning-solid',
   danger: 'bg-danger-solid',

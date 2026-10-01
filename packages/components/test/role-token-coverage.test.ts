@@ -22,7 +22,7 @@ import { defaultConfig } from '@stacksjs/ts-css/engine'
 
 const UI = path.join(import.meta.dir, '..', 'src', 'ui')
 
-const STATUSES = ['accent', 'info', 'danger', 'success', 'warning'] as const
+const STATUSES = ['accent', 'secondary', 'info', 'danger', 'success', 'warning'] as const
 
 /** Source with comments removed: a comment naming a shade is not a use of it. */
 function code(source: string): string {
@@ -260,5 +260,131 @@ describe('a control takes its shape from a role (#1993)', () => {
   it('leaves genuine circles alone', () => {
     for (const rel of ['avatar/Avatar.stx', 'spinner/Spinner.stx', 'skeleton/Skeleton.stx'])
       expect(code(readFileSync(path.join(UI, rel), 'utf-8')), rel).toContain('rounded-full')
+  })
+})
+
+/**
+ * A field in its error state, which is four colours rather than one.
+ *
+ * The five inputs shared a byte-identical error string of raw shades, and
+ * nothing in the vocabulary matched it: the nearest roles were two steps away
+ * in both modes, so forcing it onto `danger` or `danger-soft` would have turned
+ * a pale error outline into a strong one (stacksjs/stx#1993).
+ */
+describe('a field in error takes its colours from roles (#1993)', () => {
+  const FIELD_ERROR = ['danger-fg', 'danger-fg-subtle', 'danger-line', 'danger-focus'] as const
+
+  it('has a role for each of the four decisions', () => {
+    for (const role of FIELD_ERROR)
+      expect(SEMANTIC_TOKENS[role], `missing role ${role}`).toBeDefined()
+  })
+
+  it('compiles them, including the placeholder variant', async () => {
+    const css = await generateCss('<div class="ring-danger-line text-danger-fg placeholder-danger-fg-subtle focus:ring-danger-focus"></div>')
+
+    for (const role of FIELD_ERROR)
+      expect(css, `${role} did not compile`).toContain(`var(${tokenVariable(role)},`)
+
+    // `placeholder-*` is a pseudo-element variant, not a plain colour utility.
+    expect(css).toContain('::placeholder')
+  })
+
+  /*
+   * The point of the names: they mirror the RESTING branch one for one, so the
+   * two states read as the same four decisions rather than as two unrelated
+   * class strings.
+   */
+  it('mirrors the resting branch name for name', () => {
+    for (const rel of ['input/TextInput.stx', 'input/NumberInput.stx', 'input/PasswordInput.stx', 'select/Select.stx', 'textarea/Textarea.stx']) {
+      const source = code(readFileSync(path.join(UI, rel), 'utf-8'))
+
+      expect(source, rel).toContain("'ring-danger-line text-danger-fg placeholder-danger-fg-subtle focus:ring-danger-focus'")
+      expect(source, rel).toContain("'ring-line-strong text-fg placeholder-fg-subtle focus:ring-accent'")
+    }
+  })
+
+  /*
+   * A focus ring has to stay visible against a dark field, so it LIGHTENS in
+   * dark mode - the opposite of a solid fill, and the same reason coloured text
+   * lightens. Getting this backwards is how #1930's regression happened.
+   */
+  it('lightens the focus ring in dark mode, unlike a fill', () => {
+    expect(SEMANTIC_TOKENS['danger-focus']).toMatchObject({ light: 'red-500', dark: 'red-400' })
+    expect(SEMANTIC_TOKENS['danger-solid']).toMatchObject({ light: 'red-500', dark: 'red-600' })
+  })
+
+  it('leaves no raw red shade in any form control', () => {
+    const offenders: string[] = []
+    for (const rel of ['input/TextInput.stx', 'input/NumberInput.stx', 'input/PasswordInput.stx',
+      'select/Select.stx', 'textarea/Textarea.stx', 'checkbox/Checkbox.stx', 'radio/Radio.stx', 'form/Form.stx']) {
+      if (/-red-\d{2,3}\b/.test(code(readFileSync(path.join(UI, rel), 'utf-8'))))
+        offenders.push(rel)
+    }
+
+    expect(offenders).toEqual([])
+  })
+})
+
+/**
+ * Every variant of a role-driven map reaches a role.
+ *
+ * Badge's `secondary` was purple with no role behind it, and `info` was cyan
+ * while four of its siblings were already tokenised - so two of seven variants
+ * stayed put in a themed app while the rest moved. That is the worst failure
+ * shape available: silent, and visible only to the person whose badge is the
+ * wrong colour (stacksjs/stx#1993).
+ */
+describe('no variant is left as the unthemeable one', () => {
+  it('gives every status, including secondary, the full set of roles', () => {
+    for (const status of STATUSES)
+      for (const suffix of ['', '-solid', '-soft', '-soft-ink'])
+        expect(SEMANTIC_TOKENS[`${status}${suffix}`], `missing ${status}${suffix}`).toBeDefined()
+  })
+
+  /*
+   * `info` and `accent` had identical defaults, which is a vocabulary with two
+   * names you cannot tell apart - and it hid a misuse: every `info` in the
+   * library was a SELECTED or ACTIVE state that reached for it only because
+   * the hue was blue while accent was indigo. Those are accent now, and info
+   * is cyan, which is what the two components that genuinely mean
+   * informational already painted.
+   */
+  it('keeps accent and info distinguishable', () => {
+    expect(SEMANTIC_TOKENS.accent.light).not.toBe(SEMANTIC_TOKENS.info.light)
+    expect(SEMANTIC_TOKENS['accent-soft'].light).not.toBe(SEMANTIC_TOKENS['info-soft'].light)
+  })
+
+  it('leaves no palette shade in Badge or Switch', () => {
+    for (const rel of ['badge/Badge.stx', 'switch/Switch.stx']) {
+      const hits = code(readFileSync(path.join(UI, rel), 'utf-8'))
+        .match(/\b(?:[a-z-]+:)*(?:bg|text|border|ring|divide|stroke|fill)-(?:blue|red|green|yellow|indigo|cyan|purple|teal|sky)-\d{2,3}\b/g) ?? []
+
+      expect(hits, rel).toEqual([])
+    }
+  })
+
+  /*
+   * A badge is a pill by intent, so it takes the pill ROLE and an app can ask
+   * for slightly-rounded badges. The dot and the remove button keep
+   * `rounded-full`: those are genuine circles, and re-pointing the pill radius
+   * must not square them off.
+   */
+  it('rounds the badge through the pill role, and its dot through neither', () => {
+    const badge = code(readFileSync(path.join(UI, 'badge/Badge.stx'), 'utf-8'))
+
+    expect(badge).toMatch(/badgeClasses = `[^`]*rounded-pill/)
+    expect(badge).toMatch(/dotClasses = `[^`]*rounded-full/)
+  })
+
+  /*
+   * Switch's off-state and focus-ring offsets are achromatic by design: a
+   * toggle that is off has no hue, and giving it one would be inventing a
+   * decision rather than preserving it.
+   */
+  it('leaves Switch\'s achromatic parts achromatic', () => {
+    const sw = code(readFileSync(path.join(UI, 'switch/Switch.stx'), 'utf-8'))
+
+    expect(sw).toContain('bg-accent-solid')
+    expect(sw).toMatch(/bg-neutral-\d{3}/)
   })
 })

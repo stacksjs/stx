@@ -20,11 +20,11 @@ export const className = $props.className || ''
 const variantClasses = {
   default: 'bg-surface-raised text-neutral-800 dark:text-neutral-300',
   primary: 'bg-accent-soft text-accent-soft-ink',
-  secondary: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+  secondary: 'bg-secondary-soft text-secondary-soft-ink',
   success: 'bg-success-soft text-success-soft-ink',
   warning: 'bg-warning-soft text-warning-soft-ink',
   danger: 'bg-danger-soft text-danger-soft-ink',
-  info: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200',
+  info: 'bg-info-soft text-info-soft-ink',
 }
 
 const sizeClasses = { sm: 'px-2 py-0.5 text-xs', md: 'px-2.5 py-0.5 text-sm', lg: 'px-3 py-1 text-base' }
@@ -32,14 +32,14 @@ const sizeClasses = { sm: 'px-2 py-0.5 text-xs', md: 'px-2.5 py-0.5 text-sm', lg
 const dotColorClasses = {
   default: 'bg-fg-soft',
   primary: 'bg-accent',
-  secondary: 'bg-purple-500 dark:bg-purple-400',
+  secondary: 'bg-secondary',
   success: 'bg-success',
   warning: 'bg-warning',
   danger: 'bg-danger',
-  info: 'bg-cyan-500 dark:bg-cyan-400',
+  info: 'bg-info',
 }
 
-export const badgeClasses = `inline-flex items-center gap-1.5 font-medium rounded-full ${variantClasses[variant] || variantClasses.default} ${sizeClasses[size] || sizeClasses.md} ${className}`.trim()
+export const badgeClasses = `inline-flex items-center gap-1.5 font-medium rounded-pill ${variantClasses[variant] || variantClasses.default} ${sizeClasses[size] || sizeClasses.md} ${className}`.trim()
 export const dotClasses = `w-2 h-2 rounded-full ${dotColorClasses[variant] || dotColorClasses.default}`.trim()
 export const removeButtonClasses = `ml-0.5 -mr-1 text-current hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-0.5 transition-colors duration-150`.trim()
 </script>

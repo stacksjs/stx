@@ -45,7 +45,7 @@ function toggle() {
 
 function trackClasses() {
   const stateClass = isChecked()
-    ? 'bg-blue-500 dark:bg-blue-600'
+    ? 'bg-accent-solid'
     : 'bg-neutral-400 dark:bg-neutral-600'
   return `${trackBase} ${stateClass} ${trackDisabled} ${config.track} ${extraClass}`.trim()
 }
@@ -80,7 +80,7 @@ defineExpose({ isChecked, toggle })
 </label>
 
 === Extracted Classes ===
-bg-blue-500
+bg-accent-solid
 bg-neutral-400
 bg-white
 border-2
@@ -89,7 +89,6 @@ change
 checked
 cursor-not-allowed
 cursor-pointer
-dark:bg-blue-600
 dark:bg-neutral-600
 dark:focus-visible:ring-offset-neutral-700
 duration-200

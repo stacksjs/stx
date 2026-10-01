@@ -50,10 +50,25 @@ config file and no rebuild:
 | `line` | `border-line`, `divide-line` | neutral-200 | neutral-700 |
 | `line-strong` | `border-line-strong`, `ring-line-strong` | neutral-300 | neutral-600 |
 | `accent` | `text-accent`, `ring-accent` | blue-600 | blue-400 |
-| `info` | `text-info`, `stroke-info` | blue-600 | blue-400 |
+| `secondary` | `text-secondary` | purple-600 | purple-400 |
+| `info` | `text-info`, `stroke-info` | cyan-600 | cyan-400 |
 | `danger` | `text-danger` | red-600 | red-400 |
 | `success` | `text-success` | green-600 | green-400 |
 | `warning` | `text-warning` | yellow-600 | yellow-400 |
+
+`info` is cyan and `secondary` is purple. `info` was briefly blue — identical
+to `accent`, which is a vocabulary with two names you cannot tell apart. It also
+hid a misuse: every `info` in the library was a *selected* or *active* state (a
+calendar's chosen day, a listbox's checkmark, the current page, a variant
+literally named `primary`) reaching for `info` only because the hue was blue
+while `accent` was indigo. Those are `accent` now, which left `info` to the two
+components that genuinely mean informational — a Notification toast and a Badge
+chip — and both already painted cyan.
+
+`secondary` exists because Badge, Progress and Spinner all have a variant by
+that name and none of the five statuses is it. Without a role it was the one
+variant in an otherwise role-driven map that stayed purple while everything
+around it moved — silent, and visible only to whoever's badge came out wrong.
 
 `accent` was indigo. The library had two competing accents — 73 blue uses
 against 34 indigo, both meaning "primary" — and a role vocabulary cannot have
@@ -61,6 +76,27 @@ two, so blue won on count: the painted majority kept its appearance and the
 indigo minority moved (`stacksjs/stx#1993`). `accent` and `info` therefore share
 a default, which is deliberate — they are different *roles*, so pointing
 `--stx-accent` at your brand does not touch informational emphasis.
+
+### A field in its error state
+
+Four more roles, danger only, because an error is the only field state the
+library has. They mirror the resting branch name for name, so the two states
+read as the same four decisions:
+
+| Resting | In error | Light | Dark |
+|---|---|---|---|
+| `ring-line-strong` | `ring-danger-line` | red-300 | red-600 |
+| `text-fg` | `text-danger-fg` | red-900 | red-300 |
+| `placeholder-fg-subtle` | `placeholder-danger-fg-subtle` | red-300 | red-500 |
+| `focus:ring-accent` | `focus:ring-danger-focus` | red-500 | red-400 |
+
+`danger-focus` gets *lighter* in dark mode, unlike a solid fill: a focus ring
+has to stay visible against a dark field, which is the same reason coloured
+text lightens and a button fill does not.
+
+Not one set per status. A warning or success field state does not exist in the
+library, so four more families would be sixteen names measured from nothing —
+the pattern is obvious if one ever arrives.
 
 ### Fills, hovers and ink
 

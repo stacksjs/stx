@@ -124,13 +124,17 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
    * majority (Button's primary, the inputs, the focus states) keeps its
    * appearance and the indigo minority moves (stacksjs/stx#1993).
    *
-   * That leaves `accent` and `info` with the same DEFAULT, which is fine and
-   * deliberate: they are different roles, so an app re-pointing --stx-accent
-   * does not touch informational emphasis. They were separate before because
-   * the hues differed; they are separate now because the meanings do.
+   * `info` is cyan, and was briefly blue - identical to `accent` - which is a
+   * vocabulary with two names you cannot tell apart. Worse, it hid a
+   * misuse: every `info` in the library was a SELECTED or ACTIVE state (a
+   * calendar's chosen day, a listbox's checkmark, the current page, a variant
+   * literally named `primary`) that reached for `info` only because the hue
+   * was blue while `accent` was indigo. Those are `accent` now, which left
+   * `info` to the components that mean it - a Notification's informational
+   * toast, a Badge's `info` chip - and both of those already painted cyan.
    */
   'accent': { light: 'blue-600', dark: 'blue-400', description: 'Primary action, selected state' },
-  'info': { light: 'blue-600', dark: 'blue-400', description: 'Informational emphasis, links' },
+  'info': { light: 'cyan-600', dark: 'cyan-400', description: 'Informational emphasis, links' },
   'danger': { light: 'red-600', dark: 'red-400', description: 'Errors, destructive actions' },
   'success': { light: 'green-600', dark: 'green-400', description: 'Confirmation' },
   /*
@@ -165,7 +169,7 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
    * round. The 11 shift by one shade; the 73 are unchanged.
    */
   'accent-solid': { light: 'blue-500', dark: 'blue-600', description: 'Primary button fill' },
-  'info-solid': { light: 'blue-500', dark: 'blue-600', description: 'Informational fill' },
+  'info-solid': { light: 'cyan-500', dark: 'cyan-600', description: 'Informational fill' },
   'danger-solid': { light: 'red-500', dark: 'red-600', description: 'Destructive button fill' },
   'success-solid': { light: 'green-500', dark: 'green-600', description: 'Confirmation fill' },
   'warning-solid': { light: 'yellow-500', dark: 'yellow-600', description: 'Caution fill' },
@@ -179,7 +183,7 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
    * colour.
    */
   'accent-solid-hover': { light: 'blue-600', dark: 'blue-700', description: 'Primary button fill, hovered' },
-  'info-solid-hover': { light: 'blue-600', dark: 'blue-700', description: 'Informational fill, hovered' },
+  'info-solid-hover': { light: 'cyan-600', dark: 'cyan-700', description: 'Informational fill, hovered' },
   'danger-solid-hover': { light: 'red-600', dark: 'red-700', description: 'Destructive fill, hovered' },
   'success-solid-hover': { light: 'green-600', dark: 'green-700', description: 'Confirmation fill, hovered' },
   'warning-solid-hover': { light: 'yellow-600', dark: 'yellow-700', description: 'Caution fill, hovered' },
@@ -212,14 +216,66 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
    */
   'accent-soft': { light: 'blue-100', dark: 'blue-900', description: 'Tinted primary fill' },
   'accent-soft-ink': { light: 'blue-800', dark: 'blue-200', description: 'Text on a tinted primary fill' },
-  'info-soft': { light: 'blue-100', dark: 'blue-900', description: 'Tinted informational fill' },
-  'info-soft-ink': { light: 'blue-800', dark: 'blue-200', description: 'Text on a tinted informational fill' },
+  'info-soft': { light: 'cyan-100', dark: 'cyan-900', description: 'Tinted informational fill' },
+  'info-soft-ink': { light: 'cyan-800', dark: 'cyan-200', description: 'Text on a tinted informational fill' },
   'danger-soft': { light: 'red-100', dark: 'red-900', description: 'Tinted destructive fill' },
   'danger-soft-ink': { light: 'red-800', dark: 'red-200', description: 'Text on a tinted destructive fill' },
   'success-soft': { light: 'green-100', dark: 'green-900', description: 'Tinted confirmation fill' },
   'success-soft-ink': { light: 'green-800', dark: 'green-200', description: 'Text on a tinted confirmation fill' },
   'warning-soft': { light: 'yellow-100', dark: 'yellow-900', description: 'Tinted caution fill' },
   'warning-soft-ink': { light: 'yellow-800', dark: 'yellow-200', description: 'Text on a tinted caution fill' },
+
+  /*
+   * `secondary`, which is not a status.
+   *
+   * Badge and Progress and Spinner all have a `secondary` variant painted
+   * purple, and the five statuses are accent, info, danger, success and
+   * warning - none of them is "secondary". So it was the one variant in an
+   * otherwise role-driven map with no role, which is the worst case: it fails
+   * SILENTLY in a themed app, staying purple while everything around it moves.
+   *
+   * A role rather than a documented exception, because "this one variant is a
+   * fixed hue" is a thing nobody reads until their badge is the wrong colour.
+   */
+  'secondary': { light: 'purple-600', dark: 'purple-400', description: 'Secondary emphasis' },
+  'secondary-solid': { light: 'purple-500', dark: 'purple-600', description: 'Secondary fill' },
+  'secondary-solid-hover': { light: 'purple-600', dark: 'purple-700', description: 'Secondary fill, hovered' },
+  'secondary-ink': { light: 'white', dark: 'white', description: 'Text on a secondary fill' },
+  'secondary-soft': { light: 'purple-100', dark: 'purple-900', description: 'Tinted secondary fill' },
+  'secondary-soft-ink': { light: 'purple-800', dark: 'purple-200', description: 'Text on a tinted secondary fill' },
+
+  /*
+   * A form control in its error state, which is four colours rather than one.
+   *
+   * The five inputs shared a byte-identical error string of raw shades -
+   * `ring-red-300 dark:ring-red-600 text-red-900 dark:text-red-300
+   * placeholder-red-300 dark:placeholder-red-500 focus:ring-red-500
+   * dark:focus:ring-red-400` - and none of it matched an existing role. The
+   * nearest were two steps away in both modes, so forcing it onto `danger` or
+   * `danger-soft` would have turned a pale error outline into a strong one
+   * (stacksjs/stx#1993).
+   *
+   * These mirror the RESTING branch name for name, which is already fully
+   * tokenised, so the two read as the same four decisions in two states:
+   *
+   *     ring-line-strong       <->  ring-danger-line
+   *     text-fg                <->  text-danger-fg
+   *     placeholder-fg-subtle  <->  placeholder-danger-fg-subtle
+   *     focus:ring-accent      <->  focus:ring-danger-focus
+   *
+   * Danger only, not one set per status. An error is the only field state the
+   * library has; a warning or success field does not exist, so four more
+   * families would be sixteen names measured from nothing. The pattern is
+   * obvious if one ever arrives.
+   *
+   * `danger-focus` gets LIGHTER in dark mode, 500 -> 400, unlike the solid
+   * fills: a focus ring has to stay visible against a dark field, which is the
+   * same reason coloured text lightens and a button fill does not.
+   */
+  'danger-fg': { light: 'red-900', dark: 'red-300', description: 'Text in a field with an error' },
+  'danger-fg-subtle': { light: 'red-300', dark: 'red-500', description: 'Placeholder in a field with an error' },
+  'danger-line': { light: 'red-300', dark: 'red-600', description: 'Border of a field with an error' },
+  'danger-focus': { light: 'red-500', dark: 'red-400', description: 'Focus ring of a field with an error' },
 }
 
 /** The CSS custom property that backs a role. */

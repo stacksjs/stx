@@ -17,8 +17,8 @@ export const className = $props.className || ''
 const linearSizeClasses = { sm: 'h-1', md: 'h-2', lg: 'h-3' }
 const circularSizeClasses = { sm: 'w-12 h-12', md: 'w-16 h-16', lg: 'w-24 h-24' }
 const colorClasses = {
-  primary: 'bg-info-solid',
-  secondary: 'bg-purple-600 dark:bg-purple-500',
+  primary: 'bg-accent-solid',
+  secondary: 'bg-secondary-solid',
   success: 'bg-success-solid',
   warning: 'bg-warning-solid',
   danger: 'bg-danger-solid',
@@ -39,8 +39,8 @@ export const linearBarClasses = `h-full ${colorClasses[color] || colorClasses.pr
 export const circularSizeClass = circularSizeClasses[size] || circularSizeClasses.md
 export const labelClasses = `text-sm font-medium text-fg-strong mb-2`.trim()
 export const circularTrackColor = 'stroke-line'
-export const circularBarColor = color === 'primary' ? 'stroke-info'
-  : color === 'secondary' ? 'stroke-purple-600 dark:stroke-purple-500'
+export const circularBarColor = color === 'primary' ? 'stroke-accent'
+  : color === 'secondary' ? 'stroke-secondary-solid'
   : color === 'success' ? 'stroke-success'
   : color === 'warning' ? 'stroke-warning-solid'
   : color === 'danger' ? 'stroke-danger'
@@ -172,10 +172,10 @@ defineExpose({ value, setValue: (v) => value.set(v) })
 absolute
 animate-progress-indeterminate
 animate-spin
+bg-accent-solid
 bg-cyan-600
 bg-danger-solid
-bg-info-solid
-bg-purple-600
+bg-secondary-solid
 bg-success-solid
 bg-surface-sunken
 bg-warning-solid
@@ -185,9 +185,7 @@ circularSizeClass
 circularTrackColor
 containerClasses
 dark:bg-cyan-500
-dark:bg-purple-500
 dark:stroke-cyan-500
-dark:stroke-purple-500
 duration-300
 ease-in-out
 flex
@@ -215,10 +213,10 @@ overflow-hidden
 progressbar
 relative
 rounded-full
+stroke-accent
 stroke-cyan-600
 stroke-danger
-stroke-info
-stroke-purple-600
+stroke-secondary-solid
 stroke-success
 stroke-warning-solid
 text-fg-strong

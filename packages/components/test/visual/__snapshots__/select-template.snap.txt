@@ -29,7 +29,7 @@ export const className = $props.className || ''
 const sizeClasses = { sm: 'px-3 py-1.5 text-sm', md: 'px-4 py-2 text-base', lg: 'px-5 py-2.5 text-lg' }
 const baseClasses = 'block w-full border-0 rounded-control shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset dark:bg-neutral-700 dark:text-neutral-100'
 const stateClasses = error
-  ? 'ring-red-300 dark:ring-red-600 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-500 focus:ring-red-500 dark:focus:ring-red-400'
+  ? 'ring-danger-line text-danger-fg placeholder-danger-fg-subtle focus:ring-danger-focus'
   : 'ring-line-strong text-fg placeholder-fg-subtle focus:ring-accent'
 const disabledClasses = disabled
   ? 'opacity-50 cursor-not-allowed bg-surface'
@@ -110,18 +110,14 @@ change
 cursor-not-allowed
 cursor-pointer
 dark:bg-neutral-700
-dark:focus:ring-red-400
 dark:hover:ring-neutral-500
-dark:placeholder-red-500
-dark:ring-red-600
 dark:text-neutral-100
-dark:text-red-300
 duration-200
 false
 focus:ring-2
 focus:ring-accent
+focus:ring-danger-focus
 focus:ring-inset
-focus:ring-red-500
 font-medium
 h-10
 helper-text
@@ -133,25 +129,25 @@ leading-6
 ml-1
 mt-2
 opacity-50
+placeholder-danger-fg-subtle
 placeholder-fg-subtle
-placeholder-red-300
 px-3
 px-4
 px-5
 py-2
 ring-1
+ring-danger-line
 ring-inset
 ring-line-strong
-ring-red-300
 rounded-control
 selectClasses
 shadow-sm
 text-base
 text-danger
+text-danger-fg
 text-fg
 text-fg-soft
 text-lg
-text-red-900
 text-sm
 transition-colors
 true

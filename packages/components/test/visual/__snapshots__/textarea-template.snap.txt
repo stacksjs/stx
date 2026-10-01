@@ -24,7 +24,7 @@ export const className = $props.className || ''
 const resizeClasses = { none: 'resize-none', vertical: 'resize-y', horizontal: 'resize-x', both: 'resize' }
 const baseClasses = 'block w-full border-0 rounded-control shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset px-4 py-2 text-base dark:bg-neutral-700 dark:text-neutral-100'
 const stateClasses = error
-  ? 'ring-red-300 dark:ring-red-600 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-500 focus:ring-red-500 dark:focus:ring-red-400'
+  ? 'ring-danger-line text-danger-fg placeholder-danger-fg-subtle focus:ring-danger-focus'
   : 'ring-line-strong text-fg placeholder-fg-subtle focus:ring-accent'
 const disabledClasses = disabled
   ? 'opacity-50 cursor-not-allowed bg-surface'
@@ -124,18 +124,14 @@ border-0
 cursor-default
 cursor-not-allowed
 dark:bg-neutral-700
-dark:focus:ring-red-400
-dark:placeholder-red-500
-dark:ring-red-600
 dark:text-neutral-100
-dark:text-red-300
 duration-200
 false
 flex
 focus:ring-2
 focus:ring-accent
+focus:ring-danger-focus
 focus:ring-inset
-focus:ring-red-500
 font-medium
 helperClasses
 hidden
@@ -148,8 +144,8 @@ mb-2
 ml-1
 mt-2
 opacity-50
+placeholder-danger-fg-subtle
 placeholder-fg-subtle
-placeholder-red-300
 px-4
 py-2
 resize
@@ -157,16 +153,16 @@ resize-none
 resize-x
 resize-y
 ring-1
+ring-danger-line
 ring-inset
 ring-line-strong
-ring-red-300
 rounded-control
 shadow-sm
 text-base
 text-danger
+text-danger-fg
 text-fg
 text-fg-soft
-text-red-900
 text-sm
 textareaClasses
 transition-colors
