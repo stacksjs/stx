@@ -49,14 +49,36 @@ const HOST = `<script client>
   <Button className="probe" :disabled="saving()" :loading="saving()">Save</Button>
 </div>`
 
+/**
+ * A parent whose button TEXT changes with its state.
+ *
+ * "Rotate" -> "Rotating..." is as common as disabling the button, and the slot
+ * cannot express it: slot content is the caller's markup interpolated in the
+ * caller's scope at render time, so it is a snapshot the way `disabled` used
+ * to be.
+ */
+const LABEL_HOST = `<script client>
+  const rotating = state(false)
+  const rotateLabel = derived(() => rotating() ? 'Rotating...' : 'Rotate')
+  function flip() { rotating.set(!rotating()) }
+</script>
+
+<div id="label-host">
+  <Button className="labelled" :label="rotateLabel()" :disabled="rotating()" />
+  <Button className="slotted">Save</Button>
+  <Button className="static-label" label="Static" />
+</div>`
+
 const FILES = {
   'layouts/app.stx': layout(''),
   'components/Button.stx': component('button/Button.stx'),
   'components/Host.stx': HOST,
+  'components/LabelHost.stx': LABEL_HOST,
   'pages/index.stx': page('app', '<Host />'),
+  'pages/labels.stx': page('app', '<LabelHost />'),
 }
 
-const ROUTES = { '/': 'pages/index.stx' }
+const ROUTES = { '/': 'pages/index.stx', '/labels': 'pages/labels.stx' }
 
 interface Harness {
   /** The component's own <button>, found by the className the parent passed. */
@@ -140,5 +162,102 @@ describe('#1997 — Button reads disabled and loading as live props', () => {
     await settle()
     expect(visible(h.spinner())).toBe(true)
     await h.dispose()
+  })
+})
+
+/**
+ * The other half of #1997: the label.
+ *
+ * `:text` on the component tag is not the answer - the runtime's text binding
+ * writes textContent, which would erase the spinner and the icons this button
+ * keeps inside itself - so the reactive spelling is a prop.
+ */
+describe('#1997 — Button reads its label as a live prop', () => {
+  interface LabelHarness {
+    button: (className: string) => any
+    flip: () => void
+    dispose: () => Promise<void>
+  }
+
+  async function mountLabels(): Promise<LabelHarness> {
+    const app = await renderApp(FILES, ROUTES)
+    const browser = await boot(app, '/labels')
+    await settle()
+    const hostEl = find(browser, '#label-host').closest('[data-stx-scope]')
+    const hostScope = browser.window.stx._scopes[hostEl.getAttribute('data-stx-scope')]
+    return {
+      button: (className: string) => find(browser, `button.${className}`),
+      flip: () => hostScope.flip(),
+      dispose: () => app.dispose(),
+    }
+  }
+
+  it('renders the label the parent signal currently holds', async () => {
+    const harness = await mountLabels()
+    try {
+      expect(harness.button('labelled').textContent).toContain('Rotate')
+    }
+    finally {
+      await harness.dispose()
+    }
+  })
+
+  it('changes the label when the signal flips after render', async () => {
+    const harness = await mountLabels()
+    try {
+      harness.flip()
+      await settle()
+
+      // The whole point: before this, the text was fixed at render and a
+      // button could not say what it was doing.
+      expect(harness.button('labelled').textContent).toContain('Rotating...')
+    }
+    finally {
+      await harness.dispose()
+    }
+  })
+
+  it('changes back, so the label is not one-way', async () => {
+    const harness = await mountLabels()
+    try {
+      harness.flip()
+      await settle()
+      harness.flip()
+      await settle()
+
+      expect(harness.button('labelled').textContent).toContain('Rotate')
+      expect(harness.button('labelled').textContent).not.toContain('Rotating')
+    }
+    finally {
+      await harness.dispose()
+    }
+  })
+
+  it('renders a static label on first paint', async () => {
+    const harness = await mountLabels()
+    try {
+      expect(harness.button('static-label').textContent).toContain('Static')
+    }
+    finally {
+      await harness.dispose()
+    }
+  })
+
+  /*
+   * The regression this could have caused. The button is a flex container with
+   * a gap, so an empty label span would be a flex item and add a trailing gap
+   * to every button in every app that uses the slot. `:if` removes it instead.
+   */
+  it('adds no element to a button that uses the slot', async () => {
+    const harness = await mountLabels()
+    try {
+      const slotted = harness.button('slotted')
+
+      expect(slotted.textContent).toContain('Save')
+      expect(slotted.querySelectorAll('span').length).toBe(0)
+    }
+    finally {
+      await harness.dispose()
+    }
   })
 })

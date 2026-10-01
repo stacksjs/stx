@@ -11,6 +11,24 @@ export const disabled = $bool($props.disabled)
 export const loading = $bool($props.loading)
 export const type = $props.type || 'button'
 export const fullWidth = $bool($props.fullWidth)
+/*
+ * The label, as a prop, for a button whose text changes with its state.
+ *
+ * "Rotate" -> "Rotating..." is as common as disabling the button, and the slot
+ * cannot express it: slot content is the CALLER's markup, interpolated in the
+ * caller's scope at render time, so it is a snapshot like `disabled` used to
+ * be. `:text` on the component tag is not the answer either - the runtime's
+ * text binding writes textContent, which would erase the spinner and the icons
+ * this button keeps inside itself.
+ *
+ * So the reactive spelling is a prop: `
+  <Button :label="rotateLabel()">
+    `. Given
+ * one, the button renders it in a span that tracks the parent's binding; given
+ * none, the slot behaves exactly as before. See stacksjs/stx#1997.
+ */
+export const label = $props.label || ''
+export const hasLabel = label !== ''
 export const leftIcon = $props.leftIcon || ''
 export const rightIcon = $props.rightIcon || ''
 export const className = $props.className || ''
@@ -39,9 +57,9 @@ export const isDisabled = disabled || loading
 export const buttonClasses = `${baseClasses} ${variantClasses[variant] || variantClasses.primary} ${sizeClasses[size] || sizeClasses.md} ${widthClasses} ${className}`.trim()
 export const iconClasses = iconSizeClasses[size] || iconSizeClasses.md
 export const spinnerClasses = `animate-spin ${iconClasses}`.trim()
-</script>
-<script client>
-  const emit = defineEmits()
+  </script>
+  <script client>
+    const emit = defineEmits()
 
 /*
  * `disabled` and `loading` are read as live props, not as a server snapshot.
@@ -51,10 +69,10 @@ export const spinnerClasses = `animate-spin ${iconClasses}`.trim()
  * of button state in an application could not be expressed:
  *
  *
-  <Button :disabled="saving()" @click="save">
-    Save
-  </Button>
-  *
+    <Button :disabled="saving()" @click="save">
+      Save
+    </Button>
+    *
  * `saving()` is a signal. On the server it is not yet meaningful, so the button
  * shipped enabled and STAYED enabled for the life of the page — through the
  * exact async action it was there to guard. Double submits, destructive
@@ -67,6 +85,7 @@ export const spinnerClasses = `animate-spin ${iconClasses}`.trim()
  *
  * See stacksjs/stx#1997.
  */
+const labelText = useReactiveProp('label', {{ label }}, { parse: value => value == null ? '' : String(value) })
 const isLoading = useReactiveProp('loading', {{ loading }})
 const disabledProp = useReactiveProp('disabled', {{ disabled }})
 
@@ -83,8 +102,8 @@ function onClick(event) {
   }
   emit('click', event)
 }
-</script>
-<button
+  </script>
+  <button
   type="{{ type }}"
   class="{{ buttonClasses }}"
   @if(isDisabled)disabled@endif
@@ -93,12 +112,12 @@ function onClick(event) {
   :aria-busy="isLoading() ? 'true' : 'false'"
   @click="onClick($event)"
 >
-  {{-- The spinner is always in the DOM so `loading` can turn it on after render;
+    {{-- The spinner is always in the DOM so `loading` can turn it on after render;
        it was inside an @if, which meant the only way to see it was to have been
        loading when the page was built. x-cloak only when the server says we are
        NOT loading, so a button rendered loading shows its spinner on first
        paint rather than waiting for hydration. --}}
-  <svg
+    <svg
     :show="isLoading()"
     @if(!loading)x-cloak@endif
     class="{{ spinnerClasses }}"
@@ -106,32 +125,60 @@ function onClick(event) {
     fill="none"
     viewBox="0 0 24 24"
   >
-    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-    </circle>
-    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-    </path>
-  </svg>
-  @if(leftIcon)
-  <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
-    {!! leftIcon !!}
-  </span>
-  @endif
-  <slot />
-  @if(rightIcon)
-  <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
-    {!! rightIcon !!}
-  </span>
-  @endif
-</button>
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+      </circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+      </path>
+    </svg>
+    @if(leftIcon)
+    <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
+      {!! leftIcon !!}
+    </span>
+    @endif
+    <slot />
+    {{-- The label span is decided on the CLIENT, because the server cannot see a
+       reactive prop at all: `:label="rotateLabel()"` is categorised as client
+       reactive, so `$props.label` is undefined during render and only the
+       root's data-stx-parent-bindings records that a binding exists.
+
+       `:if` rather than always rendering it, because the button is a flex
+       container with a gap: an empty span is still a flex item and would add a
+       trailing gap to every button that uses the slot. x-cloak while the
+       server has no label, so that gap is not visible for the frame before
+       hydration - the same pairing the spinner above uses. --}}
+    <span
+    :if="labelText()"
+    @if(!hasLabel)x-cloak@endif
+    :text="labelText()"
+  >
+      {{ label }}
+    </span>
+    @if(rightIcon)
+    <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
+      {!! rightIcon !!}
+    </span>
+    @endif
+  </button>
 
 === Extracted Classes ===
+-
+a
+above
+add
+always
+an
+and
+because
+before
 bg-blue-500
 bg-red-500
 bg-surface-sunken
 border-2
 border-blue-500
+button
 buttonClasses
 click
+container
 dark:bg-blue-600
 dark:bg-red-600
 dark:border-blue-400
@@ -146,12 +193,18 @@ disabled:cursor-not-allowed
 disabled:opacity-50
 disabled:pointer-events-none
 duration-200
+empty
+every
 false
+flex
 focus:outline-none
 focus:ring-2
 focus:ring-blue-500
 focus:ring-offset-2
 font-semibold
+for
+frame
+gap
 gap-1
 gap-2
 gap-3
@@ -164,19 +217,27 @@ h-5
 h-6
 h-7
 h-8
+has
 hover:bg-blue-50
 hover:bg-blue-600
 hover:bg-neutral-300
 hover:bg-red-600
 hover:bg-surface-raised
 hover:shadow-lg
+hydration
 iconClasses
 inline-flex
+is
+item
 items-center
 justify-center
+label
 loading
+no
+not
 opacity-25
 opacity-75
+pairing
 px-3
 px-4
 px-6
@@ -185,9 +246,17 @@ py-1
 py-2
 py-3
 py-4
+rather
+rendering
 rounded-md
+same
+server
 shadow-md
+so
+span
+spinner
 spinnerClasses
+still
 text-base
 text-blue-500
 text-fg-strong
@@ -197,13 +266,24 @@ text-sm
 text-white
 text-xl
 text-xs
+than
+that
+the
+to
+trailing
 transition-all
 true
+uses
+visible
 w-3
 w-4
 w-5
 w-6
 w-7
 w-full
+while
+with
+would
+x-cloak
 {{
 }}
