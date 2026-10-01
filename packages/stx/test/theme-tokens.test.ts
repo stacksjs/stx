@@ -34,6 +34,21 @@ import { SEMANTIC_TOKENS, semanticColors, semanticTokenCSS, semanticTokenNames, 
 
 const PALETTE = {
   /*
+   * COMPLETE, deliberately: every family and step any role names.
+   *
+   * It was not, twice, and both times a test went green while checking
+   * nothing. Yellow stopped at 500, so `warning` moving to 600/700 dropped it
+   * out of the emitted CSS unnoticed; cyan and purple were absent entirely, so
+   * `info` and `secondary` and all ten of their siblings were never emitted
+   * either. `semanticColors` drops a role the palette cannot back - which is
+   * correct behaviour and exactly what makes an incomplete fixture silent.
+   *
+   * `declares every role for both modes` now asserts the fixture backs each
+   * role before checking it, so the next missing family fails here by name
+   * rather than quietly shrinking the test.
+   */
+
+  /*
    * The neutral roles name the `neutral` family, not `gray`: achromatic rather
    * than blue-tinted, which is a house choice about saturation and changes no
    * lightness (stacksjs/stx#1993). `gray` stays in the fixture because the
@@ -42,10 +57,12 @@ const PALETTE = {
   neutral: { 50: '#fafafa', 100: '#f5f5f5', 200: '#e5e5e5', 300: '#d4d4d4', 400: '#a3a3a3', 500: '#737373', 600: '#525252', 700: '#404040', 800: '#262626', 900: '#171717' },
   gray: { 50: '#f9fafb', 100: '#f3f4f6', 200: '#e5e7eb', 300: '#d1d5db', 400: '#9ca3af', 500: '#6b7280', 600: '#4b5563', 700: '#374151', 800: '#1f2937', 900: '#111827' },
   indigo: { 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5' },
-  blue: { 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb' },
-  red: { 400: '#f87171', 500: '#ef4444', 600: '#dc2626' },
-  green: { 400: '#4ade80', 500: '#22c55e', 600: '#16a34a' },
-  yellow: { 400: '#facc15', 500: '#eab308', 600: '#ca8a04', 700: '#a16207' },
+  blue: { 100: '#dbeafe', 200: '#bfdbfe', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a' },
+  cyan: { 100: '#cffafe', 200: '#a5f3fc', 400: '#22d3ee', 500: '#06b6d4', 600: '#0891b2', 700: '#0e7490', 800: '#155e75', 900: '#164e63' },
+  purple: { 100: '#f3e8ff', 200: '#e9d5ff', 400: '#c084fc', 500: '#a855f7', 600: '#9333ea', 700: '#7e22ce', 800: '#6b21a8', 900: '#581c87' },
+  red: { 100: '#fee2e2', 200: '#fecaca', 300: '#fca5a5', 400: '#f87171', 500: '#ef4444', 600: '#dc2626', 700: '#b91c1c', 800: '#991b1b', 900: '#7f1d1d' },
+  green: { 100: '#dcfce7', 200: '#bbf7d0', 400: '#4ade80', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 800: '#166534', 900: '#14532d' },
+  yellow: { 100: '#fef9c3', 200: '#fef08a', 400: '#facc15', 500: '#eab308', 600: '#ca8a04', 700: '#a16207', 800: '#854d0e', 900: '#713f12' },
   white: '#fff',
 }
 
@@ -108,14 +125,52 @@ describe('semanticColors', () => {
 })
 
 describe('semanticTokenCSS', () => {
+  /*
+   * This checked one role - `fg-muted` - while claiming in its name to check
+   * every one, and the gap was not academic. The fixture carried yellow only at
+   * 400 and 500, so when `warning` moved to 600/700 the role vanished from BOTH
+   * the `:root` and `.dark` blocks and this test stayed green. A role missing
+   * from the emitted CSS is the one failure that cannot be caught downstream:
+   * the utility still compiles, to a `var()` whose fallback quietly becomes the
+   * only value, so light mode looks right and dark mode never changes.
+   *
+   * It now does what it says, which means a new role whose family the fixture
+   * cannot back fails here rather than opting itself out of the check.
+   */
   it('declares every role for both modes', () => {
     const css = semanticTokenCSS(PALETTE)
+    const dark = css.slice(css.indexOf('.dark {'))
+    const colors = semanticColors(PALETTE)
 
     expect(css).toContain(':root {')
     expect(css).toContain('.dark {')
-    expect(css).toContain('--stx-fg-muted: #525252;')
-    // The dark block is what makes one class correct in both modes.
-    expect(css.slice(css.indexOf('.dark {'))).toContain('--stx-fg-muted: #a3a3a3;')
+
+    for (const role of Object.keys(SEMANTIC_TOKENS)) {
+      // The fixture has to back it in the first place, or the loop below would
+      // pass by finding nothing to check.
+      expect(colors[role], `fixture palette cannot back role ${role}`).toBeDefined()
+      expect(css, `${role} missing from :root`).toContain(`${tokenVariable(role)}:`)
+      expect(dark, `${role} missing from .dark`).toContain(`${tokenVariable(role)}:`)
+    }
+  })
+
+  it('gives a role a different value in each mode, or no dark entry at all', () => {
+    /*
+     * A dark block that repeats the light value is a role that does not respond
+     * to dark mode - which is what four of the neutral HOVER pairs amounted to
+     * before they became roles (stacksjs/stx#1993). `-ink` is the deliberate
+     * exception: white text on a fill stays white.
+     */
+    const css = semanticTokenCSS(PALETTE)
+    const dark = css.slice(css.indexOf('.dark {'))
+    const read = (block: string, role: string) =>
+      new RegExp(`${tokenVariable(role)}: ([^;]+);`).exec(block)?.[1]
+
+    for (const role of Object.keys(SEMANTIC_TOKENS)) {
+      if (role.endsWith('-ink')) continue
+
+      expect(read(dark, role), `${role} does not change in dark mode`).not.toBe(read(css, role))
+    }
   })
 
   it('uses the .dark class, matching how dark: variants compile', () => {
