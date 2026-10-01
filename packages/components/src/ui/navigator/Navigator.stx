@@ -40,7 +40,7 @@ function getItemClasses(item) {
   }
   else if (variant === 'pills') {
     cls += isActiveItem
-      ? ' bg-blue-600 text-white font-medium rounded-full'
+      ? ' bg-accent-solid text-accent-ink font-medium rounded-full'
       : 'text-fg-strong hover:bg-surface-hover rounded-full'
   }
   else if (variant === 'underline') {

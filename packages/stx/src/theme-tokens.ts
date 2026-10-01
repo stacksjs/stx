@@ -245,10 +245,35 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
    * around 1.9:1, which fails at any text size.
    */
   'accent-ink': { light: 'white', dark: 'white', description: 'Text on a primary fill' },
-  'info-ink': { light: 'white', dark: 'white', description: 'Text on an informational fill' },
+  'info-ink': { light: 'neutral-900', dark: 'neutral-900', description: 'Text on an informational fill' },
   'danger-ink': { light: 'white', dark: 'white', description: 'Text on a destructive fill' },
-  'success-ink': { light: 'white', dark: 'white', description: 'Text on a confirmation fill' },
+  'success-ink': { light: 'neutral-900', dark: 'neutral-900', description: 'Text on a confirmation fill' },
   'warning-ink': { light: 'neutral-900', dark: 'neutral-900', description: 'Text on a caution fill' },
+  /*
+   * Three of the six inks are dark, and the reason is measured rather than
+   * chosen. White on the light fill is, by WCAG:
+   *
+   *   yellow-500  1.90:1      cyan-500  2.36:1      green-500  2.22:1
+   *
+   * all far below the 3:1 floor for any text at any size, so a white label on
+   * an informational or confirmation fill was unreadable - the same defect
+   * `warning-ink` was already carrying a dark value for. neutral-900 on those
+   * three reads 9.36, 7.58 and 8.06 in light mode and 6.11, 4.97 and 5.57 in
+   * dark, so one value serves both modes.
+   *
+   * Neither `info-ink` nor `success-ink` had a single use in the library when
+   * this changed, which is why it costs nothing on screen: the fills appear
+   * only as spinner dots and progress bars, with no text on them. The fix is
+   * for the app that reaches for the role next.
+   *
+   * accent, secondary and danger keep white and are NOT fixed here. They read
+   * 3.76, 4.12 and 3.82 in light mode - above the 3:1 graphics floor, below
+   * 4.5:1 for small text - and they are blue-500, purple-500 and red-500,
+   * which is what every primary and destructive button in the library already
+   * paints. Darkening them is a change to the house hues, not a migration, so
+   * it is measured, pinned and reported rather than decided here
+   * (stacksjs/stx#1993).
+   */
 
   /*
    * A tinted fill and its text — a badge, a status chip, an inline callout.

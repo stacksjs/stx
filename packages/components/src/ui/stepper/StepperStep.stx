@@ -32,9 +32,9 @@ function onClick() {
   <button
     type="button"
     @click="onClick()"
-    class="flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-panel p-2"
+    class="flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-solid rounded-panel p-2"
   >
-    <div class="{{ isComplete ? 'bg-accent-solid' : isCurrent ? 'bg-accent-solid ring-4 ring-blue-200 dark:ring-blue-800' : 'bg-neutral-300 dark:bg-neutral-600' }} w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold transition-all">
+    <div class="{{ isComplete ? 'bg-accent-solid text-accent-ink' : isCurrent ? 'bg-accent-solid text-accent-ink ring-4 ring-accent-soft' : 'bg-surface-sunken text-fg-strong' }} w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all">
       @if(isComplete)
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />

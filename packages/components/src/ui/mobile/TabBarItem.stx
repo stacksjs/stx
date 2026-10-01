@@ -69,7 +69,7 @@ export const itemClasses = `
         survive the label being two words wide, and anchoring it to the glyph
         keeps every tab's badge in the same place.
       --}}
-      <span class="absolute -right-2 -top-1 min-w-[16px] rounded-full bg-danger px-1 text-[10px] font-semibold leading-4 text-white">
+      <span class="absolute -right-2 -top-1 min-w-[16px] rounded-full bg-danger px-1 text-[10px] font-semibold leading-4 text-danger-ink">
         {{ badge }}
       </span>
     @endif

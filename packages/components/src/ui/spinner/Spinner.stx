@@ -21,7 +21,7 @@ const colorClasses = {
   success: 'text-success',
   warning: 'text-warning-solid',
   danger: 'text-danger',
-  info: 'text-cyan-600 dark:text-cyan-500',
+  info: 'text-info',
   white: 'text-white',
   gray: 'text-fg-muted',
 }
@@ -45,9 +45,9 @@ const dotsColorClasses = {
   success: 'bg-success-solid',
   warning: 'bg-warning-solid',
   danger: 'bg-danger-solid',
-  info: 'bg-cyan-600 dark:bg-cyan-500',
+  info: 'bg-info-solid',
   white: 'bg-white',
-  gray: 'bg-neutral-600 dark:bg-neutral-400',
+  gray: 'bg-fg-muted',
 }
 
 export const dotClasses = `${dotsSizeClasses[size] || dotsSizeClasses.md} ${dotsColorClasses[color] || dotsColorClasses.primary} rounded-full`.trim()
