@@ -605,6 +605,31 @@ const props = defineProps<Props>()`))
     expect(Object.keys(arrow)).toEqual(['make'])
   })
 
+  it('allows a declared property and a defineProps destructure of the same name', async () => {
+    // The sharp edge in #2009: declaring the surface in the config emits a
+    // `const { activity } = this._props()` prologue, the component's own
+    // destructure declared it a second time, and the build failed with
+    // `failed to compile render ("activity" has already been declared)` on a
+    // component that compiled fine with no properties declared. Removing the
+    // declaration is the opposite of where anyone looks.
+    //
+    // Reading the declaration means removing it, so there is now one prologue
+    // and nothing to collide with.
+    const { input, output } = await workspace()
+    await fixture(input, 'Collide.stx', `<script component>{"tag":"collide-widget","properties":{"activity":{"type":"string","default":"","reflect":true}}}</script>
+<script server>
+const { activity = '' } = defineProps<{ activity?: string }>()
+const shown = activity.toUpperCase()
+</script>
+<template><div>{{ shown }}</div></template>
+`)
+    await buildComponentLibrary({ inputDir: input, outputDir: output, bundle: false })
+    const module = await readFile(path.join(output, 'collide-widget.js'), 'utf8')
+    expect(module.match(/_props\(\)/g)).toHaveLength(1)
+    expect(module).toContain('toUpperCase')
+    expect(module).not.toContain('defineProps')
+  })
+
   it('leaves the declarations the component derives alone', async () => {
     const { input, output } = await workspace()
     await fixture(input, 'Widget.stx', `<script component>{"tag":"derives-widget"}</script>
