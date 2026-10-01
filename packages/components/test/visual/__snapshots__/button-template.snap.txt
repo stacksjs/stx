@@ -58,9 +58,9 @@ export const className = $props.className || ''
  */
 const variantClasses = {
   primary: 'bg-accent-solid hover:bg-accent-solid-hover text-accent-ink shadow-md hover:shadow-lg',
-  secondary: 'bg-surface-sunken hover:bg-neutral-300 text-fg dark:hover:bg-neutral-600',
+  secondary: 'bg-surface-sunken hover:bg-surface-sunken-hover text-fg',
   outline: 'border-2 border-accent text-accent hover:bg-accent-soft',
-  ghost: 'hover:bg-surface-raised text-fg-strong',
+  ghost: 'hover:bg-surface-hover text-fg-strong',
   danger: 'bg-danger-solid hover:bg-danger-solid-hover text-danger-ink shadow-md hover:shadow-lg',
 }
 
@@ -228,7 +228,6 @@ button
 buttonClasses
 click
 container
-dark:hover:bg-neutral-600
 disabled
 disabled:cursor-not-allowed
 disabled:opacity-50
@@ -260,8 +259,8 @@ has
 hover:bg-accent-soft
 hover:bg-accent-solid-hover
 hover:bg-danger-solid-hover
-hover:bg-neutral-300
-hover:bg-surface-raised
+hover:bg-surface-hover
+hover:bg-surface-sunken-hover
 hover:shadow-lg
 hydration
 iconClasses

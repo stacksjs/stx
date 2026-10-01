@@ -20,7 +20,7 @@ export const chipClasses = `
   text-sm font-medium transition-colors
   ${active
     ? 'border-transparent bg-fg text-surface'
-    : 'border-line bg-surface-raised text-fg hover:bg-surface-sunken'}
+    : 'border-line bg-surface-raised text-fg hover:bg-surface-raised-hover'}
 `.replace(/\s+/g, ' ').trim()
 
 /*

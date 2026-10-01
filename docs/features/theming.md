@@ -47,6 +47,10 @@ config file and no rebuild:
 | `surface-sunken` | `bg-surface-sunken` | neutral-200 | neutral-700 |
 | `panel` | `bg-panel` | white | neutral-800 |
 | `field` | `bg-field` | white | neutral-700 |
+| `surface-hover` | `hover:bg-surface-hover` | neutral-100 | neutral-700 |
+| `surface-raised-hover` | `hover:bg-surface-raised-hover` | neutral-200 | neutral-600 |
+| `surface-sunken-hover` | `hover:bg-surface-sunken-hover` | neutral-300 | neutral-600 |
+| `field-hover` | `hover:bg-field-hover` | neutral-50 | neutral-600 |
 | `line` | `border-line`, `divide-line` | neutral-200 | neutral-700 |
 | `line-strong` | `border-line-strong`, `ring-line-strong` | neutral-300 | neutral-600 |
 | `accent` | `text-accent`, `ring-accent` | blue-600 | blue-400 |
@@ -111,7 +115,7 @@ roles, so a themed fill brings its hover state and its label with it:
 | `<status>-soft` | `bg-accent-soft` | 100 | 900 |
 | `<status>-soft-ink` | `text-accent-soft-ink` | 800 | 200 |
 
-¹ except `warning-ink`, which is `gray-900`: white on a yellow fill is about
+¹ except `warning-ink`, which is `neutral-900`: white on a yellow fill is about
 1.9:1, which fails at any text size.
 
 Why each exists:
@@ -138,12 +142,46 @@ text-accent-ink` with no `dark:` anywhere, and one variable re-themes it:
 ```
 
 `panel` and `field` are both white in light mode, and that is the point: the
-vocabulary had no name for a white surface — `surface` is gray-50 — so every
+vocabulary had no name for a white surface — `surface` is neutral-50 — so every
 card, menu, dialog and form control in the library stayed a literal
 `bg-white dark:bg-neutral-800` and ignored your theme. They differ in dark mode
-because the library draws a real distinction: a panel sits at gray-800 and a
-control inside it at gray-700, one step lighter, or the input disappears into
-the panel it is in.
+because the library draws a real distinction: a panel sits at neutral-800 and a
+control inside it at neutral-700, one step lighter, or the input disappears
+into the panel it is in.
+
+### A hovered neutral surface
+
+Each neutral surface has a `-hover` partner, for the same reason the statuses
+do: `hover:bg-surface` on a `bg-surface` element repaints the same colour, so
+the hover has to be its own role.
+
+| Element | Base | Hover |
+|---|---|---|
+| A row, an accordion header, a nav item, a menu entry | `bg-panel` or nothing | `hover:bg-surface-hover` |
+| A chip or card that is already raised | `bg-surface-raised` | `hover:bg-surface-raised-hover` |
+| A control on a well or track | `bg-surface-sunken` | `hover:bg-surface-sunken-hover` |
+| A bordered input or secondary button | `bg-field` | `hover:bg-field-hover` |
+
+There is no `panel-hover`: `surface-hover` is neutral-100/neutral-700, which
+reads against white, neutral-50, neutral-800 and neutral-900 alike, so a
+transparent row works wherever the host puts it.
+
+Before these existed, thirteen interactive surfaces each invented their own
+pair, and four invented one that **cannot be seen**:
+
+```html
+<!-- neutral-800 -> neutral-800 in dark mode: no hover at all -->
+<div class="bg-panel hover:bg-surface">
+<!-- neutral-700 -> neutral-700 -->
+<div class="bg-surface-raised hover:bg-surface-sunken">
+```
+
+`surface` shares a dark value with `panel`, and `surface-raised` with
+`surface-sunken`. Both class strings read correctly and both highlight in light
+mode, which is why they survived review. Each pair in the table above differs
+from its base in *both* modes, and that relationship — not any particular shade
+— is what `role-token-coverage.test.ts` asserts, so re-pointing one of these
+variables cannot reintroduce an invisible hover.
 
 ### Why `neutral` and not `gray`
 
@@ -337,17 +375,25 @@ Good for one-offs. Not a theme.
 
 ## What is not migrated
 
-Roughly 270 of the library's ~890 palette-shade uses still name a shade
-directly. Three cases were deliberately left alone, because migrating them would
-have changed appearance rather than preserved it:
+174 of the library's ~890 palette-shade uses still name a shade directly, in 40
+of the 102 components. Three cases are deliberately left alone, because
+migrating them would change appearance rather than preserve it:
 
 - **A shade with no `dark:` twin.** Turning it into a token would *add*
   dark-mode behaviour it never had.
 - **A pair whose dark twin is a different hue** — `text-neutral-900
   dark:text-blue-400`. That is a deliberate colour, not a shade of one role.
-- **Hover states on solid fills.** A primary button darkens on hover in both
-  modes, while the role token's dark value lightens. Folding them together made
-  hovering a dark-mode button turn it paler than its resting state.
+- **A surface that is dark in both modes.** CodeBlock's copy chip floats over
+  highlighted code, whose background comes from the syntax theme rather than
+  from a utility, so it is `bg-neutral-800 hover:bg-neutral-700` with no `dark:`
+  at all. A role whose light value is white would break it, and an always-dark
+  surface role for one call site would be worse than naming the shade — the
+  same call as Switch's off state.
+
+Hover states on solid fills *were* on this list, on the reasoning that a
+primary button darkens on hover in both modes while a role token's dark value
+lightens. That is true of the text roles and is exactly why `-solid-hover`
+exists as its own role; nothing is left out on those grounds.
 
 Where a component's pairing was already the dominant one, the migration is
 appearance-preserving. 43 occurrences used a one-step-off pairing (say

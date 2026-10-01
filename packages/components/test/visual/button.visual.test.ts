@@ -26,10 +26,28 @@ describe('Button Visual Regression', () => {
   })
 
   describe('Dark Mode Support', () => {
-    it('should have dark mode classes', async () => {
+    /*
+     * This asserted `darkClasses.length > 0` - that the button carried at
+     * least one `dark:` variant. Button now carries NONE, and that is the
+     * goal rather than a regression: every colour it paints comes from a role
+     * token, whose `.dark` block supplies the dark value, so there is nothing
+     * left for a variant to override (stacksjs/stx#1993).
+     *
+     * A `dark:` variant was in fact the thing that made the library
+     * unthemeable. `dark:bg-neutral-600` is a second hard-coded shade that an
+     * app cannot redirect, and it wins over whatever `bg-<role>` resolves to,
+     * so a themed app got its colour in light mode and Tailwind's in dark.
+     *
+     * So the property is "every painted colour is dark-mode aware", and a role
+     * token satisfies it the same way a variant does. 56 of the 102 components
+     * now carry no `dark:` at all.
+     */
+    it('is dark-mode aware without needing a single dark: variant', async () => {
       const result = await testDarkModeSupport(BUTTON_PATH, 'button')
+
       expect(result.hasDarkModeClasses).toBe(true)
-      expect(result.darkClasses.length).toBeGreaterThan(0)
+      expect(result.tokenClasses.length).toBeGreaterThan(0)
+      expect(result.darkClasses).toEqual([])
     })
 
     /*
@@ -61,8 +79,12 @@ describe('Button Visual Regression', () => {
       expect(SEMANTIC_TOKENS['danger-solid']).toMatchObject({ light: 'red-500', dark: 'red-600' })
 
       // The neutral surfaces moved onto role tokens, which carry their dark
-      // value through `--stx-*` rather than a variant.
-      for (const expected of ['bg-surface-sunken', 'hover:bg-surface-raised'])
+      // value through `--stx-*` rather than a variant - the hovers included.
+      // `hover:bg-surface-raised` was the ghost variant's highlight and
+      // resolves to the same two shades as `surface-hover`; the rename is what
+      // let the secondary variant drop its last `dark:` twin, since
+      // `surface-sunken-hover` holds both halves of the pair it spelled out.
+      for (const expected of ['bg-surface-sunken', 'hover:bg-surface-sunken-hover', 'hover:bg-surface-hover'])
         expect(result.tokenClasses).toContain(expected)
     })
   })

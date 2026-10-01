@@ -14,7 +14,7 @@ export const containerClasses = `border border-line rounded-panel overflow-hidde
 export const headerClasses = `bg-surface border-b border-line flex`.trim()
 export const headerCellClasses = `px-6 py-3 text-left text-xs font-medium text-fg-soft uppercase tracking-wider`.trim()
 export const bodyClasses = `overflow-auto bg-white dark:bg-neutral-900`.trim()
-export const rowClasses = `absolute left-0 right-0 flex border-b border-line ${hoverable ? 'hover:bg-surface' : ''}`.trim()
+export const rowClasses = `absolute left-0 right-0 flex border-b border-line ${hoverable ? 'hover:bg-surface-hover' : ''}`.trim()
 export const cellClasses = `px-6 py-4 text-sm text-fg`.trim()
 </script>
 

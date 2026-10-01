@@ -2,7 +2,7 @@
 export const className = $props.className || ''
 export const hoverable = $props.hoverable !== false
 
-const hoverClasses = hoverable ? 'hover:bg-surface' : ''
+const hoverClasses = hoverable ? 'hover:bg-surface-hover' : ''
 const rowClasses = `${hoverClasses} ${className}`.trim()
 </script>
 

@@ -48,9 +48,9 @@ export const className = $props.className || ''
  */
 const variantClasses = {
   primary: 'bg-accent-solid hover:bg-accent-solid-hover text-accent-ink shadow-md hover:shadow-lg',
-  secondary: 'bg-surface-sunken hover:bg-neutral-300 text-fg dark:hover:bg-neutral-600',
+  secondary: 'bg-surface-sunken hover:bg-surface-sunken-hover text-fg',
   outline: 'border-2 border-accent text-accent hover:bg-accent-soft',
-  ghost: 'hover:bg-surface-raised text-fg-strong',
+  ghost: 'hover:bg-surface-hover text-fg-strong',
   danger: 'bg-danger-solid hover:bg-danger-solid-hover text-danger-ink shadow-md hover:shadow-lg',
 }
 

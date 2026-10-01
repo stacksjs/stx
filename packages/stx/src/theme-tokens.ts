@@ -111,6 +111,36 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
   'panel': { light: 'white', dark: 'neutral-800', description: 'Card, menu, dialog surface' },
   'field': { light: 'white', dark: 'neutral-700', description: 'Form control surface' },
 
+  /*
+   * A hovered neutral surface, which was the one state every component had to
+   * invent for itself (stacksjs/stx#1993).
+   *
+   * The coloured families each got a `-solid-hover` when the fills were
+   * migrated, because a fill and its hover have to move together. The neutrals
+   * did not, so thirteen interactive surfaces each picked their own pair and
+   * four of them picked one that cannot be seen:
+   *
+   *   `bg-panel hover:bg-surface`          neutral-800 -> neutral-800 in dark
+   *   `bg-surface-raised hover:bg-surface-sunken`  neutral-700 -> neutral-700
+   *
+   * Those are not subtle hovers, they are absent ones: `surface` and `panel`
+   * share a dark value, and so do `surface-raised` and `surface-sunken`. A row
+   * highlight that works in light mode and does nothing at all in dark is the
+   * kind of defect that survives review, because the class is there and the
+   * name reads correctly.
+   *
+   * So each neutral surface names its own hover, and every pair differs from
+   * its base in BOTH modes - which is the property the test asserts, rather
+   * than any particular shade. `surface-hover` also serves `panel` and a
+   * transparent row, since neutral-100/neutral-700 is visible against white,
+   * neutral-50, neutral-800 and neutral-900 alike; that is why there is no
+   * separate `panel-hover`.
+   */
+  'surface-hover': { light: 'neutral-100', dark: 'neutral-700', description: 'Row or item highlight on a page or panel' },
+  'surface-raised-hover': { light: 'neutral-200', dark: 'neutral-600', description: 'Raised surface, hovered' },
+  'surface-sunken-hover': { light: 'neutral-300', dark: 'neutral-600', description: 'Sunken surface, hovered' },
+  'field-hover': { light: 'neutral-50', dark: 'neutral-600', description: 'Form control surface, hovered' },
+
   // Edges — borders, rings and dividers share a role
   'line': { light: 'neutral-200', dark: 'neutral-700', description: 'Default border, divider' },
   'line-strong': { light: 'neutral-300', dark: 'neutral-600', description: 'Input border, focus ring track' },

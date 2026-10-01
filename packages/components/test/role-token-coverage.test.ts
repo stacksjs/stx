@@ -13,7 +13,7 @@
  * compile to a variable with a fallback, the solid/hover/ink triple is
  * coherent, and the migrated components' status colours go through them.
  */
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'bun:test'
 import { SEMANTIC_TOKENS, SHAPE_TOKENS, semanticColors, semanticTokenCSS, shapeVariable, tokenVariable } from '../../stx/src/theme-tokens'
@@ -386,5 +386,134 @@ describe('no variant is left as the unthemeable one', () => {
 
     expect(sw).toContain('bg-accent-solid')
     expect(sw).toMatch(/bg-neutral-\d{3}/)
+  })
+})
+
+/**
+ * A hovered neutral surface is a role, and the role is visible in both modes.
+ *
+ * The coloured families got a `-solid-hover` when the fills were migrated,
+ * because a fill and its hover have to move together. The neutrals did not, so
+ * thirteen interactive surfaces each invented their own pair - and four of them
+ * invented one that cannot be seen (stacksjs/stx#1993):
+ *
+ *   `bg-panel hover:bg-surface`                  neutral-800 -> neutral-800
+ *   `bg-surface-raised hover:bg-surface-sunken`  neutral-700 -> neutral-700
+ *
+ * `surface` shares a dark value with `panel`, and `surface-raised` with
+ * `surface-sunken`, so those rows highlighted in light mode and did nothing at
+ * all in dark. That defect survives review because the class is present and
+ * its name reads correctly; only resolving both sides shows it.
+ *
+ * So the assertions below are about the RELATIONSHIP rather than any shade: a
+ * hover must differ from the surface it hovers, in both modes, and must move
+ * toward contrast rather than away from it.
+ */
+describe('a hovered neutral surface is a role (#1993)', () => {
+  /** Each `-hover` role and the surface it is the hover for. */
+  const HOVER_PAIRS = [
+    ['surface', 'surface-hover'],
+    ['surface-raised', 'surface-raised-hover'],
+    ['surface-sunken', 'surface-sunken-hover'],
+    ['field', 'field-hover'],
+  ] as const
+
+  /** `white` is the top of the neutral ladder, below `neutral-50`. */
+  const step = (ref: string) => (ref === 'white' ? 0 : Number(ref.split('-').pop()))
+
+  it('gives every neutral surface a hover partner', () => {
+    for (const [base, hover] of HOVER_PAIRS) {
+      expect(SEMANTIC_TOKENS[base], `missing surface ${base}`).toBeDefined()
+      expect(SEMANTIC_TOKENS[hover], `missing hover ${hover}`).toBeDefined()
+    }
+  })
+
+  /*
+   * The one that matters. Before the roles existed, four call sites paired two
+   * surfaces whose DARK values are equal, so the hover was absent in dark mode
+   * while looking entirely correct in the source.
+   */
+  it('keeps each hover distinct from its surface, in both modes', () => {
+    for (const [base, hover] of HOVER_PAIRS) {
+      const surface = SEMANTIC_TOKENS[base]
+      const hovered = SEMANTIC_TOKENS[hover]
+
+      expect(hovered.light, `${hover} is invisible on ${base} in light mode`).not.toBe(surface.light)
+      expect(hovered.dark, `${hover} is invisible on ${base} in dark mode`).not.toBe(surface.dark)
+    }
+  })
+
+  /*
+   * Direction, not just difference: light mode darkens toward the cursor and
+   * dark mode lightens. A hover that moved the other way would pass the test
+   * above while reading as the surface receding.
+   */
+  it('moves each hover toward contrast rather than away', () => {
+    for (const [base, hover] of HOVER_PAIRS) {
+      const surface = SEMANTIC_TOKENS[base]
+      const hovered = SEMANTIC_TOKENS[hover]
+
+      expect(step(hovered.light), `${hover} lightens in light mode`).toBeGreaterThan(step(surface.light))
+      expect(step(hovered.dark), `${hover} darkens in dark mode`).toBeLessThan(step(surface.dark))
+    }
+  })
+
+  /*
+   * `surface-hover` doubles as the hover for `panel` and for a transparent row,
+   * which is why there is no `panel-hover`: a table row, an accordion header
+   * and a nav item are painted on whatever the host put them on, so their
+   * hover has to read against every neutral the library uses as a page or
+   * panel background.
+   */
+  it('makes the row highlight visible on every neutral it can land on', () => {
+    const hover = SEMANTIC_TOKENS['surface-hover']
+
+    for (const base of ['panel', 'surface'] as const) {
+      expect(hover.light).not.toBe(SEMANTIC_TOKENS[base].light)
+      expect(hover.dark).not.toBe(SEMANTIC_TOKENS[base].dark)
+    }
+    // VirtualTable's body, the darkest neutral a row sits on.
+    expect(hover.dark).not.toBe('neutral-900')
+  })
+
+  /*
+   * CodeBlock's copy chip is the documented exception. It floats over
+   * highlighted code, whose background comes from the syntax theme rather than
+   * from a utility here, so it is deliberately dark in BOTH modes - the same
+   * call as Switch's off state. A role whose light value is white would break
+   * it, and inventing an always-dark surface role for one call site would be
+   * worse than naming the shade.
+   */
+  it('leaves no other component naming a neutral shade on hover', () => {
+    const SRC = path.join(import.meta.dir, '..', 'src')
+    const walk = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap(e =>
+      e.isDirectory() ? walk(path.join(dir, e.name)) : (e.name.endsWith('.stx') ? [path.join(dir, e.name)] : []),
+    )
+    const offenders: string[] = []
+
+    for (const file of walk(SRC)) {
+      const hits = code(readFileSync(file, 'utf-8'))
+        .match(/\b(?:[a-z-]+:)*hover:bg-(?:neutral|gray|zinc|slate|stone)-\d{2,3}\b/g) ?? []
+
+      if (hits.length) offenders.push(`${path.relative(SRC, file)}: ${hits.join(' ')}`)
+    }
+
+    expect(offenders).toEqual(['components/CodeBlock.stx: hover:bg-neutral-700'])
+  })
+
+  /*
+   * An accent fill hovering to a different hue. SubscriptionCheckout painted
+   * `bg-accent-solid` and then `hover:bg-indigo-700`, left behind when accent
+   * moved from indigo to blue - so the one state a themed app cannot inspect
+   * jumped hue on the way in. Calendar's selected day had the same shape, and
+   * its dark hover was blue-600 on a blue-600 fill: absent.
+   */
+  it('hovers a solid fill through the fill\'s own hover role', () => {
+    for (const rel of ['payment/SubscriptionCheckout.stx', 'calendar/Calendar.stx']) {
+      const source = code(readFileSync(path.join(UI, rel), 'utf-8'))
+
+      expect(source, rel).not.toMatch(/hover:bg-(?:indigo|blue)-\d{2,3}/)
+      expect(source, rel).toContain('hover:bg-accent-solid-hover')
+    }
   })
 })

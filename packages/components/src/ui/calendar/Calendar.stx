@@ -13,7 +13,7 @@ const baseClasses = 'bg-panel rounded-panel shadow-lg p-4 w-full max-w-sm'
 export const calendarClasses = `${baseClasses} ${className}`.trim()
 export const headerClasses = 'flex items-center justify-between mb-4'
 export const monthYearClasses = 'text-lg font-semibold text-fg'
-export const buttonClasses = 'p-2 hover:bg-surface-raised rounded-control transition-colors'
+export const buttonClasses = 'p-2 hover:bg-surface-hover rounded-control transition-colors'
 export const weekdaysClasses = 'grid grid-cols-7 gap-1 mb-2'
 export const weekdayClasses = 'text-center text-xs font-medium text-fg-muted py-2'
 export const daysGridClasses = 'grid grid-cols-7 gap-1'
@@ -122,8 +122,8 @@ function dayClasses(day) {
   const disabled = isDisabled(day.date)
   let cls = base
   cls += day.isCurrentMonth ? 'text-fg' : 'text-fg-subtle'
-  cls += disabled ? ' opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-surface-raised'
-  if (isSelected) cls += 'bg-accent-solid text-white hover:bg-blue-700 dark:hover:bg-blue-600'
+  cls += disabled ? ' opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-surface-hover'
+  if (isSelected) cls += 'bg-accent-solid text-accent-ink hover:bg-accent-solid-hover'
   if (isTodayDate && highlightToday && !isSelected) cls += 'border-2 border-accent'
   return cls
 }
@@ -179,7 +179,7 @@ defineExpose({ selectedDate, currentMonth, selectDate })
     <div class="mt-4 flex justify-center">
       <button
         type="button"
-        class="px-4 py-2 text-sm font-medium text-accent hover:bg-blue-50 dark:hover:bg-neutral-700 rounded-control transition-colors"
+        class="px-4 py-2 text-sm font-medium text-accent hover:bg-surface-hover rounded-control transition-colors"
         @click="goToToday()"
       >
         Today
