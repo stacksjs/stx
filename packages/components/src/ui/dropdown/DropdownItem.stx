@@ -1,7 +1,7 @@
 <script server>
 export const className = $props.className || ''
 export const as = $props.as || 'div'
-export const disabled = $props.disabled || false
+export const disabled = $bool($props.disabled)
 export const value = $props.value
 
 const baseClasses = 'group flex w-full items-center px-2 py-2 text-sm transition-colors text-fg hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600'

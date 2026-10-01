@@ -24,7 +24,7 @@ export const trailing = $props.trailing || ''
 /** Inline SVG for the leading column. */
 export const icon = $props.icon || ''
 /** Draws the unread dot in the leading column, under the icon. */
-export const unread = $props.unread || false
+export const unread = $bool($props.unread)
 export const href = $props.href || ''
 export const className = $props.className || ''
 

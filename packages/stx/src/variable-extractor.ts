@@ -28,7 +28,7 @@ import { getSharedTranspiler } from './utils'
  * created. The failure needed a real install to appear.
  */
 export const STX_ENGINE_BINDING_NAMES = [
-  'module', 'exports', 'require', 'props', '$props', 'defineProps', 'withDefaults',
+  'module', 'exports', 'require', 'props', '$props', '$bool', 'defineProps', 'withDefaults',
   'defineClientPayload', 'useServerData', 'useRuntimeConfig', 'useServerRuntimeConfig',
   'state', 'derived', 'effect', 'batch', 'onMount', 'onDestroy',
   'definePageMeta', 'useRoute', 'useRouter', 'useHead', 'useSeoMeta',
@@ -617,6 +617,46 @@ export async function extractVariables(
     Object.defineProperty($props, key, { value, enumerable: true, configurable: true, writable: true })
   }
 
+  /*
+   * Read a prop as a boolean, the way an author means it.
+   *
+   * A prop written as a plain attribute arrives as a STRING, so
+   * `$props.disabled || false` leaves the string "false" - which is truthy. So
+   * `<Radio disabled="false">` was disabled, `<Video muted="false">` was muted,
+   * and `<Dialog open="false">` opened over the page and locked its scroll.
+   * 103 of the 104 boolean props in @stacksjs/components behaved that way, and
+   * nothing reported it: a prop that turns something ON when you ask for it OFF
+   * looks like the component ignoring the prop (stacksjs/stx#2006).
+   *
+   * HTML's own rule for `disabled="false"` is the opposite - any value, even
+   * "false", means present - but these are component props, not HTML
+   * attributes, and no author writing `open="false"` means open. Vue reaches
+   * the same answer through a declared Boolean prop type; stx has no declared
+   * types in a server script, so the coercion is asked for by name.
+   *
+   * `$bool(value)`           -> false when unset
+   * `$bool(value, true)`     -> the fallback when unset
+   *
+   * "" is true, because that is what a bare attribute (`<Button disabled>`)
+   * arrives as, and "0"/"off"/"no" are false because an author writing one
+   * means off. Anything that is not a string is judged by ordinary
+   * truthiness, so `:open="someExpr"` keeps whatever the expression produced.
+   */
+  // eslint-disable-next-line pickier/no-unused-vars
+  const $bool = (value: unknown, fallback = false): boolean => {
+    if (value === undefined || value === null)
+      return fallback
+    if (typeof value === 'string') {
+      const text = value.trim().toLowerCase()
+      if (text === '' || text === 'true' || text === '1' || text === 'on' || text === 'yes')
+        return true
+      if (text === 'false' || text === '0' || text === 'off' || text === 'no')
+        return false
+      return true
+    }
+    return Boolean(value)
+  }
+
   // `$props` is a callable, so any prop it does NOT carry falls through to
   // Function.prototype. That made an unpassed prop named after a function's own
   // property resolve to the function's internals instead of undefined:
@@ -1048,7 +1088,7 @@ catch {
     if (hostRuntimeConfig || /\buse(?:Server)?RuntimeConfig\b/.test(jsContent))
       await prepareRuntimeConfig(context, filePath, hostRuntimeConfig)
     const result = await withRuntimeConfig((context.__stx_runtime_config as ResolvedRuntimeConfig | undefined) ?? currentRuntimeConfig() ?? resolveRuntimeConfig(), () => withServerData(context, () => scriptFn(
-      module, exports, requireFn, propsObj, $props, defineProps, withDefaults,
+      module, exports, requireFn, propsObj, $props, $bool, defineProps, withDefaults,
       defineClientPayload, useServerData, useRuntimeConfig, useServerRuntimeConfig,
       state, derived, effect, batch, onMount, onDestroy,
       definePageMeta, useRoute, useRouter, useHead, useSeoMeta,

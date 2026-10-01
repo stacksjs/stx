@@ -2,7 +2,7 @@
 export const products = $props.products || []
 export const stripePublicKey = $props.stripePublicKey || ''
 export const apiUrl = $props.apiUrl || ''
-export const showRemoveProduct = $props.showRemoveProduct ?? true
+export const showRemoveProduct = $bool($props.showRemoveProduct, true)
 export const shipping = $props.shipping || 0
 export const taxes = $props.taxes || 0
 export const className = $props.className || ''

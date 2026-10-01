@@ -1,17 +1,17 @@
 <script server>
 export const value = $props.value || ''
 export const placeholder = $props.placeholder || ''
-export const disabled = $props.disabled || false
-export const readonly = $props.readonly || false
+export const disabled = $bool($props.disabled)
+export const readonly = $bool($props.readonly)
 export const rows = $props.rows || 4
-export const autoResize = $props.autoResize || false
+export const autoResize = $bool($props.autoResize)
 export const maxRows = $props.maxRows || 10
-export const error = $props.error || false
+export const error = $bool($props.error)
 export const label = $props.label || ''
 export const helperText = $props.helperText || ''
-export const required = $props.required || false
+export const required = $bool($props.required)
 export const maxLength = $props.maxLength
-export const showCount = $props.showCount || false
+export const showCount = $bool($props.showCount)
 export const resize = $props.resize || 'vertical'
 export const className = $props.className || ''
 

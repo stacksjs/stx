@@ -1,7 +1,7 @@
 <script server>
 export const to = $props.to || 'body'
-export const disabled = $props.disabled || false
-export const defer = $props.defer || false
+export const disabled = $bool($props.disabled)
+export const defer = $bool($props.defer)
 
 export const teleportId = $uid
 </script>

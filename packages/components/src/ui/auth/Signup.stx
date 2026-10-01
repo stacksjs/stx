@@ -1,6 +1,6 @@
 <script server>
 export const headingText = $props.headingText || 'Sign up for Stacks'
-export const showSocialSignup = $props.showSocialSignup ?? true
+export const showSocialSignup = $bool($props.showSocialSignup, true)
 export const className = $props.className || ''
 
 export const containerClasses = `min-h-full flex flex-col justify-center py-12 lg:px-8 sm:px-6 dark:bg-neutral-900 ${className}`.trim()

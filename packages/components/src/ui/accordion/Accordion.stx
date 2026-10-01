@@ -7,7 +7,7 @@
 //      content. Each AccordionItem renders its own header + content panel;
 //      this parent attaches click handlers and toggles content visibility.
 export const items = $props.items || []
-export const allowMultiple = $props.allowMultiple || false
+export const allowMultiple = $bool($props.allowMultiple)
 export const defaultOpen = $props.defaultOpen || []
 export const className = $props.className || ''
 

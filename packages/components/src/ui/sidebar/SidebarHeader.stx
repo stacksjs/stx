@@ -7,7 +7,7 @@ export const actions = $props.actions || [] // [{ id, icon, label }]
 export const title = $props.title || ''
 export const subtitle = $props.subtitle || ''
 export const logo = $props.logo || ''
-export const showSearch = $props.showSearch ?? false
+export const showSearch = $bool($props.showSearch)
 export const searchPlaceholder = $props.searchPlaceholder || 'Search'
 
 export const isMacos = theme === 'macos' || theme === 'tahoe' || theme === 'macos-tahoe' || theme === 'macos-latest'
@@ -77,7 +77,7 @@ export const windowControls = controlsProp
 export const autoWindowControls = windowControls === 'auto'
 export const showWindowControls = windowControls === 'draw' || autoWindowControls
 export const reserveWindowControls = windowControls === 'native' || autoWindowControls
-export const showNavigation = $props.showNavigation ?? false
+export const showNavigation = $bool($props.showNavigation)
 
 // A replica yields to the real thing — but only when it was the default that
 // put it there. An author who asked for 'draw' gets replicas everywhere.

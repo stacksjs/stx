@@ -9,8 +9,8 @@
 export const position = $props.position || 'top'
 export const delay = $props.delay || 0
 export const className = $props.className || ''
-export const show = $props.show || false
-export const disabled = $props.disabled || false
+export const show = $bool($props.show)
+export const disabled = $bool($props.disabled)
 
 const positionClasses = {
   top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',

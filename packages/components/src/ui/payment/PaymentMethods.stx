@@ -1,8 +1,8 @@
 <script server>
 export const paymentMethods = $props.paymentMethods || []
-export const isLoading = $props.isLoading || false
-export const showMakeDefault = $props.showMakeDefault ?? true
-export const showDelete = $props.showDelete ?? true
+export const isLoading = $bool($props.isLoading)
+export const showMakeDefault = $bool($props.showMakeDefault, true)
+export const showDelete = $bool($props.showDelete, true)
 export const className = $props.className || ''
 
 export const brandIcons = {

@@ -1,6 +1,6 @@
 <script server>
 export const target = $props.target || 'body'
-export const disabled = $props.disabled || false
+export const disabled = $bool($props.disabled)
 
 export const portalId = $uid
 </script>

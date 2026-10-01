@@ -9,9 +9,9 @@
 export const count = $props.count || 1
 export const width = $props.width || ''
 export const height = $props.height || ''
-export const circle = $props.circle || false
+export const circle = $bool($props.circle)
 export const className = $props.className || ''
-export const animate = $props.animate ?? true
+export const animate = $bool($props.animate, true)
 
 // Variant classes
 const variantClasses = {

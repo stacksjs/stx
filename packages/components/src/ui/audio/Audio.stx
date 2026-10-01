@@ -1,12 +1,12 @@
 <script server>
 export const src = $props.src || ''
-export const autoplay = $props.autoplay || false
-export const loop = $props.loop || false
-export const muted = $props.muted || false
-export const controls = $props.controls ?? true
+export const autoplay = $bool($props.autoplay)
+export const loop = $bool($props.loop)
+export const muted = $bool($props.muted)
+export const controls = $bool($props.controls, true)
 export const preload = $props.preload || 'metadata'
 export const className = $props.className || ''
-export const showWaveform = $props.showWaveform || false
+export const showWaveform = $bool($props.showWaveform)
 export const title = $props.title || ''
 
 export const containerClasses = `relative w-full ${className}`.trim()

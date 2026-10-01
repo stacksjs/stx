@@ -5,8 +5,8 @@ export const rowHeight = $props.rowHeight || 48
 export const height = $props.height || 600
 export const headerHeight = $props.headerHeight || 56
 export const overscan = $props.overscan || 5
-export const striped = $props.striped || false
-export const hoverable = $props.hoverable ?? true
+export const striped = $bool($props.striped)
+export const hoverable = $bool($props.hoverable, true)
 export const className = $props.className || ''
 
 export const totalHeight = data.length * rowHeight

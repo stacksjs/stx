@@ -1,6 +1,6 @@
 <script server>
-export const checked = $props.checked || false
-export const disabled = $props.disabled || false
+export const checked = $bool($props.checked)
+export const disabled = $bool($props.disabled)
 export const size = $props.size || 'md'
 export const className = $props.className || ''
 export const label = $props.label || ''

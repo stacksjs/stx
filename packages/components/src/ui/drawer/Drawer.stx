@@ -1,5 +1,5 @@
 <script server>
-export const open = $props.open ?? false
+export const open = $bool($props.open)
 export const position = $props.position || 'right'
 export const title = $props.title || ''
 export const className = $props.className || ''

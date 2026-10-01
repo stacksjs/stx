@@ -7,7 +7,7 @@ export const radius = $props.radius || 20
 export const blur = $props.blur || 15
 export const opacity = $props.opacity || 0.6
 export const showLegend = $props.showLegend !== false
-export const interactive = $props.interactive || false
+export const interactive = $bool($props.interactive)
 export const dataSource = $props.dataSource || 'auto'
 export const endpoint = $props.endpoint || ''
 export const colorScheme = $props.colorScheme || 'default'

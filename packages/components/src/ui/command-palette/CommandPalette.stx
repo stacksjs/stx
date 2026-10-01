@@ -1,5 +1,5 @@
 <script server>
-export const open = $props.open || false
+export const open = $bool($props.open)
 export const initialQuery = $props.query || ''
 export const className = $props.className || ''
 

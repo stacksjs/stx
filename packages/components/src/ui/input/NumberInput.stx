@@ -1,17 +1,17 @@
 <script server>
 export const value = $props.value || ''
 export const placeholder = $props.placeholder || '0'
-export const disabled = $props.disabled || false
-export const readonly = $props.readonly || false
+export const disabled = $bool($props.disabled)
+export const readonly = $bool($props.readonly)
 export const size = $props.size || 'md'
-export const error = $props.error || false
+export const error = $bool($props.error)
 export const label = $props.label || ''
 export const helperText = $props.helperText || ''
-export const required = $props.required || false
+export const required = $bool($props.required)
 export const min = $props.min
 export const max = $props.max
 export const step = $props.step || 1
-export const showControls = $props.showControls ?? true
+export const showControls = $bool($props.showControls, true)
 export const className = $props.className || ''
 export const inputClassName = $props.inputClassName || ''
 

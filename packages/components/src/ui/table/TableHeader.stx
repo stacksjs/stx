@@ -1,6 +1,6 @@
 <script server>
 export const className = $props.className || ''
-export const sortable = $props.sortable || false
+export const sortable = $bool($props.sortable)
 
 const baseClasses = 'px-6 py-3 text-left text-xs font-medium text-fg-soft uppercase tracking-wider'
 const sortableClasses = sortable ? 'cursor-pointer hover:text-fg-strong' : ''

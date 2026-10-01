@@ -4,8 +4,8 @@ export const max = $props.max || 100
 export const variant = $props.variant || 'linear'
 export const size = $props.size || 'md'
 export const color = $props.color || 'primary'
-export const showLabel = $props.showLabel ?? false
-export const indeterminate = $props.indeterminate || false
+export const showLabel = $bool($props.showLabel)
+export const indeterminate = $bool($props.indeterminate)
 export const className = $props.className || ''
 
 const linearSizeClasses = { sm: 'h-1', md: 'h-2', lg: 'h-3' }

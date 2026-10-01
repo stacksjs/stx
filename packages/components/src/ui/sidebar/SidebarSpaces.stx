@@ -22,8 +22,8 @@ export const theme = $props.theme || 'arc'
 export const activeId = $props.space || $props.active || (spaceList[0] && spaceList[0].id) || ''
 export const activeIndex = spaceIndexOf(spaceList, activeId)
 
-export const showSwitcher = $props.showSwitcher ?? true
-export const showAdd = $props.showAdd ?? false
+export const showSwitcher = $bool($props.showSwitcher, true)
+export const showAdd = $bool($props.showAdd)
 export const addLabel = $props.addLabel || 'New space'
 export const persistKey = $props.persistKey || ''
 

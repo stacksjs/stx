@@ -22,8 +22,8 @@ export const sections = $props.sections || []
 export const spaces = $props.spaces || []
 export const hasSpaces = spaces.length > 0
 export const activeSpace = $props.space || $props.activeSpace || ''
-export const showSpaceSwitcher = $props.showSpaceSwitcher ?? true
-export const showSpaceAdd = $props.showSpaceAdd ?? false
+export const showSpaceSwitcher = $bool($props.showSpaceSwitcher, true)
+export const showSpaceAdd = $bool($props.showSpaceAdd)
 export const spaceAddLabel = $props.spaceAddLabel || 'New space'
 export const spacePersistKey = $props.spacePersistKey || ''
 
@@ -32,12 +32,12 @@ export const theme = $props.theme || $props.variant || (hasSpaces ? 'arc' : 'mac
 export const width = $props.width || 250
 export const position = $props.position || 'left'
 export const placement = $props.placement || 'fixed'
-export const bordered = $props.bordered ?? false
+export const bordered = $bool($props.bordered)
 
 // Collapsing. macOS sidebars hide entirely (toolbar button / drag); legacy
 // themes may collapse to a compact rail instead.
-export const collapsed = $props.collapsed ?? false
-export const collapsible = $props.collapsible ?? true
+export const collapsed = $bool($props.collapsed)
+export const collapsible = $bool($props.collapsible, true)
 export const collapseMode = $props.collapseMode || (theme === 'workspace' || theme === 'desktop' ? 'rail' : 'hidden')
 export const minWidth = $props.minWidth || 64
 export const persistKey = $props.persistKey || ''
@@ -52,7 +52,7 @@ export const className = $props.className || ''
 // the document's business, not a navigation pane's. Left on by default so a
 // sidebar dropped into a page with no theme controller still behaves; turn it
 // off in any app that owns its own light/dark switch.
-export const followSystemAppearance = $props.followSystemAppearance ?? true
+export const followSystemAppearance = $bool($props.followSystemAppearance, true)
 
 // Unique id so the client controller can find this pane even with several
 // sidebars on the page.

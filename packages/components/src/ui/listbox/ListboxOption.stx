@@ -1,6 +1,6 @@
 <script server>
 export const value = $props.value
-export const disabled = $props.disabled || false
+export const disabled = $bool($props.disabled)
 export const className = $props.className || ''
 export const as = $props.as || 'li'
 

@@ -2,9 +2,9 @@
 /** One pill. See `FilterChips` for why a menu chip is not a toggle chip. */
 export const label = $props.label || ''
 export const href = $props.href || '#'
-export const active = $props.active || false
+export const active = $bool($props.active)
 /** Opens a picker rather than toggling in place — draws a chevron. */
-export const menu = $props.menu || false
+export const menu = $bool($props.menu)
 export const count = $props.count || ''
 
 export const hasCount = count !== '' && count !== 0 && count !== '0'

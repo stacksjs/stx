@@ -47,7 +47,7 @@ Three separate channels. Mixing them up is the most common mistake.
 
 A component that needs to talk back does it with an event, not a mutated prop. Every `Emits` entry in the reference below is a `@event` you can listen for.
 
-## Six things that actually break
+## Seven things that actually break
 
 Each of these was verified against the current engine, not inherited from older docs.
 
@@ -109,6 +109,29 @@ Those three are stx **builtins**, not part of this library: they resolve in any 
 ### 6. State that two things read is a store, not a `state()`
 
 Component-local `state()` dies on SPA navigation. A `defineStore` survives it, because stores live on `window.stx._stores` and are not cleaned up with the container. If a page and a sidebar both read the cart, it is a store — with `{ persist: true }` if it should survive a reload.
+
+### 7. Pass a boolean prop as a bare attribute or a binding, not as `"false"`
+
+Up to `stacksjs/stx#2006` the library read its boolean props as
+`$props.disabled || false`. A plain attribute arrives as a **string**, so
+`"false"` was truthy and the prop did the opposite of what you asked:
+`<Radio disabled="false">` was disabled, `<Video muted="false">` was muted,
+`<Dialog open="false">` opened over the page and locked body scroll. 103 of
+104 boolean props behaved that way.
+
+They are coerced with `$bool` now, so all four of these mean what they look
+like:
+
+```html
+<Button disabled />                 <!-- on -->
+<Button disabled="true" />          <!-- on -->
+<Button disabled="false" />         <!-- off -->
+<Button :disabled="saving()" />     <!-- whatever the signal says -->
+```
+
+If you are writing a component of your own, read its boolean props the same
+way — `$bool($props.x)`, or `$bool($props.x, true)` for one that defaults to
+on. `||` and `??` leave the string.
 
 ## Where the logic goes
 

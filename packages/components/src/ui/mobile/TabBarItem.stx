@@ -9,7 +9,7 @@
 export const label = $props.label || ''
 export const href = $props.href || '#'
 export const icon = $props.icon || ''
-export const active = $props.active || false
+export const active = $bool($props.active)
 /** A count, or any short string. Zero and empty are not rendered. */
 export const badge = $props.badge || ''
 

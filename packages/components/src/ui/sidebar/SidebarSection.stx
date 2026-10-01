@@ -4,8 +4,8 @@ import { resolveSidebarTheme } from './themes'
 export const id = $props.id || ''
 export const label = $props.label || ''
 export const items = $props.items || []
-export const collapsible = $props.collapsible ?? true
-export const collapsed = $props.collapsed ?? false
+export const collapsible = $bool($props.collapsible, true)
+export const collapsed = $bool($props.collapsed)
 export const theme = $props.theme || $props.variant || 'macos'
 
 const themeStyle = resolveSidebarTheme(theme)

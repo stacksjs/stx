@@ -1,8 +1,8 @@
 <script server cache>
 export const variant = $props.variant || 'default'
 export const size = $props.size || 'md'
-export const dot = $props.dot || false
-export const removable = $props.removable || false
+export const dot = $bool($props.dot)
+export const removable = $bool($props.removable)
 export const className = $props.className || ''
 
 const variantClasses = {

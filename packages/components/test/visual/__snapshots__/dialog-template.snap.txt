@@ -5,7 +5,7 @@
 
 === Template ===
 <script server>
-  export const open = $props.open || false
+  export const open = $bool($props.open)
 export const className = $props.className || ''
 
 const baseClasses = 'relative z-50'

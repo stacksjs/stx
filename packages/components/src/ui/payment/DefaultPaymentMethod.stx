@@ -1,6 +1,6 @@
 <script server>
 export const paymentMethod = $props.paymentMethod
-export const isLoading = $props.isLoading || false
+export const isLoading = $bool($props.isLoading)
 export const className = $props.className || ''
 
 const brandIcons = {

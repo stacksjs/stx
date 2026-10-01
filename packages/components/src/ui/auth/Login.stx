@@ -1,10 +1,10 @@
 <script server>
-export const showLogo = $props.showLogo ?? true
+export const showLogo = $bool($props.showLogo, true)
 export const headingText = $props.headingText || 'Sign in to your account'
-export const showSocialLogin = $props.showSocialLogin ?? true
-export const showRememberMe = $props.showRememberMe ?? true
-export const showForgotPassword = $props.showForgotPassword ?? true
-export const showSignup = $props.showSignup ?? true
+export const showSocialLogin = $bool($props.showSocialLogin, true)
+export const showRememberMe = $bool($props.showRememberMe, true)
+export const showForgotPassword = $bool($props.showForgotPassword, true)
+export const showSignup = $bool($props.showSignup, true)
 export const signupText = $props.signupText || 'Start a 14 day free trial'
 export const className = $props.className || ''
 

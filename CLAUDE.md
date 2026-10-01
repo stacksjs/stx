@@ -94,6 +94,36 @@ function greet(name) {           // ✅ Works (auto-exported)
 
 See `packages/stx/src/variable-extractor.ts` `extractVariables()` and `convertToCommonJS()` for implementation details.
 
+#### CRITICAL: read a boolean prop with `$bool`, never `||` / `??`
+
+A prop written as a plain attribute arrives as a **string**, so the obvious
+idiom is wrong in the one direction that matters:
+
+```js
+export const disabled = $props.disabled || false   // ❌ "false" is truthy
+export const disabled = $bool($props.disabled)     // ✅
+export const animate  = $bool($props.animate, true) // ✅ fallback when unset
+```
+
+`<Radio disabled="false">` was disabled, `<Video muted="false">` was muted and
+`<Dialog open="false">` opened over the page and locked body scroll — 103 of
+the 104 boolean props in `@stacksjs/components` behaved that way
+(`stacksjs/stx#2006`). The symptom misdirects: a prop that turns something ON
+when you ask for it OFF reads as the component ignoring the prop, so the next
+thing you look at is the component rather than the coercion. And the common
+spellings (`<Button disabled>`, `:disabled="expr"`) work, so it only shows when
+someone writes the value out.
+
+`$bool` is an engine binding, available in every `<script server>` alongside
+`$props`. `""` is true — that is what a bare attribute arrives as — `"0"`,
+`"off"`, `"no"` and `"false"` are false, and a non-string value passes through
+ordinary truthiness so `:open="someExpr"` keeps what the expression produced.
+HTML's own rule for `disabled="false"` is the opposite (any value means
+present), but these are component props, not HTML attributes. Pinned by
+`packages/stx/test/server-script-bool-prop.test.ts` and, library-wide, by
+`packages/components/test/boolean-props.test.ts`, which discovers both
+spellings so writing the broken one again does not opt a prop out of the sweep.
+
 ### Directive Registration
 
 Custom directives are registered in `packages/stx/src/config.ts` as part of `defaultConfig.customDirectives`. Each directive needs:

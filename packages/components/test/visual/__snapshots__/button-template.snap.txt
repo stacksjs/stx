@@ -7,10 +7,10 @@
 <script server cache>
   export const variant = $props.variant || 'primary'
 export const size = $props.size || 'md'
-export const disabled = $props.disabled || false
-export const loading = $props.loading || false
+export const disabled = $bool($props.disabled)
+export const loading = $bool($props.loading)
 export const type = $props.type || 'button'
-export const fullWidth = $props.fullWidth || false
+export const fullWidth = $bool($props.fullWidth)
 export const leftIcon = $props.leftIcon || ''
 export const rightIcon = $props.rightIcon || ''
 export const className = $props.className || ''

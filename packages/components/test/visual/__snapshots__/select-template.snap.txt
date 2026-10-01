@@ -8,12 +8,12 @@
   export const value = $props.value || ''
 export const options = $props.options || []
 export const placeholder = $props.placeholder || 'Select an option'
-export const disabled = $props.disabled || false
+export const disabled = $bool($props.disabled)
 export const size = $props.size || 'md'
-export const error = $props.error || false
+export const error = $bool($props.error)
 export const label = $props.label || ''
 export const helperText = $props.helperText || ''
-export const required = $props.required || false
+export const required = $bool($props.required)
 export const className = $props.className || ''
 
 const sizeClasses = { sm: 'px-3 py-1.5 text-sm h-8', md: 'px-4 py-2 text-base h-10', lg: 'px-5 py-3 text-lg h-12' }

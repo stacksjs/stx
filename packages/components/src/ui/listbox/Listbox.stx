@@ -1,6 +1,6 @@
 <script server>
 export const value = $props.value
-export const multiple = $props.multiple || false
+export const multiple = $bool($props.multiple)
 export const className = $props.className || ''
 export const as = $props.as || 'div'
 

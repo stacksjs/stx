@@ -1,10 +1,10 @@
 <script server>
 export const src = $props.src || ''
 export const poster = $props.poster || ''
-export const autoplay = $props.autoplay || false
-export const loop = $props.loop || false
-export const muted = $props.muted || false
-export const controls = $props.controls ?? true
+export const autoplay = $bool($props.autoplay)
+export const loop = $bool($props.loop)
+export const muted = $bool($props.muted)
+export const controls = $bool($props.controls, true)
 export const preload = $props.preload || 'metadata'
 export const width = $props.width
 export const height = $props.height

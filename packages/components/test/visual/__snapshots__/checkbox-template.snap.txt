@@ -5,14 +5,14 @@
 
 === Template ===
 <script server>
-  export const checked = $props.checked || false
-export const disabled = $props.disabled || false
-export const indeterminate = $props.indeterminate || false
+  export const checked = $bool($props.checked)
+export const disabled = $bool($props.disabled)
+export const indeterminate = $bool($props.indeterminate)
 export const size = $props.size || 'md'
 export const label = $props.label || ''
 export const description = $props.description || ''
-export const error = $props.error || false
-export const required = $props.required || false
+export const error = $bool($props.error)
+export const required = $bool($props.required)
 export const value = $props.value || ''
 export const name = $props.name || ''
 export const className = $props.className || ''

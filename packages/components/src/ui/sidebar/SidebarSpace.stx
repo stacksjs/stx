@@ -14,7 +14,7 @@ export const sections = $props.sections || []
 export const action = $props.action || null
 export const clear = $props.clear || null
 export const theme = $props.theme || 'arc'
-export const active = $props.active ?? false
+export const active = $bool($props.active)
 
 // Render the shell without its contents.
 //
@@ -27,14 +27,14 @@ export const active = $props.active ?? false
 // The space still announces itself as a tabpanel, so the switcher and keyboard
 // navigation are unchanged; `data-space-deferred` tells the controller this one
 // has nothing yet, and `spaceChange` is where a host fills it or navigates.
-export const deferred = $props.deferred ?? false
+export const deferred = $bool($props.deferred)
 
 // Whether to draw `label` as a title above the rows. An app that names the
 // space somewhere else — an Arc header with a title puts it beside the traffic
 // lights, the way Dia does — turns this off rather than saying it twice.
 // `label` is still needed: it is the panel's accessible name and the
 // switcher's tooltip.
-export const showTitle = $props.showTitle ?? true
+export const showTitle = $bool($props.showTitle, true)
 
 const themeStyle = resolveSidebarTheme(theme)
 export const scrollAreaClasses = themeStyle.scrollArea

@@ -1,8 +1,8 @@
 <script server cache>
 export const variant = $props.variant || 'default'
 export const padding = $props.padding || 'default'
-export const hover = $props.hover || false
-export const clickable = $props.clickable || false
+export const hover = $bool($props.hover)
+export const clickable = $bool($props.clickable)
 export const image = $props.image || ''
 export const imageAlt = $props.imageAlt || ''
 export const className = $props.className || ''

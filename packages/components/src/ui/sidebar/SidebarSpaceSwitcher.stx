@@ -24,7 +24,7 @@ export const spaces = ($props.spaces || []).map(space => ({
 }))
 
 export const active = $props.active || (spaces[0] && spaces[0].id) || ''
-export const showAdd = $props.showAdd ?? false
+export const showAdd = $bool($props.showAdd)
 export const addLabel = $props.addLabel || 'New space'
 
 // A single space has nothing to indicate. Dia hides the row entirely rather
