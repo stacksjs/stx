@@ -1,5 +1,26 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.344...v0.2.345)
+
+## 🐛 Bug Fixes
+
+- **components**: an inverted surface role, and the last gray leaves the library ([548db88](https://github.com/stacksjs/stx/commit/548db88)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993))
+- **components**: hover roles for the neutrals, four of which had no hover at all ([1f03b15](https://github.com/stacksjs/stx/commit/1f03b15)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993))
+
+## ✅ Tests
+
+- **stx**: make the token test check every role, not one of them ([4d2147c](https://github.com/stacksjs/stx/commit/4d2147c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993))
+- **bun-plugin**: ask whether the bind waited, not how long it took ([9065d4c](https://github.com/stacksjs/stx/commit/9065d4c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.345 ([39b3193](https://github.com/stacksjs/stx/commit/39b3193)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- generate changelog for v0.2.345 ([6ee7ddc](https://github.com/stacksjs/stx/commit/6ee7ddc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.344...HEAD)
 
 ## 🐛 Bug Fixes
