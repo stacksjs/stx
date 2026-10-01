@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'bun:test'
+import { beforeAll, beforeEach, describe, expect, it } from 'bun:test'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 
 // eslint-disable-next-line ts/no-explicit-any
@@ -24,6 +24,21 @@ describe('preferred media runtime composables', () => {
 
     // eslint-disable-next-line no-new-func
     new Function(generateSignalsRuntimeDev())()
+  })
+
+  // The preference map is seeded once at describe scope, and the test below
+  // flips dark to false to prove a change propagates. Nothing put it back, so
+  // in file order the first test read `true` and passed, and in any order where
+  // it ran second it read the other test's leftover and failed
+  // `expect(preferredDark()).toBe(true)` (stacksjs/stx#2003).
+  //
+  // Listeners are dropped for the same reason: each test registers its own via
+  // `usePreferredDark()`, and keeping the previous ones means a change is
+  // delivered to signals whose test has already finished.
+  beforeEach(() => {
+    matches.set('(prefers-color-scheme: dark)', true)
+    matches.set('(prefers-reduced-motion: reduce)', false)
+    listeners.clear()
   })
 
   it('exposes preferred media helpers as callable signals', () => {
