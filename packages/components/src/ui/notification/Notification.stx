@@ -37,7 +37,7 @@ const positions = {
   'bottom-center': 'bottom-0 left-1/2 -translate-x-1/2',
 }
 
-const baseClasses = 'fixed z-50 m-4 max-w-md w-full pointer-events-auto rounded-lg p-4 shadow-lg ring-1 ring-black/5 transition-all'
+const baseClasses = 'fixed z-50 m-4 max-w-md w-full pointer-events-auto rounded-panel p-4 shadow-lg ring-1 ring-black/5 transition-all'
 const extraClassName = {{ JSON.stringify(className) }}
 
 const notificationClasses = derived(() => {
@@ -106,7 +106,7 @@ defineExpose({
     <button
       type="button"
       @click="close()"
-      class="ml-4 inline-flex rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2"
+      class="ml-4 inline-flex rounded-panel focus:outline-none focus:ring-2 focus:ring-offset-2"
     >
       <span class="sr-only">Close</span>
       <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

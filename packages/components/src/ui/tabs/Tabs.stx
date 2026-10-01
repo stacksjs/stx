@@ -25,7 +25,7 @@ const tabListOrientationClasses = {
 
 const variantClasses = {
   line: 'border-line',
-  pills: 'gap-2 border-0 bg-surface-raised p-1 rounded-lg',
+  pills: 'gap-2 border-0 bg-surface-raised p-1 rounded-panel',
   enclosed: 'border-line',
 }
 
@@ -120,10 +120,10 @@ function getTabClasses(index) {
     return `${base} ${border} ${isActiveTab ? 'border-blue-500 text-info' : 'border-transparent text-fg-muted hover:text-fg hover:border-line-strong'}`
   }
   if (variant === 'pills') {
-    return `${base} rounded-md ${isActiveTab ? 'bg-field text-fg shadow-sm' : 'text-fg-muted hover:text-fg'}`
+    return `${base} rounded-control ${isActiveTab ? 'bg-field text-fg shadow-sm' : 'text-fg-muted hover:text-fg'}`
   }
   if (variant === 'enclosed') {
-    const borders = orientation === 'horizontal' ? 'border-t border-l border-r rounded-t-md' : 'border-t border-l border-b rounded-l-md'
+    const borders = orientation === 'horizontal' ? 'border-t border-l border-r rounded-t-control' : 'border-t border-l border-b rounded-l-control'
     return `${base} ${borders} ${isActiveTab ? 'bg-panel border-line -mb-px' : 'bg-surface border-transparent hover:border-line'}`
   }
   return base

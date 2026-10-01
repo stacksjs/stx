@@ -28,7 +28,7 @@
  * @module ts-css-config
  */
 
-import { semanticColors, semanticTokenCSS } from './theme-tokens'
+import { semanticColors, semanticTokenCSS, shapeRadii, shapeTokenCSS } from './theme-tokens'
 
 type Dict = Record<string, any>
 
@@ -109,6 +109,17 @@ export function mergeCssConfig(base: Dict = {}, user: Dict = {}): MergedCssConfi
   const basePalette = (baseThemeKeys.colors || {}) as Dict
   baseThemeKeys.colors = { ...basePalette, ...semanticColors(basePalette) }
 
+  /*
+   * Shape roles go in the same way, for the same reason.
+   *
+   * A radius is as unthemeable from a call site as a colour was: `rounded-md`
+   * and `rounded-full` have equal specificity, so `className` cannot win
+   * reliably. These are new names in `theme.borderRadius`, so nothing existing
+   * changes (#1993).
+   */
+  const baseRadii = (baseThemeKeys.borderRadius || {}) as Dict
+  baseThemeKeys.borderRadius = { ...baseRadii, ...shapeRadii() }
+
   const theme: Dict = deepMergeThemes(baseThemeKeys, userThemeKeys)
   const extend = deepMergeThemes(baseExtend || {}, userExtend || {})
   if (Object.keys(extend).length > 0)
@@ -148,6 +159,11 @@ export function mergeCssConfig(base: Dict = {}, user: Dict = {}): MergedCssConfi
     shortcuts,
     includePreflight: user.preflight !== false,
     minify: user.minify === true,
-    tokenCSS: semanticTokenCSS(basePalette),
+    /*
+     * Colour roles then shape roles, in one block. Shape has no `.dark`
+     * counterpart - a radius does not change with the colour scheme - so it is
+     * appended rather than interleaved.
+     */
+    tokenCSS: semanticTokenCSS(basePalette) + shapeTokenCSS(),
   }
 }

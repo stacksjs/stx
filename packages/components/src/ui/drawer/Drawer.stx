@@ -301,7 +301,7 @@ defineExpose({
           <div class="{{ closeButtonClasses }}">
             <button
               type="button"
-              class="relative rounded-md text-neutral-300 dark:text-neutral-400 hover:text-white dark:hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              class="relative rounded-control text-neutral-300 dark:text-neutral-400 hover:text-white dark:hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
               @click="close()"
             >
               <span class="absolute -inset-2.5"></span>

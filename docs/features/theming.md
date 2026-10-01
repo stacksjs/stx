@@ -127,6 +127,54 @@ The tokens are in stx's base theme, so they resolve in every app with no opt-in
 a page, light mode is still correct and dark mode degrades to the light colour
 rather than to nothing.
 
+## 0b. Shape — a radius by what the thing is
+
+Colour was only half of it. An app whose buttons are pills got `rounded-md`,
+and `className` is no escape hatch for a radius for the same reason it was not
+one for a colour: `rounded-md` and `rounded-full` are single-class selectors of
+equal specificity, so the winner is whichever lands later in the generated
+stylesheet — not something a call site controls.
+
+Three shape roles, each a CSS variable with today's value as the fallback:
+
+| Token | Utility | Default | For |
+|---|---|---|---|
+| `control` | `rounded-control` | 0.375rem | buttons, inputs, selects, textareas |
+| `panel` | `rounded-panel` | 0.5rem | cards, dialogs, menus, toasts |
+| `pill` | `rounded-pill` | 9999px | chips and badges |
+
+```css
+:root {
+  --stx-radius-control: 9999px;   /* every button and input becomes a pill */
+  --stx-radius-panel: 1rem;
+}
+```
+
+Directional variants work, so `rounded-t-control` is available for a component
+with one rounded edge.
+
+Two things deliberately left alone:
+
+- **Genuine circles.** An avatar, a spinner and a skeleton keep
+  `rounded-full`, because a circle is not a theming decision and re-pointing
+  the pill radius should not turn them into squares.
+- **Dropdown menus use `panel`, not `control`**, even though they happened to
+  use the same 0.375rem radius. Otherwise an app asking for pill-shaped buttons
+  would get pill-shaped menus.
+
+### Height comes from padding
+
+The controls carried a fixed height beside their padding — `px-4 py-2 h-10` —
+so an app passing its own `py-1.5` got the padding it asked for and the height
+it did not. The heights are gone; padding decides, and `className` can set it.
+
+The fixed heights were also wrong on three of five button sizes. Measured
+against the theme's own line-heights, `lg` declared 3rem around 3.25rem of
+content and `xl` 3.5rem around 3.75rem, so the two largest had been quietly
+eating a quarter-rem of their own padding. The padding now reproduces all five
+previous heights exactly — 1.75, 2, 2.5, 3 and 3.5rem — so nothing moved on
+screen.
+
 ## 1. Redefine a shade — build time, works today, no opt-in
 
 A project's `css.config.ts` `theme.colors` **deep-merges** over the base

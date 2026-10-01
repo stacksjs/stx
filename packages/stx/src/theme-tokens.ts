@@ -311,3 +311,68 @@ export function semanticTokenCSS(palette: Palette): string {
 export function semanticTokenNames(): string[] {
   return Object.keys(SEMANTIC_TOKENS).map(tokenVariable)
 }
+
+/**
+ * Shape roles — the radius a thing has because of what it IS.
+ *
+ * Colour was only half of what made the library unadoptable. An app whose
+ * buttons are pills got `rounded-md`, and `className` is no escape hatch for a
+ * radius for exactly the reason it was not one for a colour: `rounded-md` and
+ * `rounded-full` are single-class selectors of equal specificity, so the winner
+ * is whichever lands later in the generated stylesheet, which a call site
+ * cannot control (stacksjs/stx#1993).
+ *
+ * Three roles, from what the library actually uses: `rounded-md` on controls
+ * (54 uses), `rounded-lg` on panels (24), and `rounded-full` where something is
+ * genuinely a pill (34, of which the circular ones - avatars, dots, spinners -
+ * keep `rounded-full`, because a circle is not a theming decision).
+ *
+ * So `--stx-radius-control: 9999px` turns every button, input and select in the
+ * library into a pill, and nothing else moves.
+ */
+export const SHAPE_TOKENS: Record<string, { value: string, description: string }> = {
+  control: { value: '0.375rem', description: 'Buttons, inputs, selects — rounded-md' },
+  panel: { value: '0.5rem', description: 'Cards, dialogs, menus — rounded-lg' },
+  pill: { value: '9999px', description: 'Chips and badges, which are pill-shaped by intent' },
+}
+
+/** The CSS custom property that backs a shape role. */
+export function shapeVariable(name: string): string {
+  return `--stx-radius-${name}`
+}
+
+/**
+ * The `theme.borderRadius` entries to merge in.
+ *
+ * Same shape as {@link semanticColors}: each is `var(--stx-radius-<name>,
+ * <stock value>)`, so `rounded-control` is an ordinary utility - directional
+ * variants like `rounded-t-control` included - and an app moves it by setting
+ * the variable.
+ */
+export function shapeRadii(): Record<string, string> {
+  const radii: Record<string, string> = {}
+  for (const [name, token] of Object.entries(SHAPE_TOKENS))
+    radii[name] = `var(${shapeVariable(name)}, ${token.value})`
+  return radii
+}
+
+/**
+ * The `:root` block for the shape roles.
+ *
+ * No `.dark` counterpart: a radius does not change with the colour scheme, and
+ * emitting an empty dark block would invite someone to fill it in.
+ */
+export function shapeTokenCSS(): string {
+  return [
+    '/* stx shape tokens — a radius by what the thing is. */',
+    ':root {',
+    ...Object.entries(SHAPE_TOKENS).map(([name, token]) => `  ${shapeVariable(name)}: ${token.value};`),
+    '}',
+    '',
+  ].join('\n')
+}
+
+/** Every variable a shape role reads, for documentation and tooling. */
+export function shapeTokenNames(): string[] {
+  return Object.keys(SHAPE_TOKENS).map(shapeVariable)
+}

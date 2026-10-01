@@ -64,12 +64,30 @@ const variantClasses = {
   danger: 'bg-danger-solid hover:bg-danger-solid-hover text-danger-ink shadow-md hover:shadow-lg',
 }
 
+/*
+ * Padding decides the height, with no `h-*` to override it.
+ *
+ * Each size used to carry a fixed height beside its padding, which meant an app
+ * passing its own `py-1.5` got the padding it asked for and the height it did
+ * not - and `className` cannot win that fight, because `h-10` and `h-8` are
+ * single-class selectors of equal specificity (stacksjs/stx#1993).
+ *
+ * The fixed heights were also wrong on three of five sizes. Measured against
+ * the theme's own line-heights: xs declared 1.75rem around 1.5rem of content,
+ * while lg declared 3rem around 3.25rem and xl 3.5rem around 3.75rem - so the
+ * two largest sizes had been quietly eating a quarter-rem of their own padding.
+ *
+ * The padding below reproduces all five declared heights EXACTLY - 1.75, 2,
+ * 2.5, 3 and 3.5rem - so nothing changes on screen while the height becomes
+ * something a call site can actually set. xs, lg and xl needed a padding step
+ * adjusted to land on the same number they claimed before.
+ */
 const sizeClasses = {
-  xs: 'px-2.5 py-1 text-xs h-7 gap-1',
-  sm: 'px-3 py-1.5 text-sm h-8 gap-1.5',
-  md: 'px-4 py-2 text-base h-10 gap-2',
-  lg: 'px-6 py-3 text-lg h-12 gap-2.5',
-  xl: 'px-8 py-4 text-xl h-14 gap-3',
+  xs: 'px-2.5 py-1.5 text-xs gap-1',
+  sm: 'px-3 py-1.5 text-sm gap-1.5',
+  md: 'px-4 py-2 text-base gap-2',
+  lg: 'px-6 py-2.5 text-lg gap-2.5',
+  xl: 'px-8 py-3.5 text-xl gap-3',
 }
 
 const iconSizeClasses = { xs: 'h-3 w-3', sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 w-6', xl: 'h-7 w-7' }
@@ -79,7 +97,7 @@ const iconSizeClasses = { xs: 'h-3 w-3', sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 
  * the token's light value is that same blue-500 and its dark value is a step
  * darker, which is a ring that was missing rather than one that changed.
  */
-const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-solid disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none'
+const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-control transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-solid disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none'
 const widthClasses = fullWidth ? 'w-full' : ''
 export const isDisabled = disabled || loading
 
@@ -232,8 +250,6 @@ gap-1
 gap-2
 gap-3
 h-10
-h-12
-h-14
 h-3
 h-4
 h-5
@@ -265,13 +281,10 @@ px-3
 px-4
 px-6
 px-8
-py-1
 py-2
-py-3
-py-4
 rather
 rendering
-rounded-md
+rounded-control
 same
 server
 shadow-md

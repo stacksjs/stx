@@ -26,7 +26,7 @@ const arrowClasses = {
   right: 'right-full top-1/2 -translate-y-1/2 border-r-gray-900 dark:border-r-gray-700',
 }
 
-export const tooltipClasses = `absolute z-50 px-3 py-2 text-sm font-medium text-white bg-neutral-900 dark:bg-neutral-700 rounded-lg shadow-lg whitespace-nowrap pointer-events-none transition-opacity duration-200 ${positionClasses[position] || positionClasses.top} ${className}`.trim()
+export const tooltipClasses = `absolute z-50 px-3 py-2 text-sm font-medium text-white bg-neutral-900 dark:bg-neutral-700 rounded-panel shadow-lg whitespace-nowrap pointer-events-none transition-opacity duration-200 ${positionClasses[position] || positionClasses.top} ${className}`.trim()
 export const arrowClass = `absolute w-0 h-0 border-4 border-transparent ${arrowClasses[position] || arrowClasses.top}`.trim()
 </script>
 <script client>
@@ -113,7 +113,7 @@ px-3
 py-2
 relative
 right-full
-rounded-lg
+rounded-panel
 shadow-lg
 show
 text-sm

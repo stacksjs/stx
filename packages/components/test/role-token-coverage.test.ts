@@ -16,7 +16,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'bun:test'
-import { SEMANTIC_TOKENS, semanticColors, semanticTokenCSS, tokenVariable } from '../../stx/src/theme-tokens'
+import { SEMANTIC_TOKENS, SHAPE_TOKENS, semanticColors, semanticTokenCSS, shapeVariable, tokenVariable } from '../../stx/src/theme-tokens'
 import { generateCss } from '../../stx/src/dev-server/ts-css'
 import { defaultConfig } from '@stacksjs/ts-css/engine'
 
@@ -187,5 +187,78 @@ describe('the migrated primitives carry no status shade', () => {
     }
 
     expect(offenders).toEqual([])
+  })
+})
+
+/**
+ * Shape, which was the other half of why the library could not be adopted.
+ *
+ * An app whose buttons are pills got `rounded-md`, and `className` is no escape
+ * hatch for a radius for exactly the reason it was not one for a colour:
+ * `rounded-md` and `rounded-full` are single-class selectors of equal
+ * specificity, so the winner is whichever lands later in the generated
+ * stylesheet. Same for a height — `h-10` against `h-8`.
+ */
+describe('a control takes its shape from a role (#1993)', () => {
+  it('compiles the radius roles to a variable with a fallback', async () => {
+    const css = await generateCss('<div class="rounded-control rounded-panel rounded-pill rounded-t-control"></div>')
+
+    for (const role of Object.keys(SHAPE_TOKENS))
+      expect(css, `rounded-${role} did not compile`).toContain(`var(${shapeVariable(role)},`)
+
+    // Directional variants have to work too, or a component with one rounded
+    // edge has to drop back to a shade.
+    expect(css).toContain('border-top-left-radius')
+  })
+
+  it('keeps today\'s radius as the fallback, so nothing moves by default', () => {
+    expect(SHAPE_TOKENS.control.value).toBe('0.375rem')
+    expect(SHAPE_TOKENS.panel.value).toBe('0.5rem')
+    expect(SHAPE_TOKENS.pill.value).toBe('9999px')
+  })
+
+  it('rounds the controls through the control role', () => {
+    for (const rel of ['button/Button.stx', 'input/TextInput.stx', 'select/Select.stx', 'textarea/Textarea.stx'])
+      expect(code(readFileSync(path.join(UI, rel), 'utf-8')), rel).toContain('rounded-control')
+  })
+
+  /*
+   * A menu is a panel, not a control, and this is the distinction that makes
+   * the roles safe to re-point: an app setting --stx-radius-control to a pill
+   * radius must not end up with pill-shaped dropdown menus. These five used
+   * the control radius by value and were moved to `panel` deliberately, which
+   * is the only appearance change in the shape pass.
+   */
+  it('rounds the menus through the panel role, not the control one', () => {
+    for (const rel of ['dropdown/DropdownItems.stx', 'listbox/ListboxOptions.stx', 'combobox/ComboboxOptions.stx']) {
+      const source = code(readFileSync(path.join(UI, rel), 'utf-8'))
+
+      expect(source, rel).toContain('rounded-panel')
+      expect(source, rel).not.toContain('rounded-control')
+    }
+  })
+
+  /*
+   * The height has to come from the padding, or an app passing its own padding
+   * gets the padding it asked for and the height it did not.
+   */
+  it('gives the controls no fixed height to fight', () => {
+    for (const rel of ['button/Button.stx', 'input/TextInput.stx', 'select/Select.stx']) {
+      const sizes = code(readFileSync(path.join(UI, rel), 'utf-8'))
+        .match(/const sizeClasses = \{[\s\S]*?\}/)?.[0] ?? ''
+
+      expect(sizes, rel).not.toMatch(/\bh-\d/)
+      expect(sizes, rel).toMatch(/\bpy-[\d.]+/)
+    }
+  })
+
+  /*
+   * A circle is not a theming decision. An avatar, a spinner and a skeleton
+   * stay `rounded-full` so re-pointing the pill radius cannot turn them into
+   * squares.
+   */
+  it('leaves genuine circles alone', () => {
+    for (const rel of ['avatar/Avatar.stx', 'spinner/Spinner.stx', 'skeleton/Skeleton.stx'])
+      expect(code(readFileSync(path.join(UI, rel), 'utf-8')), rel).toContain('rounded-full')
   })
 })

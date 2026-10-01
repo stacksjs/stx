@@ -175,7 +175,38 @@ describe('the merged config every render path uses', () => {
   it('survives a base config with no palette', () => {
     const { config, tokenCSS } = mergeCssConfig({}, {})
 
-    expect(tokenCSS).toBe('')
+    /*
+     * No palette means no COLOUR roles: every one of them resolves a shade
+     * reference, so with nothing to resolve against they are dropped rather
+     * than emitted as a dangling `var(--stx-fg, )`.
+     *
+     * The SHAPE roles are still there, and should be: a radius carries a
+     * literal value and depends on no palette, so there is nothing for a
+     * missing one to break (stacksjs/stx#1993).
+     */
+    expect(tokenCSS).not.toContain('--stx-fg')
+    expect(tokenCSS).not.toContain('role tokens')
+    expect(tokenCSS).toContain('--stx-radius-control: 0.375rem;')
     expect(config.theme.colors).toEqual({})
+  })
+
+  it('carries the shape roles as border radii a utility can name', () => {
+    const { config } = mergeCssConfig({}, {})
+
+    expect(config.theme.borderRadius.control).toBe('var(--stx-radius-control, 0.375rem)')
+    expect(config.theme.borderRadius.panel).toBe('var(--stx-radius-panel, 0.5rem)')
+    expect(config.theme.borderRadius.pill).toBe('var(--stx-radius-pill, 9999px)')
+  })
+
+  /*
+   * Additive, like the colours. `rounded-md` has to keep compiling to a baked
+   * value: turning an existing utility into a variable would change the CSS of
+   * every app that never asked for it.
+   */
+  it('leaves the stock radii alone', () => {
+    const { config } = mergeCssConfig({ theme: { borderRadius: { md: '0.375rem', lg: '0.5rem' } } }, {})
+
+    expect(config.theme.borderRadius.md).toBe('0.375rem')
+    expect(config.theme.borderRadius.lg).toBe('0.5rem')
   })
 })

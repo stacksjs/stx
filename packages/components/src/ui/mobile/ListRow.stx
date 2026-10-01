@@ -91,7 +91,7 @@ export const rowClasses = `
       @endif
 
       @if (trailing)
-        <span class="rounded-md bg-surface-sunken px-1.5 py-0.5 text-xs font-medium text-fg-muted">{{ trailing }}</span>
+        <span class="rounded-control bg-surface-sunken px-1.5 py-0.5 text-xs font-medium text-fg-muted">{{ trailing }}</span>
       @endif
     </span>
   @endif

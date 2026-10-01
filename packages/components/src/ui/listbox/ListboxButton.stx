@@ -3,7 +3,7 @@ export const className = $props.className || ''
 export const as = $props.as || 'button'
 export const disabled = $bool($props.disabled)
 
-const baseClasses = 'relative w-full cursor-pointer rounded-lg bg-panel py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-300'
+const baseClasses = 'relative w-full cursor-pointer rounded-panel bg-panel py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-300'
 const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : ''
 export const buttonClasses = `${baseClasses} ${disabledClasses} ${className}`.trim()
 </script>

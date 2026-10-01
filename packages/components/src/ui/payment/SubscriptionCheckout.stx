@@ -130,7 +130,7 @@ onMount(() => initializeStripe())
                 name="email-address"
                 autocomplete="email"
                 required
-                class="block w-full border border-line-strong rounded-md p-2 shadow-sm bg-field text-fg focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                class="block w-full border border-line-strong rounded-control p-2 shadow-sm bg-field text-fg focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm focus:ring-indigo-500 dark:focus:ring-indigo-400"
               />
             </div>
           </div>
@@ -154,14 +154,14 @@ onMount(() => initializeStripe())
                   name="card-name"
                   autocomplete="cc-name"
                   required
-                  class="block w-full border border-line-strong rounded-md p-2 shadow-sm bg-field text-fg focus:border-indigo-500 sm:text-sm focus:ring-indigo-500"
+                  class="block w-full border border-line-strong rounded-control p-2 shadow-sm bg-field text-fg focus:border-indigo-500 sm:text-sm focus:ring-indigo-500"
                 />
               </div>
             </div>
 
             <!-- Stripe Element Mount Point -->
             <div class="sm:col-span-2">
-              <div id="payment-element" class="mt-2 border border-line-strong rounded-md bg-field p-3"></div>
+              <div id="payment-element" class="mt-2 border border-line-strong rounded-control bg-field p-3"></div>
             </div>
           </div>
         </div>
@@ -198,7 +198,7 @@ onMount(() => initializeStripe())
           Order summary
         </h2>
 
-        <div class="mt-4 border border-line rounded-lg bg-panel shadow-sm">
+        <div class="mt-4 border border-line rounded-panel bg-panel shadow-sm">
           <h3 class="sr-only">Items in your cart</h3>
 
           <!-- Product List -->
@@ -207,9 +207,9 @@ onMount(() => initializeStripe())
               <li class="flex px-4 py-6 sm:px-6">
                 <div class="flex-shrink-0">
                   @if(product.images)
-                    <img src="{{ product.images }}" alt="{{ product.name }}" class="w-20 rounded-md" />
+                    <img src="{{ product.images }}" alt="{{ product.name }}" class="w-20 rounded-control" />
                   @else
-                    <div class="w-20 h-20 bg-surface-sunken rounded-md flex items-center justify-center">
+                    <div class="w-20 h-20 bg-surface-sunken rounded-control flex items-center justify-center">
                       <svg class="h-8 w-8 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
@@ -260,7 +260,7 @@ onMount(() => initializeStripe())
                       <select
                         id="quantity-{{ product.id }}"
                         name="quantity"
-                        class="border border-line-strong rounded-md text-left text-base text-fg-strong font-medium shadow-sm bg-field focus:border-indigo-500 sm:text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        class="border border-line-strong rounded-control text-left text-base text-fg-strong font-medium shadow-sm bg-field focus:border-indigo-500 sm:text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                       >
                         <option value="1" {{ (product.quantity || 1) === 1 ? 'selected' : '' }}>1</option>
                         <option value="2" {{ (product.quantity || 1) === 2 ? 'selected' : '' }}>2</option>
@@ -317,7 +317,7 @@ onMount(() => initializeStripe())
           <div class="border-t border-line px-4 py-6 sm:px-6">
             <button
               type="submit"
-              class="w-full border border-transparent rounded-md bg-accent-solid px-4 py-3 text-base text-white font-medium shadow-sm hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-gray-50 dark:focus:ring-offset-gray-900"
+              class="w-full border border-transparent rounded-control bg-accent-solid px-4 py-3 text-base text-white font-medium shadow-sm hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-gray-50 dark:focus:ring-offset-gray-900"
             >
               Confirm order
             </button>

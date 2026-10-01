@@ -10,7 +10,7 @@ export const hoverable = $bool($props.hoverable, true)
 export const className = $props.className || ''
 
 export const totalHeight = data.length * rowHeight
-export const containerClasses = `border border-line rounded-lg overflow-hidden ${className}`.trim()
+export const containerClasses = `border border-line rounded-panel overflow-hidden ${className}`.trim()
 export const headerClasses = `bg-surface border-b border-line flex`.trim()
 export const headerCellClasses = `px-6 py-3 text-left text-xs font-medium text-fg-soft uppercase tracking-wider`.trim()
 export const bodyClasses = `overflow-auto bg-white dark:bg-neutral-900`.trim()

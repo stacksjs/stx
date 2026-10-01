@@ -11,7 +11,7 @@ export const allowMultiple = $bool($props.allowMultiple)
 export const defaultOpen = $props.defaultOpen || []
 export const className = $props.className || ''
 
-export const accordionClasses = `divide-y divide-line border border-line rounded-lg ${className}`.trim()
+export const accordionClasses = `divide-y divide-line border border-line rounded-panel ${className}`.trim()
 export const headerClasses = `w-full flex items-center justify-between px-4 py-3 text-left font-medium text-fg hover:bg-surface transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900`.trim()
 export const iconClasses = `w-5 h-5 text-fg-soft transition-transform duration-200`.trim()
 export const contentClasses = `px-4 py-3 text-fg-strong`.trim()

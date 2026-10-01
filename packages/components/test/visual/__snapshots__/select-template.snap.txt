@@ -16,8 +16,18 @@ export const helperText = $props.helperText || ''
 export const required = $bool($props.required)
 export const className = $props.className || ''
 
-const sizeClasses = { sm: 'px-3 py-1.5 text-sm h-8', md: 'px-4 py-2 text-base h-10', lg: 'px-5 py-3 text-lg h-12' }
-const baseClasses = 'block w-full border-0 rounded-md shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset dark:bg-neutral-700 dark:text-neutral-100'
+/*
+ * Padding decides the height here too, with no `h-*` to override it: an app
+ * passing its own `py-1.5` got the padding it asked for and the height it did
+ * not, and `className` cannot beat `h-10` at equal specificity
+ * (stacksjs/stx#1993).
+ *
+ * `lg` also needed a padding step adjusted - py-3 around a 1.75rem line-height
+ * is 3.25rem of content inside a declared 3rem box - so py-2.5 lands on the
+ * 3rem it always claimed. sm and md were already exact.
+ */
+const sizeClasses = { sm: 'px-3 py-1.5 text-sm', md: 'px-4 py-2 text-base', lg: 'px-5 py-2.5 text-lg' }
+const baseClasses = 'block w-full border-0 rounded-control shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset dark:bg-neutral-700 dark:text-neutral-100'
 const stateClasses = error
   ? 'ring-red-300 dark:ring-red-600 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-500 focus:ring-red-500 dark:focus:ring-red-400'
   : 'ring-line-strong text-fg placeholder-fg-subtle focus:ring-accent'
@@ -114,8 +124,6 @@ focus:ring-inset
 focus:ring-red-500
 font-medium
 h-10
-h-12
-h-8
 helper-text
 helperClasses
 hover:ring-neutral-400
@@ -131,12 +139,11 @@ px-3
 px-4
 px-5
 py-2
-py-3
 ring-1
 ring-inset
 ring-line-strong
 ring-red-300
-rounded-md
+rounded-control
 selectClasses
 shadow-sm
 text-base
