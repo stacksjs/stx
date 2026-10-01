@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'bun:test'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 
 // eslint-disable-next-line ts/no-explicit-any
@@ -11,7 +11,10 @@ describe('preferred media runtime composables', () => {
     ['(prefers-reduced-motion: reduce)', false],
   ])
 
+  let originalMatchMedia: unknown
+
   beforeAll(() => {
+    originalMatchMedia = window.matchMedia
     window.matchMedia = (query: string) => {
       const callbacks = listeners.get(query) ?? new Set()
       listeners.set(query, callbacks)
@@ -24,6 +27,16 @@ describe('preferred media runtime composables', () => {
 
     // eslint-disable-next-line no-new-func
     new Function(generateSignalsRuntimeDev())()
+  })
+
+  // `window` is shared by every test file in the process, so a replaced global
+  // that is never put back is this file's state running in someone else's test.
+  // This mock answers `(prefers-color-scheme: dark)` with true, and
+  // toast-theme.test.ts asserts the light fallback on the stated grounds that
+  // "happy-dom reports no dark preference" - true until this file has run, and
+  // false afterwards. Running the two together failed that test every time.
+  afterAll(() => {
+    window.matchMedia = originalMatchMedia
   })
 
   // The preference map is seeded once at describe scope, and the test below
