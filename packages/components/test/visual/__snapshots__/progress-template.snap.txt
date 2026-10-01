@@ -47,16 +47,42 @@ export const circularBarColor = color === 'primary' ? 'stroke-info'
   : 'stroke-cyan-600 dark:stroke-cyan-500'
 </script>
 <script client>
-  const max = {{ max }}
-const indeterminate = {{ indeterminate }}
-const circumference = {{ circumference }}
-// Reactive prop binding — parent can drive `value` via signals. See #1704.
-const value = useReactiveProp('value', {{ value }})
+  const circumference = {{ circumference }}
+const circularBarColor = {{ circularBarColor }}
 
-const percentage = derived(() => Math.min(Math.max((value() / max) * 100, 0), 100))
+/*
+ * `value` has been a live prop since #1704. `max` and `indeterminate` were not,
+ * and they are bound for the same reasons:
+ *
+ *   :max="total()"            the denominator is often unknown until the
+ *                             response that supplies it arrives
+ *   :indeterminate="!total()" and the bar starts indeterminate precisely
+ *                             BECAUSE the total is not known yet
+ *
+ * Frozen, those two could only ever describe the state the page was built in,
+ * so a bar could never stop spinning once the total showed up. See #1997 for
+ * the same freeze on Button.
+ */
+/*
+ * The locals are deliberately NOT named `max` / `indeterminate`.
+ *
+ * A client-script name that matches a server-script export stops the server
+ * interpolating that name in the template: the `animate-spin` ternary below
+ * rendered as literal text rather than being evaluated. The attribute
+ * useReactiveProp watches is its first argument, so the local is free to be
+ * called something else — and has to be.
+ */
+const value = useReactiveProp('value', {{ value }})
+const maxValue = useReactiveProp('max', {{ max }})
+const isIndeterminate = useReactiveProp('indeterminate', {{ indeterminate }})
+
+const percentage = derived(() => Math.min(Math.max((value() / maxValue()) * 100, 0), 100))
 const percentLabel = derived(() => `${Math.round(percentage())}%`)
-const linearWidth = derived(() => indeterminate ? '30%' : `${percentage()}%`)
-const dashOffset = derived(() => indeterminate ? 0 : circumference - (percentage() / 100) * circumference)
+const linearWidth = derived(() => isIndeterminate() ? '30%' : `${percentage()}%`)
+const dashOffset = derived(() => isIndeterminate() ? 0 : circumference - (percentage() / 100) * circumference)
+// The spin is part of what `indeterminate` MEANS, so it follows the signal
+// rather than the server's snapshot of it.
+const circularBarClass = derived(() => `${circularBarColor} transition-all duration-300 ease-in-out ${isIndeterminate() ? 'animate-spin' : ''}`.trim())
 
 defineExpose({ value, setValue: (v) => value.set(v) })
 </script>
@@ -74,6 +100,7 @@ defineExpose({ value, setValue: (v) => value.set(v) })
       :aria-valuenow="value()"
       aria-valuemin="0"
       aria-valuemax="{{ max }}"
+      :aria-valuemax="maxValue()"
     >
     <div
         class="{{ linearBarClasses }}"
@@ -93,6 +120,7 @@ defineExpose({ value, setValue: (v) => value.set(v) })
         :aria-valuenow="value()"
         aria-valuemin="0"
         aria-valuemax="{{ max }}"
+        :aria-valuemax="maxValue()"
       >
       <circle
           class="{{ circularTrackColor }}"
@@ -104,6 +132,7 @@ defineExpose({ value, setValue: (v) => value.set(v) })
         />
       <circle
           class="{{ circularBarColor }} transition-all duration-300 ease-in-out {{ indeterminate ? 'animate-spin' : '' }}"
+          :class="circularBarClass()"
           cx="{{ circularSize / 2 }}"
           cy="{{ circularSize / 2 }}"
           r="{{ radius }}"
@@ -150,6 +179,7 @@ bg-purple-600
 bg-success-solid
 bg-surface-sunken
 bg-yellow-600
+circularBarClass()
 circularBarColor
 circularSizeClass
 circularTrackColor
@@ -182,6 +212,7 @@ justify-center
 labelClasses
 linearBarClasses
 linearTrackClasses
+max
 mb-2
 overflow-hidden
 progressbar
