@@ -7,7 +7,7 @@
 export const title = $props.title || ''
 export const className = $props.className || ''
 
-const headerClasses = 'w-full flex items-center justify-between px-4 py-3 text-left font-medium text-fg hover:bg-surface-hover transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900'
+const headerClasses = 'w-full flex items-center justify-between px-4 py-3 text-left font-medium text-fg hover:bg-surface-hover transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-panel'
 const iconClasses = 'w-5 h-5 text-fg-soft transition-transform duration-200'
 const contentClasses = 'px-4 py-3 text-fg-strong'
 </script>

@@ -51,6 +51,8 @@ config file and no rebuild:
 | `surface-raised-hover` | `hover:bg-surface-raised-hover` | neutral-200 | neutral-600 |
 | `surface-sunken-hover` | `hover:bg-surface-sunken-hover` | neutral-300 | neutral-600 |
 | `field-hover` | `hover:bg-field-hover` | neutral-50 | neutral-600 |
+| `inverse` | `bg-inverse`, `border-t-inverse` | neutral-900 | neutral-700 |
+| `inverse-ink` | `text-inverse-ink` | white | white |
 | `line` | `border-line`, `divide-line` | neutral-200 | neutral-700 |
 | `line-strong` | `border-line-strong`, `ring-line-strong` | neutral-300 | neutral-600 |
 | `accent` | `text-accent`, `ring-accent` | blue-600 | blue-400 |
@@ -182,6 +184,36 @@ mode, which is why they survived review. Each pair in the table above differs
 from its base in *both* modes, and that relationship — not any particular shade
 — is what `role-token-coverage.test.ts` asserts, so re-pointing one of these
 variables cannot reintroduce an invisible hover.
+
+### An inverted surface, and a focus ring's offset
+
+`inverse` is a surface that is dark in *both* modes — a tooltip bubble, a chip
+over code. It exists because Tooltip's bubble and the arrow that points out of
+it are the same colour by intent and were spelled as two independent literals:
+
+```html
+<!-- the bubble -->          bg-neutral-900 dark:bg-neutral-700
+<!-- the arrow, tinted -->   border-t-gray-900 dark:border-t-gray-700
+```
+
+`gray` is blue-tinted and `neutral` is achromatic, so the triangle did not
+match the bubble it belonged to, and nothing held the five classes together.
+They are now `bg-inverse` and `border-{t,b,l,r}-inverse`, and one variable
+moves the whole thing.
+
+A **focus ring's offset** is the surface *behind* the control, so it takes a
+surface role too:
+
+```html
+<!-- was: focus:ring-offset-2 dark:focus:ring-offset-gray-900 -->
+<button class="focus:ring-offset-2 focus:ring-offset-panel">
+```
+
+Eight controls declared only the dark half and left light mode to the engine's
+`#fff` default — which is exactly `panel`'s light value, so naming the role
+keeps light mode byte-identical and corrects dark mode from gray-900 to the
+neutral-800 the panel actually is. No component names a `gray` shade any more,
+and a test keeps it that way.
 
 ### Why `neutral` and not `gray`
 
@@ -375,7 +407,7 @@ Good for one-offs. Not a theme.
 
 ## What is not migrated
 
-174 of the library's ~890 palette-shade uses still name a shade directly, in 40
+179 of the library's ~890 palette-shade uses still name a shade directly, in 41
 of the 102 components. Three cases are deliberately left alone, because
 migrating them would change appearance rather than preserve it:
 

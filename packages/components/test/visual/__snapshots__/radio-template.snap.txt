@@ -17,7 +17,7 @@ export const name = $props.name || ''
 export const className = $props.className || ''
 
 const sizeClasses = { sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 w-6' }
-const baseClasses = 'border-line-strong text-accent focus:ring-accent focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition-colors'
+const baseClasses = 'border-line-strong text-accent focus:ring-accent focus:ring-2 focus:ring-offset-2 focus:ring-offset-panel transition-colors'
 const stateClasses = error ? 'border-danger-line text-danger focus:ring-danger-focus' : ''
 const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
 
@@ -89,7 +89,6 @@ checked
 className
 cursor-not-allowed
 cursor-pointer
-dark:focus:ring-offset-gray-900
 descriptionClasses
 false
 flex
@@ -97,6 +96,7 @@ focus:ring-2
 focus:ring-accent
 focus:ring-danger-focus
 focus:ring-offset-2
+focus:ring-offset-panel
 font-medium
 h-4
 h-5

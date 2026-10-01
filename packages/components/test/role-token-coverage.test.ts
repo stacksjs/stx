@@ -517,3 +517,82 @@ describe('a hovered neutral surface is a role (#1993)', () => {
     }
   })
 })
+
+/**
+ * Two colours that must agree come from one role, and no component names
+ * `gray` (stacksjs/stx#1993).
+ *
+ * The neutral roles name `neutral`, which is achromatic; `gray` is blue-tinted.
+ * Mixing them is not a palette preference, it is a visible seam - and Tooltip
+ * had one. The bubble was `bg-neutral-900 dark:bg-neutral-700` and the arrow
+ * that points out of it was `border-t-gray-900 dark:border-t-gray-700`: the
+ * same colour by intent, spelled as two independent literals in two different
+ * families, so the triangle was tinted against the bubble it belonged to.
+ *
+ * Nothing held those five classes together, which is the argument for the role
+ * rather than for simply correcting the family.
+ */
+describe('nothing is left naming gray (#1993)', () => {
+  const SRC = path.join(import.meta.dir, '..', 'src')
+  const walk = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap(e =>
+    e.isDirectory() ? walk(path.join(dir, e.name)) : (e.name.endsWith('.stx') ? [path.join(dir, e.name)] : []),
+  )
+
+  it('names no gray shade anywhere in the library', () => {
+    const offenders: string[] = []
+
+    for (const file of walk(SRC)) {
+      const hits = code(readFileSync(file, 'utf-8')).match(/\bgray-\d{2,3}\b/g) ?? []
+
+      if (hits.length) offenders.push(`${path.relative(SRC, file)}: ${hits.join(' ')}`)
+    }
+
+    expect(offenders).toEqual([])
+  })
+
+  it('has an inverted surface and its ink', () => {
+    expect(SEMANTIC_TOKENS.inverse).toBeDefined()
+    expect(SEMANTIC_TOKENS['inverse-ink']).toBeDefined()
+    // Inverted means dark in BOTH modes, which is the whole point: a tooltip
+    // bubble reads against the page either way.
+    expect(Number(SEMANTIC_TOKENS.inverse.light.split('-').pop())).toBeGreaterThan(500)
+    expect(Number(SEMANTIC_TOKENS.inverse.dark.split('-').pop())).toBeGreaterThan(500)
+  })
+
+  /*
+   * The arrow is the bubble. Asserting they share the role - rather than that
+   * both happen to say neutral-900 - is what makes re-pointing `--stx-inverse`
+   * move the triangle with the bubble.
+   */
+  it('paints the tooltip arrow and its bubble from one role', () => {
+    const tooltip = code(readFileSync(path.join(UI, 'tooltip/Tooltip.stx'), 'utf-8'))
+
+    expect(tooltip).toContain('bg-inverse')
+    expect(tooltip).toContain('text-inverse-ink')
+    for (const side of ['t', 'b', 'l', 'r'])
+      expect(tooltip, `arrow side ${side}`).toContain(`border-${side}-inverse`)
+  })
+
+  /*
+   * A focus ring's offset is the surface BEHIND the control, so it belongs to
+   * a surface role. Eight controls declared `dark:focus:ring-offset-gray-900`
+   * and left light mode to the engine's `#fff` default - which is `panel`'s
+   * light value, so naming the role keeps light identical and corrects dark
+   * from a blue-tinted gray-900 to the neutral-800 the panel actually is.
+   */
+  it('takes a focus ring offset from the surface behind the control', () => {
+    for (const rel of [
+      'tabs/Tabs.stx',
+      'radio/Radio.stx',
+      'checkbox/Checkbox.stx',
+      'pagination/Pagination.stx',
+      'accordion/Accordion.stx',
+      'accordion/AccordionItem.stx',
+    ]) {
+      const source = code(readFileSync(path.join(UI, rel), 'utf-8'))
+
+      expect(source, rel).toContain('focus:ring-offset-panel')
+      expect(source, rel).not.toMatch(/ring-offset-(?:gray|neutral)-\d{2,3}/)
+    }
+  })
+})

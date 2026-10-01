@@ -141,6 +141,21 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
   'surface-sunken-hover': { light: 'neutral-300', dark: 'neutral-600', description: 'Sunken surface, hovered' },
   'field-hover': { light: 'neutral-50', dark: 'neutral-600', description: 'Form control surface, hovered' },
 
+  /*
+   * A surface that contrasts with the page in BOTH modes - a tooltip bubble, a
+   * chip floating over code - which the vocabulary had no name for, so its
+   * pieces drifted apart (stacksjs/stx#1993).
+   *
+   * Tooltip is the demonstration. The bubble was `bg-neutral-900
+   * dark:bg-neutral-700` and the arrow that points out of it was
+   * `border-t-gray-900 dark:border-t-gray-700` - the SAME colour by intent,
+   * spelled as two independent literals in two different families, so the
+   * triangle was blue-tinted against an achromatic bubble and the join showed
+   * a seam. Five classes that must agree had nothing holding them together.
+   */
+  'inverse': { light: 'neutral-900', dark: 'neutral-700', description: 'Tooltip bubble, inverted surface' },
+  'inverse-ink': { light: 'white', dark: 'white', description: 'Text on an inverted surface' },
+
   // Edges — borders, rings and dividers share a role
   'line': { light: 'neutral-200', dark: 'neutral-700', description: 'Default border, divider' },
   'line-strong': { light: 'neutral-300', dark: 'neutral-600', description: 'Input border, focus ring track' },

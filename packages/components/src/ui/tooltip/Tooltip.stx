@@ -14,13 +14,13 @@ const positionClasses = {
 }
 
 const arrowClasses = {
-  top: 'top-full left-1/2 -translate-x-1/2 border-t-gray-900 dark:border-t-gray-700',
-  bottom: 'bottom-full left-1/2 -translate-x-1/2 border-b-gray-900 dark:border-b-gray-700',
-  left: 'left-full top-1/2 -translate-y-1/2 border-l-gray-900 dark:border-l-gray-700',
-  right: 'right-full top-1/2 -translate-y-1/2 border-r-gray-900 dark:border-r-gray-700',
+  top: 'top-full left-1/2 -translate-x-1/2 border-t-inverse',
+  bottom: 'bottom-full left-1/2 -translate-x-1/2 border-b-inverse',
+  left: 'left-full top-1/2 -translate-y-1/2 border-l-inverse',
+  right: 'right-full top-1/2 -translate-y-1/2 border-r-inverse',
 }
 
-export const tooltipClasses = `absolute z-50 px-3 py-2 text-sm font-medium text-white bg-neutral-900 dark:bg-neutral-700 rounded-panel shadow-lg whitespace-nowrap pointer-events-none transition-opacity duration-200 ${positionClasses[position] || positionClasses.top} ${className}`.trim()
+export const tooltipClasses = `absolute z-50 px-3 py-2 text-sm font-medium text-inverse-ink bg-inverse rounded-panel shadow-lg whitespace-nowrap pointer-events-none transition-opacity duration-200 ${positionClasses[position] || positionClasses.top} ${className}`.trim()
 export const arrowClass = `absolute w-0 h-0 border-4 border-transparent ${arrowClasses[position] || arrowClasses.top}`.trim()
 </script>
 
