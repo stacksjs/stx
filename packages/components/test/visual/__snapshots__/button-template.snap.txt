@@ -42,10 +42,42 @@ export const spinnerClasses = `animate-spin ${iconClasses}`.trim()
 </script>
 <script client>
   const emit = defineEmits()
-const disabledNow = {{ isDisabled }}
+
+/*
+ * `disabled` and `loading` are read as live props, not as a server snapshot.
+ *
+ * This used to be `const disabledNow = {{ isDisabled }}` — a value computed
+ * before the page was sent and never looked at again. So the most common piece
+ * of button state in an application could not be expressed:
+ *
+ *
+  <Button :disabled="saving()" @click="save">
+    Save
+  </Button>
+  *
+ * `saving()` is a signal. On the server it is not yet meaningful, so the button
+ * shipped enabled and STAYED enabled for the life of the page — through the
+ * exact async action it was there to guard. Double submits, destructive
+ * deletes and rotate-key confirmations all land on this.
+ *
+ * useReactiveProp wires the parent's binding into a local signal: the parent's
+ * bindAttr writes the attribute on our root, a MutationObserver picks it up,
+ * and the signal flips. Dialog already does this for `open` (#1704) and Switch
+ * for `checked`, so this is the package's existing answer rather than a new one.
+ *
+ * See stacksjs/stx#1997.
+ */
+const isLoading = useReactiveProp('loading', {{ loading }})
+const disabledProp = useReactiveProp('disabled', {{ disabled }})
+
+// Loading implies disabled, the same combination the server computes for the
+// initial render, so the two agree before and after hydration.
+const isDisabled = derived(() => disabledProp() || isLoading())
 
 function onClick(event) {
-  if (disabledNow) {
+  // Read through the signal: a button disabled after render must stop guarding
+  // on the live value, not on what was true when the page was built.
+  if (isDisabled()) {
     event.preventDefault()
     return
   }
@@ -56,26 +88,37 @@ function onClick(event) {
   type="{{ type }}"
   class="{{ buttonClasses }}"
   @if(isDisabled)disabled@endif
-  @click="onClick($event)"
+  :disabled="isDisabled()"
   aria-busy="{{ loading ? 'true' : 'false' }}"
+  :aria-busy="isLoading() ? 'true' : 'false'"
+  @click="onClick($event)"
 >
-  @if(loading)
-  <svg class="{{ spinnerClasses }}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+  {{-- The spinner is always in the DOM so `loading` can turn it on after render;
+       it was inside an @if, which meant the only way to see it was to have been
+       loading when the page was built. x-cloak only when the server says we are
+       NOT loading, so a button rendered loading shows its spinner on first
+       paint rather than waiting for hydration. --}}
+  <svg
+    :show="isLoading()"
+    @if(!loading)x-cloak@endif
+    class="{{ spinnerClasses }}"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+  >
     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
     </circle>
     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
     </path>
   </svg>
-  @else
-    @if(leftIcon)
-  <span class="{{ iconClasses }}">
+  @if(leftIcon)
+  <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
     {!! leftIcon !!}
   </span>
   @endif
-  @endif
   <slot />
-  @if(!loading && rightIcon)
-  <span class="{{ iconClasses }}">
+  @if(rightIcon)
+  <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
     {!! rightIcon !!}
   </span>
   @endif
@@ -98,6 +141,7 @@ dark:hover:bg-neutral-600
 dark:hover:bg-red-700
 dark:text-blue-400
 dark:text-white
+disabled
 disabled:cursor-not-allowed
 disabled:opacity-50
 disabled:pointer-events-none
@@ -130,6 +174,7 @@ iconClasses
 inline-flex
 items-center
 justify-center
+loading
 opacity-25
 opacity-75
 px-3
