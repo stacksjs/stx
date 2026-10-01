@@ -1,4 +1,5 @@
 import { afterAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
+import { existsSync } from 'node:fs'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -39,6 +40,19 @@ const NO_IMAGE = '<main>bound</main>'
 interface Boot {
   /** How long the port took to accept a connection, in ms. */
   elapsed: number
+  /**
+   * Whether the slow image pass had already finished when the port accepted.
+   *
+   * This is the CAUSAL answer to "did the bind wait for the pass", and it is
+   * what the floor assertions use. Timing was a proxy for it and a bad one: a
+   * floor of `elapsed > WARMUP_MS * 0.7` says nothing about ordering, it only
+   * says the machine was slow, and on a CI runner sharing a box with 14,000
+   * other tests it failed for being busy rather than for being wrong.
+   *
+   * The driver writes `warmup-done.txt` as the last thing the pass does, so its
+   * presence at the moment of the bind is exactly the property.
+   */
+  warmupDoneAtBind: boolean
   dir: string
   port: number
   stop: () => void
@@ -87,7 +101,13 @@ serve({ patterns: ['views'], port: ${port}, stxModule: stxModule as any, ...${JS
     try {
       const socket = await Bun.connect({ hostname: 'localhost', port, socket: { data() {}, error() {} } })
       socket.end()
-      return { elapsed: Date.now() - started, dir, port, stop }
+      return {
+        elapsed: Date.now() - started,
+        warmupDoneAtBind: existsSync(path.join(dir, 'warmup-done.txt')),
+        dir,
+        port,
+        stop,
+      }
     }
     catch {
       await Bun.sleep(50)
@@ -103,6 +123,13 @@ async function timeToBind(env: Record<string, string>, port: number, extra: Reco
   return booted.elapsed
 }
 
+/** Did the bind wait for the image pass? Asked of the ordering, not the clock. */
+async function boundAfterWarmup(env: Record<string, string>, port: number, extra: Record<string, unknown> = {}, page = USES_IMAGE): Promise<boolean> {
+  const booted = await boot(env, port, extra, page)
+  booted.stop()
+  return booted.warmupDoneAtBind
+}
+
 const PRODUCTION = { APP_ENV: 'production', NODE_ENV: 'production' }
 
 describe('startup image pass and the bind', () => {
@@ -110,8 +137,9 @@ describe('startup image pass and the bind', () => {
   // instance binds, the kernel gives it real visitors it cannot yet serve —
   // while the release it is replacing is right there, able to serve them.
   it('does not bind in production until the pass is done', async () => {
-    const elapsed = await timeToBind({ APP_ENV: 'production', NODE_ENV: 'production' }, 45_910 + (process.pid % 20))
-    expect(elapsed).toBeGreaterThan(WARMUP_MS * 0.7)
+    // The pass had finished BEFORE the port accepted — which is the property,
+    // rather than "the bind took a while".
+    expect(await boundAfterWarmup({ APP_ENV: 'production', NODE_ENV: 'production' }, 45_910 + (process.pid % 20))).toBe(true)
   })
 
   // A project that renders no <StxImage> and no @image gets nothing from the
@@ -146,13 +174,12 @@ describe('startup image pass and the bind', () => {
   })
 
   it('still runs the pass when forced on, whatever the templates use', async () => {
-    const elapsed = await timeToBind(
+    expect(await boundAfterWarmup(
       { APP_ENV: 'production', NODE_ENV: 'production' },
       45_990 + (process.pid % 20),
       { imageWarmup: true },
       NO_IMAGE,
-    )
-    expect(elapsed).toBeGreaterThan(WARMUP_MS * 0.7)
+    )).toBe(true)
   })
 
   // A release directory is new on every deploy; variants kept inside it were
