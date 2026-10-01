@@ -28,6 +28,27 @@ export const hasControls = backHref !== '' || compactTitle !== '' || actions !==
  * right on exactly one device.
  */
 export const headerStyle = 'padding-top: max(env(safe-area-inset-top, 0px), 12px);'
+
+/*
+ * Whether the router should own this link.
+ *
+ * The SPA router intercepts `[data-stx-link]` and nothing else, so a plain
+ * `<a href>` here was a full document load: the runtime rebooted, every signal
+ * and store was discarded, and the screen flashed white. On a phone this is
+ * the primary navigation control, so the app's main interaction was its worst
+ * one - the single largest reason a wrapped build feels like a browser rather
+ * than an app. stacksjs/stx#1988
+ *
+ * An absolute URL, a scheme (mailto:, tel:), a protocol-relative URL and a
+ * bare fragment are left to the browser: the router does not handle those, and
+ * claiming them would break a tab that points off-site.
+ */
+function routerOwns(url) {
+  if (!url || url === '#') return false
+  return !/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(url)
+}
+
+export const backRouterOwned = routerOwns(backHref)
 </script>
 
 <header class="px-4 {{ className }}" style="{{ headerStyle }}" data-stx-nav-bar>
@@ -38,6 +59,9 @@ export const headerStyle = 'padding-top: max(env(safe-area-inset-top, 0px), 12px
           href="{{ backHref }}"
           class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-raised text-fg"
           aria-label="Back"
+          @if (backRouterOwned)
+            data-stx-link
+          @endif
         >
           <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
             <path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />

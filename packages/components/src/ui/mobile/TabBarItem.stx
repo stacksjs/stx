@@ -16,6 +16,27 @@ export const badge = $props.badge || ''
 export const hasBadge = badge !== '' && badge !== 0 && badge !== '0'
 
 /*
+ * Whether the router should own this link.
+ *
+ * The SPA router intercepts `[data-stx-link]` and nothing else, so a plain
+ * `<a href>` here was a full document load: the runtime rebooted, every signal
+ * and store was discarded, and the screen flashed white. On a phone this is
+ * the primary navigation control, so the app's main interaction was its worst
+ * one - the single largest reason a wrapped build feels like a browser rather
+ * than an app. stacksjs/stx#1988
+ *
+ * An absolute URL, a scheme (mailto:, tel:), a protocol-relative URL and a
+ * bare fragment are left to the browser: the router does not handle those, and
+ * claiming them would break a tab that points off-site.
+ */
+function routerOwns(url) {
+  if (!url || url === '#') return false
+  return !/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(url)
+}
+
+export const routerOwned = routerOwns(href)
+
+/*
  * The active state is a filled pill behind the item rather than a colour
  * change alone. Colour alone is the one distinction that disappears for the
  * ~8% of men with a red-green deficiency and for anyone in bright sunlight,
@@ -32,6 +53,9 @@ export const itemClasses = `
   href="{{ href }}"
   class="{{ itemClasses }}"
   data-stx-tab-bar-item
+  @if (routerOwned)
+    data-stx-link
+  @endif
   @if (active)
     aria-current="page"
   @endif

@@ -21,6 +21,27 @@ export const cardClasses = `
   overflow-hidden rounded-2xl border border-line bg-surface-raised
   divide-y divide-line
 `.replace(/\s+/g, ' ').trim()
+
+/*
+ * Whether the router should own this link.
+ *
+ * The SPA router intercepts `[data-stx-link]` and nothing else, so a plain
+ * `<a href>` here was a full document load: the runtime rebooted, every signal
+ * and store was discarded, and the screen flashed white. On a phone this is
+ * the primary navigation control, so the app's main interaction was its worst
+ * one - the single largest reason a wrapped build feels like a browser rather
+ * than an app. stacksjs/stx#1988
+ *
+ * An absolute URL, a scheme (mailto:, tel:), a protocol-relative URL and a
+ * bare fragment are left to the browser: the router does not handle those, and
+ * claiming them would break a tab that points off-site.
+ */
+function routerOwns(url) {
+  if (!url || url === '#') return false
+  return !/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(url)
+}
+
+export const actionRouterOwned = routerOwns(actionHref)
 </script>
 
 <section class="{{ className }}" data-stx-section-card>
@@ -31,7 +52,13 @@ export const cardClasses = `
       @endif
 
       @if (action)
-        <a href="{{ actionHref }}" class="text-sm font-medium text-accent">{{ action }}</a>
+        <a
+          href="{{ actionHref }}"
+          class="text-sm font-medium text-accent"
+          @if (actionRouterOwned)
+            data-stx-link
+          @endif
+        >{{ action }}</a>
       @endif
     </header>
   @endif
