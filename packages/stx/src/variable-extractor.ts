@@ -467,6 +467,15 @@ export function isMissingBindingFailure(message: string): boolean {
 }
 
 /**
+ * Causes already reported, so a component that throws on every row of a list
+ * says so once rather than once per row.
+ *
+ * Keyed by file and message: two different failures in one file are two
+ * things to know about, and the same failure in two files is as well.
+ */
+const reportedServerScriptFailures = new Set<string>()
+
+/**
  * Extract variables from script content and add them to context
  *
  * @param scriptContent - The JavaScript/TypeScript code from a <script> tag
@@ -1177,8 +1186,41 @@ catch {
         + `an undefined identifier throws before the chain is reached. Cause: ${msg}`,
       )
     }
-    else if (process.env.STX_DEBUG) {
-      console.warn(`[stx] server <script> did not execute in ${filePath ?? '<unknown>'} — falling back to static extraction. Cause: ${msg}`)
+    else {
+      /*
+       * Anything else that threw, said once per distinct cause.
+       *
+       * This was behind STX_DEBUG, and the cost of that was a component
+       * rendering as a HOLE with nothing anywhere to say why: the markup
+       * skeleton survives, every `{{ }}` that depended on the script resolves
+       * to nothing, the page answers 200, and `debug: true` printed nothing
+       * either. The reported case was a dependency that had started importing
+       * a package it did not declare, so a static import threw wherever that
+       * package was unreachable - a failure the developer did not cause and
+       * could not see. Finding it took instrumenting the pipeline by hand
+       * (stacksjs/stx#1991).
+       *
+       * It also hides upstream breakage indefinitely: a dependency can start
+       * throwing and every page keeps rendering "successfully", just without
+       * that component.
+       *
+       * The legitimate quiet case - a script reaching for a browser global -
+       * is already classified above and does not reach here, so there is
+       * nothing left down here that is not worth saying out loud.
+       *
+       * Once per (file, cause) rather than per render, because a component on
+       * a list page throws once per row and a warning per row buries itself.
+       * STX_DEBUG brings the repeats back.
+       */
+      const seenKey = `${filePath ?? '<unknown>'}\u0000${msg}`
+      if (process.env.STX_DEBUG || !reportedServerScriptFailures.has(seenKey)) {
+        reportedServerScriptFailures.add(seenKey)
+        console.warn(
+          `[stx] server <script> in ${filePath ?? '<unknown>'} threw, `
+          + `so every variable in that script is undefined and anything that reads one renders empty. `
+          + `Cause: ${msg}`,
+        )
+      }
     }
     // Fallback: Try alternative parsing approaches
     try {
