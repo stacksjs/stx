@@ -1,5 +1,75 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.343...v0.2.344)
+
+## ✨ Features
+
+- **components**: shape roles, so a pill-shaped app can adopt the controls ([1284c0f](https://github.com/stacksjs/stx/commit/1284c0f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993))
+- **components**: the neutral surfaces move onto roles too, and a white one finally has a name ([e801e37](https://github.com/stacksjs/stx/commit/e801e37)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993), [#1993](https://github.com/stacksjs/stx/issues/1993))
+- **components**: role tokens for the painted primitives, so a themed app can adopt them ([89b49cf](https://github.com/stacksjs/stx/commit/89b49cf)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993), [#1930](https://github.com/stacksjs/stx/issues/1930))
+- **components**: Button's label can change with its state ([35e7fa1](https://github.com/stacksjs/stx/commit/35e7fa1)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1997](https://github.com/stacksjs/stx/issues/1997))
+- **components**: Dialog does what role="dialog" aria-modal="true" promises ([26bf1e5](https://github.com/stacksjs/stx/commit/26bf1e5)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1973](https://github.com/stacksjs/stx/issues/1973), [#1978](https://github.com/stacksjs/stx/issues/1978))
+- **signals**: hydrate from the server's binding list instead of walking for it ([55dd1a1](https://github.com/stacksjs/stx/commit/55dd1a1)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1984](https://github.com/stacksjs/stx/issues/1984))
+- **signals**: work out where the bindings are on the server, not in every browser ([a198835](https://github.com/stacksjs/stx/commit/a198835)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1984](https://github.com/stacksjs/stx/issues/1984))
+- **signals**: bindShow stops reading the DOM back, and scope lookup leaves it ([ed44791](https://github.com/stacksjs/stx/commit/ed44791)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1984](https://github.com/stacksjs/stx/issues/1984))
+- **signals**: event handlers register through the host ([c184b53](https://github.com/stacksjs/stx/commit/c184b53)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1984](https://github.com/stacksjs/stx/issues/1984))
+- **signals**: bindIf and bindIfChain go through the host, which is now stxHost ([db357d4](https://github.com/stacksjs/stx/commit/db357d4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: bindFor builds and reconciles rows through the host ([2eea2c8](https://github.com/stacksjs/stx/commit/2eea2c8)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1984](https://github.com/stacksjs/stx/issues/1984), [#1727](https://github.com/stacksjs/stx/issues/1727))
+- **signals**: the binding layer writes through a host, not straight at the DOM ([3fd66bb](https://github.com/stacksjs/stx/commit/3fd66bb)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1984](https://github.com/stacksjs/stx/issues/1984))
+
+## 🐛 Bug Fixes
+
+- **components**: the last unthemeable variants, and info stops being a second accent ([60a8c7e](https://github.com/stacksjs/stx/commit/60a8c7e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993))
+- **components**: a component's style block interpolates instead of shipping empty ([fff94e2](https://github.com/stacksjs/stx/commit/fff94e2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1990](https://github.com/stacksjs/stx/issues/1990))
+- **expressions**: a missing server value in a script becomes undefined, not a mustache ([14dae81](https://github.com/stacksjs/stx/commit/14dae81)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1989](https://github.com/stacksjs/stx/issues/1989))
+- **components**: Progress max/indeterminate and Tooltip disabled are live props (#2008) ([a45e619](https://github.com/stacksjs/stx/commit/a45e619)) _(by Glenn Michael Torregosa <gtorregosa@gmail.com>)_ ([#2008](https://github.com/stacksjs/stx/issues/2008), [#2008](https://github.com/stacksjs/stx/issues/2008), [#1997](https://github.com/stacksjs/stx/issues/1997), [#1704](https://github.com/stacksjs/stx/issues/1704))
+- **components**: Button reads disabled and loading as live props (#2007) ([3828157](https://github.com/stacksjs/stx/commit/3828157)) _(by Glenn Michael Torregosa <gtorregosa@gmail.com>)_ ([#1997](https://github.com/stacksjs/stx/issues/1997), [#2007](https://github.com/stacksjs/stx/issues/2007), [#2007](https://github.com/stacksjs/stx/issues/2007), [#1704](https://github.com/stacksjs/stx/issues/1704))
+- **components**: an unresolved component no longer prints the machine's paths into the page ([988a0e6](https://github.com/stacksjs/stx/commit/988a0e6)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2004](https://github.com/stacksjs/stx/issues/2004))
+- **process**: a server script that throws says so instead of leaving a hole ([81f6dd8](https://github.com/stacksjs/stx/commit/81f6dd8)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1991](https://github.com/stacksjs/stx/issues/1991))
+- **components**: a tab tap is a fragment swap, not a full document load ([b29adff](https://github.com/stacksjs/stx/commit/b29adff)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1988](https://github.com/stacksjs/stx/issues/1988), [#1992](https://github.com/stacksjs/stx/issues/1992))
+- **components**: a boolean prop set to "false" no longer turns the thing on ([f7f4e4d](https://github.com/stacksjs/stx/commit/f7f4e4d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2006](https://github.com/stacksjs/stx/issues/2006))
+- **components**: a table cell's scope no longer gets hoisted out of the table ([8eb7198](https://github.com/stacksjs/stx/commit/8eb7198)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1980](https://github.com/stacksjs/stx/issues/1980))
+- **slots**: a default slot with bound props dropped everything passed into it ([7c2b6a3](https://github.com/stacksjs/stx/commit/7c2b6a3)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1975](https://github.com/stacksjs/stx/issues/1975), [#1771](https://github.com/stacksjs/stx/issues/1771))
+- **components**: the Tabs and Accordion slot APIs rendered nothing at all ([70254d5](https://github.com/stacksjs/stx/commit/70254d5)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1979](https://github.com/stacksjs/stx/issues/1979), [#1703](https://github.com/stacksjs/stx/issues/1703))
+- **components**: Breadcrumb maxItems was off by one, and the icon prop never rendered ([a590423](https://github.com/stacksjs/stx/commit/a590423)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1999](https://github.com/stacksjs/stx/issues/1999))
+- **components**: a style tag named in a script comment is not a style block ([eb270a7](https://github.com/stacksjs/stx/commit/eb270a7)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2005](https://github.com/stacksjs/stx/issues/2005), [#1982](https://github.com/stacksjs/stx/issues/1982))
+- **components**: Drawer's size, slide-in and accessible name all shipped broken ([bfb519c](https://github.com/stacksjs/stx/commit/bfb519c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2002](https://github.com/stacksjs/stx/issues/2002), [#1982](https://github.com/stacksjs/stx/issues/1982), [#2002](https://github.com/stacksjs/stx/issues/2002), [#1982](https://github.com/stacksjs/stx/issues/1982), [#1982](https://github.com/stacksjs/stx/issues/1982))
+- **components**: a loading placeholder stops pulsing when the viewer asked it to ([d0b9345](https://github.com/stacksjs/stx/commit/d0b9345)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1995](https://github.com/stacksjs/stx/issues/1995))
+- **components**: an unknown prop value no longer deletes the class it picks ([d76cb46](https://github.com/stacksjs/stx/commit/d76cb46)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2001](https://github.com/stacksjs/stx/issues/2001), [#1995](https://github.com/stacksjs/stx/issues/1995), [#2001](https://github.com/stacksjs/stx/issues/2001))
+- **components**: form inputs had no dark mode, because blue-gray is a v2 palette ([1f7ce54](https://github.com/stacksjs/stx/commit/1f7ce54)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1976](https://github.com/stacksjs/stx/issues/1976), [#1977](https://github.com/stacksjs/stx/issues/1977), [#1993](https://github.com/stacksjs/stx/issues/1993), [#1977](https://github.com/stacksjs/stx/issues/1977))
+- **components**: backdrops and rings had no opacity, because the class emitted no CSS ([afd08fe](https://github.com/stacksjs/stx/commit/afd08fe)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1977](https://github.com/stacksjs/stx/issues/1977), [#000](https://github.com/stacksjs/stx/issues/000))
+- **components**: CodeBlock renders the code, not [object Object] ([26ab279](https://github.com/stacksjs/stx/commit/26ab279)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: an undefined server value must not ship a mustache into JS ([92e7195](https://github.com/stacksjs/stx/commit/92e7195)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ♻️ Code Refactoring
+
+- **components**: one neutral in the library, and it is achromatic ([5e13b18](https://github.com/stacksjs/stx/commit/5e13b18)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993))
+
+## 📝 Documentation
+
+- **components**: a guide to the component library, for whoever builds the UI ([1449988](https://github.com/stacksjs/stx/commit/1449988)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 💄 Styles
+
+- **components**: format the highlighter comment block ([47befb7](https://github.com/stacksjs/stx/commit/47befb7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ✅ Tests
+
+- **components**: pin the component prop binding inside an @included partial ([18d58bb](https://github.com/stacksjs/stx/commit/18d58bb)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1994](https://github.com/stacksjs/stx/issues/1994), [#1994](https://github.com/stacksjs/stx/issues/1994))
+- **bun-plugin**: say which wait timed out instead of failing two lines later ([3781541](https://github.com/stacksjs/stx/commit/3781541)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: stop fetch-interceptors leaking state between its own tests ([0de85a0](https://github.com/stacksjs/stx/commit/0de85a0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2003](https://github.com/stacksjs/stx/issues/2003))
+- **bun-plugin**: stop timing the machine instead of the bind ([eedd852](https://github.com/stacksjs/stx/commit/eedd852)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.344 ([4a9107d](https://github.com/stacksjs/stx/commit/4a9107d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- generate changelog for v0.2.344 ([a708e91](https://github.com/stacksjs/stx/commit/a708e91)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _Glenn Michael Torregosa <gtorregosa@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.343...HEAD)
 
 ## 🚀 Features
