@@ -515,3 +515,163 @@ const suffix = ')'
     expect(compiled).toContain('if (true)')
   })
 })
+
+/**
+ * The component's own declaration is its public surface (stacksjs/stx#2009).
+ *
+ * `defineProps` used to be read by one regex that required both a
+ * destructuring assignment and an explicit type argument, so four of the five
+ * documented spellings produced no properties at all, and the one that matched
+ * split names on `:` only - emitting a property literally called
+ * `label = 'Hello'`, documented as the attribute `label-hello`, which no page
+ * could ever address. Each form below is a spelling someone writes.
+ */
+describe('defineProps discovery', () => {
+  async function fieldsOf(script: string): Promise<Record<string, { type?: string, default?: string }>> {
+    const { input, output } = await workspace()
+    await fixture(input, 'Widget.stx', `<script component>{"tag":"props-widget"}</script>
+<script server>
+${script}
+</script>
+<template><div>{{ label }}</div></template>
+`)
+    await buildComponentLibrary({ inputDir: input, outputDir: output, bundle: false })
+    const manifest = JSON.parse(await readFile(path.join(output, 'custom-elements.json'), 'utf8'))
+    const members = (manifest.modules?.[0]?.declarations?.[0]?.members ?? []) as Array<Record<string, any>>
+    return Object.fromEntries(
+      members.filter(member => member.kind === 'field')
+        .map(member => [member.name as string, { type: member.type?.text, default: member.default }]),
+    )
+  }
+
+  it('reads a type-only call that is not destructured', async () => {
+    expect(await fieldsOf(`const props = defineProps<{ label?: string, count?: number }>()`))
+      .toEqual({ label: { type: 'string', default: undefined }, count: { type: 'number', default: undefined } })
+  })
+
+  it('reads withDefaults, taking the types from one side and the values from the other', async () => {
+    expect(await fieldsOf(`const props = withDefaults(defineProps<{ label?: string, count?: number }>(), { label: 'Hello', count: 0 })`))
+      .toEqual({ label: { type: 'string', default: '"Hello"' }, count: { type: 'number', default: '0' } })
+  })
+
+  it('reads the object form, including its type constructors', async () => {
+    expect(await fieldsOf(`const props = defineProps({ label: { type: String, default: 'Hello' }, count: { type: Number, default: 0 } })`))
+      .toEqual({ label: { type: 'string', default: '"Hello"' }, count: { type: 'number', default: '0' } })
+  })
+
+  it('reads the array form, which states names and no types', async () => {
+    const fields = await fieldsOf(`const { label, count } = defineProps(['label', 'count'])`)
+    expect(Object.keys(fields).sort()).toEqual(['count', 'label'])
+  })
+
+  it('reads a named interface, which is only in hand once the interfaces are scanned', async () => {
+    expect(await fieldsOf(`interface Props {
+  label?: string
+  count?: number
+}
+const props = defineProps<Props>()`))
+      .toEqual({ label: { type: 'string', default: undefined }, count: { type: 'number', default: undefined } })
+  })
+
+  it('takes the name from a destructuring default, not the whole initialiser', async () => {
+    // The regression this issue was filed for: `label = 'Hello'` became the
+    // property name, so the attribute was documented as `label-hello`.
+    const fields = await fieldsOf(`const { label = 'Hello', count = 0 } = defineProps<{ label?: string, count?: number }>()`)
+    expect(Object.keys(fields).sort()).toEqual(['count', 'label'])
+    expect(fields.label).toEqual({ type: 'string', default: '"Hello"' })
+    expect(fields.count).toEqual({ type: 'number', default: '0' })
+  })
+
+  it('types a destructured prop from its declaration rather than guessing', async () => {
+    // With no default to infer from, every prop used to be typed `object`, and
+    // an attribute of `"Revenue"` was then JSON-parsed and reached the page as
+    // [object Object].
+    expect(await fieldsOf(`const { label, count } = defineProps<{ label?: string, count?: number }>()`))
+      .toEqual({ label: { type: 'string', default: undefined }, count: { type: 'number', default: undefined } })
+  })
+
+  it('takes the property name, not the local name, when the pattern renames', async () => {
+    const fields = await fieldsOf(`const { label: shown = 'Hi' } = defineProps<{ label?: string }>()`)
+    expect(Object.keys(fields)).toEqual(['label'])
+  })
+
+  it('survives a default containing a comma, a brace and an arrow', async () => {
+    const commas = await fieldsOf(`const { label = 'To begin, click here' } = defineProps<{ label?: string }>()`)
+    expect(commas.label?.default).toBe('"To begin, click here"')
+
+    // A brace inside the pattern used to end it early, and the `>` of the
+    // arrow inside the type argument used to close the type argument.
+    const arrow = await fieldsOf(`const { make = () => ({ a: 1 }) } = defineProps<{ make?: () => object }>()`)
+    expect(Object.keys(arrow)).toEqual(['make'])
+  })
+
+  it('leaves the declarations the component derives alone', async () => {
+    const { input, output } = await workspace()
+    await fixture(input, 'Widget.stx', `<script component>{"tag":"derives-widget"}</script>
+<script server>
+const { count = 21 } = defineProps<{ count?: number }>()
+const doubled = count * 2
+</script>
+<template><div>{{ doubled }}</div></template>
+`)
+    await buildComponentLibrary({ inputDir: input, outputDir: output, bundle: false })
+    const module = await readFile(path.join(output, 'derives-widget.js'), 'utf8')
+    expect(module).toContain('count * 2')
+    expect(module).not.toContain('defineProps')
+  })
+})
+
+/**
+ * A compiled element can release what it acquired (stacksjs/stx#2010).
+ *
+ * The two custom-element reactions stay reserved, because the generated element
+ * defines them and a component that redefined one would silently take over the
+ * framework's own initialization or its listener cleanup. What was missing was
+ * anywhere else to put the work, so anything holding an observer or a document
+ * listener could not be written at all.
+ */
+describe('component lifecycle hooks', () => {
+  it('calls onConnect and onDisconnect, and keeps its own cleanup when a hook throws', async () => {
+    const { input, output } = await workspace()
+    await fixture(input, 'Lifecycle.stx', `<script component>{"tag":"lifecycle-widget-a"}</script>
+<script client>
+function onConnect() {
+  this.setAttribute('connects', String(Number(this.getAttribute('connects') || 0) + 1))
+}
+function onDisconnect() {
+  this.setAttribute('disconnects', String(Number(this.getAttribute('disconnects') || 0) + 1))
+}
+</script>
+<template><div id="body">held</div></template>
+`)
+    await buildComponentLibrary({ inputDir: input, outputDir: output, bundle: false })
+    await import(`${path.join(output, 'lifecycle-widget-a.js')}?test=${Date.now()}`)
+
+    const element = document.createElement('lifecycle-widget-a')
+    document.body.appendChild(element)
+    expect(element.getAttribute('connects')).toBe('1')
+    expect(element.getAttribute('disconnects')).toBeNull()
+
+    element.remove()
+    expect(element.getAttribute('disconnects')).toBe('1')
+
+    // Reconnecting runs both again, which is what an observer re-established on
+    // connect and torn down on disconnect depends on.
+    document.body.appendChild(element)
+    expect(element.getAttribute('connects')).toBe('2')
+    element.remove()
+    expect(element.getAttribute('disconnects')).toBe('2')
+  })
+
+  it('refuses a reserved reaction by naming the hook to use instead', async () => {
+    const { input, output } = await workspace()
+    await fixture(input, 'Reserved.stx', `<script component>{"tag":"reserved-widget-a"}</script>
+<script client>
+function disconnectedCallback() { this._observer?.disconnect() }
+</script>
+<template><div>held</div></template>
+`)
+    await expect(buildComponentLibrary({ inputDir: input, outputDir: output, bundle: false }))
+      .rejects.toThrow(/"disconnectedCallback" is reserved; define "onDisconnect" instead/)
+  })
+})

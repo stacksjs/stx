@@ -43,6 +43,27 @@ interface CompiledComponent {
   render: string
 }
 
+/**
+ * Why a name cannot be a component method, and what to write instead.
+ *
+ * The two custom-element reactions stay reserved because the generated element
+ * defines them: a component that redefined one would override the framework's
+ * own initialization or its listener cleanup and lose it with no diagnostic.
+ * What was missing was anywhere else to put the work, so the reservation read
+ * as "you cannot clean up" rather than "not here" (stacksjs/stx#2010).
+ *
+ * `onConnect` and `onDisconnect` are called from inside those reactions, which
+ * gives a component the same two moments without taking the reaction over.
+ */
+function reservedMethodMessage(name: string): string {
+  if (name === 'connectedCallback')
+    return `method "${name}" is reserved; define "onConnect" instead, which the element calls once it is connected, rendered and bound`
+  if (name === 'disconnectedCallback')
+    return `method "${name}" is reserved; define "onDisconnect" instead, which the element calls as it leaves the DOM, before it releases its own listeners`
+
+  return `method "${name}" is reserved`
+}
+
 const RESERVED_METHODS = new Set([
   'constructor',
   'connectedCallback',
@@ -133,7 +154,7 @@ function extractClientMethods(source: string, file: string): Record<string, stri
     let match: RegExpExecArray | null
     while ((match = functionPattern.exec(code))) {
       const name = match[1]
-      if (RESERVED_METHODS.has(name)) throw new Error(`${file}: client method "${name}" is reserved`)
+      if (RESERVED_METHODS.has(name)) throw new Error(`${file}: client ${reservedMethodMessage(name)}`)
       const bodyStart = functionPattern.lastIndex
       let depth = 1
       let quote = ''
@@ -414,6 +435,364 @@ function compileTemplateToRender(template: string): string {
  * Quotes (including template literals and escapes) and nested brackets are
  * tracked so an object, array or function default survives intact too.
  */
+/**
+ * The index just past a balanced bracket pair starting at `index`, or -1 when
+ * it never closes.
+ *
+ * Quotes and template literals are skipped, so a bracket inside a string
+ * default does not unbalance the scan.
+ */
+function skipBalanced(source: string, index: number, open: string, close: string): number {
+  if (source[index] !== open)
+    return -1
+
+  let depth = 0
+  let quote: string | null = null
+
+  for (let i = index; i < source.length; i++) {
+    const char = source[i]!
+    if (quote) {
+      if (char === '\\') {
+        i++
+        continue
+      }
+      if (char === quote)
+        quote = null
+      continue
+    }
+    if (char === '\'' || char === '"' || char === '`') {
+      quote = char
+      continue
+    }
+    if (char === open) {
+      depth++
+    }
+    else if (char === close) {
+      // `=>` is not a closing angle bracket. A type argument holding a function
+      // type, `<{ make?: () => object }>`, otherwise ended at the arrow, and the
+      // declaration after it failed to parse and read as no props at all.
+      if (close === '>' && source[i - 1] === '=')
+        continue
+      depth--
+      if (depth === 0)
+        return i + 1
+    }
+  }
+
+  return -1
+}
+
+/**
+ * Split a list on separators that are not nested inside brackets or quotes.
+ *
+ * `angles` decides whether `<` and `>` nest. They must in a type literal, so
+ * `Array<string, number>` stays one member, and must NOT in a value, where
+ * `>` is a comparison and `=>` an arrow and counting either unbalances
+ * everything after it.
+ */
+function splitTopLevel(body: string, separators: string, angles: boolean): string[] {
+  const opening = angles ? '([{<' : '([{'
+  const closing = angles ? ')]}>' : ')]}'
+  const parts: string[] = []
+  let depth = 0
+  let quote: string | null = null
+  let current = ''
+
+  for (let i = 0; i < body.length; i++) {
+    const char = body[i]!
+    if (quote) {
+      current += char
+      if (char === '\\') {
+        current += body[++i] ?? ''
+        continue
+      }
+      if (char === quote)
+        quote = null
+      continue
+    }
+    if (char === '\'' || char === '"' || char === '`') {
+      quote = char
+      current += char
+      continue
+    }
+    if (opening.includes(char))
+      depth++
+    else if (closing.includes(char))
+      depth--
+    if (depth === 0 && separators.includes(char)) {
+      parts.push(current)
+      current = ''
+      continue
+    }
+    current += char
+  }
+  parts.push(current)
+
+  return parts.map(part => part.trim()).filter(Boolean)
+}
+
+/**
+ * The index of the `=` that introduces a destructuring default, or -1.
+ *
+ * Only a bare `=` at depth zero counts. `==`, `===`, `!=`, `<=`, `>=` and the
+ * `=>` of an arrow all contain one and none of them starts a default, so a
+ * default of `() => fallback()` has to survive the scan intact.
+ */
+function defaultAssignmentIndex(entry: string): number {
+  let depth = 0
+  let quote: string | null = null
+
+  for (let i = 0; i < entry.length; i++) {
+    const char = entry[i]!
+    if (quote) {
+      if (char === '\\') {
+        i++
+        continue
+      }
+      if (char === quote)
+        quote = null
+      continue
+    }
+    if (char === '\'' || char === '"' || char === '`') {
+      quote = char
+      continue
+    }
+    if ('([{'.includes(char))
+      depth++
+    else if (')]}'.includes(char))
+      depth--
+    if (depth !== 0 || char !== '=')
+      continue
+    const previous = entry[i - 1]
+    const next = entry[i + 1]
+    if (next === '=' || previous === '=' || previous === '!' || previous === '<' || previous === '>')
+      continue
+    return i
+  }
+
+  return -1
+}
+
+/** The TypeScript a `type:` constructor in the object form stands for. */
+function typeFromConstructor(value: string): string | undefined {
+  switch (value.trim()) {
+    case 'String': return 'string'
+    case 'Number': return 'number'
+    case 'Boolean': return 'boolean'
+    case 'Array': return 'unknown[]'
+    case 'Object': return 'Record<string, unknown>'
+    default: return undefined
+  }
+}
+
+interface PropsDeclaration {
+  /** The source text of the whole statement, so the caller can remove it. */
+  text: string
+  propNames: string[]
+  defaults: Record<string, string>
+  declared: Record<string, string>
+  /** A named type argument, when the props were typed by `defineProps<Props>()`. */
+  typeName?: string
+}
+
+/**
+ * Read a `defineProps` declaration, in every form it is written
+ * (stacksjs/stx#2009).
+ *
+ * This used to be one regex that required a destructuring assignment AND an
+ * explicit type argument, so four of the five documented spellings produced no
+ * properties at all and the component silently had no public surface. The one
+ * that did match split its names on `:` only, so
+ *
+ *   const { label = 'Hello' } = defineProps<{ label?: string }>()
+ *
+ * produced a property literally named `label = 'Hello'`, documented as the
+ * attribute `label-hello`, and nothing a page wrote as `label="x"` ever
+ * arrived. That is worse than not reading it, because it looks like it worked.
+ *
+ * Handled here:
+ *
+ *   const { a, b = 1 } = defineProps<{ a?: string, b?: number }>()
+ *   const { a } = defineProps(['a'])
+ *   const props = defineProps<{ a?: string }>()
+ *   const props = defineProps<Props>()
+ *   const props = withDefaults(defineProps<{ a?: string }>(), { a: 'x' })
+ *   const props = defineProps({ a: { type: String, default: 'x' } })
+ *
+ * Names come from the destructuring pattern when there is one, since that is
+ * the author naming them, and otherwise from whichever of the type literal,
+ * the object form or the array form is present. Types come from the type
+ * literal or the object form's `type:`, never inferred from a default: a
+ * `title?: string` with no default was being typed as an object, and the
+ * attribute `"Revenue"` was then JSON-parsed, failed, and reached the page as
+ * `[object Object]`.
+ */
+function parsePropsDeclaration(code: string): PropsDeclaration | null {
+  const call = /\bdefineProps\b/.exec(code)
+  if (!call)
+    return null
+
+  // The declaration the call belongs to, found by reading back to the nearest
+  // preceding `const`/`let`/`var` and then forward over its binding.
+  //
+  // Scanned rather than matched. A destructuring pattern can contain braces of
+  // its own, which any object or arrow default does, and `\{[^}]*\}` stops at
+  // the first inner one and then fails the whole statement, so
+  // `{ make = () => ({ a: 1 }) }` read as no props at all.
+  const keyword = /(?:^|[\s;{}()])(const|let|var)\s+/g
+  let start = -1
+  for (let found = keyword.exec(code); found && found.index < call.index; found = keyword.exec(code))
+    start = found.index + found[0].indexOf(found[1]!)
+  if (start === -1)
+    return null
+
+  const declared: Record<string, string> = {}
+  const defaults: Record<string, string> = {}
+  const propNames: string[] = []
+  let cursor = start + (/^(?:const|let|var)\s+/.exec(code.slice(start))?.[0].length ?? 0)
+  const skipSpace = (): void => {
+    while (cursor < code.length && /\s/.test(code[cursor]!)) cursor++
+  }
+
+  let pattern: string
+  if (code[cursor] === '{') {
+    const end = skipBalanced(code, cursor, '{', '}')
+    if (end === -1)
+      return null
+    pattern = code.slice(cursor, end)
+    cursor = end
+  }
+  else {
+    const identifier = /^[A-Za-z_$][\w$]*/.exec(code.slice(cursor))
+    if (!identifier)
+      return null
+    pattern = identifier[0]
+    cursor += identifier[0].length
+  }
+
+  skipSpace()
+  if (code[cursor] !== '=')
+    return null
+  cursor++
+  skipSpace()
+
+  const wrapper = /^withDefaults\s*\(\s*/.exec(code.slice(cursor))
+  const wrapped = Boolean(wrapper)
+  if (wrapper)
+    cursor += wrapper[0].length
+  const marker = /^defineProps\b/.exec(code.slice(cursor))
+  if (!marker)
+    return null
+  cursor += marker[0].length
+
+  // The type argument, when written. Balanced so a nested generic survives.
+  let typeText = ''
+  skipSpace()
+  if (code[cursor] === '<') {
+    const end = skipBalanced(code, cursor, '<', '>')
+    if (end === -1)
+      return null
+    typeText = code.slice(cursor + 1, end - 1).trim()
+    cursor = end
+  }
+
+  skipSpace()
+  if (code[cursor] !== '(')
+    return null
+  const callEnd = skipBalanced(code, cursor, '(', ')')
+  if (callEnd === -1)
+    return null
+  const runtimeArgument = code.slice(cursor + 1, callEnd - 1).trim()
+  cursor = callEnd
+
+  // `withDefaults(defineProps<…>(), { … })` carries the defaults in its second
+  // argument, and its closing paren belongs to the statement being removed.
+  if (wrapped) {
+    skipSpace()
+    if (code[cursor] === ',') {
+      cursor++
+      skipSpace()
+    }
+    if (code[cursor] === '{') {
+      const end = skipBalanced(code, cursor, '{', '}')
+      if (end === -1)
+        return null
+      for (const [name, value] of parseDefaults(code.slice(cursor, end)))
+        defaults[name] = value
+      cursor = end
+    }
+    skipSpace()
+    if (code[cursor] === ',') {
+      cursor++
+      skipSpace()
+    }
+    if (code[cursor] === ')')
+      cursor++
+  }
+  if (code[cursor] === ';')
+    cursor++
+
+  // A type literal states the types. A bare identifier names an interface the
+  // caller resolves once it has scanned them.
+  const typeName = /^[A-Za-z_$][\w$]*$/.test(typeText) ? typeText : undefined
+  if (typeText.startsWith('{')) {
+    for (const member of splitTopLevel(typeText.replace(/^\{/, '').replace(/\}$/, ''), ',;', true)) {
+      const parsed = /^(?:readonly\s+)?([A-Za-z_$][\w$]*)\s*\??\s*:\s*([\s\S]+)$/.exec(member)
+      if (parsed)
+        declared[parsed[1]!] = parsed[2]!.trim()
+    }
+  }
+
+  // The object form states both, under each key.
+  if (runtimeArgument.startsWith('{')) {
+    for (const [name, value] of parseDefaults(runtimeArgument)) {
+      propNames.push(name)
+      if (!value.startsWith('{')) {
+        const fromConstructor = typeFromConstructor(value)
+        if (fromConstructor)
+          declared[name] = fromConstructor
+        continue
+      }
+      for (const [key, inner] of parseDefaults(value)) {
+        if (key === 'default') {
+          defaults[name] = inner
+        }
+        else if (key === 'type') {
+          const fromConstructor = typeFromConstructor(inner)
+          if (fromConstructor)
+            declared[name] = fromConstructor
+        }
+      }
+    }
+  }
+  else if (runtimeArgument.startsWith('[')) {
+    for (const entry of splitTopLevel(runtimeArgument.slice(1, -1), ',', false))
+      propNames.push(entry.replace(/^['"`]/, '').replace(/['"`]$/, ''))
+  }
+
+  // The destructuring pattern wins, because it is the author writing the names
+  // out. `{ a: local }` renames, so the property is `a`, and `{ a = 1 }` is a
+  // default rather than part of the name.
+  if (pattern.startsWith('{')) {
+    propNames.length = 0
+    for (const entry of splitTopLevel(pattern.replace(/^\{/, '').replace(/\}$/, ''), ',', false)) {
+      const assignment = defaultAssignmentIndex(entry)
+      const binding = assignment === -1 ? entry : entry.slice(0, assignment)
+      const name = binding.split(':')[0]!.trim().replace(/^\.\.\./, '')
+      if (!name)
+        continue
+      propNames.push(name)
+      if (assignment !== -1)
+        defaults[name] = entry.slice(assignment + 1).trim()
+    }
+  }
+  else if (propNames.length === 0) {
+    propNames.push(...Object.keys(declared))
+  }
+
+  return { text: code.slice(start, cursor), propNames, defaults, declared, typeName }
+}
+
 export function parseDefaults(object: string): Array<[string, string]> {
   const body = object.trim().replace(/^\{/, '').replace(/\}$/, '')
   const pairs: Array<[string, string]> = []
@@ -503,25 +882,21 @@ function compileScriptScope(source: string, file: string, outputDir: string): {
     return ''
   })
 
-  // The props declaration, in either form, tells us the public surface and the
-  // defaults. It is then removed rather than compiled.
-  // No trailing wildcard. An earlier form ended `[\s\S]*?$` under /m, which
-  // looks harmless and is not: with no withDefaults wrapper to close the match,
-  // it ran on and ate the first declaration after the props line, so the very
-  // values the component derives were removed before anything could read them.
-  // The bug appeared only in the plainer of the two forms, which is exactly the
-  // one a small component uses.
-  const destructure = /const\s*\{([^}]*)\}\s*=\s*(?:withDefaults\s*\(\s*)?defineProps\s*<[^>]*>\s*\(\s*\)\s*(?:,\s*(\{[\s\S]*?\})\s*,?\s*\))?/
-  const propMatch = destructure.exec(code)
-
-  if (propMatch) {
-    for (const name of propMatch[1].split(',')) {
-      const clean = name.split(':')[0].trim()
-      if (clean) propNames.push(clean)
-    }
-    for (const [name, value] of parseDefaults(propMatch[2] || ''))
-      defaults[name] = value
-    code = code.replace(propMatch[0], '')
+  // The props declaration tells us the public surface and the defaults, in
+  // whichever form it is written, and is then removed rather than compiled: it
+  // declares a surface already expressed as properties, and leaving the call in
+  // would reference an import that does not exist at runtime.
+  //
+  // The statement is found by balanced scanning rather than by one regex. The
+  // regex required both a destructuring assignment and an explicit type
+  // argument, so four of the five documented spellings matched nothing and the
+  // component silently had no public surface (stacksjs/stx#2009).
+  const props = parsePropsDeclaration(code)
+  if (props) {
+    propNames.push(...props.propNames)
+    Object.assign(defaults, props.defaults)
+    Object.assign(declared, props.declared)
+    code = code.replace(props.text, '')
   }
 
   /*
@@ -533,9 +908,24 @@ function compileScriptScope(source: string, file: string, outputDir: string): {
    * "Revenue" was then JSON-parsed, failed, and rendered as [object Object] on
    * the page. The interface says `string`; there is no reason to guess.
    */
-  for (const block of code.matchAll(/(?:export\s+)?interface\s+[A-Za-z_$][\w$]*\s*\{([\s\S]*?)\n\}/g)) {
-    for (const member of block[1].matchAll(/^\s*(?:\/\*\*[\s\S]*?\*\/\s*)?([A-Za-z_$][\w$]*)\??\s*:\s*([^\n;]+)/gm)) {
+  const interfaceMembers: Record<string, string[]> = {}
+  for (const block of code.matchAll(/(?:export\s+)?interface\s+([A-Za-z_$][\w$]*)\s*\{([\s\S]*?)\n\}/g)) {
+    const members: string[] = []
+    for (const member of block[2].matchAll(/^\s*(?:\/\*\*[\s\S]*?\*\/\s*)?([A-Za-z_$][\w$]*)\??\s*:\s*([^\n;]+)/gm)) {
       declared[member[1]] = member[2].trim()
+      members.push(member[1])
+    }
+    interfaceMembers[block[1]] = members
+  }
+
+  // `defineProps<Props>()` states its surface in an interface rather than
+  // inline, so the names are only in hand once those are scanned. Without this
+  // the type is read and the properties are not, which is the shape that makes
+  // a component compile and then render undefined for everything.
+  if (props && props.propNames.length === 0 && props.typeName) {
+    for (const name of interfaceMembers[props.typeName] ?? []) {
+      if (!propNames.includes(name))
+        propNames.push(name)
     }
   }
 
@@ -766,12 +1156,24 @@ export class StxElement extends HTMLElementBase {
       this.setAttribute?.('hydrated', '');
       this.dispatchEvent?.(new CustomEvent('stx:hydrated', { bubbles: true, composed: true }));
     }
+    // Called last, so a component that acquires something sees its own rendered
+    // markup and its events already bound. Reported rather than rethrown: a
+    // component that fails to set up must not take the element down with it.
+    try { this.onConnect?.(); }
+    catch (error) { console.error('[stx] onConnect failed', error); }
   }
 
   disconnectedCallback() {
     this._connected = false;
-    for (const [event, listener] of this._listeners) this.renderRoot.removeEventListener(event, listener);
-    this._listeners.clear();
+    // Called before the framework releases anything, so the element is still
+    // intact for a component that needs to read it on the way out, and inside
+    // try/finally so a throwing hook cannot leak the framework's own listeners.
+    try { this.onDisconnect?.(); }
+    catch (error) { console.error('[stx] onDisconnect failed', error); }
+    finally {
+      for (const [event, listener] of this._listeners) this.renderRoot.removeEventListener(event, listener);
+      this._listeners.clear();
+    }
   }
 
   attributeChangedCallback(attribute, oldValue, newValue) {
@@ -975,7 +1377,7 @@ function componentModule(component: CompiledComponent): string {
     bindings: component.bindings,
   }, null, 2)
   const methodCode = Object.entries(component.methods).map(([name, body]) => {
-    if (RESERVED_METHODS.has(name)) throw new Error(`${component.sourcePath}: method "${name}" is reserved`)
+    if (RESERVED_METHODS.has(name)) throw new Error(`${component.sourcePath}: ${reservedMethodMessage(name)}`)
     if (/^(?:async\s+)?[A-Za-z_$][\w$]*\s*\(/.test(body.trim())) return `  ${body.trim()}`
     return `  ${name}($event) {\n${body}\n  }`
   }).join('\n\n')
