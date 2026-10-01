@@ -75,7 +75,7 @@ defineExpose({ value: inputValue })
   <label for="textarea-input" class="{{ labelClasses }}">
     {{ label }}
       @if(required)
-    <span class="text-red-500 ml-1">
+    <span class="text-danger ml-1">
       *
     </span>
     @endif
@@ -166,7 +166,6 @@ text-base
 text-danger
 text-fg
 text-fg-soft
-text-red-500
 text-red-900
 text-sm
 textareaClasses

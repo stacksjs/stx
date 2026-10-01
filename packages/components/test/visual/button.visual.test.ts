@@ -5,6 +5,7 @@
 import type { VariantConfig } from './visual-test-utils'
 import { describe, expect, it } from 'bun:test'
 import { join } from 'node:path'
+import { SEMANTIC_TOKENS } from '../../../stx/src/theme-tokens'
 import {
   expectSnapshotMatch,
   testComponentTemplate,
@@ -31,14 +32,33 @@ describe('Button Visual Regression', () => {
       expect(result.darkClasses.length).toBeGreaterThan(0)
     })
 
-    it('should have dark mode classes for all variants', async () => {
+    /*
+     * This asserted the literal classes `dark:bg-blue-600` and
+     * `dark:bg-red-600`, on the reasoning that a solid fill must keep an
+     * explicit dark value because a role token's dark value LIGHTENS for
+     * legible text, and folding them together made every primary button paler
+     * in dark mode (stacksjs/stx#1930).
+     *
+     * That reasoning is intact and is now the job of a dedicated role. The
+     * fills moved onto `accent-solid` / `danger-solid`, which exist precisely
+     * because a fill and coloured text need different dark values - and their
+     * dark values ARE blue-600 and red-600, the colours the `dark:` variants
+     * produced (stacksjs/stx#1993).
+     *
+     * So the assertion is on the resolved colour rather than the spelling,
+     * which is what #1930 was actually protecting. Checking the class name
+     * would forbid the migration while proving nothing about what a reader
+     * sees.
+     */
+    it('keeps the solid fills from lightening in dark mode', async () => {
       const result = await testDarkModeSupport(BUTTON_PATH, 'button')
-      // Solid fills keep an explicit `dark:` value: a button's fill barely moves
-      // between modes (600 -> 500) while a role token's dark value LIGHTENS for
-      // legible text, so folding them together made every primary button paler
-      // in dark mode (stacksjs/stx#1930).
-      for (const expected of ['dark:bg-blue-600', 'dark:bg-red-600'])
-        expect(result.darkClasses).toContain(expected)
+
+      for (const expected of ['bg-accent-solid', 'bg-danger-solid'])
+        expect(result.tokenClasses).toContain(expected)
+
+      // One step DARKER than the light fill, not lighter.
+      expect(SEMANTIC_TOKENS['accent-solid']).toMatchObject({ light: 'blue-500', dark: 'blue-600' })
+      expect(SEMANTIC_TOKENS['danger-solid']).toMatchObject({ light: 'red-500', dark: 'red-600' })
 
       // The neutral surfaces moved onto role tokens, which carry their dark
       // value through `--stx-*` rather than a variant.

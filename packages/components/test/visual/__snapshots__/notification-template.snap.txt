@@ -27,10 +27,10 @@ const position = state({{ initialPosition }})
 const duration = state({{ initialDuration }})
 
 const typeColors = {
-  info: 'bg-blue-50 text-blue-900 dark:bg-blue-900 dark:text-blue-100',
-  success: 'bg-green-50 text-green-900 dark:bg-green-900 dark:text-green-100',
-  warning: 'bg-yellow-50 text-yellow-900 dark:bg-yellow-900 dark:text-yellow-100',
-  error: 'bg-red-50 text-red-900 dark:bg-red-900 dark:text-red-100',
+  info: 'bg-info-soft text-info-soft-ink',
+  success: 'bg-success-soft text-success-soft-ink',
+  warning: 'bg-warning-soft text-warning-soft-ink',
+  error: 'bg-danger-soft text-danger-soft-ink',
 }
 
 const positions = {
@@ -128,22 +128,14 @@ defineExpose({
 'opacity-90'
 :
 ?
-bg-blue-50
-bg-green-50
-bg-red-50
-bg-yellow-50
+bg-danger-soft
+bg-info-soft
+bg-success-soft
+bg-warning-soft
 bottom-0
 bottom-center
 bottom-left
 bottom-right
-dark:bg-blue-900
-dark:bg-green-900
-dark:bg-red-900
-dark:bg-yellow-900
-dark:text-blue-100
-dark:text-green-100
-dark:text-red-100
-dark:text-yellow-100
 fixed
 flex
 flex-1
@@ -169,11 +161,11 @@ rounded-lg
 rounded-md
 shadow-lg
 sr-only
-text-blue-900
-text-green-900
-text-red-900
+text-danger-soft-ink
+text-info-soft-ink
 text-sm
-text-yellow-900
+text-success-soft-ink
+text-warning-soft-ink
 title()
 top-0
 top-center

@@ -25,7 +25,7 @@ const colorClasses = {
   primary: 'text-info',
   secondary: 'text-purple-600 dark:text-purple-500',
   success: 'text-success',
-  warning: 'text-yellow-600 dark:text-yellow-500',
+  warning: 'text-warning-solid',
   danger: 'text-danger',
   info: 'text-cyan-600 dark:text-cyan-500',
   white: 'text-white',
@@ -49,7 +49,7 @@ const dotsColorClasses = {
   primary: 'bg-info-solid',
   secondary: 'bg-purple-600 dark:bg-purple-500',
   success: 'bg-success-solid',
-  warning: 'bg-yellow-600 dark:bg-yellow-500',
+  warning: 'bg-warning-solid',
   danger: 'bg-danger-solid',
   info: 'bg-cyan-600 dark:bg-cyan-500',
   white: 'bg-white',
@@ -132,16 +132,14 @@ bg-gray-600
 bg-info-solid
 bg-purple-600
 bg-success-solid
+bg-warning-solid
 bg-white
-bg-yellow-600
 containerClasses
 dark:bg-cyan-500
 dark:bg-gray-400
 dark:bg-purple-500
-dark:bg-yellow-500
 dark:text-cyan-500
 dark:text-purple-500
-dark:text-yellow-500
 dotClasses
 flex
 flex-col
@@ -172,8 +170,8 @@ text-info
 text-purple-600
 text-sm
 text-success
+text-warning-solid
 text-white
-text-yellow-600
 w-1
 w-12
 w-2

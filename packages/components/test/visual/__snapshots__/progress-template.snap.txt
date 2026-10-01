@@ -20,7 +20,7 @@ const colorClasses = {
   primary: 'bg-info-solid',
   secondary: 'bg-purple-600 dark:bg-purple-500',
   success: 'bg-success-solid',
-  warning: 'bg-yellow-600 dark:bg-yellow-500',
+  warning: 'bg-warning-solid',
   danger: 'bg-danger-solid',
   info: 'bg-cyan-600 dark:bg-cyan-500',
 }
@@ -42,7 +42,7 @@ export const circularTrackColor = 'stroke-gray-200 dark:stroke-gray-700'
 export const circularBarColor = color === 'primary' ? 'stroke-info'
   : color === 'secondary' ? 'stroke-purple-600 dark:stroke-purple-500'
   : color === 'success' ? 'stroke-success'
-  : color === 'warning' ? 'stroke-yellow-600 dark:stroke-yellow-500'
+  : color === 'warning' ? 'stroke-warning-solid'
   : color === 'danger' ? 'stroke-danger'
   : 'stroke-cyan-600 dark:stroke-cyan-500'
 </script>
@@ -178,7 +178,7 @@ bg-info-solid
 bg-purple-600
 bg-success-solid
 bg-surface-sunken
-bg-yellow-600
+bg-warning-solid
 circularBarClass()
 circularBarColor
 circularSizeClass
@@ -186,11 +186,9 @@ circularTrackColor
 containerClasses
 dark:bg-cyan-500
 dark:bg-purple-500
-dark:bg-yellow-500
 dark:stroke-cyan-500
 dark:stroke-gray-700
 dark:stroke-purple-500
-dark:stroke-yellow-500
 duration-300
 ease-in-out
 flex
@@ -224,7 +222,7 @@ stroke-gray-200
 stroke-info
 stroke-purple-600
 stroke-success
-stroke-yellow-600
+stroke-warning-solid
 text-fg-strong
 text-sm
 transform

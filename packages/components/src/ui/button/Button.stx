@@ -25,12 +25,33 @@ export const leftIcon = $props.leftIcon || ''
 export const rightIcon = $props.rightIcon || ''
 export const className = $props.className || ''
 
+/*
+ * Role tokens, not palette shades, so an app can re-theme the button by
+ * meaning rather than by cancelling its classes (stacksjs/stx#1993).
+ *
+ * `className` was never an escape hatch for this: it is appended last in the
+ * class ATTRIBUTE, and attribute order does not decide CSS. `bg-blue-500` and
+ * `bg-accent` are both single-class selectors of equal specificity, so the
+ * winner is whichever lands later in the generated stylesheet - not something
+ * a call site can control.
+ *
+ * `bg-accent-solid` is `var(--stx-accent-solid, <blue-500>)`, so an app sets
+ * one variable and primary buttons follow, dark mode included and with no
+ * `dark:` anywhere. The solid/hover/ink triple exists because all three have
+ * to move together: a themed fill needs its own hover step, and white text on
+ * a light themed fill is unreadable.
+ *
+ * primary and danger are byte-for-byte the same colours as before. outline
+ * moves one shade in light mode (its border and text were blue-500, `accent`
+ * is blue-600) and its hover tint one step stronger, because a role for every
+ * shade would be a palette with extra steps.
+ */
 const variantClasses = {
-  primary: 'bg-blue-500 hover:bg-blue-600 text-white shadow-md hover:shadow-lg dark:bg-blue-600 dark:hover:bg-blue-700',
-  secondary: 'bg-surface-sunken hover:bg-neutral-300 text-neutral-900 dark:hover:bg-neutral-600 dark:text-white',
-  outline: 'border-2 border-blue-500 text-blue-500 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-950',
+  primary: 'bg-accent-solid hover:bg-accent-solid-hover text-accent-ink shadow-md hover:shadow-lg',
+  secondary: 'bg-surface-sunken hover:bg-neutral-300 text-fg dark:hover:bg-neutral-600',
+  outline: 'border-2 border-accent text-accent hover:bg-accent-soft',
   ghost: 'hover:bg-surface-raised text-fg-strong',
-  danger: 'bg-red-500 hover:bg-red-600 text-white shadow-md hover:shadow-lg dark:bg-red-600 dark:hover:bg-red-700',
+  danger: 'bg-danger-solid hover:bg-danger-solid-hover text-danger-ink shadow-md hover:shadow-lg',
 }
 
 const sizeClasses = {
@@ -42,7 +63,13 @@ const sizeClasses = {
 }
 
 const iconSizeClasses = { xs: 'h-3 w-3', sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 w-6', xl: 'h-7 w-7' }
-const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none'
+/*
+ * The focus ring follows the accent too. It was `ring-blue-500` with no dark
+ * twin, so it stayed blue in a dark theme and in a rose-accented app alike;
+ * the token's light value is that same blue-500 and its dark value is a step
+ * darker, which is a ring that was missing rather than one that changed.
+ */
+const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-solid disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none'
 const widthClasses = fullWidth ? 'w-full' : ''
 export const isDisabled = disabled || loading
 

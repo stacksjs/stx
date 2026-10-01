@@ -48,18 +48,36 @@ describe('semanticColors', () => {
 
     expect(colors['fg-muted']).toBe('var(--stx-fg-muted, #4b5563)')
     expect(colors.line).toBe('var(--stx-line, #e5e7eb)')
-    expect(colors.accent).toBe('var(--stx-accent, #4f46e5)')
+    // blue-600, not indigo-600: the library had two competing accents - 73 blue
+    // uses against 34 indigo, both meaning "primary" - and blue won on count,
+    // so the painted majority kept its appearance (stacksjs/stx#1993).
+    expect(colors.accent).toBe('var(--stx-accent, #2563eb)')
   })
 
   it('gives a solid fill a different dark value from its text counterpart', () => {
-    // Coloured text lightens on a dark background for legibility (600 -> 400);
-    // a solid button barely moves (600 -> 500), or it stops reading as the same
-    // button. Folding the two together turned every primary button paler in
-    // dark mode, which is what separated them.
+    /*
+     * The property this protects: coloured TEXT lightens on a dark background
+     * for legibility, a solid FILL does not. Folding the two together turned
+     * every primary button paler in dark mode, which is what separated them.
+     *
+     * Both halves still hold, in opposite directions - text 600 -> 400 lightens,
+     * the fill 500 -> 600 darkens - so they cannot share a role.
+     */
     expect(SEMANTIC_TOKENS.danger.dark).toBe('red-400')
-    expect(SEMANTIC_TOKENS['danger-solid'].dark).toBe('red-500')
-    // …while the light value is the same colour, so a button and its label agree.
-    expect(SEMANTIC_TOKENS.danger.light).toBe(SEMANTIC_TOKENS['danger-solid'].light)
+    expect(SEMANTIC_TOKENS['danger-solid'].dark).toBe('red-600')
+
+    /*
+     * The LIGHT values used to be asserted equal, so that a button and its
+     * label matched. They no longer are, and that is a trade rather than a
+     * slip: the components paint a fill at 500 (`bg-red-500 hover:bg-red-600`,
+     * 73 uses) while painting danger text at 600, so the table claimed an
+     * agreement the library never honoured. Following the components keeps
+     * every one of those fills unchanged; the cost is that a `text-danger`
+     * label beside a `bg-danger-solid` button is one shade apart, which is
+     * what it already was on screen (stacksjs/stx#1993).
+     */
+    expect(SEMANTIC_TOKENS['danger-solid'].light).toBe('red-500')
+    expect(SEMANTIC_TOKENS.danger.light).toBe('red-600')
   })
 
   it('drops a token the palette cannot back rather than emitting a dangling var', () => {

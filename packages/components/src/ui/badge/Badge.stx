@@ -5,25 +5,37 @@ export const dot = $bool($props.dot)
 export const removable = $bool($props.removable)
 export const className = $props.className || ''
 
+/*
+ * Role tokens for the status variants, so an app re-themes a badge by setting
+ * --stx-accent-soft rather than by cancelling a class (stacksjs/stx#1993).
+ * The 100/800 light and 900/200 dark pairing these used IS the soft-fill
+ * token's definition, so primary, success, warning and danger are unchanged.
+ *
+ * `secondary` (purple) and `info` (cyan) stay literal. The role vocabulary has
+ * five status hues and neither of those is one of them: mapping info onto the
+ * `info` role would paint it blue, which is what `primary` already is, so a
+ * badge whose whole job is to distinguish would render two of its variants
+ * identically. A wrong colour is worse than an unthemeable one.
+ */
 const variantClasses = {
   default: 'bg-surface-raised text-gray-800 dark:text-gray-300',
-  primary: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  primary: 'bg-accent-soft text-accent-soft-ink',
   secondary: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-  success: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  warning: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-  danger: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+  success: 'bg-success-soft text-success-soft-ink',
+  warning: 'bg-warning-soft text-warning-soft-ink',
+  danger: 'bg-danger-soft text-danger-soft-ink',
   info: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200',
 }
 
 const sizeClasses = { sm: 'px-2 py-0.5 text-xs', md: 'px-2.5 py-0.5 text-sm', lg: 'px-3 py-1 text-base' }
 
 const dotColorClasses = {
-  default: 'bg-gray-500 dark:bg-gray-400',
-  primary: 'bg-blue-500 dark:bg-blue-400',
+  default: 'bg-fg-soft',
+  primary: 'bg-accent',
   secondary: 'bg-purple-500 dark:bg-purple-400',
-  success: 'bg-green-500 dark:bg-green-400',
-  warning: 'bg-yellow-500 dark:bg-yellow-400',
-  danger: 'bg-red-500 dark:bg-red-400',
+  success: 'bg-success',
+  warning: 'bg-warning',
+  danger: 'bg-danger',
   info: 'bg-cyan-500 dark:bg-cyan-400',
 }
 

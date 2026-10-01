@@ -33,12 +33,35 @@ export const leftIcon = $props.leftIcon || ''
 export const rightIcon = $props.rightIcon || ''
 export const className = $props.className || ''
 
+/*
+ * Role tokens, not palette shades, so an app can re-theme the button by
+ * meaning rather than by cancelling its classes (stacksjs/stx#1993).
+ *
+ * `className` was never an escape hatch for this: it is appended last in the
+ * class ATTRIBUTE, and attribute order does not decide CSS. `bg-blue-500` and
+ * `bg-accent` are both single-class selectors of equal specificity, so the
+ * winner is whichever lands later in the generated stylesheet - not something
+ * a call site can control.
+ *
+ * `bg-accent-solid` is `var(--stx-accent-solid,
+    <blue-500>
+      )`, so an app sets
+ * one variable and primary buttons follow, dark mode included and with no
+ * `dark:` anywhere. The solid/hover/ink triple exists because all three have
+ * to move together: a themed fill needs its own hover step, and white text on
+ * a light themed fill is unreadable.
+ *
+ * primary and danger are byte-for-byte the same colours as before. outline
+ * moves one shade in light mode (its border and text were blue-500, `accent`
+ * is blue-600) and its hover tint one step stronger, because a role for every
+ * shade would be a palette with extra steps.
+ */
 const variantClasses = {
-  primary: 'bg-blue-500 hover:bg-blue-600 text-white shadow-md hover:shadow-lg dark:bg-blue-600 dark:hover:bg-blue-700',
-  secondary: 'bg-surface-sunken hover:bg-neutral-300 text-neutral-900 dark:hover:bg-neutral-600 dark:text-white',
-  outline: 'border-2 border-blue-500 text-blue-500 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-950',
+  primary: 'bg-accent-solid hover:bg-accent-solid-hover text-accent-ink shadow-md hover:shadow-lg',
+  secondary: 'bg-surface-sunken hover:bg-neutral-300 text-fg dark:hover:bg-neutral-600',
+  outline: 'border-2 border-accent text-accent hover:bg-accent-soft',
   ghost: 'hover:bg-surface-raised text-fg-strong',
-  danger: 'bg-red-500 hover:bg-red-600 text-white shadow-md hover:shadow-lg dark:bg-red-600 dark:hover:bg-red-700',
+  danger: 'bg-danger-solid hover:bg-danger-solid-hover text-danger-ink shadow-md hover:shadow-lg',
 }
 
 const sizeClasses = {
@@ -50,16 +73,22 @@ const sizeClasses = {
 }
 
 const iconSizeClasses = { xs: 'h-3 w-3', sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 w-6', xl: 'h-7 w-7' }
-const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none'
+/*
+ * The focus ring follows the accent too. It was `ring-blue-500` with no dark
+ * twin, so it stayed blue in a dark theme and in a rose-accented app alike;
+ * the token's light value is that same blue-500 and its dark value is a step
+ * darker, which is a ring that was missing rather than one that changed.
+ */
+const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-solid disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none'
 const widthClasses = fullWidth ? 'w-full' : ''
 export const isDisabled = disabled || loading
 
 export const buttonClasses = `${baseClasses} ${variantClasses[variant] || variantClasses.primary} ${sizeClasses[size] || sizeClasses.md} ${widthClasses} ${className}`.trim()
 export const iconClasses = iconSizeClasses[size] || iconSizeClasses.md
 export const spinnerClasses = `animate-spin ${iconClasses}`.trim()
-  </script>
-  <script client>
-    const emit = defineEmits()
+    </script>
+    <script client>
+      const emit = defineEmits()
 
 /*
  * `disabled` and `loading` are read as live props, not as a server snapshot.
@@ -69,10 +98,10 @@ export const spinnerClasses = `animate-spin ${iconClasses}`.trim()
  * of button state in an application could not be expressed:
  *
  *
-    <Button :disabled="saving()" @click="save">
-      Save
-    </Button>
-    *
+      <Button :disabled="saving()" @click="save">
+        Save
+      </Button>
+      *
  * `saving()` is a signal. On the server it is not yet meaningful, so the button
  * shipped enabled and STAYED enabled for the life of the page — through the
  * exact async action it was there to guard. Double submits, destructive
@@ -102,8 +131,8 @@ function onClick(event) {
   }
   emit('click', event)
 }
-  </script>
-  <button
+    </script>
+    <button
   type="{{ type }}"
   class="{{ buttonClasses }}"
   @if(isDisabled)disabled@endif
@@ -112,12 +141,12 @@ function onClick(event) {
   :aria-busy="isLoading() ? 'true' : 'false'"
   @click="onClick($event)"
 >
-    {{-- The spinner is always in the DOM so `loading` can turn it on after render;
+      {{-- The spinner is always in the DOM so `loading` can turn it on after render;
        it was inside an @if, which meant the only way to see it was to have been
        loading when the page was built. x-cloak only when the server says we are
        NOT loading, so a button rendered loading shows its spinner on first
        paint rather than waiting for hydration. --}}
-    <svg
+      <svg
     :show="isLoading()"
     @if(!loading)x-cloak@endif
     class="{{ spinnerClasses }}"
@@ -125,18 +154,18 @@ function onClick(event) {
     fill="none"
     viewBox="0 0 24 24"
   >
-      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-      </circle>
-      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-      </path>
-    </svg>
-    @if(leftIcon)
-    <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
-      {!! leftIcon !!}
-    </span>
-    @endif
-    <slot />
-    {{-- The label span is decided on the CLIENT, because the server cannot see a
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+        </circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+        </path>
+      </svg>
+      @if(leftIcon)
+      <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
+        {!! leftIcon !!}
+      </span>
+      @endif
+      <slot />
+      {{-- The label span is decided on the CLIENT, because the server cannot see a
        reactive prop at all: `:label="rotateLabel()"` is categorised as client
        reactive, so `$props.label` is undefined during render and only the
        root's data-stx-parent-bindings records that a binding exists.
@@ -146,19 +175,19 @@ function onClick(event) {
        trailing gap to every button that uses the slot. x-cloak while the
        server has no label, so that gap is not visible for the frame before
        hydration - the same pairing the spinner above uses. --}}
-    <span
+      <span
     :if="labelText()"
     @if(!hasLabel)x-cloak@endif
     :text="labelText()"
   >
-      {{ label }}
-    </span>
-    @if(rightIcon)
-    <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
-      {!! rightIcon !!}
-    </span>
-    @endif
-  </button>
+        {{ label }}
+      </span>
+      @if(rightIcon)
+      <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
+        {!! rightIcon !!}
+      </span>
+      @endif
+    </button>
 
 === Extracted Classes ===
 -
@@ -170,24 +199,18 @@ an
 and
 because
 before
+bg-accent
+bg-accent-solid
 bg-blue-500
-bg-red-500
+bg-danger-solid
 bg-surface-sunken
 border-2
-border-blue-500
+border-accent
 button
 buttonClasses
 click
 container
-dark:bg-blue-600
-dark:bg-red-600
-dark:border-blue-400
-dark:hover:bg-blue-700
-dark:hover:bg-blue-950
 dark:hover:bg-neutral-600
-dark:hover:bg-red-700
-dark:text-blue-400
-dark:text-white
 disabled
 disabled:cursor-not-allowed
 disabled:opacity-50
@@ -199,7 +222,7 @@ false
 flex
 focus:outline-none
 focus:ring-2
-focus:ring-blue-500
+focus:ring-accent-solid
 focus:ring-offset-2
 font-semibold
 for
@@ -218,10 +241,10 @@ h-6
 h-7
 h-8
 has
-hover:bg-blue-50
-hover:bg-blue-600
+hover:bg-accent-soft
+hover:bg-accent-solid-hover
+hover:bg-danger-solid-hover
 hover:bg-neutral-300
-hover:bg-red-600
 hover:bg-surface-raised
 hover:shadow-lg
 hydration
@@ -257,13 +280,14 @@ span
 spinner
 spinnerClasses
 still
+text-accent
+text-accent-ink
 text-base
-text-blue-500
+text-danger-ink
+text-fg
 text-fg-strong
 text-lg
-text-neutral-900
 text-sm
-text-white
 text-xl
 text-xs
 than

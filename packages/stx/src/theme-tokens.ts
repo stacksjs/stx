@@ -79,14 +79,32 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
   'line': { light: 'gray-200', dark: 'gray-700', description: 'Default border, divider' },
   'line-strong': { light: 'gray-300', dark: 'gray-600', description: 'Input border, focus ring track' },
 
-  // Status and emphasis. Separate hues rather than one `primary`, because the
-  // library uses indigo and blue for genuinely different things and collapsing
-  // them would be a visible change rather than a rename.
-  'accent': { light: 'indigo-600', dark: 'indigo-400', description: 'Primary action, selected state' },
+  /*
+   * Status and emphasis.
+   *
+   * `accent` was indigo and is now blue, because the library had two competing
+   * accents - 73 blue uses against 34 indigo, both meaning "primary" - and a
+   * role vocabulary cannot have two. Blue won on count, so the painted
+   * majority (Button's primary, the inputs, the focus states) keeps its
+   * appearance and the indigo minority moves (stacksjs/stx#1993).
+   *
+   * That leaves `accent` and `info` with the same DEFAULT, which is fine and
+   * deliberate: they are different roles, so an app re-pointing --stx-accent
+   * does not touch informational emphasis. They were separate before because
+   * the hues differed; they are separate now because the meanings do.
+   */
+  'accent': { light: 'blue-600', dark: 'blue-400', description: 'Primary action, selected state' },
   'info': { light: 'blue-600', dark: 'blue-400', description: 'Informational emphasis, links' },
   'danger': { light: 'red-600', dark: 'red-400', description: 'Errors, destructive actions' },
   'success': { light: 'green-600', dark: 'green-400', description: 'Confirmation' },
-  'warning': { light: 'yellow-500', dark: 'yellow-400', description: 'Caution' },
+  /*
+   * 600, like the other four. It was yellow-500, which disagreed with every
+   * component that paints caution TEXT (`text-yellow-600`) and with the four
+   * sibling roles. Changed rather than worked around because nothing used it
+   * yet - zero uses in the library at the time - so there was no appearance to
+   * preserve.
+   */
+  'warning': { light: 'yellow-600', dark: 'yellow-400', description: 'Caution' },
 
   /*
    * The same hues as a SOLID FILL, which is a different role and needs a
@@ -99,10 +117,73 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
    * separated: the migration reported it as a "normalization" and it was a
    * regression.
    */
-  'accent-solid': { light: 'indigo-600', dark: 'indigo-500', description: 'Primary button fill' },
-  'info-solid': { light: 'blue-600', dark: 'blue-500', description: 'Informational fill' },
-  'danger-solid': { light: 'red-600', dark: 'red-500', description: 'Destructive button fill' },
-  'success-solid': { light: 'green-600', dark: 'green-500', description: 'Confirmation fill' },
+  /*
+   * 500 light / 600 dark, which is what the components actually paint:
+   * `bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700` is
+   * Button's primary, repeated across the painted half of the library.
+   *
+   * These were 600 light / 500 dark, on the reasoning that a solid fill should
+   * not get paler in dark mode. The components disagree - they go one step
+   * DARKER - and there were 11 uses of the old spelling against 73 of the
+   * pattern above, so the table follows the library rather than the other way
+   * round. The 11 shift by one shade; the 73 are unchanged.
+   */
+  'accent-solid': { light: 'blue-500', dark: 'blue-600', description: 'Primary button fill' },
+  'info-solid': { light: 'blue-500', dark: 'blue-600', description: 'Informational fill' },
+  'danger-solid': { light: 'red-500', dark: 'red-600', description: 'Destructive button fill' },
+  'success-solid': { light: 'green-500', dark: 'green-600', description: 'Confirmation fill' },
+  'warning-solid': { light: 'yellow-500', dark: 'yellow-600', description: 'Caution fill' },
+
+  /*
+   * The hover state of a solid fill, one step further in the same direction.
+   *
+   * A role rather than a `hover:` on the base token, because an app that
+   * re-points --stx-accent-solid has to be able to re-point what it becomes on
+   * hover too - and `hover:bg-accent-solid` would just repaint it the same
+   * colour.
+   */
+  'accent-solid-hover': { light: 'blue-600', dark: 'blue-700', description: 'Primary button fill, hovered' },
+  'info-solid-hover': { light: 'blue-600', dark: 'blue-700', description: 'Informational fill, hovered' },
+  'danger-solid-hover': { light: 'red-600', dark: 'red-700', description: 'Destructive fill, hovered' },
+  'success-solid-hover': { light: 'green-600', dark: 'green-700', description: 'Confirmation fill, hovered' },
+  'warning-solid-hover': { light: 'yellow-600', dark: 'yellow-700', description: 'Caution fill, hovered' },
+
+  /*
+   * The text ON a solid fill.
+   *
+   * Components wrote `text-white` next to every solid background, which is
+   * correct for the stock hues and wrong the moment an app points a fill at a
+   * light colour - white on a themed yellow or lime is unreadable, and the
+   * caller has no way to say so. A paired ink role moves with the fill.
+   *
+   * `warning-ink` is dark for exactly that reason: white on yellow-500 is
+   * around 1.9:1, which fails at any text size.
+   */
+  'accent-ink': { light: 'white', dark: 'white', description: 'Text on a primary fill' },
+  'info-ink': { light: 'white', dark: 'white', description: 'Text on an informational fill' },
+  'danger-ink': { light: 'white', dark: 'white', description: 'Text on a destructive fill' },
+  'success-ink': { light: 'white', dark: 'white', description: 'Text on a confirmation fill' },
+  'warning-ink': { light: 'gray-900', dark: 'gray-900', description: 'Text on a caution fill' },
+
+  /*
+   * A tinted fill and its text — a badge, a status chip, an inline callout.
+   *
+   * 100/800 in light and 900/200 in dark, which is the pattern Badge already
+   * used for all seven of its variants and the only one in the library for
+   * this shape. Two roles rather than one because the text has to move with
+   * the tint: an app pointing --stx-accent-soft at something darker needs the
+   * ink to follow or the chip becomes unreadable.
+   */
+  'accent-soft': { light: 'blue-100', dark: 'blue-900', description: 'Tinted primary fill' },
+  'accent-soft-ink': { light: 'blue-800', dark: 'blue-200', description: 'Text on a tinted primary fill' },
+  'info-soft': { light: 'blue-100', dark: 'blue-900', description: 'Tinted informational fill' },
+  'info-soft-ink': { light: 'blue-800', dark: 'blue-200', description: 'Text on a tinted informational fill' },
+  'danger-soft': { light: 'red-100', dark: 'red-900', description: 'Tinted destructive fill' },
+  'danger-soft-ink': { light: 'red-800', dark: 'red-200', description: 'Text on a tinted destructive fill' },
+  'success-soft': { light: 'green-100', dark: 'green-900', description: 'Tinted confirmation fill' },
+  'success-soft-ink': { light: 'green-800', dark: 'green-200', description: 'Text on a tinted confirmation fill' },
+  'warning-soft': { light: 'yellow-100', dark: 'yellow-900', description: 'Tinted caution fill' },
+  'warning-soft-ink': { light: 'yellow-800', dark: 'yellow-200', description: 'Text on a tinted caution fill' },
 }
 
 /** The CSS custom property that backs a role. */

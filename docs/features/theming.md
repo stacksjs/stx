@@ -47,17 +47,57 @@ config file and no rebuild:
 | `surface-sunken` | `bg-surface-sunken` | gray-200 | gray-700 |
 | `line` | `border-line`, `divide-line` | gray-200 | gray-700 |
 | `line-strong` | `border-line-strong`, `ring-line-strong` | gray-300 | gray-600 |
-| `accent` | `text-accent`, `ring-accent` | indigo-600 | indigo-400 |
+| `accent` | `text-accent`, `ring-accent` | blue-600 | blue-400 |
 | `info` | `text-info`, `stroke-info` | blue-600 | blue-400 |
 | `danger` | `text-danger` | red-600 | red-400 |
 | `success` | `text-success` | green-600 | green-400 |
-| `warning` | `text-warning` | yellow-500 | yellow-400 |
-| `accent-solid` … `success-solid` | `bg-accent-solid` | same as above | 500 |
+| `warning` | `text-warning` | yellow-600 | yellow-400 |
 
-The `-solid` variants exist because a solid fill and coloured text need
-different dark values. Text has to *lighten* on a dark background to stay
-legible (600 → 400); a button background barely moves (600 → 500) or it stops
-reading as the same button.
+`accent` was indigo. The library had two competing accents — 73 blue uses
+against 34 indigo, both meaning "primary" — and a role vocabulary cannot have
+two, so blue won on count: the painted majority kept its appearance and the
+indigo minority moved (`stacksjs/stx#1993`). `accent` and `info` therefore share
+a default, which is deliberate — they are different *roles*, so pointing
+`--stx-accent` at your brand does not touch informational emphasis.
+
+### Fills, hovers and ink
+
+A painted component needs more than a text colour. Each status has five more
+roles, so a themed fill brings its hover state and its label with it:
+
+| Token | Utility examples | Light | Dark |
+|---|---|---|---|
+| `<status>-solid` | `bg-accent-solid` | 500 | 600 |
+| `<status>-solid-hover` | `hover:bg-accent-solid-hover` | 600 | 700 |
+| `<status>-ink` | `text-accent-ink` | white¹ | white¹ |
+| `<status>-soft` | `bg-accent-soft` | 100 | 900 |
+| `<status>-soft-ink` | `text-accent-soft-ink` | 800 | 200 |
+
+¹ except `warning-ink`, which is `gray-900`: white on a yellow fill is about
+1.9:1, which fails at any text size.
+
+Why each exists:
+
+- **`-solid`** is a filled button. It goes one step *darker* in dark mode, not
+  lighter, because that is what the components paint and because a fill that
+  lightens stops reading as the same button. (Coloured *text* does the
+  opposite — 600 → 400 — which is why the two cannot share a role.)
+- **`-solid-hover`** is a role rather than a `hover:` on the base token,
+  because `hover:bg-accent-solid` would just repaint the same colour. An app
+  that re-points a fill has to be able to re-point what it becomes on hover.
+- **`-ink`** is the text *on* a fill. Components wrote `text-white` beside every
+  solid background, which is right for the stock hues and unreadable the moment
+  an app points a fill at something light. The ink moves with the fill.
+- **`-soft` / `-soft-ink`** are a tinted fill and its text — a badge, a status
+  chip, an inline callout. Two roles because the text has to move with the
+  tint, or a re-themed chip becomes illegible.
+
+So a primary button is `bg-accent-solid hover:bg-accent-solid-hover
+text-accent-ink` with no `dark:` anywhere, and one variable re-themes it:
+
+```css
+:root { --stx-accent-solid: #e11d48; --stx-accent-solid-hover: #be123c; }
+```
 
 The tokens are in stx's base theme, so they resolve in every app with no opt-in
 — a component saying `text-fg-muted` cannot depend on your config. Each is

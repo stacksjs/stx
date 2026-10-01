@@ -47,7 +47,7 @@ defineExpose({ value: selectedValue })
   <label for="{{ selectId }}" class="{{ labelClasses }}">
     {{ label }}
       @if(required)
-    <span class="text-red-500 ml-1">
+    <span class="text-danger ml-1">
       *
     </span>
     @endif
@@ -144,7 +144,6 @@ text-danger
 text-fg
 text-fg-soft
 text-lg
-text-red-500
 text-red-900
 text-sm
 transition-colors
