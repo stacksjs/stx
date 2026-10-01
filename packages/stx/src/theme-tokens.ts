@@ -29,6 +29,23 @@
  * pairing was the dominant one, and the defaults stay in step with the palette
  * because they are resolved from it rather than copied.
  *
+ * ## Why `neutral` and not `gray`
+ *
+ * The STEP each neutral role names was measured from the library; the FAMILY
+ * is a house decision. `neutral` is achromatic (chroma 0 at every step) while
+ * `gray` carries a blue tint (chroma 0.027–0.034 through the mid range), and
+ * the two agree on lightness to within about 1% at every step. So the choice
+ * is a pure saturation one and changes no contrast ratio.
+ *
+ * These were gray-backed, which left the library mixing both: 103 `neutral-*`
+ * uses in components against gray-backed roles. Everything is `neutral` now -
+ * the roles, and the 35 literal shades that could not move onto a role - so
+ * there is one neutral in the library rather than two that differ only by a
+ * tint nobody chose (stacksjs/stx#1993).
+ *
+ * Flipping this back is a one-line edit per role, and the rest of the
+ * vocabulary is unaffected: the status hues are their own families.
+ *
  * ## How dark mode works
  *
  * Each token resolves to `var(--stx-<name>, <light value>)`, and
@@ -64,16 +81,16 @@ export interface SemanticToken {
  */
 export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
   // Text
-  'fg': { light: 'gray-900', dark: 'gray-100', description: 'Primary text' },
-  'fg-strong': { light: 'gray-700', dark: 'gray-300', description: 'Labels, secondary headings' },
-  'fg-muted': { light: 'gray-600', dark: 'gray-400', description: 'Supporting text' },
-  'fg-soft': { light: 'gray-500', dark: 'gray-400', description: 'De-emphasised text' },
-  'fg-subtle': { light: 'gray-400', dark: 'gray-500', description: 'Placeholders, disabled text' },
+  'fg': { light: 'neutral-900', dark: 'neutral-100', description: 'Primary text' },
+  'fg-strong': { light: 'neutral-700', dark: 'neutral-300', description: 'Labels, secondary headings' },
+  'fg-muted': { light: 'neutral-600', dark: 'neutral-400', description: 'Supporting text' },
+  'fg-soft': { light: 'neutral-500', dark: 'neutral-400', description: 'De-emphasised text' },
+  'fg-subtle': { light: 'neutral-400', dark: 'neutral-500', description: 'Placeholders, disabled text' },
 
   // Surfaces
-  'surface': { light: 'gray-50', dark: 'gray-800', description: 'Page and panel background' },
-  'surface-raised': { light: 'gray-100', dark: 'gray-700', description: 'Cards, popovers' },
-  'surface-sunken': { light: 'gray-200', dark: 'gray-700', description: 'Wells, track backgrounds' },
+  'surface': { light: 'neutral-50', dark: 'neutral-800', description: 'Page and panel background' },
+  'surface-raised': { light: 'neutral-100', dark: 'neutral-700', description: 'Cards, popovers' },
+  'surface-sunken': { light: 'neutral-200', dark: 'neutral-700', description: 'Wells, track backgrounds' },
 
   /*
    * A white surface, which the vocabulary had no name for.
@@ -91,12 +108,12 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
    *
    * `panel` is also the name the apps that asked for this already use for it.
    */
-  'panel': { light: 'white', dark: 'gray-800', description: 'Card, menu, dialog surface' },
-  'field': { light: 'white', dark: 'gray-700', description: 'Form control surface' },
+  'panel': { light: 'white', dark: 'neutral-800', description: 'Card, menu, dialog surface' },
+  'field': { light: 'white', dark: 'neutral-700', description: 'Form control surface' },
 
   // Edges — borders, rings and dividers share a role
-  'line': { light: 'gray-200', dark: 'gray-700', description: 'Default border, divider' },
-  'line-strong': { light: 'gray-300', dark: 'gray-600', description: 'Input border, focus ring track' },
+  'line': { light: 'neutral-200', dark: 'neutral-700', description: 'Default border, divider' },
+  'line-strong': { light: 'neutral-300', dark: 'neutral-600', description: 'Input border, focus ring track' },
 
   /*
    * Status and emphasis.
@@ -182,7 +199,7 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
   'info-ink': { light: 'white', dark: 'white', description: 'Text on an informational fill' },
   'danger-ink': { light: 'white', dark: 'white', description: 'Text on a destructive fill' },
   'success-ink': { light: 'white', dark: 'white', description: 'Text on a confirmation fill' },
-  'warning-ink': { light: 'gray-900', dark: 'gray-900', description: 'Text on a caution fill' },
+  'warning-ink': { light: 'neutral-900', dark: 'neutral-900', description: 'Text on a caution fill' },
 
   /*
    * A tinted fill and its text — a badge, a status chip, an inline callout.

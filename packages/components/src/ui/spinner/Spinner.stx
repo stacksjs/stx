@@ -47,7 +47,7 @@ const dotsColorClasses = {
   danger: 'bg-danger-solid',
   info: 'bg-cyan-600 dark:bg-cyan-500',
   white: 'bg-white',
-  gray: 'bg-gray-600 dark:bg-gray-400',
+  gray: 'bg-neutral-600 dark:bg-neutral-400',
 }
 
 export const dotClasses = `${dotsSizeClasses[size] || dotsSizeClasses.md} ${dotsColorClasses[color] || dotsColorClasses.primary} rounded-full`.trim()

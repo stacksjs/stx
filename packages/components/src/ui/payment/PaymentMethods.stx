@@ -61,7 +61,7 @@ function onDelete(methodId) {
                   @if(showMakeDefault)
                     <button
                       type="button"
-                      class="border border-line-strong rounded-md bg-field px-2 py-1 text-sm text-fg-strong font-semibold shadow-sm hover:bg-gray-50 dark:hover:bg-neutral-600 focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      class="border border-line-strong rounded-md bg-field px-2 py-1 text-sm text-fg-strong font-semibold shadow-sm hover:bg-neutral-50 dark:hover:bg-neutral-600 focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       @click="onMakeDefault('{{ method.id }}')"
                       title="Make default"
                     >

@@ -33,12 +33,19 @@ import { mergeCssConfig } from '../src/ts-css-config'
 import { SEMANTIC_TOKENS, semanticColors, semanticTokenCSS, semanticTokenNames, tokenVariable } from '../src/theme-tokens'
 
 const PALETTE = {
+  /*
+   * The neutral roles name the `neutral` family, not `gray`: achromatic rather
+   * than blue-tinted, which is a house choice about saturation and changes no
+   * lightness (stacksjs/stx#1993). `gray` stays in the fixture because the
+   * palette has it and a role must not silently fall back to it.
+   */
+  neutral: { 50: '#fafafa', 100: '#f5f5f5', 200: '#e5e5e5', 300: '#d4d4d4', 400: '#a3a3a3', 500: '#737373', 600: '#525252', 700: '#404040', 800: '#262626', 900: '#171717' },
   gray: { 50: '#f9fafb', 100: '#f3f4f6', 200: '#e5e7eb', 300: '#d1d5db', 400: '#9ca3af', 500: '#6b7280', 600: '#4b5563', 700: '#374151', 800: '#1f2937', 900: '#111827' },
   indigo: { 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5' },
   blue: { 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb' },
   red: { 400: '#f87171', 500: '#ef4444', 600: '#dc2626' },
   green: { 400: '#4ade80', 500: '#22c55e', 600: '#16a34a' },
-  yellow: { 400: '#facc15', 500: '#eab308' },
+  yellow: { 400: '#facc15', 500: '#eab308', 600: '#ca8a04', 700: '#a16207' },
   white: '#fff',
 }
 
@@ -46,8 +53,8 @@ describe('semanticColors', () => {
   it('resolves each role to a variable with the stock value behind it', () => {
     const colors = semanticColors(PALETTE)
 
-    expect(colors['fg-muted']).toBe('var(--stx-fg-muted, #4b5563)')
-    expect(colors.line).toBe('var(--stx-line, #e5e7eb)')
+    expect(colors['fg-muted']).toBe('var(--stx-fg-muted, #525252)')
+    expect(colors.line).toBe('var(--stx-line, #e5e5e5)')
     // blue-600, not indigo-600: the library had two competing accents - 73 blue
     // uses against 34 indigo, both meaning "primary" - and blue won on count,
     // so the painted majority kept its appearance (stacksjs/stx#1993).
@@ -81,10 +88,22 @@ describe('semanticColors', () => {
   })
 
   it('drops a token the palette cannot back rather than emitting a dangling var', () => {
+    const colors = semanticColors({ neutral: { 600: '#525252' } })
+
+    expect(colors['fg-muted']).toBe('var(--stx-fg-muted, #525252)')
+    expect(colors.accent).toBeUndefined()
+  })
+
+  /*
+   * The neutral roles name `neutral`, so a palette carrying only `gray` backs
+   * none of them. Asserted because the fallback would be invisible: a role that
+   * silently resolved against a near-identical family would look right and
+   * leave the library with two neutrals again.
+   */
+  it('does not fall back to a near-identical family', () => {
     const colors = semanticColors({ gray: { 600: '#4b5563' } })
 
-    expect(colors['fg-muted']).toBe('var(--stx-fg-muted, #4b5563)')
-    expect(colors.accent).toBeUndefined()
+    expect(colors['fg-muted']).toBeUndefined()
   })
 })
 
@@ -94,9 +113,9 @@ describe('semanticTokenCSS', () => {
 
     expect(css).toContain(':root {')
     expect(css).toContain('.dark {')
-    expect(css).toContain('--stx-fg-muted: #4b5563;')
+    expect(css).toContain('--stx-fg-muted: #525252;')
     // The dark block is what makes one class correct in both modes.
-    expect(css.slice(css.indexOf('.dark {'))).toContain('--stx-fg-muted: #9ca3af;')
+    expect(css.slice(css.indexOf('.dark {'))).toContain('--stx-fg-muted: #a3a3a3;')
   })
 
   it('uses the .dark class, matching how dark: variants compile', () => {
@@ -127,7 +146,7 @@ describe('the merged config every render path uses', () => {
     // The property that lets a component say `text-fg-muted` unconditionally.
     const { config, tokenCSS } = mergeCssConfig({ theme: { colors: PALETTE } }, {})
 
-    expect(config.theme.colors['fg-muted']).toBe('var(--stx-fg-muted, #4b5563)')
+    expect(config.theme.colors['fg-muted']).toBe('var(--stx-fg-muted, #525252)')
     expect(tokenCSS).toContain('--stx-fg-muted')
   })
 
@@ -150,7 +169,7 @@ describe('the merged config every render path uses', () => {
 
     expect(config.theme.colors.accent).toBe('#e11d48')
     // …without disturbing the roles it did not name.
-    expect(config.theme.colors['fg-muted']).toBe('var(--stx-fg-muted, #4b5563)')
+    expect(config.theme.colors['fg-muted']).toBe('var(--stx-fg-muted, #525252)')
   })
 
   it('survives a base config with no palette', () => {

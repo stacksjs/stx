@@ -37,18 +37,18 @@ config file and no rebuild:
 
 | Token | Utility examples | Light | Dark |
 |---|---|---|---|
-| `fg` | `text-fg` | gray-900 | gray-100 |
-| `fg-strong` | `text-fg-strong` | gray-700 | gray-300 |
-| `fg-muted` | `text-fg-muted` | gray-600 | gray-400 |
-| `fg-soft` | `text-fg-soft` | gray-500 | gray-400 |
-| `fg-subtle` | `text-fg-subtle`, `placeholder-fg-subtle` | gray-400 | gray-500 |
-| `surface` | `bg-surface` | gray-50 | gray-800 |
-| `surface-raised` | `bg-surface-raised` | gray-100 | gray-700 |
-| `surface-sunken` | `bg-surface-sunken` | gray-200 | gray-700 |
-| `panel` | `bg-panel` | white | gray-800 |
-| `field` | `bg-field` | white | gray-700 |
-| `line` | `border-line`, `divide-line` | gray-200 | gray-700 |
-| `line-strong` | `border-line-strong`, `ring-line-strong` | gray-300 | gray-600 |
+| `fg` | `text-fg` | neutral-900 | neutral-100 |
+| `fg-strong` | `text-fg-strong` | neutral-700 | neutral-300 |
+| `fg-muted` | `text-fg-muted` | neutral-600 | neutral-400 |
+| `fg-soft` | `text-fg-soft` | neutral-500 | neutral-400 |
+| `fg-subtle` | `text-fg-subtle`, `placeholder-fg-subtle` | neutral-400 | neutral-500 |
+| `surface` | `bg-surface` | neutral-50 | neutral-800 |
+| `surface-raised` | `bg-surface-raised` | neutral-100 | neutral-700 |
+| `surface-sunken` | `bg-surface-sunken` | neutral-200 | neutral-700 |
+| `panel` | `bg-panel` | white | neutral-800 |
+| `field` | `bg-field` | white | neutral-700 |
+| `line` | `border-line`, `divide-line` | neutral-200 | neutral-700 |
+| `line-strong` | `border-line-strong`, `ring-line-strong` | neutral-300 | neutral-600 |
 | `accent` | `text-accent`, `ring-accent` | blue-600 | blue-400 |
 | `info` | `text-info`, `stroke-info` | blue-600 | blue-400 |
 | `danger` | `text-danger` | red-600 | red-400 |
@@ -108,6 +108,18 @@ card, menu, dialog and form control in the library stayed a literal
 because the library draws a real distinction: a panel sits at gray-800 and a
 control inside it at gray-700, one step lighter, or the input disappears into
 the panel it is in.
+
+### Why `neutral` and not `gray`
+
+The *step* each neutral role names was measured from the library; the *family*
+is a house decision. `neutral` is achromatic — chroma 0 at every step — while
+`gray` carries a blue tint, and the two agree on lightness to within about 1%
+everywhere. So the choice is purely about saturation and changes no contrast
+ratio.
+
+These roles were gray-backed, which left the library mixing both. Everything is
+`neutral` now, including the shades that could not move onto a role, so there is
+one neutral rather than two that differ only by a tint nobody chose.
 
 The tokens are in stx's base theme, so they resolve in every app with no opt-in
 — a component saying `text-fg-muted` cannot depend on your config. Each is

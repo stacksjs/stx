@@ -179,7 +179,7 @@ defineExpose({ selectedDate, currentMonth, selectDate })
     <div class="mt-4 flex justify-center">
       <button
         type="button"
-        class="px-4 py-2 text-sm font-medium text-info hover:bg-blue-50 dark:hover:bg-gray-700 rounded-md transition-colors"
+        class="px-4 py-2 text-sm font-medium text-info hover:bg-blue-50 dark:hover:bg-neutral-700 rounded-md transition-colors"
         @click="goToToday()"
       >
         Today

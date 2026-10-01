@@ -25,7 +25,7 @@ export const className = $props.className || ''
  */
 export const panelClass = $props.panelClass || ''
 export const panelStyle = $props.panelStyle || ''
-export const backdropClass = $props.backdropClass || 'bg-gray-500/75 dark:bg-gray-900/75'
+export const backdropClass = $props.backdropClass || 'bg-neutral-500/75 dark:bg-neutral-900/75'
 
 const positionClasses = {
   right: 'inset-y-0 right-0 pl-10 sm:pl-16',
@@ -305,7 +305,7 @@ defineExpose({
           <div class="{{ closeButtonClasses }}">
             <button
               type="button"
-              class="relative rounded-md text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              class="relative rounded-md text-neutral-300 dark:text-neutral-400 hover:text-white dark:hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
               @click="close()"
             >
               <span class="absolute -inset-2.5">
@@ -375,7 +375,7 @@ bottom-0
 closeButtonClasses
 containerClasses
 dark:hover:text-white
-dark:text-gray-400
+dark:text-neutral-400
 duration-500
 fixed
 flex
@@ -437,7 +437,7 @@ sm:px-6
 sr-only
 text-base
 text-fg
-text-gray-300
+text-neutral-300
 top-0
 transition-opacity
 w-6

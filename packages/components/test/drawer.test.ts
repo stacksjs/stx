@@ -243,7 +243,7 @@ describe('Drawer theming', () => {
 
   test('lets the app tone the backdrop', () => {
     expect(source).toContain('backdropClass')
-    expect(source).toContain("$props.backdropClass || 'bg-gray-500/75 dark:bg-gray-900/75'")
+    expect(source).toContain("$props.backdropClass || 'bg-neutral-500/75 dark:bg-neutral-900/75'")
   })
 
   test('takes a width without the app knowing where width lives', () => {

@@ -13,7 +13,7 @@ export const className = $props.className || ''
 export const title = $props.title || ''
 
 export const containerClasses = `relative w-full overflow-hidden rounded-lg ${className}`.trim()
-export const videoClasses = 'w-full h-full object-cover bg-gray-900 dark:bg-gray-950'
+export const videoClasses = 'w-full h-full object-cover bg-neutral-900 dark:bg-neutral-950'
 export const aspectRatioClass = aspectRatio === '16/9' ? 'aspect-video' : aspectRatio === '4/3' ? 'aspect-[4/3]' : aspectRatio === '1/1' ? 'aspect-square' : ''
 </script>
 

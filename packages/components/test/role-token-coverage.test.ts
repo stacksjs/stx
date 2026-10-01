@@ -94,8 +94,8 @@ describe('the role vocabulary covers what a painted component needs', () => {
    * `surface` is gray-50 and `surface-raised` is gray-100; neither is white.
    */
   it('has a name for a white surface, and a second for a control inside one', () => {
-    expect(SEMANTIC_TOKENS.panel).toMatchObject({ light: 'white', dark: 'gray-800' })
-    expect(SEMANTIC_TOKENS.field).toMatchObject({ light: 'white', dark: 'gray-700' })
+    expect(SEMANTIC_TOKENS.panel).toMatchObject({ light: 'white', dark: 'neutral-800' })
+    expect(SEMANTIC_TOKENS.field).toMatchObject({ light: 'white', dark: 'neutral-700' })
 
     // The distinction is the point: a control one step lighter than the panel
     // it sits in, or it disappears into it.
