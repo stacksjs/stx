@@ -24,7 +24,7 @@ import {
   replayComponentClientFactories,
   snapshotComponentClientFactoryCounts,
 } from './component-client-factories'
-import { interpolateScriptExpressions, processExpressions, usesSignalsInScript } from './expressions'
+import { evaluateExpression, interpolateScriptExpressions, processExpressions, usesSignalsInScript } from './expressions'
 import { COMPONENT_SCOPE_LOCAL_GLOBALS, buildRuntimeGlobalsDestructure } from './runtime-globals'
 import type { DepSnapshot } from './render-memo'
 import { contentKey, depsUnchanged, renderMemo, snapshotDeps } from './render-memo'
@@ -830,6 +830,61 @@ export function slotContentHasExpressions(slotContent: string): boolean {
 }
 
 /**
+ * Resolve `{{ }}` and `{!! !!}` in a component's style block.
+ *
+ * The style element is lifted out of the component's source BEFORE expressions
+ * run, and interpolation then works on a template that no longer contains it.
+ * So a stylesheet built from server data shipped as the literal marker, which
+ * the browser discards, and the page received an effectively empty
+ * `<style>` - no error, nothing logged (stacksjs/stx#1990). <CodeBlock> is the
+ * concrete loss: ts-syntax-highlighter hands back 2,777 bytes of token
+ * colours that could not reach the page, so highlighted code rendered
+ * correctly marked up and entirely monochrome.
+ *
+ * CSS rules, not HTML rules: the value is inserted raw, because escaping `>`
+ * or `&` would break selectors and `content:` strings, and a style element's
+ * contents are not parsed as HTML. The one sequence that matters is the
+ * closing tag, which would end the element early and let the rest of the value
+ * be parsed as markup - so a value containing it is refused rather than
+ * escaped, since no real stylesheet contains one and quietly mangling CSS is
+ * worse than dropping a value that cannot be right.
+ */
+function interpolateStyleExpressions(
+  css: string,
+  context: Record<string, unknown>,
+  filePath?: string,
+): string {
+  if (!css.includes('{{') && !css.includes('{!!'))
+    return css
+
+  const insert = (expression: string, raw: string): string => {
+    let value: unknown
+    try {
+      value = evaluateExpression(expression, context as Record<string, any>)
+    }
+    catch {
+      return raw
+    }
+    if (value === undefined || value === null)
+      return ''
+
+    const text = String(value)
+    if (/<\/style/i.test(text)) {
+      console.warn(
+        `[stx] a <style> expression in ${filePath ?? '<unknown>'} evaluated to CSS containing a closing style tag, `
+        + `which would end the element early, so it was dropped rather than emitted.`,
+      )
+      return ''
+    }
+    return text
+  }
+
+  return css
+    .replace(/\{!!([\s\S]*?)!!\}/g, (raw, expression) => insert(expression, raw))
+    .replace(/\{\{([\s\S]*?)\}\}/g, (raw, expression) => insert(expression, raw))
+}
+
+/**
  * Component names already reported, so one missing component in a loop says so
  * once rather than once per row.
  */
@@ -1570,7 +1625,7 @@ export async function renderComponentWithSlot(
     let preservedStyle = ''
     const hasScopedStyle = styleAttrs && /\bscoped\b/i.test(styleAttrs)
     if (styleMatch) {
-      preservedStyle = `<style${styleAttrs}>${styleContent}</style>`
+      preservedStyle = `<style${styleAttrs}>${interpolateStyleExpressions(styleContent, componentContext, componentFilePath)}</style>`
     }
 
     // Remove script and style tags from template content
