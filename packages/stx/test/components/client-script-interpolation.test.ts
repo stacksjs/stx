@@ -103,16 +103,25 @@ describe('stx#1757: {{ }} in a component <script client> emits valid JS', () => 
     expect(componentScript(out, 'const e =')).toMatch(/const e = "foo"/)
   })
 
-  it('leaves an unresolved expression intact for the client runtime', async () => {
-    // An expression that can't be evaluated server-side (no such server export)
-    // must survive verbatim so the client runtime can still bind it, rather than
-    // being emptied or escaped.
+  /*
+   * This asserted the mustache survived verbatim, "so the client runtime can
+   * still bind it". Nothing binds a mustache inside a script body - the
+   * browser parses the script first and `const x = {{ … }}` is a SyntaxError,
+   * which kills every declaration in the scope. <StepperStep /> shipped that
+   * way (#1989).
+   *
+   * So a missing server value becomes `undefined` instead, and the script is
+   * JavaScript either way.
+   */
+  it('emits undefined for an expression with no server value', async () => {
     await createPartialFile(
       'unresolved-prop.stx',
       `<script client>\nconst x = {{ notAServerExport }}\n</script>\n<div>w</div>`,
     )
     const out = await render(`<div><unresolved-prop /></div>`)
-    expect(out).toMatch(/\{\{\s*notAServerExport\s*\}\}/)
+
+    expect(out).not.toMatch(/\{\{\s*notAServerExport\s*\}\}/)
+    expect(componentScript(out, 'const x =')).toMatch(/const x = undefined/)
   })
 
   it('preserves string values through layout and component processing', async () => {

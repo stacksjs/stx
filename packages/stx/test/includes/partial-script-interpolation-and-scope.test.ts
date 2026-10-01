@@ -65,7 +65,13 @@ describe('include <script client>: server expressions and scope stamping', () =>
     expect(html).toContain('const slug = "nonna-pia"')
   })
 
-  it('leaves an expression it cannot resolve untouched, for the client to handle', async () => {
+  /*
+   * This asserted the mustache was left "for the client to handle". Nothing on
+   * the client handles a mustache inside a script body: the browser parses the
+   * script first, and `const later = {{ … }};` is a SyntaxError that takes
+   * every declaration in the block with it (#1989). It becomes `undefined`.
+   */
+  it('emits undefined for an expression with no server value', async () => {
     await createPartialFile(
       'unresolved.stx',
       `<div></div>\n<script client>\n  const later = {{ notOnTheServer }};\n</script>\n`,
@@ -73,7 +79,8 @@ describe('include <script client>: server expressions and scope stamping', () =>
 
     const html = await render(`@include('unresolved')`)
 
-    expect(html).toContain('{{ notOnTheServer }}')
+    expect(html).not.toContain('{{ notOnTheServer }}')
+    expect(html).toContain('const later = undefined;')
   })
 
   it('stamps the scope on <body> when the partial carries the page skeleton', async () => {

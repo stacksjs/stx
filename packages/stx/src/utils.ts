@@ -1546,7 +1546,7 @@ export async function renderComponentWithSlot(
         const hasMustache = cleanContent.includes('{{') && cleanContent.includes('}}')
         const hasRawMarker = cleanContent.includes('{!!') && cleanContent.includes('!!}')
         if (hasMustache || hasRawMarker)
-          cleanContent = interpolateScriptExpressions(cleanContent, componentContext)
+          cleanContent = interpolateScriptExpressions(cleanContent, componentContext, componentFilePath)
         // Remove ts/lang attributes from output since it's now JavaScript
         const cleanAttrs = attrs.replace(/\s*\bts\b/g, '').replace(/\s*\blang\s*=\s*["']?(ts|typescript)["']?/gi, '')
         clientScripts.push(`<script${cleanAttrs}>${cleanContent}</script>`)

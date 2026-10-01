@@ -763,9 +763,58 @@ function expressionReadsServerBinding(expr: string, context: Record<string, any>
   return false
 }
 
+/**
+ * Expressions already reported, so a component in a loop says so once.
+ */
+const reportedUnresolvedScriptExpressions = new Set<string>()
+
+/**
+ * Whether an unresolved expression in a SCRIPT body was meant as a server
+ * value, and so must not be left as a mustache.
+ *
+ * Leaving `{{ }}` in place is right for HTML - the client runtime may bind it
+ * later - and is the only possible wrong answer inside JavaScript, where
+ * nothing ever re-reads a mustache. `const stepNumber = {{ stepNumber }};` is
+ * a SyntaxError that takes the whole scoped IIFE down with it, so every
+ * handler it declared is never registered and the component is dead on the
+ * page, silently (stacksjs/stx#1989).
+ *
+ * But a script body can legitimately CONTAIN something mustache-shaped: a
+ * regex that matches stx's own markers, `/\{\{\s*|\s*\}\}/g`, is in this
+ * codebase. Rewriting that would break a working script to fix a broken one.
+ *
+ * So the test is what the author wrote, not what it evaluated to: an
+ * identifier or a property path is a server value that came back missing;
+ * anything else is left exactly as it was.
+ */
+function looksLikeServerValue(expression: string): boolean {
+  return /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*$/.test(expression.trim())
+}
+
+/**
+ * Emit `undefined` for a server value that was not there, and say so.
+ *
+ * `undefined` rather than `null` or `''` because it is what actually happened:
+ * the server had no value. It parses, so the rest of the script still runs,
+ * and a reader debugging `const n = undefined;` is looking at the right line.
+ */
+function unresolvedServerValue(expression: string, filePath: string | undefined): string {
+  const key = `${filePath ?? '<unknown>'}\u0000${expression}`
+  if (process.env.STX_DEBUG || !reportedUnresolvedScriptExpressions.has(key)) {
+    reportedUnresolvedScriptExpressions.add(key)
+    console.warn(
+      `[stx] {{ ${expression} }} in a <script> in ${filePath ?? '<unknown>'} has no server value, `
+      + `so it was emitted as undefined. A mustache left in JavaScript is a SyntaxError `
+      + `that takes the whole script down, so give the value a default in <script server>.`,
+    )
+  }
+  return 'undefined'
+}
+
 export function interpolateScriptExpressions(
   scriptBody: string,
   context: Record<string, any>,
+  filePath?: string,
 ): string {
   let output = scriptBody
 
@@ -773,7 +822,8 @@ export function interpolateScriptExpressions(
   output = output.replace(/\{!!([\s\S]*?)!!\}/g, (match, expr) => {
     try {
       const value = evaluateExpression(expr, context)
-      if (value === undefined) return match
+      if (value === undefined)
+        return looksLikeServerValue(expr) ? unresolvedServerValue(expr.trim(), filePath) : match
       return value === null ? '' : String(value)
     }
     catch {
@@ -788,7 +838,8 @@ export function interpolateScriptExpressions(
     if (/^__[A-Z_]+__$/.test(trimmed)) return match
     try {
       const value = evaluateExpression(expr, context)
-      if (value === undefined) return match
+      if (value === undefined)
+        return looksLikeServerValue(trimmed) ? unresolvedServerValue(trimmed, filePath) : match
       // Escape `<` so a value containing markup can't close the surrounding
       // <script> and inject into the document, and so the emitted text never
       // contains a literal script tag that a downstream scanner would treat as

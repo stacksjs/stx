@@ -1191,7 +1191,7 @@ catch (error: unknown) {
         // stacksjs/stacks#2391.
         if (!isServerScript && scriptContent.trim()) {
           const { interpolateScriptExpressions } = await import('./expressions')
-          scriptContent = interpolateScriptExpressions(scriptContent, includeContext)
+          scriptContent = interpolateScriptExpressions(scriptContent, includeContext, includePath)
         }
 
         // Vendor CSS side-effect imports MUST be extracted BEFORE
@@ -1366,7 +1366,7 @@ catch (e) {
         const { interpolateScriptExpressions } = await import('./expressions')
         workingContent = workingContent.replace(/__STX_DATA_BLOCK_(\d+)__/g, (_token, index: string) => {
           const block = dataBlocks[Number(index)]!
-          return `<script${block.attrs}>${interpolateScriptExpressions(block.body, includeContext)}</script>`
+          return `<script${block.attrs}>${interpolateScriptExpressions(block.body, includeContext, includePath)}</script>`
         })
       }
 

@@ -77,12 +77,26 @@ describe('interpolateScriptExpressions — JS-safe substitution', () => {
     expect(out).toBe('effect(() => console.log({{ clientSignal() }}))')
   })
 
-  it('leaves {{ expr }} untouched when the value is undefined', () => {
+  /*
+   * This used to assert the opposite, on the stated reasoning that an
+   * unresolved expression "must survive for the client runtime to handle".
+   * That reasoning does not hold inside a script BODY: the browser parses the
+   * script before anything could re-read it, and `const x = {{ missing }}` is
+   * a SyntaxError that takes the whole scoped IIFE down - every handler it
+   * declared silently never registered. It is not a hypothetical; it is how
+   * <StepperStep /> with no stepNumber shipped dead, and what
+   * renders-under-current-stx.test.ts was written to catch (#1989).
+   *
+   * A bare identifier or property path is a server value that came back
+   * missing, so it becomes `undefined`: valid JavaScript, truthful about what
+   * happened, and the rest of the script still runs.
+   */
+  it('emits undefined for a missing server value, so the script parses', () => {
     const out = interpolateScriptExpressions(
       'const x = {{ missing }}',
       { other: 1 },
     )
-    expect(out).toBe('const x = {{ missing }}')
+    expect(out).toBe('const x = undefined')
   })
 
   it('preserves build-time placeholders like __TITLE__', () => {
