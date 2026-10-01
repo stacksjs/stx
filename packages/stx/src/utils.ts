@@ -830,6 +830,65 @@ export function slotContentHasExpressions(slotContent: string): boolean {
 }
 
 /**
+ * Component names already reported, so one missing component in a loop says so
+ * once rather than once per row.
+ */
+const reportedUnresolvedComponents = new Set<string>()
+
+/**
+ * Say, on the server, that a component could not be resolved.
+ *
+ * This used to be the page's problem instead of the operator's: the renderer
+ * returned the ENOENT message AND every absolute path it had searched as
+ * visible text in the document. HTTP 200, nothing in the browser console,
+ * nothing in the dev server output, build succeeded. So the page looked broken
+ * to whoever was reading it, leaked the developer's directory layout to them,
+ * and gave the developer no signal at all except by reading the rendered HTML
+ * (stacksjs/stx#2004).
+ *
+ * The paths are genuinely useful - they are how you see that a name resolved
+ * under `components/` but not under `views/components/` - so they are kept,
+ * on the channel where the person who can act on them is looking.
+ */
+function reportUnresolvedComponent(
+  componentPath: string,
+  parentFilePath: string,
+  triedPaths: string[],
+  cause?: string,
+): void {
+  const key = `${componentPath}\u0000${parentFilePath}\u0000${cause ?? ''}`
+  if (!process.env.STX_DEBUG && reportedUnresolvedComponents.has(key))
+    return
+  reportedUnresolvedComponents.add(key)
+
+  const where = parentFilePath ? ` used in ${parentFilePath}` : ''
+  const why = cause ? ` Cause: ${cause}.` : ''
+  const searched = triedPaths.length > 0
+    ? `\n  searched:\n${triedPaths.map(tried => `    - ${tried}`).join('\n')}`
+    : ''
+
+  console.error(
+    `[stx] component <${componentPath}> could not be resolved${where}, so it rendered as nothing.${why}`
+    + `${searched}`,
+  )
+}
+
+/**
+ * What an unresolved component leaves in the page.
+ *
+ * A comment, so a reader of the page sees nothing rather than a stack trace,
+ * and a developer reading the HTML still finds the name. Never a path: the
+ * document is the wrong place for the filesystem layout of the machine that
+ * rendered it.
+ */
+function unresolvedComponentMarkup(componentPath: string): string {
+  // The name is attribute-safe by construction (it matched a component tag),
+  // but `--` would end the comment early, so it is neutralised.
+  const safeName = componentPath.replace(/--+/g, '-')
+  return `<!-- stx: component "${safeName}" could not be resolved; see the server log -->`
+}
+
+/**
  * Collect client variables whose initializer returns a signal-like value.
  *
  * Component scripts are removed before their template body reaches the
@@ -1118,10 +1177,8 @@ export async function renderComponentWithSlot(
 
     // Check if component exists
     if (!componentFilePath || !await fileExists(componentFilePath)) {
-      const searchInfo = triedPaths.length > 0
-        ? `\nSearched paths:\n${triedPaths.map(p => `  - ${p}`).join('\n')}`
-        : ''
-      return `[Error loading component: ENOENT: no such file or directory, open '${componentPath}']${searchInfo}`
+      reportUnresolvedComponent(componentPath, parentFilePath, triedPaths)
+      return unresolvedComponentMarkup(componentPath)
     }
 
     // Track this component as a dependency
@@ -1141,7 +1198,8 @@ export async function renderComponentWithSlot(
       }
       catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error)
-        return `[Error loading component: ${message}]`
+        reportUnresolvedComponent(componentPath, parentFilePath, [componentFilePath], message)
+        return unresolvedComponentMarkup(componentPath)
       }
     }
 
