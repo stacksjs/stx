@@ -550,6 +550,54 @@ describe('nothing is left naming gray (#1993)', () => {
     expect(offenders).toEqual([])
   })
 
+  /*
+   * And one accent hue, for the same reason.
+   *
+   * `accent` moved from indigo to blue because the library had two names for
+   * one meaning. Three components kept their own third and fourth: `<Login>`
+   * was an indigo page, `<Signup>` and `<TwoFactorChallenge>` teal ones - and
+   * TwoFactorChallenge used BOTH, an indigo focus ring above a teal button. An
+   * app installing the auth set got three hues none of which were its own, and
+   * no variable reached any of them.
+   *
+   * Their submit buttons also hovered the wrong way: indigo-600 -> indigo-500
+   * and teal-600 -> teal-500 LIGHTEN on hover, the opposite direction from
+   * every other fill in the library. On `accent-solid` they darken.
+   */
+  it('names no second accent hue', () => {
+    const offenders: string[] = []
+
+    for (const file of walk(SRC)) {
+      const hits = code(readFileSync(file, 'utf-8'))
+        .match(/\b(?:[a-z-]+:)*(?:bg|text|border|ring|outline|divide|from|to|placeholder|fill|stroke)-(?:indigo|teal)-\d{2,3}\b/g) ?? []
+
+      if (hits.length) offenders.push(`${path.relative(SRC, file)}: ${hits.join(' ')}`)
+    }
+
+    expect(offenders).toEqual([])
+  })
+
+  /*
+   * A `dark:` variant whose value is a ROLE is redundant and misleading: the
+   * token already carries both modes, so `dark:ring-accent-soft-ink` resolves
+   * through the same variable the plain class does and says nothing extra.
+   * One slipped in while migrating the payment badge, kept only to change an
+   * alpha from 10% to 20%.
+   */
+  it('never wraps a role token in a dark: variant', () => {
+    const offenders: string[] = []
+    const roles = Object.keys(SEMANTIC_TOKENS).sort((a, b) => b.length - a.length).join('|')
+    const pattern = new RegExp(`\\b(?:[a-z-]+:)*dark:(?:[a-z-]+:)*(?:bg|text|border|ring|ring-offset|outline|divide|placeholder|fill|stroke)-(?:${roles})(?![a-z-])`, 'g')
+
+    for (const file of walk(SRC)) {
+      const hits = code(readFileSync(file, 'utf-8')).match(pattern) ?? []
+
+      if (hits.length) offenders.push(`${path.relative(SRC, file)}: ${hits.join(' ')}`)
+    }
+
+    expect(offenders).toEqual([])
+  })
+
   it('has an inverted surface and its ink', () => {
     expect(SEMANTIC_TOKENS.inverse).toBeDefined()
     expect(SEMANTIC_TOKENS['inverse-ink']).toBeDefined()

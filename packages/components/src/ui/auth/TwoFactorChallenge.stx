@@ -71,7 +71,7 @@ function onRecoveryCode(event) {
                 maxlength="1"
                 name="code-{{ i }}"
                 placeholder="-"
-                class="block w-full border-0 rounded-control px-2 py-2 text-center text-fg ring-1 ring-line-strong ring-inset sm:text-sm placeholder:text-fg-subtle sm:leading-6 focus:ring-2 focus:ring-indigo-600 focus:ring-inset dark:bg-neutral-700"
+                class="block w-full border-0 rounded-control px-2 py-2 text-center text-fg ring-1 ring-line-strong ring-inset sm:text-sm placeholder:text-fg-subtle sm:leading-6 focus:ring-2 focus:ring-accent focus:ring-inset dark:bg-neutral-700"
                 @input="onCodeInput($event, {{ i }})"
                 @keydown="onKeyDown($event, {{ i }})"
               />
@@ -80,7 +80,7 @@ function onRecoveryCode(event) {
           <div class="py-4">
             <button
               type="submit"
-              class="relative h-8 w-full flex items-center justify-center rounded-full bg-teal-600 px-4 text-white font-semibold hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2"
+              class="relative h-8 w-full flex items-center justify-center rounded-full bg-accent-solid px-4 text-accent-ink font-semibold hover:bg-accent-solid-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
             >
               Verify
             </button>

@@ -39,7 +39,7 @@ export const containerClasses = `mt-16 w-2/3 bg-panel px-8 py-6 shadow ring-1 ri
               <div>
                 <h2 class="text-sm text-fg-muted">
                   {{ paymentMethod.brand }} •••• {{ paymentMethod.last_four }}
-                  <span class="ml-4 inline-flex items-center rounded-control bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 text-xs text-indigo-700 dark:text-indigo-300 font-medium ring-1 ring-indigo-700/10 dark:ring-indigo-300/20 ring-inset">Default</span>
+                  <span class="ml-4 inline-flex items-center rounded-control bg-accent-soft px-2 py-1 text-xs text-accent-soft-ink font-medium ring-1 ring-accent-soft-ink/20 ring-inset">Default</span>
                   <br>
                   <span class="text-xs text-fg-soft italic">Expires {{ paymentMethod.exp_month }} / {{ paymentMethod.exp_year }}</span>
                 </h2>

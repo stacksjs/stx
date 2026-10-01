@@ -68,7 +68,7 @@ function onSubmit(event) {
                 type="email"
                 autocomplete="email"
                 required
-                class="block w-full border-0 rounded-control py-1.5 text-fg shadow-sm ring-1 ring-line-strong ring-inset sm:text-sm placeholder:text-fg-subtle sm:leading-6 focus:ring-2 focus:ring-indigo-600 focus:ring-inset dark:bg-neutral-700"
+                class="block w-full border-0 rounded-control py-1.5 text-fg shadow-sm ring-1 ring-line-strong ring-inset sm:text-sm placeholder:text-fg-subtle sm:leading-6 focus:ring-2 focus:ring-accent focus:ring-inset dark:bg-neutral-700"
               />
             </div>
           </div>
@@ -84,7 +84,7 @@ function onSubmit(event) {
                 type="password"
                 autocomplete="current-password"
                 required
-                class="block w-full border-0 rounded-control py-1.5 text-fg shadow-sm ring-1 ring-line-strong ring-inset sm:text-sm placeholder:text-fg-subtle sm:leading-6 focus:ring-2 focus:ring-indigo-600 focus:ring-inset dark:bg-neutral-700"
+                class="block w-full border-0 rounded-control py-1.5 text-fg shadow-sm ring-1 ring-line-strong ring-inset sm:text-sm placeholder:text-fg-subtle sm:leading-6 focus:ring-2 focus:ring-accent focus:ring-inset dark:bg-neutral-700"
               />
             </div>
           </div>
@@ -96,7 +96,7 @@ function onSubmit(event) {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  class="h-4 w-4 border-line-strong rounded text-indigo-600 focus:ring-indigo-600 dark:bg-neutral-700"
+                  class="h-4 w-4 border-line-strong rounded text-accent focus:ring-accent dark:bg-neutral-700"
                 />
                 <label for="remember-me" class="ml-3 block text-sm text-fg leading-6">
                   Remember me
@@ -106,7 +106,7 @@ function onSubmit(event) {
 
             @if(showForgotPassword)
               <div class="text-sm leading-6">
-                <StxLink to="{{ forgotPasswordHref }}" class="text-accent font-semibold hover:text-indigo-500 dark:hover:text-indigo-300">
+                <StxLink to="{{ forgotPasswordHref }}" class="text-accent font-semibold hover:text-accent">
                   Forgot password?
                 </StxLink>
               </div>
@@ -116,7 +116,7 @@ function onSubmit(event) {
           <div>
             <button
               type="submit"
-              class="w-full flex justify-center rounded-control bg-indigo-600 px-3 py-1.5 text-sm text-white font-semibold leading-6 shadow-sm hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-indigo-600 focus-visible:outline-offset-2 focus-visible:outline"
+              class="w-full flex justify-center rounded-control bg-accent-solid px-3 py-1.5 text-sm text-accent-ink font-semibold leading-6 shadow-sm hover:bg-accent-solid-hover focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 focus-visible:outline"
             >
               Sign in
             </button>
@@ -169,7 +169,7 @@ function onSubmit(event) {
       @if(showSignup)
         <p class="mt-10 text-center text-sm text-fg-soft">
           Not a member?
-          <StxLink to="{{ signupHref }}" class="text-accent font-semibold leading-6 hover:text-indigo-500 dark:hover:text-indigo-300">
+          <StxLink to="{{ signupHref }}" class="text-accent font-semibold leading-6 hover:text-accent">
             {{ signupText }}
           </StxLink>
         </p>

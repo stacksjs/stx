@@ -42,7 +42,7 @@ export const audioClasses = 'w-full rounded-control bg-surface-raised'
           fill="none"
           stroke="currentColor"
           stroke-width="2"
-          class="text-indigo-500 dark:text-indigo-400"
+          class="text-accent"
         />
       </svg>
     </div>
