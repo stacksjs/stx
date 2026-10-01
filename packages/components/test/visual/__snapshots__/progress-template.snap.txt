@@ -38,7 +38,7 @@ export const linearTrackClasses = `w-full ${linearSizeClasses[size] || linearSiz
 export const linearBarClasses = `h-full ${colorClasses[color] || colorClasses.primary} transition-all duration-300 ease-in-out ${indeterminate ? 'animate-progress-indeterminate' : ''}`.trim()
 export const circularSizeClass = circularSizeClasses[size] || circularSizeClasses.md
 export const labelClasses = `text-sm font-medium text-fg-strong mb-2`.trim()
-export const circularTrackColor = 'stroke-gray-200 dark:stroke-gray-700'
+export const circularTrackColor = 'stroke-line'
 export const circularBarColor = color === 'primary' ? 'stroke-info'
   : color === 'secondary' ? 'stroke-purple-600 dark:stroke-purple-500'
   : color === 'success' ? 'stroke-success'
@@ -187,7 +187,6 @@ containerClasses
 dark:bg-cyan-500
 dark:bg-purple-500
 dark:stroke-cyan-500
-dark:stroke-gray-700
 dark:stroke-purple-500
 duration-300
 ease-in-out
@@ -218,7 +217,6 @@ relative
 rounded-full
 stroke-cyan-600
 stroke-danger
-stroke-gray-200
 stroke-info
 stroke-purple-600
 stroke-success

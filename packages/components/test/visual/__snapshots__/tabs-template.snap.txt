@@ -131,11 +131,11 @@ function getTabClasses(index) {
     return `${base} ${border} ${isActiveTab ? 'border-blue-500 text-info' : 'border-transparent text-fg-muted hover:text-fg hover:border-line-strong'}`
   }
   if (variant === 'pills') {
-    return `${base} rounded-md ${isActiveTab ? 'bg-white dark:bg-gray-700 text-fg shadow-sm' : 'text-fg-muted hover:text-fg'}`
+    return `${base} rounded-md ${isActiveTab ? 'bg-field text-fg shadow-sm' : 'text-fg-muted hover:text-fg'}`
   }
   if (variant === 'enclosed') {
     const borders = orientation === 'horizontal' ? 'border-t border-l border-r rounded-t-md' : 'border-t border-l border-b rounded-l-md'
-    return `${base} ${borders} ${isActiveTab ? 'bg-white dark:bg-gray-800 border-line -mb-px' : 'bg-surface border-transparent hover:border-line'}`
+    return `${base} ${borders} ${isActiveTab ? 'bg-panel border-line -mb-px' : 'bg-surface border-transparent hover:border-line'}`
   }
   return base
 }
@@ -238,9 +238,10 @@ defineExpose({ activeTab, selectTab })
 === Extracted Classes ===
 $loop.index
 -mb-px
+bg-field
+bg-panel
 bg-surface
 bg-surface-raised
-bg-white
 border-0
 border-b
 border-b-2
@@ -254,8 +255,6 @@ border-transparent
 button
 change
 containerClasses
-dark:bg-gray-700
-dark:bg-gray-800
 dark:focus:ring-offset-gray-900
 duration-150
 flex

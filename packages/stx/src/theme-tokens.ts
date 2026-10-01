@@ -75,6 +75,25 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
   'surface-raised': { light: 'gray-100', dark: 'gray-700', description: 'Cards, popovers' },
   'surface-sunken': { light: 'gray-200', dark: 'gray-700', description: 'Wells, track backgrounds' },
 
+  /*
+   * A white surface, which the vocabulary had no name for.
+   *
+   * `surface` is gray-50 and `surface-raised` is gray-100, so the 43 places
+   * that paint `bg-white dark:bg-neutral-800` - every card, menu, dialog and
+   * form control in the library - had no role to move to and stayed literal.
+   * That is the single largest reason a themed app still saw stock colours
+   * after the status hues were migrated (stacksjs/stx#1993).
+   *
+   * Two roles rather than one because the library draws a real distinction: a
+   * panel sits at gray-800 in dark mode and a form control inside it at
+   * gray-700, one step lighter, or the input disappears into the panel. 24
+   * uses of the first, 16 of the second.
+   *
+   * `panel` is also the name the apps that asked for this already use for it.
+   */
+  'panel': { light: 'white', dark: 'gray-800', description: 'Card, menu, dialog surface' },
+  'field': { light: 'white', dark: 'gray-700', description: 'Form control surface' },
+
   // Edges — borders, rings and dividers share a role
   'line': { light: 'gray-200', dark: 'gray-700', description: 'Default border, divider' },
   'line-strong': { light: 'gray-300', dark: 'gray-600', description: 'Input border, focus ring track' },

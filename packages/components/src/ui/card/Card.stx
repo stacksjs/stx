@@ -8,9 +8,9 @@ export const imageAlt = $props.imageAlt || ''
 export const className = $props.className || ''
 
 const variantClasses = {
-  default: 'bg-white dark:bg-gray-800 border border-line',
+  default: 'bg-panel border border-line',
   outlined: 'bg-transparent border-2 border-line-strong',
-  elevated: 'bg-white dark:bg-gray-800 shadow-lg border-0',
+  elevated: 'bg-panel shadow-lg border-0',
   flat: 'bg-surface border-0',
 }
 

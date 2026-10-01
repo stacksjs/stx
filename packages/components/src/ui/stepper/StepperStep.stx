@@ -46,7 +46,7 @@ function onClick() {
 
     @if(label)
       <div class="text-left">
-        <div class="text-sm font-medium {{ isCurrent ? 'text-info' : 'text-neutral-900 dark:text-white' }}">
+        <div class="text-sm font-medium {{ isCurrent ? 'text-info' : 'text-fg' }}">
           {{ label }}
         </div>
         @if(description)

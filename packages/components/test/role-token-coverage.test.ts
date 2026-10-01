@@ -88,6 +88,21 @@ describe('the role vocabulary covers what a painted component needs', () => {
     }
   })
 
+  /*
+   * A white surface had no name, which is why 43 places - every card, menu,
+   * dialog and form control - stayed literal after the status hues migrated.
+   * `surface` is gray-50 and `surface-raised` is gray-100; neither is white.
+   */
+  it('has a name for a white surface, and a second for a control inside one', () => {
+    expect(SEMANTIC_TOKENS.panel).toMatchObject({ light: 'white', dark: 'gray-800' })
+    expect(SEMANTIC_TOKENS.field).toMatchObject({ light: 'white', dark: 'gray-700' })
+
+    // The distinction is the point: a control one step lighter than the panel
+    // it sits in, or it disappears into it.
+    expect(SEMANTIC_TOKENS.field.dark).not.toBe(SEMANTIC_TOKENS.panel.dark)
+    expect(SEMANTIC_TOKENS.field.light).toBe(SEMANTIC_TOKENS.panel.light)
+  })
+
   it('gives every role a value in both modes', () => {
     const css = semanticTokenCSS((defaultConfig as any).theme.colors)
 
@@ -118,6 +133,10 @@ describe('the migrated primitives carry no status shade', () => {
     'button/Button.stx',
     'badge/Badge.stx',
     'notification/Notification.stx',
+    'dialog/DialogPanel.stx',
+    'popover/PopoverPanel.stx',
+    'listbox/ListboxOptions.stx',
+    'combobox/ComboboxOptions.stx',
   ]
 
   const STATUS_HUE = /\b(?:[a-z-]+:)*(?:bg|text|border|ring|divide|stroke|fill|placeholder|outline)-(?:blue|red|green|yellow|indigo)-\d{2,3}\b/g
@@ -139,5 +158,34 @@ describe('the migrated primitives carry no status shade', () => {
     expect(button).toContain('hover:bg-accent-solid-hover')
     expect(button).toContain('text-accent-ink')
     expect(button).toContain('bg-danger-solid')
+  })
+
+  /*
+   * The neutral pass, same shape: the surfaces have to reach the role rather
+   * than merely stop naming a shade.
+   */
+  it('paints its panels and fields through the surface roles', () => {
+    const panels = ['dialog/DialogPanel.stx', 'popover/PopoverPanel.stx', 'listbox/ListboxOptions.stx']
+    for (const rel of panels)
+      expect(readFileSync(path.join(UI, rel), 'utf-8'), rel).toContain('bg-panel')
+
+    for (const rel of ['input/TextInput.stx', 'textarea/Textarea.stx', 'select/Select.stx'])
+      expect(readFileSync(path.join(UI, rel), 'utf-8'), rel).toContain('bg-field')
+  })
+
+  /*
+   * No component should carry `bg-white dark:bg-<neutral>` any more: that
+   * pairing IS the panel/field role, and leaving one behind is how a themed
+   * app ends up with a white card in a dark product.
+   */
+  it('leaves no white-surface pairing unmigrated', () => {
+    const offenders: string[] = []
+    for (const rel of MIGRATED.concat(['input/TextInput.stx', 'select/Select.stx', 'card/Card.stx', 'tabs/Tabs.stx'])) {
+      const source = code(readFileSync(path.join(UI, rel), 'utf-8'))
+      if (/bg-white\s+dark:bg-(?:gray|neutral|zinc|slate|stone)-\d{2,3}/.test(source))
+        offenders.push(rel)
+    }
+
+    expect(offenders).toEqual([])
   })
 })

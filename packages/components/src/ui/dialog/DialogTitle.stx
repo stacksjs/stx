@@ -2,7 +2,7 @@
 export const className = $props.className || ''
 export const as = $props.as || 'h3'
 
-const baseClasses = 'text-lg font-medium leading-6 text-neutral-900 dark:text-white'
+const baseClasses = 'text-lg font-medium leading-6 text-fg'
 const titleClasses = `${baseClasses} ${className}`.trim()
 </script>
 

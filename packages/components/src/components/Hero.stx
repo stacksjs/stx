@@ -8,7 +8,7 @@ export const githubUrl = $props.githubUrl || '#'
   <h1 class="text-5xl font-bold mb-3 -mt-5 bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
     {{ title }}
   </h1>
-  <p class="mb-3 mt-0 text-lg text-neutral-600 dark:text-neutral-400">
+  <p class="mb-3 mt-0 text-lg text-fg-muted">
     {{ description }}
   </p>
   <div class="flex gap-2">
@@ -17,7 +17,7 @@ export const githubUrl = $props.githubUrl || '#'
       href="{{ githubUrl }}"
       target="_blank"
       rel="noopener noreferrer"
-      class="inline-flex items-center justify-center h-10 px-8 rounded-md text-sm font-semibold bg-gradient-to-b from-white to-neutral-100 dark:from-neutral-800 dark:to-neutral-900 text-neutral-900 dark:text-white shadow-md hover:shadow-lg transition-all duration-200"
+      class="inline-flex items-center justify-center h-10 px-8 rounded-md text-sm font-semibold bg-gradient-to-b from-white to-neutral-100 dark:from-neutral-800 dark:to-neutral-900 text-fg shadow-md hover:shadow-lg transition-all duration-200"
     >
       GitHub
     </a>

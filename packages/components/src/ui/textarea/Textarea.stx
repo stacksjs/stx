@@ -24,7 +24,7 @@ const disabledClasses = disabled
   ? 'opacity-50 cursor-not-allowed bg-surface'
   : readonly
     ? 'bg-surface cursor-default'
-    : 'bg-white dark:bg-neutral-700'
+    : 'bg-field'
 
 export const textareaClasses = `${baseClasses} ${stateClasses} ${disabledClasses} ${resizeClasses[resize] || resizeClasses.vertical} ${className}`.trim()
 export const labelClasses = `block text-sm font-medium leading-6 mb-2 ${error ? 'text-danger' : 'text-fg'}`.trim()

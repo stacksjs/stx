@@ -231,7 +231,14 @@ describe('Drawer theming', () => {
   test('still paints itself when the app says nothing', () => {
     // An app that passes no palette must not get a transparent panel with the
     // page showing through its own text.
-    expect(source).toContain("panelClass || 'bg-white dark:bg-neutral-800'")
+    /*
+     * The role, not the shades it used to name. The intent is unchanged - a
+     * drawer with no panelClass still paints itself rather than showing the
+     * page through its own text - and `bg-panel` is `var(--stx-panel, #fff)`
+     * with a gray-800 dark value, so it is the same colour and now the app's
+     * to move (stacksjs/stx#1993).
+     */
+    expect(source).toContain("panelClass || 'bg-panel'")
   })
 
   test('lets the app tone the backdrop', () => {

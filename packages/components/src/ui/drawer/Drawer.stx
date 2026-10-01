@@ -7,7 +7,7 @@ export const className = $props.className || ''
 /*
  * The surface, left to the app.
  *
- * The panel painted itself `bg-white dark:bg-neutral-800` and offered no way
+ * The panel painted itself `bg-panel` and offered no way
  * to say otherwise, so a drawer in an app with its own palette arrived as a
  * white rectangle with the app's colours inside it - the one element on the
  * screen that belongs to no theme. `className` did not help: it lands on the
@@ -312,7 +312,7 @@ defineExpose({
             </button>
           </div>
 
-          <div class="relative flex h-full flex-col overflow-y-auto {{ panelClass || 'bg-white dark:bg-neutral-800' }} py-6 shadow-xl" style="{{ panelStyle }}">
+          <div class="relative flex h-full flex-col overflow-y-auto {{ panelClass || 'bg-panel' }} py-6 shadow-xl" style="{{ panelStyle }}">
             @if(title)
               <div class="px-4 sm:px-6">
                 <h2 class="text-base font-semibold text-fg">

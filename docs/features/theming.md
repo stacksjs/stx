@@ -45,6 +45,8 @@ config file and no rebuild:
 | `surface` | `bg-surface` | gray-50 | gray-800 |
 | `surface-raised` | `bg-surface-raised` | gray-100 | gray-700 |
 | `surface-sunken` | `bg-surface-sunken` | gray-200 | gray-700 |
+| `panel` | `bg-panel` | white | gray-800 |
+| `field` | `bg-field` | white | gray-700 |
 | `line` | `border-line`, `divide-line` | gray-200 | gray-700 |
 | `line-strong` | `border-line-strong`, `ring-line-strong` | gray-300 | gray-600 |
 | `accent` | `text-accent`, `ring-accent` | blue-600 | blue-400 |
@@ -98,6 +100,14 @@ text-accent-ink` with no `dark:` anywhere, and one variable re-themes it:
 ```css
 :root { --stx-accent-solid: #e11d48; --stx-accent-solid-hover: #be123c; }
 ```
+
+`panel` and `field` are both white in light mode, and that is the point: the
+vocabulary had no name for a white surface — `surface` is gray-50 — so every
+card, menu, dialog and form control in the library stayed a literal
+`bg-white dark:bg-neutral-800` and ignored your theme. They differ in dark mode
+because the library draws a real distinction: a panel sits at gray-800 and a
+control inside it at gray-700, one step lighter, or the input disappears into
+the panel it is in.
 
 The tokens are in stx's base theme, so they resolve in every app with no opt-in
 — a component saying `text-fg-muted` cannot depend on your config. Each is

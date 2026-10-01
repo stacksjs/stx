@@ -2,7 +2,7 @@
 export const className = $props.className || ''
 export const as = $props.as || 'label'
 
-const baseClasses = 'block text-sm font-medium text-neutral-900 dark:text-white'
+const baseClasses = 'block text-sm font-medium text-fg'
 const labelClasses = `${baseClasses} ${className}`.trim()
 </script>
 

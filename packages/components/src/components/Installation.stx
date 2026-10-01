@@ -15,22 +15,22 @@ export const yarnCode = `yarn add ${packageName}`
 
   <div class="space-y-4">
     <div>
-      <h3 class="text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-300">Bun (recommended)</h3>
+      <h3 class="text-sm font-medium mb-2 text-fg-strong">Bun (recommended)</h3>
       <CodeBlock :code="installCode" language="bash" />
     </div>
 
     <div>
-      <h3 class="text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-300">npm</h3>
+      <h3 class="text-sm font-medium mb-2 text-fg-strong">npm</h3>
       <CodeBlock :code="npmCode" language="bash" />
     </div>
 
     <div>
-      <h3 class="text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-300">pnpm</h3>
+      <h3 class="text-sm font-medium mb-2 text-fg-strong">pnpm</h3>
       <CodeBlock :code="pnpmCode" language="bash" />
     </div>
 
     <div>
-      <h3 class="text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-300">Yarn</h3>
+      <h3 class="text-sm font-medium mb-2 text-fg-strong">Yarn</h3>
       <CodeBlock :code="yarnCode" language="bash" />
     </div>
   </div>
