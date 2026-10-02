@@ -1,5 +1,28 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.347...v0.2.348)
+
+## ✨ Features
+
+- **components**: ThemeToggle and EmptyState, the last two of #1981 ([1acc69d](https://github.com/stacksjs/stx/commit/1acc69d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1981](https://github.com/stacksjs/stx/issues/1981), [#1981](https://github.com/stacksjs/stx/issues/1981), [#1794](https://github.com/stacksjs/stx/issues/1794), [#1981](https://github.com/stacksjs/stx/issues/1981), [#1981](https://github.com/stacksjs/stx/issues/1981))
+- **components**: DateRangePicker, so four apps stop maintaining four copies ([ae430c2](https://github.com/stacksjs/stx/commit/ae430c2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1981](https://github.com/stacksjs/stx/issues/1981), [#1981](https://github.com/stacksjs/stx/issues/1981))
+
+## 🐛 Bug Fixes
+
+- **typecheck**: narrow an @elseif condition by the branch it follows failing ([bda1c95](https://github.com/stacksjs/stx/commit/bda1c95)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2019](https://github.com/stacksjs/stx/issues/2019))
+- **components**: Calendar renders a real month, and gains range mode ([1cfb798](https://github.com/stacksjs/stx/commit/1cfb798)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1981](https://github.com/stacksjs/stx/issues/1981), [#1981](https://github.com/stacksjs/stx/issues/1981))
+- **stx**: an @errorBoundary covers a server script that failed ([8ffdd72](https://github.com/stacksjs/stx/commit/8ffdd72)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1991](https://github.com/stacksjs/stx/issues/1991), [#1991](https://github.com/stacksjs/stx/issues/1991))
+- **components**: auto ships both palettes, so a dark code surface reads ([b5a418e](https://github.com/stacksjs/stx/commit/b5a418e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2015](https://github.com/stacksjs/stx/issues/2015), [#2015](https://github.com/stacksjs/stx/issues/2015))
+
+## 🔧 Chores
+
+- release v0.2.348 ([0a95ff8](https://github.com/stacksjs/stx/commit/0a95ff8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.346...v0.2.347)
 
 ## ✨ Features
