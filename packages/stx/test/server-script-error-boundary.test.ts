@@ -101,6 +101,34 @@ describe('a failed server script renders a boundary in development', () => {
     expect(html).toContain('hello')
   })
 
+  it('splices over the whole script element, not up to a nested closing tag', async () => {
+    /*
+     * The boundary replaces the span its scan matched. A scan that stopped at a
+     * `</script>` inside a string or a comment would end the span early and
+     * leave everything from there to the real close tag in the page as text,
+     * which would publish the script's own source (stacksjs/stx#2012).
+     *
+     * Reported against this boundary and not reproducible on `main`: the three
+     * named cases in `process/script-setup.test.ts` pass under
+     * `NODE_ENV=development`, and the shapes below render with nothing left
+     * behind. Pinned anyway, because the suite could not have told anyone
+     * either way: the boundary is off while `NODE_ENV=test`, so nothing
+     * exercised the splice except the cases in this file.
+     */
+    const bodies = [
+      `import { x } from 'package-that-does-not-exist-xyz'\n  const marker = "</script>"\n  const TAIL = 'must-not-reach-the-page'`,
+      `import { x } from 'package-that-does-not-exist-xyz'\n  const marker = '<script>x</script>'\n  const TAIL = 'must-not-reach-the-page'`,
+      `import { x } from 'package-that-does-not-exist-xyz'\n  /* </script> */\n  const TAIL = 'must-not-reach-the-page'`,
+    ]
+
+    for (const body of bodies) {
+      const html = await render(body)
+      expect(html).toContain(BOUNDARY)
+      expect(html, 'the script tail must not reach the page').not.toContain('must-not-reach-the-page')
+      expect(html, 'the script source must not reach the page').not.toContain('const marker')
+    }
+  })
+
   it('renders nothing extra in production', async () => {
     process.env.NODE_ENV = 'production'
     const html = await render(`const value = thisFunctionDoesNotExist()`)
@@ -151,5 +179,71 @@ describe('isModuleResolutionFailure', () => {
   it('does not claim an unrelated failure', () => {
     expect(isModuleResolutionFailure('thisFunctionDoesNotExist is not defined')).toBe(false)
     expect(isModuleResolutionFailure('Unexpected end of input')).toBe(false)
+  })
+})
+
+/**
+ * The boundary is spliced over the WHOLE script element (stacksjs/stx#2012).
+ *
+ * `extractServerScriptVariables` located scripts with
+ * `<script\b([^>]*)>([\s\S]*?)<\/script>`, which stops at the first
+ * `</script>` — and the body is JavaScript, where that string can legally sit
+ * inside a literal:
+ *
+ *     <script server>const html = "<script>x</script>"; const value = 1;</script>
+ *
+ * Two things went wrong at once. The body handed to the extractor was
+ * truncated, so a perfectly valid script reported "Unexpected EOF". And the
+ * span recorded for the boundary ended at the same early tag, so splicing it in
+ * left the real tail — the rest of the server script's own source — in the
+ * rendered document as literal page text.
+ *
+ * It was invisible to the suite because `showBoundaries` is false under test,
+ * so the only mode that renders a boundary was the one nothing ran in. These
+ * cases run in the development environment this file already sets up, which is
+ * what makes the splice covered rather than skipped.
+ */
+describe('#2012 — a nested </script> in the body does not leak the tail', () => {
+  it('parses a script whose body contains </script> in a string', async () => {
+    const html = await render(`const html = "<script>x</script>"\nconst value = 'ok'`)
+
+    // Valid JavaScript, so there is nothing to report and no boundary at all.
+    expect(html).not.toContain(BOUNDARY)
+    expect(html).not.toContain('Unexpected EOF')
+    // And the variable it declared actually reached the template.
+    expect(html).toContain('ok')
+  })
+
+  it('parses one with </script> in a single-quoted string and a block comment', async () => {
+    const html = await render(`/* </script> */\nconst tag = '</script>'\nconst value = tag.length`)
+
+    expect(html).not.toContain(BOUNDARY)
+    expect(html).toContain('>9<')
+  })
+
+  it('leaves no fragment of the script in the output when it does fail', async () => {
+    const html = await render(`const html = "<script>x</script>"\nconst value = thisDoesNotExist()`)
+
+    // It genuinely fails, so the boundary is right…
+    expect(html).toContain(BOUNDARY)
+    // …and the boundary NAMES the cause, which is why the bare identifier is
+    // the wrong thing to assert on: "thisDoesNotExist is not defined" is the
+    // diagnostic working. The call expression is what only the leaked SOURCE
+    // would contain.
+    expect(html).not.toContain('thisDoesNotExist()')
+    expect(html).not.toContain('const html =')
+    expect(html).not.toContain('const value =')
+  })
+
+  /*
+   * The shape of the original symptom: a tail that parsed as markup. Asserted
+   * separately because a leaked `"; const visible = 1;</script>` is worse than
+   * a leaked identifier - it closes a tag the document never opened.
+   */
+  it('does not leave a stray close tag behind', async () => {
+    const html = await render(`const html = "<script>x</script>"\nconst value = nope()`)
+    const serverScripts = html.match(/<\/script>/g) ?? []
+
+    expect(serverScripts.length).toBe(0)
   })
 })
