@@ -1,5 +1,34 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.346...HEAD)
+
+## 🚀 Features
+
+- **native**: compile named screens with route actions ([49cc3f0](https://github.com/stacksjs/stx/commit/49cc3f0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- expose Craft native haptics and clipboard APIs ([7d1b7ac](https://github.com/stacksjs/stx/commit/7d1b7ac)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **stx**: typecheck reports an @if condition against the condition ([f1ed917](https://github.com/stacksjs/stx/commit/f1ed917)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2013](https://github.com/stacksjs/stx/issues/2013))
+- **components**: CodeBlock ships no code it has no button to copy ([b4d2b99](https://github.com/stacksjs/stx/commit/b4d2b99)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2006](https://github.com/stacksjs/stx/issues/2006), [#1990](https://github.com/stacksjs/stx/issues/1990), [#2014](https://github.com/stacksjs/stx/issues/2014))
+- **router**: a filter chip is current for its own query, not the unfiltered link ([0f4e590](https://github.com/stacksjs/stx/commit/0f4e590)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1777](https://github.com/stacksjs/stx/issues/1777), [#2017](https://github.com/stacksjs/stx/issues/2017))
+- **components**: pass the resolved theme to the highlighter instead of dropping it ([202d5bc](https://github.com/stacksjs/stx/commit/202d5bc)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2015](https://github.com/stacksjs/stx/issues/2015), [#2015](https://github.com/stacksjs/stx/issues/2015), [#0](https://github.com/stacksjs/stx/issues/0))
+- **stx**: @name binds a listener for any event, so Avatar's fallback fires ([071e3a0](https://github.com/stacksjs/stx/commit/071e3a0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2016](https://github.com/stacksjs/stx/issues/2016))
+- **stx**: a utility beside a shortcut wins, instead of being silently dead ([ac701fc](https://github.com/stacksjs/stx/commit/ac701fc)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2000](https://github.com/stacksjs/stx/issues/2000))
+- **process**: a nested </script> no longer truncates a server script or leaks its tail ([87ef446](https://github.com/stacksjs/stx/commit/87ef446)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2012](https://github.com/stacksjs/stx/issues/2012))
+- **stx**: stxConfirm is modal, and Delete no longer gets the keyboard ([5e39b13](https://github.com/stacksjs/stx/commit/5e39b13)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1998](https://github.com/stacksjs/stx/issues/1998), [#1875](https://github.com/stacksjs/stx/issues/1875), [#1998](https://github.com/stacksjs/stx/issues/1998))
+- **stx**: an installed component package resolves by bare tag ([a511c76](https://github.com/stacksjs/stx/commit/a511c76)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2011](https://github.com/stacksjs/stx/issues/2011))
+- register native API requests before sending ([903ff06](https://github.com/stacksjs/stx/commit/903ff06)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧪 Tests
+
+- **process**: correct the #2012 note, the leak is real and this test catches it ([bf4199c](https://github.com/stacksjs/stx/commit/bf4199c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2012](https://github.com/stacksjs/stx/issues/2012), [#2012](https://github.com/stacksjs/stx/issues/2012), [#2012](https://github.com/stacksjs/stx/issues/2012))
+- **process**: pin that the error boundary replaces the whole script element ([cfbd266](https://github.com/stacksjs/stx/commit/cfbd266)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2012](https://github.com/stacksjs/stx/issues/2012), [#2012](https://github.com/stacksjs/stx/issues/2012))
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.345...v0.2.346)
 
 ## ✨ Features
