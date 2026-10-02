@@ -81,6 +81,24 @@ function generateBoundaryId(): string {
  *   @errorBoundary(id: 'my-boundary', logErrors: false)
  */
 // eslint-disable-next-line pickier/no-unused-vars
+/**
+ * The marker a component leaves when its own `<script server>` failed.
+ *
+ * `extractVariables` warns and returns normally, so the component renders its
+ * markup with every value undefined - correct as a default, and indistinguishable
+ * downstream from a component that is simply empty. The marker is what lets a
+ * surrounding boundary tell the two apart (stacksjs/stx#1991).
+ *
+ * Written by `renderComponentWithSlot` as a literal, so this pattern is the one
+ * place that knows the shape.
+ */
+const RENDER_FAILED_MARKER = /<!--stx-render-failed:([a-z-]+)-->/g
+
+/** Every marker removed, for output no boundary claimed. */
+export function stripRenderFailedMarkers(html: string): string {
+  return html.replace(RENDER_FAILED_MARKER, '')
+}
+
 export function processErrorBoundaryDirectives(
   template: string,
   context: Record<string, unknown> = {},
@@ -136,14 +154,37 @@ function generateErrorBoundaryHtml(
 ): string {
   const logErrors = options.logErrors !== false
 
-  return `
-<div class="stx-error-boundary" data-boundary-id="${boundaryId}" data-has-error="false">
-  <div class="stx-error-boundary-content" data-boundary-content="${boundaryId}">
-    ${content}
+  /*
+   * A render-time failure inside the content shows the fallback SERVER-SIDE
+   * (stacksjs/stx#1991, ask 3).
+   *
+   * The boundary already ships both halves and flips them from the client when
+   * it catches an error. A `<script server>` that failed never reaches the
+   * client runtime - it failed before the page was sent - so the component
+   * rendered empty inside a boundary whose fallback sat there hidden, which is
+   * the one case a boundary exists for and could not cover. The marker the
+   * component leaves is what makes it detectable here.
+   *
+   * The failed content is dropped rather than hidden: it is markup with every
+   * value undefined, and keeping it in the document means a screen reader still
+   * reads it and a `:show` still binds to it.
+   */
+  const failed = RENDER_FAILED_MARKER.test(content)
+  RENDER_FAILED_MARKER.lastIndex = 0
+  const body = failed
+    ? `  <div class="stx-error-boundary-fallback" data-boundary-fallback="${boundaryId}">
+    ${fallback}
+  </div>`
+    : `  <div class="stx-error-boundary-content" data-boundary-content="${boundaryId}">
+    ${stripRenderFailedMarkers(content)}
   </div>
   <div class="stx-error-boundary-fallback" data-boundary-fallback="${boundaryId}" style="display: none;">
     ${fallback}
-  </div>
+  </div>`
+
+  return `
+<div class="stx-error-boundary" data-boundary-id="${boundaryId}" data-has-error="${failed}">
+${body}
 </div>
 <script>
 (function() {

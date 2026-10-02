@@ -1724,8 +1724,16 @@ async function processOtherDirectives(
   output = processTransitionAttributes(output)
 
   // Process error boundary directives (@errorBoundary for graceful error handling)
-  const { processErrorBoundaryDirectives } = await importOnce('stx/error-boundaries', () => import('./error-boundaries'))
+  const { processErrorBoundaryDirectives, stripRenderFailedMarkers } = await importOnce('stx/error-boundaries', () => import('./error-boundaries'))
   output = processErrorBoundaryDirectives(output, context, filePath)
+
+  /*
+   * Any marker no boundary claimed. A component whose server script failed
+   * outside an `@errorBoundary` keeps today's behaviour - it renders empty, with
+   * the dev boundary above when that is on - and the marker must not reach the
+   * browser either way (stacksjs/stx#1991).
+   */
+  output = stripRenderFailedMarkers(output)
 
   // Process suspense directives (@suspense for coordinating async loading)
   const { processSuspenseDirectives } = await importOnce('stx/suspense', () => import('./suspense'))

@@ -1456,6 +1456,8 @@ export async function renderComponentWithSlot(
     const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
     const scriptMatches = [...componentContent.matchAll(scriptRegex)]
     const clientScripts: string[] = []
+    /** Set when this component's own `<script server>` failed to extract. */
+    let serverScriptFailure: string | null = null
     /*
      * `<script server cache>` is the author's promise that this fragment is a
      * pure function of its props and slots. It stays an opt-in: an ordinary
@@ -1565,7 +1567,29 @@ export async function renderComponentWithSlot(
         for (const name of collectBlockDeclarations(content))
           ownServerNames.add(name)
         try {
-          await extractVariables(content, componentContext, componentFilePath)
+          await extractVariables(content, componentContext, componentFilePath, {
+            /*
+             * Recorded so a surrounding `@errorBoundary` can show its fallback
+             * instead of the empty component (stacksjs/stx#1991, ask 3).
+             *
+             * `extractVariables` warns and returns normally on purpose - one
+             * failed script must not take the page down - so every variable in
+             * the script is undefined and the component renders its markup with
+             * nothing in it. That is the right default and a terrible only
+             * option: the app cannot say what a failed component should look
+             * like, because nothing downstream can tell a failed component from
+             * an empty one.
+             *
+             * `unknown` is excluded for the same reason the dev boundary
+             * excludes it: a server script reaching for `window`, or building
+             * something browser-only, lands there, and it is the case the quiet
+             * fallback exists for.
+             */
+            onFailure: (failure) => {
+              if (failure.kind !== 'unknown')
+                serverScriptFailure = failure.kind
+            },
+          })
         }
         catch (e) {
           // Script may contain browser-only code, skip variable extraction
@@ -1949,6 +1973,15 @@ else {
           : [],
       })
     }
+
+    /*
+     * The marker rides with the output, including through the render cache -
+     * same inputs, same failure - and is what lets a boundary further out tell
+     * a failed component from an empty one. Stripped at the end of the pipeline
+     * if no boundary claimed it, so it never reaches a browser.
+     */
+    if (serverScriptFailure)
+      output = `<!--stx-render-failed:${serverScriptFailure}-->${output}`
 
     return callerClientScripts.length > 0
       ? `${output}\n${callerClientScripts.join('\n')}`
