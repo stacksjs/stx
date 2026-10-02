@@ -4,8 +4,15 @@ import { applyHeadwindClasses, highlight } from '../utils/highlighter'
 export const code = $props.code || ''
 export const language = $props.language || 'typescript'
 export const theme = $props.theme || 'auto'
-export const lineNumbers = $props.lineNumbers !== false
-export const copyable = $props.copyable !== false
+/*
+ * `$bool`, not `!== false`. A plain attribute arrives as a STRING, so
+ * `copyable="false"` was `'false' !== false` - true - and the copy button
+ * rendered anyway, which is half of why #2014 looked like a template-gating
+ * problem. Same shape as the 103 props in stacksjs/stx#2006; `!== false` is a
+ * third spelling of it that the library-wide sweep does not recognise.
+ */
+export const lineNumbers = $bool($props.lineNumbers, true)
+export const copyable = $bool($props.copyable, true)
 export const className = $props.className || ''
 
 const result = await highlight(code, { language, theme, lineNumbers })
@@ -16,10 +23,41 @@ export const highlightedCode = applyHeadwindClasses(result.html, className)
 // before interpolation runs, so emitting it here ships an empty tag. Until that
 // is fixed in stx, an app includes this itself (or sets its own token styles).
 export const highlightCss = result.css
+
+/*
+ * The clipboard payload, decided on the SERVER.
+ *
+ * `{{ copyable ? code : '' }}` in the client script does not work:
+ * interpolateScriptExpressions resolves an identifier or a property path, not
+ * an arbitrary expression, so a ternary emits nothing at all (#1989) and the
+ * declaration came out as a bare `const code = `. A named export is a plain
+ * identifier, which is what the interpolator can resolve.
+ */
+export const copyPayload = copyable ? code : ''
 </script>
 
 <script client>
-const code = {{ code }}
+/*
+ * The code is shipped to the browser only when there is a copy button to need
+ * it (stacksjs/stx#2014).
+ *
+ * This was an unconditional `const code = {{ code }}`, while `copyable` gated
+ * only the button in the template - so `:copyable="false"` still emitted the
+ * full snippet as page JavaScript. An app whose blocks are install commands
+ * carrying a per-resource credential had no way to render one without that,
+ * which defeats an invariant it maintains deliberately: stx's own
+ * extractBridgeData skips `__` and `$` names, and `:code="__agentInstall.install"`
+ * routed straight around it. In the ordinary case it was dead weight - a block
+ * with no copy button shipping a duplicate of its own content.
+ *
+ * Reading the text out of the DOM at click time would drop the payload for
+ * everyone, which the report suggests and which I measured before rejecting:
+ * the highlighter renders line numbers as TEXT, so once `lineNumbers` is
+ * honoured (it is currently accepted and dropped) `textContent` copies
+ * "1const a = 1" rather than the code. Gating is the version that cannot
+ * silently corrupt what lands on the clipboard.
+ */
+const code = {{ copyPayload }}
 const copied = state(false)
 
 async function copyToClipboard() {
@@ -40,7 +78,18 @@ async function copyToClipboard() {
   @if(copyable)
     <button
       @click="copyToClipboard()"
-      class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-white text-xs rounded-panel font-medium"
+      {{-- Reachable without a mouse (#2014). It was `opacity-0
+           group-hover:opacity-100` with no focus variant, so a keyboard user
+           who tabbed to it saw nothing and on a touch device it never appeared
+           at all - the control was there, took focus, and was invisible.
+
+           `focus-visible:opacity-100` fixes the keyboard half. The touch half
+           cannot be done with a hover variant, and the engine has no
+           `@media (hover: none)` variant to hang it on, so the button is now
+           always present at 60% and comes to full opacity on hover or focus.
+           That is a visible change - the button no longer hides until pointed
+           at - and it is the only arrangement that is operable on a phone. --}}
+      class="absolute top-2 right-2 opacity-60 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity duration-200 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-white text-xs rounded-panel font-medium"
       aria-label="Copy code"
     >
       <span :show="copied()" class="flex items-center gap-1.5">
