@@ -21,7 +21,7 @@ export const className = $props.className || ''
  * 3rem it always claimed. sm and md were already exact.
  */
 const sizeClasses = { sm: 'px-3 py-1.5 text-sm', md: 'px-4 py-2 text-base', lg: 'px-5 py-2.5 text-lg' }
-const baseClasses = 'block w-full border-0 rounded-control shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset dark:bg-neutral-700 dark:text-neutral-100'
+const baseClasses = 'block w-full border-0 rounded-control shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset bg-field'
 const stateClasses = error
   ? 'ring-danger-line text-danger-fg placeholder-danger-fg-subtle focus:ring-danger-focus'
   : 'ring-line-strong text-fg placeholder-fg-subtle focus:ring-accent'

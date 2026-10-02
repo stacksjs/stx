@@ -207,3 +207,56 @@ describe('no component pins its ink while its fill is themeable', () => {
     expect(offenders).toEqual([])
   })
 })
+
+/**
+ * A `dark:` variant in a component's base beats a role token in its state
+ * branch, so the error state silently lost its colour in dark mode.
+ *
+ * The five text controls each carried
+ *
+ *     baseClasses  = '… dark:bg-neutral-700 dark:text-neutral-100'
+ *     stateClasses = error ? '… text-danger-fg …' : '… text-fg …'
+ *
+ * and `text-fg` already resolves to neutral-100 in dark mode, so the `dark:`
+ * text class said nothing the role did not. In the ERROR branch it said
+ * something quite different: `.dark .dark\:text-neutral-100` is two classes of
+ * specificity against `.text-danger-fg`'s one, so it won, and an input with an
+ * error rendered its value in ordinary light-neutral text in dark mode. The
+ * ring, the placeholder and the focus ring all turned red; the text did not.
+ *
+ * This is the same trap documented on Button for `className` - a class later in
+ * the ATTRIBUTE does not win, specificity decides - arriving from the other
+ * direction: here the loser was the role and the winner was the variant.
+ *
+ * `bg-field` replaces the background class, which is what it already was
+ * (white / neutral-700), and the text class is gone.
+ */
+describe('a state branch is not overridden by a dark: variant', () => {
+  const UI_DIR = path.join(import.meta.dir, '..', 'src', 'ui')
+  const CONTROLS = [
+    'input/TextInput.stx',
+    'input/NumberInput.stx',
+    'input/PasswordInput.stx',
+    'textarea/Textarea.stx',
+    'select/Select.stx',
+  ]
+
+  it('leaves no dark: colour variant on a control that has an error state', () => {
+    for (const rel of CONTROLS) {
+      const source = readFileSync(path.join(UI_DIR, rel), 'utf-8')
+
+      // The error branch exists and names the role…
+      expect(source, rel).toContain('text-danger-fg')
+      // …and nothing of higher specificity sets the same properties.
+      expect(source.match(/dark:(?:text|bg|placeholder)-[a-z0-9-]+/g), rel).toBeNull()
+    }
+  })
+
+  it('paints the control surface through the field role', () => {
+    for (const rel of CONTROLS) {
+      const source = readFileSync(path.join(UI_DIR, rel), 'utf-8')
+
+      expect(source, rel).toContain('bg-field')
+    }
+  })
+})
