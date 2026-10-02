@@ -28,17 +28,17 @@ const statusSizeClasses = {
 }
 
 const statusColorClasses = {
-  online: 'bg-green-500 dark:bg-green-400',
-  offline: 'bg-neutral-400 dark:bg-neutral-600',
-  away: 'bg-yellow-500 dark:bg-yellow-400',
-  busy: 'bg-red-500 dark:bg-red-400',
+  online: 'bg-success',
+  offline: 'bg-fg-subtle',
+  away: 'bg-warning',
+  busy: 'bg-danger',
 }
 
 export const containerClasses = `relative inline-block ${className}`.trim()
 export const avatarClasses = `flex items-center justify-center overflow-hidden bg-surface-sunken ${sizeClasses[size] || sizeClasses.md} ${shapeClasses[shape] || shapeClasses.circle}`.trim()
 export const imageClasses = `w-full h-full object-cover`.trim()
 export const initialsClasses = `font-medium text-fg-muted uppercase select-none`.trim()
-export const statusClasses = status ? `absolute bottom-0 right-0 ${statusSizeClasses[size] || statusSizeClasses.md} ${statusColorClasses[status] || statusColorClasses.offline} ${shapeClasses[shape] || shapeClasses.circle} border-white dark:border-neutral-900`.trim() : ''
+export const statusClasses = status ? `absolute bottom-0 right-0 ${statusSizeClasses[size] || statusSizeClasses.md} ${statusColorClasses[status] || statusColorClasses.offline} ${shapeClasses[shape] || shapeClasses.circle} border-panel`.trim() : ''
 export const displayInitials = initials || (alt ? alt.split(' ').map(n => n[0]).join('').substring(0, 2) : '?')
 </script>
 

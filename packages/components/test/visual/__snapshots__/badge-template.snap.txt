@@ -24,7 +24,7 @@ export const className = $props.className || ''
  * identically. A wrong colour is worse than an unthemeable one.
  */
 const variantClasses = {
-  default: 'bg-surface-raised text-neutral-800 dark:text-neutral-300',
+  default: 'bg-surface-raised text-fg-strong',
   primary: 'bg-accent-soft text-accent-soft-ink',
   secondary: 'bg-secondary-soft text-secondary-soft-ink',
   success: 'bg-success-soft text-success-soft-ink',
@@ -93,7 +93,6 @@ bg-success-soft
 bg-surface-raised
 bg-warning
 bg-warning-soft
-dark:text-neutral-300
 dotClasses
 duration-150
 font-medium
@@ -111,8 +110,8 @@ text-accent-soft-ink
 text-base
 text-current
 text-danger-soft-ink
+text-fg-strong
 text-info-soft-ink
-text-neutral-800
 text-secondary-soft-ink
 text-sm
 text-success-soft-ink

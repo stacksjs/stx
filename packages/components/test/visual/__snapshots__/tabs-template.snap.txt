@@ -128,7 +128,7 @@ function getTabClasses(index) {
   const base = 'px-4 py-2 font-medium text-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-accent-solid focus:ring-offset-2 focus:ring-offset-panel'
   if (variant === 'line') {
     const border = orientation === 'horizontal' ? 'border-b-2' : 'border-r-2'
-    return `${base} ${border} ${isActiveTab ? 'border-blue-500 text-accent' : 'border-transparent text-fg-muted hover:text-fg hover:border-line-strong'}`
+    return `${base} ${border} ${isActiveTab ? 'border-accent text-accent' : 'border-transparent text-fg-muted hover:text-fg hover:border-line-strong'}`
   }
   if (variant === 'pills') {
     return `${base} rounded-control ${isActiveTab ? 'bg-field text-fg shadow-sm' : 'text-fg-muted hover:text-fg'}`
@@ -243,9 +243,9 @@ bg-panel
 bg-surface
 bg-surface-raised
 border-0
+border-accent
 border-b
 border-b-2
-border-blue-500
 border-l
 border-line
 border-r

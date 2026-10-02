@@ -260,3 +260,75 @@ describe('a state branch is not overridden by a dark: variant', () => {
     }
   })
 })
+
+/**
+ * Every focus ring is a role, and one of them was invisible.
+ *
+ * Six components carried the Headless UI focus treatment - a WHITE ring,
+ * sometimes inside a blue offset - lifted off the coloured demo panel it was
+ * designed for. On an ordinary light surface `ring-white/75` is 1:1: there was
+ * no visible focus indicator at all on `<DropdownButton>`,
+ * `<PopoverButton>` and `<ComboboxInput>`, which is a keyboard user losing
+ * their place entirely rather than a theming problem.
+ *
+ * The other three paired it with `ring-offset-blue-300`, which reads as a
+ * two-tone halo and does work - but it stays blue in a rose-accented app, and
+ * it was the only focus treatment in the library that was not
+ * `ring-accent-solid` over the surface behind. Nine other components already
+ * agreed on that; all fifteen do now.
+ */
+describe('a focus ring is visible and themeable', () => {
+  const SRC = path.join(import.meta.dir, '..', 'src')
+  const walk = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap(e =>
+    e.isDirectory() ? walk(path.join(dir, e.name)) : (e.name.endsWith('.stx') ? [path.join(dir, e.name)] : []),
+  )
+  const strip = (source: string) => source
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\{\{--[\s\S]*?--\}\}/g, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/^\s*\/\/.*$/gm, '')
+
+  /*
+   * The three that are deliberately not a role:
+   *
+   *  - `ring-transparent` removes the ring, for an inset-ring input that shows
+   *    focus by thickening its own border instead.
+   *  - the sidebar's `ring-black/10` / `dark:ring-white/15` is an alpha over a
+   *    per-space tint, which no fixed colour can express.
+   *  - `<Switch>`'s white ring is achromatic by design, like its off state.
+   */
+  const ALLOWED = /^(?:[a-z-]+:)*focus(?:-visible)?:ring-(?:accent|accent-solid|danger-focus|transparent|white|black\/10|white\/15)$/
+
+  it('names a role for every focus ring but the three documented exceptions', () => {
+    const offenders: string[] = []
+    const pattern = /(?:[a-z-]+:)*focus(?:-visible)?:ring-(?!offset|inset|\d)[a-z0-9/-]+/g
+
+    for (const file of walk(SRC)) {
+      for (const hit of strip(readFileSync(file, 'utf-8')).match(pattern) ?? []) {
+        if (!ALLOWED.test(hit))
+          offenders.push(`${path.relative(SRC, file)}: ${hit}`)
+      }
+    }
+
+    expect(offenders).toEqual([])
+  })
+
+  /*
+   * And the offset, which is the surface BEHIND the control rather than a
+   * colour of its own. A coloured offset is what made the halo unthemeable.
+   */
+  it('takes every ring offset from a surface role', () => {
+    const offenders: string[] = []
+    const pattern = /(?:[a-z-]+:)*focus(?:-visible)?:ring-offset-(?!\d)[a-z0-9/-]+/g
+    const allowed = /ring-offset-(?:panel|surface|page|content|field|neutral-\d{3})$/
+
+    for (const file of walk(SRC)) {
+      for (const hit of strip(readFileSync(file, 'utf-8')).match(pattern) ?? []) {
+        if (!allowed.test(hit))
+          offenders.push(`${path.relative(SRC, file)}: ${hit}`)
+      }
+    }
+
+    expect(offenders).toEqual([])
+  })
+})

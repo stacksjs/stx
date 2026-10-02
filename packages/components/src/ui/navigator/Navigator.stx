@@ -50,7 +50,7 @@ function getItemClasses(item) {
   }
   else if (variant === 'sidebar') {
     cls += isActiveItem
-      ? 'bg-blue-50 dark:bg-blue-900/20 text-accent font-medium border-l-4 border-accent'
+      ? 'bg-accent-soft text-accent-soft-ink font-medium border-l-4 border-accent'
       : 'text-fg-strong hover:bg-surface-hover border-l-4 border-transparent'
   }
   cls += ' transition-all duration-200 cursor-pointer flex items-center gap-2'

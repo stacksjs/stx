@@ -61,7 +61,7 @@ function onDelete(methodId) {
                   @if(showMakeDefault)
                     <button
                       type="button"
-                      class="border border-line-strong rounded-control bg-field px-2 py-1 text-sm text-fg-strong font-semibold shadow-sm hover:bg-field-hover focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      class="border border-line-strong rounded-control bg-field px-2 py-1 text-sm text-fg-strong font-semibold shadow-sm hover:bg-field-hover focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       @click="onMakeDefault('{{ method.id }}')"
                       title="Make default"
                     >
@@ -74,7 +74,7 @@ function onDelete(methodId) {
                   @if(showDelete)
                     <button
                       type="button"
-                      class="border border-line-strong rounded-control bg-field px-2 py-1 text-sm text-danger font-semibold shadow-sm hover:bg-red-50 dark:hover:bg-red-900/20 focus-visible:outline-2 focus-visible:outline-red-600 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      class="border border-line-strong rounded-control bg-field px-2 py-1 text-sm text-danger font-semibold shadow-sm hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-danger focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       @click="onDelete('{{ method.id }}')"
                       title="Delete payment method"
                     >

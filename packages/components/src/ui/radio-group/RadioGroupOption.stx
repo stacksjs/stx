@@ -4,7 +4,7 @@ export const disabled = $bool($props.disabled)
 export const className = $props.className || ''
 export const as = $props.as || 'div'
 
-const baseClasses = 'relative flex cursor-pointer rounded-panel px-5 py-4 shadow-md focus:outline-none transition-all bg-panel text-fg focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-300 dark:focus-visible:ring-offset-blue-700'
+const baseClasses = 'relative flex cursor-pointer rounded-panel px-5 py-4 shadow-md focus:outline-none transition-all bg-panel text-fg focus-visible:ring-2 focus-visible:ring-accent-solid focus-visible:ring-offset-2 focus-visible:ring-offset-panel'
 const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : ''
 export const optionClasses = `${baseClasses} ${disabledClasses} ${className}`.trim()
 export const valueJson = JSON.stringify(value === undefined ? null : value)

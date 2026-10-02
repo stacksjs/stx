@@ -22,7 +22,7 @@ const colorClasses = {
   success: 'bg-success-solid',
   warning: 'bg-warning-solid',
   danger: 'bg-danger-solid',
-  info: 'bg-cyan-600 dark:bg-cyan-500',
+  info: 'bg-info-solid',
 }
 
 export const circularSize = size === 'sm' ? 48 : size === 'md' ? 64 : 96
@@ -44,7 +44,7 @@ export const circularBarColor = color === 'primary' ? 'stroke-accent'
   : color === 'success' ? 'stroke-success'
   : color === 'warning' ? 'stroke-warning-solid'
   : color === 'danger' ? 'stroke-danger'
-  : 'stroke-cyan-600 dark:stroke-cyan-500'
+  : 'stroke-info-solid'
 </script>
 <script client>
   const circumference = {{ circumference }}
@@ -173,8 +173,8 @@ absolute
 animate-progress-indeterminate
 animate-spin
 bg-accent-solid
-bg-cyan-600
 bg-danger-solid
+bg-info-solid
 bg-secondary-solid
 bg-success-solid
 bg-surface-sunken
@@ -184,8 +184,6 @@ circularBarColor
 circularSizeClass
 circularTrackColor
 containerClasses
-dark:bg-cyan-500
-dark:stroke-cyan-500
 duration-300
 ease-in-out
 flex
@@ -214,7 +212,6 @@ progressbar
 relative
 rounded-full
 stroke-accent
-stroke-cyan-600
 stroke-danger
 stroke-secondary-solid
 stroke-success
