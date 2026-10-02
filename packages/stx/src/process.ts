@@ -1512,8 +1512,24 @@ function serverScriptErrorBoundary(sourcePath: string, kind: string, message: st
 }
 
 async function extractServerScriptVariables(output: string, context: Record<string, any>, filePath: string): Promise<string> {
-  const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
-  let scriptMatch: RegExpExecArray | null
+  /*
+   * Located with the same quote/comment/regex-aware scan the STRIPPER uses,
+   * not with a non-greedy regex (stacksjs/stx#2012).
+   *
+   * `<script\b([^>]*)>([\s\S]*?)<\/script>` stops at the FIRST `</script>`,
+   * and the body is JavaScript, where that string can legally appear inside a
+   * literal: `const html = "<script>x</script>"`. Two things then went wrong at
+   * once. The body handed to the extractor was truncated, so it did not parse
+   * and reported "Unexpected EOF" for a script that is perfectly valid. And the
+   * span recorded for the error boundary ended at that same early tag, so
+   * splicing the boundary in left the real tail - the rest of the server
+   * script's source - sitting in the rendered document as literal page text.
+   *
+   * Only reachable with boundaries on, which is development only, so the suite
+   * never ran it: `showBoundaries` is false under test. Reproduced with
+   * NODE_ENV=development.
+   */
+  const { scanScriptTags } = await importOnce('stx/signal-processing', () => import('./signal-processing'))
 
   /*
    * Where a failed script was, so its cause can be shown there.
@@ -1528,17 +1544,25 @@ async function extractServerScriptVariables(output: string, context: Record<stri
   // of every suite that renders a deliberately broken script.
   const showBoundaries = !isProduction() && !isTest()
 
-  while ((scriptMatch = scriptRegex.exec(output)) !== null) {
-    const attrs = scriptMatch[1]
-    const scriptContent = scriptMatch[2]
-    const isServerScript = /\bserver\b/.test(attrs)
+  for (const script of scanScriptTags(output)) {
+    const attrs = script.attrs
+    if (!/\bserver\b/.test(attrs))
+      continue
 
-    if (!isServerScript || !scriptContent.trim())
+    const bodyStart = script.start + script.fullMatch.indexOf('>') + 1
+    const closeStart = findScriptBodyEnd(output, bodyStart)
+    if (closeStart === -1)
+      continue
+
+    const scriptContent = output.slice(bodyStart, closeStart)
+    if (!scriptContent.trim())
       continue
 
     // A view script salvaged into its layout resolves against the view.
     const sourcePath = scriptSourceOf(attrs) ?? filePath
-    const at = { index: scriptMatch.index, length: scriptMatch[0].length }
+    // The whole element, so a boundary spliced over it replaces the script
+    // rather than uncovering its tail.
+    const at = { index: script.start, length: closeStart + '</script>'.length - script.start }
 
     try {
       const { extractVariables } = await importOnce('stx/variable-extractor', () => import('./variable-extractor'))
