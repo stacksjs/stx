@@ -196,4 +196,55 @@ function loadDevice() {
     await Promise.resolve()
     expect(rootText()?.[2]).toBe('Device Instant reply')
   })
+
+  it('exposes Craft clipboard and haptics with structured native errors', async () => {
+    const source = `<script>
+let ready = globalThis.craft.device.getInfo()
+</script>
+<template><View><Text>Native APIs</Text></View></template>`
+    const sent: Array<Record<string, any>> = []
+    let clipboard = ''
+    let hapticsEnabled = false
+    let callback: (message: Record<string, any>) => void = () => {}
+    const scope: Record<string, any> = {
+      __stxNativeBridge: {
+        onMessage: (receiver: typeof callback) => { callback = receiver },
+        postMessage: (raw: string) => {
+          const message = JSON.parse(raw)
+          sent.push(message)
+          if (message.type !== 'API_REQUEST') return
+          const { module, method, args } = message.payload
+          let reply: Record<string, any>
+          if (module === 'Device') {
+            reply = { type: 'API_RESPONSE', payload: { data: { platform: 'ios' } } }
+          }
+          else if (module === 'Clipboard' && method === 'write' && typeof args[0] === 'string') {
+            clipboard = args[0]
+            reply = { type: 'API_RESPONSE', payload: { data: true } }
+          }
+          else if (module === 'Clipboard' && method === 'read') {
+            reply = { type: 'API_RESPONSE', payload: { data: clipboard } }
+          }
+          else if (module === 'Haptics' && hapticsEnabled) {
+            reply = { type: 'API_RESPONSE', payload: { data: true } }
+          }
+          else {
+            const code = module === 'Haptics' ? 'CAPABILITY_DISABLED' : 'INVALID_ARGUMENT'
+            reply = { type: 'API_ERROR', payload: { code, message: 'Native refusal' } }
+          }
+          callback({ ...reply, correlationId: message.id })
+        },
+      },
+    }
+    new Function('globalThis', generate(source))(scope)
+    expect(sent[0].payload).toEqual({ module: 'Device', method: 'getInfo', args: [] })
+    expect(await scope.craft.clipboard.write('Glenn')).toBe(true)
+    expect(await scope.craft.clipboard.read()).toBe('Glenn')
+    await expect(scope.craft.clipboard.write()).rejects.toMatchObject({ code: 'INVALID_ARGUMENT' })
+    await expect(scope.craft.haptic('heavy')).rejects.toMatchObject({ code: 'CAPABILITY_DISABLED' })
+    expect(await scope.craft.haptics.impact('light')).toBeUndefined()
+    hapticsEnabled = true
+    expect(await scope.craft.haptic('heavy')).toBe(true)
+    expect(sent.at(-1)?.payload).toEqual({ module: 'Haptics', method: 'impact', args: ['heavy'] })
+  })
 })

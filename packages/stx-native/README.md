@@ -10,9 +10,12 @@ Compile STX templates to native iOS/Android UI.
 ## Usage
 
 ```bash
-stx-native build ./src --platform ios
-stx-native build ./src --platform android
+stx-native compile ./src/Screen.stx --format bundle --output ./screen.js
 ```
+
+The bundle is currently used by Craft's experimental WebView-free iOS renderer (`craft ios init MyApp --renderer native`, then `craft ios build --native-bundle ./screen.js`). The package is private for now; from a local stx checkout, run `bun packages/stx-native/src/cli/index.ts` in place of the `stx-native` executable.
+
+Inside a native screen's `<script>`, the JavaScriptCore bridge exposes `craft.device.getInfo()`, `craft.clipboard.write(text)`, `craft.clipboard.read()`, `craft.haptic(style)`, and high-level `craft.haptics.impact(style)`, `.notification(type)`, and `.selection()`. Calls return promises. Rejections retain a `code` such as `CAPABILITY_DISABLED` or `INVALID_ARGUMENT`; the high-level haptics helpers intentionally treat `CAPABILITY_DISABLED` as a no-op, matching Craft's web bridge. The generated app must enable haptics and clipboard in its Craft config before those capabilities perform work.
 
 ## Documentation
 

@@ -696,9 +696,6 @@ catch (error) {
   // STX Document IR
   const __STX_DOCUMENT__ = ${JSON.stringify(document)};
 
-  // Script code
-  ${document.script.code}
-
   if (typeof globalThis.__stxNativeBridge !== 'undefined') {
     const bridge = globalThis.__stxNativeBridge;
     const handlers = globalThis.__stxHandlers || (globalThis.__stxHandlers = {});
@@ -756,6 +753,53 @@ catch (error) {
     globalThis.craft.device.getInfo = function() {
       return requestAPI('Device', 'getInfo', []);
     };
+    globalThis.craft.clipboard = {
+      write: function(text) { return requestAPI('Clipboard', 'write', [text]); },
+      read: function() { return requestAPI('Clipboard', 'read', []); }
+    };
+    globalThis.craft.haptic = function(style) {
+      return requestAPI('Haptics', 'impact', [style || 'medium']);
+    };
+    function hapticFeedback(answer) {
+      return answer.then(function() {}, function(error) {
+        // Match Craft's browser bridge: the high-level feedback helpers are
+        // no-ops when disabled, while craft.haptic() rejects with the code.
+        if (error.code === 'CAPABILITY_DISABLED') return;
+        throw error;
+      });
+    }
+    globalThis.craft.haptics = {
+      impact: function(style) { return hapticFeedback(globalThis.craft.haptic(style)); },
+      notification: function(type) {
+        const style = type === 'error' ? 'heavy' : type === 'warning' ? 'medium' : 'light';
+        return hapticFeedback(globalThis.craft.haptic(style));
+      },
+      selection: function() { return hapticFeedback(globalThis.craft.haptic('soft')); }
+    };
+
+    bridge.onMessage(function(raw) {
+      const message = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (message.type === 'EVENT') {
+        const handler = handlers[message.payload.handlerName];
+        if (handler) handler(message.payload.nativeEvent || {});
+      }
+      else if (message.type === 'API_RESPONSE' || message.type === 'API_ERROR') {
+        const requestId = message.correlationId || message.payload.requestId;
+        const pending = pendingAPI.get(requestId);
+        if (!pending) return;
+        pendingAPI.delete(requestId);
+        if (message.type === 'API_RESPONSE') pending.resolve(message.payload.data);
+        else {
+          const error = new Error(message.payload.message || 'Native API failed');
+          error.code = message.payload.code || 'CRAFT_ERROR';
+          pending.reject(error);
+        }
+      }
+    });
+
+    // Script code runs after Craft APIs are installed, so top-level effects
+    // can call them just as event handlers can.
+    ${document.script.code}
 
     // Register handlers
     ${document.script.functions.map(fn => `
@@ -770,22 +814,6 @@ catch (error) {
       };
     }
     `).join('\n')}
-
-    bridge.onMessage(function(raw) {
-      const message = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      if (message.type === 'EVENT') {
-        const handler = handlers[message.payload.handlerName];
-        if (handler) handler(message.payload.nativeEvent || {});
-      }
-      else if (message.type === 'API_RESPONSE' || message.type === 'API_ERROR') {
-        const requestId = message.correlationId || message.payload.requestId;
-        const pending = pendingAPI.get(requestId);
-        if (!pending) return;
-        pendingAPI.delete(requestId);
-        if (message.type === 'API_RESPONSE') pending.resolve(message.payload.data);
-        else pending.reject(new Error(message.payload.message || 'Native API failed'));
-      }
-    });
 
     render();
   }
