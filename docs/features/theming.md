@@ -47,12 +47,15 @@ config file and no rebuild:
 | `surface-sunken` | `bg-surface-sunken` | neutral-200 | neutral-700 |
 | `panel` | `bg-panel` | white | neutral-800 |
 | `field` | `bg-field` | white | neutral-700 |
+| `page` | `bg-page` | neutral-50 | neutral-900 |
 | `surface-hover` | `hover:bg-surface-hover` | neutral-100 | neutral-700 |
 | `surface-raised-hover` | `hover:bg-surface-raised-hover` | neutral-200 | neutral-600 |
 | `surface-sunken-hover` | `hover:bg-surface-sunken-hover` | neutral-300 | neutral-600 |
 | `field-hover` | `hover:bg-field-hover` | neutral-50 | neutral-600 |
 | `inverse` | `bg-inverse`, `border-t-inverse` | neutral-900 | neutral-700 |
 | `inverse-ink` | `text-inverse-ink` | white | white |
+| `link` | `text-link` | blue-500 | blue-400 |
+| `link-hover` | `hover:text-link-hover` | blue-600 | blue-300 |
 | `line` | `border-line`, `divide-line` | neutral-200 | neutral-700 |
 | `line-strong` | `border-line-strong`, `ring-line-strong` | neutral-300 | neutral-600 |
 | `accent` | `text-accent`, `ring-accent` | blue-600 | blue-400 |
@@ -214,6 +217,42 @@ Eight controls declared only the dark half and left light mode to the engine's
 keeps light mode byte-identical and corrects dark mode from gray-900 to the
 neutral-800 the panel actually is. No component names a `gray` shade any more,
 and a test keeps it that way.
+
+### The page is not a panel
+
+`surface` describes itself as "page and panel background" and sits at
+neutral-800 in dark mode — the same value as `panel`. So an app painting its
+page with `surface` got a page indistinguishable from the cards on it, and four
+components worked around it by hard-coding the step below: both auth pages, the
+two-factor challenge and the subscription checkout all chose
+`dark:bg-neutral-900`, and the checkout spelled out `bg-neutral-50
+dark:bg-neutral-900` — this exact pair.
+
+| Role | Light | Dark |
+|---|---|---|
+| `page` | neutral-50 | neutral-900 |
+| `panel` | white | neutral-800 |
+| `field` | white | neutral-700 |
+
+Three steps, each one lighter than the last in dark mode, which is the ladder
+the library was already climbing by hand: a page, the cards on it, and the form
+controls inside those.
+
+`surface` / `surface-raised` / `surface-sunken` stay as the generic trio for a
+surface with no particular identity.
+
+### A link
+
+`info` used to describe itself as "Informational emphasis, links" and nothing
+ever used it for a link — it is cyan, and every link in the library is blue.
+`accent` is the closest fit and wrong twice: a link rests a step lighter than an
+accent action, and its hover moves in opposite directions per mode — darker in
+light, lighter in dark, because the link is already the brightest thing in a
+dark paragraph.
+
+```html
+<a class="text-link hover:text-link-hover">
+```
 
 ### Why `neutral` and not `gray`
 
@@ -407,7 +446,7 @@ Good for one-offs. Not a theme.
 
 ## What is not migrated
 
-179 of the library's ~890 palette-shade uses still name a shade directly, in 41
+63 of the library's ~890 palette-shade uses still name a shade directly, in 24
 of the 102 components. Three cases are deliberately left alone, because
 migrating them would change appearance rather than preserve it:
 

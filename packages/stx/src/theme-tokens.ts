@@ -112,6 +112,22 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
   'field': { light: 'white', dark: 'neutral-700', description: 'Form control surface' },
 
   /*
+   * The page, BEHIND the panels, which `surface` conflates with them.
+   *
+   * `surface` describes itself as "page and panel background" and sits at
+   * neutral-800 in dark mode - the same value as `panel`. So an app that
+   * painted its page with `surface` got a page indistinguishable from the cards
+   * on it, and four components worked around it by hard-coding the step below:
+   * both auth pages, the two-factor challenge and the subscription checkout all
+   * chose `dark:bg-neutral-900`, and the checkout spelled out this exact pair
+   * (stacksjs/stx#1993).
+   *
+   * A page one step darker than its panels is the ordinary arrangement, so it
+   * gets a name rather than four hard-coded copies.
+   */
+  'page': { light: 'neutral-50', dark: 'neutral-900', description: 'Page background, behind panels' },
+
+  /*
    * A hovered neutral surface, which was the one state every component had to
    * invent for itself (stacksjs/stx#1993).
    *

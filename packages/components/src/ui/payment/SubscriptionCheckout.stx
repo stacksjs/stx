@@ -10,7 +10,7 @@ export const className = $props.className || ''
 export const subtotal = products.reduce((sum, product) => sum + (product.price * (product.quantity || 1)), 0)
 export const total = subtotal + shipping + taxes
 
-export const containerClasses = `bg-neutral-50 dark:bg-neutral-900 ${className}`.trim()
+export const containerClasses = `bg-page ${className}`.trim()
 </script>
 
 <script client>

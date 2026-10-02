@@ -16,7 +16,7 @@ export const className = $props.className || ''
 export const forgotPasswordHref = $props.forgotPasswordHref || '/forgot-password'
 export const signupHref = $props.signupHref || '/register'
 
-export const containerClasses = `min-h-full flex flex-col justify-center py-12 lg:px-8 sm:px-6 dark:bg-neutral-900 ${className}`.trim()
+export const containerClasses = `min-h-full flex flex-col justify-center py-12 lg:px-8 sm:px-6 bg-page ${className}`.trim()
 </script>
 
 <script client>

@@ -472,6 +472,21 @@ describe('a hovered neutral surface is a role (#1993)', () => {
    * hover has to read against every neutral the library uses as a page or
    * panel background.
    */
+  /*
+   * The page is distinguishable from the panels on it, which `surface` could
+   * not manage: it describes itself as "page and panel background" and sits at
+   * neutral-800 in dark mode, the same value as `panel`. Four components
+   * hard-coded the step below rather than use it.
+   */
+  it('keeps the page distinct from a panel and a field, in both modes', () => {
+    for (const other of ['panel', 'field', 'surface'] as const) {
+      expect(SEMANTIC_TOKENS.page.dark, `page is indistinguishable from ${other} in dark mode`)
+        .not.toBe(SEMANTIC_TOKENS[other].dark)
+    }
+    // In light mode a panel is white and the page is a step down from it.
+    expect(SEMANTIC_TOKENS.page.light).not.toBe(SEMANTIC_TOKENS.panel.light)
+  })
+
   it('makes the row highlight visible on every neutral it can land on', () => {
     const hover = SEMANTIC_TOKENS['surface-hover']
 

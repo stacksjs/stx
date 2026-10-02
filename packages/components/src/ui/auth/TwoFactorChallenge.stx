@@ -6,7 +6,7 @@ export const codeLength = $props.codeLength || 6
 export const showRecoveryCode = $bool($props.showRecoveryCode, true)
 export const className = $props.className || ''
 
-export const containerClasses = `py-32 dark:bg-neutral-900 ${className}`.trim()
+export const containerClasses = `py-32 bg-page ${className}`.trim()
 </script>
 
 <script client>
