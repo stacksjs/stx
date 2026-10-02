@@ -41,7 +41,7 @@ config file and no rebuild:
 | `fg-strong` | `text-fg-strong` | neutral-700 | neutral-300 |
 | `fg-muted` | `text-fg-muted` | neutral-600 | neutral-400 |
 | `fg-soft` | `text-fg-soft` | neutral-500 | neutral-400 |
-| `fg-subtle` | `text-fg-subtle`, `placeholder-fg-subtle` | neutral-400 | neutral-500 |
+| `fg-subtle` | `text-fg-subtle` | neutral-400 | neutral-500 |
 | `surface` | `bg-surface` | neutral-50 | neutral-800 |
 | `surface-raised` | `bg-surface-raised` | neutral-100 | neutral-700 |
 | `surface-sunken` | `bg-surface-sunken` | neutral-200 | neutral-700 |
@@ -90,15 +90,19 @@ a default, which is deliberate — they are different *roles*, so pointing
 ### A field in its error state
 
 Four more roles, danger only, because an error is the only field state the
-library has. They mirror the resting branch name for name, so the two states
-read as the same four decisions:
+library has. Three of them mirror the resting branch name for name, so the two
+states read as the same decisions:
 
 | Resting | In error | Light | Dark |
 |---|---|---|---|
 | `ring-line-strong` | `ring-danger-line` | red-300 | red-600 |
 | `text-fg` | `text-danger-fg` | red-900 | red-300 |
-| `placeholder-fg-subtle` | `placeholder-danger-fg-subtle` | red-300 | red-500 |
+| `placeholder-fg-soft` | `placeholder-danger` | red-600 | red-400 |
 | `focus:ring-accent` | `focus:ring-danger-focus` | red-500 | red-400 |
+
+The placeholder is the one that does not mirror, and the reason is the same one
+that kept a third neutral role out of the vocabulary: the legible value already
+existed under another name. See "A placeholder is text" below.
 
 `danger-focus` gets *lighter* in dark mode, unlike a solid fill: a focus ring
 has to stay visible against a dark field, which is the same reason coloured
@@ -107,6 +111,39 @@ text lightens and a button fill does not.
 Not one set per status. A warning or success field state does not exist in the
 library, so four more families would be sixteen names measured from nothing —
 the pattern is obvious if one ever arrives.
+
+### A placeholder is text
+
+`fg-subtle` used to describe itself as "Placeholders, disabled text" and sits at
+neutral-400 / neutral-500 — **2.59:1** on a white field and **2.20:1** on a dark
+one. That is below 4.5:1 for text and below even the 3:1 graphics floor in two
+of the three places it landed. `danger-fg-subtle` was worse at **1.92:1**, so
+the value in an *invalid* field was harder to read than in a valid one.
+
+It was carrying 25 uses and 23 of them had to be read: every placeholder, the
+breadcrumb separator, the pagination ellipsis, the icon buttons inside the
+inputs. Those moved to roles that already existed:
+
+| | Light | Dark |
+|---|---|---|
+| `fg-soft` — placeholders, marks, icons | 4.73:1 | 5.83:1 on a panel |
+| `danger` — the same in a field with an error | 4.76:1 | 3.59:1 |
+
+A third role at those values would have duplicated them, so the split is
+**legible from recessive**, not placeholder from disabled. Both `-subtle` roles
+keep their value for what it suits — a day outside the displayed month, an
+offline presence dot — and a test holds them to those two uses, so reaching for
+the word "subtle" for a label fails.
+
+The dark numbers are lower than the light ones on purpose. `field` is
+neutral-700 in dark so an input does not disappear into its neutral-800 panel,
+and no shade on neutral-700 reaches 4.5:1 without being brighter than
+`fg-muted` — a placeholder more prominent than body text. 4.01:1 is the best
+available that keeps the hierarchy.
+
+An icon button's hover goes to `fg-strong` rather than `fg-muted` for the same
+kind of reason: `fg-soft` and `fg-muted` share neutral-400 in dark mode, so
+that hover would have done nothing.
 
 ### Fills, hovers and ink
 

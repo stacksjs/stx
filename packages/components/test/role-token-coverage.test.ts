@@ -280,7 +280,7 @@ describe('a field in error takes its colours from roles (#1993)', () => {
   })
 
   it('compiles them, including the placeholder variant', async () => {
-    const css = await generateCss('<div class="ring-danger-line text-danger-fg placeholder-danger-fg-subtle focus:ring-danger-focus"></div>')
+    const css = await generateCss('<div class="ring-danger-line text-danger-fg placeholder-danger-fg-subtle focus:ring-danger-focus placeholder-danger"></div>')
 
     for (const role of FIELD_ERROR)
       expect(css, `${role} did not compile`).toContain(`var(${tokenVariable(role)},`)
@@ -290,16 +290,23 @@ describe('a field in error takes its colours from roles (#1993)', () => {
   })
 
   /*
-   * The point of the names: they mirror the RESTING branch one for one, so the
-   * two states read as the same four decisions rather than as two unrelated
-   * class strings.
+   * The point of the names: the two branches read as the same four decisions
+   * rather than as two unrelated class strings.
+   *
+   * Three of the four still mirror one for one. The PLACEHOLDER no longer
+   * does, and that is deliberate: `fg-subtle` and `danger-fg-subtle` were
+   * 2.59:1 and 1.92:1, below the floor for text, so both placeholders moved to
+   * roles that could be read - and those roles already existed as `fg-soft`
+   * and `danger`. Adding `fg-placeholder` and `danger-fg-placeholder` at
+   * identical values, purely so this assertion could stay symmetrical, would
+   * have been two names for colours the vocabulary already had.
    */
-  it('mirrors the resting branch name for name', () => {
+  it('reads as the same four decisions in both branches', () => {
     for (const rel of ['input/TextInput.stx', 'input/NumberInput.stx', 'input/PasswordInput.stx', 'select/Select.stx', 'textarea/Textarea.stx']) {
       const source = code(readFileSync(path.join(UI, rel), 'utf-8'))
 
-      expect(source, rel).toContain("'ring-danger-line text-danger-fg placeholder-danger-fg-subtle focus:ring-danger-focus'")
-      expect(source, rel).toContain("'ring-line-strong text-fg placeholder-fg-subtle focus:ring-accent'")
+      expect(source, rel).toContain("'ring-danger-line text-danger-fg placeholder-danger focus:ring-danger-focus'")
+      expect(source, rel).toContain("'ring-line-strong text-fg placeholder-fg-soft focus:ring-accent'")
     }
   })
 

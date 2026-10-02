@@ -71,7 +71,7 @@ function onRecoveryCode(event) {
                 maxlength="1"
                 name="code-{{ i }}"
                 placeholder="-"
-                class="block w-full border-0 rounded-control px-2 py-2 text-center text-fg ring-1 ring-line-strong ring-inset sm:text-sm placeholder:text-fg-subtle sm:leading-6 focus:ring-2 focus:ring-accent focus:ring-inset bg-field"
+                class="block w-full border-0 rounded-control px-2 py-2 text-center text-fg ring-1 ring-line-strong ring-inset sm:text-sm placeholder:text-fg-soft sm:leading-6 focus:ring-2 focus:ring-accent focus:ring-inset bg-field"
                 @input="onCodeInput($event, {{ i }})"
                 @keydown="onKeyDown($event, {{ i }})"
               />

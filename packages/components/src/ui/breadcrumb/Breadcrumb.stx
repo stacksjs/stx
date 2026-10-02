@@ -36,8 +36,8 @@ const separatorElement = separator === '/' ? '/' :
 export const breadcrumbClasses = `flex items-center flex-wrap gap-2 text-sm ${className}`.trim()
 export const itemClasses = `text-fg-muted hover:text-fg transition-colors duration-150`.trim()
 export const activeItemClasses = `text-fg font-medium`.trim()
-export const separatorClasses = `text-fg-subtle select-none`.trim()
-export const collapsedClasses = `text-fg-subtle cursor-default`.trim()
+export const separatorClasses = `text-fg-soft select-none`.trim()
+export const collapsedClasses = `text-fg-soft cursor-default`.trim()
 </script>
 
 <nav class="{{ breadcrumbClasses }}" aria-label="Breadcrumb">

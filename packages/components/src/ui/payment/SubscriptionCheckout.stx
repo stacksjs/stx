@@ -237,7 +237,7 @@ onMount(() => initializeStripe())
                       <div class="ml-4 flow-root flex-shrink-0">
                         <button
                           type="button"
-                          class="flex items-center justify-center bg-field p-2.5 text-fg-subtle -m-2.5 hover:text-fg-soft"
+                          class="flex items-center justify-center bg-field p-2.5 text-fg-soft -m-2.5 hover:text-fg-strong"
                           @click="onRemoveProduct('{{ product.id }}')"
                           title="Remove"
                         >

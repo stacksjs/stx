@@ -91,7 +91,7 @@ function onDelete(methodId) {
       </ul>
     @else
       <div class="text-center py-12 bg-panel rounded-panel border border-line">
-        <svg class="mx-auto h-12 w-12 text-fg-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="mx-auto h-12 w-12 text-fg-soft" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
         </svg>
         <h3 class="mt-2 text-sm text-fg font-medium">No payment methods</h3>

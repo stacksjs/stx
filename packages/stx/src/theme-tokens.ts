@@ -85,7 +85,28 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
   'fg-strong': { light: 'neutral-700', dark: 'neutral-300', description: 'Labels, secondary headings' },
   'fg-muted': { light: 'neutral-600', dark: 'neutral-400', description: 'Supporting text' },
   'fg-soft': { light: 'neutral-500', dark: 'neutral-400', description: 'De-emphasised text' },
-  'fg-subtle': { light: 'neutral-400', dark: 'neutral-500', description: 'Placeholders, disabled text' },
+  /*
+   * Recessive text, and ONLY that: a day outside the month on a calendar, an
+   * offline presence dot. Not placeholders, which it used to claim.
+   *
+   * At neutral-400 on white it is 2.59:1 and at neutral-500 on a dark field
+   * 2.20:1 - below 4.5:1 for text and below even the 3:1 graphics floor in two
+   * of the three places it landed. It was carrying 25 uses, and 23 of them
+   * needed to be read: every placeholder in the library, the breadcrumb
+   * separator, the pagination ellipsis, the icon buttons inside the inputs.
+   *
+   * The value is right for something genuinely non-essential, which WCAG
+   * exempts, so the role keeps it and the description stops inviting the other
+   * use. The 23 moved to `fg-soft` (4.73:1 light, 5.83:1 on a dark panel),
+   * which is where they belonged: a third role at those values would have been
+   * a duplicate of it, and the split that matters is legible from recessive,
+   * not placeholder from disabled (stacksjs/stx#1993).
+   *
+   * It is also the one `fg-*` role that gets DARKER in dark mode - the others
+   * run 900/100, 700/300, 600/400, 500/400 - which is the shape of a rung that
+   * sits below legibility on purpose.
+   */
+  'fg-subtle': { light: 'neutral-400', dark: 'neutral-500', description: 'Recessive, non-essential text' },
 
   // Surfaces
   'surface': { light: 'neutral-50', dark: 'neutral-800', description: 'Page and panel background' },
@@ -405,7 +426,20 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
    * same reason coloured text lightens and a button fill does not.
    */
   'danger-fg': { light: 'red-900', dark: 'red-300', description: 'Text in a field with an error' },
-  'danger-fg-subtle': { light: 'red-300', dark: 'red-500', description: 'Placeholder in a field with an error' },
+  /*
+   * The error-state analogue of `fg-subtle`, and recessive in the same way:
+   * red-300 on white is 1.92:1 and red-500 on a dark field 2.72:1, so it
+   * cannot carry text either. It said "placeholder" and the five error
+   * placeholders used it, which made the value in an invalid field harder to
+   * read than the value in a valid one.
+   *
+   * They are `placeholder-danger` now - red-600 / red-400, 4.76:1 and 3.59:1 -
+   * which stays clearly dimmer than the value text beside it (`danger-fg` at
+   * 10.06 and 5.41) while being legible. The role keeps its value for
+   * genuinely recessive error text, exactly as `fg-subtle` does
+   * (stacksjs/stx#1993).
+   */
+  'danger-fg-subtle': { light: 'red-300', dark: 'red-500', description: 'Recessive text in a field with an error' },
   'danger-line': { light: 'red-300', dark: 'red-600', description: 'Border of a field with an error' },
   'danger-focus': { light: 'red-500', dark: 'red-400', description: 'Focus ring of a field with an error' },
 }

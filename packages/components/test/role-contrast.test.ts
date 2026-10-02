@@ -332,3 +332,99 @@ describe('a focus ring is visible and themeable', () => {
     expect(offenders).toEqual([])
   })
 })
+
+/**
+ * A placeholder is text, and `fg-subtle` could not carry it.
+ *
+ * `fg-subtle` described itself as "Placeholders, disabled text" and sat at
+ * neutral-400 / neutral-500 — 2.59:1 on white and 2.20:1 on a dark field,
+ * below 4.5:1 for text and below even the 3:1 graphics floor in two of the
+ * three places it landed. It was carrying 25 uses and 23 of them had to be
+ * read: every placeholder in the library, the breadcrumb separator, the
+ * pagination ellipsis, the icon buttons inside the inputs.
+ *
+ * `danger-fg-subtle` was worse — red-300 on white is 1.92:1 — so the value in
+ * an INVALID field was harder to read than in a valid one.
+ *
+ * The split is legible from recessive, not placeholder from disabled, and the
+ * legible half already had roles: `fg-soft` (4.73:1 / 5.83:1) and `danger`
+ * (4.76:1 / 3.59:1). A third role at those values would have duplicated them.
+ * Both `-subtle` roles keep their value for what it suits — a day outside the
+ * month, an offline dot — and the description stops inviting the other use.
+ */
+describe('a placeholder is legible, and recessive means recessive', () => {
+  const SRC = path.join(import.meta.dir, '..', 'src')
+  const walk = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap(e =>
+    e.isDirectory() ? walk(path.join(dir, e.name)) : (e.name.endsWith('.stx') ? [path.join(dir, e.name)] : []),
+  )
+  const step = (ref: string) => (ref === 'white' ? 0 : Number(ref.split('-').pop()))
+
+  /*
+   * 4.5:1 in light and 3:1 in dark, and the asymmetry is the field's fault
+   * rather than the text's: `field` is neutral-700 in dark so an input does
+   * not disappear into its neutral-800 panel, and no shade on neutral-700
+   * reaches 4.5:1 without also being brighter than `fg-muted` — a placeholder
+   * more prominent than body text. 4.01:1 is the best available that keeps the
+   * hierarchy, so that is what is asserted rather than a number the ladder
+   * cannot deliver.
+   */
+  it('clears 4.5:1 in light and 3:1 in dark, on the field it lands on', () => {
+    for (const role of ['fg-soft', 'danger'] as const) {
+      const light = contrastRatio(SEMANTIC_TOKENS[role].light, SEMANTIC_TOKENS.field.light)
+      const dark = contrastRatio(SEMANTIC_TOKENS[role].dark, SEMANTIC_TOKENS.field.dark)
+
+      expect(light, `${role} on a light field is ${light.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5)
+      expect(dark, `${role} on a dark field is ${dark.toFixed(2)}:1`).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  /*
+   * And it stays dimmer than the value typed beside it, in both modes - which
+   * is the constraint that keeps 4.5:1 out of reach in dark mode, so it is
+   * asserted rather than left implied.
+   */
+  it('keeps the placeholder dimmer than the value it sits beside', () => {
+    // A valid field: value `fg`, placeholder `fg-soft`.
+    expect(step(SEMANTIC_TOKENS['fg-soft'].light)).toBeLessThan(step(SEMANTIC_TOKENS.fg.light))
+    expect(step(SEMANTIC_TOKENS['fg-soft'].dark)).toBeGreaterThan(step(SEMANTIC_TOKENS.fg.dark))
+
+    // A field in error: value `danger-fg`, placeholder `danger`.
+    expect(step(SEMANTIC_TOKENS.danger.light)).toBeLessThan(step(SEMANTIC_TOKENS['danger-fg'].light))
+    expect(step(SEMANTIC_TOKENS.danger.dark)).toBeGreaterThan(step(SEMANTIC_TOKENS['danger-fg'].dark))
+  })
+
+  /*
+   * The guard that matters. Both `-subtle` roles are below legibility by
+   * design, so the only safe uses are things a reader never has to make out.
+   * An allowlist rather than a count, because the failure mode is someone
+   * reaching for the word "subtle" for a label.
+   */
+  it('uses a subtle role only where nothing has to be read', () => {
+    const ALLOWED = new Set([
+      // A day outside the displayed month: present for the grid, not to be read.
+      'ui/calendar/Calendar.stx',
+      // An offline presence dot, read off its own ring rather than its fill.
+      'ui/avatar/Avatar.stx',
+    ])
+    const offenders: string[] = []
+    const pattern = /(?:[a-z-]+:)*(?:text|placeholder|bg|stroke|fill|border|ring|divide)-(?:danger-)?fg-subtle\b/g
+
+    for (const file of walk(SRC)) {
+      const rel = path.relative(SRC, file)
+      if (ALLOWED.has(rel))
+        continue
+      for (const hit of (readFileSync(file, 'utf-8').match(pattern) ?? []))
+        offenders.push(`${rel}: ${hit}`)
+    }
+
+    expect(offenders).toEqual([])
+  })
+
+  it('leaves the two allowed uses in place, so the role is not dead', () => {
+    const calendar = readFileSync(path.join(SRC, 'ui/calendar/Calendar.stx'), 'utf-8')
+    const avatar = readFileSync(path.join(SRC, 'ui/avatar/Avatar.stx'), 'utf-8')
+
+    expect(calendar).toContain('text-fg-subtle')
+    expect(avatar).toContain('bg-fg-subtle')
+  })
+})
