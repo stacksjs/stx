@@ -427,9 +427,21 @@ export function stripTypeScript(scriptContent: string): string {
  * Matched on the message because the failure arrives as a plain Error from the
  * runtime's loader rather than a typed one, and the wording differs between
  * Bun and Node.
+ *
+ * `cannot find package` is the important one and was missing. An ESM import
+ * that does not resolve says
+ *
+ *   Cannot find package 'bunfig' imported from /…/dist/index.js
+ *
+ * and only a `require()` says "module". So the case stacksjs/stx#1991 was
+ * filed for - a dependency importing a package it had not declared, which
+ * threw wherever that package was unreachable - was classified as an unknown
+ * failure and got the generic warning instead of the one naming the cause.
+ * That one is also deduplicated per cause, so the clearest failure in the set
+ * was getting the quietest treatment.
  */
 export function isModuleResolutionFailure(message: string): boolean {
-  return /cannot find module|could not resolve|module not found|failed to resolve/i.test(message)
+  return /cannot find module|cannot find package|could not resolve|module not found|failed to resolve/i.test(message)
 }
 
 /**
@@ -496,6 +508,25 @@ export interface ExtractVariablesOptions {
    * passes this flag on.
    */
   preserveExisting?: boolean
+  /**
+   * Called when the script failed, so every variable it declared is undefined
+   * and anything reading one renders empty (stacksjs/stx#1991).
+   *
+   * `kind` says how certain that is a bug. The first three always are.
+   * `unknown` is not: a server script reaching for `window` or constructing a
+   * Chart lands there, which is the case the quiet fallback exists for, so a
+   * caller showing the developer something should leave that one alone.
+   *
+   * Reported rather than thrown, because one failed script must not take the
+   * page down with it. Before this a caller could not find out at all: the
+   * extractor warned and returned normally, which is why the component became
+   * a hole that nothing could put a boundary around.
+   */
+  onFailure?: (failure: {
+    kind: 'module-resolution' | 'syntax' | 'missing-binding' | 'unknown'
+    message: string
+    error: unknown
+  }) => void
 }
 
 export async function extractVariables(
@@ -1169,6 +1200,7 @@ catch {
         `[stx] server <script> in ${filePath ?? '<unknown>'} imports a module that does not resolve, `
         + `so every variable in that script is undefined. Cause: ${msg}`,
       )
+      options.onFailure?.({ kind: 'module-resolution', message: msg, error: primaryError })
     }
     else if (isSyntaxFailure(primaryError)) {
       // Never the client-only case: a script that does not parse has no
@@ -1178,6 +1210,7 @@ catch {
         `[stx] server <script> in ${filePath ?? '<unknown>'} does not parse, `
         + `so every variable in that script is undefined. Cause: ${msg}`,
       )
+      options.onFailure?.({ kind: 'syntax', message: msg, error: primaryError })
     }
     else if (isMissingBindingFailure(msg)) {
       console.warn(
@@ -1185,6 +1218,7 @@ catch {
         + `so every variable in that script is undefined. Optional chaining does not help here: `
         + `an undefined identifier throws before the chain is reached. Cause: ${msg}`,
       )
+      options.onFailure?.({ kind: 'missing-binding', message: msg, error: primaryError })
     }
     else {
       /*
@@ -1221,6 +1255,10 @@ catch {
           + `Cause: ${msg}`,
         )
       }
+      // Outside the memo above: the warning is said once per cause, but a
+      // caller rendering something in place of the component has to be told on
+      // every render or the second one silently loses it.
+      options.onFailure?.({ kind: 'unknown', message: msg, error: primaryError })
     }
     // Fallback: Try alternative parsing approaches
     try {

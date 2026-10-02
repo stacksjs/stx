@@ -1472,9 +1472,61 @@ function scriptSourceOf(attrs: string): string | undefined {
   return match ? decodeURIComponent(match[1]) : undefined
 }
 
-async function extractServerScriptVariables(output: string, context: Record<string, any>, filePath: string): Promise<void> {
+/** Escaped for text content and double-quoted attributes. */
+function escapeForBoundary(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+/**
+ * What is shown in place of a component whose `<script server>` failed
+ * (stacksjs/stx#1991).
+ *
+ * The console already says what happened. The person who needs to know is
+ * usually not reading it: the markup skeleton survives the failure, so the
+ * symptom is a page with a hole in it, which reads as a layout or styling bug
+ * rather than as a component that did not run. Putting the cause where the
+ * component was removes that whole detour.
+ *
+ * Styled inline and on purpose. A boundary that depends on the app's CSS is
+ * invisible exactly when the app is the thing that is broken.
+ */
+function serverScriptErrorBoundary(sourcePath: string, kind: string, message: string): string {
+  const what = kind === 'module-resolution'
+    ? 'imports a module that does not resolve'
+    : kind === 'syntax'
+      ? 'does not parse'
+      : 'names something that does not exist'
+
+  return `<div data-stx-server-script-error role="alert" style="padding:12px 14px;border:1px solid #f0b4b4;`
+    + `border-left-width:4px;background:#fff5f5;color:#7a1f1f;`
+    + `font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace">`
+    + `<strong style="display:block;margin-bottom:4px">stx: a &lt;script server&gt; ${what}, `
+    + `so this component rendered nothing.</strong>`
+    + `<span style="display:block;opacity:.85">${escapeForBoundary(sourcePath)}</span>`
+    + `<span style="display:block;margin-top:4px">${escapeForBoundary(message)}</span>`
+    + `</div>`
+}
+
+async function extractServerScriptVariables(output: string, context: Record<string, any>, filePath: string): Promise<string> {
   const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
   let scriptMatch: RegExpExecArray | null
+
+  /*
+   * Where a failed script was, so its cause can be shown there.
+   *
+   * Collected rather than spliced in the loop: the regex is iterating `output`
+   * by index, and rewriting it underneath would move every later match.
+   * Applied last-first afterwards, so the earlier indices stay valid.
+   */
+  const boundaries: Array<{ index: number, length: number, markup: string }> = []
+
+  // Development only, and never under test, where it would rewrite the output
+  // of every suite that renders a deliberately broken script.
+  const showBoundaries = !isProduction() && !isTest()
 
   while ((scriptMatch = scriptRegex.exec(output)) !== null) {
     const attrs = scriptMatch[1]
@@ -1486,6 +1538,7 @@ async function extractServerScriptVariables(output: string, context: Record<stri
 
     // A view script salvaged into its layout resolves against the view.
     const sourcePath = scriptSourceOf(attrs) ?? filePath
+    const at = { index: scriptMatch.index, length: scriptMatch[0].length }
 
     try {
       const { extractVariables } = await importOnce('stx/variable-extractor', () => import('./variable-extractor'))
@@ -1494,14 +1547,36 @@ async function extractServerScriptVariables(output: string, context: Record<stri
          `preserveExisting` means a layout-level stub like
          `const user = { avatarInitials: 'JD' }` no longer clobbers the
          full object the page declared on the same name. */
-      await extractVariables(scriptContent, context, sourcePath, { preserveExisting: true })
+      await extractVariables(scriptContent, context, sourcePath, {
+        preserveExisting: true,
+        onFailure: (failure) => {
+          // `unknown` is deliberately not shown. A server script reaching for
+          // `window`, or building something that only exists in a browser, is
+          // classified there, and it is the case the quiet fallback is for: a
+          // boundary on every one of those would be wrong on pages that work.
+          if (!showBoundaries || failure.kind === 'unknown')
+            return
+          boundaries.push({ ...at, markup: serverScriptErrorBoundary(sourcePath, failure.kind, failure.message) })
+        },
+      })
     }
     catch (e) {
       const err = e instanceof Error ? e : new Error(String(e))
       errorLogger.log(err, { filePath: sourcePath, phase: 'server-script-extraction' }, 'warning')
       console.warn(`[stx] server <script> extraction failed in ${sourcePath}: ${err.message}`)
+      if (showBoundaries)
+        boundaries.push({ ...at, markup: serverScriptErrorBoundary(sourcePath, 'unknown', err.message) })
     }
   }
+
+  if (boundaries.length === 0)
+    return output
+
+  let result = output
+  for (const boundary of boundaries.sort((a, b) => b.index - a.index))
+    result = result.slice(0, boundary.index) + boundary.markup + result.slice(boundary.index + boundary.length)
+
+  return result
 }
 
 async function interpolateClientScriptExpressions(output: string, context: Record<string, any>, filePath: string): Promise<string> {
@@ -1533,7 +1608,7 @@ async function processOtherDirectives(
   // Extract variables from <script server> tags (SFC support)
   // Only scripts with explicit 'server' attribute are executed server-side
   // All other scripts (no attribute, 'client', 'type="module"', 'src=') are client-side
-  await extractServerScriptVariables(output, context, filePath)
+  output = await extractServerScriptVariables(output, context, filePath)
 
   // Interpolate server-side {{ expr }} / {!! expr !!} inside every non-server
   // <script> body (client / signals / bare) so pages can splice server data
