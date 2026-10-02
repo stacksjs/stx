@@ -1,0 +1,218 @@
+<script server>
+/*
+ * The picker four apps were each maintaining their own copy of
+ * (stacksjs/stx#1981).
+ *
+ * `<Calendar>` was single-date only, so "last 7 days / last 30 days / custom
+ * range" had to be built per app: four near-identical files, hand-ported
+ * between repos, four copies of every bug. Range selection now lives on
+ * `<Calendar mode="range">` - that is the half an app cannot reasonably
+ * compose - and this is the trigger, the panel and the preset row around it.
+ */
+export const start = $props.start || null
+export const end = $props.end || null
+/** Preset spans in days. `[7, 30, 90]` gives "Last 7 days" and so on. */
+export const presets = Array.isArray($props.presets) ? $props.presets : [7, 30, 90]
+export const placeholder = $props.placeholder || 'Select dates'
+export const locale = $props.locale || 'en-US'
+export const minDate = $props.minDate || null
+export const maxDate = $props.maxDate || null
+export const align = $props.align === 'right' ? 'right' : 'left'
+export const className = $props.className || ''
+export const disabled = $bool($props.disabled)
+
+export const startIso = start ? new Date(start).toISOString() : null
+export const endIso = end ? new Date(end).toISOString() : null
+export const minIso = minDate ? new Date(minDate).toISOString() : null
+export const maxIso = maxDate ? new Date(maxDate).toISOString() : null
+
+export const rootClasses = `relative inline-block ${className}`.trim()
+export const triggerClasses = 'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-fg bg-field rounded-control ring-1 ring-inset ring-line-strong hover:bg-field-hover focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+export const panelClasses = `absolute z-20 mt-2 flex gap-4 p-4 bg-panel rounded-panel shadow-lg ring-1 ring-line ${align === 'right' ? 'right-0' : 'left-0'}`
+export const presetListClasses = 'flex flex-col gap-1 min-w-36'
+export const presetClasses = 'px-3 py-1.5 text-left text-sm text-fg-strong rounded-control hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-accent transition-colors'
+export const presetActiveClasses = 'px-3 py-1.5 text-left text-sm font-medium text-accent-soft-ink bg-accent-soft rounded-control focus:outline-none focus:ring-2 focus:ring-accent transition-colors'
+export const instanceId = $uid
+</script>
+
+<script client>
+const emit = defineEmits()
+const instanceId = {{ instanceId }}
+const locale = {{ locale }}
+const placeholder = {{ placeholder }}
+const presets = {{ presets }}
+
+/*
+ * Guarded in JS rather than inlined through a `=== null ? 'null' : …` ternary.
+ * That pattern emits the STRING "null", which is truthy, and it is what left
+ * every optional date in `<Calendar>` an Invalid Date (#1981).
+ */
+const startIso = {{ startIso }}
+const endIso = {{ endIso }}
+
+const isOpen = state(false)
+const rangeStart = state(startIso ? new Date(startIso) : null)
+const rangeEnd = state(endIso ? new Date(endIso) : null)
+const activePreset = state(null)
+
+let rootEl = null
+let outsideHandler = null
+let keyHandler = null
+
+function midnight(d) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+function formatOne(d) {
+  return d.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+/** What the trigger says: a range, a half-made range, or the placeholder. */
+const label = derived(() => {
+  const from = rangeStart()
+  const to = rangeEnd()
+  if (!from) return placeholder
+  if (!to) return formatOne(from)
+  return formatOne(from) + ' - ' + formatOne(to)
+})
+
+function open() {
+  if (isOpen()) return
+  isOpen.set(true)
+  emit('open')
+}
+
+function close() {
+  if (!isOpen()) return
+  isOpen.set(false)
+  emit('close')
+}
+
+function toggle(event) {
+  if (event) event.stopPropagation()
+  isOpen() ? close() : open()
+}
+
+/*
+ * A preset is "the last N days, ending today", counted inclusively - so 7 days
+ * is today and the six before it, which is what every dashboard means by it.
+ */
+function applyPreset(days) {
+  const to = midnight(new Date())
+  const from = midnight(new Date())
+  from.setDate(from.getDate() - (days - 1))
+  rangeStart.set(from)
+  rangeEnd.set(to)
+  activePreset.set(days)
+  emit('change', { start: from, end: to, preset: days })
+  close()
+}
+
+function presetLabel(days) {
+  return 'Last ' + days + ' days'
+}
+
+function presetButtonClasses(days) {
+  return activePreset() === days ? {{ presetActiveClasses }} : {{ presetClasses }}
+}
+
+/*
+ * The calendar's own `change` event, caught as it bubbles.
+ *
+ * Listened for on the WRAPPER rather than with `@change` on the component tag:
+ * forwarding an event onto a nested component's root clobbers that component's
+ * own scope, so Calendar's bindings stop resolving. `defineEmits` dispatches
+ * with `bubbles: true`, so a listener one element out gets the same event and
+ * the child is left alone.
+ */
+function onCalendarChange(event) {
+  const detail = event && event.detail ? event.detail : event
+  if (!detail || !detail.start) return
+  rangeStart.set(detail.start)
+  rangeEnd.set(detail.end || null)
+  // A hand-picked range is not one of the presets any more.
+  activePreset.set(null)
+  // Emitted only once the range is closed: a half-made one is not an answer,
+  // and a consumer refetching on every click would fire twice per selection.
+  if (detail.end) {
+    emit('change', { start: detail.start, end: detail.end, preset: null })
+    close()
+  }
+}
+
+function clear() {
+  rangeStart.set(null)
+  rangeEnd.set(null)
+  activePreset.set(null)
+  emit('change', { start: null, end: null, preset: null })
+}
+
+onMount(() => {
+  rootEl = document.querySelector('[data-stx-range-picker="' + instanceId + '"]')
+  outsideHandler = (event) => {
+    if (!isOpen() || !rootEl) return
+    if (!rootEl.contains(event.target)) close()
+  }
+  keyHandler = (event) => {
+    if (event.key === 'Escape' && isOpen()) {
+      event.preventDefault()
+      close()
+    }
+  }
+  document.addEventListener('click', outsideHandler)
+  document.addEventListener('keydown', keyHandler)
+})
+
+onDestroy(() => {
+  if (outsideHandler) document.removeEventListener('click', outsideHandler)
+  if (keyHandler) document.removeEventListener('keydown', keyHandler)
+})
+
+defineExpose({ isOpen, rangeStart, rangeEnd, activePreset, applyPreset, onCalendarChange, clear, label })
+</script>
+
+<div class="{{ rootClasses }}" data-stx-range-picker="{{ instanceId }}">
+  <button
+    type="button"
+    class="{{ triggerClasses }}"
+    @if(disabled)disabled@endif
+    aria-haspopup="dialog"
+    :aria-expanded="isOpen() ? 'true' : 'false'"
+    @click="toggle($event)"
+  >
+    <svg class="h-4 w-4 text-fg-soft" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+    <span :text="label()">{{ placeholder }}</span>
+  </button>
+
+  <div :show="isOpen()" x-cloak class="{{ panelClasses }}" role="dialog" aria-label="Choose a date range">
+    <div class="{{ presetListClasses }}">
+      <button
+        :for="days in presets"
+        :key="days"
+        type="button"
+        :class="presetButtonClasses(days)"
+        @click="applyPreset(days)"
+        :text="presetLabel(days)"
+      ></button>
+      <button
+        type="button"
+        class="{{ presetClasses }} text-fg-muted"
+        @click="clear()"
+      >Clear</button>
+    </div>
+
+    {{-- The listener sits here, not on the <Calendar> tag: see onCalendarChange. --}}
+    <div @change="onCalendarChange($event)">
+      <Calendar
+        mode="range"
+        :start="rangeStart()"
+        :end="rangeEnd()"
+        min-date="{{ minIso }}"
+        max-date="{{ maxIso }}"
+        locale="{{ locale }}"
+      />
+    </div>
+  </div>
+</div>
