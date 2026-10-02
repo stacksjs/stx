@@ -108,12 +108,20 @@ describe('a failed server script renders a boundary in development', () => {
      * leave everything from there to the real close tag in the page as text,
      * which would publish the script's own source (stacksjs/stx#2012).
      *
-     * Reported against this boundary and not reproducible on `main`: the three
-     * named cases in `process/script-setup.test.ts` pass under
-     * `NODE_ENV=development`, and the shapes below render with nothing left
-     * behind. Pinned anyway, because the suite could not have told anyone
-     * either way: the boundary is off while `NODE_ENV=test`, so nothing
-     * exercised the splice except the cases in this file.
+     * Real, and caused by the non-greedy `<script…>([\s\S]*?)</script>` this
+     * boundary was built on. The body is JavaScript, where `</script>` appears
+     * legally inside a literal, so the match ended early: the extractor was
+     * handed a truncated body and reported "Unexpected EOF" for a script that
+     * parses, and the span recorded for the splice ended at the same early tag,
+     * leaving the real tail in the document as page text.
+     *
+     * Verified against the committed code: `NODE_ENV=development bun test
+     * process/script-setup.test.ts` fails its three `</script>`-in-a-literal
+     * cases, and the assertions below fail on the leaked tail.
+     *
+     * Why it took a report rather than a test: the boundary is off whenever
+     * `NODE_ENV=test`, so `bun test` never ran the splice. Nothing but this
+     * file, which opts in, exercised it at all.
      */
     const bodies = [
       `import { x } from 'package-that-does-not-exist-xyz'\n  const marker = "</script>"\n  const TAIL = 'must-not-reach-the-page'`,
