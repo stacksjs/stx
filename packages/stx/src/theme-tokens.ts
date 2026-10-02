@@ -142,6 +142,24 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
   'field-hover': { light: 'neutral-50', dark: 'neutral-600', description: 'Form control surface, hovered' },
 
   /*
+   * A hyperlink and its hover, which is not any of the roles that already
+   * exist (stacksjs/stx#1993).
+   *
+   * `info`'s description used to claim links, and nothing in the library ever
+   * used it for one - it is cyan, and every link is blue. `accent` is the
+   * closest, but a link rests a step lighter than an accent action and its
+   * hover has to move in opposite directions per mode: DARKER in light,
+   * LIGHTER in dark, since the link is already the brightest thing in a dark
+   * paragraph. No existing pair does that, and `accent-solid-hover` does the
+   * reverse.
+   *
+   * Both values are what the library already paints, so `<Footer>`'s links
+   * look identical and become themeable.
+   */
+  'link': { light: 'blue-500', dark: 'blue-400', description: 'Hyperlink' },
+  'link-hover': { light: 'blue-600', dark: 'blue-300', description: 'Hyperlink, hovered' },
+
+  /*
    * A surface that contrasts with the page in BOTH modes - a tooltip bubble, a
    * chip floating over code - which the vocabulary had no name for, so its
    * pieces drifted apart (stacksjs/stx#1993).
@@ -179,7 +197,7 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
    * toast, a Badge's `info` chip - and both of those already painted cyan.
    */
   'accent': { light: 'blue-600', dark: 'blue-400', description: 'Primary action, selected state' },
-  'info': { light: 'cyan-600', dark: 'cyan-400', description: 'Informational emphasis, links' },
+  'info': { light: 'cyan-600', dark: 'cyan-400', description: 'Informational emphasis' },
   'danger': { light: 'red-600', dark: 'red-400', description: 'Errors, destructive actions' },
   'success': { light: 'green-600', dark: 'green-400', description: 'Confirmation' },
   /*

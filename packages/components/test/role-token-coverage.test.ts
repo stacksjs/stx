@@ -416,6 +416,13 @@ describe('a hovered neutral surface is a role (#1993)', () => {
     ['surface-raised', 'surface-raised-hover'],
     ['surface-sunken', 'surface-sunken-hover'],
     ['field', 'field-hover'],
+    /*
+     * A link is on this list for the same reason, and it is the pair that
+     * shows why the direction assertion below is per-mode rather than
+     * absolute: a link darkens on hover in light mode and LIGHTENS in dark,
+     * because it is already the brightest thing in a dark paragraph.
+     */
+    ['link', 'link-hover'],
   ] as const
 
   /** `white` is the top of the neutral ladder, below `neutral-50`. */

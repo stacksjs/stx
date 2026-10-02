@@ -99,7 +99,7 @@ function onRecoveryCode(event) {
             <button
               type="button"
               @click="onRecoveryCode($event)"
-              class="text-xs text-blue-500 hover:underline"
+              class="text-xs text-link hover:underline"
             >
               Use recovery code instead
             </button>
