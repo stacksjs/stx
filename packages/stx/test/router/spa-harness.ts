@@ -208,12 +208,22 @@ export function closeBrowser(): void {
   active = null
 }
 
-/** Load `pathname` as a browser would, then hand back a way to drive it. */
+/**
+ * Load `pathname` as a browser would, then hand back a way to drive it.
+ *
+ * `pathname` may carry a query string. The document is looked up by PATH -
+ * routes are paths, and a server renders the same page for every filter - while
+ * the window gets the full URL, so `location.search` is what the browser would
+ * have. Without this, nothing that reads the query could be tested at all:
+ * active-link matching for filter chips is exactly that (stacksjs/stx#2017).
+ */
 export async function boot(app: SpaApp, pathname: string, options: BootOptions = {}): Promise<Browser> {
   closeBrowser()
-  const html = app.documents.get(pathname)
+  const queryAt = pathname.indexOf('?')
+  const routePath = queryAt === -1 ? pathname : pathname.slice(0, queryAt)
+  const html = app.documents.get(routePath)
   if (!html)
-    throw new Error(`no rendered document for ${pathname}`)
+    throw new Error(`no rendered document for ${routePath}`)
 
   const window: any = new Window({ url: `${BASE}${pathname}` })
   const document = window.document

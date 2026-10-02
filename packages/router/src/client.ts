@@ -2182,9 +2182,24 @@ else {
     // point at this path, exactly one is.
     var have=new URLSearchParams(location.search),q=true;
     u.searchParams.forEach(function(v,k){if(have.getAll(k).indexOf(v)===-1)q=false});
+    // EXACT is the stricter half (stacksjs/stx#2017). A link with NO query
+    // satisfied the loop above trivially, so a bare /list reported itself exact
+    // on /list?status=up - taking exact-active-class and aria-current from the
+    // chip the user was actually on, and telling a screen reader the unfiltered
+    // link was the current page.
+    //
+    // Only a link with no query at all is held to the stricter test, which is
+    // what keeps #1777 working: a range picker's /dashboard?site=1&range=7d is
+    // still exact on /dashboard?site=1&range=7d&country=US, because a page
+    // filter the link does not name should not unmark the range it IS on. The
+    // two requests look opposed and are not - one is about a link naming MORE
+    // than the page, the other about a link naming NOTHING.
+    var linkHasQuery=false;
+    u.searchParams.forEach(function(){linkHasQuery=true});
+    var sameQuery=q&&(linkHasQuery||!location.search);
     var matched=matchesAny(also,cur);
     return {
-      exact:q&&path===cur,
+      exact:sameQuery&&path===cur,
       active:q&&(path==='/'?cur==='/':(cur===path||cur.indexOf(path+'/')===0))||matched,
       matched:matched
     };
@@ -2236,12 +2251,21 @@ else {
   // Only ever touched on links that already carry the attribute or are the
   // current one, so a page using aria-current for something else — a step in a
   // wizard, a sort direction — is not rewritten out from under itself.
+  //
+  // Cleared for 'true' as well as 'page' (#2017). Both say "this is the current
+  // one" with no further meaning, and a consumer working around a missing
+  // aria-current by stamping aria-current="true" server-side kept it forever:
+  // the router neither updated nor removed it, so after one navigation it named
+  // the wrong link and the workaround was worse than the bug. The role-specific
+  // values - step, location, date, time - are still left alone, because those
+  // ARE the page using the attribute for something else.
   function markCurrent(link,isExact){
+    var now=link.getAttribute('aria-current');
     if(isExact){
-      if(link.getAttribute('aria-current')!=='page')link.setAttribute('aria-current','page');
+      if(now!=='page')link.setAttribute('aria-current','page');
       return;
     }
-    if(link.getAttribute('aria-current')==='page')link.removeAttribute('aria-current');
+    if(now==='page'||now==='true')link.removeAttribute('aria-current');
   }
 
   // ── Progress bar DOM + style ──

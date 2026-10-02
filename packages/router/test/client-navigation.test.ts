@@ -663,10 +663,29 @@ describe('which links are current', () => {
       <a data-stx-link href="/dashboard">Dashboard</a>
     `)
     // Extra params on the page (a filter) do not unmark the range it is on.
+    // This is #1777's case and it still holds: the link NAMES site and range,
+    // both are in effect, so it is the range the user is on even though the
+    // page also carries country.
     expect(current(links[0])).toBe('page')
     expect(current(links[1])).toBeNull()
-    // A link with no query matches on its path, so the nav entry stays current.
-    expect(current(links[2])).toBe('page')
+    /*
+     * A link with no query is no longer `aria-current` at a filtered URL
+     * (stacksjs/stx#2017), and this assertion is the deliberate change.
+     *
+     * It used to read 'page' on the reasoning that "a link with no query
+     * matches on its path, so the nav entry stays current". Matching on its
+     * path is what `active` is for; `aria-current="page"` says THIS IS THE PAGE
+     * YOU ARE ON, and on /dashboard?site=1&range=7d&country=US the bare
+     * /dashboard is not. A row of filter chips made that visible: the
+     * unfiltered chip took aria-current from the chip actually in effect, so a
+     * screen reader named the wrong link, and the app's server-rendered mark
+     * was overwritten on the client.
+     *
+     * The distinction the two issues need is not opposed: a link naming MORE
+     * than the page is still exact (above), a link naming NOTHING is not.
+     * Keeping a nav entry lit across filters is `data-stx-active-match`.
+     */
+    expect(current(links[2])).toBeNull()
   })
 
   it('resolves same-origin absolute URLs and trailing slashes', () => {
