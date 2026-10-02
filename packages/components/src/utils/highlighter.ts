@@ -75,6 +75,30 @@ export async function highlight(
     wrapLines: _wrapLines = true,
   } = options
 
+  /*
+   * Resolved before anything can return, so every exit reports the theme that
+   * was asked for.
+   *
+   * It used to be computed after the load guard below, which returned a
+   * hardcoded `github-light` on that path: a caller asking for dark and getting
+   * the plain-text floor was told it got light, which is a second untruth on
+   * top of the first (stacksjs/stx#2015).
+   *
+   * `auto` still resolves light on a server. `highlight()` is called from
+   * `<script server>`, where `globalThis.matchMedia` does not exist, and a
+   * viewer's preference is not knowable at render time anyway. Selecting a
+   * palette in JS cannot answer that question; emitting both and letting CSS
+   * choose can, and is not possible yet because this highlighter writes token
+   * colours as inline `style` attributes on each span rather than through its
+   * token classes, so no media query can override them. Its `renderDualTheme`
+   * is the right shape for it and takes `TokenLine[]`, which no public method
+   * returns. Tracked on the issue; `theme: 'dark'` is the explicit escape until
+   * then.
+   */
+  const effectiveTheme = theme === 'auto'
+    ? (globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'github-dark' : 'github-light')
+    : theme === 'dark' ? 'github-dark' : 'github-light'
+
   // A highlighter that cannot load must not take the code with it. Highlighting
   // is decoration; the code is the content. ts-syntax-highlighter@0.2.17 ships a
   // bundle that imports `bunfig` while declaring no dependencies, so it throws
@@ -86,13 +110,8 @@ export async function highlight(
     highlighter = await getHighlighter()
   }
   catch {
-    return { html: plainCodeHtml(code), css: '', language, theme: 'github-light' }
+    return { html: plainCodeHtml(code), css: '', language, theme: effectiveTheme }
   }
-
-  // Auto-detect theme based on system preference
-  const effectiveTheme = theme === 'auto'
-    ? (globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'github-dark' : 'github-light')
-    : theme === 'dark' ? 'github-dark' : 'github-light'
 
   // ts-syntax-highlighter returns { html, css, tokens, ansi }. This read the
   // whole result as if it were the HTML string, and the `String(...)` meant to
@@ -101,7 +120,12 @@ export async function highlight(
   // that stringifies anything cannot tell a wrong shape from a right one.
   let result: unknown
   try {
-    result = await highlighter.highlight(code, language)
+    // The theme belongs here. It was resolved above and then dropped, so every
+    // render came from the instance's own `github-light` and every CodeBlock in
+    // every app was light whatever it asked for, while the returned `theme`
+    // field reported the request. `RenderOptions.theme` overrides the instance
+    // per call, which is what keeps one shared highlighter usable for both.
+    result = await highlighter.highlight(code, language, { theme: effectiveTheme })
   }
   catch {
     return { html: plainCodeHtml(code), css: '', language, theme: effectiveTheme }
