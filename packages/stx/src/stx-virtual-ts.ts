@@ -71,7 +71,7 @@ export interface TemplateExpression {
   line: number
   /** 1-based column of the expression's first character. */
   column: number
-  kind: 'interpolation' | 'directive'
+  kind: 'interpolation' | 'directive' | 'condition'
   /** For directives, the attribute name (`:if`, `@click`, `x-text`). */
   attribute?: string
   /**
@@ -96,6 +96,15 @@ export interface MappedLine {
    * the start of the attribute.
    */
   prefixLength?: number
+  /**
+   * Characters of `if (…) {` wrapper before the expression's own statement.
+   *
+   * A diagnostic inside this span is about the enclosing CONDITION, not about
+   * the expression this line carries - and the condition is checked on a line
+   * of its own, so reporting it here too would name innocent markup twice
+   * (stacksjs/stx#2013).
+   */
+  guardPrefixLength?: number
 }
 
 export interface VirtualFile {
@@ -510,6 +519,61 @@ export function extractTemplateExpressions(source: string): TemplateExpression[]
       column: columnAt(masked, offset),
       offset,
       kind: 'interpolation',
+    })
+  }
+
+  /*
+   * `@if` / `@elseif` / `@unless` conditions, as expressions in their own right
+   * (stacksjs/stx#2013).
+   *
+   * `guardChainAt` already emits each condition verbatim into an `if (…)` that
+   * wraps every expression inside the block, and the comment there claimed a
+   * condition that does not compile "is reported where it is written - as its
+   * own template expression". It never was: nothing extracted them, so a fault
+   * in a condition had no line of its own to land on. It surfaced on whichever
+   * expression happened to be inside the block - `state<string>` named in an
+   * "Object is possibly null" diagnostic - and when the block held no
+   * expression at all it was not reported, because there was no wrapper to
+   * carry it.
+   *
+   * `@if (x() && x().prop)` reads as guarded and is not: nothing promises two
+   * calls to `x()` return the same value. That is a true positive worth
+   * keeping, and it found 9 real latent bugs in one app - which is exactly why
+   * it has to point at the condition rather than at innocent markup.
+   *
+   * `offset` is the DIRECTIVE's start, not the condition's, so `guardChainAt`
+   * stops before this block and the condition is not narrowed by itself. Outer
+   * blocks still apply, so a nested `@if` sees the enclosing guard.
+   */
+  const condition = /@(if|elseif|else\s+if|unless)\b\s*\(/g
+  while ((m = condition.exec(masked)) !== null) {
+    const open = m.index + m[0].length - 1
+    let depth = 0
+    let index = open
+    for (; index < masked.length; index++) {
+      const char = masked[index]
+      if (char === '(')
+        depth++
+      else if (char === ')') {
+        depth--
+        if (depth === 0)
+          break
+      }
+    }
+    if (depth !== 0)
+      continue
+    const raw = masked.slice(open + 1, index)
+    const code = raw.trim()
+    condition.lastIndex = index + 1
+    if (!code)
+      continue
+    const start = open + 1 + (raw.length - raw.trimStart().length)
+    found.push({
+      code,
+      line: lineAt(masked, start),
+      column: columnAt(masked, start),
+      offset: m.index,
+      kind: 'condition',
     })
   }
 
@@ -1557,6 +1621,7 @@ export function buildVirtualTypeScript(
           column: expression.column,
           expression,
           prefixLength: statement.prefixLength + pad.length + guardPrefix.length,
+          guardPrefixLength: pad.length + guardPrefix.length,
         })
       }
 
@@ -1610,6 +1675,12 @@ export interface ResolvedPosition {
   column: number
   /** Set when the diagnostic came from a template expression. */
   expression?: TemplateExpression
+  /**
+   * The hit landed in the `if (…) {` wrapper that markup guards put around an
+   * expression, so it is about the CONDITION rather than this expression. The
+   * condition has a line of its own (stacksjs/stx#2013).
+   */
+  inGuard?: boolean
 }
 
 /**
@@ -1636,5 +1707,8 @@ export function resolvePosition(
     line: mapped.line,
     column: mapped.column + within,
     expression: mapped.expression,
+    // 1-based column, so a hit AT guardPrefixLength is still the last character
+    // of the wrapper.
+    inGuard: column <= (mapped.guardPrefixLength ?? 0),
   }
 }

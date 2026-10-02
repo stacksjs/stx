@@ -753,6 +753,18 @@ export async function typecheckStxFiles(
       if (!at?.expression)
         continue
 
+      /*
+       * A hit inside the `if (…) {` wrapper is about the enclosing CONDITION,
+       * not about the expression this line carries. The condition is checked on
+       * a line of its own now, so this copy would report the same fault a
+       * second time against innocent markup - which is how it used to be
+       * reported at all: `state<string>` named in an "Object is possibly null"
+       * diagnostic, because the only line available was the one inside the
+       * block (stacksjs/stx#2013).
+       */
+      if (at.inGuard)
+        continue
+
       // TS2774 "this condition will always return true since this function is
       // always defined — did you mean to call it instead?" is wrong about a
       // template, and only about a template.
