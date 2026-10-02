@@ -70,6 +70,33 @@ export function classifyAttribute(name: string): Binding['kind'] | null {
     if (DIRECTIVE_SET.has(bare)) return bare === 'if' ? 'if' : bare as Binding['kind']
     if (bare === 'for' || bare === 'else' || bare === 'else-if' || bare === 'elseif') return 'for'
     if (isRuntimeEventName(bare)) return 'event'
+    /*
+     * An `@name` that is not a directive is an EVENT, whatever the name
+     * (stacksjs/stx#2016).
+     *
+     * `@` means "event listener" in the prefix convention, so there is nothing
+     * else it could be - but this fell through to 'attr' for any name outside a
+     * 25-entry whitelist, which left `error` and `load` out. So `<img
+     * @error="onImageError($event)">` was recorded as an attribute binding and
+     * never listened for anything, and `<Avatar>`'s image fallback - the
+     * component's whole advantage over a hand-rolled `@if (src)` - could not
+     * fire. The attribute survived into the rendered HTML, so it read as wired
+     * in devtools and in a snapshot, and failed only when an image actually
+     * broke: rare in development, routine in production.
+     *
+     * animationend, transitionend, drop, dragover, paste, copy and the
+     * dialog/details events were all in the same position, and so was any
+     * typo - `@clik` was silently dead markup rather than an error.
+     *
+     * The runtime's own attribute walk has always bound any `@name` as a
+     * listener; it was only this classification, which the manifest path uses,
+     * that disagreed. The two agree now.
+     *
+     * `:name` deliberately keeps the whitelist. `:` is the structural and prop
+     * prefix, so `:error` on a component is a PROP - two inputs pass exactly
+     * that - and reading it as an event would break them.
+     */
+    if (name.startsWith('@')) return 'event'
     return 'attr'
   }
 
