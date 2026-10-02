@@ -59,6 +59,7 @@ class Lexer {
   private pos = 0
   private line = 1
   private column = 1
+  private inTag = false
 
   constructor(input: string) {
     this.input = input
@@ -79,7 +80,7 @@ class Lexer {
   }
 
   private nextToken(): Token | null {
-    this.skipWhitespace()
+    if (this.inTag) this.skipWhitespace()
 
     if (this.pos >= this.input.length) return null
 
@@ -136,6 +137,7 @@ class Lexer {
       this.skipWhitespace()
       if (this.peek() !== '>') throw new Error(`Expected > at line ${this.line}`)
       this.advance(1)
+      this.inTag = false
       return { type: 'TAG_CLOSE', value: tagName, line: startLine, column: startColumn }
     }
 
@@ -143,18 +145,21 @@ class Lexer {
     if (this.peek() === '<') {
       this.advance(1)
       const tagName = this.readTagName()
+      this.inTag = true
       return { type: 'TAG_OPEN', value: tagName, line: startLine, column: startColumn }
     }
 
     // Self-closing tag end: />
     if (this.match('/>')) {
       this.advance(2)
+      this.inTag = false
       return { type: 'TAG_SELF_CLOSE', value: '/>', line: startLine, column: startColumn }
     }
 
     // Tag end: >
     if (this.peek() === '>') {
       this.advance(1)
+      this.inTag = false
       return { type: 'TAG_END', value: '>', line: startLine, column: startColumn }
     }
 
@@ -174,7 +179,7 @@ class Lexer {
     }
 
     // Attribute: name="value" or name={expression}
-    if (this.isAlpha(this.peek()) || this.peek() === ':' || this.peek() === '@') {
+    if (this.inTag && (this.isAlpha(this.peek()) || this.peek() === ':' || this.peek() === '@')) {
       const attrName = this.readAttributeName()
       this.skipWhitespace()
 
@@ -239,7 +244,7 @@ else {
     }
 
     if (text.trim()) {
-      return { type: 'TEXT', value: text.trim(), line: startLine, column: startColumn }
+      return { type: 'TEXT', value: text, line: startLine, column: startColumn }
     }
 
     return null

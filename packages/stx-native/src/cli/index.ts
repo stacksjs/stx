@@ -19,7 +19,7 @@ import { existsSync, mkdirSync, writeFileSync, readFileSync, watchFile, readdirS
 import { join, resolve, dirname, basename, extname } from 'path'
 import { createServer, IncomingMessage, ServerResponse } from 'http'
 import { WebSocketServer, WebSocket } from 'ws'
-import { parseSTX, compileSTX } from '../compiler/parser'
+import { parseSTX } from '../compiler/parser'
 import type { STXDocument } from '../compiler/ir'
 
 // ============================================================================
@@ -323,21 +323,29 @@ else {
   private async compileCommand(flags: Record<string, string>, positionals: string[]): Promise<void> {
     const inputFile = flags.input || positionals[0]
     const outputFile = flags.output || flags.o
+    const format = flags.format || 'ir'
 
     if (!inputFile) {
       console.error('Please specify an input file: stx-native compile <file.stx>')
       process.exit(1)
     }
 
+    if (format !== 'ir' && format !== 'bundle') {
+      throw new Error(`Unknown compile format: ${format}. Expected ir or bundle.`)
+    }
+
     const content = readFileSync(inputFile, 'utf-8')
-    const ir = compileSTX(content, inputFile)
+    const document = parseSTX(content, inputFile)
+    const result = format === 'bundle'
+      ? this.generateBundle(document)
+      : JSON.stringify(document, null, 2)
 
     if (outputFile) {
-      writeFileSync(outputFile, ir)
+      writeFileSync(outputFile, result)
       console.log(`Compiled: ${inputFile} → ${outputFile}`)
     }
 else {
-      console.log(ir)
+      console.log(result)
     }
   }
 
@@ -674,7 +682,10 @@ catch (error) {
   }
 
   private generateBundle(document: STXDocument): string {
-    // Generate a JavaScript bundle that includes the IR and runtime
+    // This is the small JavaScriptCore runtime for a native screen. The
+    // compiled IR is data, while expressions and handlers execute in the same
+    // lexical scope as the screen's script. A handler triggers a fresh tree so
+    // the first native slice does not require a DOM or a WebView.
     return `
 // STX Native Bundle
 // Generated at ${new Date().toISOString()}
@@ -688,36 +699,94 @@ catch (error) {
   // Script code
   ${document.script.code}
 
-  // Initialize bridge
   if (typeof globalThis.__stxNativeBridge !== 'undefined') {
     const bridge = globalThis.__stxNativeBridge;
+    const handlers = globalThis.__stxHandlers || (globalThis.__stxHandlers = {});
+    const pendingAPI = new Map();
+    let sequence = 0;
+
+    function send(type, payload, id) {
+      const messageId = id || 'js_' + (++sequence);
+      bridge.postMessage(JSON.stringify({
+        id: messageId,
+        type,
+        timestamp: Date.now(),
+        payload,
+        source: 'js'
+      }));
+      return messageId;
+    }
+
+    function resolveText(value) {
+      if (typeof value !== 'string' || !value.includes('{')) return value;
+      return value.replace(/\\{([^{}]+)\\}/g, function(_match, expression) {
+        // The expression came from the bundled .stx file, not from a device
+        // message. Direct eval keeps it in the screen script's lexical scope.
+        const answer = eval(expression);
+        return answer == null ? '' : String(answer);
+      });
+    }
+
+    function resolveNode(node) {
+      return {
+        ...node,
+        props: Object.fromEntries(Object.entries(node.props || {}).map(function([key, value]) {
+          return [key, resolveText(value)];
+        })),
+        children: (node.children || []).map(function(child) {
+          return typeof child === 'string' ? resolveText(child) : resolveNode(child);
+        })
+      };
+    }
+
+    function render() {
+      send('RENDER', { document: resolveNode(__STX_DOCUMENT__.root), mode: 'replace' }, 'init_' + Date.now() + '_' + (++sequence));
+    }
+
+    function requestAPI(module, method, args) {
+      return new Promise(function(resolve, reject) {
+        const id = send('API_REQUEST', { module, method, args });
+        pendingAPI.set(id, { resolve, reject });
+      });
+    }
+
+    globalThis.craft = globalThis.craft || {};
+    globalThis.craft.device = globalThis.craft.device || {};
+    globalThis.craft.device.getInfo = function() {
+      return requestAPI('Device', 'getInfo', []);
+    };
 
     // Register handlers
     ${document.script.functions.map(fn => `
     if (typeof ${fn} === 'function') {
-      globalThis.__stxHandlers['${fn}'] = ${fn};
+      handlers['${fn}'] = function(event) {
+        const result = ${fn}(event);
+        if (result && typeof result.then === 'function') {
+          return result.then(function(value) { render(); return value; });
+        }
+        render();
+        return result;
+      };
     }
     `).join('\n')}
 
-    // Render initial UI
-    //
-    // Both the backticks and the \${ are escaped. The backticks because this
-    // sits in the generator's own template text, where an unescaped one closes
-    // the literal and the rest of this function is parsed as code, which is
-    // why the CLI had never once run (stacksjs/stx#1985). The \${ because the
-    // id has to be the moment the bundle initializes, not the moment it was
-    // compiled: interpolating here would bake one timestamp into the bundle
-    // and every run would correlate its first message under the same id.
-    bridge.postMessage(JSON.stringify({
-      id: \`init_\${Date.now()}\`,
-      type: 'RENDER',
-      timestamp: Date.now(),
-      payload: {
-        document: __STX_DOCUMENT__.root,
-        mode: 'replace'
-      },
-      source: 'js'
-    }));
+    bridge.onMessage(function(raw) {
+      const message = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (message.type === 'EVENT') {
+        const handler = handlers[message.payload.handlerName];
+        if (handler) handler(message.payload.nativeEvent || {});
+      }
+      else if (message.type === 'API_RESPONSE' || message.type === 'API_ERROR') {
+        const requestId = message.correlationId || message.payload.requestId;
+        const pending = pendingAPI.get(requestId);
+        if (!pending) return;
+        pendingAPI.delete(requestId);
+        if (message.type === 'API_RESPONSE') pending.resolve(message.payload.data);
+        else pending.reject(new Error(message.payload.message || 'Native API failed'));
+      }
+    });
+
+    render();
   }
 
   // Export for debugging
@@ -791,7 +860,7 @@ Commands:
   run android             Run on Android emulator
   build ios               Build iOS app
   build android           Build Android app
-  compile <file>          Compile STX file to IR
+  compile <file>          Compile STX file to IR (or --format bundle)
 
 Options:
   --port <number>         Dev server port (default: 8081)

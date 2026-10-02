@@ -96,6 +96,15 @@ describe('the stx-native CLI entry point', () => {
     expect(code).toBe(0)
     expect(JSON.parse(await Bun.file(output).text()).root.type).toBe('View')
   })
+
+  it('writes an executable JavaScriptCore bundle when requested', async () => {
+    const root = await project()
+    const output = path.join(root, 'screen.js')
+    const { code } = await runCli(['compile', 'Screen.stx', '--format', 'bundle', '--output', output], root)
+    expect(code).toBe(0)
+    const bundle = await Bun.file(output).text()
+    expect(() => new Bun.Transpiler({ loader: 'js' }).transformSync(bundle)).not.toThrow()
+  })
 })
 
 describe('the generated bundle', () => {
@@ -113,17 +122,63 @@ describe('the generated bundle', () => {
   })
 
   it('defers the message id to when the bundle runs, not when it was compiled', () => {
-    // Escaping the backticks alone would have left `${Date.now()}` to be
-    // interpolated by the generator, baking one timestamp into the file so
-    // every run correlated its first message under the same id.
     const bundle = generate(SCREEN)
-    expect(bundle).toContain('id: `init_${Date.now()}`')
-    expect(bundle).not.toMatch(/id: `init_\d+`/)
+    expect(bundle).toContain("'init_' + Date.now() + '_' + (++sequence)")
   })
 
   it('carries the document and the handlers the script declared', () => {
     const bundle = generate(SCREEN)
     expect(bundle).toContain('__STX_DOCUMENT__')
     expect(bundle).toContain('greet')
+  })
+
+  it('renders expressions after button and text-input events and answers a device API', async () => {
+    const source = `<script>
+let count = 0
+let name = ''
+let device = 'waiting'
+function increment() { count++ }
+function changeName(event) { name = event.text }
+function loadDevice() {
+  return globalThis.craft.device.getInfo().then(function(info) { device = info.model })
+}
+</script>
+<template>
+  <View>
+    <Text>Count {count}</Text>
+    <Text>Name {name}</Text>
+    <Text>Device {device}</Text>
+    <Button onPress={increment}>Increment</Button>
+    <TextInput onChange={changeName} placeholder="Name" />
+    <Button onPress={loadDevice}>Device</Button>
+  </View>
+</template>`
+    const sent: Array<Record<string, any>> = []
+    let callback: (message: Record<string, any>) => void = () => {}
+    const scope: Record<string, any> = {
+      __stxNativeBridge: {
+        postMessage: (raw: string) => sent.push(JSON.parse(raw)),
+        onMessage: (receiver: typeof callback) => { callback = receiver },
+      },
+    }
+    new Function('globalThis', generate(source))(scope)
+
+    const rootText = () => sent.at(-1)?.payload.document.children.map((child: any) => child.children?.join('') || undefined)
+    expect(rootText()).toEqual(['Count 0', 'Name ', 'Device waiting', 'Increment', undefined, 'Device'])
+
+    callback({ type: 'EVENT', payload: { handlerName: 'increment', nativeEvent: {} } })
+    expect(rootText()?.[0]).toBe('Count 1')
+
+    callback({ type: 'EVENT', payload: { handlerName: 'changeName', nativeEvent: { text: 'Glenn' } } })
+    expect(rootText()?.[1]).toBe('Name Glenn')
+
+    callback({ type: 'EVENT', payload: { handlerName: 'loadDevice', nativeEvent: {} } })
+    const request = sent.at(-1)!
+    expect(request.type).toBe('API_REQUEST')
+    expect(request.payload).toEqual({ module: 'Device', method: 'getInfo', args: [] })
+    callback({ type: 'API_RESPONSE', correlationId: request.id, payload: { data: { model: 'iPhone Simulator' } } })
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(rootText()?.[2]).toBe('Device iPhone Simulator')
   })
 })
