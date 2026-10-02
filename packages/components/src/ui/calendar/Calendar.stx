@@ -1,5 +1,18 @@
 <script server>
 export const value = $props.value || null
+/*
+ * `range` is the mode four apps were missing (stacksjs/stx#1981).
+ *
+ * `<Calendar>` was single-date only, so every app that needed "last 7 days /
+ * custom range" built its own picker - four near-identical copies, hand-ported
+ * between repos, four copies of the same bugs. Range selection is the half an
+ * app cannot reasonably compose from what exists; the preset row is a Button
+ * loop, which is why `<DateRangePicker>` sits on top of this rather than
+ * replacing it.
+ */
+export const mode = $props.mode === 'range' ? 'range' : 'single'
+export const start = $props.start || null
+export const end = $props.end || null
 export const minDate = $props.minDate || null
 export const maxDate = $props.maxDate || null
 export const disabledDates = $props.disabledDates || []
@@ -20,6 +33,8 @@ export const daysGridClasses = 'grid grid-cols-7 gap-1'
 
 const valueIso = value ? new Date(value).toISOString() : null
 export const initialValueIso = valueIso
+export const initialStartIso = start ? new Date(start).toISOString() : null
+export const initialEndIso = end ? new Date(end).toISOString() : null
 const minIso = minDate ? new Date(minDate).toISOString() : null
 const maxIso = maxDate ? new Date(maxDate).toISOString() : null
 export const minIsoValue = minIso
@@ -32,14 +47,45 @@ const emit = defineEmits()
 const locale = {{ locale }}
 const firstDayOfWeek = {{ firstDayOfWeek }}
 const highlightToday = {{ highlightToday }}
-const minDate = {{ minIsoValue === null ? 'null' : minIsoValue }} ? new Date({{ minIsoValue === null ? 'null' : minIsoValue }}) : null
-const maxDate = {{ maxIsoValue === null ? 'null' : maxIsoValue }} ? new Date({{ maxIsoValue === null ? 'null' : maxIsoValue }}) : null
+/*
+ * The ISO strings are interpolated and guarded in JS, not inlined twice through
+ * a `=== null ? 'null' : …` ternary (stacksjs/stx#1981).
+ *
+ * That ternary produced the STRING "null", because `{{ }}` in a client script
+ * emits a JSON literal - so the guard `"null" ? …` was always true and every
+ * one of these became `new Date("null")`, an Invalid Date. With no props at all
+ * `<Calendar />` rendered a header reading "Invalid Date NaN" and 42 cells of
+ * Invalid Date: it has never worked without an explicit `value`, which is some
+ * of why four apps hand-rolled a picker rather than composing this one.
+ *
+ * A server-side `null` interpolates as the `null` literal, so the guard means
+ * what it says.
+ */
+const minIso = {{ minIsoValue }}
+const maxIso = {{ maxIsoValue }}
+const minDate = minIso ? new Date(minIso) : null
+const maxDate = maxIso ? new Date(maxIso) : null
 const disabledDates = ({{ disabledIsoList }}).map(s => new Date(s))
-const initialValue = {{ initialValueIso === null ? 'null' : initialValueIso }} ? new Date({{ initialValueIso === null ? 'null' : initialValueIso }}) : null
+const initialValueIso = {{ initialValueIso }}
+const initialValue = initialValueIso ? new Date(initialValueIso) : null
+
+const mode = {{ mode }}
+const startIso = {{ initialStartIso }}
+const endIso = {{ initialEndIso }}
+const initialStart = startIso ? new Date(startIso) : null
+const initialEnd = endIso ? new Date(endIso) : null
 
 const today = new Date()
-const currentMonth = state(initialValue ? new Date(initialValue) : new Date())
+const currentMonth = state(new Date(initialStart || initialValue || today))
 const selectedDate = state(initialValue)
+const rangeStart = state(initialStart)
+const rangeEnd = state(initialEnd)
+/*
+ * The day under the cursor while a range is half-made, so the span previews
+ * before the second click. Without it a range picker gives no feedback between
+ * the two clicks, which is the moment a user is deciding.
+ */
+const hoverDate = state(null)
 
 function isSameDay(d1, d2) {
   if (!d1 || !d2) return false
@@ -104,10 +150,69 @@ function nextMonthFn() {
   currentMonth.set(new Date(m.getFullYear(), m.getMonth() + 1, 1))
 }
 
+/** Midnight, so a comparison is about the DAY rather than the time of day. */
+function atMidnight(d) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
 function selectDate(date) {
   if (isDisabled(date)) return
-  selectedDate.set(date)
-  emit('change', date)
+
+  if (mode !== 'range') {
+    selectedDate.set(date)
+    emit('change', date)
+    return
+  }
+
+  const day = atMidnight(date)
+  const from = rangeStart()
+  const to = rangeEnd()
+
+  // A complete range, or none at all, starts a new one. Otherwise this click
+  // closes the open one.
+  if (!from || to) {
+    rangeStart.set(day)
+    rangeEnd.set(null)
+    hoverDate.set(null)
+    emit('change', { start: day, end: null })
+    return
+  }
+
+  // Clicking before the start reads as "I meant to begin here", which is what
+  // every range picker does rather than refusing the click.
+  const ordered = day < from ? { start: day, end: from } : { start: from, end: day }
+  rangeStart.set(ordered.start)
+  rangeEnd.set(ordered.end)
+  hoverDate.set(null)
+  emit('change', ordered)
+}
+
+/** The span to paint: the chosen range, or the one the cursor is proposing. */
+function spanNow() {
+  const from = rangeStart()
+  if (!from) return null
+  const to = rangeEnd() || hoverDate()
+  if (!to) return { start: from, end: from }
+  return to < from ? { start: to, end: from } : { start: from, end: to }
+}
+
+function onDayHover(date) {
+  if (mode !== 'range' || !rangeStart() || rangeEnd()) return
+  hoverDate.set(atMidnight(date))
+}
+
+function isRangeEnd(date) {
+  const day = atMidnight(date)
+  const from = rangeStart()
+  const to = rangeEnd()
+  return (!!from && day.getTime() === from.getTime()) || (!!to && day.getTime() === to.getTime())
+}
+
+function isInSpan(date) {
+  const span = spanNow()
+  if (!span) return false
+  const t = atMidnight(date).getTime()
+  return t >= span.start.getTime() && t <= span.end.getTime()
 }
 
 function goToToday() {
@@ -115,20 +220,44 @@ function goToToday() {
   selectDate(today)
 }
 
+/*
+ * Joined on a space rather than concatenated.
+ *
+ * Every branch here appended straight onto the previous string, so the class
+ * either side of each join was destroyed: a day cell rendered
+ * `transition-colorstext-fgcursor-pointer` and
+ * `hover:bg-surface-hoverbg-accent-solid`. Five classes were lost that way,
+ * including `bg-accent-solid` - so the SELECTED day had no background at all,
+ * in every app shipping this component. Building a list and joining it is the
+ * shape that cannot have the bug (stacksjs/stx#1981).
+ */
 function dayClasses(day) {
-  const base = 'flex items-center justify-center h-10 w-10 rounded-control text-sm transition-colors'
-  const isSelected = isSameDay(day.date, selectedDate())
+  const inRange = mode === 'range' && isInSpan(day.date)
+  const isEndpoint = mode === 'range' && isRangeEnd(day.date)
+  const isSelected = mode === 'range' ? isEndpoint : isSameDay(day.date, selectedDate())
   const isTodayDate = isToday(day.date)
   const disabled = isDisabled(day.date)
-  let cls = base
-  cls += day.isCurrentMonth ? 'text-fg' : 'text-fg-subtle'
-  cls += disabled ? ' opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-surface-hover'
-  if (isSelected) cls += 'bg-accent-solid text-accent-ink hover:bg-accent-solid-hover'
-  if (isTodayDate && highlightToday && !isSelected) cls += 'border-2 border-accent'
-  return cls
+
+  const parts = ['flex items-center justify-center h-10 w-10 text-sm transition-colors']
+
+  // Square middles, rounded ends: a run of rounded cells reads as separate
+  // chips rather than one span.
+  parts.push(inRange && !isEndpoint ? 'rounded-none' : 'rounded-control')
+  parts.push(day.isCurrentMonth ? 'text-fg' : 'text-fg-subtle')
+  parts.push(disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-surface-hover')
+
+  if (isSelected)
+    parts.push('bg-accent-solid text-accent-ink hover:bg-accent-solid-hover')
+  else if (inRange)
+    parts.push('bg-accent-soft text-accent-soft-ink')
+
+  if (isTodayDate && highlightToday && !isSelected)
+    parts.push('border-2 border-accent')
+
+  return parts.join(' ')
 }
 
-defineExpose({ selectedDate, currentMonth, selectDate })
+defineExpose({ selectedDate, currentMonth, selectDate, rangeStart, rangeEnd })
 </script>
 
 <div class="{{ calendarClasses }}">
@@ -169,7 +298,9 @@ defineExpose({ selectedDate, currentMonth, selectDate })
       type="button"
       :class="dayClasses(day)"
       @click="selectDate(day.date)"
+      @mouseenter="onDayHover(day.date)"
       :aria-label="day.date.toLocaleDateString(locale)"
+      :aria-selected="isRangeEnd(day.date)"
       :disabled="isDisabled(day.date)"
       x-text="day.date.getDate()"
     ></button>
