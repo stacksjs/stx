@@ -745,8 +745,9 @@ catch (error) {
 
     function requestAPI(module, method, args) {
       return new Promise(function(resolve, reject) {
-        const id = send('API_REQUEST', { module, method, args });
+        const id = 'js_' + (++sequence);
         pendingAPI.set(id, { resolve, reject });
+        send('API_REQUEST', { module, method, args }, id);
       });
     }
 

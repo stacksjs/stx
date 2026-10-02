@@ -155,9 +155,16 @@ function loadDevice() {
 </template>`
     const sent: Array<Record<string, any>> = []
     let callback: (message: Record<string, any>) => void = () => {}
+    let synchronousReply = false
     const scope: Record<string, any> = {
       __stxNativeBridge: {
-        postMessage: (raw: string) => sent.push(JSON.parse(raw)),
+        postMessage: (raw: string) => {
+          const message = JSON.parse(raw)
+          sent.push(message)
+          if (synchronousReply && message.type === 'API_REQUEST') {
+            callback({ type: 'API_RESPONSE', correlationId: message.id, payload: { data: { model: 'Instant reply' } } })
+          }
+        },
         onMessage: (receiver: typeof callback) => { callback = receiver },
       },
     }
@@ -180,5 +187,13 @@ function loadDevice() {
     await Promise.resolve()
     await Promise.resolve()
     expect(rootText()?.[2]).toBe('Device iPhone Simulator')
+
+    // JavaScriptCore can call native synchronously. Its reply may come back
+    // before postMessage returns, so the promise must already be registered.
+    synchronousReply = true
+    callback({ type: 'EVENT', payload: { handlerName: 'loadDevice', nativeEvent: {} } })
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(rootText()?.[2]).toBe('Device Instant reply')
   })
 })
