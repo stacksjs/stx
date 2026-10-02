@@ -42,6 +42,10 @@ interface ProjectConfig {
   bundleId: string
   androidPackage: string
   entry: string
+  /** Named .stx screens compiled into one native bundle. */
+  screens?: Record<string, string>
+  /** First screen when no route is supplied by the native host. */
+  initialScreen?: string
   ios?: {
     deploymentTarget: string
     teamId?: string
@@ -324,21 +328,23 @@ else {
     const inputFile = flags.input || positionals[0]
     const outputFile = flags.output || flags.o
     const format = flags.format || 'ir'
+    const routes = this.configuredScreens()
 
-    if (!inputFile) {
+    if (!inputFile && !routes) {
       console.error('Please specify an input file: stx-native compile <file.stx>')
       process.exit(1)
     }
+    if (inputFile && routes)
+      throw new Error('Screen routes are configured in stx-native.config.json; compile without an input file')
 
     if (format !== 'ir' && format !== 'bundle') {
       throw new Error(`Unknown compile format: ${format}. Expected ir or bundle.`)
     }
 
-    const content = readFileSync(inputFile, 'utf-8')
-    const document = parseSTX(content, inputFile)
+    const document = routes ? null : parseSTX(readFileSync(inputFile!, 'utf-8'), inputFile!)
     const result = format === 'bundle'
-      ? this.generateBundle(document)
-      : JSON.stringify(document, null, 2)
+      ? routes ? this.generateRouteBundle(routes) : this.generateBundle(document!)
+      : JSON.stringify(routes ?? document, null, 2)
 
     if (outputFile) {
       writeFileSync(outputFile, result)
@@ -654,9 +660,10 @@ catch (error) {
   // ========================================================================
 
   private async compileApp(): Promise<void> {
+    const routes = this.configuredScreens()
     const entryPath = join(this.config.projectRoot, this.projectConfig?.entry || this.config.entryFile)
 
-    if (!existsSync(entryPath)) {
+    if (!routes && !existsSync(entryPath)) {
       throw new Error(`Entry file not found: ${entryPath}`)
     }
 
@@ -665,23 +672,52 @@ catch (error) {
     mkdirSync(outputDir, { recursive: true })
 
     // Compile entry file
-    const content = readFileSync(entryPath, 'utf-8')
-    const document = parseSTX(content, entryPath)
+    const document = routes ? null : parseSTX(readFileSync(entryPath, 'utf-8'), entryPath)
 
     // Write IR
     writeFileSync(
       join(outputDir, 'ir.json'),
-      JSON.stringify(document, null, 2)
+      JSON.stringify(routes ?? document, null, 2)
     )
 
     // Generate bundle (combines IR + runtime)
-    const bundle = this.generateBundle(document)
+    const bundle = routes ? this.generateRouteBundle(routes) : this.generateBundle(document!)
     writeFileSync(join(outputDir, 'bundle.js'), bundle)
 
     console.log('  ✅ Compiled successfully')
   }
 
-  private generateBundle(document: STXDocument): string {
+  private configuredScreens(): { initialScreen: string, screens: Record<string, STXDocument> } | null {
+    const configured = this.projectConfig?.screens
+    if (!configured) return null
+    const entries = Object.entries(configured)
+    if (entries.length === 0) throw new Error('screens must name at least one .stx file')
+    const screens: Record<string, STXDocument> = {}
+    for (const [name, file] of entries) {
+      if (!/^[A-Za-z][\w-]*$/.test(name)) throw new Error(`Invalid native screen name: ${name}`)
+      if (typeof file !== 'string' || !file.endsWith('.stx')) throw new Error(`Screen ${name} must name a .stx file`)
+      const source = resolve(this.config.projectRoot, file)
+      screens[name] = parseSTX(readFileSync(source, 'utf-8'), source)
+    }
+    const initialScreen = this.projectConfig?.initialScreen || entries[0][0]
+    if (!screens[initialScreen]) throw new Error(`Initial screen ${initialScreen} is not in screens`)
+    return { initialScreen, screens }
+  }
+
+  private generateRouteBundle(routes: { initialScreen: string, screens: Record<string, STXDocument> }): string {
+    const names = Object.keys(routes.screens)
+    const header = `
+(function() {
+  const names = ${JSON.stringify(names)};
+  const name = globalThis.__stxNativeRoute || ${JSON.stringify(routes.initialScreen)};
+  if (!names.includes(name)) throw new Error('Unknown native screen: ' + name);
+  globalThis.__stxNativeRoute = name;
+})();
+`
+    return header + names.map(name => this.generateBundle(routes.screens[name], name, names)).join('\n')
+  }
+
+  private generateBundle(document: STXDocument, routeName?: string, routeNames?: string[]): string {
     // This is the small JavaScriptCore runtime for a native screen. The
     // compiled IR is data, while expressions and handlers execute in the same
     // lexical scope as the screen's script. A handler triggers a fresh tree so
@@ -692,6 +728,10 @@ catch (error) {
 
 (function() {
   'use strict';
+
+  ${routeName ? `if (globalThis.__stxNativeRoute !== ${JSON.stringify(routeName)}) return;` : ''}
+  const __STX_ROUTE_NAME__ = ${JSON.stringify(routeName ?? 'main')};
+  const __STX_ROUTE_NAMES__ = ${JSON.stringify(routeNames ?? ['main'])};
 
   // STX Document IR
   const __STX_DOCUMENT__ = ${JSON.stringify(document)};
@@ -749,6 +789,22 @@ catch (error) {
     }
 
     globalThis.craft = globalThis.craft || {};
+    globalThis.craft.route = {
+      name: __STX_ROUTE_NAME__,
+      params: globalThis.__stxNativeParams || {}
+    };
+    function navigate(type, screen, params) {
+      if (!__STX_ROUTE_NAMES__.includes(screen)) throw new Error('Unknown native screen: ' + screen);
+      if (params !== undefined && (params === null || typeof params !== 'object' || Array.isArray(params))) {
+        throw new Error('Navigation params must be an object');
+      }
+      return send(type, { screen, params: params || {} });
+    }
+    globalThis.craft.navigation = {
+      push: function(screen, params) { return navigate('NAVIGATE', screen, params); },
+      replace: function(screen, params) { return navigate('NAVIGATE_REPLACE', screen, params); },
+      back: function() { return send('NAVIGATE_BACK', {}); }
+    };
     globalThis.craft.device = globalThis.craft.device || {};
     globalThis.craft.device.getInfo = function() {
       return requestAPI('Device', 'getInfo', []);

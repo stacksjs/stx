@@ -247,4 +247,66 @@ let ready = globalThis.craft.device.getInfo()
     expect(await scope.craft.haptic('heavy')).toBe(true)
     expect(sent.at(-1)?.payload).toEqual({ module: 'Haptics', method: 'impact', args: ['heavy'] })
   })
+
+  it('compiles named screens and keeps each route runtime independent', async () => {
+    const root = await project()
+    await Bun.write(path.join(root, 'stx-native.config.json'), JSON.stringify({
+      initialScreen: 'home',
+      screens: { home: 'Home.stx', details: 'Details.stx' },
+    }))
+    await Bun.write(path.join(root, 'Home.stx'), `<script>
+let count = 0
+function increment() { count++ }
+function openDetails() { globalThis.craft.navigation.push('details', { id: 7 }) }
+</script>
+<template><View><Text>Count {count}</Text><Button onPress={increment}>Increment</Button><Button onPress={openDetails}>Details</Button></View></template>`)
+    await Bun.write(path.join(root, 'Details.stx'), `<script>
+let id = globalThis.craft.route.params.id
+function replaceHome() { globalThis.craft.navigation.replace('home', { from: id }) }
+function goBack() { globalThis.craft.navigation.back() }
+</script>
+<template><View><Text>Item {id}</Text><Button onPress={replaceHome}>Replace</Button><Button onPress={goBack}>Back</Button></View></template>`)
+    const output = path.join(root, 'routes.js')
+    const compiled = await runCli(['compile', '--format', 'bundle', '--output', output], root)
+    expect(compiled.code).toBe(0)
+    const bundle = await Bun.file(output).text()
+    expect(() => new Bun.Transpiler({ loader: 'js' }).transformSync(bundle)).not.toThrow()
+
+    function start(name?: string, params?: Record<string, unknown>) {
+      const sent: Array<Record<string, any>> = []
+      let callback: (message: Record<string, any>) => void = () => {}
+      const scope: Record<string, any> = {
+        __stxNativeRoute: name,
+        __stxNativeParams: params,
+        __stxNativeBridge: {
+          postMessage: (raw: string) => { sent.push(JSON.parse(raw)) },
+          onMessage: (receiver: typeof callback) => { callback = receiver },
+        },
+      }
+      new Function('globalThis', bundle)(scope)
+      return { scope, sent, event: (handlerName: string) => callback({ type: 'EVENT', payload: { handlerName, nativeEvent: {} } }) }
+    }
+
+    const home = start()
+    expect(home.scope.craft.route).toEqual({ name: 'home', params: {} })
+    expect(home.sent[0].payload.document.children[0].children.join('')).toBe('Count 0')
+    home.event('increment')
+    expect(home.sent.at(-1)?.payload.document.children[0].children.join('')).toBe('Count 1')
+    home.event('openDetails')
+    expect(home.sent.find(message => message.type === 'NAVIGATE')?.payload).toEqual({ screen: 'details', params: { id: 7 } })
+
+    const details = start('details', { id: 7 })
+    expect(details.scope.craft.route).toEqual({ name: 'details', params: { id: 7 } })
+    expect(details.sent[0].payload.document.children[0].children.join('')).toBe('Item 7')
+    details.event('replaceHome')
+    details.event('goBack')
+    expect(details.sent.find(message => message.type === 'NAVIGATE_REPLACE')?.payload).toEqual({ screen: 'home', params: { from: 7 } })
+    expect(details.sent.some(message => message.type === 'NAVIGATE_BACK')).toBe(true)
+    expect(() => details.scope.craft.navigation.push('missing')).toThrow('Unknown native screen')
+
+    // Native back shows the original controller and JSContext again; the
+    // compiled home closure has not been executed a second time.
+    home.event('increment')
+    expect(home.sent.at(-1)?.payload.document.children[0].children.join('')).toBe('Count 2')
+  })
 })
