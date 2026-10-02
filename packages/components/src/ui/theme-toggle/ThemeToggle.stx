@@ -1,0 +1,155 @@
+<script server>
+/*
+ * The control four of six apps hand-rolled (stacksjs/stx#1981).
+ *
+ * `<Sidebar>` already has `followSystemAppearance` and a `theme` prop, so the
+ * library had a theme concept and no standalone control to drive it. Every
+ * hand-rolled version is the same three states, the same persistence, and the
+ * same pre-paint flash to avoid.
+ *
+ * That last part is why it belongs here, and it is also the part this component
+ * does NOT reimplement: `useColorMode()` reads the options the pre-paint boot
+ * script published on `window.__STX_COLOR_MODE__` (stacksjs/stx#1794), so the
+ * class already on <html> before first paint and the storage key this reads are
+ * the same ones. A toggle that picked its own key would undo the theme on
+ * hydration - which is the flash, arriving later instead of sooner.
+ */
+export const variant = $props.variant === 'button' ? 'button' : 'group'
+export const className = $props.className || ''
+export const lightLabel = $props.lightLabel || 'Light'
+export const darkLabel = $props.darkLabel || 'Dark'
+export const systemLabel = $props.systemLabel || 'System'
+/** Labels are read by assistive tech in `button` variant, where only an icon shows. */
+export const showLabels = $bool($props.showLabels, variant === 'group')
+
+export const groupClasses = `inline-flex items-center gap-1 p-1 bg-surface-sunken rounded-control ${className}`.trim()
+export const buttonClasses = `inline-flex items-center justify-center gap-2 h-9 w-9 text-fg-soft rounded-control hover:bg-surface-hover hover:text-fg-strong focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-panel transition-colors ${className}`.trim()
+export const optionClasses = 'inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-sm text-fg-soft rounded-control hover:text-fg-strong focus:outline-none focus:ring-2 focus:ring-accent transition-colors'
+export const optionActiveClasses = 'inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-sm font-medium text-fg bg-panel shadow-sm rounded-control focus:outline-none focus:ring-2 focus:ring-accent transition-colors'
+</script>
+
+<script client>
+const emit = defineEmits()
+const variant = {{ variant }}
+const labels = { light: {{ lightLabel }}, dark: {{ darkLabel }}, system: {{ systemLabel }} }
+
+/*
+ * `useColorMode()` owns the class on <html>, the storage key and the system
+ * media query. This component owns none of that - it is a control, and the
+ * preference below is a mirror so the template can react to it.
+ */
+const colorMode = useColorMode()
+const preference = state(colorMode.preference)
+const resolved = state(colorMode.mode)
+
+let unsubscribe = null
+
+onMount(() => {
+  // Another tab, another toggle, or the OS changing under an `auto` preference.
+  // Without this the control shows a stale answer while the page is correct.
+  unsubscribe = colorMode.subscribe((mode, pref) => {
+    resolved.set(mode)
+    preference.set(pref)
+  })
+  // The boot script may have resolved a preference after this scope captured
+  // its initial value, so take it again on mount.
+  preference.set(colorMode.preference)
+  resolved.set(colorMode.mode)
+})
+
+onDestroy(() => {
+  if (unsubscribe) unsubscribe()
+})
+
+function choose(next) {
+  colorMode.set(next)
+  preference.set(next === 'system' ? 'auto' : next)
+  resolved.set(colorMode.mode)
+  emit('change', { preference: preference(), mode: resolved() })
+}
+
+/*
+ * The cycle for the single-button variant: light to dark to system and round.
+ * `auto` is the stored spelling and `system` the one people say, and
+ * `useColorMode().set` accepts either.
+ */
+function cycle() {
+  const order = ['light', 'dark', 'auto']
+  const at = order.indexOf(preference())
+  choose(order[(at + 1) % order.length])
+}
+
+function isActive(option) {
+  const pref = preference()
+  return option === 'system' ? pref === 'auto' : pref === option
+}
+
+function optionButtonClasses(option) {
+  return isActive(option) ? {{ optionActiveClasses }} : {{ optionClasses }}
+}
+
+/** What the single button says it will do, for a screen reader. */
+const triggerLabel = derived(() => {
+  const pref = preference()
+  const name = pref === 'auto' ? labels.system : labels[pref]
+  return 'Theme: ' + name
+})
+
+defineExpose({ preference, resolved, choose, cycle, isActive, triggerLabel })
+</script>
+
+@if(variant === 'group')
+  <div class="{{ groupClasses }}" role="group" aria-label="Colour theme">
+    <button
+      type="button"
+      :class="optionButtonClasses('light')"
+      :aria-pressed="isActive('light') ? 'true' : 'false'"
+      @click="choose('light')"
+    >
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+      </svg>
+      @if(showLabels)<span>{{ lightLabel }}</span>@endif
+    </button>
+    <button
+      type="button"
+      :class="optionButtonClasses('dark')"
+      :aria-pressed="isActive('dark') ? 'true' : 'false'"
+      @click="choose('dark')"
+    >
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+      </svg>
+      @if(showLabels)<span>{{ darkLabel }}</span>@endif
+    </button>
+    <button
+      type="button"
+      :class="optionButtonClasses('system')"
+      :aria-pressed="isActive('system') ? 'true' : 'false'"
+      @click="choose('auto')"
+    >
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+      @if(showLabels)<span>{{ systemLabel }}</span>@endif
+    </button>
+  </div>
+@else
+  <button
+    type="button"
+    class="{{ buttonClasses }}"
+    :aria-label="triggerLabel()"
+    :title="triggerLabel()"
+    @click="cycle()"
+  >
+    <svg :show="isActive('light')" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+    <svg :show="isActive('dark')" x-cloak class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+    </svg>
+    <svg :show="isActive('system')" x-cloak class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    </svg>
+  </button>
+@endif

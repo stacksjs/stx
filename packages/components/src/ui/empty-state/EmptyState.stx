@@ -1,0 +1,57 @@
+<script server>
+/*
+ * 29 hand-built empty states across six apps (stacksjs/stx#1981): icon,
+ * heading, one line of explanation, optional action. `Card` and `Button` both
+ * exist; the composition did not.
+ *
+ * Low complexity, high repetition - which is exactly why it ends up subtly
+ * inconsistent across a suite: everyone writes their own, and the padding, the
+ * heading level and the gap all drift.
+ */
+export const title = $props.title || ''
+export const description = $props.description || ''
+/*
+ * Raw SVG markup, not an icon name. Naming would mean this component owning a
+ * registry, and the library's icons are 200k Iconify entries across generated
+ * packages - so `<EmptyState>` takes the markup or the `icon` slot and stays
+ * out of that decision.
+ */
+export const icon = $props.icon || ''
+export const as = $props.as || 'div'
+/** `panel` draws the bordered card; `bare` is for something already in one. */
+export const variant = $props.variant === 'bare' ? 'bare' : 'panel'
+export const align = $props.align === 'left' ? 'left' : 'center'
+export const className = $props.className || ''
+
+const panel = variant === 'panel' ? 'bg-panel rounded-panel ring-1 ring-line' : ''
+const alignment = align === 'left' ? 'items-start text-left' : 'items-center text-center'
+export const rootClasses = `flex flex-col ${alignment} gap-3 px-6 py-12 ${panel} ${className}`.trim()
+export const iconWrapClasses = 'flex items-center justify-center h-12 w-12 rounded-full bg-surface-sunken text-fg-soft'
+export const titleClasses = 'text-base font-semibold text-fg'
+export const descriptionClasses = 'max-w-sm text-sm text-fg-muted'
+export const actionClasses = 'mt-2 flex flex-wrap items-center gap-2'
+export const hasIcon = icon !== ''
+</script>
+
+<component :is="{{ as }}" class="{{ rootClasses }}">
+  {{-- Only when there is one: an empty state without an icon would otherwise
+       carry a floating grey disc. A named slot is not offered because stx
+       cannot tell an empty slot from an absent one at render time, so the
+       circle would render either way - the prop is the honest shape, and a
+       caller wanting a whole <Icon /> composes it with variant="bare". --}}
+  @if(hasIcon)
+    <div class="{{ iconWrapClasses }}">{!! icon !!}</div>
+  @endif
+
+  @if(title)
+    <h3 class="{{ titleClasses }}">{{ title }}</h3>
+  @endif
+
+  @if(description)
+    <p class="{{ descriptionClasses }}">{{ description }}</p>
+  @endif
+
+  <div class="{{ actionClasses }}">
+    <slot />
+  </div>
+</component>
