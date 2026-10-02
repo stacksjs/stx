@@ -6546,6 +6546,89 @@ catch (e) {} }
   // Both return Promises and render into a temporary modal overlay.
 
   var _dialogId = 0;
+
+  // Shared across every open dialog, because four of the defects in #1998 were
+  // each dialog acting as if it were the only one.
+  var _dialogStack = [];
+  // What WE set inert, so restoring never clears an app's own inert.
+  var _dialogInerted = [];
+  // Saved once, when the first dialog opens.
+  var _dialogScrollLock = null;
+
+  /*
+   * The page behind an aria-modal dialog does not scroll and is not reachable
+   * by a virtual cursor (stacksjs/stx#1998, items 1 and 2).
+   *
+   * The backdrop is position:fixed;inset:0, so it stayed put while the content
+   * behind it scrolled away underneath - the dialog claimed to be modal and the
+   * page moved anyway. And the Tab trap, which #1875 added, only covers the
+   * keyboard: aria-modal support for the virtual cursor is uneven, so a screen
+   * reader could still browse the page behind the dialog.
+   *
+   * inert rather than aria-hidden on the siblings: aria-hidden on an element
+   * that contains focus is itself a violation, and inert removes the subtree
+   * from the tab order and the accessibility tree together. Everything except
+   * the TOPMOST dialog goes inert, which also settles the two traps competing
+   * for Tab while both were open - a backgrounded dialog's buttons stop being
+   * focusable at all.
+   */
+  function _dialogSyncModality() {
+    var top = _dialogStack.length ? _dialogStack[_dialogStack.length - 1] : null;
+
+    for (var i = 0; i < _dialogInerted.length; i++) {
+      try { _dialogInerted[i].inert = false; }
+      catch (_e) { /* element may be gone */ }
+    }
+    _dialogInerted = [];
+
+    if (!top) {
+      if (_dialogScrollLock) {
+        document.body.style.overflow = _dialogScrollLock.body;
+        document.documentElement.style.overflow = _dialogScrollLock.html;
+        document.body.style.paddingRight = _dialogScrollLock.pad;
+        _dialogScrollLock = null;
+      }
+      return;
+    }
+
+    if (!_dialogScrollLock) {
+      _dialogScrollLock = {
+        body: document.body.style.overflow,
+        html: document.documentElement.style.overflow,
+        pad: document.body.style.paddingRight
+      };
+      // Compensate for the scrollbar the lock removes, or the whole page shifts
+      // sideways the moment a dialog opens.
+      var gap = window.innerWidth - document.documentElement.clientWidth;
+      if (gap > 0) {
+        var existing = Number.parseFloat(window.getComputedStyle(document.body).paddingRight) || 0;
+        document.body.style.paddingRight = (existing + gap) + 'px';
+      }
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    }
+
+    var kids = document.body.children;
+    for (var k = 0; k < kids.length; k++) {
+      var kid = kids[k];
+      if (kid === top || kid.inert) continue;
+      try {
+        kid.inert = true;
+        _dialogInerted.push(kid);
+      }
+      catch (_e) { /* inert unsupported; the Tab trap still holds */ }
+    }
+  }
+
+  /** Dialogs animate unless the reader asked them not to (#1998 item 5). */
+  function _dialogReducedMotion() {
+    try {
+      return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    }
+    catch (_e) {
+      return false;
+    }
+  }
   var _dialogIcons = {
     info: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
     warning: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
@@ -6573,14 +6656,23 @@ catch (e) {} }
     var icon = _dialogIcons[type] || _dialogIcons.info;
 
     return new Promise(function(resolve) {
+      // Inline transitions cannot be reached by a stylesheet media query, so the
+      // preference is read here instead (#1998 item 5). One matchMedia probe
+      // rather than usePreferredReducedMotion(): that returns a signal with a
+      // change listener, and an imperative dialog that reads the value once at
+      // open time would leak one listener per call.
+      var still = _dialogReducedMotion();
+      var fade = still ? '' : 'transition:opacity 0.2s ease;';
+      var scale = still ? '' : 'transition:transform 0.2s ease;';
+
       var backdrop = document.createElement('div');
       backdrop.id = id;
-      backdrop.style.cssText = 'position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);backdrop-filter:blur(2px);opacity:0;transition:opacity 0.2s ease;font-family:system-ui,-apple-system,sans-serif';
+      backdrop.style.cssText = 'position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);backdrop-filter:blur(2px);opacity:' + (still ? '1' : '0') + ';' + fade + 'font-family:system-ui,-apple-system,sans-serif';
       backdrop.setAttribute('role', 'alertdialog');
       backdrop.setAttribute('aria-modal', 'true');
 
       var panel = document.createElement('div');
-      panel.style.cssText = 'max-width:24rem;width:calc(100% - 2rem);border-radius:0.75rem;padding:1.5rem;background:' + bg + ';color:' + textColor + ';box-shadow:0 20px 60px rgba(0,0,0,0.3);transform:scale(0.95);transition:transform 0.2s ease;text-align:center';
+      panel.style.cssText = 'max-width:24rem;width:calc(100% - 2rem);border-radius:0.75rem;padding:1.5rem;background:' + bg + ';color:' + textColor + ';box-shadow:0 20px 60px rgba(0,0,0,0.3);transform:scale(' + (still ? '1' : '0.95') + ');' + scale + 'text-align:center';
 
       var iconDiv = document.createElement('div');
       iconDiv.style.cssText = 'display:flex;justify-content:center;margin-bottom:1rem';
@@ -6621,9 +6713,25 @@ catch (e) {} }
         if (closed) return;
         closed = true;
         document.removeEventListener('keydown', keyHandler, true);
+
+        // Out of the stack BEFORE resolving, so a caller that opens another
+        // dialog the moment this one answers does not land under a backdrop
+        // that is still fading.
+        var at = _dialogStack.indexOf(backdrop);
+        if (at !== -1) _dialogStack.splice(at, 1);
+
+        // The fade is 200ms and resolve() is immediate, so for those 200ms a
+        // full-viewport element at z-index 999999 was still hit-testing at the
+        // centre of the screen - after the caller's await had already returned
+        // (#1998 item 6). Fading out is right; swallowing clicks is not.
+        backdrop.style.pointerEvents = 'none';
         backdrop.style.opacity = '0';
-        panel.style.transform = 'scale(0.95)';
-        setTimeout(function() { backdrop.remove(); }, 200);
+        if (!still) panel.style.transform = 'scale(0.95)';
+        setTimeout(function() { backdrop.remove(); }, still ? 0 : 200);
+
+        // Unlocks the page and clears inert when this was the last dialog, or
+        // hands modality back to the one underneath when it was not.
+        _dialogSyncModality();
         if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
           try { previouslyFocused.focus(); }
           catch (_e) { /* element may be gone; not worth failing the dialog over */ }
@@ -6631,8 +6739,11 @@ catch (e) {} }
         resolve(result);
       }
 
+      // Declared out here rather than inside the branch: the focus decision
+      // below needs to know whether a Cancel button exists at all.
+      var cancelBtn = null;
       if (isConfirm) {
-        var cancelBtn = document.createElement('button');
+        cancelBtn = document.createElement('button');
         cancelBtn.textContent = cancelText;
         cancelBtn.style.cssText = 'padding:0.5rem 1.25rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;cursor:pointer;border:1px solid ' + (isDark ? '#374151' : '#d1d5db') + ';background:transparent;color:' + textColor + ';transition:background 0.15s';
         cancelBtn.onmouseover = function() { this.style.background = isDark ? '#374151' : '#f3f4f6'; };
@@ -6653,11 +6764,15 @@ catch (e) {} }
       panel.appendChild(btnRow);
       backdrop.appendChild(panel);
       document.body.appendChild(backdrop);
+      _dialogStack.push(backdrop);
+      _dialogSyncModality();
 
       // Animate in
-      void backdrop.offsetHeight;
-      backdrop.style.opacity = '1';
-      panel.style.transform = 'scale(1)';
+      if (!still) {
+        void backdrop.offsetHeight;
+        backdrop.style.opacity = '1';
+        panel.style.transform = 'scale(1)';
+      }
 
       // Escape, plus a real focus trap.
       //
@@ -6670,6 +6785,11 @@ catch (e) {} }
       // walked straight out into the page behind it. Capture phase so the trap
       // wins over anything the page has bound.
       var keyHandler = function(e) {
+        // Every dialog binds its own capture-phase handler on document and none
+        // of them checked whether they were on top, so ONE Escape resolved every
+        // open dialog at once (#1998 item 4). The backgrounded dialogs are inert
+        // too, which is what stops their traps competing for Tab.
+        if (_dialogStack.length && _dialogStack[_dialogStack.length - 1] !== backdrop) return;
         if (e.key === 'Escape') {
           e.preventDefault();
           cleanup(isConfirm ? false : undefined);
@@ -6699,8 +6819,24 @@ catch (e) {} }
       };
       document.addEventListener('keydown', keyHandler, true);
 
-      // Focus the primary button
-      okBtn.focus();
+      /*
+       * Initial focus, which was an unconditional okBtn.focus() (#1998 item 3).
+       *
+       * type: 'error' already paints that button red, so the API knows the
+       * action is destructive - and still handed it the keyboard, where a stray
+       * Enter or Space confirmed the delete. An error-type confirm now defaults
+       * to Cancel, and defaultFocus overrides either way.
+       *
+       * An alert has only one button, so it keeps it: there is nothing
+       * destructive to land on and focus has to go somewhere inside the trap.
+       */
+      var focusTarget = okBtn;
+      if (isConfirm && cancelBtn) {
+        var want = opts.defaultFocus;
+        if (want === 'cancel' || (!want && type === 'error')) focusTarget = cancelBtn;
+        else if (want === 'confirm') focusTarget = okBtn;
+      }
+      focusTarget.focus();
     });
   }
 
