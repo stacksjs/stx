@@ -78,8 +78,17 @@ class STXCLI {
 
   async run(args: string[]): Promise<void> {
     const command = args[0]
-    const subCommand = args[1]
-    const flags = this.parseFlags(args.slice(2))
+    /*
+     * From the argument after the command, not two after it.
+     *
+     * `args[1]` used to be read as a subcommand and parsing began at `args[2]`,
+     * which works for `run ios` and `build android` and silently eats the only
+     * argument of every command that takes a positional instead. The documented
+     * `compile <file>` could therefore never receive its file, and answered
+     * "Please specify an input file" for a command that specified one. Nothing
+     * had executed this file, so nothing had noticed (stacksjs/stx#1985).
+     */
+    const { flags, positionals } = this.parseArgs(args.slice(1))
 
     // Apply flags
     if (flags.debug !== undefined) this.config.debug = flags.debug
@@ -91,10 +100,10 @@ class STXCLI {
 
     switch (command) {
       case 'run':
-        await this.runCommand(subCommand as 'ios' | 'android', flags)
+        await this.runCommand(positionals[0] as 'ios' | 'android', flags)
         break
       case 'build':
-        await this.buildCommand(subCommand as 'ios' | 'android', flags)
+        await this.buildCommand(positionals[0] as 'ios' | 'android', flags)
         break
       case 'init':
         await this.initCommand(flags)
@@ -103,7 +112,7 @@ class STXCLI {
         await this.devCommand(flags)
         break
       case 'compile':
-        await this.compileCommand(flags)
+        await this.compileCommand(flags, positionals)
         break
       case 'help':
       case '--help':
@@ -311,8 +320,8 @@ else {
     console.log('\n   Watching for file changes...\n')
   }
 
-  private async compileCommand(flags: Record<string, string>): Promise<void> {
-    const inputFile = flags.input || flags._[0]
+  private async compileCommand(flags: Record<string, string>, positionals: string[]): Promise<void> {
+    const inputFile = flags.input || positionals[0]
     const outputFile = flags.output || flags.o
 
     if (!inputFile) {
@@ -691,8 +700,16 @@ catch (error) {
     `).join('\n')}
 
     // Render initial UI
+    //
+    // Both the backticks and the \${ are escaped. The backticks because this
+    // sits in the generator's own template text, where an unescaped one closes
+    // the literal and the rest of this function is parsed as code, which is
+    // why the CLI had never once run (stacksjs/stx#1985). The \${ because the
+    // id has to be the moment the bundle initializes, not the moment it was
+    // compiled: interpolating here would bake one timestamp into the bundle
+    // and every run would correlate its first message under the same id.
     bridge.postMessage(JSON.stringify({
-      id: `init_${Date.now()}`,
+      id: \`init_\${Date.now()}\`,
       type: 'RENDER',
       timestamp: Date.now(),
       payload: {
@@ -720,8 +737,18 @@ catch (error) {
     }
   }
 
-  private parseFlags(args: string[]): Record<string, string> {
-    const flags: Record<string, string> = { _: [] as unknown as string }
+  /**
+   * Named flags and positional arguments, kept apart.
+   *
+   * Positionals used to be pushed onto `flags._`, declared as a string and
+   * cast with `as unknown as string` so it would sit in a
+   * `Record<string, string>`. The cast is what let `flags._[0]` compile:
+   * on the declared type that is a character of a string, and the one caller
+   * reading it wanted the first argument (stacksjs/stx#1985).
+   */
+  private parseArgs(args: string[]): { flags: Record<string, string>, positionals: string[] } {
+    const flags: Record<string, string> = {}
+    const positionals: string[] = []
 
     for (let i = 0; i < args.length; i++) {
       const arg = args[i]
@@ -729,16 +756,16 @@ catch (error) {
         const [key, value] = arg.slice(2).split('=')
         flags[key] = value || args[++i] || 'true'
       }
-else if (arg.startsWith('-')) {
+      else if (arg.startsWith('-') && arg.length > 1) {
         const key = arg.slice(1)
         flags[key] = args[++i] || 'true'
       }
-else {
-        (flags._ as unknown as string[]).push(arg)
+      else {
+        positionals.push(arg)
       }
     }
 
-    return flags
+    return { flags, positionals }
   }
 
   // eslint-disable-next-line pickier/no-unused-vars
@@ -790,10 +817,24 @@ Examples:
 // Entry Point
 // ============================================================================
 
-const cli = new STXCLI()
-cli.run(process.argv.slice(2)).catch((error) => {
-  console.error('Error:', error.message)
-  process.exit(1)
-})
+/*
+ * Guarded, because this module both runs the CLI and exports the class
+ * (stacksjs/stx#1985).
+ *
+ * Unguarded, importing it ran the CLI against the importer's own argv, which
+ * for a test runner is an unknown command: the help text printed and
+ * `process.exit(1)` took the runner down with it. So the file could be executed
+ * or exported from, never both, and the export below says which was intended.
+ *
+ * `import.meta.main` is the same guard `benchmarks/src/regression.ts` and
+ * `bun-plugin/src/serve.ts` use. `bun src/cli/index.ts …` is unaffected.
+ */
+if (import.meta.main) {
+  const cli = new STXCLI()
+  cli.run(process.argv.slice(2)).catch((error) => {
+    console.error('Error:', error.message)
+    process.exit(1)
+  })
+}
 
 export { STXCLI }
