@@ -162,4 +162,46 @@ const maybe = (null as N | null)
     expect(result.diagnostics.length).toBe(1)
     expect(result.diagnostics[0].expression).toBe('note() && note().ok')
   })
+
+  /*
+   * An `@elseif` condition is only evaluated once every earlier branch has
+   * failed, so it is narrowed by their negation - not by the branch it
+   * follows. Guarding it with the previous condition read a three-way
+   * `variant` switch as `variant === 'bare' && variant === 'centered'` and
+   * reported "types have no overlap" on a correct layout.
+   */
+  it('narrows an @elseif condition by the branches it follows having failed', async () => {
+    const file = join(dir, 'elseif-narrowing.stx')
+    await Bun.write(file, `<script server>
+declare const variant: 'default' | 'centered' | 'bare'
+</script>
+@if (variant === 'bare')
+  <span>bare</span>
+@elseif (variant === 'centered')
+  <span>centered</span>
+@elseif (variant === 'default')
+  <span>default</span>
+@endif
+`)
+    const result = await typecheckStxFiles([file])
+
+    expect(result.diagnostics).toEqual([])
+  })
+
+  it('still reports an @elseif condition the earlier branches made impossible', async () => {
+    const file = join(dir, 'elseif-impossible.stx')
+    await Bun.write(file, `<script server>
+declare const variant: 'centered' | 'bare'
+</script>
+@if (variant === 'bare')
+  <span>bare</span>
+@elseif (variant === 'bare')
+  <span>never</span>
+@endif
+`)
+    const result = await typecheckStxFiles([file])
+
+    expect(result.diagnostics.length).toBe(1)
+    expect(result.diagnostics[0].expression).toBe("variant === 'bare'")
+  })
 })

@@ -1306,10 +1306,28 @@ export function guardChainAt(source: string, offset: number): string[] {
   let match: RegExpExecArray | null
 
   while ((match = directive.exec(source)) !== null) {
-    if (match.index >= offset)
+    if (match.index > offset)
       break
 
     const name = match[1]!
+
+    /*
+     * A condition is checked at its own directive's offset. For `@if` that
+     * means "not narrowed by itself". An `@elseif` condition, though, is only
+     * evaluated after the branch it follows has failed, so that branch is
+     * ruled out before stopping - otherwise the condition is guarded by the
+     * previous one, and a three-way switch reads as `a === 'x' && a === 'y'`.
+     */
+    if (match.index === offset) {
+      if (name === 'elseif') {
+        const open = stack[stack.length - 1]
+        if (open?.current)
+          open.seen.push(open.current)
+        if (open)
+          open.current = null
+      }
+      break
+    }
 
     if (name === 'endif' || name === 'endunless') {
       stack.pop()
