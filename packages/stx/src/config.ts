@@ -727,13 +727,54 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
 
     warnMissingDirs(loaded, effectiveCwd)
 
-    // Load plugins from config
-    if (loaded.plugins && loaded.plugins.length > 0) {
+    /*
+     * An installed component package answers to a bare tag without a config
+     * line (stacksjs/stx#2011).
+     *
+     * `@stacksjs/components` already ships `./stx-plugin`, which registers
+     * `src/ui` and `src/components` as component roots, and it worked - for
+     * anyone who knew to write `plugins: ['@stacksjs/components/stx-plugin']`.
+     * Nothing said so. The guide shows `<Dialog :open="…">` with no import and
+     * no plugin, and a reader following it got an HTML comment where the modal
+     * should be, because resolution searches project directories only.
+     *
+     * `Badge`, `Card`, `Avatar`, `Image` and `Video` appeared to work, which
+     * made it worse: they are also in `@stacksjs/defaults`, so the ones a
+     * reader tries first resolve and the rest do not.
+     *
+     * So the packages in `componentPackages` are appended to whatever the
+     * config lists, each resolved from the PROJECT rather than from stx, and
+     * only if it is actually installed. They land last in
+     * `_pluginComponentDirs`, which is itself searched after every project
+     * directory, so a component the app wrote still wins and an explicitly
+     * listed plugin keeps its options.
+     */
+    const autoPlugins: string[] = []
+    const listed = new Set((loaded.plugins ?? []).map(e => (typeof e === 'string' ? e : e[0])))
+    for (const pkg of loaded.componentPackages ?? ['@stacksjs/components']) {
+      const entry = `${pkg}/stx-plugin`
+      if (listed.has(entry) || listed.has(pkg))
+        continue
+      try {
+        // Resolved against the project, not against stx: whether the app has
+        // the package is the whole question, and stx's own node_modules would
+        // answer it wrongly in a monorepo.
+        require.resolve(entry, { paths: [effectiveCwd] })
+        autoPlugins.push(entry)
+      }
+      catch {
+        // Not installed. Nothing to register, and nothing worth saying.
+      }
+    }
+
+    // Load plugins from config, then any component package found above.
+    const effectivePlugins = [...(loaded.plugins ?? []), ...autoPlugins]
+    if (effectivePlugins.length > 0) {
       const { pluginManager } = await import('./plugin-system')
       const pluginComponentDirs: string[] = []
       const pluginPageDirs: Array<{ dir: string, prefix: string }> = []
 
-      for (const pluginEntry of loaded.plugins) {
+      for (const pluginEntry of effectivePlugins) {
         const pluginPath = typeof pluginEntry === 'string' ? pluginEntry : pluginEntry[0]
         const pluginOptions = typeof pluginEntry === 'string' ? {} : (pluginEntry[1] || {})
 
@@ -743,8 +784,11 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
           let pluginDir: string
 
           try {
-            pluginModule = await import(pluginPath)
-            pluginDir = path.dirname(require.resolve(pluginPath))
+            // `paths` so a project's own install wins over stx's, which is what
+            // makes an auto-registered package resolve at all in a monorepo.
+            const entry = require.resolve(pluginPath, { paths: [effectiveCwd] })
+            pluginModule = await import(entry)
+            pluginDir = path.dirname(entry)
           }
           catch {
             const resolvedPath = path.resolve(effectiveCwd, pluginPath)

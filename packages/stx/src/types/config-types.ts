@@ -773,6 +773,17 @@ export interface StxConfig {
   defaultLayout?: string
   /** Plugins to load — npm packages, local paths, or [path, options] tuples */
   plugins?: Array<string | [string, Record<string, any>]>
+
+  /**
+   * Installed packages whose components resolve by bare tag, with no plugin
+   * entry and no import.
+   *
+   * Each is loaded through its own `<pkg>/stx-plugin` export if the project has
+   * it installed, and is searched AFTER every project directory - so a
+   * component the app wrote still wins. Defaults to `['@stacksjs/components']`;
+   * set it to `[]` to opt out entirely (stacksjs/stx#2011).
+   */
+  componentPackages?: string[]
   /** Path to public/static assets directory, defaults to 'public' */
   publicDir?: string
   /** Path to .env file, defaults to '.env' in project root (Bun loads this automatically) */

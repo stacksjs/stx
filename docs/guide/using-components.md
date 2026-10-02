@@ -6,19 +6,36 @@ This page is written for whoever is building the UI, agent or human. The short v
 
 ## Setup
 
-Register the plugin once. Every tag then resolves by name in any `.stx` file — no imports, ever.
+There isn't any. Install the package and every tag resolves by name in any
+`.stx` file — no imports, no plugin entry.
+
+```html
+<!-- Any .stx file. No import line, no config line. -->
+<Button variant="primary" size="lg" @click="save()">Save</Button>
+```
+
+This page used to open with `plugins: ['@stacksjs/components/stx-plugin']` and
+it was load-bearing: resolution searched project directories only, so without
+that line `<Dialog :open="…">` rendered an HTML comment and nothing else.
+`Badge`, `Card`, `Avatar`, `Image` and `Video` worked anyway — they are also in
+`@stacksjs/defaults` — so the components you try first resolved and the rest
+did not (`stacksjs/stx#2011`).
+
+An installed component package is now auto-registered, and searched **after**
+every project directory: a component you wrote by the same name still wins, so
+adding this dependency cannot restyle your app. Two escape hatches, both in the
+stx config:
 
 ```ts
-// stx.config.ts
 export default {
-  plugins: ['@stacksjs/components/stx-plugin'],
+  // Add another package whose components should resolve by bare tag.
+  componentPackages: ['@stacksjs/components', '@acme/ui'],
+  // …or opt out of all of it.
+  // componentPackages: [],
 }
 ```
 
-```html
-<!-- Any .stx file. No import line. -->
-<Button variant="primary" size="lg" @click="save()">Save</Button>
-```
+Listing the plugin by hand still works and is not registered twice.
 
 To check the inventory against what is actually installed:
 
