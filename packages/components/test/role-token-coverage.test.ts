@@ -487,6 +487,69 @@ describe('a hovered neutral surface is a role (#1993)', () => {
     expect(SEMANTIC_TOKENS.page.light).not.toBe(SEMANTIC_TOKENS.panel.light)
   })
 
+  /*
+   * The fourth rung, and the property that made it necessary.
+   *
+   * A table's head is `surface` and its body is `content`, and the body is
+   * BRIGHTER than its header in light mode and DARKER in dark mode - in both,
+   * the header is the surface with more presence. `panel` cannot express it:
+   * `panel` and `surface` share neutral-800 in dark, so a body on `panel`
+   * would be the same colour as its own header.
+   */
+  it('keeps a content area distinct from the chrome above it, in both modes', () => {
+    const head = SEMANTIC_TOKENS.surface
+    const body = SEMANTIC_TOKENS.content
+
+    expect(body.light, 'the body matches its header in light mode').not.toBe(head.light)
+    expect(body.dark, 'the body matches its header in dark mode').not.toBe(head.dark)
+
+    // And it must differ from the panel it may be nested in, which is the
+    // substitution that looks right and collapses in dark mode.
+    for (const other of ['panel', 'field'] as const) {
+      expect(body.dark, `content is indistinguishable from ${other} in dark mode`)
+        .not.toBe(SEMANTIC_TOKENS[other].dark)
+    }
+  })
+
+  /*
+   * `content` DOES share `page`'s dark value, deliberately: a full-bleed table
+   * body sitting flush with the page is a normal arrangement, and the rows are
+   * separated by `divide-line` rather than by the surface behind them. Asserted
+   * so the overlap reads as a decision rather than an oversight - and so that
+   * moving either one has to move this line too.
+   */
+  it('lets a full-bleed body sit flush with the page', () => {
+    expect(SEMANTIC_TOKENS.content.dark).toBe(SEMANTIC_TOKENS.page.dark)
+    // In light mode the paper is still a step brighter than the page.
+    expect(SEMANTIC_TOKENS.content.light).not.toBe(SEMANTIC_TOKENS.page.light)
+  })
+
+  /*
+   * A floating panel is a `panel`, and CommandPalette was the one that was not:
+   * it painted `bg-white dark:bg-neutral-900` while DialogPanel, DropdownItems,
+   * ListboxOptions and ComboboxOptions all used the role.
+   */
+  it('paints every floating panel from the panel role', () => {
+    for (const rel of [
+      'dialog/DialogPanel.stx',
+      'dropdown/DropdownItems.stx',
+      'listbox/ListboxOptions.stx',
+      'combobox/ComboboxOptions.stx',
+      'command-palette/CommandPalette.stx',
+    ]) {
+      const source = code(readFileSync(path.join(UI, rel), 'utf-8'))
+
+      expect(source, rel).toContain('bg-panel')
+      /*
+       * Opaque only. A translucent `dark:bg-neutral-500/50` is a SCRIM - the
+       * backdrop over the page behind a palette or a drawer - and an alpha over
+       * whatever is beneath it is the right way to express that. It is not a
+       * panel surface naming a shade.
+       */
+      expect(source, rel).not.toMatch(/bg-white(?![a-z/-])|dark:bg-neutral-\d{3}(?!\/)/)
+    }
+  })
+
   it('makes the row highlight visible on every neutral it can land on', () => {
     const hover = SEMANTIC_TOKENS['surface-hover']
 

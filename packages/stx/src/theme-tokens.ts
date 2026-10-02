@@ -128,6 +128,34 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
   'page': { light: 'neutral-50', dark: 'neutral-900', description: 'Page background, behind panels' },
 
   /*
+   * The content area under a chrome header - a table or list body - which is
+   * the fourth rung and the one the ladder could not express.
+   *
+   * `<TableBody>` and `<VirtualTable>`'s body both paint `bg-white
+   * dark:bg-neutral-900` beneath a head on `surface`, and neither `panel` nor
+   * `page` can say it. The relation they encode is not "one step down" but
+   * "the extreme end of the ladder in whichever direction the mode runs":
+   *
+   *            light          dark
+   *   head     neutral-50     neutral-800     (surface - the chrome)
+   *   body     white          neutral-900     (content - the paper)
+   *
+   * so the body is BRIGHTER than its header in light mode and DARKER in dark
+   * mode, and in both the header is the surface with more presence. Putting the
+   * body on `panel` would make it neutral-800 in dark - the same value as its
+   * own header, since `surface` and `panel` share that step - which is the
+   * collapse that hid four hovers before they became roles.
+   *
+   * It shares `page`'s dark value, and that is allowed here rather than
+   * overlooked: a full-bleed table body sitting flush with the page is a
+   * normal arrangement, and the rows are separated by `divide-line` rather than
+   * by the surface behind them. The property that has to hold is that the body
+   * differs from its HEADER and from the `panel` it may sit in, which the test
+   * asserts (stacksjs/stx#1993).
+   */
+  'content': { light: 'white', dark: 'neutral-900', description: 'Content area under a chrome header - a table or list body' },
+
+  /*
    * A hovered neutral surface, which was the one state every component had to
    * invent for itself (stacksjs/stx#1993).
    *

@@ -48,6 +48,7 @@ config file and no rebuild:
 | `panel` | `bg-panel` | white | neutral-800 |
 | `field` | `bg-field` | white | neutral-700 |
 | `page` | `bg-page` | neutral-50 | neutral-900 |
+| `content` | `bg-content` | white | neutral-900 |
 | `surface-hover` | `hover:bg-surface-hover` | neutral-100 | neutral-700 |
 | `surface-raised-hover` | `hover:bg-surface-raised-hover` | neutral-200 | neutral-600 |
 | `surface-sunken-hover` | `hover:bg-surface-sunken-hover` | neutral-300 | neutral-600 |
@@ -231,15 +232,43 @@ dark:bg-neutral-900` — this exact pair.
 | Role | Light | Dark |
 |---|---|---|
 | `page` | neutral-50 | neutral-900 |
+| `content` | white | neutral-900 |
 | `panel` | white | neutral-800 |
 | `field` | white | neutral-700 |
 
-Three steps, each one lighter than the last in dark mode, which is the ladder
-the library was already climbing by hand: a page, the cards on it, and the form
-controls inside those.
+A page, the content printed on it, the cards on the page, and the form controls
+inside those — the ladder the library was already climbing by hand.
 
 `surface` / `surface-raised` / `surface-sunken` stay as the generic trio for a
 surface with no particular identity.
+
+#### Why `content` is a rung and not just `panel`
+
+`<TableBody>` and `<VirtualTable>`'s body paint the area beneath a head that
+sits on `surface`, and the relation is not "one step down" — it is "the extreme
+end of the ladder, in whichever direction the mode runs":
+
+| | Light | Dark |
+|---|---|---|
+| head (`surface`) | neutral-50 | neutral-800 |
+| body (`content`) | white | neutral-900 |
+
+The body is *brighter* than its header in light mode and *darker* in dark mode,
+and in both the header is the surface with more presence. Putting the body on
+`panel` would make it neutral-800 in dark — the same value as its own header,
+since `surface` and `panel` share that step. That is the collapse that hid four
+hovers before they became roles.
+
+`content` does share `page`'s dark value, and that is a decision rather than an
+oversight: a full-bleed table body sitting flush with the page is a normal
+arrangement, and the rows are separated by `divide-line` rather than by the
+surface behind them. What has to hold is that the body differs from its header
+and from any `panel` it is nested in, which is what the test asserts.
+
+A floating panel — dialog, dropdown, listbox, combobox, command palette — is a
+`panel`. `<CommandPalette>` was the one that was not, painting
+`bg-white dark:bg-neutral-900` while the other four used the role; it is one
+step lighter in dark mode now and agrees with them.
 
 ### A link
 
