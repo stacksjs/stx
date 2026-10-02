@@ -1,5 +1,36 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.345...HEAD)
+
+## 🚀 Features
+
+- compile reactive stx-native screen bundles ([7652bcc](https://github.com/stacksjs/stx/commit/7652bcc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: a content role, the fourth rung the surface ladder was missing ([0b5a147](https://github.com/stacksjs/stx/commit/0b5a147)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993))
+- **components**: a page role, because surface could not tell a page from a panel ([789f734](https://github.com/stacksjs/stx/commit/789f734)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993))
+- **components**: a link role, which info's description had been claiming ([764330e](https://github.com/stacksjs/stx/commit/764330e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993))
+
+## 🐛 Bug Fixes
+
+- **components**: split fg-subtle, because 23 of its 25 uses had to be read ([0634768](https://github.com/stacksjs/stx/commit/0634768)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993))
+- **components**: Hero's gradients, and the tool was not measuring gradients ([63fce89](https://github.com/stacksjs/stx/commit/63fce89)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993))
+- **components**: one focus ring, and three of them were invisible ([d381b8b](https://github.com/stacksjs/stx/commit/d381b8b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993))
+- **stx-native**: the CLI parses, receives its arguments, and can be imported ([2ec82de](https://github.com/stacksjs/stx/commit/2ec82de)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1985](https://github.com/stacksjs/stx/issues/1985), [#1985](https://github.com/stacksjs/stx/issues/1985))
+- **process**: show a failed server script where the component was, and classify the import that caused it ([f71f544](https://github.com/stacksjs/stx/commit/f71f544)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1991](https://github.com/stacksjs/stx/issues/1991), [#1991](https://github.com/stacksjs/stx/issues/1991))
+- **components**: an input in error showed ordinary text in dark mode ([78ca5a6](https://github.com/stacksjs/stx/commit/78ca5a6)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993), [#1993](https://github.com/stacksjs/stx/issues/1993))
+- **components**: one accent hue, so the auth pages stop being indigo and teal ([73b439b](https://github.com/stacksjs/stx/commit/73b439b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993))
+- **web-components**: read defineProps in every form, and let an element clean up ([162a0ce](https://github.com/stacksjs/stx/commit/162a0ce)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2009](https://github.com/stacksjs/stx/issues/2009), [#2010](https://github.com/stacksjs/stx/issues/2010))
+- **components**: ink follows its fill, and two inks could not be read at all ([d55e8ea](https://github.com/stacksjs/stx/commit/d55e8ea)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993))
+
+## 🧪 Tests
+
+- **web-components**: pin the declared-property and defineProps collision ([b2d4088](https://github.com/stacksjs/stx/commit/b2d4088)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2009](https://github.com/stacksjs/stx/issues/2009), [#2009](https://github.com/stacksjs/stx/issues/2009))
+- **signals**: put window.matchMedia back when preferred-media is done with it ([1276409](https://github.com/stacksjs/stx/commit/1276409)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2003](https://github.com/stacksjs/stx/issues/2003))
+- **signals**: stop preferred-media leaking a preference between its own tests ([76fcc56](https://github.com/stacksjs/stx/commit/76fcc56)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2003](https://github.com/stacksjs/stx/issues/2003))
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.344...v0.2.345)
 
 ## 🐛 Bug Fixes
