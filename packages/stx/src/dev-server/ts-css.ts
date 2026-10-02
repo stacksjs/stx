@@ -768,65 +768,62 @@ async function generateCssUncached(htmlContent: string, appDir?: string): Promis
     // Generate CSS using Css's CSSGenerator
     const generator = new hw.CSSGenerator(cssConfig)
 
+    /*
+     * Shortcuts are the BASE and utilities override them (stacksjs/stx#2000).
+     *
+     * Two things were wrong, and both made a utility beside a shortcut dead.
+     *
+     * stx re-derived a grouped `.name { … }` rule by scraping declarations out
+     * of the already-generated stylesheet and APPENDED it — while the engine
+     * had emitted a complete, correct one all along. So every shortcut appeared
+     * twice: pretty-printed from the engine, then single-line at the very end.
+     * Both are single-class selectors, so specificity ties and source order
+     * decides, and the appended copy came after every utility. That is why
+     * `class="text-xs btn-primary"` AND `class="btn-primary text-xs"` both
+     * rendered at text-sm: the third copy always won.
+     *
+     * And even with one copy the order was wrong. The engine emits in
+     * generation order, which is class-discovery order, so whether a utility
+     * applied depended on where it sat in the attribute.
+     *
+     * Shortcuts now go through their own generator and are concatenated FIRST,
+     * which is the @apply semantics every call site was written assuming. The
+     * scraping is gone, and with it two bugs nobody had filed: it only knew how
+     * to handle `dark:` among variants, and it emitted
+     * `@media (prefers-color-scheme: dark) { .dark .name { … } }` — needing the
+     * media query AND the class to match, where the rest of stx keys dark mode
+     * on the class alone. The engine resolves every variant properly:
+     * `.btn:hover`, `.dark .btn`, `.btn:focus`.
+     *
+     * Preflight stays with the utilities even though it is emitted after the
+     * shortcuts, because it is wrapped in `@layer tc-base` — a layered rule
+     * loses to every unlayered one regardless of order.
+     */
+    const shortcuts = (cssConfig.shortcuts || (userConfig as any).shortcuts || {}) as Record<string, string>
+    const usedShortcuts = Object.keys(shortcuts).filter(name => classes.has(name) || safelist.includes(name))
+
     // Generate safelist classes
     for (const cls of safelist) {
-      generator.generate(cls)
+      if (!shortcuts[cls])
+        generator.generate(cls)
     }
 
     for (const className of classes) {
-      generator.generate(className)
+      if (!shortcuts[className])
+        generator.generate(className)
     }
 
-    let css = generator.toCSS(includePreflight, minify)
-
-    // Generate shortcut CSS rules — CSSGenerator expands shortcuts into
-    // individual utility classes but doesn't emit grouped .shortcut { ... } rules
-    const shortcuts = cssConfig.shortcuts || (userConfig as any).shortcuts || {}
-    for (const [name, classStr] of Object.entries(shortcuts)) {
-      if (!classes.has(name) && !safelist.includes(name)) continue
-      const parts = (classStr as string).split(/\s+/).filter(Boolean)
-      for (const p of parts) generator.generate(p)
+    let shortcutCSS = ''
+    if (usedShortcuts.length > 0) {
+      const shortcutGenerator = new hw.CSSGenerator(cssConfig)
+      for (const name of usedShortcuts) shortcutGenerator.generate(name)
+      // No preflight: it belongs to the sheet once, with the utilities below.
+      shortcutCSS = shortcutGenerator.toCSS(false, minify)
+      if (shortcutCSS && !shortcutCSS.endsWith('\n'))
+        shortcutCSS += '\n'
     }
-    // Re-generate to include any new utility classes from shortcuts
-    css = generator.toCSS(includePreflight, minify)
 
-    // Build grouped shortcut rules — extract declarations from generated CSS
-    // and combine them under a single .shortcut-name selector
-    const cssLines = css.split('\n')
-    for (const [name, classStr] of Object.entries(shortcuts)) {
-      if (!classes.has(name) && !safelist.includes(name)) continue
-      const parts = (classStr as string).split(/\s+/).filter(Boolean)
-      const decls: string[] = []
-      const darkDecls: string[] = []
-      for (const cls of parts) {
-        const isDark = cls.startsWith('dark:')
-        const actualCls = isDark ? cls.slice(5) : cls
-        // Find the CSS rule by looking for the selector line, then collecting declarations
-        const escapedCls = actualCls.replace(/\//g, '\\/').replace(/:/g, '\\:').replace(/\./g, '\\.').replace(/\[/g, '\\[').replace(/\]/g, '\\]').replace(/%/g, '\\%')
-        const selectorTarget = `.${escapedCls}`
-        for (let i = 0; i < cssLines.length; i++) {
-          const line = cssLines[i].trim()
-          if (line === `${selectorTarget} {` || line.startsWith(`${selectorTarget} {`)) {
-            // Collect declarations until closing brace
-            let j = i
-            let ruleContent = ''
-            while (j < cssLines.length) {
-              ruleContent += cssLines[j]
-              if (cssLines[j].includes('}')) break
-              j++
-            }
-            const declMatch = ruleContent.match(/\{([^}]+)\}/)
-            if (declMatch) {
-              if (isDark) darkDecls.push(declMatch[1].trim())
-              else decls.push(declMatch[1].trim())
-            }
-            break
-          }
-        }
-      }
-      if (decls.length) css += `\n.${name} { ${decls.join(' ')} }`
-      if (darkDecls.length) css += `\n@media (prefers-color-scheme: dark) { .dark .${name} { ${darkDecls.join(' ')} } }`
-    }
+    let css = shortcutCSS + generator.toCSS(includePreflight, minify)
 
     // Role-token values first, so the utilities below resolve against them and
     // an app's own stylesheet — which comes after — can still override (#1930).
