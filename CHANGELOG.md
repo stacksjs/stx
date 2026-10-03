@@ -1,5 +1,27 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.349...v0.2.350)
+
+## 🐛 Bug Fixes
+
+- **deps**: very-happy-dom ^0.3.5, which parses @-prefixed attribute names ([0e74e59](https://github.com/stacksjs/stx/commit/0e74e59)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2018](https://github.com/stacksjs/stx/issues/2018))
+
+## ♻️ Code Refactoring
+
+- **components**: forward Calendar's change with @change on its tag ([16ab1c2](https://github.com/stacksjs/stx/commit/16ab1c2)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2018](https://github.com/stacksjs/stx/issues/2018))
+
+## ✅ Tests
+
+- **harness**: expose a classic script's top-level functions on window ([f1b5e6b](https://github.com/stacksjs/stx/commit/f1b5e6b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.350 ([c6e36b5](https://github.com/stacksjs/stx/commit/c6e36b5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.348...v0.2.349)
 
 ## 🐛 Bug Fixes
