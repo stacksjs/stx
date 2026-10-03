@@ -193,6 +193,22 @@ export interface BootOptions {
   globals?: Record<string, unknown>
 }
 
+/**
+ * A classic script's top-level function declarations become properties of
+ * window in a browser. A script run through new Function keeps them local, so
+ * the page setup the compiler emits as `function __stx_setup_x() {...}` and
+ * names on `<body data-stx="__stx_setup_x">` was invisible to the runtime's
+ * `window[setupName]` lookup: on a first load the page's own client script
+ * never ran, and every page-level binding and handler came up undefined.
+ *
+ * Declarations start a line in the emitted code. The typeof guard keeps a
+ * nested function that happens to start a line from being misread as one.
+ */
+function exposeTopLevelFunctions(code: string): string {
+  const names = new Set(Array.from(code.matchAll(/^function\s+([A-Z_$][\w$]*)\s*\(/gim), match => match[1]))
+  return Array.from(names, name => `\n;if (typeof ${name} === 'function') window[${JSON.stringify(name)}] = ${name};`).join('')
+}
+
 export const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
 
 /** Long enough for the debounced stx:load (5ms) and a deferred :if subtree. */
@@ -285,7 +301,7 @@ export async function boot(app: SpaApp, pathname: string, options: BootOptions =
     currentScript = el
     try {
       // eslint-disable-next-line no-new-func
-      new Function(code)()
+      new Function(code + exposeTopLevelFunctions(code))()
     }
     catch (error) {
       errors.push(`${(el.getAttribute('data-stx-route-script') || el.getAttribute('data-stx-page') !== null) ? 'injected' : 'parsed'} script: ${String(error)}`)
