@@ -78,6 +78,16 @@ let diskCacheRoot: string | null = null
 let configFingerprint: string | null = null
 
 /**
+ * The user's css config per app root, with its fingerprint.
+ *
+ * This was one module-level slot filled from whichever root generated CSS
+ * first, so every later root - a second app served by the same process, a
+ * build for another package, another test - silently got the first one's
+ * shortcuts and theme, and its cache keys too.
+ */
+const configByRoot = new Map<string, { config: CssConfig | null, fingerprint: string }>()
+
+/**
  * Compute a stable short hash of a string. Used as the cache file
  * name so different (classes, config) pairs don't collide.
  */
@@ -115,10 +125,10 @@ export function getCssServeAsset(hash: string): string | undefined {
   return css
 }
 
-async function readDiskCache(key: string): Promise<string | null> {
-  if (!diskCacheRoot) return null
+async function readDiskCache(key: string, root: string | null = diskCacheRoot): Promise<string | null> {
+  if (!root) return null
   try {
-    const file = Bun.file(path.join(diskCacheRoot, `cw-${shortHash(key)}.css`))
+    const file = Bun.file(path.join(root, `cw-${shortHash(key)}.css`))
     if (!(await file.exists())) return null
     return await file.text()
   }
@@ -127,11 +137,11 @@ async function readDiskCache(key: string): Promise<string | null> {
   }
 }
 
-async function writeDiskCache(key: string, css: string): Promise<void> {
-  if (!diskCacheRoot) return
+async function writeDiskCache(key: string, css: string, root: string | null = diskCacheRoot): Promise<void> {
+  if (!root) return
   try {
-    if (!fs.existsSync(diskCacheRoot)) fs.mkdirSync(diskCacheRoot, { recursive: true })
-    await Bun.write(path.join(diskCacheRoot, `cw-${shortHash(key)}.css`), css)
+    if (!fs.existsSync(root)) fs.mkdirSync(root, { recursive: true })
+    await Bun.write(path.join(root, `cw-${shortHash(key)}.css`), css)
   }
   catch {
     // Read-only FS, race, etc. — disk cache is opportunistic.
@@ -345,6 +355,7 @@ export function resetCssCache(): void {
   // disk cache invalidates implicitly via configFingerprint in the
   // generator path.
   configFingerprint = null
+  configByRoot.clear()
 }
 
 /**
@@ -674,7 +685,8 @@ export function extractClassNames(htmlContent: string): Set<string> {
 const cssByPage = renderMemo<string>(64)
 
 export async function generateCss(htmlContent: string, appDir?: string): Promise<string> {
-  const remembered = cssByPage.get(contentKey(htmlContent, appDir, configFingerprint))
+  const rootFingerprint = () => configByRoot.get(appDir ? path.resolve(appDir) : process.cwd())?.fingerprint ?? null
+  const remembered = cssByPage.get(contentKey(htmlContent, appDir, rootFingerprint()))
   if (remembered !== undefined)
     return remembered
   const css = await generateCssUncached(htmlContent, appDir)
@@ -691,7 +703,7 @@ export async function generateCss(htmlContent: string, appDir?: string): Promise
   // Keyed on the fingerprint as known AFTER generating: the first render
   // learns it, so this is what the next render of the page will look up.
   if (css)
-    cssByPage.set(contentKey(htmlContent, appDir, configFingerprint), css)
+    cssByPage.set(contentKey(htmlContent, appDir, rootFingerprint()), css)
   return css
 }
 
@@ -718,12 +730,22 @@ async function generateCssUncached(htmlContent: string, appDir?: string): Promis
     // Fallback: `process.cwd()` (legacy behaviour).
     const resolveRoot = appDir ? path.resolve(appDir) : process.cwd()
 
-    // Wire up the on-disk cache root once we know the app directory.
-    // Putting it in the state directory's `cache/` keeps it alongside the
-    // existing stx page cache and behaves the same way under .gitignore
-    // conventions.
+    // The on-disk cache lives in this app's state directory (`cache/`, next
+    // to the stx page cache, under the same .gitignore conventions). Per
+    // root: a process serving two apps must not read one's CSS for the other.
+    const appDiskCache = stateDir(resolveRoot, 'cache')
     if (!diskCacheRoot)
-      diskCacheRoot = stateDir(resolveRoot, 'cache')
+      diskCacheRoot = appDiskCache
+
+    // Load the project's css config, once per app root.
+    // Priority: 1) stx.config.ts css field, 2) css.config.ts auto-discovery
+    let rootConfig = configByRoot.get(resolveRoot)
+    if (!rootConfig) {
+      const loaded = await resolveUserCssConfig(resolveRoot)
+      rootConfig = { config: loaded, fingerprint: fingerprintConfig(loaded) }
+      configByRoot.set(resolveRoot, rootConfig)
+      configFingerprint = rootConfig.fingerprint
+    }
 
     // Cache lookup — keyed on the sorted class set + a fingerprint of
     // the loaded css config. Different config (theme tokens,
@@ -731,28 +753,21 @@ async function generateCssUncached(htmlContent: string, appDir?: string): Promis
     // same class set, otherwise a stale CSS file outlives the config
     // edit that produced it.
     const classSetKey = [...classes].sort().join(' ')
-    const cacheKey = `${configFingerprint || 'default'}::${classSetKey}`
+    const cacheKey = `${rootConfig.fingerprint || 'default'}::${classSetKey}`
     const cached = cssByClassSet.get(cacheKey)
     if (cached !== undefined) {
       // LRU bump — re-insert to mark as most-recently-used.
       setLruCache(cacheKey, cached)
       return cached
     }
-    const onDisk = await readDiskCache(cacheKey)
+    const onDisk = await readDiskCache(cacheKey, appDiskCache)
     if (onDisk !== null) {
       setLruCache(cacheKey, onDisk)
       return onDisk
     }
 
-    // Load the project's css config
-    // Priority: 1) stx.config.ts css field, 2) css.config.ts auto-discovery
-    if (!cachedConfig) {
-      cachedConfig = await resolveUserCssConfig(resolveRoot)
-      configFingerprint = fingerprintConfig(cachedConfig)
-    }
-
     const baseConfig = hw.defaultConfig || hw.config
-    const userConfig = cachedConfig || {}
+    const userConfig = rootConfig.config || {}
 
     // One merge, shared with bun-plugin's serve path (#1867). This used to read
     // only `theme.extend` and pin the result after the user spread, so a
@@ -832,7 +847,7 @@ async function generateCssUncached(htmlContent: string, appDir?: string): Promis
     setLruCache(cacheKey, css)
     // Best-effort persistence so the next request after a server
     // restart (or the next CI build) skips the regeneration cost.
-    void writeDiskCache(cacheKey, css)
+    void writeDiskCache(cacheKey, css, appDiskCache)
     return css
   }
   catch (error) {
