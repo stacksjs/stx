@@ -117,13 +117,13 @@ function presetButtonClasses(days) {
 }
 
 /*
- * The calendar's own `change` event, caught as it bubbles.
+ * The calendar's own `change` event, forwarded with `@change` on its tag.
  *
- * Listened for on the WRAPPER rather than with `@change` on the component tag:
- * forwarding an event onto a nested component's root clobbers that component's
- * own scope, so Calendar's bindings stop resolving. `defineEmits` dispatches
- * with `bubbles: true`, so a listener one element out gets the same event and
- * the child is left alone.
+ * A forwarded listener receives the emitted payload; the CustomEvent fallback
+ * keeps this working if it is ever caught as it bubbles instead. (This was once
+ * listened for on a wrapper element, on the belief that `@change` on the tag
+ * broke Calendar's own bindings. That was the test DOM failing to parse the
+ * attribute, never the runtime: stacksjs/stx#2018.)
  */
 function onCalendarChange(event) {
   const detail = event && event.detail ? event.detail : event
@@ -203,16 +203,14 @@ defineExpose({ isOpen, rangeStart, rangeEnd, activePreset, applyPreset, onCalend
       >Clear</button>
     </div>
 
-    {{-- The listener sits here, not on the <Calendar> tag: see onCalendarChange. --}}
-    <div @change="onCalendarChange($event)">
-      <Calendar
-        mode="range"
-        :start="rangeStart()"
-        :end="rangeEnd()"
-        min-date="{{ minIso }}"
-        max-date="{{ maxIso }}"
-        locale="{{ locale }}"
-      />
-    </div>
+    <Calendar
+      mode="range"
+      :start="rangeStart()"
+      :end="rangeEnd()"
+      min-date="{{ minIso }}"
+      max-date="{{ maxIso }}"
+      locale="{{ locale }}"
+      @change="onCalendarChange($event)"
+    />
   </div>
 </div>

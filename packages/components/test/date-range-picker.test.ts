@@ -21,6 +21,8 @@ const UI = path.join(import.meta.dir, '..', 'src', 'ui')
 
 interface Picker {
   scope: Record<string, any>
+  /** The nested Calendar's own scope. */
+  calendar: Record<string, any> | undefined
   errors: string[]
   dispose: () => Promise<void>
 }
@@ -38,7 +40,9 @@ async function mount(tag = '<DateRangePicker />'): Promise<Picker> {
     .find((s: any) => typeof s?.applyPreset === 'function') as Record<string, any>
   if (!scope)
     throw new Error('date range picker scope not registered')
-  return { scope, errors: browser.errors, dispose: () => app.dispose() }
+  const calendar = Object.values(browser.window.stx._scopes || {})
+    .find((s: any) => typeof s?.selectDate === 'function') as Record<string, any> | undefined
+  return { scope, calendar, errors: browser.errors, dispose: () => app.dispose() }
 }
 
 /** Days between two dates, counted inclusively — the way a preset means it. */
@@ -197,18 +201,37 @@ describe('#1981 — DateRangePicker and the calendar inside it', () => {
   })
 
   /*
-   * The composition itself. The listener sits on a WRAPPER rather than as
-   * `@change` on the `<Calendar>` tag, because forwarding an event onto a
-   * nested component's root clobbers that component's own scope - Calendar's
-   * `monthYearLabel` stops resolving and hydration reports an expression that
-   * never evaluated. `defineEmits` dispatches with `bubbles: true`, so a
-   * listener one element out receives the same event and the child is left
-   * alone. This asserts the arrangement stays clean.
+   * The composition itself: `@change` on the `<Calendar>` tag, the obvious
+   * way. That once looked like it broke Calendar's own scope - its
+   * `monthYearLabel` stopped resolving - but it was the test DOM dropping
+   * every attribute after the first `@`-prefixed one, `data-stx-scope`
+   * included (stacksjs/stx#2018). This asserts the arrangement stays clean.
    */
   it('nests a working Calendar, with no hydration complaints', async () => {
     const p = await mount()
     try {
       expect(p.errors).toEqual([])
+      expect(p.calendar, 'Calendar registered its own scope').toBeTruthy()
+      expect(typeof p.calendar!.monthYearLabel()).toBe('string')
+    }
+    finally {
+      await p.dispose()
+    }
+  })
+
+  it('hears a range picked on the Calendar through @change on its tag', async () => {
+    const p = await mount()
+    try {
+      const from = new Date()
+      from.setDate(from.getDate() - 3)
+      const to = new Date()
+      p.calendar!.selectDate(from)
+      p.calendar!.selectDate(to)
+      await settle()
+
+      expect(p.scope.rangeStart()?.toDateString()).toBe(from.toDateString())
+      expect(p.scope.rangeEnd()?.toDateString()).toBe(to.toDateString())
+      expect(p.scope.activePreset()).toBeNull()
     }
     finally {
       await p.dispose()
