@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.348...v0.2.349)
+
+## 🐛 Bug Fixes
+
+- **css**: resolve the css config per app root ([dd62cac](https://github.com/stacksjs/stx/commit/dd62cac)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2021](https://github.com/stacksjs/stx/issues/2021), [#2000](https://github.com/stacksjs/stx/issues/2000))
+
+## 🔧 Chores
+
+- release v0.2.349 ([6e390e1](https://github.com/stacksjs/stx/commit/6e390e1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.347...v0.2.348)
 
 ## ✨ Features
