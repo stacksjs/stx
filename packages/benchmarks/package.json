@@ -27,7 +27,7 @@
     "handlebars": "^4.7.9",
     "isomorphic-dompurify": "^4.4.0",
     "js-yaml": "^5.4.2",
-    "liquidjs": "^10.29.0",
+    "liquidjs": "^10.30.0",
     "markdown-it": "^15.0.2",
     "marked": "^18.0.14",
     "mitata": "^1.0.34",
@@ -35,7 +35,7 @@
     "pug": "^3.0.4",
     "remark": "^15.0.1",
     "remark-html": "^16.0.1",
-    "sanitize-html": "^2.17.7",
+    "sanitize-html": "^2.18.0",
     "showdown": "^2.1.0",
     "tinybench": "^6.2.0",
     "xss": "^1.0.15"
