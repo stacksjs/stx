@@ -93,3 +93,26 @@ describe('nested declarations are not exported (#1959)', () => {
     expect(inline).toContain('var pattern = undefined')
   })
 })
+
+// A regex literal holding a quote or a brace used to shift every bracket depth
+// after it: `/[&<>"']/g` opened a phantom string at its `"`. Declarations
+// below it then read as nested, were left out of the scope object, and the
+// template rendered them as nothing.
+describe('declarations after a regex literal', () => {
+  it('still exposes everything declared after one', async () => {
+    const { inline } = await bundleBothWays([
+      IMPORT.trimEnd(),
+      'function escape(s) {',
+      '  return s.replace(/[&<>"\']/g, ch => ({ \'&\': \'&amp;\', \'"\': \'&quot;\' })[ch] || ch)',
+      '}',
+      'const braces = /\\{[^}]+\\}/g',
+      'const after = greet()',
+      'function later() { return after }',
+    ].join('\n'))
+
+    expect(inline).toContain('var escape = undefined')
+    expect(inline).toContain('var braces = undefined')
+    expect(inline).toContain('var after = undefined')
+    expect(inline).toContain('var later = undefined')
+  })
+})

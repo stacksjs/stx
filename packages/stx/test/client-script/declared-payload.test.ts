@@ -117,14 +117,27 @@ describe('declared payload (#1868)', () => {
     expect(bridge(ctx, 'function range() {}\nuse(range)')).not.toContain('var range')
   })
 
-  it('falls back to withholding when a regex brace makes depth untrustworthy', () => {
-    // /\{/ leaves a brace the literal stripper cannot see, so every later depth
-    // reads one too deep. Rather than act on that, ownership falls back to the
-    // pre-#1953 textual rule and withholds -- the conservative side, since a
-    // wrong "not declared" would emit a duplicate binding (#1959).
+  it('reads depth correctly past a regex holding a brace', () => {
+    // /\{/ used to leave a brace the literal stripper could not see, so every
+    // later depth read one too deep and ownership fell back to withholding.
+    // The stripper blanks regex literals now: `range` is only a local of
+    // later(), so the top-level `use(range)` gets the server value.
     const out = bridge(
       { range: '30d', __stxClientPayload: { range: '30d' } },
       'const pattern = /\\{/\nfunction later() {\n  const range = "7d"\n  return range\n}\nuse(range)',
+    )
+    expect(out).toContain('var range = "30d"')
+  })
+
+  it('falls back to withholding when depth is still untrustworthy', () => {
+    // A regex straight after `if (x)` reads as division, so its brace is
+    // counted and the brackets no longer balance. Rather than act on that,
+    // ownership falls back to the pre-#1953 textual rule and withholds -- the
+    // conservative side, since a wrong "not declared" would emit a duplicate
+    // binding (#1959).
+    const out = bridge(
+      { range: '30d', __stxClientPayload: { range: '30d' } },
+      'if (ok) /\\{/.test(s)\nfunction later() {\n  const range = "7d"\n  return range\n}\nuse(range)',
     )
     expect(out).not.toContain('var range')
   })

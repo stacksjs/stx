@@ -108,8 +108,67 @@ export function findInterpolationEnd(code: string, start: number): number {
 }
 
 /**
- * Blank out comments and string literals, preserving length and line structure
- * so offsets still line up, so that identifier detection only ever sees code.
+ * Keywords after which a `/` starts a regex literal rather than dividing:
+ * `return /x/.test(s)` is a regex, `total / count` is division.
+ */
+const REGEX_AFTER_KEYWORD = new Set(['return', 'typeof', 'instanceof', 'in', 'of', 'new', 'delete', 'void', 'throw', 'case', 'do', 'else', 'yield', 'await'])
+
+/**
+ * Whether a `/` (not `//` or `/*`) begins a regex literal, decided from the
+ * last significant token before it: after something that ends an expression -
+ * an identifier, a number, `)`, `]`, a string or template - it divides; after
+ * an operator, an opening bracket, a `{` or `}`, or the start of the source it
+ * starts a regex. The same rule `extractExports` applies.
+ */
+function startsRegex(lastSig: string, lastWord: string): boolean {
+  if (lastWord)
+    return REGEX_AFTER_KEYWORD.has(lastWord)
+  return !(lastSig === ')' || lastSig === ']' || lastSig === LITERAL_END)
+}
+
+/** Stands for "a literal just ended" in `lastSig`, which is never source text. */
+const LITERAL_END = '\u0000'
+
+/**
+ * Index just past the regex literal whose `/` is at `start`, or -1 if what
+ * follows cannot be one (it reaches a line break first).
+ */
+function regexEnd(code: string, start: number): number {
+  let i = start + 1
+  let inClass = false
+  while (i < code.length) {
+    const c = code[i]
+    if (c === '\n')
+      return -1
+    if (c === '\\') {
+      i += 2
+      continue
+    }
+    if (c === '[')
+      inClass = true
+    else if (c === ']')
+      inClass = false
+    else if (c === '/' && !inClass) {
+      i++
+      while (i < code.length && /[a-z]/i.test(code[i]!)) i++
+      return i
+    }
+    i++
+  }
+  return -1
+}
+
+/**
+ * Blank out comments, string literals and regex literals, preserving length
+ * and line structure so offsets still line up, so that identifier detection
+ * only ever sees code.
+ *
+ * Regex literals were not recognised, and they hold exactly the characters
+ * that derail everything else: `/[&<>"']/g` opened a "string" at its `"` that
+ * ran on into real code, and `/\{/` left a brace behind. Both shift every
+ * bracket depth after them, so the bundler's export scan judged later
+ * top-level declarations nested and left them out of the page's scope - the
+ * template then rendered them as nothing, with no error.
  *
  * Template-literal INTERPOLATIONS are kept, because `${...}` is code, not text.
  * Blanking them hid every identifier that appears only inside one — a helper
@@ -121,6 +180,9 @@ export function findInterpolationEnd(code: string, start: number): number {
 export function stripCommentsAndLiterals(code: string): string {
   let out = ''
   let i = 0
+  // The last significant token, for telling a regex `/` from division.
+  let lastSig = ''
+  let lastWord = ''
 
   while (i < code.length) {
     const two = code.slice(i, i + 2)
@@ -154,7 +216,21 @@ export function stripCommentsAndLiterals(code: string): string {
       }
       out += ' '
       i++
+      lastSig = LITERAL_END
+      lastWord = ''
       continue
+    }
+
+    if (ch === '/' && startsRegex(lastSig, lastWord)) {
+      const end = regexEnd(code, i)
+      if (end !== -1) {
+        // Keep the slashes so the token is still visibly there; blank the body.
+        out += `/${' '.repeat(end - i - 2)}/`
+        i = end
+        lastSig = LITERAL_END
+        lastWord = ''
+        continue
+      }
     }
 
     if (ch === '`') {
@@ -183,11 +259,21 @@ export function stripCommentsAndLiterals(code: string): string {
       }
       out += ' '
       i++
+      lastSig = LITERAL_END
+      lastWord = ''
       continue
     }
 
     out += ch
     i++
+    if (/[\w$]/.test(ch)) {
+      lastWord = /[\w$]/.test(lastSig) ? lastWord + ch : ch
+      lastSig = ch
+    }
+    else if (!/\s/.test(ch)) {
+      lastSig = ch
+      lastWord = ''
+    }
   }
 
   return out
@@ -200,9 +286,10 @@ export function stripCommentsAndLiterals(code: string): string {
  * the loop, not the file.
  *
  * `balanced` is false when the brackets do not close out cleanly -- they go
- * negative, or end above zero. stripCommentsAndLiterals does not recognise
- * regex literals, so `/\\{/` leaves a brace behind, and every depth after it is
- * off by one. A caller must not trust `depths` then, and should fall back to
+ * negative, or end above zero. stripCommentsAndLiterals now blanks regex
+ * literals, but a `/` it misreads (division taken for a regex or the reverse)
+ * can still leave a stray bracket, and every depth after it is then off by
+ * one. A caller must not trust `depths` then, and should fall back to
  * whatever it did before it knew about nesting: acting on a wrong depth can
  * hide a real top-level binding, which is worse than the bug depth fixes.
  *
