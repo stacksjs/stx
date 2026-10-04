@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.361...v0.2.362)
+
+## ✨ Features
+
+- **desktop**: standardMenus.app(name, { settings }) adds Settings… with Cmd+, ([16f75bd](https://github.com/stacksjs/stx/commit/16f75bd)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.362 ([8097813](https://github.com/stacksjs/stx/commit/8097813)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.360...v0.2.361)
 
 ## ✨ Features
