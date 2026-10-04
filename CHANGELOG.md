@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.353...v0.2.354)
+
+## 🐛 Bug Fixes
+
+- **client-script**: regex literals no longer hide the declarations after them ([d0fa2b9](https://github.com/stacksjs/stx/commit/d0fa2b9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.354 ([1926087](https://github.com/stacksjs/stx/commit/1926087)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.352...v0.2.353)
 
 ## 🐛 Bug Fixes
