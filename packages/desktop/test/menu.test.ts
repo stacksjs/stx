@@ -57,6 +57,18 @@ describe('menu', () => {
     expect(second).toBe(1)
   })
 
+  it('puts Settings with Cmd+, after About when the app has settings', () => {
+    let opened = 0
+    const app = standardMenus.app('MyApp', { settings: () => { opened++ } })
+    const settings = app.items.find(item => item.label === 'Settings…')!
+    expect(app.items.indexOf(settings)).toBe(2)
+    expect(settings.shortcut).toBe('cmd+,')
+    settings.onClick!()
+    expect(opened).toBe(1)
+    expect(standardMenus.app('MyApp').items.some(item => item.label === 'Settings…')).toBe(false)
+    expect(standardMenus.leading('MyApp', { settings: () => {} })[0]!.items[2]!.label).toBe('Settings…')
+  })
+
   it('standardMenus.leading puts the app menu first, where AppKit expects it', () => {
     const leading = standardMenus.leading('MyApp')
     expect(leading[0].label).toBe('MyApp')

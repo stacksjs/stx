@@ -181,6 +181,11 @@ export interface MenuAPI {
   onAction: (cb: (event: MenuActionEvent) => void) => () => void
 }
 
+export interface StandardMenuOptions {
+  /** Opens the app's settings; adds "Settings…" (Cmd+,) to the app menu. */
+  settings?: () => void
+}
+
 /**
  * The menus every Mac app is expected to have, built correctly.
  *
@@ -192,13 +197,18 @@ export interface MenuAPI {
  * menu — which it only does for menus it recognises.
  */
 export const standardMenus = {
-  /** The application menu. Must be first in the bar; AppKit titles it for you. */
-  app(appName: string): Menu {
+  /**
+   * The application menu. Must be first in the bar; AppKit titles it for you.
+   * Pass `settings` and it gets "Settings…" with Cmd+, after About, where
+   * every Mac app keeps it.
+   */
+  app(appName: string, options: StandardMenuOptions = {}): Menu {
     return {
       label: appName,
       items: [
         { label: `About ${appName}`, role: 'about' },
         { separator: true },
+        ...(options.settings ? [{ id: 'stx.menu.settings', label: 'Settings…', shortcut: 'cmd+,', onClick: options.settings }, { separator: true }] : []),
         { label: `Hide ${appName}`, role: 'hide', shortcut: 'cmd+h' },
         { label: 'Hide Others', role: 'hideOthers', shortcut: 'cmd+alt+h' },
         { label: 'Show All', role: 'showAll' },
@@ -243,8 +253,8 @@ export const standardMenus = {
    * Spread this first and add your own menus after: the app menu has to be
    * index zero, and Edit is the one people notice missing.
    */
-  leading(appName: string): Menu[] {
-    return [this.app(appName), this.edit()]
+  leading(appName: string, options: StandardMenuOptions = {}): Menu[] {
+    return [this.app(appName, options), this.edit()]
   },
 }
 
