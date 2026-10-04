@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.362...v0.2.363)
+
+## 🐛 Bug Fixes
+
+- **ssg**: a page depends on the packages its module registry inlines ([ef0727c](https://github.com/stacksjs/stx/commit/ef0727c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.363 ([a1ba4bf](https://github.com/stacksjs/stx/commit/a1ba4bf)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.361...v0.2.362)
 
 ## ✨ Features
