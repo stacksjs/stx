@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.360...v0.2.361)
+
+## ✨ Features
+
+- **desktop**: sidebar, a native source list beside the page; contextMenu in the browser entry ([afd3f29](https://github.com/stacksjs/stx/commit/afd3f29)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.361 ([147ec08](https://github.com/stacksjs/stx/commit/147ec08)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.359...v0.2.360)
 
 ## ✨ Features
