@@ -2,14 +2,19 @@ import parserCSS from 'prettier/parser-postcss'
 import prettier from 'prettier/standalone'
 
 /**
- * Parse and prettify CSS output
+ * Parse and prettify CSS output.
+ *
+ * Prettier 3's `format` returns a promise. This used to call `.trim()` on it
+ * synchronously, which threw, and the `catch` handed back the input, so every
+ * utility-class hover showed the engine's minified CSS.
  */
-export function prettifyCSS(css: string): string {
+export async function prettifyCSS(css: string): Promise<string> {
   try {
-    return prettier.format(css, {
+    const formatted = await prettier.format(css, {
       parser: 'css',
       plugins: [parserCSS],
-    }).trim()
+    })
+    return formatted.trim()
   }
   catch {
     return css

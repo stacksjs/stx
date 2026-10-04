@@ -21,9 +21,11 @@ export function extractClassesFromDocument(
 
   // Match class="..." or className="..."
   const classRegex = /class(?:Name)?=["']([^"']*)["']/g
-  let match = classRegex.exec(text)
-
-  while (match !== null) {
+  // `for`, not `while`: the advance has to run on `continue` too. As a
+  // `while` whose last statement was the advance, skipping an attribute the
+  // position is not in re-tested the same match forever, so hovering anywhere
+  // after a document's first class attribute hung the extension host.
+  for (let match = classRegex.exec(text); match !== null; match = classRegex.exec(text)) {
     const classContent = match[1]
     const classStartOffset = match.index + match[0].indexOf(classContent)
 
@@ -51,8 +53,6 @@ export function extractClassesFromDocument(
         currentOffset = classIndex + className.length
       }
     }
-
-    match = classRegex.exec(text)
   }
 
   return matches

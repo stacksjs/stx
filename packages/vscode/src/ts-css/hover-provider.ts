@@ -36,7 +36,7 @@ export function createCssHoverProvider(vscodeModule: typeof vscode, context: Css
 
         const remToPxRatio = vscodeModule.workspace.getConfiguration('css').get<number>('remToPxRatio', 16)
         const processedCSS = addRemToPxComment(css, remToPxRatio)
-        const prettyCSS = prettifyCSS(processedCSS)
+        const prettyCSS = await prettifyCSS(processedCSS)
 
         const markdown = new vscodeModule.MarkdownString()
         markdown.supportHtml = true

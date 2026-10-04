@@ -139,7 +139,7 @@ describe('Css Integration Tests', () => {
     const parserPath = path.join(PACKAGE_ROOT, 'src/ts-css/utils/css-parser.ts')
     const content = await Bun.file(parserPath).text()
 
-    expect(content).toContain('export function prettifyCSS')
+    expect(content).toContain('export async function prettifyCSS')
     expect(content).toContain('export function addRemToPxComment')
   })
 
@@ -340,7 +340,7 @@ describe('Css CSS Parser Tests', () => {
   test('prettifyCSS should be exported', async () => {
     const parserPath = path.join(PACKAGE_ROOT, 'src/ts-css/utils/css-parser.ts')
     const content = await Bun.file(parserPath).text()
-    expect(content).toContain('export function prettifyCSS')
+    expect(content).toContain('export async function prettifyCSS')
   })
 })
 
