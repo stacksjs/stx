@@ -480,6 +480,12 @@ export type {
 } from './context-menu'
 
 // =============================================================================
+// Native Sidebar (a real source list beside the page)
+// =============================================================================
+export { sidebar } from './sidebar'
+export type { SidebarAPI, SidebarHandle, SidebarItem, SidebarOptions, SidebarSection } from './sidebar'
+
+// =============================================================================
 // System / Host Info
 // =============================================================================
 export { system } from './system'
