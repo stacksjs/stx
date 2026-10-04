@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.350...v0.2.351)
+
+## 🐛 Bug Fixes
+
+- **vscode**: publish the extension as Stacks.vscode-stx, and its language support as a library ([cba2093](https://github.com/stacksjs/stx/commit/cba2093)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2020](https://github.com/stacksjs/stx/issues/2020))
+
+## 🔧 Chores
+
+- release v0.2.351 ([8aebea0](https://github.com/stacksjs/stx/commit/8aebea0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.349...v0.2.350)
 
 ## 🐛 Bug Fixes
