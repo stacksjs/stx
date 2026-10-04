@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.357...v0.2.358)
+
+## ✨ Features
+
+- **vscode**: ship the TypeScript plugin in @stacksjs/stx-vscode, and load it once when two extensions contribute it ([3054cff](https://github.com/stacksjs/stx/commit/3054cff)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2028](https://github.com/stacksjs/stx/issues/2028))
+
+## 🔧 Chores
+
+- release v0.2.358 ([5115cc3](https://github.com/stacksjs/stx/commit/5115cc3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.356...v0.2.357)
 
 ## ✨ Features
