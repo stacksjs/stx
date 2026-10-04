@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.359...v0.2.360)
+
+## ✨ Features
+
+- **desktop**: checked context menu items ([7f6040e](https://github.com/stacksjs/stx/commit/7f6040e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.360 ([234b803](https://github.com/stacksjs/stx/commit/234b803)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.358...v0.2.359)
 
 ## 🐛 Bug Fixes
