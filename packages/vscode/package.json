@@ -121,7 +121,7 @@
         "stxTypescriptPlugin.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Enable TypeScript language features in stx files"
+          "description": "Type-check the TypeScript in stx files (script blocks and template expressions) with the TypeScript server, and offer its hovers, completions and go to definition there"
         },
         "stx.diagnostics.enable": {
           "type": "boolean",
@@ -239,7 +239,10 @@
     "typescriptServerPlugins": [
       {
         "name": "@stacksjs/stx-typescript-plugin",
-        "enableForWorkspaceTypeScriptVersions": true
+        "enableForWorkspaceTypeScriptVersions": true,
+        "languages": [
+          "stx"
+        ]
       }
     ]
   },

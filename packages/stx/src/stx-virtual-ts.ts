@@ -57,6 +57,15 @@ export interface ScriptBlock {
   code: string
   /** 1-based line in the source file where the body's first character sits. */
   startLine: number
+  /**
+   * 1-based column of the body's first character. Greater than 1 when the
+   * code starts on the line the opening tag is on (`<script client>const a`),
+   * which a buffer has to pad for or every diagnostic on that line lands
+   * left of the code it is about.
+   */
+  startColumn?: number
+  /** Offset of the body's first character in the source. */
+  offset?: number
   /** The opening tag's attributes, trimmed. */
   attrs: string
 }
@@ -110,6 +119,8 @@ export interface MappedLine {
 export interface VirtualFile {
   text: string
   componentDependencies?: Map<string, string>
+  /** Whether the `reference` option's directive was written (line 1 was free). */
+  referenced?: boolean
   /**
    * Virtual 1-based line → where it came from.
    *
@@ -196,7 +207,7 @@ export function extractScriptBlocks(source: string): ScriptBlock[] {
     // that point; +1 converts to a 1-based line number.
     const startLine = lineAt(source, bodyStart)
 
-    blocks.push({ kind, code: body, startLine, attrs })
+    blocks.push({ kind, code: body, startLine, startColumn: columnAt(source, bodyStart), offset: bodyStart, attrs })
   }
 
   return blocks
@@ -840,8 +851,21 @@ export const STX_SERVER_CONTEXT = [
   '$props',
 ] as const
 
-export function serverContextDeclarations(): string {
-  return STX_SERVER_CONTEXT.map(name => `declare var ${name}: any`).join('\n')
+export function serverContextDeclarations(typed: ReadonlySet<string> = new Set()): string {
+  return STX_SERVER_CONTEXT.filter(name => !typed.has(name)).map(name => `declare var ${name}: any`).join('\n')
+}
+
+/**
+ * Names a global declaration file declares as values: `declare function`,
+ * `declare const` / `let` / `var`, at the start of a line.
+ *
+ * Used to keep the `any` fallbacks below from colliding with a TYPED global of
+ * the same name in `stx.d.ts` — `definePageMeta` and `defineStore` are both
+ * server context and typed runtime globals, and `declare var x: any` beside
+ * `declare function x()` is a conflict that leaves the name typed by neither.
+ */
+export function declaredGlobalNames(declarations: string): Set<string> {
+  return new Set([...declarations.matchAll(/^declare (?:function|const|let|var)\s+([A-Za-z_$][\w$]*)/gm)].map(match => match[1]))
 }
 
 /**
@@ -1447,6 +1471,45 @@ export function absolutizeRelativeSpecifiers(code: string, originDir: string): s
   })
 }
 
+/**
+ * Spaces that put a block's first line at the column it occupies in the file.
+ *
+ * A body that starts on the opening tag's line (`<script client>const a = 1`)
+ * was written from column 1, so every diagnostic on that line pointed left of
+ * the code it was about by the width of the tag.
+ */
+export function firstLinePadding(block: ScriptBlock): string {
+  return ' '.repeat(Math.max(0, (block.startColumn ?? 1) - 1))
+}
+
+/**
+ * Local names a block's `import` declarations bind, type-only ones included:
+ * `import a, { b as c, type D } from 'x'` and `import * as ns from 'x'`.
+ */
+export function collectImportedNames(code: string): string[] {
+  const names = new Set<string>()
+  const stripped = stripCommentsAndLiterals(code)
+  // Literals are blanked to spaces, so the clause is matched up to `from` and
+  // limited to what a clause can contain: names, `*`, braces and commas.
+  for (const match of stripped.matchAll(/\bimport\s+(?:type\s+)?([\w$*{}\s,]+?)\s+from\b/g)) {
+    const clause = match[1]
+    const named = /\{([^}]*)\}/.exec(clause)
+    for (const part of named?.[1].split(',') ?? []) {
+      const local = part.trim().replace(/^type\s+/, '').split(/\s+as\s+/).pop()?.trim()
+      if (local && /^[A-Z_$][\w$]*$/i.test(local))
+        names.add(local)
+    }
+    const outside = clause.replace(/\{[^}]*\}/, '')
+    const namespace = /\*\s*as\s+([A-Z_$][\w$]*)/i.exec(outside)
+    if (namespace)
+      names.add(namespace[1])
+    const defaultName = /^\s*([A-Z_$][\w$]*)/i.exec(outside)
+    if (defaultName && defaultName[1] !== 'type')
+      names.add(defaultName[1])
+  }
+  return [...names].sort()
+}
+
 export interface BuildVirtualOptions {
   /** Enables component call-site checks using the renderer's file lookup. */
   filePath?: string
@@ -1464,6 +1527,28 @@ export interface BuildVirtualOptions {
   originDir?: string
   /** Append ambient declarations at all. Default true. */
   globals?: boolean
+  /**
+   * Where the server context, the `@stacksjs/browser` auto-imports and the
+   * template globals are declared. Default `'module'`.
+   *
+   * `'global'` wraps them in `declare global { … }`. Declared in the module
+   * they share a scope with the author's own bindings, so a block's
+   * `const { query } = defineProps()` is a redeclaration of the context's
+   * `query`; declared globally, the block's binding shadows it instead, as it
+   * does in `stx typecheck`, whose context is a global file. The editor, which
+   * has one buffer per file, needs the global form.
+   */
+  contextScope?: 'module' | 'global'
+  /**
+   * A declaration file to pull into the program with a triple-slash
+   * reference, written on the buffer's first line.
+   *
+   * That line is always blank when the file opens with markup or with a
+   * `<script>` tag on a line of its own, which is how every real file starts,
+   * so nothing moves. When code sits on line 1 the reference is left out and
+   * {@link VirtualFile.referenced} says so, so the caller can fall back.
+   */
+  reference?: string
   /**
    * Declare the stx runtime globals as `any`. Default true.
    *
@@ -1501,14 +1586,41 @@ export function buildVirtualTypeScript(
       })
     : undefined
 
+  /** Line indexes a block body was written to, and where each block ends. */
+  const occupied = new Set<number>()
+  const blockEnds: number[] = []
   for (const block of blocks) {
     // Line-count preserving, so every body line still lands on its own line (#1928).
-    const bodyLines = absolutizeRelativeSpecifiers(block.code, options.originDir ?? '').split('\n')
+    // The same position-preserving rewrites `stx typecheck` applies to a block:
+    // a `{{ }}` or a directive line in a script body is a syntax error to
+    // TypeScript, and one parse error hides every real diagnostic after it.
+    const code = blankScriptDirectives(substituteInterpolationsInPlace(block.code))
+    const bodyLines = absolutizeRelativeSpecifiers(code, options.originDir ?? '').split('\n')
     bodyLines.forEach((text, i) => {
       const index = block.startLine - 1 + i
-      if (index < lines.length)
-        lines[index] = text
+      if (index < lines.length) {
+        lines[index] = i === 0 ? firstLinePadding(block) + text : text
+        occupied.add(index)
+      }
     })
+    blockEnds.push(block.startLine - 1 + bodyLines.length - 1)
+  }
+
+  /*
+   * End every block with a statement boundary.
+   *
+   * The blocks are separate scripts at runtime but one buffer here, and ASI
+   * joins a block that ends without a semicolon to the next one that opens
+   * with a parenthesis: `const n = ok ? 1 : 0` in a server block followed by a
+   * client block opening `(window as …).x = 1` read as `0(window as …)`, "This
+   * expression is not callable". The `;` goes on the block's last line when
+   * that is the blank one `</script>` sits on, else on the markup line after it;
+   * both are blank in the buffer, so nothing the author wrote moves.
+   */
+  for (const end of blockEnds) {
+    const at = lines[end]?.trim() === '' ? end : end + 1
+    if (at < lines.length && lines[at].trim() === '' && (at === end || !occupied.has(at)))
+      lines[at] = ';'
   }
 
   const append = (text: string, origin?: MappedLine): void => {
@@ -1521,32 +1633,66 @@ export function buildVirtualTypeScript(
 
   if (options.globals !== false) {
     append('')
+    /*
+     * A name the author binds is never also declared here.
+     *
+     * Everything below is a `declare var` in the same module scope as the
+     * blocks, so it collides with the author's own binding of the same name:
+     * `const props = defineProps()` reported "Cannot redeclare block-scoped
+     * variable 'props'", `const query = state('')` the same for `query`, and
+     * `import { definePageMeta } from 'stx'` "Import declaration conflicts with
+     * local declaration". Each is a false error on code that runs, and the
+     * declaration exists only to stand in for a binding the author did not make.
+     */
+    const bound = new Set([
+      ...blocks.flatMap(block => collectBlockDeclarations(block.code)),
+      ...blocks.flatMap(block => collectImportedNames(block.code)),
+    ])
+    const declareAny = (name: string): void => {
+      if (!bound.has(name))
+        append(`declare var ${name}: any`)
+    }
     // Skipped when the caller supplies the package's real `stx.d.ts`. These are
     // `any`, so emitting them alongside it would SHADOW the typed declarations
     // — the buffer is a module, so a local `declare var state: any` wins over
     // the ambient `state<T>(initial: T): StxSignal<T>` and every client-side
     // expression goes back to being unchecked (#1889).
     if (options.runtimeGlobals !== false) {
-      for (const decl of runtimeGlobalDeclarations().split('\n'))
-        append(decl)
+      if (!bound.has('window'))
+        append('declare var window: any')
+      for (const name of STX_RUNTIME_GLOBALS)
+        declareAny(name)
     }
-    for (const decl of serverContextDeclarations().split('\n'))
-      append(decl)
-    /*
-     * The names stx auto-imports into a client script from
-     * `@stacksjs/browser` - `debounce`, `useTimeoutFn`, `useDocumentVisibility`
-     * and the rest of `BROWSER_CORE_IMPORTS`. They are injected at build time
-     * and were declared nowhere, so the checker reported each one as
-     * "Cannot find name" against a script that runs.
-     *
-     * `any`, like the other context names: their real types live in a package
-     * this buffer does not import, and a wrong type would be worse than a
-     * loose one.
-     */
-    for (const name of BROWSER_CORE_IMPORTS)
-      append(`declare var ${name}: any`)
-    for (const name of STX_TEMPLATE_GLOBALS)
-      append(`declare var ${name}: any`)
+    // With the typed runtime in the program, a context name it already types
+    // (`definePageMeta`, `defineStore`) is left to it: a global `var x: any`
+    // beside its `function x()` is a conflict that types the name as neither.
+    const contextNames = [...new Set<string>([...STX_SERVER_CONTEXT, ...BROWSER_CORE_IMPORTS, ...STX_TEMPLATE_GLOBALS])]
+      .filter(name => options.runtimeGlobals !== false || !STX_RUNTIME_GLOBALS.includes(name))
+    if (options.contextScope === 'global') {
+      append('declare global {')
+      for (const name of contextNames)
+        append(`  var ${name}: any`)
+      append('}')
+    }
+    else {
+      for (const name of STX_SERVER_CONTEXT)
+        declareAny(name)
+      /*
+       * The names stx auto-imports into a client script from
+       * `@stacksjs/browser` - `debounce`, `useTimeoutFn`, `useDocumentVisibility`
+       * and the rest of `BROWSER_CORE_IMPORTS`. They are injected at build time
+       * and were declared nowhere, so the checker reported each one as
+       * "Cannot find name" against a script that runs.
+       *
+       * `any`, like the other context names: their real types live in a package
+       * this buffer does not import, and a wrong type would be worse than a
+       * loose one.
+       */
+      for (const name of BROWSER_CORE_IMPORTS)
+        declareAny(name)
+      for (const name of STX_TEMPLATE_GLOBALS)
+        declareAny(name)
+    }
     append(`declare var ${INTERPOLATION_PLACEHOLDER}: any`)
 
     // Loop bindings the markup introduces, which no script block declares.
@@ -1648,13 +1794,21 @@ export function buildVirtualTypeScript(
     }
   }
 
+  // Before anything else, a directive is only honoured ahead of the first
+  // statement, and line 1 is the only line guaranteed to come first.
+  let referenced = false
+  if (options.reference && lines[0] !== undefined && lines[0].trim() === '') {
+    lines[0] = `/// <reference path=${JSON.stringify(options.reference.replace(/\\/g, '/'))} />`
+    referenced = true
+  }
+
   // Makes the buffer a MODULE. Without it a block-less file is a global script,
   // so a top-level `const open` does not shadow lib.dom's `open` and
   // `open.set(…)` reports against `Window.open` instead of the signal. Any name
   // lib.dom happens to claim — `name`, `status`, `length`, `close` — hits this.
   append('export {}')
 
-  return { text: lines.join('\n'), lineMap, sourceLineCount: sourceLines.length, componentDependencies: components?.dependencies }
+  return { text: lines.join('\n'), lineMap, sourceLineCount: sourceLines.length, componentDependencies: components?.dependencies, referenced }
 }
 
 /** Offsets at which each 1-based line starts. */
@@ -1699,6 +1853,28 @@ export interface ResolvedPosition {
    * condition has a line of its own (stacksjs/stx#2013).
    */
   inGuard?: boolean
+}
+
+/**
+ * Whether a diagnostic on a template-expression line is an artefact of how the
+ * expression was wrapped rather than a fault in it. Both checkers drop these,
+ * so the editor and `stx typecheck` agree:
+ *
+ *  - A hit inside the `if (…) {` wrapper that markup guards put around an
+ *    expression is about the enclosing CONDITION, which is checked on a line
+ *    of its own. This copy would report the same fault again against innocent
+ *    markup (stacksjs/stx#2013).
+ *  - TS2774 ("this condition will always return true since this function is
+ *    always defined") is wrong about a template, and only about a template.
+ *    {@link UNWRAP_HELPER} types a signal as the intersection of the signal and
+ *    its value, which stays callable, and the runtime unwraps a name the
+ *    expression only reads — so `x-class="ready ? '' : 'hidden'"` does not
+ *    always return true. In a script block it is a true positive and is kept.
+ */
+export function isTemplateArtefact(position: ResolvedPosition, code: number): boolean {
+  if (!position.expression)
+    return false
+  return position.inGuard === true || code === 2774
 }
 
 /**

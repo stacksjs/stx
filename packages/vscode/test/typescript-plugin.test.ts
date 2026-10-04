@@ -14,12 +14,13 @@
  * positions, block isolation, and suppression.
  */
 import type * as ts from 'typescript/lib/tsserverlibrary'
-import { describe, expect, test } from 'bun:test'
+import { afterAll, describe, expect, test } from 'bun:test'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildVirtualTypeScript, lineStarts, positionToOffset } from '../../stx/src/stx-virtual-ts'
-import init from '../src/typescript-stx-plugin'
+import { writeStxDeclarations } from '../src/ts-plugin-declarations'
+import init, { findInstalledStxDeclarations } from '../src/typescript-stx-plugin'
 
 /** Everything the plugin uses from the `typescript` module. */
 const tsLib = {
@@ -39,7 +40,7 @@ interface Harness {
   setDiagnostics: (diagnostics: Partial<ts.Diagnostic>[]) => void
 }
 
-function harness(fileName: string, source: string, components = new Map<string, string>()): Harness {
+function harness(fileName: string, source: string, components = new Map<string, string>(), options: { declarationsDir?: string, plugin?: ReturnType<typeof init>, service?: Record<string, unknown> } = {}): Harness {
   let diagnostics: Partial<ts.Diagnostic>[] = []
 
   const host = {
@@ -55,6 +56,7 @@ function harness(fileName: string, source: string, components = new Map<string, 
     getSuggestionDiagnostics: () => [] as ts.DiagnosticWithLocation[],
     getQuickInfoAtPosition: () => undefined,
     getCompletionsAtPosition: () => undefined,
+    ...options.service,
   } as unknown as ts.LanguageService
 
   const info = {
@@ -63,7 +65,7 @@ function harness(fileName: string, source: string, components = new Map<string, 
     project: { projectService: { logger: { info: () => {} } } },
   } as unknown as ts.server.PluginCreateInfo
 
-  const service = init({ typescript: tsLib }).create(info)
+  const service = (options.plugin ?? init({ typescript: tsLib }, { declarationsDir: options.declarationsDir })).create(info)
   return { service, host, setDiagnostics: (d) => { diagnostics = d } }
 }
 
@@ -155,14 +157,15 @@ describe('diagnostic positions', () => {
       '</script>', //         3
       '<p>{{ titel }}</p>', //4
     ].join('\n')
-    const { service, setDiagnostics } = harness('/p.stx', source)
-    const built = buildVirtualTypeScript(source)
+    const { service, host, setDiagnostics } = harness('/p.stx', source)
+    // The buffer the plugin really serves, which is what tsserver reports on.
+    const snapshot = host.getScriptSnapshot!('/p.stx')!
+    const text = snapshot.getText(0, snapshot.getLength())
 
     // Find the synthetic line carrying the expression and report on it.
-    const [line, mapped] = [...built.lineMap.entries()].find(([, m]) => m.expression)!
     setDiagnostics([{
       code: 2304,
-      start: offsetOf(built.text, line, (mapped.prefixLength ?? 0) + 1),
+      start: text.lastIndexOf('titel'),
       length: 5,
       messageText: `Cannot find name 'titel'.`,
     }])
@@ -250,5 +253,137 @@ describe('plugin shape', () => {
     const project = { getFileNames: () => ['/a.stx', '/b.md', '/c.ts'] } as unknown as ts.server.Project
 
     expect(plugin.getExternalFiles!(project, 0)).toEqual(['/a.stx', '/b.md'])
+  })
+})
+
+describe('the runtime declarations (stacksjs/stx#2028)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'stx-plugin-declarations-'))
+  afterAll(() => rmSync(dir, { recursive: true, force: true }))
+  const [stxModule] = writeStxDeclarations(join(dir, 'types')).filter(file => file.endsWith('stx-module.d.ts'))
+  const source = '<script client>\nimport { onMount, useServerData } from \'stx\'\nconst n = state(0)\n</script>\n<p>{{ n }}</p>'
+  const text = (host: ts.LanguageServiceHost, file: string) => {
+    const snapshot = host.getScriptSnapshot!(file)!
+    return snapshot.getText(0, snapshot.getLength())
+  }
+
+  test('are referenced from line 1, so only a program holding a .stx file loads them', () => {
+    const { host } = harness('/app/p.stx', source, undefined, { declarationsDir: join(dir, 'types') })
+    expect(text(host, '/app/p.stx').split('\n')[0]).toBe(`/// <reference path="${stxModule}" />`)
+  })
+
+  test('replace the `any` runtime globals, which would shadow their types', () => {
+    const { host } = harness('/app/p.stx', source, undefined, { declarationsDir: join(dir, 'types') })
+    expect(text(host, '/app/p.stx')).not.toContain('declare var state: any')
+
+    // Without them it falls back to `any`, rather than to "Cannot find name".
+    const fallback = harness('/app/p.stx', source)
+    expect(text(fallback.host, '/app/p.stx')).toContain('declare var state: any')
+  })
+
+  test('come from the app\'s own @stacksjs/stx when it ships them', () => {
+    const app = join(dir, 'app')
+    const installed = join(app, 'node_modules', '@stacksjs', 'stx')
+    writeStxDeclarations(installed)
+    expect(findInstalledStxDeclarations(join(app, 'resources', 'views'))).toBe(join(installed, 'stx-module.d.ts'))
+    expect(findInstalledStxDeclarations('/')).toBeUndefined()
+
+    const { host } = harness(join(app, 'resources', 'p.stx'), source, undefined, { declarationsDir: join(dir, 'types') })
+    expect(text(host, join(app, 'resources', 'p.stx')).split('\n')[0]).toBe(`/// <reference path="${join(installed, 'stx-module.d.ts')}" />`)
+  })
+
+  test('a name imported into the wrong kind of block is reported at the name', () => {
+    const { service } = harness('/app/p.stx', source, undefined, { declarationsDir: join(dir, 'types') })
+    const [diagnostic, ...rest] = service.getSemanticDiagnostics('/app/p.stx')
+    expect(rest).toEqual([])
+    expect(source.slice(diagnostic.start!, diagnostic.start! + diagnostic.length!)).toBe('useServerData')
+    expect(diagnostic.source).toBe('stx')
+  })
+
+  test('stxTypescriptPlugin.enabled = false silences the file', () => {
+    const plugin = init({ typescript: tsLib }, { declarationsDir: join(dir, 'types') })
+    const { service, setDiagnostics } = harness('/app/p.stx', source, undefined, { plugin })
+    setDiagnostics([{ code: 2322, start: 30, length: 1, messageText: 'nope' }])
+    expect(service.getSemanticDiagnostics('/app/p.stx').length).toBeGreaterThan(0)
+
+    plugin.onConfigurationChanged!({ enabled: false })
+    expect(service.getSemanticDiagnostics('/app/p.stx')).toEqual([])
+    expect(service.getSyntacticDiagnostics('/app/p.stx')).toEqual([])
+
+    plugin.onConfigurationChanged!({ enabled: true })
+    expect(service.getSemanticDiagnostics('/app/p.stx').length).toBeGreaterThan(0)
+  })
+})
+
+describe('features that are not mapped answer nothing for a .stx file', () => {
+  // Their answers are offsets and edits in the VIRTUAL buffer, which the
+  // client would apply to the real file: a format would rewrite the markup,
+  // semantic tokens would colour the wrong characters.
+  const edits = [{ span: { start: 0, length: 1 }, newText: 'x' }]
+  const service = {
+    getFormattingEditsForDocument: () => edits,
+    getCodeFixesAtPosition: () => [{ changes: [] }],
+    getEncodedSemanticClassifications: () => ({ spans: [0, 1, 2], endOfLineState: 0 }),
+    getOutliningSpans: () => [{ textSpan: { start: 0, length: 1 } }],
+  }
+
+  test('for .stx, and pass through for everything else', () => {
+    const { service: ls } = harness('/p.stx', PAGE, undefined, { service })
+    expect(ls.getFormattingEditsForDocument('/p.stx', {} as ts.FormatCodeSettings)).toEqual([])
+    expect(ls.getCodeFixesAtPosition('/p.stx', 0, 1, [2322], {}, {})).toEqual([])
+    expect(ls.getEncodedSemanticClassifications('/p.stx', { start: 0, length: 1 })).toBeUndefined()
+    expect(ls.getOutliningSpans('/p.stx')).toEqual([])
+    expect(ls.getFormattingEditsForDocument('/p.ts', {} as ts.FormatCodeSettings)).toBe(edits)
+  })
+})
+
+describe('completions', () => {
+  test('are offered in a script block, at the mapped position, without auto-imports', () => {
+    let asked: { position: number, options: ts.GetCompletionsAtPositionOptions | undefined } | undefined
+    const service = {
+      getCompletionsAtPosition: (_file: string, position: number, options: ts.GetCompletionsAtPositionOptions | undefined) => {
+        asked = { position, options }
+        return { isGlobalCompletion: false, isMemberCompletion: false, isNewIdentifierLocation: false, entries: [{ name: 'flag', kind: 'const', sortText: '0' }, { name: '__stx_interpolated', kind: 'var', sortText: '0' }] }
+      },
+    }
+    const { service: ls, host } = harness('/p.stx', PAGE, undefined, { service })
+    const virtual = host.getScriptSnapshot!('/p.stx')!
+    const result = ls.getCompletionsAtPosition('/p.stx', offsetOf(PAGE, 7, 7), { includeCompletionsForModuleExports: true })
+    expect(asked!.position).toBe(offsetOf(virtual.getText(0, virtual.getLength()), 7, 7))
+    expect(asked!.options?.includeCompletionsForModuleExports).toBe(false)
+    expect(result!.entries.map(entry => entry.name)).toEqual(['flag'])
+  })
+
+  test('are not offered in the markup, where TypeScript would list every global', () => {
+    const { service: ls } = harness('/p.stx', PAGE, undefined, { service: { getCompletionsAtPosition: () => ({ entries: [{ name: 'window' }] }) } })
+    expect(ls.getCompletionsAtPosition('/p.stx', offsetOf(PAGE, 5, 3), undefined)).toBeUndefined()
+  })
+})
+
+describe('definitions', () => {
+  test('keep virtual offsets on a script line, which tsserver reads through the buffer', () => {
+    // tsserver turns a definition's span into line/column with the language
+    // service's own source file, so it must stay a buffer offset; the bound
+    // span, converted through the real file, is mapped back.
+    let virtualText = ''
+    const service = {
+      getDefinitionAndBoundSpan: () => ({
+        textSpan: { start: offsetOf(virtualText, 7, 7), length: 4 },
+        definitions: [
+          { fileName: '/p.stx', textSpan: { start: offsetOf(virtualText, 7, 7), length: 4 }, kind: 'const', name: 'flag', containerKind: '', containerName: '' },
+          { fileName: '/p.stx', textSpan: { start: virtualText.length - 2, length: 1 }, kind: 'var', name: 'x', containerKind: '', containerName: '' },
+          { fileName: '/lib.d.ts', textSpan: { start: 3, length: 1 }, kind: 'var', name: 'y', containerKind: '', containerName: '' },
+        ],
+      }),
+    }
+    const { service: ls, host } = harness('/p.stx', PAGE, undefined, { service })
+    const snapshot = host.getScriptSnapshot!('/p.stx')!
+    virtualText = snapshot.getText(0, snapshot.getLength())
+
+    const result = ls.getDefinitionAndBoundSpan('/p.stx', offsetOf(PAGE, 7, 7))!
+    expect(result.textSpan.start).toBe(offsetOf(PAGE, 7, 7))
+    expect(result.definitions!.map(d => [d.fileName, d.textSpan.start])).toEqual([
+      ['/p.stx', offsetOf(virtualText, 7, 7)],
+      ['/lib.d.ts', 3],
+    ])
   })
 })

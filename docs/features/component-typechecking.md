@@ -38,7 +38,10 @@ Component lookup shares the renderer's file naming and search order, including
 The CLI loads the app's stx configuration. Programmatic callers may override
 `componentsDir` in `typecheckStxFiles(files, { componentsDir })`.
 
-The TypeScript editor plugin uses the same contract projection and rechecks a
+The TypeScript editor plugin uses the same contract projection, the same
+declarations (`stx.d.ts` and `stx-module.d.ts`, preferring the copies the app has
+installed) and the same `from 'stx'` rules as `stx typecheck`, so the two report
+the same diagnostics. `stxTypescriptPlugin.enabled: false` turns it off. It rechecks a
 parent when an open child component's declarations change. For a custom component
 directory, set `componentsDir` on the stx TypeScript plugin entry in `tsconfig.json`
 (relative to the TypeScript project). The editor does not execute `stx.config.ts`.

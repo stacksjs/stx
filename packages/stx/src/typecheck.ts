@@ -48,8 +48,12 @@ import {
   scrapedBridgeNames,
   serverContextDeclarations,
   blankScriptDirectives,
+  declaredGlobalNames,
+  firstLinePadding,
+  isTemplateArtefact,
   substituteInterpolationsInPlace,
 } from './stx-virtual-ts'
+import { stxImportDiagnostics } from './stx-module-imports'
 
 export type { ScriptBlock, ScriptKind } from './stx-virtual-ts'
 export {
@@ -140,7 +144,8 @@ export function buildVirtualSource(block: ScriptBlock, serverCode = '', originDi
   // Interpolations first: the directive matcher requires the directive to be
   // alone on its line, and a multi-line `{{ }}` in its argument is collapsed to
   // one line by the substitution above.
-  const code = blankScriptDirectives(substituteInterpolationsInPlace(block.code))
+  // Padded so a body that starts on the tag's own line keeps its column.
+  const code = firstLinePadding(block) + blankScriptDirectives(substituteInterpolationsInPlace(block.code))
 
   /*
    * A client block is checked in its own buffer, so a value reaching it through
@@ -160,50 +165,6 @@ export function buildVirtualSource(block: ScriptBlock, serverCode = '', originDi
   // type can carry an `import('./x').Foo`, and the rewrite adds no lines, so
   // the padding above still puts every diagnostic on the author's line.
   return absolutizeRelativeSpecifiers(`${leadingNewlines + code}\n${payload}\nexport {}\n`, originDir)
-}
-
-/**
- * Make `from 'stx'` resolve, because the framework accepts it.
- *
- * Inside a `.stx` script block, `stx` is a VIRTUAL specifier: `client-script.ts`
- * treats `'stx'` and `'@stacksjs/stx'` alike and strips the import, handing the
- * names to the block as runtime globals. It is also the house spelling — 164
- * uses across `docs/` and `src/` against 126 of the scoped name — so it is what
- * an author copies out of the documentation.
- *
- * The checker did not know that, and reported `Cannot find module 'stx'` on the
- * documented form. That is not merely a false error; it MASKED a real one. An
- * unresolved module is `any`, so every signature behind it stopped being
- * enforced: correcting the specifier in one app turned 18 "Cannot find module"
- * errors into 36 genuine constraint errors that had been invisible the whole
- * time (stacksjs/stx#1917).
- *
- * Aliased to the real package rather than re-declaring its exports, so there is
- * no second list of the public API to drift. Emitted only when the package
- * actually resolves — a `declare module` pointing at nothing would put an error
- * in an ambient file, and a syntax-level failure there takes the whole run down
- * with it (#1906).
- *
- * Scoped to this checker on purpose. The specifier is virtual only where the
- * import is stripped, which is inside a `.stx` block; a `.ts` composable has a
- * real import and must keep using the real package name.
- */
-function virtualStxModuleDeclaration(files: string[]): string {
-  const anchor = files.length > 0 ? path.dirname(path.resolve(files[0])) : process.cwd()
-
-  try {
-    Bun.resolveSync('@stacksjs/stx', anchor)
-  }
-  catch {
-    return ''
-  }
-
-  return [
-    '// Generated — `stx` is the virtual specifier client-script.ts strips.',
-    'declare module \'stx\' {',
-    '  export * from \'@stacksjs/stx\'',
-    '}',
-  ].join('\n')
 }
 
 /**
@@ -290,9 +251,29 @@ export function sourcePathFor(virtualPath: string): string {
  * than hand tsc a path to nothing.
  */
 export function findRuntimeTypeDeclarations(): string | null {
+  return findPackageDeclarations('stx.d.ts')
+}
+
+/**
+ * Locate the package's own `stx-module.d.ts`, which declares the virtual `stx`
+ * module a `.stx` block imports from.
+ *
+ * It used to be generated here as `declare module 'stx' { export * from
+ * '@stacksjs/stx' }`, which typed `from 'stx'` as the whole package. That is
+ * not what the specifier binds: a client block gets only what is destructured
+ * off `window.stx`, a server block only what the engine passes in, and every
+ * other name fails at runtime (stacksjs/stx#2028). The declaration file says
+ * exactly that, and the editor plugin loads the same one, so the two checkers
+ * cannot disagree about it.
+ */
+export function findStxModuleDeclarations(): string | null {
+  return findPackageDeclarations('stx-module.d.ts')
+}
+
+function findPackageDeclarations(name: string): string | null {
   for (const candidate of [
-    path.resolve(import.meta.dir, '..', 'stx.d.ts'),
-    path.resolve(import.meta.dir, '..', '..', 'stx.d.ts'),
+    path.resolve(import.meta.dir, '..', name),
+    path.resolve(import.meta.dir, '..', '..', name),
   ]) {
     if (existsSync(candidate))
       return candidate
@@ -501,6 +482,8 @@ export async function typecheckStxFiles(
   const virtualFiles = new Map<string, VirtualEntry>()
   /** Per file: the bridge names still crossing implicitly, and where to say so. */
   const scrapedByFile = new Map<string, { names: string[], line: number, kind: ScriptKind }>()
+  /** Names imported from `stx` into a block kind that does not receive them. */
+  const importDiagnostics: TypecheckDiagnostic[] = []
   const checkedFiles: string[] = []
   let blockCount = 0
   let expressionCount = 0
@@ -534,6 +517,18 @@ export async function typecheckStxFiles(
       .filter(block => block.kind === 'server')
       .map(block => block.code)
       .join('\n')
+
+    for (const d of stxImportDiagnostics(source, blocks)) {
+      importDiagnostics.push({
+        file,
+        line: d.line,
+        column: d.column,
+        code: 0,
+        message: d.message,
+        category: 'error',
+        blockKind: d.kind,
+      })
+    }
 
     // Recorded here, where both halves of the file are in hand, and reported
     // after tsc has run so the warning sits alongside the real diagnostics.
@@ -584,7 +579,7 @@ export async function typecheckStxFiles(
   }
 
   if (virtualFiles.size === 0)
-    return { diagnostics: [], checkedFiles, blockCount: 0, expressionCount: 0 }
+    return { diagnostics: importDiagnostics, checkedFiles, blockCount: 0, expressionCount: 0 }
 
   /*
    * Resolved against the caller's cwd, not left relative (#1906).
@@ -617,11 +612,17 @@ export async function typecheckStxFiles(
   // `const n = state(0)` gave `n: any`, so `{{ n.nosuch }}` passed. See #1889.
   if (runtimeTypes)
     ambient.push(runtimeTypes)
+  // References `stx.d.ts` for its types, so it is only usable alongside it.
+  const stxModule = runtimeTypes ? findStxModuleDeclarations() : null
+  if (stxModule)
+    ambient.push(stxModule)
 
   const globalsDts = `${stateDir()}/typecheck/__stx_globals.d.ts`
   const globalDecls = [
     '// Generated — the context serve.ts injects into <script server> blocks.',
-    serverContextDeclarations(),
+    // Names stx.d.ts types are left to it: `declare var x: any` beside its
+    // `declare function x()` is a conflict that types the name as neither.
+    serverContextDeclarations(runtimeTypes ? declaredGlobalNames(readFileSync(runtimeTypes, 'utf8')) : undefined),
     ...(runtimeTypes
       ? []
       // Fallback only: if stx.d.ts cannot be found (an unusual install layout),
@@ -642,7 +643,6 @@ export async function typecheckStxFiles(
      */
     ['// Generated — the names stx auto-imports from @stacksjs/browser.',
       ...BROWSER_CORE_IMPORTS.map(name => `declare const ${name}: any`)].join('\n'),
-    virtualStxModuleDeclaration(files),
     composableGlobalDeclarations(await listComposableModules()),
   ].filter(Boolean).join('\n')
 
@@ -753,39 +753,8 @@ export async function typecheckStxFiles(
       if (!at?.expression)
         continue
 
-      /*
-       * A hit inside the `if (…) {` wrapper is about the enclosing CONDITION,
-       * not about the expression this line carries. The condition is checked on
-       * a line of its own now, so this copy would report the same fault a
-       * second time against innocent markup - which is how it used to be
-       * reported at all: `state<string>` named in an "Object is possibly null"
-       * diagnostic, because the only line available was the one inside the
-       * block (stacksjs/stx#2013).
-       */
-      if (at.inGuard)
-        continue
-
-      // TS2774 "this condition will always return true since this function is
-      // always defined — did you mean to call it instead?" is wrong about a
-      // template, and only about a template.
-      //
-      // `UNWRAP_HELPER` types a signal as the INTERSECTION of the signal and
-      // its value, so that `:if="flag"` and `@click="flag.set(true)"` both
-      // type-check off one declaration. The intersection stays callable, and
-      // TS2774 fires on precisely that: a callable in a boolean position. So
-      // the diagnostic lands on `x-class="ready ? '' : 'hidden'"` — the exact
-      // form the unwrap exists to bless.
-      //
-      // The runtime disagrees with it. `createExpressionAutoUnwrapProxy`
-      // decides PER IDENTIFIER, from the expression text: a name the
-      // expression calls stays a callable signal, a name it only reads is
-      // handed over unwrapped. So in `a && !b()`, `b` stays callable and `a`
-      // reads as its value — the condition does not always return true.
-      //
-      // Left in place for script blocks, where it is a true positive: a
-      // `<script client>` body gets the raw signal and `if (flag)` there really
-      // is always truthy. Only the template buffer suppresses it.
-      if (Number(code) === 2774)
+      // The guard wrapper and TS2774 — see isTemplateArtefact.
+      if (isTemplateArtefact(at, Number(code)))
         continue
 
       line = at.line
@@ -867,6 +836,8 @@ export async function typecheckStxFiles(
       })
     }
   }
+
+  diagnostics.push(...importDiagnostics)
 
   // Deduplicate: an expression that appears twice in a file produces the same
   // diagnostic at the same place once per occurrence only if they really are

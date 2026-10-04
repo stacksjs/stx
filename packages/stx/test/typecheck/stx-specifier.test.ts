@@ -93,4 +93,56 @@ const p = defineProps<{ a: string }>()
 
     expect(result.diagnostics.map(d => d.code)).toContain(2307)
   })
+
+  it('declares what a client block gets: the window.stx runtime, typed', async () => {
+    // A client block's `from 'stx'` is stripped and destructured off
+    // window.stx, so the module has to be that surface and type it the same
+    // way as the auto-imported globals (stacksjs/stx#2028).
+    const result = await check('client.stx', `<script client>
+import { onMount, state, useQuery } from 'stx'
+const count = state(0)
+const wrong: string = count()
+onMount(() => count.set(1))
+useQuery<{ id: number }>('/api')
+</script>
+<div>{{ count }}</div>`)
+
+    expect(result.diagnostics.map(d => d.code)).not.toContain(2307)
+    expect(result.diagnostics.filter(d => d.code === 2322).map(d => d.line)).toEqual([4])
+    expect(result.diagnostics.filter(d => d.code !== 2322)).toEqual([])
+  })
+
+  it('reports a name the runtime does not bind for that kind of block', async () => {
+    // `useServerData` is the engine's, server side only: in a client block the
+    // import is stripped and nothing on window.stx replaces it. `useQuery` is
+    // the reverse - in a server block it becomes `await import('stx')`, which
+    // does not resolve. Both type-check against a module that blessed the whole
+    // package; both fail at runtime.
+    const result = await check('wrong-side.stx', `<script server>
+import { useQuery, withDefaults } from 'stx'
+</script>
+<script client>
+import { onMount, useServerData } from 'stx'
+</script>
+<div></div>`)
+
+    const surface = result.diagnostics.filter(d => d.code === 0 && d.category === 'error')
+    expect(surface.map(d => [d.line, d.column, d.blockKind])).toEqual([
+      [2, 10, 'server'],
+      [5, 19, 'client'],
+    ])
+    expect(surface[0].message).toContain(`'useQuery' is not provided by 'stx' in a <script server> block`)
+    expect(surface[1].message).toContain(`'useServerData' is not provided by 'stx' in a client <script> block`)
+  })
+
+  it('does not export the rest of @stacksjs/stx', async () => {
+    // `useForm` is a real export of the package and nothing either script path
+    // binds for `from 'stx'`.
+    const result = await check('not-runtime.stx', `<script server>
+import { useForm } from 'stx'
+</script>
+<div></div>`)
+
+    expect(result.diagnostics.map(d => d.code)).toContain(2305)
+  })
 })

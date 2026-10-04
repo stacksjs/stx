@@ -1,5 +1,6 @@
 import process from 'node:process'
 import { writeTsPluginPackage } from './scripts/ts-plugin-package'
+import { writeStxDeclarations } from './src/ts-plugin-declarations'
 
 console.log('Building VSCode extension...')
 
@@ -49,6 +50,10 @@ try {
     console.error('TypeScript plugin build failed:', pluginResult.logs)
     process.exit(1)
   }
+
+  // The runtime's declarations the plugin adds to a program holding a `.stx`
+  // file, beside the bundle that looks for them (stacksjs/stx#2028).
+  writeStxDeclarations(`${import.meta.dir}/dist/types`)
 
   const manifest = await Bun.file(new URL('./package.json', import.meta.url)).json()
   writeTsPluginPackage(import.meta.dir, manifest.version)

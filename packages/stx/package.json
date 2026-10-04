@@ -84,7 +84,8 @@
     "LICENSE.md",
     "README.md",
     "dist",
-    "stx.d.ts"
+    "stx.d.ts",
+    "stx-module.d.ts"
   ],
   "scripts": {
     "build": "bun run build:css && bun --bun build.ts",

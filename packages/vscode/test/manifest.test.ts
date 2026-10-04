@@ -41,6 +41,33 @@ function loadLikeTsserver(extensionRoot: string, name: string): unknown {
   return createRequire(path.join(extensionRoot, 'node_modules', 'index.js'))(name)
 }
 
+/**
+ * The plugin, loaded the way tsserver loads it from `extensionRoot`, finds the
+ * declaration files it references from every `.stx` buffer (stacksjs/stx#2028).
+ *
+ * Asserted through the buffer it serves rather than by looking at dist/: the
+ * bundle cannot locate them by itself (Bun inlines `__dirname` at build time),
+ * so what matters is that the package's `index.js` tells it where they are.
+ */
+function expectDeclarationsFound(extensionRoot: string): void {
+  const factory = loadLikeTsserver(extensionRoot, TS_PLUGIN_PACKAGE) as (modules: { typescript: unknown }) => { create: (info: unknown) => unknown }
+  const text = '<script client>\nconst n = state(0)\n</script>\n'
+  const host: Record<string, unknown> = {
+    getScriptSnapshot: () => ({ getText: (start: number, end: number) => text.slice(start, end), getLength: () => text.length, getChangeRange: () => undefined }),
+    getScriptVersion: () => '1',
+  }
+  const service = {}
+  factory({
+    typescript: { ScriptSnapshot: { fromString: (value: string) => ({ getText: (start: number, end: number) => value.slice(start, end), getLength: () => value.length, getChangeRange: () => undefined }) } },
+  }).create({ languageService: service, languageServiceHost: host, project: { projectService: { logger: { info: () => {} } } } })
+
+  const snapshot = (host.getScriptSnapshot as (file: string) => { getText: (s: number, e: number) => string, getLength: () => number })('/tmp/page.stx')
+  const firstLine = snapshot.getText(0, snapshot.getLength()).split('\n')[0]
+  const referenced = /^\/\/\/ <reference path="(.+)" \/>$/.exec(firstLine)?.[1]
+  expect(referenced).toBe(path.join(extensionRoot, 'dist', 'types', 'stx-module.d.ts'))
+  expect(existsSync(path.join(extensionRoot, 'dist', 'types', 'stx.d.ts'))).toBe(true)
+}
+
 function floor(range: string): number[] {
   const match = range.match(/(\d+)\.(\d+)\.(\d+)/)
   if (!match)
@@ -148,6 +175,19 @@ describe('VSCODE: TypeScript server plugin', () => {
     }
   })
 
+  test('claims the stx language, or VS Code never sends a .stx file to tsserver', () => {
+    // Without `languages` the plugin loaded and then type-checked nothing:
+    // VS Code only syncs documents whose language tsserver or a plugin claims
+    // (stacksjs/stx#2028).
+    for (const plugin of manifest.contributes.typescriptServerPlugins)
+      expect(plugin.languages).toEqual(['stx'])
+    expect(manifest.contributes.languages.map((language: { id: string }) => language.id)).toContain('stx')
+  })
+
+  test('declares the setting that switches it off', () => {
+    expect(manifest.contributes.configuration.properties['stxTypescriptPlugin.enabled'].default).toBe(true)
+  })
+
   test('the package is named what the manifest contributes', () => {
     expect(JSON.parse(tsPluginPackageFiles('1.0.0')['package.json']).name).toBe(TS_PLUGIN_PACKAGE)
   })
@@ -159,9 +199,10 @@ describe('VSCODE: TypeScript server plugin', () => {
     const factory = loadLikeTsserver(PACKAGE_ROOT, TS_PLUGIN_PACKAGE)
 
     expect(typeof factory).toBe('function')
-    expect(loadLikeTsserver(PACKAGE_ROOT, TS_PLUGIN_PACKAGE)).toBe(createRequire(import.meta.url)(path.join(PACKAGE_ROOT, TS_PLUGIN_BUNDLE)))
     const plugin = (factory as (modules: { typescript: unknown }) => { create: unknown, getExternalFiles: unknown })({ typescript: {} })
     expect(typeof plugin.create).toBe('function')
+    expect(existsSync(path.join(PACKAGE_ROOT, TS_PLUGIN_BUNDLE))).toBe(true)
+    expectDeclarationsFound(PACKAGE_ROOT)
   }, 60_000)
 
   // vsce runs `vscode:prepublish` through npm, so this needs npm on PATH; the
@@ -176,6 +217,9 @@ describe('VSCODE: TypeScript server plugin', () => {
       const installed = path.join(dir, 'extension')
       const factory = loadLikeTsserver(installed, TS_PLUGIN_PACKAGE)
       expect(typeof factory).toBe('function')
+      // The declarations ride in dist/types, which .vscodeignore's `**/*.ts`
+      // would drop without its exception.
+      expectDeclarationsFound(installed)
     }
     finally {
       rmSync(dir, { recursive: true, force: true })

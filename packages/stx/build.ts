@@ -338,6 +338,10 @@ cpSync(resolve('./src/components'), resolve('./dist/components'), { recursive: t
 // pick the globals up automatically when they install @stacksjs/stx — no
 // per-app stx.d.ts workaround required.
 copyFileSync(resolve('./stx.d.ts'), resolve('./dist/stx.d.ts'))
+// The virtual `stx` module a `.stx` block imports from. Deliberately NOT
+// referenced from any entrypoint: the specifier is virtual only inside a `.stx`
+// block, so `stx typecheck` and the editor plugin add it themselves.
+copyFileSync(resolve('./stx-module.d.ts'), resolve('./dist/stx-module.d.ts'))
 
 // Every documented entrypoint gets the reference, not just `.`. An app that
 // only imports a subpath (`@stacksjs/stx/menubar`, say) never loads index.d.ts,

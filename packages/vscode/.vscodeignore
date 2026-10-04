@@ -11,6 +11,7 @@ node_modules/**
 **/*.map
 **/*.ts
 !src/**/*.d.ts
+!dist/types/*.d.ts
 .editorconfig
 .prettierrc
 .prettierignore
