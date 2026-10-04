@@ -238,7 +238,7 @@
     },
     "typescriptServerPlugins": [
       {
-        "name": "./dist/typescript-stx-plugin.js",
+        "name": "@stacksjs/stx-typescript-plugin",
         "enableForWorkspaceTypeScriptVersions": true
       }
     ]
@@ -246,8 +246,8 @@
   "scripts": {
     "build": "bun build.ts",
     "vscode:prepublish": "bun run build",
-    "package": "bun x --bun vsce package --no-dependencies --baseContentUrl https://github.com/stacksjs/stx/blob/main/packages/vscode --baseImagesUrl https://raw.githubusercontent.com/stacksjs/stx/main/packages/vscode",
-    "release": "bun x --bun vsce publish --no-dependencies --baseContentUrl https://github.com/stacksjs/stx/blob/main/packages/vscode --baseImagesUrl https://raw.githubusercontent.com/stacksjs/stx/main/packages/vscode"
+    "package": "bun scripts/package.ts",
+    "release": "bun scripts/package.ts --publish"
   },
   "galleryBanner": {
     "color": "#d7e4f5",

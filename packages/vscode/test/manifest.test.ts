@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'bun:test'
-import { existsSync } from 'node:fs'
-import { builtinModules } from 'node:module'
+import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { builtinModules, createRequire } from 'node:module'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { packageExtension } from '../scripts/package'
+import { TS_PLUGIN_BUNDLE, TS_PLUGIN_DIR, TS_PLUGIN_PACKAGE, tsPluginPackageFiles } from '../scripts/ts-plugin-package'
 import { STACKS_EXTENSION_ID, STX_EXTENSION_ID } from '../src/ids'
 
 const PACKAGE_ROOT = path.join(import.meta.dir, '..')
@@ -15,6 +18,27 @@ const manifest = await Bun.file(path.join(PACKAGE_ROOT, 'package.json')).json()
 
 function extensionId(pkg: { publisher: string, name: string }): string {
   return `${pkg.publisher}.${pkg.name}`
+}
+
+/** packages/vscode's own dependencies are installed (see the note below). */
+const INSTALLED = existsSync(path.join(PACKAGE_ROOT, 'node_modules/prettier'))
+
+let built = false
+function build(): void {
+  if (built)
+    return
+  const result = Bun.spawnSync(['bun', 'build.ts'], { cwd: PACKAGE_ROOT, stdout: 'pipe', stderr: 'pipe' })
+  expect(result.exitCode).toBe(0)
+  built = true
+}
+
+/**
+ * Load a TypeScript server plugin the way tsserver does: `require()` the name
+ * from `<probe location>/node_modules` (VS Code passes the extension root as
+ * the probe location) and take `module.exports` as the factory, unwrapped.
+ */
+function loadLikeTsserver(extensionRoot: string, name: string): unknown {
+  return createRequire(path.join(extensionRoot, 'node_modules', 'index.js'))(name)
 }
 
 function floor(range: string): number[] {
@@ -74,18 +98,18 @@ describe('VSCODE: installability', () => {
     expect(floor(manifest.engines.vscode)).toEqual(floor(manifest.devDependencies['@types/vscode']))
   })
 
-  test('packages without node_modules, so the bundle carries its dependencies', () => {
-    expect(manifest.scripts.package).toContain('--no-dependencies')
-    expect(manifest.scripts.release).toContain('--no-dependencies')
+  test('packages without node_modules, so the bundle carries its dependencies', async () => {
+    expect(manifest.scripts.package).toBe('bun scripts/package.ts')
+    expect(manifest.scripts.release).toBe('bun scripts/package.ts --publish')
+    expect(await Bun.file(path.join(PACKAGE_ROOT, 'scripts/package.ts')).text()).toContain(`'vsce', 'package', '--no-dependencies'`)
     expect(manifest.scripts['vscode:prepublish']).toBe('bun run build')
   })
 
   // packages/vscode is outside the root workspace, so its dependencies are
   // only present after `bun install` in this directory. The VS Code extension
   // workflow installs them and runs this file before every publish.
-  test.skipIf(!existsSync(path.join(PACKAGE_ROOT, 'node_modules/prettier')))('the built extension requires only vscode and Node built-ins', async () => {
-    const build = Bun.spawnSync(['bun', 'build.ts'], { cwd: PACKAGE_ROOT, stdout: 'pipe', stderr: 'pipe' })
-    expect(build.exitCode).toBe(0)
+  test.skipIf(!INSTALLED)('the built extension requires only vscode and Node built-ins', async () => {
+    build()
 
     const bundle = await Bun.file(path.join(PACKAGE_ROOT, 'dist/extension.js')).text()
     const specifiers = new Set([...bundle.matchAll(/\b(?:require|import)\("([^"]+)"\)/g)].map(match => match[1]))
@@ -103,4 +127,58 @@ describe('VSCODE: installability', () => {
     // eslint-disable-next-line no-new-func
     expect(() => new Function('exports', 'require', 'module', '__filename', '__dirname', bundle)).not.toThrow()
   }, 60_000)
+})
+
+// tsserver loads a plugin only by package name, resolved from the extension's
+// node_modules, and calls `module.exports` as the factory. The plugin was
+// contributed as `./dist/typescript-stx-plugin.js`, which tsserver refuses
+// ("only package name is allowed plugin name"), and its bundle exported
+// `{ default }`, which it would have skipped too. VS Code 1.128's log showed
+// the first; these tests pin both, and that the VSIX carries the package.
+describe('VSCODE: TypeScript server plugin', () => {
+  const contributed = manifest.contributes.typescriptServerPlugins.map((plugin: { name: string }) => plugin.name)
+
+  test('is contributed by package name, which tsserver accepts', () => {
+    expect(contributed).toEqual([TS_PLUGIN_PACKAGE])
+
+    // The rule tsserver applies before loading anything (requestEnablePlugin).
+    for (const name of contributed) {
+      expect(name).not.toMatch(/^(?:\.\.?(?:\/|$)|\/|[a-z]:)/i)
+      expect(name).not.toMatch(/[\\/]\.\.?(?:$|[\\/])/)
+    }
+  })
+
+  test('the package is named what the manifest contributes', () => {
+    expect(JSON.parse(tsPluginPackageFiles('1.0.0')['package.json']).name).toBe(TS_PLUGIN_PACKAGE)
+  })
+
+  test.skipIf(!INSTALLED)('the build writes a package tsserver can load', () => {
+    build()
+
+    expect(existsSync(path.join(PACKAGE_ROOT, TS_PLUGIN_DIR, 'package.json'))).toBe(true)
+    const factory = loadLikeTsserver(PACKAGE_ROOT, TS_PLUGIN_PACKAGE)
+
+    expect(typeof factory).toBe('function')
+    expect(loadLikeTsserver(PACKAGE_ROOT, TS_PLUGIN_PACKAGE)).toBe(createRequire(import.meta.url)(path.join(PACKAGE_ROOT, TS_PLUGIN_BUNDLE)))
+    const plugin = (factory as (modules: { typescript: unknown }) => { create: unknown, getExternalFiles: unknown })({ typescript: {} })
+    expect(typeof plugin.create).toBe('function')
+  }, 60_000)
+
+  // vsce runs `vscode:prepublish` through npm, so this needs npm on PATH; the
+  // VS Code extension workflow has it.
+  test.skipIf(!INSTALLED || !Bun.which('npm') || !Bun.which('zip') || !Bun.which('unzip'))('the VSIX carries the package, and it loads from the installed layout', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'stx-vsix-test-'))
+    try {
+      const vsix = packageExtension(path.join(dir, 'stx.vsix'))
+      const unzip = Bun.spawnSync(['unzip', '-q', vsix, 'extension/*', '-d', dir])
+      expect(unzip.exitCode).toBe(0)
+
+      const installed = path.join(dir, 'extension')
+      const factory = loadLikeTsserver(installed, TS_PLUGIN_PACKAGE)
+      expect(typeof factory).toBe('function')
+    }
+    finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  }, 120_000)
 })

@@ -1,4 +1,5 @@
 import process from 'node:process'
+import { writeTsPluginPackage } from './scripts/ts-plugin-package'
 
 console.log('Building VSCode extension...')
 
@@ -29,10 +30,14 @@ try {
     process.exit(1)
   }
 
-  // 2. Build the TypeScript plugin (CJS for TS server)
+  // 2. Build the TypeScript plugin (CJS for TS server). The entry sets
+  //    `module.exports` to the factory, which is what tsserver calls, and the
+  //    package tsserver resolves it by is written next to the extension's
+  //    other node_modules (see scripts/ts-plugin-package.ts).
   const pluginResult = await Bun.build({
-    entrypoints: ['./src/typescript-stx-plugin.ts'],
+    entrypoints: ['./src/typescript-plugin-entry.ts'],
     outdir: './dist',
+    naming: 'typescript-stx-plugin.[ext]',
     target: 'node',
     format: 'cjs',
     external: ['typescript', 'typescript/lib/tsserverlibrary'],
@@ -44,6 +49,9 @@ try {
     console.error('TypeScript plugin build failed:', pluginResult.logs)
     process.exit(1)
   }
+
+  const manifest = await Bun.file(new URL('./package.json', import.meta.url)).json()
+  writeTsPluginPackage(import.meta.dir, manifest.version)
 
   // 3. Build the library entry point (ESM for importing in other projects)
   const libResult = await Bun.build({
