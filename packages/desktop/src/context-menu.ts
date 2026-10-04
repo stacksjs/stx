@@ -53,6 +53,8 @@ export interface ContextMenuItem {
   shortcut?: string
   /** Renders greyed and unpickable. */
   disabled?: boolean
+  /** Shows a checkmark: the choice currently in effect. */
+  checked?: boolean
   /** Nested menu under this item. */
   submenu?: ContextMenuItem[]
 }
@@ -112,6 +114,7 @@ function toBridgeItem(item: ContextMenuItem): Record<string, unknown> {
     icon: item.icon,
     shortcut: item.shortcut,
     enabled: item.disabled ? false : undefined,
+    checked: item.checked ? true : undefined,
     // Craft builds a nested menu only for an item typed as one.
     type: item.submenu ? 'submenu' : undefined,
     submenu: item.submenu?.map(toBridgeItem),
