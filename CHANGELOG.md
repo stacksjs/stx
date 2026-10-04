@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.352...v0.2.353)
+
+## 🐛 Bug Fixes
+
+- **composables**: bundle a composable's imports instead of erasing them ([b558298](https://github.com/stacksjs/stx/commit/b558298)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **desktop**: context menu picks reach the page, and pick() returns them ([86479e4](https://github.com/stacksjs/stx/commit/86479e4)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.353 ([7748ee0](https://github.com/stacksjs/stx/commit/7748ee0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.351...v0.2.352)
 
 ## 🐛 Bug Fixes
