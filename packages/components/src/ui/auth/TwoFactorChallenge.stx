@@ -64,7 +64,7 @@ function onRecoveryCode(event) {
         </label>
         <form @submit="onSubmit($event)">
           <div class="mt-2 flex rounded-control shadow-sm space-x-2">
-            @for(i in Array(codeLength).keys())
+            @for(let i = 0; i < codeLength; i++)
               <input
                 id="code-{{ i }}"
                 type="text"

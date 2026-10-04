@@ -45,7 +45,9 @@
 
 import { BROWSER_CORE_IMPORTS } from './browser-core-imports'
 import path from 'node:path'
-import { stripCommentsAndLiterals } from './strip-literals'
+import { declaresClientIdentifier } from './client-declarations'
+import { parseLoopBinding } from './loop-binding'
+import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 import { componentContractChecks } from './component-contract-checks'
 
@@ -744,14 +746,24 @@ export function collectTemplateBindings(source: string): TemplateBinding[] {
     const head = balancedGroup(source, m.index + m[0].length - 1)
     if (head === null)
       continue
-    const asMatch = head.match(/^([\s\S]*?)\bas\b([\s\S]*)$/)
-    if (!asMatch)
+    // The runtime's own parser, so both spellings bind here exactly as they do
+    // at render. `@foreach(item in items)` - 48 uses in stx's components alone -
+    // was read only in its `as` form, and every `{{ item.x }}` in the body came
+    // back "Cannot find name 'item'" on markup that renders.
+    const binding = parseLoopBinding(head)
+    if (!binding)
       continue
-    add(asMatch[2].replace(/=>/g, ' '), iterableOf(asMatch[1]))
+    add(binding.itemVar.replace(/=>/g, ' '), iterableOf(binding.arrayExpr))
   }
 
+  // @for (item of items) / @for (const [k, v] of entries) - with or without
+  // the keyword, since the runtime declares a bare head itself. Typed from the
+  // iterable for `of`; `in` yields keys, which are strings, not elements.
+  for (const m of source.matchAll(/@for\s*\(\s*(?:(?:let|const|var)\s+)?([\w$]+|\[[^\]]*\]|\{[^}]*\})\s+(of|in)\s+([^)]*)/g))
+    add(m[1], m[2] === 'of' ? iterableOf(m[3]) : undefined)
+
   // @for (let i = 0; …)
-  for (const m of source.matchAll(/@for\s*\(\s*(?:let|const|var)\s+([\w$]+)/g))
+  for (const m of source.matchAll(/@for\s*\(\s*(?:let|const|var)\s+([\w$]+)\s*[=;]/g))
     add(m[1])
 
   // :for="(item, index) in items" / x-for="item of list"
@@ -851,8 +863,28 @@ export const STX_SERVER_CONTEXT = [
   '$props',
 ] as const
 
+/**
+ * Server bindings with a type worth stating, rather than the `any` fallback.
+ *
+ * Both are in scope in every `<script server>` block and were "Cannot find
+ * name" - 145 times across stx's own components, which open with
+ * `$bool($props.open, false)` and key their ids off `$uid`.
+ *
+ * - `$bool` is the boolean-prop reader `variable-extractor.ts` binds beside
+ *   `$props`; this is its exact signature.
+ * - `$uid` is the per-instance id `utils.ts` puts in a component's context.
+ *   A page has no component instance, so it is optional there.
+ */
+const TYPED_SERVER_CONTEXT: Record<string, string> = {
+  $bool: 'declare function $bool(value: unknown, fallback?: boolean): boolean',
+  $uid: 'declare var $uid: string',
+}
+
 export function serverContextDeclarations(typed: ReadonlySet<string> = new Set()): string {
-  return STX_SERVER_CONTEXT.filter(name => !typed.has(name)).map(name => `declare var ${name}: any`).join('\n')
+  return [
+    ...STX_SERVER_CONTEXT.filter(name => !typed.has(name)).map(name => `declare var ${name}: any`),
+    ...Object.entries(TYPED_SERVER_CONTEXT).filter(([name]) => !typed.has(name)).map(([, declaration]) => declaration),
+  ].join('\n')
 }
 
 /**
@@ -1096,7 +1128,13 @@ export function clientPayloadDeclarations(serverCode: string, clientCode = ''): 
     .map(entry => entry.text)
 
   if (!published) {
+    // A name the client block declares at its own top level never arrives:
+    // the runtime bridge leaves a client-owned binding alone rather than emit
+    // a duplicate `var` beside it. Declaring it here anyway turned every such
+    // page - CodeBlock's `const code`, Accordion's `allowMultiple` - into
+    // "Cannot redeclare block-scoped variable" on code that runs.
     const scraped = collectBlockDeclarations(serverCode)
+      .filter(name => !declaresClientIdentifier(clientCode, name))
     if (scraped.length === 0 && serverTypes.length === 0)
       return ''
 
@@ -1315,6 +1353,84 @@ const DIRECT_ASSIGNMENT_RE = /^\s*[A-Z_$][\w$]*\s*=[^=]/i
  * compile is reported where it is written - as its own template expression -
  * rather than twice.
  */
+/**
+ * Top-level `const` aliases whose initializer is a condition, by name.
+ *
+ * The template buffer re-binds every script name as a parameter of a wrapper
+ * (see the shadowing below), and that cuts TypeScript's aliased-condition
+ * narrowing: given
+ *
+ *   const notFound = !event || event.status === 'draft'
+ *   @if (notFound) … @else {{ event.slug }} @endif
+ *
+ * the parameter `notFound` is a plain boolean with no link to the parameter
+ * `event`, so every read in the `@else` branch was "possibly null" on markup
+ * the guard protects. Expanding the alias in the guard restores the narrowing
+ * TypeScript would have applied to the script itself.
+ *
+ * Only single-line, condition-shaped, await-free initializers qualify, and only
+ * names declared once: anything else is left as written, which can only cost
+ * narrowing, never invent it.
+ */
+export function collectConditionAliases(codes: readonly string[]): Map<string, string> {
+  const found = new Map<string, string | null>()
+  const CONDITION = /!|===|!==|==|!=|&&|\|\||<|>|\btypeof\b|\binstanceof\b|\bin\b/
+  for (const code of codes) {
+    const stripped = stripCommentsAndLiterals(code)
+    const { depths, balanced } = bracketDepths(stripped)
+    if (!balanced)
+      continue
+    const declaration = /^([ \t]*(?:export[ \t]+)?const[ \t]+)([A-Za-z_$][\w$]*)[ \t]*(?::[^=\n]+)?=[ \t]*([^\n]+)$/gm
+    for (const match of stripped.matchAll(declaration)) {
+      const index = match.index ?? 0
+      if (depths[index + match[1].length] !== 0)
+        continue
+      const name = match[2]
+      const start = index + match[0].length - match[3].length
+      const original = code.slice(start, index + match[0].length).trim().replace(/;$/, '').trim()
+      const shape = match[3]
+      const usable = CONDITION.test(shape)
+        && !/\bawait\b|=>|\bfunction\b|[{}]/.test(shape)
+        // On the original text: the stripped one has blanked a trailing
+        // string, so `=== 'draft'` would read as a dangling `===`.
+        && !/[,+\-*/%&|?:=]$/.test(original)
+        && bracketDepths(shape).balanced
+      found.set(name, found.has(name) || !usable ? null : original)
+    }
+  }
+  return new Map([...found].filter((entry): entry is [string, string] => entry[1] !== null))
+}
+
+/**
+ * `condition` with every free reference to an alias replaced by its
+ * parenthesised initializer, recursively to the depth TypeScript itself
+ * follows aliases (5). Property names, string contents and object keys are
+ * left alone.
+ */
+export function expandConditionAliases(condition: string, aliases: ReadonlyMap<string, string>, depth = 0, seen: ReadonlySet<string> = new Set()): string {
+  if (aliases.size === 0 || depth >= 5)
+    return condition
+  const stripped = stripCommentsAndLiterals(condition)
+  let out = ''
+  let last = 0
+  for (const match of stripped.matchAll(/[A-Za-z_$][\w$]*/g)) {
+    const index = match.index ?? 0
+    const name = match[0]
+    const initializer = aliases.get(name)
+    if (!initializer || seen.has(name))
+      continue
+    const before = stripped.slice(0, index).trimEnd()
+    const after = stripped.slice(index + name.length).trimStart()
+    if (before.endsWith('.') || /^:(?!:)/.test(after) && /[{,]$/.test(before))
+      continue
+    if (index > 0 && /[\w$]/.test(stripped[index - 1]!))
+      continue
+    out += `${condition.slice(last, index)}(${expandConditionAliases(initializer, aliases, depth + 1, new Set([...seen, name]))})`
+    last = index + name.length
+  }
+  return out + condition.slice(last)
+}
+
 export function guardChainAt(source: string, offset: number): string[] {
   const directive = /@(if|unless|elseif|else|endif|endunless)\b\s*(\()?/g
   /*
@@ -1725,9 +1841,17 @@ export function buildVirtualTypeScript(
           expression.anchor = true
           const code = expression.code.trim()
           const assignment = /^([\w$]+)\s*=\s*([^=][\s\S]*)$/.exec(code)
+          /*
+           * A bare handler is checked for being a listener, not by calling it.
+           * `${code}($event)` made `@blur="validateEmail"` an error - "Expected
+           * 0 arguments, but got 1" - for a handler that ignores the payload,
+           * which JavaScript allows and the runtime does. Assignability says
+           * exactly what matters: a function the payload can be passed to.
+           * The handler stays first so a diagnostic keeps its column.
+           */
           const body = assignment
             ? `void ((${assignment[2]}) satisfies __StxAssignedValue<typeof ${assignment[1]}>)`
-            : /^[\w$]+(?:\.[\w$]+)*$/.test(code) ? `${code}($event)` : code
+            : /^[\w$]+(?:\.[\w$]+)*$/.test(code) ? `${code} satisfies (($event: ${payload}) => unknown)` : code
           const prefix = `;(($event: ${payload}): void => { `
           return { expression, statement: { text: `${prefix}${body} });`, prefixLength: prefix.length } }
         }
@@ -1748,6 +1872,7 @@ export function buildVirtualTypeScript(
       // reference the parameter it is annotating, which TypeScript reads as a
       // circular initialiser.
       const maskedSource = maskNonTemplateRegions(source)
+      const conditionAliases = collectConditionAliases(blocks.map(block => block.code))
       const declared = [...new Set(blocks.flatMap(block => collectBlockDeclarations(block.code)))]
       const shadowed = declared.filter(name => /^[A-Z_$][\w$]*$/i.test(name))
 
@@ -1776,7 +1901,7 @@ export function buildVirtualTypeScript(
         // `if (x) ;void(…)` makes that semicolon the if-body - which TypeScript
         // rejects outright as TS1313.
         const guardPrefix = guards.length > 0
-          ? `${guards.map(condition => `if (${condition}) `).join('')}{ `
+          ? `${guards.map(condition => `if (${expandConditionAliases(condition, conditionAliases)}) `).join('')}{ `
           : ''
         const guardSuffix = guards.length > 0 ? ' }' : ''
 

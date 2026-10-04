@@ -43,6 +43,7 @@
  * ```
  */
 
+import { parseLoopBinding } from './loop-binding'
 import type { StxOptions } from './types'
 import { processConditionals } from './conditionals'
 import { ErrorCodes, inlineError } from './error-handling'
@@ -675,41 +676,7 @@ catch (error: unknown) {
  * @param filePath - Path to template file for error messages
  * @param options - Optional stx configuration
  */
-/**
- * Split `@foreach(...)` / `@forelse(...)` params into the collection and the
- * item binding.
- *
- * Two spellings are documented and only one was implemented. Blade's
- * `items as item` worked; the JS-natural `item in items` — which
- * docs/SCRIPT_VARIABLES.md shows, and which matches the `:for="item in items"`
- * client directive — did not, and the failure was silent. An unrecognised
- * binding was skipped with `continue`, so the directive text survived into the
- * built page and every `{{ }}` inside it resolved against a variable that never
- * existed. The reported page shipped `data-variant-row="{{ p.id }}"` to the
- * browser: a literal no selector matches and no binding resolves
- * (stacksjs/stx#1842).
- *
- * The operands are the other way round between the two forms, which is the
- * whole reason this needs saying once rather than at each call site. Vue's
- * parenthesised `(item, index)` maps onto the comma form the item parser
- * already understands.
- */
-export function parseLoopBinding(params: string): { arrayExpr: string, itemVar: string } | null {
-  const asIndex = params.indexOf(' as ')
-  if (asIndex !== -1) {
-    const arrayExpr = params.slice(0, asIndex).trim()
-    const itemVar = params.slice(asIndex + 4).trim()
-    return arrayExpr && itemVar ? { arrayExpr, itemVar } : null
-  }
-
-  const inMatch = /^\s*(.+?)\s+in\s+([\s\S]+)$/.exec(params)
-  if (!inMatch)
-    return null
-
-  const itemVar = inMatch[1].trim().replace(/^\(([\s\S]*)\)$/, '$1').trim()
-  const arrayExpr = inMatch[2].trim()
-  return itemVar && arrayExpr ? { arrayExpr, itemVar } : null
-}
+export { parseLoopBinding } from './loop-binding'
 
 /**
  * A marker standing in for the "not iterable" build warning until it is known
@@ -1174,6 +1141,26 @@ export function processLoops(template: string, context: Record<string, any>, fil
  * Uses the safe evaluator's isForExpressionSafe for validation
  * Allows: "let i = 0; i < n; i++" or "const x of items" etc.
  */
+/**
+ * `@for(item of items)` with no `let` / `const`, made a declaration.
+ *
+ * The head is compiled into a plain `for (…)`, and an undeclared head in a
+ * sloppy-mode function ASSIGNS a global. The loop rendered, so nothing looked
+ * wrong - but on a server every render wrote `globalThis.item`, shared across
+ * requests, and a loop variable named `name`, `status` or `event` overwrote
+ * the real global of that name. `let` keeps the variable in the loop, the way
+ * `@foreach` and every author reading the template already assume.
+ *
+ * Only `<identifier|pattern> of|in …` is touched: a C-style head
+ * (`i = 0; …`) re-uses a variable on purpose and is left alone.
+ */
+export function declareBareLoopHead(expr: string): string {
+  const head = /^(\s*)([A-Za-z_$][\w$]*|\[[^\]]*\]|\{[^}]*\})(\s+(?:of|in)\s)/.exec(expr)
+  if (!head || /^(?:const|let|var)$/.test(head[2]))
+    return expr
+  return `${head[1]}let ${expr.slice(head[1].length)}`
+}
+
 function validateForExpression(expr: string): boolean {
   return isForExpressionSafe(expr)
 }
@@ -1208,7 +1195,7 @@ function processForLoops(
       break
     }
 
-    const forExpr = output.slice(openParenPos + 1, closeParenPos)
+    const forExpr = declareBareLoopHead(output.slice(openParenPos + 1, closeParenPos))
     const _contentStart = closeParenPos + 1 // Used for position tracking
 
     // Find @endfor using the parser
