@@ -1,5 +1,5 @@
 import process from 'node:process'
-import { writeTsPluginPackage } from './scripts/ts-plugin-package'
+import { buildTsPluginBundle, writeTsPluginPackage } from './scripts/ts-plugin-package'
 import { writeStxDeclarations } from './src/ts-plugin-declarations'
 
 console.log('Building VSCode extension...')
@@ -35,21 +35,7 @@ try {
   //    `module.exports` to the factory, which is what tsserver calls, and the
   //    package tsserver resolves it by is written next to the extension's
   //    other node_modules (see scripts/ts-plugin-package.ts).
-  const pluginResult = await Bun.build({
-    entrypoints: ['./src/typescript-plugin-entry.ts'],
-    outdir: './dist',
-    naming: 'typescript-stx-plugin.[ext]',
-    target: 'node',
-    format: 'cjs',
-    external: ['typescript', 'typescript/lib/tsserverlibrary'],
-    minify: true,
-    sourcemap: 'external',
-  })
-
-  if (!pluginResult.success) {
-    console.error('TypeScript plugin build failed:', pluginResult.logs)
-    process.exit(1)
-  }
+  await buildTsPluginBundle('./dist', 'external')
 
   // The runtime's declarations the plugin adds to a program holding a `.stx`
   // file, beside the bundle that looks for them (stacksjs/stx#2028).

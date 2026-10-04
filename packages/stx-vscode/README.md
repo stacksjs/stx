@@ -28,6 +28,16 @@ The static half has to be in your extension's manifest, because VS Code reads gr
 
 `vscode`, `prettier` and `@stacksjs/ts-css` are imported, not bundled: bundle the library into your extension.
 
+## Type checking `.stx` files
+
+The TypeScript server plugin ships too, as a complete package in `dist/typescript-plugin/` (`@stacksjs/stx-typescript-plugin/...` is exported as `@stacksjs/stx-vscode/typescript-plugin/*`). To type-check `.stx` files in the editor:
+
+1. Declare `typescriptServerPlugins` from `contributes.json` in your manifest.
+2. Put the package where tsserver looks for it: tsserver loads a plugin only by package name, from `<your extension>/node_modules/@stacksjs/stx-typescript-plugin`. If you package with `vsce --no-dependencies`, which leaves `node_modules` out, ship the directory elsewhere in the VSIX and add a two-file forwarder package under `node_modules` after `vsce` writes it, as the Stacks extension does.
+3. Call `configureTypeScriptPlugin(vscode, context.subscriptions)` in `activate`. It starts VS Code's TypeScript extension, which does not activate on `stx` by itself, and forwards `stxTypescriptPlugin.enabled` to the plugin.
+
+The stx extension contributes the same plugin under the same name. With both extensions installed, tsserver loads it once per contribution, and the plugin decorates each project only the first time.
+
 ## License
 
 MIT

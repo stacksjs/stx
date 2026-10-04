@@ -6,9 +6,10 @@ import { stacksProvidesStx } from './stand-down'
 import { configureTypeScriptPlugin } from './ts-plugin-config'
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-  // Before standing down: the TypeScript plugin is contributed by this
-  // extension alone, so it is configured here even when the Stacks extension
-  // serves everything else.
+  // Before standing down: this extension contributes the TypeScript plugin
+  // whether or not it serves stx, so it forwards the setting either way. The
+  // Stacks extension contributes and configures the same plugin; the plugin
+  // decorates a project once however many contributions load it.
   configureTypeScriptPlugin(vscode, context.subscriptions).catch((error) => {
     console.error('stx Extension - could not configure the TypeScript plugin:', error)
   })

@@ -2,7 +2,7 @@
   "name": "@stacksjs/stx-vscode",
   "type": "module",
   "version": "0.2.357",
-  "description": "stx language support for VS Code extensions to embed: the hovers, completions, diagnostics, grammar, snippets and language configuration behind the stx extension.",
+  "description": "stx language support for VS Code extensions to embed: the hovers, completions, diagnostics, grammar, snippets, language configuration and TypeScript server plugin behind the stx extension.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
   "homepage": "https://github.com/stacksjs/stx/tree/main/packages/stx-vscode#readme",
@@ -27,7 +27,8 @@
       "import": "./dist/index.js"
     },
     "./contributes.json": "./dist/contributes.json",
-    "./assets/*": "./dist/assets/*"
+    "./assets/*": "./dist/assets/*",
+    "./typescript-plugin/*": "./dist/typescript-plugin/*"
   },
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",

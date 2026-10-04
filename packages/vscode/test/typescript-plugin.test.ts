@@ -256,6 +256,56 @@ describe('plugin shape', () => {
   })
 })
 
+// The stx extension and the Stacks extension both contribute the plugin, and
+// tsserver loads it once per contribution, on the same language service.
+describe('registered twice', () => {
+  function twice(source: string) {
+    let diagnostics: Partial<ts.Diagnostic>[] = []
+    const host = {
+      getScriptSnapshot: (name: string) => name === '/p.stx' ? tsLib.ScriptSnapshot.fromString(source) : undefined,
+      getScriptVersion: () => '1',
+    } as unknown as ts.LanguageServiceHost
+    const languageService = {
+      getSemanticDiagnostics: () => diagnostics as ts.Diagnostic[],
+      getSyntacticDiagnostics: () => [] as ts.DiagnosticWithLocation[],
+      getSuggestionDiagnostics: () => [] as ts.DiagnosticWithLocation[],
+    } as unknown as ts.LanguageService
+    const project = { projectService: { logger: { info: () => {} } }, getFileNames: () => ['/p.stx', '/q.ts'] }
+    const info = { languageService, languageServiceHost: host, project } as unknown as ts.server.PluginCreateInfo
+
+    const first = init({ typescript: tsLib })
+    const second = init({ typescript: tsLib })
+    // tsserver hands each plugin what the previous one returned; this one
+    // decorates in place, so that is the same object.
+    const service = second.create({ ...info, languageService: first.create(info) })
+    return { first, second, service, host, project: project as unknown as ts.server.Project, setDiagnostics: (d: Partial<ts.Diagnostic>[]) => { diagnostics = d } }
+  }
+
+  test('decorates the language service once', () => {
+    const { service, host, setDiagnostics } = twice(PAGE)
+    const virtual = buildVirtualTypeScript(PAGE).text
+
+    // The buffer tsserver reads is the virtual file, not a virtual file built
+    // from the virtual file.
+    const read = (from: ts.LanguageServiceHost) => {
+      const snapshot = from.getScriptSnapshot('/p.stx')!
+      return snapshot.getText(0, snapshot.getLength())
+    }
+    expect(read(host)).toBe(read(harness('/p.stx', PAGE).host))
+
+    setDiagnostics([{ code: 2322, start: offsetOf(virtual, 7, 7), length: 4, messageText: 'nope' }])
+    const diagnostics = service.getSemanticDiagnostics('/p.stx')
+    expect(diagnostics).toHaveLength(1)
+    expect(diagnostics[0].start).toBe(offsetOf(PAGE, 7, 7))
+  })
+
+  test('only the registration that decorated the project names its .stx files', () => {
+    const { first, second, project } = twice(PAGE)
+    expect(first.getExternalFiles!(project, 0)).toEqual(['/p.stx'])
+    expect(second.getExternalFiles!(project, 0)).toEqual([])
+  })
+})
+
 describe('the runtime declarations (stacksjs/stx#2028)', () => {
   const dir = mkdtempSync(join(tmpdir(), 'stx-plugin-declarations-'))
   afterAll(() => rmSync(dir, { recursive: true, force: true }))

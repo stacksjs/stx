@@ -84,6 +84,20 @@ import { findStxPluginEntry } from '../../stx/src/stx-plugin-config'
  * server (what Volar is to Vue), which is a larger change than this.
  */
 
+/**
+ * Set on a language service this plugin has decorated (stacksjs/stx#2028).
+ *
+ * Two extensions contribute this plugin under the same name: the stx
+ * extension and the Stacks extension, which builds stx support in. VS Code
+ * passes every contribution to tsserver (`--globalPlugins name,name`), and
+ * tsserver dedupes neither the names nor the loads, so with both installed it
+ * called `create` twice on one language service. The second pass wrapped the
+ * first: it read the virtual buffer back as if it were the `.stx` source and
+ * the file's diagnostics never arrived. A registered symbol, so a copy of the
+ * plugin from another extension's bundle recognises it too.
+ */
+const APPLIED = Symbol.for('@stacksjs/stx-typescript-plugin')
+
 /** Diagnostics that report the same name being declared twice. */
 const REDECLARATION_CODES = new Set([2300, 2451, 2403])
 
@@ -253,11 +267,19 @@ function init(modules: { typescript: typeof ts }, options: StxPluginOptions = {}
   const tsLib = modules.typescript
   let config: StxPluginConfig = {}
   const onConfigChange = new Set<() => void>()
+  /** Projects another load of the plugin had already decorated; see {@link APPLIED}. */
+  const stoodDown = new WeakSet<object>()
 
   return {
     create(info: ts.server.PluginCreateInfo): ts.LanguageService {
       const log = (msg: string) => {
         info.project.projectService.logger.info(`[stx-plugin] ${msg}`)
+      }
+
+      if ((info.languageService as unknown as Record<symbol, unknown>)[APPLIED]) {
+        stoodDown.add(info.project)
+        log('already applied to this project by another registration of the plugin; leaving it as it is')
+        return info.languageService
       }
 
       log('TypeScript stx plugin initialized')
@@ -771,11 +793,15 @@ function init(modules: { typescript: typeof ts }, options: StxPluginOptions = {}
           typeof fileName === 'string' && isStx(fileName) ? answer() : bound(fileName, ...rest)
       }
 
+      ;(languageService as unknown as Record<symbol, unknown>)[APPLIED] = true
       log('Language service proxy created')
       return languageService
     },
 
     getExternalFiles(project: ts.server.Project): string[] {
+      // The registration that decorated the project already names them.
+      if (stoodDown.has(project))
+        return []
       return project.getFileNames().filter(isHandled)
     },
 

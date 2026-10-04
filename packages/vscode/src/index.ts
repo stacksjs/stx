@@ -156,3 +156,12 @@ export { registerSnippetCompletions, snippetCompletionItems } from './snippets'
 
 export { activate, deactivate } from './extension'
 export { stacksProvidesStx } from './stand-down'
+
+// The TypeScript server plugin: what an embedding extension calls so `.stx`
+// files reach tsserver, and the name it contributes the plugin under.
+export {
+  configureTypeScriptPlugin,
+  TS_PLUGIN_NAME,
+  TS_PLUGIN_SETTINGS,
+  TYPESCRIPT_EXTENSION_ID,
+} from './ts-plugin-config'

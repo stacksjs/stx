@@ -13,10 +13,17 @@
  *   assets/           grammar, language configuration and snippets
  *   contributes.json  the manifest contributions an embedding extension must declare,
  *                     with paths relative to assets/
+ *   typescript-plugin/
+ *                     the TypeScript server plugin as a complete package named
+ *                     `@stacksjs/stx-typescript-plugin` (package.json, index.js, the
+ *                     bundle, types/). tsserver loads it by that name from
+ *                     `<extension>/node_modules`, so an embedding extension puts it
+ *                     there, or a forwarder to it (stacksjs/stx#2028).
  */
 import process from 'node:process'
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { writeTsPluginStandalone } from '../vscode/scripts/ts-plugin-package'
 
 const here = import.meta.dir
 const extension = join(here, '../vscode')
@@ -60,6 +67,9 @@ writeFileSync(join(dist, 'contributes.json'), `${JSON.stringify({
   snippets: contributes.snippets.map((snippet: any) => ({ ...snippet, path: fromAssets(snippet.path) })),
   commands: contributes.commands,
   configuration: contributes.configuration,
+  typescriptServerPlugins: contributes.typescriptServerPlugins,
 }, null, 2)}\n`)
+
+await writeTsPluginStandalone(join(dist, 'typescript-plugin'), manifest.version)
 
 console.log('Built @stacksjs/stx-vscode')

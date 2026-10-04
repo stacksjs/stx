@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
-import { existsSync, readFileSync } from 'node:fs'
-import { builtinModules } from 'node:module'
+import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync } from 'node:fs'
+import { builtinModules, createRequire } from 'node:module'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 // `@stacksjs/stx-vscode` is the npm build of the stx extension's language
@@ -30,7 +31,16 @@ describe('@stacksjs/stx-vscode', () => {
     const declared = readFileSync(join(dist, 'index.d.ts'), 'utf8')
     const names = [...declared.matchAll(/export declare (?:const|function) (\w+)/g)].map(match => match[1])
 
-    expect(names).toEqual(['STX_EXTENSION_ID', 'STACKS_EXTENSION_ID', 'activateStxLanguage', 'deactivateStxLanguage'])
+    expect(names).toEqual([
+      'STX_EXTENSION_ID',
+      'STACKS_EXTENSION_ID',
+      'activateStxLanguage',
+      'deactivateStxLanguage',
+      'TS_PLUGIN_NAME',
+      'TS_PLUGIN_SETTINGS',
+      'TYPESCRIPT_EXTENSION_ID',
+      'configureTypeScriptPlugin',
+    ])
     expect(runtimeExports()).toEqual(expect.arrayContaining(names))
   })
 
@@ -67,10 +77,59 @@ describe('@stacksjs/stx-vscode', () => {
     expect(contributes.grammars.map((grammar: any) => grammar.scopeName)).toEqual(source.grammars.map((grammar: any) => grammar.scopeName))
     expect(contributes.commands).toEqual(source.commands)
     expect(contributes.configuration).toEqual(source.configuration)
+    expect(contributes.typescriptServerPlugins).toEqual(source.typescriptServerPlugins)
   })
 
   test('is versioned with the extension it is built from', () => {
     expect(pkg.version).toBe(extensionManifest.version)
     expect(pkg.dependencies).toEqual(extensionManifest.dependencies)
+  })
+})
+
+// The Stacks extension builds stx support in and installs no other extension,
+// so it contributes the TypeScript server plugin itself, from this package
+// (stacksjs/stx#2028). tsserver loads a plugin by package name from
+// `<extension>/node_modules` and calls `module.exports` as the factory.
+describe('the TypeScript server plugin', () => {
+  const plugin = join(dist, 'typescript-plugin')
+  const contributes = () => JSON.parse(readFileSync(join(dist, 'contributes.json'), 'utf8'))
+
+  test('is a package named what contributes.json contributes', () => {
+    const manifest = JSON.parse(readFileSync(join(plugin, 'package.json'), 'utf8'))
+    expect(contributes().typescriptServerPlugins.map((entry: { name: string }) => entry.name)).toEqual([manifest.name])
+    expect(manifest.name).toBe('@stacksjs/stx-typescript-plugin')
+    expect(manifest.version).toBe(pkg.version)
+    expect(pkg.exports['./typescript-plugin/*']).toBe('./dist/typescript-plugin/*')
+  })
+
+  test('requires only Node built-ins at runtime', () => {
+    const bundle = readFileSync(join(plugin, 'typescript-stx-plugin.js'), 'utf8')
+    const specifiers = new Set([...bundle.matchAll(/\brequire\("([^"]+)"\)/g)].map(match => match[1]))
+    expect([...specifiers].filter(specifier => !specifier.startsWith('node:') && !builtinModules.includes(specifier))).toEqual([])
+  })
+
+  test('loads from an extension\'s node_modules the way tsserver loads it, and finds its declarations', () => {
+    // Real path: require() resolves symlinks, and macOS's tmpdir is one.
+    const extension = realpathSync(mkdtempSync(join(tmpdir(), 'stx-vscode-plugin-')))
+    try {
+      cpSync(plugin, join(extension, 'node_modules/@stacksjs/stx-typescript-plugin'), { recursive: true })
+      const factory = createRequire(join(extension, 'node_modules', 'index.js'))('@stacksjs/stx-typescript-plugin')
+      expect(typeof factory).toBe('function')
+
+      const text = '<script client>\nconst n = state(0)\n</script>\n'
+      const snapshot = (value: string) => ({ getText: (start: number, end: number) => value.slice(start, end), getLength: () => value.length, getChangeRange: () => undefined })
+      const host: Record<string, any> = { getScriptSnapshot: () => snapshot(text), getScriptVersion: () => '1' }
+      factory({ typescript: { ScriptSnapshot: { fromString: snapshot } } })
+        .create({ languageService: {}, languageServiceHost: host, project: { projectService: { logger: { info: () => {} } } } })
+
+      const buffer = host.getScriptSnapshot('/tmp/page.stx')
+      const referenced = /^\/\/\/ <reference path="(.+)" \/>$/.exec(buffer.getText(0, buffer.getLength()).split('\n')[0])?.[1]
+      const types = join(extension, 'node_modules/@stacksjs/stx-typescript-plugin/types')
+      expect(referenced).toBe(join(types, 'stx-module.d.ts'))
+      expect(existsSync(join(types, 'stx.d.ts'))).toBe(true)
+    }
+    finally {
+      rmSync(extension, { recursive: true, force: true })
+    }
   })
 })

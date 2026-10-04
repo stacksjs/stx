@@ -9,8 +9,9 @@ name: VS Code Extension
 # with every stx release.
 #
 # The Stacks framework extension (Stacks.vscode-stacks, published from
-# stacksjs/stacks) lists this one in its extensionPack, so this ID has to
-# exist on the marketplace for that pack to install (stacksjs/stx#2020).
+# stacksjs/stacks) builds the same stx support in from @stacksjs/stx-vscode
+# and installs no other extension; this one stands down next to it
+# (stacksjs/stx#2020).
 
 on:
   push:
