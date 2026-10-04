@@ -1,5 +1,25 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.354...v0.2.355)
+
+## 🐛 Bug Fixes
+
+- **vscode**: load the TypeScript server plugin, by package name ([ec93506](https://github.com/stacksjs/stx/commit/ec93506)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2026](https://github.com/stacksjs/stx/issues/2026))
+- **vscode**: move the utility-class setting and command out of VS Code's css. namespace ([5cff990](https://github.com/stacksjs/stx/commit/5cff990)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2025](https://github.com/stacksjs/stx/issues/2025))
+- **vscode**: utility-class hovers show formatted CSS, and stop hanging after the first class attribute ([04000e9](https://github.com/stacksjs/stx/commit/04000e9)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2024](https://github.com/stacksjs/stx/issues/2024), [#2027](https://github.com/stacksjs/stx/issues/2027))
+
+## 📝 Documentation
+
+- **desktop**: context menu picks need Craft 0.0.109 ([8fe1a2c](https://github.com/stacksjs/stx/commit/8fe1a2c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.355 ([66fe734](https://github.com/stacksjs/stx/commit/66fe734)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.353...v0.2.354)
 
 ## 🐛 Bug Fixes
