@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.355...v0.2.356)
+
+## 🐛 Bug Fixes
+
+- **vscode**: type-check .stx files in the editor, against what `from 'stx'` really binds ([bcbf402](https://github.com/stacksjs/stx/commit/bcbf402)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2028](https://github.com/stacksjs/stx/issues/2028))
+
+## 🔧 Chores
+
+- release v0.2.356 ([af03464](https://github.com/stacksjs/stx/commit/af03464)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.354...v0.2.355)
 
 ## 🐛 Bug Fixes
