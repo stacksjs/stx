@@ -78,6 +78,37 @@ describe('contextMenu', () => {
     expect(lastCall().items[0].submenu[1]).toMatchObject({ id: 'x', title: 'X' })
   })
 
+  it('marks an item with a submenu as one, which is what makes Craft nest it', async () => {
+    await contextMenu.show({ x: 0, y: 0, items: [{ id: 'open', title: 'Open With', submenu: [{ id: 'x', title: 'X' }] }] })
+    expect(lastCall().items[0].type).toBe('submenu')
+  })
+
+  it('resolves pick() with the chosen id', async () => {
+    bridge.whenCalled('nativeUI', 'showContextMenu', async () => ({ id: 'trash', targetId: 'row-1', targetType: 'general' }))
+    expect(await contextMenu.pick({ x: 0, y: 0, targetId: 'row-1', items: [{ id: 'trash', title: 'Trash' }] })).toBe('trash')
+  })
+
+  it('resolves pick() with null when the menu is dismissed', async () => {
+    bridge.whenCalled('nativeUI', 'showContextMenu', async () => ({ id: null, targetId: '', targetType: 'general' }))
+    expect(await contextMenu.pick({ x: 0, y: 0, items: [{ id: 'a', title: 'A' }] })).toBeNull()
+  })
+
+  it('treats a runtime that answers nothing as a dismissal', async () => {
+    bridge.whenCalled('nativeUI', 'showContextMenu', async () => undefined)
+    expect(await contextMenu.pick({ x: 0, y: 0, items: [{ id: 'a', title: 'A' }] })).toBeNull()
+  })
+
+  it('hears picks on the channel Craft sends them on, and not dismissals', () => {
+    const seen: unknown[] = []
+    const off = contextMenu.onAction(event => seen.push(event))
+    window.dispatchEvent(new CustomEvent('craft:contextmenu:action', { detail: { id: 'archive', targetId: 'chat-1', targetType: 'general' } }))
+    window.dispatchEvent(new CustomEvent('craft:contextmenu:action', { detail: { id: null, targetId: 'chat-1', targetType: 'general' } }))
+    // The menubar's channel is not a context menu's.
+    window.dispatchEvent(new CustomEvent('craft:menu:action', { detail: { id: 'quit' } }))
+    off()
+    expect(seen).toEqual([{ id: 'archive', targetId: 'chat-1' }])
+  })
+
   it('refuses an empty menu instead of opening nothing', async () => {
     await expect(contextMenu.show({ x: 0, y: 0, items: [] })).rejects.toThrow(/at least one item/)
   })
@@ -106,6 +137,10 @@ describe('contextMenu without a bridge', () => {
     // to render its own menu, not crash on a right-click.
     expect(await contextMenu.show({ x: 0, y: 0, items: [{ id: 'a', title: 'A' }] })).toBe(false)
     expect(contextMenu.available()).toBe(false)
+  })
+
+  it('picks nothing', async () => {
+    expect(await contextMenu.pick({ x: 0, y: 0, items: [{ id: 'a', title: 'A' }] })).toBeNull()
   })
 
   it('still refuses an empty menu', async () => {

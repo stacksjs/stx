@@ -127,6 +127,7 @@ export interface CraftEventMap {
 
   // menu
   'craft:menu:action': import('./menu').MenuActionEvent
+  'craft:contextmenu:action': { id: string | null, targetId: string, targetType: string }
 
   // midi
   'craft:midi:message': import('./midi').MIDIMessageEvent
