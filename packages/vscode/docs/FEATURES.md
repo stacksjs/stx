@@ -375,8 +375,8 @@ Customize the extension to match your workflow.
   "stx.utilityClasses.hoverPreview": true,
   "stx.utilityClasses.sortOnSave": false,
 
-  // Headwind configuration
-  "headwind.remToPxRatio": 16
+  // Pixels per rem in utility-class hovers (0 hides them)
+  "stx.utilityClasses.remToPxRatio": 16
 }
 ```
 

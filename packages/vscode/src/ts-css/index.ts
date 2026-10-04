@@ -47,11 +47,11 @@ export async function activateCss(extensionContext: vscode.ExtensionContext): Pr
     extensionContext.subscriptions.push(sortCommand)
 
     // Register reload command
-    const reloadCommand = vscode.commands.registerCommand('css.reload', async () => {
+    const reloadCommand = vscode.commands.registerCommand('stx.reloadUtilityClasses', async () => {
       console.log('[ts-css] Reloading configuration...')
       const newConfig = await loadCssEngineConfig(vscode)
       await cssContext?.reload(newConfig)
-      vscode.window.showInformationMessage('Css configuration reloaded')
+      vscode.window.showInformationMessage('Utility class configuration reloaded')
     })
     extensionContext.subscriptions.push(reloadCommand)
 

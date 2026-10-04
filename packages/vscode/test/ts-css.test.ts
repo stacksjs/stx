@@ -234,7 +234,7 @@ describe('Css Integration Tests', () => {
     expect(sortCommand).toBeDefined()
     expect(sortCommand.title).toContain('Sort')
 
-    const reloadCommand = commands.find((cmd: any) => cmd.command === 'css.reload')
+    const reloadCommand = commands.find((cmd: any) => cmd.command === 'stx.reloadUtilityClasses')
     expect(reloadCommand).toBeDefined()
     expect(reloadCommand.title).toContain('Reload')
   })
@@ -249,7 +249,7 @@ describe('Css Integration Tests', () => {
     expect(Object.keys(config)).toContain('stx.utilityClasses.enable')
     expect(Object.keys(config)).toContain('stx.utilityClasses.colorPreview')
     expect(Object.keys(config)).toContain('stx.utilityClasses.hoverPreview')
-    expect(Object.keys(config)).toContain('css.remToPxRatio')
+    expect(Object.keys(config)).toContain('stx.utilityClasses.remToPxRatio')
   })
 
   test('should activate css in language.ts', async () => {
@@ -289,7 +289,7 @@ describe('Css Integration Tests', () => {
     const indexPath = path.join(PACKAGE_ROOT, 'src/ts-css/index.ts')
     const content = await Bun.file(indexPath).text()
 
-    expect(content).toContain("vscode.commands.registerCommand('css.reload'")
+    expect(content).toContain("vscode.commands.registerCommand('stx.reloadUtilityClasses'")
     expect(content).toContain('cssContext?.reload')
   })
 

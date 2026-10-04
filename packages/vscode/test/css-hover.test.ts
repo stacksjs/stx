@@ -10,7 +10,7 @@
 import type * as vscode from 'vscode'
 import { describe, expect, test } from 'bun:test'
 import { CssContext, loadCssEngineConfig } from '../src/ts-css/context'
-import { createCssHoverProvider } from '../src/ts-css/hover-provider'
+import { createCssHoverProvider, DEFAULT_REM_TO_PX_RATIO, remToPxRatio } from '../src/ts-css/hover-provider'
 import { prettifyCSS } from '../src/ts-css/utils/css-parser'
 
 class Position {
@@ -131,5 +131,33 @@ describe('utility-class hover', () => {
   test('finds a class in an attribute after the first one', async () => {
     const css = codeBlock(await hoverText('p-4', {}, '<span class="block"></span>\n'))
     expect(css).toContain('padding: 1rem')
+  })
+
+  test('converts rem with stx.utilityClasses.remToPxRatio', async () => {
+    const css = codeBlock(await hoverText('p-4', { 'stx.utilityClasses': { remToPxRatio: 10 } }))
+    expect(css).toContain('padding: 1rem /* 10px */;')
+  })
+})
+
+describe('remToPxRatio', () => {
+  test('defaults to 16', () => {
+    expect(remToPxRatio(vscodeStub())).toBe(DEFAULT_REM_TO_PX_RATIO)
+    expect(DEFAULT_REM_TO_PX_RATIO).toBe(16)
+  })
+
+  test('reads stx.utilityClasses.remToPxRatio', () => {
+    expect(remToPxRatio(vscodeStub({ 'stx.utilityClasses': { remToPxRatio: 10 } }))).toBe(10)
+  })
+
+  test('still honours css.remToPxRatio, the key it used to be contributed under', () => {
+    expect(remToPxRatio(vscodeStub({ css: { remToPxRatio: 20 } }))).toBe(20)
+  })
+
+  test('prefers the new key when both are set', () => {
+    expect(remToPxRatio(vscodeStub({ 'stx.utilityClasses': { remToPxRatio: 10 }, 'css': { remToPxRatio: 20 } }))).toBe(10)
+  })
+
+  test('honours 0, which hides the px values', () => {
+    expect(remToPxRatio(vscodeStub({ 'stx.utilityClasses': { remToPxRatio: 0 } }))).toBe(0)
   })
 })

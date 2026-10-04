@@ -242,6 +242,7 @@ Customize the extension to fit your workflow. Press `Cmd+,` (Mac) or `Ctrl+,` (W
   "stx.utilityClasses.colorPreview": true,
   "stx.utilityClasses.hoverPreview": true,
   "stx.utilityClasses.sortOnSave": false,
+  "stx.utilityClasses.remToPxRatio": 16, // px per rem in hovers; 0 hides them (was css.remToPxRatio)
 
   // Code Actions
   "stx.codeActions.enable": true,

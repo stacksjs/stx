@@ -35,7 +35,7 @@ export interface StxLanguageOptions {
  * Register all of stx's runtime language support: hovers, completions,
  * diagnostics, go to definition, document links, folding, semantic tokens,
  * code actions, utility-class previews, and the `stx.sortClasses` and
- * `css.reload` commands. Everything is added to `context.subscriptions`.
+ * `stx.reloadUtilityClasses` commands. Everything is added to `context.subscriptions`.
  *
  * Call it at most once per window. The stx extension stands down only for
  * `Stacks.vscode-stacks`, and only once that extension's `activate` resolves
