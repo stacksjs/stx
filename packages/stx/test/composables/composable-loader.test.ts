@@ -286,3 +286,50 @@ describe('a later page\'s composables arrive on navigation', () => {
     }
   })
 })
+
+// A composable is browser code like a <script client> block, so what it
+// imports has to reach the browser. The loader stripped every import, which is
+// right for `state`/`derived` (runtime globals) and wrong for anything else:
+// `import { contextMenu } from '@stacksjs/desktop/browser'` became a bare
+// `contextMenu.show(...)` that threw a ReferenceError only when it ran.
+describe('composables that import packages and helpers', () => {
+  let root: string
+  let dir: string
+
+  beforeAll(async () => {
+    // The helper lives OUTSIDE the composables directory, as a package or a
+    // shared module does: a file inside it is concatenated anyway.
+    root = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-composables-imports-'))
+    dir = path.join(root, 'functions')
+    await Bun.write(
+      path.join(root, 'shared', 'format.ts'),
+      `export function shout(text: string): string { return text.toUpperCase() + '!' }\n`,
+    )
+    await Bun.write(
+      path.join(dir, 'greet.ts'),
+      `import { state } from 'stx'\n`
+      + `import { shout } from '../shared/format'\n`
+      + `export function greet(name: string): string { return shout('hi ' + name) }\n`
+      + `export function useGreeting() { return state(greet('there')) }\n`,
+    )
+    clearComposableCache()
+  })
+
+  afterAll(async () => {
+    clearComposableCache()
+    await fs.promises.rm(root, { recursive: true, force: true })
+  })
+
+  it('bundles the import instead of erasing its binding', async () => {
+    const code = await getComposableScript(dir)
+    expect(code).not.toBeNull()
+    expect(code).not.toContain("from '../shared/format'")
+
+    const win: any = { stx: { state: (value: unknown) => () => value } }
+    // eslint-disable-next-line no-new-func
+    new Function('window', code!)(win)
+    expect(win.__composables.greet('ada')).toBe('HI ADA!')
+    // A runtime global used beside a bundled import still resolves.
+    expect(win.__composables.useGreeting()()).toBe('HI THERE!')
+  })
+})

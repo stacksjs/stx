@@ -24,11 +24,13 @@
  */
 
 import path from 'node:path'
+import { bundleClientScript, clientBundleDependencies, hasUserImports } from './client-script-bundler'
 import { loadStxConfig } from './config'
 import { getPublicEnvDefine } from './public-env'
 import { readSigned, type SignedCacheEntry, sourceSignature, writeSigned } from './source-signature'
 import { stripModuleImports } from './store-imports'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
+import { stripStxRuntimeImports } from './signal-processing'
 import { transformStoreImports } from './store-imports'
 import { getSharedTranspiler } from './utils'
 
@@ -259,7 +261,13 @@ export async function getComposableScript(
   // used to be permanent, and nothing outside tests called
   // `clearComposableCache()`, so a dev server served the first build for the
   // life of the process (#1877).
-  const signature = sourceSignature(composableFiles)
+  // A composable that imports a package or a helper is bundled (below), so the
+  // files it pulled in are inputs too: editing one must invalidate the memo.
+  const composableInputs = () => [...new Set([
+    ...composableFiles,
+    ...composableFiles.flatMap(file => clientBundleDependencies(file)),
+  ])]
+  let signature = sourceSignature(composableInputs())
 
   if (composableFiles.length === 0) {
     writeSigned(_cachedComposableScripts, resolvedDir, signature, '')
@@ -332,6 +340,20 @@ export async function getComposableScript(
       // Rewrite `@stores` / `@composables` imports to their runtime globals so a
       // composable can use a store (or another composable) the same way a page can.
       code = transformStoreImports(code)
+
+      // A composable is browser code like a <script client> block, so an
+      // import of a package or a local helper has to be bundled, as stores
+      // already are. Stripping it (below) used to leave the binding undefined:
+      // `import { contextMenu } from '@stacksjs/desktop/browser'` compiled to a
+      // bare `contextMenu.show(...)` that typechecked, built, and threw a
+      // ReferenceError only when the function finally ran. STX runtime imports
+      // stay external and resolve from window.stx as before.
+      if (hasUserImports(code)) {
+        code = await bundleClientScript(code, file, { projectRoot: process.cwd(), externalizeUserModules: false })
+        // A bundled dependency importing a runtime name gets it renamed
+        // (`state as state2`); map those back before the generic strip.
+        code = stripStxRuntimeImports(code)
+      }
 
       // Strip the remaining imports BEFORE transpiling: `state`/`derived`/
       // `defineStore` are runtime globals, not real modules, and leaving the
@@ -418,6 +440,8 @@ ${assignments}
   }
 })();`
 
+  // Bundling has now recorded what each composable pulled in.
+  signature = sourceSignature(composableInputs())
   writeSigned(_cachedComposableScripts, cacheKey, signature, code)
   return code
 }
