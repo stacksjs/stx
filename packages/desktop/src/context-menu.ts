@@ -35,7 +35,7 @@
  * Picks also arrive on `onAction`, for code that wants every menu's outcome.
  * They used to be expected on `craft:menu:action`, the menubar's channel,
  * where Craft never sent them: a context menu could be shown but its choice
- * never reached the page. Craft 0.0.108 answers the call itself and
+ * never reached the page. Craft 0.0.109 answers the call itself and
  * dispatches `craft:contextmenu:action`.
  */
 import { hasBridge, onCraftEvent } from './_bridge'
@@ -120,7 +120,7 @@ function toBridgeItem(item: ContextMenuItem): Record<string, unknown> {
 
 /**
  * Open the menu and wait for it to close. Null without a bridge. A runtime
- * older than Craft 0.0.108 resolves nothing, which reads as a dismissal.
+ * older than Craft 0.0.109 resolves nothing, which reads as a dismissal.
  */
 async function open(options: ContextMenuOptions): Promise<ContextMenuResult | null> {
   if (!options.items || options.items.length === 0)
