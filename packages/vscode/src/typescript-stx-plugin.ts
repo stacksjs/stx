@@ -1,5 +1,7 @@
 import type * as ts from 'typescript/lib/tsserverlibrary'
-import { existsSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 import type { ResolvedPosition, ScriptBlock, VirtualFile } from '../../stx/src/stx-virtual-ts'
 // Imported by relative path on purpose. The plugin is bundled (see build.ts),
@@ -16,6 +18,7 @@ import {
   resolvePosition,
 } from '../../stx/src/stx-virtual-ts'
 import { stxImportDiagnostics } from '../../stx/src/stx-module-imports'
+import { findStxPluginEntry } from '../../stx/src/stx-plugin-config'
 
 /**
  * Type-check `.stx` files in the editor using the same extractor as
@@ -148,6 +151,22 @@ export function findInstalledStxDeclarations(fromDir: string, exists: (file: str
   }
 }
 
+/**
+ * One declaration file that references several, for a buffer that has a
+ * single line to reference them from. Written once per distinct list, under
+ * the system temp directory, and named by its content so two projects with
+ * the same list share it.
+ */
+export function declarationEntry(files: string[], dir: string = path.join(tmpdir(), 'stx-typescript-plugin')): string {
+  const text = files.map(file => `/// <reference path=${JSON.stringify(file.replace(/\\/g, '/'))} />`).join('\n') + '\n'
+  const entry = path.join(dir, `${createHash('sha1').update(text).digest('hex').slice(0, 16)}.d.ts`)
+  if (!existsSync(entry)) {
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(entry, text)
+  }
+  return entry
+}
+
 /** What the plugin package's `index.js` passes alongside tsserver's modules. */
 export interface StxPluginOptions {
   /** Where the declaration files are; see {@link findStxDeclarations}. */
@@ -258,13 +277,31 @@ function init(modules: { typescript: typeof ts }, options: StxPluginOptions = {}
       const bundled = findStxDeclarations(options.declarationsDir)
       if (!bundled)
         log('the bundled stx declarations were not found; apps without their own fall back to `any`')
-      const installed = new Map<string, string | undefined>()
-      /** The declarations for a file: its app's own, else the extension's. */
+      const exists = (file: string): boolean => tsLib.sys?.fileExists(file) ?? existsSync(file)
+      const readConfig = (file: string): Record<string, any> | undefined => {
+        const read = tsLib.readConfigFile?.(file, name => tsLib.sys.readFile(name))
+        return read && !read.error ? read.config : undefined
+      }
+      const references = new Map<string, string | undefined>()
+      /**
+       * What a file's buffer references: its app's own declarations, else the
+       * extension's, plus the `libs` of the stx entry in its tsconfig — the
+       * list `stx typecheck` reads too (stx-plugin-config.ts).
+       */
       const declarationsFor = (fileName: string): string | undefined => {
         const dir = path.dirname(fileName)
-        if (!installed.has(dir))
-          installed.set(dir, findInstalledStxDeclarations(dir, file => tsLib.sys?.fileExists(file) ?? existsSync(file)))
-        return installed.get(dir) ?? bundled
+        if (!references.has(dir)) {
+          const stxModule = findInstalledStxDeclarations(dir, exists) ?? bundled
+          let libs: string[] = []
+          try {
+            libs = (findStxPluginEntry(dir, readConfig, exists)?.libs ?? []).filter(exists)
+          }
+          catch (error) {
+            log(`could not read the stx entry of the project's tsconfig: ${String(error)}`)
+          }
+          references.set(dir, stxModule && libs.length > 0 ? declarationEntry([stxModule, ...libs]) : stxModule)
+        }
+        return references.get(dir)
       }
 
       const documents = new Map<string, StxDocument>()

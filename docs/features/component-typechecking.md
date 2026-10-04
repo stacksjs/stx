@@ -41,7 +41,24 @@ The CLI loads the app's stx configuration. Programmatic callers may override
 The TypeScript editor plugin uses the same contract projection, the same
 declarations (`stx.d.ts` and `stx-module.d.ts`, preferring the copies the app has
 installed) and the same `from 'stx'` rules as `stx typecheck`, so the two report
-the same diagnostics. `stxTypescriptPlugin.enabled: false` turns it off. It rechecks a
+the same diagnostics. `stxTypescriptPlugin.enabled: false` turns it off.
+
+Globals the app installs itself, which the stx runtime does not know about, are
+declared once for both checkers through the stx entry in the app's `tsconfig.json`
+(paths relative to the tsconfig that declares the entry, which may be a base the
+app `extends`):
+
+```json
+{
+  "compilerOptions": {
+    "plugins": [
+      { "name": "@stacksjs/stx-typescript-plugin", "libs": ["./types/request-context.d.ts"] }
+    ]
+  }
+}
+```
+
+`stx typecheck --lib <file>` still adds a file for one run. The editor plugin rechecks a
 parent when an open child component's declarations change. For a custom component
 directory, set `componentsDir` on the stx TypeScript plugin entry in `tsconfig.json`
 (relative to the TypeScript project). The editor does not execute `stx.config.ts`.

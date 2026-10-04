@@ -54,6 +54,7 @@ import {
   substituteInterpolationsInPlace,
 } from './stx-virtual-ts'
 import { stxImportDiagnostics } from './stx-module-imports'
+import { findStxPluginEntry } from './stx-plugin-config'
 
 export type { ScriptBlock, ScriptKind } from './stx-virtual-ts'
 export {
@@ -306,6 +307,61 @@ function isSyntactic(code: number): boolean {
   return code >= 1000 && code < 2000
 }
 
+// Character scan, not regex. A glob is indistinguishable from a comment to a
+// regex: `"app/Models/**/*.ts"` contains a literal `/**/`, which a block-comment
+// pattern happily eats, and the result parses as garbage or — worse — as valid
+// JSON with a silently wrong value. Only a scanner that knows whether it is
+// inside a string can tell the two apart.
+function stripJsonc(text: string): string {
+  let out = ''
+  let inString = false
+  let escaped = false
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]
+
+    if (inString) {
+      out += c
+      if (escaped) escaped = false
+      else if (c === '\\') escaped = true
+      else if (c === '"') inString = false
+      continue
+    }
+
+    if (c === '"') {
+      inString = true
+      out += c
+      continue
+    }
+    if (c === '/' && text[i + 1] === '/') {
+      while (i < text.length && text[i] !== '\n') i++
+      out += '\n'
+      continue
+    }
+    if (c === '/' && text[i + 1] === '*') {
+      i += 2
+      while (i < text.length && !(text[i] === '*' && text[i + 1] === '/')) i++
+      i++
+      continue
+    }
+    out += c
+  }
+
+  // Trailing commas are legal in tsconfig and not in JSON. Safe as a regex
+  // now: every string has already survived the scan above intact.
+  return out.replace(/,(\s*[}\]])/g, '$1')
+}
+
+/** A tsconfig as an object, or undefined when it cannot be read or parsed. */
+function readJsoncConfig(file: string): Record<string, any> | undefined {
+  try {
+    return JSON.parse(stripJsonc(readFileSync(file, 'utf8')))
+  }
+  catch {
+    return undefined
+  }
+}
+
 /**
  * Type-check `.stx` files.
  *
@@ -361,50 +417,6 @@ function readProjectPathAliases(startDir: string): { paths?: Record<string, stri
   if (!configPath)
     return {}
 
-  // Character scan, not regex. A glob is indistinguishable from a comment to a
-  // regex: `"app/Models/**/*.ts"` contains a literal `/**/`, which a block-comment
-  // pattern happily eats, and the result parses as garbage or — worse — as valid
-  // JSON with a silently wrong value. Only a scanner that knows whether it is
-  // inside a string can tell the two apart.
-  const stripJsonc = (text: string): string => {
-    let out = ''
-    let inString = false
-    let escaped = false
-
-    for (let i = 0; i < text.length; i++) {
-      const c = text[i]
-
-      if (inString) {
-        out += c
-        if (escaped) escaped = false
-        else if (c === '\\') escaped = true
-        else if (c === '"') inString = false
-        continue
-      }
-
-      if (c === '"') {
-        inString = true
-        out += c
-        continue
-      }
-      if (c === '/' && text[i + 1] === '/') {
-        while (i < text.length && text[i] !== '\n') i++
-        out += '\n'
-        continue
-      }
-      if (c === '/' && text[i + 1] === '*') {
-        i += 2
-        while (i < text.length && !(text[i] === '*' && text[i + 1] === '/')) i++
-        i++
-        continue
-      }
-      out += c
-    }
-
-    // Trailing commas are legal in tsconfig and not in JSON. Safe as a regex
-    // now: every string has already survived the scan above intact.
-    return out.replace(/,(\s*[}\]])/g, '$1')
-  }
 
   const seen = new Set<string>()
   let current: string | undefined = configPath
@@ -594,6 +606,15 @@ export async function typecheckStxFiles(
    * An absolute path the caller passed is left exactly as it is.
    */
   const ambient: string[] = (options.extraLibs ?? []).map(lib => path.resolve(lib))
+
+  // The app's own `libs`, from the stx entry in its tsconfig — the list the
+  // editor plugin reads too, so a global the app declares there is known to
+  // both rather than to whichever was handed a `--lib` (stacksjs/stx#2028).
+  const pluginEntry = findStxPluginEntry(files.length > 0 ? path.dirname(path.resolve(files[0])) : process.cwd(), readJsoncConfig, existsSync)
+  for (const lib of pluginEntry?.libs ?? []) {
+    if (!ambient.includes(lib) && existsSync(lib))
+      ambient.push(lib)
+  }
 
   // The runtime globals come from the package's own `stx.d.ts`, which types
   // them properly — `state<T>(initial: T): StxSignal<T>` rather than `any`.

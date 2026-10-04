@@ -62,7 +62,7 @@ Catch mistakes early with built-in diagnostics:
 - Type errors in expressions
 - Invalid utility classes
 
-TypeScript errors in `<script server>`, `<script client>` and template expressions are reported by the TypeScript server, through the extension's TypeScript plugin, against the same declarations `stx typecheck` uses. `import { state } from 'stx'` and the auto-imported runtime globals resolve to their real types, and a name imported from `stx` into the kind of block the runtime does not give it (`useQuery` in a `<script server>`, `useServerData` in a client script) is reported. When the app's installed `@stacksjs/stx` ships `stx-module.d.ts`, those declarations are used, so the editor matches the runtime the app actually runs.
+TypeScript errors in `<script server>`, `<script client>` and template expressions are reported by the TypeScript server, through the extension's TypeScript plugin, against the same declarations `stx typecheck` uses. `import { state } from 'stx'` and the auto-imported runtime globals resolve to their real types, and a name imported from `stx` into the kind of block the runtime does not give it (`useQuery` in a `<script server>`, `useServerData` in a client script) is reported. When the app's installed `@stacksjs/stx` ships `stx-module.d.ts`, those declarations are used, so the editor matches the runtime the app actually runs. Globals the app installs itself are declared through `libs` on the `@stacksjs/stx-typescript-plugin` entry of its `tsconfig.json` `compilerOptions.plugins`, which `stx typecheck` reads too.
 
 ### ⚡ And Much More
 

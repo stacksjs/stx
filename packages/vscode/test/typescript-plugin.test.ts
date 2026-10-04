@@ -15,12 +15,12 @@
  */
 import type * as ts from 'typescript/lib/tsserverlibrary'
 import { afterAll, describe, expect, test } from 'bun:test'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildVirtualTypeScript, lineStarts, positionToOffset } from '../../stx/src/stx-virtual-ts'
 import { writeStxDeclarations } from '../src/ts-plugin-declarations'
-import init, { findInstalledStxDeclarations } from '../src/typescript-stx-plugin'
+import init, { declarationEntry, findInstalledStxDeclarations } from '../src/typescript-stx-plugin'
 
 /** Everything the plugin uses from the `typescript` module. */
 const tsLib = {
@@ -385,5 +385,37 @@ describe('definitions', () => {
       ['/p.stx', offsetOf(virtualText, 7, 7)],
       ['/lib.d.ts', 3],
     ])
+  })
+})
+
+describe('the tsconfig libs', () => {
+  test('are referenced alongside the runtime declarations, through one generated entry', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'stx-plugin-libs-'))
+    let entry = ''
+    try {
+      const types = join(dir, 'ext-types')
+      writeStxDeclarations(types)
+      mkdirSync(join(dir, 'app', 'types'), { recursive: true })
+      writeFileSync(join(dir, 'app', 'types', 'request.d.ts'), 'declare const requestContext: unknown\n')
+      writeFileSync(join(dir, 'app', 'tsconfig.json'), JSON.stringify({ compilerOptions: { plugins: [{ name: '@stacksjs/stx-typescript-plugin', libs: ['./types/request.d.ts'] }] } }))
+
+      const tsWithConfig = { ...tsLib, readConfigFile: (file: string) => ({ config: JSON.parse(readFileSync(file, 'utf8')) }), sys: { fileExists: existsSync, readFile: (file: string) => readFileSync(file, 'utf8') } } as unknown as typeof ts
+      const file = join(dir, 'app', 'page.stx')
+      const { host } = harness(file, '<script server>\nconst c = requestContext\n</script>', undefined, { plugin: init({ typescript: tsWithConfig }, { declarationsDir: types }) })
+
+      const snapshot = host.getScriptSnapshot!(file)!
+      entry = /^\/\/\/ <reference path="(.+)" \/>$/.exec(snapshot.getText(0, snapshot.getLength()).split('\n')[0])![1]
+      expect(readFileSync(entry, 'utf8').trim().split('\n')).toEqual([
+        `/// <reference path="${join(types, 'stx-module.d.ts')}" />`,
+        `/// <reference path="${join(dir, 'app', 'types', 'request.d.ts')}" />`,
+      ])
+      expect(declarationEntry([join(types, 'stx-module.d.ts'), join(dir, 'app', 'types', 'request.d.ts')])).toBe(entry)
+    }
+    finally {
+      rmSync(dir, { recursive: true, force: true })
+      // The generated entry lives in the shared temp directory, by design.
+      if (entry)
+        rmSync(entry, { force: true })
+    }
   })
 })
