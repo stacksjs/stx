@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.358...v0.2.359)
+
+## 🐛 Bug Fixes
+
+- **typecheck**: stop reporting templates that run, and fix the two runtime bugs they hid ([55ce4d7](https://github.com/stacksjs/stx/commit/55ce4d7)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2029](https://github.com/stacksjs/stx/issues/2029))
+
+## ✅ Tests
+
+- **vscode**: compare the unpacked VSIX by real path, so the packaging test passes on macOS ([b8fa87b](https://github.com/stacksjs/stx/commit/b8fa87b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.359 ([ef6265c](https://github.com/stacksjs/stx/commit/ef6265c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.357...v0.2.358)
 
 ## ✨ Features
