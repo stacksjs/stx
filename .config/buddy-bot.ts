@@ -25,8 +25,12 @@ const config: BuddyBotConfig = {
   packages: {
     strategy: 'all',
     ignore: [
-      // Add packages to ignore here
-      // Example: '@types/node', 'eslint'
+      // The VS Code extension compiles against the API of the oldest editor
+      // it supports, so @types/vscode moves with `engines.vscode` in
+      // packages/vscode/package.json, by hand. Raising it alone makes
+      // `vsce publish` refuse the extension, and an earlier bump also rewrote
+      // `engines.vscode` to ^1.999.0, which no editor can install.
+      '@types/vscode',
     ],
     ignorePaths: [
       // Add file/directory paths to ignore using glob patterns

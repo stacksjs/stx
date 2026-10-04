@@ -14,7 +14,7 @@ The stx VS Code extension provides comprehensive support for stx development wit
 ### From Command Line
 
 ```bash
-code --install-extension stx.stx-vscode
+code --install-extension Stacks.vscode-stx
 ```
 
 ## Features

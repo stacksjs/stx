@@ -55,7 +55,8 @@
 2. **Install the extension**:
    ```bash
    cd packages/vscode
-   code --install-extension vscode-stacks-0.1.12.vsix
+   bun run package
+   code --install-extension vscode-stx-<version>.vsix
    ```
 
 ## What to Test

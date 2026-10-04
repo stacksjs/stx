@@ -26,37 +26,34 @@ let builtInRules: any
 let cssLoaded = false
 
 /**
- * The utility-CSS engine, newest package name first. It now lives at the
- * `engine` subpath of `@stacksjs/ts-css`; `@stacksjs/ts-css` is the standalone
- * package it was published as before that.
+ * Load the utility-CSS engine, the `engine` subpath of `@stacksjs/ts-css`.
+ *
+ * The specifier is a literal on purpose. The extension ships as a single
+ * bundled file with no `node_modules` (`vsce package --no-dependencies`), so
+ * the bundler has to see the import to inline the engine. A specifier held in
+ * a variable compiled to a runtime `import()` that found nothing in the
+ * installed extension, and every utility-class feature failed to activate.
  */
-export const ENGINE_SPECIFIERS = ['@stacksjs/ts-css/engine', '@stacksjs/ts-css/engine']
+export async function importCssEngine(): Promise<typeof import('@stacksjs/ts-css/engine')> {
+  setupBunPolyfill()
+  return await import('@stacksjs/ts-css/engine')
+}
 
 async function loadCssEngine() {
   if (cssLoaded)
     return
 
-  setupBunPolyfill()
-
-  let lastError: unknown
-  for (const specifier of ENGINE_SPECIFIERS) {
-    try {
-      const css = await import(specifier)
-      if (!css?.CSSGenerator)
-        continue
-      CSSGenerator = css.CSSGenerator
-      parseClass = css.parseClass
-      builtInRules = css.builtInRules
-      cssLoaded = true
-      return
-    }
-    catch (error) {
-      lastError = error
-    }
+  try {
+    const css = await importCssEngine()
+    CSSGenerator = css.CSSGenerator
+    parseClass = css.parseClass
+    builtInRules = css.builtInRules
+    cssLoaded = true
   }
-
-  console.error(`[ts-css] Failed to load the CSS engine from any of ${ENGINE_SPECIFIERS.join(', ')}:`, lastError)
-  throw new Error(`Cannot load the CSS engine: ${lastError}`)
+  catch (error) {
+    console.error('[ts-css] Failed to load the CSS engine from @stacksjs/ts-css/engine:', error)
+    throw new Error(`Cannot load the CSS engine: ${error}`)
+  }
 }
 
 /**

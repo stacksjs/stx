@@ -3,18 +3,16 @@ import process from 'node:process'
 console.log('Building VSCode extension...')
 
 try {
-  // 1. Build the main extension (CJS for VSCode)
+  // 1. Build the main extension (CJS for VSCode). Everything but the `vscode`
+  //    module the editor provides is bundled: the extension is packaged with
+  //    `vsce package --no-dependencies`, so the installed extension has no
+  //    node_modules to resolve `@stacksjs/ts-css` or `prettier` from.
   const result = await Bun.build({
     entrypoints: ['./src/extension.ts'],
     outdir: './dist',
     target: 'node',
     format: 'cjs',
-    external: [
-      'vscode',
-      '@stacksjs/ts-css',
-      '@stacksjs/ts-css/engine',
-      'prettier',
-    ],
+    external: ['vscode'],
     minify: true,
     sourcemap: 'external',
   })

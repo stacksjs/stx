@@ -1,0 +1,89 @@
+name: VS Code Extension
+
+# Publishes packages/vscode to the VS Code Marketplace as Stacks.vscode-stx.
+#
+# It is its own workflow rather than a step in release.yml so a marketplace
+# failure can never hold up the npm release, and so it can be re-run on its
+# own (`gh workflow run vscode-extension.yml`) without republishing anything
+# else. The version is the one bumpx writes into packages/vscode/package.json
+# with every stx release.
+#
+# The Stacks framework extension (Stacks.vscode-stacks, published from
+# stacksjs/stacks) lists this one in its extensionPack, so this ID has to
+# exist on the marketplace for that pack to install (stacksjs/stx#2020).
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vscode-extension
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      # The TypeScript plugin bundles sources from packages/stx, which resolve
+      # their imports from the root workspace.
+      - name: Install Dependencies
+        run: bun install
+
+      # packages/vscode is outside the root workspace and has its own lockfile.
+      - name: Install Extension Dependencies
+        working-directory: packages/vscode
+        run: bun install --frozen-lockfile
+
+      # Includes test/manifest.test.ts, which pins the marketplace ID, builds
+      # the extension and fails if the bundle still requires a package the
+      # installed extension would not have.
+      - name: Test the Extension
+        working-directory: packages/vscode
+        run: bun test
+
+      - name: Check the Marketplace
+        id: marketplace
+        working-directory: packages/vscode
+        run: |
+          id="$(jq -r '.publisher + "." + .name' package.json)"
+          version="$(jq -r .version package.json)"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          published="$(curl -fsS -X POST 'https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery' \
+            -H 'Content-Type: application/json' \
+            -H 'Accept: application/json;api-version=7.2-preview.1' \
+            -d "{\"filters\":[{\"criteria\":[{\"filterType\":7,\"value\":\"$id\"}]}],\"flags\":1}" \
+            | jq -r '[.results[0].extensions[0].versions[]?.version] | join(" ")')"
+
+          if [[ " $published " == *" $version "* ]]; then
+            echo "$id@$version is already on the marketplace."
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to the VS Code Marketplace
+        if: steps.marketplace.outputs.published != 'true'
+        working-directory: packages/vscode
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          if [ -z "$VSCE_PAT" ]; then
+            echo "::error::The VSCE_PAT secret is not set on this repository. It is the Azure DevOps token for the 'Stacks' marketplace publisher, the same one stacksjs/stacks publishes Stacks.vscode-stacks with. Add it under Settings > Secrets and variables > Actions, then re-run this workflow."
+            exit 1
+          fi
+          bun run release
+          echo "Published ${{ steps.marketplace.outputs.id }}@${{ steps.marketplace.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"

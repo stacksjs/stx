@@ -2,8 +2,8 @@
 
 > Beautiful, intelligent language support for stx templates in Visual Studio Code
 
-[![Version](https://img.shields.io/visual-studio-marketplace/v/stacks.vscode-stacks)](https://marketplace.visualstudio.com/items?itemName=stacks.vscode-stacks)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/stacks.vscode-stacks)](https://marketplace.visualstudio.com/items?itemName=stacks.vscode-stacks)
+[![Version](https://img.shields.io/visual-studio-marketplace/v/Stacks.vscode-stx)](https://marketplace.visualstudio.com/items?itemName=Stacks.vscode-stx)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/Stacks.vscode-stx)](https://marketplace.visualstudio.com/items?itemName=Stacks.vscode-stx)
 [![License](https://img.shields.io/github/license/stacksjs/stx)](https://github.com/stacksjs/stx/blob/main/LICENSE.md)
 
 ## What is stx?
@@ -76,10 +76,12 @@ Catch mistakes early with built-in diagnostics:
 
 1. Open VS Code
 2. Press `Cmd+Shift+X` (Mac) or `Ctrl+Shift+X` (Windows/Linux)
-3. Search for "stx" or "Stacks"
+3. Search for "stx Language Support"
 4. Click Install
 
-Or [install from the marketplace](https://marketplace.visualstudio.com/items?itemName=stacks.vscode-stacks)
+The extension ID is `Stacks.vscode-stx`, so `code --install-extension Stacks.vscode-stx` works too. If you build with the Stacks framework you do not need it: the Stacks extension (`Stacks.vscode-stacks`) has the same stx support built in, through [`@stacksjs/stx-vscode`](../stx-vscode). With both installed, this one stands down so nothing is registered twice.
+
+Or [install from the marketplace](https://marketplace.visualstudio.com/items?itemName=Stacks.vscode-stx)
 
 ### First Template
 
@@ -282,7 +284,7 @@ Hover over any utility class to see what CSS it generates:
 
 Sort your utility classes for better readability:
 
-**Command:** `Stacks: Sort Utility Classes`
+**Command:** `stx: Sort Utility Classes`
 
 ```stx
 <!-- Before -->

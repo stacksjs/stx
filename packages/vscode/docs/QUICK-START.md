@@ -75,7 +75,7 @@ Let's add some styling with utility classes:
 **Try this:**
 - Hover over `bg-blue-500` - See the actual blue color
 - Hover over `flex` - See `display: flex;`
-- Use `Cmd+Shift+P` → "Stacks: Sort Utility Classes" to organize them
+- Use `Cmd+Shift+P` → "stx: Sort Utility Classes" to organize them
 
 ## 🔄 Working with Loops
 
@@ -226,7 +226,7 @@ Type `@` followed by a directive name and press `Tab` for instant snippets:
 
 ### Tip 2: Sort Your Classes
 Keep utility classes readable by sorting them regularly:
-- Command: `Cmd+Shift+P` → "Stacks: Sort Utility Classes"
+- Command: `Cmd+Shift+P` → "stx: Sort Utility Classes"
 - Or enable auto-sort: `"stx.utilityClasses.sortOnSave": true`
 
 ### Tip 3: Explore with Hover

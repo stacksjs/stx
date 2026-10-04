@@ -220,4 +220,4 @@ If you encounter any issues with the stx language support:
 ## Resources
 
 - [stx Repository](https://github.com/stacksjs/stx)
-- [VS Code Marketplace Extension](https://marketplace.visualstudio.com/items?itemName=Stacks.vscode-stacks)
+- [VS Code Marketplace Extension](https://marketplace.visualstudio.com/items?itemName=Stacks.vscode-stx)

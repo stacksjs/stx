@@ -1,0 +1,48 @@
+{
+  "name": "@stacksjs/stx-vscode",
+  "type": "module",
+  "version": "0.2.350",
+  "description": "stx language support for VS Code extensions to embed: the hovers, completions, diagnostics, grammar, snippets and language configuration behind the stx extension.",
+  "author": "Chris Breuer <chris@stacksjs.org>",
+  "license": "MIT",
+  "homepage": "https://github.com/stacksjs/stx/tree/main/packages/stx-vscode#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stacksjs/stx.git",
+    "directory": "packages/stx-vscode"
+  },
+  "bugs": {
+    "url": "https://github.com/stacksjs/stx/issues"
+  },
+  "keywords": [
+    "stx",
+    "vscode",
+    "language support",
+    "grammar",
+    "stacks"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./contributes.json": "./dist/contributes.json",
+    "./assets/*": "./dist/assets/*"
+  },
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "LICENSE.md",
+    "README.md",
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun --bun build.ts",
+    "prepublishOnly": "bun run build",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@stacksjs/ts-css": "^0.3.6",
+    "prettier": "^3.9.9"
+  }
+}

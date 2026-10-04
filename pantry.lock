@@ -1685,7 +1685,7 @@
       }
     },
     "packages/vscode": {
-      "name": "vscode-stacks",
+      "name": "vscode-stx",
       "version": "0.2.350",
       "dependencies": {
         "@cwcss/crosswind": "^0.2.14",

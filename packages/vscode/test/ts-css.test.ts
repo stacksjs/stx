@@ -98,28 +98,32 @@ describe('Css Integration Tests', () => {
     expect(content).toContain('waitReady')
   })
 
-  test('should use dynamic imports for ESM module', async () => {
+  test('should load the ESM engine lazily, through one literal specifier', async () => {
     const contextPath = path.join(PACKAGE_ROOT, 'src/ts-css/context.ts')
     const content = await Bun.file(contextPath).text()
 
-    // Imported through a variable rather than a literal specifier: the
-    // engine's newest package name is not a static dependency here, and a
-    // literal would make the compiler demand it.
-    expect(content).toContain('await import(specifier)')
+    // A literal, so the bundler inlines the engine. The extension ships with
+    // no node_modules, and a specifier held in a variable compiled to a
+    // runtime import() that resolved nothing once installed.
+    expect(content).toContain("await import('@stacksjs/ts-css/engine')")
+    expect(content).not.toMatch(/await import\(specifier\)/)
     expect(content).toContain('async function loadCssEngine()')
   })
 
   test('should resolve the engine from the ts-css package', async () => {
-    const contextPath = path.join(PACKAGE_ROOT, 'src/ts-css/context.ts')
-    const content = await Bun.file(contextPath).text()
+    const sources = await Promise.all(
+      ['src/ts-css/context.ts', 'src/ts-css/sort-provider.ts']
+        .map(file => Bun.file(path.join(PACKAGE_ROOT, file)).text()),
+    )
 
     // The engine ships at the `engine` subpath of @stacksjs/ts-css. An
     // extension pointed anywhere else generates CSS the project cannot
-    // reproduce, so the specifier table is worth pinning down.
-    const table = content.match(/ENGINE_SPECIFIERS\s*=\s*\[([^\]]*)\]/)?.[1] ?? ''
+    // reproduce, and the sorter must use the same engine as the hovers.
+    const specifiers = new Set(sources.flatMap(source => [...source.matchAll(/import\('([^']+)'\)/g)].map(m => m[1]))
+      .filter(specifier => !specifier.startsWith('.')))
 
-    expect(table).toContain('@stacksjs/ts-css/engine')
-    expect(table).not.toContain('crosswind')
+    expect([...specifiers]).toEqual(['@stacksjs/ts-css/engine'])
+    expect(sources[1]).toContain('importCssEngine()')
   })
 
   test('should have proper async initialization pattern', async () => {
@@ -248,13 +252,13 @@ describe('Css Integration Tests', () => {
     expect(Object.keys(config)).toContain('css.remToPxRatio')
   })
 
-  test('should activate css in extension.ts', async () => {
-    const extensionPath = path.join(PACKAGE_ROOT, 'src/extension.ts')
+  test('should activate css in language.ts', async () => {
+    const extensionPath = path.join(PACKAGE_ROOT, 'src/language.ts')
     const content = await Bun.file(extensionPath).text()
 
     expect(content).toContain("import('./ts-css/index')")
     expect(content).toContain('activateCss')
-    expect(content).toContain('await activateCss(context)')
+    expect(content).toContain('await activateCss(context as vscode.ExtensionContext)')
   })
 
   test('should NOT have styles-uno directory', async () => {

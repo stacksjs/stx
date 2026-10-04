@@ -26,3 +26,7 @@ scripts/**
 *.log
 *.tsbuildinfo
 build.ts
+bun.lock
+deps.yaml
+TESTING.md
+dist/index.mjs

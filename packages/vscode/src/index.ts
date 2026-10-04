@@ -2,6 +2,7 @@
  * stx VSCode Extension - Library Exports
  *
  * Import these to build your own VSCode extension using stx's language features as a base.
+ * Published as `@stacksjs/stx-vscode`; `activateStxLanguage` starts all of it at once.
  *
  * @example
  * ```ts
@@ -13,7 +14,7 @@
  *   createDiagnosticsProvider,
  *   ComponentRegistry,
  *   PropsTypeExtractor,
- * } from 'vscode-stacks'
+ * } from 'vscode-stx'
  * ```
  */
 
@@ -59,30 +60,30 @@ export {
   loadCssEngineConfig,
   getDefaultConfig as getCssDefaultConfig,
 } from './ts-css/context'
-export { createCssHoverProvider } from './css/hover-provider'
-export { createCssCompletionProvider } from './css/completion-provider'
-export { createSortClassesCommand, sortClasses } from './css/sort-provider'
-export { registerColorDecorations } from './css/color-provider'
+export { createCssHoverProvider } from './ts-css/hover-provider'
+export { createCssCompletionProvider } from './ts-css/completion-provider'
+export { createSortClassesCommand, sortClasses } from './ts-css/sort-provider'
+export { registerColorDecorations } from './ts-css/color-provider'
 
 // Css utilities
 export {
   extractClassesFromDocument,
   getClassAtPosition,
   extractClassesFromLine,
-} from './css/utils/class-matcher'
-export type { ClassMatch } from './css/utils/class-matcher'
+} from './ts-css/utils/class-matcher'
+export type { ClassMatch } from './ts-css/utils/class-matcher'
 export {
   extractColorFromCSS,
   isColorClass,
   extractAllColors,
-} from './css/utils/color-extractor'
-export type { ColorInfo } from './css/utils/color-extractor'
+} from './ts-css/utils/color-extractor'
+export type { ColorInfo } from './ts-css/utils/color-extractor'
 export {
   prettifyCSS,
   extractRuleForClass,
   formatCSSDeclarations,
   addRemToPxComment,
-} from './css/utils/css-parser'
+} from './ts-css/utils/css-parser'
 
 // =============================================================================
 // Utilities — Template path resolution, CSS analysis, JSDoc formatting
@@ -137,7 +138,21 @@ export type {
 } from './interfaces/animation-types'
 
 // =============================================================================
+// Embedding — start all of stx support from another extension
+// =============================================================================
+
+export {
+  activateStxLanguage,
+  deactivateStxLanguage,
+  STACKS_EXTENSION_ID,
+  STX_EXTENSION_ID,
+} from './language'
+export type { StxExtensionContext, StxLanguageOptions } from './language'
+export { registerSnippetCompletions, snippetCompletionItems } from './snippets'
+
+// =============================================================================
 // Extension lifecycle — activate/deactivate for direct use
 // =============================================================================
 
 export { activate, deactivate } from './extension'
+export { stacksProvidesStx } from './stand-down'

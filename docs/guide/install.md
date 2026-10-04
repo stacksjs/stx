@@ -289,7 +289,7 @@ serve({
 
 ### VSCode
 
-1. **Install the STX extension** from the [VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=stacksjs.stx)
+1. **Install the STX extension** from the [VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=Stacks.vscode-stx)
 
 2. **Configure file associations:**
 

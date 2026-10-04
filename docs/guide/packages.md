@@ -355,7 +355,7 @@ bun run bench:all
 
 ---
 
-### vscode-stacks
+### vscode-stx
 
 **VS Code extension** providing STX language support.
 
@@ -370,7 +370,7 @@ bun run bench:all
 - TypeScript support in templates
 - 100+ configuration options
 
-**Install**: Search for "stx" or "stacks" in VS Code Extensions
+**Install**: search for "stx Language Support" in the Extensions view, or run `code --install-extension Stacks.vscode-stx`
 
 **Learn More**: [VS Code Extension](/guide/tools/vscode)
 

@@ -460,7 +460,7 @@ import {
   VirtualTsDocumentProvider,
   ComponentRegistry,
   activateCss,
-} from 'vscode-stacks'
+} from 'vscode-stx'
 ```
 
 ## Packages
@@ -469,7 +469,8 @@ import {
 |---------|-------------|
 | [`stx`](./packages/stx) | Core template processing engine |
 | [`bun-plugin-stx`](./packages/bun-plugin) | Bun plugin for `.stx` file processing |
-| [`vscode-stacks`](./packages/vscode) | VS Code extension with TypeScript support |
+| [`vscode-stx`](./packages/vscode) | VS Code extension for `.stx` files ([`Stacks.vscode-stx`](https://marketplace.visualstudio.com/items?itemName=Stacks.vscode-stx)) |
+| [`@stacksjs/stx-vscode`](./packages/stx-vscode) | The VS Code extension's language support as a library, for embedding in another extension |
 | [`@stacksjs/desktop`](./packages/desktop) | Native desktop app framework (via Craft) |
 | [`@stacksjs/markdown`](./packages/markdown) | Markdown parsing with frontmatter |
 | [`@stacksjs/sanitizer`](./packages/sanitizer) | HTML/XSS sanitization |

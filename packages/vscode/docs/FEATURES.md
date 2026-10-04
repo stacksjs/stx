@@ -218,7 +218,7 @@ Keep your utility classes organized with the sort command:
 <div class="text-white p-4 bg-blue-500 flex rounded-lg items-center">
 ```
 
-**After sorting** (`Cmd+Shift+P` → "Stacks: Sort Utility Classes"):
+**After sorting** (`Cmd+Shift+P` → "stx: Sort Utility Classes"):
 
 ```stx
 <div class="flex items-center rounded-lg bg-blue-500 p-4 text-white">
