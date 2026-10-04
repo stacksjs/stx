@@ -59,7 +59,16 @@ export function registeredModuleIdsIn(...sources: Array<string | null | undefine
  */
 export async function buildModuleRegistryScript(
   ids: string[],
-  options: { minify?: boolean } = {},
+  options: {
+    minify?: boolean
+    /**
+     * Receives the files the registry was built from - the modules' own
+     * sources, `node_modules` included. The registry is inlined into the
+     * page, so the page depends on them; a caller caching the page has to
+     * know, or upgrading a package leaves the page serving the old one.
+     */
+    collectInputs?: string[]
+  } = {},
 ): Promise<string | null> {
   if (ids.length === 0)
     return null
@@ -89,6 +98,7 @@ export async function buildModuleRegistryScript(
       projectRoot: root,
       minify: options.minify,
       externalizeUserModules: false,
+      collectInputs: options.collectInputs,
     })
   }
   catch (error) {

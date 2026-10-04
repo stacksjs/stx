@@ -319,15 +319,25 @@ function findScriptBlockByAttribute(html: string, attribute: string): ScriptBloc
 async function buildModulesTag(
   sources: Array<string | null>,
   options: StxOptions,
+  dependencies?: Set<string>,
 ): Promise<string | null> {
   try {
     const { registeredModuleIdsIn, buildModuleRegistryScript } = await importOnce(
       'stx/client-module-registry',
       () => import('./client-module-registry'),
     )
+    // The registry is inlined into this page, so what it was built from is
+    // this page's dependency too. The page's own script bundle leaves these
+    // modules external and records none of them, so without this a page that
+    // imports a package recorded no dependency on it, and upgrading the
+    // package left the build cache serving the page with the old copy inlined.
+    const inputs: string[] = []
     const code = await buildModuleRegistryScript(registeredModuleIdsIn(...sources), {
       minify: options.buildMode === 'compile',
+      collectInputs: inputs,
     })
+    for (const input of inputs)
+      dependencies?.add(input)
     if (!code)
       return null
     // Serve mode links the bundle as a content-addressed file the Bun serve
@@ -693,7 +703,7 @@ export async function processDirectives(
           // The page-level module registry (#1957): every module a component or
           // store imports, bundled and evaluated ONCE for the page, so module
           // state is shared instead of duplicated per component bundle.
-          modulesTag = await buildModulesTag([result, storeTag], options)
+          modulesTag = await buildModulesTag([result, storeTag], options, dependencies)
 
           // Framework composables the page actually calls but the runtime does
           // not provide (#1805). Bundled from the real modules rather than
@@ -760,7 +770,7 @@ export async function processDirectives(
           // No runtime to anchor to, but a client script can still import a
           // module. Put the registry directly ahead of the first script that
           // reads it; without it those scripts throw naming the module.
-          const modulesTag = await buildModulesTag([result], options)
+          const modulesTag = await buildModulesTag([result], options, dependencies)
           if (modulesTag) {
             const firstReader = result.search(/<script\b[^>]*>(?:(?!<\/script>)[\s\S])*?__stxModules\[/i)
             if (firstReader !== -1)
