@@ -1704,7 +1704,7 @@
       "name": "@stacksjs/stx-vscode",
       "version": "0.2.351",
       "dependencies": {
-        "@stacksjs/ts-css": "^0.3.6",
+        "@stacksjs/ts-css": "^0.3.7",
         "prettier": "^3.9.9",
       },
     },
@@ -2972,7 +2972,7 @@
 
     "@stacksjs/logsmith/pickier": ["pickier@0.1.56", "", { "dependencies": { "@stacksjs/clapp": "^0.2.3", "@stacksjs/clarity": "^0.3.24" }, "optionalDependencies": { "@stacksjs/ts-spell-check": "^0.1.0" }, "bin": { "pickier": "./dist/bin/cli.js" } }, "sha512-wYSdryx2Gx2WNS0RTxYWB4z+oBZ08lBQli12HjOIGMIKlpG+O10XZsAG9ILxWTEMG13f7cMK+tNRyGxp48ll1w=="],
 
-    "@stacksjs/stx-vscode/@stacksjs/ts-css": ["@stacksjs/ts-css@0.3.6", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0", "bunfig": "^0.15.17" }, "bin": { "cssx": "./dist/bin/cssx.js", "ts-css": "./dist/bin/cli.js" } }, "sha512-7NJcQN9JshAA73FmwvpVdnO+iXnQiEyqtQ/ta+8UQbI3O+34mvRTNBtcx2oQNNKZ8TxM1g/Z/TvMaaan2p8tAA=="],
+    "@stacksjs/stx-vscode/@stacksjs/ts-css": ["@stacksjs/ts-css@0.3.7", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0", "bunfig": "^0.15.17" }, "bin": { "cssx": "./dist/bin/cssx.js", "ts-css": "./dist/bin/cli.js" } }, "sha512-ZP8TTLErkqQ7Q68jln7xQt0ZxDEafZNYLKnbyNtLgSwdFbMEXSKJ1VBZMmHbScfhmRTbU03juD+WELMtYbIs7A=="],
 
     "@stacksjs/ts-css/@stacksjs/clapp": ["@stacksjs/clapp@0.2.14", "", {}, "sha512-YGLCMDklXU8bxrT52g2KVEJB6o2xpDz3lc9nqDqDQUCKj1Q99YMz0Vp80idYlbj/Hu60tS6nWuvJfOKscD7NPg=="],
 

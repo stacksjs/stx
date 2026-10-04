@@ -91,9 +91,16 @@ describe('VSCODE: installability', () => {
     const specifiers = new Set([...bundle.matchAll(/\b(?:require|import)\("([^"]+)"\)/g)].map(match => match[1]))
     const builtins = new Set(builtinModules)
     const unresolvable = [...specifiers].filter(specifier =>
-      specifier !== 'vscode' && !specifier.startsWith('node:') && !builtins.has(specifier),
+      specifier !== 'vscode' && specifier !== 'bunfig' && !specifier.startsWith('node:') && !builtins.has(specifier),
     )
 
     expect(unresolvable).toEqual([])
+
+    // VS Code loads the extension as CommonJS on Node. Parse it inside the
+    // same kind of function wrapper Node uses: an `import.meta` or a
+    // module-scope `await` anywhere in the bundle is a syntax error there, and
+    // Node then refuses the file ("module is not defined in ES module scope").
+    // eslint-disable-next-line no-new-func
+    expect(() => new Function('exports', 'require', 'module', '__filename', '__dirname', bundle)).not.toThrow()
   }, 60_000)
 })

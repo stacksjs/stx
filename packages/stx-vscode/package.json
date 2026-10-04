@@ -42,7 +42,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@stacksjs/ts-css": "^0.3.6",
+    "@stacksjs/ts-css": "^0.3.7",
     "prettier": "^3.9.9"
   }
 }

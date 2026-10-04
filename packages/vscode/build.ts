@@ -7,12 +7,19 @@ try {
   //    module the editor provides is bundled: the extension is packaged with
   //    `vsce package --no-dependencies`, so the installed extension has no
   //    node_modules to resolve `@stacksjs/ts-css` or `prettier` from.
+  //
+  //    bunfig is the exception. The utility-class engine imports it only to
+  //    load a config file, which the extension never asks it to, and bunfig's
+  //    logger has a module-scope `await` and `import.meta.require`: in a CJS
+  //    bundle either one is a syntax error, and VS Code's Node host refuses
+  //    the whole extension. test/manifest.test.ts parses the bundle the way
+  //    Node does.
   const result = await Bun.build({
     entrypoints: ['./src/extension.ts'],
     outdir: './dist',
     target: 'node',
     format: 'cjs',
-    external: ['vscode'],
+    external: ['vscode', 'bunfig'],
     minify: true,
     sourcemap: 'external',
   })
