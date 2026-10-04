@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, realpathSync, rmSync } from 'node:fs'
 import { builtinModules, createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -208,7 +208,8 @@ describe('VSCODE: TypeScript server plugin', () => {
   // vsce runs `vscode:prepublish` through npm, so this needs npm on PATH; the
   // VS Code extension workflow has it.
   test.skipIf(!INSTALLED || !Bun.which('npm') || !Bun.which('zip') || !Bun.which('unzip'))('the VSIX carries the package, and it loads from the installed layout', () => {
-    const dir = mkdtempSync(path.join(tmpdir(), 'stx-vsix-test-'))
+    // Real path: require() resolves symlinks, and macOS's tmpdir is one.
+    const dir = realpathSync(mkdtempSync(path.join(tmpdir(), 'stx-vsix-test-')))
     try {
       const vsix = packageExtension(path.join(dir, 'stx.vsix'))
       const unzip = Bun.spawnSync(['unzip', '-q', vsix, 'extension/*', '-d', dir])
