@@ -1,7 +1,7 @@
 {
   "name": "@stacksjs/stx-vscode",
   "type": "module",
-  "version": "0.2.356",
+  "version": "0.2.357",
   "description": "stx language support for VS Code extensions to embed: the hovers, completions, diagnostics, grammar, snippets and language configuration behind the stx extension.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",

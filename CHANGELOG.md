@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.356...v0.2.357)
+
+## ✨ Features
+
+- **typecheck**: read extra declaration files from the stx entry in tsconfig, in the CLI and the editor ([9c8a8a5](https://github.com/stacksjs/stx/commit/9c8a8a5)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2028](https://github.com/stacksjs/stx/issues/2028))
+
+## 🔧 Chores
+
+- release v0.2.357 ([0d8508a](https://github.com/stacksjs/stx/commit/0d8508a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.355...v0.2.356)
 
 ## 🐛 Bug Fixes
