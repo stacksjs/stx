@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.351...v0.2.352)
+
+## 🐛 Bug Fixes
+
+- **vscode**: load in VS Code's Node host, and stop the semantic tokenizer looping forever ([e46783d](https://github.com/stacksjs/stx/commit/e46783d)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2020](https://github.com/stacksjs/stx/issues/2020))
+
+## 🔧 Chores
+
+- release v0.2.352 ([309b22a](https://github.com/stacksjs/stx/commit/309b22a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.350...v0.2.351)
 
 ## 🐛 Bug Fixes
