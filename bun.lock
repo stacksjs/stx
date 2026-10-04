@@ -21,7 +21,7 @@
         "@11ty/eleventy": "^3.1.6",
         "@stacksjs/sanitizer": "workspace:*",
         "dompurify": "^3.4.16",
-        "ejs": "^6.0.1",
+        "ejs": "^7.0.1",
         "gray-matter": "^4.0.3",
         "handlebars": "^4.7.9",
         "isomorphic-dompurify": "^4.4.0",
@@ -2488,7 +2488,7 @@
 
     "ee-first": ["ee-first@1.1.1", "", {}, "sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow=="],
 
-    "ejs": ["ejs@6.0.1", "", { "bin": { "ejs": "bin/cli.js" } }, "sha512-UaaM14yby8U3k02ihS1Bmj5Kz2d7CCQM1scxpgs4Mhkq8F1wR2gl3+Ts4h5Ne4Mnt7M9m4Dw7jsuMr3+xO4vZA=="],
+    "ejs": ["ejs@7.0.1", "", { "bin": { "ejs": "bin/cli.js" } }, "sha512-TrAb1fY4jNY6aQrNjMJsoWQxGUK47A38JxuUvnt75vDcAA9Ln7ur6FHo+irVa5Bwd3w9rdUT3xLSl5MRgHIugg=="],
 
     "encodeurl": ["encodeurl@2.0.0", "", {}, "sha512-Q0n9HRi4m6JuGIV1eFlmvJB7ZEVxu93IrMyiMsGC0lrMJMWzRgx6WGquyfQgZVb31vhGgXnfmPNNXmxnOkRBrg=="],
 
