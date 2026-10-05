@@ -305,8 +305,8 @@ describe('Text interpolation', () => {
     const runtime = generateSignalsRuntimeDev()
     // The effect wrapper around interpolation
     expect(runtime).toContain('effect(() => {')
-    // Text interpolation uses new Function with captured scope
-    expect(runtime).toContain('new Function(...Object.keys(capturedScope)')
+    // Text interpolation compiles (through the cache) over the captured scope
+    expect(runtime).toContain('__stxCompile(Object.keys(capturedScope)')
     expect(runtime).toContain('bindingNode.textContent')
   })
 })

@@ -179,7 +179,7 @@ describe('if/else chain runtime wiring (#1734)', () => {
     // ONLY to the signals the branch references, not every signal in scope
     // (#1738). The proxy pass uses unwrapScope; the retry pass uses the raw
     // scope (call-syntax).
-    expect(runtime).toContain('new Function(\'__scope__\', \'with(__scope__) { return \' + expression + \' }\')')
+    expect(runtime).toContain('__stxCompile([\'__scope__\'], \'with(__scope__) { return \' + expression + \' }\')')
     expect(runtime).toContain('return fn2(scope);')
   })
 

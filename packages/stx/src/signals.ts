@@ -213,6 +213,25 @@ console.log('[stx] entering IIFE');
   // Reactive Core
   // ==========================================================================
 
+  // Compiled expression functions, by parameter list and body. A binding was
+  // compiled with new Function on every evaluation: a page with a few hundred
+  // names in scope rebuilt a function of a few hundred parameters for every
+  // binding of every row, every time a row re-rendered. Opening a 386-message
+  // conversation took seven seconds in WebKit, the window frozen meanwhile.
+  // A Function built this way closes over nothing, so one can be reused.
+  const __stxCompiled = new Map();
+  function __stxCompile(params, body) {
+    const key = params.join(',') + '\\x01' + body;
+    let fn = __stxCompiled.get(key);
+    if (!fn) {
+      fn = new Function(...params, body);
+      // Bounded: expressions are finite per page, but SPA navigation adds more.
+      if (__stxCompiled.size >= 5000) __stxCompiled.clear();
+      __stxCompiled.set(key, fn);
+    }
+    return fn;
+  }
+
   let activeEffect = null;
   const effectStack = [];
   const pendingEffects = new Set();
@@ -802,7 +821,7 @@ else {
     // First evaluate the base expression
     let value;
     try {
-      const fn = new Function(...Object.keys(scope), 'return ' + valueExpr);
+      const fn = __stxCompile(Object.keys(scope), 'return ' + valueExpr);
       value = fn(...Object.values(scope));
     }
 catch (e) {
@@ -823,7 +842,7 @@ catch (e) {
             if (/^['"].*['"]$/.test(arg)) return arg.slice(1, -1);
             // Try to evaluate as expression in scope
             try {
-              const fn = new Function(...Object.keys(scope), 'return ' + arg);
+              const fn = __stxCompile(Object.keys(scope), 'return ' + arg);
               return fn(...Object.values(scope));
             }
 catch (e) {
@@ -2115,7 +2134,7 @@ finally {
               || expressionUsesSignalApi(expr, prop);
           })
         : baseScope;
-      const fn = new Function(...Object.keys(baseScope), 'return ' + expr);
+      const fn = __stxCompile(Object.keys(baseScope), 'return ' + expr);
       const result = fn(...Object.values(scope));
       // Post-eval unwrap — see evalAttrExpr note for the reason.
       return (result && typeof result === 'function' && (result._isSignal || result._isDerived)) ? result() : result;
@@ -2283,7 +2302,7 @@ catch (e) {
         const v = scope[k];
         handlerScope[k] = (v && typeof v === 'function' && v._isStxLoopItem) ? v() : v;
       });
-      const fn = new Function(...Object.keys(handlerScope), '$event', expr);
+      const fn = __stxCompile(Object.keys(handlerScope).concat(['$event']), expr);
       fn(...Object.values(handlerScope), event);
     }
 catch (e) {
@@ -2593,7 +2612,7 @@ catch (e) {
             return expressionCallsSignal(expression, prop)
               || expressionUsesSignalApi(expression, prop);
           });
-          var fn = new Function('__scope__', 'with(__scope__) { return (' + expression + ') }');
+          var fn = __stxCompile(['__scope__'], 'with(__scope__) { return (' + expression + ') }');
           value = fn(unwrapScope);
           if (value && typeof value === 'function' && (value._isSignal || value._isDerived)) value = value();
         }
@@ -2801,7 +2820,7 @@ catch (e) {
         var memoExpr = el.getAttribute('data-stx-memo');
         try {
           var memoScope = { ...globalHelpers, ...scope, ...(findElementScope(el) || {}) };
-          var memoFn = new Function(...Object.keys(memoScope), 'return ' + memoExpr);
+          var memoFn = __stxCompile(Object.keys(memoScope), 'return ' + memoExpr);
           var memoVals = JSON.stringify(memoFn(...Object.values(memoScope)));
           if (el.__stx_memo_prev === memoVals) {
             return; // Dependencies unchanged — skip re-processing
@@ -2854,7 +2873,7 @@ catch (e) {
 else {
                     // Use auto-unwrap proxy (Feature #1)
                     const unwrapScope = createExpressionAutoUnwrapProxy(capturedScope, expr);
-                    const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
+                    const fn = __stxCompile(Object.keys(capturedScope), 'return ' + expr);
                     bindingNode.textContent = fn(...Object.values(unwrapScope));
                   }
                 }
@@ -2863,7 +2882,7 @@ catch (e) {
                   // because it converts the signal to its value before the expression runs.
                   // Retry without auto-unwrap so signal functions remain callable.
                   try {
-                    const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
+                    const fn = __stxCompile(Object.keys(capturedScope), 'return ' + expr);
                     bindingNode.textContent = fn(...Object.values(capturedScope));
                   }
 catch (e2) {
@@ -2980,7 +2999,7 @@ else if (part) {
 
         // Use auto-unwrap proxy (Feature #1)
         const unwrapScope = createExpressionAutoUnwrapProxy(activeScope, expr);
-        const fn = new Function('__scope__', 'with(__scope__) { return (' + expr + ') }');
+        const fn = __stxCompile(['__scope__'], 'with(__scope__) { return (' + expr + ') }');
         var value = maybeUnwrapSignal(fn(unwrapScope));
         noteExprSuccess(expr);
         return value;
@@ -2989,7 +3008,7 @@ catch (e) {
         // Auto-unwrap can break explicit signal calls like errorData().message
         // Retry without auto-unwrap so signal functions remain callable
         try {
-          const fn = new Function('__scope__', 'with(__scope__) { return (' + expr + ') }');
+          const fn = __stxCompile(['__scope__'], 'with(__scope__) { return (' + expr + ') }');
           var retried = maybeUnwrapSignal(fn(activeScope));
           noteExprSuccess(expr);
           return retried;
@@ -3303,7 +3322,7 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
                 return 'if(' + k + ' !== __s["' + k + '"]()) __s["' + k + '"].set(' + k + ')';
               }).join(';');
               var body = getVars + ';' + value + ';' + setVars;
-              var fn2 = new Function('__s', '$event', body);
+              var fn2 = __stxCompile(['__s', '$event'], body);
               fn2(eventCapturedScope, handlerEvent);
             } else if (hasSignals) {
               // Function calls with signals in scope keep any signal used through
@@ -3326,10 +3345,10 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
                 }
                 return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && __s["' + k + '"]._isSignal ? __s["' + k + '"]() : __s["' + k + '"]';
               }).join(';');
-              var fn3 = new Function('__s', '$event', unwrapVars + ';' + value);
+              var fn3 = __stxCompile(['__s', '$event'], unwrapVars + ';' + value);
               fn3(eventCapturedScope, handlerEvent);
             } else {
-              var fn = new Function(...Object.keys(eventCapturedScope), '$event', value);
+              var fn = __stxCompile(Object.keys(eventCapturedScope).concat(['$event']), value);
               fn(...Object.values(eventCapturedScope), handlerEvent);
             }
           }
@@ -3455,13 +3474,13 @@ catch (e) {
         var value;
         try {
           var unwrapScope = createExpressionAutoUnwrapProxy(capturedScope, expr);
-          var fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
+          var fn = __stxCompile(Object.keys(capturedScope), 'return ' + expr);
           value = fn(...Object.values(unwrapScope));
         } catch (e1) {
           // Retry without unwrapping — handles edge cases where the proxy
           // interferes with certain expression patterns
           try {
-            var fn2 = new Function(...Object.keys(capturedScope), 'return ' + expr);
+            var fn2 = __stxCompile(Object.keys(capturedScope), 'return ' + expr);
             value = fn2(...Object.values(capturedScope));
           } catch (e2) {
             // Suppress ReferenceError/TypeError during async init — a signal
@@ -3507,7 +3526,7 @@ catch (e) {
         return direct();
       try {
         var unwrapScope = createExpressionAutoUnwrapProxy(capturedScope, expr);
-        var fn = new Function('__scope__', 'with(__scope__) { return (' + expr + ') }');
+        var fn = __stxCompile(['__scope__'], 'with(__scope__) { return (' + expr + ') }');
         return fn(unwrapScope);
       }
       catch (e) {
@@ -3535,7 +3554,7 @@ else {
           // Routing through it also drops the old requirement that every scope
           // key be a valid identifier, since nothing is destructured now.
           var writeScope = createModelWriteProxy(capturedScope);
-          var writeFn = new Function('__scope__', '__v__', 'with(__scope__) { ' + expr + ' = __v__ }');
+          var writeFn = __stxCompile(['__scope__', '__v__'], 'with(__scope__) { ' + expr + ' = __v__ }');
           writeFn(writeScope, val);
         }
       }
@@ -3649,7 +3668,7 @@ else {
     const safeKeys = keys.filter(k => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k));
     let fn;
     try {
-      fn = new Function(...safeKeys, 'return ' + expr);
+      fn = __stxCompile(safeKeys, 'return ' + expr);
     } catch (e) {
       console.warn('[STX] bindClass compile error:', expr, e);
       return;
@@ -3718,12 +3737,12 @@ else {
       // throw TypeError.
       try {
         const unwrapScope = createExpressionAutoUnwrapProxy(capturedScope, expr);
-        const fn = new Function(...Object.keys(capturedScope), 'return ' + expr);
+        const fn = __stxCompile(Object.keys(capturedScope), 'return ' + expr);
         return fn(...Object.values(unwrapScope));
       }
 catch (e1) {
         try {
-          const fn2 = new Function(...Object.keys(capturedScope), 'return ' + expr);
+          const fn2 = __stxCompile(Object.keys(capturedScope), 'return ' + expr);
           return fn2(...Object.values(capturedScope));
         }
 catch (e2) {
@@ -4209,7 +4228,7 @@ else {
           return expressionCallsSignal(expression, prop)
             || expressionUsesSignalApi(expression, prop);
         });
-        const fn = new Function(...Object.keys(scope), 'return ' + expression);
+        const fn = __stxCompile(Object.keys(scope), 'return ' + expression);
         return fn(...Object.values(unwrapScope));
       }
 catch (e) {
@@ -4232,7 +4251,7 @@ catch (e) {
         });
         // new Function body is non-strict, so with() works — only accessed
         // properties trigger the proxy's get trap and register as dependencies
-        const fn = new Function('__scope__', 'with(__scope__) { return ' + expression + ' }');
+        const fn = __stxCompile(['__scope__'], 'with(__scope__) { return ' + expression + ' }');
         return fn(unwrapScope);
       } catch (e) {
         if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Expression error:', expression, e);
@@ -4327,7 +4346,7 @@ catch (e) {
       try {
         const scope = { [itemName]: item };
         if (indexName) scope[indexName] = index;
-        const fn = new Function(itemName, indexName || '_idx', 'return ' + keyExpr);
+        const fn = __stxCompile([itemName, indexName || '_idx'], 'return ' + keyExpr);
         return String(fn(item, index));
       } catch (e) {
         return String(index);
@@ -4750,12 +4769,12 @@ catch (e) {
       try {
         var unwrapScope = createExpressionAutoUnwrapProxy(scope, expression);
         // new Function body is non-strict, so with() works.
-        var fn = new Function('__scope__', 'with(__scope__) { return ' + expression + ' }');
+        var fn = __stxCompile(['__scope__'], 'with(__scope__) { return ' + expression + ' }');
         return fn(unwrapScope);
       }
 catch (e1) {
         try {
-          var fn2 = new Function('__scope__', 'with(__scope__) { return ' + expression + ' }');
+          var fn2 = __stxCompile(['__scope__'], 'with(__scope__) { return ' + expression + ' }');
           return fn2(scope);
         }
 catch (e2) {
@@ -4999,14 +5018,14 @@ catch (e) { /* a disposer of its own is not this branch's problem */ }
       try {
         const scope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
         const unwrapScope = createExpressionAutoUnwrapProxy(scope, expression);
-        const fn = new Function('__scope__', 'with(__scope__) { return ' + expression + ' }');
+        const fn = __stxCompile(['__scope__'], 'with(__scope__) { return ' + expression + ' }');
         return fn(unwrapScope);
       }
 catch (e1) {
         try {
           // Retry without the unwrap proxy so call-syntax (signal()) works.
           const scope2 = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
-          const fn2 = new Function('__scope__', 'with(__scope__) { return ' + expression + ' }');
+          const fn2 = __stxCompile(['__scope__'], 'with(__scope__) { return ' + expression + ' }');
           return fn2(scope2);
         }
 catch (e2) {
@@ -8299,7 +8318,7 @@ else {
               if (matches) {
                 matches.forEach(match => {
                   const expr = match.replace(/^\\{\\{\\s*|\\s*\\}\\}$/g, '');
-                  const fn = new Function(...Object.keys(componentScope), 'return ' + expr);
+                  const fn = __stxCompile(Object.keys(componentScope), 'return ' + expr);
                   const value = fn(...Object.values(componentScope));
                   result = result.replace(match, value != null ? value : '');
                 });
@@ -8326,7 +8345,7 @@ else if (el.tagName === 'META') {
                 matches.forEach(match => {
                   const expr = match.replace(/^\\{\\{\\s*|\\s*\\}\\}$/g, '');
                   if (/^__[A-Z_]+__$/.test(expr.trim())) return;
-                  const fn = new Function(...Object.keys(componentScope), 'return ' + expr);
+                  const fn = __stxCompile(Object.keys(componentScope), 'return ' + expr);
                   const value = fn(...Object.values(componentScope));
                   result = result.replace(match, value != null ? value : '');
                 });
