@@ -171,16 +171,17 @@ describe('if/else chain runtime wiring (#1734)', () => {
     expect(runtime).toContain('if (ifChain.length > 1) bindIfChain(ifChain, scope)')
   })
 
-  it('binder inherits the #1733 retry-without-unwrap eval, via with() for narrow subscription (#1738)', () => {
+  it('binder inherits the #1733 retry-without-unwrap eval, with narrow subscription (#1738)', () => {
     // The chain's per-branch evaluator must retry without the unwrap proxy
     // so x-else-if="count() === 0" works on day one (#1733)...
     expect(runtime).toContain('var unwrapScope = createExpressionAutoUnwrapProxy(scope, expression);')
-    // ...and both passes evaluate via with(__scope__) so the effect subscribes
-    // ONLY to the signals the branch references, not every signal in scope
-    // (#1738). The proxy pass uses unwrapScope; the retry pass uses the raw
-    // scope (call-syntax).
-    expect(runtime).toContain('__stxCompile([\'__scope__\'], \'with(__scope__) { return \' + expression + \' }\')')
-    expect(runtime).toContain('return fn2(scope);')
+    // ...and both passes compile over only the names the branch mentions, so
+    // the effect subscribes ONLY to the signals it references, not every
+    // signal in scope (#1738; it used with(), which JavaScriptCore runs through
+    // proxy traps on every identifier). The proxy pass uses unwrapScope; the
+    // retry pass uses the raw scope (call-syntax).
+    expect(runtime).toContain('__stxCompileScoped(unwrapScope, [], \'return \' + expression + \'\')')
+    expect(runtime).toContain('return fn2(...__stxArgs(fn2, scope));')
   })
 
   it('skips inactive chain members without mistaking nested detached branches for inactive', () => {

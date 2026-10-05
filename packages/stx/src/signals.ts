@@ -2652,8 +2652,8 @@ catch (e) {
             return expressionCallsSignal(expression, prop)
               || expressionUsesSignalApi(expression, prop);
           });
-          var fn = __stxCompile(['__scope__'], 'with(__scope__) { return (' + expression + ') }');
-          value = fn(unwrapScope);
+          var fn = __stxCompileScoped(unwrapScope, [], 'return (' + expression + ')');
+          value = fn(...__stxArgs(fn, unwrapScope));
           if (value && typeof value === 'function' && (value._isSignal || value._isDerived)) value = value();
         }
         catch (e) {
@@ -3039,8 +3039,8 @@ else if (part) {
 
         // Use auto-unwrap proxy (Feature #1)
         const unwrapScope = createExpressionAutoUnwrapProxy(activeScope, expr);
-        const fn = __stxCompile(['__scope__'], 'with(__scope__) { return (' + expr + ') }');
-        var value = maybeUnwrapSignal(fn(unwrapScope));
+        const fn = __stxCompileScoped(unwrapScope, [], 'return (' + expr + ')');
+        var value = maybeUnwrapSignal(fn(...__stxArgs(fn, unwrapScope)));
         noteExprSuccess(expr);
         return value;
       }
@@ -3048,8 +3048,8 @@ catch (e) {
         // Auto-unwrap can break explicit signal calls like errorData().message
         // Retry without auto-unwrap so signal functions remain callable
         try {
-          const fn = __stxCompile(['__scope__'], 'with(__scope__) { return (' + expr + ') }');
-          var retried = maybeUnwrapSignal(fn(activeScope));
+          const fn = __stxCompileScoped(activeScope, [], 'return (' + expr + ')');
+          var retried = maybeUnwrapSignal(fn(...__stxArgs(fn, activeScope)));
           noteExprSuccess(expr);
           return retried;
         }
@@ -3566,8 +3566,8 @@ catch (e) {
         return direct();
       try {
         var unwrapScope = createExpressionAutoUnwrapProxy(capturedScope, expr);
-        var fn = __stxCompile(['__scope__'], 'with(__scope__) { return (' + expr + ') }');
-        return fn(unwrapScope);
+        var fn = __stxCompileScoped(unwrapScope, [], 'return (' + expr + ')');
+        return fn(...__stxArgs(fn, unwrapScope));
       }
       catch (e) {
         if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] ' + attrName + ' get error:', expr, e);
@@ -4292,10 +4292,12 @@ catch (e) {
           return expressionCallsSignal(expression, prop)
             || expressionUsesSignalApi(expression, prop);
         });
-        // new Function body is non-strict, so with() works — only accessed
-        // properties trigger the proxy's get trap and register as dependencies
-        const fn = __stxCompile(['__scope__'], 'with(__scope__) { return ' + expression + ' }');
-        return fn(unwrapScope);
+        // Compiled over the names the expression mentions (__stxCompileScoped),
+        // so only those are read and register as dependencies. It used with()
+        // over the proxy, which JavaScriptCore resolves through proxy traps on
+        // every identifier - 36x slower than V8 for a list of message rows.
+        const fn = __stxCompileScoped(unwrapScope, [], 'return ' + expression + '');
+        return fn(...__stxArgs(fn, unwrapScope));
       } catch (e) {
         if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Expression error:', expression, e);
         return '';
@@ -4811,14 +4813,14 @@ catch (e) {
       var scope = { ...globalHelpers, ...capturedComponentScope, ...(b.capturedElementScope || {}) };
       try {
         var unwrapScope = createExpressionAutoUnwrapProxy(scope, expression);
-        // new Function body is non-strict, so with() works.
-        var fn = __stxCompile(['__scope__'], 'with(__scope__) { return ' + expression + ' }');
-        return fn(unwrapScope);
+        // Compiled over the names the expression mentions (see __stxCompileScoped).
+        var fn = __stxCompileScoped(unwrapScope, [], 'return ' + expression + '');
+        return fn(...__stxArgs(fn, unwrapScope));
       }
 catch (e1) {
         try {
-          var fn2 = __stxCompile(['__scope__'], 'with(__scope__) { return ' + expression + ' }');
-          return fn2(scope);
+          var fn2 = __stxCompileScoped(scope, [], 'return ' + expression + '');
+          return fn2(...__stxArgs(fn2, scope));
         }
 catch (e2) {
           if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Expression error:', expression, e2);
@@ -5061,15 +5063,15 @@ catch (e) { /* a disposer of its own is not this branch's problem */ }
       try {
         const scope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
         const unwrapScope = createExpressionAutoUnwrapProxy(scope, expression);
-        const fn = __stxCompile(['__scope__'], 'with(__scope__) { return ' + expression + ' }');
-        return fn(unwrapScope);
+        const fn = __stxCompileScoped(unwrapScope, [], 'return ' + expression + '');
+        return fn(...__stxArgs(fn, unwrapScope));
       }
 catch (e1) {
         try {
           // Retry without the unwrap proxy so call-syntax (signal()) works.
           const scope2 = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
-          const fn2 = __stxCompile(['__scope__'], 'with(__scope__) { return ' + expression + ' }');
-          return fn2(scope2);
+          const fn2 = __stxCompileScoped(scope2, [], 'return ' + expression + '');
+          return fn2(...__stxArgs(fn2, scope2));
         }
 catch (e2) {
           if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Expression error:', expression, e2);

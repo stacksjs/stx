@@ -602,7 +602,9 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
     const end = runtime.indexOf('// Known directive names', start)
     const evalAttrSection = runtime.slice(start, end)
 
-    expect(evalAttrSection).toContain('with(__scope__)')
+    // Compiled over the names the expression mentions, so it reads (and
+    // subscribes to) only those - see test/signals/expression-compile-cache.
+    expect(evalAttrSection).toContain('__stxCompileScoped(unwrapScope, [], ')
     expect(evalAttrSection).not.toContain('Object.values(unwrapScope)')
   })
 
