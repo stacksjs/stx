@@ -82,6 +82,82 @@ function onDocumentKey(event) {
   if (trigger && trigger.focus) trigger.focus()
 }
 
+/*
+ * Roving focus over the menu items.
+ *
+ * `role="menuitem"` on a div is not focusable on its own, so the items carry
+ * tabindex="-1" and focus is moved programmatically -- the APG menu-button
+ * arrangement. Only the items are in the ring; a disabled one is skipped
+ * rather than focused and ignored, because landing on something inert reads as
+ * the menu being broken.
+ */
+function menuItems() {
+  if (!rootEl) return []
+  const all = rootEl.querySelectorAll('[data-stx-dropdown-item]')
+  return Array.prototype.filter.call(all, item => item.getAttribute('aria-disabled') !== 'true')
+}
+
+function focusItemAt(index) {
+  const items = menuItems()
+  if (!items.length) return
+  const target = items[(index + items.length) % items.length]
+  if (target && target.focus) target.focus()
+}
+
+function focusedItemIndex() {
+  const doc = rootEl && rootEl.ownerDocument
+  return doc ? menuItems().indexOf(doc.activeElement) : -1
+}
+
+/*
+ * Keys are handled only while the event comes from inside this dropdown.
+ * Bound on the document so Escape works before focus has moved into the panel,
+ * which means an unguarded ArrowDown here would hijack scrolling for the whole
+ * page.
+ */
+function onMenuKey(event) {
+  if (!rootEl || !rootEl.contains(event.target)) return
+  const key = event.key
+
+  if (!isOpen()) {
+    // ArrowDown opens and lands on the first item; ArrowUp on the last, which
+    // is how a menu button reached from below behaves.
+    if (key !== 'ArrowDown' && key !== 'ArrowUp') return
+    event.preventDefault()
+    open()
+    focusItemAt(key === 'ArrowDown' ? 0 : menuItems().length - 1)
+    return
+  }
+
+  if (key === 'ArrowDown' || key === 'ArrowUp') {
+    event.preventDefault()
+    const current = focusedItemIndex()
+    if (current === -1) focusItemAt(key === 'ArrowDown' ? 0 : menuItems().length - 1)
+    else focusItemAt(current + (key === 'ArrowDown' ? 1 : -1))
+    return
+  }
+
+  if (key === 'Home' || key === 'End') {
+    event.preventDefault()
+    focusItemAt(key === 'Home' ? 0 : menuItems().length - 1)
+    return
+  }
+
+  if (key === 'Enter' || key === ' ') {
+    // The item is a div, so Enter does not activate it the way it would a
+    // button. Clicking it runs the handler the item already has.
+    const current = focusedItemIndex()
+    if (current === -1) return
+    event.preventDefault()
+    menuItems()[current].click()
+    return
+  }
+
+  // Tabbing out of an open menu closes it, rather than leaving it hanging
+  // over the content the user has moved to.
+  if (key === 'Tab') close()
+}
+
 onMount(() => {
   rootEl = document.querySelector(`[data-dropdown-id="${dropdownInstanceId}"]`)
   syncExpanded()
@@ -91,11 +167,13 @@ onMount(() => {
   }
   document.addEventListener('click', outsideHandler, true)
   document.addEventListener('keydown', onDocumentKey)
+  document.addEventListener('keydown', onMenuKey)
 })
 
 onDestroy(() => {
   if (outsideHandler) document.removeEventListener('click', outsideHandler, true)
   document.removeEventListener('keydown', onDocumentKey)
+  document.removeEventListener('keydown', onMenuKey)
 })
 
 const dataState = derived(() => isOpen() ? 'open' : 'closed')

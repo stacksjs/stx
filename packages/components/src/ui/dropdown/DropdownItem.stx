@@ -28,6 +28,7 @@ function onClick(event) {
   class="{{ itemClasses }}"
   data-stx-dropdown-item
   role="menuitem"
+  tabindex="-1"
   @if(disabled)aria-disabled="true"@endif
   @click="onClick($event)"
 >
