@@ -22,6 +22,7 @@ function onClick(event) {
   :is="{{ as }}"
   class="{{ buttonClasses }}"
   data-stx-popover-button
+  aria-expanded="false"
   @if(disabled)disabled aria-disabled="true"@endif
   @click="onClick($event)"
 >

@@ -14,8 +14,25 @@ const isOpen = state(false)
 let rootEl = null
 let outsideHandler = null
 
-function open() { if (!isOpen()) { isOpen.set(true); emit('change', true) } }
-function close() { if (isOpen()) { isOpen.set(false); emit('change', false) } }
+/*
+ * The trigger carries the open state for assistive tech. `isOpen` already
+ * drove `data-state` on the root, which styles the panel but says nothing to a
+ * screen reader: the button announced itself as a plain button, with no
+ * indication that it opens anything or whether it is open right now.
+ */
+function syncExpanded() {
+  if (!rootEl) return
+  const trigger = rootEl.querySelector('[data-stx-popover-button]')
+  if (!trigger) return
+  trigger.setAttribute('aria-expanded', isOpen() ? 'true' : 'false')
+  const panel = rootEl.querySelector('[data-stx-popover-panel]')
+  if (!panel) return
+  if (!panel.id) panel.id = 'stx-popover-panel-' + popoverInstanceId
+  trigger.setAttribute('aria-controls', panel.id)
+}
+
+function open() { if (!isOpen()) { isOpen.set(true); emit('change', true); syncExpanded() } }
+function close() { if (isOpen()) { isOpen.set(false); emit('change', false); syncExpanded() } }
 function toggle() { isOpen() ? close() : open() }
 
 function onToggle(event) { event.stopPropagation(); toggle() }
@@ -24,6 +41,7 @@ function onOpen(event) { event.stopPropagation(); open() }
 
 onMount(() => {
   rootEl = document.querySelector(`[data-popover-id="${popoverInstanceId}"]`)
+  syncExpanded()
   outsideHandler = (event) => {
     if (!isOpen()) return
     if (rootEl && !rootEl.contains(event.target)) close()

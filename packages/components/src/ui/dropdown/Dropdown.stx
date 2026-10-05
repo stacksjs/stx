@@ -14,21 +14,41 @@ const isOpen = state(false)
 let rootEl = null
 let outsideHandler = null
 
+/*
+ * The trigger carries the open state for assistive tech. `isOpen` already
+ * drove `data-state` on the root, which styles the panel but says nothing to a
+ * screen reader: the button announced itself as a plain button, with no
+ * indication that it opens anything or whether it is open right now.
+ */
+function syncExpanded() {
+  if (!rootEl) return
+  const trigger = rootEl.querySelector('[data-stx-dropdown-button]')
+  if (!trigger) return
+  trigger.setAttribute('aria-expanded', isOpen() ? 'true' : 'false')
+  const panel = rootEl.querySelector('[data-stx-dropdown-items]')
+  if (!panel) return
+  if (!panel.id) panel.id = 'stx-dropdown-panel-' + dropdownInstanceId
+  trigger.setAttribute('aria-controls', panel.id)
+}
+
 function toggle() {
   isOpen.set(!isOpen())
   emit('change', isOpen())
+  syncExpanded()
 }
 
 function open() {
   if (isOpen()) return
   isOpen.set(true)
   emit('change', true)
+  syncExpanded()
 }
 
 function close() {
   if (!isOpen()) return
   isOpen.set(false)
   emit('change', false)
+  syncExpanded()
 }
 
 function onItemSelect(event) {
@@ -43,6 +63,7 @@ function onClose(event) { event.stopPropagation(); close() }
 
 onMount(() => {
   rootEl = document.querySelector(`[data-dropdown-id="${dropdownInstanceId}"]`)
+  syncExpanded()
   outsideHandler = (event) => {
     if (!isOpen()) return
     if (rootEl && !rootEl.contains(event.target)) close()

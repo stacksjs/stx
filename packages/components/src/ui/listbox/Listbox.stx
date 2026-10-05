@@ -36,6 +36,9 @@ function selectValue(v) {
     isOpen.set(false)
   }
   syncOptionStates()
+  // The single-select branch above closes the panel without going through
+  // close(), so the trigger's state has to be refreshed here too.
+  syncExpanded()
   emit('change', selected())
 }
 
@@ -53,8 +56,25 @@ function syncOptionStates() {
   }
 }
 
-function open() { if (!isOpen()) { isOpen.set(true); emit('change', selected()) } }
-function close() { if (isOpen()) { isOpen.set(false) } }
+/*
+ * The trigger carries the open state for assistive tech. `isOpen` already
+ * drove `data-state` on the root, which styles the panel but says nothing to a
+ * screen reader: the button announced itself as a plain button, with no
+ * indication that it opens anything or whether it is open right now.
+ */
+function syncExpanded() {
+  if (!rootEl) return
+  const trigger = rootEl.querySelector('[data-stx-listbox-button]')
+  if (!trigger) return
+  trigger.setAttribute('aria-expanded', isOpen() ? 'true' : 'false')
+  const panel = rootEl.querySelector('[data-stx-listbox-options]')
+  if (!panel) return
+  if (!panel.id) panel.id = 'stx-listbox-panel-' + listboxInstanceId
+  trigger.setAttribute('aria-controls', panel.id)
+}
+
+function open() { if (!isOpen()) { isOpen.set(true); emit('change', selected()); syncExpanded() } }
+function close() { if (isOpen()) { isOpen.set(false); syncExpanded() } }
 function toggle() { isOpen() ? close() : open() }
 
 function onToggle(event) { event.stopPropagation(); toggle() }
@@ -65,6 +85,7 @@ function onSelect(event) {
 
 onMount(() => {
   rootEl = document.querySelector(`[data-listbox-id="${listboxInstanceId}"]`)
+  syncExpanded()
   syncOptionStates()
   outsideHandler = (event) => {
     if (!isOpen()) return
