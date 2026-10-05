@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.371...v0.2.372)
+
+## ✨ Features
+
+- **serve**: hand onRequest the server, so a hook can read the socket peer ([a439dca](https://github.com/stacksjs/stx/commit/a439dca)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.372 ([b75eb9b](https://github.com/stacksjs/stx/commit/b75eb9b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.370...v0.2.371)
 
 ## ✨ Features
