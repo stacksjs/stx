@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.366...v0.2.367)
+
+## ⚡ Performance Improvements
+
+- **runtime**: attribute and :if bindings stop evaluating through with() ([a863c20](https://github.com/stacksjs/stx/commit/a863c20)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1738](https://github.com/stacksjs/stx/issues/1738))
+
+## 🔧 Chores
+
+- release v0.2.367 ([1bd34e3](https://github.com/stacksjs/stx/commit/1bd34e3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.365...v0.2.366)
 
 ## ⚡ Performance Improvements
