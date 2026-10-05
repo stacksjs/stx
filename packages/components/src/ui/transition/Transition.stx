@@ -1,5 +1,5 @@
 <script server>
-export const show = $props.show !== false
+export const show = $bool($props.show, true)
 export const enter = $props.enter || 'transition-opacity duration-300'
 export const enterFrom = $props.enterFrom || 'opacity-0'
 export const enterTo = $props.enterTo || 'opacity-100'

@@ -18,9 +18,9 @@ export const maxDate = $props.maxDate || null
 export const disabledDates = $props.disabledDates || []
 export const locale = $props.locale || 'en-US'
 export const firstDayOfWeek = $props.firstDayOfWeek || 0
-export const showToday = $props.showToday !== false
+export const showToday = $bool($props.showToday, true)
 export const className = $props.className || ''
-export const highlightToday = $props.highlightToday !== false
+export const highlightToday = $bool($props.highlightToday, true)
 
 const baseClasses = 'bg-panel rounded-panel shadow-lg p-4 w-full max-w-sm'
 export const calendarClasses = `${baseClasses} ${className}`.trim()

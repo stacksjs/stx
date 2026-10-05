@@ -65,19 +65,32 @@ function comparable(html: string): string {
 interface Case { tag: string, prop: string, dir: string, fallback: boolean }
 
 /*
- * Both spellings are discovered: the $bool call, and the bare
- * `$props.x || false` idiom this replaced. Matching only the fixed form would
- * mean the sweep stops checking a prop the moment someone writes the broken
- * one again - a guard that opts out exactly when it is needed.
+ * Every spelling is discovered: the $bool call, and the three bare idioms it
+ * replaced. Matching only the fixed form would mean the sweep stops checking a
+ * prop the moment someone writes a broken one again - a guard that opts out
+ * exactly when it is needed.
+ *
+ * `!== false` and `=== true` were missed by the first version of this sweep,
+ * which looked only for `||` and `??`, and nine props were still reading their
+ * own attribute wrong behind them: `<Transition show="false">` showed,
+ * `<Image lazy="false">` stayed lazy, `<TableRow hoverable="false">` hovered.
+ * `=== true` fails the other way and is harder to spot for it - `"true"` is
+ * not `true`, so `<Form validateOnChange="true">` could not turn validation ON
+ * and neither could the bare `<Form validateOnChange>`, which arrives as "".
  */
-const BOOLEAN_PROP = /export const (\w+) = (?:\$bool\(\$props\.\1(?:,\s*(true|false))?\)|\$props\.\1\s*(?:\|\||\?\?)\s*(true|false))/g
+const BOOLEAN_PROP = /export const (\w+) = (\$bool\(\$props\.\1(?:,\s*(?:true|false))?\)|\$props\.\1\s*(?:\|\||\?\?)\s*(?:true|false)|\$props\.\1\s*!==\s*false|\$props\.\1\s*===\s*true)/g
+
+/** The value the prop takes when it is not passed at all. */
+function fallbackOf(read: string): boolean {
+  return /,\s*true\)|(?:\|\||\?\?)\s*true|!==\s*false/.test(read)
+}
 
 const cases: Case[] = []
 for (const file of stxFiles(SRC)) {
   const tag = path.basename(file, '.stx')
   const source = readFileSync(file, 'utf-8')
-  for (const [, prop, boolFallback, bareFallback] of source.matchAll(BOOLEAN_PROP))
-    cases.push({ tag, prop, dir: path.dirname(file), fallback: (boolFallback ?? bareFallback) === 'true' })
+  for (const [, prop, read] of source.matchAll(BOOLEAN_PROP))
+    cases.push({ tag, prop, dir: path.dirname(file), fallback: fallbackOf(read) })
 }
 
 describe('a boolean prop set to "false" is off', () => {
@@ -116,4 +129,65 @@ describe('a boolean prop set to "false" is off', () => {
       expect(comparable(on)).toBe(comparable(absent))
     })
   }
+})
+
+/*
+ * And the sweep's own blind spot, closed from the other side.
+ *
+ * Everything above is anchored on `export const <name> = $props.<name>`, which
+ * cannot see a prop read into a differently-named variable. `SidebarHeader`
+ * read its own `showWindowControls` inside the expression that resolves
+ * `windowControls`, so no amount of widening the pattern above would have
+ * found it -- and `showWindowControls="false"` drew the replica traffic lights
+ * it was asked not to draw, which inside a real window is the six-circles bug
+ * the `windowControls` prop exists to prevent.
+ *
+ * So the declared types are the list instead. A prop typed `boolean` in the
+ * published interface has exactly one correct way to be read, wherever in the
+ * script it is read, and this says so without having to guess at the shape of
+ * the expression around it.
+ */
+interface Declared { component: string, prop: string }
+
+function declaredBooleanProps(): Declared[] {
+  const found: Declared[] = []
+  const walk = (dir: string): string[] => readdirSync(dir).flatMap((entry) => {
+    const full = path.join(dir, entry)
+    if (statSync(full).isDirectory())
+      return walk(full)
+    return full.endsWith('.ts') ? [full] : []
+  })
+
+  for (const file of walk(SRC)) {
+    const source = readFileSync(file, 'utf-8')
+    for (const [, component, body] of source.matchAll(/export interface (\w+)Props\s*\{([\s\S]*?)\n\}/g)) {
+      for (const [, prop] of body.matchAll(/^ {2}(\w+)\?:\s*boolean\s*$/gm))
+        found.push({ component, prop })
+    }
+  }
+  return found
+}
+
+describe('a prop declared boolean is read as one', () => {
+  const declared = declaredBooleanProps()
+  const sources = new Map(stxFiles(SRC).map(file => [path.basename(file, '.stx'), readFileSync(file, 'utf-8')]))
+
+  it('finds the declarations to check against', () => {
+    expect(declared.length).toBeGreaterThan(100)
+    expect(declared.map(d => `${d.component}.${d.prop}`)).toContain('SidebarHeader.showWindowControls')
+  })
+
+  it('reads every one of them through $bool', () => {
+    // A prop the component never reads from $props is left alone: some are
+    // documented for a wrapper, or consumed on the client through
+    // useReactiveProp, and neither is this coercion's business.
+    const raw = declared.filter(({ component, prop }) => {
+      const source = sources.get(component)
+      if (!source || source.includes(`$bool($props.${prop}`))
+        return false
+      return new RegExp(`\\$props\\.${prop}\\b`).test(source)
+    })
+
+    expect(raw.map(d => `${d.component}.${d.prop}`)).toEqual([])
+  })
 })

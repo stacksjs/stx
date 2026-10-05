@@ -1,6 +1,6 @@
 <script server>
 export const className = $props.className || ''
-export const hoverable = $props.hoverable !== false
+export const hoverable = $bool($props.hoverable, true)
 
 const hoverClasses = hoverable ? 'hover:bg-surface-hover' : ''
 const rowClasses = `${hoverClasses} ${className}`.trim()

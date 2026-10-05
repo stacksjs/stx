@@ -2,7 +2,7 @@
 // Initial defaults captured at render time. The client script wraps these
 // in signals so consumers can mutate them after mount (fetch-then-toast,
 // auto-dismiss, etc.). See stacksjs/stx#1692.
-export const initialShow = $props.show !== false
+export const initialShow = $bool($props.show, true)
 export const initialTitle = $props.title || ''
 export const initialMessage = $props.message || ''
 export const initialType = $props.type || 'info'

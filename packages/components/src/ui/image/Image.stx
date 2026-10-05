@@ -8,7 +8,7 @@ export const alt = $props.alt || ''
 export const width = $props.width
 export const height = $props.height
 export const priority = $bool($props.priority)
-export const lazy = priority ? false : ($props.lazy ?? true)
+export const lazy = priority ? false : $bool($props.lazy, true)
 export const decoding = $props.decoding || 'async'
 export const fetchpriority = priority ? 'high' : ($props.fetchpriority || 'auto')
 

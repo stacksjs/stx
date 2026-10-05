@@ -1,7 +1,7 @@
 <script server>
 export const className = $props.className || ''
 export const striped = $bool($props.striped)
-export const hoverable = $props.hoverable !== false
+export const hoverable = $bool($props.hoverable, true)
 
 const baseClasses = 'min-w-full divide-y divide-line'
 const tableClasses = `${baseClasses} ${className}`.trim()

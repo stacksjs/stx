@@ -73,7 +73,7 @@ export const isArc = theme === 'arc'
 // padding.
 const controlsProp = $props.windowControls || ''
 export const windowControls = controlsProp
-  || (($props.showWindowControls ?? !isArc) ? 'auto' : 'none')
+  || ($bool($props.showWindowControls, !isArc) ? 'auto' : 'none')
 export const autoWindowControls = windowControls === 'auto'
 export const showWindowControls = windowControls === 'draw' || autoWindowControls
 export const reserveWindowControls = windowControls === 'native' || autoWindowControls

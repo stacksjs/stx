@@ -6,8 +6,8 @@ export const className = $props.className || ''
 // These three were declared in FormProps and read by nothing, so passing them
 // did exactly nothing. See #1874.
 export const initialValues = $props.initialValues || {}
-export const validateOnChange = $props.validateOnChange === true
-export const validateOnBlur = $props.validateOnBlur === true
+export const validateOnChange = $bool($props.validateOnChange)
+export const validateOnBlur = $bool($props.validateOnBlur)
 
 export const formClasses = `space-y-6 ${className}`.trim()
 export const errorClasses = `mt-1 text-sm text-danger`.trim()
