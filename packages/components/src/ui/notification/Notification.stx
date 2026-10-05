@@ -106,7 +106,7 @@ defineExpose({
     <button
       type="button"
       @click="close()"
-      class="ml-4 inline-flex rounded-panel focus:outline-none focus:ring-2 focus:ring-offset-2"
+      class="ml-4 inline-flex rounded-panel focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-panel"
     >
       <span class="sr-only">Close</span>
       <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

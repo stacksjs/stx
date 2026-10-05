@@ -291,3 +291,62 @@ describe('a hovered edge is a role (#1993)', () => {
     expect(select).not.toMatch(/hover:ring-neutral-\d{3}/)
   })
 })
+
+/**
+ * An offset band names the background behind it, or it is white.
+ *
+ * `ring-offset-2` sets a WIDTH. The colour is a separate utility, and the
+ * engine's fallback for it is literal white:
+ *
+ *     --tc-ring-offset-shadow: ... var(--tc-ring-offset-color, #fff)
+ *
+ * which is right in light mode and, in dark mode, a 2px white band around the
+ * control - 15.12:1 against a panel and 17.91:1 against the page, brighter
+ * than the ring it is supposed to sit behind. Three components set the width
+ * and not the colour, `<Button>` among them, so it was the whole library's
+ * most-used focus treatment.
+ *
+ * The band's job is the opposite of the ring's: the ring has to be seen
+ * against the background, the band has to vanish into it. So this is asserted
+ * as a ceiling where the ring is asserted as a floor.
+ */
+describe('a focus ring offset disappears into the background (#1993)', () => {
+  /** A band more visible than this is a halo, not a gap. */
+  const BAND_CEILING = 1.3
+
+  it('names an offset colour wherever it sets an offset width', () => {
+    const offenders: string[] = []
+
+    for (const file of stxFiles(SRC)) {
+      const source = code(readFileSync(file, 'utf-8'))
+      if (!/ring-offset-(?:[0-9]+)\b/.test(source))
+        continue
+      if (!/ring-offset-(?:panel|surface|page|content|field)\b/.test(source))
+        offenders.push(path.relative(SRC, file))
+    }
+
+    expect(offenders).toEqual([])
+  })
+
+  it('keeps the band within a shade of the surface it sits on', () => {
+    for (const mode of MODES) {
+      for (const surface of ['panel', 'page'] as const) {
+        const ratio = contrastRatio(SEMANTIC_TOKENS.panel[mode], SEMANTIC_TOKENS[surface][mode])
+
+        expect(ratio, `offset-panel on ${surface} (${mode}) is ${ratio.toFixed(2)}:1`)
+          .toBeLessThanOrEqual(BAND_CEILING)
+      }
+    }
+  })
+
+  /*
+   * The value the default falls back to, so the reason the utility is required
+   * is recorded rather than described: white is a halo on both dark neutrals.
+   */
+  it('shows why the engine default cannot be left in place', () => {
+    for (const surface of ['panel', 'page'] as const) {
+      expect(contrastRatio('white', SEMANTIC_TOKENS[surface].dark)).toBeGreaterThan(15)
+      expect(contrastRatio('white', SEMANTIC_TOKENS[surface].light)).toBeLessThanOrEqual(BAND_CEILING)
+    }
+  })
+})
