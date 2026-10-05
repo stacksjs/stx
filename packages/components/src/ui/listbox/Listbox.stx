@@ -83,6 +83,27 @@ function onSelect(event) {
   selectValue(event.detail)
 }
 
+/*
+ * Escape dismisses it, from anywhere rather than only from inside the panel.
+ *
+ * Opening one of these does not move focus, so a keydown bound on the panel
+ * never sees the first Escape - focus is still on whatever opened it. Drawer
+ * reached the same conclusion and binds on the document; this follows it, and
+ * only acts while open so one open popup does not swallow Escape for the page.
+ *
+ * Focus goes back to the trigger, but only if it had moved into the panel:
+ * otherwise this would steal it from wherever the user actually is.
+ */
+function onDocumentKey(event) {
+  if (event.key !== 'Escape' || !isOpen()) return
+  close()
+  if (!rootEl) return
+  const active = rootEl.ownerDocument && rootEl.ownerDocument.activeElement
+  if (!active || !rootEl.contains(active)) return
+  const trigger = rootEl.querySelector('[data-stx-listbox-button]')
+  if (trigger && trigger.focus) trigger.focus()
+}
+
 onMount(() => {
   rootEl = document.querySelector(`[data-listbox-id="${listboxInstanceId}"]`)
   syncExpanded()
@@ -92,10 +113,12 @@ onMount(() => {
     if (rootEl && !rootEl.contains(event.target)) close()
   }
   document.addEventListener('click', outsideHandler, true)
+  document.addEventListener('keydown', onDocumentKey)
 })
 
 onDestroy(() => {
   if (outsideHandler) document.removeEventListener('click', outsideHandler, true)
+  document.removeEventListener('keydown', onDocumentKey)
 })
 
 const dataState = derived(() => isOpen() ? 'open' : 'closed')

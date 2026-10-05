@@ -35,6 +35,7 @@ interface Widget {
   scope: Record<string, any>
   trigger: any
   panel: any
+  doc: any
   dispose: () => Promise<void>
 }
 
@@ -63,6 +64,7 @@ async function mount(spec: {
     scope,
     trigger: doc.querySelector(`[${spec.triggerAttr}]`),
     panel: doc.querySelector(`[${spec.panelAttr}]`),
+    doc,
     dispose: () => app.dispose(),
   }
 }
@@ -244,5 +246,89 @@ describe('a disclosure trigger reports its own state', () => {
   it('does not promise Popover a popup role its panel does not have', () => {
     expect(code('popover/PopoverPanel.stx')).not.toMatch(/role="/)
     expect(code('popover/PopoverButton.stx')).not.toContain('aria-haspopup')
+  })
+})
+
+/**
+ * Escape dismisses a popup.
+ *
+ * None of the four handled a single key (stacksjs/stx#2032). This covers the
+ * dismissal half only: arrow navigation between items is a separate change per
+ * widget, and `aria-activedescendant` waits on it.
+ *
+ * Bound on the document rather than the panel, for the reason `<Drawer>`
+ * already records: opening one of these does not move focus, so a handler on
+ * the panel never sees the first Escape — focus is still on the trigger.
+ */
+describe('Escape dismisses a popup (#2032)', () => {
+  const press = (doc: any, key: string) => {
+    doc.dispatchEvent(new doc.defaultView.KeyboardEvent('keydown', { key, bubbles: true }))
+  }
+
+  for (const w of WIDGETS) {
+    it(`${w.name} closes on Escape, with focus still on the trigger`, async () => {
+      const m = await mount(w)
+      try {
+        m.scope.open()
+        await settle()
+        expect(m.scope.isOpen(), 'open to begin with').toBe(true)
+
+        press(m.doc, 'Escape')
+        await settle()
+
+        expect(m.scope.isOpen(), 'Escape closed it').toBe(false)
+        expect(m.trigger.getAttribute('aria-expanded'), 'and the trigger says so').toBe('false')
+      }
+      finally {
+        await m.dispose()
+      }
+    })
+
+    it(`${w.name} ignores Escape while already closed`, async () => {
+      const m = await mount(w)
+      try {
+        expect(m.scope.isOpen()).toBe(false)
+        press(m.doc, 'Escape')
+        await settle()
+
+        expect(m.scope.isOpen()).toBe(false)
+      }
+      finally {
+        await m.dispose()
+      }
+    })
+
+    it(`${w.name} leaves other keys alone`, async () => {
+      const m = await mount(w)
+      try {
+        m.scope.open()
+        await settle()
+        press(m.doc, 'a')
+        press(m.doc, 'Enter')
+        await settle()
+
+        expect(m.scope.isOpen(), 'still open').toBe(true)
+      }
+      finally {
+        await m.dispose()
+      }
+    })
+  }
+
+  /*
+   * Returning focus is conditional: it goes back to the trigger only when it
+   * had moved into the panel, so Escape pressed while the user is elsewhere on
+   * the page does not yank focus to a popup they just dismissed.
+   */
+  it('returns focus to the trigger only when focus was inside the panel', () => {
+    for (const w of WIDGETS) {
+      const parent = code(w.name === 'Dropdown'
+        ? 'dropdown/Dropdown.stx'
+        : w.name === 'Listbox'
+          ? 'listbox/Listbox.stx'
+          : w.name === 'Popover' ? 'popover/Popover.stx' : 'combobox/Combobox.stx')
+
+      expect(parent, w.name).toContain('if (!active || !rootEl.contains(active)) return')
+    }
   })
 })
