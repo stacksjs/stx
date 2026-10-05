@@ -19,6 +19,7 @@ import { describe, expect, it } from 'bun:test'
 import { SEMANTIC_TOKENS, SHAPE_TOKENS, semanticColors, semanticTokenCSS, shapeVariable, tokenVariable } from '../../stx/src/theme-tokens'
 import { generateCss } from '../../stx/src/dev-server/ts-css'
 import { defaultConfig } from '@stacksjs/ts-css/engine'
+import { contrastRatio } from './utils/wcag-contrast'
 
 const UI = path.join(import.meta.dir, '..', 'src', 'ui')
 
@@ -838,5 +839,73 @@ describe('a hovered role differs from its resting role (#1993)', () => {
 
     expect(login.match(/text-link[^"]*hover:text-link-hover/g)).toHaveLength(2)
     expect(login).not.toMatch(/hover:text-accent\b/)
+  })
+})
+
+/**
+ * A FOREGROUND is never a raw neutral shade.
+ *
+ * The migration's sweeps caught hovers and status shades, so five
+ * foregrounds survived by being neither — and all five were unreadable in
+ * light mode, where `neutral-400` is 2.06:1 to 2.59:1 against the surface
+ * under it:
+ *
+ *   CommandPalette   placeholder-neutral-400  2.59:1 on a panel
+ *   CommandPalette   text-neutral-400         2.59:1  (the search icon)
+ *   SubscriptionCheckout  text-neutral-400    2.06:1 on a sunken well
+ *   Footer x2        text-neutral-400         2.48:1  (the separators)
+ *
+ * `fg-soft` is neutral-500 / neutral-400, so its DARK value is the shade
+ * these already used: the fix moves nothing in dark mode and lifts light mode
+ * to 3.76:1 and 4.73:1. That shared dark value is also why it went unnoticed —
+ * whoever checked it in dark mode saw the right colour.
+ *
+ * `placeholder-neutral-400` was the pointed one: ten placeholders in the
+ * library name a role, and role-contrast.test.ts documents that this very
+ * shade could not carry placeholder text. One field never got the memo.
+ *
+ * BACKGROUNDS are a different question and deliberately not swept here. A
+ * scrim, a video letterbox and a toggle's off track are achromatic by intent
+ * and have no themed surface behind them to take a role from.
+ */
+describe('a foreground is a role, not a shade (#1993)', () => {
+  /*
+   * Drawer's close button sits ON the scrim, outside the panel, so the thing
+   * behind it is the overlay rather than a surface the theme controls.
+   */
+  const ON_AN_OVERLAY = ['ui/drawer/Drawer.stx: text-neutral-300']
+
+  it('leaves no component painting text, a placeholder or a glyph from a shade', () => {
+    const SRC = path.join(import.meta.dir, '..', 'src')
+    const walk = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap(e =>
+      e.isDirectory() ? walk(path.join(dir, e.name)) : (e.name.endsWith('.stx') ? [path.join(dir, e.name)] : []),
+    )
+    const offenders: string[] = []
+
+    for (const file of walk(SRC)) {
+      const hits = code(readFileSync(file, 'utf-8'))
+        .match(/\b(?:[a-z-]+:)*(?:text|placeholder|fill|stroke)-(?:neutral|gray|zinc|slate|stone)-\d{2,3}\b/g) ?? []
+
+      if (hits.length)
+        offenders.push(`${path.relative(SRC, file)}: ${hits.join(' ')}`)
+    }
+
+    expect(offenders).toEqual(ON_AN_OVERLAY)
+  })
+
+  /*
+   * The reason the fix is safe, as a value: fg-soft's dark half IS the shade
+   * that was there, so nothing moves in dark mode. Re-pointing fg-soft at
+   * something lighter than neutral-400 would make these five unreadable again
+   * and should fail here.
+   */
+  it('keeps fg-soft readable on every surface these five landed on', () => {
+    for (const surface of ['panel', 'page', 'surface-sunken'] as const) {
+      for (const mode of ['light', 'dark'] as const) {
+        const ratio = contrastRatio(SEMANTIC_TOKENS['fg-soft'][mode], SEMANTIC_TOKENS[surface][mode])
+
+        expect(ratio, `fg-soft on ${surface} (${mode}) is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(3)
+      }
+    }
   })
 })
