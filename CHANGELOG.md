@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.363...v0.2.364)
+
+## 🐛 Bug Fixes
+
+- **signals**: one effect that throws no longer stops the page ([a91d81d](https://github.com/stacksjs/stx/commit/a91d81d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.364 ([b71fdbf](https://github.com/stacksjs/stx/commit/b71fdbf)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.362...v0.2.363)
 
 ## 🐛 Bug Fixes
