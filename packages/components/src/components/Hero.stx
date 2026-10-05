@@ -17,7 +17,7 @@ export const githubUrl = $props.githubUrl || '#'
       href="{{ githubUrl }}"
       target="_blank"
       rel="noopener noreferrer"
-      class="inline-flex items-center justify-center h-10 px-8 rounded-control text-sm font-semibold bg-gradient-to-b from-panel to-neutral-100 dark:to-neutral-900 text-fg shadow-md hover:shadow-lg transition-all duration-200"
+      class="inline-flex items-center justify-center h-10 px-8 rounded-control text-sm font-semibold bg-gradient-to-b from-panel to-page text-fg shadow-md hover:shadow-lg transition-all duration-200"
     >
       GitHub
     </a>

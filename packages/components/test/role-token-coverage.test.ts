@@ -384,9 +384,11 @@ describe('no variant is left as the unthemeable one', () => {
   })
 
   /*
-   * Switch's off-state and focus-ring offsets are achromatic by design: a
-   * toggle that is off has no hue, and giving it one would be inventing a
-   * decision rather than preserving it.
+   * Switch's off-state track is achromatic by design: a toggle that is off has
+   * no hue, and giving it one would be inventing a decision rather than
+   * preserving it. That argument stops at the off state - it was extended to
+   * the focus RING, which is an indicator and was 1.00:1 on the panel it ships
+   * on. See focus-visibility.test.ts.
    */
   it('leaves Switch\'s achromatic parts achromatic', () => {
     const sw = code(readFileSync(path.join(UI, 'switch/Switch.stx'), 'utf-8'))

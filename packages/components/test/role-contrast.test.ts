@@ -273,9 +273,10 @@ describe('a state branch is not overridden by a dark: variant', () => {
  *
  * The other three paired it with `ring-offset-blue-300`, which reads as a
  * two-tone halo and does work - but it stays blue in a rose-accented app, and
- * it was the only focus treatment in the library that was not
- * `ring-accent-solid` over the surface behind. Nine other components already
- * agreed on that; all fifteen do now.
+ * it was the only focus treatment in the library that did not put a role over
+ * the surface behind. All fifteen do now, and the role is `accent`: the first
+ * pass standardised them onto `accent-solid`, which is the fill, and
+ * focus-visibility.test.ts measures why that is the wrong half of the pair.
  */
 describe('a focus ring is visible and themeable', () => {
   const SRC = path.join(import.meta.dir, '..', 'src')
@@ -289,17 +290,28 @@ describe('a focus ring is visible and themeable', () => {
     .replace(/^\s*\/\/.*$/gm, '')
 
   /*
-   * The three that are deliberately not a role:
+   * Three of the exceptions this list used to carry did not survive being
+   * measured, and the reasons are worth keeping because each one reads well:
    *
-   *  - `ring-transparent` removes the ring, for an inset-ring input that shows
-   *    focus by thickening its own border instead.
-   *  - the sidebar's `ring-black/10` / `dark:ring-white/15` is an alpha over a
-   *    per-space tint, which no fixed colour can express.
-   *  - `<Switch>`'s white ring is achromatic by design, like its off state.
+   *  - `ring-transparent` was described as an inset-ring input that shows focus
+   *    by thickening its own border instead. No such thickening existed on any
+   *    of the four sites: they draw their edge with `ring-1 ring-inset`, so
+   *    focus REMOVED the border.
+   *  - `<Switch>`'s white ring was called achromatic by design, like its off
+   *    state. The off state has no hue because a toggle that is off has none;
+   *    a focus ring with no hue on a white panel is 1.00:1.
+   *  - `accent-solid` was the treatment the other nine already agreed on, so
+   *    all fifteen were standardised onto it. It is the FILL role, and a fill
+   *    darkens in dark mode: 1.98:1 on a dark field. The pairing in
+   *    theme-tokens.ts had named `ring-accent` for this all along.
+   *
+   * See focus-visibility.test.ts, which measures each one. What remains is the
+   * sidebar's `ring-black/10` / `dark:ring-white/15`: an alpha over a per-space
+   * tint, which no fixed colour can express.
    */
-  const ALLOWED = /^(?:[a-z-]+:)*focus(?:-visible)?:ring-(?:accent|accent-solid|danger-focus|transparent|white|black\/10|white\/15)$/
+  const ALLOWED = /^(?:[a-z-]+:)*focus(?:-visible)?:ring-(?:accent|danger-focus|black\/10|white\/15)$/
 
-  it('names a role for every focus ring but the three documented exceptions', () => {
+  it('names a role for every focus ring but the sidebar\'s alpha over a tint', () => {
     const offenders: string[] = []
     const pattern = /(?:[a-z-]+:)*focus(?:-visible)?:ring-(?!offset|inset|\d)[a-z0-9/-]+/g
 
@@ -320,7 +332,7 @@ describe('a focus ring is visible and themeable', () => {
   it('takes every ring offset from a surface role', () => {
     const offenders: string[] = []
     const pattern = /(?:[a-z-]+:)*focus(?:-visible)?:ring-offset-(?!\d)[a-z0-9/-]+/g
-    const allowed = /ring-offset-(?:panel|surface|page|content|field|neutral-\d{3})$/
+    const allowed = /ring-offset-(?:panel|surface|page|content|field)$/
 
     for (const file of walk(SRC)) {
       for (const hit of strip(readFileSync(file, 'utf-8')).match(pattern) ?? []) {

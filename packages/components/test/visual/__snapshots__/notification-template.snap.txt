@@ -42,7 +42,7 @@ const positions = {
   'bottom-center': 'bottom-0 left-1/2 -translate-x-1/2',
 }
 
-const baseClasses = 'fixed z-50 m-4 max-w-md w-full pointer-events-auto rounded-panel p-4 shadow-lg ring-1 ring-black/5 transition-all'
+const baseClasses = 'fixed z-50 m-4 max-w-md w-full pointer-events-auto rounded-panel p-4 shadow-lg ring-1 ring-line transition-all'
 const extraClassName = {{ JSON.stringify(className) }}
 
 const notificationClasses = derived(() => {
@@ -157,6 +157,7 @@ p-4
 pointer-events-auto
 right-0
 ring-1
+ring-line
 rounded-panel
 shadow-lg
 sr-only

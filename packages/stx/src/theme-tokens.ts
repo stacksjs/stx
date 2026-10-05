@@ -242,6 +242,7 @@ export const SEMANTIC_TOKENS: Record<string, SemanticToken> = {
   // Edges — borders, rings and dividers share a role
   'line': { light: 'neutral-200', dark: 'neutral-700', description: 'Default border, divider' },
   'line-strong': { light: 'neutral-300', dark: 'neutral-600', description: 'Input border, focus ring track' },
+  'line-hover': { light: 'neutral-400', dark: 'neutral-500', description: 'Border of a hovered control' },
 
   /*
    * Status and emphasis.

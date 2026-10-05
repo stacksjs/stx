@@ -32,7 +32,7 @@ function onClick() {
   <button
     type="button"
     @click="onClick()"
-    class="flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-solid rounded-panel p-2"
+    class="flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-panel p-2"
   >
     <div class="{{ isComplete ? 'bg-accent-solid text-accent-ink' : isCurrent ? 'bg-accent-solid text-accent-ink ring-4 ring-accent-soft' : 'bg-surface-sunken text-fg-strong' }} w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all">
       @if(isComplete)

@@ -97,7 +97,7 @@ const iconSizeClasses = { xs: 'h-3 w-3', sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 
  * the token's light value is that same blue-500 and its dark value is a step
  * darker, which is a ring that was missing rather than one that changed.
  */
-const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-control transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-solid disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none'
+const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-control transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none'
 const widthClasses = fullWidth ? 'w-full' : ''
 export const isDisabled = disabled || loading
 
@@ -239,7 +239,7 @@ false
 flex
 focus:outline-none
 focus:ring-2
-focus:ring-accent-solid
+focus:ring-accent
 focus:ring-offset-2
 font-semibold
 for

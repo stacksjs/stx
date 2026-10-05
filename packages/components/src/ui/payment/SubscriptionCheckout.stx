@@ -222,7 +222,7 @@ onMount(() => initializeStripe())
                     <div class="min-w-0 flex-1">
                       <h4 class="text-sm">
                         @if(product.href)
-                          <StxLink to="{{ product.href }}" class="text-fg-strong font-medium hover:text-neutral-800 dark:hover:text-neutral-200">
+                          <StxLink to="{{ product.href }}" class="text-fg-strong font-medium hover:text-fg">
                             {{ product.name }}
                           </StxLink>
                         @else
