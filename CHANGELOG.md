@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.370...HEAD)
+
+## 🚀 Features
+
+- **native**: emit incremental mutation batches ([fa5b1e1](https://github.com/stacksjs/stx/commit/fa5b1e1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **components**: whole-form field ids collided with the host app ([1839c63](https://github.com/stacksjs/stx/commit/1839c63)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: two of a form control on one page shared one id ([ec9e338](https://github.com/stacksjs/stx/commit/ec9e338)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2033](https://github.com/stacksjs/stx/issues/2033))
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.369...v0.2.370)
 
 ## ✨ Features
