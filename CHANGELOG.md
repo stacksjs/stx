@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.364...v0.2.365)
+
+## ⚡ Performance Improvements
+
+- **runtime**: compile each binding expression once ([b930750](https://github.com/stacksjs/stx/commit/b930750)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.365 ([2842010](https://github.com/stacksjs/stx/commit/2842010)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.363...v0.2.364)
 
 ## 🐛 Bug Fixes
