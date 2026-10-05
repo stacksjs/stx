@@ -555,9 +555,14 @@ catch {
       // Handle other props
       // Try to parse as JSON for booleans, numbers, etc.
       if (token.raw) {
-        // Keep the braces that distinguish an expression attribute from a
-        // quoted string. The native runtime evaluates it in screen scope.
-        props[name] = token.raw
+        // JSON literals inside expression braces are already fully typed.
+        // Preserve braces only for code that needs the native screen scope.
+        try {
+          props[name] = JSON.parse(value)
+        }
+        catch {
+          props[name] = token.raw
+        }
         continue
       }
       try {

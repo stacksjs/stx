@@ -60,6 +60,8 @@ function loadMore() { /* append records, then return */ }
 
 The compiler removes `data` and `keyExtractor` from the native payload, expands only the keyed native nodes, and emits create/update/insert/move/remove mutations on later renders. Craft hosts recycle off-screen rows with `UICollectionView` on iOS and `RecyclerView` on Android. Header, footer, empty, and separator templates are optional; direct children without a `listRole` retain their previous static-list behavior.
 
+Expression props keep their JavaScript value type: `data={people}` remains an array, `source={{"uri":"avatar.png"}}` remains an object, and `accessibilityLabel={item.name}` resolves to the current row's string rather than the literal text `item.name`.
+
 ## Documentation
 
 - [Full Documentation](https://stx.sh)

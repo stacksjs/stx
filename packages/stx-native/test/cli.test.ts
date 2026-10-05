@@ -256,6 +256,7 @@ function clear() { items = [] }
       <Text listRole="header">People</Text>
       <View listRole="item" accessibilityLabel={item.name}>
         <Text>{index}: {item.name}</Text>
+        <Image source={{"uri":"avatar.png"}} />
       </View>
       <View listRole="separator"><Text>|</Text></View>
       <Text listRole="empty">Nobody</Text>
@@ -284,6 +285,7 @@ function clear() { items = [] }
       listRole: 'item',
     })
     expect(created('root/key:feed/key:a/index:0').children.join('')).toBe('0: Ada')
+    expect(created('root/key:feed/key:a/index:1').props.source).toEqual({ uri: 'avatar.png' })
     expect(created('root/key:feed/header').props.listRole).toBe('header')
     expect(created('root/key:feed/separator:a').props.listRole).toBe('separator')
     expect(created('root/key:feed/footer').props.listRole).toBe('footer')
