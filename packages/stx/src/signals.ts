@@ -4184,8 +4184,12 @@ else if (typeof value === 'string') {
     let templateContent;
     if (isTemplate) {
       templateContent = el.content;
+      deferRowConditionals(templateContent);
     }
 else {
+      // Before the source is cloned into the row template, so that clone does
+      // not build the conditional elements either.
+      deferRowConditionals(el);
       const wrapper = stxHost.clone(el);
       wrapper.removeAttribute('@for');
       wrapper.removeAttribute(':for');
@@ -4691,6 +4695,50 @@ catch (e) {
     });
   }
 
+  // A :for row is a clone of its template, so a conditional element in the row
+  // is built for every row whether or not its condition ever holds; :if then
+  // parks the false ones. In WebKit a <video> or <audio> sets up a media player
+  // as it is created: a message list with one media slot per attachment took
+  // 1.8s to render instead of 18ms, and every row paid for elements it never
+  // showed. Before any row is cloned, each eligible conditional element in the
+  // row template is moved into a <template> carrying its condition. Template
+  // content is inert, so a cloned row builds the element only when the
+  // condition holds (bindIf clones template content on the first true).
+  //
+  // Left alone: an if/else chain (its branches must stay siblings), an element
+  // that is also a loop, a component (its setup script is a sibling), and
+  // anything holding a script.
+  var IF_ATTRS = [':if', 'x-if', '@if'];
+  var FOR_ATTRS = [':for', 'x-for', '@for'];
+  function deferRowConditionals(root) {
+    if (!root || !root.querySelectorAll || typeof document === 'undefined' || !document.createElement) return;
+    // A walk, not a selector: escaping ':' and '@' in an attribute selector
+    // through this generated source is easy to get wrong, and wrong throws.
+    var candidates = Array.prototype.slice.call(root.querySelectorAll('*'));
+    for (var i = 0; i < candidates.length; i++) {
+      var el = candidates[i];
+      if (el.tagName === 'TEMPLATE' || !el.parentNode) continue;
+      var attr = null;
+      for (var a = 0; a < IF_ATTRS.length; a++) {
+        if (el.hasAttribute(IF_ATTRS[a])) { attr = IF_ATTRS[a]; break; }
+      }
+      if (!attr) continue;
+      var skip = false;
+      for (var f = 0; f < FOR_ATTRS.length; f++) {
+        if (el.hasAttribute(FOR_ATTRS[f])) skip = true;
+      }
+      if (skip || getElseAttrInfo(el)) continue;
+      var next = el.nextElementSibling;
+      if (next && (getElseAttrInfo(next) || next.tagName === 'SCRIPT')) continue;
+      if (el.hasAttribute('data-stx-scope') || el.hasAttribute('x-data') || el.querySelector('script')) continue;
+      var holder = document.createElement('template');
+      holder.setAttribute(attr, el.getAttribute(attr));
+      el.removeAttribute(attr);
+      el.parentNode.insertBefore(holder, el);
+      holder.content.appendChild(el);
+    }
+  }
+
   var __bindIfCounter = 0;
   // ── x-else / x-else-if chain support (stacksjs/stx#1734) ──────────────
   // Returns { name, terminal } for an else/else-if attribute present on el,
@@ -5028,22 +5076,12 @@ catch (e) { /* a disposer of its own is not this branch's problem */ }
     el.removeAttribute(attrName);
 
     if (isTemplate) {
-      // For templates, we need to handle the content fragment
-      const content = el.content;
-      currentNodes = Array.from(content.childNodes).map(n => stxHost.clone(n));
-      // Insert cloned content initially
-      // Capture the anchor once. Re-reading placeholder.nextSibling after
-      // every insertion points at the node just inserted and reverses a
-      // multi-root template branch.
-      const initialAnchor = placeholder.nextSibling;
-      currentNodes.forEach(node => stxHost.insert(parent, node, initialAnchor));
-      // The end of this branch's range, bound at the same time as the content
-      // it closes (#1955). Needed here too, not only on re-show: the first
-      // hide of a branch that was never toggled removes THIS content, and a
-      // nested :for renders rows that are siblings of these clones rather than
-      // among them.
-      endMarker = stxHost.anchor('stx-if-end');
-      stxHost.insert(parent, endMarker, initialAnchor);
+      // Nothing is cloned until the condition holds: the effect below clones
+      // template.content on the first true and binds it then. Every branch
+      // used to be cloned and inserted up front and the false ones removed, so
+      // a false branch still built its elements - in WebKit a <video> or
+      // <audio> sets up a media player as it is created.
+      isInserted = false;
       stxHost.remove(el); // Remove the template element itself
     }
 
