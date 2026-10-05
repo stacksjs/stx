@@ -28,6 +28,7 @@ function onClick(event) {
   data-stx-listbox-option
   data-option-value="{{ valueJson }}"
   role="option"
+  tabindex="-1"
   aria-selected="false"
   @if(disabled)aria-disabled="true"@endif
   @click="onClick($event)"

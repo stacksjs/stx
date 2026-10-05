@@ -104,6 +104,119 @@ function onDocumentKey(event) {
   if (trigger && trigger.focus) trigger.focus()
 }
 
+/*
+ * Roving focus over the options.
+ *
+ * `role="option"` on an li is not focusable on its own, so the options carry
+ * tabindex="-1" and focus moves programmatically -- the same arrangement
+ * <Dropdown> uses for its menu items. APG allows either this or
+ * aria-activedescendant for a listbox; <Combobox> is the case that REQUIRES
+ * the latter, because focus has to stay in its input.
+ *
+ * Arrows move focus and do not change the selection. Selection following focus
+ * is a documented variant, and the quieter of the two: arrowing past an option
+ * should not commit a value the user was only passing over.
+ */
+function optionElements() {
+  if (!rootEl) return []
+  const all = rootEl.querySelectorAll('[data-stx-listbox-option]')
+  return Array.prototype.filter.call(all, option => option.getAttribute('aria-disabled') !== 'true')
+}
+
+function focusOptionAt(index) {
+  const options = optionElements()
+  if (!options.length) return
+  const target = options[(index + options.length) % options.length]
+  if (target && target.focus) target.focus()
+}
+
+function focusedOptionIndex() {
+  const doc = rootEl && rootEl.ownerDocument
+  return doc ? optionElements().indexOf(doc.activeElement) : -1
+}
+
+/** Opening lands on what is already chosen, so the current value is in view. */
+function focusSelectedOrFirst(fallbackToLast) {
+  const options = optionElements()
+  const chosen = options.findIndex(option => option.getAttribute('aria-selected') === 'true')
+  if (chosen !== -1) focusOptionAt(chosen)
+  else focusOptionAt(fallbackToLast ? options.length - 1 : 0)
+}
+
+/*
+ * Type-ahead: a printable character jumps to the next option whose label
+ * starts with it, wrapping, so a long list is reachable without arrowing
+ * through all of it.
+ */
+function focusByTypeAhead(character) {
+  const options = optionElements()
+  if (!options.length) return false
+  const wanted = character.toLowerCase()
+  const from = focusedOptionIndex()
+  for (let step = 1; step <= options.length; step++) {
+    const candidate = options[(from + step + options.length) % options.length]
+    const label = (candidate.textContent || '').trim().toLowerCase()
+    if (label.startsWith(wanted)) {
+      if (candidate.focus) candidate.focus()
+      return true
+    }
+  }
+  return false
+}
+
+/*
+ * Gated on the event coming from inside this listbox. The handler is on the
+ * document so Escape works before focus has moved into the panel, which would
+ * otherwise make ArrowDown a page-wide scroll hijack.
+ */
+function onListboxKey(event) {
+  if (!rootEl || !rootEl.contains(event.target)) return
+  const key = event.key
+
+  if (!isOpen()) {
+    if (key !== 'ArrowDown' && key !== 'ArrowUp') return
+    event.preventDefault()
+    open()
+    focusSelectedOrFirst(key === 'ArrowUp')
+    return
+  }
+
+  if (key === 'ArrowDown' || key === 'ArrowUp') {
+    event.preventDefault()
+    const current = focusedOptionIndex()
+    if (current === -1) focusSelectedOrFirst(key === 'ArrowUp')
+    else focusOptionAt(current + (key === 'ArrowDown' ? 1 : -1))
+    return
+  }
+
+  if (key === 'Home' || key === 'End') {
+    event.preventDefault()
+    focusOptionAt(key === 'Home' ? 0 : optionElements().length - 1)
+    return
+  }
+
+  if (key === 'Enter' || key === ' ') {
+    // An li does not activate on Enter, so the option is clicked and runs the
+    // handler it already has.
+    const current = focusedOptionIndex()
+    if (current === -1) return
+    event.preventDefault()
+    optionElements()[current].click()
+    return
+  }
+
+  if (key === 'Tab') {
+    close()
+    return
+  }
+
+  // A single printable character, so modifier combinations still reach the
+  // browser.
+  if (key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    if (focusByTypeAhead(key)) event.preventDefault()
+  }
+}
+
 onMount(() => {
   rootEl = document.querySelector(`[data-listbox-id="${listboxInstanceId}"]`)
   syncExpanded()
@@ -114,11 +227,13 @@ onMount(() => {
   }
   document.addEventListener('click', outsideHandler, true)
   document.addEventListener('keydown', onDocumentKey)
+  document.addEventListener('keydown', onListboxKey)
 })
 
 onDestroy(() => {
   if (outsideHandler) document.removeEventListener('click', outsideHandler, true)
   document.removeEventListener('keydown', onDocumentKey)
+  document.removeEventListener('keydown', onListboxKey)
 })
 
 const dataState = derived(() => isOpen() ? 'open' : 'closed')
