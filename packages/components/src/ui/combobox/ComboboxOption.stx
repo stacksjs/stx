@@ -42,6 +42,20 @@ function onClick(event) {
 </component>
 
 <style>
+/*
+ * The ACTIVE option, highlighted to match the hover state.
+ *
+ * A combobox keeps focus in its input, so the option a user has arrowed to has
+ * no focus ring to show it -- `aria-activedescendant` tells a screen reader
+ * which one it is and nothing told a sighted keyboard user. Written out rather
+ * than as a utility class because the runtime sets a data attribute, and it
+ * resolves through the same role variable `hover:bg-accent-soft` compiles to,
+ * so re-pointing the accent moves both together.
+ */
+[data-stx-combobox-option][data-active="true"] {
+  background-color: var(--stx-accent-soft, oklch(93.2% 0.032 255.585));
+}
+
 [data-stx-combobox-option][data-selected="false"] [data-stx-combobox-check],
 [data-stx-combobox-option]:not([data-selected]) [data-stx-combobox-check] {
   display: none;

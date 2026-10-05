@@ -16,6 +16,16 @@ const initialValue = {{ value === undefined ? 'null' : value }}
 const isOpen = state(false)
 const selected = state(initialValue)
 const query = state('')
+/*
+ * The ACTIVE option, which is not the focused one.
+ *
+ * A combobox keeps focus in its input so the user can keep typing, so there is
+ * no focused option to move -- the active one is named by
+ * `aria-activedescendant` on the input instead. That is why <Listbox> and
+ * <Dropdown> move real focus with a roving tabindex and this does not, and why
+ * aria-activedescendant was absent until there was something to point it at.
+ */
+const activeIndex = state(-1)
 let rootEl = null
 let outsideHandler = null
 
@@ -64,8 +74,105 @@ function syncExpanded() {
   input.setAttribute('aria-controls', list.id)
 }
 
+function optionElements() {
+  if (!rootEl) return []
+  const all = rootEl.querySelectorAll('[data-stx-combobox-option]')
+  return Array.prototype.filter.call(all, option => option.getAttribute('aria-disabled') !== 'true')
+}
+
+/*
+ * aria-activedescendant needs an id to point at, so the options are given one
+ * here rather than in the markup: the component does not know its own index
+ * and an id has to be unique on the page, not just within the list.
+ */
+function syncActiveOption() {
+  if (!rootEl) return
+  const options = optionElements()
+  const index = activeIndex()
+  const doc = rootEl.ownerDocument
+  for (let i = 0; i < options.length; i++) {
+    /*
+     * An id is only usable here if it is UNIQUE, and an existing one may not
+     * be: event binding stamps every bound element `__stx_evt_0`, restarting
+     * per component render, so four options arrive sharing one id and
+     * getElementById returns an arbitrary one of them. An author's own id is
+     * kept when it really is unique; otherwise this assigns its own.
+     */
+    const existing = options[i].id
+    const unique = existing && doc.querySelectorAll('[id="' + existing + '"]').length === 1
+    if (!unique) options[i].id = 'stx-combobox-option-' + comboboxInstanceId + '-' + i
+    if (i === index) options[i].setAttribute('data-active', 'true')
+    else options[i].removeAttribute('data-active')
+  }
+  const input = rootEl.querySelector('[data-stx-combobox-input]')
+  if (!input) return
+  const active = index >= 0 ? options[index] : null
+  if (active) input.setAttribute('aria-activedescendant', active.id)
+  else input.removeAttribute('aria-activedescendant')
+}
+
+function moveActive(delta) {
+  const options = optionElements()
+  if (!options.length) return
+  const from = activeIndex()
+  const next = from < 0
+    ? (delta > 0 ? 0 : options.length - 1)
+    : (from + delta + options.length) % options.length
+  activeIndex.set(next)
+  syncActiveOption()
+  const landed = optionElements()[next]
+  // The list scrolls at max-h-60, so an option stepped past the fold has to be
+  // brought in: there is no focus move to do it for us.
+  if (landed && landed.scrollIntoView) landed.scrollIntoView({ block: 'nearest' })
+}
+
+/*
+ * Gated on the event coming from inside this combobox, like the Escape
+ * handler, so an arrow key elsewhere on the page still scrolls it.
+ *
+ * Space is deliberately absent. On <Listbox> and <Dropdown> it activates the
+ * focused item; here focus is in a text input and Space has to type a space.
+ */
+function onComboboxKey(event) {
+  if (!rootEl || !rootEl.contains(event.target)) return
+  const key = event.key
+
+  if (!isOpen()) {
+    if (key !== 'ArrowDown' && key !== 'ArrowUp') return
+    event.preventDefault()
+    open()
+    activeIndex.set(-1)
+    moveActive(key === 'ArrowDown' ? 1 : -1)
+    return
+  }
+
+  if (key === 'ArrowDown' || key === 'ArrowUp') {
+    event.preventDefault()
+    moveActive(key === 'ArrowDown' ? 1 : -1)
+    return
+  }
+
+  if (key === 'Home' || key === 'End') {
+    event.preventDefault()
+    activeIndex.set(-1)
+    moveActive(key === 'Home' ? 1 : -1)
+    return
+  }
+
+  if (key === 'Enter') {
+    const options = optionElements()
+    const index = activeIndex()
+    if (index < 0 || !options[index]) return
+    event.preventDefault()
+    options[index].click()
+    return
+  }
+
+  if (key === 'Tab') close()
+}
+
 function open() { if (!isOpen()) { isOpen.set(true); syncExpanded() } }
-function close() { if (isOpen()) { isOpen.set(false); syncExpanded() } }
+function close() { if (isOpen()) { isOpen.set(false); activeIndex.set(-1); syncActiveOption(); syncExpanded() } }
 function toggle() { isOpen() ? close() : open() }
 
 function onToggle(event) { event.stopPropagation(); toggle() }
@@ -73,6 +180,9 @@ function onSelect(event) { event.stopPropagation(); selectValue(event.detail) }
 function onQuery(event) {
   event.stopPropagation()
   query.set(event.detail)
+  // The list the indexes referred to is about to change under them.
+  activeIndex.set(-1)
+  syncActiveOption()
   if (!isOpen()) open()
   emit('query', event.detail)
 }
@@ -109,16 +219,18 @@ onMount(() => {
   }
   document.addEventListener('click', outsideHandler, true)
   document.addEventListener('keydown', onDocumentKey)
+  document.addEventListener('keydown', onComboboxKey)
 })
 
 onDestroy(() => {
   if (outsideHandler) document.removeEventListener('click', outsideHandler, true)
   document.removeEventListener('keydown', onDocumentKey)
+  document.removeEventListener('keydown', onComboboxKey)
 })
 
 const dataState = derived(() => isOpen() ? 'open' : 'closed')
 
-defineExpose({ isOpen, selected, query, toggle, open, close, selectValue })
+defineExpose({ isOpen, selected, query, activeIndex, toggle, open, close, selectValue })
 </script>
 
 <component

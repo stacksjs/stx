@@ -214,14 +214,21 @@ describe('a disclosure trigger reports its own state', () => {
   })
 
   /*
-   * aria-activedescendant names the option the user has moved to. This
-   * combobox has no option keyboard navigation to move with, so setting it
-   * would describe a focus that does not exist — a worse lie than the silence
-   * it replaces. See the note in Combobox.stx.
+   * This asserted the ABSENCE of aria-activedescendant, because the combobox
+   * had no option navigation and pointing it at an option would have described
+   * a focus that did not exist. Arrow navigation landed (stacksjs/stx#2032), so
+   * there is now something to point at and the attribute is correct —
+   * deliberately inverted rather than deleted, so the record shows the
+   * attribute arrived WITH the navigation and not before it.
+   *
+   * Driven in combobox-keyboard.test.ts; here it is only the pairing that is
+   * pinned: the attribute exists exactly where the movement does.
    */
-  it('claims no active option, having no way to move between them', () => {
-    for (const rel of ['combobox/Combobox.stx', 'combobox/ComboboxInput.stx', 'combobox/ComboboxOptions.stx'])
-      expect(code(rel), rel).not.toContain('aria-activedescendant')
+  it('names an active option now that it can move between them', () => {
+    const parent = code('combobox/Combobox.stx')
+
+    expect(parent).toContain('aria-activedescendant')
+    expect(parent, 'and the movement it describes').toMatch(/ArrowDown/)
   })
 
   it('names the Combobox chevron, which is an icon alone', async () => {
