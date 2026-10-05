@@ -85,9 +85,29 @@ export async function renderView(
     ...props,
   }
 
-  // Extract variables from server script
+  /*
+   * Extract variables from the server script.
+   *
+   * `onFailure` is forwarded here as well as through `config`, because this
+   * function strips the view's own `<script server>` and extracts it ITSELF --
+   * so `processDirectives` never sees the one script a page is most likely to
+   * fail in, and a hook passed only through the config would report every
+   * component's script and miss the view's (stacksjs/stx#2035). `unknown` is
+   * skipped for the reason the extractor documents: a script reaching for a
+   * browser global lands there and is legitimate.
+   */
   if (scriptContent) {
-    await extractVariables(scriptContent, context, templatePath)
+    await extractVariables(scriptContent, context, templatePath, {
+      onFailure: (failure) => {
+        if (failure.kind === 'unknown')
+          return
+        options.onServerScriptError?.({
+          sourcePath: templatePath,
+          kind: failure.kind,
+          message: failure.message,
+        })
+      },
+    })
   }
 
   // Merge options with defaults
@@ -177,7 +197,29 @@ export async function buildViews(options: ViewBuildOptions): Promise<BuildResult
         ...placeholders,
       }
 
-      const html = await renderView(inputPath, props, stxOptions)
+      /*
+       * A failed `<script server>` fails this build too (stacksjs/stx#2035).
+       *
+       * Same reasoning as the SSG path and `failOnIncludeError` before it: the
+       * script's variables are undefined, so the file written here has the
+       * content they produce missing, and a build that reports success is the
+       * only thing standing between that and a deploy. Thrown so it lands in
+       * the catch below -- the one place that records the file and clears
+       * `success`.
+       */
+      const serverScriptFailures: string[] = []
+      const html = await renderView(inputPath, props, {
+        ...stxOptions,
+        onServerScriptError: (failure) => {
+          serverScriptFailures.push(`${failure.kind}: ${failure.message}`)
+        },
+      })
+      if (serverScriptFailures.length > 0) {
+        throw new Error(
+          `${serverScriptFailures.length} <script server> block(s) failed, so this view would have been `
+          + `written with the content they produce missing:\n  ${serverScriptFailures.join('\n  ')}`,
+        )
+      }
       await Bun.write(outputPath, html)
       result.views.push(outputName)
     }

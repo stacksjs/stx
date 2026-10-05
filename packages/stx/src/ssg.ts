@@ -111,6 +111,27 @@ export interface SSGConfig {
    * Set `false` for the old behaviour.
    */
   failOnIncludeError?: boolean
+  /**
+   * Fail the build when a `<script server>` fails (default: true).
+   *
+   * The same condition as `failOnIncludeError`, for the other half of the page.
+   * A failed server script leaves every variable it declared undefined, so the
+   * page is written with its content missing -- empty headings, `{{ name }}` as
+   * literal text, or an error banner where a component should be -- while the
+   * build reports `Failed: 0` and exits 0.
+   *
+   * That is not a theoretical ordering: an app shipped 13 of 46 pages as
+   * nothing but a banner printing an absolute build-machine path to visitors,
+   * and what caught it was an unrelated responsive check noticing the banner
+   * overflowed a 390px viewport (stacksjs/stx#2035).
+   *
+   * Only the failures that are certainly bugs count -- a module that does not
+   * resolve, a script that does not parse, a binding that does not exist. A
+   * script reaching for `window` is not one of them.
+   *
+   * Set `false` for the old behaviour.
+   */
+  failOnServerScriptError?: boolean
   /** Output directory for generated files (default: 'dist') */
   outputDir?: string
   /** Base URL for the site (default: '/') */
@@ -721,13 +742,28 @@ export function declaresPageAction(source: string): boolean {
 /**
  * Render a single page
  */
+/*
+ * Drop the `imported from <stx's own module>` tail Bun adds to a resolution
+ * error.
+ *
+ * The referrer is the file that called `import()`, which is always inside stx
+ * -- so the one path in the message that looks like an answer points at the
+ * framework, and the file the reader has to go and edit is not in there at all.
+ * The report issue quoted it as `from node_modules/@stacksjs/stx/dist/chunk-…`
+ * and had to work out the rest. The caller prefixes the real source file, so
+ * this only removes a line that sends people to the wrong place.
+ */
+function withoutStxReferrer(message: string): string {
+  return message.replace(/\s*imported from \S*(?:[/\\]packages[/\\]stx[/\\]|@stacksjs[/\\]stx[/\\])\S*/g, '')
+}
+
 async function renderPage(
   route: Route,
   params: Record<string, string>,
   props: Record<string, unknown> = {},
   options: SSGConfig,
   stxConfig: Record<string, unknown>
-): Promise<{ html: string, dependencies: string[], includeFailures: string[] }> {
+): Promise<{ html: string, dependencies: string[], includeFailures: string[], serverScriptFailures: string[] }> {
   const content = await Bun.file(route.filePath).text()
 
   // 1. Load data from companion .data.ts file
@@ -766,6 +802,12 @@ async function renderPage(
    * The caller decides what to do; this only makes it knowable.
    */
   const includeFailures: string[] = []
+  /*
+   * Server script failures, collected the same way and for the same reason.
+   * The script's own file, not the page being rendered: a view's script
+   * extracted inside its layout reports the view, which is the file to go fix.
+   */
+  const serverScriptFailures: string[] = []
   const stxOptions = {
     ...stxConfig,
     // Explicit overrides beat the loaded config, matching every other key here.
@@ -778,6 +820,11 @@ async function renderPage(
       includeFailures.push(
         `${path.relative(process.cwd(), failure.templatePath)}: ${failure.message}\n`
         + `    resolved against partialsDir: ${failure.partialsDir}`,
+      )
+    },
+    onServerScriptError: (failure: { sourcePath: string, kind: string, message: string }) => {
+      serverScriptFailures.push(
+        `${path.relative(process.cwd(), failure.sourcePath)} (${failure.kind}): ${withoutStxReferrer(failure.message)}`,
       )
     },
   }
@@ -862,10 +909,10 @@ async function renderPage(
 
   // Minify if enabled
   if (options.minify !== false) {
-    return { html: minifyHtml(html), dependencies: Array.from(dependencies), includeFailures }
+    return { html: minifyHtml(html), dependencies: Array.from(dependencies), includeFailures, serverScriptFailures }
   }
 
-  return { html, dependencies: Array.from(dependencies), includeFailures }
+  return { html, dependencies: Array.from(dependencies), includeFailures, serverScriptFailures }
 }
 
 /**
@@ -1138,6 +1185,7 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     partialsDir: options.partialsDir || (stxConfig as any)?.partialsDir || '',
     componentsDir: options.componentsDir || (stxConfig as any)?.componentsDir || '',
     failOnIncludeError: options.failOnIncludeError ?? true,
+    failOnServerScriptError: options.failOnServerScriptError ?? true,
     // Strict opt-in: only an explicit `true` enables chunking, so NODE_ENV
     // never auto-flips it and every existing pipeline stays byte-identical.
     chunkIslands: options.chunkIslands === true,
@@ -1388,6 +1436,27 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
                 + `shipped with an error banner where the markup should be:\n  `
                 + `${rendered.includeFailures.join('\n  ')}\n`
                 + `Set ssg.failOnIncludeError to false to build anyway.`,
+              )
+            }
+
+            /*
+             * And a `<script server>` that failed, for the same reason: the
+             * page is written with its content missing while the run reports
+             * success. Thrown here so it lands in the one per-page failure
+             * path that increments `failedCount`, records the route, fires
+             * `onError` and makes the run exit non-zero (stacksjs/stx#2035).
+             *
+             * Named with the script's own file rather than the route, because a
+             * view's script extracted inside its layout belongs to the view and
+             * one broken partial or layout shows up on every page that uses it
+             * -- the route alone would have you looking in the wrong file.
+             */
+            if (cfg.failOnServerScriptError && rendered.serverScriptFailures.length > 0) {
+              throw new Error(
+                `${rendered.serverScriptFailures.length} <script server> block(s) failed, so this page would `
+                + `have shipped with the content they produce missing:\n  `
+                + `${rendered.serverScriptFailures.join('\n  ')}\n`
+                + `Set ssg.failOnServerScriptError to false to build anyway.`,
               )
             }
 

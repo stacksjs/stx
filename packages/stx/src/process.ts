@@ -1550,7 +1550,7 @@ function serverScriptErrorBoundary(sourcePath: string, kind: string, message: st
     + `</div>`
 }
 
-async function extractServerScriptVariables(output: string, context: Record<string, any>, filePath: string): Promise<string> {
+async function extractServerScriptVariables(output: string, context: Record<string, any>, filePath: string, options?: StxOptions): Promise<string> {
   /*
    * Located with the same quote/comment/regex-aware scan the STRIPPER uses,
    * not with a non-greedy regex (stacksjs/stx#2012).
@@ -1613,11 +1613,23 @@ async function extractServerScriptVariables(output: string, context: Record<stri
       await extractVariables(scriptContent, context, sourcePath, {
         preserveExisting: true,
         onFailure: (failure) => {
-          // `unknown` is deliberately not shown. A server script reaching for
-          // `window`, or building something that only exists in a browser, is
-          // classified there, and it is the case the quiet fallback is for: a
-          // boundary on every one of those would be wrong on pages that work.
-          if (!showBoundaries || failure.kind === 'unknown')
+          // `unknown` is deliberately not reported. A server script reaching
+          // for `window`, or building something that only exists in a browser,
+          // is classified there, and it is the case the quiet fallback is for:
+          // a boundary -- or a failed build -- on every one of those would be
+          // wrong on pages that work.
+          if (failure.kind === 'unknown')
+            return
+          /*
+           * Carried out to the caller BEFORE the boundary check, because the
+           * two have different audiences and only one of them is reading a
+           * screen. The boundary is for a developer looking at the page, so it
+           * is development-only; this is for whatever built the file, which
+           * needs to know in production above all -- that is the configuration
+           * the broken page ships from (stacksjs/stx#2035).
+           */
+          options?.onServerScriptError?.({ sourcePath, kind: failure.kind, message: failure.message })
+          if (!showBoundaries)
             return
           boundaries.push({ ...at, markup: serverScriptErrorBoundary(sourcePath, failure.kind, failure.message) })
         },
@@ -1671,7 +1683,7 @@ async function processOtherDirectives(
   // Extract variables from <script server> tags (SFC support)
   // Only scripts with explicit 'server' attribute are executed server-side
   // All other scripts (no attribute, 'client', 'type="module"', 'src=') are client-side
-  output = await extractServerScriptVariables(output, context, filePath)
+  output = await extractServerScriptVariables(output, context, filePath, options)
 
   // Interpolate server-side {{ expr }} / {!! expr !!} inside every non-server
   // <script> body (client / signals / bare) so pages can splice server data

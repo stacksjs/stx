@@ -704,6 +704,33 @@ export interface StxConfig {
     /** The directory the include was resolved against. */
     partialsDir: string
   }) => void
+  /**
+   * Called when a `<script server>` fails, instead of the failure being silent.
+   *
+   * The same argument as `onIncludeError`, for the other half of the page. A
+   * failed server script leaves every variable it declared undefined, so the
+   * markup around it renders empty and `{{ name }}` ships as literal text --
+   * and in a build that is a file nobody would knowingly deploy, written while
+   * the build prints `Failed: 0`. One app shipped 13 of 46 pages as nothing but
+   * an error banner that way (stacksjs/stx#2035), found only because the banner
+   * happened to overflow a mobile viewport in an unrelated responsive check.
+   *
+   * Only the kinds that are certainly bugs are reported: a module that does not
+   * resolve, a script that does not parse, a binding that does not exist. A
+   * script reaching for `window` or building something that only exists in a
+   * browser is classified `unknown` by the extractor and is NOT reported here,
+   * because that one is legitimate on pages that work.
+   *
+   * The rendered output is unchanged -- this only carries the fact out, so a
+   * caller that writes files can decide to fail.
+   */
+  onServerScriptError?: (failure: {
+    /** The file the script was written in, which is not always the file being rendered. */
+    sourcePath: string
+    /** `module-resolution`, `syntax` or `missing-binding`. */
+    kind: string
+    message: string
+  }) => void
   /** Path to components directory, defaults to 'components' in the same directory as the template */
   componentsDir: string
   /** @internal Configured component root retained while nested components resolve locally. */
