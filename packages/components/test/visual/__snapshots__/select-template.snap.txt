@@ -38,10 +38,28 @@ const disabledClasses = disabled
 export const selectClasses = `${baseClasses} ${sizeClasses[size] || sizeClasses.md} ${stateClasses} ${disabledClasses} ${className}`.trim()
 export const labelClasses = `block text-sm font-medium leading-6 ${error ? 'text-danger' : 'text-fg'}`.trim()
 export const helperClasses = `mt-2 text-sm ${error ? 'text-danger' : 'text-fg-soft'}`.trim()
-export const selectId = `select-${value}`
-</script>
-<script client>
-  const emit = defineEmits()
+/*
+ * Ids unique to this instance.
+ *
+ * These were derived from the LABEL or hardcoded outright, so two of these on
+ * one page -- an ordinary form -- emitted the same id twice. `
+  <label for>
+    `
+ * then activated the FIRST field from every label, and `aria-describedby`
+ * pointed every field's description at the first one's helper text. A label
+ * containing a space also produced an invalid id, `input-First name`, which
+ * getElementById and querySelector cannot address at all.
+ *
+ * `$uid` is unique per instance and stable across renders, which is what an id
+ * has to be (utils.ts explains why a render that changes its own bytes is
+ * uncacheable). The `id` prop overrides it, for a caller that needs to point
+ * its own `for` or `aria-describedby` at this control.
+ */
+export const selectId = $props.id || `select-${$uid}`
+export const helperId = `${selectId}-helper`
+  </script>
+  <script client>
+    const emit = defineEmits()
 // Reactive prop binding — parent can drive `value` via signals. See #1704.
 const selectedValue = useReactiveProp('value', {{ value }}, { parse: (v) => v == null ? '' : String(v) })
 
@@ -51,20 +69,20 @@ function onChange(event) {
 }
 
 defineExpose({ value: selectedValue })
-</script>
-<div class="w-full">
-  @if(label)
-  <label for="{{ selectId }}" class="{{ labelClasses }}">
-    {{ label }}
+  </script>
+  <div class="w-full">
+    @if(label)
+    <label for="{{ selectId }}" class="{{ labelClasses }}">
+      {{ label }}
       @if(required)
-    <span class="text-danger ml-1">
-      *
-    </span>
+      <span class="text-danger ml-1">
+        *
+      </span>
+      @endif
+    </label>
     @endif
-  </label>
-  @endif
-  <div class="{{ label ? 'mt-2' : '' }}">
-    <select
+    <div class="{{ label ? 'mt-2' : '' }}">
+      <select
       id="{{ selectId }}"
       class="{{ selectClasses }}"
       :value="selectedValue()"
@@ -72,30 +90,30 @@ defineExpose({ value: selectedValue })
       @if(required)required@endif
       @change="onChange($event)"
       :aria-invalid="{{ error ? 'true' : 'false' }}"
-      aria-describedby="{{ helperText ? 'helper-text' : '' }}"
+      aria-describedby="{{ helperText ? helperId : '' }}"
     >
-      @if(placeholder)
-      <option value="" disabled>
-        {{ placeholder }}
-      </option>
-      @endif
+        @if(placeholder)
+        <option value="" disabled>
+          {{ placeholder }}
+        </option>
+        @endif
 
       @foreach(option in options)
-      <option
+        <option
           value="{{ option.value }}"
           @if(option.disabled)disabled@endif
         >
-        {{ option.label }}
-      </option>
-      @endforeach
-    </select>
+          {{ option.label }}
+        </option>
+        @endforeach
+      </select>
+    </div>
+    @if(helperText)
+    <p id="{{ helperId }}" class="{{ helperClasses }}">
+      {{ helperText }}
+    </p>
+    @endif
   </div>
-  @if(helperText)
-  <p id="helper-text" class="{{ helperClasses }}">
-    {{ helperText }}
-  </p>
-  @endif
-</div>
 
 === Extracted Classes ===
 ''
@@ -117,7 +135,6 @@ focus:ring-danger-focus
 focus:ring-inset
 font-medium
 h-10
-helper-text
 helperClasses
 hover:ring-line-hover
 label

@@ -50,10 +50,28 @@ export const inputClasses = `${baseClasses} ${sizeClasses[size] || sizeClasses.m
 export const labelClasses = `block text-sm font-medium leading-6 mb-2 ${error ? 'text-danger' : 'text-fg'}`.trim()
 export const helperClasses = `mt-2 text-sm ${error ? 'text-danger' : 'text-fg-soft'}`.trim()
 export const iconClasses = iconSizeClasses[size] || iconSizeClasses.md
-export const inputId = `input-${label}`
-</script>
-<script client>
-  const emit = defineEmits()
+/*
+ * Ids unique to this instance.
+ *
+ * These were derived from the LABEL or hardcoded outright, so two of these on
+ * one page -- an ordinary form -- emitted the same id twice. `
+  <label for>
+    `
+ * then activated the FIRST field from every label, and `aria-describedby`
+ * pointed every field's description at the first one's helper text. A label
+ * containing a space also produced an invalid id, `input-First name`, which
+ * getElementById and querySelector cannot address at all.
+ *
+ * `$uid` is unique per instance and stable across renders, which is what an id
+ * has to be (utils.ts explains why a render that changes its own bytes is
+ * uncacheable). The `id` prop overrides it, for a caller that needs to point
+ * its own `for` or `aria-describedby` at this control.
+ */
+export const inputId = $props.id || `input-${$uid}`
+export const helperId = `${inputId}-helper`
+  </script>
+  <script client>
+    const emit = defineEmits()
 // v-model:value supports modifiers; @input remains available to existing callers.
 const inputValue = useModel('value', { default: {{ value }}, parse: (v) => v == null ? '' : String(v) })
 
@@ -77,27 +95,27 @@ const hasValue = derived(() => String(inputValue()).length > 0)
 const charCount = derived(() => `${String(inputValue()).length} / {{ maxLength || 0 }}`)
 
 defineExpose({ value: inputValue, clear: onClear })
-</script>
-<div class="w-full {{ className }}">
-  @if(label)
-  <label for="{{ inputId }}" class="{{ labelClasses }}">
-    {{ label }}
+  </script>
+  <div class="w-full {{ className }}">
+    @if(label)
+    <label for="{{ inputId }}" class="{{ labelClasses }}">
+      {{ label }}
       @if(required)
-    <span class="text-danger ml-1">
-      *
-    </span>
-    @endif
-  </label>
-  @endif
-  <div class="relative">
-    @if(leftIcon)
-    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-      <span class="{{ iconClasses }} text-fg-soft">
-        {!! leftIcon !!}
+      <span class="text-danger ml-1">
+        *
       </span>
-    </div>
+      @endif
+    </label>
     @endif
-    <input
+    <div class="relative">
+      @if(leftIcon)
+      <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+        <span class="{{ iconClasses }} text-fg-soft">
+          {!! leftIcon !!}
+        </span>
+      </div>
+      @endif
+      <input
       type="text"
       id="{{ inputId }}"
       class="{{ inputClasses }}"
@@ -110,48 +128,48 @@ defineExpose({ value: inputValue, clear: onClear })
       @input="onInput($event)"
       @change="onChange($event)"
       :aria-invalid="{{ error ? 'true' : 'false' }}"
-      @if(helperText)aria-describedby="helper-text"@endif
+      @if(helperText)aria-describedby="{{ helperId }}"@endif
     />
-    @if(clearable)
-    <div :show="hasValue() && !{{ disabled }} && !{{ readonly }}" class="absolute inset-y-0 right-0 flex items-center pr-3">
-      <button
+      @if(clearable)
+      <div :show="hasValue() && !{{ disabled }} && !{{ readonly }}" class="absolute inset-y-0 right-0 flex items-center pr-3">
+        <button
           type="button"
           @click="onClear()"
           class="text-fg-soft hover:text-fg-strong focus:outline-none"
           aria-label="Clear input"
         >
-        <svg class="{{ iconClasses }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    </div>
-    @endif
+          <svg class="{{ iconClasses }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      @endif
     @if(rightIcon && !clearable)
-    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-      <span class="{{ iconClasses }} text-fg-soft">
-        {!! rightIcon !!}
-      </span>
+      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+        <span class="{{ iconClasses }} text-fg-soft">
+          {!! rightIcon !!}
+        </span>
+      </div>
+      @endif
     </div>
-    @endif
-  </div>
-  @if(helperText || (showCount && maxLength))
-  <div class="flex items-center justify-between mt-2">
-    @if(helperText)
-    <p id="helper-text" class="{{ helperClasses }}">
-      {{ helperText }}
-    </p>
-    @else
-    <span>
-    </span>
-    @endif
+    @if(helperText || (showCount && maxLength))
+    <div class="flex items-center justify-between mt-2">
+      @if(helperText)
+      <p id="{{ helperId }}" class="{{ helperClasses }}">
+        {{ helperText }}
+      </p>
+      @else
+      <span>
+      </span>
+      @endif
 
       @if(showCount && maxLength)
-    <p class="text-sm text-fg-soft" x-text="charCount()">
-    </p>
+      <p class="text-sm text-fg-soft" x-text="charCount()">
+      </p>
+      @endif
+    </div>
     @endif
   </div>
-  @endif
-</div>
 
 === Extracted Classes ===
 absolute

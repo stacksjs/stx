@@ -18,7 +18,23 @@ const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-poi
 export const radioClasses = `${baseClasses} ${sizeClasses[size] || sizeClasses.md} ${stateClasses} ${disabledClasses}`.trim()
 export const labelClasses = `text-sm font-medium ${error ? 'text-danger' : 'text-fg'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`.trim()
 export const descriptionClasses = `text-sm ${error ? 'text-danger' : 'text-fg-soft'}`.trim()
-export const inputId = `radio-${value || label}`
+/*
+ * Ids unique to this instance.
+ *
+ * These were derived from the LABEL or hardcoded outright, so two of these on
+ * one page -- an ordinary form -- emitted the same id twice. `<label for>`
+ * then activated the FIRST field from every label, and `aria-describedby`
+ * pointed every field's description at the first one's helper text. A label
+ * containing a space also produced an invalid id, `input-First name`, which
+ * getElementById and querySelector cannot address at all.
+ *
+ * `$uid` is unique per instance and stable across renders, which is what an id
+ * has to be (utils.ts explains why a render that changes its own bytes is
+ * uncacheable). The `id` prop overrides it, for a caller that needs to point
+ * its own `for` or `aria-describedby` at this control.
+ */
+export const inputId = $props.id || `radio-${$uid}`
+export const descriptionId = `${inputId}-description`
 </script>
 
 <script client>
@@ -53,7 +69,7 @@ defineExpose({ isChecked })
       class="{{ radioClasses }}"
       @change="onInputChange($event)"
       :aria-invalid="{{ error ? 'true' : 'false' }}"
-      @if(description)aria-describedby="radio-description"@endif
+      @if(description)aria-describedby="{{ descriptionId }}"@endif
     />
   </div>
 
@@ -68,7 +84,7 @@ defineExpose({ isChecked })
         </label>
       @endif
       @if(description)
-        <p id="radio-description" class="{{ descriptionClasses }}">
+        <p id="{{ descriptionId }}" class="{{ descriptionClasses }}">
           {{ description }}
         </p>
       @endif

@@ -14,6 +14,25 @@ export const autoResize = $bool($props.autoResize)
 export const maxRows = $props.maxRows || 10
 export const error = $bool($props.error)
 export const label = $props.label || ''
+/*
+ * Ids unique to this instance.
+ *
+ * These were derived from the LABEL or hardcoded outright, so two of these on
+ * one page -- an ordinary form -- emitted the same id twice. `
+  <label for>
+    `
+ * then activated the FIRST field from every label, and `aria-describedby`
+ * pointed every field's description at the first one's helper text. A label
+ * containing a space also produced an invalid id, `input-First name`, which
+ * getElementById and querySelector cannot address at all.
+ *
+ * `$uid` is unique per instance and stable across renders, which is what an id
+ * has to be (utils.ts explains why a render that changes its own bytes is
+ * uncacheable). The `id` prop overrides it, for a caller that needs to point
+ * its own `for` or `aria-describedby` at this control.
+ */
+export const inputId = $props.id || `textarea-input-${$uid}`
+export const helperId = `${inputId}-helper`
 export const helperText = $props.helperText || ''
 export const required = $bool($props.required)
 export const maxLength = $props.maxLength
@@ -35,9 +54,9 @@ const disabledClasses = disabled
 export const textareaClasses = `${baseClasses} ${stateClasses} ${disabledClasses} ${resizeClasses[resize] || resizeClasses.vertical} ${className}`.trim()
 export const labelClasses = `block text-sm font-medium leading-6 mb-2 ${error ? 'text-danger' : 'text-fg'}`.trim()
 export const helperClasses = `mt-2 text-sm ${error ? 'text-danger' : 'text-fg-soft'}`.trim()
-</script>
-<script client>
-  const emit = defineEmits()
+  </script>
+  <script client>
+    const emit = defineEmits()
 const autoResize = {{ autoResize }}
 const maxRows = {{ maxRows }}
 // Reactive prop binding — parent can drive `value` via signals. See #1704.
@@ -69,20 +88,20 @@ onMount(() => {
 const charCount = derived(() => `${inputValue().length} / {{ maxLength || 0 }}`)
 
 defineExpose({ value: inputValue })
-</script>
-<div class="w-full">
-  @if(label)
-  <label for="textarea-input" class="{{ labelClasses }}">
-    {{ label }}
+  </script>
+  <div class="w-full">
+    @if(label)
+    <label for="{{ inputId }}" class="{{ labelClasses }}">
+      {{ label }}
       @if(required)
-    <span class="text-danger ml-1">
-      *
-    </span>
+      <span class="text-danger ml-1">
+        *
+      </span>
+      @endif
+    </label>
     @endif
-  </label>
-  @endif
-  <textarea
-    id="textarea-input"
+    <textarea
+    id="{{ inputId }}"
     class="{{ textareaClasses }}"
     rows="{{ rows }}"
     placeholder="{{ placeholder }}"
@@ -92,28 +111,28 @@ defineExpose({ value: inputValue })
     @if(maxLength)maxlength="{{ maxLength }}"@endif
     @input="onInput($event)"
     :aria-invalid="{{ error ? 'true' : 'false' }}"
-    @if(helperText)aria-describedby="helper-text"@endif
+    @if(helperText)aria-describedby="{{ helperId }}"@endif
   >
-    {{ value }}
-  </textarea>
-  @if(helperText || (showCount && maxLength))
-  <div class="flex items-center justify-between mt-2">
-    @if(helperText)
-    <p id="helper-text" class="{{ helperClasses }}">
-      {{ helperText }}
-    </p>
-    @else
-    <span>
-    </span>
-    @endif
+      {{ value }}
+    </textarea>
+    @if(helperText || (showCount && maxLength))
+    <div class="flex items-center justify-between mt-2">
+      @if(helperText)
+      <p id="{{ helperId }}" class="{{ helperClasses }}">
+        {{ helperText }}
+      </p>
+      @else
+      <span>
+      </span>
+      @endif
 
       @if(showCount && maxLength)
-    <p class="text-sm text-fg-soft" x-text="charCount()">
-    </p>
+      <p class="text-sm text-fg-soft" x-text="charCount()">
+      </p>
+      @endif
+    </div>
     @endif
   </div>
-  @endif
-</div>
 
 === Extracted Classes ===
 auto

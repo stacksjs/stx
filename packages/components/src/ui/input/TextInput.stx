@@ -44,7 +44,23 @@ export const inputClasses = `${baseClasses} ${sizeClasses[size] || sizeClasses.m
 export const labelClasses = `block text-sm font-medium leading-6 mb-2 ${error ? 'text-danger' : 'text-fg'}`.trim()
 export const helperClasses = `mt-2 text-sm ${error ? 'text-danger' : 'text-fg-soft'}`.trim()
 export const iconClasses = iconSizeClasses[size] || iconSizeClasses.md
-export const inputId = `input-${label}`
+/*
+ * Ids unique to this instance.
+ *
+ * These were derived from the LABEL or hardcoded outright, so two of these on
+ * one page -- an ordinary form -- emitted the same id twice. `<label for>`
+ * then activated the FIRST field from every label, and `aria-describedby`
+ * pointed every field's description at the first one's helper text. A label
+ * containing a space also produced an invalid id, `input-First name`, which
+ * getElementById and querySelector cannot address at all.
+ *
+ * `$uid` is unique per instance and stable across renders, which is what an id
+ * has to be (utils.ts explains why a render that changes its own bytes is
+ * uncacheable). The `id` prop overrides it, for a caller that needs to point
+ * its own `for` or `aria-describedby` at this control.
+ */
+export const inputId = $props.id || `input-${$uid}`
+export const helperId = `${inputId}-helper`
 </script>
 
 <script client>
@@ -104,7 +120,7 @@ defineExpose({ value: inputValue, clear: onClear })
       @input="onInput($event)"
       @change="onChange($event)"
       :aria-invalid="{{ error ? 'true' : 'false' }}"
-      @if(helperText)aria-describedby="helper-text"@endif
+      @if(helperText)aria-describedby="{{ helperId }}"@endif
     />
 
     @if(clearable)
@@ -131,7 +147,7 @@ defineExpose({ value: inputValue, clear: onClear })
   @if(helperText || (showCount && maxLength))
     <div class="flex items-center justify-between mt-2">
       @if(helperText)
-        <p id="helper-text" class="{{ helperClasses }}">
+        <p id="{{ helperId }}" class="{{ helperClasses }}">
           {{ helperText }}
         </p>
       @else
