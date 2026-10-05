@@ -1,5 +1,6 @@
 <script server>
 export const value = $props.value
+export const valueJson = JSON.stringify(value === undefined ? null : value)
 export const multiple = $bool($props.multiple)
 export const className = $props.className || ''
 export const as = $props.as || 'div'
@@ -13,7 +14,19 @@ export const listboxInstanceId = $uid
 const emit = defineEmits()
 const listboxInstanceId = {{ listboxInstanceId }}
 const multiple = {{ multiple }}
-const initialValue = {{ value === undefined ? 'null' : value }}
+/*
+ * JSON built on the server and emitted raw, rather than a 'null' sentinel
+ * through an ordinary interpolation.
+ *
+ * A `value === undefined ? 'null' : value` ternary was meant to put the bare
+ * token null into the script. An interpolation QUOTES a string, so what it
+ * emitted was the four-character string "null" -- truthy, in the one place a
+ * value is meant to be absent. JSON.stringify produces the correct literal for
+ * every type, null included, and raw interpolation passes it through unquoted.
+ * Calendar and DateRangePicker already avoid this sentinel and say why
+ * (stacksjs/stx#1981).
+ */
+const initialValue = {!! valueJson !!}
 
 const isOpen = state(false)
 const selected = state(initialValue)

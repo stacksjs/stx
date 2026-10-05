@@ -3,6 +3,7 @@ export const className = $props.className || ''
 export const as = $props.as || 'div'
 export const disabled = $bool($props.disabled)
 export const value = $props.value
+export const valueJson = JSON.stringify(value === undefined ? null : value)
 
 const baseClasses = 'group flex w-full items-center px-2 py-2 text-sm transition-colors text-fg hover:bg-accent-solid hover:text-accent-ink'
 const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
@@ -12,7 +13,19 @@ export const itemClasses = `${baseClasses} ${disabledClasses} ${className}`.trim
 <script client>
 const emit = defineEmits()
 const isDisabled = {{ disabled }}
-const itemValue = {{ value === undefined ? 'null' : value }}
+/*
+ * JSON built on the server and emitted raw, rather than a 'null' sentinel
+ * through an ordinary interpolation.
+ *
+ * A `value === undefined ? 'null' : value` ternary was meant to put the bare
+ * token null into the script. An interpolation QUOTES a string, so what it
+ * emitted was the four-character string "null" -- truthy, in the one place a
+ * value is meant to be absent. JSON.stringify produces the correct literal for
+ * every type, null included, and raw interpolation passes it through unquoted.
+ * Calendar and DateRangePicker already avoid this sentinel and say why
+ * (stacksjs/stx#1981).
+ */
+const itemValue = {!! valueJson !!}
 
 function onClick(event) {
   if (isDisabled) return

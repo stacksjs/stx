@@ -12,7 +12,19 @@ export const valueJson = JSON.stringify(value === undefined ? null : value)
 
 <script client>
 const isDisabled = {{ disabled }}
-const optionValue = {{ value === undefined ? 'null' : value }}
+/*
+ * JSON built on the server and emitted raw, rather than a 'null' sentinel
+ * through an ordinary interpolation.
+ *
+ * A `value === undefined ? 'null' : value` ternary was meant to put the bare
+ * token null into the script. An interpolation QUOTES a string, so what it
+ * emitted was the four-character string "null" -- truthy, in the one place a
+ * value is meant to be absent. JSON.stringify produces the correct literal for
+ * every type, null included, and raw interpolation passes it through unquoted.
+ * Calendar and DateRangePicker already avoid this sentinel and say why
+ * (stacksjs/stx#1981).
+ */
+const optionValue = {!! valueJson !!}
 
 function onClick(event) {
   if (isDisabled) return
