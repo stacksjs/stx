@@ -94,16 +94,25 @@ function greet(name) {           // ✅ Works (auto-exported)
 
 See `packages/stx/src/variable-extractor.ts` `extractVariables()` and `convertToCommonJS()` for implementation details.
 
-#### CRITICAL: read a boolean prop with `$bool`, never `||` / `??`
+#### CRITICAL: read a boolean prop with `$bool`, never a comparison
 
-A prop written as a plain attribute arrives as a **string**, so the obvious
-idiom is wrong in the one direction that matters:
+A prop written as a plain attribute arrives as a **string**, so every obvious
+idiom is wrong, and the four are wrong in two different directions:
 
 ```js
-export const disabled = $props.disabled || false   // ❌ "false" is truthy
-export const disabled = $bool($props.disabled)     // ✅
-export const animate  = $bool($props.animate, true) // ✅ fallback when unset
+export const disabled = $props.disabled || false    // ❌ "false" is truthy
+export const disabled = $props.disabled ?? false    // ❌ same
+export const hoverable = $props.hoverable !== false // ❌ "false" !== false
+export const strict = $props.strict === true        // ❌ "true" !== true, and "" never is
+export const disabled = $bool($props.disabled)      // ✅
+export const animate = $bool($props.animate, true)  // ✅ fallback when unset
 ```
+
+The first three turn something ON when you ask for it OFF. `=== true` fails the
+other way and is harder to spot for it: the prop cannot be turned on by
+`strict="true"` OR by the bare `<Thing strict>`, which arrives as `""` — so it
+reads as a prop that simply does nothing, and `:strict="true"` is the only
+spelling that works.
 
 `<Radio disabled="false">` was disabled, `<Video muted="false">` was muted and
 `<Dialog open="false">` opened over the page and locked body scroll — 103 of
@@ -113,6 +122,14 @@ when you ask for it OFF reads as the component ignoring the prop, so the next
 thing you look at is the component rather than the coercion. And the common
 spellings (`<Button disabled>`, `:disabled="expr"`) work, so it only shows when
 someone writes the value out.
+
+Read it where you read it, too: a prop pulled into a differently-named
+variable (`SidebarHeader` resolved `$props.showWindowControls` inside the
+expression for `windowControls`) escapes a sweep anchored on
+`export const <name> = $props.<name>`. Nine more of these survived #2006
+behind the two comparison idioms above; that one survived behind its own name. `boolean-props.test.ts` now also sweeps the props declared
+`boolean` in the published `*Props` interfaces, which does not care what shape
+the expression around the read has.
 
 `$bool` is an engine binding, available in every `<script server>` alongside
 `$props`. `""` is true — that is what a bare attribute arrives as — `"0"`,
