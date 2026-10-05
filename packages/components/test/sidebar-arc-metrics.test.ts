@@ -12,12 +12,21 @@
  * was 32% too large.
  */
 import { describe, expect, it } from 'bun:test'
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { sidebarThemes } from '../src/ui/sidebar/themes'
+import { markup, renderSidebar } from './utils/render-sidebar'
 
 const arc = sidebarThemes.arc
-const pinned = readFileSync(join(import.meta.dir, '..', 'src', 'ui', 'sidebar', 'SidebarPinned.stx'), 'utf8')
+
+const ITEMS = `[{ id: 'mail', label: 'Mail', icon: 'i-f7-envelope' }, { id: 'docs', label: 'Docs', icon: 'i-f7-doc' }]`
+
+/** The pinned grid and its tiles, as rendered. */
+async function grid(attrs = ''): Promise<{ container: string, tile: string }> {
+  const html = markup(await renderSidebar(`<body><SidebarPinned :items="${ITEMS}" ${attrs} /></body>`))
+  return {
+    container: html.match(/<div[^>]*data-space-pinned[^>]*>/)?.[0] ?? '',
+    tile: html.match(/<button[^>]*data-space-pinned-item[^>]*>/)?.[0] ?? '',
+  }
+}
 
 /** The first `N` of a `px-[Npx]`-style utility in a class string. */
 function utilityPx(classes: string, prefix: string): number | null {
@@ -45,35 +54,47 @@ describe('rows sit where Dia puts them', () => {
 })
 
 describe('the favourites grid matches the measurement', () => {
-  it('is four columns with a 6px gutter', () => {
-    expect(pinned).toContain('export const columns = $props.columns || 4')
-    expect(pinned).toContain('gap-[6px]')
+  it('is four columns by default, with a 6px gutter', async () => {
+    const { container } = await grid()
+
+    expect(container).toContain('grid-template-columns: repeat(4, minmax(0, 1fr))')
+    expect(container).toContain('gap-[6px]')
   })
 
-  it('uses Dia\'s slightly landscape tile', () => {
+  it('takes the column count from the prop', async () => {
+    expect((await grid('columns="3"')).container).toContain('grid-template-columns: repeat(3, minmax(0, 1fr))')
+  })
+
+  it('uses Dia\'s slightly landscape tile', async () => {
     // 50pt wide by 41pt tall, measured. Width follows from the column count,
     // so only the height is set here.
-    expect(pinned).toContain('h-[41px]')
+    expect((await grid()).tile).toContain('h-[41px]')
   })
 
-  it('leaves the horizontal inset to the scroll area', () => {
-    // Dia's grid is nearly full-bleed — 6pt from the panel edge — where its
+  it('leaves the horizontal inset to the scroll area', async () => {
+    // Dia's grid is nearly full-bleed -- 6pt from the panel edge -- where its
     // rows are inset 16pt. Its own padding on top of the scroll area's would
     // push it to 24.
-    const gridClass = pinned.match(/class="grid gap-\[6px\][^"]*"/)?.[0] ?? ''
-    expect(gridClass).not.toContain('px-')
+    const { container } = await grid()
+
+    // A negative alone would also pass against an empty string, which is what
+    // a renamed marker attribute would hand it.
+    expect(container).toContain('data-space-pinned')
+    expect(container).not.toContain('px-')
   })
 
-  it('separates the tile from the panel in the right direction', () => {
+  it('separates the tile from the panel in the right direction', async () => {
     // The finding: Dia's tiles are ~9 units DARKER than a pale panel and ~23
     // lighter than a dark one. A white overlay is correct in dark appearance
     // and backwards in light, where it lifted a tile meant to be recessed.
-    expect(pinned).toContain('bg-black/[0.035] dark:bg-white/[0.09]')
-    expect(pinned).not.toContain('bg-white/45')
+    const { tile } = await grid()
+
+    expect(tile).toContain('bg-black/[0.035] dark:bg-white/[0.09]')
+    expect(tile).not.toContain('bg-white/45')
   })
 
-  it('gives the well an edge', () => {
-    expect(pinned).toContain('ring-1 ring-black/[0.05] dark:ring-white/[0.06]')
+  it('gives the well an edge', async () => {
+    expect((await grid()).tile).toContain('ring-1 ring-black/[0.05] dark:ring-white/[0.06]')
   })
 })
 
