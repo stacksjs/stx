@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.372...v0.2.373)
+
+## 🐛 Bug Fixes
+
+- **serve**: the ambient ip comes from the app's clientAddress resolver, and the render cache is bounded ([384682b](https://github.com/stacksjs/stx/commit/384682b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.373 ([5ba834f](https://github.com/stacksjs/stx/commit/5ba834f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.371...v0.2.372)
 
 ## ✨ Features
