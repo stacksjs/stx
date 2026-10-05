@@ -236,7 +236,14 @@ export function state<T>(initialValue: T): Signal<T> {
       value = newValue
 
       // Notify subscribers
-      subscribers.forEach(cb => cb(value, prev))
+      subscribers.forEach((cb) => {
+        try {
+          cb(value, prev)
+        }
+        catch (error) {
+          console.error('[stx] subscriber error:', error)
+        }
+      })
 
       // Trigger effects
       if (isBatching()) {
@@ -421,8 +428,14 @@ export function effect(fn: () => void | CleanupFn, options: EffectOptions = {}):
 
     // Run previous cleanup
     if (cleanup) {
-      cleanup()
+      const pending = cleanup
       cleanup = undefined
+      try {
+        pending()
+      }
+      catch (error) {
+        console.error('[stx] effect cleanup error:', error)
+      }
     }
 
     const prevEffect = setActiveSubscriber(runEffect)
@@ -437,7 +450,14 @@ export function effect(fn: () => void | CleanupFn, options: EffectOptions = {}):
       const result = fn()
       cleanup = typeof result === 'function' ? result : undefined
     }
-finally {
+    catch (error) {
+      // Reported and disposed, never re-thrown: re-thrown, it escaped the
+      // set() that ran this effect and stopped that set() notifying every
+      // subscriber after it. Same contract as the client runtime.
+      isDisposed = true
+      console.error('[stx] effect error (the effect is disposed):', error)
+    }
+    finally {
       restoreActiveSubscriber(prevEffect)
     }
   }

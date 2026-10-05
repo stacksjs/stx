@@ -871,7 +871,10 @@ else {
         }
         const prev = value;
         value = newValue;
-        subscribers.forEach(cb => cb(value, prev));
+        subscribers.forEach(cb => {
+          try { cb(value, prev); }
+          catch (e) { console.error('[stx] subscriber error:', e); }
+        });
         if (isBatching) {
           effects.forEach(effect => pendingEffects.add(effect));
         }
@@ -885,7 +888,10 @@ else {
     // Notify as if the value changed, for an array or object mutated in place.
     // set() cannot do it: the value is the same reference, so Object.is skips.
     signal.trigger = () => {
-      subscribers.forEach(cb => cb(value, value));
+      subscribers.forEach(cb => {
+        try { cb(value, value); }
+        catch (e) { console.error('[stx] subscriber error:', e); }
+      });
       if (isBatching) {
         effects.forEach(effect => pendingEffects.add(effect));
       }
@@ -975,8 +981,10 @@ finally {
       if (isDisposed) return;
       if (__stxDevtoolsTracking) { runEffect._runCount++; __stxDevtoolsStats.effectRuns++; }
       if (cleanup) {
-        cleanup();
+        const pending = cleanup;
         cleanup = undefined;
+        try { pending(); }
+        catch (e) { console.error('[stx] effect cleanup error:', e); }
       }
       const prev = activeEffect;
       activeEffect = runEffect;
@@ -999,11 +1007,18 @@ finally {
         isDisposed = true;
         // Only log if this is likely a real error, not a stale SPA effect.
         // Stale effects reference variables from a previous page's scope that no longer exist.
+        //
+        // Reported, never re-thrown. Re-thrown, it escaped the .set() that ran
+        // this effect, and that set() stopped notifying everything after it:
+        // a list half-rendered with raw {{ }} and no click handlers, a
+        // selection that moved while the view it drives did not, and nothing
+        // in the console, because the exception ended inside an event handler
+        // or a native callback. One broken effect took the page with it.
         if (e instanceof ReferenceError) {
           // Silently dispose — this is expected during SPA navigation when
-          // old effects fire against the new page's scope. Don't re-throw.
+          // old effects fire against the new page's scope.
         } else {
-          throw e;
+          console.error('[stx] effect error (the effect is disposed):', e);
         }
       }
       finally {
@@ -1069,10 +1084,17 @@ catch (e) { console.warn('[stx] dispose error:', e); } });
       return;
     }
     isBatching = true;
-    fn();
-    isBatching = false;
-    pendingEffects.forEach(e => e());
-    pendingEffects.clear();
+    // finally: a throw inside fn left isBatching set for good, and every later
+    // update was queued for a flush that never came - the page stopped.
+    try {
+      fn();
+    }
+    finally {
+      isBatching = false;
+      const queued = Array.from(pendingEffects);
+      pendingEffects.clear();
+      queued.forEach(e => e());
+    }
   }
 
   // ==========================================================================

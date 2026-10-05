@@ -325,7 +325,9 @@ describe('Reactive utilities', () => {
 
     it('should run pending effects after batch', () => {
       const runtime = generateSignalsRuntimeDev()
-      expect(runtime).toContain('pendingEffects.forEach')
+      // Drained into a local list, then run: see effect-fault-isolation.test.ts
+      // for the behaviour, including a batch whose body throws.
+      expect(runtime).toContain('Array.from(pendingEffects)')
       expect(runtime).toContain('pendingEffects.clear()')
     })
   })

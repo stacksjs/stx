@@ -523,25 +523,26 @@ describe('signals integration - error handling', () => {
   })
 
   it('should handle errors in effects gracefully', () => {
+    // An effect that throws is reported and disposed; it does not escape the
+    // set() that ran it, where it stopped every later subscriber from
+    // updating (see test/signals/effect-fault-isolation.test.ts).
     const trigger = state(0)
-    let errorCaught = false
-
-    // In a real app, you'd have error boundaries
+    const errors: unknown[] = []
+    const original = console.error
+    console.error = (...args: unknown[]) => errors.push(args)
     try {
       effect(() => {
-        if (trigger() > 5) {
+        if (trigger() > 5)
           throw new Error('Effect error')
-        }
       })
-
-      trigger.set(10) // Should throw
+      expect(() => trigger.set(10)).not.toThrow()
     }
-catch {
-      errorCaught = true
+    finally {
+      console.error = original
     }
-
-    expect(errorCaught).toBe(true)
+    expect(String(errors[0])).toContain('Effect error')
   })
+
 
   it('should continue working after errors', () => {
     const count = state(0)
