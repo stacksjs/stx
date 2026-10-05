@@ -6,12 +6,32 @@ export const codeLength = $props.codeLength || 6
 export const showRecoveryCode = $bool($props.showRecoveryCode, true)
 export const className = $props.className || ''
 
+/*
+ * The digit inputs' ids, unique to this instance.
+ *
+ * They were `code-0` ... `code-5`, and the focus management looks them up with
+ * `document.getElementById` -- a DOCUMENT-wide lookup on an id as generic as
+ * `code-1`. Any element in the host app with that id would take the focus
+ * instead, and two of these on a page would type into each other.
+ *
+ * `name` deliberately stays `code-<i>`: that is the key the form submits
+ * under, so namespacing it would change the payload a server sees. Only the
+ * id, which exists to connect the label and the focus moves, is instance-local.
+ */
+export const codeIdPrefix = $props.id || `code-${$uid}`
+
 export const containerClasses = `py-32 bg-page ${className}`.trim()
 </script>
 
 <script client>
 const emit = defineEmits()
 const codeLength = {{ codeLength }}
+const codeIdPrefix = {{ codeIdPrefix }}
+
+/** The digit input at `index`, found by this instance's own id. */
+function codeInput(index) {
+  return document.getElementById(codeIdPrefix + '-' + index)
+}
 
 function onCodeInput(event, index) {
   const input = event.target
@@ -21,13 +41,13 @@ function onCodeInput(event, index) {
     return
   }
   if (value.length === 1 && index < codeLength - 1) {
-    document.getElementById(`code-${index + 1}`)?.focus()
+    codeInput(index + 1)?.focus()
   }
 }
 
 function onKeyDown(event, index) {
   if (event.key === 'Backspace' && !event.target.value && index > 0) {
-    document.getElementById(`code-${index - 1}`)?.focus()
+    codeInput(index - 1)?.focus()
   }
 }
 
@@ -35,7 +55,7 @@ function onSubmit(event) {
   event.preventDefault()
   const code = []
   for (let i = 0; i < codeLength; i++) {
-    const input = document.getElementById(`code-${i}`)
+    const input = codeInput(i)
     if (input?.value) code.push(input.value)
   }
   if (code.length === codeLength) {
@@ -59,14 +79,14 @@ function onRecoveryCode(event) {
         <h3 class="text-center text-sm text-fg font-semibold">
           {{ headingText }}
         </h3>
-        <label for="code-0" class="mt-4 block text-sm text-fg font-medium leading-6">
+        <label for="{{ codeIdPrefix }}-0" class="mt-4 block text-sm text-fg font-medium leading-6">
           {{ labelText }}
         </label>
         <form @submit="onSubmit($event)">
           <div class="mt-2 flex rounded-control shadow-sm space-x-2">
             @for(let i = 0; i < codeLength; i++)
               <input
-                id="code-{{ i }}"
+                id="{{ codeIdPrefix }}-{{ i }}"
                 type="text"
                 maxlength="1"
                 name="code-{{ i }}"

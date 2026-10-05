@@ -150,3 +150,80 @@ describe('a form control\'s id is unique to its instance', () => {
     expect(offenders).toEqual([])
   })
 })
+
+/**
+ * The whole-form components, whose ids collided with the HOST APP rather than
+ * with each other.
+ *
+ * `<Login>` shipped `id="email"`, `id="password"`, `id="remember-me"`;
+ * `<Signup>` added `name` and `confirm_email`; `<SubscriptionCheckout>` had
+ * `email-address`, `card-name`, `credit-card` and `payment-element`. You
+ * render one of these per page, so they rarely duplicated each other -- but
+ * any app with its own `id="email"` broke getElementById and `<label for>` for
+ * both elements.
+ *
+ * `name` is deliberately unchanged throughout: it is the key the form submits
+ * under, and it is what `autocomplete` and password managers read alongside
+ * `type`. Renaming it would alter the payload a server sees and could disturb
+ * autofill; renaming the id does neither.
+ */
+describe('a whole form\'s field ids are its own', () => {
+  const FORMS = [
+    { tag: 'Login', markup: '<Login />', fields: ['email', 'password', 'remember-me'] },
+    { tag: 'Signup', markup: '<Signup />', fields: ['name', 'email', 'confirm_email', 'password'] },
+    { tag: 'SubscriptionCheckout', markup: '<SubscriptionCheckout />', fields: ['email-address', 'card-name', 'credit-card'] },
+  ] as const
+
+  for (const { tag, markup, fields } of FORMS) {
+    it(`${tag} claims no bare generic id`, async () => {
+      const html = await render(markup)
+      const found = ids(html)
+
+      for (const field of fields)
+        expect(found, `${tag} must not ship a bare id="${field}"`).not.toContain(field)
+      // The fields are still there, under a prefix.
+      for (const field of fields)
+        expect(found.some(id => id.endsWith(`-${field}`)), `${tag} renders ${field}`).toBe(true)
+    })
+
+    it(`${tag} still submits under the generic names`, async () => {
+      const html = await render(markup)
+      const names = attr(html, /\sname="([^"]+)"/g)
+
+      for (const field of fields) {
+        if (field === 'remember-me' || field === 'credit-card')
+          continue
+        expect(names, `${tag} keeps name="${field}" for autofill and the payload`).toContain(field)
+      }
+    })
+  }
+
+  it('matches every label to a field that exists', async () => {
+    for (const { markup } of FORMS) {
+      const html = await render(markup)
+      const present = new Set(ids(html))
+
+      for (const target of attr(html, /<label for="([^"]+)"/g))
+        expect(present.has(target), `label points at ${target}`).toBe(true)
+    }
+  })
+
+  /*
+   * The one that is not merely a label target: Stripe mounts its card form
+   * into `#payment-element` BY SELECTOR. The id and the selector are built
+   * from the same prefix, and a drift between them would empty the card form
+   * with nothing logged -- so the two are asserted against each other rather
+   * than each against a literal.
+   */
+  it('mounts Stripe into the element it actually rendered', async () => {
+    const html = await render('<SubscriptionCheckout />')
+    const mountTarget = html.match(/<div id="([^"]*payment-element)"/)?.[1]
+    const prefix = html.match(/const fieldPrefix = "([^"]+)"/)?.[1]
+    const mount = html.match(/\.mount\(([^)]*)\)/)?.[1]
+
+    expect(mountTarget, 'the div is rendered').toBeTruthy()
+    expect(prefix, 'the script knows the prefix').toBeTruthy()
+    expect(mount, 'the mount is by selector').toContain('fieldPrefix')
+    expect(`${prefix}-payment-element`).toBe(mountTarget)
+  })
+})

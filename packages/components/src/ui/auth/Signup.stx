@@ -3,6 +3,17 @@ export const headingText = $props.headingText || 'Sign up for Stacks'
 export const showSocialSignup = $bool($props.showSocialSignup, true)
 export const className = $props.className || ''
 
+/*
+ * Field ids unique to this instance.
+ *
+ * They were `email`, `password` and the like -- names generic enough to
+ * collide with the host app's own ids, which breaks getElementById and
+ * `<label for>` for both. `name` deliberately stays generic: it is the key the
+ * form submits under, and it is what `autocomplete` and password managers read
+ * alongside `type`, so the autofill behaviour is unchanged.
+ */
+export const fieldPrefix = $props.id || `signup-${$uid}`
+
 export const containerClasses = `min-h-full flex flex-col justify-center py-12 lg:px-8 sm:px-6 bg-page ${className}`.trim()
 </script>
 
@@ -33,8 +44,8 @@ function onSubmit(event) {
   emit('submit', { name, email, password })
 
   setTimeout(() => {
-    event.target.querySelector('#password')?.setAttribute('value', '')
-    event.target.querySelector('#confirm_email')?.setAttribute('value', '')
+    event.target.querySelector('input[name="password"]')?.setAttribute('value', '')
+    event.target.querySelector('input[name="confirm_email"]')?.setAttribute('value', '')
   }, 1000)
 }
 </script>
@@ -50,12 +61,12 @@ function onSubmit(event) {
     <div class="bg-panel px-6 py-12 shadow sm:rounded-panel sm:px-12">
       <form class="space-y-6" @submit="onSubmit($event)">
         <div>
-          <label for="name" class="block text-sm text-fg font-medium leading-6">
+          <label for="{{ fieldPrefix }}-name" class="block text-sm text-fg font-medium leading-6">
             Full Name
           </label>
           <div class="mt-2">
             <input
-              id="name"
+              id="{{ fieldPrefix }}-name"
               name="name"
               type="text"
               autocomplete="name"
@@ -66,12 +77,12 @@ function onSubmit(event) {
         </div>
 
         <div>
-          <label for="email" class="block text-sm text-fg font-medium leading-6">
+          <label for="{{ fieldPrefix }}-email" class="block text-sm text-fg font-medium leading-6">
             Email address
           </label>
           <div class="mt-2">
             <input
-              id="email"
+              id="{{ fieldPrefix }}-email"
               name="email"
               type="email"
               autocomplete="email"
@@ -82,12 +93,12 @@ function onSubmit(event) {
         </div>
 
         <div>
-          <label for="confirm_email" class="block text-sm text-fg font-medium leading-6">
+          <label for="{{ fieldPrefix }}-confirm_email" class="block text-sm text-fg font-medium leading-6">
             Confirm Email
           </label>
           <div class="mt-2">
             <input
-              id="confirm_email"
+              id="{{ fieldPrefix }}-confirm_email"
               name="confirm_email"
               type="email"
               autocomplete="email"
@@ -98,12 +109,12 @@ function onSubmit(event) {
         </div>
 
         <div>
-          <label for="password" class="block text-sm text-fg font-medium leading-6">
+          <label for="{{ fieldPrefix }}-password" class="block text-sm text-fg font-medium leading-6">
             Password
           </label>
           <div class="mt-2">
             <input
-              id="password"
+              id="{{ fieldPrefix }}-password"
               name="password"
               type="password"
               autocomplete="new-password"

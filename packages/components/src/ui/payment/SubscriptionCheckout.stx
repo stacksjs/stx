@@ -10,10 +10,26 @@ export const className = $props.className || ''
 export const subtotal = products.reduce((sum, product) => sum + (product.price * (product.quantity || 1)), 0)
 export const total = subtotal + shipping + taxes
 
+/*
+ * Field ids unique to this instance.
+ *
+ * `email-address`, `card-name`, `credit-card` and `payment-element` were
+ * generic enough to collide with the host app's own ids, which breaks
+ * getElementById and `<label for>` for both. `name` stays generic: it is the
+ * key the form submits under and what autocomplete reads.
+ *
+ * `payment-element` matters most of the three, because it is not only a label
+ * target -- Stripe mounts into it BY SELECTOR (`#payment-element` below), so a
+ * second element with that id anywhere on the page could take the card form.
+ * Both sides read the same prefix, so they cannot drift apart.
+ */
+export const fieldPrefix = $props.id || `checkout-${$uid}`
+
 export const containerClasses = `bg-page ${className}`.trim()
 </script>
 
 <script client>
+const fieldPrefix = {{ fieldPrefix }}
 const emit = defineEmits()
 const stripePublicKey = {{ stripePublicKey }}
 const apiUrl = {{ apiUrl }}
@@ -52,7 +68,7 @@ async function setupStripeElements() {
       },
     })
     paymentElement = elements.create('payment')
-    paymentElement.mount('#payment-element')
+    paymentElement.mount('#' + fieldPrefix + '-payment-element')
   }
   catch (error) {
     console.error('Error setting up Stripe elements:', error)
@@ -120,12 +136,12 @@ onMount(() => initializeStripe())
           </h2>
 
           <div class="mt-4">
-            <label for="email-address" class="block text-sm text-fg-strong font-medium">
+            <label for="{{ fieldPrefix }}-email-address" class="block text-sm text-fg-strong font-medium">
               Email address
             </label>
             <div class="mt-1">
               <input
-                id="email-address"
+                id="{{ fieldPrefix }}-email-address"
                 type="email"
                 name="email-address"
                 autocomplete="email"
@@ -144,13 +160,13 @@ onMount(() => initializeStripe())
 
           <div class="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
             <div class="sm:col-span-2">
-              <label for="card-name" class="block text-sm text-fg-strong font-medium">
+              <label for="{{ fieldPrefix }}-card-name" class="block text-sm text-fg-strong font-medium">
                 Name on card
               </label>
               <div class="mt-1">
                 <input
                   type="text"
-                  id="card-name"
+                  id="{{ fieldPrefix }}-card-name"
                   name="card-name"
                   autocomplete="cc-name"
                   required
@@ -161,7 +177,7 @@ onMount(() => initializeStripe())
 
             <!-- Stripe Element Mount Point -->
             <div class="sm:col-span-2">
-              <div id="payment-element" class="mt-2 border border-line-strong rounded-control bg-field p-3"></div>
+              <div id="{{ fieldPrefix }}-payment-element" class="mt-2 border border-line-strong rounded-control bg-field p-3"></div>
             </div>
           </div>
         </div>
@@ -177,13 +193,13 @@ onMount(() => initializeStripe())
             <div class="sm:flex sm:items-center space-y-4 sm:space-x-10 sm:space-y-0">
               <div class="flex items-center">
                 <input
-                  id="credit-card"
+                  id="{{ fieldPrefix }}-credit-card"
                   name="payment-type"
                   type="radio"
                   checked
                   class="h-4 w-4 border-line-strong text-accent focus:ring-accent"
                 />
-                <label for="credit-card" class="ml-3 block text-sm text-fg-strong font-medium">
+                <label for="{{ fieldPrefix }}-credit-card" class="ml-3 block text-sm text-fg-strong font-medium">
                   Credit card
                 </label>
               </div>
@@ -256,9 +272,9 @@ onMount(() => initializeStripe())
                     </p>
 
                     <div class="ml-4">
-                      <label for="quantity-{{ product.id }}" class="sr-only">Quantity</label>
+                      <label for="{{ fieldPrefix }}-quantity-{{ product.id }}" class="sr-only">Quantity</label>
                       <select
-                        id="quantity-{{ product.id }}"
+                        id="{{ fieldPrefix }}-quantity-{{ product.id }}"
                         name="quantity"
                         class="border border-line-strong rounded-control text-left text-base text-fg-strong font-medium shadow-sm bg-field focus:border-accent sm:text-sm focus:outline-none focus:ring-1 focus:ring-accent"
                       >

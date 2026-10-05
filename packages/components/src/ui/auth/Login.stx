@@ -16,6 +16,17 @@ export const className = $props.className || ''
 export const forgotPasswordHref = $props.forgotPasswordHref || '/forgot-password'
 export const signupHref = $props.signupHref || '/register'
 
+/*
+ * Field ids unique to this instance.
+ *
+ * They were `email`, `password` and the like -- names generic enough to
+ * collide with the host app's own ids, which breaks getElementById and
+ * `<label for>` for both. `name` deliberately stays generic: it is the key the
+ * form submits under, and it is what `autocomplete` and password managers read
+ * alongside `type`, so the autofill behaviour is unchanged.
+ */
+export const fieldPrefix = $props.id || `login-${$uid}`
+
 export const containerClasses = `min-h-full flex flex-col justify-center py-12 lg:px-8 sm:px-6 bg-page ${className}`.trim()
 </script>
 
@@ -37,7 +48,7 @@ function onSubmit(event) {
   const password = formData.get('password')
   emit('submit', { email, password })
   setTimeout(() => {
-    const pw = event.target.querySelector('#password')
+    const pw = event.target.querySelector('input[name="password"]')
     if (pw) pw.value = ''
   }, 1000)
 }
@@ -58,12 +69,12 @@ function onSubmit(event) {
       <div class="bg-panel px-6 py-12 shadow sm:rounded-panel sm:px-12">
         <div class="space-y-6">
           <div>
-            <label for="email" class="block text-sm text-fg font-medium leading-6">
+            <label for="{{ fieldPrefix }}-email" class="block text-sm text-fg font-medium leading-6">
               Email address
             </label>
             <div class="mt-2">
               <input
-                id="email"
+                id="{{ fieldPrefix }}-email"
                 name="email"
                 type="email"
                 autocomplete="email"
@@ -74,12 +85,12 @@ function onSubmit(event) {
           </div>
 
           <div>
-            <label for="password" class="block text-sm text-fg font-medium leading-6">
+            <label for="{{ fieldPrefix }}-password" class="block text-sm text-fg font-medium leading-6">
               Password
             </label>
             <div class="mt-2">
               <input
-                id="password"
+                id="{{ fieldPrefix }}-password"
                 name="password"
                 type="password"
                 autocomplete="current-password"
@@ -93,12 +104,12 @@ function onSubmit(event) {
             @if(showRememberMe)
               <div class="flex items-center">
                 <input
-                  id="remember-me"
+                  id="{{ fieldPrefix }}-remember-me"
                   name="remember-me"
                   type="checkbox"
                   class="h-4 w-4 border-line-strong rounded text-accent focus:ring-accent bg-field"
                 />
-                <label for="remember-me" class="ml-3 block text-sm text-fg leading-6">
+                <label for="{{ fieldPrefix }}-remember-me" class="ml-3 block text-sm text-fg leading-6">
                   Remember me
                 </label>
               </div>
