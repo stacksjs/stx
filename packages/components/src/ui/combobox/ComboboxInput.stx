@@ -24,6 +24,9 @@ function onInput(event) {
   type="text"
   class="{{ inputClasses }}"
   data-stx-combobox-input
+  role="combobox"
+  aria-expanded="false"
+  aria-autocomplete="list"
   placeholder="{{ placeholder }}"
   value="{{ displayValue }}"
   @if(disabled)disabled@endif

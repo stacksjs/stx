@@ -27,6 +27,7 @@ function selectValue(v) {
   selected.set(v)
   isOpen.set(false)
   syncOptionStates()
+  syncExpanded()
   emit('change', v)
 }
 
@@ -44,8 +45,27 @@ function syncOptionStates() {
   }
 }
 
-function open() { if (!isOpen()) { isOpen.set(true) } }
-function close() { if (isOpen()) isOpen.set(false) }
+/*
+ * role="combobox" makes aria-expanded REQUIRED, and the state lived only in
+ * `data-state` on the root. Nothing announced whether the list was showing.
+ *
+ * aria-activedescendant is deliberately absent: it names the option a user has
+ * moved to, and this combobox has no option keyboard navigation to move with,
+ * so pointing at one would describe a focus that does not exist.
+ */
+function syncExpanded() {
+  if (!rootEl) return
+  const input = rootEl.querySelector('[data-stx-combobox-input]')
+  if (!input) return
+  input.setAttribute('aria-expanded', isOpen() ? 'true' : 'false')
+  const list = rootEl.querySelector('[data-stx-combobox-options]')
+  if (!list) return
+  if (!list.id) list.id = 'stx-combobox-list-' + comboboxInstanceId
+  input.setAttribute('aria-controls', list.id)
+}
+
+function open() { if (!isOpen()) { isOpen.set(true); syncExpanded() } }
+function close() { if (isOpen()) { isOpen.set(false); syncExpanded() } }
 function toggle() { isOpen() ? close() : open() }
 
 function onToggle(event) { event.stopPropagation(); toggle() }
@@ -60,6 +80,7 @@ function onQuery(event) {
 onMount(() => {
   rootEl = document.querySelector(`[data-combobox-id="${comboboxInstanceId}"]`)
   syncOptionStates()
+  syncExpanded()
   outsideHandler = (event) => {
     if (!isOpen()) return
     if (rootEl && !rootEl.contains(event.target)) close()

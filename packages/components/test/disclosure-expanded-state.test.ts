@@ -25,6 +25,12 @@ const UI = path.join(import.meta.dir, '..', 'src', 'ui')
 
 const read = (rel: string) => readFileSync(path.join(UI, rel), 'utf-8')
 
+/** Source with comments removed: a comment naming an attribute is not a use of it. */
+const code = (rel: string) => read(rel)
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/<!--[\s\S]*?-->/g, '')
+  .replace(/^\s*\/\/.*$/gm, '')
+
 interface Widget {
   scope: Record<string, any>
   trigger: any
@@ -64,6 +70,7 @@ async function mount(spec: {
 const WIDGETS = [
   {
     name: 'Dropdown',
+    source: 'dropdown/DropdownButton.stx',
     haspopup: 'menu',
     triggerAttr: 'data-stx-dropdown-button',
     panelAttr: 'data-stx-dropdown-items',
@@ -76,6 +83,7 @@ const WIDGETS = [
   },
   {
     name: 'Listbox',
+    source: 'listbox/ListboxButton.stx',
     haspopup: 'listbox',
     triggerAttr: 'data-stx-listbox-button',
     panelAttr: 'data-stx-listbox-options',
@@ -88,6 +96,7 @@ const WIDGETS = [
   },
   {
     name: 'Popover',
+    source: 'popover/PopoverButton.stx',
     haspopup: null,
     triggerAttr: 'data-stx-popover-button',
     panelAttr: 'data-stx-popover-panel',
@@ -98,6 +107,21 @@ const WIDGETS = [
     },
     markup: '<Popover><PopoverButton>More</PopoverButton><PopoverPanel><span>body</span></PopoverPanel></Popover>',
   },
+  {
+    name: 'Combobox',
+    source: 'combobox/ComboboxInput.stx',
+    haspopup: null,
+    // The combobox itself is the input, not the chevron beside it.
+    triggerAttr: 'data-stx-combobox-input',
+    panelAttr: 'data-stx-combobox-options',
+    files: {
+      'components/Combobox.stx': read('combobox/Combobox.stx'),
+      'components/ComboboxInput.stx': read('combobox/ComboboxInput.stx'),
+      'components/ComboboxButton.stx': read('combobox/ComboboxButton.stx'),
+      'components/ComboboxOptions.stx': read('combobox/ComboboxOptions.stx'),
+    },
+    markup: '<Combobox><ComboboxInput /><ComboboxButton /><ComboboxOptions><li>one</li></ComboboxOptions></Combobox>',
+  },
 ] as const
 
 afterEach(() => {
@@ -107,6 +131,15 @@ afterEach(() => {
 describe('a disclosure trigger reports its own state', () => {
   for (const w of WIDGETS) {
     it(`${w.name} starts closed, and says so before any script runs`, async () => {
+      /*
+       * Asserted in the SOURCE as well as the DOM. The harness always
+       * hydrates, and syncExpanded() sets the attribute on mount, so a DOM
+       * read alone passes even with the static attribute deleted -- it cannot
+       * see the state the markup ships in, which is the one a server-rendered
+       * page shows until the runtime arrives.
+       */
+      expect(code(w.source), w.source).toContain('aria-expanded="false"')
+
       const m = await mount(w)
       try {
         expect(m.trigger, 'trigger rendered').toBeTruthy()
@@ -162,12 +195,54 @@ describe('a disclosure trigger reports its own state', () => {
   }
 
   /*
+   * `<ComboboxInput>` was a bare `<input type="text">` — not one ARIA
+   * attribute on the most ARIA-demanding widget in the library. role="combobox"
+   * is what makes aria-expanded required rather than merely useful.
+   */
+  it('makes the Combobox input an actual combobox', async () => {
+    const m = await mount(WIDGETS.find(w => w.name === 'Combobox')!)
+    try {
+      expect(m.trigger.getAttribute('role')).toBe('combobox')
+      expect(m.trigger.getAttribute('aria-autocomplete')).toBe('list')
+      expect(m.panel.getAttribute('role')).toBe('listbox')
+    }
+    finally {
+      await m.dispose()
+    }
+  })
+
+  /*
+   * aria-activedescendant names the option the user has moved to. This
+   * combobox has no option keyboard navigation to move with, so setting it
+   * would describe a focus that does not exist — a worse lie than the silence
+   * it replaces. See the note in Combobox.stx.
+   */
+  it('claims no active option, having no way to move between them', () => {
+    for (const rel of ['combobox/Combobox.stx', 'combobox/ComboboxInput.stx', 'combobox/ComboboxOptions.stx'])
+      expect(code(rel), rel).not.toContain('aria-activedescendant')
+  })
+
+  it('names the Combobox chevron, which is an icon alone', async () => {
+    const m = await mount(WIDGETS.find(w => w.name === 'Combobox')!)
+    try {
+      const chevron = m.trigger.ownerDocument.querySelector('[data-stx-combobox-button]')
+
+      expect(chevron.getAttribute('aria-label')).toBeTruthy()
+      expect(chevron.getAttribute('tabindex'), 'the input is the tab stop').toBe('-1')
+      expect(chevron.querySelector('svg').getAttribute('aria-hidden')).toBe('true')
+    }
+    finally {
+      await m.dispose()
+    }
+  })
+
+  /*
    * Popover's panel carries no role, so it is a plain disclosure: a button
    * with `aria-expanded` and `aria-controls` and nothing promising a menu or a
    * dialog that is not there.
    */
   it('does not promise Popover a popup role its panel does not have', () => {
-    expect(read('popover/PopoverPanel.stx')).not.toMatch(/role="/)
-    expect(read('popover/PopoverButton.stx')).not.toContain('aria-haspopup')
+    expect(code('popover/PopoverPanel.stx')).not.toMatch(/role="/)
+    expect(code('popover/PopoverButton.stx')).not.toContain('aria-haspopup')
   })
 })
