@@ -16,7 +16,7 @@ import path from 'node:path'
 import { injectCss } from './dev-server/ts-css'
 import { findBodyOpenTag, replaceBodyOpenTag } from './find-body-tag'
 import { findFirstScriptTag } from './first-script-tag'
-import { matchHtmlComment, matchStyleElement, maskAtElementPosition, stashScriptElements } from './html-masking'
+import { matchHtmlComment, matchStyleElement, maskAtElementPosition, restoreStashedScripts, stashScriptElements } from './html-masking'
 import { processA11yDirectives } from './a11y'
 import { generateLifecycleRuntime } from './composables'
 import { processTemplateBindings } from './reactive-bindings'
@@ -1049,6 +1049,35 @@ async function processDirectivesInternal(
         output = `@section('content')\n${output.trim()}\n@endsection`
       }
     }
+  }
+
+  /*
+   * Tag this view's server scripts with its own path before the layout
+   * swallows them (stacksjs/stx#2035).
+   *
+   * The orphan salvage further down already tags the scripts it moves, but a
+   * script inside an `@section` never reaches it: the section body is lifted
+   * into `sections`, substituted into the layout at `@yield`, and the combined
+   * document is extracted with the LAYOUT's path. A relative import in it then
+   * resolved against the layouts directory, so a view one level deeper than its
+   * layout reached one level ABOVE the app root and could not find a module it
+   * names every day.
+   *
+   * How far off it landed was the gap between the view's depth and the
+   * layout's, which is why this presented as unrepeatable: in one app, from one
+   * specifier shape, the views whose depth happened to match their layout
+   * resolved correctly and the deeper ones did not. It is also why the serve
+   * paths were fine and only the static build broke -- they extract the view's
+   * script against the view before any layout is involved.
+   *
+   * Tagged here rather than per section because every `<script server>` in the
+   * view wants the view's path wherever the author put it, and the tag is
+   * idempotent, so the salvage re-tagging below costs nothing.
+   */
+  if (layoutPath && output.includes('<script')) {
+    const stashed = stashScriptElements(output)
+    const tagged = stashed.scripts.map(token => tagServerScriptSource(token, filePath) ?? token)
+    output = restoreStashedScripts(stashed.output, tagged)
   }
 
   // Extract sections — three passes:
