@@ -738,3 +738,105 @@ describe('nothing is left naming gray (#1993)', () => {
     }
   })
 })
+
+/**
+ * A hover that resolves to the resting value is not a hover.
+ *
+ * The sweep above checks the role TABLE: every `-hover` role differs from the
+ * surface it partners. That cannot see a component pairing two roles itself,
+ * and two links in `<Login>` were written `text-accent hover:text-accent` --
+ * the same class twice, so "Forgot password?" and "Sign up" had no hover state
+ * at all. They are `text-link hover:text-link-hover` now, which is what the
+ * five links in `<Footer>` already used.
+ *
+ * Checked by resolving both sides rather than by comparing the class names: the
+ * original #1993 defect was `bg-panel hover:bg-surface`, two DIFFERENT names
+ * that share a dark value, and `text-accent hover:text-accent` is the same
+ * defect with the spelling that makes it obvious. Only one of the two is
+ * visible in review, so neither is checked that way.
+ */
+describe('a hovered role differs from its resting role (#1993)', () => {
+  /** Longest first, so `ring-offset` is never read as `ring`. */
+  const PAINTED = ['ring-offset', 'placeholder', 'divide', 'border', 'stroke', 'text', 'fill', 'ring', 'from', 'via', 'bg', 'to'] as const
+
+  it('leaves no resting/hover pair resolving to one value', () => {
+    const SRC = path.join(import.meta.dir, '..', 'src')
+    const walk = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap(e =>
+      e.isDirectory() ? walk(path.join(dir, e.name)) : (e.name.endsWith('.stx') ? [path.join(dir, e.name)] : []),
+    )
+    const findings: string[] = []
+
+    for (const file of walk(SRC)) {
+      for (const group of code(readFileSync(file, 'utf-8')).matchAll(/(?:class="|class=`|Classes = [`'"]|: ')([^"`']{0,700})/g)) {
+        const classes = group[1].split(/\s+/).filter(Boolean)
+
+        for (const prop of PAINTED) {
+          const resting = classes.find(c => new RegExp(`^${prop}-[a-z][a-z-]*$`).test(c))
+          const hovered = classes.find(c => new RegExp(`^hover:${prop}-[a-z][a-z-]*$`).test(c))
+          if (!resting || !hovered)
+            continue
+
+          const a = SEMANTIC_TOKENS[resting.slice(prop.length + 1)]
+          const b = SEMANTIC_TOKENS[hovered.slice(prop.length + 7)]
+          if (!a || !b)
+            continue
+
+          for (const mode of ['light', 'dark'] as const) {
+            if (a[mode] === b[mode])
+              findings.push(`${path.relative(SRC, file)}: ${resting} -> ${hovered} are both ${a[mode]} in ${mode}`)
+          }
+        }
+      }
+    }
+
+    expect([...new Set(findings)]).toEqual([])
+  })
+
+  /*
+   * An `-ink` belongs on its own `-solid`, which is the fill it was measured
+   * against. `<TabBarItem>`'s count badge put `text-danger-ink` on `bg-danger`
+   * -- the TEXT role used as a fill -- and white on red-400 is 2.89:1 in dark
+   * mode, under even the 3:1 graphics floor. On `danger-solid` it is 3.82:1 /
+   * 4.76:1. A 10px badge is still short of the 4.5:1 that text this size wants
+   * in light mode; that is the ceiling of a tiny count bubble rather than
+   * something this pairing can fix, and the fills are tuned for the bold
+   * button labels they mostly carry.
+   */
+  it('puts every ink on the fill it was measured against', () => {
+    const SRC = path.join(import.meta.dir, '..', 'src')
+    const walk = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap(e =>
+      e.isDirectory() ? walk(path.join(dir, e.name)) : (e.name.endsWith('.stx') ? [path.join(dir, e.name)] : []),
+    )
+    const offenders: string[] = []
+
+    for (const file of walk(SRC)) {
+      for (const group of code(readFileSync(file, 'utf-8')).matchAll(/(?:class="|class=`|Classes = [`'"]|: ')([^"`']{0,700})/g)) {
+        const classes = group[1].split(/\s+/).filter(Boolean)
+        const ink = classes.find(c => /^text-[a-z-]+-ink$/.test(c))
+        const fill = classes.find(c => /^bg-[a-z-]+$/.test(c) && c.slice(3) in SEMANTIC_TOKENS)
+        if (!ink || !fill)
+          continue
+
+        /*
+         * `accent-soft-ink` goes on `accent-soft` and `inverse-ink` on
+         * `inverse`: the ink names its fill. The six bare statuses are the
+         * exception, because there `accent` is the TEXT role and the fill it
+         * was measured against is `accent-solid`.
+         */
+        const name = ink.slice(5, -4)
+        const expected = STATUSES.includes(name as typeof STATUSES[number]) ? `${name}-solid` : name
+        if (fill.slice(3) !== expected)
+          offenders.push(`${path.relative(SRC, file)}: ${ink} on ${fill}, not bg-${expected}`)
+      }
+    }
+
+    expect(offenders).toEqual([])
+  })
+
+  it('gives the auth links the treatment the footer links already had', () => {
+    const login = code(readFileSync(path.join(import.meta.dir, '..', 'src', 'ui/auth/Login.stx'), 'utf-8'))
+
+    expect(login.match(/text-link[^"]*hover:text-link-hover/g)).toHaveLength(2)
+    expect(login).not.toMatch(/hover:text-accent\b/)
+  })
+})

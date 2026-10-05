@@ -106,7 +106,7 @@ function onSubmit(event) {
 
             @if(showForgotPassword)
               <div class="text-sm leading-6">
-                <StxLink to="{{ forgotPasswordHref }}" class="text-accent font-semibold hover:text-accent">
+                <StxLink to="{{ forgotPasswordHref }}" class="text-link font-semibold hover:text-link-hover">
                   Forgot password?
                 </StxLink>
               </div>
@@ -169,7 +169,7 @@ function onSubmit(event) {
       @if(showSignup)
         <p class="mt-10 text-center text-sm text-fg-soft">
           Not a member?
-          <StxLink to="{{ signupHref }}" class="text-accent font-semibold leading-6 hover:text-accent">
+          <StxLink to="{{ signupHref }}" class="text-link font-semibold leading-6 hover:text-link-hover">
             {{ signupText }}
           </StxLink>
         </p>
