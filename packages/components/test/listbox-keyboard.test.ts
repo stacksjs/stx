@@ -5,11 +5,12 @@
  * renders an `<li role="option">` with no `tabindex`, so focus had nowhere to
  * go and Enter did nothing on it.
  *
- * Enter and Space are asserted as far as the CLICK they deliver: whether that
- * click selects is `<ListboxOption>`'s own path, which stacksjs/stx#2033
- * breaks for more than one option. Clicking with a mouse is equally dead
- * there, so this is not a regression -- but asserting the selection would pin
- * that bug as expected behaviour.
+ * Enter and Space are asserted through to the SELECTION. They were once
+ * asserted only as far as the click they delivered, because selecting was
+ * broken for more than one option by stacksjs/stx#2033 -- every instance of a
+ * component rendered `id="__stx_evt_0"` and the binding resolved it with
+ * getElementById, so only the first option's handler was ever bound. That is
+ * fixed, so these assert the thing a user cares about.
  *
  * Arrows move FOCUS and deliberately do not change the selection. Selection
  * following focus is a documented APG variant and the louder of the two:
@@ -168,17 +169,10 @@ describe('Listbox moves focus with the keyboard (#2032)', () => {
 
 describe('Listbox activates the focused option', () => {
   /*
-   * What the key handler is responsible for is delivering the activation to
-   * the focused option -- an `<li>` does not fire its own handler on Enter, so
-   * the handler clicks it.
-   *
-   * Whether that click then SELECTS is the component's own path, and it is
-   * broken for more than one option by stacksjs/stx#2033: a component whose
-   * client script names no signal API gets no per-instance scope, so
-   * `<ListboxOption>`'s `@click` binds only while exactly one instance exists.
-   * Clicking with a mouse is equally dead, so this is not a regression, and
-   * asserting the selection here would pin a framework bug as expected
-   * behaviour. These assert the click, which is this handler's contract.
+   * An `<li>` does not fire its own handler on Enter, so the handler clicks it
+   * and the option's own `@click` carries it to the selection. Both halves are
+   * asserted: the click, which is this handler's contract, and the selection,
+   * which is what the user is after.
    */
   const clicksOn = (option: any) => {
     const hits: string[] = []
@@ -220,6 +214,7 @@ describe('Listbox activates the focused option', () => {
 
       expect(banana, 'the focused option was activated').toEqual(['click'])
       expect(apple, 'and only that one').toEqual([])
+      expect(m.scope.selected(), 'and the choice landed').toBe('banana')
     }
     finally {
       await m.dispose()
@@ -237,6 +232,7 @@ describe('Listbox activates the focused option', () => {
       await settle()
 
       expect(apple).toEqual(['click'])
+      expect(m.scope.selected()).toBe('apple')
     }
     finally {
       await m.dispose()

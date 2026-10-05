@@ -248,9 +248,25 @@ function parseModifiers(parts: string[]): EventModifiers {
 }
 
 /**
- * Find all elements with event attributes in the template
+ * Find all elements with event attributes in the template.
+ *
+ * `namespace` makes the generated ids unique per component INSTANCE. The
+ * counter below is local to this call, and a component's template is parsed
+ * once per instance, so every instance used to start at 0 and emit
+ * `id="__stx_evt_0"`. The binding code resolves its element with
+ * `document.getElementById(...)`, which returns the first match -- so every
+ * instance's handler bound to the FIRST instance's element and instances 2..N
+ * had none. `<Listbox>` could not select with more than one option and two
+ * `<Listbox>` widgets on a page had two dead triggers (stacksjs/stx#2033).
+ *
+ * The namespace has to be derived rather than invented: a module-level counter
+ * or any randomness would make the same template render to different bytes and
+ * the render uncacheable, which utils.ts documents at length (the component uid
+ * exists for exactly these three constraints -- identical across renders,
+ * unique within a document, distinct across pages). So the caller passes the
+ * component uid and pages, which render once, keep the bare ids they had.
  */
-function findElementsWithEvents(template: string): ElementWithEvents[] {
+function findElementsWithEvents(template: string, namespace = ''): ElementWithEvents[] {
   const elements: ElementWithEvents[] = []
   let idCounter = 0
 
@@ -265,7 +281,7 @@ function findElementsWithEvents(template: string): ElementWithEvents[] {
     const endIndex = startIndex + fullMatch.length
 
     // Generate a single ID for this element
-    const elementId = `__stx_evt_${idCounter++}`
+    const elementId = `__stx_evt_${namespace}${idCounter++}`
 
     // Find all @event attributes in this tag
     // Use two separate regexes for double and single quoted values
@@ -586,11 +602,11 @@ export function generateRuntimeScript(events: ParsedEvent[]): string {
  * @param template - The HTML template string
  * @returns Object with processed template and collected bindings
  */
-export function extractAndProcessEvents(template: string): {
+export function extractAndProcessEvents(template: string, namespace = ''): {
   template: string
   bindings: ParsedEvent[]
 } {
-  const elements = findElementsWithEvents(template)
+  const elements = findElementsWithEvents(template, namespace)
 
   if (elements.length === 0) {
     return { template, bindings: [] }
@@ -648,6 +664,18 @@ export function extractAndProcessEvents(template: string): {
  * @param filePath - Source file path for error messages
  * @returns Processed template with event binding script (or just template in SFC mode)
  */
+/**
+ * The id namespace for one render: a component's own uid, or nothing.
+ *
+ * `$uid` is on a component's context and not on a page's, which is what makes
+ * this the right source — a page renders once, so its ids were never the
+ * problem, and leaving them bare keeps the change to the case that was broken.
+ */
+function eventIdNamespace(context: Record<string, unknown>): string {
+  const uid = context.$uid
+  return typeof uid === 'string' && uid ? `${uid}_` : ''
+}
+
 export function processEventDirectives(
   template: string,
   context: Record<string, unknown>,
@@ -676,14 +704,14 @@ export function processEventDirectives(
     if (/x-data\s*=\s*["']/.test(template)) {
       return template
     }
-    const { template: processed, bindings } = extractAndProcessEvents(template)
+    const { template: processed, bindings } = extractAndProcessEvents(template, eventIdNamespace(context))
     const existing = (context.__stx_event_bindings || []) as ParsedEvent[]
     context.__stx_event_bindings = [...existing, ...bindings]
     return processed
   }
 
   // Non-SFC mode: existing behavior (generate standalone script)
-  const elements = findElementsWithEvents(template)
+  const elements = findElementsWithEvents(template, eventIdNamespace(context))
 
   if (elements.length === 0) {
     return template

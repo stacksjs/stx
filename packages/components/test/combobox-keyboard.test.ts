@@ -15,10 +15,11 @@
  * Space is deliberately not an activation key here. On the other two it
  * activates the focused item; in a text input it has to type a space.
  *
- * Enter is asserted as far as the CLICK it delivers. Whether that click
- * selects is `<ComboboxOption>`'s own path, broken for more than one option by
- * stacksjs/stx#2033 — clicking with a mouse is equally dead there, so this is
- * not a regression, but asserting the selection would pin that bug as correct.
+ * Enter is asserted through to the SELECTION. It was once asserted only as far
+ * as the click it delivered, because selecting was broken for more than one
+ * option by stacksjs/stx#2033 — every instance of a component rendered
+ * `id="__stx_evt_0"` and the binding resolved it with getElementById, so only
+ * the first option's handler was ever bound. That is fixed.
  */
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -249,6 +250,7 @@ describe('Combobox activates the active option', () => {
 
       expect(banana).toEqual(['click'])
       expect(apple, 'and only that one').toEqual([])
+      expect(m.scope.selected(), 'and the choice landed').toBe('banana')
     }
     finally {
       await m.dispose()

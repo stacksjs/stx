@@ -179,9 +179,22 @@ describe('Event Directives in Signal Components', () => {
 
     const html = await getHtmlOutput(result)
 
-    // Non-signal components should have @click converted to ID
-    // because skipEventDirectives is only true for signal components
-    expect(html).toMatch(/id="__stx_evt_\d+"/)
+    /*
+     * Non-signal components have @click converted to an ID, because
+     * skipEventDirectives is only true for signal components.
+     *
+     * The id carries the component's uid between the prefix and the counter.
+     * It used to be `__stx_evt_<n>` with the counter local to each parse, so
+     * every INSTANCE of a component started at 0 and emitted
+     * `id="__stx_evt_0"` -- and the binding resolves its element with
+     * getElementById, which returns the first match, so instances 2..N had no
+     * handler at all (stacksjs/stx#2033). The uid is what makes it unique per
+     * instance without making it random, which would break render caching.
+     */
+    const injected = html.match(/id="(__stx_evt_[^"]+)"/)
+
+    expect(injected, 'an id was injected').toBeTruthy()
+    expect(injected![1], 'and it carries the component instance').toContain('simple_button')
     expect(html).not.toContain('@click=')
   })
 
