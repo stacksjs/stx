@@ -854,6 +854,32 @@ export interface ServeOptions {
   renderCacheVary?: 'request' | 'source'
 
   /**
+   * How many rendered pages the render cache keeps, least recently used
+   * first out. Defaults to 512.
+   *
+   * With `renderCacheVary: 'request'` every distinct request context is its
+   * own entry - query string, cookies, client address - so a public site
+   * produces new keys for as long as it has new visitors. Unbounded, each one
+   * a full page of HTML, that is the leak that once took a deployed server
+   * from 230MB to its memory ceiling. With `'source'` there is one entry per
+   * route file and the limit is never reached.
+   */
+  renderCacheLimit?: number
+
+  /**
+   * The client address a page sees as its ambient `ip`. Defaults to the
+   * socket peer.
+   *
+   * Behind a reverse proxy the peer is the proxy, and only the application
+   * knows which proxies it runs - so it is the application's to say how far
+   * forwarding headers can be believed. Stacks passes bun-router's
+   * `clientAddress()`. Reading `X-Forwarded-For` here directly would hand the
+   * address to whoever wrote the header, which is anyone who can reach this
+   * port.
+   */
+  clientAddress?: (req: Request, server: ServeServer) => string | null | undefined
+
+  /**
    * How many class sets' worth of generated CSS to keep. Defaults to 512.
    *
    * The cache is keyed by the class set of the *rendered page*, so a site
@@ -1579,7 +1605,7 @@ export async function serve(options: ServeOptions): Promise<void> {
      */
     headers?: Record<string, string>
   }
-  const htmlCache = new Map<string, HtmlCacheEntry>()
+  const htmlCache = boundedCache<HtmlCacheEntry>(options.renderCacheLimit ?? 512)
   // Opt-in because generic server scripts may read external state that no
   // filesystem watcher can observe. For applications whose static views are
   // source-derived, the signature and watcher invalidation below provide a
@@ -2125,15 +2151,14 @@ function __stxOverlay(errs){
   let activeServeCookies: Record<string, string> = {}
   let activeServeCookieHeader: string = ''
   /**
-   * Best-effort client IP for the in-flight SSR pass, exposed as the
-   * ambient `ip` variable — lets a page implement an IP allowlist. From
-   * `server.requestIP()` (the actual socket peer), falling back to the
-   * left-most `X-Forwarded-For` entry when running behind a reverse proxy
-   * (rpx, a CDN, ...) since the socket peer is the proxy itself in that
-   * case, not the real visitor. The X-Forwarded-For fallback is spoofable
-   * by anyone who can reach this process directly — only trust it in a
-   * deployment where an actual trusted proxy is guaranteed to be the only
-   * thing that can reach this process.
+   * The client address for the in-flight SSR pass, exposed as the ambient
+   * `ip` variable - lets a page implement an IP allowlist. Resolved by
+   * `options.clientAddress`, else the socket peer.
+   *
+   * This used to fall back to the left-most `X-Forwarded-For` entry. The peer
+   * is always there on a real connection, so the fallback never ran behind a
+   * proxy, where every visitor was the proxy's address - and had it run, the
+   * client would have chosen its own `ip`.
    */
   let activeServeIp: string = ''
 
@@ -2266,6 +2291,19 @@ function __stxOverlay(errs){
         return
 
       full.responseHeaders = { ...full.responseHeaders, [header]: String(value) }
+    }
+  }
+
+  /** The request's client address: the app's resolver, else the socket peer. Never throws. */
+  function resolveClientAddress(req: Request, server: ServeServer): string {
+    try {
+      const address = options.clientAddress
+        ? options.clientAddress(req, server)
+        : server.requestIP(req)?.address
+      return address ?? ''
+    }
+    catch {
+      return ''
     }
   }
 
@@ -2776,7 +2814,7 @@ function __stxOverlay(errs){
     // pay the stat cost once. Query-driven pages opt out entirely.
     if (ENABLE_HTML_CACHE && !skipCacheHint && !isMutating) {
       const cacheKey = htmlCacheKey(filePath, reqCtx)
-      const cachedEntry = htmlCache.get(cacheKey)
+      const cachedEntry = htmlCache.read(cacheKey)
       if (cachedEntry && await templateSignatureFresh(cachedEntry.signature)) {
         // Braced: two statements now, and a brace-less `if` would have run the
         // second unconditionally against a context that may not exist.
@@ -2928,7 +2966,7 @@ function __stxOverlay(errs){
         && placeholdersAreReady
     ) {
       const signature = await buildTemplateSignature(filePath, dependencies)
-      htmlCache.set(htmlCacheKey(filePath, reqCtx), { html: output, signature, status: reqCtx?.responseStatus ?? 200, headers: reqCtx?.responseHeaders })
+      htmlCache.remember(htmlCacheKey(filePath, reqCtx), { html: output, signature, status: reqCtx?.responseStatus ?? 200, headers: reqCtx?.responseHeaders })
     }
 
     return output
@@ -3192,7 +3230,7 @@ function __stxOverlay(errs){
     if (reqCtx)
       reqCtx.params = paramsObj
     if (cacheShell) {
-      const cachedEntry = htmlCache.get(filePath)
+      const cachedEntry = htmlCache.read(filePath)
       if (cachedEntry && await templateSignatureFresh(cachedEntry.signature)) {
         if (reqCtx) {
           reqCtx.responseStatus = cachedEntry.status
@@ -3316,7 +3354,7 @@ function __stxOverlay(errs){
         && placeholdersAreReady
     ) {
       const signature = await buildTemplateSignature(filePath, dependencies)
-      htmlCache.set(filePath, { html: output, signature, status: reqCtx?.responseStatus ?? 200, headers: reqCtx?.responseHeaders })
+      htmlCache.remember(filePath, { html: output, signature, status: reqCtx?.responseStatus ?? 200, headers: reqCtx?.responseHeaders })
     }
     return fillRouteParams(output, paramsObj)
   }
@@ -3713,7 +3751,7 @@ function __stxOverlay(errs){
               activeServeHost = req.headers.get('host') || ''
               activeServeCookieHeader = req.headers.get('cookie') || ''
               activeServeCookies = parseCookies(req)
-              activeServeIp = server.requestIP(req)?.address || (req.headers.get('x-forwarded-for') || '').split(',')[0]!.trim()
+              activeServeIp = resolveClientAddress(req, server)
 
               // A CSRF token the page can embed, minted before the render.
               //
