@@ -1,5 +1,90 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.347...HEAD)
+
+## 🚀 Features
+
+- **desktop**: standardMenus.app(name, { settings }) adds Settings… with Cmd+, ([16f75bd](https://github.com/stacksjs/stx/commit/16f75bd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **desktop**: sidebar, a native source list beside the page; contextMenu in the browser entry ([afd3f29](https://github.com/stacksjs/stx/commit/afd3f29)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **desktop**: checked context menu items ([7f6040e](https://github.com/stacksjs/stx/commit/7f6040e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **vscode**: ship the TypeScript plugin in @stacksjs/stx-vscode, and load it once when two extensions contribute it ([3054cff](https://github.com/stacksjs/stx/commit/3054cff)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2028](https://github.com/stacksjs/stx/issues/2028))
+- **typecheck**: read extra declaration files from the stx entry in tsconfig, in the CLI and the editor ([9c8a8a5](https://github.com/stacksjs/stx/commit/9c8a8a5)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2028](https://github.com/stacksjs/stx/issues/2028))
+- **components**: ThemeToggle and EmptyState, the last two of #1981 ([1acc69d](https://github.com/stacksjs/stx/commit/1acc69d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1981](https://github.com/stacksjs/stx/issues/1981), [#1981](https://github.com/stacksjs/stx/issues/1981), [#1794](https://github.com/stacksjs/stx/issues/1794), [#1981](https://github.com/stacksjs/stx/issues/1981), [#1981](https://github.com/stacksjs/stx/issues/1981))
+- **components**: DateRangePicker, so four apps stop maintaining four copies ([ae430c2](https://github.com/stacksjs/stx/commit/ae430c2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1981](https://github.com/stacksjs/stx/issues/1981), [#1981](https://github.com/stacksjs/stx/issues/1981))
+
+## 🐛 Bug Fixes
+
+- **components**: two hovers that did nothing, and an ink on the wrong fill ([71f5927](https://github.com/stacksjs/stx/commit/71f5927)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993))
+- **components**: a focus ring's offset band was white in dark mode ([5302dae](https://github.com/stacksjs/stx/commit/5302dae)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: three focus indicators that could not be seen ([ac63be9](https://github.com/stacksjs/stx/commit/ac63be9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: one effect that throws no longer stops the page ([a91d81d](https://github.com/stacksjs/stx/commit/a91d81d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ssg**: a page depends on the packages its module registry inlines ([ef0727c](https://github.com/stacksjs/stx/commit/ef0727c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **typecheck**: stop reporting templates that run, and fix the two runtime bugs they hid ([55ce4d7](https://github.com/stacksjs/stx/commit/55ce4d7)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2029](https://github.com/stacksjs/stx/issues/2029))
+- **vscode**: type-check .stx files in the editor, against what `from 'stx'` really binds ([bcbf402](https://github.com/stacksjs/stx/commit/bcbf402)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2028](https://github.com/stacksjs/stx/issues/2028))
+- **vscode**: load the TypeScript server plugin, by package name ([ec93506](https://github.com/stacksjs/stx/commit/ec93506)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2026](https://github.com/stacksjs/stx/issues/2026))
+- **vscode**: move the utility-class setting and command out of VS Code's css. namespace ([5cff990](https://github.com/stacksjs/stx/commit/5cff990)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2025](https://github.com/stacksjs/stx/issues/2025))
+- **vscode**: utility-class hovers show formatted CSS, and stop hanging after the first class attribute ([04000e9](https://github.com/stacksjs/stx/commit/04000e9)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2024](https://github.com/stacksjs/stx/issues/2024), [#2027](https://github.com/stacksjs/stx/issues/2027))
+- **client-script**: regex literals no longer hide the declarations after them ([d0fa2b9](https://github.com/stacksjs/stx/commit/d0fa2b9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **composables**: bundle a composable's imports instead of erasing them ([b558298](https://github.com/stacksjs/stx/commit/b558298)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **desktop**: context menu picks reach the page, and pick() returns them ([86479e4](https://github.com/stacksjs/stx/commit/86479e4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **vscode**: load in VS Code's Node host, and stop the semantic tokenizer looping forever ([e46783d](https://github.com/stacksjs/stx/commit/e46783d)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2020](https://github.com/stacksjs/stx/issues/2020))
+- **vscode**: publish the extension as Stacks.vscode-stx, and its language support as a library ([cba2093](https://github.com/stacksjs/stx/commit/cba2093)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2020](https://github.com/stacksjs/stx/issues/2020))
+- **deps**: very-happy-dom ^0.3.5, which parses @-prefixed attribute names ([0e74e59](https://github.com/stacksjs/stx/commit/0e74e59)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2018](https://github.com/stacksjs/stx/issues/2018))
+- **css**: resolve the css config per app root ([dd62cac](https://github.com/stacksjs/stx/commit/dd62cac)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2021](https://github.com/stacksjs/stx/issues/2021), [#2000](https://github.com/stacksjs/stx/issues/2000))
+- **typecheck**: narrow an @elseif condition by the branch it follows failing ([bda1c95](https://github.com/stacksjs/stx/commit/bda1c95)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2019](https://github.com/stacksjs/stx/issues/2019))
+- **components**: Calendar renders a real month, and gains range mode ([1cfb798](https://github.com/stacksjs/stx/commit/1cfb798)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1981](https://github.com/stacksjs/stx/issues/1981), [#1981](https://github.com/stacksjs/stx/issues/1981))
+- **stx**: an @errorBoundary covers a server script that failed ([8ffdd72](https://github.com/stacksjs/stx/commit/8ffdd72)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1991](https://github.com/stacksjs/stx/issues/1991), [#1991](https://github.com/stacksjs/stx/issues/1991))
+- **components**: auto ships both palettes, so a dark code surface reads ([b5a418e](https://github.com/stacksjs/stx/commit/b5a418e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2015](https://github.com/stacksjs/stx/issues/2015), [#2015](https://github.com/stacksjs/stx/issues/2015))
+
+## ⚡ Performance Improvements
+
+- **runtime**: a false :if builds nothing, not even in a :for row ([d800101](https://github.com/stacksjs/stx/commit/d800101)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **runtime**: attribute and :if bindings stop evaluating through with() ([a863c20](https://github.com/stacksjs/stx/commit/a863c20)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1738](https://github.com/stacksjs/stx/issues/1738))
+- **runtime**: a binding subscribes only to the signals it names ([799589a](https://github.com/stacksjs/stx/commit/799589a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **runtime**: compile each binding expression once ([b930750](https://github.com/stacksjs/stx/commit/b930750)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ♻️ Code Refactoring
+
+- **components**: forward Calendar's change with @change on its tag ([16ab1c2](https://github.com/stacksjs/stx/commit/16ab1c2)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2018](https://github.com/stacksjs/stx/issues/2018))
+
+## 📚 Documentation
+
+- **desktop**: context menu picks need Craft 0.0.109 ([8fe1a2c](https://github.com/stacksjs/stx/commit/8fe1a2c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧪 Tests
+
+- **vscode**: compare the unpacked VSIX by real path, so the packaging test passes on macOS ([b8fa87b](https://github.com/stacksjs/stx/commit/b8fa87b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **harness**: expose a classic script's top-level functions on window ([f1b5e6b](https://github.com/stacksjs/stx/commit/f1b5e6b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.368 ([02a97dc](https://github.com/stacksjs/stx/commit/02a97dc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.367 ([f0a1dab](https://github.com/stacksjs/stx/commit/f0a1dab)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.366 ([daba7ed](https://github.com/stacksjs/stx/commit/daba7ed)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.365 ([bf7e036](https://github.com/stacksjs/stx/commit/bf7e036)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.364 ([b94c5f3](https://github.com/stacksjs/stx/commit/b94c5f3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.363 ([72429c0](https://github.com/stacksjs/stx/commit/72429c0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.362 ([138117e](https://github.com/stacksjs/stx/commit/138117e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.361 ([cf37c17](https://github.com/stacksjs/stx/commit/cf37c17)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.360 ([1eb10c7](https://github.com/stacksjs/stx/commit/1eb10c7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.359 ([e85d3eb](https://github.com/stacksjs/stx/commit/e85d3eb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.358 ([59cf98f](https://github.com/stacksjs/stx/commit/59cf98f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.357 ([4510d10](https://github.com/stacksjs/stx/commit/4510d10)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.356 ([7172a6b](https://github.com/stacksjs/stx/commit/7172a6b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.355 ([d2b3f10](https://github.com/stacksjs/stx/commit/d2b3f10)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.354 ([645afa9](https://github.com/stacksjs/stx/commit/645afa9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.353 ([a53454b](https://github.com/stacksjs/stx/commit/a53454b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.352 ([b228d15](https://github.com/stacksjs/stx/commit/b228d15)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.351 ([4f6aa27](https://github.com/stacksjs/stx/commit/4f6aa27)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.350 ([39bb001](https://github.com/stacksjs/stx/commit/39bb001)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.349 ([75500af](https://github.com/stacksjs/stx/commit/75500af)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.348 ([ebd68b6](https://github.com/stacksjs/stx/commit/ebd68b6)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.367...v0.2.368)
 
 ## ⚡ Performance Improvements
