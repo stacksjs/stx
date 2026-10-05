@@ -783,6 +783,9 @@ export function pageExcluder(exclude: readonly string[] | undefined, cwd: string
   }
 }
 
+/** The Bun server `serve()` started - handed to `onRequest` beside each request. */
+export type ServeServer = ReturnType<typeof bunServe>
+
 export interface ServeOptions {
   patterns: string[]
   /**
@@ -1024,8 +1027,13 @@ export interface ServeOptions {
    * globals set inside the hook can be clobbered by concurrent requests,
    * and AsyncLocalStorage `enterWith()` does not survive the hook's await
    * boundary (stacksjs/stacks#1967).
+   *
+   * The second argument is the Bun server that accepted the request, so a
+   * hook can ask it who is on the other end of the socket
+   * (`server.requestIP(req)`) - the only client address a visitor cannot
+   * write themselves.
    */
-  onRequest?: (req: Request) =>
+  onRequest?: (req: Request, server: ServeServer) =>
   | Response
   | Record<string, unknown>
   | null
@@ -3948,7 +3956,7 @@ function __stxOverlay(errs){
                 // state (auth cookies, locale, a user object, ...) to
                 // `<script server>` blocks — see the onRequest option docs.
                 if (options.onRequest) {
-                  const hookResult = await options.onRequest(req)
+                  const hookResult = await options.onRequest(req, server)
                   if (hookResult instanceof Response)
                     return hookResult
                   if (hookResult && typeof hookResult === 'object')
