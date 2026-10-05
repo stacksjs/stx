@@ -1,5 +1,31 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.369...v0.2.370)
+
+## ✨ Features
+
+- **components**: Combobox tracks an active option with the arrow keys ([ec97f05](https://github.com/stacksjs/stx/commit/ec97f05)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2032](https://github.com/stacksjs/stx/issues/2032))
+- **components**: Listbox is navigable with the arrow keys ([2060862](https://github.com/stacksjs/stx/commit/2060862)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2032](https://github.com/stacksjs/stx/issues/2032), [#2033](https://github.com/stacksjs/stx/issues/2033))
+- **components**: Dropdown is navigable with the arrow keys ([a019150](https://github.com/stacksjs/stx/commit/a019150)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2032](https://github.com/stacksjs/stx/issues/2032))
+- **components**: Escape dismisses Dropdown, Listbox, Combobox and Popover ([ea44a4d](https://github.com/stacksjs/stx/commit/ea44a4d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2032](https://github.com/stacksjs/stx/issues/2032), [#2032](https://github.com/stacksjs/stx/issues/2032))
+
+## 🐛 Bug Fixes
+
+- **components**: an absent value prop arrived as the string "null" ([09a3b44](https://github.com/stacksjs/stx/commit/09a3b44)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1981](https://github.com/stacksjs/stx/issues/1981))
+- **events**: two instances of a component shared one element id ([3204032](https://github.com/stacksjs/stx/commit/3204032)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2033](https://github.com/stacksjs/stx/issues/2033))
+- **components**: five foregrounds the colour migration's sweeps missed ([cd52f36](https://github.com/stacksjs/stx/commit/cd52f36)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: the Combobox was not a combobox to a screen reader ([ebc010c](https://github.com/stacksjs/stx/commit/ebc010c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: a disclosure trigger never reported that it was open ([544ca80](https://github.com/stacksjs/stx/commit/544ca80)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.370 ([425c007](https://github.com/stacksjs/stx/commit/425c007)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- generate changelog for v0.2.370 ([a16f68e](https://github.com/stacksjs/stx/commit/a16f68e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.369...HEAD)
 
 ## 🚀 Features
