@@ -123,7 +123,7 @@ describe('the generated bundle', () => {
 
   it('defers the message id to when the bundle runs, not when it was compiled', () => {
     const bundle = generate(SCREEN)
-    expect(bundle).toContain("'init_' + Date.now() + '_' + (++sequence)")
+    expect(bundle).toContain("'render_' + Date.now() + '_' + (++sequence)")
   })
 
   it('carries the document and the handlers the script declared', () => {
@@ -195,6 +195,51 @@ function loadDevice() {
     await Promise.resolve()
     await Promise.resolve()
     expect(rootText()?.[2]).toBe('Device Instant reply')
+  })
+
+  it('emits versioned mutation batches when the native host advertises support', () => {
+    const source = `<script>
+let count = 0
+function increment() { count++ }
+</script>
+<template>
+  <View>
+    <Text testID="count">Count {count}</Text>
+    <Button testID="increment" onPress={increment}>Increment</Button>
+  </View>
+</template>`
+    const sent: Array<Record<string, any>> = []
+    let callback: (message: Record<string, any>) => void = () => {}
+    const scope: Record<string, any> = {
+      __stxNativeBridge: {
+        mutationProtocolVersion: 1,
+        postMessage: (raw: string) => { sent.push(JSON.parse(raw)) },
+        onMessage: (receiver: typeof callback) => { callback = receiver },
+      },
+    }
+    new Function('globalThis', generate(source))(scope)
+
+    expect(sent[0].type).toBe('MUTATE')
+    expect(sent[0].payload).toMatchObject({ version: 1, baseRevision: 0, revision: 1 })
+    expect(sent[0].payload.operations.some((operation: Record<string, any>) =>
+      operation.op === 'createNode' && operation.id === 'root/key:count'
+      && operation.node.children.join('') === 'Count 0')).toBe(true)
+    expect(sent.some(message => message.type === 'RENDER')).toBe(false)
+
+    callback({ type: 'EVENT', payload: { handlerName: 'increment', nativeEvent: {} } })
+    const update = sent.at(-1)!
+    expect(update.type).toBe('MUTATE')
+    expect(update.payload).toMatchObject({ version: 1, baseRevision: 1, revision: 2 })
+    expect(update.payload.operations).toEqual([{
+      op: 'updateNode',
+      id: 'root/key:count',
+      patch: { children: ['Count ', '1'] },
+    }])
+
+    callback({ type: 'MUTATION_ERROR', payload: { code: 'REVISION_MISMATCH' } })
+    const fallback = sent.at(-1)!
+    expect(fallback.type).toBe('RENDER')
+    expect(fallback.payload.document.children[0].children.join('')).toBe('Count 1')
   })
 
   it('exposes Craft clipboard and haptics with structured native errors', async () => {

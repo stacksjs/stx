@@ -764,20 +764,168 @@ catch (error) {
       });
     }
 
-    function resolveNode(node) {
+    const mutationProtocolVersion = Number(bridge.mutationProtocolVersion || 0);
+    let mutationRevision = 0;
+    let mutationsEnabled = mutationProtocolVersion === 1;
+    let previousTree = null;
+    let latestTree = null;
+
+    function nodeKey(node) {
+      const props = node.props || {};
+      return node.key || props.key || props.testID || null;
+    }
+
+    function resolveNode(node, id) {
+      const rawChildren = node.children || [];
+      const keyedCounts = new Map();
+      rawChildren.forEach(function(child) {
+        if (typeof child === 'string') return;
+        const key = nodeKey(child);
+        if (key) keyedCounts.set(key, (keyedCounts.get(key) || 0) + 1);
+      });
       return {
         ...node,
+        id,
         props: Object.fromEntries(Object.entries(node.props || {}).map(function([key, value]) {
           return [key, resolveText(value)];
         })),
-        children: (node.children || []).map(function(child) {
-          return typeof child === 'string' ? resolveText(child) : resolveNode(child);
+        children: rawChildren.map(function(child, index) {
+          if (typeof child === 'string') return resolveText(child);
+          const key = nodeKey(child);
+          const childId = key && keyedCounts.get(key) === 1
+            ? id + '/key:' + key
+            : id + '/index:' + index;
+          return resolveNode(child, childId);
         })
       };
     }
 
+    function nodeValue(node) {
+      return {
+        type: node.type,
+        props: node.props || {},
+        style: node.style || {},
+        events: node.events || {},
+        children: (node.children || []).filter(function(child) { return typeof child === 'string'; })
+      };
+    }
+
+    function flatten(root) {
+      const result = new Map();
+      function visit(node, parentId, index) {
+        const childNodes = (node.children || []).filter(function(child) { return typeof child !== 'string'; });
+        result.set(node.id, {
+          node,
+          parentId,
+          index,
+          children: childNodes.map(function(child) { return child.id; })
+        });
+        childNodes.forEach(function(child, childIndex) { visit(child, node.id, childIndex); });
+      }
+      visit(root, null, 0);
+      return result;
+    }
+
+    function createTreeOperations(tree) {
+      const nodes = flatten(tree);
+      const operations = [];
+      nodes.forEach(function(entry, id) {
+        operations.push({ op: 'createNode', id, root: entry.parentId === null, node: nodeValue(entry.node) });
+      });
+      nodes.forEach(function(entry, parentId) {
+        entry.children.forEach(function(childId, index) {
+          operations.push({ op: 'insertChild', parentId, childId, index });
+        });
+      });
+      return operations;
+    }
+
+    function equivalent(left, right) {
+      return JSON.stringify(left) === JSON.stringify(right);
+    }
+
+    function diffTrees(before, after) {
+      const oldNodes = flatten(before);
+      const newNodes = flatten(after);
+      const typeChanged = Array.from(oldNodes.keys()).some(function(id) {
+        return newNodes.has(id) && oldNodes.get(id).node.type !== newNodes.get(id).node.type;
+      });
+      if (typeChanged) {
+        return [{ op: 'removeNode', id: before.id }].concat(createTreeOperations(after));
+      }
+
+      const operations = [];
+      const removed = new Set(Array.from(oldNodes.keys()).filter(function(id) { return !newNodes.has(id); }));
+      oldNodes.forEach(function(entry, id) {
+        if (!removed.has(id) || (entry.parentId && removed.has(entry.parentId))) return;
+        operations.push({ op: 'removeNode', id });
+      });
+
+      newNodes.forEach(function(entry, id) {
+        if (!oldNodes.has(id)) operations.push({ op: 'createNode', id, root: entry.parentId === null, node: nodeValue(entry.node) });
+      });
+
+      newNodes.forEach(function(entry, id) {
+        const previous = oldNodes.get(id);
+        if (!previous) return;
+        const oldValue = nodeValue(previous.node);
+        const newValue = nodeValue(entry.node);
+        const patch = {};
+        if (!equivalent(oldValue.props, newValue.props)) patch.props = newValue.props;
+        if (!equivalent(oldValue.style, newValue.style)) patch.style = newValue.style;
+        if (!equivalent(oldValue.events, newValue.events)) patch.events = newValue.events;
+        if (!equivalent(oldValue.children, newValue.children)) patch.children = newValue.children;
+        if (Object.keys(patch).length) operations.push({ op: 'updateNode', id, patch });
+      });
+
+      newNodes.forEach(function(entry, parentId) {
+        let current = [];
+        const previous = oldNodes.get(parentId);
+        if (previous) {
+          current = previous.children.filter(function(id) {
+            return newNodes.has(id) && newNodes.get(id).parentId === parentId;
+          });
+        }
+        entry.children.forEach(function(childId, index) {
+          if (current[index] === childId) return;
+          const oldIndex = current.indexOf(childId);
+          if (oldIndex >= 0) {
+            operations.push({ op: 'moveChild', parentId, childId, index });
+            current.splice(oldIndex, 1);
+            current.splice(index, 0, childId);
+          }
+          else {
+            operations.push({ op: 'insertChild', parentId, childId, index });
+            current.splice(index, 0, childId);
+          }
+        });
+      });
+      return operations;
+    }
+
+    function sendRenderFallback() {
+      send('RENDER', { document: latestTree, mode: 'replace' }, 'render_' + Date.now() + '_' + (++sequence));
+    }
+
     function render() {
-      send('RENDER', { document: resolveNode(__STX_DOCUMENT__.root), mode: 'replace' }, 'init_' + Date.now() + '_' + (++sequence));
+      const nextTree = resolveNode(__STX_DOCUMENT__.root, 'root');
+      latestTree = nextTree;
+      if (!mutationsEnabled) {
+        sendRenderFallback();
+        return;
+      }
+      const operations = previousTree ? diffTrees(previousTree, nextTree) : createTreeOperations(nextTree);
+      previousTree = nextTree;
+      if (!operations.length) return;
+      const baseRevision = mutationRevision;
+      mutationRevision += 1;
+      send('MUTATE', {
+        version: mutationProtocolVersion,
+        batchId: 'mutation_' + mutationRevision,
+        baseRevision,
+        revision: mutationRevision,
+        operations
+      });
     }
 
     function requestAPI(module, method, args) {
@@ -850,6 +998,12 @@ catch (error) {
           error.code = message.payload.code || 'CRAFT_ERROR';
           pending.reject(error);
         }
+      }
+      else if (message.type === 'MUTATION_ERROR') {
+        mutationsEnabled = false;
+        mutationRevision = 0;
+        previousTree = null;
+        sendRenderFallback();
       }
     });
 

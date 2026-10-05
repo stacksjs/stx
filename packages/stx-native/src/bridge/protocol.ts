@@ -20,6 +20,9 @@
 export type BridgeMessageType =
   // Rendering
   | 'RENDER'              // Render a new component tree
+  | 'MUTATE'              // Apply one atomic native-tree mutation batch
+  | 'MUTATION_ACK'        // Native host committed a mutation batch
+  | 'MUTATION_ERROR'      // Native host rejected a mutation batch
   | 'UPDATE'              // Update existing component(s)
   | 'REMOVE'              // Remove component(s) from tree
 
@@ -91,6 +94,44 @@ export interface RenderPayload {
 
   /** Whether to replace or append */
   mode: 'replace' | 'append' | 'prepend'
+}
+
+export interface NativeMutationNode {
+  type: string
+  props?: Record<string, unknown>
+  style?: Partial<import('../compiler/ir').STXStyle>
+  events?: Record<string, string>
+  /** Text children only. Structural children use insertChild. */
+  children?: string[]
+}
+
+export type NativeMutationOperation
+  = | { op: 'createNode', id: string, node: NativeMutationNode, root?: boolean }
+    | { op: 'updateNode', id: string, patch: Omit<NativeMutationNode, 'type'> }
+    | { op: 'insertChild', parentId: string, childId: string, index: number }
+    | { op: 'moveChild', parentId: string, childId: string, index: number }
+    | { op: 'removeNode', id: string }
+
+export interface NativeMutationPayload {
+  version: 1
+  batchId: string
+  baseRevision: number
+  revision: number
+  operations: NativeMutationOperation[]
+}
+
+export interface NativeMutationAckPayload {
+  version: 1
+  batchId: string
+  revision: number
+}
+
+export interface NativeMutationErrorPayload {
+  version: 1
+  batchId: string
+  code: string
+  message: string
+  operationIndex?: number
 }
 
 /**
@@ -399,6 +440,11 @@ catch (error) {
       containerId: options.containerId,
       mode: options.mode || 'replace',
     })
+  }
+
+  /** Apply a validated, revision-ordered native-tree mutation batch. */
+  mutate(payload: NativeMutationPayload): string {
+    return this.send<NativeMutationPayload>('MUTATE', payload)
   }
 
   /**
