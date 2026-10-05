@@ -548,12 +548,18 @@ catch {
 
       // Handle key prop
       if (name === 'key') {
-        props.key = value
+        props.key = token.raw ?? value
         continue
       }
 
       // Handle other props
       // Try to parse as JSON for booleans, numbers, etc.
+      if (token.raw) {
+        // Keep the braces that distinguish an expression attribute from a
+        // quoted string. The native runtime evaluates it in screen scope.
+        props[name] = token.raw
+        continue
+      }
       try {
         props[name] = JSON.parse(value)
       }

@@ -242,6 +242,77 @@ function increment() { count++ }
     expect(fallback.payload.document.children[0].children.join('')).toBe('Count 1')
   })
 
+  it('materializes keyed FlatList templates and diffs list changes by item identity', () => {
+    const source = `<script>
+let items = [{ id: 'a', name: 'Ada' }, { id: 'b', name: 'Bun' }]
+function shuffle() {
+  items = [{ id: 'b', name: 'Bun updated' }, { id: 'c', name: 'Craft' }, { id: 'a', name: 'Ada' }]
+}
+function clear() { items = [] }
+</script>
+<template>
+  <View>
+    <FlatList testID="feed" data={items} keyExtractor={item.id} numColumns={2} onEndReached={shuffle}>
+      <Text listRole="header">People</Text>
+      <View listRole="item" accessibilityLabel={item.name}>
+        <Text>{index}: {item.name}</Text>
+      </View>
+      <View listRole="separator"><Text>|</Text></View>
+      <Text listRole="empty">Nobody</Text>
+      <Text listRole="footer">End</Text>
+    </FlatList>
+  </View>
+</template>`
+    const sent: Array<Record<string, any>> = []
+    let callback: (message: Record<string, any>) => void = () => {}
+    const scope: Record<string, any> = {
+      __stxNativeBridge: {
+        mutationProtocolVersion: 1,
+        postMessage: (raw: string) => { sent.push(JSON.parse(raw)) },
+        onMessage: (receiver: typeof callback) => { callback = receiver },
+      },
+    }
+    new Function('globalThis', generate(source))(scope)
+
+    const initial = sent[0].payload.operations
+    const created = (id: string) => initial.find((operation: Record<string, any>) =>
+      operation.op === 'createNode' && operation.id === id)?.node
+    expect(created('root/key:feed').props).toEqual({ testID: 'feed', numColumns: 2, itemCount: 2 })
+    expect(created('root/key:feed/key:a').props).toMatchObject({
+      accessibilityLabel: 'Ada',
+      key: 'a',
+      listRole: 'item',
+    })
+    expect(created('root/key:feed/key:a/index:0').children.join('')).toBe('0: Ada')
+    expect(created('root/key:feed/header').props.listRole).toBe('header')
+    expect(created('root/key:feed/separator:a').props.listRole).toBe('separator')
+    expect(created('root/key:feed/footer').props.listRole).toBe('footer')
+    expect(created('root/key:feed/empty')).toBeUndefined()
+
+    callback({ type: 'EVENT', payload: { handlerName: 'shuffle', nativeEvent: {} } })
+    const shuffled = sent.at(-1)!.payload.operations
+    expect(shuffled).toContainEqual(expect.objectContaining({
+      op: 'moveChild', parentId: 'root/key:feed', childId: 'root/key:feed/key:b', index: 1,
+    }))
+    expect(shuffled).toContainEqual(expect.objectContaining({
+      op: 'createNode', id: 'root/key:feed/key:c',
+    }))
+    expect(shuffled).toContainEqual(expect.objectContaining({
+      op: 'updateNode', id: 'root/key:feed/key:b',
+    }))
+
+    callback({ type: 'EVENT', payload: { handlerName: 'clear', nativeEvent: {} } })
+    const emptied = sent.at(-1)!.payload.operations
+    expect(emptied).toContainEqual(expect.objectContaining({
+      op: 'createNode', id: 'root/key:feed/empty',
+    }))
+    expect(emptied).toContainEqual({
+      op: 'updateNode',
+      id: 'root/key:feed',
+      patch: { props: { testID: 'feed', numColumns: 2, itemCount: 0 } },
+    })
+  })
+
   it('exposes Craft clipboard and haptics with structured native errors', async () => {
     const source = `<script>
 let ready = globalThis.craft.device.getInfo()

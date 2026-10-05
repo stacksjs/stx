@@ -754,14 +754,21 @@ catch (error) {
       return messageId;
     }
 
-    function resolveText(value) {
+    function resolveValue(value, item, index) {
       if (typeof value !== 'string' || !value.includes('{')) return value;
+      const exact = value.match(/^\\{([^{}]+)\\}$/);
+      if (exact) return eval(exact[1]);
       return value.replace(/\\{([^{}]+)\\}/g, function(_match, expression) {
-        // The expression came from the bundled .stx file, not from a device
-        // message. Direct eval keeps it in the screen script's lexical scope.
+        // Expressions are compiler-owned screen code. Direct eval retains the
+        // screen scope plus a FlatList template's item and index bindings.
         const answer = eval(expression);
         return answer == null ? '' : String(answer);
       });
+    }
+
+    function resolveText(value, item, index) {
+      const answer = resolveValue(value, item, index);
+      return answer == null ? '' : String(answer);
     }
 
     const mutationProtocolVersion = Number(bridge.mutationProtocolVersion || 0);
@@ -770,32 +777,105 @@ catch (error) {
     let previousTree = null;
     let latestTree = null;
 
-    function nodeKey(node) {
+    function nodeKey(node, item, index) {
       const props = node.props || {};
-      return node.key || props.key || props.testID || null;
+      return resolveValue(node.key || props.key || props.testID || null, item, index);
     }
 
-    function resolveNode(node, id) {
+    function listExpression(value, item, index) {
+      if (typeof value !== 'string') return value;
+      const exact = value.match(/^\\{([^{}]+)\\}$/);
+      const answer = eval(exact ? exact[1] : value);
+      return typeof answer === 'function' ? answer(item, index) : answer;
+    }
+
+    function listRole(node) {
+      return node && typeof node !== 'string' ? (node.props || {}).listRole || null : null;
+    }
+
+    function resolveListNode(node, id, resolvedProps) {
+      const rawProps = node.props || {};
+      const data = listExpression(rawProps.data, undefined, undefined);
+      const templates = (node.children || []).filter(function(child) { return typeof child !== 'string'; });
+      const itemTemplates = templates.filter(function(child) { return listRole(child) === 'item'; });
+      if (!Array.isArray(data) || itemTemplates.length === 0) return null;
+
+      const groups = {
+        header: templates.filter(function(child) { return listRole(child) === 'header'; }),
+        empty: templates.filter(function(child) { return listRole(child) === 'empty'; }),
+        separator: templates.filter(function(child) { return listRole(child) === 'separator'; }),
+        footer: templates.filter(function(child) { return listRole(child) === 'footer'; })
+      };
+      const children = [];
+      const seenKeys = new Map();
+      function appendTemplates(entries, role, item, index, keyPrefix) {
+        entries.forEach(function(template, templateIndex) {
+          const suffix = entries.length === 1 ? '' : '/template:' + templateIndex;
+          const child = resolveNode(template, id + '/' + keyPrefix + suffix, item, index);
+          child.props = { ...(child.props || {}), listRole: role };
+          children.push(child);
+        });
+      }
+      appendTemplates(groups.header, 'header', undefined, -1, 'header');
+      if (data.length === 0) {
+        appendTemplates(groups.empty, 'empty', undefined, -1, 'empty');
+      }
+      else {
+        data.forEach(function(item, index) {
+          let key = rawProps.keyExtractor == null
+            ? item && (item.key ?? item.id)
+            : listExpression(rawProps.keyExtractor, item, index);
+          if (key == null || key === '') key = index;
+          const encodedKey = encodeURIComponent(String(key));
+          const occurrence = seenKeys.get(encodedKey) || 0;
+          seenKeys.set(encodedKey, occurrence + 1);
+          const uniqueKey = occurrence === 0 ? encodedKey : encodedKey + '#' + occurrence;
+          itemTemplates.forEach(function(template, templateIndex) {
+            const suffix = itemTemplates.length === 1 ? '' : '/template:' + templateIndex;
+            const child = resolveNode(template, id + '/key:' + uniqueKey + suffix, item, index);
+            child.props = { ...(child.props || {}), key: String(key), listRole: 'item' };
+            children.push(child);
+          });
+          if (index < data.length - 1) {
+            appendTemplates(groups.separator, 'separator', item, index, 'separator:' + uniqueKey);
+          }
+        });
+      }
+      appendTemplates(groups.footer, 'footer', undefined, data.length, 'footer');
+      const props = { ...resolvedProps, itemCount: data.length };
+      delete props.data;
+      delete props.keyExtractor;
+      return { ...node, id, props, children };
+    }
+
+    function resolveNode(node, id, item, itemIndex) {
+      const isDataList = node.type === 'FlatList' && (node.props || {}).data != null;
+      const resolvedProps = Object.fromEntries(Object.entries(node.props || {}).map(function([key, value]) {
+        if (isDataList && (key === 'data' || key === 'keyExtractor')) return [key, value];
+        return [key, resolveValue(value, item, itemIndex)];
+      }));
+      if (isDataList) {
+        const list = resolveListNode(node, id, resolvedProps);
+        if (list) return list;
+      }
       const rawChildren = node.children || [];
       const keyedCounts = new Map();
       rawChildren.forEach(function(child) {
         if (typeof child === 'string') return;
-        const key = nodeKey(child);
+        const key = nodeKey(child, item, itemIndex);
         if (key) keyedCounts.set(key, (keyedCounts.get(key) || 0) + 1);
       });
       return {
         ...node,
         id,
-        props: Object.fromEntries(Object.entries(node.props || {}).map(function([key, value]) {
-          return [key, resolveText(value)];
-        })),
+        props: resolvedProps,
         children: rawChildren.map(function(child, index) {
-          if (typeof child === 'string') return resolveText(child);
-          const key = nodeKey(child);
+          if (typeof child === 'string') return resolveText(child, item, itemIndex);
+          const key = nodeKey(child, item, itemIndex);
           const childId = key && keyedCounts.get(key) === 1
             ? id + '/key:' + key
             : id + '/index:' + index;
-          return resolveNode(child, childId);
+          return resolveNode(child, childId, item, itemIndex);
         })
       };
     }
