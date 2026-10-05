@@ -18,16 +18,16 @@ describe('bindStyle runtime — retry with raw scope for call-syntax', () => {
   const runtime = generateSignalsRuntimeDev()
 
   it('bindStyle catches an initial TypeError and retries with raw scope', () => {
-    // Two compiled functions (__stxCompile), one inside the primary try, one in the
+    // Two compiled functions (__stxCompileScoped), one inside the primary try, one in the
     // retry — matches bindClass's shape.
     const styleSrc = runtime.slice(runtime.indexOf('function bindStyle'))
     const styleEnd = styleSrc.indexOf('function bindFor')
     const body = styleSrc.slice(0, styleEnd > 0 ? styleEnd : 3000)
-    const fnCalls = body.match(/__stxCompile\(/g) || []
+    const fnCalls = body.match(/__stxCompileScoped\(/g) || []
     expect(fnCalls.length).toBeGreaterThanOrEqual(2)
     // The second pass uses capturedScope values directly (not unwrapScope),
     // which is the key shape of the retry.
-    expect(body).toMatch(/Object\.values\(capturedScope\)/)
+    expect(body).toMatch(/__stxArgs\(fn2, capturedScope\)/)
   })
 
   it('still guards TypeError/ReferenceError from producing noisy warns', () => {

@@ -16,7 +16,7 @@ import { describe, expect, it } from 'bun:test'
 import { Window } from 'very-happy-dom'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 
-function renderList(rows: number): { compiles: number, rerender: () => number, text: () => string } {
+function renderList(rows: number): { compiles: number, rerender: () => number, touchUnrelated: () => number, text: () => string } {
   const window = new Window({ url: 'http://localhost/' }) as any
   let compiles = 0
   // eslint-disable-next-line no-new-func
@@ -31,7 +31,9 @@ function renderList(rows: number): { compiles: number, rerender: () => number, t
   const stx = window.stx
   const make = (n: number, tag: string) => Array.from({ length: n }, (_, i) => ({ id: i, name: `${tag}${i}` }))
   const items = stx.state(make(rows, 'a'))
-  stx._scopes.list = { items, label: (item: { name: string }) => item.name.toUpperCase() }
+  const unrelated = stx.state(0)
+  let labelled = 0
+  stx._scopes.list = { items, unrelated, label: (item: { name: string }) => { labelled++; return item.name.toUpperCase() } }
 
   const container = window.document.createElement('div')
   container.setAttribute('data-stx-scope', 'list')
@@ -41,6 +43,11 @@ function renderList(rows: number): { compiles: number, rerender: () => number, t
 
   return {
     compiles,
+    touchUnrelated() {
+      const before = labelled
+      unrelated.set(unrelated() + 1)
+      return labelled - before
+    },
     rerender() {
       const before = compiles
       items.set(make(rows, 'b'))
@@ -67,5 +74,13 @@ describe('expression compile cache', () => {
     const list = renderList(50)
     expect(list.rerender()).toBe(0)
     expect(list.text()).toContain('B49')
+  })
+
+  it('re-runs a binding only for the signals it names', () => {
+    // Every binding was handed - and so read - every value in scope, which
+    // subscribed it to every signal on the page: changing one unrelated value
+    // re-ran every row.
+    const list = renderList(20)
+    expect(list.touchUnrelated()).toBe(0)
   })
 })

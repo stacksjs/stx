@@ -232,6 +232,46 @@ console.log('[stx] entering IIFE');
     return fn;
   }
 
+  // The names an expression mentions, by its text.
+  const __stxIdentifiers = new Map();
+  function __stxNamesIn(body) {
+    let names = __stxIdentifiers.get(body);
+    if (!names) {
+      names = Array.from(new Set(body.match(/[A-Za-z_$][\\w$]*/g) || []));
+      if (__stxIdentifiers.size >= 5000) __stxIdentifiers.clear();
+      __stxIdentifiers.set(body, names);
+    }
+    return names;
+  }
+
+  // Compile an expression over just the names in scope it mentions.
+  //
+  // It was compiled over every name in scope and called with every value,
+  // read through the auto-unwrap proxy. Reading a signal subscribes the
+  // running effect, so every binding depended on every signal on the page:
+  // changing one unrelated value re-ran every binding of every row. The proxy
+  // also tested each signal against the expression with fresh regexes. Now an
+  // expression sees, reads and subscribes to what it names; a mention inside
+  // a string only widens that, never narrows it.
+  function __stxCompileScoped(scope, extraParams, body) {
+    const keys = [];
+    const names = __stxNamesIn(body);
+    for (let i = 0; i < names.length; i++) {
+      if (Object.prototype.propertyIsEnumerable.call(scope, names[i])) keys.push(names[i]);
+    }
+    const fn = __stxCompile(extraParams.length ? keys.concat(extraParams) : keys, body);
+    // The cache keys on the parameter list, so a function always has these keys.
+    fn.__stxKeys = keys;
+    return fn;
+  }
+
+  function __stxArgs(fn, scope) {
+    const keys = fn.__stxKeys;
+    const args = new Array(keys.length);
+    for (let i = 0; i < keys.length; i++) args[i] = scope[keys[i]];
+    return args;
+  }
+
   let activeEffect = null;
   const effectStack = [];
   const pendingEffects = new Set();
@@ -821,8 +861,8 @@ else {
     // First evaluate the base expression
     let value;
     try {
-      const fn = __stxCompile(Object.keys(scope), 'return ' + valueExpr);
-      value = fn(...Object.values(scope));
+      const fn = __stxCompileScoped(scope, [], 'return ' + valueExpr);
+      value = fn(...__stxArgs(fn, scope));
     }
 catch (e) {
       if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Pipe base expression error:', valueExpr, e);
@@ -842,8 +882,8 @@ catch (e) {
             if (/^['"].*['"]$/.test(arg)) return arg.slice(1, -1);
             // Try to evaluate as expression in scope
             try {
-              const fn = __stxCompile(Object.keys(scope), 'return ' + arg);
-              return fn(...Object.values(scope));
+              const fn = __stxCompileScoped(scope, [], 'return ' + arg);
+              return fn(...__stxArgs(fn, scope));
             }
 catch (e) {
               return arg;
@@ -2134,8 +2174,8 @@ finally {
               || expressionUsesSignalApi(expr, prop);
           })
         : baseScope;
-      const fn = __stxCompile(Object.keys(baseScope), 'return ' + expr);
-      const result = fn(...Object.values(scope));
+      const fn = __stxCompileScoped(baseScope, [], 'return ' + expr);
+      const result = fn(...__stxArgs(fn, scope));
       // Post-eval unwrap — see evalAttrExpr note for the reason.
       return (result && typeof result === 'function' && (result._isSignal || result._isDerived)) ? result() : result;
     }
@@ -2302,8 +2342,8 @@ catch (e) {
         const v = scope[k];
         handlerScope[k] = (v && typeof v === 'function' && v._isStxLoopItem) ? v() : v;
       });
-      const fn = __stxCompile(Object.keys(handlerScope).concat(['$event']), expr);
-      fn(...Object.values(handlerScope), event);
+      const fn = __stxCompileScoped(handlerScope, ['$event'], expr);
+      fn(...__stxArgs(fn, handlerScope), event);
     }
 catch (e) {
       // Event handlers fire on user interaction, not reactive re-runs — there's no
@@ -2820,8 +2860,8 @@ catch (e) {
         var memoExpr = el.getAttribute('data-stx-memo');
         try {
           var memoScope = { ...globalHelpers, ...scope, ...(findElementScope(el) || {}) };
-          var memoFn = __stxCompile(Object.keys(memoScope), 'return ' + memoExpr);
-          var memoVals = JSON.stringify(memoFn(...Object.values(memoScope)));
+          var memoFn = __stxCompileScoped(memoScope, [], 'return ' + memoExpr);
+          var memoVals = JSON.stringify(memoFn(...__stxArgs(memoFn, memoScope)));
           if (el.__stx_memo_prev === memoVals) {
             return; // Dependencies unchanged — skip re-processing
           }
@@ -2873,8 +2913,8 @@ catch (e) {
 else {
                     // Use auto-unwrap proxy (Feature #1)
                     const unwrapScope = createExpressionAutoUnwrapProxy(capturedScope, expr);
-                    const fn = __stxCompile(Object.keys(capturedScope), 'return ' + expr);
-                    bindingNode.textContent = fn(...Object.values(unwrapScope));
+                    const fn = __stxCompileScoped(capturedScope, [], 'return ' + expr);
+                    bindingNode.textContent = fn(...__stxArgs(fn, unwrapScope));
                   }
                 }
 catch (e) {
@@ -2882,8 +2922,8 @@ catch (e) {
                   // because it converts the signal to its value before the expression runs.
                   // Retry without auto-unwrap so signal functions remain callable.
                   try {
-                    const fn = __stxCompile(Object.keys(capturedScope), 'return ' + expr);
-                    bindingNode.textContent = fn(...Object.values(capturedScope));
+                    const fn = __stxCompileScoped(capturedScope, [], 'return ' + expr);
+                    bindingNode.textContent = fn(...__stxArgs(fn, capturedScope));
                   }
 catch (e2) {
                     if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Expression error:', expr, e2);
@@ -3348,8 +3388,8 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
               var fn3 = __stxCompile(['__s', '$event'], unwrapVars + ';' + value);
               fn3(eventCapturedScope, handlerEvent);
             } else {
-              var fn = __stxCompile(Object.keys(eventCapturedScope).concat(['$event']), value);
-              fn(...Object.values(eventCapturedScope), handlerEvent);
+              var fn = __stxCompileScoped(eventCapturedScope, ['$event'], value);
+              fn(...__stxArgs(fn, eventCapturedScope), handlerEvent);
             }
           }
 catch (e) {
@@ -3474,14 +3514,14 @@ catch (e) {
         var value;
         try {
           var unwrapScope = createExpressionAutoUnwrapProxy(capturedScope, expr);
-          var fn = __stxCompile(Object.keys(capturedScope), 'return ' + expr);
-          value = fn(...Object.values(unwrapScope));
+          var fn = __stxCompileScoped(capturedScope, [], 'return ' + expr);
+          value = fn(...__stxArgs(fn, unwrapScope));
         } catch (e1) {
           // Retry without unwrapping — handles edge cases where the proxy
           // interferes with certain expression patterns
           try {
-            var fn2 = __stxCompile(Object.keys(capturedScope), 'return ' + expr);
-            value = fn2(...Object.values(capturedScope));
+            var fn2 = __stxCompileScoped(capturedScope, [], 'return ' + expr);
+            value = fn2(...__stxArgs(fn2, capturedScope));
           } catch (e2) {
             // Suppress ReferenceError/TypeError during async init — a signal
             // or object may not be ready yet on the first effect run, and
@@ -3664,8 +3704,11 @@ else {
     const capturedScope = { ...globalHelpers, ...passedScope, ...(findElementScope(el) || {}) };
     const keys = Object.keys(capturedScope);
 
-    // Pre-compile — filter out keys that aren't valid JS identifiers
-    const safeKeys = keys.filter(k => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k));
+    // Pre-compile — only the names the expression mentions (see
+    // __stxCompileScoped: reading every signal subscribed the class binding to
+    // every signal on the page), and only valid JS identifiers.
+    const mentioned = new Set(__stxNamesIn(expr));
+    const safeKeys = keys.filter(k => mentioned.has(k) && /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k));
     let fn;
     try {
       fn = __stxCompile(safeKeys, 'return ' + expr);
@@ -3737,13 +3780,13 @@ else {
       // throw TypeError.
       try {
         const unwrapScope = createExpressionAutoUnwrapProxy(capturedScope, expr);
-        const fn = __stxCompile(Object.keys(capturedScope), 'return ' + expr);
-        return fn(...Object.values(unwrapScope));
+        const fn = __stxCompileScoped(capturedScope, [], 'return ' + expr);
+        return fn(...__stxArgs(fn, unwrapScope));
       }
 catch (e1) {
         try {
-          const fn2 = __stxCompile(Object.keys(capturedScope), 'return ' + expr);
-          return fn2(...Object.values(capturedScope));
+          const fn2 = __stxCompileScoped(capturedScope, [], 'return ' + expr);
+          return fn2(...__stxArgs(fn2, capturedScope));
         }
 catch (e2) {
           if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Style expression error:', expr, e2);
@@ -4228,8 +4271,8 @@ else {
           return expressionCallsSignal(expression, prop)
             || expressionUsesSignalApi(expression, prop);
         });
-        const fn = __stxCompile(Object.keys(scope), 'return ' + expression);
-        return fn(...Object.values(unwrapScope));
+        const fn = __stxCompileScoped(scope, [], 'return ' + expression);
+        return fn(...__stxArgs(fn, unwrapScope));
       }
 catch (e) {
         if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Expression error:', expression, e);
@@ -8318,8 +8361,8 @@ else {
               if (matches) {
                 matches.forEach(match => {
                   const expr = match.replace(/^\\{\\{\\s*|\\s*\\}\\}$/g, '');
-                  const fn = __stxCompile(Object.keys(componentScope), 'return ' + expr);
-                  const value = fn(...Object.values(componentScope));
+                  const fn = __stxCompileScoped(componentScope, [], 'return ' + expr);
+                  const value = fn(...__stxArgs(fn, componentScope));
                   result = result.replace(match, value != null ? value : '');
                 });
               }
@@ -8345,8 +8388,8 @@ else if (el.tagName === 'META') {
                 matches.forEach(match => {
                   const expr = match.replace(/^\\{\\{\\s*|\\s*\\}\\}$/g, '');
                   if (/^__[A-Z_]+__$/.test(expr.trim())) return;
-                  const fn = __stxCompile(Object.keys(componentScope), 'return ' + expr);
-                  const value = fn(...Object.values(componentScope));
+                  const fn = __stxCompileScoped(componentScope, [], 'return ' + expr);
+                  const value = fn(...__stxArgs(fn, componentScope));
                   result = result.replace(match, value != null ? value : '');
                 });
               }

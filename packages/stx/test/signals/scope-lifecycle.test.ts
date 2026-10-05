@@ -306,7 +306,7 @@ describe('Text interpolation', () => {
     // The effect wrapper around interpolation
     expect(runtime).toContain('effect(() => {')
     // Text interpolation compiles (through the cache) over the captured scope
-    expect(runtime).toContain('__stxCompile(Object.keys(capturedScope)')
+    expect(runtime).toContain('__stxCompileScoped(capturedScope, [], ')
     expect(runtime).toContain('bindingNode.textContent')
   })
 })
