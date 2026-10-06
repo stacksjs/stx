@@ -2205,13 +2205,34 @@ else {
     };
   }
 
+  // A nav marked data-stx-sticky-active is a tab bar: each tab owns the
+  // screens opened from it, as on iOS. On a page that is none of its links'
+  // own, the link that was current stays current (a workout opened from
+  // Today keeps Today lit), and data-stx-active-match only decides a page
+  // reached with nothing current yet, such as a cold start on a deep link.
+  // data-stx-nav-current remembers which link that was, because
+  // updateActiveLinks has already rewritten the classes by now.
   function updateNav(){
-    qsa('nav a[href], #mobileNav a[href], [data-stx-nav] a[href]').forEach(function(a){
-      if(!a.hasAttribute('data-stx-link'))return;
-      var st=linkState(a.getAttribute('href'),a.getAttribute('data-stx-active-match'));
-      if(!st)return;
-      var ac=a.getAttribute('data-stx-active-class')||'active';
-      if(st.exact||st.matched)ac.split(' ').forEach(function(cls){if(cls)a.classList.add(cls)});else ac.split(' ').forEach(function(cls){if(cls)a.classList.remove(cls)});
+    var done=new Set();
+    qsa('nav, #mobileNav, [data-stx-nav]').forEach(function(nav){
+      var states=[];
+      Array.prototype.forEach.call(nav.querySelectorAll('a[href]'),function(a){
+        if(done.has(a)||!a.hasAttribute('data-stx-link'))return;
+        done.add(a);
+        var st=linkState(a.getAttribute('href'),a.getAttribute('data-stx-active-match'));
+        if(st)states.push({a:a,st:st});
+      });
+      var kept=null;
+      if(nav.hasAttribute('data-stx-sticky-active')&&!states.some(function(x){return x.st.exact})){
+        kept=states.filter(function(x){return x.a.hasAttribute('data-stx-nav-current')})[0]||null;
+      }
+      states.forEach(function(x){
+        var a=x.a,st=x.st;
+        var on=kept?a===kept.a:(st.exact||st.matched);
+        var ac=a.getAttribute('data-stx-active-class')||'active';
+        ac.split(' ').forEach(function(cls){if(cls){if(on)a.classList.add(cls);else a.classList.remove(cls)}});
+        if(on)a.setAttribute('data-stx-nav-current','');else a.removeAttribute('data-stx-nav-current');
+      });
     });
   }
 

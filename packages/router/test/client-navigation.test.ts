@@ -619,6 +619,65 @@ describe('nav links after an in-app navigation', () => {
   })
 })
 
+describe('a tab bar after an in-app navigation', () => {
+  const TAB_BAR = `
+    <html>
+      <head></head>
+      <body>
+        <nav data-stx-sticky-active>
+          <a data-stx-link data-stx-active-class="on" href="/m">Today</a>
+          <a data-stx-link data-stx-active-class="on" href="/m/calendar" data-stx-active-match="/m/workout">Calendar</a>
+        </nav>
+        <main>Today</main>
+      </body>
+    </html>
+  `
+  const fragment = async () => response('<section>A workout</section>', { 'X-STX-Fragment': 'true', 'X-STX-Layout': '', 'X-STX-Layout-Group': 'app' })
+  const lit = (window: any) => [...window.document.querySelectorAll('nav a')].map((a: any) => a.classList.contains('on'))
+
+  it('keeps the tab a screen was opened from lit, over a match', async () => {
+    const window = installRouter(TAB_BAR, fragment)
+    await window.stxRouter.navigate('/m')
+    await waitForRouterSwap()
+    expect(lit(window)).toEqual([true, false])
+
+    // A workout opened from Today is Today's, not the calendar's.
+    await window.stxRouter.navigate('/m/workout/42')
+    await waitForRouterSwap()
+    expect(lit(window)).toEqual([true, false])
+
+    // And so is the screen pushed from it.
+    await window.stxRouter.navigate('/m/go/42')
+    await waitForRouterSwap()
+    expect(lit(window)).toEqual([true, false])
+  })
+
+  it('follows the tab when its own page is shown', async () => {
+    const window = installRouter(TAB_BAR, fragment)
+    await window.stxRouter.navigate('/m/calendar')
+    await waitForRouterSwap()
+    await window.stxRouter.navigate('/m/workout/42')
+    await waitForRouterSwap()
+    expect(lit(window)).toEqual([false, true])
+  })
+
+  it('falls back to the match when nothing was current', async () => {
+    const window = installRouter(TAB_BAR.replace('<a data-stx-link data-stx-active-class="on" href="/m">', '<a data-stx-link data-stx-active-class="on" href="/m/today">'), fragment)
+    await window.stxRouter.navigate('/m/workout/42')
+    await waitForRouterSwap()
+    expect(lit(window)).toEqual([false, true])
+  })
+
+  it('leaves a nav that does not ask for it exact-only', async () => {
+    const window = installRouter(TAB_BAR.replace(' data-stx-sticky-active', ''), fragment)
+    await window.stxRouter.navigate('/m')
+    await waitForRouterSwap()
+    await window.stxRouter.navigate('/m/workout/42')
+    await waitForRouterSwap()
+    expect(lit(window)).toEqual([false, true])
+  })
+})
+
 describe('which links are current', () => {
   /** A page at `url`, with the router initialised on it. */
   function at(url: string, links: string, wrapper = 'nav') {
