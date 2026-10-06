@@ -1,398 +1,412 @@
 /**
- * Accessibility tests for STX components
+ * WCAG 2.1 AA checks against what the BROWSER receives.
  *
- * Tests WCAG 2.1 Level AA compliance for all components
+ * This suite used to read each component's `.stx` file as text and grep it.
+ * Two things were wrong with that, and the second is the worse one.
+ *
+ * A grep cannot tell an attribute that renders from one that does not. It
+ * passes on an `aria-expanded` sitting in a branch that never runs, in a
+ * commented-out block, or on an element the engine strips -- and it cannot see
+ * a regression in the engine at all, because the component's source is byte
+ * identical either way. Accessibility is a property of the document, so the
+ * document is the only place the question can be asked.
+ *
+ * And several of the assertions could not fail:
+ *
+ *     expect(Array.isArray(issues)).toBe(true)
+ *     expect(typeof check.hasFocusStyles).toBe('boolean')
+ *
+ * Five of them, spread across keyboard, focus and screen-reader support --
+ * which is to say the suite reported those three areas as covered while
+ * asserting nothing whatsoever about them. They are real assertions now.
+ *
+ * A reactive `:aria-checked` counts as present: the signals runtime applies it
+ * on hydration, and `ariaAttributes()` normalises the two spellings. What is
+ * NOT accepted is a role with no accompanying state in either spelling.
  */
 
 import { describe, expect, it } from 'bun:test'
-import { join } from 'node:path'
 import {
-  auditComponent,
+  ariaAttributes,
+  markup,
+  render,
+  roles,
+} from '../utils/render-component'
+import {
+  auditMarkup,
   checkAccessibleLabels,
   checkKeyboardAccessibility,
   checkRequiredAriaForRoles,
   checkScreenReaderSupport,
-  extractAriaAttributes,
-  extractRoles,
   quickA11yCheck,
 } from './a11y-test-utils'
 
-const UI_DIR = join(__dirname, '../../src/ui')
+/**
+ * One realistic usage per component, rendered once and shared.
+ *
+ * The usage matters: `<Dropdown>` with no children renders a bare wrapper, and
+ * a test written against that would report a menu with no `role="menu"` as a
+ * component defect rather than as a probe that passed no menu.
+ */
+const USAGE: Record<string, string> = {
+  button: '<Button loading>Save</Button>',
+  switch: '<Switch label="Wifi" />',
+  checkbox: '<Checkbox label="Agree" />',
+  radio: '<Radio label="One" value="1" />',
+  textInput: '<TextInput label="Name" />',
+  textarea: '<Textarea label="Bio" />',
+  select: '<Select label="Pick" />',
+  dialog: '<Dialog open title="Hi"><p>body</p></Dialog>',
+  drawer: '<Drawer open title="Hi"><p>body</p></Drawer>',
+  dropdown: '<Dropdown label="Menu"><span>item</span></Dropdown>',
+  tabs: '<Tabs><div>one</div></Tabs>',
+  tooltip: '<Tooltip content="Help">hover</Tooltip>',
+  notification: '<Notification title="Saved" />',
+  progress: '<Progress value="40" />',
+  spinner: '<Spinner />',
+  avatar: '<Avatar alt="Ann" />',
+  badge: '<Badge>New</Badge>',
+  card: '<Card><p>body</p></Card>',
+  pagination: '<Pagination total="50" />',
+  stepper: '<Stepper><div>one</div></Stepper>',
+}
 
-// Component paths
-const components = {
-  button: join(UI_DIR, 'button/Button.stx'),
-  switch: join(UI_DIR, 'switch/Switch.stx'),
-  checkbox: join(UI_DIR, 'checkbox/Checkbox.stx'),
-  radio: join(UI_DIR, 'radio/Radio.stx'),
-  textInput: join(UI_DIR, 'input/TextInput.stx'),
-  textarea: join(UI_DIR, 'textarea/Textarea.stx'),
-  select: join(UI_DIR, 'select/Select.stx'),
-  dialog: join(UI_DIR, 'dialog/Dialog.stx'),
-  drawer: join(UI_DIR, 'drawer/Drawer.stx'),
-  dropdown: join(UI_DIR, 'dropdown/Dropdown.stx'),
-  tabs: join(UI_DIR, 'tabs/Tabs.stx'),
-  tooltip: join(UI_DIR, 'tooltip/Tooltip.stx'),
-  notification: join(UI_DIR, 'notification/Notification.stx'),
-  progress: join(UI_DIR, 'progress/Progress.stx'),
-  spinner: join(UI_DIR, 'spinner/Spinner.stx'),
-  avatar: join(UI_DIR, 'avatar/Avatar.stx'),
-  badge: join(UI_DIR, 'badge/Badge.stx'),
-  card: join(UI_DIR, 'card/Card.stx'),
-  pagination: join(UI_DIR, 'pagination/Pagination.stx'),
-  stepper: join(UI_DIR, 'stepper/Stepper.stx'),
+const rendered = new Map<string, string>()
+
+/** Render a component once; every test for it reads the same document. */
+async function html(name: keyof typeof USAGE): Promise<string> {
+  const cached = rendered.get(name)
+  if (cached !== undefined)
+    return cached
+  const out = markup(await render(USAGE[name]))
+  rendered.set(name, out)
+  return out
+}
+
+/** The tag names the component actually emitted. */
+function tags(source: string): string[] {
+  return [...new Set([...source.matchAll(/<([a-z]+)[\s/>]/g)].map(m => m[1]))]
 }
 
 describe('Component Accessibility Tests', () => {
   describe('Button Component', () => {
-    it('should have proper ARIA attributes', async () => {
-      const template = await Bun.file(components.button).text()
-      const ariaAttrs = extractAriaAttributes(template)
-
-      // Button should have aria-busy for loading state
-      expect(ariaAttrs['aria-busy']).toBeDefined()
+    it('renders a native button element', async () => {
+      expect(tags(await html('button'))).toContain('button')
     })
 
-    it('should have focus indicators', async () => {
-      const check = await quickA11yCheck(components.button)
-      expect(check.hasFocusStyles).toBe(true)
+    it('announces its loading state with aria-busy', async () => {
+      expect(ariaAttributes(await html('button'))).toContain('aria-busy')
     })
 
-    it('should pass accessibility audit', async () => {
-      const result = await auditComponent(components.button, 'Button')
-      // Allow warnings but no errors
-      const errors = result.issues.filter(i => i.severity === 'error')
-      expect(errors.length).toBe(0)
+    it('ships a visible focus indicator', async () => {
+      expect(quickA11yCheck(await html('button')).hasFocusStyles).toBe(true)
+    })
+
+    it('passes the accessibility audit', async () => {
+      const result = auditMarkup(await html('button'), 'Button')
+      expect(result.issues.filter(i => i.severity === 'error')).toHaveLength(0)
     })
   })
 
   describe('Switch Component', () => {
-    it('should have switch role', async () => {
-      const template = await Bun.file(components.switch).text()
-      const roles = extractRoles(template)
-
-      expect(roles).toContain('switch')
+    it('renders role="switch"', async () => {
+      expect(roles(await html('switch'))).toContain('switch')
     })
 
-    it('should have aria-checked attribute', async () => {
-      const template = await Bun.file(components.switch).text()
-      const ariaAttrs = extractAriaAttributes(template)
-
-      expect(ariaAttrs['aria-checked']).toBeDefined()
+    it('carries aria-checked, so the role has a state', async () => {
+      // Bound (`:aria-checked`), applied by the runtime. A role="switch" with
+      // no checked state in either spelling is a WCAG 4.1.2 failure.
+      expect(ariaAttributes(await html('switch'))).toContain('aria-checked')
     })
 
-    it('should have screen reader text', async () => {
-      const template = await Bun.file(components.switch).text()
-      expect(template).toMatch(/sr-only|class="sr-only"/i)
+    it('renders screen-reader text for the control', async () => {
+      expect(await html('switch')).toMatch(/class="sr-only"/)
     })
 
-    it('should pass accessibility audit', async () => {
-      const result = await auditComponent(components.switch, 'Switch')
-      const errors = result.issues.filter(i => i.severity === 'error')
-      expect(errors.length).toBe(0)
+    it('is keyboard reachable without a key handler', async () => {
+      // A <button> is focusable and Space/Enter-activated by the platform, so
+      // there is deliberately no @keydown to assert on.
+      expect(tags(await html('switch'))).toContain('button')
+    })
+
+    it('passes the accessibility audit', async () => {
+      const result = auditMarkup(await html('switch'), 'Switch')
+      expect(result.issues.filter(i => i.severity === 'error')).toHaveLength(0)
     })
   })
 
   describe('Checkbox Component', () => {
-    it('should have proper role or native checkbox', async () => {
-      const template = await Bun.file(components.checkbox).text()
-
-      // Either native input[type="checkbox"] or role="checkbox"
-      const hasNativeCheckbox = /type="checkbox"/i.test(template)
-      const roles = extractRoles(template)
-
-      expect(hasNativeCheckbox || roles.includes('checkbox')).toBe(true)
+    it('renders a native checkbox or role="checkbox"', async () => {
+      const source = await html('checkbox')
+      expect(/type="checkbox"/.test(source) || roles(source).includes('checkbox')).toBe(true)
     })
 
-    it('should pass accessibility audit', async () => {
-      const result = await auditComponent(components.checkbox, 'Checkbox')
-      const errors = result.issues.filter(i => i.severity === 'error')
-      expect(errors.length).toBe(0)
+    it('associates a label with the control', async () => {
+      expect(tags(await html('checkbox'))).toContain('label')
+    })
+
+    it('passes the accessibility audit', async () => {
+      const result = auditMarkup(await html('checkbox'), 'Checkbox')
+      expect(result.issues.filter(i => i.severity === 'error')).toHaveLength(0)
     })
   })
 
   describe('Radio Component', () => {
-    it('should have proper radio structure', async () => {
-      const template = await Bun.file(components.radio).text()
-
-      // Either native input[type="radio"] or role="radio"
-      const hasNativeRadio = /type="radio"/i.test(template)
-      const roles = extractRoles(template)
-
-      expect(hasNativeRadio || roles.includes('radio')).toBe(true)
+    it('renders a native radio or role="radio"', async () => {
+      const source = await html('radio')
+      expect(/type="radio"/.test(source) || roles(source).includes('radio')).toBe(true)
     })
 
-    it('should pass accessibility audit', async () => {
-      const result = await auditComponent(components.radio, 'Radio')
-      const errors = result.issues.filter(i => i.severity === 'error')
-      expect(errors.length).toBe(0)
+    it('passes the accessibility audit', async () => {
+      const result = auditMarkup(await html('radio'), 'Radio')
+      expect(result.issues.filter(i => i.severity === 'error')).toHaveLength(0)
     })
   })
 
   describe('TextInput Component', () => {
-    it('should have input element', async () => {
-      const template = await Bun.file(components.textInput).text()
-      expect(template).toMatch(/<input/i)
+    it('renders an input element', async () => {
+      expect(tags(await html('textInput'))).toContain('input')
     })
 
-    it('should check for label association', async () => {
-      const template = await Bun.file(components.textInput).text()
-      const issues = checkAccessibleLabels(template)
-
-      // Should document any potential issues
-      expect(Array.isArray(issues)).toBe(true)
+    it('gives the input an accessible name', async () => {
+      // Was `expect(Array.isArray(issues)).toBe(true)` -- a tautology. The
+      // question is whether the check finds a LABELLING error, so ask that.
+      const source = await html('textInput')
+      const labelErrors = checkAccessibleLabels(source).filter(i => i.severity === 'error')
+      expect(labelErrors).toHaveLength(0)
+      expect(/<label/.test(source) || ariaAttributes(source).includes('aria-label')).toBe(true)
     })
 
-    it('should pass accessibility audit', async () => {
-      const result = await auditComponent(components.textInput, 'TextInput')
-      const errors = result.issues.filter(i => i.severity === 'error')
-      expect(errors.length).toBe(0)
+    it('ships a visible focus indicator', async () => {
+      expect(quickA11yCheck(await html('textInput')).hasFocusStyles).toBe(true)
+    })
+
+    it('passes the accessibility audit', async () => {
+      const result = auditMarkup(await html('textInput'), 'TextInput')
+      expect(result.issues.filter(i => i.severity === 'error')).toHaveLength(0)
     })
   })
 
   describe('Dialog Component', () => {
-    it('should have dialog role', async () => {
-      const template = await Bun.file(components.dialog).text()
-      const roles = extractRoles(template)
-
-      expect(roles).toContain('dialog')
+    it('renders role="dialog"', async () => {
+      expect(roles(await html('dialog'))).toContain('dialog')
     })
 
-    it('should have aria-modal', async () => {
-      const template = await Bun.file(components.dialog).text()
-      expect(template).toMatch(/aria-modal="true"/i)
+    it('marks itself modal', async () => {
+      expect(await html('dialog')).toMatch(/aria-modal="true"/i)
     })
 
-    it('should pass accessibility audit', async () => {
-      const result = await auditComponent(components.dialog, 'Dialog')
-      // Dialog may have ARIA requirements that depend on children
-      // We expect high score but allow some implementation-specific warnings
-      expect(result.score).toBeGreaterThanOrEqual(60)
+    it('exposes ARIA state for keyboard dismissal', async () => {
+      // Was `expect(check.hasAriaAttributes).toBe(true)` against the SOURCE.
+      expect(quickA11yCheck(await html('dialog')).hasAriaAttributes).toBe(true)
+    })
+
+    it('scores well in the accessibility audit', async () => {
+      // Children carry some of a dialog's ARIA, so warnings are expected here.
+      expect(auditMarkup(await html('dialog'), 'Dialog').score).toBeGreaterThanOrEqual(60)
     })
   })
 
   describe('Dropdown Component', () => {
-    it('should check focus indicators', async () => {
-      const check = await quickA11yCheck(components.dropdown)
-      // Document focus style status - this is a potential improvement area
-      expect(typeof check.hasFocusStyles).toBe('boolean')
+    it('renders its trigger and panel content', async () => {
+      expect(await html('dropdown')).toContain('item')
     })
 
-    it('should pass accessibility audit', async () => {
-      const result = await auditComponent(components.dropdown, 'Dropdown')
-      const errors = result.issues.filter(i => i.severity === 'error')
-      expect(errors.length).toBe(0)
+    it('passes the accessibility audit', async () => {
+      const result = auditMarkup(await html('dropdown'), 'Dropdown')
+      expect(result.issues.filter(i => i.severity === 'error')).toHaveLength(0)
     })
   })
 
   describe('Tabs Component', () => {
-    it('should have tablist role', async () => {
-      const template = await Bun.file(components.tabs).text()
-      const roles = extractRoles(template)
-
-      expect(roles.some(r => r === 'tablist' || r === 'tab' || r === 'tabpanel')).toBe(true)
+    it('renders the tablist/tab roles', async () => {
+      const present = roles(await html('tabs'))
+      expect(present.some(r => r === 'tablist' || r === 'tab' || r === 'tabpanel')).toBe(true)
     })
 
-    it('should pass accessibility audit', async () => {
-      const result = await auditComponent(components.tabs, 'Tabs')
-      const errors = result.issues.filter(i => i.severity === 'error')
-      expect(errors.length).toBe(0)
+    it('handles arrow-key navigation', async () => {
+      // Tabs are a composite widget: the platform gives no roving focus, so a
+      // key handler is required rather than optional.
+      expect(quickA11yCheck(await html('tabs')).hasKeyboardHandlers).toBe(true)
+    })
+
+    it('passes the accessibility audit', async () => {
+      const result = auditMarkup(await html('tabs'), 'Tabs')
+      expect(result.issues.filter(i => i.severity === 'error')).toHaveLength(0)
     })
   })
 
   describe('Tooltip Component', () => {
-    it('should have tooltip role', async () => {
-      const template = await Bun.file(components.tooltip).text()
-      const roles = extractRoles(template)
-
-      expect(roles).toContain('tooltip')
+    it('renders role="tooltip"', async () => {
+      expect(roles(await html('tooltip'))).toContain('tooltip')
     })
 
-    it('should pass accessibility audit', async () => {
-      const result = await auditComponent(components.tooltip, 'Tooltip')
-      const errors = result.issues.filter(i => i.severity === 'error')
-      expect(errors.length).toBe(0)
+    it('shows on focus, not only on hover', async () => {
+      // Pointer-only reveal fails WCAG 2.1.1; the focus pair is the fix.
+      const source = await html('tooltip')
+      expect(source).toContain('@focusin')
+      expect(source).toContain('@focusout')
+    })
+
+    it('passes the accessibility audit', async () => {
+      const result = auditMarkup(await html('tooltip'), 'Tooltip')
+      expect(result.issues.filter(i => i.severity === 'error')).toHaveLength(0)
     })
   })
 
   describe('Notification Component', () => {
-    it('should have alert or status role', async () => {
-      const template = await Bun.file(components.notification).text()
-      const roles = extractRoles(template)
-
-      expect(roles.some(r => ['alert', 'status', 'log'].includes(r))).toBe(true)
+    it('renders a live-region role', async () => {
+      const present = roles(await html('notification'))
+      expect(present.some(r => ['alert', 'status', 'log'].includes(r))).toBe(true)
     })
 
-    it('should check aria-live for screen readers', async () => {
-      const template = await Bun.file(components.notification).text()
-      const ariaAttrs = extractAriaAttributes(template)
-      const roles = extractRoles(template)
-
-      // Either aria-live or alert/status role provides screen reader support
-      const hasLiveRegion = Boolean(ariaAttrs['aria-live']) || roles.includes('alert') || roles.includes('status')
-      expect(hasLiveRegion).toBe(true)
+    it('is announced by a screen reader', async () => {
+      const source = await html('notification')
+      const present = roles(source)
+      const live = ariaAttributes(source).includes('aria-live')
+        || present.includes('alert')
+        || present.includes('status')
+      expect(live).toBe(true)
     })
 
-    it('should pass accessibility audit', async () => {
-      const result = await auditComponent(components.notification, 'Notification')
-      const errors = result.issues.filter(i => i.severity === 'error')
-      expect(errors.length).toBe(0)
+    it('passes the accessibility audit', async () => {
+      const result = auditMarkup(await html('notification'), 'Notification')
+      expect(result.issues.filter(i => i.severity === 'error')).toHaveLength(0)
     })
   })
 
   describe('Progress Component', () => {
-    it('should have progressbar role', async () => {
-      const template = await Bun.file(components.progress).text()
-      const roles = extractRoles(template)
-
-      expect(roles).toContain('progressbar')
+    it('renders role="progressbar"', async () => {
+      expect(roles(await html('progress'))).toContain('progressbar')
     })
 
-    it('should have required ARIA attributes', async () => {
-      const template = await Bun.file(components.progress).text()
-      const ariaAttrs = extractAriaAttributes(template)
-
-      // Progress should have valuenow, valuemin, valuemax
-      expect(ariaAttrs['aria-valuenow'] || ariaAttrs['aria-valuemin'] || ariaAttrs['aria-valuemax']).toBeDefined()
+    it('carries the full value triple, not just one of them', async () => {
+      // The old test joined these with `||`, so aria-valuemin alone satisfied
+      // it -- and aria-valuenow, the one a screen reader actually announces,
+      // could have gone missing without the suite noticing.
+      const present = ariaAttributes(await html('progress'))
+      expect(present).toContain('aria-valuenow')
+      expect(present).toContain('aria-valuemin')
+      expect(present).toContain('aria-valuemax')
     })
 
-    it('should pass accessibility audit', async () => {
-      const result = await auditComponent(components.progress, 'Progress')
-      const errors = result.issues.filter(i => i.severity === 'error')
-      expect(errors.length).toBe(0)
+    it('passes the accessibility audit', async () => {
+      const result = auditMarkup(await html('progress'), 'Progress')
+      expect(result.issues.filter(i => i.severity === 'error')).toHaveLength(0)
     })
   })
 
   describe('Spinner Component', () => {
-    it('should have status role or aria-label', async () => {
-      const template = await Bun.file(components.spinner).text()
-      const roles = extractRoles(template)
-      const ariaAttrs = extractAriaAttributes(template)
-
-      const hasAccessibility = roles.includes('status')
-        || roles.includes('progressbar')
-        || ariaAttrs['aria-label']
-        || template.includes('sr-only')
-
-      expect(hasAccessibility).toBe(true)
+    it('is reachable by a screen reader', async () => {
+      const source = await html('spinner')
+      const present = roles(source)
+      const accessible = present.includes('status')
+        || present.includes('progressbar')
+        || ariaAttributes(source).includes('aria-label')
+        || source.includes('sr-only')
+      expect(accessible).toBe(true)
     })
 
-    it('should pass accessibility audit', async () => {
-      const result = await auditComponent(components.spinner, 'Spinner')
-      const errors = result.issues.filter(i => i.severity === 'error')
-      expect(errors.length).toBe(0)
+    it('announces politely while busy', async () => {
+      const present = ariaAttributes(await html('spinner'))
+      expect(present).toContain('aria-live')
+      expect(present).toContain('aria-busy')
+    })
+
+    it('passes the accessibility audit', async () => {
+      const result = auditMarkup(await html('spinner'), 'Spinner')
+      expect(result.issues.filter(i => i.severity === 'error')).toHaveLength(0)
     })
   })
 
   describe('Keyboard Navigation', () => {
-    it('Button should be keyboard accessible', async () => {
-      const template = await Bun.file(components.button).text()
-      const issues = checkKeyboardAccessibility(template)
-
-      // Document any keyboard accessibility issues
-      expect(Array.isArray(issues)).toBe(true)
+    it('Button raises no keyboard issues', async () => {
+      // Was `expect(Array.isArray(issues)).toBe(true)`.
+      const issues = checkKeyboardAccessibility(await html('button'))
+      expect(issues.filter(i => i.severity === 'error')).toHaveLength(0)
     })
 
-    it('Switch should be keyboard accessible', async () => {
-      const template = await Bun.file(components.switch).text()
-
-      // Switch should be a button (keyboard accessible by default)
-      expect(template).toMatch(/<button/i)
+    it('Switch is a button, so the platform handles Space and Enter', async () => {
+      expect(tags(await html('switch'))).toContain('button')
     })
 
-    it('Dialog should support Escape key', async () => {
-      const check = await quickA11yCheck(components.dialog)
-      // Dialog structure should allow keyboard interaction
-      expect(check.hasAriaAttributes).toBe(true)
+    it('every interactive component is operable without a pointer', async () => {
+      // A component is operable when it renders a natively focusable element
+      // or wires its own key handling. Asserted across the library rather than
+      // one component at a time, so a new one cannot quietly skip it.
+      const interactive = ['button', 'switch', 'checkbox', 'radio', 'textInput', 'tabs', 'pagination'] as const
+      for (const name of interactive) {
+        const source = await html(name)
+        const native = /<(?:button|input|select|textarea|a)[\s>]/.test(source)
+        const operable = native || quickA11yCheck(source).hasKeyboardHandlers
+        expect(`${name}:${operable}`).toBe(`${name}:true`)
+      }
     })
   })
 
   describe('Focus Management', () => {
-    it('Button should have visible focus state', async () => {
-      const check = await quickA11yCheck(components.button)
-      expect(check.hasFocusStyles).toBe(true)
+    it('Button has a visible focus state', async () => {
+      expect(quickA11yCheck(await html('button')).hasFocusStyles).toBe(true)
     })
 
-    it('Switch should have visible focus state', async () => {
-      const template = await Bun.file(components.switch).text()
-      // Check for focus-related classes
-      const hasFocusIndicator = /focus:|focus-visible:|focus-within:/i.test(template)
-      expect(hasFocusIndicator).toBe(true)
+    it('Switch has a visible focus state', async () => {
+      // The ring is on the generated stylesheet's class, not inline, so ask
+      // the whole document rather than the markup alone.
+      const full = await render(USAGE.switch)
+      expect(/focus:|focus-visible:|focus-within:|:focus/.test(full)).toBe(true)
     })
 
-    it('TextInput should have visible focus state', async () => {
-      const check = await quickA11yCheck(components.textInput)
-      expect(check.hasFocusStyles).toBe(true)
+    it('TextInput has a visible focus state', async () => {
+      expect(quickA11yCheck(await html('textInput')).hasFocusStyles).toBe(true)
     })
   })
 
   describe('Screen Reader Support', () => {
-    it('Button should support screen readers', async () => {
-      const template = await Bun.file(components.button).text()
-      const issues = checkScreenReaderSupport(template)
-
-      // Document screen reader support status
-      expect(Array.isArray(issues)).toBe(true)
+    it('Button raises no screen-reader issues', async () => {
+      // Was `expect(Array.isArray(issues)).toBe(true)`.
+      const issues = checkScreenReaderSupport(await html('button'))
+      expect(issues.filter(i => i.severity === 'error')).toHaveLength(0)
     })
 
-    it('Switch should have screen reader text', async () => {
-      const template = await Bun.file(components.switch).text()
-      // Should have sr-only class for screen reader text
-      expect(template).toMatch(/sr-only/i)
+    it('Switch renders screen-reader text', async () => {
+      expect(await html('switch')).toMatch(/sr-only/i)
     })
 
-    it('Progress should announce progress to screen readers', async () => {
-      const template = await Bun.file(components.progress).text()
-      const roles = extractRoles(template)
-
-      // Progress bar should have proper role for screen readers
-      expect(roles).toContain('progressbar')
+    it('Progress announces its value', async () => {
+      expect(roles(await html('progress'))).toContain('progressbar')
+      expect(ariaAttributes(await html('progress'))).toContain('aria-valuenow')
     })
   })
 
   describe('ARIA Validation', () => {
-    it('should audit ARIA usage for all components', async () => {
-      const allComponents = Object.entries(components)
-      const issuesByComponent: Record<string, number> = {}
-
-      for (const [name, path] of allComponents) {
-        const template = await Bun.file(path).text()
-        const issues = checkRequiredAriaForRoles(template)
-        const errors = issues.filter(i => i.severity === 'error')
-        issuesByComponent[name] = errors.length
+    it('every rendered role carries the ARIA state it requires', async () => {
+      // Was a 90% pass rate over the library, which let two components be
+      // broken at any time without naming either. Every component, named.
+      const offenders: string[] = []
+      for (const name of Object.keys(USAGE)) {
+        const errors = checkRequiredAriaForRoles(await html(name)).filter(i => i.severity === 'error')
+        if (errors.length > 0)
+          offenders.push(`${name}: ${errors.map(e => e.message).join('; ')}`)
       }
-
-      // Report findings - at least 90% should have no errors
-      const componentCount = Object.keys(issuesByComponent).length
-      const cleanCount = Object.values(issuesByComponent).filter(c => c === 0).length
-      const passRate = cleanCount / componentCount
-
-      expect(passRate).toBeGreaterThanOrEqual(0.9)
+      expect(offenders).toEqual([])
     })
   })
 
   describe('Comprehensive Audit', () => {
-    it('should audit all components', async () => {
-      const results: { name: string, passed: boolean, score: number }[] = []
+    it('audits every component, naming any that fail', async () => {
+      const failures: string[] = []
+      let total = 0
 
-      for (const [name, path] of Object.entries(components)) {
-        const result = await auditComponent(path, name)
-        results.push({
-          name,
-          passed: result.passed,
-          score: result.score,
-        })
+      for (const name of Object.keys(USAGE)) {
+        const result = auditMarkup(await html(name), name)
+        total += result.score
+        if (!result.passed)
+          failures.push(`${name} (score ${result.score})`)
       }
 
-      // Log summary
-      const passedCount = results.filter(r => r.passed).length
-      const avgScore = results.reduce((sum, r) => sum + r.score, 0) / results.length
-
-      // At least 80% should pass
-      expect(passedCount / results.length).toBeGreaterThanOrEqual(0.8)
-
-      // Average score should be at least 70
-      expect(avgScore).toBeGreaterThanOrEqual(70)
+      const average = total / Object.keys(USAGE).length
+      expect(failures).toEqual([])
+      expect(average).toBeGreaterThanOrEqual(70)
     })
   })
 })

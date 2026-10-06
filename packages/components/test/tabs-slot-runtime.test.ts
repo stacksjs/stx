@@ -183,3 +183,45 @@ describe('Accordion in slot mode has the same discovery path (#1979)', () => {
     }
   })
 })
+
+/**
+ * Each slot-mode tab points at the panel it controls.
+ *
+ * Prop mode numbers both sides itself (`tab-N` / `tab-panel-N`), but in slot
+ * mode the panels are the consumer's own markup, so there was nothing for the
+ * tab to reference: the button rendered `role="tab"` with no `aria-controls`
+ * and no id, which leaves a screen reader user able to hear the tab and unable
+ * to reach its panel (WCAG 4.1.2). The association is minted on mount, which
+ * is the only point where the panels are known -- so it cannot be checked by
+ * reading the rendered HTML, only by running the component.
+ */
+describe('Tabs slot mode associates each tab with its panel', () => {
+  it('gives every tab an aria-controls pointing at a real panel', async () => {
+    const app = await renderApp(FILES, ROUTES)
+    try {
+      const browser = await boot(app, '/tabs')
+      await settle()
+
+      const tabs = [...browser.document.querySelectorAll('[role="tab"]')]
+      expect(tabs.length).toBe(2)
+
+      for (const tab of tabs) {
+        const controls = tab.getAttribute('aria-controls')
+        expect(controls).toBeTruthy()
+
+        const panel = browser.document.getElementById(controls!)
+        expect(panel).not.toBeNull()
+        expect(panel!.hasAttribute('data-stx-tab-panel')).toBe(true)
+        // ...and back again, so the panel names the tab that opened it.
+        expect(panel!.getAttribute('aria-labelledby')).toBe(tab.getAttribute('id'))
+      }
+
+      // Distinct panels, not both tabs pointing at the first one.
+      const targets = tabs.map(t => t.getAttribute('aria-controls'))
+      expect(new Set(targets).size).toBe(2)
+    }
+    finally {
+      closeBrowser()
+    }
+  })
+})

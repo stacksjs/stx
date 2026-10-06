@@ -2,6 +2,19 @@
 export const open = $bool($props.open)
 export const className = $props.className || ''
 
+/*
+ * The dialog's accessible name.
+ *
+ * `role="dialog"` with no name is announced as just "dialog", which tells a
+ * screen reader user nothing about what has taken over the page -- WCAG 4.1.2.
+ * The slot idiom puts the name in a <DialogTitle>, which the client script
+ * below associates on mount; this prop is the server-rendered half, so a
+ * dialog is named before hydration and without JavaScript at all. Emitted only
+ * when set: an empty aria-label is worse than none, because it suppresses the
+ * name the title would otherwise supply. Same idiom as Drawer.
+ */
+export const title = $props.title || ''
+
 const baseClasses = 'relative z-50'
 export const dialogClasses = `${baseClasses} ${className}`.trim()
 
@@ -38,7 +51,27 @@ const mounted = state(false)
 
 onMount(() => {
   mounted.set(true)
+  labelFromTitle()
 })
+
+/*
+ * Name the dialog after its <DialogTitle>, when the server could not.
+ *
+ * The documented idiom puts the name in the slot, which the server cannot see
+ * from here -- it renders the title as opaque slot content. So a dialog
+ * without the `title` prop reaches the browser announced as bare "dialog".
+ * This associates the two once the slot content exists. Skipped when a name is
+ * already present, so the prop always wins.
+ */
+function labelFromTitle() {
+  const root = rootRef.value
+  if (!root) return
+  if (root.getAttribute('aria-label') || root.getAttribute('aria-labelledby')) return
+  const heading = root.querySelector('[data-stx-dialog-title]')
+  if (!heading) return
+  if (!heading.id) heading.id = `${dialogInstanceId}-title`
+  root.setAttribute('aria-labelledby', heading.id)
+}
 
 function close() {
   isOpen.set(false)
@@ -262,6 +295,7 @@ defineExpose({
   data-stx-dialog="{{ dialogInstanceId }}"
   role="dialog"
   aria-modal="true"
+  @if(title)aria-label="{{ title }}"@endif
   @click="onRootClick($event)"
 >
   <slot />

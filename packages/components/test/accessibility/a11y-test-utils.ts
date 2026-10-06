@@ -61,6 +61,20 @@ export interface A11yAuditResult {
 /**
  * Required ARIA attributes for specific roles
  */
+/**
+ * Attributes that satisfy a requirement in place of the one named.
+ *
+ * ARIA computes an accessible name from `aria-labelledby` OR `aria-label`, so
+ * demanding the first by name reports a component that uses the second as
+ * broken. `<Drawer>` was the case: it has carried `aria-label="{{ title }}"` on
+ * its `role="dialog"` all along and was still counted a failure -- which, under
+ * the old 90%-pass-rate assertion, also used up the budget that was meant to
+ * cover a component that really was unnamed.
+ */
+const EQUIVALENT_ARIA: Record<string, string[]> = {
+  'aria-labelledby': ['aria-label'],
+}
+
 const REQUIRED_ARIA_BY_ROLE: Record<string, string[]> = {
   button: [],
   checkbox: ['aria-checked'],
@@ -107,13 +121,6 @@ const _INTERACTIVE_ELEMENTS = [
 ]
 
 /**
- * Read an STX component template
- */
-async function readTemplate(componentPath: string): Promise<string> {
-  return await Bun.file(componentPath).text()
-}
-
-/**
  * Extract ARIA attributes from template
  */
 export function extractAriaAttributes(template: string): Record<string, string[]> {
@@ -157,7 +164,8 @@ export function checkRequiredAriaForRoles(template: string): A11yIssue[] {
     const required = REQUIRED_ARIA_BY_ROLE[role]
     if (required) {
       for (const attr of required) {
-        if (!ariaAttrs[attr]) {
+        const satisfied = [attr, ...(EQUIVALENT_ARIA[attr] ?? [])].some(name => ariaAttrs[name])
+        if (!satisfied) {
           issues.push({
             severity: 'error',
             wcagCriteria: '4.1.2',
@@ -360,11 +368,19 @@ export function checkMotionAccessibility(template: string): A11yIssue[] {
 /**
  * Run full accessibility audit on a component
  */
-export async function auditComponent(
-  componentPath: string,
+/**
+ * Run every check over markup.
+ *
+ * Takes the markup rather than a path so the caller decides what is audited.
+ * The component's SOURCE answers a different question from the document a
+ * browser receives, and for accessibility only the second one counts: an
+ * attribute in a branch that never runs, or on an element the engine strips,
+ * reads the same in the file and is absent on the page.
+ */
+export function auditMarkup(
+  template: string,
   componentName: string,
-): Promise<A11yAuditResult> {
-  const template = await readTemplate(componentPath)
+): A11yAuditResult {
   const issues: A11yIssue[] = []
   const checkedCriteria: string[] = []
 
@@ -447,17 +463,15 @@ export function generateAuditReport(results: A11yAuditResult[]): string {
  * Quick check for basic accessibility requirements
  */
 // eslint-disable-next-line pickier/no-unused-vars
-export async function quickA11yCheck(componentPath: string): Promise<{
+export function quickA11yCheck(template: string): {
   hasRoles: boolean
   hasAriaAttributes: boolean
   hasFocusStyles: boolean
   hasKeyboardHandlers: boolean
-}> {
-  const template = await readTemplate(componentPath)
-
+} {
   return {
     hasRoles: /role="[^"]+"/i.test(template),
-    hasAriaAttributes: /aria-[a-z]+="[^"]+"/i.test(template),
+    hasAriaAttributes: /:?aria-[a-z-]+="[^"]+"/i.test(template),
     hasFocusStyles: /focus:|focus-visible:|focus-within:/i.test(template),
     hasKeyboardHandlers: /@keydown|@keyup|@keypress|onkeydown|onkeyup/i.test(template),
   }

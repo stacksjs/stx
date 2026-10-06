@@ -6,6 +6,6 @@ const baseClasses = 'text-lg font-medium leading-6 text-fg'
 const titleClasses = `${baseClasses} ${className}`.trim()
 </script>
 
-<component :is="{{ as }}" class="{{ titleClasses }}">
+<component :is="{{ as }}" class="{{ titleClasses }}" data-stx-dialog-title>
   <slot />
 </component>

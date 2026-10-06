@@ -21,6 +21,14 @@ export const orientation = $props.orientation || 'horizontal'
 export const variant = $props.variant || 'line'
 export const className = $props.className || ''
 
+/*
+ * This tab set's own id, so the ids it mints for slot-mode tabs and panels
+ * cannot collide with a second
+    <Tabs>
+      on the same page. Same idiom as Dialog.
+ */
+export const tabsInstanceId = $uid
+
 const orientationClasses = {
   horizontal: 'flex-col',
   vertical: 'flex-row',
@@ -43,9 +51,10 @@ export const tabPanelClasses = `p-4 focus:outline-none`.trim()
 // True when the parent passes a non-empty `tabs` array — switches to the
 // legacy render path so existing snapshots stay byte-identical.
 export const hasPropTabs = Array.isArray(tabs) && tabs.length > 0
-  </script>
-  <script client>
-    const emit = defineEmits()
+    </script>
+    <script client>
+      const emit = defineEmits()
+const tabsInstanceId = {{ tabsInstanceId }}
 const tabs = {{ tabs }}
 const variant = {{ variant }}
 const orientation = {{ orientation }}
@@ -57,8 +66,8 @@ const hasPropTabs = {{ hasPropTabs }}
 // stacksjs/stx#1979
 const containerRef = useRef('containerRef')
 // In slot mode, `discoveredTabs` is populated from child
-    <TabPanel>
-      data
+      <TabPanel>
+        data
 // attributes on mount. In prop mode, it mirrors the `tabs` prop so the
 // rendering loop works the same in both modes.
 const discoveredTabs = state(hasPropTabs ? tabs : [])
@@ -83,8 +92,8 @@ function findOwnPanels() {
   if (!root) return []
   // Closest ancestor with data-stx-tabs must be this container's root —
   // protects against nested
-      <Tabs>
-        contamination.
+        <Tabs>
+          contamination.
   return Array.from(root.querySelectorAll('[data-stx-tab-panel]'))
     .filter(p => p.closest('[data-stx-tabs]') === root)
 }
@@ -92,10 +101,26 @@ function findOwnPanels() {
 onMount(() => {
   if (hasPropTabs) return  // legacy mode: prop array already in discoveredTabs
   const panels = findOwnPanels()
-  const list = panels.map(p => ({
-    label: p.dataset.label || '',
-    icon: p.dataset.icon || '',
-  }))
+  /*
+   * Give each panel an id and hand it to its tab, so the tab can point at it.
+   *
+   * Prop mode numbers both sides itself (`tab-N` / `tab-panel-N`), but in slot
+   * mode the panels are the consumer's own markup and may carry no id at all --
+   * so the tab button rendered with role="tab" and no aria-controls, and a
+   * screen reader had no way to get from the tab to the panel it controls
+   * (WCAG 4.1.2). Only assigned when the panel has no id of its own.
+   */
+  const list = panels.map((p, i) => {
+    if (!p.id) p.id = `${tabsInstanceId}-panel-${i}`
+    const tabId = `${tabsInstanceId}-tab-${i}`
+    p.setAttribute('aria-labelledby', tabId)
+    return {
+      label: p.dataset.label || '',
+      icon: p.dataset.icon || '',
+      panelId: p.id,
+      tabId,
+    }
+  })
   discoveredTabs.set(list)
   mounted.set(true)
 })
@@ -160,19 +185,19 @@ function onTabKey(event, index) {
 }
 
 defineExpose({ activeTab, selectTab })
-      </script>
-      <div x-ref="containerRef" data-stx-tabs class="{{ containerClasses }}">
-        <div
+        </script>
+        <div x-ref="containerRef" data-stx-tabs class="{{ containerClasses }}">
+          <div
     class="{{ tabListClasses }}"
     role="tablist"
     aria-orientation="{{ orientation }}"
   >
-          @if(hasPropTabs)
+            @if(hasPropTabs)
       {{-- Legacy mode: server-side iterate the prop tabs array. Buttons --}}
       {{-- get static class names so existing visual snapshots stay      --}}
       {{-- byte-identical.                                                 --}}
       @foreach(tab in tabs)
-          <button
+            <button
           type="button"
           :class="getTabClasses({{ $loop.index }})"
           role="tab"
@@ -183,43 +208,45 @@ defineExpose({ activeTab, selectTab })
           @click="selectTab({{ $loop.index }})"
           @keydown="onTabKey($event, {{ $loop.index }})"
         >
-            @if(tab.icon)
-            <span class="inline-flex items-center gap-2">
-              <span x-html="{!! JSON.stringify(tab.icon) !!}">
+              @if(tab.icon)
+              <span class="inline-flex items-center gap-2">
+                <span x-html="{!! JSON.stringify(tab.icon) !!}">
+                </span>
+                <span>
+                  {{ tab.label }}
+                </span>
               </span>
-              <span>
-                {{ tab.label }}
-              </span>
-            </span>
-            @else
+              @else
             {{ tab.label }}
           @endif
-          </button>
-          @endforeach
+            </button>
+            @endforeach
     @else
       {{-- Slot mode: render the tab list dynamically from --}}
       {{-- discoveredTabs() which is populated in onMount. --}}
-          <button
+            <button
         :for="(tab, idx) in discoveredTabs()"
         :key="idx"
         type="button"
         x-class="getTabClasses(idx)"
         role="tab"
         :aria-selected="isActive(idx) ? 'true' : 'false'"
+        :aria-controls="tab.panelId"
+        :id="tab.tabId"
         :tabindex="isActive(idx) ? 0 : -1"
         @click="selectTab(idx)"
         @keydown="onTabKey($event, idx)"
       >
-            <span :if="tab.icon" class="inline-flex items-center gap-2" x-html="tab.icon">
-            </span>
-            <span :text="tab.label">
-            </span>
-          </button>
-          @endif
-        </div>
-        @if(hasPropTabs)
+              <span :if="tab.icon" class="inline-flex items-center gap-2" x-html="tab.icon">
+              </span>
+              <span :text="tab.label">
+              </span>
+            </button>
+            @endif
+          </div>
+          @if(hasPropTabs)
     @foreach(tab in tabs)
-        <div
+          <div
         :show="isActive({{ $loop.index }})"
         id="tab-panel-{{ $loop.index }}"
         class="{{ tabPanelClasses }}"
@@ -227,17 +254,18 @@ defineExpose({ activeTab, selectTab })
         aria-labelledby="tab-{{ $loop.index }}"
         tabindex="0"
       >
-          {!! tab.content !!}
-        </div>
-        @endforeach
+            {!! tab.content !!}
+          </div>
+          @endforeach
   @else
-        <slot />
-        @endif
-      </div>
+          <slot />
+          @endif
+        </div>
 
 === Extracted Classes ===
 $loop.index
 -mb-px
+aria-labelledby
 bg-field
 bg-panel
 bg-surface
