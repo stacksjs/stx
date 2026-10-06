@@ -27,6 +27,8 @@
  * ```
  */
 
+import { isProduction } from './env'
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -518,8 +520,13 @@ export function processComponentProps(
         : options.default
     }
 
-    // Validate in development
-    if (process.env.NODE_ENV !== 'production') {
+    /*
+     * Validate in development, through `isProduction()` rather than off
+     * `process.env.NODE_ENV` directly: the build's transpiler constant-folds
+     * that comparison, so written inline this check shipped frozen to whatever
+     * the release machine's environment was (see env.ts).
+     */
+    if (!isProduction()) {
       const error = validateProp(key, value, options, componentName)
       if (error) {
         console.warn(error.message)
