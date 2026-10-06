@@ -63,6 +63,48 @@ describe('findUnbalancedTags (#1769)', () => {
     expect(issues[0].closed).toBeGreaterThan(issues[0].opened)
   })
 
+  /*
+   * stacksjs/stx#2039: a `<` outside markup must not start a tag match.
+   *
+   * It was reported as a well-formed 579-line page warning about two stray
+   * `</div>`, with three openings dropped from the count and only one of their
+   * closers -- which read as false `@if` branches being stripped before
+   * counting. This check cannot do that: it runs on the raw template before
+   * any processing. The real cause is that `<` followed by a letter began a
+   * tag match that ran to the next `>`, which belonged to the following REAL
+   * opening tag, consuming it:
+   *
+   *     <limit)\n<div class="wrap">   was counted once, as <limit>
+   *
+   * One open vanished per swallow and a close only when the consumed span
+   * held one, which is exactly the asymmetry that was measured.
+   *
+   * The cost of this shape of bug is that it trains people to ignore the
+   * warning -- the one thing that would catch a genuinely malformed page --
+   * so the cases below check both halves: silent on the comparison, and still
+   * loud when the same file is actually unbalanced.
+   */
+  it('does not let a < comparison outside markup swallow a tag', () => {
+    const balanced = '@if (count<limit)\n<div class="wrap">\n  <div class="inner">x</div>\n</div>\n@endif\n'
+
+    expect(findUnbalancedTags(balanced)).toEqual([])
+  })
+
+  it('still reports a real imbalance in a file that also has one', () => {
+    const broken = '@if (count<limit)\n<div class="wrap">\n@endif\n'
+    const issue = findUnbalancedTags(broken).find(i => i.tag === 'div')
+
+    expect(issue).toMatchObject({ tag: 'div', opened: 1, closed: 0 })
+  })
+
+  it('counts the tag that follows the comparison, not a phantom one', () => {
+    // The phantom was named after whatever followed the `<`, so a report could
+    // name a tag that does not exist in the file at all.
+    const issues = findUnbalancedTags('@if (a<b)\n<section>x</section>\n')
+
+    expect(issues.map(i => i.tag)).toEqual([])
+  })
+
   it('keeps accurate line numbers past neutralised regions', () => {
     const tpl = `<div>\n<script>\n<div>\n</script>\n<section>\n<div>\n</div>\n<span>x</span>`
     const issues = findUnbalancedTags(tpl)

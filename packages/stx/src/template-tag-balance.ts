@@ -64,9 +64,27 @@ export function findUnbalancedTags(template: string): TagBalanceIssue[] {
   const opens = new Map<string, OpenInfo>()
   const closes = new Map<string, number>()
 
-  // Keep `>` inside quoted attributes within the same tag without treating
-  // apostrophes in normal text as the start of a quoted region.
-  const tagRe = /<(\/?)([A-Za-z][\w-]*)\b(?:[^>"']|"[^"]*"|'[^']*')*?(\/?)>/g
+  /*
+   * Keep `>` inside quoted attributes within the same tag without treating
+   * apostrophes in normal text as the start of a quoted region.
+   *
+   * `[^<>"']` excludes `<` as well, so a tag match can never span another `<`
+   * (stacksjs/stx#2039). A real tag's attribute region cannot contain a bare
+   * one, and allowing it meant any `<` followed by a letter outside markup --
+   * `@if (count<limit)` is the shape that was reported -- began a tag match
+   * that ran forward to the next `>`, which was the `>` of the following REAL
+   * opening tag:
+   *
+   *     <limit)\n<div class="wrap">     counted once, as <limit>
+   *
+   * The swallowed `<div>` lost its open while its `</div>` still counted, so
+   * the file was reported as having a stray closer. That is why the miscount
+   * was asymmetric -- one dropped open per swallow, and a dropped close only
+   * when the consumed span happened to contain one -- and why it looked like
+   * false `@if` branches being stripped, which this check cannot do: it runs
+   * on the raw template before any processing.
+   */
+  const tagRe = /<(\/?)([A-Za-z][\w-]*)\b(?:[^<>"']|"[^"]*"|'[^']*')*?(\/?)>/g
   let m: RegExpExecArray | null
   // eslint-disable-next-line no-cond-assign
   while ((m = tagRe.exec(stripped)) !== null) {
