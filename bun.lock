@@ -1708,10 +1708,6 @@
         "prettier": "^3.9.9",
       },
     },
-    "packages/stx-vscode/dist/typescript-plugin": {
-      "name": "@stacksjs/stx-typescript-plugin",
-      "version": "0.2.358",
-    },
   },
   "overrides": {
     "bunfig": "0.15.17",
@@ -2275,8 +2271,6 @@
     "@stacksjs/stx": ["@stacksjs/stx@workspace:packages/stx"],
 
     "@stacksjs/stx-devtools-extension": ["@stacksjs/stx-devtools-extension@workspace:packages/devtools-extension"],
-
-    "@stacksjs/stx-typescript-plugin": ["@stacksjs/stx-typescript-plugin@workspace:packages/stx-vscode/dist/typescript-plugin"],
 
     "@stacksjs/stx-vscode": ["@stacksjs/stx-vscode@workspace:packages/stx-vscode"],
 
