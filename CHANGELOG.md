@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.386...v0.2.387)
+
+## ✨ Features
+
+- **router**: navigate(url, { instant: true }) swaps without the fade ([ff1416f](https://github.com/stacksjs/stx/commit/ff1416f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.387 ([5658cd3](https://github.com/stacksjs/stx/commit/5658cd3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.385...v0.2.386)
 
 ## 🐛 Bug Fixes
