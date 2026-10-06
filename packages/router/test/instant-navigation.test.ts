@@ -87,6 +87,19 @@ describe('instant navigation', () => {
     expect(transitions).toEqual([])
   })
 
+  it('does not fall back to the fade for it either', async () => {
+    const { window } = installRouter()
+    const main = window.document.querySelector('main') as HTMLElement
+    const opacities: string[] = []
+    const observer = new (window as any).MutationObserver(() => opacities.push(main.style.opacity))
+    observer.observe(main, { attributes: true, attributeFilter: ['style'] })
+    click(window, 'tab')
+    await sleep(40)
+    expect(window.document.querySelector('main')!.textContent).toContain('next')
+    expect(opacities).not.toContain('0')
+    observer.disconnect()
+  })
+
   it('keeps the View Transition for an ordinary link', async () => {
     const { window, transitions } = installRouter()
     click(window, 'plain')

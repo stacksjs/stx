@@ -1433,6 +1433,7 @@ else {
             }catch(err){reject(err)}
           }
           if(runViewTransition(completeFragSwap)){}
+          else if(instantNav){completeFragSwap()}
           else{currentContent.style.transition='opacity 0.12s ease-out';currentContent.style.opacity='0';setTimeout(function(){completeFragSwap();currentContent.style.opacity='1';setTimeout(function(){currentContent.style.transition=''},150)},120)}
         });
       }
@@ -1882,6 +1883,10 @@ else {
           }catch(err){reject(err)}
         }
         if(runViewTransition(completeSwap)){
+        }
+        else if(instantNav){
+          // A tab: swap at once, no fade either way.
+          completeSwap();
         }
         else {
           // Fallback fade for browsers without View Transitions API
