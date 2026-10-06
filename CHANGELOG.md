@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.378...v0.2.379)
+
+## 🐛 Bug Fixes
+
+- **desktop**: typecheck the native sidebar and context menu payloads ([cf43d21](https://github.com/stacksjs/stx/commit/cf43d21)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **stx**: the env gates shipped welded shut, so every app ran in dev mode ([709f15c](https://github.com/stacksjs/stx/commit/709f15c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2035](https://github.com/stacksjs/stx/issues/2035))
+- **native**: compact initial render payloads ([cd6ccd1](https://github.com/stacksjs/stx/commit/cd6ccd1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: remove stale generated workspace ([797a53d](https://github.com/stacksjs/stx/commit/797a53d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: render initial trees atomically ([6383325](https://github.com/stacksjs/stx/commit/6383325)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.379 ([b3c0714](https://github.com/stacksjs/stx/commit/b3c0714)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- generate changelog for v0.2.379 ([29a4118](https://github.com/stacksjs/stx/commit/29a4118)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.378...HEAD)
 
 ## 🐛 Bug Fixes
