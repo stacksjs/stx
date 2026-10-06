@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.374...v0.2.375)
+
+## ✨ Features
+
+- **router**: a tab bar keeps the tab a screen was opened from lit ([bcb75b1](https://github.com/stacksjs/stx/commit/bcb75b1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.375 ([9fb74c5](https://github.com/stacksjs/stx/commit/9fb74c5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.373...v0.2.374)
 
 ## ✨ Features
