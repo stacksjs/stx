@@ -1625,7 +1625,7 @@
       "name": "@stacksjs/desktop",
       "version": "0.2.375",
       "dependencies": {
-        "craft-native": ">=0.0.104",
+        "craft-native": ">=0.0.111",
       },
     },
     "packages/devtools": {
@@ -1707,6 +1707,10 @@
         "@stacksjs/ts-css": "^0.3.7",
         "prettier": "^3.9.9",
       },
+    },
+    "packages/stx-vscode/dist/typescript-plugin": {
+      "name": "@stacksjs/stx-typescript-plugin",
+      "version": "0.2.358",
     },
   },
   "overrides": {
@@ -2272,6 +2276,8 @@
 
     "@stacksjs/stx-devtools-extension": ["@stacksjs/stx-devtools-extension@workspace:packages/devtools-extension"],
 
+    "@stacksjs/stx-typescript-plugin": ["@stacksjs/stx-typescript-plugin@workspace:packages/stx-vscode/dist/typescript-plugin"],
+
     "@stacksjs/stx-vscode": ["@stacksjs/stx-vscode@workspace:packages/stx-vscode"],
 
     "@stacksjs/ts-avif": ["@stacksjs/ts-avif@0.1.4", "", {}, "sha512-+ri7xxHLxaFGRJPihI7irDZpdLEIrEFpR7Em+ojfDbTjXQmXtQBqN/9WKNhBdQ1BZ2M1ckjdgnxmfege86QQ5Q=="],
@@ -2442,7 +2448,7 @@
 
     "constantinople": ["constantinople@4.0.1", "", { "dependencies": { "@babel/parser": "^7.6.0", "@babel/types": "^7.6.1" } }, "sha512-vCrqcSIq4//Gx74TXXCGnHpulY1dskqLTFGDmhrGxzeXL8lF8kvXv6mpNWlJj1uD4DW23D4ljAqbY4RRaaUZIw=="],
 
-    "craft-native": ["craft-native@0.0.104", "", { "bin": { "craft-sdk": "dist/cli.js" } }, "sha512-o2Pd0fPiE6mZ6wbuOXH2elrljsncL102L9c8lGGG/n0anZ3k7gom+Tfsm3+ekEtCJK9LW8LoYq+5z97QsrTq6Q=="],
+    "craft-native": ["craft-native@0.0.115", "", { "bin": { "craft-sdk": "dist/cli.js" } }, "sha512-k5zO/e16r3uE+dYB5L+aGlHRvAEDa0zUVxiMAcTebKKbpnys3D9uiGKEFlF2R9E3i8ibcDcRy1nwOwlwB3eEBw=="],
 
     "create-stx": ["create-stx@workspace:packages/create-stx"],
 
