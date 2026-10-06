@@ -13,6 +13,7 @@ function runtime(script: string = '', options: { timeout?: number, initialAppSta
   let callback: (message: Record<string, any>) => void = () => {}
   const scope: Record<string, any> = {
     __stxNativeBridge: {
+      platform: 'ios',
       capabilityProtocolVersion: 1,
       capabilityTimeoutMs: options.timeout ?? 100,
       initialAppState: options.initialAppState ?? 'active',
@@ -26,6 +27,20 @@ function runtime(script: string = '', options: { timeout?: number, initialAppSta
 }
 
 describe('generated native capability protocol', () => {
+  it('publishes the platform and capability flags through the existing Craft shape', () => {
+    const { scope } = runtime()
+    expect(scope.craft.platform).toBe('ios')
+    expect(scope.craft.capabilityProtocolVersion).toBe(1)
+    expect(scope.craft.capabilities).toMatchObject({
+      storage: true,
+      localDatabase: true,
+      lifecycle: true,
+      deepLinks: true,
+      localNotifications: true,
+      camera: false,
+    })
+  })
+
   it('exposes the existing Craft API shapes over versioned requests', () => {
     const { scope, sent, receive } = runtime()
     scope.craft.storage.get('theme')

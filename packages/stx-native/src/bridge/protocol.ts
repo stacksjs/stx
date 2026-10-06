@@ -582,6 +582,9 @@ catch (error) {
  * Interface that native code must implement
  */
 export interface NativeBridgeInterface {
+  /** Native host platform. */
+  platform?: 'ios' | 'android'
+
   /** Versioned API request/response contract. Omitted by legacy hosts. */
   capabilityProtocolVersion?: 1
 

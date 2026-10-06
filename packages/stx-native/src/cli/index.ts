@@ -1047,6 +1047,36 @@ catch (error) {
     }
 
     globalThis.craft = globalThis.craft || {};
+    const nativeCapabilities = new Set(Array.isArray(bridge.capabilities) ? bridge.capabilities : []);
+    globalThis.craft.platform = bridge.platform || 'unknown';
+    globalThis.craft.capabilityProtocolVersion = Number(bridge.capabilityProtocolVersion || 0);
+    globalThis.craft.capabilities = {
+      haptics: nativeCapabilities.has('haptics'),
+      speechRecognition: false,
+      share: false,
+      camera: false,
+      biometric: false,
+      pushNotifications: false,
+      secureStorage: false,
+      storage: nativeCapabilities.has('storage'),
+      localDatabase: nativeCapabilities.has('database'),
+      lifecycle: nativeCapabilities.has('lifecycle'),
+      geolocation: false,
+      clipboard: nativeCapabilities.has('clipboard'),
+      contacts: false,
+      calendar: false,
+      localNotifications: nativeCapabilities.has('notifications'),
+      inAppPurchase: false,
+      keepAwake: false,
+      orientationLock: false,
+      deepLinks: nativeCapabilities.has('deepLinks'),
+      flashlight: false,
+      speech: false,
+      network: false,
+      deviceInfo: nativeCapabilities.has('device'),
+      badge: false,
+      appReview: false
+    };
     globalThis.craft.route = {
       name: __STX_ROUTE_NAME__,
       params: globalThis.__stxNativeParams || {}
