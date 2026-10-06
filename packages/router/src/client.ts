@@ -529,6 +529,47 @@ function routerSource(): string {
   function isComposablesScript(s){
     return !!s&&((s.hasAttribute&&s.hasAttribute('data-stx-composables'))||COMPOSABLES_TEXT.test(s.textContent||''));
   }
+  /*
+   * What the block wrap below would otherwise hide (stacksjs/stx#2041).
+   *
+   * A re-executed script is wrapped in a bare block so that top-level const
+   * and let cannot collide across navigations. That wrap is invisible for a
+   * plain function declaration -- Annex B.3.3 still hoists its binding to the
+   * enclosing scope in sloppy mode -- and NOT invisible for anything else.
+   * async function, function*, class, const and let are all block-scoped, so
+   * the same source published a global when the browser parsed the script and
+   * published nothing when the router re-ran it.
+   *
+   * The effect is a divergence between development and a built app, because
+   * only the built one reaches a route as a fragment: a page served whole runs
+   * its script natively. An inline onclick that names such a declaration then
+   * worked in dev and threw ReferenceError in the packaged app, where there is
+   * no console, so it read as a button that does nothing.
+   *
+   * So: re-publish what the browser would have published. Only values that are
+   * functions, which is what an inline handler calls -- assigning every
+   * top-level const would otherwise write over window.name and friends, which
+   * a lexical global shadows rather than overwrites. Each name is guarded on
+   * its own so an unmatched one cannot take the rest down, and typeof is safe
+   * on a name that was never declared.
+   *
+   * Column-anchored: a declaration nested inside a function is indented, and
+   * is not in scope at the end of the block anyway.
+   */
+  var TOP_LEVEL_DECL=/^(?:export\\s+)?(?:async\\s+)?(?:function\\s*\\*?|class|const|let|var)\\s+([A-Za-z_$][\\w$]*)/gm;
+  function republishTopLevel(src){
+    var names=[],m;
+    TOP_LEVEL_DECL.lastIndex=0;
+    while((m=TOP_LEVEL_DECL.exec(src))!==null){
+      if(names.indexOf(m[1])===-1)names.push(m[1]);
+    }
+    if(!names.length)return '';
+    var out='\\n;';
+    for(var i=0;i<names.length;i++){
+      out+='try{if(typeof '+names[i]+'==="function")window.'+names[i]+'='+names[i]+'}catch(e){}';
+    }
+    return out;
+  }
   function runsAlways(declared, code){
     if(declared==='always')return true;
     if(declared==='once')return false;
@@ -1789,7 +1830,7 @@ else {
           // ESM, and top-level 'import' is illegal inside a block, which
           // would throw SyntaxError before the script ever runs.
           var alreadyScoped=runsAlways(typeof entry==='string'?'':entry.run,text);
-          ns.textContent=(hasImport||alreadyScoped)?text:'{'+text+'}';
+          ns.textContent=(hasImport||alreadyScoped)?text:'{'+text+republishTopLevel(text)+'}';
           ns.setAttribute('data-stx-page','');
           var placeholder=entry.slot?qs('script[data-stx-route-script="'+entry.slot+'"]'):null;
           if(placeholder&&placeholder.parentNode){
