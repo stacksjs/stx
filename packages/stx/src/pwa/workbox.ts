@@ -16,6 +16,7 @@
  */
 
 import type { StxOptions } from '../types'
+import { isProduction } from '../env'
 import {
   generateRuntimeCachingCode,
   getWorkboxStrategyName,
@@ -206,8 +207,13 @@ export function generateWorkboxServiceWorker(options: StxOptions, outputDir?: st
 // Import Workbox modules from CDN
 importScripts('https://storage.googleapis.com/workbox-cdn/releases/7.0.0/workbox-sw.js');
 
-// Disable Workbox logging in production
-workbox.setConfig({ debug: ${process.env.NODE_ENV !== 'production'} });
+// Disable Workbox logging in production. Through isProduction() rather than
+// off process.env.NODE_ENV: this is inside a template literal, so the
+// comparison is evaluated when the service worker is GENERATED -- and the
+// build's transpiler folds that particular read to a constant, so every
+// published copy of stx emitted "debug: true" and no app could turn Workbox's
+// logging off in production however it set NODE_ENV (see ../env.ts).
+workbox.setConfig({ debug: ${!isProduction()} });
 
 // Extract modules from workbox global
 ${imports}

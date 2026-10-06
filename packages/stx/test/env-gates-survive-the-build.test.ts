@@ -63,6 +63,22 @@ describe('the env gates survive the build', () => {
     expect(isTestBody).toContain('"test"')
   })
 
+  it('keeps the generated service worker asking at generation time', async () => {
+    /*
+     * The third instance of the same fold, and the one that reached users'
+     * browsers. `pwa/workbox.ts` builds the service worker as a template
+     * literal and interpolated `process.env.NODE_ENV !== 'production'` into it,
+     * so the comparison ran when the string was BUILT -- and the transpiler
+     * folded it first. Every published copy emitted `debug: true`, so Workbox
+     * logged in every app's production service worker and no NODE_ENV the app
+     * set could change it.
+     */
+    const output = await built('pwa/workbox.ts')
+
+    expect(output).toContain('isProduction()')
+    expect(output).not.toContain('debug: true }')
+  })
+
   it('does not fold the prop validation gate either', async () => {
     // Same comparison, same fold, written inline in props.ts: a development
     // only warning path, permanently on in every published copy.
