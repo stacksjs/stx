@@ -591,7 +591,10 @@ export interface NativeBridgeInterface {
   /** Capability names implemented by this host. */
   capabilities?: string[]
 
-  /** Host-selected request deadline, primarily useful to deterministic tests. */
+  /**
+   * Request deadline used by runtimes with timers. Bare runtimes require the
+   * native host to enforce the same deadline and answer with `TIMEOUT`.
+   */
   capabilityTimeoutMs?: number
 
   /** App state captured before the generated bundle starts executing. */

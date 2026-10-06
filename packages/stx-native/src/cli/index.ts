@@ -742,6 +742,12 @@ catch (error) {
     const pendingAPI = new Map();
     const appStateHandlers = new Set();
     const deepLinkHandlers = new Set();
+    const scheduleTimeout = typeof globalThis.setTimeout === 'function'
+      ? globalThis.setTimeout.bind(globalThis)
+      : null;
+    const cancelTimeout = typeof globalThis.clearTimeout === 'function'
+      ? globalThis.clearTimeout.bind(globalThis)
+      : null;
     let currentAppState = ['active', 'inactive', 'background'].includes(bridge.initialAppState)
       ? bridge.initialAppState
       : 'active';
@@ -1034,13 +1040,13 @@ catch (error) {
         const id = 'js_' + (++sequence);
         const configuredTimeout = Number(bridge.capabilityTimeoutMs || 30000);
         const timeoutMs = Number.isFinite(configuredTimeout) && configuredTimeout > 0 ? configuredTimeout : 30000;
-        const timeout = setTimeout(function() {
+        const timeout = scheduleTimeout ? scheduleTimeout(function() {
           if (!pendingAPI.delete(id)) return;
           send('API_CANCEL', { version: 1, requestId: id, reason: 'timeout' });
           const error = new Error('Native API request timed out');
           error.code = 'TIMEOUT';
           reject(error);
-        }, timeoutMs);
+        }, timeoutMs) : null;
         pendingAPI.set(id, { resolve, reject, timeout });
         send('API_REQUEST', { version: 1, module, method, args }, id);
       });
@@ -1180,7 +1186,7 @@ catch (error) {
         const pending = pendingAPI.get(requestId);
         if (!pending) return;
         pendingAPI.delete(requestId);
-        clearTimeout(pending.timeout);
+        if (pending.timeout !== null && cancelTimeout) cancelTimeout(pending.timeout);
         if (message.type === 'API_RESPONSE') pending.resolve(message.payload.data);
         else {
           const error = new Error(message.payload.message || 'Native API failed');

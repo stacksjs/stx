@@ -8,7 +8,7 @@ function generate(script: string = ''): string {
   return cli.generateBundle(parseSTX(source, 'Capabilities.stx'))
 }
 
-function runtime(script: string = '', options: { timeout?: number, initialAppState?: string } = {}) {
+function runtime(script: string = '', options: { timeout?: number, initialAppState?: string, timers?: boolean } = {}) {
   const sent: Array<Record<string, any>> = []
   let callback: (message: Record<string, any>) => void = () => {}
   const scope: Record<string, any> = {
@@ -21,6 +21,10 @@ function runtime(script: string = '', options: { timeout?: number, initialAppSta
       onMessage: (receiver: typeof callback) => { callback = receiver },
       postMessage: (raw: string) => { sent.push(JSON.parse(raw)) },
     },
+  }
+  if (options.timers !== false) {
+    scope.setTimeout = setTimeout
+    scope.clearTimeout = clearTimeout
   }
   new Function('globalThis', generate(script))(scope)
   return { scope, sent, receive: (message: Record<string, any>) => callback(message) }
@@ -105,6 +109,19 @@ describe('generated native capability protocol', () => {
       correlationId: request.id,
       payload: { version: 1, requestId: request.id, data: null },
     })
+  })
+
+  it('uses host responses when a bare JavaScript runtime has no timers', async () => {
+    const { scope, sent, receive } = runtime('', { timers: false })
+    const read = scope.craft.storage.get('bare-runtime')
+    const request = sent.at(-1)!
+    expect(request.type).toBe('API_REQUEST')
+    receive({
+      type: 'API_RESPONSE',
+      correlationId: request.id,
+      payload: { version: 1, requestId: request.id, data: 'works' },
+    })
+    expect(await read).toBe('works')
   })
 
   it('settles responses, dispatches subscriptions, and cancels timed-out work', async () => {
