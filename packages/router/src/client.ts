@@ -239,8 +239,14 @@ function routerSource(): string {
     log('[router] build skew: page is',loadedBuild,'server is',incoming,'— full navigation');
     location.href=url;
   }
+  // A link marked data-stx-transition="none" swaps without the cross-fade. A
+  // tab bar is the case: iOS switches tabs instantly, and the fade read as a
+  // quarter-second lag on every tap in a phone app. Set by the click that
+  // started the navigation, so programmatic and history navigations keep it.
+  var instantNext=false;
+  var instantNav=false;
   function runViewTransition(callback){
-    if(!o.viewTransitions||!document.startViewTransition)return false;
+    if(instantNav||!o.viewTransitions||!document.startViewTransition)return false;
     try{
       var transition=document.startViewTransition(callback);
       var onAbort=function(err){log('[router] view transition aborted:',err&&err.message?err.message:err)};
@@ -267,19 +273,28 @@ function routerSource(): string {
     progEl.style.opacity=progVal>0?'1':'0';
     progEl.style.transform='scaleX('+(progVal/100)+')';
   }
+  // Shown only for a navigation that is actually waiting. A page served from
+  // the prefetch cache swaps in a few milliseconds, and drawing then fading a
+  // bar for it made every instant navigation look like a load.
+  var progDelay=null;
   function startProgress(){
     if(!o.progress||!progEl)return;
     if(progTimer){clearInterval(progTimer);progTimer=null}
-    setProgress(8);
-    progTimer=setInterval(function(){
-      if(progVal>=90)return;
-      // Asymptotic trickle — fast at first, slower near 90%
-      var inc=Math.max(0.4,(90-progVal)*0.08);
-      setProgress(progVal+inc);
-    },160);
+    if(progDelay)clearTimeout(progDelay);
+    progDelay=setTimeout(function(){
+      progDelay=null;
+      setProgress(8);
+      progTimer=setInterval(function(){
+        if(progVal>=90)return;
+        // Asymptotic trickle — fast at first, slower near 90%
+        var inc=Math.max(0.4,(90-progVal)*0.08);
+        setProgress(progVal+inc);
+      },160);
+    },150);
   }
   function finishProgress(){
     if(!o.progress||!progEl)return;
+    if(progDelay){clearTimeout(progDelay);progDelay=null;return}
     if(progTimer){clearInterval(progTimer);progTimer=null}
     setProgress(100);
     // Fade out, then reset. Delays chosen so the "full" state is briefly
@@ -881,6 +896,8 @@ function routerSource(): string {
     if(pushState!==false&&t.href===location.href&&!t.hash&&!force)return Promise.resolve(false);
 
     isNavigating=true;
+    instantNav=instantNext;
+    instantNext=false;
     document.body.classList.add(o.loadingClass);
     startProgress();
 
@@ -1984,6 +2001,7 @@ else {
     e.preventDefault();
     e.stopPropagation();
     log('[router] navigating to:',href);
+    instantNext=link.getAttribute('data-stx-transition')==='none';
     navigate(withCurrentLocale(href));
   });
 
