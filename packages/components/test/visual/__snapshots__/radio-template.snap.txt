@@ -47,9 +47,22 @@ export const descriptionId = `${inputId}-description`
   <script client>
     const emit = defineEmits()
 const isDisabled = {{ disabled }}
-const radioValue = {{ value }}
 // Reactive prop binding — parent can drive `checked` via signals. See #1704.
 const isChecked = useReactiveProp('checked', {{ checked }})
+/*
+ * Label, description and value follow the parent too.
+ *
+ * They were read once on the server, which is all a literal needs, but a
+ * radio rendered in a client `:for` (one per option of a list the page owns)
+ * receives every prop as a binding: the server saw none of them, so each
+ * radio shipped with no label, no description and `value=""`, and every
+ * option looked and submitted the same. Button reads its label this way for
+ * the same reason (#1997).
+ */
+const toText = value => value == null ? '' : String(value)
+const labelText = useReactiveProp('label', {{ label }}, { parse: toText })
+const descriptionText = useReactiveProp('description', {{ description }}, { parse: toText })
+const radioValue = useReactiveProp('value', {{ value }}, { parse: toText })
 
 function onInputChange(event) {
   if (isDisabled) {
@@ -57,7 +70,7 @@ function onInputChange(event) {
     return
   }
   isChecked.set(event.target.checked)
-  emit('change', { value: radioValue, checked: isChecked() })
+  emit('change', { value: radioValue(), checked: isChecked() })
 }
 
 defineExpose({ isChecked })
@@ -69,34 +82,31 @@ defineExpose({ isChecked })
       type="radio"
       name="{{ name }}"
       value="{{ value }}"
+      :value="radioValue()"
       :checked="isChecked()"
       @if(disabled)disabled@endif
       @if(required)required@endif
       class="{{ radioClasses }}"
       @change="onInputChange($event)"
       :aria-invalid="{{ error ? 'true' : 'false' }}"
-      @if(description)aria-describedby="{{ descriptionId }}"@endif
+      :aria-describedby="descriptionText() ? '{{ descriptionId }}' : null"
     />
     </div>
-    @if(label || description)
-    <div class="ml-3 text-sm leading-6">
-      @if(label)
-      <label for="{{ inputId }}" class="{{ labelClasses }}">
-        {{ label }}
-          @if(required)
+    <div :if="labelText() || descriptionText()" class="ml-3 text-sm leading-6">
+      <label :if="labelText()" for="{{ inputId }}" class="{{ labelClasses }}">
+        <span :text="labelText()">
+          {{ label }}
+        </span>
+        @if(required)
         <span class="text-danger ml-1">
           *
         </span>
         @endif
       </label>
-      @endif
-      @if(description)
-      <p id="{{ descriptionId }}" class="{{ descriptionClasses }}">
+      <p :if="descriptionText()" id="{{ descriptionId }}" class="{{ descriptionClasses }}" :text="descriptionText()">
         {{ description }}
       </p>
-      @endif
     </div>
-    @endif
   </div>
 
 === Extracted Classes ===
@@ -107,6 +117,7 @@ checked
 className
 cursor-not-allowed
 cursor-pointer
+description
 descriptionClasses
 false
 flex
@@ -121,6 +132,7 @@ h-5
 h-6
 items-center
 items-start
+label
 labelClasses
 leading-6
 ml-1
@@ -135,6 +147,7 @@ text-fg-soft
 text-sm
 transition-colors
 true
+value
 w-4
 w-5
 w-6
