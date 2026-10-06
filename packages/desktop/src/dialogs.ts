@@ -184,6 +184,87 @@ export interface ColorPickerResult {
 // =============================================================================
 
 /**
+ * The dialog methods this module probes for on the host.
+ *
+ * Deliberately all optional: the whole bug was assuming a method is there
+ * because the namespace is. `unknown` returns, because the three hosts answer
+ * a button press in three different shapes -- see {@link toMessageBoxResult}.
+ */
+interface NativeDialogApi {
+  showMessageBox?: (options: MessageBoxOptions) => Promise<unknown>
+  showAlert?: (options: Record<string, unknown>) => Promise<unknown>
+}
+
+/** The host's dialog namespace, or undefined outside a Craft window. */
+function nativeDialogApi(): NativeDialogApi | undefined {
+  if (typeof window === 'undefined')
+    return undefined
+  return (window as { craft?: { dialog?: NativeDialogApi } }).craft?.dialog
+}
+
+/** How a Craft alert style names what a message box calls a `type`. */
+const ALERT_STYLE: Record<string, string> = {
+  error: 'critical',
+  warning: 'warning',
+  question: 'info',
+  info: 'info',
+  none: 'info',
+}
+
+/**
+ * A message box expressed as the alert the bridge implements.
+ *
+ * Craft's `title` is the bold primary line and `message` the secondary one,
+ * which is the opposite emphasis from `MessageBoxOptions`, where `message` is
+ * the primary text and `title` the window title. So the primary line is the
+ * title when there is one and the message otherwise, and whatever is left over
+ * joins the detail underneath.
+ */
+function toAlertOptions(options: MessageBoxOptions): Record<string, unknown> {
+  const secondary = [options.title ? options.message : '', options.detail ?? '']
+    .filter(Boolean)
+    .join('\n\n')
+
+  return {
+    title: options.title || options.message,
+    message: secondary || undefined,
+    style: ALERT_STYLE[options.type ?? 'none'] ?? 'info',
+    buttons: options.buttons,
+  }
+}
+
+/**
+ * Whatever the host answered, as a button index.
+ *
+ * Three currencies are in circulation for one question. `showAlert` resolves
+ * to a bare number; a host implementing `showMessageBox` may answer Electron's
+ * `{ response }` or Craft's own `{ buttonIndex }` -- the key the native
+ * runtime puts on the wire. Reading only one of them yields `undefined`, and
+ * `undefined === 0` is false, so a confirm dialog silently reports "not that
+ * button" whichever button was pressed.
+ *
+ * An unreadable answer falls back to the CANCEL button rather than to 0: the
+ * conventional ordering puts the action first, so defaulting to 0 would treat
+ * a dialog that failed to answer as consent to the destructive thing it asked
+ * about.
+ */
+function toMessageBoxResult(raw: unknown, options: MessageBoxOptions): MessageBoxResult {
+  if (typeof raw === 'number' && Number.isFinite(raw))
+    return { response: raw }
+
+  if (raw && typeof raw === 'object') {
+    const value = raw as Record<string, unknown>
+    if (typeof value.response === 'number')
+      return { response: value.response }
+    if (typeof value.buttonIndex === 'number')
+      return { response: value.buttonIndex }
+  }
+
+  const buttons = options.buttons ?? ['OK']
+  return { response: options.cancelButton ?? Math.max(0, buttons.length - 1) }
+}
+
+/**
  * Check if running inside a Craft native window
  */
 function isInCraftWindow(): boolean {
@@ -367,14 +448,41 @@ export async function showSaveDialog(options: SaveDialogOptions = {}): Promise<S
  * ```
  */
 export async function showMessageBox(options: MessageBoxOptions): Promise<MessageBoxResult> {
-  if (isInCraftWindow()) {
-    // Use Craft's native dialog
-    const craftWindow = window as any
+  const native = nativeDialogApi()
+
+  /*
+   * Ask for the METHOD, not the namespace.
+   *
+   * `isInCraftWindow()` only establishes that `craft.dialog` exists, and the
+   * shipped bridge's dialog namespace is
+   *
+   *   { openFile, openFolder, saveFile, showAlert, showConfirm, showPrompt }
+   *
+   * with no showMessageBox at all -- although `craft-native`'s own
+   * `bridge/core.d.ts` declares one, which is why this read as available. So
+   * the call threw "not a function", the catch below swallowed it, and every
+   * native dialog quietly fell through to the web `confirm()` path. In a
+   * packaged app that is the worst place to land: there is no console to see
+   * the warning in, and a WebView that does not implement the confirm panel
+   * answers `false` without showing anything -- so the dialog appeared to draw
+   * and then refuse every answer (stacksjs/stx#2040).
+   */
+  if (typeof native?.showMessageBox === 'function') {
     try {
-      return await craftWindow.craft.dialog.showMessageBox(options)
+      return toMessageBoxResult(await native.showMessageBox(options), options)
     }
     catch (error) {
       console.warn('[stx-dialog] Failed to show native message box:', error)
+    }
+  }
+  else if (typeof native?.showAlert === 'function') {
+    // The surface the bridge actually implements. It answers with the button
+    // index directly, having already unwrapped the host's `{ buttonIndex }`.
+    try {
+      return toMessageBoxResult(await native.showAlert(toAlertOptions(options)), options)
+    }
+    catch (error) {
+      console.warn('[stx-dialog] Failed to show native alert:', error)
     }
   }
 
@@ -556,8 +664,32 @@ window.stxDialog = {
   showOpenDialog: (options) => window.craft?.dialog?.showOpenDialog(options),
   showSaveDialog: (options) => window.craft?.dialog?.showSaveDialog(options),
 
-  // Message dialogs
-  showMessageBox: (options) => window.craft?.dialog?.showMessageBox(options),
+  // Message dialogs.
+  //
+  // The bridge's dialog namespace has no showMessageBox -- showAlert is the
+  // method it actually implements, and it answers with the button index. So
+  // this prefers showMessageBox when a host provides one and uses showAlert
+  // otherwise, instead of calling a method that is not there (stacksjs/stx#2040).
+  showMessageBox: async (options) => {
+    const api = window.craft?.dialog;
+    if (typeof api?.showMessageBox === 'function') {
+      const raw = await api.showMessageBox(options);
+      if (typeof raw === 'number') return { response: raw };
+      if (raw && typeof raw.response === 'number') return { response: raw.response };
+      if (raw && typeof raw.buttonIndex === 'number') return { response: raw.buttonIndex };
+    }
+    else if (typeof api?.showAlert === 'function') {
+      const index = await api.showAlert({
+        title: options.title || options.message,
+        message: options.title ? options.message : options.detail,
+        buttons: options.buttons,
+      });
+      if (typeof index === 'number') return { response: index };
+    }
+    // Unreadable: answer with cancel, never with the action button.
+    const buttons = options.buttons || ['OK'];
+    return { response: options.cancelButton ?? Math.max(0, buttons.length - 1) };
+  },
 
   // Color picker
   showColorPicker: (options) => window.craft?.dialog?.showColorPicker(options),
@@ -567,7 +699,7 @@ window.stxDialog = {
 
   // Convenience functions
   alert: async (message, title) => {
-    return window.craft?.dialog?.showMessageBox({
+    return window.stxDialog.showMessageBox({
       type: 'info',
       title: title || 'Alert',
       message,
@@ -575,18 +707,24 @@ window.stxDialog = {
     });
   },
 
+  // OK first, matching showConfirmDialog: NSAlert adds buttons right-to-left
+  // and makes the first one the default, so ['Cancel', 'OK'] built a confirm
+  // that defaulted to Cancel and put OK on the left. This wrapper still had
+  // the old order after the typed path was corrected.
   confirm: async (message, title) => {
-    const result = await window.craft?.dialog?.showMessageBox({
+    const result = await window.stxDialog.showMessageBox({
       type: 'question',
       title: title || 'Confirm',
       message,
-      buttons: ['Cancel', 'OK'],
+      buttons: ['OK', 'Cancel'],
+      defaultButton: 0,
+      cancelButton: 1,
     });
-    return result?.response === 1;
+    return result?.response === 0;
   },
 
   error: async (message, title) => {
-    return window.craft?.dialog?.showMessageBox({
+    return window.stxDialog.showMessageBox({
       type: 'error',
       title: title || 'Error',
       message,

@@ -130,3 +130,101 @@ describe('showOpenDialog', () => {
     expect(seen.properties).toEqual(['openDirectory'])
   })
 })
+
+/**
+ * The bridge's REAL dialog surface.
+ *
+ * `showMessageBox` was called on `window.craft.dialog` behind a guard that only
+ * checked the namespace existed. The shipped bridge's namespace is
+ *
+ *   { openFile, openFolder, saveFile, showAlert, showConfirm, showPrompt }
+ *
+ * with no `showMessageBox` -- `craft-native`'s own `bridge/core.d.ts` declares
+ * one that `api/dialog.d.ts` does not provide. So the call threw, the catch
+ * swallowed it, and the native path fell through to the browser `confirm()` --
+ * which in a packaged WebView answers `false` without drawing anything, and has
+ * no console to report it in (stacksjs/stx#2040).
+ *
+ * The existing suite could not catch this: the shared bridge mock is a Proxy
+ * that answers every namespace and every method, so it implements a richer
+ * bridge than the one that ships. These tests install exactly the methods the
+ * real one has.
+ */
+function installDialogBridge(dialog: Record<string, unknown>): void {
+  ;(window as any).craft = { dialog }
+}
+
+describe('showMessageBox against the bridge that actually ships', () => {
+  it('uses showAlert when the host has no showMessageBox', async () => {
+    const seen: any[] = []
+    installDialogBridge({
+      // The real surface -- note the absence of showMessageBox.
+      showAlert: async (options: any) => { seen.push(options); return 1 },
+      showConfirm: async () => true,
+      showPrompt: async () => null,
+    })
+
+    const result = await showMessageBox({
+      type: 'question',
+      title: 'Confirm',
+      message: 'Delete?',
+      buttons: ['Delete', 'Cancel'],
+    })
+
+    expect(result).toEqual({ response: 1 })
+    expect(seen).toHaveLength(1)
+    expect(seen[0].buttons).toEqual(['Delete', 'Cancel'])
+    // Craft's `title` is the bold primary line; the message drops to secondary.
+    expect(seen[0].title).toBe('Confirm')
+    expect(seen[0].message).toContain('Delete?')
+    // ...and nothing reached the browser fallback.
+    expect(asked).toEqual([])
+  })
+
+  it('maps an error type onto the critical alert style', async () => {
+    const seen: any[] = []
+    installDialogBridge({ showAlert: async (o: any) => { seen.push(o); return 0 } })
+    await showMessageBox({ type: 'error', message: 'Boom', buttons: ['OK'] })
+    expect(seen[0].style).toBe('critical')
+  })
+
+  it('reads a host that answers Craft\'s buttonIndex', async () => {
+    installDialogBridge({ showMessageBox: async () => ({ buttonIndex: 1 }) })
+    expect(await showMessageBox({ message: 'x', buttons: ['Go', 'Cancel'] }))
+      .toEqual({ response: 1 })
+  })
+
+  it('reads a host that answers Electron\'s response', async () => {
+    installDialogBridge({ showMessageBox: async () => ({ response: 1 }) })
+    expect(await showMessageBox({ message: 'x', buttons: ['Go', 'Cancel'] }))
+      .toEqual({ response: 1 })
+  })
+
+  it('reads a host that answers a bare index', async () => {
+    installDialogBridge({ showMessageBox: async () => 0 })
+    expect(await showMessageBox({ message: 'x', buttons: ['Go', 'Cancel'] }))
+      .toEqual({ response: 0 })
+  })
+
+  it('answers cancel, never the action button, when the reply is unreadable', async () => {
+    // Defaulting to 0 would read an unanswerable dialog as consent to the
+    // destructive thing it asked about.
+    installDialogBridge({ showMessageBox: async () => ({ nonsense: true }) })
+    expect(await showMessageBox({ message: 'Delete?', buttons: ['Delete', 'Cancel'] }))
+      .toEqual({ response: 1 })
+
+    installDialogBridge({ showMessageBox: async () => ({ nonsense: true }) })
+    expect(await showMessageBox({ message: 'Delete?', buttons: ['Cancel', 'Delete'], cancelButton: 0 }))
+      .toEqual({ response: 0 })
+  })
+
+  it('carries a real confirmation all the way through showConfirmDialog', async () => {
+    // The end-to-end shape of the reported bug: pressing the action button on
+    // a packaged app reported "not confirmed" and the action did nothing.
+    installDialogBridge({ showAlert: async () => 0 })
+    expect(await showConfirmDialog('Empty the trash?')).toBe(true)
+
+    installDialogBridge({ showAlert: async () => 1 })
+    expect(await showConfirmDialog('Empty the trash?')).toBe(false)
+  })
+})
