@@ -35,6 +35,14 @@ export const descriptionClasses = `text-sm ${error ? 'text-danger' : 'text-fg-so
  */
 export const inputId = $props.id || `radio-${$uid}`
 export const descriptionId = `${inputId}-description`
+/*
+ * `autocomplete` and `form`, alongside the `name` this already had
+ * (stacksjs/stx#2043). `autocomplete` is how the browser and a password
+ * manager identify a field; `form` lets a control live outside the <form>
+ * element it belongs to. Emitted only when given.
+ */
+export const autocomplete = $props.autocomplete || $props.autoComplete || ''
+export const form = $props.form || ''
 </script>
 
 <script client>
@@ -75,6 +83,8 @@ defineExpose({ isChecked })
       id="{{ inputId }}"
       type="radio"
       name="{{ name }}"
+      @if(autocomplete)autocomplete="{{ autocomplete }}"@endif
+      @if(form)form="{{ form }}"@endif
       value="{{ value }}"
       :value="radioValue()"
       :checked="isChecked()"

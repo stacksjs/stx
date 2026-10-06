@@ -11,9 +11,27 @@ export const required = $bool($props.required)
 export const className = $props.className || ''
 
 export const emailIcon = '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>'
+/*
+ * Forwarded to the TextInput this renders (stacksjs/stx#2043).
+ *
+ * A wrapper that does not pass them through is as unsubmittable as a control
+ * that never accepted them: the inner input is the one that lands in FormData.
+ * `type` is the wrapper's own business, but `name`, `autocomplete` and `form`
+ * belong to the caller.
+ */
+export const name = $props.name || ''
+export const autocomplete = $props.autocomplete || $props.autoComplete || ''
+export const form = $props.form || ''
+export const inputMode = $props.inputMode || $props.inputmode || ''
+export const enterKeyHint = $props.enterKeyHint || $props.enterkeyhint || ''
 </script>
 
 <TextInput
+  :name="name"
+  :autocomplete="autocomplete"
+  :form="form"
+  :inputMode="inputMode"
+  :enterKeyHint="enterKeyHint"
   :value="value"
   :placeholder="placeholder"
   :disabled="disabled"

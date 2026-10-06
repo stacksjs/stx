@@ -44,9 +44,18 @@ export const descriptionClasses = `text-sm ${error ? 'text-danger' : 'text-fg-so
  */
 export const inputId = $props.id || `checkbox-${$uid}`
 export const descriptionId = `${inputId}-description`
-  </script>
-  <script client>
-    const emit = defineEmits()
+/*
+ * `autocomplete` and `form`, alongside the `name` this already had
+ * (stacksjs/stx#2043). `autocomplete` is how the browser and a password
+ * manager identify a field; `form` lets a control live outside the
+    <form>
+      * element it belongs to. Emitted only when given.
+ */
+export const autocomplete = $props.autocomplete || $props.autoComplete || ''
+export const form = $props.form || ''
+    </script>
+    <script client>
+      const emit = defineEmits()
 const isDisabled = {{ disabled }}
 const isIndeterminate = {{ indeterminate }}
 // Reactive prop binding so the parent can drive `checked` via signals.
@@ -70,13 +79,15 @@ onMount(() => {
 })
 
 defineExpose({ isChecked })
-  </script>
-  <div class="relative flex items-start {{ className }}">
-    <div class="flex h-6 items-center">
-      <input
+    </script>
+    <div class="relative flex items-start {{ className }}">
+      <div class="flex h-6 items-center">
+        <input
       id="{{ inputId }}"
       type="checkbox"
       name="{{ name }}"
+      @if(autocomplete)autocomplete="{{ autocomplete }}"@endif
+      @if(form)form="{{ form }}"@endif
       value="{{ value }}"
       :checked="isChecked()"
       @if(disabled)disabled@endif
@@ -86,27 +97,27 @@ defineExpose({ isChecked })
       :aria-invalid="{{ error ? 'true' : 'false' }}"
       @if(description)aria-describedby="{{ descriptionId }}"@endif
     />
-    </div>
-    @if(label || description)
-    <div class="ml-3 text-sm leading-6">
-      @if(label)
-      <label for="{{ inputId }}" class="{{ labelClasses }}">
-        {{ label }}
+      </div>
+      @if(label || description)
+      <div class="ml-3 text-sm leading-6">
+        @if(label)
+        <label for="{{ inputId }}" class="{{ labelClasses }}">
+          {{ label }}
           @if(required)
-        <span class="text-danger ml-1">
-          *
-        </span>
+          <span class="text-danger ml-1">
+            *
+          </span>
+          @endif
+        </label>
         @endif
-      </label>
-      @endif
       @if(description)
-      <p id="{{ descriptionId }}" class="{{ descriptionClasses }}">
-        {{ description }}
-      </p>
+        <p id="{{ descriptionId }}" class="{{ descriptionClasses }}">
+          {{ description }}
+        </p>
+        @endif
+      </div>
       @endif
     </div>
-    @endif
-  </div>
 
 === Extracted Classes ===
 border-danger-line

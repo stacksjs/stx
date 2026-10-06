@@ -12,6 +12,19 @@ export const className = $props.className || ''
 export const searchIcon = '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'
 export const spinnerIcon = '<svg class="animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>'
 export const rightIcon = loading ? spinnerIcon : ''
+/*
+ * Forwarded to the TextInput this renders (stacksjs/stx#2043).
+ *
+ * A wrapper that does not pass them through is as unsubmittable as a control
+ * that never accepted them: the inner input is the one that lands in FormData.
+ * `type` is the wrapper's own business, but `name`, `autocomplete` and `form`
+ * belong to the caller.
+ */
+export const name = $props.name || ''
+export const autocomplete = $props.autocomplete || $props.autoComplete || ''
+export const form = $props.form || ''
+export const inputMode = $props.inputMode || $props.inputmode || ''
+export const enterKeyHint = $props.enterKeyHint || $props.enterkeyhint || ''
 </script>
 
 <script client>
@@ -28,6 +41,11 @@ function onSearchInput(event) {
 
 <div @input="onSearchInput($event)">
   <TextInput
+    :name="name"
+    :autocomplete="autocomplete"
+    :form="form"
+    :inputMode="inputMode"
+    :enterKeyHint="enterKeyHint"
     :value="value"
     :placeholder="placeholder"
     :disabled="disabled"

@@ -1,5 +1,22 @@
 <script server>
 export const checked = $bool($props.checked)
+
+/*
+ * Form participation, which a <button role="switch"> cannot have on its own
+ * (stacksjs/stx#2043).
+ *
+ * The control the user operates is a button, and a button is never submitted
+ * by name -- so a Switch inside a form contributed nothing to FormData no
+ * matter what it was set to. A hidden input carries the state instead, which
+ * is what it takes for a custom switch to be readable the way a checkbox is.
+ *
+ * Only rendered when a `name` is given, so a Switch used as a plain toggle
+ * emits exactly the markup it did before.
+ */
+export const name = $props.name || ''
+export const form = $props.form || ''
+export const checkedValue = $props.checkedValue || 'true'
+export const uncheckedValue = $props.uncheckedValue || 'false'
 export const disabled = $bool($props.disabled)
 export const size = $props.size || 'md'
 export const className = $props.className || ''
@@ -58,6 +75,20 @@ defineExpose({ isChecked, toggle })
     <span class="text-sm font-medium text-fg-strong">
       {{ label }}
     </span>
+  @endif
+
+  @if(name)
+    {{-- Always submitted, carrying one of two values, rather than a checkbox's
+         present-or-absent convention: a reader then gets an explicit "false"
+         instead of a missing key, which is the difference between "switched
+         off" and "field was never in the form". --}}
+    <input
+      type="hidden"
+      name="{{ name }}"
+      @if(form)form="{{ form }}"@endif
+      value="{{ checked ? checkedValue : uncheckedValue }}"
+      :value="isChecked() ? '{{ checkedValue }}' : '{{ uncheckedValue }}'"
+    />
   @endif
 
   <button

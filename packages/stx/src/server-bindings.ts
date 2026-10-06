@@ -142,7 +142,18 @@ export function processServerBindings(
 
   // Process :attr="expr" bindings on HTML elements
   // Match opening tags with colon-prefixed attributes
-  const tagRegex = /<([a-zA-Z][a-zA-Z0-9-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)\s*\/?>/g
+  /*
+   * The self-closing slash is its OWN group (stacksjs/stx#2043).
+   *
+   * The attribute class matches `/` like any other character, and the group
+   * was greedy, so for `<input ... />` the trailing slash was already inside
+   * the captured attributes and `\s*\/?>` matched just the `>`. Rebuilding the
+   * tag then appended a second one, and every control with a server-resolved
+   * `:attr` shipped as `<input ... / />`. Lazy, with the slash captured, so
+   * the attributes end where the attributes end. Same shape as the matcher
+   * fixed in #2039.
+   */
+  const tagRegex = /<([a-zA-Z][a-zA-Z0-9-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*?)\s*(\/?)>/g
   const replacements: Array<{ start: number, end: number, replacement: string }> = []
   // A binding's generated function closes over no render data: values are
   // passed positionally on every call. Reuse identical expression/scope-shape
@@ -273,7 +284,7 @@ export function processServerBindings(
     }
 
     if (hadReplacement) {
-      const selfClose = fullTag.endsWith('/>') ? ' /' : ''
+      const selfClose = match[3] ? ' /' : ''
       const tagName = match[1]
       const newTag = `<${tagName}${newAttrs}${selfClose}>`
       replacements.push({

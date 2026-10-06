@@ -6,6 +6,25 @@
 === Template ===
 <script server>
   export const checked = $bool($props.checked)
+
+/*
+ * Form participation, which a
+  <button role="switch">
+    cannot have on its own
+ * (stacksjs/stx#2043).
+ *
+ * The control the user operates is a button, and a button is never submitted
+ * by name -- so a Switch inside a form contributed nothing to FormData no
+ * matter what it was set to. A hidden input carries the state instead, which
+ * is what it takes for a custom switch to be readable the way a checkbox is.
+ *
+ * Only rendered when a `name` is given, so a Switch used as a plain toggle
+ * emits exactly the markup it did before.
+ */
+export const name = $props.name || ''
+export const form = $props.form || ''
+export const checkedValue = $props.checkedValue || 'true'
+export const uncheckedValue = $props.uncheckedValue || 'false'
 export const disabled = $bool($props.disabled)
 export const size = $props.size || 'md'
 export const className = $props.className || ''
@@ -25,9 +44,9 @@ export const config = sizeConfig[size] || sizeConfig.md
 export const trackBaseClasses = 'relative inline-flex shrink-0 cursor-pointer border-2 border-transparent rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel'
 export const trackDisabledClasses = disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
 export const thumbBaseClasses = 'pointer-events-none inline-block transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out'
-</script>
-<script client>
-  const emit = defineEmits()
+  </script>
+  <script client>
+    const emit = defineEmits()
 const isDisabled = {{ disabled }}
 const config = {{ config }}
 const trackBase = {{ trackBaseClasses }}
@@ -56,14 +75,28 @@ function thumbClasses() {
 }
 
 defineExpose({ isChecked, toggle })
-</script>
-<label class="inline-flex items-center gap-3 cursor-pointer">
-  @if(label)
-  <span class="text-sm font-medium text-fg-strong">
-    {{ label }}
-  </span>
-  @endif
-  <button
+  </script>
+  <label class="inline-flex items-center gap-3 cursor-pointer">
+    @if(label)
+    <span class="text-sm font-medium text-fg-strong">
+      {{ label }}
+    </span>
+    @endif
+
+  @if(name)
+    {{-- Always submitted, carrying one of two values, rather than a checkbox's
+         present-or-absent convention: a reader then gets an explicit "false"
+         instead of a missing key, which is the difference between "switched
+         off" and "field was never in the form". --}}
+    <input
+      type="hidden"
+      name="{{ name }}"
+      @if(form)form="{{ form }}"@endif
+      value="{{ checked ? checkedValue : uncheckedValue }}"
+      :value="isChecked() ? '{{ checkedValue }}' : '{{ uncheckedValue }}'"
+    />
+    @endif
+    <button
     type="button"
     role="switch"
     :aria-checked="isChecked() ? 'true' : 'false'"
@@ -71,13 +104,13 @@ defineExpose({ isChecked, toggle })
     @if(disabled)disabled aria-disabled="true"@endif
     @click="toggle()"
   >
-    <span class="sr-only">
-      @if(label){{ label }}@else Toggle switch@endif
-    </span>
-    <span aria-hidden="true" :class="thumbClasses()">
-    </span>
-  </button>
-</label>
+      <span class="sr-only">
+        @if(label){{ label }}@else Toggle switch@endif
+      </span>
+      <span aria-hidden="true" :class="thumbClasses()">
+      </span>
+    </button>
+  </label>
 
 === Extracted Classes ===
 bg-accent-solid

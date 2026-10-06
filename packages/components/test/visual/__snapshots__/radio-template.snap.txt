@@ -43,9 +43,18 @@ export const descriptionClasses = `text-sm ${error ? 'text-danger' : 'text-fg-so
  */
 export const inputId = $props.id || `radio-${$uid}`
 export const descriptionId = `${inputId}-description`
-  </script>
-  <script client>
-    const emit = defineEmits()
+/*
+ * `autocomplete` and `form`, alongside the `name` this already had
+ * (stacksjs/stx#2043). `autocomplete` is how the browser and a password
+ * manager identify a field; `form` lets a control live outside the
+    <form>
+      * element it belongs to. Emitted only when given.
+ */
+export const autocomplete = $props.autocomplete || $props.autoComplete || ''
+export const form = $props.form || ''
+    </script>
+    <script client>
+      const emit = defineEmits()
 const isDisabled = {{ disabled }}
 // Reactive prop binding — parent can drive `checked` via signals. See #1704.
 const isChecked = useReactiveProp('checked', {{ checked }})
@@ -74,13 +83,15 @@ function onInputChange(event) {
 }
 
 defineExpose({ isChecked })
-  </script>
-  <div class="relative flex items-start {{ className }}">
-    <div class="flex h-6 items-center">
-      <input
+    </script>
+    <div class="relative flex items-start {{ className }}">
+      <div class="flex h-6 items-center">
+        <input
       id="{{ inputId }}"
       type="radio"
       name="{{ name }}"
+      @if(autocomplete)autocomplete="{{ autocomplete }}"@endif
+      @if(form)form="{{ form }}"@endif
       value="{{ value }}"
       :value="radioValue()"
       :checked="isChecked()"
@@ -91,23 +102,23 @@ defineExpose({ isChecked })
       :aria-invalid="{{ error ? 'true' : 'false' }}"
       :aria-describedby="descriptionText() ? '{{ descriptionId }}' : null"
     />
+      </div>
+      <div :if="labelText() || descriptionText()" class="ml-3 text-sm leading-6">
+        <label :if="labelText()" for="{{ inputId }}" class="{{ labelClasses }}">
+          <span :text="labelText()">
+            {{ label }}
+          </span>
+          @if(required)
+          <span class="text-danger ml-1">
+            *
+          </span>
+          @endif
+        </label>
+        <p :if="descriptionText()" id="{{ descriptionId }}" class="{{ descriptionClasses }}" :text="descriptionText()">
+          {{ description }}
+        </p>
+      </div>
     </div>
-    <div :if="labelText() || descriptionText()" class="ml-3 text-sm leading-6">
-      <label :if="labelText()" for="{{ inputId }}" class="{{ labelClasses }}">
-        <span :text="labelText()">
-          {{ label }}
-        </span>
-        @if(required)
-        <span class="text-danger ml-1">
-          *
-        </span>
-        @endif
-      </label>
-      <p :if="descriptionText()" id="{{ descriptionId }}" class="{{ descriptionClasses }}" :text="descriptionText()">
-        {{ description }}
-      </p>
-    </div>
-  </div>
 
 === Extracted Classes ===
 border-danger-line

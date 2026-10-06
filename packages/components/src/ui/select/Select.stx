@@ -49,6 +49,25 @@ export const helperClasses = `mt-2 text-sm ${error ? 'text-danger' : 'text-fg-so
  */
 export const selectId = $props.id || `select-${$uid}`
 export const helperId = `${selectId}-helper`
+/*
+ * The attributes that make this a form control (stacksjs/stx#2043).
+ *
+ * A control with no `name` is not a form control in the HTML sense: it is left
+ * out of FormData, out of form.elements.namedItem(), and out of an ordinary
+ * non-JS POST. A form built from these components submitted nothing for every
+ * field, silently -- which is how six apps read their forms.
+ *
+ * `autocomplete` is separate and just as load-bearing: it is how the browser
+ * and a password manager identify a field, so a password input without
+ * `autocomplete="current-password"` is never offered for autofill and is not
+ * recognised as part of a sign-in form at all.
+ *
+ * Emitted only when given, so a control that passes none of them renders
+ * exactly the markup it did before.
+ */
+export const name = $props.name || ''
+export const autocomplete = $props.autocomplete || $props.autoComplete || ''
+export const form = $props.form || ''
 </script>
 
 <script client>
@@ -76,6 +95,9 @@ defineExpose({ value: selectedValue })
 
   <div class="{{ label ? 'mt-2' : '' }}">
     <select
+      @if(name)name="{{ name }}"@endif
+      @if(autocomplete)autocomplete="{{ autocomplete }}"@endif
+      @if(form)form="{{ form }}"@endif
       id="{{ selectId }}"
       class="{{ selectClasses }}"
       :value="selectedValue()"

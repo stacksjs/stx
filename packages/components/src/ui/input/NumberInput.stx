@@ -57,6 +57,27 @@ const paddingClasses = showControls ? 'pr-10' : ''
 export const inputClasses = `${baseClasses} ${sizeClasses[size] || sizeClasses.md} ${stateClasses} ${disabledClasses} ${paddingClasses} ${inputClassName}`.trim()
 export const labelClasses = `block text-sm font-medium leading-6 mb-2 ${error ? 'text-danger' : 'text-fg'}`.trim()
 export const helperClasses = `mt-2 text-sm ${error ? 'text-danger' : 'text-fg-soft'}`.trim()
+/*
+ * The attributes that make this a form control (stacksjs/stx#2043).
+ *
+ * A control with no `name` is not a form control in the HTML sense: it is left
+ * out of FormData, out of form.elements.namedItem(), and out of an ordinary
+ * non-JS POST. A form built from these components submitted nothing for every
+ * field, silently -- which is how six apps read their forms.
+ *
+ * `autocomplete` is separate and just as load-bearing: it is how the browser
+ * and a password manager identify a field, so a password input without
+ * `autocomplete="current-password"` is never offered for autofill and is not
+ * recognised as part of a sign-in form at all.
+ *
+ * Emitted only when given, so a control that passes none of them renders
+ * exactly the markup it did before.
+ */
+export const name = $props.name || ''
+export const autocomplete = $props.autocomplete || $props.autoComplete || ''
+export const form = $props.form || ''
+export const inputMode = $props.inputMode || $props.inputmode || ''
+export const enterKeyHint = $props.enterKeyHint || $props.enterkeyhint || ''
 </script>
 
 <script client>
@@ -103,6 +124,11 @@ defineExpose({ value: inputValue, increment, decrement })
 
   <div class="relative">
     <input
+      @if(name)name="{{ name }}"@endif
+      @if(autocomplete)autocomplete="{{ autocomplete }}"@endif
+      @if(form)form="{{ form }}"@endif
+      @if(inputMode)inputmode="{{ inputMode }}"@endif
+      @if(enterKeyHint)enterkeyhint="{{ enterKeyHint }}"@endif
       type="number"
       id="{{ inputId }}"
       class="{{ inputClasses }}"
