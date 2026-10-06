@@ -5258,20 +5258,25 @@ else if (!value && isInserted) {
           console.log('[stx] bindIf REMOVED, el.isConnected:', el.isConnected);
         }
         // Process the entire subtree when element is visible and not yet processed.
-        // Defer to next microtask so child effects do not subscribe to the parent
-        // bindIf tracked signals. Use capturedComponentScope (not global
-        // componentScope) so iteration variables from an enclosing for-loop
-        // remain in scope. Process the element itself, not just children, so
-        // sibling directives on the same element (e.g. text binding alongside
-        // if) fire too. The if attribute was already removed, so no recursion.
+        // peek() keeps child effects from subscribing to this bindIf's tracked
+        // signals. Use capturedComponentScope (not global componentScope) so
+        // iteration variables from an enclosing for-loop remain in scope.
+        // Process the element itself, not just children, so sibling directives
+        // on the same element (e.g. text binding alongside if) fire too. The if
+        // attribute was already removed, so no recursion.
+        //
+        // Synchronously when the branch is on the page, as the template and
+        // if/else-chain branches already are. This pass used to wait for a
+        // timer, so every :if (and each :for inside one) filled in a frame
+        // after the rest of the page was bound: a screen opened from a tab bar
+        // showed its sections arriving one after another.
         if (value && isInserted && !childrenProcessed) {
           childrenProcessed = true;
-          // Until this deferred pass runs, the shown subtree still holds literal
-          // {{ }}. Flag it so the hydration audit doesn't report those as a
-          // binding miss in the gap before the setTimeout fires — a :for nested
-          // in a :if binds a macrotask after the synchronous stx:load audit (#1773).
+          // Until this pass runs, the shown subtree still holds literal {{ }}.
+          // Flag it so the hydration audit doesn't report those as a binding
+          // miss when the pass is deferred (#1773).
           el.__stx_if_pending = true;
-          setTimeout(function() {
+          var hydrateShownBranch = function() {
             // Removed with its row, or hidden again, before this ran. Hydrating
             // a detached element now creates effects nothing will dispose
             // (#1954). Leave it unprocessed so the next show schedules the pass.
@@ -5301,7 +5306,11 @@ else if (!value && isInserted) {
             el.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
             // Deferred bind complete — the audit may inspect this subtree now.
             el.__stx_if_pending = false;
-          }, 0);
+          };
+          // A branch shown while detached (inside content not on the page yet)
+          // waits for a later turn, when it has been placed.
+          if (el.isConnected) peek(hydrateShownBranch);
+          else setTimeout(hydrateShownBranch, 0);
         }
       }
     });
@@ -7258,6 +7267,7 @@ catch (e) {} }
     _mountCallbacks: mountCallbacks,
     _destroyCallbacks: destroyCallbacks,
     _cleanupContainer: cleanupContainer,
+    _flushLoad: flushStxLoad,
     _registerSuspense: registerSuspense,  // <Suspense> query registration (#1742)
     _tg: { enter: tgEnter, leave: tgLeave, flip: tgFlip, snapshot: tgSnapshot },  // <TransitionGroup> helpers (#1742)
     _scopes: {},  // Component-level scopes
@@ -8842,6 +8852,17 @@ catch (e) {
   }
   window.__stxLoadHandler = stxLoadHandler;
   window.addEventListener('stx:load', stxLoadHandler);
+
+  // Run a pending stx:load now instead of after the debounce. The router's
+  // instant navigation (a tab bar) reveals the new screen in a single frame
+  // once the page is bound; waiting out the timer revealed it with its
+  // {{ }} still unbound and filled it in a frame later.
+  function flushStxLoad() {
+    if (!_stxLoadTimer) return false;
+    clearTimeout(_stxLoadTimer);
+    _handleStxLoad();
+    return true;
+  }
   function _handleStxLoad() {
     _stxLoadTimer = null;
     console.log('[stx:load] START. mountQueue:', mountQueue.length, '_latestSetup:', !!window.stx._latestSetup);

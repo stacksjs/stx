@@ -162,11 +162,10 @@ describe('hydration audit — literal moustaches', () => {
   })
 
   it('stays silent for a :if subtree whose deferred bind has not run yet', () => {
-    // bindIf defers processing the shown subtree to a macrotask, so children
-    // do not subscribe to the parent effect's signals (note 35). Between the
-    // insert and that setTimeout the subtree legitimately still holds literal
-    // {{ }} — the synchronous audit must not call that a miss, or every page
-    // with a conditional reports a false failure on first paint.
+    // A branch shown while detached defers its pass to a macrotask; until it
+    // runs the subtree legitimately still holds literal {{ }}, and the
+    // synchronous audit must not call that a miss. A branch on the page is
+    // bound in the same pass, so it has nothing literal left by the audit.
     g.window.stx._scopes.if_pending = { show: true, label: 'ok' }
     const out = auditErrors(hydrate(
       '<div data-stx-scope="if_pending"><section :if="show"><p>{{ label }}</p></section></div>',
@@ -188,16 +187,14 @@ describe('hydration audit — literal moustaches', () => {
     expect(literals[0]).not.toContain('label')
   })
 
-  it('lifts the exemption once the deferred bind has run', async () => {
-    // Temporary, not permanent: if the flag stuck, a genuine miss inside any
-    // conditional would be unreportable forever.
+  it('binds a shown branch in the same pass and leaves no exemption behind', () => {
+    // A screen the router reveals right after stx:load has to be filled in
+    // already: a :if on the page used to bind a timer later, so its section
+    // appeared a frame after everything else. And the flag must not stick, or
+    // a genuine miss inside any conditional would be unreportable forever.
     g.window.stx._scopes.if_lift = { show: true, label: 'ok' }
     hydrate('<div data-stx-scope="if_lift"><section :if="show"><p>{{ label }}</p></section></div>')
     const section = g.document.querySelector('section')
-    expect(section.__stx_if_pending).toBe(true)
-
-    await new Promise(resolve => setTimeout(resolve, 30))
-
     expect(section.__stx_if_pending).toBe(false)
     expect(g.document.querySelector('p').textContent).toBe('ok')
   })

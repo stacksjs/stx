@@ -1487,7 +1487,7 @@ export async function serve(options: ServeOptions): Promise<void> {
   // Blocking *indefinitely* is not. The pass decodes every raster under
   // `public/`, so on a photo-heavy site it is tens of seconds, and this
   // handler is the only thing between the bound socket and an answer. Bun
-  // closes a production connection after `idleTimeout` (30s) — having sent
+  // closes a production connection after `idleTimeout` (120s) — having sent
   // nothing, which the browser reports as ERR_EMPTY_RESPONSE. So every
   // visitor who arrived during a restart got a broken page in exchange for
   // placeholders on the one that eventually loaded. Cap it.
@@ -3655,8 +3655,11 @@ function __stxOverlay(errs){
         // and the default 10s idle kills it with
         // `ERR_INCOMPLETE_CHUNKED_ENCODING`. Other long-lived dev requests
         // (debug websockets, slow downloads) benefit too. A dev server has
-        // no good reason to enforce request timeouts.
-        idleTimeout: production ? 30 : 0,
+        // no good reason to enforce request timeouts. In production it is the
+        // time an answer may take, and this server also proxies the API: 30s
+        // cut off an upload or an import the API was still working on, so it
+        // is the API server's own 120.
+        idleTimeout: production ? 120 : 0,
         async fetch(req, server) {
           // See `awaitImageWarmup`: the port is already bound, and this is
           // where the wait belongs — before anything renders, not before

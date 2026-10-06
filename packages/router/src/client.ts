@@ -260,6 +260,83 @@ function routerSource(): string {
     }
   }
 
+  // ── Instant navigation: one frame, already filled ──
+  // A tab swap used to paint the new screen before its scripts had run: a page
+  // script with an import is a module, and a module runs after the task that
+  // inserted it, so for a few frames the screen showed its bare markup and then
+  // filled in, on every visit. Each inserted page script now reports when it
+  // has run, and an instant navigation holds the old frame (a View Transition
+  // with no animation) until they all have, capped so it can never hang.
+  var scriptsPending=0;
+  var hydrateWaiters=[];
+  window.__stxScriptRan=function(){
+    if(scriptsPending>0)scriptsPending--;
+    if(!scriptsPending){var w=hydrateWaiters;hydrateWaiters=[];w.forEach(function(f){f()})}
+  };
+  function markRan(code){scriptsPending++;return code+String.fromCharCode(10)+';window.__stxScriptRan&&window.__stxScriptRan();'}
+  function whenHydrated(capMs){
+    return new Promise(function(resolve){
+      var done=false;
+      function finish(){if(done)return;done=true;setTimeout(resolve,0)}
+      if(!scriptsPending){done=true;resolve();return}
+      hydrateWaiters.push(finish);
+      setTimeout(finish,capMs);
+    });
+  }
+  // Whether a fragment's scripts all run inside the swap's own task: none is
+  // a module, and every file it names is already loaded. Then an instant
+  // navigation needs no held frame at all: swapped, run and bound before the
+  // browser next paints, it shows the new screen whole in the first frame.
+  function swapRunsInOneTask(html,base){
+    var sync=true;
+    html.replace(new RegExp('<scr'+'ipt\\\\b([^>]*)>([\\\\s\\\\S]*?)<\\\\/scr'+'ipt>','gi'),function(m,attrs,code){
+      if(!sync)return m;
+      var typeMatch=attrs.match(/\\btype\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))/i);
+      var scriptType=((typeMatch&&(typeMatch[1]||typeMatch[2]||typeMatch[3]))||'').trim().toLowerCase();
+      if(scriptType==='module'){sync=false;return m}
+      if(scriptType&&scriptType!=='text/javascript'&&scriptType!=='application/javascript')return m;
+      var srcMatch=attrs.match(/\\bsrc\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))/i);
+      var src=srcMatch&&(srcMatch[1]||srcMatch[2]||srcMatch[3]);
+      if(src){
+        if(!isSharedClientScriptAttrs(attrs)){var key=externalScriptKey(src,base);if(key&&!loadedExternalScripts[key])sync=false}
+        return m;
+      }
+      if(code&&hasStaticImport(code))sync=false;
+      return m;
+    });
+    return sync;
+  }
+  function runInOneTask(complete){
+    // The runtime binds on stx:load after a debounce; bind now, in this task.
+    function flush(){if(window.stx&&typeof window.stx._flushLoad==='function')window.stx._flushLoad()}
+    window.addEventListener('stx:load',flush,{once:true});
+    try{complete()}finally{window.removeEventListener('stx:load',flush)}
+  }
+  function runInstantSwap(complete){
+    if(!document.startViewTransition)return false;
+    var root=document.documentElement;
+    root.classList.add('stx-instant');
+    var clear=function(){root.classList.remove('stx-instant')};
+    try{
+      var transition=document.startViewTransition(function(){
+        scriptsPending=0;
+        // The runtime binds the page on stx:load after a short debounce; run
+        // it now, so the frame this reveals is bound rather than showing its
+        // {{ }} for a frame before they fill in.
+        var loaded=new Promise(function(resolve){window.addEventListener('stx:load',function(){if(window.stx&&typeof window.stx._flushLoad==='function')window.stx._flushLoad();resolve()},{once:true});setTimeout(resolve,300)});
+        complete();
+        return loaded.then(function(){return whenHydrated(300)});
+      });
+      if(transition&&transition.finished&&transition.finished.then)transition.finished.then(clear,clear);else clear();
+      if(transition&&transition.ready&&transition.ready.catch)transition.ready.catch(function(){});
+      return true;
+    }catch(err){
+      clear();
+      log('[router] instant transition unavailable:',err&&err.message?err.message:err);
+      return false;
+    }
+  }
+
   // ── Progress bar (0→100% at top of viewport) ──
   // Native loading indicator baked into the router. Starts when navigation
   // begins, trickles up to ~90% during fetch, snaps to 100% + fades on
@@ -1385,7 +1462,7 @@ else {
           if(hasImport){
             ns.type='module';
           }
-          ns.textContent=(hasImport||isAlreadyScoped)?code:'{'+code+'}';
+          ns.textContent=markRan((hasImport||isAlreadyScoped)?code:'{'+code+'}');
           ns.setAttribute('data-stx-page','');
           if(placeholder&&placeholder.parentNode){
             ns.setAttribute('data-stx-positioned','');
@@ -1426,7 +1503,9 @@ else {
               resolve(true);
             }catch(err){reject(err)}
           }
-          if(runViewTransition(completeFragSwap)){}
+          if(instantNav&&swapRunsInOneTask(html,url)){runInOneTask(completeFragSwap)}
+          else if(instantNav&&runInstantSwap(completeFragSwap)){}
+          else if(runViewTransition(completeFragSwap)){}
           else if(instantNav){completeFragSwap()}
           else{currentContent.style.transition='opacity 0.12s ease-out';currentContent.style.opacity='0';setTimeout(function(){completeFragSwap();currentContent.style.opacity='1';setTimeout(function(){currentContent.style.transition=''},150)},120)}
         });
@@ -1842,7 +1921,7 @@ else {
           // ESM, and top-level 'import' is illegal inside a block, which
           // would throw SyntaxError before the script ever runs.
           var alreadyScoped=runsAlways(typeof entry==='string'?'':entry.run,text);
-          ns.textContent=(hasImport||alreadyScoped)?text:'{'+text+republishTopLevel(text)+'}';
+          ns.textContent=markRan((hasImport||alreadyScoped)?text:'{'+text+republishTopLevel(text)+'}');
           ns.setAttribute('data-stx-page','');
           var placeholder=entry.slot?qs('script[data-stx-route-script="'+entry.slot+'"]'):null;
           if(placeholder&&placeholder.parentNode){
@@ -1876,7 +1955,9 @@ else {
             resolve(true);
           }catch(err){reject(err)}
         }
-        if(runViewTransition(completeSwap)){
+        if(instantNav&&runInstantSwap(completeSwap)){
+        }
+        else if(runViewTransition(completeSwap)){
         }
         else if(instantNav){
           // A tab: swap at once, no fade either way.
@@ -2171,7 +2252,23 @@ else {
       return readPrefetchResponse(r,wantsFragment);
     }).then(function(result){
       if(result&&o.cache)setCache(key,result.html,result.layout,result.layoutGroup,result.title,result.containerAttrs);
+      if(result)loadModuleRegistries(result.html,href);
     }).catch(function(){}).finally(function(){delete prefetching[key]});
+  }
+
+  // A prefetched page's module registry (the file its imports are bundled
+  // into, one per page) is loaded with the prefetch, not on the tap. It only
+  // registers modules, once, so loading it early changes nothing but timing,
+  // and the tap then finds every script it needs already here: the swap runs
+  // in one task and the first visit to a tab paints whole, like the second.
+  function loadModuleRegistries(html,base){
+    html.replace(new RegExp('<scr'+'ipt\\\\b([^>]*)>','gi'),function(m,attrs){
+      if(!/(?:^|\\s)data-stx-modules(?:[\\s=]|$)/i.test(attrs))return m;
+      var srcMatch=attrs.match(/\\bsrc\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))/i);
+      var src=srcMatch&&(srcMatch[1]||srcMatch[2]||srcMatch[3]);
+      if(src)loadExternalScript(src,base);
+      return m;
+    });
   }
 
   // Links marked data-stx-prefetch="eager", fetched once the page is idle, so
@@ -2368,7 +2465,7 @@ else {
       // The container the router focuses after a navigation is not a
       // control, so it draws no focus ring: Safari drew one around the whole
       // page, a blue line along its bottom edge on every screen.
-      var css='[data-stx-route-focus]:focus{outline:none}.stx-navigating{cursor:wait}.stx-navigating a,.stx-navigating button{pointer-events:none}#stx-router-progress{position:fixed;top:0;left:0;right:0;height:'+ph+';background:'+pc+';box-shadow:0 0 8px '+pc+',0 0 4px '+pc+';transform:scaleX(0);transform-origin:left;transition:transform .18s ease-out,opacity .26s ease;opacity:0;pointer-events:none;z-index:999999}';
+      var css='[data-stx-route-focus]:focus{outline:none}.stx-navigating{cursor:wait}.stx-navigating a,.stx-navigating button{pointer-events:none}#stx-router-progress{position:fixed;top:0;left:0;right:0;height:'+ph+';background:'+pc+';box-shadow:0 0 8px '+pc+',0 0 4px '+pc+';transform:scaleX(0);transform-origin:left;transition:transform .18s ease-out,opacity .26s ease;opacity:0;pointer-events:none;z-index:999999}html.stx-instant::view-transition-group(*),html.stx-instant::view-transition-old(*),html.stx-instant::view-transition-new(*){animation:none!important}';
       if(o.viewTransitions&&'startViewTransition' in document){
         var dur=(o.viewTransitionDuration||220)+'ms';
         var ease=o.viewTransitionEasing||'cubic-bezier(0.16, 1, 0.3, 1)';
