@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.375...v0.2.376)
+
+## 🐛 Bug Fixes
+
+- **desktop**: require the craft-native every other framework package does ([1c6a56f](https://github.com/stacksjs/stx/commit/1c6a56f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.376 ([d8ad9b8](https://github.com/stacksjs/stx/commit/d8ad9b8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.374...v0.2.375)
 
 ## ✨ Features
