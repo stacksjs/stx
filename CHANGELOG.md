@@ -1,5 +1,22 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.381...HEAD)
+
+## 🚀 Features
+
+- **native**: publish capability metadata ([523f25f](https://github.com/stacksjs/stx/commit/523f25f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **stx**: a < outside markup made the div-balance check cry wolf ([1cad047](https://github.com/stacksjs/stx/commit/1cad047)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2039](https://github.com/stacksjs/stx/issues/2039))
+- **native**: support bare runtime requests ([1b42942](https://github.com/stacksjs/stx/commit/1b42942)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: a number prop written as an attribute is a number ([1ba01f9](https://github.com/stacksjs/stx/commit/1ba01f9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: preserve capability API contracts ([595c66a](https://github.com/stacksjs/stx/commit/595c66a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.380...v0.2.381)
 
 ## ✨ Features
