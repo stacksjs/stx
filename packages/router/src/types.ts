@@ -132,6 +132,8 @@ export interface RouteMiddlewareDefinition {
 
 export interface NavigateToOptions {
   replace?: boolean
+  /** No View Transition cross-fade, as for a link marked data-stx-transition="none". */
+  instant?: boolean
   external?: boolean
   redirectCode?: 301 | 302 | 303 | 307 | 308
 }

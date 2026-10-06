@@ -133,6 +133,15 @@ describe('instant navigation', () => {
     observer.disconnect()
   })
 
+  it('swaps a navigate(url, { instant: true }) call the same way', async () => {
+    const { window, transitions } = installRouter({ fragment: '<section>next</section><script>window.__page = 1</script>' })
+    void (window as any).stxRouter.navigate('/about', { replace: true, instant: true })
+    await sleep(150)
+    expect(window.location.pathname).toBe('/about')
+    expect(window.document.querySelector('main')!.textContent).toContain('next')
+    expect(transitions.length).toBe(0)
+  })
+
   it('keeps the View Transition for an ordinary link', async () => {
     const { window, transitions } = installRouter()
     click(window, 'plain')

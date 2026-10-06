@@ -934,9 +934,10 @@ function routerSource(): string {
   function tokenState(){var state={};state[SCROLL_TOKEN]=scrollToken;return state}
 
   // Second arg accepts the legacy pushState boolean OR an options object
-  // { replace }. Callers inside this file still pass the boolean.
+  // { replace, instant }. Callers inside this file still pass the boolean.
+  // instant is what data-stx-transition="none" is to a link: no cross-fade.
   function navigate(url,pushState,force){
-    if(pushState&&typeof pushState==='object')pushState=pushState.replace?'replace':true;
+    if(pushState&&typeof pushState==='object'){if(pushState.instant)instantNext=true;pushState=pushState.replace?'replace':true}
     // Lang-picker passes force=true with an already-localized path (/en/...).
     // Re-localizing would map it back to the *current* locale and no-op.
     if(!force) url=withCurrentLocale(url);

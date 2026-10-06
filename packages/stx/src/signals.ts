@@ -1608,7 +1608,7 @@ else if (immediate) {
   // Navigation API
   // ==========================================================================
 
-  // Second argument is an options object: { replace, reload }.
+  // Second argument is an options object: { replace, reload, instant }.
   //
   // It used to be a bare forceReload boolean while the shipped declaration
   // promised { replace?: boolean } — so the one call the type system invited,
@@ -1623,7 +1623,9 @@ else if (immediate) {
     var replace = !!opts.replace;
     var reload = !!(opts.reload || opts.forceReload);
     if (!reload && window.stxRouter && typeof window.stxRouter.navigate === 'function') {
-      window.stxRouter.navigate(url, { replace: replace });
+      var routed = { replace: replace };
+      if (opts.instant) routed.instant = true;
+      window.stxRouter.navigate(url, routed);
       return;
     }
     if (replace) window.location.replace(url);

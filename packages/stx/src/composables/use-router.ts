@@ -65,6 +65,12 @@ export interface NavigateOptions {
   replace?: boolean
   /** Bypass the SPA router and perform a full document load. */
   reload?: boolean
+  /**
+   * Swap without the View Transition cross-fade, as a link marked
+   * `data-stx-transition="none"` does: for a screen that should replace the
+   * one before it at once (a saved workout replacing its player).
+   */
+  instant?: boolean
 }
 
 /**
@@ -81,6 +87,7 @@ export interface NavigateOptions {
  * navigate('/about')
  * navigate('/dashboard', { replace: true })
  * navigate('/legacy', { reload: true })
+ * navigate('/workout/5', { replace: true, instant: true })
  * ```
  */
 export function navigate(url: string, options?: NavigateOptions | boolean): void {
@@ -92,7 +99,7 @@ export function navigate(url: string, options?: NavigateOptions | boolean): void
   const router = (window as any).stxRouter
 
   if (!opts.reload && router?.navigate) {
-    router.navigate(url, { replace: !!opts.replace })
+    router.navigate(url, opts.instant ? { replace: !!opts.replace, instant: true } : { replace: !!opts.replace })
     return
   }
 

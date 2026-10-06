@@ -90,6 +90,16 @@ describe('navigate options', () => {
     expect(replaceCalls).toEqual([])
   })
 
+  it('forwards instant to the router, for a swap without the cross-fade', () => {
+    // A screen replacing the one before it at once, as a tab bar link does.
+    withRouter()
+    stx.navigate('/dashboard', { replace: true, instant: true })
+
+    expect(routerCalls).toEqual([['/dashboard', { replace: true, instant: true }]])
+    expect(hrefWrites).toEqual([])
+    expect(replaceCalls).toEqual([])
+  })
+
   it('does a full load for reload: true', () => {
     withRouter()
     stx.navigate('/legacy', { reload: true })
