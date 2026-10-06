@@ -3,6 +3,27 @@ export const variant = $props.variant || 'default'
 export const size = $props.size || 'md'
 export const dot = $bool($props.dot)
 export const removable = $bool($props.removable)
+
+/*
+ * Whether this badge announces itself. Off by default (stacksjs/stx#2043-adjacent).
+ *
+ * Every badge carried `role="status"`, which is an ARIA live region: a screen
+ * reader watches it and reads out any change to its contents. A badge is
+ * usually a styled label -- a tag, a count, a status pill sitting in a table
+ * cell -- and a page of them becomes a page of live regions. One estate has
+ * 126 badges on a single view, so a single re-render could queue 126
+ * announcements, and the interruptions are the point: a live region speaks
+ * over whatever the user is reading.
+ *
+ * A live region is right when the badge is the thing that CHANGED and nothing
+ * else says so -- an unread count going up while focus is elsewhere. That is
+ * the caller's judgement, not a default, so it is opt-in: `<Badge live>` for
+ * polite, `<Badge live="assertive">` to interrupt.
+ */
+const liveProp = $props.live
+export const live = liveProp === 'assertive'
+  ? 'assertive'
+  : ($bool(liveProp) ? 'polite' : '')
 export const className = $props.className || ''
 
 /*
@@ -52,7 +73,10 @@ function onRemove() {
 }
 </script>
 
-<span class="{{ badgeClasses }}" role="status">
+<span
+  class="{{ badgeClasses }}"
+  @if(live)role="status" aria-live="{{ live }}"@endif
+>
   @if(dot)
     <span class="{{ dotClasses }}" aria-hidden="true"></span>
   @endif

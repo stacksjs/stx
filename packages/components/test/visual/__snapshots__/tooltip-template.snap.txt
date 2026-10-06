@@ -12,6 +12,28 @@ export const className = $props.className || ''
 export const show = $bool($props.show)
 export const disabled = $bool($props.disabled)
 
+/*
+ * The id that makes the tooltip reachable from its trigger.
+ *
+ * `role="tooltip"` names what the element IS; it does not attach it to
+ * anything. Without `aria-describedby` on the trigger pointing here, a screen
+ * reader never reaches this element at all and the role announces nothing --
+ * so the component was a DOWNGRADE from the native `title=` it replaces, which
+ * at least is announced.
+ */
+export const tooltipId = `tooltip-${$uid}`
+
+/*
+ * Whether the text may wrap. It may, by default.
+ *
+ * `whitespace-nowrap` keeps a two-word hint on one line, which is what a
+ * tooltip usually is -- but a sentence-length one then grows past the viewport
+ * instead of wrapping, and on a phone the end of it is simply unreachable.
+ * Wrapping with a sensible max width is right for both; `nowrap` is there for
+ * a caller who knows the content is short.
+ */
+export const nowrap = $bool($props.nowrap)
+
 const positionClasses = {
   top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
   bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
@@ -26,7 +48,8 @@ const arrowClasses = {
   right: 'right-full top-1/2 -translate-y-1/2 border-r-inverse',
 }
 
-export const tooltipClasses = `absolute z-50 px-3 py-2 text-sm font-medium text-inverse-ink bg-inverse rounded-panel shadow-lg whitespace-nowrap pointer-events-none transition-opacity duration-200 ${positionClasses[position] || positionClasses.top} ${className}`.trim()
+const wrapClasses = nowrap ? 'whitespace-nowrap' : 'max-w-xs break-words'
+export const tooltipClasses = `absolute z-50 px-3 py-2 text-sm font-medium text-inverse-ink bg-inverse rounded-panel shadow-lg ${wrapClasses} pointer-events-none transition-opacity duration-200 ${positionClasses[position] || positionClasses.top} ${className}`.trim()
 export const arrowClass = `absolute w-0 h-0 border-4 border-transparent ${arrowClasses[position] || arrowClasses.top}`.trim()
 </script>
 <script client>
@@ -58,7 +81,12 @@ function hideTooltip() {
 }
 </script>
 <div class="relative inline-block {{ disabled ? 'cursor-not-allowed' : '' }}">
+  {{-- aria-describedby is what attaches the tooltip to what it describes.
+       The element is always in the DOM -- :show toggles it -- so the
+       description resolves whether or not the tooltip is on screen, which is
+       how a screen reader is meant to reach it. --}}
   <div
+    aria-describedby="{{ tooltipId }}"
     @mouseenter="showTooltip()"
     @mouseleave="hideTooltip()"
     @focusin="showTooltip()"
@@ -67,6 +95,7 @@ function hideTooltip() {
     <slot />
   </div>
   <div
+    id="{{ tooltipId }}"
     :show="isVisible() && !{{ disabled }}"
     class="{{ tooltipClasses }}"
     role="tooltip"
@@ -92,6 +121,7 @@ border-r-inverse
 border-t-inverse
 border-transparent
 bottom-full
+break-words
 cursor-not-allowed
 disabled
 duration-200
@@ -99,6 +129,7 @@ font-medium
 h-0
 inline-block
 left-full
+max-w-xs
 mb-2
 ml-2
 mr-2
