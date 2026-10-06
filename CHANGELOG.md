@@ -1,5 +1,37 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.373...v0.2.374)
+
+## ✨ Features
+
+- **stx**: a failed server script fails the build ([b9a846d](https://github.com/stacksjs/stx/commit/b9a846d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2035](https://github.com/stacksjs/stx/issues/2035), [#2004](https://github.com/stacksjs/stx/issues/2004), [#2037](https://github.com/stacksjs/stx/issues/2037), [#1921](https://github.com/stacksjs/stx/issues/1921))
+- **native**: compile keyed flat list templates ([d7f0dfd](https://github.com/stacksjs/stx/commit/d7f0dfd)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **deps**: require ts-broadcasting ^0.0.11 ([ad27d55](https://github.com/stacksjs/stx/commit/ad27d55)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: preserve typed expression props ([390fb80](https://github.com/stacksjs/stx/commit/390fb80)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **stx**: a server script inside an @section resolved its imports against the layout ([f1b3f30](https://github.com/stacksjs/stx/commit/f1b3f30)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1698](https://github.com/stacksjs/stx/issues/1698), [#2035](https://github.com/stacksjs/stx/issues/2035), [#1698](https://github.com/stacksjs/stx/issues/1698))
+- **components**: ten more boolean props read their own attribute wrong ([7fa0f09](https://github.com/stacksjs/stx/commit/7fa0f09)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2006](https://github.com/stacksjs/stx/issues/2006))
+
+## 📝 Documentation
+
+- $bool covers four wrong idioms, not two ([696db7d](https://github.com/stacksjs/stx/commit/696db7d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ✅ Tests
+
+- **components**: render the arc favourites grid, measure the rendered tile ([da97a40](https://github.com/stacksjs/stx/commit/da97a40)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: render the sidebar instead of reading its source ([8742181](https://github.com/stacksjs/stx/commit/8742181)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.374 ([45187f8](https://github.com/stacksjs/stx/commit/45187f8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.372...v0.2.373)
 
 ## 🐛 Bug Fixes
