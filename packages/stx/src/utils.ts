@@ -1697,9 +1697,26 @@ export async function renderComponentWithSlot(
     const { applySlots } = await importOnce('stx/slots', () => import('./slots'))
     const { defaultSlot, namedSlots } = parsedSlotContent
 
-    // Only signal components introduce a registered scope boundary.
+    /*
+     * Only signal components introduce a registered scope boundary.
+     *
+     * `onMount` and `onDestroy` count, which they did not before
+     * stacksjs/stx#2036. A component whose client script uses nothing but a
+     * lifecycle hook got no boundary at all, so its hooks went to the runtime's
+     * GLOBAL mount queue -- a list with no link to any element -- and the
+     * DOMContentLoaded handler ran them unconditionally. A component behind a
+     * false `:if` therefore mounted with its markup absent, and nothing could
+     * ever destroy it, so being mounted could not be used as an open state:
+     * three gated modal shells each locked body scroll and claimed Escape
+     * before anything was opened.
+     *
+     * The same two names are already in `SIGNAL_API_RE` (signal-processing.ts),
+     * which decides the identical question for a page or layout script. The two
+     * lists disagreeing is what made this reachable from a component and not
+     * from a page.
+     */
     const hasSignalScripts = clientScripts.some(s =>
-      /\b(?:state|derived|effect|ref|useRef|reactive|computed|watch|watchEffect|useModel|useReactiveProp|defineProps|withDefaults|defineEmits|defineExpose|defineSlots)\s*(?:<[^<>()]*>)?\s*\(/.test(s),
+      /\b(?:state|derived|effect|ref|useRef|reactive|computed|watch|watchEffect|useModel|useReactiveProp|onMount|onDestroy|defineProps|withDefaults|defineEmits|defineExpose|defineSlots)\s*(?:<[^<>()]*>)?\s*\(/.test(s),
     )
     const projectRefs = (content: string) => hasSignalScripts ? markProjectedRefs(content, componentUid) : content
     // Apply slots to the template (handles named slots, scoped slots, and default slots)

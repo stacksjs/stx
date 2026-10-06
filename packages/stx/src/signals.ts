@@ -8365,7 +8365,20 @@ else {
       // the work, so onMount must fire when the trigger actually hydrates the
       // scope, not now. deferHydration's run() flushes it then.
       var scopeDeferred = el.hasAttribute && el.hasAttribute('stx-hydrate') && !el.__stx_hydrated;
-      if (scopeVars && scopeVars.__mountCallbacks && !scopeVars.__mounted && !scopeDeferred) {
+      // A component behind a false :if is in the document's MARKUP but not in
+      // the document: bindIf detached the subtree before this walk reached it,
+      // while the component's own setup script already ran and queued its
+      // onMount. Mounting it from here anyway is what made being mounted
+      // unusable as an open state (stacksjs/stx#2036) -- three gated modal
+      // shells each locked body scroll and registered an Escape handler before
+      // anything had been opened, so the page could not be scrolled and Escape
+      // reached whichever instance registered last.
+      //
+      // Left unmounted rather than mounted-and-torn-down, so hydrateComponentScopes
+      // flushes it when bindIf shows the subtree -- the same deferral
+      // stx-hydrate uses above, and the same flush an island gets.
+      var scopeDetached = el.isConnected === false;
+      if (scopeVars && scopeVars.__mountCallbacks && !scopeVars.__mounted && !scopeDeferred && !scopeDetached) {
         scopeVars.__mounted = true;
         runMountCallbacks(scopeVars.__mountCallbacks, scopeDestroySink(scopeVars));
       }

@@ -40,8 +40,18 @@ ${BODY}</script>
 
 <div class="sink">{{ hits() }}</div>
 `,
-  // A tag component with no signals: stx.mount, which keeps its hooks on
-  // root.__stx_destroy.
+  /*
+   * A tag component with no state(), only lifecycle hooks.
+   *
+   * This took the stx.mount path until stacksjs/stx#2036, which made onMount
+   * and onDestroy count as needing a scope boundary -- without one, a
+   * lifecycle-only component's hooks went to the runtime's global mount queue,
+   * which has no link to any element, so a component behind a false `:if`
+   * mounted anyway. So the shape is still here and still has to keep its own
+   * teardown; it is the scope's queue that holds it now rather than
+   * root.__stx_destroy. That sink is still covered, by the mountEl case at the
+   * bottom of this file.
+   */
   'components/MountSink.stx': `<script client>
   function label() { return 'mounted' }
 ${BODY}</script>
@@ -130,7 +140,7 @@ async function destroyContainer(browser: Browser): Promise<void> {
 describe('an onDestroy registered inside onMount', () => {
   for (const [shape, route, stamp] of [
     ['a tag component with signals', '/tag', 'data-stx-scope'],
-    ['a tag component mounted through stx.mount', '/mount', 'window.stx.mount('],
+    ['a tag component with only lifecycle hooks', '/mount', 'data-stx-scope'],
     ['an @include', '/include', 'data-stx-scope'],
   ] as const) {
     it(`stays with ${shape} until it is destroyed, then runs once`, async () => {
