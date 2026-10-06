@@ -8,13 +8,14 @@ function generate(script: string = ''): string {
   return cli.generateBundle(parseSTX(source, 'Capabilities.stx'))
 }
 
-function runtime(script: string = '', options: { timeout?: number } = {}) {
+function runtime(script: string = '', options: { timeout?: number, initialAppState?: string } = {}) {
   const sent: Array<Record<string, any>> = []
   let callback: (message: Record<string, any>) => void = () => {}
   const scope: Record<string, any> = {
     __stxNativeBridge: {
       capabilityProtocolVersion: 1,
       capabilityTimeoutMs: options.timeout ?? 100,
+      initialAppState: options.initialAppState ?? 'active',
       capabilities: ['storage', 'database', 'lifecycle', 'deepLinks', 'notifications'],
       onMessage: (receiver: typeof callback) => { callback = receiver },
       postMessage: (raw: string) => { sent.push(JSON.parse(raw)) },
@@ -29,7 +30,7 @@ describe('generated native capability protocol', () => {
     const { scope, sent, receive } = runtime()
     scope.craft.storage.get('theme')
     scope.craft.db.execute('BEGIN TRANSACTION')
-    scope.craft.lifecycle.getState()
+    expect(scope.craft.lifecycle.getState()).toBe('active')
     scope.craft.deepLinks.getInitialURL()
     scope.craft.notifications.schedule({ id: 'wake', title: 'Wake up' })
 
@@ -37,7 +38,6 @@ describe('generated native capability protocol', () => {
     expect(requests.map(message => message.payload)).toEqual([
       { version: 1, module: 'Storage', method: 'get', args: ['theme'] },
       { version: 1, module: 'Database', method: 'execute', args: ['BEGIN TRANSACTION', []] },
-      { version: 1, module: 'Lifecycle', method: 'getState', args: [] },
       { version: 1, module: 'DeepLinks', method: 'getInitialURL', args: [] },
       { version: 1, module: 'Notifications', method: 'schedule', args: [{ id: 'wake', title: 'Wake up' }] },
     ])
@@ -46,6 +46,50 @@ describe('generated native capability protocol', () => {
       correlationId: request.id,
       payload: { version: 1, requestId: request.id, data: null },
     }))
+  })
+
+  it('preserves synchronous lifecycle and legacy notification aliases', () => {
+    const { scope, sent, receive } = runtime('', { initialAppState: 'background' })
+    expect(scope.craft.getAppState()).toBe('background')
+    expect(scope.craft.lifecycle.getState()).toBe('background')
+
+    const states: string[] = []
+    scope.craft.lifecycle.onStateChange((state: string) => states.push(state))
+    receive({ type: 'APP_STATE', payload: { state: 'active' } })
+    receive({ type: 'APP_STATE', payload: { state: 'active' } })
+    expect(states).toEqual(['active'])
+
+    scope.craft.scheduleNotification({ id: 'legacy', title: 'Legacy' })
+    scope.craft.cancelNotification('legacy')
+    scope.craft.cancelAllNotifications()
+    scope.craft.getPendingNotifications()
+    expect(sent.slice(-4).map(message => [message.payload.module, message.payload.method])).toEqual([
+      ['Notifications', 'schedule'],
+      ['Notifications', 'cancel'],
+      ['Notifications', 'cancelAll'],
+      ['Notifications', 'pending'],
+    ])
+    sent.slice(-4).forEach(request => receive({
+      type: 'API_RESPONSE',
+      correlationId: request.id,
+      payload: { version: 1, requestId: request.id, data: null },
+    }))
+  })
+
+  it('does not deliver an initial link after getInitialURL claims it', () => {
+    const { scope, sent, receive } = runtime()
+    const links: string[] = []
+    scope.craft.deepLinks.getInitialURL()
+    scope.craft.deepLinks.onLink((link: { url: string }) => links.push(link.url))
+    receive({ type: 'DEEP_LINK', payload: { url: 'craft://launch', initial: true } })
+    receive({ type: 'DEEP_LINK', payload: { url: 'craft://later', initial: false } })
+    expect(links).toEqual(['craft://later'])
+    const request = sent.find(message => message.type === 'API_REQUEST')!
+    receive({
+      type: 'API_RESPONSE',
+      correlationId: request.id,
+      payload: { version: 1, requestId: request.id, data: null },
+    })
   })
 
   it('settles responses, dispatches subscriptions, and cancels timed-out work', async () => {

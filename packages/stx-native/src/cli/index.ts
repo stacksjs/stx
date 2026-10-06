@@ -742,6 +742,10 @@ catch (error) {
     const pendingAPI = new Map();
     const appStateHandlers = new Set();
     const deepLinkHandlers = new Set();
+    let currentAppState = ['active', 'inactive', 'background'].includes(bridge.initialAppState)
+      ? bridge.initialAppState
+      : 'active';
+    let initialDeepLinkClaimed = false;
     let sequence = 0;
 
     function send(type, payload, id) {
@@ -1100,18 +1104,23 @@ catch (error) {
       commit: function() { return requestAPI('Database', 'commit', []); },
       rollback: function() { return requestAPI('Database', 'rollback', []); }
     };
-    globalThis.craft.lifecycle = {
-      getState: function() { return requestAPI('Lifecycle', 'getState', []); },
-      onChange: function(callback) {
-        if (typeof callback !== 'function') throw new TypeError('lifecycle.onChange needs a function');
+    function onAppStateChange(callback) {
+        if (typeof callback !== 'function') throw new TypeError('lifecycle.onStateChange needs a function');
         appStateHandlers.add(callback);
         return function() { appStateHandlers.delete(callback); };
-      }
+    }
+    globalThis.craft.lifecycle = {
+      getState: function() { return currentAppState; },
+      onStateChange: onAppStateChange,
+      onChange: onAppStateChange
     };
     globalThis.craft.getAppState = globalThis.craft.lifecycle.getState;
-    globalThis.craft.onAppStateChange = globalThis.craft.lifecycle.onChange;
+    globalThis.craft.onAppStateChange = onAppStateChange;
     globalThis.craft.deepLinks = {
-      getInitialURL: function() { return requestAPI('DeepLinks', 'getInitialURL', []); },
+      getInitialURL: function() {
+        initialDeepLinkClaimed = true;
+        return requestAPI('DeepLinks', 'getInitialURL', []);
+      },
       onLink: function(callback) {
         if (typeof callback !== 'function') throw new TypeError('deepLinks.onLink needs a function');
         deepLinkHandlers.add(callback);
@@ -1125,6 +1134,10 @@ catch (error) {
       cancelAll: function() { return requestAPI('Notifications', 'cancelAll', []); },
       pending: function() { return requestAPI('Notifications', 'pending', []); }
     };
+    globalThis.craft.scheduleNotification = globalThis.craft.notifications.schedule;
+    globalThis.craft.cancelNotification = globalThis.craft.notifications.cancel;
+    globalThis.craft.cancelAllNotifications = globalThis.craft.notifications.cancelAll;
+    globalThis.craft.getPendingNotifications = globalThis.craft.notifications.pending;
 
     bridge.onMessage(function(raw) {
       const message = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -1146,9 +1159,12 @@ catch (error) {
         }
       }
       else if (message.type === 'APP_STATE') {
+        if (message.payload.state === currentAppState) return;
+        currentAppState = message.payload.state;
         appStateHandlers.forEach(function(handler) { handler(message.payload.state); });
       }
       else if (message.type === 'DEEP_LINK') {
+        if (initialDeepLinkClaimed && message.payload.initial) return;
         deepLinkHandlers.forEach(function(handler) { handler(message.payload); });
       }
       else if (message.type === 'MUTATION_ERROR') {

@@ -591,6 +591,9 @@ export interface NativeBridgeInterface {
   /** Host-selected request deadline, primarily useful to deterministic tests. */
   capabilityTimeoutMs?: number
 
+  /** App state captured before the generated bundle starts executing. */
+  initialAppState?: 'active' | 'inactive' | 'background'
+
   /**
    * Post a message to native
    */
