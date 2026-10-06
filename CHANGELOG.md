@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.380...v0.2.381)
+
+## ✨ Features
+
+- **native**: version capability bridge requests ([b50aafe](https://github.com/stacksjs/stx/commit/b50aafe)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **pwa**: every app's service worker shipped with Workbox logging on ([a9dd4cb](https://github.com/stacksjs/stx/commit/a9dd4cb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.381 ([fa90dd2](https://github.com/stacksjs/stx/commit/fa90dd2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- generate changelog for v0.2.381 ([203b35f](https://github.com/stacksjs/stx/commit/203b35f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.380...HEAD)
 
 ## 🚀 Features
