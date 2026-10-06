@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.385...v0.2.386)
+
+## 🐛 Bug Fixes
+
+- **router**: a tab switch paints the new screen whole, in one frame ([701fe1d](https://github.com/stacksjs/stx/commit/701fe1d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: a server-rendered value did not survive a POST ([1da5a4d](https://github.com/stacksjs/stx/commit/1da5a4d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2043](https://github.com/stacksjs/stx/issues/2043))
+
+## 🔧 Chores
+
+- release v0.2.386 ([46024c0](https://github.com/stacksjs/stx/commit/46024c0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.384...v0.2.385)
 
 ## 🐛 Bug Fixes
