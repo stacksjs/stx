@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.376...v0.2.377)
+
+## 🐛 Bug Fixes
+
+- **expressions**: a client loop variable shadows a server binding of the same name ([a8d2d91](https://github.com/stacksjs/stx/commit/a8d2d91)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.377 ([9b6fad6](https://github.com/stacksjs/stx/commit/9b6fad6)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.375...v0.2.376)
 
 ## 🐛 Bug Fixes
