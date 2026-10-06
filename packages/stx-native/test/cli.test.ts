@@ -182,7 +182,7 @@ function loadDevice() {
     callback({ type: 'EVENT', payload: { handlerName: 'loadDevice', nativeEvent: {} } })
     const request = sent.at(-1)!
     expect(request.type).toBe('API_REQUEST')
-    expect(request.payload).toEqual({ module: 'Device', method: 'getInfo', args: [] })
+    expect(request.payload).toEqual({ version: 1, module: 'Device', method: 'getInfo', args: [] })
     callback({ type: 'API_RESPONSE', correlationId: request.id, payload: { data: { model: 'iPhone Simulator' } } })
     await Promise.resolve()
     await Promise.resolve()
@@ -361,7 +361,7 @@ let ready = globalThis.craft.device.getInfo()
       },
     }
     new Function('globalThis', generate(source))(scope)
-    expect(sent[0].payload).toEqual({ module: 'Device', method: 'getInfo', args: [] })
+    expect(sent[0].payload).toEqual({ version: 1, module: 'Device', method: 'getInfo', args: [] })
     expect(await scope.craft.clipboard.write('Glenn')).toBe(true)
     expect(await scope.craft.clipboard.read()).toBe('Glenn')
     await expect(scope.craft.clipboard.write()).rejects.toMatchObject({ code: 'INVALID_ARGUMENT' })
@@ -369,7 +369,7 @@ let ready = globalThis.craft.device.getInfo()
     expect(await scope.craft.haptics.impact('light')).toBeUndefined()
     hapticsEnabled = true
     expect(await scope.craft.haptic('heavy')).toBe(true)
-    expect(sent.at(-1)?.payload).toEqual({ module: 'Haptics', method: 'impact', args: ['heavy'] })
+    expect(sent.at(-1)?.payload).toEqual({ version: 1, module: 'Haptics', method: 'impact', args: ['heavy'] })
   })
 
   it('compiles named screens and keeps each route runtime independent', async () => {

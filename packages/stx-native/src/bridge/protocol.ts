@@ -46,6 +46,7 @@ export type BridgeMessageType =
 
   // API
   | 'API_REQUEST'         // Call native API
+  | 'API_CANCEL'          // Cancel an in-flight native API request
   | 'API_RESPONSE'        // Native API response
   | 'API_ERROR'           // Native API error
 
@@ -248,6 +249,9 @@ export interface AppStatePayload {
  * API_REQUEST message payload
  */
 export interface ApiRequestPayload {
+  /** Capability protocol spoken by this request. */
+  version: 1
+
   /** API module (e.g., 'clipboard', 'storage', 'camera') */
   module: string
 
@@ -258,10 +262,20 @@ export interface ApiRequestPayload {
   args: unknown[]
 }
 
+/** A request that no longer has a JavaScript consumer. */
+export interface ApiCancelPayload {
+  version: 1
+  requestId: string
+  reason: 'timeout' | 'screen-closed' | 'aborted'
+}
+
 /**
  * API_RESPONSE message payload
  */
 export interface ApiResponsePayload {
+  /** Capability protocol spoken by this response. */
+  version: 1
+
   /** Request ID this is responding to */
   requestId: string
 
@@ -276,6 +290,9 @@ export interface ApiResponsePayload {
  * API_ERROR message payload
  */
 export interface ApiErrorPayload {
+  /** Capability protocol spoken by this response. */
+  version: 1
+
   /** Request ID this is responding to */
   requestId: string
 
@@ -565,6 +582,15 @@ catch (error) {
  * Interface that native code must implement
  */
 export interface NativeBridgeInterface {
+  /** Versioned API request/response contract. Omitted by legacy hosts. */
+  capabilityProtocolVersion?: 1
+
+  /** Capability names implemented by this host. */
+  capabilities?: string[]
+
+  /** Host-selected request deadline, primarily useful to deterministic tests. */
+  capabilityTimeoutMs?: number
+
   /**
    * Post a message to native
    */

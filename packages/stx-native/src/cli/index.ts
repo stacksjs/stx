@@ -14,9 +14,9 @@
  *   stx-native dev              # Start dev server with hot reload
  */
 
-import { spawn, execSync, ChildProcess } from 'child_process'
+import { spawn, execSync } from 'child_process'
 import { existsSync, mkdirSync, writeFileSync, readFileSync, watchFile, readdirSync } from 'fs'
-import { join, resolve, dirname, basename, extname } from 'path'
+import { join, resolve, basename } from 'path'
 import { createServer, IncomingMessage, ServerResponse } from 'http'
 import { WebSocketServer, WebSocket } from 'ws'
 import { parseSTX } from '../compiler/parser'
@@ -740,6 +740,8 @@ catch (error) {
     const bridge = globalThis.__stxNativeBridge;
     const handlers = globalThis.__stxHandlers || (globalThis.__stxHandlers = {});
     const pendingAPI = new Map();
+    const appStateHandlers = new Set();
+    const deepLinkHandlers = new Set();
     let sequence = 0;
 
     function send(type, payload, id) {
@@ -1026,8 +1028,17 @@ catch (error) {
     function requestAPI(module, method, args) {
       return new Promise(function(resolve, reject) {
         const id = 'js_' + (++sequence);
-        pendingAPI.set(id, { resolve, reject });
-        send('API_REQUEST', { module, method, args }, id);
+        const configuredTimeout = Number(bridge.capabilityTimeoutMs || 30000);
+        const timeoutMs = Number.isFinite(configuredTimeout) && configuredTimeout > 0 ? configuredTimeout : 30000;
+        const timeout = setTimeout(function() {
+          if (!pendingAPI.delete(id)) return;
+          send('API_CANCEL', { version: 1, requestId: id, reason: 'timeout' });
+          const error = new Error('Native API request timed out');
+          error.code = 'TIMEOUT';
+          reject(error);
+        }, timeoutMs);
+        pendingAPI.set(id, { resolve, reject, timeout });
+        send('API_REQUEST', { version: 1, module, method, args }, id);
       });
     }
 
@@ -1075,6 +1086,45 @@ catch (error) {
       },
       selection: function() { return hapticFeedback(globalThis.craft.haptic('soft')); }
     };
+    globalThis.craft.storage = {
+      get: function(key) { return requestAPI('Storage', 'get', [key]); },
+      set: function(key, value) { return requestAPI('Storage', 'set', [key, value]); },
+      remove: function(key) { return requestAPI('Storage', 'remove', [key]); },
+      clear: function() { return requestAPI('Storage', 'clear', []); },
+      keys: function() { return requestAPI('Storage', 'keys', []); }
+    };
+    globalThis.craft.db = {
+      execute: function(sql, params) { return requestAPI('Database', 'execute', [sql, params || []]); },
+      query: function(sql, params) { return requestAPI('Database', 'query', [sql, params || []]); },
+      beginTransaction: function() { return requestAPI('Database', 'beginTransaction', []); },
+      commit: function() { return requestAPI('Database', 'commit', []); },
+      rollback: function() { return requestAPI('Database', 'rollback', []); }
+    };
+    globalThis.craft.lifecycle = {
+      getState: function() { return requestAPI('Lifecycle', 'getState', []); },
+      onChange: function(callback) {
+        if (typeof callback !== 'function') throw new TypeError('lifecycle.onChange needs a function');
+        appStateHandlers.add(callback);
+        return function() { appStateHandlers.delete(callback); };
+      }
+    };
+    globalThis.craft.getAppState = globalThis.craft.lifecycle.getState;
+    globalThis.craft.onAppStateChange = globalThis.craft.lifecycle.onChange;
+    globalThis.craft.deepLinks = {
+      getInitialURL: function() { return requestAPI('DeepLinks', 'getInitialURL', []); },
+      onLink: function(callback) {
+        if (typeof callback !== 'function') throw new TypeError('deepLinks.onLink needs a function');
+        deepLinkHandlers.add(callback);
+        return function() { deepLinkHandlers.delete(callback); };
+      }
+    };
+    globalThis.craft.notifications = {
+      show: function(notification) { return requestAPI('Notifications', 'schedule', [notification]); },
+      schedule: function(notification) { return requestAPI('Notifications', 'schedule', [notification]); },
+      cancel: function(id) { return requestAPI('Notifications', 'cancel', [id]); },
+      cancelAll: function() { return requestAPI('Notifications', 'cancelAll', []); },
+      pending: function() { return requestAPI('Notifications', 'pending', []); }
+    };
 
     bridge.onMessage(function(raw) {
       const message = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -1087,12 +1137,19 @@ catch (error) {
         const pending = pendingAPI.get(requestId);
         if (!pending) return;
         pendingAPI.delete(requestId);
+        clearTimeout(pending.timeout);
         if (message.type === 'API_RESPONSE') pending.resolve(message.payload.data);
         else {
           const error = new Error(message.payload.message || 'Native API failed');
           error.code = message.payload.code || 'CRAFT_ERROR';
           pending.reject(error);
         }
+      }
+      else if (message.type === 'APP_STATE') {
+        appStateHandlers.forEach(function(handler) { handler(message.payload.state); });
+      }
+      else if (message.type === 'DEEP_LINK') {
+        deepLinkHandlers.forEach(function(handler) { handler(message.payload); });
       }
       else if (message.type === 'MUTATION_ERROR') {
         mutationsEnabled = false;
