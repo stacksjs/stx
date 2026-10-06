@@ -273,6 +273,8 @@ function clear() { items = [] }
 
     expect(sent[0].type).toBe('RENDER')
     const initial = sent[0].payload.document
+    expect(JSON.stringify(initial)).not.toContain('"_source"')
+    expect(JSON.stringify(initial)).not.toContain('"_classes"')
     const created = (id: string) => {
       let found: Record<string, any> | undefined
       function visit(node: Record<string, any>): void {

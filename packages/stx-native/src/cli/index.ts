@@ -890,6 +890,16 @@ catch (error) {
       };
     }
 
+    function treeValue(node) {
+      return {
+        id: node.id,
+        ...nodeValue(node),
+        children: (node.children || []).map(function(child) {
+          return typeof child === 'string' ? child : treeValue(child);
+        })
+      };
+    }
+
     function flatten(root) {
       const result = new Map();
       function visit(node, parentId, index) {
@@ -984,7 +994,7 @@ catch (error) {
     }
 
     function sendRenderFallback() {
-      send('RENDER', { document: latestTree, mode: 'replace' }, 'render_' + Date.now() + '_' + (++sequence));
+      send('RENDER', { document: treeValue(latestTree), mode: 'replace' }, 'render_' + Date.now() + '_' + (++sequence));
     }
 
     function render() {
