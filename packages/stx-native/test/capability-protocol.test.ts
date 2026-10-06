@@ -75,7 +75,17 @@ describe('generated native capability protocol', () => {
   })
 
   it('exposes typed secure storage and biometric APIs only through native capability requests', () => {
-    const { scope, sent } = runtime('', { capabilities: ['biometric', 'secureStorage'] })
+    /*
+     * No timers: this asserts what was SENT and never answers any of it.
+     *
+     * With timers on, each of the seven requests below leaves a promise that
+     * rejects when the capability timeout elapses, and nothing is awaiting any
+     * of them -- so seven unhandled rejections fired about 100ms later, inside
+     * whichever test file happened to be running by then. The whole suite saw
+     * it as five failures in cli.test.ts attributed to a line in this file,
+     * and each file passed when run on its own.
+     */
+    const { scope, sent } = runtime('', { capabilities: ['biometric', 'secureStorage'], timers: false })
     scope.craft.secureStorage.set('token', 'secret')
     scope.craft.secureStorage.get('token')
     scope.craft.secureStorage.delete('token')
