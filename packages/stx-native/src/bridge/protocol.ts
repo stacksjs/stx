@@ -41,6 +41,7 @@ export type BridgeMessageType =
 
   // Lifecycle
   | 'APP_STATE'           // App foreground/background
+  | 'DEEP_LINK'           // App opened or resumed through a URL
   | 'SCREEN_FOCUS'        // Screen gained/lost focus
   | 'MEMORY_WARNING'      // Low memory warning
 
@@ -245,6 +246,17 @@ export interface AppStatePayload {
   previousState?: 'active' | 'inactive' | 'background'
 }
 
+/** A normalized deep link delivered by either native host. */
+export interface DeepLinkPayload {
+  url: string
+  scheme: string
+  host: string
+  path: string
+  query: string
+  queryParams?: Record<string, string>
+  initial?: boolean
+}
+
 /**
  * API_REQUEST message payload
  */
@@ -282,8 +294,6 @@ export interface ApiResponsePayload {
   /** Response data */
   data: unknown
 
-  /** Success flag */
-  success: boolean
 }
 
 /**
@@ -343,7 +353,14 @@ type MessageHandler<T = unknown> = (message: BridgeMessage<T>) => void | Promise
 type PendingRequest = {
   resolve: (value: unknown) => void
   reject: (error: Error) => void
-  timeout: ReturnType<typeof setTimeout>
+  timeout: ReturnType<typeof setTimeout> | null
+}
+
+export class NativeCapabilityError extends Error {
+  constructor(public readonly code: string, message: string) {
+    super(message)
+    this.name = 'NativeCapabilityError'
+  }
 }
 
 /**
@@ -396,11 +413,20 @@ catch (error) {
     const message = this.createMessage(type, payload)
 
     return new Promise<R>((resolve, reject) => {
-      // Set up timeout
-      const timeoutId = setTimeout(() => {
+      const scheduleTimeout = typeof globalThis.setTimeout === 'function'
+        ? globalThis.setTimeout.bind(globalThis)
+        : null
+      const timeoutId = scheduleTimeout ? scheduleTimeout(() => {
         this.pendingRequests.delete(message.id)
-        reject(new Error(`Request ${message.id} timed out after ${timeout}ms`))
-      }, timeout)
+        if (type === 'API_REQUEST') {
+          this.postToNative(this.createMessage<ApiCancelPayload>('API_CANCEL', {
+            version: 1,
+            requestId: message.id,
+            reason: 'timeout',
+          }))
+        }
+        reject(new NativeCapabilityError('TIMEOUT', `Request ${message.id} timed out after ${timeout}ms`))
+      }, timeout) : null
 
       // Store pending request
       this.pendingRequests.set(message.id, {
@@ -501,6 +527,7 @@ catch (error) {
    */
   async callNativeAPI<T>(module: string, method: string, ...args: unknown[]): Promise<T> {
     return this.request<ApiRequestPayload, T>('API_REQUEST', {
+      version: 1,
       module,
       method,
       args,
@@ -547,11 +574,13 @@ catch (error) {
     if (message.correlationId && this.pendingRequests.has(message.correlationId)) {
       const pending = this.pendingRequests.get(message.correlationId)!
       this.pendingRequests.delete(message.correlationId)
-      clearTimeout(pending.timeout)
+      if (pending.timeout !== null && typeof globalThis.clearTimeout === 'function') {
+        globalThis.clearTimeout(pending.timeout)
+      }
 
       if (message.type === 'API_ERROR') {
         const error = message.payload as ApiErrorPayload
-        pending.reject(new Error(`${error.code}: ${error.message}`))
+        pending.reject(new NativeCapabilityError(error.code, error.message))
       }
 else {
         pending.resolve((message.payload as ApiResponsePayload).data)

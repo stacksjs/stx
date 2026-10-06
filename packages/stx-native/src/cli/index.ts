@@ -1052,6 +1052,15 @@ catch (error) {
       });
     }
 
+    function dispatchSubscription(handlers, value) {
+      if (!handlers.size) return;
+      handlers.forEach(function(handler) {
+        const result = handler(value);
+        if (result && typeof result.then === 'function') result.then(render, function() {});
+      });
+      render();
+    }
+
     globalThis.craft = globalThis.craft || {};
     const nativeCapabilities = new Set(Array.isArray(bridge.capabilities) ? bridge.capabilities : []);
     globalThis.craft.platform = bridge.platform || 'unknown';
@@ -1061,9 +1070,9 @@ catch (error) {
       speechRecognition: false,
       share: false,
       camera: false,
-      biometric: false,
+      biometric: nativeCapabilities.has('biometric'),
       pushNotifications: false,
-      secureStorage: false,
+      secureStorage: nativeCapabilities.has('secureStorage'),
       storage: nativeCapabilities.has('storage'),
       localDatabase: nativeCapabilities.has('database'),
       lifecycle: nativeCapabilities.has('lifecycle'),
@@ -1133,6 +1142,18 @@ catch (error) {
       clear: function() { return requestAPI('Storage', 'clear', []); },
       keys: function() { return requestAPI('Storage', 'keys', []); }
     };
+    globalThis.craft.biometrics = {
+      isAvailable: function() { return requestAPI('Biometrics', 'isAvailable', []); },
+      getBiometricType: function() { return requestAPI('Biometrics', 'getBiometricType', []); },
+      authenticate: function(reason) { return requestAPI('Biometrics', 'authenticate', [reason || 'Authenticate to continue']); }
+    };
+    globalThis.craft.secureStorage = {
+      set: function(key, value) { return requestAPI('SecureStorage', 'set', [key, value]); },
+      get: function(key) { return requestAPI('SecureStorage', 'get', [key]); },
+      remove: function(key) { return requestAPI('SecureStorage', 'remove', [key]); },
+      delete: function(key) { return requestAPI('SecureStorage', 'remove', [key]); },
+      clear: function() { return requestAPI('SecureStorage', 'clear', []); }
+    };
     globalThis.craft.db = {
       execute: function(sql, params) { return requestAPI('Database', 'execute', [sql, params || []]); },
       query: function(sql, params) { return requestAPI('Database', 'query', [sql, params || []]); },
@@ -1197,11 +1218,11 @@ catch (error) {
       else if (message.type === 'APP_STATE') {
         if (message.payload.state === currentAppState) return;
         currentAppState = message.payload.state;
-        appStateHandlers.forEach(function(handler) { handler(message.payload.state); });
+        dispatchSubscription(appStateHandlers, message.payload.state);
       }
       else if (message.type === 'DEEP_LINK') {
         if (initialDeepLinkClaimed && message.payload.initial) return;
-        deepLinkHandlers.forEach(function(handler) { handler(message.payload); });
+        dispatchSubscription(deepLinkHandlers, message.payload);
       }
       else if (message.type === 'MUTATION_ERROR') {
         mutationsEnabled = false;
