@@ -16,7 +16,7 @@
 //      [data-stx-tab-panel] descendants on mount and builds the tab list
 //      dynamically.
 export const tabs = $props.tabs || []
-export const defaultTab = $props.defaultTab || 0
+export const defaultTab = $num($props.defaultTab) || 0
 export const orientation = $props.orientation || 'horizontal'
 export const variant = $props.variant || 'line'
 export const className = $props.className || ''

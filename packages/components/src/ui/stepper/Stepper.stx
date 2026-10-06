@@ -1,5 +1,5 @@
 <script server>
-export const currentStep = $props.currentStep || 0
+export const currentStep = $num($props.currentStep) || 0
 export const orientation = $props.orientation || 'horizontal'
 export const className = $props.className || ''
 export const as = $props.as || 'div'

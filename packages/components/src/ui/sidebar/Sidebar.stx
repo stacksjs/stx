@@ -29,7 +29,7 @@ export const spacePersistKey = $props.spacePersistKey || ''
 
 // `theme` is the new name; `variant` is accepted for backwards compatibility.
 export const theme = $props.theme || $props.variant || (hasSpaces ? 'arc' : 'macos')
-export const width = $props.width || 250
+export const width = $num($props.width) || 250
 export const position = $props.position || 'left'
 export const placement = $props.placement || 'fixed'
 export const bordered = $bool($props.bordered)
@@ -39,7 +39,7 @@ export const bordered = $bool($props.bordered)
 export const collapsed = $bool($props.collapsed)
 export const collapsible = $bool($props.collapsible, true)
 export const collapseMode = $props.collapseMode || (theme === 'workspace' || theme === 'desktop' ? 'rail' : 'hidden')
-export const minWidth = $props.minWidth || 64
+export const minWidth = $num($props.minWidth) || 64
 export const persistKey = $props.persistKey || ''
 export const shellSelector = $props.shellSelector || ''
 export const widthVar = $props.widthVar || '--stx-sidebar-width'

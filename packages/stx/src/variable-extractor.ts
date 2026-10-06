@@ -659,6 +659,43 @@ export async function extractVariables(
     return Boolean(value)
   }
 
+  /*
+   * Read a prop as a number, the way an author means it.
+   *
+   * The numeric half of `$bool`, and the same trap: a prop written as a plain
+   * attribute arrives as a STRING, so `$props.stepNumber ?? 0` keeps "2" and
+   * every arithmetic use of it is wrong in a different way. `+` concatenates --
+   * `<StepperStep stepNumber="2">` rendered its label as "21" rather than 3 --
+   * while `-`, `*`, `/` and `<` coerce and quietly work, so the breakage is
+   * scattered across a component rather than obvious in one place. `===`
+   * against a real number is always false, which turns "which step is current"
+   * into "none of them".
+   *
+   * `$num(value)`        -> 0 when unset
+   * `$num(value, 100)`   -> the fallback when unset
+   *
+   * A string that is not a number gives the fallback rather than NaN: NaN
+   * poisons every expression it reaches and renders as the text "NaN" across
+   * the component, which is a worse report of the same mistake. `""` -- a bare
+   * attribute, as in `<Progress value>` -- means no number was given, so it
+   * takes the fallback too. Anything that is not a string goes through
+   * `Number`, so `:value="someExpr"` keeps what the expression produced.
+   */
+  // eslint-disable-next-line pickier/no-unused-vars
+  const $num = (value: unknown, fallback = 0): number => {
+    if (value === undefined || value === null)
+      return fallback
+    if (typeof value === 'string') {
+      const text = value.trim()
+      if (text === '')
+        return fallback
+      const parsed = Number(text)
+      return Number.isFinite(parsed) ? parsed : fallback
+    }
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : fallback
+  }
+
   // `$props` is a callable, so any prop it does NOT carry falls through to
   // Function.prototype. That made an unpassed prop named after a function's own
   // property resolve to the function's internals instead of undefined:
@@ -1090,7 +1127,7 @@ catch {
     if (hostRuntimeConfig || /\buse(?:Server)?RuntimeConfig\b/.test(jsContent))
       await prepareRuntimeConfig(context, filePath, hostRuntimeConfig)
     const result = await withRuntimeConfig((context.__stx_runtime_config as ResolvedRuntimeConfig | undefined) ?? currentRuntimeConfig() ?? resolveRuntimeConfig(), () => withServerData(context, () => scriptFn(
-      module, exports, requireFn, propsObj, $props, $bool, defineProps, withDefaults,
+      module, exports, requireFn, propsObj, $props, $bool, $num, defineProps, withDefaults,
       defineClientPayload, useServerData, useRuntimeConfig, useServerRuntimeConfig,
       state, derived, effect, batch, onMount, onDestroy,
       definePageMeta, useRoute, useRouter, useHead, useSeoMeta,

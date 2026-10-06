@@ -6,7 +6,7 @@
 === Template ===
 <script server cache>
   export const variant = $props.variant || 'text'
-export const count = $props.count || 1
+export const count = $num($props.count) || 1
 export const width = $props.width || ''
 export const height = $props.height || ''
 export const circle = $bool($props.circle)

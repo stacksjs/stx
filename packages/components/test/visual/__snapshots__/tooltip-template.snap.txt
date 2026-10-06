@@ -7,7 +7,7 @@
 <script server cache>
   export const content = $props.content || ''
 export const position = $props.position || 'top'
-export const delay = $props.delay || 0
+export const delay = $num($props.delay) || 0
 export const className = $props.className || ''
 export const show = $bool($props.show)
 export const disabled = $bool($props.disabled)

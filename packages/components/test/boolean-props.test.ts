@@ -161,7 +161,21 @@ function declaredBooleanProps(): Declared[] {
   for (const file of walk(SRC)) {
     const source = readFileSync(file, 'utf-8')
     for (const [, component, body] of source.matchAll(/export interface (\w+)Props\s*\{([\s\S]*?)\n\}/g)) {
-      for (const [, prop] of body.matchAll(/^ {2}(\w+)\?:\s*boolean\s*$/gm))
+      /*
+       * `\??` and the trailing-comment tail are both load-bearing, though
+       * neither catches anything today.
+       *
+       * The first version of this required `?:`, so a REQUIRED prop was
+       * invisible to it, and ended at `boolean`, so a prop documented with a
+       * trailing `// comment` was too. Both holes were found by writing the
+       * same sweep for number props, where they did hide something: the
+       * required `stepNumber` and the commented `firstDayOfWeek` were the two
+       * the number sweep missed, and `stepNumber` was the one actually broken.
+       * No boolean prop is written either way at the moment, which is exactly
+       * why this needs saying -- the next one would have slipped through
+       * silently.
+       */
+      for (const [, prop] of body.matchAll(/^ {2}(\w+)\??:\s*boolean\s*(?:\/\/.*)?$/gm))
         found.push({ component, prop })
     }
   }

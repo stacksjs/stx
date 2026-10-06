@@ -34,7 +34,7 @@
  * created. The failure needed a real install to appear.
  */
 export const STX_ENGINE_BINDING_NAMES = [
-  'module', 'exports', 'require', 'props', '$props', '$bool', 'defineProps', 'withDefaults',
+  'module', 'exports', 'require', 'props', '$props', '$bool', '$num', 'defineProps', 'withDefaults',
   'defineClientPayload', 'useServerData', 'useRuntimeConfig', 'useServerRuntimeConfig',
   'state', 'derived', 'effect', 'batch', 'onMount', 'onDestroy',
   'definePageMeta', 'useRoute', 'useRouter', 'useHead', 'useSeoMeta',

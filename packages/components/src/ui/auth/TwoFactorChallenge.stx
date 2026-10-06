@@ -2,7 +2,7 @@
 export const headingText = $props.headingText || 'Two Factor Authentication'
 export const labelText = $props.labelText || 'Authentication code'
 export const instructionText = $props.instructionText || 'Open your Symantec 2FA app to view your authentication code.'
-export const codeLength = $props.codeLength || 6
+export const codeLength = $num($props.codeLength) || 6
 export const showRecoveryCode = $bool($props.showRecoveryCode, true)
 export const className = $props.className || ''
 

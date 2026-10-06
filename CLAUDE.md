@@ -131,6 +131,28 @@ behind the two comparison idioms above; that one survived behind its own name. `
 `boolean` in the published `*Props` interfaces, which does not care what shape
 the expression around the read has.
 
+#### And `$num` for a number prop, for the same reason
+
+```js
+export const step = $props.step ?? 0        // ❌ "2" + 1 is "21"
+export const step = $num($props.step, 0)    // ✅
+export const rows = $num($props.rows) || 4  // ✅ keeps `||`'s "0 means default"
+```
+
+Numbers hide it better than booleans, because the answer depends on the
+operator: `-`, `*`, `/` and `<` coerce and quietly work, so most of a component
+behaves. `+` concatenates and `===` against a real number is always false. So
+`<StepperStep stepNumber="2">` rendered its label as **"21"** while "which step
+is complete" stayed correct, because that uses `<`.
+
+`$num(value, fallback)` takes the fallback when the prop is unset, when it is
+`""` (a bare attribute gave no number), and when the string is not numeric —
+NaN would otherwise poison every expression it reaches and render as the text
+"NaN" across the component. Translate `|| N` as `$num($props.x) || N` to keep
+that idiom's "0 means default" behaviour, and `?? N` as `$num($props.x, N)`,
+which already honours an explicit 0. Library-wide sweep:
+`packages/components/test/number-props.test.ts`.
+
 `$bool` is an engine binding, available in every `<script server>` alongside
 `$props`. `""` is true — that is what a bare attribute arrives as — `"0"`,
 `"off"`, `"no"` and `"false"` are false, and a non-string value passes through

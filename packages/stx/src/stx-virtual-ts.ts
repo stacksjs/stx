@@ -877,6 +877,7 @@ export const STX_SERVER_CONTEXT = [
  */
 const TYPED_SERVER_CONTEXT: Record<string, string> = {
   $bool: 'declare function $bool(value: unknown, fallback?: boolean): boolean',
+  $num: 'declare function $num(value: unknown, fallback?: number): number',
   $uid: 'declare var $uid: string',
 }
 

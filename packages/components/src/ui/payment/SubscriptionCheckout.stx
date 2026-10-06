@@ -3,8 +3,8 @@ export const products = $props.products || []
 export const stripePublicKey = $props.stripePublicKey || ''
 export const apiUrl = $props.apiUrl || ''
 export const showRemoveProduct = $bool($props.showRemoveProduct, true)
-export const shipping = $props.shipping || 0
-export const taxes = $props.taxes || 0
+export const shipping = $num($props.shipping) || 0
+export const taxes = $num($props.taxes) || 0
 export const className = $props.className || ''
 
 export const subtotal = products.reduce((sum, product) => sum + (product.price * (product.quantity || 1)), 0)

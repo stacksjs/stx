@@ -36,7 +36,7 @@ import { STX_RUNTIME_GLOBALS } from './runtime-globals'
  * so the module does not declare them.
  */
 const ENVIRONMENT_BINDINGS = new Set([
-  'module', 'exports', 'require', '$bool',
+  'module', 'exports', 'require', '$bool', '$num',
   'window', 'document', 'console', 'confirm', 'alert', 'fetch',
 ])
 

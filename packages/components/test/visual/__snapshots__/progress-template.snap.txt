@@ -5,8 +5,8 @@
 
 === Template ===
 <script server cache>
-  export const value = $props.value || 0
-export const max = $props.max || 100
+  export const value = $num($props.value) || 0
+export const max = $num($props.max) || 100
 export const variant = $props.variant || 'linear'
 export const size = $props.size || 'md'
 export const color = $props.color || 'primary'

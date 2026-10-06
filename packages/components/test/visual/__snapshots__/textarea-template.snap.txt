@@ -9,9 +9,9 @@
 export const placeholder = $props.placeholder || ''
 export const disabled = $bool($props.disabled)
 export const readonly = $bool($props.readonly)
-export const rows = $props.rows || 4
+export const rows = $num($props.rows) || 4
 export const autoResize = $bool($props.autoResize)
-export const maxRows = $props.maxRows || 10
+export const maxRows = $num($props.maxRows) || 10
 export const error = $bool($props.error)
 export const label = $props.label || ''
 /*

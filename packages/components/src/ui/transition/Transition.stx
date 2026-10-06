@@ -7,8 +7,8 @@ export const leave = $props.leave || 'transition-opacity duration-200'
 export const leaveFrom = $props.leaveFrom || 'opacity-100'
 export const leaveTo = $props.leaveTo || 'opacity-0'
 export const appear = $bool($props.appear)
-export const duration = $props.duration || 300
-export const delay = $props.delay || 0
+export const duration = $num($props.duration) || 300
+export const delay = $num($props.delay) || 0
 export const preset = $props.preset || ''
 export const className = $props.className || ''
 
