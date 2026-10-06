@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.377...v0.2.378)
+
+## 🐛 Bug Fixes
+
+- **components**: a Radio rendered from a list gets its label and value ([7a5a070](https://github.com/stacksjs/stx/commit/7a5a070)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1997](https://github.com/stacksjs/stx/issues/1997))
+
+## 🔧 Chores
+
+- release v0.2.378 ([488011d](https://github.com/stacksjs/stx/commit/488011d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.376...v0.2.377)
 
 ## 🐛 Bug Fixes
