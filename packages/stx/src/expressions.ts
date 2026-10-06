@@ -651,6 +651,72 @@ export function usesSignalsInScript(template: string, filePath?: string): boolea
 }
 
 /**
+ * Where each client-side loop in `html` is, and the names it binds.
+ *
+ * A `:for`/`x-for`/`@for="item in items"` loop runs in the browser, so inside
+ * it `item` is the loop's variable, whatever the server context holds under
+ * that name. The server context is not empty: bun-plugin-stx puts the request
+ * into it as `host`, `query`, `cookies`, `ip`, `params` and `request`. A loop
+ * over hosts written `:for="host in hosts()"` had `{{ host.key }}` evaluated on
+ * the server as the request's Host header - a string, so `.key` was undefined
+ * and the row rendered empty - and the client never saw the mustache.
+ */
+export function clientLoopScopes(html: string): Array<{ start: number, end: number, names: Set<string> }> {
+  const scopes: Array<{ start: number, end: number, names: Set<string> }> = []
+  const opener = /<([a-zA-Z][\w-]*)\b[^>]*?\s(?::for|x-for|@for)\s*=\s*(["'])([\s\S]*?)\2[^>]*>/g
+
+  for (let match = opener.exec(html); match; match = opener.exec(html)) {
+    const tag = match[1]!.toLowerCase()
+    const binding = /^\s*\(?\s*([A-Za-z_$][\w$]*)\s*(?:,\s*([A-Za-z_$][\w$]*)\s*)?\)?\s+(?:in|of)\s/.exec(match[3]!)
+    if (!binding)
+      continue
+    const names = new Set([binding[1]!, ...(binding[2] ? [binding[2]] : [])])
+
+    const openEnd = match.index + match[0].length
+    if (match[0].endsWith('/>')) {
+      scopes.push({ start: match.index, end: openEnd, names })
+      continue
+    }
+
+    // The matching close tag, counting nested elements of the same name.
+    const tags = new RegExp(`<(/?)${tag}\\b[^>]*?(/?)>`, 'gi')
+    tags.lastIndex = openEnd
+    let depth = 1
+    let end = html.length
+    for (let next = tags.exec(html); next; next = tags.exec(html)) {
+      if (next[2] === '/')
+        continue
+      depth += next[1] === '/' ? -1 : 1
+      if (depth === 0) {
+        end = next.index + next[0].length
+        break
+      }
+    }
+    scopes.push({ start: match.index, end, names })
+  }
+
+  return scopes
+}
+
+/** Whether `expr`, at `offset`, reads a variable of a client loop that encloses it. */
+function readsEnclosingLoopVariable(
+  scopes: Array<{ start: number, end: number, names: Set<string> }>,
+  offset: number,
+  expr: string,
+): boolean {
+  const searchable = stripCommentsAndLiterals(expr)
+  for (const scope of scopes) {
+    if (offset < scope.start || offset >= scope.end)
+      continue
+    for (const name of scope.names) {
+      if (new RegExp(`(?<![.#\\w$])${name.replace(/\$/g, '\\$')}(?![\\w$])`).test(searchable))
+        return true
+    }
+  }
+  return false
+}
+
+/**
  * Check if an expression references only identifiers that exist in the context
  * Returns true if ALL identifiers in the expression are in context or are JS built-ins
  */
@@ -1108,8 +1174,14 @@ export function processExpressions(template: string, context: Record<string, any
   output = maskInto(output, styleMatcher, styleBlocks, n => `<!--__STX_STYLE_${n}__-->`)
 
   // Replace {{ expr }} with escaped expressions
+  const loopScopes = hasSignals ? clientLoopScopes(output) : []
   output = replaceInterpolations(output, (match, expr, offset) => {
     const trimmedExpr = expr.trim()
+
+    // Inside a client loop, its variable shadows any server binding of the
+    // same name; the browser evaluates this one.
+    if (loopScopes.length > 0 && readsEnclosingLoopVariable(loopScopes, offset, trimmedExpr))
+      return match
 
     // A nested component has already classified these expressions as
     // client-owned. Parent processing runs another expression pass after
