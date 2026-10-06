@@ -38,6 +38,7 @@
  * never reached the page. Craft 0.0.109 answers the call itself and
  * dispatches `craft:contextmenu:action`.
  */
+import type { CraftContextMenuItem } from 'craft-native'
 import { hasBridge, onCraftEvent } from './_bridge'
 
 export interface ContextMenuItem {
@@ -104,7 +105,7 @@ export interface ContextMenuAPI {
 }
 
 /** The bridge takes `{type: 'separator'}`; the public shape uses a boolean. */
-function toBridgeItem(item: ContextMenuItem): Record<string, unknown> {
+function toBridgeItem(item: ContextMenuItem): CraftContextMenuItem {
   if (item.separator)
     return { id: item.id || '', title: '', type: 'separator' }
 
@@ -132,7 +133,12 @@ async function open(options: ContextMenuOptions): Promise<ContextMenuResult | nu
   if (!hasBridge('nativeUI'))
     return null
 
-  const result = await window.craft!.nativeUI.showContextMenu({
+  // Read once into a local so the narrowing holds past the bridge check.
+  const nativeUI = window.craft?.nativeUI
+  if (!nativeUI)
+    return null
+
+  const result = await nativeUI.showContextMenu({
     targetId: options.targetId || '',
     targetType: 'general',
     // Rounded because AppKit places menus on whole points; a fractional

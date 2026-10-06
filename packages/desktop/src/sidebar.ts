@@ -90,7 +90,23 @@ function badgeText(badge: SidebarItem['badge']): string {
   return String(badge)
 }
 
-function toNative(sections: SidebarSection[]): Array<Record<string, unknown>> {
+/**
+ * The payload shape `createSidebar` takes.
+ *
+ * Named structurally rather than imported: craft-native's entry re-exports a
+ * fixed list of type names and `CraftSidebarSection` is not one of them, so
+ * there is nothing to import and `declare module` would declare a second
+ * interface rather than merge. Assignment is structural either way, and a
+ * named shape keeps a typo in the payload an error, which
+ * `Record<string, unknown>` did not.
+ */
+interface NativeSidebarSection {
+  id: string
+  header?: string
+  items: Array<{ id: string, label: string, icon?: string, badge?: string }>
+}
+
+function toNative(sections: SidebarSection[]): NativeSidebarSection[] {
   return sections.map(section => ({
     id: section.id,
     header: section.header,
@@ -122,7 +138,12 @@ export const sidebar: SidebarAPI = {
   create(options) {
     if (!sidebar.available())
       return null
-    const native = window.craft!.nativeUI.createSidebar({
+    // Read once into a local so the narrowing holds: `available()` above
+    // already proves the namespace is there, but TS cannot see through it.
+    const nativeUI = window.craft?.nativeUI
+    if (!nativeUI)
+      return null
+    const native = nativeUI.createSidebar({
       id: options.id,
       sections: toNative(options.sections),
       selected: options.selected,

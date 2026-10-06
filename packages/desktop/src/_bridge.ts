@@ -39,6 +39,20 @@ declare module 'craft-native' {
     setBadge: (count: number) => Promise<void>
     bounce: (type?: 'critical' | 'informational') => Promise<void>
   }
+
+  // How the runtime reports a sidebar pick back to the page. Underscored and
+  // absent from the published types because it is the bridge's own emitter
+  // rather than something a page calls — but its PRESENCE is the only way to
+  // tell a runtime that reports picks from one that draws a sidebar the page
+  // would never hear from, which is what `sidebar.available()` tests.
+  //
+  // Augmented rather than cast because `CraftNativeUIAPI` is one of the names
+  // craft-native's entry re-exports, so this merges. For a namespace it does
+  // not re-export the merge silently declares a second interface instead and
+  // the calls still fail — see the note in global-shortcuts.ts.
+  interface CraftNativeUIAPI {
+    _emitSidebarSelect?: (itemId: string) => void
+  }
 }
 
 declare global {
