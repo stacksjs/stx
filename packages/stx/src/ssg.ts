@@ -742,21 +742,6 @@ export function declaresPageAction(source: string): boolean {
 /**
  * Render a single page
  */
-/*
- * Drop the `imported from <stx's own module>` tail Bun adds to a resolution
- * error.
- *
- * The referrer is the file that called `import()`, which is always inside stx
- * -- so the one path in the message that looks like an answer points at the
- * framework, and the file the reader has to go and edit is not in there at all.
- * The report issue quoted it as `from node_modules/@stacksjs/stx/dist/chunk-…`
- * and had to work out the rest. The caller prefixes the real source file, so
- * this only removes a line that sends people to the wrong place.
- */
-function withoutStxReferrer(message: string): string {
-  return message.replace(/\s*imported from \S*(?:[/\\]packages[/\\]stx[/\\]|@stacksjs[/\\]stx[/\\])\S*/g, '')
-}
-
 async function renderPage(
   route: Route,
   params: Record<string, string>,
@@ -824,7 +809,7 @@ async function renderPage(
     },
     onServerScriptError: (failure: { sourcePath: string, kind: string, message: string }) => {
       serverScriptFailures.push(
-        `${path.relative(process.cwd(), failure.sourcePath)} (${failure.kind}): ${withoutStxReferrer(failure.message)}`,
+        `${path.relative(process.cwd(), failure.sourcePath)} (${failure.kind}): ${failure.message}`,
       )
     },
   }

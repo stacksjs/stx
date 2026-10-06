@@ -384,6 +384,31 @@ export function stripTypeScript(scriptContent: string): string {
 }
 
 /**
+ * Drop the " imported from <stx's own file>" tail a loader puts on a module
+ * resolution error.
+ *
+ * The runtime names the file that issued the import, and for a `<script server>`
+ * that file is always stx itself - the script is compiled and imported from
+ * `variable-extractor.ts`. So the message read
+ *
+ *   Cannot find module './lib/data' imported from /…/packages/stx/src/variable-extractor.ts
+ *
+ * which points at the framework for a path the app got wrong, and sent the
+ * reader looking at stx. That is the detour stacksjs/stx#2035 was reported as.
+ * It also puts the build machine's absolute path into production logs, where
+ * the served page's warning is the only signal there is.
+ *
+ * Stripped where the message is built rather than at one consumer, so the
+ * console warning, the dev error boundary, the `onFailure` payload and the
+ * failed build all say the same thing. Only an stx-owned referrer is removed:
+ * when the importer really is the app's own file, that is the useful half of
+ * the message.
+ */
+export function withoutStxReferrer(message: string): string {
+  return message.replace(/\s*imported from \S*(?:[/\\]packages[/\\]stx[/\\]|@stacksjs[/\\]stx[/\\])\S*/g, '')
+}
+
+/**
  * Whether a script failure was a module that could not be found.
  *
  * Matched on the message because the failure arrives as a plain Error from the
@@ -1177,7 +1202,7 @@ catch {
     // bug looks identical from the outside — the page just renders with empty
     // variables and NO error, which is very hard to debug. Set STX_DEBUG=1 to
     // surface the real cause and the offending file.
-    const msg = primaryError instanceof Error ? primaryError.message : String(primaryError)
+    const msg = withoutStxReferrer(primaryError instanceof Error ? primaryError.message : String(primaryError))
 
     /*
      * A module that cannot be resolved is always a bug.
