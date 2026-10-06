@@ -571,19 +571,13 @@ function routerSource(): string {
    * Column-anchored: a declaration nested inside a function is indented, and
    * is not in scope at the end of the block anyway.
    */
-  var TOP_LEVEL_DECL=/^(?:export\\s+)?(?:async\\s+)?(?:function\\s*\\*?|class|const|let|var)\\s+([A-Za-z_$][\\w$]*)/gm;
+  var TLD=/^(?:export\\s+)?(?:async\\s+)?(?:function\\s*\\*?|class|const|let|var)\\s+([$\\w]+)/gm;
   function republishTopLevel(src){
-    var names=[],m;
-    TOP_LEVEL_DECL.lastIndex=0;
-    while((m=TOP_LEVEL_DECL.exec(src))!==null){
-      if(names.indexOf(m[1])===-1)names.push(m[1]);
-    }
-    if(!names.length)return '';
-    var out='\\n;';
-    for(var i=0;i<names.length;i++){
-      out+='try{if(typeof '+names[i]+'==="function")window.'+names[i]+'='+names[i]+'}catch(e){}';
-    }
-    return out;
+    var n=[],m,o='',i;
+    TLD.lastIndex=0;
+    while((m=TLD.exec(src))!==null)if(n.indexOf(m[1])<0)n.push(m[1]);
+    for(i=0;i<n.length;i++)o+='try{typeof '+n[i]+'=="function"&&(window.'+n[i]+'='+n[i]+')}catch(e){}';
+    return o?'\\n;'+o:'';
   }
   function runsAlways(declared, code){
     if(declared==='always')return true;

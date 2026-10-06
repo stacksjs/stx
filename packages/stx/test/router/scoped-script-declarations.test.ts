@@ -39,10 +39,10 @@ import { getRouterScript, getRouterScriptDev } from '../../../router/src/client'
 
 /** Pull a function out of the generated runtime and make it callable here. */
 function extractRepublish(runtime: string): (src: string) => string {
-  const declRe = /var TOP_LEVEL_DECL=(\/.*?\/gm);/
+  const declRe = /var TLD=(\/.*?\/gm);/
   const decl = declRe.exec(runtime)
   if (!decl)
-    throw new Error('TOP_LEVEL_DECL is not in the generated runtime')
+    throw new Error('TLD is not in the generated runtime')
 
   const start = runtime.indexOf('function republishTopLevel(src){')
   if (start === -1)
@@ -63,7 +63,7 @@ function extractRepublish(runtime: string): (src: string) => string {
   const body = runtime.slice(start, end)
 
   // eslint-disable-next-line no-new-func
-  return new Function(`var TOP_LEVEL_DECL=${decl[1]};${body};return republishTopLevel`)() as (src: string) => string
+  return new Function(`var TLD=${decl[1]};${body};return republishTopLevel`)() as (src: string) => string
 }
 
 const SOURCE = `async function doCleanSelected() { return 'cleaned' }
@@ -96,7 +96,7 @@ describe('the router re-publishes what its block wrap would hide', () => {
         const assignments = suffix.match(/try\{/g) ?? []
         // One try per name, not one around the lot.
         expect(assignments.length).toBeGreaterThanOrEqual(5)
-        expect(suffix).toContain('typeof doCleanSelected==="function"')
+        expect(suffix).toContain('typeof doCleanSelected=="function"')
       })
 
       it('actually publishes the hidden names when the block is run', () => {
