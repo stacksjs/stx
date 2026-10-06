@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.384...HEAD)
+
+## 🐛 Bug Fixes
+
+- **components**: Badge announced everything and Tooltip announced nothing ([ae7343a](https://github.com/stacksjs/stx/commit/ae7343a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **router**: trim the republish helper back under the size budget ([90fcffb](https://github.com/stacksjs/stx/commit/90fcffb)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2041](https://github.com/stacksjs/stx/issues/2041))
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.383...v0.2.384)
 
 ## ✨ Features
