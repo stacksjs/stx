@@ -994,7 +994,12 @@ catch (error) {
         sendRenderFallback();
         return;
       }
-      const operations = previousTree ? diffTrees(previousTree, nextTree) : createTreeOperations(nextTree);
+      if (!previousTree) {
+        previousTree = nextTree;
+        sendRenderFallback();
+        return;
+      }
+      const operations = diffTrees(previousTree, nextTree);
       previousTree = nextTree;
       if (!operations.length) return;
       const baseRevision = mutationRevision;

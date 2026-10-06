@@ -219,17 +219,13 @@ function increment() { count++ }
     }
     new Function('globalThis', generate(source))(scope)
 
-    expect(sent[0].type).toBe('MUTATE')
-    expect(sent[0].payload).toMatchObject({ version: 1, baseRevision: 0, revision: 1 })
-    expect(sent[0].payload.operations.some((operation: Record<string, any>) =>
-      operation.op === 'createNode' && operation.id === 'root/key:count'
-      && operation.node.children.join('') === 'Count 0')).toBe(true)
-    expect(sent.some(message => message.type === 'RENDER')).toBe(false)
+    expect(sent[0].type).toBe('RENDER')
+    expect(sent[0].payload.document.children[0].children.join('')).toBe('Count 0')
 
     callback({ type: 'EVENT', payload: { handlerName: 'increment', nativeEvent: {} } })
     const update = sent.at(-1)!
     expect(update.type).toBe('MUTATE')
-    expect(update.payload).toMatchObject({ version: 1, baseRevision: 1, revision: 2 })
+    expect(update.payload).toMatchObject({ version: 1, baseRevision: 0, revision: 1 })
     expect(update.payload.operations).toEqual([{
       op: 'updateNode',
       id: 'root/key:count',
@@ -275,9 +271,17 @@ function clear() { items = [] }
     }
     new Function('globalThis', generate(source))(scope)
 
-    const initial = sent[0].payload.operations
-    const created = (id: string) => initial.find((operation: Record<string, any>) =>
-      operation.op === 'createNode' && operation.id === id)?.node
+    expect(sent[0].type).toBe('RENDER')
+    const initial = sent[0].payload.document
+    const created = (id: string) => {
+      let found: Record<string, any> | undefined
+      function visit(node: Record<string, any>): void {
+        if (node.id === id) found = node
+        node.children?.filter((child: unknown) => typeof child === 'object').forEach(visit)
+      }
+      visit(initial)
+      return found
+    }
     expect(created('root/key:feed').props).toEqual({ testID: 'feed', numColumns: 2, itemCount: 2 })
     expect(created('root/key:feed/key:a').props).toMatchObject({
       accessibilityLabel: 'Ada',
