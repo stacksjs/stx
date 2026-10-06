@@ -1,5 +1,68 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.378...HEAD)
+
+## 🐛 Bug Fixes
+
+- **desktop**: typecheck the native sidebar and context menu payloads ([cf43d21](https://github.com/stacksjs/stx/commit/cf43d21)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **stx**: the env gates shipped welded shut, so every app ran in dev mode ([709f15c](https://github.com/stacksjs/stx/commit/709f15c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2035](https://github.com/stacksjs/stx/issues/2035))
+- **native**: compact initial render payloads ([cd6ccd1](https://github.com/stacksjs/stx/commit/cd6ccd1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: remove stale generated workspace ([797a53d](https://github.com/stacksjs/stx/commit/797a53d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: render initial trees atomically ([6383325](https://github.com/stacksjs/stx/commit/6383325)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.371...HEAD)
+
+## 🚀 Features
+
+- **router**: a tab bar keeps the tab a screen was opened from lit ([bcb75b1](https://github.com/stacksjs/stx/commit/bcb75b1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **stx**: a failed server script fails the build ([b9a846d](https://github.com/stacksjs/stx/commit/b9a846d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2035](https://github.com/stacksjs/stx/issues/2035), [#2004](https://github.com/stacksjs/stx/issues/2004), [#2037](https://github.com/stacksjs/stx/issues/2037), [#1921](https://github.com/stacksjs/stx/issues/1921))
+- **native**: compile keyed flat list templates ([d7f0dfd](https://github.com/stacksjs/stx/commit/d7f0dfd)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **serve**: hand onRequest the server, so a hook can read the socket peer ([a439dca](https://github.com/stacksjs/stx/commit/a439dca)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **desktop**: typecheck the native sidebar and context menu payloads ([cf43d21](https://github.com/stacksjs/stx/commit/cf43d21)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **stx**: the env gates shipped welded shut, so every app ran in dev mode ([709f15c](https://github.com/stacksjs/stx/commit/709f15c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2035](https://github.com/stacksjs/stx/issues/2035))
+- **native**: compact initial render payloads ([cd6ccd1](https://github.com/stacksjs/stx/commit/cd6ccd1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **deps**: remove stale generated workspace ([797a53d](https://github.com/stacksjs/stx/commit/797a53d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: render initial trees atomically ([6383325](https://github.com/stacksjs/stx/commit/6383325)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: a Radio rendered from a list gets its label and value ([7a5a070](https://github.com/stacksjs/stx/commit/7a5a070)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1997](https://github.com/stacksjs/stx/issues/1997))
+- **expressions**: a client loop variable shadows a server binding of the same name ([a8d2d91](https://github.com/stacksjs/stx/commit/a8d2d91)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **desktop**: require the craft-native every other framework package does ([1c6a56f](https://github.com/stacksjs/stx/commit/1c6a56f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: require ts-broadcasting ^0.0.11 ([ad27d55](https://github.com/stacksjs/stx/commit/ad27d55)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: preserve typed expression props ([390fb80](https://github.com/stacksjs/stx/commit/390fb80)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **stx**: a server script inside an @section resolved its imports against the layout ([f1b3f30](https://github.com/stacksjs/stx/commit/f1b3f30)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1698](https://github.com/stacksjs/stx/issues/1698), [#2035](https://github.com/stacksjs/stx/issues/2035), [#1698](https://github.com/stacksjs/stx/issues/1698))
+- **components**: ten more boolean props read their own attribute wrong ([7fa0f09](https://github.com/stacksjs/stx/commit/7fa0f09)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2006](https://github.com/stacksjs/stx/issues/2006))
+- **serve**: the ambient ip comes from the app's clientAddress resolver, and the render cache is bounded ([384682b](https://github.com/stacksjs/stx/commit/384682b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 📚 Documentation
+
+- $bool covers four wrong idioms, not two ([696db7d](https://github.com/stacksjs/stx/commit/696db7d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧪 Tests
+
+- **components**: render the arc favourites grid, measure the rendered tile ([da97a40](https://github.com/stacksjs/stx/commit/da97a40)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: render the sidebar instead of reading its source ([8742181](https://github.com/stacksjs/stx/commit/8742181)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.378 ([1368dd6](https://github.com/stacksjs/stx/commit/1368dd6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.377 ([efdae1d](https://github.com/stacksjs/stx/commit/efdae1d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.376 ([8cc0510](https://github.com/stacksjs/stx/commit/8cc0510)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.375 ([0c1cbf9](https://github.com/stacksjs/stx/commit/0c1cbf9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.374 ([a5a3ed2](https://github.com/stacksjs/stx/commit/a5a3ed2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.373 ([bd30fea](https://github.com/stacksjs/stx/commit/bd30fea)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.2.372 ([a674444](https://github.com/stacksjs/stx/commit/a674444)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.377...v0.2.378)
 
 ## 🐛 Bug Fixes
