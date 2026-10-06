@@ -145,6 +145,18 @@ defineExpose({ value: inputValue, clear: onClear })
       type="text"
       id="{{ inputId }}"
       class="{{ inputClasses }}"
+
+      {{-- The served value, alongside the binding that takes over on hydration.
+      
+           An HTML `value` attribute is the DEFAULT value: it is what the field shows
+           on first paint and what an ordinary non-JS POST submits, while the runtime
+           drives the live `value` PROPERTY afterwards. With only `:value`, a
+           server-rendered `value="a@b.c"` reached the browser as an empty box that
+           posted an empty string -- the field arrived under its name carrying
+           nothing, which is the same silent shape as the missing name itself
+           (stacksjs/stx#2043). The two do not fight: attribute and property are
+           different things. --}}
+      value="{{ value }}"
       :value="inputValue()"
       placeholder="{{ placeholder }}"
       @if(disabled)disabled@endif

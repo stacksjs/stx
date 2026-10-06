@@ -115,6 +115,10 @@ defineExpose({ value: selectedValue })
         <option
           value="{{ option.value }}"
           @if(option.disabled)disabled@endif
+          {{-- Which option is served as the choice. `selected` is
+               defaultSelected, so without it a select posted its FIRST option
+               no matter what `value` said. --}}
+          @if(String(option.value) === String(value))selected@endif
         >
           {{ option.label }}
         </option>

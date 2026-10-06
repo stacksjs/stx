@@ -36,13 +36,9 @@ async function one(usage: string): Promise<string> {
 }
 
 describe('every control reaches FormData under its name', () => {
-  it('carries a text field', async () => {
+  it('carries a text field and its value', async () => {
     const data = await submit('<TextInput label="Email" name="email" value="a@b.c" />')
-    // The KEY is what was missing. The value is bound client-side
-    // (`:value="inputValue()"`, no static value attribute), so before
-    // hydration the field submits its name and an empty string -- which is a
-    // separate gap from this one, and not what #2043 is about.
-    expect([...data.keys()]).toContain('email')
+    expect(data.get('email')).toBe('a@b.c')
   })
 
   it('carries values from the wrappers too', async () => {
@@ -52,8 +48,8 @@ describe('every control reaches FormData under its name', () => {
       <EmailInput label="Email" name="work_email" value="a@b.c" />
       <SearchInput label="Find" name="q" value="widgets" />
     `)
-    expect([...data.keys()]).toContain('work_email')
-    expect([...data.keys()]).toContain('q')
+    expect(data.get('work_email')).toBe('a@b.c')
+    expect(data.get('q')).toBe('widgets')
   })
 
   it('carries a password, a number, a textarea and a select', async () => {
@@ -63,11 +59,10 @@ describe('every control reaches FormData under its name', () => {
       <Textarea label="Bio" name="bio" value="hello" />
       <Select label="Pick" name="pick" />
     `)
-    expect([...data.keys()]).toContain('password')
-    expect([...data.keys()]).toContain('qty')
-    expect([...data.keys()]).toContain('pick')
-    // A textarea's value IS its server-rendered content, so this one carries.
+    expect(data.get('password')).toBe('hunter2')
+    expect(data.get('qty')).toBe('3')
     expect(data.get('bio')).toBe('hello')
+    expect([...data.keys()]).toContain('pick')
   })
 
   it('carries a switch, which is a button and could never be submitted', async () => {
@@ -88,15 +83,13 @@ describe('every control reaches FormData under its name', () => {
     expect([...off.keys()]).toContain('wifi')
   })
 
-  it('still names the two that already worked', async () => {
-    // `checked` is bound client-side here too, and an unchecked box is not
-    // submitted at all -- so this asserts the attribute rather than FormData.
-    const html = await one(`
+  it('still carries the two that already had a name', async () => {
+    const data = await submit(`
       <Checkbox label="Agree" name="agree" value="yes" checked />
       <Radio label="One" name="choice" value="1" checked />
     `)
-    expect(html).toContain('name="agree"')
-    expect(html).toContain('name="choice"')
+    expect(data.get('agree')).toBe('yes')
+    expect(data.get('choice')).toBe('1')
   })
 
   it('adds nothing to a control given no name', async () => {
@@ -148,4 +141,69 @@ describe('the native element is well formed', () => {
       expect(await one(usage)).not.toMatch(/\/\s+\/>/)
     })
   }
+})
+
+/**
+ * A server-rendered value survives a POST with no JavaScript.
+ *
+ * The controls bound `value` and `checked` only reactively -- `:value`,
+ * `:checked` -- with no static attribute. An HTML `value` attribute is the
+ * DEFAULT value: it is what the field shows on first paint and what an
+ * ordinary form POST submits, while the runtime drives the live property
+ * afterwards. The two are different things and do not fight.
+ *
+ * So the field arrived under its name carrying nothing, which is the same
+ * silent shape the missing name had: a form that looks right and submits
+ * emptiness. `checked` was worse, because an unchecked box is not submitted at
+ * all -- a server-rendered checked control was absent from the POST entirely,
+ * not merely empty.
+ */
+describe('a server-rendered value survives without JavaScript', () => {
+  it('posts the value every text-like control was given', async () => {
+    const data = await submit(`
+      <TextInput label="E" name="text" value="a@b.c" />
+      <EmailInput label="E" name="email" value="a@b.c" />
+      <PasswordInput label="P" name="password" value="hunter2" />
+      <NumberInput label="Q" name="qty" value="3" />
+      <SearchInput label="S" name="q" value="widgets" />
+      <Textarea label="B" name="bio" value="hello" />
+    `)
+    expect(data.get('text')).toBe('a@b.c')
+    expect(data.get('email')).toBe('a@b.c')
+    expect(data.get('password')).toBe('hunter2')
+    expect(data.get('qty')).toBe('3')
+    expect(data.get('q')).toBe('widgets')
+    expect(data.get('bio')).toBe('hello')
+  })
+
+  it('posts a checked box and a chosen radio', async () => {
+    const data = await submit(`
+      <Checkbox label="A" name="agree" value="yes" checked />
+      <Radio label="R" name="choice" value="1" checked />
+    `)
+    expect(data.get('agree')).toBe('yes')
+    expect(data.get('choice')).toBe('1')
+  })
+
+  it('posts the selected option rather than the first one', async () => {
+    // `selected` is defaultSelected: without it a select posts whatever option
+    // happens to be first, regardless of what `value` said.
+    const data = await submit(
+      `<Select label="P" name="pick" :options="[{value:'a',label:'A'},{value:'b',label:'B'}]" value="b" />`,
+    )
+    expect(data.get('pick')).toBe('b')
+  })
+
+  it('invents nothing for an empty or unchecked control', async () => {
+    const data = await submit(`
+      <TextInput label="E" name="text" />
+      <Checkbox label="A" name="agree" value="yes" />
+      <Radio label="R" name="choice" value="1" />
+    `)
+    // Present but empty, which is what an empty text field submits.
+    expect(data.get('text')).toBe('')
+    // Absent, which is what an unchecked box submits.
+    expect(data.get('agree')).toBeNull()
+    expect(data.get('choice')).toBeNull()
+  })
 })

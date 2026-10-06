@@ -94,6 +94,12 @@ defineExpose({ isChecked })
       @if(form)form="{{ form }}"@endif
       value="{{ value }}"
       :value="radioValue()"
+
+      {{-- The served checked state, alongside the binding that takes over on
+           hydration. `checked` as an attribute is defaultChecked: an UNCHECKED box
+           is not submitted at all, so with only `:checked` a server-rendered checked
+           control was absent from the POST entirely rather than merely empty. --}}
+      @if(checked)checked@endif
       :checked="isChecked()"
       @if(disabled)disabled@endif
       @if(required)required@endif
