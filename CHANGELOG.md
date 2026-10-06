@@ -1,5 +1,31 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.383...v0.2.384)
+
+## ✨ Features
+
+- **router**: instant navigation for a tab bar, and no progress bar for an instant page ([db71c73](https://github.com/stacksjs/stx/commit/db71c73)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: expose typed capability APIs ([6c1603f](https://github.com/stacksjs/stx/commit/6c1603f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **router**: an instant navigation skips the fallback fade too ([7ea0984](https://github.com/stacksjs/stx/commit/7ea0984)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: form controls had no name, so forms submitted nothing ([901119f](https://github.com/stacksjs/stx/commit/901119f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2043](https://github.com/stacksjs/stx/issues/2043), [#2039](https://github.com/stacksjs/stx/issues/2039))
+- **components**: a reactive Button label left the served button nameless ([c8e62e5](https://github.com/stacksjs/stx/commit/c8e62e5)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2034](https://github.com/stacksjs/stx/issues/2034), [#1997](https://github.com/stacksjs/stx/issues/1997))
+
+## ✅ Tests
+
+- **native**: an unanswered capability request failed another file ([1f23420](https://github.com/stacksjs/stx/commit/1f23420)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.384 ([7504927](https://github.com/stacksjs/stx/commit/7504927)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.382...v0.2.383)
 
 ## 🐛 Bug Fixes
