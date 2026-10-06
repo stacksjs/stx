@@ -1,5 +1,15 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.379...HEAD)
+
+## 🐛 Bug Fixes
+
+- **stx**: a component behind a false :if no longer mounts ([42e0860](https://github.com/stacksjs/stx/commit/42e0860)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2036](https://github.com/stacksjs/stx/issues/2036), [#1737](https://github.com/stacksjs/stx/issues/1737))
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.378...v0.2.379)
 
 ## 🐛 Bug Fixes
