@@ -67,6 +67,8 @@ const LABEL_HOST = `<script client>
   <Button className="labelled" :label="rotateLabel()" :disabled="rotating()" />
   <Button className="slotted">Save</Button>
   <Button className="static-label" label="Static" />
+  <Button className="fallback" :label="rotateLabel()">Confirm</Button>
+  <Button className="named" :label="rotateLabel()" ariaLabel="Rotate the key" />
 </div>`
 
 const FILES = {
@@ -247,17 +249,124 @@ describe('#1997 — Button reads its label as a live prop', () => {
    * The regression this could have caused. The button is a flex container with
    * a gap, so an empty label span would be a flex item and add a trailing gap
    * to every button in every app that uses the slot. `:if` removes it instead.
+   *
+   * This counted spans until #2034, when the slot gained a wrapper so it can
+   * serve as a reactive label's fallback. The wrapper cannot be conditional --
+   * `data-stx-parent-bindings` is stamped on the rendered HTML by the renderer
+   * and never reaches the component's own server script, so the component
+   * cannot know whether a reactive :label exists. So it asserts what the count
+   * was standing in for: nothing inside the button is an extra FLEX ITEM.
+   * display:contents is not a box, so the gap is unchanged -- which is the
+   * property the gap regression was ever about.
    */
-  it('adds no element to a button that uses the slot', async () => {
+  it('adds no flex item to a button that uses the slot', async () => {
     const harness = await mountLabels()
     try {
       const slotted = harness.button('slotted')
 
       expect(slotted.textContent).toContain('Save')
-      expect(slotted.querySelectorAll('span').length).toBe(0)
+
+      const boxes = [...slotted.querySelectorAll('span')]
+        .filter((el: any) => !/display:\s*contents/.test(el.getAttribute('style') ?? ''))
+      expect(boxes.length).toBe(0)
+
+      // ...and the label span itself is still absent, which is the original point.
+      expect(slotted.innerHTML).not.toContain(':text')
     }
     finally {
       await harness.dispose()
+    }
+  })
+})
+
+/**
+ * Slot content is the reactive label's server-rendered fallback (#2034).
+ *
+ * `:label` is client-categorised, so the server cannot see it: the markup
+ * actually served for `<Button :label="confirmLabel()" />` carries no text and
+ * no accessible name, and assistive technology that reaches it before
+ * hydration finds an unlabelled button. On a destructive confirmation -- the
+ * reported case was "Delete project" -- that is the worst case.
+ *
+ * Slot content was not a way out, because the slot and the label span both
+ * rendered: `<Button :label="confirmLabel()">Confirm</Button>` served
+ * "Confirm" and then read "ConfirmDelete project" once the binding resolved.
+ * An author had to choose between a server-rendered name and a reactive one,
+ * which is why the reporting app went back to a plain <button>, where static
+ * content is the served name and `:text` takes over after hydration.
+ *
+ * The slot is now that fallback. It renders inside a display:contents wrapper
+ * that `:if` removes as soon as a label resolves, so the two never both show.
+ *
+ * The wrapper is why this is not simply `<slot :if="...">`: a slot is replaced
+ * by the caller's markup at render time and any attribute on it goes too --
+ * measured, `<div><slot :if="!label" /></div>` renders the content with the
+ * binding silently dropped.
+ */
+describe('a reactive label falls back to slot content (#2034)', () => {
+  it('serves the slot text, then replaces it with the label', async () => {
+    const app = await renderApp(FILES, ROUTES)
+    try {
+      const browser = await boot(app, '/labels')
+
+      // Served: the slot is the accessible name, before any script runs.
+      const servedHtml = app.documents.get('/labels') ?? ''
+      expect(servedHtml).toContain('Confirm')
+
+      await settle()
+
+      const button = find(browser, '.fallback')
+      expect(button).not.toBeNull()
+
+      const text = (button.textContent ?? '').replace(/\s+/g, ' ').trim()
+      // The label won; the fallback is gone rather than sitting next to it.
+      expect(text).toContain('Rotate')
+      expect(text).not.toContain('Confirm')
+    }
+    finally {
+      closeBrowser()
+    }
+  })
+
+  it('keeps slot content when there is no label to replace it', async () => {
+    const app = await renderApp(FILES, ROUTES)
+    try {
+      const browser = await boot(app, '/labels')
+      await settle()
+
+      // The wrapper must not swallow an ordinary slot-only button.
+      const text = (find(browser, '.slotted').textContent ?? '').trim()
+      expect(text).toContain('Save')
+    }
+    finally {
+      closeBrowser()
+    }
+  })
+
+  it('names a button that has a reactive label and no slot at all', async () => {
+    // The one case the slot cannot cover, so the prop is the escape hatch.
+    const app = await renderApp(FILES, ROUTES)
+    try {
+      const servedHtml = app.documents.get('/labels') ?? ''
+      expect(servedHtml).toContain('aria-label="Rotate the key"')
+
+      const browser = await boot(app, '/labels')
+      await settle()
+      expect(find(browser, '.named').getAttribute('aria-label')).toBe('Rotate the key')
+    }
+    finally {
+      closeBrowser()
+    }
+  })
+
+  it('emits no aria-label when none was given', async () => {
+    // An empty one would suppress the name the slot or label supplies.
+    const app = await renderApp(FILES, ROUTES)
+    try {
+      expect(app.documents.get('/labels') ?? '').not.toContain('aria-label=""')
+    }
+    finally {
+      await app.dispose()
     }
   })
 })

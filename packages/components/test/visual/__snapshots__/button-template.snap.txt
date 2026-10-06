@@ -29,6 +29,21 @@ export const fullWidth = $bool($props.fullWidth)
  */
 export const label = $props.label || ''
 export const hasLabel = label !== ''
+
+/*
+ * A server-rendered accessible name, for the one case the slot cannot cover.
+ *
+ * `:label` is client-categorised, so the server cannot see it: a
+ * `
+    <Button :label="confirmLabel()" />
+    ` with no slot content has no text and no
+ * name in the markup actually served, and assistive technology reaching it
+ * before hydration finds an unlabelled button. On a destructive confirmation
+ * that is the worst case (stacksjs/stx#2034). Slot content is the better
+ * answer where there is any, because it is visible as well as announced; this
+ * is for a button that has neither.
+ */
+export const ariaLabel = $props.ariaLabel || $props['aria-label'] || ''
 export const leftIcon = $props.leftIcon || ''
 export const rightIcon = $props.rightIcon || ''
 export const className = $props.className || ''
@@ -157,6 +172,7 @@ function onClick(event) {
   :disabled="isDisabled()"
   aria-busy="{{ loading ? 'true' : 'false' }}"
   :aria-busy="isLoading() ? 'true' : 'false'"
+  @if(ariaLabel)aria-label="{{ ariaLabel }}"@endif
   @click="onClick($event)"
 >
       {{-- The spinner is always in the DOM so `loading` can turn it on after render;
@@ -182,8 +198,36 @@ function onClick(event) {
         {!! leftIcon !!}
       </span>
       @endif
-      <slot />
-      {{-- The label span is decided on the CLIENT, because the server cannot see a
+
+  {{-- The slot is the label's FALLBACK, not its sibling (stacksjs/stx#2034).
+
+       A reactive label is invisible to the server, so the only text a
+       `
+      <Button :label="confirmLabel()">
+        Confirm
+      </Button>
+      ` can serve is the slot
+       content -- and it used to render it NEXT TO the label span, so once
+       labelText() resolved the button read "ConfirmDelete project". An author
+       had to choose between a server-rendered accessible name and a reactive
+       one, which is why the reporting app kept a plain
+      <button>
+        .
+
+       Wrapped rather than put on the slot itself: `
+        <slot :if="...">
+          ` does not
+       work, because the slot is replaced by the caller's markup at render time
+       and the attribute goes with it. display:contents so the wrapper is not a
+       box -- slot children stay direct flex items of the button, so the gap
+       between them is unchanged.
+
+       `:if` rather than `:show` for the same reason: `:show` writes
+       style.display, which would fight the display:contents this needs. --}}
+          <span style="display:contents" :if="!labelText()">
+            <slot />
+          </span>
+          {{-- The label span is decided on the CLIENT, because the server cannot see a
        reactive prop at all: `:label="rotateLabel()"` is categorised as client
        reactive, so `$props.label` is undefined during render and only the
        root's data-stx-parent-bindings records that a binding exists.
@@ -193,30 +237,34 @@ function onClick(event) {
        trailing gap to every button that uses the slot. x-cloak while the
        server has no label, so that gap is not visible for the frame before
        hydration - the same pairing the spinner above uses. --}}
-      <span
+          <span
     :if="labelText()"
     @if(!hasLabel)x-cloak@endif
     :text="labelText()"
   >
-        {{ label }}
-      </span>
-      @if(rightIcon)
-      <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
-        {!! rightIcon !!}
-      </span>
-      @endif
-    </button>
+            {{ label }}
+          </span>
+          @if(rightIcon)
+          <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
+            {!! rightIcon !!}
+          </span>
+          @endif
+        </button>
 
 === Extracted Classes ===
 -
+--
 a
 above
 add
 always
 an
 and
+at
+attribute
 because
 before
+between
 bg-accent
 bg-accent-solid
 bg-blue-500
@@ -224,14 +272,18 @@ bg-danger-solid
 bg-surface-sunken
 border-2
 border-accent
+box
 button
 buttonClasses
+children
 click
 container
+direct
 disabled
 disabled:cursor-not-allowed
 disabled:opacity-50
 disabled:pointer-events-none
+display:contents
 duration-200
 empty
 every
@@ -249,6 +301,7 @@ gap
 gap-1
 gap-2
 gap-3
+goes
 h-10
 h-3
 h-4
@@ -268,12 +321,15 @@ iconClasses
 inline-flex
 is
 item
+items
 items-center
 justify-center
 label
 loading
+markup
 no
 not
+of
 opacity-25
 opacity-75
 pairing
@@ -283,15 +339,19 @@ px-6
 px-8
 py-2
 rather
+render
 rendering
 rounded-control
+s
 same
 server
 shadow-md
+slot
 so
 span
 spinner
 spinnerClasses
+stay
 still
 text-accent
 text-accent-ink
@@ -306,6 +366,8 @@ text-xs
 than
 that
 the
+them
+time
 to
 trailing
 transition-all
@@ -321,6 +383,7 @@ w-full
 while
 with
 would
+wrapper
 x-cloak
 {{
 }}
