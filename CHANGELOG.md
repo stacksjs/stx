@@ -1,5 +1,18 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.382...HEAD)
+
+## 🐛 Bug Fixes
+
+- **router**: a re-run script hid every declaration except a plain function ([0d85f78](https://github.com/stacksjs/stx/commit/0d85f78)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2041](https://github.com/stacksjs/stx/issues/2041))
+- **desktop**: showMessageBox called a bridge method that does not exist ([da5e222](https://github.com/stacksjs/stx/commit/da5e222)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2040](https://github.com/stacksjs/stx/issues/2040), [#2040](https://github.com/stacksjs/stx/issues/2040))
+- **components**: a dialog and a slot-mode tab now say what they are ([6cfdd40](https://github.com/stacksjs/stx/commit/6cfdd40)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **stx**: a failed server script named stx's file, not the app's ([53313b9](https://github.com/stacksjs/stx/commit/53313b9)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2035](https://github.com/stacksjs/stx/issues/2035))
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.381...v0.2.382)
 
 ## ✨ Features
