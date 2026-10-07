@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.388...v0.2.389)
+
+## ✨ Features
+
+- **offline**: a server-rendered app that keeps working without a network ([9be761d](https://github.com/stacksjs/stx/commit/9be761d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **signals**: keep the bound write in the shape the SVG-case check reads ([3e46cbd](https://github.com/stacksjs/stx/commit/3e46cbd)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.389 ([f2ec6ba](https://github.com/stacksjs/stx/commit/f2ec6ba)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.387...v0.2.388)
 
 ## 🐛 Bug Fixes
