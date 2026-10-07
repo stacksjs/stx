@@ -82,6 +82,16 @@ export {
   type NetworkRef,
 } from './use-network'
 
+// Writes that survive having no network, and forgetting offline data on sign-out
+export { clearOfflineData } from './use-offline'
+export {
+  useOutbox,
+  type Outbox,
+  type OutboxEntry,
+  type OutboxOptions,
+  type OutboxSendResult,
+} from './use-outbox'
+
 // Window
 export {
   useWindowSize,

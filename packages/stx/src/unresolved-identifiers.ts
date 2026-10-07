@@ -26,7 +26,7 @@
  * the auto-import list did (#1804).
  */
 export const SERVER_ONLY_COMPOSABLES: readonly string[] = [
-  'broadcast', 'calculateDistance', 'canNotify', 'clearCookies', 'clearFetchCache',
+  'broadcast', 'calculateDistance', 'canNotify', 'clearCookies', 'clearFetchCache', 'clearOfflineData',
   'clearStorage', 'copyToClipboard', 'createShareableFile', 'defineForm', 'getBatteryLevel', 'getCookie',
   'getCurrentPosition', 'getStorageKeys', 'getStorageSize', 'getVoices', 'hasBattery',
   'hasCameraPermission', 'hasGeolocationPermission', 'hasMicrophonePermission',
@@ -48,7 +48,7 @@ export const SERVER_ONLY_COMPOSABLES: readonly string[] = [
   'useInfiniteScroll', 'useIntersectionObserver', 'useIntersectionObserverMultiple',
   'useIsDesktop', 'useIsMobile', 'useIsTablet', 'useKeyPressed', 'useKeySequence',
   'useKeyboard', 'useLastActive', 'useLazyLoad', 'useMeta', 'useMouse', 'useMouseInElement',
-  'useMutationObserver', 'useNetwork', 'useNotification', 'useOnline', 'useParallax',
+  'useMutationObserver', 'useNetwork', 'useNotification', 'useOnline', 'useOutbox', 'useParallax',
   'usePermission', 'usePermissions', 'usePointer', 'usePost', 'useResizeObserver',
   'useResizeObserverMultiple', 'useSSE', 'useScroll', 'useSelectionPopup', 'useShare',
   'useSpeechRecognition', 'useSpeechSynthesis', 'useStorage', 'useTextObserver',

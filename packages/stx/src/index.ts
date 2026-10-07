@@ -10,6 +10,7 @@ export { useServerData } from './server-data'
 export { useRuntimeConfig, useServerRuntimeConfig } from './runtime-config-server'
 export type { RuntimeConfigDefaults, PublicRuntimeConfig } from './runtime-config-types'
 export { clearServerData } from './composables/use-fetch'
+export { generateOfflineWorker, OFFLINE_REGISTER_SCRIPT, OFFLINE_WORKER_PATH, type OfflineAppConfig } from './offline/app-service-worker'
 // Exported for servers as well as the static build: SSR inlines the runtime
 // once per *request*, which is the same waste in a worse form.
 export { EXTERNALIZED_ASSET_DIR, externalizeHtml, externalizeSharedAssets, type ExternalizedAsset, type ExternalizeHtmlResult, type ExternalizeResult } from './build-externalize'

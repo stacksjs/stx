@@ -895,6 +895,12 @@ export interface StxConfig {
   story?: Partial<import('../story/types').StoryConfig>
   /** Progressive Web App (PWA) configuration */
   pwa?: Partial<PwaConfig>
+  /**
+   * Keep a server-rendered app working without a network: an offline worker
+   * served at /_stx/sw.js and registered on every page (see
+   * src/offline/app-service-worker.ts). Pair with `useOutbox` for writes.
+   */
+  offline?: import('../offline/app-service-worker').OfflineAppConfig
   /** Component configuration */
   components?: Partial<ComponentConfig>
   /** Route middleware configuration */

@@ -2895,6 +2895,8 @@ function __stxOverlay(errs){
       // both native providers (fathom/GA/…) and plugin-injected trackers (the
       // plugin-mutated analytics is merged onto stxConfig above).
       ...('analytics' in stxConfig && { analytics: stxConfig.analytics }),
+      // The offline worker's registration rides on every document.
+      ...('offline' in stxConfig && { offline: (stxConfig as { offline?: unknown }).offline }),
       // Forward plugin-registered component dirs so renderComponentWithSlot
       // can resolve tags exposed by stx plugins (e.g. `<Notification>` from
       // `@stacksjs/components` via a stx plugin shim). Populated by
@@ -3301,6 +3303,8 @@ function __stxOverlay(errs){
       // both native providers (fathom/GA/…) and plugin-injected trackers (the
       // plugin-mutated analytics is merged onto stxConfig above).
       ...('analytics' in stxConfig && { analytics: stxConfig.analytics }),
+      // The offline worker's registration rides on every document.
+      ...('offline' in stxConfig && { offline: (stxConfig as { offline?: unknown }).offline }),
       // Mirror the static-route config: forward plugin-registered component
       // dirs so dynamic routes also resolve `<Notification>` etc.
       ...('_pluginComponentDirs' in stxConfig && { _pluginComponentDirs: stxConfig._pluginComponentDirs }),
@@ -3960,6 +3964,19 @@ function __stxOverlay(errs){
                 // normally inlined into the page; the HMR client needs it as a
                 // standalone fetch so an edit can be applied without a reload.
                 // No-store: the whole point is that it changed.
+                // The app's offline worker (`offline` in the stx config). Served
+                // fresh every time: a new build is a new worker, and the browser
+                // only checks for one when this file changes.
+                if (path === '/_stx/sw.js' && (stxConfig as { offline?: { enabled?: boolean } }).offline?.enabled) {
+                  const stx = await stxModule
+                  return new Response((stx as any).generateOfflineWorker((stxConfig as any).offline, getBuildId()), {
+                    headers: {
+                      'Content-Type': 'text/javascript; charset=utf-8',
+                      'Cache-Control': 'no-cache',
+                      'Service-Worker-Allowed': '/',
+                    },
+                  })
+                }
                 if (path === '/_stx/stores.js') {
                   const stx = await stxModule
                   const code = typeof (stx as any).getStoreScript === 'function'
