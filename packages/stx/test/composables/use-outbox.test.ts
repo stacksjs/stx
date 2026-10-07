@@ -74,6 +74,16 @@ describe('useOutbox', () => {
     outbox.stop()
   })
 
+  it('keeps a write whose credentials were not ready, and sends it once they are', async () => {
+    let signedIn = false
+    const outbox = useOutbox(name(), { storage: memory(), fetch: async () => new Response('{}', { status: signedIn ? 200 : 401 }) })
+    expect((await outbox.send('/api/me', { method: 'POST' })).status).toBe('queued')
+    signedIn = true
+    await outbox.flush(true)
+    expect(outbox.pending).toBe(0)
+    outbox.stop()
+  })
+
   it('outlives a reload: a new outbox over the same storage sends what was waiting', async () => {
     const storage = memory()
     const id = name()

@@ -90,7 +90,7 @@ function precache() {
       return Promise.all([false, true].map(function (fragment) {
         var headers = fragment ? { 'X-STX-Router': 'true', 'Accept': 'text/html' } : { 'Accept': 'text/html' };
         return fetch(page, { headers: headers, credentials: 'same-origin' }).then(function (response) {
-          if (response.ok && !response.redirected) return cache.put(variantUrl(page, fragment), response);
+          if (response.status === 200 && !response.redirected) return cache.put(variantUrl(page, fragment), response);
         }).catch(function () {});
       }));
     }));
@@ -119,9 +119,9 @@ function pageResponse(request) {
   var network = fetch(request).then(function (response) {
     // Only a page that is what was asked for: a redirect (to a sign-in page)
     // or an error is not kept as this screen.
-    if (response.ok && !response.redirected && response.type === 'basic') {
+    if (response.status === 200 && !response.redirected && response.type === 'basic') {
       var copy = response.clone();
-      caches.open(SHELL).then(function (cache) { cache.put(key, copy); });
+      caches.open(SHELL).then(function (cache) { return cache.put(key, copy); }).catch(function () {});
     }
     return response;
   });
@@ -143,7 +143,7 @@ function assetResponse(request) {
   return caches.open(ASSETS).then(function (cache) {
     return cache.match(request).then(function (hit) {
       var network = fetch(request).then(function (response) {
-        if (response.ok && response.type === 'basic') cache.put(request, response.clone());
+        if (response.status === 200 && response.type === 'basic') cache.put(request, response.clone()).catch(function () {});
         return response;
       });
       if (hit) {
@@ -161,9 +161,9 @@ function apiResponse(request) {
     u.searchParams.set('__stx_who', who);
     var key = u.toString();
     var network = fetch(request).then(function (response) {
-      if (response.ok) {
+      if (response.status === 200) {
         var copy = response.clone();
-        caches.open(DATA).then(function (cache) { cache.put(key, copy); });
+        caches.open(DATA).then(function (cache) { return cache.put(key, copy); }).catch(function () {});
       }
       return response;
     });
@@ -180,6 +180,9 @@ function apiResponse(request) {
 self.addEventListener('fetch', function (event) {
   var request = event.request;
   if (request.method !== 'GET') return;
+  // A range (a video seeking) is the browser's to answer: the cache cannot
+  // hold a partial response.
+  if (request.headers.has('Range')) return;
   var url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   for (var i = 0; i < S.exclude.length; i++) {

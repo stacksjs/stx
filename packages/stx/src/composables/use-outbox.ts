@@ -15,9 +15,13 @@
  * that are current at send time (a bearer token) rather than ones stored with
  * the entry.
  *
- * What counts as delivered: any answer from the server except a 5xx, 408 or
- * 429. A 4xx is the server saying no; sending it again would get the same
- * answer, so it is dropped and reported through `onRejected`.
+ * What counts as delivered: any answer from the server except a 5xx, 408,
+ * 429 or 401. A 401 is credentials that are not there yet (the page still
+ * loading its session) or have run out, not a verdict on the write, so it
+ * waits for a sign-in; name the outbox per account so it is never sent with
+ * someone else's. Any other 4xx is the server saying no; sending it again
+ * would get the same answer, so it is dropped and reported through
+ * `onRejected`.
  */
 
 export interface OutboxEntry {
@@ -93,7 +97,7 @@ function defaultStorage(): Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> {
 
 /** Whether an answer means "try again later" rather than "done" or "no". */
 function retryable(response: Response): boolean {
-  return response.status >= 500 || response.status === 408 || response.status === 429
+  return response.status >= 500 || response.status === 408 || response.status === 429 || response.status === 401
 }
 
 function headersOf(init: RequestInit | undefined): Record<string, string> {

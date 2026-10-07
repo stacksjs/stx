@@ -24,8 +24,11 @@ describe('the offline worker', () => {
     expect(worker).toContain('\'stx-shell-\' + S.build')
     expect(worker).toContain('__stx_who')
     expect(worker).toContain('stx:clear-offline-data')
-    // Writes are never cached here.
+    // Writes are never cached here, nor a range (a video seeking): the cache
+    // cannot hold a partial answer.
     expect(worker).toContain('if (request.method !== \'GET\') return;')
+    expect(worker).toContain('if (request.headers.has(\'Range\')) return;')
+    expect(worker).not.toContain('response.ok')
   })
 })
 
