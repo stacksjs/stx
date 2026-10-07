@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.387...v0.2.388)
+
+## 🐛 Bug Fixes
+
+- **signals**: a re-pointed iframe no longer fills the page's history ([d7cdf31](https://github.com/stacksjs/stx/commit/d7cdf31)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.388 ([883a3ec](https://github.com/stacksjs/stx/commit/883a3ec)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.386...v0.2.387)
 
 ## ✨ Features
