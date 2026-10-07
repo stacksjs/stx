@@ -144,6 +144,10 @@ function routerSource(): string {
   // there. sessionStorage is per tab and dies with it, same as the history.
   var SCROLL_TOKEN='__stxScroll';
   var SCROLL_STORE='stx:scroll:';
+  // On every entry the router pushes, never on the one the app opened with
+  // (which carries a scroll token too): going back from a pushed entry stays
+  // in the app, from the first it leaves it (or, in a phone app, does nothing).
+  var PUSHED_MARK='__stxPushed';
   var scrollSeq=0;
   var pendingScroll=null;
   var restoreScroll=!!o.scrollRestoration;
@@ -927,9 +931,18 @@ function routerSource(): string {
     // The position belongs to the entry being left, and scrollToken still
     // names it here.
     rememberScroll();
-    if(mode==='replace'){history.replaceState(tokenState(),'',href);return}
+    if(mode==='replace'){
+      // A replaced entry is still the one it replaces: pushed by the app or
+      // the one the app opened with.
+      var replaced=tokenState();
+      if(history.state&&history.state[PUSHED_MARK])replaced[PUSHED_MARK]=true;
+      history.replaceState(replaced,'',href);
+      return;
+    }
     scrollToken=newScrollToken();
-    history.pushState(tokenState(),'',href);
+    var pushed=tokenState();
+    pushed[PUSHED_MARK]=true;
+    history.pushState(pushed,'',href);
   }
   function tokenState(){var state={};state[SCROLL_TOKEN]=scrollToken;return state}
 

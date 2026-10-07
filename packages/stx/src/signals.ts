@@ -1758,10 +1758,13 @@ else if (immediate) {
       // template literal, so a backtick in a COMMENT ends the string and the
       // rest of the runtime is parsed as code.
       var replace = !!(options && typeof options === 'object' && options.replace);
+      // Pushed entries are marked as the router marks them, and a replaced
+      // one stays what it was, so Back knows whether it stays in the app.
+      var wasPushed = !!(window.history.state && window.history.state.__stxPushed);
       if (replace)
-        window.history.replaceState({}, '', url);
+        window.history.replaceState(wasPushed ? { __stxPushed: true } : {}, '', url);
       else
-        window.history.pushState({}, '', url);
+        window.history.pushState({ __stxPushed: true }, '', url);
       syncFromUrl();
     };
     return {
