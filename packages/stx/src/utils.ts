@@ -1352,6 +1352,61 @@ export async function renderComponentWithSlot(
       )
     }
 
+    /*
+     * The caller's `{{ }}` belong to the CALLER's scope, the same way their
+     * `<script>` and their `@include` above do (stacksjs/stx#2046).
+     *
+     * Slot content was substituted into the component and interpolated with
+     * the COMPONENT's context, so every name the component happens to declare
+     * shadowed the caller's. `<Button>` alone declares label, loading,
+     * disabled, type, size, variant and className -- ordinary names for a page
+     * to use -- and the collision is silent in both directions:
+     *
+     *   {{ label }}                 the component's '' instead of the caller's
+     *   {{ loading() ? a : b }}     calls the component's BOOLEAN, throws, ''
+     *
+     * The second is the reported shape, and it is the worse one: the natural
+     * spelling for a state-dependent button label rendered a button with no
+     * text and no accessible name, while the same expression on a native
+     * `<button>` in the same file worked. The difference was never the
+     * expression; it was whose scope evaluated it.
+     *
+     * Resolved here against `parentContext`, so a caller's server value
+     * resolves and a caller's signal is left as a literal `{{ }}` for the
+     * runtime -- which is exactly what the native element does.
+     */
+    const callerPreservedExpressions: string[] = []
+    if (slotContentHasExpressions(callerSlotContent)) {
+      const { processExpressions: resolveCallerExpressions } = await importOnce('stx/expressions', () => import('./expressions'))
+      /*
+       * An unknown gate means PRESERVE, not evaluate.
+       *
+       * `__stx_signals_gate` is set by whoever rendered the caller's template.
+       * A direct `renderComponentWithSlot` call -- the component tests, and any
+       * embedder -- passes a bare context where it is undefined, and treating
+       * that as "no signals here" would resolve `{{ total() }}` to nothing and
+       * blank the slot, which is the very failure this change is removing.
+       * Leaving an expression alone is always recoverable; evaluating one that
+       * belonged to the client is not.
+       */
+      const callerExpressionContext = parentContext.__stx_signals_gate === undefined
+        ? { ...parentContext, __stx_signals_gate: true }
+        : parentContext
+      callerSlotContent = resolveCallerExpressions(callerSlotContent, callerExpressionContext, parentFilePath)
+
+      /*
+       * What the caller's pass deliberately LEFT as `{{ }}` is a caller signal,
+       * bound by the runtime. The component's own expression pass runs over the
+       * expanded output next and would evaluate it a second time -- against the
+       * component's context, where the name is a prop rather than a signal, so
+       * `loading()` calls a boolean and throws. Naming them here is what stops
+       * the second pass touching them; `processExpressions` honours this set
+       * before anything else.
+       */
+      for (const match of callerSlotContent.matchAll(/\{\{([\s\S]*?)\}\}/g))
+        callerPreservedExpressions.push(match[1].trim())
+    }
+
     const stashedCallerScripts = stashScriptElements(callerSlotContent)
     const callerClientScripts: string[] = []
     const componentSlotContent = stashedCallerScripts.output.replace(
@@ -1434,6 +1489,14 @@ export async function renderComponentWithSlot(
       // pre-strip source PLUS the caller's slot markup — whose {{ }} name the
       // CALLER's signals, which this component's own script cannot see.
       __stx_signals_gate: usesSignalsInScript(componentContent) || slotContentHasExpressions(slotContent),
+      // The caller's own signals, already resolved against the caller's scope
+      // above and left for the runtime (stacksjs/stx#2046).
+      __stx_preserved_client_expressions: [
+        ...(Array.isArray(parentContext.__stx_preserved_client_expressions)
+          ? parentContext.__stx_preserved_client_expressions as string[]
+          : []),
+        ...callerPreservedExpressions,
+      ],
     }
 
     // Fill in `defineProps` destructuring defaults for any prop the caller
