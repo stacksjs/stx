@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.389...v0.2.390)
+
+## 🐛 Bug Fixes
+
+- **offline**: a 401 waits for a sign-in, and a video seek is left alone ([33760e1](https://github.com/stacksjs/stx/commit/33760e1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.390 ([6c3e695](https://github.com/stacksjs/stx/commit/6c3e695)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.388...v0.2.389)
 
 ## ✨ Features

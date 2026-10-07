@@ -3,7 +3,7 @@
   "name": "vscode-stx",
   "private": true,
   "displayName": "stx Language Support",
-  "version": "0.2.389",
+  "version": "0.2.390",
   "description": "Language support for stx templates: syntax highlighting, completions, hovers, diagnostics, go to definition and utility-class previews for .stx files.",
   "license": "MIT",
   "funding": "https://github.com/sponsors/chrisbbreuer",
