@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.392...v0.2.393)
+
+## 🐛 Bug Fixes
+
+- **signals**: leave an attribute that already has its value ([16638ee](https://github.com/stacksjs/stx/commit/16638ee)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.393 ([86dec00](https://github.com/stacksjs/stx/commit/86dec00)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.391...v0.2.392)
 
 ## ✨ Features
