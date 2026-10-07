@@ -3205,7 +3205,24 @@ else {
               try { attrValue = JSON.stringify(v); }
               catch (e) { attrValue = String(v); }
             }
-            stxHost.setAttribute(el, attrName, safeUrlAttr(attrName, attrValue));
+            var nextAttr = safeUrlAttr(attrName, attrValue);
+            // A frame already on the page that is pointed somewhere else
+            // navigates, and every navigation is an entry in the page's own
+            // history: a player showing a video per step left one per step,
+            // and Back had to be tapped through all of them before it left
+            // the screen. Out of the page and back in, the frame starts afresh
+            // (its first load adds no entry, and its old entries go with it).
+            var parentNode = el.parentNode;
+            if (attrName === 'src' && el.tagName === 'IFRAME' && parentNode && el.isConnected
+              && el.hasAttribute('src') && el.getAttribute('src') !== String(nextAttr)) {
+              var nextSibling = el.nextSibling;
+              parentNode.removeChild(el);
+              stxHost.setAttribute(el, attrName, nextAttr);
+              parentNode.insertBefore(el, nextSibling);
+            }
+            else {
+              stxHost.setAttribute(el, attrName, nextAttr);
+            }
           }
         });
         el.removeAttribute(name);
