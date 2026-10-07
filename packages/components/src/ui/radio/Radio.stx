@@ -12,7 +12,14 @@ export const className = $props.className || ''
 
 const sizeClasses = { sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 w-6' }
 const baseClasses = 'border-line-strong text-accent focus:ring-accent focus:ring-2 focus:ring-offset-2 focus:ring-offset-panel transition-colors'
-const stateClasses = error ? 'border-danger-line text-danger focus:ring-danger-focus' : ''
+/*
+ * The two halves of the validity state, exported so the CLIENT can swap them
+ * (stacksjs/stx#2047). Toggled per class rather than as a whole string,
+ * because a reactive class string MERGES with the static one and the element
+ * would carry both rings at once.
+ */
+export const stateInvalidClasses = 'border-danger-line text-danger focus:ring-danger-focus'
+const stateClasses = error ? stateInvalidClasses : ''
 const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
 
 export const radioClasses = `${baseClasses} ${sizeClasses[size] || sizeClasses.md} ${stateClasses} ${disabledClasses}`.trim()
@@ -47,6 +54,9 @@ export const form = $props.form || ''
 
 <script client>
 const emit = defineEmits()
+// Validity is live, for the same reason `disabled` is: a form posted with
+// fetch learns it after the submit, and nothing re-renders (#2047).
+const isError = useReactiveProp('error', {{ error }})
 const isDisabled = {{ disabled }}
 // Reactive prop binding — parent can drive `checked` via signals. See #1704.
 const isChecked = useReactiveProp('checked', {{ checked }})
@@ -98,7 +108,9 @@ defineExpose({ isChecked })
       @if(required)required@endif
       class="{{ radioClasses }}"
       @change="onInputChange($event)"
-      :aria-invalid="{{ error ? 'true' : 'false' }}"
+      aria-invalid="{{ error ? 'true' : 'false' }}"
+      :aria-invalid="isError() ? 'true' : 'false'"
+      :class="{ '{{ stateInvalidClasses }}': isError() }"
       :aria-describedby="descriptionText() ? '{{ descriptionId }}' : null"
     />
   </div>

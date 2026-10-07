@@ -42,9 +42,15 @@ export const className = $props.className || ''
 
 const resizeClasses = { none: 'resize-none', vertical: 'resize-y', horizontal: 'resize-x', both: 'resize' }
 const baseClasses = 'block w-full border-0 rounded-control shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset px-4 py-2 text-base bg-field'
-const stateClasses = error
-  ? 'ring-danger-line text-danger-fg placeholder-danger focus:ring-danger-focus'
-  : 'ring-line-strong text-fg placeholder-fg-soft focus:ring-accent'
+/*
+ * The two halves of the validity state, exported so the CLIENT can swap them
+ * (stacksjs/stx#2047). Toggled per class rather than as a whole string,
+ * because a reactive class string MERGES with the static one and the element
+ * would carry both rings at once.
+ */
+export const stateInvalidClasses = 'ring-danger-line text-danger-fg placeholder-danger focus:ring-danger-focus'
+export const stateValidClasses = 'ring-line-strong text-fg placeholder-fg-soft focus:ring-accent'
+const stateClasses = error ? stateInvalidClasses : stateValidClasses
 const disabledClasses = disabled
   ? 'opacity-50 cursor-not-allowed bg-surface'
   : readonly
@@ -78,6 +84,9 @@ export const enterKeyHint = $props.enterKeyHint || $props.enterkeyhint || ''
   </script>
   <script client>
     const emit = defineEmits()
+// Validity is live, for the same reason `disabled` is: a form posted with
+// fetch learns it after the submit, and nothing re-renders (#2047).
+const isError = useReactiveProp('error', {{ error }})
 const autoResize = {{ autoResize }}
 const maxRows = {{ maxRows }}
 // Reactive prop binding — parent can drive `value` via signals. See #1704.
@@ -136,7 +145,9 @@ defineExpose({ value: inputValue })
     @if(required)required@endif
     @if(maxLength)maxlength="{{ maxLength }}"@endif
     @input="onInput($event)"
-    :aria-invalid="{{ error ? 'true' : 'false' }}"
+    aria-invalid="{{ error ? 'true' : 'false' }}"
+    :aria-invalid="isError() ? 'true' : 'false'"
+    :class="{ '{{ stateInvalidClasses }}': isError(), '{{ stateValidClasses }}': !isError() }"
     @if(helperText)aria-describedby="{{ helperId }}"@endif
   >
       {{ value }}
@@ -161,6 +172,8 @@ defineExpose({ value: inputValue })
   </div>
 
 === Extracted Classes ===
+!isError()
+'{{
 auto
 bg-field
 bg-surface
@@ -169,6 +182,7 @@ border-0
 cursor-default
 cursor-not-allowed
 duration-200
+error
 false
 flex
 focus:ring-2
@@ -179,6 +193,7 @@ font-medium
 helperClasses
 hidden
 input
+isError(),
 items-center
 justify-between
 labelClasses
@@ -201,6 +216,8 @@ ring-inset
 ring-line-strong
 rounded-control
 shadow-sm
+stateInvalidClasses
+stateValidClasses
 text-base
 text-danger
 text-danger-fg
@@ -212,5 +229,8 @@ transition-colors
 true
 value
 w-full
+{
 {{
+}
 }}
+}}':

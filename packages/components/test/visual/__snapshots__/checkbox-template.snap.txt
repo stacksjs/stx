@@ -19,7 +19,14 @@ export const className = $props.className || ''
 
 const sizeClasses = { sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 w-6' }
 const baseClasses = 'rounded border-line-strong text-accent focus:ring-accent focus:ring-2 focus:ring-offset-2 focus:ring-offset-panel transition-colors'
-const stateClasses = error ? 'border-danger-line text-danger focus:ring-danger-focus' : ''
+/*
+ * The two halves of the validity state, exported so the CLIENT can swap them
+ * (stacksjs/stx#2047). Toggled per class rather than as a whole string,
+ * because a reactive class string MERGES with the static one and the element
+ * would carry both rings at once.
+ */
+export const stateInvalidClasses = 'border-danger-line text-danger focus:ring-danger-focus'
+const stateClasses = error ? stateInvalidClasses : ''
 const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
 
 export const checkboxClasses = `${baseClasses} ${sizeClasses[size] || sizeClasses.md} ${stateClasses} ${disabledClasses}`.trim()
@@ -56,6 +63,9 @@ export const form = $props.form || ''
     </script>
     <script client>
       const emit = defineEmits()
+// Validity is live, for the same reason `disabled` is: a form posted with
+// fetch learns it after the submit, and nothing re-renders (#2047).
+const isError = useReactiveProp('error', {{ error }})
 const isDisabled = {{ disabled }}
 const isIndeterminate = {{ indeterminate }}
 // Reactive prop binding so the parent can drive `checked` via signals.
@@ -100,7 +110,9 @@ defineExpose({ isChecked })
       @if(required)required@endif
       class="{{ checkboxClasses }}"
       @change="onInputChange($event)"
-      :aria-invalid="{{ error ? 'true' : 'false' }}"
+      aria-invalid="{{ error ? 'true' : 'false' }}"
+      :aria-invalid="isError() ? 'true' : 'false'"
+      :class="{ '{{ stateInvalidClasses }}': isError() }"
       @if(description)aria-describedby="{{ descriptionId }}"@endif
     />
       </div>
@@ -126,6 +138,7 @@ defineExpose({ isChecked })
     </div>
 
 === Extracted Classes ===
+'{{
 border-danger-line
 border-line-strong
 change
@@ -135,6 +148,7 @@ className
 cursor-not-allowed
 cursor-pointer
 descriptionClasses
+error
 false
 flex
 focus:ring-2
@@ -146,6 +160,7 @@ font-medium
 h-4
 h-5
 h-6
+isError()
 items-center
 items-start
 labelClasses
@@ -155,6 +170,7 @@ ml-3
 opacity-50
 relative
 rounded
+stateInvalidClasses
 text-accent
 text-danger
 text-fg
@@ -165,5 +181,8 @@ true
 w-4
 w-5
 w-6
+{
 {{
+}
 }}
+}}':

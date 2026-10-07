@@ -36,9 +36,27 @@ const sizeClasses = { sm: 'px-3 py-1.5 text-sm', md: 'px-4 py-2 text-base', lg: 
 const iconSizeClasses = { sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 w-6' }
 
 const baseClasses = 'block w-full border-0 rounded-control shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset bg-field'
-const stateClasses = error
-  ? 'ring-danger-line text-danger-fg placeholder-danger focus:ring-danger-focus'
-  : 'ring-line-strong text-fg placeholder-fg-soft focus:ring-accent'
+/*
+ * The two halves of the validity state, exported so the CLIENT can swap them
+ * (stacksjs/stx#2047).
+ *
+ * `error` was read once on the server, like `disabled` and `loading` used to
+ * be -- and validity is the clearest case of state that is not known at render
+ * time: a form posted with fetch learns it after the submit, with no
+ * re-render. So a field could never BECOME invalid, which made the component a
+ * step backwards from a plain
+  <input>
+  for exactly the forms it is for.
+ *
+ * Toggled as an object binding rather than a whole class string, because a
+ * reactive class string MERGES with the static one -- measured, the element
+ * ends up carrying `ring-line-strong` and `ring-danger-line` at once, and
+ * which wins is then CSS source order rather than anything this file controls.
+ * Per-class toggling removes one set as it adds the other.
+ */
+export const stateInvalidClasses = 'ring-danger-line text-danger-fg placeholder-danger focus:ring-danger-focus'
+export const stateValidClasses = 'ring-line-strong text-fg placeholder-fg-soft focus:ring-accent'
+const stateClasses = error ? stateInvalidClasses : stateValidClasses
 const disabledClasses = disabled
   ? 'opacity-50 cursor-not-allowed bg-surface'
   : readonly
@@ -93,6 +111,9 @@ export const enterKeyHint = $props.enterKeyHint || $props.enterkeyhint || ''
   </script>
   <script client>
     const emit = defineEmits()
+// Validity is live, for the same reason `disabled` is: a form posted with
+// fetch learns it after the submit, and nothing re-renders (#2047).
+const isError = useReactiveProp('error', {{ error }})
 // v-model:value supports modifiers; @input remains available to existing callers.
 const inputValue = useModel('value', { default: {{ value }}, parse: (v) => v == null ? '' : String(v) })
 
@@ -165,7 +186,9 @@ defineExpose({ value: inputValue, clear: onClear })
       @if(maxLength)maxlength="{{ maxLength }}"@endif
       @input="onInput($event)"
       @change="onChange($event)"
-      :aria-invalid="{{ error ? 'true' : 'false' }}"
+      aria-invalid="{{ error ? 'true' : 'false' }}"
+      :aria-invalid="isError() ? 'true' : 'false'"
+      :class="{ '{{ stateInvalidClasses }}': isError(), '{{ stateValidClasses }}': !isError() }"
       @if(helperText)aria-describedby="{{ helperId }}"@endif
     />
       @if(clearable)
@@ -210,6 +233,8 @@ defineExpose({ value: inputValue, clear: onClear })
   </div>
 
 === Extracted Classes ===
+!isError()
+'{{
 absolute
 bg-field
 bg-surface
@@ -219,6 +244,7 @@ className
 cursor-default
 cursor-not-allowed
 duration-200
+error
 false
 flex
 focus:outline-none
@@ -237,6 +263,7 @@ iconClasses
 input
 inputClasses
 inset-y-0
+isError(),
 items-center
 justify-between
 labelClasses
@@ -265,6 +292,8 @@ ring-inset
 ring-line-strong
 rounded-control
 shadow-sm
+stateInvalidClasses
+stateValidClasses
 text-base
 text-danger
 text-danger-fg
@@ -279,5 +308,8 @@ w-4
 w-5
 w-6
 w-full
+{
 {{
+}
 }}
+}}':
