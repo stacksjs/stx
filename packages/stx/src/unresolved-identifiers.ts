@@ -26,7 +26,7 @@
  * the auto-import list did (#1804).
  */
 export const SERVER_ONLY_COMPOSABLES: readonly string[] = [
-  'broadcast', 'calculateDistance', 'canNotify', 'clearCookies', 'clearFetchCache', 'clearOfflineData',
+  'broadcast', 'cacheMedia', 'calculateDistance', 'canNotify', 'clearCookies', 'clearFetchCache', 'clearOfflineData',
   'clearStorage', 'copyToClipboard', 'createShareableFile', 'defineForm', 'getBatteryLevel', 'getCookie',
   'getCurrentPosition', 'getStorageKeys', 'getStorageSize', 'getVoices', 'hasBattery',
   'hasCameraPermission', 'hasGeolocationPermission', 'hasMicrophonePermission',
