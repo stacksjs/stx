@@ -72,4 +72,22 @@ describe('a bound iframe src', () => {
     expect(document.querySelector('[data-img]').getAttribute('src')).toBe('/media/b.jpg')
     expect(removed).toHaveLength(0)
   })
+
+  it('does not write a src that is already the frame\'s own', async () => {
+    // A rest and the set after it share a video: the binding re-runs on the
+    // step change with the same URL. Writing it again reloads the frame,
+    // and every reload was an entry in the page's history.
+    const step = window.stx.state(0)
+    const videos = ['https://www.youtube-nocookie.com/embed/same', 'https://www.youtube-nocookie.com/embed/same']
+    await boot('<div data-box3><iframe data-frame3 x-src="videos[step]"></iframe></div>', { step, videos })
+    const frame = document.querySelector('[data-frame3]')
+    const writes: string[] = []
+    const observer = new window.MutationObserver((records: any[]) => records.forEach(record => writes.push(record.attributeName)))
+    observer.observe(frame, { attributes: true, attributeFilter: ['src'] })
+    step.set(1)
+    await settle()
+    observer.disconnect()
+    expect(frame.getAttribute('src')).toBe('https://www.youtube-nocookie.com/embed/same')
+    expect(writes).toHaveLength(0)
+  })
 })

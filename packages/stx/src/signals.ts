@@ -3206,6 +3206,11 @@ else {
               catch (e) { attrValue = String(v); }
             }
             var attrValueSafe = safeUrlAttr(attrName, attrValue);
+            // Writing the value an attribute already has is not nothing: a
+            // frame given its own src again loads again (an entry in the
+            // page's history each time) and a video restarts. A player whose
+            // rest and next set share a video re-set it on every step.
+            if (el.getAttribute(attrName) === String(attrValueSafe)) return;
             // A frame already on the page that is pointed somewhere else
             // navigates, and every navigation is an entry in the page's own
             // history: a player showing a video per step left one per step,
