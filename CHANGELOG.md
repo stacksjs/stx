@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.391...v0.2.392)
+
+## ✨ Features
+
+- **offline**: keep videos on the device, seeking included ([6a1462d](https://github.com/stacksjs/stx/commit/6a1462d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.392 ([542b50a](https://github.com/stacksjs/stx/commit/542b50a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.390...v0.2.391)
 
 ## 🐛 Bug Fixes
