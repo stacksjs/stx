@@ -5326,9 +5326,14 @@ else if (!value && isInserted) {
             // Deferred bind complete — the audit may inspect this subtree now.
             el.__stx_if_pending = false;
           };
-          // A branch shown while detached (inside content not on the page yet)
-          // waits for a later turn, when it has been placed.
-          if (el.isConnected) peek(hydrateShownBranch);
+          // In a microtask, not inside this effect's own run: child effects
+          // created while it is running saw the data mid-change (a screen
+          // swapping workouts) and recorded expressions that had never
+          // evaluated. A microtask still runs before the browser paints, so
+          // the branch is bound in the first frame all the same. A branch
+          // shown while detached (inside content not on the page yet) waits a
+          // macrotask, when it has been placed.
+          if (el.isConnected) queueMicrotask(function() { peek(hydrateShownBranch); });
           else setTimeout(hydrateShownBranch, 0);
         }
       }

@@ -187,16 +187,44 @@ describe('hydration audit — literal moustaches', () => {
     expect(literals[0]).not.toContain('label')
   })
 
-  it('binds a shown branch in the same pass and leaves no exemption behind', () => {
+  it('binds a shown branch before the next paint and leaves no exemption behind', async () => {
     // A screen the router reveals right after stx:load has to be filled in
-    // already: a :if on the page used to bind a timer later, so its section
+    // by its first paint: a :if on the page used to bind a timer later, so its section
     // appeared a frame after everything else. And the flag must not stick, or
     // a genuine miss inside any conditional would be unreportable forever.
     g.window.stx._scopes.if_lift = { show: true, label: 'ok' }
     hydrate('<div data-stx-scope="if_lift"><section :if="show"><p>{{ label }}</p></section></div>')
     const section = g.document.querySelector('section')
+    // A microtask: before the browser paints, after the effect that showed it.
+    await Promise.resolve()
     expect(section.__stx_if_pending).toBe(false)
     expect(g.document.querySelector('p').textContent).toBe('ok')
+  })
+
+  it('does not report a shown branch whose data changes in the same turn', async () => {
+    // A screen opened onto cached data and refreshed at once: the branch is
+    // shown for one workout, then the next workout has nothing for it. Its
+    // children must not have been bound to the first and evaluated against
+    // the second (#regression from binding inside the :if effect's own run).
+    const stx = g.window.stx
+    const detail = stx.state({ workout: { zones: { label: 'Heart rate' } } })
+    const zones = stx.derived(() => (detail() && detail().workout && detail().workout.zones) || null)
+    g.window.stx._scopes.if_swap = { detail, zones }
+    // Everything said while it settles, not only during the first pass: the
+    // report this guards against came late.
+    const late: string[] = []
+    const out = hydrate('<div data-stx-scope="if_swap"><section :if="zones"><p :aria-label="\'Time in \' + zones.label.toLowerCase()">x</p></section></div>')
+    console.error = (...args: unknown[]) => { late.push(args.map(String).join(' ')) }
+    try {
+      detail.set({ workout: {} })
+      await new Promise(resolve => setTimeout(resolve, 20))
+      g.window.dispatchEvent(new g.window.Event('stx:load'))
+      await new Promise(resolve => setTimeout(resolve, 20))
+    }
+    finally {
+      console.error = realError
+    }
+    expect([...out, ...late].filter(e => e.includes('never evaluated'))).toEqual([])
   })
 
   it('caps the report so one broken loop cannot flood the console', () => {
