@@ -417,7 +417,22 @@ export interface StrictModeConfig {
   enabled: boolean
   /** Throw errors instead of warnings (default: false) */
   failOnViolation?: boolean
-  /** Pattern strings to allow through validation (matched against message or regex source) */
+  /**
+   * Rule names to allow through validation, matched against the rule's message.
+   *
+   * RULE-GLOBAL: an entry here turns that rule off for every file. For one
+   * justified call site, write the exemption at the site instead, which keeps
+   * the rule enforced everywhere else and records WHY where a reviewer will
+   * see it (stacksjs/stx#2049):
+   *
+   *     // stx-strict-ignore-next-line getElementById -- pre-hydration guard
+   *     var form = document.getElementById('signin')
+   *
+   * A bare `stx-strict-ignore-next-line` exempts every rule on the next line;
+   * a trailing `// stx-strict-ignore` exempts the line it sits on. Suppression
+   * is per line, so a file can exempt one call and stay in breach three lines
+   * down -- which is what lets an app reach `failOnViolation: true` at all.
+   */
   allowPatterns?: string[]
   /**
    * What to do when a `<script client>` block does not bundle.

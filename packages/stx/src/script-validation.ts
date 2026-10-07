@@ -172,6 +172,153 @@ export const PROHIBITED_DOM_PATTERNS: Array<{
  * @param filePath - The file path for error reporting
  * @param strict - Strict mode configuration
  */
+/**
+ * A per-line exemption, written at the site that needs it (stacksjs/stx#2049).
+ *
+ * `allowPatterns` is rule-global: exempting one justified call site turns the
+ * rule off for the whole app, which is the rule you most want enforced
+ * everywhere else. So an app with a single correct violation could never reach
+ * `failOnViolation: true` -- and a queue that cannot empty keeps the guard
+ * advisory for ever, which is close to the problem strict mode was added to
+ * solve.
+ *
+ * The shapes accepted:
+ *
+ *     // stx-strict-ignore-next-line
+ *     // stx-strict-ignore-next-line getElementById -- pre-hydration guard
+ *     var form = document.getElementById('signin')   // stx-strict-ignore
+ *
+ * A bare directive suppresses every rule on its line; naming one or more rules
+ * suppresses only those, matched against the rule's message exactly as
+ * `allowPatterns` is, so the two spellings cannot disagree about what a name
+ * means. Everything after `--` is for the reader and is ignored here -- which
+ * is the point of preferring this over a config entry: the reason lives where
+ * the reviewer is looking, and "not migrated yet" stops being indistinguishable
+ * from "correct, and here is why".
+ *
+ * Read from the ORIGINAL source, before comments are blanked for scanning: the
+ * directive is itself a comment, so by scan time it is spaces.
+ */
+const STRICT_IGNORE = /(?:\/\/|\/\*|\{\{--)\s*stx-strict-ignore(-next-line)?([^\n*}]*)/g
+
+/**
+ * A view of the code with everything that is NOT a comment blanked out.
+ *
+ * The directive is only a directive where it is a comment. A script that
+ * PRINTS one -- documentation, a help string, a test fixture -- has not used
+ * it, and honouring that would let a string literal switch the validator off
+ * for the line beneath it. The inverse of the blanking the scanner does, and
+ * for the mirror-image reason: #1911 established that a prohibited API named
+ * in a comment is not a use of it.
+ *
+ * Positions are preserved, so line numbers still line up with the source.
+ */
+function commentsOnly(code: string): string {
+  const out: string[] = Array.from(code, char => (char === '\n' ? '\n' : ' '))
+  let i = 0
+  let quote = ''
+
+  while (i < code.length) {
+    const char = code[i]
+    const next = code[i + 1]
+
+    if (quote) {
+      if (char === '\\') { i += 2; continue }
+      if (char === quote) quote = ''
+      i++
+      continue
+    }
+
+    if (char === '"' || char === '\'' || char === '`') { quote = char; i++; continue }
+
+    if (char === '/' && next === '/') {
+      while (i < code.length && code[i] !== '\n') { out[i] = code[i]; i++ }
+      continue
+    }
+
+    if (char === '/' && next === '*') {
+      const end = code.indexOf('*/', i + 2)
+      const stop = end === -1 ? code.length : end + 2
+      for (; i < stop; i++) out[i] = code[i]
+      continue
+    }
+
+    if (char === '{' && next === '{' && code.slice(i, i + 4) === '{{--') {
+      const end = code.indexOf('--}}', i + 4)
+      const stop = end === -1 ? code.length : end + 4
+      for (; i < stop; i++) out[i] = code[i]
+      continue
+    }
+
+    i++
+  }
+
+  return out.join('')
+}
+
+/** Rules suppressed per 1-based line. An empty set means "every rule". */
+export function parseStrictIgnores(content: string): Map<number, Set<string>> {
+  const suppressed = new Map<number, Set<string>>()
+  // Matched against comments only; "is there code before it" is asked of the
+  // SOURCE, since the comments-only view has blanked exactly that code.
+  const lines = commentsOnly(content).split('\n')
+  const sourceLines = content.split('\n')
+
+  lines.forEach((line, index) => {
+    STRICT_IGNORE.lastIndex = 0
+    for (const match of line.matchAll(STRICT_IGNORE)) {
+      const nextLine = match[1] === '-next-line'
+      // A directive with code before it governs its OWN line; one on a line of
+      // its own governs the next, whichever spelling was used.
+      const beforeDirective = (sourceLines[index] ?? '').slice(0, match.index).trim()
+      const target = nextLine || beforeDirective === ''
+        ? index + 2
+        : index + 1
+
+      const argument = (match[2] ?? '').split('--')[0]
+      const candidates = argument.split(/[\s,]+/).filter(Boolean)
+      const named = candidates.filter(name => /\w/.test(name))
+
+      /*
+       * Named only punctuation, so it names no rule and suppresses none.
+       *
+       * Falling through to the bare case would make `stx-strict-ignore ((`
+       * disable every rule on the line -- the same shape as `allowPatterns:
+       * ['(']` disabling almost every rule by accident (#1792 P3). A directive
+       * that cannot be read is not permission.
+       */
+      if (candidates.length > 0 && named.length === 0)
+        continue
+
+      const existing = suppressed.get(target)
+      if (existing && existing.size === 0)
+        continue
+      if (named.length === 0) {
+        // Bare: everything on that line, regardless of what was there before.
+        suppressed.set(target, new Set())
+        continue
+      }
+      if (existing)
+        named.forEach(name => existing.add(name))
+      else
+        suppressed.set(target, new Set(named))
+    }
+  })
+
+  return suppressed
+}
+
+/** Whether `message`'s rule is suppressed on `line`. */
+function isSuppressed(suppressed: Map<number, Set<string>>, line: number, message: string): boolean {
+  const names = suppressed.get(line)
+  if (!names)
+    return false
+  if (names.size === 0)
+    return true
+  // Same matching as allowPatterns, so one name cannot mean two things.
+  return [...names].some(name => message.includes(name))
+}
+
 export function validateClientScript(
   content: string,
   filePath: string,
@@ -205,6 +352,8 @@ export function validateClientScript(
   }
 
   const allowPatterns = strictConfig.allowPatterns ?? []
+  // Read before the blanking below, because a directive is itself a comment.
+  const suppressed = parseStrictIgnores(content)
   const errors: string[] = []
 
   /*
@@ -261,10 +410,27 @@ export function validateClientScript(
 
       lines.forEach((line, index) => {
         pattern.lastIndex = 0
-        if (pattern.test(line)) {
+        if (pattern.test(line) && !isSuppressed(suppressed, index + 1, message)) {
           lineNumbers.push(index + 1)
         }
       })
+
+      /*
+       * Every line this rule matched was exempted at its site, so the rule has
+       * nothing left to report (#2049).
+       *
+       * Checked here rather than before the scan because suppression is
+       * per-line: a file may exempt one justified call and still be in breach
+       * three lines down, and that one has to keep failing. A rule whose match
+       * could not be attributed to any line is NOT suppressed -- there is no
+       * site to have exempted.
+       */
+      if (lineNumbers.length === 0 && lines.some((line) => {
+        pattern.lastIndex = 0
+        return pattern.test(line)
+      })) {
+        continue
+      }
 
       // Line numbers are relative to the <script> BODY, not to any file: the
       // content handed here has already been extracted from a template that may
