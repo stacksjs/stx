@@ -1,5 +1,33 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.395...v0.2.396)
+
+## ✨ Features
+
+- **native**: the host interface, implemented by something that is not a DOM ([5d1e2dd](https://github.com/stacksjs/stx/commit/5d1e2dd)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1984](https://github.com/stacksjs/stx/issues/1984))
+
+## 🐛 Bug Fixes
+
+- **components**: a field could never become invalid after a failed submit ([2713139](https://github.com/stacksjs/stx/commit/2713139)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2047](https://github.com/stacksjs/stx/issues/2047))
+- **stx**: a slot expression was evaluated in the component's scope ([497f354](https://github.com/stacksjs/stx/commit/497f354)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2046](https://github.com/stacksjs/stx/issues/2046))
+- **components**: Tooltip could not be dismissed or hovered ([9470a93](https://github.com/stacksjs/stx/commit/9470a93)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2045](https://github.com/stacksjs/stx/issues/2045))
+
+## ⚡ Performance Improvements
+
+- **router**: raise the script budget to 58KB, deliberately ([271c3ff](https://github.com/stacksjs/stx/commit/271c3ff)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ✅ Tests
+
+- **native**: golden tests for the compiler, and the renderer drift they found ([24128af](https://github.com/stacksjs/stx/commit/24128af)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1986](https://github.com/stacksjs/stx/issues/1986))
+
+## 🔧 Chores
+
+- release v0.2.396 ([107bad2](https://github.com/stacksjs/stx/commit/107bad2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.394...v0.2.395)
 
 ## 🐛 Bug Fixes
