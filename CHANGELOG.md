@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.393...v0.2.394)
+
+## 🐛 Bug Fixes
+
+- **offline**: open the screen asked for, not the first one ([60621f2](https://github.com/stacksjs/stx/commit/60621f2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.394 ([c27ecad](https://github.com/stacksjs/stx/commit/c27ecad)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.392...v0.2.393)
 
 ## 🐛 Bug Fixes
