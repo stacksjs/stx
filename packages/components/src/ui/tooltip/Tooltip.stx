@@ -43,7 +43,14 @@ const arrowClasses = {
 }
 
 const wrapClasses = nowrap ? 'whitespace-nowrap' : 'max-w-xs break-words'
-export const tooltipClasses = `absolute z-50 px-3 py-2 text-sm font-medium text-inverse-ink bg-inverse rounded-panel shadow-lg ${wrapClasses} pointer-events-none transition-opacity duration-200 ${positionClasses[position] || positionClasses.top} ${className}`.trim()
+/*
+ * No `pointer-events-none`: WCAG 2.1 SC 1.4.13 requires content shown on hover
+ * to stay visible while the pointer is over it. With the pointer locked out,
+ * moving toward the tooltip to read it dismissed it -- worst for exactly the
+ * long tooltips that are hardest to read quickly. The panel takes its own
+ * mouseenter/mouseleave below so entering it keeps it open.
+ */
+export const tooltipClasses = `absolute z-50 px-3 py-2 text-sm font-medium text-inverse-ink bg-inverse rounded-panel shadow-lg ${wrapClasses} transition-opacity duration-200 ${positionClasses[position] || positionClasses.top} ${className}`.trim()
 export const arrowClass = `absolute w-0 h-0 border-4 border-transparent ${arrowClasses[position] || arrowClasses.top}`.trim()
 </script>
 
@@ -74,6 +81,21 @@ function hideTooltip() {
   }
   isVisible.set(false)
 }
+
+/*
+ * Escape dismisses it (WCAG 2.1 SC 1.4.13).
+ *
+ * The rule is that content shown on hover or focus can be dismissed WITHOUT
+ * moving the pointer or the focus -- so a keyboard listener on the trigger is
+ * not enough when the tooltip was opened by hovering and focus is somewhere
+ * else entirely. The listener is global for that reason, and does nothing
+ * unless this tooltip is the one showing. useEventListener drops it on
+ * teardown, so a page of tooltips does not leak one apiece.
+ */
+useEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && isVisible())
+    hideTooltip()
+})
 </script>
 
 <div class="relative inline-block {{ disabled ? 'cursor-not-allowed' : '' }}">
@@ -96,6 +118,8 @@ function hideTooltip() {
     :show="isVisible() && !{{ disabled }}"
     class="{{ tooltipClasses }}"
     role="tooltip"
+    @mouseenter="showTooltip()"
+    @mouseleave="hideTooltip()"
   >
     {{ content }}
     <div class="{{ arrowClass }}"></div>
