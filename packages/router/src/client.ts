@@ -2236,6 +2236,22 @@ else {
     navigate(location.pathname+location.search+location.hash,false);
   });
 
+  // ── Offline stand-in ──
+  // Without a network the offline worker answers a screen it has not kept
+  // whole with the app's first screen, marked. A screen reached inside the
+  // app was kept as a fragment, so ask for that and show it in place. Only
+  // when it is there: a failed navigate reloads, and the reload would be
+  // answered with the stand-in again.
+  var standIn=document.querySelector('meta[name="stx-offline-fallback"]');
+  if(standIn&&shouldUseFragmentResponse()){
+    standIn.remove();
+    var wanted=location.pathname+location.search;
+    fetch(wanted,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){
+      if(r.ok&&r.headers.get('X-STX-Fragment')==='true'&&location.pathname+location.search===wanted)
+        navigate(wanted+location.hash,false,true);
+    }).catch(function(){});
+  }
+
   // ── Prefetch ──
   // A link's page, fetched before it is followed into the cache navigate
   // reads, so following it is a swap rather than a round trip.

@@ -143,3 +143,26 @@ describe('media kept for offline', () => {
     expect(sw.stores.has('stx-media')).toBe(false)
   })
 })
+
+describe('a screen not kept whole', () => {
+  it('is answered offline with the first screen, marked as a stand-in', async () => {
+    const sw = runWorker({ enabled: true, pages: ['/m'] }, () => null)
+    sw.stores.set('stx-shell-b1', new Map([
+      ['http://app.test/m', new Response('<!doctype html><html><head><title>Today</title></head><body>Today</body></html>', { status: 200, headers: { 'Content-Type': 'text/html' } })],
+    ]))
+    const page = await sw.request('http://app.test/m/go/7', { Accept: 'text/html' })
+    const html = await page!.text()
+    expect(page!.status).toBe(200)
+    expect(html).toContain('<head><meta name="stx-offline-fallback" content="1"><title>Today</title>')
+    expect(html).toContain('<body>Today</body>')
+  })
+
+  it('leaves a screen it kept unmarked', async () => {
+    const sw = runWorker({ enabled: true, pages: ['/m'] }, () => null)
+    sw.stores.set('stx-shell-b1', new Map([
+      ['http://app.test/m', new Response('<html><head></head><body>Today</body></html>', { status: 200 })],
+    ]))
+    const page = await sw.request('http://app.test/m', { Accept: 'text/html' })
+    expect(await page!.text()).not.toContain('stx-offline-fallback')
+  })
+})

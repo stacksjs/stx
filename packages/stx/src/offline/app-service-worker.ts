@@ -209,6 +209,21 @@ self.addEventListener('message', function (event) {
   }
 });
 
+// The fallback screen stands in for one this device has not kept whole. It
+// says so, and the router then asks for the screen that was wanted as a
+// fragment: one reached inside the app was kept that way.
+function markFallback(response) {
+  return response.text().then(function (html) {
+    var head = html.indexOf('<head');
+    var at = head === -1 ? -1 : html.indexOf('>', head) + 1;
+    var mark = '<meta name="stx-offline-fallback" content="1">';
+    var body = at > 0 ? html.slice(0, at) + mark + html.slice(at) : mark + html;
+    var headers = new Headers(response.headers);
+    headers.delete('Content-Length');
+    return new Response(body, { status: 200, headers: headers });
+  });
+}
+
 function pageResponse(request) {
   var fragment = isFragment(request);
   var key = variantUrl(request.url, fragment);
@@ -228,7 +243,7 @@ function pageResponse(request) {
         // Slower than the timeout but still coming: wait for it rather than fail.
         return network.catch(function () {
           if (!S.fallback || fragment) return Response.error();
-          return cache.match(variantUrl(S.fallback, false)).then(function (fallback) { return fallback || Response.error(); });
+          return cache.match(variantUrl(S.fallback, false)).then(function (fallback) { return fallback ? markFallback(fallback) : Response.error(); });
         });
       });
     });
