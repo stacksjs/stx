@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.390...v0.2.391)
+
+## 🐛 Bug Fixes
+
+- **signals**: bind a shown :if branch in a microtask, not inside its effect ([6451587](https://github.com/stacksjs/stx/commit/6451587)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.391 ([908748c](https://github.com/stacksjs/stx/commit/908748c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.389...v0.2.390)
 
 ## 🐛 Bug Fixes
