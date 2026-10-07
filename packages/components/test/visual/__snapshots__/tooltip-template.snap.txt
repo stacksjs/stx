@@ -64,6 +64,8 @@ export const arrowClass = `absolute w-0 h-0 border-4 border-transparent ${arrowC
 // A live prop: a tooltip is commonly suppressed by state the page only learns
 // about later — while a field is being edited, or once a hint has been read —
 // and frozen it could only ever reflect the state the page was built in.
+const tooltipId = {{ tooltipId }}
+const triggerRef = useRef('triggerRef')
 const isDisabled = useReactiveProp('disabled', {{ disabled }})
 // Reactive prop binding — parent can drive `show` via signals. See #1704.
 const isVisible = useReactiveProp('show', {{ show }})
@@ -101,22 +103,57 @@ useEventListener('keydown', (event) => {
   if (event.key === 'Escape' && isVisible())
     hideTooltip()
 })
-</script>
-<div class="relative inline-block {{ disabled ? 'cursor-not-allowed' : '' }}">
-  {{-- aria-describedby is what attaches the tooltip to what it describes.
-       The element is always in the DOM -- :show toggles it -- so the
-       description resolves whether or not the tooltip is on screen, which is
-       how a screen reader is meant to reach it. --}}
-  <div
-    aria-describedby="{{ tooltipId }}"
+
+/*
+ * Put the description on the CONTROL, not on the wrapper around it
+ * (stacksjs/stx#2048).
+ *
+ * `aria-describedby` is not inherited: the description is computed for the
+ * element that carries the attribute. On the wrapper that element is a plain,
+ * non-focusable
+  <div>
+    , which assistive technology never lands on -- so the
+ * button or input inside the slot got nothing, and an icon-only button lost
+ * the name a native `title` would have given it.
+ *
+ * The events are a different matter and stay on the wrapper: focus and
+ * pointer events BUBBLE up from the slotted control, which is why that half
+ * worked. A description does not bubble, so it has to be placed.
+ *
+ * Done on mount because the trigger is the caller's markup, and the component
+ * only learns what it is once it exists. Appended rather than assigned: a
+ * caller who already described their control keeps that description, and ARIA
+ * reads the list in order.
+ */
+function describeTrigger() {
+  const wrapper = triggerRef.value
+  if (!wrapper) return
+  // The control, or the wrapper itself when the trigger is bare text and
+  // there is nothing better to carry it.
+  const target = wrapper.firstElementChild || wrapper
+  const existing = (target.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean)
+  if (existing.indexOf(tooltipId) !== -1) return
+  existing.push(tooltipId)
+  target.setAttribute('aria-describedby', existing.join(' '))
+}
+
+onMount(describeTrigger)
+  </script>
+  <div class="relative inline-block {{ disabled ? 'cursor-not-allowed' : '' }}">
+    {{-- The trigger wrapper carries the EVENTS, which bubble up to it from the
+       slotted control, and deliberately not the description, which does not
+       bubble anywhere. `describeTrigger` below moves that onto the control
+       itself (stacksjs/stx#2048). --}}
+    <div
+    x-ref="triggerRef"
     @mouseenter="showTooltip()"
     @mouseleave="hideTooltip()"
     @focusin="showTooltip()"
     @focusout="hideTooltip()"
   >
-    <slot />
-  </div>
-  <div
+      <slot />
+    </div>
+    <div
     id="{{ tooltipId }}"
     :show="isVisible() && !{{ disabled }}"
     class="{{ tooltipClasses }}"
@@ -124,11 +161,11 @@ useEventListener('keydown', (event) => {
     @mouseenter="showTooltip()"
     @mouseleave="hideTooltip()"
   >
-    {{ content }}
-    <div class="{{ arrowClass }}">
+      {{ content }}
+      <div class="{{ arrowClass }}">
+      </div>
     </div>
   </div>
-</div>
 
 === Extracted Classes ===
 ''
@@ -136,6 +173,7 @@ useEventListener('keydown', (event) => {
 :
 ?
 absolute
+aria-describedby
 arrowClass
 bg-inverse
 border-4

@@ -22,9 +22,14 @@
  * component a DOWNGRADE from the native `title=` it replaces, since that at
  * least is announced.
  */
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import { describe, expect, it } from 'bun:test'
+import { boot, closeBrowser, layout, page, renderApp, settle } from '../../stx/test/router/spa-harness'
 import { markup, render } from './utils/render-component'
 import { parse } from './utils/render-component'
+
+const UI_DIR = path.join(import.meta.dir, '..', 'src', 'ui')
 
 describe('Badge announces only when asked to', () => {
   it('is not a live region by default', async () => {
@@ -60,27 +65,30 @@ describe('Badge announces only when asked to', () => {
 })
 
 describe('Tooltip is reachable from what it describes', () => {
-  it('points the trigger at the tooltip, and the id resolves', async () => {
+  it('gives the panel an id and the tooltip role', async () => {
+    /*
+     * The REFERENCE is attached on mount, not here: it has to land on the
+     * slotted control, and the component only learns what that is once the
+     * markup exists (#2048). What the server owes is a panel that can be
+     * referenced -- an id and the role -- which is what this pins. The
+     * reference itself is asserted in the runtime tests below.
+     */
     const document = parse(await render('<Tooltip content="Deletes everything">hover</Tooltip>'))
 
-    const trigger = document.querySelector('[aria-describedby]')
-    expect(trigger).not.toBeNull()
-
-    const id = trigger!.getAttribute('aria-describedby')!
-    const panel = document.getElementById(id)
+    const panel = document.querySelector('[role="tooltip"]')
     expect(panel).not.toBeNull()
-    expect(panel!.getAttribute('role')).toBe('tooltip')
+    expect(panel!.getAttribute('id')).toBeTruthy()
     expect(panel!.textContent).toContain('Deletes everything')
   })
 
-  it('gives two tooltips on one page different ids', async () => {
+  it('gives two tooltips on one page different panel ids', async () => {
     // A shared id would point every trigger at the first tooltip.
     const document = parse(await render(`
       <Tooltip content="First">a</Tooltip>
       <Tooltip content="Second">b</Tooltip>
     `))
-    const ids = [...document.querySelectorAll('[aria-describedby]')]
-      .map(el => el.getAttribute('aria-describedby'))
+    const ids = [...document.querySelectorAll('[role="tooltip"]')]
+      .map(el => el.getAttribute('id'))
 
     expect(ids).toHaveLength(2)
     expect(new Set(ids).size).toBe(2)
@@ -144,5 +152,108 @@ describe('Tooltip can be dismissed and can be hovered', () => {
   it('only dismisses the tooltip that is showing', async () => {
     const html = await render('<Tooltip content="Help">x</Tooltip>')
     expect(html).toContain('isVisible()')
+  })
+})
+
+/**
+ * The description has to land on the CONTROL (stacksjs/stx#2048).
+ *
+ * #2045 gave the panel an id and pointed `aria-describedby` at it -- but from
+ * the wrapper `<div>` the component puts around the slot. `aria-describedby`
+ * is not inherited: the description is computed for the element carrying the
+ * attribute, and that element was a plain non-focusable div which assistive
+ * technology never lands on. The button inside the slot got nothing.
+ *
+ * Which makes the component a downgrade from the `title` it replaces, exactly
+ * as before, and worst for the icon-only case: a symbol-only button has no
+ * other source of a name, so `<button title="Resolve">✓</button>` announces
+ * "Resolve" and the component's shape announced "✓".
+ *
+ * The events stay on the wrapper and that is correct -- focus and pointer
+ * events BUBBLE up from the slotted control, which is why that half worked all
+ * along. A description does not bubble, so it has to be placed.
+ */
+describe('Tooltip describes the control, not the wrapper', () => {
+  const FILES = {
+    'layouts/app.stx': layout(''),
+    'components/Tooltip.stx': readFileSync(path.join(UI_DIR, 'tooltip/Tooltip.stx'), 'utf-8'),
+    'pages/index.stx': page('app', `<Tooltip content="Resolve, alerts again only if it comes back">
+  <button id="trigger">OK</button>
+</Tooltip>`),
+    'pages/described.stx': page('app', `<Tooltip content="Extra detail">
+  <button id="trigger" aria-describedby="caller-own">OK</button>
+</Tooltip>`),
+    'pages/text.stx': page('app', `<Tooltip content="Plain text trigger">bare words</Tooltip>`),
+  }
+  const ROUTES = { '/': 'pages/index.stx', '/described': 'pages/described.stx', '/text': 'pages/text.stx' }
+
+  it('points the slotted button at the tooltip panel', async () => {
+    const app = await renderApp(FILES, ROUTES)
+    try {
+      const browser = await boot(app, '/')
+      await settle()
+
+      const button = browser.document.querySelector('#trigger')!
+      const described = button.getAttribute('aria-describedby')
+      expect(described).toBeTruthy()
+
+      const panel = browser.document.getElementById(described!.split(/\s+/)[0])
+      expect(panel).not.toBeNull()
+      expect(panel!.getAttribute('role')).toBe('tooltip')
+      expect(panel!.textContent).toContain('Resolve, alerts again only if it comes back')
+    }
+    finally {
+      closeBrowser()
+    }
+  })
+
+  it('leaves the wrapper without a description of its own', async () => {
+    // The wrapper is not what an AT lands on, so a reference there is at best
+    // inert and at worst a second announcement on a div.
+    const app = await renderApp(FILES, ROUTES)
+    try {
+      const browser = await boot(app, '/')
+      await settle()
+
+      const wrapper = browser.document.querySelector('#trigger')!.parentElement!
+      expect(wrapper.hasAttribute('aria-describedby')).toBe(false)
+    }
+    finally {
+      closeBrowser()
+    }
+  })
+
+  it('keeps a description the caller already set', async () => {
+    // ARIA reads the list in order, so appending adds detail rather than
+    // replacing whatever the caller had reason to point at.
+    const app = await renderApp(FILES, ROUTES)
+    try {
+      const browser = await boot(app, '/described')
+      await settle()
+
+      const ids = (browser.document.querySelector('#trigger')!
+        .getAttribute('aria-describedby') ?? '').split(/\s+/)
+      expect(ids[0]).toBe('caller-own')
+      expect(ids).toHaveLength(2)
+    }
+    finally {
+      closeBrowser()
+    }
+  })
+
+  it('falls back to the wrapper when the trigger is bare text', async () => {
+    // Nothing better to carry it: there is no control in the slot at all.
+    const app = await renderApp(FILES, ROUTES)
+    try {
+      const browser = await boot(app, '/text')
+      await settle()
+
+      const described = browser.document.querySelector('[aria-describedby]')
+      expect(described).not.toBeNull()
+      expect(described!.textContent).toContain('bare words')
+    }
+    finally {
+      closeBrowser()
+    }
   })
 })
