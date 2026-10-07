@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.394...v0.2.395)
+
+## 🐛 Bug Fixes
+
+- **router**: mark the history entries the app pushed ([38d3d1a](https://github.com/stacksjs/stx/commit/38d3d1a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.395 ([c1d9f58](https://github.com/stacksjs/stx/commit/c1d9f58)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.393...v0.2.394)
 
 ## 🐛 Bug Fixes
