@@ -128,12 +128,14 @@ describe('the manifest agrees with what the runtime consumes', () => {
     const { manifest } = extractBindingManifest(`<main>${markup}</main>`)
     expect(manifest.entries).toEqual([])
 
-    // The runtime agrees it is not a binding -- it is excluded from the generic
-    // attribute path -- but it does not render it as a literal `:literal`
-    // either: the attribute is stripped and nothing takes its place. Recorded
-    // as observed rather than asserted as correct; `::` has no test and no
-    // documentation anywhere in the repo, so which of those it should be is an
-    // open question, not something this file should pin.
+    // The runtime agrees it is not a binding, and it now renders the escaped
+    // attribute: `::literal` is replaced by a literal `:literal`, the way
+    // `@@if` renders `@if`. It used to be swallowed by the event catch-all --
+    // a name starting with two colons starts with one -- which bound an event
+    // named `:literal` and removed the attribute, so the author got neither a
+    // binding nor their attribute. `escaped-colon-attr.test.ts` owns that
+    // behaviour; this file only cares that the manifest and the runtime agree
+    // it is not a binding.
     const consumed = await consumedByRuntime(markup, {})
     expect(consumed.get('esc')).toEqual(['::literal'])
   })

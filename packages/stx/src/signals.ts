@@ -3149,6 +3149,28 @@ catch (e2) {
       const value = attr.value;
       if (!name) return;
 
+      /*
+       * A doubled colon escapes the prefix, the way a doubled at-sign does in
+       * a directive: @@if renders @if, so ::foo renders :foo.
+       *
+       * It was excluded from the generic attribute path, which is why it was
+       * never evaluated as an expression -- but a name beginning with two
+       * colons also begins with one, so the event catch-all below claimed it,
+       * registered a listener for an event named :foo, and removed the
+       * attribute. The author got neither a binding nor their attribute: it
+       * disappeared, silently, and nothing took its place.
+       *
+       * Unescaped here rather than on the server, because an unescaped :foo
+       * reaching this pass is indistinguishable from one the author wrote and
+       * would be bound as an event. The attributes were snapshotted before
+       * this loop, so the one written now is not revisited.
+       */
+      if (name.startsWith('::')) {
+        el.removeAttribute(name);
+        el.setAttribute(name.slice(1), value);
+        return;
+      }
+
       // Dynamic attribute binding: @bind:attr, x-bind:attr, :attr, OR x-attr
       // x-attr (e.g. x-class, x-style, x-href, x-src) is the canonical binding prefix.
       // :attr still works for backward compat but is reserved for structural directives.
