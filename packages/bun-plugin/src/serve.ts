@@ -69,6 +69,30 @@ type CssEngine = Pick<typeof import('@stacksjs/ts-css/engine'), 'CSSGenerator' |
 const INSTANCE_SCRIPT_OPEN_TAG = /^<script\b[^>]*\sdata-stx-(?:owner|instance)(?=[\s=/>])/i
 
 /**
+ * Whether an instance script outside the container is the layout chrome's own
+ * (#1958). An instance script is emitted after the component holding it, so
+ * in a layout that wraps `<main>` in a component (an app shell) every page
+ * component's script lands after the container too; one that names its root
+ * in data-stx-owner belongs to the side that root is on. Mirrors
+ * isChromeInstanceScript in stx's app-shell.ts, inlined because
+ * '@stacksjs/stx' resolves to dist here, which lags src.
+ */
+function isChromeInstanceScript(html: string, script: string, containerStart: number, containerEnd: number): boolean {
+  if (!INSTANCE_SCRIPT_OPEN_TAG.test(script))
+    return false
+  const openTag = script.slice(0, script.indexOf('>') + 1)
+  const owner = /\sdata-stx-owner="([^"]+)"/i.exec(openTag)?.[1]
+  if (!owner)
+    return true
+  const root = `data-stx-scope="${owner}"`
+  for (let at = html.indexOf(root); at !== -1; at = html.indexOf(root, at + root.length)) {
+    if (at >= containerStart && at < containerEnd)
+      return false
+  }
+  return true
+}
+
+/**
  * Where the utility-CSS engine can be found inside a package store.
  *
  * The engine ships inside `@stacksjs/ts-css`, at its `engine` subpath. Both
@@ -4393,13 +4417,15 @@ function __stxOverlay(errs){
                         && offset < mainContentEnd
                       if (insideMain || pageSetupScriptOffsets.has(offset))
                         return
-                      // A component instance's own script outside the container
-                      // belongs to the layout's chrome, which this fragment leaves
-                      // in place, instance and bindings included; running it again
-                      // set up a second instance the markup never saw (#1958).
+                      // The layout chrome's own component scripts stay out: this
+                      // fragment leaves the chrome in place, instance and bindings
+                      // included, and running one again set up a second instance
+                      // the markup never saw (#1958). A page component's script
+                      // can sit out here too, when the layout wraps the container
+                      // in a component; its root inside says it is the page's.
                       // Only with a container: without one every script counts as
                       // outside, the page's own instances too.
-                      if (mainContentStart !== -1 && INSTANCE_SCRIPT_OPEN_TAG.test(match[0]))
+                      if (mainContentStart !== -1 && isChromeInstanceScript(content, match[0], mainContentStart, mainContentEnd))
                         return
                       pageSetupScriptOffsets.add(offset)
                       pageSetupScripts.push(match[0])

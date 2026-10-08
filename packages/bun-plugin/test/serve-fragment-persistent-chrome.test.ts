@@ -78,6 +78,33 @@ window.CARD_SETUP = true
 <Card />
 @endsection
 `)
+  // The container inside a component's slot, as an app shell wraps <main>:
+  // the page's own component scripts are emitted after the shell, outside
+  // the container, and still belong to the page.
+  await Bun.write(path.join(dir, 'components', 'Shell.stx'), `<script client>
+const shellReady = state(true)
+window.SHELL_SETUP = true
+</script>
+<div class="shell">{{ shellReady() }}<slot /></div>
+`)
+  await Bun.write(path.join(dir, 'layouts', 'shell.stx'), `<!DOCTYPE html>
+<html lang="en">
+<head><title>Shell</title></head>
+<body>
+  <Shell>
+    <main>
+      @yield('content')
+    </main>
+  </Shell>
+</body>
+</html>
+`)
+  await Bun.write(path.join(dir, 'views', 'shelled.stx'), `@extends('layouts/shell')
+@section('content')
+<h1>Shelled</h1>
+<Card />
+@endsection
+`)
   // No container anywhere: every script counts as outside it, the page's
   // own component included, so nothing may be dropped.
   await Bun.write(path.join(dir, 'views', 'bare.stx'), `<div class="bare">
@@ -130,6 +157,15 @@ describe('fragments and the layout chrome (#1958)', () => {
       plain: body.includes('PLAIN_RUN'),
       card: body.includes('CARD_SETUP'),
     }).toEqual({ nav: false, sheet: false, plain: false, card: true })
+  })
+
+  it('keeps a page component\'s script that landed after a shell-wrapped container', async () => {
+    const whole = await fetchPage('/shelled', false)
+    expect(whole.body.indexOf('CARD_SETUP')).toBeGreaterThan(whole.body.indexOf('</main>'))
+    const { isFragment, body } = await fetchPage('/shelled', true)
+    expect(isFragment).toBe('true')
+    expect(body).toContain('<h1>Shelled</h1>')
+    expect({ card: body.includes('CARD_SETUP'), shell: body.includes('SHELL_SETUP') }).toEqual({ card: true, shell: false })
   })
 
   it('a page with no container drops nothing', async () => {

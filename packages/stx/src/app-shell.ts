@@ -363,6 +363,32 @@ export function stripDocumentWrapper(html: string, options: { preserveHead?: boo
 const COMPONENT_INSTANCE_SCRIPT = /^<script\b[^>]*\sdata-stx-(?:owner|instance)(?=[\s=/>])/i
 
 /**
+ * Whether a component instance script outside the container is the layout's
+ * own chrome, to be left out of a fragment (#1958).
+ *
+ * Where the script sits does not say: an instance script is emitted after the
+ * component that holds it, so in a layout that wraps the container in a
+ * component (an app shell around `<main>`) every component on the PAGE has its
+ * script after the container too. One that names its root in data-stx-owner
+ * belongs to whichever side that root is on. One with no root to name
+ * (data-stx-instance) still counts as chrome.
+ */
+export function isChromeInstanceScript(html: string, script: string, containerStart: number, containerEnd: number): boolean {
+  if (!COMPONENT_INSTANCE_SCRIPT.test(script))
+    return false
+  const openTag = script.slice(0, script.indexOf('>') + 1)
+  const owner = /\sdata-stx-owner="([^"]+)"/i.exec(openTag)?.[1]
+  if (!owner)
+    return true
+  const root = `data-stx-scope="${owner}"`
+  for (let at = html.indexOf(root); at !== -1; at = html.indexOf(root, at + root.length)) {
+    if (at >= containerStart && at < containerEnd)
+      return false
+  }
+  return true
+}
+
+/**
  * Check if a request is an SPA navigation request (from the stx router).
  */
 export function isSpaNavigation(request: Request): boolean {
@@ -427,8 +453,9 @@ export function extractContainerContent(html: string, containerSelector: string 
   // page's signals, so reactive :for / :text / :if directives find no data.
   // The router extracts and re-runs scripts from the fragment on navigation.
   //
-  // Except a component instance's own script (#1958). Out here it belongs to
-  // the layout's chrome, which a same-layout navigation leaves in place,
+  // Except the layout chrome's own component scripts (#1958, and
+  // isChromeInstanceScript for which those are). The chrome is what a
+  // same-layout navigation leaves in place,
   // instance and bindings included, so running it again set up a second
   // instance the markup never saw. Navigation swaps a fragment in only when
   // the layout is unchanged; a layout change fetches the whole document. A
@@ -451,7 +478,7 @@ export function extractContainerContent(html: string, containerSelector: string 
       let sm: RegExpExecArray | null
       scriptRe.lastIndex = 0
       while ((sm = scriptRe.exec(region)) !== null) {
-        if (COMPONENT_INSTANCE_SCRIPT.test(sm[0]))
+        if (isChromeInstanceScript(trimmed, sm[0], openEnd, closeIdx))
           continue
         bodyScripts.push(sm[0])
       }
