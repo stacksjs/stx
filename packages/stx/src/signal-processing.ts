@@ -1037,6 +1037,19 @@ export function convertServerLoopAttributesToDirectives(
     return template
 
   const signalNames = extractClientSignalNames(template)
+  // A component's template arrives here with its `<script client>` already
+  // lifted out, so the scan above finds nothing in it. The renderer records the
+  // names that script declares on the context instead. Without them a signal
+  // named after one of the component's props (`const options =
+  // derived(() => rawOptions().map(...))` beside an `options` prop) looked like
+  // server data, and the loop became an `@foreach` over `options()`, which is
+  // not callable on the server: NativeSegmentedControl rendered no segments.
+  if (Array.isArray(context.__stx_client_signal_names)) {
+    for (const name of context.__stx_client_signal_names as unknown[]) {
+      if (typeof name === 'string')
+        signalNames.add(name)
+    }
+  }
   let output = template
 
   // Rebuilt from the end so earlier offsets stay valid.
