@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.398...v0.2.399)
+
+## 🐛 Bug Fixes
+
+- **signals**: bind an :if branch hidden by its page once it shows again ([db813c9](https://github.com/stacksjs/stx/commit/db813c9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.399 ([a3f91f4](https://github.com/stacksjs/stx/commit/a3f91f4)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.397...v0.2.398)
 
 ## ✨ Features
