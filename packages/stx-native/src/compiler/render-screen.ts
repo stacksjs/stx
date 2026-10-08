@@ -19,14 +19,31 @@
  */
 import type { STXDocument } from './ir'
 import type { TranslationDiagnostic } from './html-to-ir'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { processDirectives } from '@stacksjs/stx'
 import { translateHtmlToDocument } from './html-to-ir'
 import { extractClientScript } from './client-script'
 
-/** Where the native primitive components live, for an app's stx config. */
+/**
+ * Where the native primitive components live, for an app's stx config.
+ *
+ * Resolved by looking, because the answer differs between running from source
+ * (`src/compiler` -> `src/primitives`) and running the built CLI, where the
+ * bundler flattens the JavaScript into `dist` and leaves the `.stx` files in
+ * the source tree. A path that is merely plausible would fail only in the
+ * built binary, which is the one users run.
+ */
 export function nativePrimitivesDir(): string {
-  return path.join(import.meta.dir, '..', 'primitives')
+  const candidates = [
+    path.join(import.meta.dir, '..', 'primitives'),
+    path.join(import.meta.dir, '..', 'src', 'primitives'),
+    path.join(import.meta.dir, '..', '..', 'src', 'primitives'),
+  ]
+  for (const candidate of candidates)
+    if (existsSync(path.join(candidate, 'View.stx')))
+      return candidate
+  return candidates[0]
 }
 
 export interface CompileScreenOptions {

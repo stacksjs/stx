@@ -213,6 +213,25 @@ describe('what is deliberately dropped', () => {
     expect(root.style).toEqual({ width: '50%', fontSize: 24 })
   })
 
+  it('sees through a template wrapper instead of dropping the screen', async () => {
+    // A native screen written as `<script>...</script><template>...</template>`
+    // keeps the template element in stx's output. Dropping it as a non-view
+    // took the whole screen with it -- found by the CLI's own fixtures
+    // translating to nothing at all.
+    const { root } = await translateHtmlToIR(
+      '<template><div class="p-4"><span>Hello</span></div></template>',
+    )
+    expect(root.type).toBe('View')
+    expect(root.style).toEqual({ padding: 16 })
+    expect(texts(root)).toEqual(['Hello'])
+  })
+
+  it('sees through a document body too', async () => {
+    const { root } = await translateHtmlToIR('<body><div class="p-1"><span>a</span></div></body>')
+    expect(root.type).toBe('View')
+    expect(texts(root)).toEqual(['a'])
+  })
+
   it('reports an inline style property the IR has no field for', async () => {
     const { root, diagnostics } = await translateHtmlToIR('<div style="display:contents;cursor:pointer"><span>a</span></div>')
     expect(root.style).toEqual({ display: 'contents' })

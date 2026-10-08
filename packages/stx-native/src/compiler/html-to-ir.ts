@@ -71,7 +71,18 @@ export interface TranslateOptions {
  * IR has no way to express a glyph. Pretending otherwise would ship an empty
  * square claiming to be an icon.
  */
-const DROP_SUBTREE = new Set(['script', 'style', 'head', 'meta', 'link', 'title', 'base', 'noscript', 'template', 'svg'])
+const DROP_SUBTREE = new Set(['script', 'style', 'head', 'meta', 'link', 'title', 'base', 'noscript', 'svg'])
+
+/**
+ * Elements that are not views but whose children are.
+ *
+ * `template` is the one that matters: stx strips it as an SFC wrapper, and a
+ * native screen written as `<script>...</script><template>...</template>`
+ * leaves it in the rendered output. Dropping it took the entire screen with
+ * it -- which is how this was found, by the CLI's own fixtures translating to
+ * nothing. `body` and `html` are here for a whole rendered document.
+ */
+const UNWRAP = new Set(['template', 'body', 'html', 'main', 'fragment'])
 
 /** Mapped to a View so the icon's box survives, with the geometry dropped. */
 const BOX_ONLY = new Set(['svg'])
@@ -242,6 +253,8 @@ interface Frame {
   dropped: boolean
   /** The node itself is not part of the tree. Discarded on close. */
   discard: boolean
+  /** The node is not a view but its children are: they rise to the parent. */
+  unwrap: boolean
 }
 
 interface Attributes {
@@ -418,6 +431,22 @@ export async function translateHtmlToIR(
       parent.node.children.push(node)
   }
 
+  /** A wrapper's children take its place. */
+  function hoist(frame: Frame): void {
+    const parent = stack[stack.length - 1]
+    for (const child of frame.node.children) {
+      if (typeof child === 'string') {
+        if (parent && !parent.dropped)
+          parent.node.children.push(child)
+        continue
+      }
+      if (!parent)
+        roots.push(child)
+      else if (!parent.dropped)
+        parent.node.children.push(child)
+    }
+  }
+
   function open(tag: string, attributes: Array<[string, string]>): Frame {
     const dropped = DROP_SUBTREE.has(tag) && !BOX_ONLY.has(tag)
     const inheritedDrop = stack[stack.length - 1]?.dropped ?? false
@@ -437,7 +466,7 @@ export async function translateHtmlToIR(
       type = BOX_ONLY.has(tag) ? 'View' : mapToNativeComponent(tag)
     }
 
-    if (type === tag && !NATIVE_TYPES.has(type) && !DROP_SUBTREE.has(tag) && !seenUnmapped.has(tag)) {
+    if (type === tag && !NATIVE_TYPES.has(type) && !DROP_SUBTREE.has(tag) && !UNWRAP.has(tag) && !seenUnmapped.has(tag)) {
       seenUnmapped.add(tag)
       diagnostics.push({ kind: 'unmapped-tag', tag })
     }
@@ -466,6 +495,7 @@ export async function translateHtmlToIR(
       node,
       dropped: dropped || inheritedDrop || BOX_ONLY.has(tag),
       discard: dropped || inheritedDrop,
+      unwrap: UNWRAP.has(tag),
     }
   }
 
@@ -478,7 +508,11 @@ export async function translateHtmlToIR(
         try {
           element.onEndTag(() => {
             stack.pop()
-            if (!frame.discard)
+            if (frame.discard)
+              return
+            if (frame.unwrap)
+              hoist(frame)
+            else
               attach(settle(frame, diagnostics))
           })
         }
