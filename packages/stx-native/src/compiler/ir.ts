@@ -59,6 +59,18 @@ export interface STXNode {
   /** Event handlers (name -> handler function name) */
   events: Record<string, string>
 
+  /**
+   * Client bindings, kept verbatim for the runtime to evaluate.
+   *
+   * stx's rendered output keeps `:show`, `x-text` and friends in the document
+   * on purpose, so the signals runtime can bind them. The native target wants
+   * the same thing, so the translator carries them through here instead of
+   * resolving them: the expression is evaluated on the device, against the
+   * screen's own scope. Keyed by the binding name with its prefix removed, so
+   * `:text` and `x-text` are one entry.
+   */
+  bindings?: Record<string, string>
+
   /** Child nodes or text content */
   children: (STXNode | string)[]
 

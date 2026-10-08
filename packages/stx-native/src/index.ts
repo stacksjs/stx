@@ -21,6 +21,7 @@
 export * from './compiler/ir'
 export * from './compiler/headwind-to-style'
 export * from './compiler/parser'
+export * from './compiler/html-to-ir'
 
 // Bridge exports
 export * from './bridge/protocol'
