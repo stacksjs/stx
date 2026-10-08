@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.397...v0.2.398)
+
+## ✨ Features
+
+- **composables**: keptState, a value kept between visits per scope, for instant phone tabs ([23ad209](https://github.com/stacksjs/stx/commit/23ad209)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.398 ([faced8f](https://github.com/stacksjs/stx/commit/faced8f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.396...v0.2.397)
 
 ## ✨ Features
