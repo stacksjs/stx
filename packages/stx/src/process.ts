@@ -421,6 +421,34 @@ function placeSignalsRuntimeBeforeScripts(html: string, afterRuntime = ''): stri
 /**
  * Process all template directives with enhanced error handling and performance monitoring
  */
+/**
+ * Restore an escaped `@{{ … }}` to braces, in the form the surrounding context
+ * can actually carry.
+ *
+ * In TEXT the pair is split by an HTML comment, so the signals runtime cannot
+ * match it -- its interpolation scan is per text node, and a plain `{{ … }}`
+ * would be re-interpolated and then BLANKED, because the runtime blanks an
+ * expression it cannot resolve.
+ *
+ * Inside a TAG that trick is actively wrong: an HTML comment is not a comment
+ * in an attribute value, it is six literal characters, so
+ * `title="@{{ name }}"` would have served
+ * `title="{<!--stx-literal-->{ name }}"`. Plain braces are both correct and
+ * safe there, because the runtime does not interpolate attribute values at all
+ * -- measured, and asserted in `escaped-mustache.test.ts`.
+ *
+ * Context is decided by which delimiter is nearer behind the placeholder: a
+ * `<` closer than any `>` means the placeholder sits inside a tag.
+ */
+function restoreEscapedMustaches(html: string): string {
+  const PAIR = /\x00STX_ESC_MUSTACHE_OPEN\x00([\s\S]*?)\x00STX_ESC_MUSTACHE_CLOSE\x00/g
+  return html.replace(PAIR, (_match, content: string, offset: number) => {
+    const before = html.slice(0, offset)
+    const insideTag = before.lastIndexOf('<') > before.lastIndexOf('>')
+    return insideTag ? `{{${content}}}` : `{<!--stx-literal-->{${content}}}`
+  })
+}
+
 export async function processDirectives(
   template: string,
   context: Record<string, any>,
@@ -817,11 +845,10 @@ export async function processDirectives(
       result = result.replace(/\x00STX_ESCAPED_AT\x00/g, '@')
 
       // And `@{{ … }}` to braces the browser shows and the runtime cannot
-      // bind. The comment is what makes the second half true -- see the note
-      // at the placeholder site.
-      result = result
-        .replace(/\x00STX_ESC_MUSTACHE_OPEN\x00/g, '{<!--stx-literal-->{')
-        .replace(/\x00STX_ESC_MUSTACHE_CLOSE\x00/g, '}}')
+      // bind -- see the note at the placeholder site for why the comment is
+      // load-bearing in text, and `restoreEscapedMustaches` for why it must
+      // not be used inside a tag.
+      result = restoreEscapedMustaches(result)
 
       if (isTopLevel && context.__stx_runtime_config)
         result = injectRuntimeConfig(result, context.__stx_runtime_config)

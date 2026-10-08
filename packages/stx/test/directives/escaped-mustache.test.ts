@@ -68,6 +68,24 @@ describe('the server does not evaluate an escaped mustache', () => {
     expect(html).not.toContain('@{{')
   })
 
+  it('uses plain braces inside an attribute value, where a comment is not a comment', async () => {
+    /*
+     * The comment form is load-bearing in text and actively wrong here: an
+     * HTML comment inside an attribute value is six literal characters, so
+     * this served `title="{<!--stx-literal-->{ name }}"` until the restore
+     * learned the difference. Caught by sweeping the escape surface rather
+     * than by the text-node tests, which all still passed.
+     *
+     * Plain braces are safe here because the runtime does not interpolate
+     * attribute values -- the case below establishes that rather than
+     * assuming it.
+     */
+    const html = await render('<script server>\nconst name = \'Alice\'\n</script>\n<p title="@{{ name }}">x</p>')
+    expect(html).toContain('title="{{ name }}"')
+    expect(html).not.toContain('stx-literal')
+    expect(html).not.toContain('title="Alice"')
+  })
+
   it('leaves @@ alone, which is a different escape', async () => {
     const html = await render('<p id="e">@@if(x) y @@endif</p>')
     expect(html).toContain('@if(x) y @endif')
@@ -118,6 +136,19 @@ describe('the browser sees the braces', () => {
       { who: window.stx.state('Alice') },
     )
     expect(text).toBe('{{ who }} and Alice')
+  })
+
+  it('confirms the runtime leaves an attribute mustache alone', async () => {
+    // The premise for using plain braces in an attribute. If the runtime ever
+    // starts interpolating attribute values, this fails and the attribute
+    // branch of the restore needs the same protection text gets.
+    const name = `esc_attr_${++booted}`
+    window[`__stx_setup_${name}`] = () => ({ who: window.stx.state('Alice') })
+    document.body.innerHTML = `<main data-stx="__stx_setup_${name}"><p id="e" title="{{ who }}">x</p></main>`
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await settle()
+    expect(document.querySelector('#e').getAttribute('title')).toBe('{{ who }}')
   })
 
   it('confirms the unescaped form really would have been blanked', async () => {
