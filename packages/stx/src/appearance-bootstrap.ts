@@ -66,6 +66,20 @@ export interface AppearanceBootstrapOptions {
    */
   appearance?: AppearanceBootstrapValue
   colorMode: ColorModeBootstrapValue
+  /**
+   * Leave an attribute alone when it already carries a concrete value, and
+   * resolve to that instead of to what is stored. @default false
+   *
+   * For a page whose theme is not the visitor's to choose: stamped
+   * server-side during render, it has to outrank whatever they stored from
+   * their own browsing. Without this the bootstrap resolved purely from
+   * storage and stamped unconditionally (stacksjs/stx#2050).
+   *
+   * `system` is not concrete: it is an instruction to resolve rather than an
+   * answer, so the stored preference still wins for it. For the appearance
+   * axis, concrete means a value in `allowed`.
+   */
+  respectExisting?: boolean
 }
 
 /** The normalized form, where an absent `appearance` is explicitly null. */
@@ -73,6 +87,7 @@ interface NormalizedOptions {
   storageKey: string
   appearance: AppearanceBootstrapValue | null
   colorMode: ColorModeBootstrapValue
+  respectExisting: boolean
 }
 
 const DATA_ATTRIBUTE_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
@@ -142,6 +157,7 @@ function normalizeOptions(value: unknown): NormalizedOptions {
       attribute: colorMode.attribute,
       default: colorMode.default as ColorModeBootstrapValue['default'],
     },
+    respectExisting: input.respectExisting === true,
   }
 }
 
@@ -206,7 +222,12 @@ function generateBootstrap(options: NormalizedOptions): string {
   //
   // `config.appearance` may be null, the colour-mode-only case, in which case
   // no second attribute is stamped and setAppearance is a no-op.
-  return `<script data-stx-scoped data-stx-appearance-bootstrap>(function(){"use strict";const config=${config};const root=document.documentElement;const MODES=["light","dark","system"];let format="json";function read(){let stored={};try{const raw=localStorage.getItem(config.storageKey);if(raw){let parsed=null;try{parsed=JSON.parse(raw)}catch{parsed=raw}if(parsed&&typeof parsed==="object"&&!Array.isArray(parsed)){stored=parsed;format="json"}else if(typeof parsed==="string"&&MODES.includes(parsed)){stored={};stored[config.colorMode.key]=parsed;format="string"}}}catch{}return stored}function write(stored){try{if(format==="string"&&!config.appearance)localStorage.setItem(config.storageKey,stored[config.colorMode.key]);else localStorage.setItem(config.storageKey,JSON.stringify(stored))}catch{}}function resolve(){const stored=read();const state={colorMode:MODES.includes(stored[config.colorMode.key])?stored[config.colorMode.key]:config.colorMode.default};if(config.appearance)state.appearance=config.appearance.allowed.includes(stored[config.appearance.key])?stored[config.appearance.key]:config.appearance.default;return state}function prefersDark(){try{return matchMedia("(prefers-color-scheme: dark)").matches}catch{return false}}function apply(){const state=resolve();const dark=state.colorMode==="dark"||(state.colorMode==="system"&&prefersDark());if(config.appearance)root.setAttribute("data-"+config.appearance.attribute,state.appearance);root.setAttribute("data-"+config.colorMode.attribute,state.colorMode);root.classList.toggle("dark",dark);root.dataset.theme=dark?"dark":"light";state.dark=dark;try{window.dispatchEvent(new CustomEvent("stx:appearance",{detail:state}))}catch{}return state}function store(key,allowed,value){if(allowed.includes(value)){const stored=read();stored[key]=value;write(stored)}return apply()}window.__stxAppearance={config:config,read:read,resolve:resolve,apply:apply,setColorMode:function(mode){return store(config.colorMode.key,MODES,mode)},setAppearance:function(name){return config.appearance?store(config.appearance.key,config.appearance.allowed,name):apply()},watchSystem:function(){try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",function(){if(resolve().colorMode==="system")apply()})}catch{}}};apply()}());</script>`
+  //
+  // `forced` is captured ONCE, before the first apply, and never re-read.
+  // apply() stamps both attributes, so a later call -- from watchSystem or
+  // from a settings control -- would otherwise read this script's own stamp
+  // back as a server-forced value and pin the theme permanently.
+  return `<script data-stx-scoped data-stx-appearance-bootstrap>(function(){"use strict";const config=${config};const root=document.documentElement;const MODES=["light","dark","system"];let format="json";const forced=(function(){const found={colorMode:null,appearance:null};if(!config.respectExisting)return found;try{const mode=root.getAttribute("data-"+config.colorMode.attribute);if(mode==="light"||mode==="dark")found.colorMode=mode;if(config.appearance){const name=root.getAttribute("data-"+config.appearance.attribute);if(config.appearance.allowed.includes(name))found.appearance=name}}catch{}return found}());function read(){let stored={};try{const raw=localStorage.getItem(config.storageKey);if(raw){let parsed=null;try{parsed=JSON.parse(raw)}catch{parsed=raw}if(parsed&&typeof parsed==="object"&&!Array.isArray(parsed)){stored=parsed;format="json"}else if(typeof parsed==="string"&&MODES.includes(parsed)){stored={};stored[config.colorMode.key]=parsed;format="string"}}}catch{}return stored}function write(stored){try{if(format==="string"&&!config.appearance)localStorage.setItem(config.storageKey,stored[config.colorMode.key]);else localStorage.setItem(config.storageKey,JSON.stringify(stored))}catch{}}function resolve(){const stored=read();const state={colorMode:forced.colorMode||(MODES.includes(stored[config.colorMode.key])?stored[config.colorMode.key]:config.colorMode.default)};if(config.appearance)state.appearance=forced.appearance||(config.appearance.allowed.includes(stored[config.appearance.key])?stored[config.appearance.key]:config.appearance.default);return state}function prefersDark(){try{return matchMedia("(prefers-color-scheme: dark)").matches}catch{return false}}function apply(){const state=resolve();const dark=state.colorMode==="dark"||(state.colorMode==="system"&&prefersDark());if(config.appearance)root.setAttribute("data-"+config.appearance.attribute,state.appearance);root.setAttribute("data-"+config.colorMode.attribute,state.colorMode);root.classList.toggle("dark",dark);root.dataset.theme=dark?"dark":"light";state.dark=dark;try{window.dispatchEvent(new CustomEvent("stx:appearance",{detail:state}))}catch{}return state}function store(key,allowed,value){if(allowed.includes(value)){const stored=read();stored[key]=value;write(stored)}return apply()}window.__stxAppearance={config:config,forced:forced,read:read,resolve:resolve,apply:apply,setColorMode:function(mode){return store(config.colorMode.key,MODES,mode)},setAppearance:function(name){return config.appearance?store(config.appearance.key,config.appearance.allowed,name):apply()},watchSystem:function(){try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",function(){if(resolve().colorMode==="system")apply()})}catch{}}};apply()}());</script>`
 }
 
 function findClosingParenthesis(source: string, openIndex: number): number {

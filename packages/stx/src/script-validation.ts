@@ -95,9 +95,18 @@ export const PROHIBITED_DOM_PATTERNS: Array<{
     // before the signals runtime exists, so useLocalStorage() is not defined
     // yet. Advice that cannot be taken reads as the rule not understanding the
     // code (#1836) — and a theme bootstrap is the overwhelmingly common reason
-    // to reach for localStorage in a bare <script>, which @appearanceBootstrap
-    // already does properly.
-    suggestion: 'Use useLocalStorage() from composables — or @appearanceBootstrap if this must run before first paint, where the runtime does not exist yet',
+    // to reach for localStorage in a bare <script>.
+    //
+    // Both pre-paint paths are named, not just the directive. For an ordinary
+    // light/dark theme the `colorMode` config is the one to reach for: it is
+    // set once and injected at the top of every page, where the directive has
+    // to be placed per template and exists for the case with a second axis.
+    // Sending everyone to the directive cost a migration attempt that could
+    // not work (stacksjs/stx#2050) — it required that second axis and read
+    // only a JSON preference object, so a bare 'dark' resolved to the default.
+    // Both of those are fixed, and the advice should still point at the right
+    // one of the two first.
+    suggestion: 'Use useLocalStorage() from composables — or, where this must run before first paint and the runtime does not exist yet, the colorMode config for a light/dark theme, or @appearanceBootstrap when there is a second appearance axis',
   },
   {
     pattern: /window\.sessionStorage(?![A-Za-z])/g,

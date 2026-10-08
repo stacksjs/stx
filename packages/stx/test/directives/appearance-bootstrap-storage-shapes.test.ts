@@ -23,13 +23,13 @@ import { processAppearanceBootstrapDirective } from '../../src/appearance-bootst
  */
 
 /** Run the real directive, then execute the script it emitted. */
-function boot(options: string, stored: string | null) {
+function boot(options: string, stored: string | null, stamped: Record<string, string> = {}) {
   const html = processAppearanceBootstrapDirective(`@appearanceBootstrap(${options})`, {})
   const body = html
     .replace(/^<script[^>]*>/, '')
     .replace(/<\/script>$/, '')
 
-  const attributes: Record<string, string> = {}
+  const attributes: Record<string, string> = { ...stamped }
   const storage = new Map<string, string>()
   if (stored !== null)
     storage.set('app-theme', stored)
@@ -163,5 +163,52 @@ describe('the appearance axis is optional', () => {
 
   it('still requires colorMode', () => {
     expect(() => boot(`{ storageKey: 'app-theme' }`, null)).toThrow('colorMode must be an object')
+  })
+})
+
+describe('respectExisting honours an already-stamped attribute', () => {
+  const RESPECT = `{ storageKey: 'app-theme', respectExisting: true, colorMode: { key: 'colorMode', attribute: 'color-mode', default: 'system' } }`
+  const RESPECT_BOTH = `{ storageKey: 'app-theme', respectExisting: true, appearance: { key: 'sidebarStyle', attribute: 'appearance', allowed: ['macos', 'arc'], default: 'macos' }, colorMode: { key: 'colorMode', attribute: 'color-mode', default: 'system' } }`
+
+  it('renders the stamped mode over the stored preference', () => {
+    const { attributes, dataset } = boot(RESPECT, 'dark', { 'data-color-mode': 'light' })
+    expect(attributes['data-color-mode']).toBe('light')
+    expect(dataset.theme).toBe('light')
+  })
+
+  it('takes the stored preference when nothing concrete is stamped', () => {
+    // `system` is an instruction to resolve, not an answer.
+    for (const stamped of [{}, { 'data-color-mode': 'system' }, { 'data-color-mode': '' }])
+      expect(boot(RESPECT, 'dark', stamped).attributes['data-color-mode'], JSON.stringify(stamped)).toBe('dark')
+  })
+
+  it('honours a stamped appearance from the allowed set only', () => {
+    expect(boot(RESPECT_BOTH, '{"sidebarStyle":"macos"}', { 'data-appearance': 'arc' }).attributes['data-appearance']).toBe('arc')
+    // Not in `allowed`, so it is not an answer either.
+    expect(boot(RESPECT_BOTH, '{"sidebarStyle":"macos"}', { 'data-appearance': 'nonsense' }).attributes['data-appearance']).toBe('macos')
+  })
+
+  it('does not read its own stamp back on a later apply', () => {
+    // apply() stamps both attributes, so a forced value captured per call
+    // would make this script pin the theme against its own settings control
+    // the moment anything called apply a second time.
+    const { api, attributes } = boot(RESPECT, 'dark', {})
+    expect(attributes['data-color-mode']).toBe('dark')
+
+    api.setColorMode('light')
+    expect(attributes['data-color-mode']).toBe('light')
+
+    api.setColorMode('dark')
+    expect(attributes['data-color-mode']).toBe('dark')
+  })
+
+  it('changes nothing when it is off', () => {
+    const OFF = `{ storageKey: 'app-theme', colorMode: { key: 'colorMode', attribute: 'color-mode', default: 'system' } }`
+    expect(boot(OFF, 'dark', { 'data-color-mode': 'light' }).attributes['data-color-mode']).toBe('dark')
+  })
+
+  it('publishes what it adopted', () => {
+    expect(boot(RESPECT, 'dark', { 'data-color-mode': 'light' }).api.forced.colorMode).toBe('light')
+    expect(boot(RESPECT, 'dark', {}).api.forced.colorMode).toBe(null)
   })
 })
