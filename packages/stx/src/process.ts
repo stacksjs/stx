@@ -68,7 +68,7 @@ import { injectRuntimeConfig } from './runtime-config-server'
 import { applyHtmlAttrs, cloakStyleFragment, ensureDocumentShell, hasDocumentShell, injectConfigHeadTags, mergeHtmlAttrs, metaDedupKey, startsDocument } from './document-shell'
 
 // Extracted modules
-import { hasSignalsSyntax, convertSignalDirectivesToAttributes, convertSignalLoopsToAttributes, preEvalLiteralReactiveIfs, processSignals } from './signal-processing'
+import { hasSignalsSyntax, convertSignalDirectivesToAttributes, convertSignalLoopsToAttributes, convertServerLoopAttributesToDirectives, preEvalLiteralReactiveIfs, processSignals } from './signal-processing'
 import { processComponents } from './component-renderer'
 import { processInlineAssets } from './inline-assets'
 import { addCloakToConditionalDirectives, addCloakToUnresolvedExpressions, processJsonDirective, processMemoDirective, processOnceDirective, processRefAttributes } from './misc-directives'
@@ -1782,6 +1782,10 @@ async function processOtherDirectives(
   if (usesSignalsInScript(output)) {
     output = convertSignalDirectivesToAttributes(output, context)
     output = convertSignalLoopsToAttributes(output, context)
+    // And the reverse: a `:for` written directly over `<script server>` data
+    // becomes a server loop, instead of reaching the client and rendering zero
+    // rows against a scope that never held the name (#2051).
+    output = convertServerLoopAttributesToDirectives(output, context)
   }
 
   // Pre-eval literal `:if` / `:show` (stacksjs/stx#1739 Phase A) — dead

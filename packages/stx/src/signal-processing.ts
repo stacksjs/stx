@@ -994,6 +994,115 @@ export function preEvalLiteralReactiveIfs(template: string): string {
  *     <div>{{ item.name }}</div>
  *   </template>
  */
+/** Loop attributes, in the three spellings that mean the same thing. */
+const LOOP_ATTRS = [':for', '@for', 'x-for'] as const
+
+/**
+ * A `:for` over `<script server>` data becomes a server loop (stacksjs/stx#2051).
+ *
+ * `convertSignalLoopsToAttributes` below already makes this decision in the
+ * other direction: an `@foreach` whose iterable is server data is left for
+ * `processLoops`, and one whose iterable is a signal becomes a client `:for`.
+ * The missing half was an author writing `:for` directly over a server name.
+ * That is expanded on the client, against a scope the client script declares,
+ * where a `<script server>` const has never existed — so the list rendered
+ * **zero rows**, with one console warning and no other signal.
+ *
+ * It cost a real app its architecture. It iterated monitors fetched in a
+ * server block, read a warning that guessed at signals, concluded the whole
+ * `:for` pattern was unreliable, and was rebuilt on hand-written
+ * `getElementById` wiring.
+ *
+ * Deliberately narrow. Only an iterable whose ROOT identifier is a server
+ * context key is converted, because that is the case that cannot work any
+ * other way:
+ *
+ * - A literal (`:for="n in [1,2,3]"`) already works on the client. Converting
+ *   it would move working markup to the server for no gain.
+ * - A declared signal stays on the client even when the context happens to
+ *   carry the same name, since the signal is what the author is iterating.
+ * - A name in neither is left alone, so a typo still reaches the runtime
+ *   warning that now names the cause.
+ *
+ * `<template>` is unwrapped rather than emitted, since a server loop repeats
+ * real markup and a template element renders nothing.
+ */
+export function convertServerLoopAttributesToDirectives(
+  template: string,
+  context?: Record<string, any>,
+): string {
+  if (!context || Object.keys(context).length === 0)
+    return template
+  if (!LOOP_ATTRS.some(attr => template.includes(`${attr}=`)))
+    return template
+
+  const signalNames = extractClientSignalNames(template)
+  let output = template
+
+  // Rebuilt from the end so earlier offsets stay valid.
+  const replacements: Array<{ start: number, end: number, replacement: string }> = []
+  const tagRe = /<([a-zA-Z][\w-]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/g
+  let match: RegExpExecArray | null
+
+  while ((match = tagRe.exec(output)) !== null) {
+    const [openTag, tag, rawAttrs] = match
+    const startIdx = match.index
+    const startTagEnd = startIdx + openTag.length
+
+    const attrMatch = LOOP_ATTRS
+      .map(attr => ({ attr, m: new RegExp(`\\s${attr}="([^"]*)"`).exec(rawAttrs) }))
+      .find(entry => entry.m !== null)
+    if (!attrMatch || !attrMatch.m)
+      continue
+
+    const parsed = parseLoopExpression(attrMatch.m[1])
+    if (!parsed.iterable || !parsed.itemVar)
+      continue
+
+    const rootVar = parsed.iterable.trim().split(/[.[(]/)[0].trim()
+    if (!rootVar || signalNames.has(rootVar) || !(rootVar in context))
+      continue
+
+    const end = findElementEnd(output, startIdx, tag, startTagEnd)
+    if (end === -1)
+      continue
+
+    // The element minus its loop attribute and its key, which is a client
+    // identity hint with nothing to identify once the rows are server markup.
+    const cleanedAttrs = rawAttrs
+      .replace(new RegExp(`\\s${attrMatch.attr}="[^"]*"`), '')
+      .replace(/\s:key="[^"]*"/, '')
+      .replace(/\sx-cloak(?=\s|$)/, '')
+    const inner = output.slice(startTagEnd, end - `</${tag}>`.length)
+    // Nested loops over this loop's own binding are server-side too.
+    const nestedContext = { ...context, [parsed.itemVar]: undefined }
+    if (parsed.indexVar)
+      nestedContext[parsed.indexVar] = undefined
+    const body = convertServerLoopAttributesToDirectives(inner, nestedContext)
+
+    const binding = parsed.indexVar
+      ? `${parsed.iterable} as ${parsed.indexVar} => ${parsed.itemVar}`
+      : `${parsed.iterable} as ${parsed.itemVar}`
+    const repeated = tag.toLowerCase() === 'template'
+      ? body
+      : `<${tag}${cleanedAttrs}>${body}</${tag}>`
+
+    replacements.push({
+      start: startIdx,
+      end,
+      replacement: `@foreach(${binding})${repeated}@endforeach`,
+    })
+    tagRe.lastIndex = end
+  }
+
+  for (let i = replacements.length - 1; i >= 0; i--) {
+    const { start, end, replacement } = replacements[i]
+    output = output.slice(0, start) + replacement + output.slice(end)
+  }
+
+  return output
+}
+
 export function convertSignalLoopsToAttributes(template: string, context?: Record<string, any>): string {
   let output = template
 

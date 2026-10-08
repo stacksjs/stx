@@ -157,53 +157,42 @@ Supports destructuring and index:
 </div>
 ```
 
-#### `:for` is client-side, `@foreach` is server-side -- and only one can see a `<script server>` binding
+#### `:for` over `<script server>` data runs on the server
 
-This is the one difference between them that matters, and nothing in the
-names says it (`stacksjs/stx#2051`).
-
-| | runs | sees `<script server>` | sees `<script client>` |
-|---|---|---|---|
-| `@foreach(rows as row)` | server | **yes** | no |
-| `:for="row in rows"` | client | **no** | yes |
-
-`:for` is expanded by the signals runtime in the browser, against the scope the
-client script declares. A name that only exists in `<script server>` is not in
-that scope, so the list renders **zero rows** -- not an error, just nothing:
+`:for` is normally expanded by the signals runtime in the browser. When its
+iterable is a `<script server>` binding, it is expanded on the **server**
+instead, as if it had been written `@foreach` (`stacksjs/stx#2051`).
 
 ```html
 <script server>
 const serverRows = [{ id: 1, name: 'alpha' }]
 </script>
 
-<!-- Zero rows. `serverRows` is not in the client scope. -->
-<ul><li :for="row in serverRows" :key="row.id">{{ row.name }}</li></ul>
-
-<!-- Renders. @foreach runs on the server, where the binding lives. -->
+<!-- These three are equivalent, and all render. -->
+<ul><li :for="row in serverRows">{{ row.name }}</li></ul>
+<ul><template :for="row in serverRows"><li>{{ row.name }}</li></template></ul>
 <ul>@foreach(serverRows as row)<li>{{ row.name }}</li>@endforeach</ul>
-
-<!-- Also renders, and stays reactive: the value is in the client scope now. -->
-<script client>
-  const rows = state(serverRows)
-</script>
-<ul><li :for="row in rows" :key="row.id">{{ row.name }}</li></ul>
 ```
 
-Two things worth knowing, because both have misled people:
+This is the same per-expression decision `@if` makes, and the same one
+`@foreach` already made in the other direction: an `@foreach` over a signal
+becomes a client `:for`, and a `:for` over server data becomes a server loop.
+The data decides where the loop runs, not the keyword.
 
-- **The `<template>` wrapper is not the problem.** `<template :for>` and
-  `<li :for>` fail identically here; neither is server-expanded. (Prefer the
-  element form anyway -- see the `<template>` note elsewhere -- but it does not
-  change this.)
-- **The warning used to blame signals.** It ended with "try the bare reference
-  (signal instead of signal())" whatever the cause, and in this failure the
-  name is usually not a signal at all. One app read that, concluded the
-  signals-and-`:for` pattern was unreliable, and was rebuilt on hand-written
-  `getElementById` wiring. The warning now leads with whether the name was in
-  scope at all and names the two fixes above.
+**What stays on the client**, deliberately:
 
-So the rule: **if the data comes from `<script server>`, either iterate it with
-`@foreach`, or put it in the client scope with `state()` first.**
+| iterable | runs | why |
+|---|---|---|
+| a signal — `rows`, `rows()` | client | reactivity is the point of `:for` |
+| a literal — `[1, 2, 3]` | client | already worked; moving it gains nothing |
+| a name in neither scope | client | so a typo still reaches the runtime warning |
+| a signal that shadows a server name | client | the signal is what you are iterating |
+
+**Before this, a `:for` over server data rendered zero rows** — not an error,
+just an empty list with one console warning that guessed at signals. One app
+read that warning, concluded the signals-and-`:for` pattern was unreliable, and
+was rebuilt on hand-written `getElementById` wiring. The warning now names the
+cause when a name really is out of scope, and this case no longer produces one.
 
 ### `:key` -- Identity for List Items
 
