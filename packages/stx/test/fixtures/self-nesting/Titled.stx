@@ -1,0 +1,4 @@
+<script server>
+const heading = $props.heading ?? ''
+</script>
+<section class="titled"><h3>{{ heading }}</h3><slot /></section>

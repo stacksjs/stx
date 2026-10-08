@@ -1353,6 +1353,39 @@ export async function renderComponentWithSlot(
     }
 
     /*
+     * A component tag in slot content belongs to the CALLER's subtree too, and
+     * that is what makes a component usable inside itself.
+     *
+     * `<Box><Box>deep</Box></Box>` rendered as
+     * `[Circular component reference: box]`. The recursion guard is keyed by
+     * name and cloned per branch, which blocks a component whose own template
+     * references itself -- the thing it is for -- but slot content is not the
+     * component's template. It is the caller's markup, handed over, so the
+     * outer Box is not an ancestor of the inner one in any meaningful sense.
+     *
+     * The symptom was a text marker where the content should be, with no
+     * error, and it hit the most ordinary layouts there are: a Card in a Card,
+     * a list inside a list, a View inside a View. Found while giving the
+     * native target the primitives it needs, where nesting a View is the first
+     * thing anyone writes.
+     *
+     * Expanded here against the caller's set, which is the same decision
+     * already made above for `@include` and below for `{{ }}`. The component's
+     * own pass runs over the expanded output afterwards and finds no tags left
+     * in the slot region, so nothing is done twice.
+     */
+    if (/<[A-Z][\w.-]*[\s/>]/.test(callerSlotContent)) {
+      const { processComponents } = await importOnce('stx/component-renderer', () => import('./component-renderer'))
+      callerSlotContent = await processComponents(
+        callerSlotContent,
+        { ...parentContext, __processedComponents: components },
+        parentFilePath,
+        options,
+        dependencies,
+      )
+    }
+
+    /*
      * The caller's `{{ }}` belong to the CALLER's scope, the same way their
      * `<script>` and their `@include` above do (stacksjs/stx#2046).
      *
