@@ -4557,19 +4557,51 @@ catch (e) {
         // _isStxStore marker). Only fires on the warn path, which is
         // rare, so the extra Object.keys / spread cost is negligible.
         var diagScope;
+        var rootName = '?';
+        var rootInScope = true;
+        var rootVal;
         try {
           var diagMerged = { ...globalHelpers, ...passedScope, ...(capturedScope || {}) };
           var firstIdent = listExpr.match(/^[A-Za-z_$][\\w$]*/);
-          var rootName = firstIdent ? firstIdent[0] : '?';
-          var rootInScope = Object.prototype.hasOwnProperty.call(diagMerged, rootName);
-          var rootVal = rootInScope ? diagMerged[rootName] : '<NOT-IN-SCOPE>';
+          rootName = firstIdent ? firstIdent[0] : '?';
+          rootInScope = Object.prototype.hasOwnProperty.call(diagMerged, rootName);
+          rootVal = rootInScope ? diagMerged[rootName] : '<NOT-IN-SCOPE>';
           var rootKeys = (rootVal && typeof rootVal === 'object')
             ? Object.keys(rootVal).slice(0, 8).join(',')
             : '-';
           diagScope = '[root=' + rootName + ' inScope=' + rootInScope + ' type=' + (typeof rootVal) + ' isStxStore=' + !!(rootVal && rootVal._isStxStore) + ' keys=' + rootKeys + ']';
         }
-        catch (_e) { diagScope = '[diag-error]'; }
-        console.warn('[STX] :for expected an array; got ' + (list === '' ? 'empty/error' : typeof list) + ' for expression "' + listExpr + '". ' + diagScope + ' If this is a signal call, try the bare reference (signal instead of signal()).');
+        catch (_e) { diagScope = '[diag-error]'; rootInScope = true; }
+
+        /*
+         * Name the cause rather than guessing at it (stacksjs/stx#2051).
+         *
+         * This used to end with "If this is a signal call, try the bare
+         * reference" every single time. In the most common failure the
+         * identifier is not a signal at all -- it is a bare name the client
+         * scope has never heard of, usually a declaration from a
+         * script-server block, which :for cannot see because it is expanded
+         * on the client. The hint sent people to the wrong layer: one app
+         * read it, concluded the signals-and-:for pattern was unreliable, and
+         * was rebuilt on hand-written getElementById wiring.
+         *
+         * The scope dump already answered the question -- inScope=false was
+         * right there, ahead of the guess -- so lead with it, and keep the
+         * signal advice for when the value really is a signal, which is the
+         * one case where it applies.
+         */
+        var advice;
+        if (!rootInScope) {
+          advice = 'Nothing named ' + rootName + ' is in the client scope. A script-server declaration is not available here: :for is expanded on the client. '
+            + 'Either wrap it in state() inside a script-client block, or iterate it with the server-side @foreach(' + rootName + ' as item).';
+        }
+        else if (typeof rootVal === 'function' && (rootVal._isSignal || rootVal._isDerived)) {
+          advice = rootName + ' is a signal, so try the bare reference: ' + rootName + ' instead of ' + rootName + '().';
+        }
+        else {
+          advice = rootName + ' resolved to a ' + (typeof rootVal) + ', not an array.';
+        }
+        console.warn('[STX] :for expected an array; got ' + (list === '' ? 'empty/error' : typeof list) + ' for expression "' + listExpr + '". ' + diagScope + ' ' + advice);
         return;
       }
 

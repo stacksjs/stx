@@ -157,6 +157,54 @@ Supports destructuring and index:
 </div>
 ```
 
+#### `:for` is client-side, `@foreach` is server-side -- and only one can see a `<script server>` binding
+
+This is the one difference between them that matters, and nothing in the
+names says it (`stacksjs/stx#2051`).
+
+| | runs | sees `<script server>` | sees `<script client>` |
+|---|---|---|---|
+| `@foreach(rows as row)` | server | **yes** | no |
+| `:for="row in rows"` | client | **no** | yes |
+
+`:for` is expanded by the signals runtime in the browser, against the scope the
+client script declares. A name that only exists in `<script server>` is not in
+that scope, so the list renders **zero rows** -- not an error, just nothing:
+
+```html
+<script server>
+const serverRows = [{ id: 1, name: 'alpha' }]
+</script>
+
+<!-- Zero rows. `serverRows` is not in the client scope. -->
+<ul><li :for="row in serverRows" :key="row.id">{{ row.name }}</li></ul>
+
+<!-- Renders. @foreach runs on the server, where the binding lives. -->
+<ul>@foreach(serverRows as row)<li>{{ row.name }}</li>@endforeach</ul>
+
+<!-- Also renders, and stays reactive: the value is in the client scope now. -->
+<script client>
+  const rows = state(serverRows)
+</script>
+<ul><li :for="row in rows" :key="row.id">{{ row.name }}</li></ul>
+```
+
+Two things worth knowing, because both have misled people:
+
+- **The `<template>` wrapper is not the problem.** `<template :for>` and
+  `<li :for>` fail identically here; neither is server-expanded. (Prefer the
+  element form anyway -- see the `<template>` note elsewhere -- but it does not
+  change this.)
+- **The warning used to blame signals.** It ended with "try the bare reference
+  (signal instead of signal())" whatever the cause, and in this failure the
+  name is usually not a signal at all. One app read that, concluded the
+  signals-and-`:for` pattern was unreliable, and was rebuilt on hand-written
+  `getElementById` wiring. The warning now leads with whether the name was in
+  scope at all and names the two fixes above.
+
+So the rule: **if the data comes from `<script server>`, either iterate it with
+`@foreach`, or put it in the client scope with `state()` first.**
+
 ### `:key` -- Identity for List Items
 
 Tells the runtime how to track items across re-renders. Must be a unique, stable identifier.
