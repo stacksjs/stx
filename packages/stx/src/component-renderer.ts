@@ -213,20 +213,20 @@ function parseComponentProps(
         }
 
         const contextKeys = Object.keys(context)
+        // An expression naming something the server does not have is the
+        // client's (loop variables from :for, signals from <script client>).
+        // Checked before evaluating, not only when the result is undefined:
+        // `remainingLabel + ' left'` evaluates on the server to the string
+        // 'undefined left', which was then baked in and never bound.
+        const jsKeywords = new Set(['true', 'false', 'null', 'undefined', 'typeof', 'instanceof', 'in', 'of', 'new', 'this', 'return', 'void', 'delete', 'throw', 'if', 'else'])
+        const hasUnresolved = freeIdentifiers(expression).some(v => !jsKeywords.has(v) && !contextKeys.includes(v) && !(v in globalThis))
+        if (hasUnresolved) {
+          resolved.clientReactive[propName] = expression
+          continue
+        }
+
         const valueFn = createSafeFunction(expression, contextKeys)
         const evaluated = valueFn(...Object.values(context))
-
-        // If evaluation returned undefined, check if the expression references
-        // variables not in the server context — if so, it's a client-side expression
-        // (e.g. loop variables from :for, signal values from <script client>)
-        if (evaluated === undefined) {
-          const jsKeywords = new Set(['true', 'false', 'null', 'undefined', 'typeof', 'instanceof', 'in', 'of', 'new', 'this', 'return', 'void', 'delete', 'throw', 'if', 'else'])
-          const hasUnresolved = freeIdentifiers(expression).some(v => !jsKeywords.has(v) && !contextKeys.includes(v))
-          if (hasUnresolved) {
-            resolved.clientReactive[propName] = expression
-            continue
-          }
-        }
 
         resolved.serverDynamic[propName] = evaluated
         // Same round-trip as setStatic: a builtin forwarding this onto real

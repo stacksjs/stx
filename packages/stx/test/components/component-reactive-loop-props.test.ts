@@ -25,3 +25,20 @@ describe('component props inside reactive loops', () => {
     expect(html).not.toContain('alt="undefined logo"')
   })
 })
+
+describe('component props built from client values', () => {
+  it('binds an expression naming a client signal rather than baking its server result', async () => {
+    const html = await processDirectives(
+      `<Image x-src="cover" x-alt="remainingLabel + ' left'" width="64" height="64" />`,
+      { cover: '/a.png' },
+      '/app/page.stx',
+      options,
+      new Set<string>(),
+    )
+
+    expect(html).toContain(':alt="remainingLabel + \' left\'"')
+    expect(html).not.toContain('undefined left')
+    // A value the server has, and globals, still render on the server.
+    expect(html).toContain('src="/a.png"')
+  })
+})

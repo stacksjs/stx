@@ -41,9 +41,10 @@ const shellReady = state(true)
 `,
   'components/Ring.stx': `<script client>
 const value = useReactiveProp('value', 0)
+const label = useReactiveProp('label', '')
 const ringStyle = derived(() => 'width:' + (Number(value()) || 0) + 'px')
 </script>
-<div class="ring" :style="ringStyle()"><div class="ring-center"><slot /></div></div>
+<div class="ring" :aria-label="label()" :style="ringStyle()"><div class="ring-center"><slot /></div></div>
 `,
   'views/home.stx': page('default', `<script client>
 const homeOpen = state(true)
@@ -56,7 +57,7 @@ const remainingLabel = derived(() => total() === null ? '' : '0:' + total())
 window.SET_TOTAL = value => total.set(value)
 </script>
 <div :if="total !== null" class="holder">
-  <Ring :value="total"><span class="count">{{ remainingLabel }}</span></Ring>
+  <Ring :value="total" :label="remainingLabel + ' left'"><span class="count">{{ remainingLabel }}</span></Ring>
 </div>
 `),
 }
@@ -71,9 +72,13 @@ describe('a page in a layout that wraps its container in a component', () => {
 
     expect(browser.document.querySelector('.count')?.textContent?.trim()).toBe('0:30')
     expect(browser.document.querySelector('.ring')?.getAttribute('style')?.replace(/\s/g, '')).toContain('width:30px')
+    // A prop built from the page's client values is bound, not baked in on
+    // the server as 'undefined left'.
+    expect(browser.document.querySelector('.ring')?.getAttribute('aria-label')).toBe('0:30 left')
     browser.window.SET_TOTAL(45)
     await settle()
     expect(browser.document.querySelector('.count')?.textContent?.trim()).toBe('0:45')
+    expect(browser.document.querySelector('.ring')?.getAttribute('aria-label')).toBe('0:45 left')
     // The shell's own script stays out: it is still running on screen.
     expect(browser.document.querySelectorAll('.shell').length).toBe(1)
     expect(browser.errors).toEqual([])
