@@ -96,6 +96,156 @@ export function findPantryPackage(cwd: string, name = 'stx'): string | null {
   return null
 }
 
+/** One installed copy of a framework package, wherever it was found. */
+export interface InstalledCopy {
+  /** Package name, as declared. */
+  name: string
+  version: string
+  /** Directory of the copy, relative to the scan root where possible. */
+  dir: string
+  /** True when it is nested inside another package rather than top level. */
+  nested: boolean
+}
+
+const FRAMEWORK_PACKAGES = ['@stacksjs/stx', 'bun-plugin-stx']
+
+function readVersion(dir: string): string | null {
+  try {
+    const raw = fs.readFileSync(path.join(dir, 'package.json'), 'utf8')
+    const version = JSON.parse(raw)?.version
+    return typeof version === 'string' ? version : null
+  }
+  catch {
+    return null
+  }
+}
+
+/**
+ * Every copy of the framework packages installed under `cwd`, nested ones
+ * included (stacksjs/stx#2052).
+ *
+ * The two resolution checks above ask "what does this specifier mean HERE",
+ * from the app root, and that is the wrong question for a tool that executes
+ * from inside its own package: Bun resolves from the importing file, so a CLI
+ * living in `node_modules/@stacksjs/buddy` gets
+ * `node_modules/@stacksjs/buddy/node_modules/@stacksjs/stx` if one exists. One
+ * app served every page through a nested copy **58 versions** behind its top
+ * level, with both of those checks reporting ok, because both were right about
+ * the root and neither was about the renderer.
+ *
+ * Symlinks are followed, with realpaths tracked so a cycle cannot hang the
+ * walk. That matters because the usual way of looking for this -- `grep -r`
+ * -- does not follow them, so a symlinked layer hides from exactly the search
+ * someone reaches for first.
+ */
+export function findInstalledCopies(cwd: string, maxDepth = 6): InstalledCopy[] {
+  const root = path.resolve(cwd)
+  const found: InstalledCopy[] = []
+  const seen = new Set<string>()
+
+  function scan(nodeModules: string, depth: number): void {
+    if (depth > maxDepth)
+      return
+    let real: string
+    try {
+      real = fs.realpathSync(nodeModules)
+    }
+    catch {
+      return
+    }
+    if (seen.has(real))
+      return
+    seen.add(real)
+
+    for (const name of FRAMEWORK_PACKAGES) {
+      const dir = path.join(nodeModules, name)
+      const version = readVersion(dir)
+      if (version !== null) {
+        found.push({
+          name,
+          version,
+          dir: path.relative(root, dir) || dir,
+          nested: depth > 0,
+        })
+      }
+    }
+
+    // Recurse into each package's own node_modules, which is where a nested
+    // copy lives. Scoped packages carry one more level.
+    let entries: fs.Dirent[]
+    try {
+      entries = fs.readdirSync(nodeModules, { withFileTypes: true })
+    }
+    catch {
+      return
+    }
+    for (const entry of entries) {
+      if (!entry.isDirectory() && !entry.isSymbolicLink())
+        continue
+      if (entry.name === '.bin' || entry.name === '.cache')
+        continue
+      const child = path.join(nodeModules, entry.name)
+      if (entry.name.startsWith('@')) {
+        let scoped: fs.Dirent[]
+        try {
+          scoped = fs.readdirSync(child, { withFileTypes: true })
+        }
+        catch {
+          continue
+        }
+        for (const inner of scoped) {
+          const nestedModules = path.join(child, inner.name, 'node_modules')
+          if (fs.existsSync(nestedModules))
+            scan(nestedModules, depth + 1)
+        }
+        continue
+      }
+      const nestedModules = path.join(child, 'node_modules')
+      if (fs.existsSync(nestedModules))
+        scan(nestedModules, depth + 1)
+    }
+  }
+
+  const top = path.join(root, 'node_modules')
+  if (fs.existsSync(top))
+    scan(top, 0)
+  return found
+}
+
+/**
+ * Turn the copies into a check per package, erroring when versions disagree.
+ *
+ * Disagreement is the finding, not nesting on its own: a nested copy at the
+ * same version is harmless duplication, while one at a different version means
+ * two answers to "what does this framework do" are installed and which one
+ * runs depends on who imports it.
+ */
+export function versionAgreementChecks(copies: InstalledCopy[]): DoctorCheck[] {
+  const checks: DoctorCheck[] = []
+  for (const name of FRAMEWORK_PACKAGES) {
+    const mine = copies.filter(copy => copy.name === name)
+    if (mine.length <= 1)
+      continue
+    const versions = [...new Set(mine.map(copy => copy.version))]
+    const listed = mine.map(copy => `${copy.version} at ${copy.dir}`).join('; ')
+    if (versions.length === 1) {
+      checks.push({
+        name: `${name} copies`,
+        status: 'info',
+        detail: `${mine.length} copies, all ${versions[0]} — duplicated but in agreement`,
+      })
+      continue
+    }
+    checks.push({
+      name: `${name} copies disagree`,
+      status: 'error',
+      detail: `${versions.length} versions installed, so which one runs depends on who imports it: ${listed}`,
+      fix: `remove the nested copies, or add an overrides entry pinning ${name}, then reinstall — and verify with: find -L node_modules -path '*/${name}/package.json' -exec grep -H '\"version\"' {} +`,
+    })
+  }
+  return checks
+}
+
 /**
  * Run the resolution/staleness diagnostics. Pure-ish: only reads the filesystem
  * and (optionally) generates the runtime — never mutates anything.
@@ -116,6 +266,12 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<DoctorRepo
   const pluginEntry = resolve('bun-plugin-stx', cwd)
   if (pluginEntry)
     checks.push({ name: 'bun-plugin-stx resolves to', status: 'ok', detail: pluginEntry })
+
+  // 2b. Every copy installed anywhere beneath cwd, and whether they agree.
+  // Checks 1 and 2 answer "what does this specifier mean from the app root",
+  // which is not what a tool executing from inside its own package resolves.
+  for (const check of versionAgreementChecks(findInstalledCopies(cwd)))
+    checks.push(check)
 
   // 3. Pantry presence + dist staleness.
   const pantry = findPantryPackage(cwd, 'stx')
