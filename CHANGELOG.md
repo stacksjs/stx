@@ -1,5 +1,26 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.400...v0.2.401)
+
+## ✨ Features
+
+- **signals**: teardown reaches a subtree through the host, not a selector ([281bc4d](https://github.com/stacksjs/stx/commit/281bc4d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1984](https://github.com/stacksjs/stx/issues/1984))
+- **appearance**: respectExisting on the directive, and advice that can be taken ([4b00f36](https://github.com/stacksjs/stx/commit/4b00f36)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2050](https://github.com/stacksjs/stx/issues/2050), [#2050](https://github.com/stacksjs/stx/issues/2050))
+- **color-mode**: respectExisting, so a server-stamped theme survives ([63a1908](https://github.com/stacksjs/stx/commit/63a1908)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2050](https://github.com/stacksjs/stx/issues/2050))
+
+## 🐛 Bug Fixes
+
+- **signals**: an escaped ::attr renders, instead of vanishing ([5a9a341](https://github.com/stacksjs/stx/commit/5a9a341)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1984](https://github.com/stacksjs/stx/issues/1984))
+- **appearance**: read a bare-string theme key, and make the second axis optional ([604809c](https://github.com/stacksjs/stx/commit/604809c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1788](https://github.com/stacksjs/stx/issues/1788), [#2050](https://github.com/stacksjs/stx/issues/2050))
+
+## 🔧 Chores
+
+- release v0.2.401 ([76ba017](https://github.com/stacksjs/stx/commit/76ba017)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.399...v0.2.400)
 
 ## ✨ Features
