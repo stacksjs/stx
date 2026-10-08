@@ -953,7 +953,7 @@ function unresolvedComponentMarkup(componentPath: string): string {
  */
 export function componentClientSignalNames(scripts: string[]): string[] {
   const names = new Set<string>()
-  const declaration = /\b(?:const|let|var)\s+([a-zA-Z_$][\w$]*)\s*=\s*(?:state|derived|computed|ref|reactive|signal|useModel|useReactiveProp|useLocalStorage|useSessionStorage|useCookie|useDebouncedValue)\s*(?:<[^>]*>)?\s*\(/g
+  const declaration = /\b(?:const|let|var)\s+([a-zA-Z_$][\w$]*)\s*=\s*(?:state|derived|computed|ref|reactive|signal|useModel|useReactiveProp|useLocalStorage|useSessionStorage|keptState|useCookie|useDebouncedValue)\s*(?:<[^>]*>)?\s*\(/g
 
   for (const script of scripts) {
     let match: RegExpExecArray | null

@@ -6148,6 +6148,33 @@ catch (e) {} }
     return s;
   }
 
+  // A value kept between visits, for a phone app between launches: the tab a
+  // user opens right after starting the app draws last time's data at once
+  // and the fresh answer replaces it. Kept in localStorage under stx:kept:,
+  // in a scope such as the signed-in account, so one person's data is never
+  // shown to another. A scope of false, null or '' keeps nothing (a plain
+  // state), for a page or a visitor that should not leave data behind.
+  // forgetKeptState(scope) removes a scope's values, or every kept value.
+  var STX_KEPT_PREFIX = 'stx:kept:';
+  function stxKeptPrefix(scope) {
+    return STX_KEPT_PREFIX + (scope === undefined || scope === null || scope === '' ? '' : String(scope) + ':');
+  }
+  function keptState(name, initialValue, options) {
+    var scope = options ? options.scope : undefined;
+    if (scope === false || scope === null || scope === '') return state(initialValue);
+    return useLocalStorage(stxKeptPrefix(scope) + name, initialValue);
+  }
+  function forgetKeptState(scope) {
+    try {
+      var prefix = stxKeptPrefix(scope);
+      for (var i = localStorage.length - 1; i >= 0; i--) {
+        var key = localStorage.key(i);
+        if (key && key.indexOf(prefix) === 0) localStorage.removeItem(key);
+      }
+    }
+    catch (e) {}
+  }
+
   // Reactive cookie binding. Mirrors useLocalStorage's shape: returns a string-
   // valued signal, writes on .set(), and respects cookie attributes via opts.
   // Setting the signal to '' deletes the cookie (max-age=0). Cookies don't fire
@@ -7208,6 +7235,8 @@ catch (e) {} }
     useAsync,
     useLocalStorage,
     useSessionStorage,
+    keptState,
+    forgetKeptState,
     useCookie,
     useId,
     useReactiveProp,
@@ -8040,6 +8069,8 @@ else {
   // bundled module that wasn't rewritten) found useLocalStorage defined and
   // useSessionStorage undefined.
   window.useSessionStorage = useSessionStorage;
+  window.keptState = keptState;
+  window.forgetKeptState = forgetKeptState;
   window.useEventListener = useEventListener;
   window.useWebSocket = useWebSocket;
   window.useColorMode = useColorMode;

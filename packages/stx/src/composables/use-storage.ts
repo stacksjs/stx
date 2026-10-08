@@ -381,3 +381,56 @@ export function getStorageSize(type: StorageType = 'local'): number {
   }
   return size
 }
+
+/** Where kept values live in localStorage. */
+export const KEPT_STATE_PREFIX = 'stx:kept:'
+
+export interface KeptStateOptions {
+  /**
+   * Whose value this is, such as the signed-in account's id, so one person's
+   * data is never shown to another. `false`, `null` or `''` keeps nothing: a
+   * plain state, for a visitor or a page that should leave no data behind.
+   */
+  scope?: string | number | false | null
+}
+
+function keptPrefix(scope: KeptStateOptions['scope']): string {
+  return `${KEPT_STATE_PREFIX}${scope === undefined || scope === null || scope === '' || scope === false ? '' : `${scope}:`}`
+}
+
+/** The localStorage key a kept value uses. */
+export function keptStateKey(name: string, scope?: KeptStateOptions['scope']): string {
+  return `${keptPrefix(scope)}${name}`
+}
+
+/**
+ * A value kept between visits, for a phone app between launches: a tab opened
+ * right after the app starts draws last time's data at once, and the fresh
+ * answer replaces it. Returns a Signal like `useLocalStorage`.
+ *
+ * @example
+ * ```ts
+ * const calendar = keptState('calendar', {}, { scope: user()?.id ?? false })
+ * ```
+ */
+export function keptState<T>(name: string, initialValue: T, options: KeptStateOptions = {}): Signal<T> {
+  const { scope } = options
+  if (scope === false || scope === null || scope === '')
+    return state<T>(initialValue)
+  return storageSignal('local', 'keptState', keptStateKey(name, scope), initialValue)
+}
+
+/** Remove a scope's kept values, or every kept value: what signing out leaves behind is nothing. */
+export function forgetKeptState(scope?: KeptStateOptions['scope']): void {
+  if (typeof localStorage === 'undefined')
+    return
+  try {
+    const prefix = keptPrefix(scope)
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i)
+      if (key?.startsWith(prefix))
+        localStorage.removeItem(key)
+    }
+  }
+  catch {}
+}

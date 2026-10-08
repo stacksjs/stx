@@ -220,3 +220,45 @@ describe('useStorage keeps the richer object API', () => {
     expect(typeof ref.subscribe).toBe('function')
   })
 })
+
+// keptState: a value kept between visits, per scope (stacksjs/stx: instant
+// phone tabs). Same two implementations, same contract.
+const KEPT_IMPLS: Array<[string, { kept: any, forget: any }]> = [
+  ['module (composables)', { kept: composableModule.keptState, forget: composableModule.forgetKeptState }],
+  ['runtime (window.stx)', {
+    get kept() { return g.window.stx.keptState },
+    get forget() { return g.window.stx.forgetKeptState },
+  } as any],
+]
+
+for (const [name, impl] of KEPT_IMPLS) {
+  describe(`keptState (${name})`, () => {
+    it('keeps a value per scope under stx:kept:, read back on the next visit', () => {
+      const calendar = impl.kept('calendar', {}, { scope: 77 })
+      calendar.set({ '2026-10-07': [1] })
+      expect(local.getItem('stx:kept:77:calendar')).toBe('{"2026-10-07":[1]}')
+      expect(impl.kept('calendar', {}, { scope: 77 })()).toEqual({ '2026-10-07': [1] })
+      // Another account sees its own, not this one.
+      expect(impl.kept('calendar', {}, { scope: 116 })()).toEqual({})
+    })
+
+    it('keeps nothing for a scope of false', () => {
+      const s = impl.kept('calendar', 0, { scope: false })
+      s.set(5)
+      expect(s()).toBe(5)
+      expect(local.length).toBe(0)
+    })
+
+    it('forgets a scope, or everything kept, and nothing else', () => {
+      impl.kept('a', 0, { scope: 1 }).set(1)
+      impl.kept('b', 0, { scope: 2 }).set(2)
+      local.setItem('auth_token', 'x')
+      impl.forget(1)
+      expect(local.getItem('stx:kept:1:a')).toBeNull()
+      expect(local.getItem('stx:kept:2:b')).toBe('2')
+      impl.forget()
+      expect(local.getItem('stx:kept:2:b')).toBeNull()
+      expect(local.getItem('auth_token')).toBe('x')
+    })
+  })
+}

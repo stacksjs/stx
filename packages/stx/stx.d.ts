@@ -481,6 +481,10 @@ declare function useAsync<T>(_fn: () => Promise<T>): {
 
 declare function useLocalStorage<T>(_key: string, _defaultValue: T): StxSignal<T>
 declare function useSessionStorage<T>(_key: string, _defaultValue: T): StxSignal<T>
+/** A value kept between visits (a phone app between launches) in a scope such as the signed-in account; a scope of false keeps nothing. */
+declare function keptState<T>(_name: string, _initialValue: T, _options?: { scope?: string | number | false | null }): StxSignal<T>
+/** Remove a scope's kept values, or every kept value. */
+declare function forgetKeptState(_scope?: string | number | false | null): void
 
 /**
  * Options accepted by the auto-imported `useCookie` global.
@@ -915,6 +919,8 @@ interface StxRuntimeRegistry {
   useModel: typeof useModel
   useLocalStorage: typeof useLocalStorage
   useSessionStorage: typeof useSessionStorage
+  keptState: typeof keptState
+  forgetKeptState: typeof forgetKeptState
   useEventListener: typeof useEventListener
   useScrollLock: typeof useScrollLock
   useWebSocket: typeof useWebSocket
