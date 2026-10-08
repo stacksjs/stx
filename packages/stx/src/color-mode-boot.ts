@@ -91,6 +91,26 @@ export interface ColorModeBootConfig {
    * key to `'auto'`. @default whatever is stored, else 'auto'
    */
   autoValue?: ColorModeBootAutoValue
+  /**
+   * Leave `attribute` alone when it already carries a concrete mode, and
+   * render that instead of the visitor's stored preference. @default false
+   *
+   * For a page whose theme is not the visitor's to choose: a public status
+   * page whose owner forces light or dark for everyone, stamped server-side
+   * during render. Without this the boot script computes from storage and
+   * stamps unconditionally, so a visitor who had browsed in dark saw the
+   * forced-light page in dark (stacksjs/stx#2050).
+   *
+   * Only `'light'` and `'dark'` count as concrete. `'auto'` and `'system'`
+   * are instructions to resolve, not answers, so they are ignored here and
+   * the stored preference wins as usual.
+   *
+   * The adopted value is published as `forced` on the boot global, because
+   * once this script has stamped the attribute nothing downstream can tell a
+   * forced value from a computed one by looking at the DOM. `useColorMode`
+   * reads it and renders it over its own resolution.
+   */
+  respectExisting?: boolean
 }
 
 interface ResolvedBootConfig {
@@ -99,6 +119,7 @@ interface ResolvedBootConfig {
   darkClass: string | null
   attribute: string | null
   autoValue: ColorModeBootAutoValue | null
+  respectExisting: boolean
 }
 
 const MODES = new Set<string>(['light', 'dark', 'auto', 'system'])
@@ -116,6 +137,7 @@ function resolveConfig(options: ColorModeBootConfig): ResolvedBootConfig {
   const darkClass = options.darkClass === undefined ? 'dark' : options.darkClass
   const attribute = options.attribute ?? null
   const autoValue = options.autoValue ?? null
+  const respectExisting = options.respectExisting === true
 
   if (typeof storageKey !== 'string' || storageKey.length === 0)
     throw new Error('colorMode.storageKey must be a non-empty string')
@@ -129,12 +151,17 @@ function resolveConfig(options: ColorModeBootConfig): ResolvedBootConfig {
     throw new Error(`colorMode.autoValue must be 'auto' or 'system' — got ${JSON.stringify(autoValue)}`)
   if (darkClass === null && attribute === null)
     throw new Error('colorMode needs at least one of darkClass or attribute — with both null nothing would mark the mode on <html>')
+  // Without an attribute there is nothing already-stamped to respect: the dark
+  // class alone cannot distinguish "the server chose light" from "no one has
+  // chosen yet", so honouring it would be guesswork.
+  if (respectExisting && attribute === null)
+    throw new Error('colorMode.respectExisting needs an attribute to read — the dark class alone cannot say whether a mode was chosen')
 
   // Normalised for the script: 'system' is an input spelling, not a distinct
   // mode. The spelling survives via autoValue, which is what gets written back.
   const initialMode = rawInitial === 'system' ? 'auto' : rawInitial
 
-  return { storageKey, initialMode, darkClass, attribute, autoValue }
+  return { storageKey, initialMode, darkClass, attribute, autoValue, respectExisting }
 }
 
 /**
@@ -166,7 +193,15 @@ export function generateColorModeBootScript(options: ColorModeBootConfig = {}): 
 
   // `a` carries the spelling actually found in storage so the composable writes
   // the same one back — an app persisting 'system' must not have it converted.
-  const body = `(function(){"use strict";var c=${c};var p=c.initialMode;var a=c.autoValue;try{var v=localStorage.getItem(c.storageKey);if(v==="light"||v==="dark"){p=v}else if(v==="auto"||v==="system"){p="auto";if(!a)a=v}}catch(e){}var m=p;if(p==="auto"){try{m=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}catch(e){m="light"}}var r=document.documentElement;if(c.attribute)r.setAttribute(c.attribute,m);if(c.darkClass){if(m==="dark")r.classList.add(c.darkClass);else r.classList.remove(c.darkClass)}try{window.${COLOR_MODE_BOOT_GLOBAL}={storageKey:c.storageKey,initialMode:c.initialMode,darkClass:c.darkClass,attribute:c.attribute,autoValue:a||"auto",preference:p,mode:m}}catch(e){}}());`
+  // `f` is a mode already on the attribute when `respectExisting` is set: the
+  // server stamped it deliberately and it outranks the visitor's own stored
+  // preference. Read BEFORE anything is written, because the stamp below makes
+  // the attribute concrete either way and the distinction is unrecoverable
+  // afterwards -- which is why `f` is published rather than re-derived.
+  //
+  // `p` stays the stored preference even when forced, so a settings panel
+  // shows the visitor what they chose rather than what the page is showing.
+  const body = `(function(){"use strict";var c=${c};var p=c.initialMode;var a=c.autoValue;try{var v=localStorage.getItem(c.storageKey);if(v==="light"||v==="dark"){p=v}else if(v==="auto"||v==="system"){p="auto";if(!a)a=v}}catch(e){}var r=document.documentElement;var f=null;if(c.respectExisting&&c.attribute){var x=r.getAttribute(c.attribute);if(x==="light"||x==="dark")f=x}var m=f;if(!m){m=p;if(p==="auto"){try{m=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}catch(e){m="light"}}}if(c.attribute)r.setAttribute(c.attribute,m);if(c.darkClass){if(m==="dark")r.classList.add(c.darkClass);else r.classList.remove(c.darkClass)}try{window.${COLOR_MODE_BOOT_GLOBAL}={storageKey:c.storageKey,initialMode:c.initialMode,darkClass:c.darkClass,attribute:c.attribute,autoValue:a||"auto",respectExisting:c.respectExisting,forced:f,preference:p,mode:m}}catch(e){}}());`
 
   return `<script ${COLOR_MODE_BOOT_MARKER}>${body}</script>`
 }

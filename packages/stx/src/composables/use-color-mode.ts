@@ -48,6 +48,22 @@ export interface ColorModeOptions {
   autoValue?: AutoValue
   /** Disable CSS transitions during mode switch to prevent flash (default: true) */
   disableTransitions?: boolean
+  /**
+   * Render a mode the page was already stamped with, over this composable's
+   * own resolution (default: false).
+   *
+   * Set by `colorMode.respectExisting` through the boot global rather than at
+   * a call site, normally. For a page whose theme is not the visitor's to
+   * choose: without it, the pre-paint script could honour a server-stamped
+   * attribute and then this composable would recompute from storage on mount
+   * and stamp over it, so the page painted correctly and flipped
+   * (stacksjs/stx#2050).
+   *
+   * The forced value itself comes from the boot global's `forced`, not from
+   * reading the DOM: by the time this runs the boot script has stamped the
+   * attribute either way, so the DOM can no longer say which it was.
+   */
+  respectExisting?: boolean
 }
 
 /** Storage tokens meaning "follow the system". */
@@ -140,7 +156,33 @@ export function useColorMode(options: ColorModeOptions = {}): ColorModeRef {
     attribute = pick(undefined, boot?.attribute, null as string | null),
     autoValue: autoValueOption = boot?.autoValue,
     disableTransitions = true,
+    respectExisting = false,
   } = options
+
+  /**
+   * The mode the pre-paint script adopted from an already-stamped attribute.
+   *
+   * State, not config, so it is read straight off the boot global rather than
+   * through `pick`. Null unless `colorMode.respectExisting` is on AND the
+   * attribute carried a concrete mode when the page was served.
+   */
+  // eslint-disable-next-line ts/no-explicit-any
+  const bootForced = (boot as any)?.forced
+  const forcedMode: 'light' | 'dark' | null
+    = (respectExisting || (boot as any)?.respectExisting === true) && (bootForced === 'light' || bootForced === 'dark')
+      ? bootForced
+      : null
+
+  /**
+   * What to render: a forced mode outranks anything resolved locally.
+   *
+   * Used everywhere `resolved` is assigned, because a forced page must also
+   * survive a system-theme change and another tab's write, not just the
+   * initial mount.
+   */
+  function effective(pref: ColorMode): 'light' | 'dark' {
+    return forcedMode ?? resolve(pref)
+  }
 
   let preference: ColorMode = normalizeColorMode(initialMode) ?? 'auto'
   let resolved: 'light' | 'dark' = 'light'
@@ -225,7 +267,7 @@ export function useColorMode(options: ColorModeOptions = {}): ColorModeRef {
    */
   function update(pref: ColorModeInput, persistChoice = true) {
     preference = normalizeColorMode(pref) ?? 'auto'
-    resolved = resolve(preference)
+    resolved = effective(preference)
     applyToDOM(resolved)
     if (persistChoice)
       persist(preference)
@@ -246,7 +288,7 @@ export function useColorMode(options: ColorModeOptions = {}): ColorModeRef {
     const mql = window.matchMedia('(prefers-color-scheme: dark)')
     const onSystemChange = () => {
       if (preference === 'auto') {
-        resolved = getSystemPreference()
+        resolved = forcedMode ?? getSystemPreference()
         applyToDOM(resolved)
         listeners.forEach(fn => fn(resolved, preference))
       }
@@ -264,7 +306,7 @@ export function useColorMode(options: ColorModeOptions = {}): ColorModeRef {
         if (v === 'auto' && e.newValue && AUTO_VALUES.includes(e.newValue))
           autoValue = e.newValue as AutoValue
         preference = v
-        resolved = resolve(v)
+        resolved = effective(v)
         applyToDOM(resolved)
         listeners.forEach(fn => fn(resolved, preference))
       }

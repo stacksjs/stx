@@ -5832,6 +5832,18 @@ else if (timer === null) {
     var attribute = pick(options.attribute, fromBoot('attribute'), null);
     var autoValueOption = pick(options.autoValue, fromBoot('autoValue'), undefined);
     var disableTransitions = options.disableTransitions !== false;
+    // A mode the page was served already stamped with, which outranks this
+    // composable's own resolution: for a page whose theme is not the visitor's
+    // to choose (stacksjs/stx#2050). Taken from the boot global's forced key
+    // rather than by reading the attribute, because the boot script has
+    // stamped it by now either way and the DOM can no longer say which it was.
+    //
+    // No backticks in this comment, or any other in this file: the runtime is
+    // generated from a template literal, so one would end the literal and
+    // break the whole emitted script.
+    var respectExisting = options.respectExisting === true || fromBoot('respectExisting') === true;
+    var bootForced = fromBoot('forced');
+    var forcedMode = (respectExisting && (bootForced === 'light' || bootForced === 'dark')) ? bootForced : null;
     var resolved = 'light';
     var listeners = [];
     var cleanups = [];
@@ -5851,6 +5863,9 @@ else if (timer === null) {
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
     function resolve(pref) { return pref === 'auto' ? getSystem() : pref; }
+    // Used wherever the resolved mode is assigned, so a forced page survives
+    // a system-theme change and another tab's write, not just the first mount.
+    function effective(pref) { return forcedMode || resolve(pref); }
     function applyDOM(mode) {
       var el = document.documentElement;
       if (disableTransitions) el.style.setProperty('transition', 'none', 'important');
@@ -5883,7 +5898,7 @@ catch (e) {} }
     // composable didn't recognise, destroying it.
     function update(pref, persistChoice) {
       preference = normalizeMode(pref) || 'auto';
-      resolved = resolve(preference);
+      resolved = effective(preference);
       applyDOM(resolved);
       if (persistChoice !== false) persist(preference);
       listeners.forEach(function(fn) { fn(resolved, preference); });
@@ -5894,7 +5909,7 @@ catch (e) {} }
     var mql = window.matchMedia('(prefers-color-scheme: dark)');
     var onSystemChange = function() {
       if (preference === 'auto') {
-        resolved = getSystem();
+        resolved = forcedMode || getSystem();
         applyDOM(resolved);
         listeners.forEach(function(fn) { fn(resolved, preference); });
       }
@@ -5909,7 +5924,7 @@ catch (e) {} }
         // Track the other tab's spelling too, so a write from here doesn't
         // convert the key out from under it.
         if (v === 'auto' && (e.newValue === 'auto' || e.newValue === 'system')) autoValue = e.newValue;
-        preference = v; resolved = resolve(v); applyDOM(resolved);
+        preference = v; resolved = effective(v); applyDOM(resolved);
         listeners.forEach(function(fn) { fn(resolved, preference); });
       }
     };
