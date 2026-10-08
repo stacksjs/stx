@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.404...v0.2.405)
+
+## 🐛 Bug Fixes
+
+- **components**: bind a prop built from client values instead of baking its server result ([7b8c440](https://github.com/stacksjs/stx/commit/7b8c440)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.405 ([540effb](https://github.com/stacksjs/stx/commit/540effb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.403...v0.2.404)
 
 ## 🐛 Bug Fixes
