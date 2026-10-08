@@ -1,5 +1,32 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.399...v0.2.400)
+
+## ✨ Features
+
+- **native**: compile a screen through stx, with the primitives as components ([57a53a5](https://github.com/stacksjs/stx/commit/57a53a5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: translate stx's rendered output to the native IR ([67f10e7](https://github.com/stacksjs/stx/commit/67f10e7)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1983](https://github.com/stacksjs/stx/issues/1983))
+
+## 🐛 Bug Fixes
+
+- **native**: see through a template wrapper instead of dropping the screen ([9c2df37](https://github.com/stacksjs/stx/commit/9c2df37)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: a component can contain another instance of itself ([a4c6b53](https://github.com/stacksjs/stx/commit/a4c6b53)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2046](https://github.com/stacksjs/stx/issues/2046))
+- **native**: never emit a style value that fails the whole document ([dc6b67f](https://github.com/stacksjs/stx/commit/dc6b67f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: map the tags the component library actually writes ([fa0bfa5](https://github.com/stacksjs/stx/commit/fa0bfa5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ✅ Tests
+
+- **native**: pin the style vocabulary each renderer actually reads ([32c6075](https://github.com/stacksjs/stx/commit/32c6075)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1987](https://github.com/stacksjs/stx/issues/1987), [#1992](https://github.com/stacksjs/stx/issues/1992))
+
+## 🔧 Chores
+
+- release v0.2.400 ([27f4587](https://github.com/stacksjs/stx/commit/27f4587)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update changelog ([df30561](https://github.com/stacksjs/stx/commit/df30561)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.399...HEAD)
 
 ## 🚀 Features
