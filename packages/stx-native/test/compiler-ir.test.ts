@@ -152,6 +152,44 @@ describe('mapToNativeComponent', () => {
     // A custom component name must survive to the renderer, not become View.
     expect(mapToNativeComponent('WildloopCard')).toBe('WildloopCard')
   })
+
+  /**
+   * Measured against the library the native target exists to render.
+   *
+   * Every HTML tag written across the 101 components in `@stacksjs/components`
+   * either maps to a native type or is named below. An unknown tag does not
+   * fail: `mapToNativeComponent` passes it through, the renderer's switch has
+   * no case for it, and the subtree is dropped on the device -- so the only
+   * place this can be caught is here, before anything renders.
+   */
+  const NOT_NATIVE = [
+    // Expanded away by the stx pipeline before the translator sees them.
+    'component', 'slot',
+    // Drawing primitives. An icon's box survives as a View; its glyph does not.
+    'svg', 'path', 'circle',
+    // Media and embedding, with no IR counterpart yet.
+    'audio', 'video', 'canvas', 'source',
+    // A line break, which has no element form natively.
+    'br',
+  ]
+
+  it('maps every tag the component library writes, or names it as unmapped', () => {
+    const ui = path.join(import.meta.dir, '..', '..', 'components', 'src', 'ui')
+    const files = [...new Bun.Glob('**/*.stx').scanSync(ui)]
+    expect(files.length).toBeGreaterThan(90)
+
+    const tags = new Set<string>()
+    for (const file of files) {
+      const source = readFileSync(path.join(ui, file), 'utf8')
+        .replace(/<script[\s\S]*?<\/script>/g, '')
+        .replace(/<style[\s\S]*?<\/style>/g, '')
+      for (const match of source.matchAll(/<([a-z][\w-]*)/g))
+        tags.add(match[1])
+    }
+
+    const unmapped = [...tags].filter(tag => mapToNativeComponent(tag) === tag).sort()
+    expect(unmapped).toEqual([...NOT_NATIVE].sort())
+  })
 })
 
 /**

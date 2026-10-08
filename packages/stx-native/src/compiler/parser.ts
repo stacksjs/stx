@@ -727,6 +727,54 @@ export function mapToNativeComponent(tag: string): STXComponentType | string {
     aside: 'View',
     form: 'View',
     label: 'Text',
+    fieldset: 'View',
+    legend: 'Text',
+    option: 'Text',
+    dialog: 'Modal',
+    figure: 'View',
+    figcaption: 'Text',
+    picture: 'View',
+    hr: 'View',
+
+    // Lists and tables: the container lays out, the leaf holds words. A leaf
+    // mapped to View would drop its text -- the iOS renderer says so in as
+    // many words ("View doesn't render text directly"), and Android agrees.
+    ul: 'View',
+    ol: 'View',
+    li: 'View',
+    dl: 'View',
+    dt: 'Text',
+    dd: 'Text',
+    table: 'View',
+    thead: 'View',
+    tbody: 'View',
+    tfoot: 'View',
+    tr: 'View',
+    th: 'Text',
+    td: 'Text',
+    caption: 'Text',
+
+    // Text-level semantics. Native has no inline markup, so these carry their
+    // words and lose their emphasis rather than losing both.
+    strong: 'Text',
+    b: 'Text',
+    em: 'Text',
+    i: 'Text',
+    u: 'Text',
+    s: 'Text',
+    small: 'Text',
+    mark: 'Text',
+    abbr: 'Text',
+    time: 'Text',
+    code: 'Text',
+    kbd: 'Text',
+    samp: 'Text',
+    pre: 'Text',
+    blockquote: 'Text',
+    cite: 'Text',
+    q: 'Text',
+    sub: 'Text',
+    sup: 'Text',
   }
 
   return mapping[tag.toLowerCase()] || tag
