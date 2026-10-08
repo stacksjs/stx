@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bu
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { freePort } from '../../stx/test-utils/test-port'
 
 /**
  * `onResponse` — the post-response mirror of `onRequest`.
@@ -19,7 +20,7 @@ import path from 'node:path'
 
 setDefaultTimeout(60_000)
 
-const PORT = 43_000 + (process.pid % 1000)
+const PORT = freePort()
 const BASE = `http://localhost:${PORT}`
 const SERVE_SRC = path.join(import.meta.dir, '..', 'src', 'serve.ts')
 

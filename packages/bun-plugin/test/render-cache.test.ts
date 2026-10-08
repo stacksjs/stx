@@ -3,8 +3,9 @@ import { access, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fillRouteParams, isRenderableCacheCandidate, ROUTE_PARAMS_PLACEHOLDER, serverScriptsReadParams } from '../src/serve'
+import { freePort } from '../../stx/test-utils/test-port'
 
-const PORT = 43_000 + (process.pid % 1000)
+const PORT = freePort()
 const BASE = `http://localhost:${PORT}`
 const SERVE_SOURCE = path.join(import.meta.dir, '..', 'src', 'serve.ts')
 

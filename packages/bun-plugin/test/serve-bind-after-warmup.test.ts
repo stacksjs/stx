@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { encode } from 'ts-images'
 import { DEFAULT_IMAGE_WARMUP_BIND_BUDGET_MS, projectUsesImageBuiltins, resolveImageWarmupBindBudget, settleWithin } from '../src/serve'
+import { freePort } from '../../stx/test-utils/test-port'
 
 setDefaultTimeout(60_000)
 
@@ -139,7 +140,7 @@ describe('startup image pass and the bind', () => {
   it('does not bind in production until the pass is done', async () => {
     // The pass had finished BEFORE the port accepted — which is the property,
     // rather than "the bind took a while".
-    expect(await boundAfterWarmup({ APP_ENV: 'production', NODE_ENV: 'production' }, 45_910 + (process.pid % 20))).toBe(true)
+    expect(await boundAfterWarmup({ APP_ENV: 'production', NODE_ENV: 'production' }, freePort())).toBe(true)
   })
 
   // A project that renders no <StxImage> and no @image gets nothing from the
@@ -148,7 +149,7 @@ describe('startup image pass and the bind', () => {
   it('binds immediately in production when the pass is turned off', async () => {
     const elapsed = await timeToBind(
       { APP_ENV: 'production', NODE_ENV: 'production' },
-      45_950 + (process.pid % 20),
+      freePort(),
       { imageWarmup: false },
     )
     expect(elapsed).toBeLessThan(BOUND_WITHOUT_WAITING_MS)
@@ -156,7 +157,7 @@ describe('startup image pass and the bind', () => {
 
   // Development wants the server now; the fallbacks are fine until it warms.
   it('binds immediately in development', async () => {
-    const elapsed = await timeToBind({ APP_ENV: 'development', NODE_ENV: 'development' }, 45_930 + (process.pid % 20))
+    const elapsed = await timeToBind({ APP_ENV: 'development', NODE_ENV: 'development' }, freePort())
     expect(elapsed).toBeLessThan(BOUND_WITHOUT_WAITING_MS)
   })
 
@@ -166,7 +167,7 @@ describe('startup image pass and the bind', () => {
   it('skips the pass by default when no template uses <StxImage> or @image', async () => {
     const elapsed = await timeToBind(
       { APP_ENV: 'production', NODE_ENV: 'production' },
-      45_970 + (process.pid % 20),
+      freePort(),
       {},
       NO_IMAGE,
     )
@@ -176,7 +177,7 @@ describe('startup image pass and the bind', () => {
   it('still runs the pass when forced on, whatever the templates use', async () => {
     expect(await boundAfterWarmup(
       { APP_ENV: 'production', NODE_ENV: 'production' },
-      45_990 + (process.pid % 20),
+      freePort(),
       { imageWarmup: true },
       NO_IMAGE,
     )).toBe(true)
@@ -187,7 +188,7 @@ describe('startup image pass and the bind', () => {
   it('keeps the variants under STX_IMAGE_CACHE_DIR when it is set', async () => {
     const cache = await mkdtemp(path.join(tmpdir(), 'stx-image-cache-'))
     dirs.push(cache)
-    await timeToBind({ APP_ENV: 'production', NODE_ENV: 'production', STX_IMAGE_CACHE_DIR: cache }, 46_010 + (process.pid % 20))
+    await timeToBind({ APP_ENV: 'production', NODE_ENV: 'production', STX_IMAGE_CACHE_DIR: cache }, freePort())
 
     const dir = dirs.at(-1)!
     let recorded = ''
@@ -208,7 +209,7 @@ describe('the bind budget', () => {
   // the deploy failed with the old release still serving and nothing wrong
   // with the new one but a missing cache.
   it('binds once the budget is spent, and finishes the pass behind the bind', async () => {
-    const booted = await boot(PRODUCTION, 46_030 + (process.pid % 20), { imageWarmupBindBudgetMs: BUDGET_MS })
+    const booted = await boot(PRODUCTION, freePort(), { imageWarmupBindBudgetMs: BUDGET_MS })
     try {
       expect(booted.elapsed).toBeGreaterThan(BUDGET_MS * 0.7)
       expect(booted.elapsed).toBeLessThan(BOUND_WITHOUT_WAITING_MS)
@@ -237,7 +238,7 @@ describe('the bind budget', () => {
   it('reads the budget from the stx config', async () => {
     const elapsed = await timeToBind(
       PRODUCTION,
-      46_050 + (process.pid % 20),
+      freePort(),
       {},
       USES_IMAGE,
       { 'stx.config.ts': `export default { imageWarmupBindBudgetMs: ${BUDGET_MS} }\n` },
@@ -246,7 +247,7 @@ describe('the bind budget', () => {
   })
 
   it('binds at once with a budget of zero', async () => {
-    const elapsed = await timeToBind(PRODUCTION, 46_070 + (process.pid % 20), { imageWarmupBindBudgetMs: 0 })
+    const elapsed = await timeToBind(PRODUCTION, freePort(), { imageWarmupBindBudgetMs: 0 })
     expect(elapsed).toBeLessThan(BOUND_WITHOUT_WAITING_MS)
   })
 })
@@ -269,7 +270,7 @@ describe('serving while the pass runs', () => {
   it('answers a page quickly while a cold pass is still encoding', async () => {
     const dir = await mkdtemp(path.join(tmpdir(), 'stx-busy-'))
     dirs.push(dir)
-    const port = 46_090 + (process.pid % 20)
+    const port = freePort()
     await Bun.write(path.join(dir, 'views', 'index.stx'), '<main><StxImage src="/photo-0.png" alt="Photo" /></main>')
     await Bun.write(path.join(dir, 'views', 'simple.stx'), '<main>simple</main>')
     await mkdir(path.join(dir, 'public'), { recursive: true })

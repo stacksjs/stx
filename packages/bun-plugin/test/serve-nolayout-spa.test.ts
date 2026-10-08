@@ -25,10 +25,11 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { deriveLayoutGroup } from 'stx-router/layout-metadata'
+import { freePort } from '../../stx/test-utils/test-port'
 
 setDefaultTimeout(60_000)
 
-const PORT = 44_900 + (process.pid % 600)
+const PORT = freePort()
 const BASE = `http://localhost:${PORT}`
 const SERVE_SRC = path.join(import.meta.dir, '..', 'src', 'serve.ts')
 

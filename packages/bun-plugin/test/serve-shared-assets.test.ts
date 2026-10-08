@@ -3,10 +3,11 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { encode } from 'ts-images'
+import { freePort } from '../../stx/test-utils/test-port'
 
 setDefaultTimeout(60_000)
 
-const PORT = 44_000 + (process.pid % 1000)
+const PORT = freePort()
 const BASE = `http://localhost:${PORT}`
 const SERVE_SRC = path.join(import.meta.dir, '..', 'src', 'serve.ts')
 

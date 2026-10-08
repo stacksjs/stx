@@ -3,6 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { pageExcluder } from '../src/serve'
+import { freePort } from '../../stx/test-utils/test-port'
 
 /**
  * `exclude`: page files a pattern directory holds that the server must not
@@ -17,7 +18,7 @@ import { pageExcluder } from '../src/serve'
 
 setDefaultTimeout(60_000)
 
-const PORT = 43_500 + (process.pid % 400)
+const PORT = freePort()
 const BASE = `http://localhost:${PORT}`
 const SERVE_SRC = path.join(import.meta.dir, '..', 'src', 'serve.ts')
 

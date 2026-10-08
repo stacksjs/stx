@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bu
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { freePort } from '../../stx/test-utils/test-port'
 
 /**
  * The ambient `ip` a page sees, and the render cache it can fragment.
@@ -17,7 +18,7 @@ import path from 'node:path'
 
 setDefaultTimeout(60_000)
 
-const PORT = 45_000 + (process.pid % 1000)
+const PORT = freePort()
 const PLAIN = `http://127.0.0.1:${PORT}`
 const RESOLVED = `http://127.0.0.1:${PORT + 1}`
 const SERVE_SRC = path.join(import.meta.dir, '..', 'src', 'serve.ts')

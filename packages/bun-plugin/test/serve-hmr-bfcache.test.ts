@@ -21,10 +21,11 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { freePort } from '../../stx/test-utils/test-port'
 
 setDefaultTimeout(120_000)
 
-const PORT = 44_900 + (process.pid % 700)
+const PORT = freePort()
 const BASE = `http://localhost:${PORT}`
 const SERVE_SRC = path.join(import.meta.dir, '..', 'src', 'serve.ts')
 const CHROME = process.env.CHROME_PATH || [
