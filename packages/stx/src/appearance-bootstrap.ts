@@ -48,9 +48,30 @@ export interface ColorModeBootstrapValue {
 }
 
 export interface AppearanceBootstrapOptions {
-  /** localStorage key containing the persisted JSON preference object. */
+  /**
+   * localStorage key holding the persisted preference.
+   *
+   * Read as a JSON object, and also as a bare `'light'` / `'dark'` /
+   * `'system'` string, which is what `useColorMode` writes under its own
+   * `storageKey` and the overwhelmingly common shape in existing apps.
+   */
   storageKey: string
-  appearance: AppearanceBootstrapValue
+  /**
+   * A second axis beside colour mode, such as a sidebar style.
+   *
+   * Optional: colour mode is the common case and this is the specialised one,
+   * so an app that themes only light/dark leaves it out rather than inventing
+   * a single-valued axis to satisfy the normalizer and then carrying a
+   * meaningless `data-*` attribute on every page (stacksjs/stx#2050).
+   */
+  appearance?: AppearanceBootstrapValue
+  colorMode: ColorModeBootstrapValue
+}
+
+/** The normalized form, where an absent `appearance` is explicitly null. */
+interface NormalizedOptions {
+  storageKey: string
+  appearance: AppearanceBootstrapValue | null
   colorMode: ColorModeBootstrapValue
 }
 
@@ -63,7 +84,7 @@ function assertString(value: unknown, label: string): asserts value is string {
     throw new Error(`@appearanceBootstrap ${label} must be a non-empty string`)
 }
 
-function normalizeOptions(value: unknown): AppearanceBootstrapOptions {
+function normalizeOptions(value: unknown): NormalizedOptions {
   if (!value || typeof value !== 'object' || Array.isArray(value))
     throw new Error('@appearanceBootstrap expects an options object')
 
@@ -72,37 +93,50 @@ function normalizeOptions(value: unknown): AppearanceBootstrapOptions {
   const colorMode = input.colorMode as Record<string, unknown> | undefined
 
   assertString(input.storageKey, 'storageKey')
-  if (!appearance || typeof appearance !== 'object' || Array.isArray(appearance))
-    throw new Error('@appearanceBootstrap appearance must be an object')
+  // `appearance` absent is the colour-mode-only case and is allowed. Present
+  // but not an object is still a mistake worth naming.
+  if (appearance !== undefined && (!appearance || typeof appearance !== 'object' || Array.isArray(appearance)))
+    throw new Error('@appearanceBootstrap appearance must be an object when given')
   if (!colorMode || typeof colorMode !== 'object' || Array.isArray(colorMode))
     throw new Error('@appearanceBootstrap colorMode must be an object')
 
-  assertString(appearance.key, 'appearance.key')
-  assertString(appearance.attribute, 'appearance.attribute')
-  assertString(appearance.default, 'appearance.default')
   assertString(colorMode.key, 'colorMode.key')
   assertString(colorMode.attribute, 'colorMode.attribute')
   assertString(colorMode.default, 'colorMode.default')
 
-  if (!PROPERTY_PATTERN.test(appearance.key) || !PROPERTY_PATTERN.test(colorMode.key))
+  if (!PROPERTY_PATTERN.test(colorMode.key))
     throw new Error('@appearanceBootstrap preference keys must be JavaScript property names')
-  if (!DATA_ATTRIBUTE_PATTERN.test(appearance.attribute) || !DATA_ATTRIBUTE_PATTERN.test(colorMode.attribute))
+  if (!DATA_ATTRIBUTE_PATTERN.test(colorMode.attribute))
     throw new Error('@appearanceBootstrap attributes must be lowercase data attribute names')
-  if (!Array.isArray(appearance.allowed) || appearance.allowed.length === 0 || appearance.allowed.some(item => typeof item !== 'string' || item.length === 0))
-    throw new Error('@appearanceBootstrap appearance.allowed must contain one or more strings')
-  if (!(appearance.allowed as string[]).includes(appearance.default))
-    throw new Error('@appearanceBootstrap appearance.default must be in appearance.allowed')
   if (!COLOR_MODES.has(colorMode.default))
     throw new Error('@appearanceBootstrap colorMode.default must be light, dark, or system')
 
-  return {
-    storageKey: input.storageKey,
-    appearance: {
+  let normalizedAppearance: AppearanceBootstrapValue | null = null
+  if (appearance) {
+    assertString(appearance.key, 'appearance.key')
+    assertString(appearance.attribute, 'appearance.attribute')
+    assertString(appearance.default, 'appearance.default')
+
+    if (!PROPERTY_PATTERN.test(appearance.key))
+      throw new Error('@appearanceBootstrap preference keys must be JavaScript property names')
+    if (!DATA_ATTRIBUTE_PATTERN.test(appearance.attribute))
+      throw new Error('@appearanceBootstrap attributes must be lowercase data attribute names')
+    if (!Array.isArray(appearance.allowed) || appearance.allowed.length === 0 || appearance.allowed.some(item => typeof item !== 'string' || item.length === 0))
+      throw new Error('@appearanceBootstrap appearance.allowed must contain one or more strings')
+    if (!(appearance.allowed as string[]).includes(appearance.default))
+      throw new Error('@appearanceBootstrap appearance.default must be in appearance.allowed')
+
+    normalizedAppearance = {
       key: appearance.key,
       attribute: appearance.attribute,
       allowed: [...new Set(appearance.allowed as string[])],
       default: appearance.default,
-    },
+    }
+  }
+
+  return {
+    storageKey: input.storageKey,
+    appearance: normalizedAppearance,
     colorMode: {
       key: colorMode.key,
       attribute: colorMode.attribute,
@@ -151,10 +185,28 @@ function serializeForScript(value: unknown): string {
  * half must not wait for a fetch, and a runtime that arrived later would be
  * missing exactly when a settings panel binds to it.
  */
-function generateBootstrap(options: AppearanceBootstrapOptions): string {
+function generateBootstrap(options: NormalizedOptions): string {
   const config = serializeForScript(options)
 
-  return `<script data-stx-scoped data-stx-appearance-bootstrap>(function(){"use strict";const config=${config};const root=document.documentElement;const MODES=["light","dark","system"];function read(){let stored={};try{const raw=localStorage.getItem(config.storageKey);const parsed=raw?JSON.parse(raw):{};if(parsed&&typeof parsed==="object"&&!Array.isArray(parsed))stored=parsed}catch{}return stored}function write(stored){try{localStorage.setItem(config.storageKey,JSON.stringify(stored))}catch{}}function resolve(){const stored=read();return{appearance:config.appearance.allowed.includes(stored[config.appearance.key])?stored[config.appearance.key]:config.appearance.default,colorMode:MODES.includes(stored[config.colorMode.key])?stored[config.colorMode.key]:config.colorMode.default}}function prefersDark(){try{return matchMedia("(prefers-color-scheme: dark)").matches}catch{return false}}function apply(){const state=resolve();const dark=state.colorMode==="dark"||(state.colorMode==="system"&&prefersDark());root.setAttribute("data-"+config.appearance.attribute,state.appearance);root.setAttribute("data-"+config.colorMode.attribute,state.colorMode);root.classList.toggle("dark",dark);root.dataset.theme=dark?"dark":"light";state.dark=dark;try{window.dispatchEvent(new CustomEvent("stx:appearance",{detail:state}))}catch{}return state}function store(key,allowed,value){if(allowed.includes(value)){const stored=read();stored[key]=value;write(stored)}return apply()}window.__stxAppearance={config:config,read:read,resolve:resolve,apply:apply,setColorMode:function(mode){return store(config.colorMode.key,MODES,mode)},setAppearance:function(name){return store(config.appearance.key,config.appearance.allowed,name)},watchSystem:function(){try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",function(){if(resolve().colorMode==="system")apply()})}catch{}}};apply()}());</script>`
+  // Three things the emitted script does that are worth reading slowly, all
+  // from stacksjs/stx#2050:
+  //
+  // `read` accepts a bare "dark" as well as a JSON object. A theme key holding
+  // a bare string is the common shape in existing apps and is what
+  // useColorMode writes under its own storageKey. JSON.parse throws on it, the
+  // old catch swallowed the throw by design, and the resolver then fell to the
+  // default -- so migrating a hand-written guard to this directive silently
+  // discarded the stored preference of every existing user, with nothing to
+  // warn that the formats disagreed.
+  //
+  // `write` puts back the shape it found. Reading a bare string and writing an
+  // object would convert the app's storage out from under its own other
+  // readers, which is the silent data loss #1788 was about. Only safe without
+  // an appearance axis, since a bare string cannot carry one.
+  //
+  // `config.appearance` may be null, the colour-mode-only case, in which case
+  // no second attribute is stamped and setAppearance is a no-op.
+  return `<script data-stx-scoped data-stx-appearance-bootstrap>(function(){"use strict";const config=${config};const root=document.documentElement;const MODES=["light","dark","system"];let format="json";function read(){let stored={};try{const raw=localStorage.getItem(config.storageKey);if(raw){let parsed=null;try{parsed=JSON.parse(raw)}catch{parsed=raw}if(parsed&&typeof parsed==="object"&&!Array.isArray(parsed)){stored=parsed;format="json"}else if(typeof parsed==="string"&&MODES.includes(parsed)){stored={};stored[config.colorMode.key]=parsed;format="string"}}}catch{}return stored}function write(stored){try{if(format==="string"&&!config.appearance)localStorage.setItem(config.storageKey,stored[config.colorMode.key]);else localStorage.setItem(config.storageKey,JSON.stringify(stored))}catch{}}function resolve(){const stored=read();const state={colorMode:MODES.includes(stored[config.colorMode.key])?stored[config.colorMode.key]:config.colorMode.default};if(config.appearance)state.appearance=config.appearance.allowed.includes(stored[config.appearance.key])?stored[config.appearance.key]:config.appearance.default;return state}function prefersDark(){try{return matchMedia("(prefers-color-scheme: dark)").matches}catch{return false}}function apply(){const state=resolve();const dark=state.colorMode==="dark"||(state.colorMode==="system"&&prefersDark());if(config.appearance)root.setAttribute("data-"+config.appearance.attribute,state.appearance);root.setAttribute("data-"+config.colorMode.attribute,state.colorMode);root.classList.toggle("dark",dark);root.dataset.theme=dark?"dark":"light";state.dark=dark;try{window.dispatchEvent(new CustomEvent("stx:appearance",{detail:state}))}catch{}return state}function store(key,allowed,value){if(allowed.includes(value)){const stored=read();stored[key]=value;write(stored)}return apply()}window.__stxAppearance={config:config,read:read,resolve:resolve,apply:apply,setColorMode:function(mode){return store(config.colorMode.key,MODES,mode)},setAppearance:function(name){return config.appearance?store(config.appearance.key,config.appearance.allowed,name):apply()},watchSystem:function(){try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",function(){if(resolve().colorMode==="system")apply()})}catch{}}};apply()}());</script>`
 }
 
 function findClosingParenthesis(source: string, openIndex: number): number {
