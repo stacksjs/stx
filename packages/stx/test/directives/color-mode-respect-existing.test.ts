@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'bun:test'
+import path from 'node:path'
 import { generateColorModeBootScript, injectColorModeBootScript } from '../../src/color-mode-boot'
+import { processDirectives } from '../../src/process'
 
 /**
  * A theme the visitor does not get to choose (stacksjs/stx#2050).
@@ -147,5 +149,61 @@ describe('the option reaches the page through app.colorMode', () => {
     )
 
     expect(html).toContain('"respectExisting":false')
+  })
+
+  /*
+   * Through the whole render, not just the injector (stacksjs/stx#2052).
+   *
+   * The test above calls `injectColorModeBootScript` directly, which proves
+   * the generator and the injector agree and nothing about the layer that
+   * reaches them. #2052 reported precisely that gap -- the flag never arriving
+   * at a served page -- and named the serve assembly of `options.app` as the
+   * suspect. It is not: the config is forwarded wholesale and all six fields
+   * arrive. What the report was actually seeing was an older copy of the
+   * generator being executed, whose config literal is this one minus the
+   * field.
+   *
+   * So this drives the public entry point an app's request goes through, and
+   * asserts the field on the far side of it, which is the only version of this
+   * test that could have answered the question either way.
+   */
+  it('survives a full serve render, which is the path a request takes', async () => {
+    const html = await processDirectives(
+      '<html><head><meta charset="utf-8"></head><body><p>hi</p></body></html>',
+      {},
+      path.join(import.meta.dir, 'color-mode-serve.stx'),
+      { root: import.meta.dir, buildMode: 'serve', cache: false, app: { colorMode: RESPECT } } as never,
+      new Set<string>(),
+    )
+
+    // The config literal the script reads, with every field the resolver
+    // returns. A served page missing one of these is running another build.
+    expect(html).toContain('"respectExisting":true')
+    expect(html).toContain('respectExisting:c.respectExisting')
+    // The behaviour the flag buys: reading what the server already stamped.
+    expect(html).toContain('getAttribute')
+    expect(html).toContain('forced')
+  })
+
+  it('leaves the field out of nothing: the served literal carries all six', async () => {
+    // Named because the reported symptom was a five-key literal. The order is
+    // the resolver's, so a diff against a served page reads directly.
+    const html = await processDirectives(
+      '<html><head><meta charset="utf-8"></head><body></body></html>',
+      {},
+      path.join(import.meta.dir, 'color-mode-serve.stx'),
+      { root: import.meta.dir, buildMode: 'serve', cache: false, app: { colorMode: RESPECT } } as never,
+      new Set<string>(),
+    )
+    const literal = /\{"storageKey"[^}]*\}/.exec(html)
+    expect(literal).toBeTruthy()
+    expect(Object.keys(JSON.parse(literal![0]))).toEqual([
+      'storageKey',
+      'initialMode',
+      'darkClass',
+      'attribute',
+      'autoValue',
+      'respectExisting',
+    ])
   })
 })
