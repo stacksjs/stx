@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.403...v0.2.404)
+
+## 🐛 Bug Fixes
+
+- **router**: keep a page component's script in its fragment when the layout wraps the container ([a593def](https://github.com/stacksjs/stx/commit/a593def)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1958](https://github.com/stacksjs/stx/issues/1958))
+
+## 🔧 Chores
+
+- release v0.2.404 ([1707502](https://github.com/stacksjs/stx/commit/1707502)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.402...v0.2.403)
 
 ## ✨ Features
