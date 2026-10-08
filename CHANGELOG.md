@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.405...v0.2.406)
+
+## 🐛 Bug Fixes
+
+- **signals**: keep a component's :for over a signal named after its prop on the client ([72ce76d](https://github.com/stacksjs/stx/commit/72ce76d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.406 ([7be65c1](https://github.com/stacksjs/stx/commit/7be65c1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.404...v0.2.405)
 
 ## 🐛 Bug Fixes
