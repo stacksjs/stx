@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.402...v0.2.403)
+
+## ✨ Features
+
+- **offline**: open a dynamic screen never visited, and keep a kept page's styles ([c0306da](https://github.com/stacksjs/stx/commit/c0306da)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.403 ([697f64f](https://github.com/stacksjs/stx/commit/697f64f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.401...v0.2.402)
 
 ## ✨ Features
