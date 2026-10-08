@@ -74,6 +74,42 @@ describe('compileHeadwindToStyle, by class family', () => {
   })
 })
 
+/**
+ * Arbitrary values, which is where this compiler was quietly wrong.
+ *
+ * Found by translating the real component library rather than by reading the
+ * file: TabBar's `text-[11px]` came out as `color: "11px"` -- an invalid color
+ * that also lost the font size it asked for -- and `h-[calc(100%-2rem)]`
+ * parsed to NaN and was assigned anyway, so the IR carried `"height": null`.
+ */
+describe('compileHeadwindToStyle, arbitrary values', () => {
+  it('reads an arbitrary length after text- as a size, not a color', () => {
+    expect(compileHeadwindToStyle('text-[11px]')).toEqual({ fontSize: 11 })
+    expect(compileHeadwindToStyle('text-[1.5rem]')).toEqual({ fontSize: 24 })
+  })
+
+  it('still reads an arbitrary color after text- as a color', () => {
+    expect(compileHeadwindToStyle('text-[#ff0000]')).toEqual({ color: '#ff0000' })
+  })
+
+  it('does not take a length for a color anywhere else either', () => {
+    expect(compileHeadwindToStyle('bg-[12px]')).toEqual({})
+    expect(compileHeadwindToStyle('bg-[#112233]')).toEqual({ backgroundColor: '#112233' })
+  })
+
+  it('drops a value it cannot read instead of emitting NaN', () => {
+    // NaN serialises to null, which decodes as nil and renders as nothing --
+    // indistinguishable from a property that was never set.
+    expect(compileHeadwindToStyle('h-[calc(100%-2rem)]')).toEqual({})
+    expect(compileHeadwindToStyle('p-[calc(1rem+2px)]')).toEqual({})
+  })
+
+  it('keeps the arbitrary lengths it does understand', () => {
+    expect(compileHeadwindToStyle('w-[68px]')).toEqual({ width: 68 })
+    expect(compileHeadwindToStyle('p-[7px]')).toEqual({ padding: 7 })
+  })
+})
+
 describe('parseSTXToNode produces the documented IR', () => {
   it('compiles the reference tree exactly', () => {
     const node = parseSTXToNode(

@@ -41,6 +41,8 @@ export type TranslationDiagnosticKind =
   | 'unread-event'
   /** An inline CSS property the IR has no field for. */
   | 'unknown-style'
+  /** A value the IR's field cannot hold, so emitting it would brick the screen. */
+  | 'non-numeric-style'
 
 export interface TranslationDiagnostic {
   kind: TranslationDiagnosticKind
@@ -135,6 +137,37 @@ const STYLE_KEYS = new Set([
   'textTransform', 'resizeMode', 'tintColor', 'transform', 'overflow',
 ])
 
+/**
+ * Style properties the IR declares as a bare number.
+ *
+ * Emitting a string into one of these is not a dropped property, it is a
+ * dropped screen: iOS reads them as `CGFloat?`, and Swift's synthesised
+ * decoder fails the WHOLE document on a type mismatch. Verified against the
+ * renderer's own structs -- `{"style":{"bottom":"max(env(...), 12px)"}}`
+ * returns typeMismatch and nothing renders. `null` is harmless by comparison.
+ */
+const NUMERIC_STYLE_KEYS = new Set([
+  'flex', 'flexGrow', 'flexShrink', 'zIndex', 'aspectRatio', 'gap', 'rowGap', 'columnGap',
+  'borderWidth', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
+  'borderRadius', 'borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomLeftRadius',
+  'borderBottomRightRadius', 'opacity', 'shadowOpacity', 'shadowRadius', 'elevation',
+  'fontSize', 'lineHeight', 'letterSpacing',
+])
+
+/**
+ * Properties the IR declares as `number | string`, where the string form is a
+ * percentage and nothing else. A CSS function like `max(env(...), 12px)` is
+ * not a dimension any renderer can read, so it is reported and dropped.
+ */
+const DIMENSION_STYLE_KEYS = new Set([
+  'top', 'right', 'bottom', 'left', 'width', 'height', 'minWidth', 'maxWidth',
+  'minHeight', 'maxHeight', 'flexBasis',
+  'margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
+  'marginHorizontal', 'marginVertical',
+  'padding', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+  'paddingHorizontal', 'paddingVertical',
+])
+
 /** A container type: it lays children out and does not render text itself. */
 const CONTAINER_TYPES = new Set(['View', 'SafeAreaView', 'ScrollView', 'KeyboardAvoidingView'])
 
@@ -168,11 +201,14 @@ function camelCase(property: string): string {
   return property.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())
 }
 
-/** `12px` to 12, `1.5` to 1.5, anything else kept as the string it is. */
+/** `12px` to 12, `1.5rem` to 24, `1.5` to 1.5, anything else left as a string. */
 function styleValue(raw: string): string | number {
   const pixels = /^(-?[\d.]+)px$/.exec(raw)
   if (pixels)
     return Number.parseFloat(pixels[1])
+  const relative = /^(-?[\d.]+)r?em$/.exec(raw)
+  if (relative)
+    return Number.parseFloat(relative[1]) * 16
   if (/^-?[\d.]+$/.test(raw))
     return Number.parseFloat(raw)
   return raw
@@ -258,6 +294,15 @@ function readAttributes(
   return { props, style, events, bindings, classes }
 }
 
+/** Whether this property's field can hold this string at all. */
+function holdsString(property: string, value: string): boolean {
+  if (NUMERIC_STYLE_KEYS.has(property))
+    return false
+  if (DIMENSION_STYLE_KEYS.has(property))
+    return /^-?[\d.]+%$/.test(value)
+  return true
+}
+
 function inlineStyle(tag: string, css: string, diagnostics: TranslationDiagnostic[]): STXStyle {
   const style: Record<string, string | number> = {}
   for (const declaration of css.split(';')) {
@@ -272,7 +317,13 @@ function inlineStyle(tag: string, css: string, diagnostics: TranslationDiagnosti
       diagnostics.push({ kind: 'unknown-style', tag, name: property })
       continue
     }
-    style[property] = styleValue(value)
+
+    const translated = styleValue(value)
+    if (typeof translated === 'string' && !holdsString(property, translated)) {
+      diagnostics.push({ kind: 'non-numeric-style', tag, name: property })
+      continue
+    }
+    style[property] = translated
   }
   return style as STXStyle
 }

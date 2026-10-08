@@ -206,7 +206,11 @@ function resolveColor(colorClass: string): string | undefined {
 
   // Handle hex colors (e.g., "[#ff0000]")
   if (colorClass.startsWith('[') && colorClass.endsWith(']')) {
-    return colorClass.slice(1, -1)
+    const inner = colorClass.slice(1, -1)
+    // Only if it is shaped like a color. An arbitrary LENGTH reaching here is
+    // how `text-[11px]` used to compile to `color: "11px"` -- an invalid color
+    // that also lost the font size it was asking for.
+    return /^(#|rgba?\(|hsla?\(|[a-z]+$)/i.test(inner) ? inner : undefined
   }
 
   return undefined
@@ -216,13 +220,13 @@ function resolveSpacing(value: string): number | undefined {
   // Handle arbitrary values (e.g., "[20px]", "[1.5rem]")
   if (value.startsWith('[') && value.endsWith(']')) {
     const inner = value.slice(1, -1)
-    if (inner.endsWith('px')) {
-      return Number.parseFloat(inner)
-    }
-    if (inner.endsWith('rem')) {
-      return Number.parseFloat(inner) * 16
-    }
-    return Number.parseFloat(inner)
+    const length = inner.endsWith('rem')
+      ? Number.parseFloat(inner) * 16
+      : Number.parseFloat(inner)
+    // `h-[calc(100%-2rem)]` parsed to NaN and was assigned anyway, so the IR
+    // carried `"height": null`. A value this function cannot read is a value
+    // it does not have.
+    return Number.isFinite(length) ? length : undefined
   }
 
   return spacing[value]
@@ -348,6 +352,20 @@ function parseTextColor(className: string, style: STXStyle): boolean {
   if (fontSizes[value]) {
     style.fontSize = fontSizes[value]
     return true
+  }
+
+  // An arbitrary length is a font size, not a color: `text-[11px]`.
+  if (value.startsWith('[') && value.endsWith(']')) {
+    const inner = value.slice(1, -1)
+    if (/^-?[\d.]+(?:px|r?em)?$/.test(inner)) {
+      const size = inner.endsWith('rem') || inner.endsWith('em')
+        ? Number.parseFloat(inner) * 16
+        : Number.parseFloat(inner)
+      if (Number.isFinite(size)) {
+        style.fontSize = size
+        return true
+      }
+    }
   }
 
   // Otherwise it's a color

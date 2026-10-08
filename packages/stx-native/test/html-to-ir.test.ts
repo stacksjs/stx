@@ -196,6 +196,23 @@ describe('what is deliberately dropped', () => {
     expect(diagnostics).toContainEqual({ kind: 'dropped-subtree', tag: 'svg' })
   })
 
+  it('drops a value a numeric field cannot hold, rather than bricking the screen', async () => {
+    // Not a dropped property -- a dropped screen. iOS reads these as CGFloat
+    // and Swift's synthesised decoder fails the WHOLE document on a type
+    // mismatch, so one `bottom: max(env(...), 12px)` in a safe-area inset
+    // means nothing renders at all. TabBar had exactly that.
+    const { root, diagnostics } = await translateHtmlToIR(
+      '<div style="bottom:max(env(safe-area-inset-bottom, 0px), 12px);padding:8px"><span>a</span></div>',
+    )
+    expect(root.style).toEqual({ padding: 8 })
+    expect(diagnostics).toContainEqual({ kind: 'non-numeric-style', tag: 'div', name: 'bottom' })
+  })
+
+  it('keeps a percentage, which the IR does declare for a dimension', async () => {
+    const { root } = await translateHtmlToIR('<div style="width:50%;font-size:1.5rem"><span>a</span></div>')
+    expect(root.style).toEqual({ width: '50%', fontSize: 24 })
+  })
+
   it('reports an inline style property the IR has no field for', async () => {
     const { root, diagnostics } = await translateHtmlToIR('<div style="display:contents;cursor:pointer"><span>a</span></div>')
     expect(root.style).toEqual({ display: 'contents' })
@@ -277,6 +294,37 @@ describe('real components from @stacksjs/components', () => {
     }
   })
 
+  it('emits no style value the iOS renderer would reject outright', async () => {
+    // The contract is read out of the renderer, so it tracks the renderer. A
+    // `CGFloat?` field holding a string is a typeMismatch on the whole
+    // document, which is the one failure here that costs a screen rather than
+    // a property.
+    const swift = readFileSync(
+      path.join(import.meta.dir, '..', 'src', 'renderers', 'ios.swift'),
+      'utf8',
+    )
+    const struct = swift.slice(swift.indexOf('struct STXStyle: Codable {'))
+    const numeric = new Set(
+      [...struct.slice(0, struct.indexOf('\n}')).matchAll(/var (\w+): CGFloat\?/g)].map(m => m[1]),
+    )
+    expect(numeric.size).toBeGreaterThan(20)
+
+    const samples = [
+      '<TabBar :items="[{ label: \'Home\', to: \'/\' }]" />',
+      '<Drawer title="Menu"><p>x</p></Drawer>',
+      '<Dialog title="Confirm"><p>Sure?</p></Dialog>',
+      '<Card title="Account"><p>Body</p></Card>',
+      '<Sidebar :items="[{ label: \'Home\', to: \'/\' }]" />',
+    ]
+    for (const sample of samples) {
+      const { root } = await translateHtmlToIR(await render(sample), { source: sample })
+      for (const node of walk(root))
+        for (const [key, value] of Object.entries(node.style))
+          if (numeric.has(key))
+            expect(typeof value, `${sample} -> ${node.type}.${key} = ${JSON.stringify(value)}`).not.toBe('string')
+    }
+  })
+
   it('wraps a translation in a document the renderers can decode', async () => {
     const { document } = await translateHtmlToDocument(await render('<Badge>New</Badge>'), {
       source: 'Badge.stx',
@@ -299,4 +347,11 @@ function find(node: STXNode, predicate: (node: STXNode) => boolean): STXNode | n
       return found
   }
   return null
+}
+
+function* walk(node: STXNode): Generator<STXNode> {
+  yield node
+  for (const child of node.children)
+    if (typeof child !== 'string')
+      yield * walk(child)
 }
