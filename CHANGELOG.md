@@ -1,5 +1,28 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.396...v0.2.397)
+
+## ✨ Features
+
+- **stx**: exempt one strict-mode violation at the site, not app-wide ([ba4e53f](https://github.com/stacksjs/stx/commit/ba4e53f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2049](https://github.com/stacksjs/stx/issues/2049), [#1792](https://github.com/stacksjs/stx/issues/1792), [#1911](https://github.com/stacksjs/stx/issues/1911))
+
+## 🐛 Bug Fixes
+
+- **components**: the tooltip described its wrapper, not the control ([467475b](https://github.com/stacksjs/stx/commit/467475b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2048](https://github.com/stacksjs/stx/issues/2048), [#2045](https://github.com/stacksjs/stx/issues/2045), [#2046](https://github.com/stacksjs/stx/issues/2046), [#2045](https://github.com/stacksjs/stx/issues/2045))
+
+## ⚡ Performance Improvements
+
+- **router**: tab pages ready from the first tap: shared in-flight prefetch, kept between launches ([f332034](https://github.com/stacksjs/stx/commit/f332034)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.397 ([ebbc314](https://github.com/stacksjs/stx/commit/ebbc314)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.395...v0.2.396)
 
 ## ✨ Features
