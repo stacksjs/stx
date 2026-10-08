@@ -225,3 +225,78 @@ describe('renderer coverage', () => {
     }
   })
 })
+
+/**
+ * The style vocabulary the compiler emits, against what each renderer reads
+ * (stacksjs/stx#1987, #1992).
+ *
+ * This is the half of renderer drift that cannot announce itself. A component
+ * type with no branch at least falls through a `switch`. A STYLE property the
+ * compiler emits and a renderer does not read is simply absent: Swift's
+ * `Codable` ignores unknown keys, so `lineHeight` or `letterSpacing` decodes
+ * into nothing, no error anywhere, and the view is laid out as though the
+ * class had never been written.
+ *
+ * Measured: the IR declares 80 style properties, `android.kt` refers to 68 of
+ * them, and `ios.swift` declares 52. So iOS silently drops 28, which is a
+ * third of the vocabulary -- on top of the three component types it is missing.
+ *
+ * Named here rather than asserted away, so the lists can only shrink.
+ */
+describe('style vocabulary coverage', () => {
+  const ROOT = path.join(import.meta.dir, '..', 'src')
+
+  /** Every property name the IR's STXStyle declares. */
+  function irStyleKeys(): string[] {
+    const source = readFileSync(path.join(ROOT, 'compiler', 'ir.ts'), 'utf8')
+    const block = source.slice(
+      source.indexOf('export interface STXStyle'),
+      source.indexOf('export type STXEventType'),
+    )
+    return [...new Set([...block.matchAll(/^ {2}(\w+)\??:/gm)].map(m => m[1]))]
+  }
+
+  /** Every property `ios.swift`'s mirror of that struct declares. */
+  function swiftStyleKeys(): Set<string> {
+    const source = readFileSync(path.join(ROOT, 'renderers', 'ios.swift'), 'utf8')
+    const block = source.slice(source.indexOf('struct STXStyle: Codable {'))
+    return new Set(
+      [...block.slice(0, block.indexOf('\n}')).matchAll(/var (\w+):/g)].map(m => m[1]),
+    )
+  }
+
+  /**
+   * Emitted by the compiler and absent from the iOS mirror, so dropped in
+   * silence. This list must only shrink.
+   */
+  const IOS_DROPS = [
+    'alignContent', 'aspectRatio', 'backgroundImage', 'borderBottomColor',
+    'borderBottomWidth', 'borderLeftColor', 'borderLeftWidth', 'borderRightColor',
+    'borderRightWidth', 'borderStyle', 'borderTopColor', 'borderTopWidth',
+    'columnGap', 'elevation', 'flexBasis', 'fontFamily', 'letterSpacing',
+    'lineHeight', 'overflow', 'resizeMode', 'rowGap', 'shadowOffset',
+    'textDecorationColor', 'textDecorationLine', 'textTransform', 'tintColor',
+    'transform', 'zIndex',
+  ]
+
+  it('iOS drops exactly the properties on the known list, and no more', () => {
+    const swift = swiftStyleKeys()
+    const dropped = irStyleKeys().filter(key => !swift.has(key)).sort()
+    expect(dropped).toEqual([...IOS_DROPS].sort())
+  })
+
+  it('declares nothing on iOS that the compiler never emits', () => {
+    // The other direction: a field here that the IR cannot produce is dead
+    // weight, and more likely a rename that only happened on one side.
+    const ir = new Set(irStyleKeys())
+    const orphaned = [...swiftStyleKeys()].filter(key => !ir.has(key)).sort()
+    expect(orphaned).toEqual([])
+  })
+
+  it('covers the properties the reference tree actually uses', () => {
+    // Whatever else is missing, the documented example has to survive the trip.
+    const swift = swiftStyleKeys()
+    for (const key of ['flex', 'flexDirection', 'justifyContent', 'alignItems', 'padding', 'backgroundColor', 'color', 'fontSize', 'fontWeight'])
+      expect(swift.has(key)).toBe(true)
+  })
+})
