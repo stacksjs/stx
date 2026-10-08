@@ -63,7 +63,7 @@ describe('router prefetch on a phone', () => {
     expect(requested).toContain('/m/calendar')
   })
 
-  it('fetches eager links once the page is idle, but not the page it is on', async () => {
+  it('fetches eager links soon after the page loads, the page it is on included', async () => {
     const { requested } = installRouter(
       '<nav><a href="/m" data-stx-link data-stx-prefetch="eager">Today</a>'
       + '<a href="/m/calendar" data-stx-link data-stx-prefetch="eager">Calendar</a>'
@@ -71,7 +71,8 @@ describe('router prefetch on a phone', () => {
       + '<a href="/m/health" data-stx-link>Health</a></nav>',
     )
     await wait(400)
-    expect(requested.sort()).toEqual(['/m/calendar', '/m/me'])
+    // The page it is on came as a whole document; its fragment is the way back.
+    expect(requested.sort()).toEqual(['/m', '/m/calendar', '/m/me'])
   })
 
   it('leaves eager links alone on a connection that asked to save data', async () => {

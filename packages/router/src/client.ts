@@ -389,6 +389,7 @@ function routerSource(): string {
 
   var cache={};
   var prefetching={};
+  var awaitingKey='';
   var isNavigating=false;
 
   // LRU bookkeeping for cache/layoutCache/layoutGroupCache. Pre-fix
@@ -979,6 +980,19 @@ function routerSource(): string {
     // and the visible page content would be left frozen on the
     // forward-navigation page.
     if(pushState!==false&&t.href===location.href&&!t.hash&&!force)return Promise.resolve(false);
+
+    // Its prefetch is on the way: wait for that answer rather than asking the
+    // server a second time. A later tap elsewhere wins.
+    var awaitedKey=cacheKey(url);
+    if(o.cache&&!force&&!cache[awaitedKey]&&prefetching[awaitedKey]&&prefetching[awaitedKey].then){
+      awaitingKey=awaitedKey;
+      return prefetching[awaitedKey].then(function(){
+        if(awaitingKey!==awaitedKey)return false;
+        awaitingKey='';
+        return navigate(url,pushState,force);
+      });
+    }
+    awaitingKey='';
 
     isNavigating=true;
     instantNav=instantNext;
@@ -2268,23 +2282,69 @@ else {
   // ── Prefetch ──
   // A link's page, fetched before it is followed into the cache navigate
   // reads, so following it is a swap rather than a round trip.
-  function prefetchLink(link){
+  // 'prefetching' holds each fetch in flight, so a tap that lands before its
+  // prefetch has finished waits for that answer instead of asking again.
+  // 'fresh' refetches a page that is cached, for an entry restored from an
+  // earlier launch that is shown at once and replaced behind it.
+  function prefetchLink(link,fresh){
     // Same opt-out set as the click path. Without it, hovering a link the
     // router is not allowed to claim still fired a real GET at it — a
     // logout or OAuth URL was requested on hover alone.
     if(isRouterExcluded(link))return;
     var href=withCurrentLocale(link.getAttribute('href'));
     var key=cacheKey(href);
-    if(cache[key]||prefetching[key])return;
-    prefetching[key]=true;
+    if((cache[key]&&!fresh)||prefetching[key])return;
+    var eager=link.getAttribute('data-stx-prefetch')==='eager';
     var wantsFragment=shouldUseFragmentResponse();
-    fetch(href,{headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
+    prefetching[key]=fetch(href,{headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
       return readPrefetchResponse(r,wantsFragment);
     }).then(function(result){
-      if(result&&o.cache)setCache(key,result.html,result.layout,result.layoutGroup,result.title,result.containerAttrs);
+      if(result&&o.cache){
+        setCache(key,result.html,result.layout,result.layoutGroup,result.title,result.containerAttrs);
+        if(eager)keepPage(key,result);
+      }
       if(result)loadModuleRegistries(result.html,href);
     }).catch(function(){}).finally(function(){delete prefetching[key]});
   }
+
+  // ── Pages kept between launches ──
+  // An eager link's page (a tab bar's) is kept in localStorage under the build
+  // that rendered it, and put back into the cache when the next launch of the
+  // same build starts. The first tap after opening the app is then a swap,
+  // not a round trip, however far the server is; the eager prefetch replaces
+  // the kept copy behind it. Pages of any other build are dropped, since a
+  // runtime must never be handed another build's fragment (#1772).
+  var KEPT_PREFIX='stx:pages:';
+  var KEPT_MAX_BYTES=400000;
+  function keptStore(){try{return window.localStorage||null}catch(e){return null}}
+  function keepPage(key,result){
+    var store=keptStore();
+    if(!store||!loadedBuild||!result||!result.html||result.html.length>KEPT_MAX_BYTES)return;
+    try{
+      var all=JSON.parse(store.getItem(KEPT_PREFIX+loadedBuild)||'{}');
+      all[key]={h:result.html,l:result.layout,g:result.layoutGroup,t:result.title,a:result.containerAttrs};
+      store.setItem(KEPT_PREFIX+loadedBuild,JSON.stringify(all));
+    }catch(e){}
+  }
+  function restoreKeptPages(){
+    var store=keptStore();
+    if(!store||!o.cache||!loadedBuild)return;
+    try{
+      for(var i=store.length-1;i>=0;i--){
+        var name=store.key(i);
+        if(name&&name.indexOf(KEPT_PREFIX)===0&&name!==KEPT_PREFIX+loadedBuild)store.removeItem(name);
+      }
+      var all=JSON.parse(store.getItem(KEPT_PREFIX+loadedBuild)||'{}');
+      for(var key in all){
+        var page=all[key];
+        if(!Object.prototype.hasOwnProperty.call(all,key)||!page||!page.h||cache[key])continue;
+        setCache(key,page.h,page.l||'',page.g||'',page.t||'',page.a||'');
+        restored[key]=true;
+        loadModuleRegistries(page.h,key);
+      }
+    }catch(e){}
+  }
+  var restored={};
 
   // A prefetched page's module registry (the file its imports are bundled
   // into, one per page) is loaded with the prefetch, not on the tap. It only
@@ -2312,15 +2372,21 @@ else {
       eagerQueued=false;
       var connection=navigator.connection;
       if(connection&&(connection.saveData||/2g/.test(connection.effectiveType||'')))return;
-      var here=cacheKey(location.pathname+location.search);
+      // The page it is on too: it was loaded as a whole document, so without
+      // its fragment the way back to it went to the network.
       var links=document.querySelectorAll('[data-stx-link][data-stx-prefetch="eager"]');
       for(var i=0;i<links.length;i++){
         var href=links[i].getAttribute('href');
-        if(href&&cacheKey(withCurrentLocale(href))!==here)prefetchLink(links[i]);
+        if(!href)continue;
+        var key=cacheKey(withCurrentLocale(href));
+        prefetchLink(links[i],restored[key]);
+        delete restored[key];
       }
     };
-    if(window.requestIdleCallback)window.requestIdleCallback(run,{timeout:2000});
-    else setTimeout(run,300);
+    // Soon after the first paint rather than whenever the page next idles: on
+    // a distant server each page is a second away, and the first tap comes fast.
+    if(window.requestIdleCallback)window.requestIdleCallback(run,{timeout:500});
+    else setTimeout(run,100);
   }
 
   if(o.prefetch){
@@ -2579,6 +2645,7 @@ else {
     injectStyles();
     injectViewTransitionCSS();
     refreshCurrentLinks();
+    restoreKeptPages();
     prefetchEager();
   }
 
