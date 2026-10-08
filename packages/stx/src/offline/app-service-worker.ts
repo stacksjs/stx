@@ -10,8 +10,13 @@
  * - Pages and fragments: network first, with a short timeout, and the last
  *   copy when the network is not there. The screens named in `pages` are
  *   fetched when the worker installs, so they open offline even before they
- *   were visited. Kept per build: a fragment from another build would make
- *   the router reload into nothing.
+ *   were visited, with the stylesheets and scripts they link to. Kept per
+ *   build: a fragment from another build would make the router reload into
+ *   nothing.
+ * - Dynamic screens named in `routes` (`/m/workout/:id`): one never opened is
+ *   answered offline with the route's kept page, its params swapped for the
+ *   ones asked for. For a page drawn on the device from the API, every value
+ *   shares the page, so a session the phone never showed still opens.
  * - The build's own files (`/_stx/…`) and public assets: the cached copy at
  *   once, refreshed behind.
  * - API reads (`apiPrefix`, GET only): network first, the last answer offline.
@@ -32,6 +37,15 @@ export interface OfflineAppConfig {
   networkTimeoutMs?: number
   /** Where a page that was never cached goes offline (one of `pages`). Default: the first of `pages`. */
   fallback?: string
+  /**
+   * Dynamic screens whose page is the same for every value, drawn on the
+   * device from the API: `/m/workout/:id` or `/m/workout/[id]`. One that was
+   * never opened is answered offline with the route's kept page, its route
+   * params replaced by the ones asked for. The route's page is fetched when
+   * the worker installs (each param as `0`) and refreshed by every visit.
+   * Leave out a route whose server renders the value's own data.
+   */
+  routes?: string[]
   /** Paths the worker leaves alone entirely (prefixes). */
   exclude?: string[]
   /**
@@ -42,6 +56,35 @@ export interface OfflineAppConfig {
 }
 
 export const OFFLINE_WORKER_PATH = '/_stx/sw.js'
+
+interface OfflineRoute {
+  /** The route as configured, which names its kept page. */
+  path: string
+  /** Matches a path of this route, one group per param. */
+  re: string
+  names: string[]
+  /** The path fetched when the worker installs. */
+  sample: string
+}
+
+/** `/m/workout/:id` and `/m/workout/[id]` as a matcher the worker can carry. */
+export function offlineRoute(path: string): OfflineRoute | null {
+  if (typeof path !== 'string' || !path.startsWith('/')) return null
+  const names: string[] = []
+  const sample: string[] = []
+  const parts = path.replace(/\/+$/, '').split('/').slice(1).map((segment) => {
+    const param = /^:(\w+)$/.exec(segment) || /^\[(\w+)\]$/.exec(segment)
+    if (param) {
+      names.push(param[1]!)
+      sample.push('0')
+      return '([^/]+)'
+    }
+    sample.push(segment)
+    return segment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  })
+  if (!names.length) return null
+  return { path, re: `^/${parts.join('/')}/?$`, names, sample: `/${sample.join('/')}` }
+}
 
 /** The tag every page carries so the worker is installed. */
 export const OFFLINE_REGISTER_SCRIPT = `<script data-stx-offline>if('serviceWorker' in navigator){addEventListener('load',function(){navigator.serviceWorker.register('${OFFLINE_WORKER_PATH}',{scope:'/'}).catch(function(){})})}</script>`
@@ -54,6 +97,7 @@ export function generateOfflineWorker(config: OfflineAppConfig, buildId: string)
     api: config.apiPrefix || '/api/',
     timeout: Math.max(500, Number(config.networkTimeoutMs) || 3500),
     fallback: config.fallback || (config.pages && config.pages[0]) || null,
+    routes: (config.routes || []).map(offlineRoute).filter(Boolean),
     exclude: ['/_stx/hmr', OFFLINE_WORKER_PATH, ...(config.exclude || [])],
     mediaMax: Math.max(10 * 1024 * 1024, Number(config.mediaMaxBytes) || 600 * 1024 * 1024),
   }
@@ -92,13 +136,79 @@ function hashOf(text) {
   });
 }
 
+// A dynamic route's kept page, under a key no real path has.
+function routeKey(route, fragment) {
+  return variantUrl('/__stx_route__' + route.path, fragment);
+}
+
+function routeOf(pathname) {
+  for (var i = 0; i < S.routes.length; i++) {
+    var match = new RegExp(S.routes[i].re).exec(pathname);
+    if (!match) continue;
+    var params = {};
+    S.routes[i].names.forEach(function (name, at) {
+      try { params[name] = decodeURIComponent(match[at + 1]); }
+      catch (error) { params[name] = match[at + 1]; }
+    });
+    return { route: S.routes[i], params: params };
+  }
+  return null;
+}
+
+// The route's kept page with the params asked for in its params script, so
+// useRoute().params reads the value that was opened, not the one kept.
+var PARAMS_SCRIPT = /(<script\\b[^>]*data-stx-route-params[^>]*>\\(function\\(\\)\\{var p=)[\\s\\S]*?(;window\\.__stx_rp)/;
+function withParams(response, params) {
+  return response.text().then(function (html) {
+    var json = JSON.stringify(params).replace(/</g, '\\\\u003C').replace(/\\u2028/g, '\\\\u2028').replace(/\\u2029/g, '\\\\u2029');
+    var body = html.replace(PARAMS_SCRIPT, function (all, open, close) { return open + json + close; });
+    var headers = new Headers(response.headers);
+    headers.delete('Content-Length');
+    return new Response(body, { status: 200, headers: headers });
+  });
+}
+
+// The stylesheets and scripts a kept page links to. Each page has its own
+// generated CSS, fetched only when the page is shown: a screen kept at
+// install but never opened online came up offline without its styles.
+var keepingAssets = {};
+var ASSET_REF = /<(?:link|script)\\b[^>]*?\\s(?:href|src)="(\\/[^"]+\\.(?:css|js))"/g;
+function keepAssetsOf(response) {
+  return response.text().then(function (html) {
+    var urls = [];
+    var match;
+    ASSET_REF.lastIndex = 0;
+    while ((match = ASSET_REF.exec(html))) {
+      if (urls.indexOf(match[1]) === -1) urls.push(match[1]);
+    }
+    return caches.open(ASSETS).then(function (cache) {
+      return Promise.all(urls.map(function (url) {
+        // A page and its fragment link the same files: one fetch each.
+        if (!keepingAssets[url]) {
+          keepingAssets[url] = cache.match(url).then(function (hit) {
+            if (hit) return;
+            return fetch(url, { credentials: 'same-origin' }).then(function (asset) {
+              if (asset.status === 200) return cache.put(url, asset);
+            });
+          }).catch(function () {});
+        }
+        return keepingAssets[url];
+      }));
+    });
+  }).catch(function () {});
+}
+
 function precache() {
+  var wanted = S.pages.map(function (page) { return { url: page, key: function (fragment) { return variantUrl(page, fragment); } }; })
+    .concat(S.routes.map(function (route) { return { url: route.sample, key: function (fragment) { return routeKey(route, fragment); } }; }));
   return caches.open(SHELL).then(function (cache) {
-    return Promise.all(S.pages.map(function (page) {
+    return Promise.all(wanted.map(function (page) {
       return Promise.all([false, true].map(function (fragment) {
         var headers = fragment ? { 'X-STX-Router': 'true', 'Accept': 'text/html' } : { 'Accept': 'text/html' };
-        return fetch(page, { headers: headers, credentials: 'same-origin' }).then(function (response) {
-          if (response.status === 200 && !response.redirected) return cache.put(variantUrl(page, fragment), response);
+        return fetch(page.url, { headers: headers, credentials: 'same-origin' }).then(function (response) {
+          if (response.status !== 200 || response.redirected) return;
+          var copy = response.clone();
+          return Promise.all([cache.put(page.key(fragment), response), keepAssetsOf(copy)]);
         }).catch(function () {});
       }));
     }));
@@ -236,12 +346,16 @@ function markFallback(response) {
 function pageResponse(request) {
   var fragment = isFragment(request);
   var key = variantUrl(request.url, fragment);
+  var dynamic = routeOf(new URL(request.url).pathname);
   var network = fetch(request).then(function (response) {
     // Only a page that is what was asked for: a redirect (to a sign-in page)
     // or an error is not kept as this screen.
     if (response.status === 200 && !response.redirected && response.type === 'basic') {
       var copy = response.clone();
-      caches.open(SHELL).then(function (cache) { return cache.put(key, copy); }).catch(function () {});
+      var routeCopy = dynamic ? response.clone() : null;
+      caches.open(SHELL).then(function (cache) {
+        return Promise.all([cache.put(key, copy), routeCopy && cache.put(routeKey(dynamic.route, fragment), routeCopy)]);
+      }).catch(function () {});
     }
     return response;
   });
@@ -251,8 +365,12 @@ function pageResponse(request) {
         if (hit) return hit;
         // Slower than the timeout but still coming: wait for it rather than fail.
         return network.catch(function () {
-          if (!S.fallback || fragment) return Response.error();
-          return cache.match(variantUrl(S.fallback, false)).then(function (fallback) { return fallback ? markFallback(fallback) : Response.error(); });
+          var route = dynamic ? cache.match(routeKey(dynamic.route, fragment)) : Promise.resolve(null);
+          return route.then(function (kept) {
+            if (kept) return withParams(kept, dynamic.params);
+            if (!S.fallback || fragment) return Response.error();
+            return cache.match(variantUrl(S.fallback, false)).then(function (fallback) { return fallback ? markFallback(fallback) : Response.error(); });
+          });
         });
       });
     });

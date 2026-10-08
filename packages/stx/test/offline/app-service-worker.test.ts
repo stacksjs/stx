@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { generateOfflineWorker, OFFLINE_REGISTER_SCRIPT } from '../../src/offline/app-service-worker'
+import { generateOfflineWorker, OFFLINE_REGISTER_SCRIPT, offlineRoute } from '../../src/offline/app-service-worker'
 import { processDirectives } from '../../src/process'
 
 describe('the offline worker', () => {
@@ -84,6 +84,11 @@ function runWorker(config: Parameters<typeof generateOfflineWorker>[0], network:
   new Function('self', 'caches', 'fetch', 'crypto', generateOfflineWorker(config, 'b1'))(self, caches, fetch, crypto)
   return {
     stores,
+    async install(): Promise<void> {
+      let waited: Promise<unknown> = Promise.resolve()
+      listeners.install!({ waitUntil: (p: Promise<unknown>) => { waited = p } })
+      await waited
+    },
     async message(data: unknown): Promise<any> {
       let waited: Promise<unknown> = Promise.resolve()
       let replied: unknown
@@ -192,5 +197,78 @@ describe('a screen not kept whole', () => {
     ]))
     const page = await sw.request('http://app.test/m', { Accept: 'text/html' })
     expect(await page!.text()).not.toContain('stx-offline-fallback')
+  })
+})
+
+describe('a dynamic screen never opened', () => {
+  const paramsScript = (json: string) => `<script data-stx-route-params>(function(){var p=${json};window.__stx_rp=p;if(window.stx){window.stx._rp=p;if(window.stx.setRouteParams)window.stx.setRouteParams(p)}})()</script>`
+  const sessionPage = (id: string) => `<html><head>${paramsScript(`{"id":"${id}"}`)}</head><body>Session</body></html>`
+
+  it('matches `:param` and `[param]` routes, and leaves static ones out', () => {
+    expect(offlineRoute('/m/workout/:id')).toEqual({ path: '/m/workout/:id', re: '^/m/workout/([^/]+)/?$', names: ['id'], sample: '/m/workout/0' })
+    expect(offlineRoute('/m/go/[id]')!.sample).toBe('/m/go/0')
+    expect(new RegExp(offlineRoute('/a.b/:x/c')!.re).test('/a.b/7/c')).toBe(true)
+    expect(new RegExp(offlineRoute('/a.b/:x/c')!.re).test('/aXb/7/c')).toBe(false)
+    expect(offlineRoute('/m/calendar')).toBeNull()
+    expect(offlineRoute('m/:id')).toBeNull()
+  })
+
+  it('is fetched when the worker installs, from the route\'s sample', async () => {
+    const asked: string[] = []
+    const sw = runWorker({ enabled: true, pages: [], routes: ['/m/workout/:id'] }, (url) => {
+      asked.push(url)
+      return new Response(sessionPage('0'), { status: 200 })
+    })
+    await sw.install()
+    expect(asked).toContain('/m/workout/0')
+    expect(sw.stores.get('stx-shell-b1')!.has('http://app.test/__stx_route__/m/workout/:id')).toBe(true)
+    expect(sw.stores.get('stx-shell-b1')!.has('http://app.test/__stx_route__/m/workout/:id?__stx_fragment=1')).toBe(true)
+  })
+
+  it('keeps the stylesheets and scripts of the screens it installs', async () => {
+    const page = '<html><head><link data-css="generated" rel="stylesheet" href="/_stx/css.abc.css"><script data-stx-modules src="/_stx/modules.def.js"></script><link rel="stylesheet" href="https://cdn.test/x.css"></head></html>'
+    const asked: string[] = []
+    const sw = runWorker({ enabled: true, pages: ['/m/health'] }, (url) => {
+      asked.push(url)
+      return new Response(url.startsWith('/_stx/') ? 'body{}' : page, { status: 200 })
+    })
+    await sw.install()
+    const assets = sw.stores.get('stx-assets')!
+    expect(assets.has('http://app.test/_stx/css.abc.css')).toBe(true)
+    expect(assets.has('http://app.test/_stx/modules.def.js')).toBe(true)
+    expect(asked.filter(url => url === '/_stx/css.abc.css').length).toBe(1)
+    expect(asked).not.toContain('https://cdn.test/x.css')
+  })
+
+  it('is answered offline with the route\'s kept page, carrying the params asked for', async () => {
+    let online = true
+    const sw = runWorker({ enabled: true, pages: ['/m'], routes: ['/m/workout/:id'] }, url => (online ? new Response(sessionPage(url.split('/').pop()!), { status: 200 }) : null))
+    // Installed with a signal: the route's page is kept from its sample.
+    await sw.install()
+    online = false
+    const page = await sw.request('http://app.test/m/workout/16319', { 'X-STX-Router': 'true', 'Accept': 'text/html' })
+    const html = await page!.text()
+    expect(page!.status).toBe(200)
+    expect(html).toContain('var p={"id":"16319"};window.__stx_rp=p')
+    expect(html).not.toContain('"id":"0"')
+    expect(html).not.toContain('stx-offline-fallback')
+  })
+
+  it('keeps params script-safe', async () => {
+    const sw = runWorker({ enabled: true, pages: [], routes: ['/p/:slug'] }, () => null)
+    sw.stores.set('stx-shell-b1', new Map([
+      ['http://app.test/__stx_route__/p/:slug', new Response(`<html><head>${paramsScript('{"slug":"a"}')}</head></html>`, { status: 200 })],
+    ]))
+    const html = await (await sw.request('http://app.test/p/%3C%2Fscript%3E$%26', { Accept: 'text/html' }))!.text()
+    expect(html).toContain('var p={"slug":"\\u003C/script>$&"};')
+  })
+
+  it('still falls back to the first screen for a route not named', async () => {
+    const sw = runWorker({ enabled: true, pages: ['/m'], routes: ['/m/workout/:id'] }, () => null)
+    sw.stores.set('stx-shell-b1', new Map([
+      ['http://app.test/m', new Response('<html><head></head><body>Today</body></html>', { status: 200 })],
+    ]))
+    const html = await (await sw.request('http://app.test/m/plan/3', { Accept: 'text/html' }))!.text()
+    expect(html).toContain('stx-offline-fallback')
   })
 })
