@@ -5054,12 +5054,27 @@ catch (e) { /* a disposer of its own is not this branch's problem */ }
               n.removeAttribute('x-cloak');
               n.querySelectorAll('[x-cloak]').forEach(function (c) { c.removeAttribute('x-cloak'); });
             });
+            resumeDetachedBranches();
           });
           });
         }
       }
 
       currentIdx = pickedIdx;
+    });
+  }
+
+  // Shown branches whose deferred bind found them off the page: an enclosing
+  // :if, bound later in the same pass, hid them between the queue and the run.
+  // Their own condition has not changed, so their effect never runs again to
+  // retry; each resumes here when an enclosing branch puts it back.
+  const detachedBranches = new Set();
+  function resumeDetachedBranches() {
+    if (!detachedBranches.size) return;
+    Array.from(detachedBranches).forEach(function(resume) {
+      if (!resume.el.isConnected) return;
+      detachedBranches.delete(resume);
+      resume();
     });
   }
 
@@ -5180,6 +5195,7 @@ catch (e2) {
           node.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
         }
       });
+      resumeDetachedBranches();
     };
 
     // Evaluate the :if expression — use direct signal read for simple refs,
@@ -5310,6 +5326,18 @@ else if (!value && isInserted) {
             if (!el.isConnected) {
               childrenProcessed = false;
               el.__stx_if_pending = false;
+              // Hidden by an ancestor rather than by this condition (a page :if
+              // around a component whose own :if queued this pass), the branch
+              // comes back without this effect running, and a component shown
+              // again kept its :for rows as raw markup.
+              var resume = function() {
+                if (!isInserted || childrenProcessed) return;
+                childrenProcessed = true;
+                el.__stx_if_pending = true;
+                peek(hydrateShownBranch);
+              };
+              resume.el = el;
+              detachedBranches.add(resume);
               return;
             }
             var childScope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
@@ -5333,6 +5361,8 @@ else if (!value && isInserted) {
             el.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
             // Deferred bind complete — the audit may inspect this subtree now.
             el.__stx_if_pending = false;
+            // Branches inside this one that were hidden with it can bind now.
+            resumeDetachedBranches();
           };
           // In a microtask, not inside this effect's own run: child effects
           // created while it is running saw the data mid-change (a screen

@@ -156,3 +156,56 @@ describe('a component gated by :if inside a partial', () => {
     await app.dispose()
   })
 })
+
+/**
+ * A component with an `:if` of its own, hidden by its page after it was bound.
+ *
+ * The component's `:if` binds its children in a microtask. When the page hid
+ * the component in between -- a saved choice restored in a promise, a fetch
+ * that lands -- that pass found the branch off the page and gave up, and as
+ * its condition never changed again nothing retried it. Shown again, the
+ * component kept its `:for` rows as raw markup: a coach's strength session
+ * editor read `{{ row.title }}` once Strength was picked.
+ */
+const LIST_FILES = {
+  'layouts/default.stx': layout('<header>chrome</header>'),
+  'components/RowList.stx': `<script client>
+const listRows = useReactiveProp('rows', [])
+const listShown = derived(() => (listRows() || []).length > 0)
+</script>
+<div class="row-list">
+  <ol :if="listShown">
+    <li :for="row in listRows" :key="row.id" class="row-item">{{ row.name }}</li>
+  </ol>
+</div>
+`,
+  'views/list.stx': page('default', `<script client>
+const listOpen = state(true)
+const pageRows = state([{ id: 1, name: 'Squat' }, { id: 2, name: 'Plank' }])
+Promise.resolve().then(() => listOpen.set(false))
+window.SET_LIST = value => listOpen.set(value)
+</script>
+<div>
+  <div :if="listOpen">
+    <RowList :rows="pageRows" />
+  </div>
+</div>
+`),
+}
+
+describe('a component hidden by its page between its bind and its :if pass', () => {
+  it('binds its rows when the page shows it again', async () => {
+    const app = await renderApp(LIST_FILES, { '/list': 'views/list.stx' })
+    const browser = await boot(app, '/list')
+    expect(browser.document.querySelector('.row-list')).toBeNull()
+
+    browser.window.SET_LIST(true)
+    await settle()
+
+    const rows = Array.from(browser.document.querySelectorAll('.row-item')).map((row: any) => row.textContent.trim())
+    expect(rows).toEqual(['Squat', 'Plank'])
+    expect(browser.errors).toEqual([])
+
+    await app.dispose()
+  })
+})
