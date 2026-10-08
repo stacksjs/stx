@@ -1594,8 +1594,16 @@ describe('Edge Cases', () => {
 
 describe('Expression Edge Cases (discovered bugs)', () => {
   it('should not evaluate @{{ }} at the expression level (handled by process pipeline)', () => {
+    // `toBeDefined()` was the whole assertion, which passes for any output at
+    // all. What this layer actually does with the raw input is resolve the
+    // braces and leave the at-sign stranded -- `@Alice` -- because it has no
+    // escape awareness, and is not meant to: `processDirectives` swaps the
+    // escape for a placeholder before expressions run and restores it as
+    // literal braces afterwards, so this layer never sees `@{{` in real use.
+    // Recorded so nobody mistakes this function for the place the escape is
+    // handled; `directives/escaped-mustache.test.ts` owns the behaviour.
     const result = processExpressions('@{{ name }}', { name: 'Alice' }, 'test.stx')
-    expect(result).toBeDefined()
+    expect(result).toBe('@Alice')
   })
 })
 

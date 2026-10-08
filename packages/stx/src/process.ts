@@ -816,6 +816,13 @@ export async function processDirectives(
       // Restore @@ escape placeholders to literal @ AFTER all directive processing
       result = result.replace(/\x00STX_ESCAPED_AT\x00/g, '@')
 
+      // And `@{{ … }}` to braces the browser shows and the runtime cannot
+      // bind. The comment is what makes the second half true -- see the note
+      // at the placeholder site.
+      result = result
+        .replace(/\x00STX_ESC_MUSTACHE_OPEN\x00/g, '{<!--stx-literal-->{')
+        .replace(/\x00STX_ESC_MUSTACHE_CLOSE\x00/g, '}}')
+
       if (isTopLevel && context.__stx_runtime_config)
         result = injectRuntimeConfig(result, context.__stx_runtime_config)
       if (isTopLevel && !context.__stx_defer_server_data) {
@@ -935,11 +942,39 @@ async function processDirectivesInternal(
   // so @@if(true) doesn't get evaluated as a real @if directive.
   // The placeholder is restored to a literal @ after all processing.
   const ESCAPED_AT_PLACEHOLDER = '\x00STX_ESCAPED_AT\x00'
+  const ESCAPED_MUSTACHE_OPEN = '\x00STX_ESC_MUSTACHE_OPEN\x00'
+  const ESCAPED_MUSTACHE_CLOSE = '\x00STX_ESC_MUSTACHE_CLOSE\x00'
   output = output.replace(/@@/g, ESCAPED_AT_PLACEHOLDER)
 
-  // Process escaped @{{ }} expressions before other directives
+  /*
+   * Escaped `@{{ … }}` renders the braces, it does not evaluate them.
+   *
+   * This used to rewrite `@{{ name }}` to `{{ name }}` right here, BEFORE the
+   * expression processor runs -- so the escape did nothing at all and
+   * `@{{ name }}` rendered `Alice` exactly like the unescaped form. Two tests
+   * were named after the feature and neither asserted it: one checked only
+   * that the build completed and pinned the empty output as "the current
+   * implementation", the other asserted `toBeDefined()`. The docs
+   * (docs/api/directives.md, ARCHITECTURE.md) have always said it emits a
+   * literal.
+   *
+   * Held as a placeholder through the whole pipeline, like `@@`, so nothing
+   * downstream sees a `{{` to evaluate. It is restored as braces split by an
+   * HTML comment -- `{<!--stx-literal-->{ name }}` -- which is the one form
+   * that satisfies both halves of the problem:
+   *
+   *   - The browser renders it as the text `{{ name }}`, comments being
+   *     invisible, and copies out of the page as that text too.
+   *   - The signals runtime cannot bind it. Its interpolation pass runs per
+   *     TEXT NODE and tests that node for `{{`; the comment splits the text in
+   *     two, so neither half contains the opening pair. Without this the
+   *     client would re-interpolate the literal we just restored, and since
+   *     the runtime BLANKS an expression it cannot resolve, a documented
+   *     `@{{ variableName }}` would come out as empty text on any page that
+   *     ships signals.
+   */
   output = output.replace(/@\{\{([\s\S]*?)\}\}/g, (_, content) => {
-    return `{{ ${content} }}`
+    return `${ESCAPED_MUSTACHE_OPEN}${content}${ESCAPED_MUSTACHE_CLOSE}`
   })
 
   // Transform Vue template syntax (v-if, v-for, v-show, v-model, :bind, etc.)

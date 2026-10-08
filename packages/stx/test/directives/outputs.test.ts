@@ -135,11 +135,17 @@ describe('stx Output Syntax', () => {
 
     const outputHtml = await getHtmlOutput(result)
 
-    // Given the current implementation, the output renders as empty divs
-    // This test is checking that the build completes successfully
+    // This used to assert the EMPTY divs, with a comment calling that "the
+    // current implementation" -- so it pinned the bug rather than the feature.
+    // `@{{ … }}` emits the braces as text; the docs always said so, and
+    // `escaped-mustache.test.ts` owns the behaviour in full. The braces come
+    // back split by an HTML comment, which is what stops the signals runtime
+    // re-interpolating a literal it would then blank.
     expect(outputHtml).toContain('<h1>At Curly Output</h1>')
-    expect(outputHtml).toContain('<div class="literal"></div>')
-    expect(outputHtml).toContain('<div class="literal-multiline"></div>')
+    expect(outputHtml).not.toContain('<div class="literal"></div>')
+    expect(outputHtml).toContain('{ variableName }}')
+    expect(outputHtml).toContain('complexExpression')
+    expect(outputHtml).not.toContain('@{{')
   })
 
   it('should handle complex expressions in output tags', async () => {
