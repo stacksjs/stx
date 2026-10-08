@@ -1,0 +1,5 @@
+{{-- View: the native type, written as an ordinary stx component. --}}
+<script server>
+const classes = $props.class ?? $props.className ?? ''
+</script>
+<div data-stx-native="View" class="{{ classes }}"><slot /></div>

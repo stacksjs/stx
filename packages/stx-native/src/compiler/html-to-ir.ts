@@ -168,6 +168,27 @@ const DIMENSION_STYLE_KEYS = new Set([
   'paddingHorizontal', 'paddingVertical',
 ])
 
+/**
+ * Every component type the IR declares, for `data-stx-native` to name.
+ *
+ * Pinned against `ir.ts` by the test. A native screen written with the
+ * primitive tags renders through stx like any other template -- the primitive
+ * is an ordinary component that emits the closest HTML tag -- and the tag
+ * alone cannot say which native type it came from, since `TouchableOpacity`,
+ * `Pressable` and `TouchableHighlight` all emit a div. So the primitive states
+ * its type and the translator takes its word for it, against this list.
+ */
+const NATIVE_TYPES = new Set([
+  'View', 'ScrollView', 'SafeAreaView', 'KeyboardAvoidingView',
+  'Text', 'TextInput',
+  'Button', 'TouchableOpacity', 'TouchableHighlight', 'Pressable',
+  'Image', 'ImageBackground',
+  'FlatList', 'SectionList',
+  'Switch', 'Slider', 'Picker', 'DatePicker',
+  'Modal', 'ActivityIndicator',
+  'StatusBar', 'RefreshControl',
+])
+
 /** A container type: it lays children out and does not render text itself. */
 const CONTAINER_TYPES = new Set(['View', 'SafeAreaView', 'ScrollView', 'KeyboardAvoidingView'])
 
@@ -404,8 +425,19 @@ export async function translateHtmlToIR(
       ? { props: {}, style: {}, events: {}, bindings: {}, classes: '' }
       : readAttributes(tag, attributes, diagnostics)
 
-    const type = BOX_ONLY.has(tag) ? 'View' : mapToNativeComponent(tag)
-    if (type === tag && !DROP_SUBTREE.has(tag) && !seenUnmapped.has(tag)) {
+    // A primitive component names its own native type, since the HTML tag it
+    // emits cannot carry the distinction.
+    const declared = props['data-stx-native']
+    let type: string
+    if (typeof declared === 'string' && NATIVE_TYPES.has(declared)) {
+      type = declared
+      delete props['data-stx-native']
+    }
+    else {
+      type = BOX_ONLY.has(tag) ? 'View' : mapToNativeComponent(tag)
+    }
+
+    if (type === tag && !NATIVE_TYPES.has(type) && !DROP_SUBTREE.has(tag) && !seenUnmapped.has(tag)) {
       seenUnmapped.add(tag)
       diagnostics.push({ kind: 'unmapped-tag', tag })
     }

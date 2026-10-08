@@ -1,0 +1,5 @@
+{{-- Picker: the native type, written as an ordinary stx component. --}}
+<script server>
+const classes = $props.class ?? $props.className ?? ''
+</script>
+<div data-stx-native="Picker" class="{{ classes }}"><slot /></div>

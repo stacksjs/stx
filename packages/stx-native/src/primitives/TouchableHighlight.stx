@@ -1,0 +1,5 @@
+{{-- TouchableHighlight: the native type, written as an ordinary stx component. --}}
+<script server>
+const classes = $props.class ?? $props.className ?? ''
+</script>
+<div data-stx-native="TouchableHighlight" class="{{ classes }}" role="button"><slot /></div>
