@@ -80,6 +80,33 @@ function recordingHost(ops: Op[]) {
       const start = from ? (node && node.parentElement) : node
       return (start && start.closest) ? start.closest('[data-stx-scope]') : null
     },
+    // Teardown reaches a subtree through the host too, so neither disposal
+    // path needs a selector (#1984).
+    // eslint-disable-next-line ts/no-explicit-any
+    descendants: (node: any) => {
+      ops.push({ op: 'descendants', node: name(node), args: [] })
+      const out: unknown[] = []
+      if (!node || !node.querySelectorAll) return out
+      const all = node.querySelectorAll('*')
+      for (let i = 0; i < all.length; i++) out.push(all[i])
+      return out
+    },
+    // eslint-disable-next-line ts/no-explicit-any
+    scopesIn: (node: any) => {
+      ops.push({ op: 'scopesIn', node: name(node), args: [] })
+      const ids: string[] = []
+      if (!node) return ids
+      const own = node.getAttribute && node.getAttribute('data-stx-scope')
+      if (own) ids.push(own)
+      if (node.querySelectorAll) {
+        const matches = node.querySelectorAll('[data-stx-scope]')
+        for (let i = 0; i < matches.length; i++) {
+          const id = matches[i].getAttribute('data-stx-scope')
+          if (id) ids.push(id)
+        }
+      }
+      return ids
+    },
   }
 }
 
@@ -181,6 +208,29 @@ describe('the runtime writes through a host', () => {
     items.set([{ id: 1, label: 'a' }])
     await settle()
     expect(ops.filter(o => o.op === 'remove').length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('tears a removed row down through the host, without a selector', async () => {
+    /*
+     * The last DOM assumption in the binding layer (#1984). Both disposal
+     * paths reached their subtree with a selector query -- one for every
+     * descendant, one for `[data-stx-scope]` -- and a view hierarchy has
+     * neither selectors nor attributes to match. A native host knows what it
+     * built, so it is asked.
+     *
+     * Asserted on a SHRINKING list, because that is a disposal the page did
+     * not ask for: the row leaves because its data did, and the teardown has
+     * to find it anyway.
+     */
+    const items = window.stx.state([{ id: 1 }, { id: 2 }])
+    await boot('<ul data-id="l3"><li data-id="r3" :for="row in items" :key="row.id">x</li></ul>', { items })
+    ops.length = 0
+
+    items.set([{ id: 1 }])
+    await settle()
+
+    expect(ops.some(o => o.op === 'descendants')).toBe(true)
+    expect(ops.some(o => o.op === 'scopesIn')).toBe(true)
   })
 
   it('registers event handlers through the host, with their options', async () => {

@@ -75,6 +75,8 @@ export interface NativeHost {
   clone: (node: NativeNode) => NativeNode
   insert: (parent: NativeNode, node: NativeNode, before?: NativeNode | null) => void
   remove: (node: NativeNode) => void
+  descendants: (node: NativeNode) => NativeNode[]
+  scopesIn: (node: NativeNode) => string[]
   /** Register a node the native side already created, so the host can track it. */
   adopt: (node: NativeNode, type: string, owner?: NativeNode | null) => NativeNode
   /** Send whatever is pending now, rather than waiting for the scheduled flush. */
@@ -96,6 +98,8 @@ export const HOST_METHODS: readonly string[] = [
   'clone',
   'insert',
   'remove',
+  'descendants',
+  'scopesIn',
 ]
 
 export function createNativeHost(options: NativeHostOptions): NativeHost {
@@ -133,6 +137,23 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       records.set(node.__stxId, record)
     }
     return record
+  }
+
+  /** Every node under this one, read off the parentage the host recorded. */
+  function collectDescendants(node: NativeNode): NativeNode[] {
+    const out: NativeNode[] = []
+    const visit = (current: NativeNode): void => {
+      const record = records.get(current.__stxId)
+      if (!record)
+        return
+      for (const child of record.children) {
+        out.push(child)
+        visit(child)
+      }
+    }
+    if (node)
+      visit(node)
+    return out
   }
 
   function adopt(node: NativeNode, type: string, owner?: NativeNode | null): NativeNode {
@@ -283,6 +304,37 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         childId: node.__stxId,
         index,
       })
+    },
+
+    /*
+     * Teardown reaches a subtree by asking, not by searching.
+     *
+     * Both disposal paths in the runtime used to run a selector query -- one
+     * for every descendant, one for `[data-stx-scope]`. A view hierarchy has
+     * neither, and the host already recorded the parentage as the tree was
+     * built, so answering is a walk over its own map rather than a search.
+     *
+     * An anchor is included: it is a node the binding layer holds and hangs
+     * state on, even though it never becomes a view.
+     */
+    descendants: collectDescendants,
+
+    /*
+     * Scope IDS, not scope nodes: the only thing the runtime does with them is
+     * look the scope up in its own registry and delete it. Returning a node
+     * would make the caller ask it for its id, which is the attribute read
+     * this removes.
+     */
+    scopesIn(node) {
+      const ids: string[] = []
+      if (!node)
+        return ids
+      if (node.__stxScope !== undefined)
+        ids.push(node.__stxScope)
+      for (const child of collectDescendants(node))
+        if (child.__stxScope !== undefined)
+          ids.push(child.__stxScope)
+      return ids
     },
 
     remove(node) {

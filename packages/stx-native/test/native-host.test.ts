@@ -286,3 +286,97 @@ describe('batching', () => {
     expect(sent).toHaveLength(1)
   })
 })
+
+/**
+ * Teardown reaching a subtree, which was the last DOM assumption in the
+ * binding layer (#1984).
+ *
+ * Both disposal paths in the runtime ran a selector query -- one for every
+ * descendant, one for `[data-stx-scope]`. A view hierarchy has neither
+ * selectors nor attributes to match, so the host answers from the parentage it
+ * recorded while building the tree.
+ */
+describe('reaching a subtree without a selector', () => {
+  /** root > [a > [a1], b], plus an anchor, with a scope on `a`. */
+  function tree() {
+    const { host, ops, batches } = harness()
+    const root = host.adopt({ __stxId: 'root' }, 'View')
+    const a = host.adopt({ __stxId: 'a' }, 'View')
+    const a1 = host.adopt({ __stxId: 'a1' }, 'Text')
+    const b = host.adopt({ __stxId: 'b' }, 'Text')
+    host.insert(root, a)
+    host.insert(a, a1)
+    host.insert(root, b)
+    a.__stxScope = 'scope_a'
+    return { host, root, a, a1, b, ops, batches }
+  }
+
+  it('reports every node under one, depth first', () => {
+    const { host, root } = tree()
+    expect(host.descendants(root).map(node => node.__stxId)).toEqual(['a', 'a1', 'b'])
+  })
+
+  it('does not report the node itself', () => {
+    const { host, root, a } = tree()
+    expect(host.descendants(root).some(node => node.__stxId === 'root')).toBe(false)
+    expect(host.descendants(a).map(node => node.__stxId)).toEqual(['a1'])
+  })
+
+  it('reports nothing for a leaf', () => {
+    const { host, b } = tree()
+    expect(host.descendants(b)).toEqual([])
+  })
+
+  it('includes an anchor, which the binding layer holds even though it is not a view', () => {
+    const { host, root } = tree()
+    const anchor = host.anchor('stx-for')
+    host.insert(root, anchor)
+    expect(host.descendants(root).some(node => node.__stxId === anchor.__stxId)).toBe(true)
+  })
+
+  it('reports the scope ids in a subtree, this node included', () => {
+    const { host, root, a } = tree()
+    root.__stxScope = 'scope_root'
+    expect(host.scopesIn(root)).toEqual(['scope_root', 'scope_a'])
+    expect(host.scopesIn(a)).toEqual(['scope_a'])
+  })
+
+  it('reports ids, not nodes, because a node cannot be asked for its attribute', () => {
+    const { host, root } = tree()
+    for (const id of host.scopesIn(root))
+      expect(typeof id).toBe('string')
+  })
+
+  it('reads nothing off a node the host never adopted', () => {
+    const { host } = tree()
+    expect(host.descendants({ __stxId: 'ghost' })).toEqual([])
+    expect(host.scopesIn({ __stxId: 'ghost' })).toEqual([])
+  })
+
+  it('answers when the methods are taken off the host', () => {
+    // The runtime calls these as `stxHost.scopesIn(root)`, but nothing in the
+    // contract says it must: a method that needs `this` is a trap for the next
+    // caller, and this host's walk is a free function for that reason.
+    const { host, root } = tree()
+    const { descendants, scopesIn } = host
+    expect(descendants(root).map(node => node.__stxId)).toEqual(['a', 'a1', 'b'])
+    expect(scopesIn(root)).toEqual(['scope_a'])
+  })
+
+  it('stops reporting a node that was removed', () => {
+    const { host, root, a } = tree()
+    host.remove(a)
+    expect(host.descendants(root).map(node => node.__stxId)).toEqual(['b'])
+    expect(host.scopesIn(root)).toEqual([])
+  })
+
+  it('costs no bridge traffic, because it is a question and not a mutation', () => {
+    const { host, root, batches } = tree()
+    host.flush()
+    batches.length = 0
+    host.descendants(root)
+    host.scopesIn(root)
+    host.flush()
+    expect(batches).toEqual([])
+  })
+})

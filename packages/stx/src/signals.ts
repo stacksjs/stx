@@ -196,7 +196,39 @@ console.log('[stx] entering IIFE');
     anchor: function(label) { return document.createComment(label); },
     clone: function(node) { return node.cloneNode(true); },
     insert: function(parent, node, before) { parent.insertBefore(node, before); },
-    remove: function(node) { if (node.parentNode) node.parentNode.removeChild(node); }
+    remove: function(node) { if (node.parentNode) node.parentNode.removeChild(node); },
+
+    // Teardown needs to reach a subtree, and both ways of reaching one were
+    // selector queries -- the last DOM assumption left in the binding layer
+    // (#1984). A view hierarchy has no selectors, and a native host already
+    // knows what it built, so being asked is cheaper for it than searching is
+    // for the document.
+    //
+    // descendants() is every node under this one, for the per-node teardown
+    // state the runtime hangs off elements. scopesIn() is the scope IDS in the
+    // subtree, this node included -- ids and not nodes, because the only thing
+    // done with them is a lookup in window.stx._scopes.
+    descendants: function(node) {
+      var out = [];
+      if (!node || !node.querySelectorAll) return out;
+      var all = node.querySelectorAll('*');
+      for (var i = 0; i < all.length; i++) out.push(all[i]);
+      return out;
+    },
+    scopesIn: function(node) {
+      var ids = [];
+      if (!node) return ids;
+      var own = node.getAttribute && node.getAttribute('data-stx-scope');
+      if (own) ids.push(own);
+      if (node.querySelectorAll) {
+        var matches = node.querySelectorAll('[data-stx-scope]');
+        for (var i = 0; i < matches.length; i++) {
+          var id = matches[i].getAttribute('data-stx-scope');
+          if (id) ids.push(id);
+        }
+      }
+      return ids;
+    }
   };
 
   // Inject x-cloak CSS to prevent FOUC (Flash of Unstyled Content)
@@ -8601,11 +8633,7 @@ catch (e) {
   // Descendants first, then the root, the order cleanupContainer always used.
   function disposeSubtreeEffects(root) {
     if (!root) return;
-    var nodes = [];
-    if (root.querySelectorAll) {
-      var all = root.querySelectorAll('*');
-      for (var i = 0; i < all.length; i++) nodes.push(all[i]);
-    }
+    var nodes = stxHost.descendants(root);
     nodes.push(root);
     var owned = ['__stx_disposers', '__stx_effect_disposers', '__stx_if_disposers', '__stx_chain_disposers'];
     for (var n = 0; n < nodes.length; n++) {
@@ -8639,18 +8667,12 @@ catch (e) {
 
   function disposeSubtreeScopes(root) {
     if (!root || !window.stx || !window.stx._scopes) return;
-    // Build the list of nodes to inspect: root + descendants with the
-    // [data-stx-scope] attribute. Avoid Array.from on a generator since
-    // we want browser-broad compatibility from the minified runtime.
-    var nodes = [];
-    if (root.getAttribute && root.getAttribute('data-stx-scope')) nodes.push(root);
-    if (root.querySelectorAll) {
-      var matches = root.querySelectorAll('[data-stx-scope]');
-      for (var i = 0; i < matches.length; i++) nodes.push(matches[i]);
-    }
-    for (var n = 0; n < nodes.length; n++) {
-      var el = nodes[n];
-      var scopeId = el.getAttribute('data-stx-scope');
+    // The host reports which scopes live in this subtree: the document finds
+    // them with a selector, a native host reads the map it keeps as it builds
+    // views (#1984).
+    var scopeIds = stxHost.scopesIn(root);
+    for (var n = 0; n < scopeIds.length; n++) {
+      var scopeId = scopeIds[n];
       if (!scopeId) continue;
       var scopeVars = window.stx._scopes[scopeId];
       if (!scopeVars) continue;
