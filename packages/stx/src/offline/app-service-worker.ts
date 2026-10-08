@@ -141,14 +141,23 @@ function keepMedia(urls) {
       wanted.forEach(function (key) {
         chain = chain.then(function () {
           if (index[key]) { index[key].at = Date.now(); return; }
-          return fetch(key, { credentials: 'same-origin' }).then(function (response) {
-            if (response.status !== 200) return;
-            return response.blob().then(function (blob) {
-              var type = response.headers.get('Content-Type') || blob.type || 'application/octet-stream';
-              return cache.put(key, new Response(blob, { headers: { 'Content-Type': type, 'Content-Length': String(blob.size), 'Accept-Ranges': 'bytes' } })).then(function () {
-                index[key] = { bytes: blob.size, at: Date.now() };
+          // Already stored by the page (cacheMedia downloads while the app is
+          // open), so only its size is wanted. Otherwise fetched here.
+          return cache.match(key).then(function (stored) {
+            if (stored) return stored;
+            return fetch(key, { credentials: 'same-origin' }).then(function (response) {
+              if (response.status !== 200 || !response.body) return null;
+              var type = response.headers.get('Content-Type') || 'application/octet-stream';
+              // Streamed into the cache, never held whole: a coach's 300 MB
+              // upload read into one blob was enough for iOS to end the worker
+              // part way, and nothing was kept.
+              return cache.put(key, new Response(response.body, { headers: { 'Content-Type': type, 'Accept-Ranges': 'bytes' } })).then(function () {
+                return cache.match(key);
               });
             });
+          }).then(function (kept) {
+            if (!kept) return;
+            return kept.blob().then(function (blob) { index[key] = { bytes: blob.size, at: Date.now() }; });
           }).catch(function () {});
         });
       });

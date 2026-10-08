@@ -136,6 +136,34 @@ describe('media kept for offline', () => {
     expect(reply.kept.sort()).toEqual(['http://app.test/b.mp4', 'http://app.test/c.mp4'])
   })
 
+  it('keeps a video the page already stored without fetching it again', async () => {
+    let fetched = 0
+    const sw = runWorker({ enabled: true }, () => { fetched++; return null })
+    sw.stores.set('stx-media', new Map([[url, new Response(video, { status: 200, headers: { 'Content-Type': 'video/mp4' } })]]))
+    const reply = await sw.message({ type: 'stx:cache-media', urls: [url] })
+    expect(reply.kept).toEqual([url])
+    expect(fetched).toBe(0)
+    const part = await sw.request(url, { Range: 'bytes=0-9' })
+    expect(part!.headers.get('Content-Range')).toBe('bytes 0-9/1000')
+  })
+
+  it('streams a download into the cache rather than reading it whole', async () => {
+    let pulled = 0
+    const streamed = () => new Response(new ReadableStream({
+      pull(controller) {
+        if (pulled >= 4) return controller.close()
+        pulled++
+        controller.enqueue(new Uint8Array(250))
+      },
+    }), { status: 200, headers: { 'Content-Type': 'video/mp4' } })
+    const sw = runWorker({ enabled: true }, u => (u === url ? streamed() : null))
+    const reply = await sw.message({ type: 'stx:cache-media', urls: [url] })
+    expect(reply.kept).toEqual([url])
+    const whole = await sw.request(url)
+    expect((await whole!.arrayBuffer()).byteLength).toBe(1000)
+    expect(whole!.headers.get('Accept-Ranges')).toBe('bytes')
+  })
+
   it('forgets kept media on sign-out', async () => {
     const sw = runWorker({ enabled: true }, () => new Response(video, { status: 200 }))
     await sw.message({ type: 'stx:cache-media', urls: [url] })

@@ -19,14 +19,49 @@ export async function clearOfflineData(): Promise<void> {
   catch {}
 }
 
+/** The cache media is kept in, shared with the offline worker, which answers from it. */
+const MEDIA_CACHE = 'stx-media'
+
+/**
+ * Download what is not kept yet into the media cache, one at a time, each
+ * streamed to the device rather than held in memory.
+ *
+ * Done here, by the open page, rather than by the worker: iOS gives a
+ * service worker little time to finish what a message started, and a coach's
+ * long upload outlasted it, so videos were never kept. A page that is open
+ * has as long as it is open. A download cut short stores nothing, so the
+ * next call starts it again.
+ */
+async function downloadMedia(urls: string[]): Promise<void> {
+  if (typeof caches === 'undefined' || typeof fetch === 'undefined')
+    return
+  const cache = await caches.open(MEDIA_CACHE)
+  for (const url of urls) {
+    try {
+      if (await cache.match(url))
+        continue
+      const response = await fetch(url, { credentials: 'same-origin' })
+      if (response.status !== 200 || !response.body)
+        continue
+      await cache.put(url, new Response(response.body, {
+        headers: { 'Content-Type': response.headers.get('Content-Type') || 'application/octet-stream', 'Accept-Ranges': 'bytes' },
+      }))
+    }
+    catch {
+      // No network, or no room: the next call tries again.
+    }
+  }
+}
+
 /**
  * cacheMedia - keep videos (or audio) on the device so they play offline
  *
- * Asks the app's offline worker to download each URL whole and answer it
- * from the device from then on, seeking (Range requests) included. Already
- * kept files are not fetched again; past the worker's `mediaMaxBytes` the
- * oldest others are dropped. Resolves with the URLs kept, or [] where there is
- * no offline worker (offline not enabled, or a browser without one).
+ * Downloads each URL whole, streamed to the device, and from then on the
+ * app's offline worker answers it from there, seeking (Range requests)
+ * included. Already kept files are not fetched again; past the worker's
+ * `mediaMaxBytes` the oldest others are dropped. Resolves with the URLs kept,
+ * or [] where there is no offline worker (offline not enabled, or a web view
+ * without one: on iOS an app's web view gets one only for app-bound domains).
  *
  * Same-origin media only: a video another site serves (an embedded player)
  * is that site's to deliver.
@@ -43,11 +78,13 @@ export async function cacheMedia(urls: string[]): Promise<string[]> {
     const worker = registration && (registration.active || navigator.serviceWorker.controller)
     if (!worker || typeof MessageChannel === 'undefined')
       return []
+    const absolute = wanted.map(url => new URL(url, location.href).toString())
+    await downloadMedia(absolute)
     const channel = new MessageChannel()
     const answer = new Promise<string[]>((resolve) => {
       channel.port1.onmessage = event => resolve(Array.isArray(event.data?.kept) ? event.data.kept : [])
     })
-    worker.postMessage({ type: 'stx:cache-media', urls: wanted.map(url => new URL(url, location.href).toString()) }, [channel.port2])
+    worker.postMessage({ type: 'stx:cache-media', urls: absolute }, [channel.port2])
     return await answer
   }
   catch {
