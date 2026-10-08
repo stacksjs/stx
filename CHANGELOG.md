@@ -1,5 +1,33 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.401...v0.2.402)
+
+## ✨ Features
+
+- **signals**: a :for over server data runs on the server ([22ab190](https://github.com/stacksjs/stx/commit/22ab190)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2051](https://github.com/stacksjs/stx/issues/2051))
+
+## 🐛 Bug Fixes
+
+- **offline**: keep videos by streaming them to the device from the page ([297f6f8](https://github.com/stacksjs/stx/commit/297f6f8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **test**: let the kernel pick test ports, instead of a scheme that always collides ([3e69bbc](https://github.com/stacksjs/stx/commit/3e69bbc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **doctor**: report every installed copy, not just the one at the app root ([02b7871](https://github.com/stacksjs/stx/commit/02b7871)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2052](https://github.com/stacksjs/stx/issues/2052))
+- **expressions**: an escaped mustache in an attribute gets plain braces ([c71c7b5](https://github.com/stacksjs/stx/commit/c71c7b5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **expressions**: @{{ … }} renders the braces instead of evaluating them ([51aea2e](https://github.com/stacksjs/stx/commit/51aea2e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: the :for warning names the cause instead of guessing at signals ([be0f6c2](https://github.com/stacksjs/stx/commit/be0f6c2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2051](https://github.com/stacksjs/stx/issues/2051))
+
+## ✅ Tests
+
+- **color-mode**: drive respectExisting through a full serve render ([57890a9](https://github.com/stacksjs/stx/commit/57890a9)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2052](https://github.com/stacksjs/stx/issues/2052), [#2050](https://github.com/stacksjs/stx/issues/2050))
+
+## 🔧 Chores
+
+- release v0.2.402 ([a4b504b](https://github.com/stacksjs/stx/commit/a4b504b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.400...v0.2.401)
 
 ## ✨ Features
