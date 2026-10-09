@@ -381,12 +381,15 @@ export function buildDynamicRouteRegexes(fileRouteBase: string): RegExp[] {
   // `[username].stx` does not render a page for `/favicon.ico` or
   // `/wp-login.php`; catch-alls are exempt. The rule and its reasons live in
   // stx-router's file-requests.ts, shared with the client's owned routes.
+  // One pass for `[param]`: a second `.replace` would read the guard's own
+  // `[^/]` as a `[param]` and rewrite it.
+  const paramGroup = (param: string, _name: string, offset: number, whole: string): string => {
+    const last = offset + param.length === whole.length
+    return last ? `${FILE_SEGMENT_GUARD}([^/]+)` : '([^/]+)'
+  }
   const toPattern = (p: string): string => p
     .replace(/\[\.\.\.([^\]]+)\]/g, '(.+)')
-    // One pass: a second `.replace` would read the guard's own `[^/]` as a
-    // `[param]` and rewrite it.
-    .replace(/\[([^\]]+)\]/g, (param, _name, offset, whole) =>
-      offset + param.length === whole.length ? `${FILE_SEGMENT_GUARD}([^/]+)` : '([^/]+)')
+    .replace(/\[([^\]]+)\]/g, paramGroup)
     .replace(/\//g, '\\/')
 
   const patterns: RegExp[] = [new RegExp(`^${toPattern(fileRouteBase)}$`)]
@@ -3776,9 +3779,11 @@ function __stxOverlay(errs){
               // the site lives: send the visitor there, so they browse (and
               // sign in) on one origin. Assets, /api and public files stay.
               else if (req.method === 'GET' || req.method === 'HEAD') {
-                const location = resolveDomainElsewhere(requestHost(req), original.pathname, original.search, domainRoutes, pathname =>
-                  pathname.startsWith('/api/') || pathname.startsWith('/_stx/') || pathname.startsWith('/.well-known/')
-                  || isStaticAssetPath(pathname) || publicFileExists(pathname, publicDir))
+                const staysHere = (pathname: string): boolean => {
+                  return pathname.startsWith('/api/') || pathname.startsWith('/_stx/') || pathname.startsWith('/.well-known/')
+                    || isStaticAssetPath(pathname) || publicFileExists(pathname, publicDir)
+                }
+                const location = resolveDomainElsewhere(requestHost(req), original.pathname, original.search, domainRoutes, staysHere)
                 if (location) {
                   // The client router cannot follow a cross-origin redirect
                   // (its X-STX-Router header makes the follow fail CORS), so
