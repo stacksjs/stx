@@ -548,6 +548,29 @@ const stored = globalThis.craft.storage.getSync('k')
     expect(typeof app.scope.craft.storage.get).toBe('function')
   })
 
+  it('passes a ScrollView\'s sticky headers and scroll target through as values', async () => {
+    const { code } = await compile(`<script>
+let target = null
+let taps = 0
+function pick(day) { target = { id: 'day-' + day, key: ++taps } }
+</script>
+<template>
+  <ScrollView testID="list" stickyHeaderIndices={[0]} scrollTarget={target}>
+    <View testID="strip"><Text testID="tue" onPress={pick('tue')}>Tue</Text></View>
+    <View testID="day-tue"><Text>Tuesday</Text></View>
+  </ScrollView>
+</template>`)
+    const app = host(code)
+    expect(app.byTestID('list')!.props.stickyHeaderIndices).toEqual([0])
+    expect(app.byTestID('list')!.props.scrollTarget).toBeNull()
+    app.press(app.byTestID('tue'))
+    await tick()
+    expect(app.byTestID('list')!.props.scrollTarget).toEqual({ id: 'day-tue', key: 1 })
+    app.press(app.byTestID('tue'))
+    await tick()
+    expect(app.byTestID('list')!.props.scrollTarget).toEqual({ id: 'day-tue', key: 2 })
+  })
+
   it('emits rounded-[Npx] and tracking-[…] as plain point numbers', () => {
     const style = compileHeadwindToStyle('text-[13px] rounded-[10px] tracking-[0.05em] tracking-[1px]')
     expect(style.borderRadius).toBe(10)

@@ -76,6 +76,7 @@ function open(id: string) { craft.navigation.push('Session', { id }) }
 - **Handlers** are code: `onPress={refresh}`, `onPress={open(item.id)}`, `@click="select(day)"`, `() => …`, or statements (`@click="count++"`). `$event` is the native event. Inside a FlatList row or a `:for`, handlers see that row's variables.
 - **Scripts** are TypeScript and may import from the project; each screen is bundled with `Bun.build`. Pass `--minify` for a smaller bundle.
 - **Icons:** `<Icon symbol="sun.max" />`, `<Icon name="sun" />` or `<Icon class="i-lucide-sun w-5 h-5 text-amber-400" />` draw SF Symbols. Iconify names are mapped by `src/compiler/icons.ts`; unknown names compile to `circle` with a warning.
+- **Sticky headers and scroll targets:** `<ScrollView stickyHeaderIndices={[0]} scrollTarget={target}>` keeps the first child at the top once scrolled to (as in React Native), and scrolls the view whose `testID` is `target.id` to the top, below that header, whenever `target` changes (`{ id, key, animated }`; a new `key` scrolls again). Craft's iOS host draws both.
 - **Navigation bar:** `craft.navigation.setOptions({ title, largeTitle, hidden, backTitle, rightButtons: [{ id, symbol, onPress }] })`, with taps also delivered to `craft.navigation.onButton(cb)`.
 
 Template expressions are compiled into real functions in the screen's module (nothing is `eval`ed on the device), and an expression that throws renders as empty and is logged rather than blanking the screen.

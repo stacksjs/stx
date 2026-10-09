@@ -91,6 +91,14 @@ export interface ScrollViewProps extends ViewProps {
   keyboardDismissMode?: 'none' | 'on-drag' | 'interactive'
   /** Refresh control */
   refreshControl?: RefreshControlProps
+  /** Content children (by index) that stay at the top once scrolled to, each pushed up by the next (Craft iOS) */
+  stickyHeaderIndices?: number[]
+  /**
+   * Scrolls the view with this `testID` to the top of the visible area, below
+   * a sticky header, whenever the value changes; a new `key` scrolls to the
+   * same view again (Craft iOS).
+   */
+  scrollTarget?: string | { id: string, key?: string | number, animated?: boolean } | null
   /** Paging enabled */
   pagingEnabled?: boolean
   /** Scroll enabled */
