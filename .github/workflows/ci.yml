@@ -106,14 +106,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Pantry
-        uses: home-lang/pantry/packages/action@main
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2.2.0
 
       - name: Install Dependencies
         run: bun install
 
       - name: Build
         run: bun run build
+
+      # After the install, not before: the action unpacks its tools into
+      # ./pantry inside the checkout, and `bun install` then walks into it
+      # (the workspace globs' `dist/**` negations make Bun scan the whole
+      # tree) and fails on a package.json there with no name.
+      - name: Setup Pantry
+        uses: home-lang/pantry/packages/action@main
 
       - name: Publish Commit
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
