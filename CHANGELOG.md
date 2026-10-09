@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.414...v0.2.415)
+
+## 🐛 Bug Fixes
+
+- **images**: one delivery catalog per process, whichever copy of stx asks ([9176884](https://github.com/stacksjs/stx/commit/9176884)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.415 ([5136161](https://github.com/stacksjs/stx/commit/5136161)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.413...v0.2.414)
 
 ## ♻️ Code Refactoring
