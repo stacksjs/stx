@@ -1,12 +1,31 @@
 <script server>
-export const src = $props.src || ''
-export const srcSet = $props.srcSet || ''
-export const sizes = $props.sizes || ''
+import { deliveredImage } from '@stacksjs/stx'
+
 export const webpSrc = $props.webpSrc || ''
 export const webpSrcSet = $props.webpSrcSet || ''
+
+/**
+ * The optimized variants stx prepared for this image, unless the caller wrote
+ * sources of their own.
+ *
+ * A dev server or build that serves the public directory encodes every local
+ * raster into AVIF and WebP at several widths. stx's builtin `<StxImage>` reads
+ * that catalog itself; this component used to ignore it. Since stx registers
+ * this package on its own whenever it is installed, this `<Image>` is the one
+ * a bare `<Image>` tag resolves to, and every image in the app went out as the
+ * original full-size file.
+ */
+const delivered = !$props.srcSet && !webpSrc && !webpSrcSet ? deliveredImage($props.src || '') : undefined
+
+export const src = delivered ? delivered.src : ($props.src || '')
+export const srcSet = delivered ? delivered.srcset : ($props.srcSet || '')
+// Width descriptors mean nothing without `sizes`; 100vw is what a browser
+// assumes anyway, said out loud.
+export const sizes = $props.sizes || (delivered ? '100vw' : '')
+export const sources = delivered ? delivered.sources : []
 export const alt = $props.alt || ''
-export const width = $props.width
-export const height = $props.height
+export const width = $props.width || delivered?.width
+export const height = $props.height || delivered?.height
 export const priority = $bool($props.priority)
 export const lazy = priority ? false : $bool($props.lazy, true)
 export const decoding = $props.decoding || 'async'
@@ -21,7 +40,7 @@ export const fetchpriority = priority ? 'high' : ($props.fetchpriority || 'auto'
  * through anything transparent in it and stays there once it has loaded,
  * which is a permanent artefact on every PNG with an alpha channel.
  */
-export const placeholder = $props.placeholder || ''
+export const placeholder = $props.placeholder || (delivered?.placeholder ? `url("${delivered.placeholder}")` : '')
 export const aspectRatio = $props.aspectRatio
 export const objectFit = $props.objectFit || 'cover'
 export const objectPosition = $props.objectPosition || 'center'
@@ -89,6 +108,9 @@ export const imageStyle = [
 </script>
 
 <picture class="{{ className }}" style="{{ frameStyle }}">
+  @foreach(sources as source)
+    <source type="{{ source.type }}" srcset="{{ source.srcset }}" sizes="{{ sizes }}" />
+  @endforeach
   @if(hasWebP)
     <source
       type="image/webp"

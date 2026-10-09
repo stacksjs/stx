@@ -404,6 +404,65 @@ export function isTransparentImage(src: string): boolean {
   return key ? transparentSources.has(key) : false
 }
 
+/**
+ * The modern-format `<source>` families worth offering for a delivered image,
+ * smallest first.
+ *
+ * A modern extension is not automatically an optimization. Browsers use the
+ * first supported `<source>`, so any family that costs at least as much as the
+ * fallback is left out.
+ */
+export function efficientDeliverySources(delivery: ImageDeliveryManifest): Array<{ format: 'avif' | 'webp', srcset: string }> {
+  const bytesByFormat = (format: string) => delivery.variants
+    .filter(variant => variant.format === format)
+    .reduce((total, variant) => total + variant.bytes, 0)
+  const fallbackBytes = bytesByFormat(delivery.fallback.format)
+
+  return (['avif', 'webp'] as const)
+    .map(format => ({ format, srcset: delivery.sources[format] || '', bytes: bytesByFormat(format) }))
+    .filter(candidate => candidate.srcset && candidate.bytes > 0 && candidate.bytes < fallbackBytes)
+    .sort((a, b) => a.bytes - b.bytes)
+    .map(({ format, srcset }) => ({ format, srcset }))
+}
+
+/** What a component needs to render one delivered image. */
+export interface DeliveredImage {
+  /** The fallback variant's URL, for `<img src>`. */
+  src: string
+  /** The fallback format at every width, for `<img srcset>`. */
+  srcset: string
+  /** `<source>` elements to put ahead of the `<img>`, smallest family first. */
+  sources: Array<{ type: string, srcset: string }>
+  width: number
+  height: number
+  /** A data URL of the image's own preview, absent for a transparent image. */
+  placeholder?: string
+}
+
+/**
+ * The optimized variants of a public image, ready for markup.
+ *
+ * `<StxImage>` renders from the catalog directly. A component that draws its
+ * own markup (the `<Image>` in @stacksjs/components) reads it through this, so
+ * an app gets the same responsive variants whichever `<Image>` resolves.
+ * Undefined when the image is not in the catalog: remote, an SVG, or a server
+ * that has not prepared delivery.
+ */
+export function deliveredImage(src: string): DeliveredImage | undefined {
+  const delivery = getImageDelivery(src)
+  if (!delivery)
+    return undefined
+
+  return {
+    src: delivery.fallback.url,
+    srcset: delivery.sources[delivery.fallback.format] || '',
+    sources: efficientDeliverySources(delivery).map(({ format, srcset }) => ({ type: `image/${format}`, srcset })),
+    width: delivery.source.width,
+    height: delivery.source.height,
+    placeholder: isTransparentImage(src) ? undefined : delivery.placeholder?.dataUrl,
+  }
+}
+
 /** Clear process-global delivery state between builds and tests. */
 export function clearImageDeliveryCatalog(): void {
   deliveryCatalog = new Map()

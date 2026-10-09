@@ -46,6 +46,18 @@ Native `loading="lazy"`, so it works with scripts disabled.
 />
 ```
 
+### Optimized local images
+
+A local raster under the public directory needs nothing extra. The stx dev
+server and build encode it into AVIF and WebP at several widths, and `<Image>`
+serves those variants, with the image's intrinsic size and a preview of its own
+pixels behind it while it loads. Passing `srcSet`, `webpSrc` or `webpSrcSet`
+opts out: your sources are used as written.
+
+```stx
+<Image src="/images/hero.jpg" alt="Hero" sizes="(min-width: 1024px) 50vw, 100vw" />
+```
+
 ### Aspect Ratio
 
 ```stx

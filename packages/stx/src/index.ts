@@ -117,8 +117,10 @@ export {
 } from './builtins/image-placeholder'
 export {
   clearImageDeliveryCatalog,
+  deliveredImage,
   getImageDelivery,
   prepareImageDelivery,
+  type DeliveredImage,
 } from './builtins/image-delivery'
 
 // Core functionality - these are the primary modules
