@@ -71,7 +71,7 @@
   "devDependencies": {
     "@types/bun": "^1.4.2",
     "bun-plugin-dtsx": "^0.21.17",
-    "pickier": "^0.1.65",
+    "pickier": "^0.1.68",
     "typescript": "^7.0.2"
   }
 }
