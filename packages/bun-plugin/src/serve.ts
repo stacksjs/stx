@@ -26,6 +26,11 @@ import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { extractLayoutMetadata } from 'stx-router/layout-metadata'
 import { actionRedirectResponse, compressResponse, runPageAction as sharedRunPageAction } from '@stacksjs/stx'
+import { compileDomainRoutes, describeDomainRoutes, requestHost, resolveDomainRoute } from './domain-routes'
+import type { DomainRoutesOption } from './domain-routes'
+
+export { compileDomainRoutes, describeDomainRoutes, matchDomain, requestHost, resolveDomainRoute } from './domain-routes'
+export type { DomainRoute, DomainRoutesOption } from './domain-routes'
 import { runPageMiddleware } from './page-middleware'
 import type { MiddlewareContext, MiddlewareHandler, MiddlewareRequest, PageMiddleware, PrepareMiddlewareRequest } from './page-middleware'
 
@@ -1091,6 +1096,22 @@ export interface ServeOptions {
   | Promise<Response | Record<string, unknown> | null | undefined>
 
   /**
+   * Hosts whose home page is a page of the site.
+   *
+   * ```ts
+   * domains: { '{username}.example.com': '/{username}' }
+   * ```
+   *
+   * `chris.example.com/` renders what `example.com/chris` renders — the same
+   * file route and params — while the address bar keeps the host. Only the
+   * root is routed; every other path on the host is the site's own. A label
+   * written `{name}` matches one DNS label. See `domain-routes.ts`.
+   *
+   * Falls back to `server.domains` in `stx.config.ts`.
+   */
+  domains?: DomainRoutesOption
+
+  /**
    * Custom response handler, run once on the finished response — the mirror
    * of `onRequest`, and the only place a caller can touch a response the
    * server itself produced (a rendered page, a static asset, a 404).
@@ -1476,6 +1497,10 @@ export async function serve(options: ServeOptions): Promise<void> {
   const fallbackComponentsDir = options.fallbackComponentsDir ?? stxConfig.fallbackComponentsDir
   const partialsDir = options.partialsDir ?? stxConfig.partialsDir ?? defaultStxConfig.partialsDir
   const publicDir = options.publicDir ?? stxConfig.publicDir ?? 'public'
+  // Compiled once: a request only walks the list.
+  const domainRoutes = compileDomainRoutes(options.domains ?? (stxConfig as any).server?.domains, message => console.warn(message))
+  if (domainRoutes.length)
+    console.log(`[stx] domain routes: ${describeDomainRoutes(domainRoutes)}`)
 
   // Derive image placeholders for <StxImage>, which reads them synchronously
   // because a builtin renders in a synchronous pass. Two things have to be true
@@ -3722,6 +3747,21 @@ function __stxOverlay(errs){
           // this handler rather than the one that happens to converge. Hot reload
           // streams over text/event-stream, which compressResponse never buffers.
           return compressResponse(req, await (async () => {
+            // Domain routes first, before anything else reads the path: the
+            // root of a routed host is that page, for every step below —
+            // middleware, onRequest, the route table — exactly as if its own
+            // path had been asked for. See domain-routes.ts.
+            if (domainRoutes.length) {
+              const original = new URL(req.url)
+              const routed = resolveDomainRoute(requestHost(req), original.pathname, domainRoutes)
+              if (routed) {
+                original.pathname = routed
+                const headers = new Headers(req.headers)
+                headers.set('x-stx-domain-route', requestHost(req))
+                req = new Request(original, { headers, method: req.method, body: req.body, redirect: req.redirect, duplex: 'half' } as RequestInit)
+              }
+            }
+
             const url = new URL(req.url)
             let path = url.pathname
 
