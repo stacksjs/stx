@@ -93,8 +93,21 @@ function stripRouterLogs(source: string): string {
 
 function minifyRouterScript(source: string, mangle = false): string {
   try {
+    /*
+     * `minify` is cast because bun-types does not declare it on
+     * TranspilerOptions, only on BuildConfig. The runtime does support it, and
+     * it is the ONLY form that mangles identifiers -- measured on this Bun:
+     *
+     *   minify: { whitespace, identifiers }   59 bytes, identifiers mangled
+     *   minifyWhitespace: true               221 bytes, not mangled
+     *   minifyIdentifiers: true              221 bytes, SILENTLY IGNORED
+     *
+     * So the obvious way to satisfy the compiler -- swapping in
+     * `minifyIdentifiers` -- would drop mangling without any error, and the
+     * router script is within a kilobyte of its size budget.
+     */
     const transpiler = new Bun.Transpiler(mangle
-      ? { loader: 'js', minify: { whitespace: true, identifiers: true } }
+      ? { loader: 'js', minify: { whitespace: true, identifiers: true } } as ConstructorParameters<typeof Bun.Transpiler>[0]
       : { loader: 'js', minifyWhitespace: true })
     return transpiler.transformSync(source)
       .replace(/\}(var |let |const |function )/g, '};$1')
