@@ -21,9 +21,10 @@
  * ```
  */
 
-import type { STXNode, STXDocument, STXStyle, STXComponentType } from './ir'
+import type { STXNode, STXDocument, STXStyle, STXComponentType, STXDirectives } from './ir'
 import { createNode, createDocument } from './ir'
-import { compileHeadwindToStyle } from './headwind-to-style'
+import { compileClassStyles } from './headwind-to-style'
+import { iconClassIn, resolveIconName } from './icons'
 
 // ============================================================================
 // Tokenizer Types
@@ -60,6 +61,8 @@ class Lexer {
   private line = 1
   private column = 1
   private inTag = false
+  /** `<template>` wrappers are skipped; `<template :if>` fragments are kept. */
+  private templates: boolean[] = []
 
   constructor(input: string) {
     this.input = input
@@ -104,7 +107,10 @@ class Lexer {
       if (contentEnd === -1) throw new Error(`Unclosed <script> block at line ${startLine}`)
 
       const value = this.input.slice(contentStart, contentEnd).trim()
+      const attributes = this.input.slice(this.pos + 7, contentStart - 1)
       this.advance(contentEnd - this.pos + closeTag.length)
+      // `<script server>` runs on a web server; a native screen has none.
+      if (/\bserver\b/.test(attributes)) return null
       return { type: 'SCRIPT_BLOCK', value, line: startLine, column: startColumn }
     }
 
@@ -120,12 +126,17 @@ class Lexer {
       return { type: 'STYLE_BLOCK', value, line: startLine, column: startColumn }
     }
 
-    // Template block markers (skip, parse contents)
+    // Template block markers (skip, parse contents). A template with
+    // attributes is a fragment (`<template :if="ready">`) and stays a tag.
     if (this.match('<template>')) {
+      this.templates.push(false)
       this.advance(10)
       return null
     }
-    if (this.match('</template>')) {
+    if (this.match('<template')) {
+      this.templates.push(true)
+    }
+    if (this.match('</template>') && this.templates.pop() !== true) {
       this.advance(11)
       return null
     }
@@ -163,6 +174,16 @@ class Lexer {
       return { type: 'TAG_END', value: '>', line: startLine, column: startColumn }
     }
 
+    // Expression: {{ expression }}, as stx and Vue write it in text.
+    if (!this.inTag && this.match('{{')) {
+      const end = this.input.indexOf('}}', this.pos + 2)
+      if (end !== -1) {
+        const value = this.input.slice(this.pos + 2, end)
+        this.advance(end - this.pos + 2)
+        return { type: 'EXPRESSION', value: value.trim(), line: startLine, column: startColumn }
+      }
+    }
+
     // Expression: {expression}
     if (this.peek() === '{') {
       this.advance(1)
@@ -190,11 +211,12 @@ class Lexer {
         let attrValue: string
         let raw: string | undefined
 
-        if (this.peek() === '"') {
-          // String attribute: name="value"
+        if (this.peek() === '"' || this.peek() === '\'') {
+          // String attribute: name="value" or name='value'
+          const quote = this.peek()
           this.advance(1)
           attrValue = ''
-          while (this.peek() !== '"' && this.pos < this.input.length) {
+          while (this.peek() !== quote && this.pos < this.input.length) {
             attrValue += this.peek()
             this.advance(1)
           }
@@ -243,7 +265,8 @@ else {
       this.advance(1)
     }
 
-    if (text.trim()) {
+    // A space between two expressions on one line (`{a} {b}`) is text too.
+    if (text.trim() || (text && !text.includes('\n'))) {
       return { type: 'TEXT', value: text, line: startLine, column: startColumn }
     }
 
@@ -312,6 +335,7 @@ interface ParseContext {
   scriptCode: string
   exports: Record<string, unknown>
   functions: string[]
+  warnings: string[]
 }
 
 class Parser {
@@ -325,6 +349,7 @@ class Parser {
       scriptCode: '',
       exports: {},
       functions: [],
+      warnings: [],
     }
   }
 
@@ -342,7 +367,7 @@ class Parser {
       throw new Error('No root element found in template')
     }
 
-    return createDocument(
+    const document = createDocument(
       root,
       {
         exports: this.ctx.exports,
@@ -354,6 +379,8 @@ class Parser {
         compiledAt: Date.now(),
       }
     )
+    if (this.ctx.warnings.length) document.meta.warnings = [...new Set(this.ctx.warnings)]
+    return document
   }
 
   private extractScriptBlocks(): void {
@@ -427,15 +454,15 @@ catch {
     this.advance()
 
     // Parse attributes
-    const { props, style, events, classes } = this.parseAttributes()
+    const attributes = this.parseAttributes(tagName, token.line)
+    const { props, style, events } = attributes
 
     // Check for self-closing or tag end
     const nextToken = this.peek()
     if (nextToken.type === 'TAG_SELF_CLOSE') {
       this.advance()
       const node = createNode(tagName, props, style, events, [])
-      node._classes = classes
-      node._source = source
+      this.finishNode(node, attributes, source)
       return node
     }
 
@@ -490,19 +517,71 @@ catch {
     }
 
     const node = createNode(tagName, props, style, events, children)
-    node._classes = classes
-    node._source = source
+    this.finishNode(node, attributes, source)
     return node
   }
 
-  private parseAttributes(): {
-    props: Record<string, unknown>
-    style: STXStyle
-    events: Record<string, string>
-    classes: string
-  } {
+  private finishNode(node: STXNode, attributes: ParsedAttributes, source: STXNode['_source']): void {
+    if (typeof node.props.__text === 'string') {
+      node.children = [`{${node.props.__text}}`]
+      delete node.props.__text
+    }
+    normalizeWhitespace(node)
+    if (attributes.classes) node._classes = attributes.classes
+    node._source = source
+    if (attributes.darkStyle) node.darkStyle = attributes.darkStyle
+    if (Object.keys(attributes.directives).length) node.directives = attributes.directives
+    if (Object.keys(attributes.bindings).length) node.bindings = attributes.bindings
+    if (attributes.numberOfLines !== undefined && node.props.numberOfLines === undefined)
+      node.props.numberOfLines = attributes.numberOfLines
+    if (node.type === 'Icon') this.finishIcon(node, attributes.icon)
+  }
+
+  /**
+   * `<Icon>`: a symbol, an Iconify name, or an Iconify class, all ending as
+   * an SF Symbol name in `props.symbol`. Expressions are left for the runtime,
+   * which maps them with the same table.
+   */
+  private finishIcon(node: STXNode, iconClass: string | undefined): void {
+    const props = node.props
+    const isExpression = (value: unknown) => typeof value === 'string' && /\{[^}]*\}/.test(value)
+    if (props.size !== undefined) {
+      const size = Number(props.size)
+      if (Number.isFinite(size)) {
+        node.style.width ??= size
+        node.style.height ??= size
+        delete props.size
+      }
+    }
+    node.children = []
+    if (props.symbol !== undefined) {
+      delete props.name
+      return
+    }
+    const name = props.name ?? props.icon ?? iconClass
+    delete props.icon
+    if (name === undefined) {
+      if (!node.bindings?.class)
+        this.ctx.warnings.push(`<Icon> without symbol, name or an i-* class in ${this.ctx.source}; drawn as circle`)
+      return
+    }
+    if (isExpression(name)) {
+      props.name = name
+      return
+    }
+    delete props.name
+    const icon = resolveIconName(String(name))
+    props.symbol = icon.symbol
+    if (icon.iconify) props.iconify = icon.iconify
+    if (!icon.known)
+      this.ctx.warnings.push(`Unknown icon ${name} in ${this.ctx.source}; drawn as ${icon.symbol}`)
+  }
+
+  private parseAttributes(tagName: string, line: number): ParsedAttributes {
     const props: Record<string, unknown> = {}
     const events: Record<string, string> = {}
+    const directives: STXDirectives = {}
+    const bindings: Record<string, string> = {}
     let classes = ''
     let inlineStyle: STXStyle = {}
 
@@ -510,45 +589,88 @@ catch {
       const token = this.peek()
       this.advance()
 
-      const [name, ...valueParts] = token.value.split('=')
+      const [rawName, ...valueParts] = token.value.split('=')
       const value = valueParts.join('=') // Handle = in values
+      // `x-bind:foo` and `:foo` are one binding; `x-on:click` and `@click` one event.
+      const name = rawName.startsWith('x-bind:') ? `:${rawName.slice(7)}` : rawName.startsWith('x-on:') ? `@${rawName.slice(5)}` : rawName
+      const bound = name.startsWith(':') || (name.startsWith('x-') && name !== 'x-cloak')
+      const binding = bound ? (name.startsWith(':') ? name.slice(1) : name.slice(2)) : ''
+      const boolean = !token.raw && value === 'true' && !token.value.endsWith('="true"')
+
+      // Structural directives: `:if`, `:else-if`, `:else`, `:for`, `:show`.
+      if (bound && binding === 'if') { directives.if = value; continue }
+      if (bound && (binding === 'else-if' || binding === 'elseif')) { directives.elseIf = value; continue }
+      if (bound && binding === 'else') { directives.else = true; continue }
+      if (bound && binding === 'show') { directives.show = value; continue }
+      if (bound && binding === 'for') {
+        const loop = parseForExpression(value)
+        if (!loop) throw new Error(`Cannot read :for="${value}" at line ${line}: expected "item in items" or "(item, index) in items"`)
+        directives.for = loop
+        continue
+      }
+      if (bound && binding === 'key') { props.key = `{${value}}`; continue }
+      if (bound && binding === 'text') { props.__text = value; continue }
+      if (name === 'x-cloak' || name === 'x-data') continue
 
       // Handle class attribute
-      if (name === 'class' || name === 'className') {
-        classes = value
+      if (name === 'class' || name === 'className' || (bound && (binding === 'class' || binding === 'className'))) {
+        if (bound || token.raw) bindings.class = value
+        else classes = classes ? `${classes} ${value}` : value
         continue
       }
 
       // Handle style attribute
-      if (name === 'style') {
+      if (name === 'style' || (bound && binding === 'style')) {
+        if (bound) {
+          bindings.style = value
+          continue
+        }
+        if (token.raw) {
+          try {
+            inlineStyle = { ...inlineStyle, ...JSON.parse(value) }
+          }
+          catch {
+            // `style={{ flex: 1 }}` and `style={tone}` are code: the runtime
+            // evaluates them in the screen's scope.
+            bindings.style = value
+          }
+          continue
+        }
         // Parse inline style object
         try {
           if (value.startsWith('{') && value.endsWith('}')) {
-            inlineStyle = JSON.parse(value)
+            inlineStyle = { ...inlineStyle, ...JSON.parse(value) }
           }
-else {
-            inlineStyle = JSON.parse(`{${value}}`)
+          else {
+            inlineStyle = { ...inlineStyle, ...JSON.parse(`{${value}}`) }
           }
         }
-catch {
+        catch {
           // If not valid JSON, try to parse as CSS-in-JS
-          inlineStyle = this.parseCSSInJS(value)
+          inlineStyle = { ...inlineStyle, ...this.parseCSSInJS(value) }
         }
         continue
       }
 
-      // Handle event handlers (onPress, onClick, @click, etc.)
-      if (name.startsWith('on') || name.startsWith('@')) {
-        const eventName = name.startsWith('@')
-          ? `on${name.slice(1).charAt(0).toUpperCase()}${name.slice(2)}`
-          : name
-        events[eventName] = value
+      // Handle event handlers (onPress, onClick, @click, etc.). The value is
+      // code: a function (`onPress={refresh}`), a call with arguments
+      // (`onPress={open(item.id)}`, `@click="select(day)"`), an arrow, or a
+      // statement (`@click="count++"`).
+      if ((/^on[A-Z]/.test(name) && !NOT_EVENTS.has(name)) || name.startsWith('@')) {
+        const eventName = name.startsWith('@') ? nativeEventName(name.slice(1)) : name
+        if (!boolean) events[eventName] = value
         continue
       }
 
       // Handle key prop
       if (name === 'key') {
         props.key = token.raw ?? value
+        continue
+      }
+
+      // `:prop="expr"` is `prop={expr}`.
+      if (bound) {
+        props[binding] = `{${value}}`
         continue
       }
 
@@ -568,18 +690,30 @@ catch {
       try {
         props[name] = JSON.parse(value)
       }
-catch {
+      catch {
         props[name] = value
       }
     }
 
-    // Compile Headwind classes to style object
-    const headwindStyle = classes ? compileHeadwindToStyle(classes) : {}
+    // Compile Headwind classes to style object, `dark:` kept apart
+    const compiled = classes ? compileClassStyles(classes) : null
+    if (compiled && compiled.unknown.length)
+      this.ctx.warnings.push(`Classes with no native style on <${tagName}> at line ${line}: ${compiled.unknown.join(' ')}`)
 
     // Merge headwind style with inline style (inline takes precedence)
-    const style = { ...headwindStyle, ...inlineStyle }
+    const style = { ...(compiled?.style ?? {}), ...inlineStyle }
 
-    return { props, style, events, classes }
+    return {
+      props,
+      style,
+      events,
+      classes,
+      directives,
+      bindings,
+      darkStyle: compiled?.dark,
+      numberOfLines: compiled?.numberOfLines,
+      icon: compiled?.icon ?? (classes ? iconClassIn(classes) : undefined),
+    }
   }
 
   private parseCSSInJS(value: string): STXStyle {
@@ -633,6 +767,144 @@ catch {
   }
 }
 
+/**
+ * Text as HTML renders it: runs of whitespace are one space, and the edges of
+ * a node's text are trimmed. A container with elements keeps no
+ * whitespace-only strings, since those are indentation, not words.
+ */
+function normalizeWhitespace(node: STXNode): void {
+  const hasElements = node.children.some(child => typeof child !== 'string')
+  let children = node.children
+    .map(child => (typeof child === 'string' && !/^\{[\s\S]*\}$/.test(child) ? child.replace(/\s+/g, ' ') : child))
+    .filter(child => !(hasElements && typeof child === 'string' && !child.trim()))
+  if (!hasElements && children.length) {
+    const first = children[0]
+    const last = children[children.length - 1]
+    if (typeof first === 'string') children[0] = first.replace(/^\s+/, '')
+    if (typeof last === 'string') children[children.length - 1] = (children[children.length - 1] as string).replace(/\s+$/, '')
+    children = children.filter(child => child !== '')
+  }
+  node.children = children
+}
+
+interface ParsedAttributes {
+  props: Record<string, unknown>
+  style: STXStyle
+  events: Record<string, string>
+  classes: string
+  directives: STXDirectives
+  bindings: Record<string, string>
+  darkStyle?: STXStyle
+  numberOfLines?: number
+  icon?: string
+}
+
+/** Props that start with `on` and are values, not handlers. */
+const NOT_EVENTS = new Set(['onEndReachedThreshold'])
+
+/** Web event names as the native renderers dispatch them. */
+const NATIVE_EVENT_NAMES: Record<string, string> = {
+  click: 'onPress',
+  press: 'onPress',
+  tap: 'onPress',
+  longpress: 'onLongPress',
+  contextmenu: 'onLongPress',
+  input: 'onChangeText',
+  change: 'onChange',
+  focus: 'onFocus',
+  blur: 'onBlur',
+  submit: 'onSubmitEditing',
+  scroll: 'onScroll',
+  refresh: 'onRefresh',
+  close: 'onRequestClose',
+  layout: 'onLayout',
+}
+
+/** `@click.prevent` to `onPress`; anything unmapped to `onName`. */
+function nativeEventName(spelling: string): string {
+  const [base] = spelling.split('.')
+  return NATIVE_EVENT_NAMES[base.toLowerCase()] ?? `on${base.charAt(0).toUpperCase()}${base.slice(1)}`
+}
+
+/**
+ * `item in items`, `(item, index) in items`, `item of items`, and stx's
+ * `items as item` / `items as index => item`.
+ */
+export function parseForExpression(value: string): STXDirectives['for'] | null {
+  const trimmed = value.trim()
+  const inForm = /^\(?\s*([$\w]+)\s*(?:,\s*([$\w]+)\s*)?\)?\s+(?:in|of)\s+([\s\S]+)$/.exec(trimmed)
+  if (inForm) return { item: inForm[1], index: inForm[2], source: inForm[3].trim() }
+  const asForm = /^([\s\S]+?)\s+as\s+(?:([$\w]+)\s*=>\s*)?([$\w]+)$/.exec(trimmed)
+  if (asForm) return { item: asForm[3], index: asForm[2], source: asForm[1].trim() }
+  return null
+}
+
+/** The `(…)` after a directive, with nested parentheses and strings. */
+function balancedParens(source: string, open: number): number {
+  let depth = 0
+  let quote = ''
+  for (let i = open; i < source.length; i++) {
+    const char = source[i]
+    if (quote) {
+      if (char === '\\') i++
+      else if (char === quote) quote = ''
+      continue
+    }
+    if (char === '"' || char === '\'' || char === '`') quote = char
+    else if (char === '(') depth++
+    else if (char === ')' && --depth === 0) return i
+  }
+  return -1
+}
+
+/** A directive's expression as an attribute value the lexer reads back intact. */
+function attribute(name: string, expression: string): string {
+  return expression.includes('"') ? `${name}={${expression}}` : `${name}="${expression}"`
+}
+
+/**
+ * stx's text directives as fragments the parser already understands.
+ *
+ * `@if (a) … @elseif (b) … @else … @endif` becomes sibling
+ * `<Fragment :if>`/`:else-if`/`:else` nodes, and `@foreach (items as item) …
+ * @endforeach` a `<Fragment :for>`, so the runtime evaluates both on every
+ * render like the attribute forms. Script and style blocks are left alone.
+ */
+export function expandTextDirectives(source: string): string {
+  const pattern = /<script\b[\s\S]*?<\/script>|<style\b[\s\S]*?<\/style>|@(if|elseif|unless|foreach|for)\s*\(|@(else|endif|endunless|endforeach|endfor)\b/g
+  let out = ''
+  let last = 0
+  for (let match = pattern.exec(source); match; match = pattern.exec(source)) {
+    if (match[0].startsWith('<')) continue
+    // `@click=` and `user@if(` are attributes and words, not directives.
+    const before = source[match.index - 1]
+    if (before && /[\w@.]/.test(before)) continue
+    out += source.slice(last, match.index)
+    if (match[1]) {
+      const open = match.index + match[0].length - 1
+      const close = balancedParens(source, open)
+      if (close === -1) throw new Error(`Unclosed @${match[1]}( in template`)
+      const expression = source.slice(open + 1, close).trim()
+      if (match[1] === 'if') out += `<Fragment ${attribute(':if', expression)}>`
+      else if (match[1] === 'unless') out += `<Fragment ${attribute(':if', `!(${expression})`)}>`
+      else if (match[1] === 'elseif') out += `</Fragment><Fragment ${attribute(':else-if', expression)}>`
+      else {
+        const loop = parseForExpression(expression)
+        if (!loop) throw new Error(`Cannot read @${match[1]}(${expression})`)
+        const head = loop.index ? `(${loop.item}, ${loop.index})` : loop.item
+        out += `<Fragment ${attribute(':for', `${head} in ${loop.source}`)}>`
+      }
+      last = close + 1
+      pattern.lastIndex = last
+    }
+    else {
+      out += match[2] === 'else' ? '</Fragment><Fragment :else>' : '</Fragment>'
+      last = match.index + match[0].length
+    }
+  }
+  return out + source.slice(last)
+}
+
 // ============================================================================
 // Public API
 // ============================================================================
@@ -641,7 +913,7 @@ catch {
  * Parse an STX template string into an STX Document
  */
 export function parseSTX(template: string, source = 'unknown.stx'): STXDocument {
-  const lexer = new Lexer(template)
+  const lexer = new Lexer(expandTextDirectives(template))
   const tokens = lexer.tokenize()
   const parser = new Parser(tokens, source)
   return parser.parse()

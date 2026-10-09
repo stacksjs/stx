@@ -70,6 +70,9 @@ describe('the documented reference tree', () => {
     expect(root.type).toBe('View')
     expect(root.style).toEqual({
       flex: 1,
+      flexGrow: 1,
+      flexShrink: 1,
+      flexBasis: 0,
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',

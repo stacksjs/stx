@@ -27,7 +27,7 @@ describe('compileHeadwindToStyle, by class family', () => {
     ['spacing: vertical', 'py-3', { paddingVertical: 12 }],
     ['spacing: margin', 'm-1', { margin: 4 }],
     ['spacing: one edge', 'mt-2', { marginTop: 8 }],
-    ['flex: grow', 'flex-1', { flex: 1 }],
+    ['flex: grow, shrink, basis 0', 'flex-1', { flex: 1, flexGrow: 1, flexShrink: 1, flexBasis: 0 }],
     ['flex: row', 'flex-row', { flexDirection: 'row' }],
     ['flex: column', 'flex-col', { flexDirection: 'column' }],
     ['flex: justify', 'justify-between', { justifyContent: 'space-between' }],
@@ -57,6 +57,9 @@ describe('compileHeadwindToStyle, by class family', () => {
   it('merges several families into one object', () => {
     expect(compileHeadwindToStyle('flex-1 flex-col p-4 bg-blue-500')).toEqual({
       flex: 1,
+      flexGrow: 1,
+      flexShrink: 1,
+      flexBasis: 0,
       flexDirection: 'column',
       padding: 16,
       backgroundColor: '#3b82f6',
@@ -121,6 +124,9 @@ describe('parseSTXToNode produces the documented IR', () => {
     expect(node.type).toBe('View')
     expect(node.style).toEqual({
       flex: 1,
+      flexGrow: 1,
+      flexShrink: 1,
+      flexBasis: 0,
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
@@ -351,6 +357,9 @@ describe('style vocabulary coverage', () => {
     'lineHeight', 'overflow', 'resizeMode', 'rowGap', 'shadowOffset',
     'textDecorationColor', 'textDecorationLine', 'textTransform', 'tintColor',
     'transform', 'zIndex',
+    // Craft's native host lays out `display: grid` with `gridColumns`; this
+    // older renderer has no grid (added with grid-cols-N, 2026-10).
+    'gridColumns',
   ]
 
   it('iOS drops exactly the properties on the known list, and no more', () => {

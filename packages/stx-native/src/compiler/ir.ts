@@ -71,6 +71,16 @@ export interface STXNode {
    */
   bindings?: Record<string, string>
 
+  /**
+   * Structural directives, evaluated by the runtime on every render:
+   * `:if` / `:else-if` / `:else` choose between siblings, `:for` repeats the
+   * node per item, `:show` hides it. Expressions are kept verbatim.
+   */
+  directives?: STXDirectives
+
+  /** What `dark:` classes change on top of `style`, for a dark appearance. */
+  darkStyle?: STXStyle
+
   /** Child nodes or text content */
   children: (STXNode | string)[]
 
@@ -85,13 +95,30 @@ export interface STXNode {
   }
 }
 
+export interface STXDirectives {
+  if?: string
+  elseIf?: string
+  else?: boolean
+  for?: {
+    /** The list expression, evaluated in the enclosing scope. */
+    source: string
+    /** The name each element is bound to inside the node. */
+    item: string
+    /** The name the position is bound to, when the template asked for one. */
+    index?: string
+  }
+  show?: string
+}
+
 // ============================================================================
 // Style Types (Maps to Yoga + Platform Styling)
 // ============================================================================
 
 export interface STXStyle {
   // Layout (Yoga Flexbox)
-  display?: 'flex' | 'none'
+  display?: 'flex' | 'none' | 'grid'
+  /** Equal columns for `display: 'grid'` (`grid-cols-3`). */
+  gridColumns?: number
   flex?: number
   flexGrow?: number
   flexShrink?: number
@@ -279,6 +306,8 @@ export interface STXDocument {
     compiledAt: number
     /** Headwind config used */
     headwindConfig?: string
+    /** What the compiler could not translate exactly (unknown icons, classes). */
+    warnings?: string[]
   }
 }
 

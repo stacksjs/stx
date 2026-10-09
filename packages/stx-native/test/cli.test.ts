@@ -19,8 +19,7 @@ import { describe, expect, it } from 'bun:test'
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { parseSTX } from '../src/compiler/parser'
-import { STXCLI } from '../src/cli/index'
+import { compileScreenBundle } from '../src/compiler/bundle'
 
 const CLI = path.join(import.meta.dir, '..', 'src', 'cli', 'index.ts')
 
@@ -108,27 +107,35 @@ describe('the stx-native CLI entry point', () => {
 })
 
 describe('the generated bundle', () => {
-  /** `generateBundle` is private; a test is allowed to know that. */
-  function generate(source: string): string {
-    const cli = new STXCLI() as unknown as { generateBundle: (document: unknown) => string }
-    return cli.generateBundle(parseSTX(source, 'Screen.stx'))
+  /** One screen, compiled the way `compile <file> --format bundle` does. */
+  async function generate(source: string): Promise<string> {
+    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-bundle-'))
+    const file = path.join(root, 'Screen.stx')
+    await Bun.write(file, source)
+    return (await compileScreenBundle(file)).code
   }
 
-  it('is valid JavaScript', () => {
+  it('is valid JavaScript', async () => {
     // The whole bug: the generator's literal closed early, so what it emitted
     // was never checked against a parser either.
-    const bundle = generate(SCREEN)
+    const bundle = await generate(SCREEN)
     expect(() => new Bun.Transpiler({ loader: 'js' }).transformSync(bundle)).not.toThrow()
   })
 
-  it('defers the message id to when the bundle runs, not when it was compiled', () => {
-    const bundle = generate(SCREEN)
-    expect(bundle).toContain("'render_' + Date.now() + '_' + (++sequence)")
+  it('defers the message id to when the bundle runs, not when it was compiled', async () => {
+    const bundle = await generate(SCREEN)
+    const sent: Array<Record<string, any>> = []
+    const before = Date.now()
+    new Function('globalThis', bundle)({
+      __stxNativeBridge: { postMessage: (raw: string) => { sent.push(JSON.parse(raw)) }, onMessage: () => {} },
+    })
+    const stamp = Number(/^render_(\d+)_/.exec(sent[0].id)?.[1])
+    expect(stamp).toBeGreaterThanOrEqual(before)
   })
 
-  it('carries the document and the handlers the script declared', () => {
-    const bundle = generate(SCREEN)
-    expect(bundle).toContain('__STX_DOCUMENT__')
+  it('carries the template and the handlers the script declared', async () => {
+    const bundle = await generate(SCREEN)
+    expect(bundle).toContain('__stxNative')
     expect(bundle).toContain('greet')
   })
 
@@ -168,7 +175,7 @@ function loadDevice() {
         onMessage: (receiver: typeof callback) => { callback = receiver },
       },
     }
-    new Function('globalThis', generate(source))(scope)
+    new Function('globalThis', await generate(source))(scope)
 
     const rootText = () => sent.at(-1)?.payload.document.children.map((child: any) => child.children?.join('') || undefined)
     expect(rootText()).toEqual(['Count 0', 'Name ', 'Device waiting', 'Increment', undefined, 'Device'])
@@ -180,7 +187,9 @@ function loadDevice() {
     expect(rootText()?.[1]).toBe('Name Glenn')
 
     callback({ type: 'EVENT', payload: { handlerName: 'loadDevice', nativeEvent: {} } })
-    const request = sent.at(-1)!
+    // A handler that returns a promise renders at once (so a busy flag set
+    // before its await shows) and again when it settles.
+    const request = sent.findLast(message => message.type === 'API_REQUEST')!
     expect(request.type).toBe('API_REQUEST')
     expect(request.payload).toEqual({ version: 1, module: 'Device', method: 'getInfo', args: [] })
     callback({ type: 'API_RESPONSE', correlationId: request.id, payload: { data: { model: 'iPhone Simulator' } } })
@@ -197,7 +206,7 @@ function loadDevice() {
     expect(rootText()?.[2]).toBe('Device Instant reply')
   })
 
-  it('emits versioned mutation batches when the native host advertises support', () => {
+  it('emits versioned mutation batches when the native host advertises support', async () => {
     const source = `<script>
 let count = 0
 function increment() { count++ }
@@ -217,7 +226,7 @@ function increment() { count++ }
         onMessage: (receiver: typeof callback) => { callback = receiver },
       },
     }
-    new Function('globalThis', generate(source))(scope)
+    new Function('globalThis', await generate(source))(scope)
 
     expect(sent[0].type).toBe('RENDER')
     expect(sent[0].payload.document.children[0].children.join('')).toBe('Count 0')
@@ -238,7 +247,7 @@ function increment() { count++ }
     expect(fallback.payload.document.children[0].children.join('')).toBe('Count 1')
   })
 
-  it('materializes keyed FlatList templates and diffs list changes by item identity', () => {
+  it('materializes keyed FlatList templates and diffs list changes by item identity', async () => {
     const source = `<script>
 let items = [{ id: 'a', name: 'Ada' }, { id: 'b', name: 'Bun' }]
 function shuffle() {
@@ -269,7 +278,7 @@ function clear() { items = [] }
         onMessage: (receiver: typeof callback) => { callback = receiver },
       },
     }
-    new Function('globalThis', generate(source))(scope)
+    new Function('globalThis', await generate(source))(scope)
 
     expect(sent[0].type).toBe('RENDER')
     const initial = sent[0].payload.document
@@ -360,7 +369,7 @@ let ready = globalThis.craft.device.getInfo()
         },
       },
     }
-    new Function('globalThis', generate(source))(scope)
+    new Function('globalThis', await generate(source))(scope)
     expect(sent[0].payload).toEqual({ version: 1, module: 'Device', method: 'getInfo', args: [] })
     expect(await scope.craft.clipboard.write('Glenn')).toBe(true)
     expect(await scope.craft.clipboard.read()).toBe('Glenn')
@@ -369,7 +378,7 @@ let ready = globalThis.craft.device.getInfo()
     expect(await scope.craft.haptics.impact('light')).toBeUndefined()
     hapticsEnabled = true
     expect(await scope.craft.haptic('heavy')).toBe(true)
-    expect(sent.at(-1)?.payload).toEqual({ version: 1, module: 'Haptics', method: 'impact', args: ['heavy'] })
+    expect(sent.findLast(message => message.type === 'API_REQUEST')?.payload).toEqual({ version: 1, module: 'Haptics', method: 'impact', args: ['heavy'] })
   })
 
   it('compiles named screens and keeps each route runtime independent', async () => {

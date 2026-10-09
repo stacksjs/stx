@@ -1,14 +1,17 @@
 import { describe, expect, it } from 'bun:test'
-import { parseSTX } from '../src/compiler/parser'
-import { STXCLI } from '../src/cli/index'
+import { mkdtemp } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+import { compileScreenBundle } from '../src/compiler/bundle'
 
-function generate(script: string = '', template: string = '<View><Text>Capabilities</Text></View>'): string {
-  const source = `<script>${script}</script><template>${template}</template>`
-  const cli = new STXCLI() as unknown as { generateBundle: (document: unknown) => string }
-  return cli.generateBundle(parseSTX(source, 'Capabilities.stx'))
+async function generate(script: string = '', template: string = '<View><Text>Capabilities</Text></View>'): Promise<string> {
+  const root = await mkdtemp(path.join(tmpdir(), 'stx-native-capabilities-'))
+  const file = path.join(root, 'Capabilities.stx')
+  await Bun.write(file, `<script>${script}</script><template>${template}</template>`)
+  return (await compileScreenBundle(file)).code
 }
 
-function runtime(script: string = '', options: {
+async function runtime(script: string = '', options: {
   timeout?: number
   initialAppState?: string
   timers?: boolean
@@ -33,13 +36,13 @@ function runtime(script: string = '', options: {
     scope.setTimeout = setTimeout
     scope.clearTimeout = clearTimeout
   }
-  new Function('globalThis', generate(script, options.template))(scope)
+  new Function('globalThis', await generate(script, options.template))(scope)
   return { scope, sent, receive: (message: Record<string, any>) => callback(message) }
 }
 
 describe('generated native capability protocol', () => {
-  it('publishes the platform and capability flags through the existing Craft shape', () => {
-    const { scope } = runtime()
+  it('publishes the platform and capability flags through the existing Craft shape', async () => {
+    const { scope } = await runtime()
     expect(scope.craft.platform).toBe('ios')
     expect(scope.craft.capabilityProtocolVersion).toBe(1)
     expect(scope.craft.capabilities).toMatchObject({
@@ -52,8 +55,8 @@ describe('generated native capability protocol', () => {
     })
   })
 
-  it('exposes the existing Craft API shapes over versioned requests', () => {
-    const { scope, sent, receive } = runtime()
+  it('exposes the existing Craft API shapes over versioned requests', async () => {
+    const { scope, sent, receive } = await runtime()
     scope.craft.storage.get('theme')
     scope.craft.db.execute('BEGIN TRANSACTION')
     expect(scope.craft.lifecycle.getState()).toBe('active')
@@ -74,7 +77,7 @@ describe('generated native capability protocol', () => {
     }))
   })
 
-  it('exposes typed secure storage and biometric APIs only through native capability requests', () => {
+  it('exposes typed secure storage and biometric APIs only through native capability requests', async () => {
     /*
      * No timers: this asserts what was SENT and never answers any of it.
      *
@@ -85,7 +88,7 @@ describe('generated native capability protocol', () => {
      * it as five failures in cli.test.ts attributed to a line in this file,
      * and each file passed when run on its own.
      */
-    const { scope, sent } = runtime('', { capabilities: ['biometric', 'secureStorage'], timers: false })
+    const { scope, sent } = await runtime('', { capabilities: ['biometric', 'secureStorage'], timers: false })
     scope.craft.secureStorage.set('token', 'secret')
     scope.craft.secureStorage.get('token')
     scope.craft.secureStorage.delete('token')
@@ -105,8 +108,8 @@ describe('generated native capability protocol', () => {
     ])
   })
 
-  it('preserves synchronous lifecycle and legacy notification aliases', () => {
-    const { scope, sent, receive } = runtime('', { initialAppState: 'background' })
+  it('preserves synchronous lifecycle and legacy notification aliases', async () => {
+    const { scope, sent, receive } = await runtime('', { initialAppState: 'background' })
     expect(scope.craft.getAppState()).toBe('background')
     expect(scope.craft.lifecycle.getState()).toBe('background')
 
@@ -133,8 +136,8 @@ describe('generated native capability protocol', () => {
     }))
   })
 
-  it('does not deliver an initial link after getInitialURL claims it', () => {
-    const { scope, sent, receive } = runtime()
+  it('does not deliver an initial link after getInitialURL claims it', async () => {
+    const { scope, sent, receive } = await runtime()
     const links: string[] = []
     scope.craft.deepLinks.getInitialURL()
     scope.craft.deepLinks.onLink((link: { url: string }) => links.push(link.url))
@@ -150,7 +153,7 @@ describe('generated native capability protocol', () => {
   })
 
   it('uses host responses when a bare JavaScript runtime has no timers', async () => {
-    const { scope, sent, receive } = runtime('', { timers: false })
+    const { scope, sent, receive } = await runtime('', { timers: false })
     const read = scope.craft.storage.get('bare-runtime')
     const request = sent.at(-1)!
     expect(request.type).toBe('API_REQUEST')
@@ -163,7 +166,7 @@ describe('generated native capability protocol', () => {
   })
 
   it('settles responses, dispatches subscriptions, and cancels timed-out work', async () => {
-    const { scope, sent, receive } = runtime('', { timeout: 5 })
+    const { scope, sent, receive } = await runtime('', { timeout: 5 })
     const states: string[] = []
     const links: string[] = []
     const removeState = scope.craft.lifecycle.onChange((state: string) => states.push(state))
@@ -194,8 +197,8 @@ describe('generated native capability protocol', () => {
     })
   })
 
-  it('re-renders lifecycle and deep-link subscription state', () => {
-    const { sent, receive } = runtime(`
+  it('re-renders lifecycle and deep-link subscription state', async () => {
+    const { sent, receive } = await runtime(`
       let state = 'active'
       let link = 'none'
       globalThis.craft.lifecycle.onStateChange(function(next) { state = next })
@@ -213,15 +216,15 @@ describe('generated native capability protocol', () => {
     ]))
   })
 
-  it('installs fetch only when the host advertises it', () => {
-    expect(runtime('', { capabilities: ['storage'] }).scope.fetch).toBeUndefined()
-    const { scope } = runtime('', { capabilities: ['storage', 'fetch'] })
+  it('installs fetch only when the host advertises it', async () => {
+    expect((await runtime('', { capabilities: ['storage'] })).scope.fetch).toBeUndefined()
+    const { scope } = await runtime('', { capabilities: ['storage', 'fetch'] })
     expect(typeof scope.fetch).toBe('function')
     expect(scope.craft.capabilities.fetch).toBe(true)
   })
 
   it('sends fetch as one Network request and reads the answer like a Response', async () => {
-    const { scope, sent, receive } = runtime('', { capabilities: ['fetch'] })
+    const { scope, sent, receive } = await runtime('', { capabilities: ['fetch'] })
     const answer = scope.fetch('http://localhost:3011/api/profile', {
       method: 'post',
       headers: { Authorization: 'Bearer abc', 'Content-Type': 'application/json' },
@@ -271,7 +274,7 @@ describe('generated native capability protocol', () => {
   })
 
   it('rejects bodies the host cannot send and turns transport failures into TypeErrors', async () => {
-    const { scope, sent, receive } = runtime('', { capabilities: ['fetch'] })
+    const { scope, sent, receive } = await runtime('', { capabilities: ['fetch'] })
     const before = sent.length
     await expect(scope.fetch('https://example.com', { body: 'x' })).rejects.toThrow('cannot have a body')
     await expect(scope.fetch('https://example.com', { method: 'POST', body: { a: 1 } })).rejects.toThrow('string bodies only')
@@ -290,7 +293,7 @@ describe('generated native capability protocol', () => {
   })
 
   it('re-renders once top-level async work has used a capability answer', async () => {
-    const { sent, receive } = runtime(`
+    const { sent, receive } = await runtime(`
       let name = 'loading'
       globalThis.fetch('https://example.com/me').then(function(r) { return r.json() }).then(function(me) { name = me.name })
     `, { capabilities: ['fetch'], template: '<View><Text testID="name">{name}</Text></View>' })

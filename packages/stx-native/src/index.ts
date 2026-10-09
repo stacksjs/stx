@@ -24,6 +24,8 @@ export * from './compiler/parser'
 export * from './compiler/html-to-ir'
 export * from './compiler/client-script'
 export * from './compiler/render-screen'
+export * from './compiler/bundle'
+export * from './compiler/icons'
 
 // Bridge exports
 export * from './bridge/protocol'

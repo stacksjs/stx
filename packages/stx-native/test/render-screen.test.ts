@@ -62,6 +62,9 @@ describe('the reference screen', () => {
     const { document } = await compileScreenSource(source, screen('Reference.stx', source))
     expect(document.root.style).toEqual({
       flex: 1,
+      flexGrow: 1,
+      flexShrink: 1,
+      flexBasis: 0,
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',

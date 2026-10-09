@@ -20,6 +20,8 @@ import { join, resolve, basename } from 'path'
 import { createServer, IncomingMessage, ServerResponse } from 'http'
 import { WebSocketServer, WebSocket } from 'ws'
 import { parseSTX } from '../compiler/parser'
+import { compileNativeBundle, compileScreenBundle } from '../compiler/bundle'
+import type { NativeBundle } from '../compiler/bundle'
 import type { STXDocument } from '../compiler/ir'
 
 // ============================================================================
@@ -55,6 +57,14 @@ interface ProjectConfig {
     targetSdk: number
     compileSdk: number
   }
+}
+
+interface ConfiguredScreens {
+  initialScreen: string
+  /** Screen name to absolute `.stx` path. */
+  files: Record<string, string>
+  /** The parsed IR of every screen, for `--format ir`. */
+  documents: () => { initialScreen: string, screens: Record<string, STXDocument> }
 }
 
 // ============================================================================
@@ -341,14 +351,14 @@ else {
       throw new Error(`Unknown compile format: ${format}. Expected ir or bundle.`)
     }
 
-    const document = routes ? null : parseSTX(readFileSync(inputFile!, 'utf-8'), inputFile!)
+    const minify = flags.minify === 'true'
     const result = format === 'bundle'
-      ? routes ? this.generateRouteBundle(routes) : this.generateBundle(document!)
-      : JSON.stringify(routes ?? document, null, 2)
+      ? this.reportWarnings(routes ? await this.generateRouteBundle(routes, minify) : await compileScreenBundle(inputFile!, { minify }))
+      : JSON.stringify(routes ? routes.documents() : parseSTX(readFileSync(inputFile!, 'utf-8'), inputFile!), null, 2)
 
     if (outputFile) {
       writeFileSync(outputFile, result)
-      console.log(`Compiled: ${inputFile} → ${outputFile}`)
+      console.log(`Compiled: ${inputFile ?? Object.keys(routes!.files).join(', ')} → ${outputFile}`)
     }
 else {
       console.log(result)
@@ -671,673 +681,56 @@ catch (error) {
     const outputDir = join(this.config.projectRoot, this.config.outputDir)
     mkdirSync(outputDir, { recursive: true })
 
-    // Compile entry file
-    const document = routes ? null : parseSTX(readFileSync(entryPath, 'utf-8'), entryPath)
-
     // Write IR
     writeFileSync(
       join(outputDir, 'ir.json'),
-      JSON.stringify(routes ?? document, null, 2)
+      JSON.stringify(routes ? routes.documents() : parseSTX(readFileSync(entryPath, 'utf-8'), entryPath), null, 2)
     )
 
-    // Generate bundle (combines IR + runtime)
-    const bundle = routes ? this.generateRouteBundle(routes) : this.generateBundle(document!)
+    // Generate bundle (the runtime, then each screen's compiled module)
+    const bundle = this.reportWarnings(routes ? await this.generateRouteBundle(routes, false) : await compileScreenBundle(entryPath))
     writeFileSync(join(outputDir, 'bundle.js'), bundle)
 
     console.log('  ✅ Compiled successfully')
   }
 
-  private configuredScreens(): { initialScreen: string, screens: Record<string, STXDocument> } | null {
+  private configuredScreens(): ConfiguredScreens | null {
     const configured = this.projectConfig?.screens
     if (!configured) return null
     const entries = Object.entries(configured)
     if (entries.length === 0) throw new Error('screens must name at least one .stx file')
-    const screens: Record<string, STXDocument> = {}
+    const files: Record<string, string> = {}
     for (const [name, file] of entries) {
       if (!/^[A-Za-z][\w-]*$/.test(name)) throw new Error(`Invalid native screen name: ${name}`)
       if (typeof file !== 'string' || !file.endsWith('.stx')) throw new Error(`Screen ${name} must name a .stx file`)
-      const source = resolve(this.config.projectRoot, file)
-      screens[name] = parseSTX(readFileSync(source, 'utf-8'), source)
+      files[name] = resolve(this.config.projectRoot, file)
+      if (!existsSync(files[name])) throw new Error(`Screen ${name} not found: ${files[name]}`)
     }
     const initialScreen = this.projectConfig?.initialScreen || entries[0][0]
-    if (!screens[initialScreen]) throw new Error(`Initial screen ${initialScreen} is not in screens`)
-    return { initialScreen, screens }
+    if (!files[initialScreen]) throw new Error(`Initial screen ${initialScreen} is not in screens`)
+    return {
+      initialScreen,
+      files,
+      documents: () => ({
+        initialScreen,
+        screens: Object.fromEntries(Object.entries(files).map(([name, file]) => [name, parseSTX(readFileSync(file, 'utf-8'), file)])),
+      }),
+    }
   }
 
-  private generateRouteBundle(routes: { initialScreen: string, screens: Record<string, STXDocument> }): string {
-    const names = Object.keys(routes.screens)
-    const header = `
-(function() {
-  const names = ${JSON.stringify(names)};
-  const name = globalThis.__stxNativeRoute || ${JSON.stringify(routes.initialScreen)};
-  if (!names.includes(name)) throw new Error('Unknown native screen: ' + name);
-  globalThis.__stxNativeRoute = name;
-})();
-`
-    return header + names.map(name => this.generateBundle(routes.screens[name], name, names)).join('\n')
+  /**
+   * Every configured screen in one bundle. Each screen is built by
+   * `Bun.build` from its own `.stx` file (see `compiler/bundle.ts`), so its
+   * script may be TypeScript and import from the project.
+   */
+  private generateRouteBundle(routes: ConfiguredScreens, minify: boolean): Promise<NativeBundle> {
+    return compileNativeBundle({ screens: routes.files, initialScreen: routes.initialScreen, minify })
   }
 
-  private generateBundle(document: STXDocument, routeName?: string, routeNames?: string[]): string {
-    // This is the small JavaScriptCore runtime for a native screen. The
-    // compiled IR is data, while expressions and handlers execute in the same
-    // lexical scope as the screen's script. A handler triggers a fresh tree so
-    // the first native slice does not require a DOM or a WebView.
-    return `
-// STX Native Bundle
-// Generated at ${new Date().toISOString()}
-
-(function() {
-  'use strict';
-
-  ${routeName ? `if (globalThis.__stxNativeRoute !== ${JSON.stringify(routeName)}) return;` : ''}
-  const __STX_ROUTE_NAME__ = ${JSON.stringify(routeName ?? 'main')};
-  const __STX_ROUTE_NAMES__ = ${JSON.stringify(routeNames ?? ['main'])};
-
-  // STX Document IR
-  const __STX_DOCUMENT__ = ${JSON.stringify(document)};
-
-  if (typeof globalThis.__stxNativeBridge !== 'undefined') {
-    const bridge = globalThis.__stxNativeBridge;
-    const handlers = globalThis.__stxHandlers || (globalThis.__stxHandlers = {});
-    const pendingAPI = new Map();
-    const appStateHandlers = new Set();
-    const deepLinkHandlers = new Set();
-    const scheduleTimeout = typeof globalThis.setTimeout === 'function'
-      ? globalThis.setTimeout.bind(globalThis)
-      : null;
-    const cancelTimeout = typeof globalThis.clearTimeout === 'function'
-      ? globalThis.clearTimeout.bind(globalThis)
-      : null;
-    let currentAppState = ['active', 'inactive', 'background'].includes(bridge.initialAppState)
-      ? bridge.initialAppState
-      : 'active';
-    let initialDeepLinkClaimed = false;
-    let sequence = 0;
-
-    function send(type, payload, id) {
-      const messageId = id || 'js_' + (++sequence);
-      bridge.postMessage(JSON.stringify({
-        id: messageId,
-        type,
-        timestamp: Date.now(),
-        payload,
-        source: 'js'
-      }));
-      return messageId;
-    }
-
-    function resolveValue(value, item, index) {
-      if (typeof value !== 'string' || !value.includes('{')) return value;
-      const exact = value.match(/^\\{([^{}]+)\\}$/);
-      if (exact) return eval(exact[1]);
-      return value.replace(/\\{([^{}]+)\\}/g, function(_match, expression) {
-        // Expressions are compiler-owned screen code. Direct eval retains the
-        // screen scope plus a FlatList template's item and index bindings.
-        const answer = eval(expression);
-        return answer == null ? '' : String(answer);
-      });
-    }
-
-    function resolveText(value, item, index) {
-      const answer = resolveValue(value, item, index);
-      return answer == null ? '' : String(answer);
-    }
-
-    const mutationProtocolVersion = Number(bridge.mutationProtocolVersion || 0);
-    let mutationRevision = 0;
-    let mutationsEnabled = mutationProtocolVersion === 1;
-    let previousTree = null;
-    let latestTree = null;
-
-    function nodeKey(node, item, index) {
-      const props = node.props || {};
-      return resolveValue(node.key || props.key || props.testID || null, item, index);
-    }
-
-    function listExpression(value, item, index) {
-      if (typeof value !== 'string') return value;
-      const exact = value.match(/^\\{([^{}]+)\\}$/);
-      const answer = eval(exact ? exact[1] : value);
-      return typeof answer === 'function' ? answer(item, index) : answer;
-    }
-
-    function listRole(node) {
-      return node && typeof node !== 'string' ? (node.props || {}).listRole || null : null;
-    }
-
-    function resolveListNode(node, id, resolvedProps) {
-      const rawProps = node.props || {};
-      const data = listExpression(rawProps.data, undefined, undefined);
-      const templates = (node.children || []).filter(function(child) { return typeof child !== 'string'; });
-      const itemTemplates = templates.filter(function(child) { return listRole(child) === 'item'; });
-      if (!Array.isArray(data) || itemTemplates.length === 0) return null;
-
-      const groups = {
-        header: templates.filter(function(child) { return listRole(child) === 'header'; }),
-        empty: templates.filter(function(child) { return listRole(child) === 'empty'; }),
-        separator: templates.filter(function(child) { return listRole(child) === 'separator'; }),
-        footer: templates.filter(function(child) { return listRole(child) === 'footer'; })
-      };
-      const children = [];
-      const seenKeys = new Map();
-      function appendTemplates(entries, role, item, index, keyPrefix) {
-        entries.forEach(function(template, templateIndex) {
-          const suffix = entries.length === 1 ? '' : '/template:' + templateIndex;
-          const child = resolveNode(template, id + '/' + keyPrefix + suffix, item, index);
-          child.props = { ...(child.props || {}), listRole: role };
-          children.push(child);
-        });
-      }
-      appendTemplates(groups.header, 'header', undefined, -1, 'header');
-      if (data.length === 0) {
-        appendTemplates(groups.empty, 'empty', undefined, -1, 'empty');
-      }
-      else {
-        data.forEach(function(item, index) {
-          let key = rawProps.keyExtractor == null
-            ? item && (item.key ?? item.id)
-            : listExpression(rawProps.keyExtractor, item, index);
-          if (key == null || key === '') key = index;
-          const encodedKey = encodeURIComponent(String(key));
-          const occurrence = seenKeys.get(encodedKey) || 0;
-          seenKeys.set(encodedKey, occurrence + 1);
-          const uniqueKey = occurrence === 0 ? encodedKey : encodedKey + '#' + occurrence;
-          itemTemplates.forEach(function(template, templateIndex) {
-            const suffix = itemTemplates.length === 1 ? '' : '/template:' + templateIndex;
-            const child = resolveNode(template, id + '/key:' + uniqueKey + suffix, item, index);
-            child.props = { ...(child.props || {}), key: String(key), listRole: 'item' };
-            children.push(child);
-          });
-          if (index < data.length - 1) {
-            appendTemplates(groups.separator, 'separator', item, index, 'separator:' + uniqueKey);
-          }
-        });
-      }
-      appendTemplates(groups.footer, 'footer', undefined, data.length, 'footer');
-      const props = { ...resolvedProps, itemCount: data.length };
-      delete props.data;
-      delete props.keyExtractor;
-      return { ...node, id, props, children };
-    }
-
-    function resolveNode(node, id, item, itemIndex) {
-      const isDataList = node.type === 'FlatList' && (node.props || {}).data != null;
-      const resolvedProps = Object.fromEntries(Object.entries(node.props || {}).map(function([key, value]) {
-        if (isDataList && (key === 'data' || key === 'keyExtractor')) return [key, value];
-        return [key, resolveValue(value, item, itemIndex)];
-      }));
-      if (isDataList) {
-        const list = resolveListNode(node, id, resolvedProps);
-        if (list) return list;
-      }
-      const rawChildren = node.children || [];
-      const keyedCounts = new Map();
-      rawChildren.forEach(function(child) {
-        if (typeof child === 'string') return;
-        const key = nodeKey(child, item, itemIndex);
-        if (key) keyedCounts.set(key, (keyedCounts.get(key) || 0) + 1);
-      });
-      return {
-        ...node,
-        id,
-        props: resolvedProps,
-        children: rawChildren.map(function(child, index) {
-          if (typeof child === 'string') return resolveText(child, item, itemIndex);
-          const key = nodeKey(child, item, itemIndex);
-          const childId = key && keyedCounts.get(key) === 1
-            ? id + '/key:' + key
-            : id + '/index:' + index;
-          return resolveNode(child, childId, item, itemIndex);
-        })
-      };
-    }
-
-    function nodeValue(node) {
-      return {
-        type: node.type,
-        props: node.props || {},
-        style: node.style || {},
-        events: node.events || {},
-        children: (node.children || []).filter(function(child) { return typeof child === 'string'; })
-      };
-    }
-
-    function treeValue(node) {
-      return {
-        id: node.id,
-        ...nodeValue(node),
-        children: (node.children || []).map(function(child) {
-          return typeof child === 'string' ? child : treeValue(child);
-        })
-      };
-    }
-
-    function flatten(root) {
-      const result = new Map();
-      function visit(node, parentId, index) {
-        const childNodes = (node.children || []).filter(function(child) { return typeof child !== 'string'; });
-        result.set(node.id, {
-          node,
-          parentId,
-          index,
-          children: childNodes.map(function(child) { return child.id; })
-        });
-        childNodes.forEach(function(child, childIndex) { visit(child, node.id, childIndex); });
-      }
-      visit(root, null, 0);
-      return result;
-    }
-
-    function createTreeOperations(tree) {
-      const nodes = flatten(tree);
-      const operations = [];
-      nodes.forEach(function(entry, id) {
-        operations.push({ op: 'createNode', id, root: entry.parentId === null, node: nodeValue(entry.node) });
-      });
-      nodes.forEach(function(entry, parentId) {
-        entry.children.forEach(function(childId, index) {
-          operations.push({ op: 'insertChild', parentId, childId, index });
-        });
-      });
-      return operations;
-    }
-
-    function equivalent(left, right) {
-      return JSON.stringify(left) === JSON.stringify(right);
-    }
-
-    function diffTrees(before, after) {
-      const oldNodes = flatten(before);
-      const newNodes = flatten(after);
-      const typeChanged = Array.from(oldNodes.keys()).some(function(id) {
-        return newNodes.has(id) && oldNodes.get(id).node.type !== newNodes.get(id).node.type;
-      });
-      if (typeChanged) {
-        return [{ op: 'removeNode', id: before.id }].concat(createTreeOperations(after));
-      }
-
-      const operations = [];
-      const removed = new Set(Array.from(oldNodes.keys()).filter(function(id) { return !newNodes.has(id); }));
-      oldNodes.forEach(function(entry, id) {
-        if (!removed.has(id) || (entry.parentId && removed.has(entry.parentId))) return;
-        operations.push({ op: 'removeNode', id });
-      });
-
-      newNodes.forEach(function(entry, id) {
-        if (!oldNodes.has(id)) operations.push({ op: 'createNode', id, root: entry.parentId === null, node: nodeValue(entry.node) });
-      });
-
-      newNodes.forEach(function(entry, id) {
-        const previous = oldNodes.get(id);
-        if (!previous) return;
-        const oldValue = nodeValue(previous.node);
-        const newValue = nodeValue(entry.node);
-        const patch = {};
-        if (!equivalent(oldValue.props, newValue.props)) patch.props = newValue.props;
-        if (!equivalent(oldValue.style, newValue.style)) patch.style = newValue.style;
-        if (!equivalent(oldValue.events, newValue.events)) patch.events = newValue.events;
-        if (!equivalent(oldValue.children, newValue.children)) patch.children = newValue.children;
-        if (Object.keys(patch).length) operations.push({ op: 'updateNode', id, patch });
-      });
-
-      newNodes.forEach(function(entry, parentId) {
-        let current = [];
-        const previous = oldNodes.get(parentId);
-        if (previous) {
-          current = previous.children.filter(function(id) {
-            return newNodes.has(id) && newNodes.get(id).parentId === parentId;
-          });
-        }
-        entry.children.forEach(function(childId, index) {
-          if (current[index] === childId) return;
-          const oldIndex = current.indexOf(childId);
-          if (oldIndex >= 0) {
-            operations.push({ op: 'moveChild', parentId, childId, index });
-            current.splice(oldIndex, 1);
-            current.splice(index, 0, childId);
-          }
-          else {
-            operations.push({ op: 'insertChild', parentId, childId, index });
-            current.splice(index, 0, childId);
-          }
-        });
-      });
-      return operations;
-    }
-
-    function sendRenderFallback() {
-      send('RENDER', { document: treeValue(latestTree), mode: 'replace' }, 'render_' + Date.now() + '_' + (++sequence));
-    }
-
-    function render() {
-      const nextTree = resolveNode(__STX_DOCUMENT__.root, 'root');
-      latestTree = nextTree;
-      if (!mutationsEnabled) {
-        sendRenderFallback();
-        return;
-      }
-      if (!previousTree) {
-        previousTree = nextTree;
-        sendRenderFallback();
-        return;
-      }
-      const operations = diffTrees(previousTree, nextTree);
-      previousTree = nextTree;
-      if (!operations.length) return;
-      const baseRevision = mutationRevision;
-      mutationRevision += 1;
-      send('MUTATE', {
-        version: mutationProtocolVersion,
-        batchId: 'mutation_' + mutationRevision,
-        baseRevision,
-        revision: mutationRevision,
-        operations
-      });
-    }
-
-    // Top-level async work (a fetch on open, a stored value read back) has no
-    // handler to re-render after it. A timer runs once the promise reactions
-    // queued by this answer have drained, so the screen's continuation has
-    // assigned its state; one render covers answers that arrive together.
-    let renderScheduled = false;
-    function scheduleRender() {
-      if (!scheduleTimeout || renderScheduled) return;
-      renderScheduled = true;
-      scheduleTimeout(function() {
-        renderScheduled = false;
-        render();
-      }, 0);
-    }
-
-    function requestAPI(module, method, args) {
-      return new Promise(function(resolve, reject) {
-        const id = 'js_' + (++sequence);
-        const configuredTimeout = Number(bridge.capabilityTimeoutMs || 30000);
-        const timeoutMs = Number.isFinite(configuredTimeout) && configuredTimeout > 0 ? configuredTimeout : 30000;
-        const timeout = scheduleTimeout ? scheduleTimeout(function() {
-          if (!pendingAPI.delete(id)) return;
-          send('API_CANCEL', { version: 1, requestId: id, reason: 'timeout' });
-          const error = new Error('Native API request timed out');
-          error.code = 'TIMEOUT';
-          reject(error);
-          scheduleRender();
-        }, timeoutMs) : null;
-        pendingAPI.set(id, { resolve, reject, timeout });
-        send('API_REQUEST', { version: 1, module, method, args }, id);
-      });
-    }
-
-    function dispatchSubscription(handlers, value) {
-      if (!handlers.size) return;
-      handlers.forEach(function(handler) {
-        const result = handler(value);
-        if (result && typeof result.then === 'function') result.then(render, function() {});
-      });
-      render();
-    }
-
-    globalThis.craft = globalThis.craft || {};
-    const nativeCapabilities = new Set(Array.isArray(bridge.capabilities) ? bridge.capabilities : []);
-    globalThis.craft.platform = bridge.platform || 'unknown';
-    globalThis.craft.capabilityProtocolVersion = Number(bridge.capabilityProtocolVersion || 0);
-    globalThis.craft.capabilities = {
-      haptics: nativeCapabilities.has('haptics'),
-      speechRecognition: false,
-      share: false,
-      camera: false,
-      biometric: nativeCapabilities.has('biometric'),
-      pushNotifications: false,
-      secureStorage: nativeCapabilities.has('secureStorage'),
-      storage: nativeCapabilities.has('storage'),
-      localDatabase: nativeCapabilities.has('database'),
-      lifecycle: nativeCapabilities.has('lifecycle'),
-      geolocation: false,
-      clipboard: nativeCapabilities.has('clipboard'),
-      contacts: false,
-      calendar: false,
-      localNotifications: nativeCapabilities.has('notifications'),
-      inAppPurchase: false,
-      keepAwake: false,
-      orientationLock: false,
-      deepLinks: nativeCapabilities.has('deepLinks'),
-      flashlight: false,
-      speech: false,
-      network: false,
-      deviceInfo: nativeCapabilities.has('device'),
-      fetch: nativeCapabilities.has('fetch'),
-      badge: false,
-      appReview: false
-    };
-    globalThis.craft.route = {
-      name: __STX_ROUTE_NAME__,
-      params: globalThis.__stxNativeParams || {}
-    };
-    function navigate(type, screen, params) {
-      if (!__STX_ROUTE_NAMES__.includes(screen)) throw new Error('Unknown native screen: ' + screen);
-      if (params !== undefined && (params === null || typeof params !== 'object' || Array.isArray(params))) {
-        throw new Error('Navigation params must be an object');
-      }
-      return send(type, { screen, params: params || {} });
-    }
-    globalThis.craft.navigation = {
-      push: function(screen, params) { return navigate('NAVIGATE', screen, params); },
-      replace: function(screen, params) { return navigate('NAVIGATE_REPLACE', screen, params); },
-      back: function() { return send('NAVIGATE_BACK', {}); }
-    };
-    globalThis.craft.device = globalThis.craft.device || {};
-    globalThis.craft.device.getInfo = function() {
-      return requestAPI('Device', 'getInfo', []);
-    };
-    globalThis.craft.clipboard = {
-      write: function(text) { return requestAPI('Clipboard', 'write', [text]); },
-      read: function() { return requestAPI('Clipboard', 'read', []); }
-    };
-    globalThis.craft.haptic = function(style) {
-      return requestAPI('Haptics', 'impact', [style || 'medium']);
-    };
-    function hapticFeedback(answer) {
-      return answer.then(function() {}, function(error) {
-        // Match Craft's browser bridge: the high-level feedback helpers are
-        // no-ops when disabled, while craft.haptic() rejects with the code.
-        if (error.code === 'CAPABILITY_DISABLED') return;
-        throw error;
-      });
-    }
-    globalThis.craft.haptics = {
-      impact: function(style) { return hapticFeedback(globalThis.craft.haptic(style)); },
-      notification: function(type) {
-        const style = type === 'error' ? 'heavy' : type === 'warning' ? 'medium' : 'light';
-        return hapticFeedback(globalThis.craft.haptic(style));
-      },
-      selection: function() { return hapticFeedback(globalThis.craft.haptic('soft')); }
-    };
-    globalThis.craft.storage = {
-      get: function(key) { return requestAPI('Storage', 'get', [key]); },
-      set: function(key, value) { return requestAPI('Storage', 'set', [key, value]); },
-      remove: function(key) { return requestAPI('Storage', 'remove', [key]); },
-      clear: function() { return requestAPI('Storage', 'clear', []); },
-      keys: function() { return requestAPI('Storage', 'keys', []); }
-    };
-    globalThis.craft.biometrics = {
-      isAvailable: function() { return requestAPI('Biometrics', 'isAvailable', []); },
-      getBiometricType: function() { return requestAPI('Biometrics', 'getBiometricType', []); },
-      authenticate: function(reason) { return requestAPI('Biometrics', 'authenticate', [reason || 'Authenticate to continue']); }
-    };
-    globalThis.craft.secureStorage = {
-      set: function(key, value) { return requestAPI('SecureStorage', 'set', [key, value]); },
-      get: function(key) { return requestAPI('SecureStorage', 'get', [key]); },
-      remove: function(key) { return requestAPI('SecureStorage', 'remove', [key]); },
-      delete: function(key) { return requestAPI('SecureStorage', 'remove', [key]); },
-      clear: function() { return requestAPI('SecureStorage', 'clear', []); }
-    };
-    globalThis.craft.db = {
-      execute: function(sql, params) { return requestAPI('Database', 'execute', [sql, params || []]); },
-      query: function(sql, params) { return requestAPI('Database', 'query', [sql, params || []]); },
-      beginTransaction: function() { return requestAPI('Database', 'beginTransaction', []); },
-      commit: function() { return requestAPI('Database', 'commit', []); },
-      rollback: function() { return requestAPI('Database', 'rollback', []); }
-    };
-    function onAppStateChange(callback) {
-        if (typeof callback !== 'function') throw new TypeError('lifecycle.onStateChange needs a function');
-        appStateHandlers.add(callback);
-        return function() { appStateHandlers.delete(callback); };
-    }
-    globalThis.craft.lifecycle = {
-      getState: function() { return currentAppState; },
-      onStateChange: onAppStateChange,
-      onChange: onAppStateChange
-    };
-    globalThis.craft.getAppState = globalThis.craft.lifecycle.getState;
-    globalThis.craft.onAppStateChange = onAppStateChange;
-    globalThis.craft.deepLinks = {
-      getInitialURL: function() {
-        initialDeepLinkClaimed = true;
-        return requestAPI('DeepLinks', 'getInitialURL', []);
-      },
-      onLink: function(callback) {
-        if (typeof callback !== 'function') throw new TypeError('deepLinks.onLink needs a function');
-        deepLinkHandlers.add(callback);
-        return function() { deepLinkHandlers.delete(callback); };
-      }
-    };
-    globalThis.craft.notifications = {
-      show: function(notification) { return requestAPI('Notifications', 'schedule', [notification]); },
-      schedule: function(notification) { return requestAPI('Notifications', 'schedule', [notification]); },
-      cancel: function(id) { return requestAPI('Notifications', 'cancel', [id]); },
-      cancelAll: function() { return requestAPI('Notifications', 'cancelAll', []); },
-      pending: function() { return requestAPI('Notifications', 'pending', []); }
-    };
-    // fetch over the Network capability, for hosts that advertise it.
-    // JavaScriptCore has no fetch of its own; the host runs the request and
-    // answers with { status, statusText, url, redirected, headers, body }.
-    function nativeResponse(data) {
-      const headers = data && data.headers && typeof data.headers === 'object' ? data.headers : {};
-      const body = data && data.body != null ? String(data.body) : '';
-      const status = Number(data && data.status) || 0;
-      let bodyUsed = false;
-      function consume() {
-        if (bodyUsed) return Promise.reject(new TypeError('Body has already been consumed'));
-        bodyUsed = true;
-        return Promise.resolve(body);
-      }
-      return {
-        type: 'basic',
-        url: data && data.url || '',
-        status,
-        statusText: data && data.statusText || '',
-        ok: status >= 200 && status < 300,
-        redirected: Boolean(data && data.redirected),
-        headers: {
-          get: function(name) {
-            const value = headers[String(name).toLowerCase()];
-            return value == null ? null : String(value);
-          },
-          has: function(name) { return headers[String(name).toLowerCase()] != null; },
-          forEach: function(callback) {
-            Object.keys(headers).forEach(function(name) { callback(String(headers[name]), name); });
-          }
-        },
-        get bodyUsed() { return bodyUsed; },
-        text: consume,
-        json: function() { return consume().then(function(text) { return JSON.parse(text); }); }
-      };
-    }
-    function nativeFetch(input, init) {
-      const options = init || {};
-      const request = input && typeof input === 'object' ? input : {};
-      const url = typeof input === 'string' ? input : String(request.url || input);
-      const method = String(options.method || request.method || 'GET').toUpperCase();
-      const headers = {};
-      const source = options.headers || request.headers;
-      function addHeader(name, value) { headers[String(name).toLowerCase()] = String(value); }
-      if (Array.isArray(source)) source.forEach(function(pair) { addHeader(pair[0], pair[1]); });
-      else if (source && typeof source.forEach === 'function') source.forEach(function(value, name) { addHeader(name, value); });
-      else if (source && typeof source === 'object') Object.keys(source).forEach(function(name) { addHeader(name, source[name]); });
-      const body = options.body !== undefined ? options.body : request.body;
-      if (body != null && typeof body !== 'string') {
-        return Promise.reject(new TypeError('fetch in a native screen sends string bodies only'));
-      }
-      if (body != null && (method === 'GET' || method === 'HEAD')) {
-        return Promise.reject(new TypeError('A GET or HEAD request cannot have a body'));
-      }
-      return requestAPI('Network', 'fetch', [{ url, method, headers, body: body == null ? null : body }]).then(nativeResponse, function(error) {
-        // Match the web: transport failures are TypeErrors, statuses are not.
-        if (error && error.code === 'INVALID_ARGUMENT') throw error;
-        const failure = new TypeError(error && error.message || 'Network request failed');
-        failure.code = error && error.code || 'NETWORK_ERROR';
-        throw failure;
-      });
-    }
-    if (nativeCapabilities.has('fetch') && typeof globalThis.fetch !== 'function') {
-      globalThis.fetch = nativeFetch;
-    }
-    globalThis.craft.scheduleNotification = globalThis.craft.notifications.schedule;
-    globalThis.craft.cancelNotification = globalThis.craft.notifications.cancel;
-    globalThis.craft.cancelAllNotifications = globalThis.craft.notifications.cancelAll;
-    globalThis.craft.getPendingNotifications = globalThis.craft.notifications.pending;
-
-    bridge.onMessage(function(raw) {
-      const message = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      if (message.type === 'EVENT') {
-        const handler = handlers[message.payload.handlerName];
-        if (handler) handler(message.payload.nativeEvent || {});
-      }
-      else if (message.type === 'API_RESPONSE' || message.type === 'API_ERROR') {
-        const requestId = message.correlationId || message.payload.requestId;
-        const pending = pendingAPI.get(requestId);
-        if (!pending) return;
-        pendingAPI.delete(requestId);
-        if (pending.timeout !== null && cancelTimeout) cancelTimeout(pending.timeout);
-        if (message.type === 'API_RESPONSE') pending.resolve(message.payload.data);
-        else {
-          const error = new Error(message.payload.message || 'Native API failed');
-          error.code = message.payload.code || 'CRAFT_ERROR';
-          pending.reject(error);
-        }
-        scheduleRender();
-      }
-      else if (message.type === 'APP_STATE') {
-        if (message.payload.state === currentAppState) return;
-        currentAppState = message.payload.state;
-        dispatchSubscription(appStateHandlers, message.payload.state);
-      }
-      else if (message.type === 'DEEP_LINK') {
-        if (initialDeepLinkClaimed && message.payload.initial) return;
-        dispatchSubscription(deepLinkHandlers, message.payload);
-      }
-      else if (message.type === 'MUTATION_ERROR') {
-        mutationsEnabled = false;
-        mutationRevision = 0;
-        previousTree = null;
-        sendRenderFallback();
-      }
-    });
-
-    // Script code runs after Craft APIs are installed, so top-level effects
-    // can call them just as event handlers can.
-    ${document.script.code}
-
-    // Register handlers
-    ${document.script.functions.map(fn => `
-    if (typeof ${fn} === 'function') {
-      handlers['${fn}'] = function(event) {
-        const result = ${fn}(event);
-        if (result && typeof result.then === 'function') {
-          return result.then(function(value) { render(); return value; });
-        }
-        render();
-        return result;
-      };
-    }
-    `).join('\n')}
-
-    render();
-  }
-
-  // Export for debugging
-  globalThis.__STX_DOCUMENT__ = __STX_DOCUMENT__;
-})();
-`
+  /** What the compiler could not translate exactly, on stderr; the code on. */
+  private reportWarnings(bundle: NativeBundle): string {
+    for (const warning of bundle.warnings) console.warn(`warning: ${warning}`)
+    return bundle.code
   }
 
   // ========================================================================
@@ -1368,7 +761,8 @@ catch (error) {
       const arg = args[i]
       if (arg.startsWith('--')) {
         const [key, value] = arg.slice(2).split('=')
-        flags[key] = value || args[++i] || 'true'
+        // A flag followed by another flag is a boolean (`--minify --output x`).
+        flags[key] = value || (args[i + 1] !== undefined && !args[i + 1].startsWith('--') ? args[++i] : 'true')
       }
       else if (arg.startsWith('-') && arg.length > 1) {
         const key = arg.slice(1)
@@ -1405,7 +799,7 @@ Commands:
   run android             Run on Android emulator
   build ios               Build iOS app
   build android           Build Android app
-  compile <file>          Compile STX file to IR (or --format bundle)
+  compile <file>          Compile STX file to IR (or --format bundle [--minify])
 
 Options:
   --port <number>         Dev server port (default: 8081)
