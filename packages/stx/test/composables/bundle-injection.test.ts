@@ -102,3 +102,45 @@ describe('bundles injected after the signals runtime', () => {
     expect(composables).toBeGreaterThan(stores)
   })
 })
+
+describe('large bundles in serve mode', () => {
+  // A store big enough to cross the threshold for its own file.
+  const bigStoresDir = path.join(APP, 'big-stores')
+
+  beforeAll(async () => {
+    fs.mkdirSync(bigStoresDir, { recursive: true })
+    await Bun.write(path.join(bigStoresDir, 'cart.ts'), [
+      `import { defineStore, state } from 'stx'`,
+      ``,
+      `export const useCart = defineStore('cart', () => {`,
+      `  const total = state(0)`,
+      `  const notes = state(${JSON.stringify('x'.repeat(6000))})`,
+      `  function checkout() { return applyDiscount(total()) }`,
+      `  return { total, notes, checkout }`,
+      `})`,
+    ].join('\n'))
+  })
+
+  async function renderServed(): Promise<string> {
+    clearComposableCache()
+    const options = { ...defaultConfig, storesDir: bigStoresDir, composablesDir, buildMode: 'serve' } as StxOptions
+    return processDirectives(PAGE, {}, path.join(APP, 'page.stx'), options, new Set())
+  }
+
+  it('links the stores as a cached file instead of inlining them in every page', async () => {
+    const { getServeModuleBundle } = await import('../../src/caching')
+    const output = await renderServed()
+    const src = output.match(/<script data-stx-stores src="([^"]+)"><\/script>/)?.[1]
+    expect(src).toBeTruthy()
+    expect(output).not.toContain('x'.repeat(6000))
+    const hash = src!.match(/([0-9a-f]{16})\.js$/)?.[1]
+    expect(getServeModuleBundle(hash!)).toContain('x'.repeat(6000))
+  })
+
+  it('still ships a composable only that store reaches, though the store is now a file', async () => {
+    const { getServeModuleBundle } = await import('../../src/caching')
+    const output = await renderServed()
+    const linked = Array.from(output.matchAll(/data-stx-composables src="[^"]*?([0-9a-f]{16})\.js"/g), match => getServeModuleBundle(match[1]!) || '')
+    expect(output.includes('DISCOUNT_BODY_SENTINEL') || linked.some(code => code.includes('DISCOUNT_BODY_SENTINEL'))).toBe(true)
+  })
+})

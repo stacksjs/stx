@@ -317,6 +317,24 @@ function findScriptBlockByAttribute(html: string, attribute: string): ScriptBloc
  * (stacksjs/stx#1957). Tagged data-stx-scoped so SPA navigation carries it
  * into the next page along with the component scripts that depend on it.
  */
+/**
+ * A page-wide bundle (the stores, the composables) as a content-addressed
+ * file rather than inline text, in serve mode. Inlined, they were ~230KB of
+ * every document and every fragment: parsed and compiled again on each page
+ * the phone opened, and kept again in each page the offline worker and the
+ * router cached. As a file it is fetched once, kept immutably and compiled
+ * from the browser's code cache. Small bundles stay inline, where a request
+ * would cost more than the bytes; a static build has no server to answer the
+ * URL and keeps them inline too.
+ */
+const EXTERNAL_BUNDLE_MIN_BYTES = 4096
+async function externalBundleTag(attrs: string, code: string, options: StxOptions): Promise<string | null> {
+  if (options.buildMode !== 'serve' || code.length < EXTERNAL_BUNDLE_MIN_BYTES)
+    return null
+  const { registerServeModuleBundle } = await import('./caching')
+  return `<script ${attrs} src="${registerServeModuleBundle(code)}"></script>`
+}
+
 async function buildModulesTag(
   sources: Array<string | null>,
   options: StxOptions,
@@ -715,6 +733,9 @@ export async function processDirectives(
         if (runtime) {
           let modulesTag: string | null = null
           let storeTag: string | null = null
+          // The store code as text, for the scans below: the tag itself can be
+          // just a src, which a scan for imports or composables reads as nothing.
+          let storeScan: string | null = null
           let composableTag: string | null = null
           let frameworkScript: string | null = null
 
@@ -725,8 +746,10 @@ export async function processDirectives(
             // point at the real app directory). Fall back to config lookup.
             const resolvedStoresDir = (options as any).storesDir as string | undefined
             const storeCode = await getStoreScript(resolvedStoresDir)
-            if (storeCode)
-              storeTag = `<script data-stx-stores>${storeCode}</script>`
+            if (storeCode) {
+              storeScan = `<script data-stx-stores>${storeCode}</script>`
+              storeTag = (await externalBundleTag('data-stx-stores', storeCode, options)) ?? storeScan
+            }
           }
           catch {
             // Store loading is optional
@@ -735,7 +758,7 @@ export async function processDirectives(
           // The page-level module registry (#1957): every module a component or
           // store imports, bundled and evaluated ONCE for the page, so module
           // state is shared instead of duplicated per component bundle.
-          modulesTag = await buildModulesTag([result, storeTag], options, dependencies)
+          modulesTag = await buildModulesTag([result, storeScan], options, dependencies)
 
           // Framework composables the page actually calls but the runtime does
           // not provide (#1805). Bundled from the real modules rather than
@@ -771,13 +794,14 @@ export async function processDirectives(
           try {
             const { getComposableScript } = await importOnce('stx/composable-loader', () => import('./composable-loader'))
             const resolvedComposablesDir = (options as any).composablesDir as string | undefined
-            const pending = [modulesTag, storeTag, frameworkScript].filter((text): text is string => text !== null)
+            const pending = [modulesTag, storeScan, frameworkScript].filter((text): text is string => text !== null)
             const composableCode = await getComposableScript(options._layerComposableDirs ?? resolvedComposablesDir, result, pending)
             if (composableCode)
               // Scoped and always-run like the module registry, so a fragment
               // navigation carries it and the router runs it: the next page may
               // call a composable this one never loaded.
-              composableTag = `<script data-stx-scoped data-stx-run="always" data-stx-composables>${composableCode}</script>`
+              composableTag = (await externalBundleTag('data-stx-scoped data-stx-run="always" data-stx-composables', composableCode, options))
+                ?? `<script data-stx-scoped data-stx-run="always" data-stx-composables>${composableCode}</script>`
           }
           catch {
             // Composable loading is optional
