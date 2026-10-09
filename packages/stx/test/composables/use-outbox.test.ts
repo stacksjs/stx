@@ -119,3 +119,104 @@ describe('useOutbox', () => {
     outbox.stop()
   })
 })
+
+describe('useOutbox: delivering once, in time', () => {
+  it('sends one Idempotency-Key per entry, the same on every attempt', async () => {
+    let online = false
+    const keys: string[] = []
+    const outbox = useOutbox(name(), {
+      storage: memory(),
+      fetch: async (_url, init) => {
+        keys.push((init.headers as Record<string, string>)['Idempotency-Key']!)
+        if (!online) throw new TypeError('Load failed')
+        return new Response('{}', { status: 200 })
+      },
+    })
+    const result = await outbox.send('/api/a', { method: 'POST', body: '{}' })
+    expect(result.status).toBe('queued')
+    await outbox.flush(true)
+    online = true
+    await outbox.flush(true)
+    expect(keys.length).toBe(3)
+    expect(new Set(keys).size).toBe(1)
+    expect(keys[0]).toBe((result as any).entry.id)
+
+    // A key of the caller's own is left as it is, and the header can be turned off.
+    await outbox.send('/api/b', { method: 'POST', headers: { 'idempotency-key': 'mine' } })
+    expect(keys.at(-1)).toBeUndefined()
+    outbox.stop()
+    const plain = useOutbox(name(), { storage: memory(), idempotency: false, fetch: async (_u, init) => { keys.push(JSON.stringify(init.headers)); return new Response('{}') } })
+    await plain.send('/api/c', { method: 'POST' })
+    expect(keys.at(-1)).toBe('{}')
+    plain.stop()
+  })
+
+  it('gives up on an attempt after timeoutMs and keeps the write', async () => {
+    let aborted = false
+    const outbox = useOutbox(name(), {
+      storage: memory(),
+      timeoutMs: 30,
+      fetch: (_url, init) => new Promise((_, reject) => {
+        init.signal!.addEventListener('abort', () => {
+          aborted = true
+          reject(new DOMException('aborted', 'AbortError'))
+        })
+      }),
+    })
+    const started = Date.now()
+    const result = await outbox.send('/api/slow', { method: 'POST' })
+    expect(result.status).toBe('queued')
+    expect(aborted).toBe(true)
+    expect(Date.now() - started).toBeLessThan(500)
+    outbox.stop()
+  })
+})
+
+describe('useOutbox: a waiting write shown on the reads it changes', () => {
+  const target = { key: 'weights', url: '/api/health/weight?days=90' }
+
+  it('applies waiting writes that affect a read, oldest first, and lists them', async () => {
+    const outbox = useOutbox(name(), {
+      storage: memory(),
+      fetch: async () => { throw new TypeError('offline') },
+      overlays: { addWeight: (list: number[], entry) => [...list, JSON.parse(entry.body!).kg] },
+    })
+    await outbox.send('/api/health/weight', { method: 'POST', body: '{"kg":80}', affects: ['/api/health/weight'], overlay: 'addWeight' })
+    await outbox.send('/api/health/weight', { method: 'POST', body: '{"kg":81}', affects: ['weights'], apply: (list: number[]) => [...list, 81] })
+    await outbox.send('/api/other', { method: 'POST', affects: ['/api/other'], apply: () => 'never' })
+    expect(outbox.overlay(target, [79])).toEqual([79, 80, 81])
+    expect(outbox.pendingFor('/api/health/weight').length).toBe(1)
+    expect(outbox.pendingFor('weights').length).toBe(1)
+    const first = outbox.entries()[0]!
+    expect(outbox.overlay(target, [79], first.id)).toEqual([79, 80])
+    outbox.stop()
+  })
+
+  it('tells the page when it changes, and which entry reached the server', async () => {
+    let online = false
+    const heard: any[] = []
+    const listener = (event: Event) => heard.push((event as CustomEvent).detail)
+    window.addEventListener('stx:outbox', listener)
+    const outbox = useOutbox(name(), {
+      storage: memory(),
+      fetch: async () => {
+        if (!online) throw new TypeError('offline')
+        return new Response('{}')
+      },
+    })
+    await outbox.send('/api/a', { method: 'POST', affects: ['a'] })
+    online = true
+    await outbox.flush(true)
+    window.removeEventListener('stx:outbox', listener)
+    expect(heard.map(d => [d.pending, d.sent ? d.sent.affects : null])).toEqual([[1, null], [1, ['a']], [0, null]])
+    outbox.stop()
+  })
+
+  it('is on the page registry cached queries read, until stopped', () => {
+    const box = name()
+    const outbox = useOutbox(box, { storage: memory() })
+    expect((globalThis as any).__stx_outboxes.get(box)).toBe(outbox)
+    outbox.stop()
+    expect((globalThis as any).__stx_outboxes.has(box)).toBe(false)
+  })
+})

@@ -12,6 +12,8 @@ import { state, derived, effect, batch, onMount, onDestroy, isSignal, isDerived,
 import { runtimeDirectiveNamesLiteral, runtimeEventRegexLiteral, runtimeHandledXAttrsLiteral } from './runtime-globals'
 import { createModelSignal } from './component-model'
 import { readHydratedData, clearServerData } from './composables/use-fetch'
+import { createKeptStore, indexedDbBackend } from './offline/kept-store'
+import { createQueryCache, queryTargetMatches } from './offline/query-cache'
 
 export * from './signals-api'
 
@@ -1859,15 +1861,44 @@ else if (immediate) {
     var staleTime = options.staleTime || 0;
     var cacheTime = options.cacheTime || 300000; // 5 min default
     var cacheKey = options.cacheKey || (typeof url === 'function' ? null : url);
-    var data = state(options.initialData || null);
-    var loading = state(true);
+    // keep: the answer is kept on the device per account (setKeptScope, or
+    // options.scope) and seeds the next visit synchronously, refreshed behind.
+    // true keeps it under the query's key; a string names it.
+    var keepKey = options.keep ? (typeof options.keep === 'string' ? options.keep : cacheKey) : null;
+    var queryTarget = function() {
+      var resolved = null;
+      try { resolved = typeof url === 'function' ? url() : url; } catch (e) {}
+      return { key: cacheKey || keepKey || resolved || '', url: resolved };
+    };
+    // What is shown is the last answer with the outbox's waiting writes on
+    // top, so a change made offline is not undone by a refetch.
+    var base = options.initialData || null;
+    var seeded = keepKey ? __stxQueries.seed(keepKey, options.scope) : undefined;
+    if (seeded) base = seeded.data;
+    var data = state(seeded ? __stxQueries.overlay(queryTarget(), base) : base);
+    var show = function(value) {
+      base = value;
+      data.set(__stxQueries.overlay(queryTarget(), value));
+    };
+    var answered = false;
+    var loading = state(!seeded);
     // See useFetch: loading means "nothing to show yet", isFetching means "a
     // request is open" — including a background refresh, which is the case that
     // makes the distinction necessary (#1929).
     var isFetching = state(true);
     var error = state(null);
-    var isStale = state(false);
+    var isStale = state(!!seeded);
     if (options.suspense) registerSuspense(loading, error);
+    // Kept too large for a synchronous read: it arrives a moment later, and
+    // shows unless an answer came first.
+    if (keepKey && !seeded) {
+      __stxQueries.restore(keepKey, options.scope).then(function(found) {
+        if (!found || answered) return;
+        show(found.data);
+        loading.set(false);
+        isStale.set(true);
+      });
+    }
 
     // Per-run AbortController: a newer run aborts the previous in-flight one and
     // onDestroy aborts the last, so a resolved request can't write into a
@@ -1895,7 +1926,8 @@ else if (immediate) {
       // Check cache
       var cached = _queryCache[key];
       if (cached && (Date.now() - cached.timestamp < staleTime)) {
-        data.set(cached.data);
+        answered = true;
+        show(cached.data);
         if (!background) loading.set(false);
         isFetching.set(false);
         isStale.set(false);
@@ -1905,7 +1937,7 @@ else if (immediate) {
 
       // Stale-while-revalidate
       if (cached) {
-        data.set(cached.data);
+        show(cached.data);
         isStale.set(true);
       }
 
@@ -1923,7 +1955,9 @@ else if (immediate) {
         try {
           var joinedResult = await shared.promise;
           var joinedTransformed = options.transform ? options.transform(joinedResult) : joinedResult;
-          data.set(joinedTransformed);
+          answered = true;
+          show(joinedTransformed);
+          if (keepKey) __stxQueries.persist(keepKey, joinedTransformed, options.scope);
           if (background) error.set(null);
           isStale.set(false);
           if (options.onSuccess) options.onSuccess(joinedTransformed);
@@ -1977,7 +2011,9 @@ else if (immediate) {
         var result = await netPromise;
         if (__signal && __signal.aborted) return;
         var transformed = options.transform ? options.transform(result) : result;
-        data.set(transformed);
+        answered = true;
+        show(transformed);
+        if (keepKey) __stxQueries.persist(keepKey, transformed, options.scope);
         if (background) error.set(null);
         isStale.set(false);
         _queryCache[key] = { data: transformed, timestamp: Date.now() };
@@ -2000,16 +2036,40 @@ finally {
       }
     };
 
+    // A refetch nobody asked for does not set loading (see backgroundRun below).
+    var backgroundRun = { background: true };
+
     if (options.immediate !== false) {
-      onMount(fetchData);
+      // Seeded from the device: the kept copy is on screen, so the first
+      // fetch refreshes it behind rather than putting a spinner over it.
+      onMount(function() { return seeded ? fetchData(backgroundRun) : fetchData(); });
     }
+
+    // The worker has a newer answer for this URL, or the outbox changed: a
+    // write waiting on it is shown on top, and one that reached the server
+    // stays shown until the refetch it triggers includes it.
+    var unwatch = __stxQueries.watch({
+      target: queryTarget,
+      updated: function() {
+        delete _queryCache[cacheKey || queryTarget().url];
+        fetchData(backgroundRun);
+      },
+      outbox: function(sent) {
+        if (sent) {
+          base = __stxQueries.overlay(queryTarget(), base, sent.id);
+          delete _queryCache[cacheKey || queryTarget().url];
+          fetchData(backgroundRun);
+        }
+        show(base);
+      }
+    });
+    onDestroy(unwatch);
 
     // A refetch nobody asked for does not set loading. Both of these refresh
     // data that is ALREADY on screen, so driving the first-load state from them
     // put a spinner over a populated view once a minute, forever — the reason a
     // polling view could not use this composable at all (#1929). Bind
     // isFetching for a subtle in-flight indicator.
-    var backgroundRun = { background: true };
 
     // refetchOnFocus — removed on destroy, like refetchInterval right below.
     // It used to add a listener and never remove it, so every instance leaked
@@ -6281,29 +6341,62 @@ catch (e) {} }
 
   // A value kept between visits, for a phone app between launches: the tab a
   // user opens right after starting the app draws last time's data at once
-  // and the fresh answer replaces it. Kept in localStorage under stx:kept:,
-  // in a scope such as the signed-in account, so one person's data is never
-  // shown to another. A scope of false, null or '' keeps nothing (a plain
-  // state), for a page or a visitor that should not leave data behind.
-  // forgetKeptState(scope) removes a scope's values, or every kept value.
+  // and the fresh answer replaces it. Kept under stx:kept:, in a scope such as
+  // the signed-in account, so one person's data is never shown to another. A
+  // scope of false, null or '' keeps nothing (a plain state), for a page or a
+  // visitor that should not leave data behind; no scope at all uses the one
+  // given to setKeptScope. forgetKeptState(scope) removes a scope's values, or
+  // every kept value.
+  //
+  // Stored by the kept store (offline/kept-store.ts): small values in
+  // localStorage, readable on the first draw, large ones in IndexedDB, written
+  // off the critical path and read back asynchronously. Values kept before it
+  // are read where they are.
   var STX_KEPT_PREFIX = 'stx:kept:';
+  var __stxKept = (${createKeptStore.toString()})(undefined, ${indexedDbBackend.toString()});
+  var __stxQueries = (${createQueryCache.toString()})({ state: state, kept: __stxKept, prefix: STX_KEPT_PREFIX, matches: ${queryTargetMatches.toString()} });
   function stxKeptPrefix(scope) {
     return STX_KEPT_PREFIX + (scope === undefined || scope === null || scope === '' ? '' : String(scope) + ':');
   }
   function keptState(name, initialValue, options) {
     var scope = options ? options.scope : undefined;
+    if (scope === undefined) scope = __stxQueries.scope();
     if (scope === false || scope === null || scope === '') return state(initialValue);
-    return useLocalStorage(stxKeptPrefix(scope) + name, initialValue);
+    var key = stxKeptPrefix(scope) + name;
+    var hit = __stxKept.peek(key);
+    var s = state(hit ? hit.value : initialValue);
+    var restored = {};
+    var touched = false;
+    s.subscribe(function(value) {
+      if (value === restored) return;
+      touched = true;
+      __stxKept.set(key, value);
+    });
+    // Large values are kept where only an asynchronous read reaches: they
+    // arrive a moment later, unless the screen set its own first.
+    if (!hit) {
+      __stxKept.load(key).then(function(found) {
+        if (!found || touched) return;
+        restored = found.value;
+        s.set(found.value);
+      });
+    }
+    return s;
   }
   function forgetKeptState(scope) {
-    try {
-      var prefix = stxKeptPrefix(scope);
-      for (var i = localStorage.length - 1; i >= 0; i--) {
-        var key = localStorage.key(i);
-        if (key && key.indexOf(prefix) === 0) localStorage.removeItem(key);
-      }
-    }
-    catch (e) {}
+    return __stxKept.forget(stxKeptPrefix(scope));
+  }
+  // The account kept state and cached queries belong to when they name none.
+  function setKeptScope(scope) {
+    __stxQueries.setScope(scope);
+  }
+  // Finish writing what is kept (before signing out, or in a test).
+  function flushKeptState() {
+    return __stxKept.flush();
+  }
+  // A query kept per account and refreshed behind: see offline/query-cache.ts.
+  function cachedQuery(key, options) {
+    return __stxQueries.cachedQuery(key, options);
   }
 
   // Reactive cookie binding. Mirrors useLocalStorage's shape: returns a string-
@@ -7368,6 +7461,9 @@ catch (e) {} }
     useSessionStorage,
     keptState,
     forgetKeptState,
+    setKeptScope,
+    flushKeptState,
+    cachedQuery,
     useCookie,
     useId,
     useReactiveProp,
@@ -8202,6 +8298,9 @@ else {
   window.useSessionStorage = useSessionStorage;
   window.keptState = keptState;
   window.forgetKeptState = forgetKeptState;
+  window.setKeptScope = setKeptScope;
+  window.flushKeptState = flushKeptState;
+  window.cachedQuery = cachedQuery;
   window.useEventListener = useEventListener;
   window.useWebSocket = useWebSocket;
   window.useColorMode = useColorMode;

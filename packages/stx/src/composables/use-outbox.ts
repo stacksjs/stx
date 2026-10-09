@@ -22,7 +22,22 @@
  * someone else's. Any other 4xx is the server saying no; sending it again
  * would get the same answer, so it is dropped and reported through
  * `onRejected`.
+ *
+ * A request that takes longer than `timeoutMs` (15 s) is given up on and kept
+ * for later, rather than leaving the screen waiting on a gym's one bar of
+ * signal. It may still have reached the server, so every entry carries an
+ * `Idempotency-Key` header, the same on every attempt: a server that honours
+ * it applies the write once however many times it arrives.
+ *
+ * An entry can say which reads it changes (`affects`: query keys or URLs) and
+ * how (`apply`, or a named function in `overlays`). Until it is delivered,
+ * cached queries (`cachedQuery`, `useQuery`) show their data with it applied,
+ * so the person's own change does not vanish when the screen refetches from a
+ * server that has not heard of it yet; once it is, they refetch. `entries()`
+ * and `pendingFor()` tell a screen what is still only on this phone.
  */
+
+import { queryTargetMatches } from '../offline/query-cache'
 
 export interface OutboxEntry {
   id: string
@@ -36,6 +51,29 @@ export interface OutboxEntry {
   attempts: number
   /** Not before this time (ms), after a failed attempt. */
   nextAt: number
+  /** Sent as `Idempotency-Key` on every attempt, so the server can apply the write once. */
+  idempotencyKey?: string
+  /** The reads this write changes: query keys, or the URLs they GET. */
+  affects?: string[]
+  /** The name of the function in the outbox's `overlays` that applies it to those reads. */
+  overlay?: string
+}
+
+/** Applies a waiting write to the data of a read it affects. */
+export type OutboxOverlay = (data: any, entry: OutboxEntry, target: { key: string, url?: string | null }) => any
+
+export interface OutboxSendInit extends RequestInit {
+  meta?: Record<string, unknown>
+  /** The reads this write changes: query keys, or the URLs they GET. */
+  affects?: string[]
+  /**
+   * Applies it to those reads while it waits. Kept in memory: after a
+   * reload, an entry is applied by its `overlay` name (or the outbox's
+   * `apply`) instead.
+   */
+  apply?: OutboxOverlay
+  /** The name of a function in `overlays` that applies it; survives a reload. */
+  overlay?: string
 }
 
 export type OutboxSendResult =
@@ -56,19 +94,31 @@ export interface OutboxOptions {
   onSent?: (entry: OutboxEntry, response: Response) => void
   /** Called when the server refused a queued entry (4xx): it is dropped. */
   onRejected?: (entry: OutboxEntry, response: Response) => void
+  /** Give up on one attempt after this long, ms, and keep the entry. Default 15000. */
+  timeoutMs?: number
+  /** Send `Idempotency-Key` with every entry. Default true. */
+  idempotency?: boolean
+  /** Named overlays, for entries sent with `overlay: 'name'`. */
+  overlays?: Record<string, OutboxOverlay>
+  /** The overlay for an entry that names none. */
+  apply?: OutboxOverlay
 }
 
 export interface Outbox {
   /** Send now; keep it for later if the network or the server is not there. */
-  send: (url: string, init?: RequestInit & { meta?: Record<string, unknown> }) => Promise<OutboxSendResult>
+  send: (url: string, init?: OutboxSendInit) => Promise<OutboxSendResult>
   /** Try everything that is waiting and due (or everything, with `force`). */
   flush: (force?: boolean) => Promise<void>
-  /** What is waiting, oldest first. */
+  /** What is waiting, oldest first: what a screen can mark "Saved on this phone". */
   entries: () => OutboxEntry[]
+  /** What is waiting that affects this read (a query key or URL). */
+  pendingFor: (keyOrUrl: string) => OutboxEntry[]
   /** How many are waiting. */
   readonly pending: number
-  /** Called with the waiting count whenever it changes; returns an unsubscribe. */
-  subscribe: (callback: (pending: number) => void) => () => void
+  /** Called with the waiting count (and the entries) whenever it changes; returns an unsubscribe. */
+  subscribe: (callback: (pending: number, entries: OutboxEntry[]) => void) => () => void
+  /** `data` with the waiting writes that affect this read applied, oldest first (only entry `onlyId`, when given). */
+  overlay: <T>(target: { key: string, url?: string | null }, data: T, onlyId?: string) => T
   /** Stop listening for the network and the timer. */
   stop: () => void
 }
@@ -115,6 +165,50 @@ function headersOf(init: RequestInit | undefined): Record<string, string> {
   return { ...(given as Record<string, string>) }
 }
 
+/** Every outbox on the page, which cached queries read their overlays from. */
+function registry(): Map<string, Outbox> {
+  const g = globalThis as any
+  if (!(g.__stx_outboxes instanceof Map))
+    g.__stx_outboxes = new Map()
+  return g.__stx_outboxes
+}
+
+/** Tell the page's cached queries the outbox changed (`sent`: an entry that just reached the server). */
+function announce(name: string, entries: OutboxEntry[], sent?: OutboxEntry): void {
+  const target: any = typeof window !== 'undefined' ? window : globalThis
+  const Event: typeof CustomEvent | undefined = target.CustomEvent || (typeof CustomEvent !== 'undefined' ? CustomEvent : undefined)
+  if (!Event || typeof target.dispatchEvent !== 'function')
+    return
+  try {
+    target.dispatchEvent(new Event('stx:outbox', { detail: { name, pending: entries.length, entries, sent: sent || null } }))
+  }
+  catch {}
+}
+
+/**
+ * Give up on a request after `ms`, keeping any signal the caller passed.
+ * AbortSignal.timeout where there is one; a timer where there is not.
+ */
+function timeoutSignal(ms: number, given?: AbortSignal | null): { signal?: AbortSignal, done: () => void } {
+  if (typeof AbortController === 'undefined')
+    return { signal: given || undefined, done: () => {} }
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(new DOMException('The request took too long.', 'TimeoutError')), ms)
+  const onAbort = (): void => controller.abort(given?.reason)
+  if (given) {
+    if (given.aborted)
+      controller.abort(given.reason)
+    else given.addEventListener('abort', onAbort, { once: true })
+  }
+  return {
+    signal: controller.signal,
+    done: () => {
+      clearTimeout(timer)
+      given?.removeEventListener('abort', onAbort)
+    },
+  }
+}
+
 let counter = 0
 function newId(): string {
   counter = (counter + 1) % 1e6
@@ -144,7 +238,10 @@ export function useOutbox(name: string, options: OutboxOptions = {}): Outbox {
   let opts = options
   const storage = options.storage ?? defaultStorage()
   const key = `stx-outbox:${name}`
-  const listeners = new Set<(pending: number) => void>()
+  const listeners = new Set<(pending: number, entries: OutboxEntry[]) => void>()
+  // Inline overlays, by entry id. Functions cannot be stored with the entry,
+  // so after a reload an entry is applied by its overlay name instead.
+  const applies = new Map<string, OutboxOverlay>()
   let timer: ReturnType<typeof setTimeout> | null = null
   let flushing: Promise<void> | null = null
 
@@ -163,8 +260,34 @@ export function useOutbox(name: string, options: OutboxOptions = {}): Outbox {
       else storage.removeItem(key)
     }
     catch {}
-    for (const listener of listeners) listener(list.length)
+    for (const known of Array.from(applies.keys())) {
+      if (!list.some(entry => entry.id === known))
+        applies.delete(known)
+    }
+    for (const listener of listeners) listener(list.length, list)
+    announce(name, list)
     schedule(list)
+  }
+
+  const withKey = (entry: OutboxEntry, headers: Record<string, string>): Record<string, string> => {
+    if (opts.idempotency === false || !entry.idempotencyKey)
+      return headers
+    for (const header of Object.keys(headers)) {
+      if (header.toLowerCase() === 'idempotency-key')
+        return headers
+    }
+    return { ...headers, 'Idempotency-Key': entry.idempotencyKey }
+  }
+
+  /** One attempt, given up on after timeoutMs. Throws when there is no answer. */
+  async function attempt(url: string, init: RequestInit): Promise<Response> {
+    const limit = timeoutSignal(opts.timeoutMs ?? 15_000, init.signal)
+    try {
+      return await sender()(url, { ...init, signal: limit.signal })
+    }
+    finally {
+      limit.done()
+    }
   }
 
   const sender = (): ((url: string, init: RequestInit) => Promise<Response>) =>
@@ -186,7 +309,7 @@ export function useOutbox(name: string, options: OutboxOptions = {}): Outbox {
   async function deliver(entry: OutboxEntry): Promise<'sent' | 'rejected' | 'kept'> {
     let response: Response
     try {
-      response = await sender()(entry.url, { method: entry.method, headers: entry.headers, body: entry.body ?? undefined })
+      response = await attempt(entry.url, { method: entry.method, headers: withKey(entry, entry.headers), body: entry.body ?? undefined })
     }
     catch {
       return 'kept'
@@ -214,6 +337,10 @@ export function useOutbox(name: string, options: OutboxOptions = {}): Outbox {
           break
         }
         if (at >= 0) {
+          // Heard while the entry is still listed, so a cached query can keep
+          // showing it until its refetch includes it.
+          if (outcome === 'sent')
+            announce(name, list, list[at])
           list.splice(at, 1)
           write(list)
         }
@@ -227,10 +354,11 @@ export function useOutbox(name: string, options: OutboxOptions = {}): Outbox {
     }
   }
 
-  async function send(url: string, init: RequestInit & { meta?: Record<string, unknown> } = {}): Promise<OutboxSendResult> {
-    const { meta, ...requestInit } = init
+  async function send(url: string, init: OutboxSendInit = {}): Promise<OutboxSendResult> {
+    const { meta, affects, apply, overlay, ...requestInit } = init
+    const id = newId()
     const entry: OutboxEntry = {
-      id: newId(),
+      id,
       url,
       method: (requestInit.method || 'GET').toUpperCase(),
       headers: headersOf(requestInit),
@@ -239,26 +367,56 @@ export function useOutbox(name: string, options: OutboxOptions = {}): Outbox {
       createdAt: Date.now(),
       attempts: 0,
       nextAt: 0,
+      idempotencyKey: id,
+    }
+    if (Array.isArray(affects) && affects.length)
+      entry.affects = affects.filter(item => typeof item === 'string' && item)
+    if (typeof overlay === 'string' && overlay)
+      entry.overlay = overlay
+    const keep = (nextAt: number): OutboxSendResult => {
+      if (typeof apply === 'function')
+        applies.set(id, apply)
+      write([...read(), { ...entry, attempts: 1, nextAt }])
+      return { status: 'queued', entry }
     }
     // Behind something already waiting, a write must wait its turn too.
     if (read().length) {
-      write([...read(), { ...entry, attempts: 1, nextAt: Date.now() }])
+      const result = keep(Date.now())
       void flush()
-      return { status: 'queued', entry }
+      return result
     }
     let response: Response
     try {
-      response = await sender()(url, { ...requestInit, method: entry.method })
+      response = await attempt(url, { ...requestInit, method: entry.method, headers: withKey(entry, entry.headers) })
     }
     catch {
-      write([...read(), { ...entry, attempts: 1, nextAt: Date.now() + delayFor(1) }])
-      return { status: 'queued', entry }
+      return keep(Date.now() + delayFor(1))
     }
-    if (retryable(response)) {
-      write([...read(), { ...entry, attempts: 1, nextAt: Date.now() + delayFor(1) }])
-      return { status: 'queued', entry }
-    }
+    if (retryable(response))
+      return keep(Date.now() + delayFor(1))
+    // Reached the server at once: the reads it changed fetch again.
+    if (response.ok && entry.affects)
+      announce(name, read(), entry)
     return response.ok ? { status: 'sent', response } : { status: 'rejected', response }
+  }
+
+  const matching = (entry: OutboxEntry, target: { key: string, url?: string | null }): boolean =>
+    !!entry.affects && entry.affects.some(item => queryTargetMatches(item, target))
+
+  function overlayOf<T>(target: { key: string, url?: string | null }, data: T, onlyId?: string): T {
+    let out: any = data
+    for (const entry of read()) {
+      if ((onlyId && entry.id !== onlyId) || !matching(entry, target))
+        continue
+      const fn = applies.get(entry.id) || (entry.overlay ? opts.overlays?.[entry.overlay] : undefined) || opts.apply
+      if (!fn)
+        continue
+      try {
+        out = fn(out, entry, target)
+      }
+      catch {}
+    }
+    return out as T
   }
 
   const onOnline = (): void => { void flush(true) }
@@ -272,6 +430,8 @@ export function useOutbox(name: string, options: OutboxOptions = {}): Outbox {
     send,
     flush,
     entries: read,
+    pendingFor: (keyOrUrl: string) => read().filter(entry => matching(entry, { key: keyOrUrl, url: keyOrUrl })),
+    overlay: overlayOf,
     get pending() { return read().length },
     subscribe(callback) {
       listeners.add(callback)
@@ -283,12 +443,15 @@ export function useOutbox(name: string, options: OutboxOptions = {}): Outbox {
       if (typeof removeEventListener === 'function') removeEventListener('online', onOnline)
       if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisible)
       outboxes.delete(name)
+      if (registry().get(name) === outbox)
+        registry().delete(name)
     },
     __setOptions(next) {
       opts = { ...opts, ...next }
     },
   }
   outboxes.set(name, outbox)
+  registry().set(name, outbox)
   // Anything left from before (a reload, the app closed offline) goes now.
   schedule(read())
   if (read().length) void flush(true)

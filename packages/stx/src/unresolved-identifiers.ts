@@ -26,7 +26,7 @@
  * the auto-import list did (#1804).
  */
 export const SERVER_ONLY_COMPOSABLES: readonly string[] = [
-  'broadcast', 'cacheMedia', 'calculateDistance', 'canNotify', 'clearCookies', 'clearFetchCache', 'clearOfflineData',
+  'applyOfflineUpdate', 'broadcast', 'cacheMedia', 'calculateDistance', 'canNotify', 'clearCookies', 'clearFetchCache', 'clearOfflineData',
   'clearStorage', 'copyToClipboard', 'createShareableFile', 'defineForm', 'getBatteryLevel', 'getCookie',
   'getCurrentPosition', 'getStorageKeys', 'getStorageSize', 'getVoices', 'hasBattery',
   'hasCameraPermission', 'hasGeolocationPermission', 'hasMicrophonePermission',
@@ -35,7 +35,7 @@ export const SERVER_ONLY_COMPOSABLES: readonly string[] = [
   'isDeviceOrientationSupported', 'isEventSourceSupported', 'isEyeDropperSupported',
   'isInFullscreen', 'isMutationObserverSupported', 'isPermissionGranted',
   'isSpeechRecognitionSupported', 'isSpeechSynthesisSupported', 'isWakeLockSupported',
-  'isWebSocketSupported', 'notify', 'parseCookies', 'pickColor', 'prefetch', 'removeCookie',
+  'isWebSocketSupported', 'notify', 'onOfflineUpdateReady', 'parseCookies', 'pickColor', 'prefetch', 'removeCookie',
   'requestMediaPermissions', 'requestMotionPermission', 'requestNotificationPermission',
   'requestOrientationPermission', 'setCookie', 'share', 'shareCurrentPage', 'shareFiles',
   'shareText', 'shareURL', 'shareWithFallback', 'speak', 'stopSpeaking', 'toggleFullscreen',

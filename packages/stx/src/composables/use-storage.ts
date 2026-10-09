@@ -20,6 +20,7 @@
  */
 import type { Signal } from '../signals-api'
 import { effect, state } from '../signals-api'
+import { keptStore, queryCache } from './use-cached-query'
 
 export type StorageType = 'local' | 'session'
 
@@ -382,7 +383,7 @@ export function getStorageSize(type: StorageType = 'local'): number {
   return size
 }
 
-/** Where kept values live in localStorage. */
+/** Where kept values live: the prefix of their keys in localStorage and IndexedDB. */
 export const KEPT_STATE_PREFIX = 'stx:kept:'
 
 export interface KeptStateOptions {
@@ -390,6 +391,7 @@ export interface KeptStateOptions {
    * Whose value this is, such as the signed-in account's id, so one person's
    * data is never shown to another. `false`, `null` or `''` keeps nothing: a
    * plain state, for a visitor or a page that should leave no data behind.
+   * Left out, the scope given to `setKeptScope` (none, if it was not called).
    */
   scope?: string | number | false | null
 }
@@ -398,7 +400,7 @@ function keptPrefix(scope: KeptStateOptions['scope']): string {
   return `${KEPT_STATE_PREFIX}${scope === undefined || scope === null || scope === '' || scope === false ? '' : `${scope}:`}`
 }
 
-/** The localStorage key a kept value uses. */
+/** The key a kept value uses. */
 export function keptStateKey(name: string, scope?: KeptStateOptions['scope']): string {
   return `${keptPrefix(scope)}${name}`
 }
@@ -408,29 +410,47 @@ export function keptStateKey(name: string, scope?: KeptStateOptions['scope']): s
  * right after the app starts draws last time's data at once, and the fresh
  * answer replaces it. Returns a Signal like `useLocalStorage`.
  *
+ * Small values are kept in localStorage and read synchronously; large ones in
+ * IndexedDB, written off the critical path and arriving a moment after the
+ * signal is created (offline/kept-store.ts).
+ *
  * @example
  * ```ts
  * const calendar = keptState('calendar', {}, { scope: user()?.id ?? false })
  * ```
  */
 export function keptState<T>(name: string, initialValue: T, options: KeptStateOptions = {}): Signal<T> {
-  const { scope } = options
-  if (scope === false || scope === null || scope === '')
+  const scope = options.scope === undefined ? queryCache().scope() : options.scope
+  // Nothing is kept on the server: a module-level store there would be
+  // shared by every request.
+  if (scope === false || scope === null || scope === '' || typeof window === 'undefined')
     return state<T>(initialValue)
-  return storageSignal('local', 'keptState', keptStateKey(name, scope), initialValue)
+  const key = keptStateKey(name, scope)
+  const kept = keptStore()
+  const hit = kept.peek(key)
+  const signal = state<T>(hit ? hit.value as T : initialValue)
+  let restored: unknown = {}
+  let touched = false
+  signal.subscribe((value) => {
+    if (value === restored)
+      return
+    touched = true
+    kept.set(key, value)
+  })
+  if (!hit) {
+    void kept.load(key).then((found) => {
+      if (!found || touched)
+        return
+      restored = found.value
+      signal.set(found.value as T)
+    })
+  }
+  return signal
 }
 
 /** Remove a scope's kept values, or every kept value: what signing out leaves behind is nothing. */
-export function forgetKeptState(scope?: KeptStateOptions['scope']): void {
-  if (typeof localStorage === 'undefined')
-    return
-  try {
-    const prefix = keptPrefix(scope)
-    for (let i = localStorage.length - 1; i >= 0; i--) {
-      const key = localStorage.key(i)
-      if (key?.startsWith(prefix))
-        localStorage.removeItem(key)
-    }
-  }
-  catch {}
+export function forgetKeptState(scope?: KeptStateOptions['scope']): Promise<void> {
+  if (typeof window === 'undefined')
+    return Promise.resolve()
+  return keptStore().forget(keptPrefix(scope))
 }

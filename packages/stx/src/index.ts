@@ -43,6 +43,16 @@ export {
   useStorage,
   type UseStorageOptions,
 } from './composables/use-storage'
+// Data kept per account and refreshed behind: the module twin of
+// window.stx.cachedQuery / setKeptScope / flushKeptState.
+export {
+  cachedQuery,
+  type CachedQuery,
+  type CachedQueryOptions,
+  flushKeptState,
+  type KeptScope,
+  setKeptScope,
+} from './composables/use-cached-query'
 // View composers were unreachable: `runComposers` is wired into the render
 // pipeline (process.ts:1206) and runs on every render, but the two functions that
 // PUT anything in the registry were never exported, so the registry was always

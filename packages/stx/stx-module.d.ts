@@ -112,6 +112,9 @@ declare module 'stx' {
   export const useSessionStorage: typeof globalThis.useSessionStorage
   export const keptState: typeof globalThis.keptState
   export const forgetKeptState: typeof globalThis.forgetKeptState
+  export const setKeptScope: typeof globalThis.setKeptScope
+  export const flushKeptState: typeof globalThis.flushKeptState
+  export const cachedQuery: typeof globalThis.cachedQuery
   export const useSlots: typeof globalThis.useSlots
   export const useStore: typeof globalThis.useStore
   export const useThrottle: typeof globalThis.useThrottle

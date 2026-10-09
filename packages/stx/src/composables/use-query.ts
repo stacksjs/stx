@@ -28,6 +28,14 @@ export interface UseQueryOptions<T = unknown> {
   onSuccess?: (data: T) => void
   /** Error callback */
   onError?: (error: Error) => void
+  /**
+   * Keep the answer on the device, per account, and seed the next visit with
+   * it synchronously (refreshed behind, not under a spinner). `true` keeps it
+   * under the query's key; a string names it.
+   */
+  keep?: boolean | string
+  /** Whose answer it is, as for `keptState`. Default: the scope given to `setKeptScope`. */
+  scope?: string | number | false | null
 }
 
 /** How one run of a request should behave. */

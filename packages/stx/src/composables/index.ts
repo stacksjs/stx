@@ -87,7 +87,16 @@ export {
 } from './use-network'
 
 // Writes that survive having no network, and forgetting offline data on sign-out
-export { cacheMedia, clearOfflineData } from './use-offline'
+export { applyOfflineUpdate, cacheMedia, clearOfflineData, onOfflineUpdateReady } from './use-offline'
+// Data kept per account, shown at once and refreshed behind
+export {
+  cachedQuery,
+  flushKeptState,
+  setKeptScope,
+  type CachedQuery,
+  type CachedQueryOptions,
+  type KeptScope,
+} from './use-cached-query'
 export {
   useOutbox,
   type Outbox,

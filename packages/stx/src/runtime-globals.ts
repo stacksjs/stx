@@ -43,12 +43,12 @@ import { importsSignalDeclarations } from './imported-signals'
  * plumbing, not part of the authoring surface.
  */
 export const STX_RUNTIME_GLOBALS: readonly string[] = [
-  'batch', 'clearServerData', 'computed', 'configureFetch', 'defineEmits', 'defineExpose', 'definePageMeta', 'defineProps',
-  'defineSlots', 'defineStore', 'derived', 'effect', 'forgetKeptState', 'goBack', 'goForward', 'inject',
+  'batch', 'cachedQuery', 'clearServerData', 'computed', 'configureFetch', 'defineEmits', 'defineExpose', 'definePageMeta', 'defineProps',
+  'defineSlots', 'defineStore', 'derived', 'effect', 'flushKeptState', 'forgetKeptState', 'goBack', 'goForward', 'inject',
   'invalidateRoute', 'isDerived', 'isSignal', 'keptState', 'navigate',
   'nextTick', 'onBeforeMount', 'onBeforeUnmount', 'onDestroy', 'onMount', 'onMounted', 'onUnmounted',
   'peek', 'provide', 'reactive',
-  'ref', 'refresh', 'registerStoresClient', 'setRouteParams', 'state', 'untrack', 'useAsync', 'useClickOutside', 'useColorMode',
+  'ref', 'refresh', 'registerStoresClient', 'setKeptScope', 'setRouteParams', 'state', 'untrack', 'useAsync', 'useClickOutside', 'useColorMode',
   'useCookie', 'useCounter', 'useDark', 'useDebounce', 'useDebouncedValue', 'useDocumentVisibility', 'useEventListener',
   'useFetch', 'useFocus', 'useHead', 'useId', 'useInterval', 'useLocalStorage', 'useMediaQuery',
   'useModel', 'useMutation', 'useOptimistic', 'usePreferredContrast', 'usePreferredDark',

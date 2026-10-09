@@ -484,7 +484,51 @@ declare function useSessionStorage<T>(_key: string, _defaultValue: T): StxSignal
 /** A value kept between visits (a phone app between launches) in a scope such as the signed-in account; a scope of false keeps nothing. */
 declare function keptState<T>(_name: string, _initialValue: T, _options?: { scope?: string | number | false | null }): StxSignal<T>
 /** Remove a scope's kept values, or every kept value. */
-declare function forgetKeptState(_scope?: string | number | false | null): void
+declare function forgetKeptState(_scope?: string | number | false | null): Promise<void>
+/** The account kept state and cached queries belong to when they name no scope. */
+declare function setKeptScope(_scope: string | number | false | null | undefined): void
+/** Finish writing what is kept (large values are written behind, to IndexedDB). */
+declare function flushKeptState(): Promise<void>
+
+/** Options of `cachedQuery`: see offline/query-cache.ts. */
+interface StxCachedQueryOptions<T> {
+  /** The URL to GET (answered as JSON), or a function giving it. */
+  url?: string | (() => string | null | undefined)
+  /** Load the data some other way than a GET of `url`. */
+  load?: (_context: { force: boolean, url: string | null, signal?: AbortSignal }) => Promise<T>
+  /** How to send the GET, with current credentials. */
+  fetch?: (_url: string, _init: RequestInit) => Promise<Response>
+  /** Whose data this is, as for keptState; a function is read at every load. Default: setKeptScope's. */
+  scope?: string | number | false | null | (() => string | number | false | null | undefined)
+  /** How long an answer counts as fresh, ms. Default 0. */
+  staleTime?: number
+  initial?: T
+  transform?: (_raw: any) => T
+  /** Give up on a request after this long, ms. Default 15000. */
+  timeoutMs?: number
+  /** Fetch when created. */
+  immediate?: boolean
+}
+
+interface StxCachedQuery<T> {
+  /** The last answer, with writes still waiting in the outbox applied. */
+  data: StxSignal<T>
+  loading: StxSignal<boolean>
+  isFetching: StxSignal<boolean>
+  error: StxSignal<string | null>
+  /** When the data shown was fetched (ms); 0 for none. */
+  updatedAt: StxSignal<number>
+  /** Fetch when older than staleTime (or always, with force). One request for every caller. */
+  load: (_force?: boolean) => Promise<T>
+  /** Fetch now, past every cache. */
+  refresh: () => Promise<T>
+  set: (_value: T | ((_current: T) => T)) => void
+  invalidate: () => void
+  readonly key: string
+}
+
+/** Data kept per account, shown at once from last time and refreshed behind. Same key, same query. */
+declare function cachedQuery<T = any>(_key: string, _options?: StxCachedQueryOptions<T>): StxCachedQuery<T>
 
 /**
  * Options accepted by the auto-imported `useCookie` global.
@@ -921,6 +965,9 @@ interface StxRuntimeRegistry {
   useSessionStorage: typeof useSessionStorage
   keptState: typeof keptState
   forgetKeptState: typeof forgetKeptState
+  setKeptScope: typeof setKeptScope
+  flushKeptState: typeof flushKeptState
+  cachedQuery: typeof cachedQuery
   useEventListener: typeof useEventListener
   useScrollLock: typeof useScrollLock
   useWebSocket: typeof useWebSocket
