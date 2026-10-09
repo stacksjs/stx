@@ -1,5 +1,25 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.406...v0.2.407)
+
+## ✨ Features
+
+- **router**: retained screens, per-tab stacks, swipe back and native motion ([1685ef0](https://github.com/stacksjs/stx/commit/1685ef0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **data**: persisted queries, a kept store off the main thread, and outbox writes shown until they sync ([f65601b](https://github.com/stacksjs/stx/commit/f65601b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **offline**: answer kept screens and API reads at once, revalidate behind, and update builds safely ([86e0cf3](https://github.com/stacksjs/stx/commit/86e0cf3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **offline**: drop a compressed answer's encoding and length from the decoded copy kept ([d2f5067](https://github.com/stacksjs/stx/commit/d2f5067)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.407 ([05154cf](https://github.com/stacksjs/stx/commit/05154cf)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.405...v0.2.406)
 
 ## 🐛 Bug Fixes
