@@ -75,6 +75,7 @@ const STX_RUNTIME_SPECIFIERS = new Set(['stx', '@stacksjs/stx'])
 // Import from tokenizer to avoid circular dependency
 import { findMatchingDelimiter } from './parser/tokenizer'
 import { mergeHeadConfigs, seoMetaToHeadConfig } from './head'
+import { normalizeHeadKeys, USE_HEAD_KEYS } from './head-keys'
 import { getPublicEnvDefine } from './public-env'
 import { isUsableParamName, safeEvaluate } from './safe-evaluator'
 import { responseBindings } from './page-response'
@@ -920,7 +921,7 @@ catch {
   // Module-global state would leak metadata between concurrent SSR requests.
   const useHead = (head: unknown) => {
     const existing = (context.__stx_runtime_head as Record<string, any>) || {}
-    context.__stx_runtime_head = mergeHeadConfigs(existing, (head as Record<string, any>) || {})
+    context.__stx_runtime_head = mergeHeadConfigs(existing, normalizeHeadKeys((head as Record<string, any>) || {}, { known: USE_HEAD_KEYS, source: 'useHead()' }))
   }
   const useSeoMeta = (meta: unknown) => {
     useHead(seoMetaToHeadConfig((meta as Record<string, any>) || {}))

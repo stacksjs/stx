@@ -28,6 +28,7 @@ import { loadStxConfig } from './config'
 import { createRouteRuleResolver, type RouteRules } from './route-rules'
 import { hydrateTemplateStream } from './template-hydrator'
 import { buildServerApi, discoverServerApi, type ServerApiOptions } from './server-api'
+import { APP_HEAD_KEYS, normalizeHeadKeys } from './head-keys'
 import { resolveRuntimeConfig } from './runtime-config-server'
 import { generateRuntimeConfigTypes } from './runtime-config-loader'
 import { layerManifest } from './application-layers'
@@ -174,7 +175,7 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
   const partialsDir = path.resolve(root, options.partialsDir ?? projectConfig.partialsDir ?? 'partials')
   const layoutsDir = path.resolve(root, options.layoutsDir ?? projectConfig.layoutsDir ?? 'layouts')
   const publicDir = options.publicDir ?? projectConfig.publicDir ?? 'public'
-  const headConfigDefault = projectConfig.app?.head || {}
+  const headConfigDefault = normalizeHeadKeys(projectConfig.app?.head, { known: APP_HEAD_KEYS, source: 'app.head' })
   const colorModeConfig = projectConfig.app?.colorMode
   const routerContainer: string = projectConfig.router?.container || 'main'
   const routeRules = options.routeRules ?? projectConfig.routeRules ?? {}

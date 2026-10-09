@@ -65,6 +65,7 @@ import { applyHeadInjections, createHeadInjections } from './head-injection'
 import { serverDataScope, serverDataTag } from './server-data'
 import { prepareRuntimeConfig } from './runtime-config-loader'
 import { injectRuntimeConfig } from './runtime-config-server'
+import { APP_HEAD_KEYS, normalizeHeadKeys } from './head-keys'
 import { applyHtmlAttrs, cloakStyleFragment, ensureDocumentShell, hasDocumentShell, injectConfigHeadTags, mergeHtmlAttrs, metaDedupKey, startsDocument } from './document-shell'
 
 // Extracted modules
@@ -551,7 +552,9 @@ export async function processDirectives(
       // The serve paths (dev-server.ts, serve.ts) set this when serving pages.
       // Tests and programmatic usage don't set it, so output stays unwrapped.
       if (isTopLevel && options.autoShell && options.buildMode !== 'compile') {
-        const baseHeadConfig = (options as any).app?.head || {}
+        // Plural list keys (`links`) are read as the singular and every
+        // unknown key is warned about once, instead of silently ignored.
+        const baseHeadConfig = normalizeHeadKeys((options as any).app?.head, { known: APP_HEAD_KEYS, source: 'app.head' })
         // Merge runtime useHead() state into the static config so per-page
         // useHead({ title, meta, link, ... }) calls actually affect the
         // generated <head>. Read from the context-bound copy first (set by

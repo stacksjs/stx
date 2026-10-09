@@ -31,6 +31,7 @@
 import { replaceDirectiveCalls, reportDirectiveFailure, splitTopLevelArgs } from './directive-arguments'
 import { ErrorCodes } from './error-handling'
 import { resolveMetaArguments } from './meta-arguments'
+import { normalizeHeadKeys, USE_HEAD_KEYS } from './head-keys'
 
 // =============================================================================
 // Types
@@ -233,8 +234,9 @@ export function resetHead(): void {
  * ```
  */
 export function useHead(config: HeadConfig): void {
-  // Merge with current head
-  currentHead = mergeHeadConfigs(currentHead, config)
+  // Merge with current head. `links` reads as `link`, and an unknown key is
+  // warned about once rather than dropped without a word (head-keys.ts).
+  currentHead = mergeHeadConfigs(currentHead, normalizeHeadKeys(config, { known: USE_HEAD_KEYS, source: 'useHead()' }))
 }
 
 /**
