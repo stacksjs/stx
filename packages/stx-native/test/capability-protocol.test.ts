@@ -212,4 +212,98 @@ describe('generated native capability protocol', () => {
       expect.objectContaining({ patch: expect.objectContaining({ children: ['craft://notes/1'] }) }),
     ]))
   })
+
+  it('installs fetch only when the host advertises it', () => {
+    expect(runtime('', { capabilities: ['storage'] }).scope.fetch).toBeUndefined()
+    const { scope } = runtime('', { capabilities: ['storage', 'fetch'] })
+    expect(typeof scope.fetch).toBe('function')
+    expect(scope.craft.capabilities.fetch).toBe(true)
+  })
+
+  it('sends fetch as one Network request and reads the answer like a Response', async () => {
+    const { scope, sent, receive } = runtime('', { capabilities: ['fetch'] })
+    const answer = scope.fetch('http://localhost:3011/api/profile', {
+      method: 'post',
+      headers: { Authorization: 'Bearer abc', 'Content-Type': 'application/json' },
+      body: '{"a":1}',
+    })
+    const request = sent.at(-1)!
+    expect(request.payload).toEqual({
+      version: 1,
+      module: 'Network',
+      method: 'fetch',
+      args: [{
+        url: 'http://localhost:3011/api/profile',
+        method: 'POST',
+        headers: { 'authorization': 'Bearer abc', 'content-type': 'application/json' },
+        body: '{"a":1}',
+      }],
+    })
+    receive({
+      type: 'API_RESPONSE',
+      correlationId: request.id,
+      payload: {
+        version: 1,
+        requestId: request.id,
+        data: { url: 'http://localhost:3011/api/profile', status: 201, statusText: 'created', redirected: false, headers: { 'content-type': 'application/json' }, body: '{"name":"Ava"}' },
+      },
+    })
+    const response = await answer
+    expect(response.ok).toBe(true)
+    expect(response.status).toBe(201)
+    expect(response.headers.get('Content-Type')).toBe('application/json')
+    expect(response.headers.get('missing')).toBeNull()
+    expect(await response.json()).toEqual({ name: 'Ava' })
+    expect(response.bodyUsed).toBe(true)
+    await expect(response.text()).rejects.toThrow('already been consumed')
+
+    const missing = scope.fetch('http://localhost:3011/api/nope')
+    const second = sent.at(-1)!
+    expect(second.payload.args[0]).toEqual({ url: 'http://localhost:3011/api/nope', method: 'GET', headers: {}, body: null })
+    receive({
+      type: 'API_RESPONSE',
+      correlationId: second.id,
+      payload: { version: 1, requestId: second.id, data: { status: 404, statusText: 'not found', headers: {}, body: 'Not found' } },
+    })
+    const notFound = await missing
+    expect(notFound.ok).toBe(false)
+    expect(await notFound.text()).toBe('Not found')
+  })
+
+  it('rejects bodies the host cannot send and turns transport failures into TypeErrors', async () => {
+    const { scope, sent, receive } = runtime('', { capabilities: ['fetch'] })
+    const before = sent.length
+    await expect(scope.fetch('https://example.com', { body: 'x' })).rejects.toThrow('cannot have a body')
+    await expect(scope.fetch('https://example.com', { method: 'POST', body: { a: 1 } })).rejects.toThrow('string bodies only')
+    expect(sent.length).toBe(before)
+
+    const offline = scope.fetch('https://example.com')
+    const request = sent.at(-1)!
+    receive({
+      type: 'API_ERROR',
+      correlationId: request.id,
+      payload: { version: 1, requestId: request.id, code: 'NETWORK_ERROR', message: 'The Internet connection appears to be offline.' },
+    })
+    const failure = await offline.catch((error: Error & { code?: string }) => error)
+    expect(failure).toBeInstanceOf(TypeError)
+    expect(failure.code).toBe('NETWORK_ERROR')
+  })
+
+  it('re-renders once top-level async work has used a capability answer', async () => {
+    const { sent, receive } = runtime(`
+      let name = 'loading'
+      globalThis.fetch('https://example.com/me').then(function(r) { return r.json() }).then(function(me) { name = me.name })
+    `, { capabilities: ['fetch'], template: '<View><Text testID="name">{name}</Text></View>' })
+    const request = sent.find(message => message.type === 'API_REQUEST')!
+    receive({
+      type: 'API_RESPONSE',
+      correlationId: request.id,
+      payload: { version: 1, requestId: request.id, data: { status: 200, headers: {}, body: '{"name":"Ava"}' } },
+    })
+    await new Promise(resolve => setTimeout(resolve, 5))
+    const updates = sent.filter(message => message.type === 'MUTATE')
+      .flatMap(message => message.payload.operations)
+      .filter(operation => operation.op === 'updateNode')
+    expect(updates).toEqual([expect.objectContaining({ patch: { children: ['Ava'] } })])
+  })
 })

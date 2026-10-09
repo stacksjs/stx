@@ -274,6 +274,36 @@ export interface ApiRequestPayload {
   args: unknown[]
 }
 
+/**
+ * The single argument of a `Network.fetch` capability request. The bundle's
+ * global `fetch` builds it; header names are lower-cased and bodies are text.
+ */
+export interface NativeFetchRequest {
+  /** Absolute `http` or `https` URL. */
+  url: string
+  /** Upper-cased HTTP method. Defaults to `GET`. */
+  method: string
+  headers: Record<string, string>
+  /** UTF-8 request body. A `GET` or `HEAD` request has none. */
+  body: string | null
+}
+
+/**
+ * The `API_RESPONSE` data for `Network.fetch`. HTTP error statuses are
+ * responses; transport failures are `API_ERROR`s with `NETWORK_ERROR`,
+ * `TIMEOUT`, `INVALID_ARGUMENT` or `RESPONSE_TOO_LARGE`.
+ */
+export interface NativeFetchResponse {
+  url: string
+  status: number
+  statusText: string
+  redirected: boolean
+  /** Lower-cased header names. */
+  headers: Record<string, string>
+  /** The body decoded as UTF-8. */
+  body: string
+}
+
 /** A request that no longer has a JavaScript consumer. */
 export interface ApiCancelPayload {
   version: 1
@@ -617,7 +647,11 @@ export interface NativeBridgeInterface {
   /** Versioned API request/response contract. Omitted by legacy hosts. */
   capabilityProtocolVersion?: 1
 
-  /** Capability names implemented by this host. */
+  /**
+   * Capability names implemented by this host, such as `storage`,
+   * `secureStorage`, `database` or `fetch` (a `Network.fetch` request served
+   * by the host, installed by the bundle as the global `fetch`).
+   */
   capabilities?: string[]
 
   /**

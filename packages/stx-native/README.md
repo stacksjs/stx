@@ -31,6 +31,8 @@ Run `stx-native compile --format bundle --output ./screen.js` without an input f
 
 Inside a native screen's `<script>`, the JavaScriptCore bridge exposes `craft.device.getInfo()`, `craft.clipboard.write(text)`, `craft.clipboard.read()`, `craft.haptic(style)`, and high-level `craft.haptics.impact(style)`, `.notification(type)`, and `.selection()`. Calls return promises. Rejections retain a `code` such as `CAPABILITY_DISABLED` or `INVALID_ARGUMENT`; the high-level haptics helpers intentionally treat `CAPABILITY_DISABLED` as a no-op, matching Craft's web bridge. The generated app must enable haptics and clipboard in its Craft config before those capabilities perform work.
 
+When the host advertises the `fetch` capability (Craft's iOS host does), the bundle installs a global `fetch` with the common subset: `method`, `headers`, a string `body`, and a response with `ok`, `status`, `statusText`, `url`, `headers.get()`, `text()` and `json()`. The host performs the request (URLSession on iOS) under the same 30-second deadline and route-teardown cancellation as the other capabilities; transport failures reject with a `TypeError` carrying a `code`. Once any capability answer settles, the screen re-renders after its promise continuations have run, so top-level async work such as `let today = null; fetch(url).then(r => r.json()).then(data => { today = data })` updates the screen without a handler.
+
 ### Native FlatList
 
 Bind a data array and mark the reusable row template with `listRole="item"`. Expressions inside that template receive `item` and `index`; `keyExtractor` must return a stable primitive key.

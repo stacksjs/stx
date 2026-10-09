@@ -1035,6 +1035,20 @@ catch (error) {
       });
     }
 
+    // Top-level async work (a fetch on open, a stored value read back) has no
+    // handler to re-render after it. A timer runs once the promise reactions
+    // queued by this answer have drained, so the screen's continuation has
+    // assigned its state; one render covers answers that arrive together.
+    let renderScheduled = false;
+    function scheduleRender() {
+      if (!scheduleTimeout || renderScheduled) return;
+      renderScheduled = true;
+      scheduleTimeout(function() {
+        renderScheduled = false;
+        render();
+      }, 0);
+    }
+
     function requestAPI(module, method, args) {
       return new Promise(function(resolve, reject) {
         const id = 'js_' + (++sequence);
@@ -1046,6 +1060,7 @@ catch (error) {
           const error = new Error('Native API request timed out');
           error.code = 'TIMEOUT';
           reject(error);
+          scheduleRender();
         }, timeoutMs) : null;
         pendingAPI.set(id, { resolve, reject, timeout });
         send('API_REQUEST', { version: 1, module, method, args }, id);
@@ -1089,6 +1104,7 @@ catch (error) {
       speech: false,
       network: false,
       deviceInfo: nativeCapabilities.has('device'),
+      fetch: nativeCapabilities.has('fetch'),
       badge: false,
       appReview: false
     };
@@ -1191,6 +1207,70 @@ catch (error) {
       cancelAll: function() { return requestAPI('Notifications', 'cancelAll', []); },
       pending: function() { return requestAPI('Notifications', 'pending', []); }
     };
+    // fetch over the Network capability, for hosts that advertise it.
+    // JavaScriptCore has no fetch of its own; the host runs the request and
+    // answers with { status, statusText, url, redirected, headers, body }.
+    function nativeResponse(data) {
+      const headers = data && data.headers && typeof data.headers === 'object' ? data.headers : {};
+      const body = data && data.body != null ? String(data.body) : '';
+      const status = Number(data && data.status) || 0;
+      let bodyUsed = false;
+      function consume() {
+        if (bodyUsed) return Promise.reject(new TypeError('Body has already been consumed'));
+        bodyUsed = true;
+        return Promise.resolve(body);
+      }
+      return {
+        type: 'basic',
+        url: data && data.url || '',
+        status,
+        statusText: data && data.statusText || '',
+        ok: status >= 200 && status < 300,
+        redirected: Boolean(data && data.redirected),
+        headers: {
+          get: function(name) {
+            const value = headers[String(name).toLowerCase()];
+            return value == null ? null : String(value);
+          },
+          has: function(name) { return headers[String(name).toLowerCase()] != null; },
+          forEach: function(callback) {
+            Object.keys(headers).forEach(function(name) { callback(String(headers[name]), name); });
+          }
+        },
+        get bodyUsed() { return bodyUsed; },
+        text: consume,
+        json: function() { return consume().then(function(text) { return JSON.parse(text); }); }
+      };
+    }
+    function nativeFetch(input, init) {
+      const options = init || {};
+      const request = input && typeof input === 'object' ? input : {};
+      const url = typeof input === 'string' ? input : String(request.url || input);
+      const method = String(options.method || request.method || 'GET').toUpperCase();
+      const headers = {};
+      const source = options.headers || request.headers;
+      function addHeader(name, value) { headers[String(name).toLowerCase()] = String(value); }
+      if (Array.isArray(source)) source.forEach(function(pair) { addHeader(pair[0], pair[1]); });
+      else if (source && typeof source.forEach === 'function') source.forEach(function(value, name) { addHeader(name, value); });
+      else if (source && typeof source === 'object') Object.keys(source).forEach(function(name) { addHeader(name, source[name]); });
+      const body = options.body !== undefined ? options.body : request.body;
+      if (body != null && typeof body !== 'string') {
+        return Promise.reject(new TypeError('fetch in a native screen sends string bodies only'));
+      }
+      if (body != null && (method === 'GET' || method === 'HEAD')) {
+        return Promise.reject(new TypeError('A GET or HEAD request cannot have a body'));
+      }
+      return requestAPI('Network', 'fetch', [{ url, method, headers, body: body == null ? null : body }]).then(nativeResponse, function(error) {
+        // Match the web: transport failures are TypeErrors, statuses are not.
+        if (error && error.code === 'INVALID_ARGUMENT') throw error;
+        const failure = new TypeError(error && error.message || 'Network request failed');
+        failure.code = error && error.code || 'NETWORK_ERROR';
+        throw failure;
+      });
+    }
+    if (nativeCapabilities.has('fetch') && typeof globalThis.fetch !== 'function') {
+      globalThis.fetch = nativeFetch;
+    }
     globalThis.craft.scheduleNotification = globalThis.craft.notifications.schedule;
     globalThis.craft.cancelNotification = globalThis.craft.notifications.cancel;
     globalThis.craft.cancelAllNotifications = globalThis.craft.notifications.cancelAll;
@@ -1214,6 +1294,7 @@ catch (error) {
           error.code = message.payload.code || 'CRAFT_ERROR';
           pending.reject(error);
         }
+        scheduleRender();
       }
       else if (message.type === 'APP_STATE') {
         if (message.payload.state === currentAppState) return;
