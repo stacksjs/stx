@@ -566,6 +566,29 @@ export function createRuntime(bridge: Any, options: RuntimeOptions = {}): { moun
     }, 0)
   }
 
+  // A timer's callback changes state the same way a handler does, so the
+  // screen redraws after it (a countdown, a debounce, a delayed reveal). The
+  // runtime's own timers use the unwrapped functions captured above.
+  function redrawAfter(name: 'setTimeout' | 'setInterval'): void {
+    const original = g[name]
+    if (typeof original !== 'function' || original.__stxRedraws) return
+    const wrapped = function (callback: Any, delay?: number, ...args: Any[]) {
+      if (typeof callback !== 'function') return original.call(g, callback, delay, ...args)
+      return original.call(g, (...given: Any[]) => {
+        try {
+          callback(...given)
+        }
+        finally {
+          scheduleRender()
+        }
+      }, delay, ...args)
+    }
+    wrapped.__stxRedraws = true
+    g[name] = wrapped
+  }
+  redrawAfter('setTimeout')
+  redrawAfter('setInterval')
+
   /** Run a handler, then render; once more when its promise settles. */
   function runHandler(handler: (event?: Any) => Any, event: Any): Any {
     let result: Any

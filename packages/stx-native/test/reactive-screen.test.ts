@@ -45,6 +45,8 @@ function host(code: string, globals: Record<string, any> = {}, bridge: Record<st
   const scope: Record<string, any> = {
     setTimeout,
     clearTimeout,
+    setInterval,
+    clearInterval,
     ...globals,
     __stxNativeBridge: {
       platform: 'ios',
@@ -491,6 +493,51 @@ globalThis.craft.navigation.setOptions({ title: 'Today', rightButtons: [{ id: 'm
     expect(app.sent.some(message => message.type === 'NAVIGATION_SET_OPTIONS')).toBe(false)
     app.receive({ type: 'EVENT', payload: { handlerName: 'navButton', nativeEvent: { id: 'me' } } })
     expect(app.text()).toBe('1')
+  })
+})
+
+describe('Craft host contract (B1–B4)', () => {
+  it('redraws after setTimeout and setInterval callbacks, with no handler involved', async () => {
+    const { code } = await compile(`<script>
+let label = 'waiting'
+let ticks = 0
+setTimeout(() => { label = 'fired' }, 1)
+const id = setInterval(() => { if (++ticks === 2) clearInterval(id) }, 1)
+</script>
+<template><View><Text>{label} {ticks}</Text></View></template>`)
+    const app = host(code)
+    expect(app.text()).toBe('waiting 0')
+    await new Promise(resolve => setTimeout(resolve, 40))
+    expect(app.text()).toBe('fired 2')
+  })
+
+  it('keeps globalThis.craft and the host\'s accessor namespaces it hangs off', async () => {
+    const { code } = await compile(`<script>
+const stored = globalThis.craft.storage.getSync('k')
+</script>
+<template><View><Text>{stored}</Text></View></template>`)
+    // Craft's shape: each namespace is an accessor whose setter re-adds the
+    // host's members to whatever object is assigned.
+    const craft: Record<string, any> = {}
+    let storage: Record<string, any> = {}
+    Object.defineProperty(craft, 'storage', {
+      configurable: true,
+      enumerable: true,
+      get: () => storage,
+      set: (value: Record<string, any>) => { storage = { getSync: (key: string) => `host:${key}`, ...value } },
+    })
+    craft.storage = {}
+    const app = host(code, { craft })
+    expect(app.scope.craft).toBe(craft)
+    expect(app.text()).toBe('host:k')
+    expect(typeof app.scope.craft.storage.get).toBe('function')
+  })
+
+  it('emits rounded-[Npx] and tracking-[…] as plain point numbers', () => {
+    const style = compileHeadwindToStyle('text-[13px] rounded-[10px] tracking-[0.05em] tracking-[1px]')
+    expect(style.borderRadius).toBe(10)
+    expect(style.letterSpacing).toBe(1)
+    expect(compileHeadwindToStyle('text-xs tracking-[0.1em]').letterSpacing).toBeCloseTo(1.2)
   })
 })
 
