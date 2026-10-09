@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.408...v0.2.409)
+
+## 🐛 Bug Fixes
+
+- **router**: run a fragment's external scripts in order, and need no Node global ([b76d677](https://github.com/stacksjs/stx/commit/b76d677)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **offline**: open a cold start at once on the build it has ([7fe85dc](https://github.com/stacksjs/stx/commit/7fe85dc)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **serve**: link the stores and composables as cached files ([df4c191](https://github.com/stacksjs/stx/commit/df4c191)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.409 ([bd8b343](https://github.com/stacksjs/stx/commit/bd8b343)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.407...v0.2.408)
 
 ## 🐛 Bug Fixes
