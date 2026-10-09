@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { FILE_SEGMENT_GUARD } from './file-requests'
 
 export function filePathToPattern(filePath: string, pagesDir: string): string {
   const relativePath = path.relative(pagesDir, filePath)
@@ -41,7 +42,18 @@ export function filePathToPattern(filePath: string, pagesDir: string): string {
  * the regex matched and the page rendered - which is why it reads as a routing
  * mystery rather than an off-by-one.
  */
-export function patternToRegex(pattern: string): { regex: RegExp, params: string[] } {
+export interface PatternToRegexOptions {
+  /**
+   * Compiling a PAGE route: a param that ends the pattern refuses a final
+   * segment naming a file (`/:username` does not match `/favicon.ico`; see
+   * file-requests.ts). Off for anything else - an API route such as
+   * `/api/files/:name` legitimately answers `report.pdf`.
+   */
+  page?: boolean
+}
+
+export function patternToRegex(pattern: string, options: PatternToRegexOptions = {}): { regex: RegExp, params: string[] } {
+  const guard = options.page ? FILE_SEGMENT_GUARD : ''
   const params: string[] = []
   let regexStr = ''
   let i = 0
@@ -54,7 +66,8 @@ export function patternToRegex(pattern: string): { regex: RegExp, params: string
     const optional = /^\/:([^/?*]+)\?/.exec(rest)
     if (optional) {
       params.push(optional[1]!)
-      regexStr += '(?:/([^/]+))?'
+      const last = i + optional[0].length === pattern.length
+      regexStr += `(?:/${last ? guard : ''}([^/]+))?`
       i += optional[0].length
       continue
     }
@@ -68,10 +81,14 @@ export function patternToRegex(pattern: string): { regex: RegExp, params: string
       continue
     }
 
+    // In a page route, a param that ends the pattern never captures a file
+    // name: `/:username` must not render a page for `/favicon.ico` (see
+    // file-requests.ts). A catch-all above is exempt, by design.
     const required = /^:([^/?*]+)/.exec(rest)
     if (required) {
       params.push(required[1]!)
-      regexStr += '([^/]+)'
+      const last = i + required[0].length === pattern.length
+      regexStr += `${last ? guard : ''}([^/]+)`
       i += required[0].length
       continue
     }
@@ -119,7 +136,7 @@ export function matchRoute(pathname: string, routes: { pattern: string, regex: R
  *
  * Exported so nothing has to write those two lines again.
  */
-export function bracketPathToRegex(routePath: string): { regex: RegExp, params: string[] } {
+export function bracketPathToRegex(routePath: string, options: PatternToRegexOptions = {}): { regex: RegExp, params: string[] } {
   // Reuse the one compiler rather than adding a fourth dialect: convert the
   // bracket spelling to the `:name` spelling, then hand it over.
   const pattern = routePath
@@ -127,5 +144,5 @@ export function bracketPathToRegex(routePath: string): { regex: RegExp, params: 
     .replace(/\[([^\]]+)\]/g, ':$1')
     .replace(/:\.\.\.([^/]+)/g, ':$1*')
 
-  return patternToRegex(pattern)
+  return patternToRegex(pattern, options)
 }

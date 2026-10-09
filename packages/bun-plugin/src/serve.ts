@@ -25,6 +25,7 @@ import { BUILD_ID_HEADER, decodeTitleEntities, extractPageResponseStatus, findCo
 import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { extractLayoutMetadata } from 'stx-router/layout-metadata'
+import { FILE_SEGMENT_GUARD, isFileRequestPath } from 'stx-router/file-requests'
 import { actionRedirectResponse, compressResponse, runPageAction as sharedRunPageAction } from '@stacksjs/stx'
 import { compileDomainRoutes, describeDomainRoutes, requestHost, resolveDomainElsewhere, resolveDomainRoute } from './domain-routes'
 import type { DomainRoutesOption } from './domain-routes'
@@ -375,9 +376,17 @@ export function buildDynamicRouteRegexes(fileRouteBase: string): RegExp[] {
   // Catch-all first: `[...path]` has to become a group that spans separators,
   // and the ordinary rule below would otherwise turn it into `([^/]+)` - which
   // silently makes every multi-segment URL a 404.
+  //
+  // A `[param]` that ends the route never captures a file name, so a root
+  // `[username].stx` does not render a page for `/favicon.ico` or
+  // `/wp-login.php`; catch-alls are exempt. The rule and its reasons live in
+  // stx-router's file-requests.ts, shared with the client's owned routes.
   const toPattern = (p: string): string => p
     .replace(/\[\.\.\.([^\]]+)\]/g, '(.+)')
-    .replace(/\[([^\]]+)\]/g, '([^/]+)')
+    // One pass: a second `.replace` would read the guard's own `[^/]` as a
+    // `[param]` and rewrite it.
+    .replace(/\[([^\]]+)\]/g, (param, _name, offset, whole) =>
+      offset + param.length === whole.length ? `${FILE_SEGMENT_GUARD}([^/]+)` : '([^/]+)')
     .replace(/\//g, '\\/')
 
   const patterns: RegExp[] = [new RegExp(`^${toPattern(fileRouteBase)}$`)]
@@ -2055,7 +2064,7 @@ function __stxOverlay(errs){
 
   function compileRoutePattern(urlPath: string): { re: RegExp, names: string[] } {
     const names: string[] = []
-    const re = urlPath.split('/').map((seg) => {
+    const re = urlPath.split('/').map((seg, index, all) => {
       if (!seg) return ''
       const catchAll = seg.match(/^\[\.\.\.(.+)\]$/)
       if (catchAll) {
@@ -2065,7 +2074,8 @@ function __stxOverlay(errs){
       const param = seg.match(/^\[(.+)\]$/)
       if (param) {
         names.push(param[1])
-        return '([^/]+)'
+        // Same rule as the page itself: a final `[param]` is not a file.
+        return index === all.length - 1 ? `${FILE_SEGMENT_GUARD}([^/]+)` : '([^/]+)'
       }
       return seg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     }).join('/')
@@ -4817,15 +4827,27 @@ function __stxOverlay(errs){
                   }
                 }
 
+                // 404 handling.
+                const isProd = isProductionServe()
+
                 // /favicon.ico fallback — only fires if publicDir didn't have it.
                 // Returns 204 instead of 404 so browsers stop nagging the dev server
-                // when no favicon is configured.
-                if (path === '/favicon.ico') {
+                // when no favicon is configured. Production says what is true.
+                if (path === '/favicon.ico' && !isProd) {
                   return new Response(null, { status: 204 })
                 }
 
-                // 404 handling.
-                const isProd = isProductionServe()
+                // A request naming a file (`/apple-touch-icon.png`,
+                // `/wp-login.php`) that no route and no public file answered:
+                // a plain 404, not the 404 page. Nothing asked for HTML, and
+                // scanners send these by the thousand (see file-requests.ts
+                // in stx-router for which paths count).
+                if (isFileRequestPath(path)) {
+                  return new Response('Not Found', {
+                    status: 404,
+                    headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' },
+                  })
+                }
 
                 // (1) Custom-app override: if the app ships a 404 page at a
                 // conventional location, render THAT (works in both dev and

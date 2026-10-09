@@ -21,6 +21,7 @@ import { decodeTitleEntities, FRAGMENT_CACHE_CONTROL, spaNavVaryHeaders } from '
 import { stateDir } from '../state-dir'
 import { plugin as stxPlugin } from '../plugin'
 import { createRouter, matchRoute, formatRoutes, findErrorPage } from '../router'
+import { isFileRequestPath } from 'stx-router'
 import {
   loadMiddlewareFromDirectory,
   runMiddleware,
@@ -1021,6 +1022,12 @@ catch {
           }
         }
       }
+
+      // A request naming a file (`/favicon.ico`, `/wp-login.php`) that no
+      // route or static file answered is a plain 404, never the SPA index or
+      // the 404 page: nothing asked for HTML.
+      if (isFileRequestPath(url.pathname))
+        return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
 
       // SPA fallback: serve index page for unmatched routes
       const indexPage = builtPages.get('/')

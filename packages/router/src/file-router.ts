@@ -111,7 +111,7 @@ export class Router {
           continue
         seenPatterns.add(identity)
 
-        const { regex, params } = patternToRegex(pattern)
+        const { regex, params } = patternToRegex(pattern, { page: true })
         const layouts = config.layouts !== false ? resolveLayoutChain(filePath, dir) : []
 
         this.routes.push({

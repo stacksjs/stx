@@ -398,7 +398,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
             // One compiler, shared with the file router. Hand-rolling this is
             // what made `[...path]` bind under the name `...path` and compile
             // to a segment that could not span a separator.
-            const { regex, params: paramNames } = bracketPathToRegex(routePath)
+            const { regex, params: paramNames } = bracketPathToRegex(routePath, { page: true })
             dynamicRoutes.push({
               pattern: regex,
               paramNames,

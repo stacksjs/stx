@@ -3,6 +3,10 @@ export { createRouter, findErrorPage, formatRoutes, Router } from './file-router
 
 // Route pattern matching
 export { bracketPathToRegex, filePathToPattern, matchRoute, patternToRegex } from './matcher'
+export type { PatternToRegexOptions } from './matcher'
+
+// Which request paths ask for a file, never a page
+export { FILE_REQUEST_EXTENSIONS, FILE_SEGMENT_GUARD, isFileRequestPath } from './file-requests'
 
 // Named routes
 export { defineRoute, defineRoutes, resetRoutes, route, setAppUrl } from './named-routes'

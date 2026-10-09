@@ -138,9 +138,13 @@ describe('isStaticAssetPath — catch-all never shadows a static asset (#1841)',
     expect(resolveAsset('some/missing/page', files)).toBe('[...all].stx')
   })
 
-  it('a specific route may still match an extensioned path publicDir lacks', () => {
-    const files = ['[...all].stx', 'download/[file].stx']
-    expect(resolveAsset('download/report.pdf', files)).toBe('download/[file].stx')
+  // A final `[param]` never captures a file name (stx-router file-requests.ts):
+  // an stx page renders HTML, so `download/[file]` is not the answer for
+  // `report.pdf`. A catch-all still is - it claims the rest of the URL.
+  it('a final [param] does not take a file name publicDir lacks, a catch-all may', () => {
+    expect(resolveAsset('download/report.pdf', ['download/[file].stx'])).toBeNull()
+    expect(resolveAsset('download/report.pdf', ['[...all].stx', 'download/[file].stx'])).toBe('[...all].stx')
+    expect(resolveAsset('download/report', ['[...all].stx', 'download/[file].stx'])).toBe('download/[file].stx')
   })
 
   /*

@@ -17,7 +17,7 @@ import { hydrateTemplateStream } from './template-hydrator'
 import type { CompiledTemplate } from './template-compiler'
 import { extractContainerContent, extractLayoutMetadata, type LayoutMetadata } from './app-shell'
 import { pageShipsSignalsRuntime } from './runtime-injection'
-import { patternToRegex } from 'stx-router'
+import { isFileRequestPath, patternToRegex } from 'stx-router'
 import { compressResponse } from './compression'
 import { actionRedirectResponse, isActionableMethod } from './page-action'
 import { FRAGMENT_CACHE_CONTROL, isSpaNavRequest, spaNavVaryHeaders } from './spa-nav'
@@ -151,7 +151,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
       // Shared compiler: the hand-rolled version captured `path*` as a name
       // including the asterisk and could not match across separators, so
       // catch-all routes worked in development and not in production.
-      const { regex, params: paramNames } = patternToRegex(route.pattern)
+      const { regex, params: paramNames } = patternToRegex(route.pattern, { page: true })
       paramRoutes.push({ regex, route, paramNames })
     }
     else {
@@ -265,7 +265,9 @@ export async function startProductionServer(options: ProductionServerOptions = {
           // `errorPage.compiledPath` — that was a pre-existing bug noticed
           // while wiring in the parallel /500 lookup for stacksjs/stx#1722.
           // It silently broke the entire 404.stx feature in production.
-          const errorPage = exactRoutes.get('/404') || null
+          // A request naming a file (`/favicon.ico`, `/wp-login.php`) gets
+          // the plain answer, not a rendered page: nothing asked for HTML.
+          const errorPage = isFileRequestPath(pathname) ? null : exactRoutes.get('/404') || null
           if (errorPage) {
             const compiled = compiledTemplates.get(errorPage.pattern)
             if (compiled) {
@@ -275,7 +277,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
               })
             }
           }
-          return new Response('Not Found', { status: 404 })
+          return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
         }
   
         const rule = resolveRule(pathname)
