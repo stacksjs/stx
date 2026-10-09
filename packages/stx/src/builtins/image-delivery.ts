@@ -91,10 +91,30 @@ export function imageEncoderIdentity(): string {
   return encoderIdentity
 }
 
-let deliveryCatalog = new Map<string, ImageDeliveryManifest>()
+interface DeliveryState {
+  catalog: Map<string, ImageDeliveryManifest>
+  /** Catalog keys whose source has visible transparency. */
+  transparent: Set<string>
+}
 
-/** Catalog keys whose source has visible transparency. */
-let transparentSources = new Set<string>()
+/**
+ * The catalog lives on `globalThis`, not in this module, so every copy of stx
+ * in the process reads the one the server prepared.
+ *
+ * There can be more than one. A production runtime bundles stx into its own
+ * chunks and prepares the catalog there, while a component's server script
+ * that imports `@stacksjs/stx` loads the copy in node_modules. With the
+ * catalog held in module scope that second copy saw an empty one, so the
+ * library `<Image>` served the original files in production and only in
+ * production: in dev both imports are the same module.
+ */
+const DELIVERY_STATE = Symbol.for('stx.image-delivery')
+
+function deliveryState(): DeliveryState {
+  const scope = globalThis as typeof globalThis & { [DELIVERY_STATE]?: DeliveryState }
+  scope[DELIVERY_STATE] ??= { catalog: new Map(), transparent: new Set() }
+  return scope[DELIVERY_STATE]
+}
 
 /** Stale-variant warnings already printed, so a watch rebuild does not repeat them. */
 const warnedOpaqueWebp = new Set<string>()
@@ -390,7 +410,7 @@ function normalizeLookupSource(src: string): string | undefined {
 /** Return build-time delivery metadata for one public image URL. */
 export function getImageDelivery(src: string): ImageDeliveryManifest | undefined {
   const key = normalizeLookupSource(src)
-  return key ? deliveryCatalog.get(key) : undefined
+  return key ? deliveryState().catalog.get(key) : undefined
 }
 
 /**
@@ -401,7 +421,7 @@ export function getImageDelivery(src: string): ImageDeliveryManifest | undefined
  */
 export function isTransparentImage(src: string): boolean {
   const key = normalizeLookupSource(src)
-  return key ? transparentSources.has(key) : false
+  return key ? deliveryState().transparent.has(key) : false
 }
 
 /**
@@ -465,8 +485,9 @@ export function deliveredImage(src: string): DeliveredImage | undefined {
 
 /** Clear process-global delivery state between builds and tests. */
 export function clearImageDeliveryCatalog(): void {
-  deliveryCatalog = new Map()
-  transparentSources = new Set()
+  const state = deliveryState()
+  state.catalog = new Map()
+  state.transparent = new Set()
 }
 
 /** The catalog as plain data, for a worker to post back to the thread that serves. */
@@ -477,13 +498,15 @@ export interface ImageDeliverySnapshot {
 
 /** What this thread's catalog holds, in a form `postMessage` can carry. */
 export function snapshotImageDelivery(): ImageDeliverySnapshot {
-  return { entries: [...deliveryCatalog], transparent: [...transparentSources] }
+  const state = deliveryState()
+  return { entries: [...state.catalog], transparent: [...state.transparent] }
 }
 
 /** Swap in a catalog built elsewhere, whole, as the in-thread pass does. */
 export function installImageDelivery(snapshot: ImageDeliverySnapshot): void {
-  deliveryCatalog = new Map(snapshot.entries)
-  transparentSources = new Set(snapshot.transparent)
+  const state = deliveryState()
+  state.catalog = new Map(snapshot.entries)
+  state.transparent = new Set(snapshot.transparent)
 }
 
 export interface PrepareImageDeliveryOptions {
@@ -609,8 +632,9 @@ export async function prepareImageDelivery(
   const transparent = await findTransparent(catalog.entries)
   const droppedWebp = dropOpaqueWebp(catalog.entries, transparent)
 
-  deliveryCatalog = new Map(Object.entries(catalog.entries))
-  transparentSources = transparent
+  const state = deliveryState()
+  state.catalog = new Map(Object.entries(catalog.entries))
+  state.transparent = transparent
 
   // Both decisions change the markup — no placeholder, no WebP <source> —
   // without changing a single variant name, so they have to reach the key
