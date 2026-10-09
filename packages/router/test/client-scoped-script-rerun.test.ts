@@ -30,7 +30,7 @@
  */
 import { afterEach, describe, expect, it } from 'bun:test'
 import { Window } from 'very-happy-dom'
-import { getRouterScript } from '../src/client'
+import { getRouterScript, getRouterScriptDev } from '../src/client'
 
 const originalGlobals = {
   window: globalThis.window,
@@ -55,7 +55,10 @@ afterEach(() => {
  * test that passes because it checked nothing (CLAUDE.md item 41).
  */
 function generatedRunsAlways(): (declared: string, code: string) => boolean {
-  const src = getRouterScript()
+  // The development build: the production one mangles identifiers, so neither
+  // `REGISTERS_SCOPE` nor `runsAlways` exists by name there. Both builds come
+  // from the same source; the end-to-end tests below run the production one.
+  const src = getRouterScriptDev()
   const registers = /var REGISTERS_SCOPE=[^;]+;/.exec(src)
   const fn = /function runsAlways\(declared,code\)\{[\s\S]*?\n?\}/.exec(src)
   if (!registers)
