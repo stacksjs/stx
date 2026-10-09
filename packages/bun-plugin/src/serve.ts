@@ -1284,6 +1284,26 @@ const staticContentTypes: Record<string, string> = {
   eot: 'application/vnd.ms-fontobject',
 }
 
+/**
+ * Files a platform fetches by a fixed, extensionless name, and the type it
+ * insists on. Apple reads apple-app-site-association for universal links and
+ * shared web credentials, and treats one served as
+ * `application/octet-stream` as missing: hq.training links then open Safari
+ * instead of the app, with nothing in any log to say why.
+ */
+const wellKnownContentTypes: Record<string, string> = {
+  'apple-app-site-association': 'application/json',
+  'apple-developer-merchantid-domain-association': 'text/plain',
+}
+
+/** The Content-Type a static file is served with, by its name, then its extension. */
+export function staticContentType(path: string): string {
+  const name = path.split(/[/\\]/).pop() || ''
+  if (wellKnownContentTypes[name]) return wellKnownContentTypes[name]
+  const ext = name.includes('.') ? name.split('.').pop()?.toLowerCase() : ''
+  return staticContentTypes[ext || ''] || 'application/octet-stream'
+}
+
 const bundledAssetExtensions = new Set(['ts', 'tsx', 'mts', 'cts'])
 
 function isBundledAssetExtension(ext: string | undefined): ext is string {
@@ -3965,9 +3985,8 @@ function __stxOverlay(errs){
                     if (await file.exists()) {
                       const stat = await file.stat().catch(() => null)
                       if (stat && !stat.isDirectory()) {
-                        const ext = resolvedPath.split('.').pop()?.toLowerCase()
                         const headers = {
-                          'Content-Type': staticContentTypes[ext || ''] || 'application/octet-stream',
+                          'Content-Type': staticContentType(resolvedPath),
                           'Cache-Control': 'public, max-age=31536000, immutable',
                           ...corsHeaders,
                         }
@@ -4666,7 +4685,7 @@ function __stxOverlay(errs){
 
                         return new Response(file, {
                           headers: {
-                            'Content-Type': staticContentTypes[ext || ''] || 'application/octet-stream',
+                            'Content-Type': staticContentType(assetPath),
                             // Dev mode: `no-cache` not `max-age=31536000`. The previous year-long
                             // cache header forced users to hard-reload (Cmd+Shift+R) after every
                             // edit to a stylesheet / asset under `resources/assets/` — the server
@@ -4723,10 +4742,9 @@ function __stxOverlay(errs){
                           // Skip directories (Bun.file().exists() returns true for dirs in some versions)
                           const stat = await file.stat().catch(() => null)
                           if (stat && !stat.isDirectory()) {
-                            const ext = resolvedPath.split('.').pop()?.toLowerCase()
                             return new Response(file, {
                               headers: {
-                                'Content-Type': staticContentTypes[ext || ''] || 'application/octet-stream',
+                                'Content-Type': staticContentType(resolvedPath),
                                 'Cache-Control': staticCacheControl(resolvedPath),
                               },
                             })
