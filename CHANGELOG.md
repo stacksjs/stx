@@ -1,5 +1,28 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.415...v0.2.416)
+
+## ✨ Features
+
+- **native**: type ScrollView sticky headers and scroll targets ([f0cd6c1](https://github.com/stacksjs/stx/commit/f0cd6c1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **router**: a dynamic page segment never captures a file name ([2f2d14b](https://github.com/stacksjs/stx/commit/2f2d14b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **shell**: a layout's own <meta> replaces the config tag of the same name ([05360d5](https://github.com/stacksjs/stx/commit/05360d5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **signals**: restore window.localStorage after query-keep runs ([26d550f](https://github.com/stacksjs/stx/commit/26d550f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.416 ([680afe2](https://github.com/stacksjs/stx/commit/680afe2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.414...v0.2.415)
 
 ## 🐛 Bug Fixes
