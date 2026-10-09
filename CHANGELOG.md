@@ -1,5 +1,27 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.418...v0.2.419)
+
+## 🐛 Bug Fixes
+
+- **head**: read app.head.links as link, and warn on unknown keys ([df6418a](https://github.com/stacksjs/stx/commit/df6418a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 💄 Styles
+
+- **serve**: format serve.ts so CI's format check passes ([49f39f8](https://github.com/stacksjs/stx/commit/49f39f8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **router**: read runsAlways from the development router build ([7866679](https://github.com/stacksjs/stx/commit/7866679)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.419 ([f2285a1](https://github.com/stacksjs/stx/commit/f2285a1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.417...v0.2.418)
 
 ## 🔧 Chores
