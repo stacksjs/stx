@@ -24,6 +24,7 @@ describe('the offline worker', () => {
     expect(settings.pages).toEqual(['/m', '/m/calendar'])
     expect(settings.api).toBe('/api/')
     expect(settings.timeout).toBe(2000)
+    expect(generateOfflineWorker({ enabled: true }, 'b')).toContain('"timeout":1500')
     expect(settings.fallback).toBe('/m')
     expect(settings.exclude).toContain('/_stx/hmr')
   })
@@ -32,9 +33,9 @@ describe('the offline worker', () => {
     expect(worker).toContain('\'stx-shell-\' + S.build')
     expect(worker).toContain('__stx_who')
     expect(worker).toContain('stx:clear-offline-data')
-    // Writes are never cached here, and only a full answer is ever kept.
-    expect(worker).toContain('if (request.method !== \'GET\') return;')
+    // Only a full, same-origin answer is ever kept.
     expect(worker).not.toContain('response.ok')
+    expect(worker).toContain('response.type === \'basic\'')
   })
 })
 
@@ -52,8 +53,22 @@ describe('registering it', () => {
   })
 })
 
-/** The worker run against an in-memory Cache API, enough to drive it. */
-function runWorker(config: Parameters<typeof generateOfflineWorker>[0], network: (url: string) => Response | null) {
+interface FakeClient { visibilityState: 'visible' | 'hidden', messages: any[], postMessage: (message: unknown) => void }
+
+/** A window client of the app, as the worker sees it. */
+function client(visibilityState: 'visible' | 'hidden' = 'visible'): FakeClient {
+  const messages: any[] = []
+  return { visibilityState, messages, postMessage: (message: unknown) => { messages.push(message) } }
+}
+
+interface RequestOptions { method?: string, mode?: string, cache?: string }
+
+/**
+ * The worker run against an in-memory Cache API, enough to drive it. Answers
+ * from `network` are same-origin (`type: 'basic'`) unless it says otherwise;
+ * returning null is no network at all.
+ */
+function runWorker(config: Parameters<typeof generateOfflineWorker>[0], network: (url: string, request?: Request) => Response | null | Promise<Response | null>) {
   const stores = new Map<string, Map<string, Response>>()
   const open = async (name: string) => {
     if (!stores.has(name)) stores.set(name, new Map())
@@ -67,26 +82,42 @@ function runWorker(config: Parameters<typeof generateOfflineWorker>[0], network:
     }
   }
   const listeners: Record<string, (event: any) => void> = {}
+  const clients: FakeClient[] = []
+  let skipped = 0
   const self: any = {
     location: { origin: 'http://app.test' },
     addEventListener: (type: string, fn: (event: any) => void) => { listeners[type] = fn },
-    skipWaiting: async () => {},
-    clients: { claim: async () => {} },
+    skipWaiting: async () => { skipped++ },
+    clients: { claim: async () => {}, matchAll: async () => clients },
+    registration: { waiting: null as null | { messages: any[], postMessage: (m: unknown) => void } },
   }
   const caches = { open, delete: async (name: string) => stores.delete(name), keys: async () => [...stores.keys()] }
+  const fetched: string[] = []
   const fetch = async (input: string | Request) => {
     const url = typeof input === 'string' ? input : input.url
-    const answer = network(url)
+    fetched.push(url)
+    const answer = await network(url, typeof input === 'string' ? undefined : input)
     if (!answer) throw new TypeError('offline')
+    if (answer.type === 'default') Object.defineProperty(answer, 'type', { value: 'basic' })
     return answer
   }
   // eslint-disable-next-line no-new-func
   new Function('self', 'caches', 'fetch', 'crypto', generateOfflineWorker(config, 'b1'))(self, caches, fetch, crypto)
+  let background: Promise<unknown>[] = []
   return {
     stores,
+    clients,
+    fetched,
+    self,
+    get skipped() { return skipped },
     async install(): Promise<void> {
       let waited: Promise<unknown> = Promise.resolve()
       listeners.install!({ waitUntil: (p: Promise<unknown>) => { waited = p } })
+      await waited
+    },
+    async activate(): Promise<void> {
+      let waited: Promise<unknown> = Promise.resolve()
+      listeners.activate!({ waitUntil: (p: Promise<unknown>) => { waited = p } })
       await waited
     },
     async message(data: unknown): Promise<any> {
@@ -96,10 +127,25 @@ function runWorker(config: Parameters<typeof generateOfflineWorker>[0], network:
       await waited
       return replied
     },
-    async request(url: string, headers: Record<string, string> = {}): Promise<Response | null> {
+    async request(url: string, headers: Record<string, string> = {}, options: RequestOptions = {}): Promise<Response | null> {
       let answer: Promise<Response> | null = null
-      listeners.fetch!({ request: new Request(url, { headers }), respondWith: (p: Promise<Response>) => { answer = p } })
+      const request = new Request(url, { headers, method: options.method || 'GET' })
+      if (options.mode) Object.defineProperty(request, 'mode', { value: options.mode })
+      if (options.cache) Object.defineProperty(request, 'cache', { value: options.cache })
+      listeners.fetch!({
+        request,
+        respondWith: (p: Promise<Response>) => { answer = p },
+        waitUntil: (p: Promise<unknown>) => { background.push(p) },
+      })
       return answer ? await answer : null
+    },
+    /** Wait for what the worker does behind an answer: revalidating, keeping copies. */
+    async settle(): Promise<void> {
+      while (background.length) {
+        const pending = background
+        background = []
+        await Promise.all(pending)
+      }
     },
   }
 }
@@ -270,5 +316,287 @@ describe('a dynamic screen never opened', () => {
     ]))
     const html = await (await sw.request('http://app.test/m/plan/3', { Accept: 'text/html' }))!.text()
     expect(html).toContain('stx-offline-fallback')
+  })
+})
+
+const html = (body: string, headers: Record<string, string> = {}) =>
+  new Response(`<html><head></head><body>${body}</body></html>`, { status: 200, headers: { 'Content-Type': 'text/html', ...headers } })
+const json = (value: unknown, headers: Record<string, string> = {}) =>
+  new Response(JSON.stringify(value), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
+const never = () => new Promise<Response | null>(() => {})
+const later = (ms: number, response: () => Response | null) => new Promise<Response | null>(resolve => setTimeout(() => resolve(response()), ms))
+
+describe('a kept screen (stale-while-revalidate)', () => {
+  it('is answered at once, without waiting on a network that has not answered', async () => {
+    const sw = runWorker({ enabled: true, pages: ['/m'] }, never)
+    sw.stores.set('stx-shell-b1', new Map([['http://app.test/m', html('Kept')]]))
+    const started = Date.now()
+    const page = await sw.request('http://app.test/m', { Accept: 'text/html' })
+    expect(await page!.text()).toContain('Kept')
+    expect(Date.now() - started).toBeLessThan(200)
+    expect(sw.fetched).toContain('http://app.test/m')
+  })
+
+  it('takes the newer answer behind it and tells every open page', async () => {
+    let body = 'Old'
+    const sw = runWorker({ enabled: true, pages: ['/m'] }, () => html(body))
+    sw.clients.push(client(), client('hidden'))
+    await sw.install()
+    body = 'New'
+    const first = await sw.request('http://app.test/m', { Accept: 'text/html' })
+    expect(await first!.text()).toContain('Old')
+    await sw.settle()
+    for (const open of sw.clients)
+      expect(open.messages).toEqual([{ type: 'stx:updated', url: 'http://app.test/m', kind: 'page', fragment: false }])
+    const second = await sw.request('http://app.test/m', { Accept: 'text/html' })
+    expect(await second!.text()).toContain('New')
+  })
+
+  it('says nothing when the answer is the same, or differs only in its nonce', async () => {
+    let nonce = 'a'
+    const sw = runWorker({ enabled: true, pages: ['/m'] }, () => html(`<script nonce="${nonce}">1</script>Same`))
+    sw.clients.push(client())
+    await sw.install()
+    await sw.request('http://app.test/m', { Accept: 'text/html' })
+    nonce = 'b'
+    await sw.request('http://app.test/m', { Accept: 'text/html' })
+    await sw.settle()
+    expect(sw.clients[0]!.messages).toEqual([])
+  })
+
+  it('trusts a matching ETag over the body', async () => {
+    let body = 'One'
+    const sw = runWorker({ enabled: true, pages: ['/m'] }, () => html(body, { ETag: '"v1"' }))
+    sw.clients.push(client())
+    await sw.install()
+    body = 'Two'
+    await sw.request('http://app.test/m', { Accept: 'text/html' })
+    await sw.settle()
+    expect(sw.clients[0]!.messages).toEqual([])
+  })
+
+  it('keeps a fragment apart from its page, and says which one changed', async () => {
+    let body = 'A'
+    const sw = runWorker({ enabled: true, pages: ['/m'] }, () => html(body))
+    sw.clients.push(client())
+    await sw.install()
+    body = 'B'
+    await sw.request('http://app.test/m', { 'X-STX-Router': 'true', 'Accept': 'text/html' })
+    await sw.settle()
+    expect(sw.clients[0]!.messages).toEqual([{ type: 'stx:updated', url: 'http://app.test/m', kind: 'page', fragment: true }])
+    expect(await (await sw.stores.get('stx-shell-b1')!.get('http://app.test/m?__stx_fragment=1'))!.text()).toContain('B')
+    expect(await (await sw.stores.get('stx-shell-b1')!.get('http://app.test/m'))!.text()).toContain('A')
+  })
+
+  it('never keeps a redirect, an error or another origin\'s answer', async () => {
+    let answer: () => Response = () => html('Kept')
+    const sw = runWorker({ enabled: true, pages: ['/m'] }, () => answer())
+    await sw.install()
+    const redirected = html('Sign in')
+    Object.defineProperty(redirected, 'redirected', { value: true })
+    for (const next of [() => redirected, () => new Response('down', { status: 503 }), () => Object.defineProperty(html('x'), 'type', { value: 'opaque' })]) {
+      answer = next
+      await sw.request('http://app.test/m', { Accept: 'text/html' })
+      await sw.settle()
+      expect(await sw.stores.get('stx-shell-b1')!.get('http://app.test/m')!.clone().text()).toContain('Kept')
+    }
+  })
+
+  it('goes to the network first for a pull to refresh and for a networkFirst path', async () => {
+    const sw = runWorker({ enabled: true, pages: ['/m', '/m/live'], networkFirst: ['/m/live'] }, () => html('Fresh'))
+    sw.stores.set('stx-shell-b1', new Map([
+      ['http://app.test/m', html('Kept')],
+      ['http://app.test/m/live', html('Kept')],
+    ]))
+    expect(await (await sw.request('http://app.test/m', { Accept: 'text/html' }, { cache: 'no-cache' }))!.text()).toContain('Fresh')
+    expect(await (await sw.request('http://app.test/m/live', { Accept: 'text/html' }))!.text()).toContain('Fresh')
+    expect(await (await sw.request('http://app.test/m', { Accept: 'text/html' }))!.text()).toContain('Kept')
+  })
+
+  it('falls back to the kept copy when a network-first request goes unanswered', async () => {
+    const sw = runWorker({ enabled: true, pages: ['/m'], networkTimeoutMs: 500 }, never)
+    sw.stores.set('stx-shell-b1', new Map([['http://app.test/m', html('Kept')]]))
+    expect(await (await sw.request('http://app.test/m', { Accept: 'text/html' }, { cache: 'no-cache' }))!.text()).toContain('Kept')
+  })
+})
+
+describe('a screen never kept', () => {
+  it('waits for the network, however slow, when nothing could stand in', async () => {
+    const sw = runWorker({ enabled: true, pages: [], networkTimeoutMs: 500 }, () => later(700, () => html('Slow')))
+    expect(await (await sw.request('http://app.test/m/new', { Accept: 'text/html' }))!.text()).toContain('Slow')
+    await sw.settle()
+    expect(sw.stores.get('stx-shell-b1')!.has('http://app.test/m/new')).toBe(true)
+  })
+
+  it('gets the route\'s kept page after the timeout, and keeps the late answer', async () => {
+    const page = (id: string) => `<html><head><script data-stx-route-params>(function(){var p={"id":"${id}"};window.__stx_rp=p})()</script></head><body>Session</body></html>`
+    let slow = false
+    const sw = runWorker({ enabled: true, pages: [], routes: ['/m/workout/:id'], networkTimeoutMs: 500 }, url => slow ? later(800, () => new Response(page('late'), { status: 200 })) : new Response(page('0'), { status: 200 }))
+    await sw.install()
+    slow = true
+    const started = Date.now()
+    const answer = await sw.request('http://app.test/m/workout/42', { Accept: 'text/html' })
+    expect(Date.now() - started).toBeLessThan(750)
+    expect(await answer!.text()).toContain('var p={"id":"42"}')
+    await sw.settle()
+    expect(await sw.stores.get('stx-shell-b1')!.get('http://app.test/m/workout/42')!.clone().text()).toContain('"late"')
+  })
+})
+
+describe('API reads', () => {
+  const read = (sw: ReturnType<typeof runWorker>, token = 'a', options: RequestOptions = {}) =>
+    sw.request('http://app.test/api/calendar', { Authorization: `Bearer ${token}` }, options)
+
+  it('answer the kept copy at once, refresh it behind, and say when it changed', async () => {
+    let value = 1
+    const sw = runWorker({ enabled: true }, () => json({ value }))
+    sw.clients.push(client())
+    expect(await (await read(sw))!.json()).toEqual({ value: 1 })
+    await sw.settle()
+    expect(sw.clients[0]!.messages).toEqual([])
+    value = 2
+    expect(await (await read(sw))!.json()).toEqual({ value: 1 })
+    await sw.settle()
+    expect(sw.clients[0]!.messages).toEqual([{ type: 'stx:updated', url: 'http://app.test/api/calendar', kind: 'api', fragment: false }])
+    expect(await (await read(sw))!.json()).toEqual({ value: 2 })
+    await sw.settle()
+    expect(sw.clients[0]!.messages.length).toBe(1)
+  })
+
+  it('are kept per signed-in token', async () => {
+    let value = 'a'
+    const sw = runWorker({ enabled: true }, () => json({ value }))
+    await read(sw, 'a')
+    await sw.settle()
+    value = 'b'
+    expect(await (await read(sw, 'b'))!.json()).toEqual({ value: 'b' })
+    await sw.settle()
+    expect(sw.stores.get('stx-data')!.size).toBe(2)
+  })
+
+  it('go to the network after the app wrote, so the write shows', async () => {
+    let value = 'before'
+    const sw = runWorker({ enabled: true }, () => json({ value }))
+    await read(sw)
+    await sw.settle()
+    value = 'after'
+    expect(await sw.request('http://app.test/api/calendar/5', {}, { method: 'POST' })).toBeNull()
+    await sw.settle()
+    expect(await (await read(sw))!.json()).toEqual({ value: 'after' })
+  })
+
+  it('remember the last write across a worker restart', async () => {
+    const shared = runWorker({ enabled: true }, () => json({ value: 'old' }))
+    await read(shared)
+    await shared.request('http://app.test/api/x', {}, { method: 'DELETE' })
+    await shared.settle()
+    const kept = shared.stores.get('stx-data')!
+    expect([...kept.keys()].some(key => key.endsWith('/__stx_last_write__'))).toBe(true)
+  })
+
+  it('go to the network first for a pull to refresh, and fall back offline', async () => {
+    let online = true
+    let value = 1
+    const sw = runWorker({ enabled: true }, () => online ? json({ value }) : null)
+    await read(sw)
+    await sw.settle()
+    value = 2
+    expect(await (await read(sw, 'a', { cache: 'no-cache' }))!.json()).toEqual({ value: 2 })
+    await sw.settle()
+    online = false
+    expect(await (await read(sw, 'a', { cache: 'no-cache' }))!.json()).toEqual({ value: 2 })
+  })
+})
+
+describe('a new build', () => {
+  it('installs without taking over the running one', async () => {
+    const sw = runWorker({ enabled: true, pages: ['/m'] }, () => html('x'))
+    await sw.install()
+    expect(sw.skipped).toBe(0)
+  })
+
+  it('takes over when no page of the app is on screen', async () => {
+    const sw = runWorker({ enabled: true }, () => null)
+    sw.clients.push(client('hidden'), client('visible'))
+    await sw.message({ type: 'stx:activate-update', reason: 'hidden' })
+    expect(sw.skipped).toBe(0)
+    sw.clients[1]!.visibilityState = 'hidden'
+    await sw.message({ type: 'stx:activate-update', reason: 'hidden' })
+    expect(sw.skipped).toBe(1)
+  })
+
+  it('takes over when the only page just loaded, or when asked outright', async () => {
+    const sw = runWorker({ enabled: true }, () => null)
+    sw.clients.push(client(), client())
+    await sw.message({ type: 'stx:activate-update', reason: 'load' })
+    expect(sw.skipped).toBe(0)
+    await sw.message({ type: 'stx:activate-update', force: true })
+    expect(sw.skipped).toBe(1)
+    sw.clients.pop()
+    await sw.message({ type: 'stx:activate-update', reason: 'load' })
+    expect(sw.skipped).toBe(2)
+  })
+
+  it('takes over on a cold start, which opens on the network rather than the old build', async () => {
+    const sw = runWorker({ enabled: true, pages: ['/m'] }, () => html('New build'))
+    sw.stores.set('stx-shell-b1', new Map([['http://app.test/m', html('Old build')]]))
+    const waiting = { messages: [] as any[], postMessage(m: unknown) { this.messages.push(m) } }
+    sw.self.registration.waiting = waiting
+    const page = await sw.request('http://app.test/m', { Accept: 'text/html' }, { mode: 'navigate' })
+    expect(await page!.text()).toContain('New build')
+    expect(waiting.messages).toEqual([{ type: 'stx:activate-update', reason: 'cold-start' }])
+
+    // With another page of the app open, the running build stays.
+    waiting.messages = []
+    sw.clients.push(client(), client())
+    sw.stores.set('stx-shell-b1', new Map([['http://app.test/m', html('Old build')]]))
+    const other = await sw.request('http://app.test/m', { Accept: 'text/html' }, { mode: 'navigate' })
+    expect(await other!.text()).toContain('Old build')
+    expect(waiting.messages).toEqual([])
+  })
+
+  it('keeps the running build\'s screens until it takes over, then drops them', async () => {
+    const sw = runWorker({ enabled: true, pages: ['/m'] }, () => html('x'))
+    sw.stores.set('stx-shell-b0', new Map([['http://app.test/m', html('Old')]]))
+    await sw.install()
+    expect(sw.stores.has('stx-shell-b0')).toBe(true)
+    await sw.activate()
+    expect(sw.stores.has('stx-shell-b0')).toBe(false)
+    expect(sw.stores.has('stx-shell-b1')).toBe(true)
+  })
+
+  it('prunes files no kept screen links to, but not ones fetched lately', async () => {
+    const page = '<html><head><link rel="stylesheet" href="/_stx/css.new.css"><script src="/_stx/app.new.js"></script></head></html>'
+    const sw = runWorker({ enabled: true, pages: ['/m'] }, url => new Response(url.endsWith('.css') || url.endsWith('.js') ? 'x' : page, { status: 200 }))
+    const old = Date.now() - 3 * 24 * 60 * 60 * 1000
+    const stampedAt = (at: number) => new Response('x', { headers: { 'X-STX-Kept-At': String(at) } })
+    sw.stores.set('stx-assets', new Map([
+      ['http://app.test/_stx/css.old.css', stampedAt(old)],
+      ['http://app.test/_stx/app.old.js', new Response('x')],
+      ['http://app.test/_stx/lazy.js', stampedAt(Date.now())],
+      ['http://app.test/assets/logo.png', stampedAt(old)],
+    ]))
+    await sw.install()
+    await sw.activate()
+    const kept = [...sw.stores.get('stx-assets')!.keys()].sort()
+    expect(kept).toEqual([
+      'http://app.test/_stx/app.new.js',
+      'http://app.test/_stx/css.new.css',
+      'http://app.test/_stx/lazy.js',
+      'http://app.test/assets/logo.png',
+    ])
+  })
+
+  it('caps the other files it keeps, the least recently fetched first', async () => {
+    const sw = runWorker({ enabled: true, pages: [], assetsMaxEntries: 50 }, () => null)
+    const assets = new Map<string, Response>()
+    for (let i = 0; i < 60; i++)
+      assets.set(`http://app.test/assets/${i}.png`, new Response('x', { headers: { 'X-STX-Kept-At': String(1000 + i) } }))
+    sw.stores.set('stx-assets', assets)
+    await sw.activate()
+    const kept = [...sw.stores.get('stx-assets')!.keys()]
+    expect(kept.length).toBe(50)
+    expect(kept).not.toContain('http://app.test/assets/0.png')
+    expect(kept).toContain('http://app.test/assets/59.png')
   })
 })

@@ -91,3 +91,47 @@ export async function cacheMedia(urls: string[]): Promise<string[]> {
     return []
   }
 }
+
+interface OfflineRuntime {
+  updateReady: boolean
+  onUpdateReady: (callback: () => void) => () => void
+  applyUpdate: () => boolean
+}
+
+function offlineRuntime(): OfflineRuntime | null {
+  return typeof window !== 'undefined' ? ((window as any).stxOffline as OfflineRuntime | undefined) ?? null : null
+}
+
+/**
+ * onOfflineUpdateReady - hear that a new build of the app is installed and waiting
+ *
+ * The offline worker of a new deploy installs beside the running one and
+ * waits, so nobody's screen changes under them mid-task. It takes over by
+ * itself when no page of the app is on screen or the app starts cold. An app
+ * that wants it sooner can offer "Update" here and call `applyOfflineUpdate()`;
+ * one that is happy with the quiet default need not do anything.
+ *
+ * Runs at once when a build is already waiting. Returns an unsubscribe.
+ */
+export function onOfflineUpdateReady(callback: () => void): () => void {
+  const runtime = offlineRuntime()
+  if (runtime)
+    return runtime.onUpdateReady(callback)
+  if (typeof window === 'undefined')
+    return () => {}
+  // The register tag has not run (offline off, or a page without it): the
+  // window event is the only way to hear of one.
+  const listener = (): void => callback()
+  window.addEventListener('stx:offline-update-ready', listener)
+  return () => window.removeEventListener('stx:offline-update-ready', listener)
+}
+
+/**
+ * applyOfflineUpdate - let the waiting build take over now, and reload into it
+ *
+ * Returns false when there is no build waiting (nothing to do).
+ */
+export function applyOfflineUpdate(): boolean {
+  const runtime = offlineRuntime()
+  return runtime ? runtime.applyUpdate() : false
+}
