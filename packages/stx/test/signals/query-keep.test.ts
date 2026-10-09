@@ -25,7 +25,11 @@ let calls: string[] = []
 let answer: (url: string) => unknown = () => ({})
 
 beforeAll(() => {
+  // The preload's DOM puts localStorage on `window` only, so the global and
+  // the window property are saved apart: restoring the window's from the
+  // (undefined) global left every later file in the process without storage.
   saved.localStorage = g.localStorage
+  saved.windowLocalStorage = g.window?.localStorage
   saved.fetch = g.fetch
   g.localStorage = local
   if (g.window) g.window.localStorage = local
@@ -35,7 +39,7 @@ beforeAll(() => {
 
 afterAll(() => {
   g.localStorage = saved.localStorage
-  if (g.window) g.window.localStorage = saved.localStorage
+  if (g.window) g.window.localStorage = saved.windowLocalStorage
   g.fetch = saved.fetch
 })
 
