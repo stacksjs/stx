@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.411...v0.2.412)
+
+## ✨ Features
+
+- **native**: reactive templates, handlers with arguments and TypeScript screens ([2c9db5f](https://github.com/stacksjs/stx/commit/2c9db5f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **router**: leave for another origin instead of failing the navigation ([da3d1bc](https://github.com/stacksjs/stx/commit/da3d1bc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: redraw after timer callbacks, and pin the Craft host contract ([98349df](https://github.com/stacksjs/stx/commit/98349df)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.412 ([8fc8746](https://github.com/stacksjs/stx/commit/8fc8746)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.410...v0.2.411)
 
 ## ✨ Features
