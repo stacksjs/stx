@@ -547,8 +547,18 @@ describe('a new build', () => {
     expect(sw.skipped).toBe(2)
   })
 
-  it('takes over on a cold start, which opens on the network rather than the old build', async () => {
+  it('opens a cold start at once on the kept build, and leaves the new one waiting', async () => {
     const sw = runWorker({ enabled: true, pages: ['/m'] }, () => html('New build'))
+    sw.stores.set('stx-shell-b1', new Map([['http://app.test/m', html('Old build')]]))
+    const waiting = { messages: [] as any[], postMessage(m: unknown) { this.messages.push(m) } }
+    sw.self.registration.waiting = waiting
+    const page = await sw.request('http://app.test/m', { Accept: 'text/html' }, { mode: 'navigate' })
+    expect(await page!.text()).toContain('Old build')
+    expect(waiting.messages).toEqual([])
+  })
+
+  it('with updateOnColdStart, takes over on a cold start, which opens on the network rather than the old build', async () => {
+    const sw = runWorker({ enabled: true, pages: ['/m'], updateOnColdStart: true }, () => html('New build'))
     sw.stores.set('stx-shell-b1', new Map([['http://app.test/m', html('Old build')]]))
     const waiting = { messages: [] as any[], postMessage(m: unknown) { this.messages.push(m) } }
     sw.self.registration.waiting = waiting

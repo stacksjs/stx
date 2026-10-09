@@ -59,6 +59,15 @@ export interface OfflineAppConfig {
    * balance or a live score.
    */
   networkFirst?: string[]
+  /**
+   * Whether an app started cold while a new build waits opens on the new
+   * build, going to the network for its first screen, rather than on the kept
+   * one. Off by default: the app opens at once on the build it has, the way a
+   * native app keeps running the version it has while the next downloads,
+   * and the new build takes over the next time the app is not on screen. On
+   * costs a round trip on the first launch after every deploy.
+   */
+  updateOnColdStart?: boolean
   /** Where a page that was never cached goes offline (one of `pages`). Default: the first of `pages`. */
   fallback?: string
   /**
@@ -263,6 +272,7 @@ export function generateOfflineWorker(config: OfflineAppConfig, buildId: string)
     api: config.apiPrefix || '/api/',
     timeout: Math.max(500, Number(config.networkTimeoutMs) || 1500),
     networkFirst: (config.networkFirst || []).filter(path => typeof path === 'string' && path.startsWith('/')),
+    updateOnColdStart: config.updateOnColdStart === true,
     fallback: config.fallback || (config.pages && config.pages[0]) || null,
     routes: (config.routes || []).map(offlineRoute).filter(Boolean),
     exclude: ['/_stx/hmr', OFFLINE_WORKER_PATH, ...(config.exclude || [])],
@@ -695,11 +705,12 @@ function markFallback(response) {
 }
 
 // The app starting cold (a navigation with no other page of it open) while a
-// new build waits: the new build takes over now, and this navigation goes to
-// the network so it opens on the new build rather than the kept old one.
+// new build waits, with updateOnColdStart on: the new build takes over now, and
+// this navigation goes to the network so it opens on the new build rather than
+// the kept old one. Off, it opens at once on the kept build.
 function coldStartUpdate(request) {
   var registration = self.registration;
-  if (request.mode !== 'navigate' || !registration || !registration.waiting || !self.clients || !self.clients.matchAll) return Promise.resolve(false);
+  if (!S.updateOnColdStart || request.mode !== 'navigate' || !registration || !registration.waiting || !self.clients || !self.clients.matchAll) return Promise.resolve(false);
   return self.clients.matchAll({ type: 'window' }).then(function (list) {
     if (list.length > 1 || !registration.waiting) return false;
     registration.waiting.postMessage({ type: 'stx:activate-update', reason: 'cold-start' });
