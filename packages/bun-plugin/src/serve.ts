@@ -3769,8 +3769,15 @@ function __stxOverlay(errs){
                 const location = resolveDomainElsewhere(requestHost(req), original.pathname, original.search, domainRoutes, pathname =>
                   pathname.startsWith('/api/') || pathname.startsWith('/_stx/') || pathname.startsWith('/.well-known/')
                   || isStaticAssetPath(pathname) || publicFileExists(pathname, publicDir))
-                if (location)
+                if (location) {
+                  // The client router cannot follow a cross-origin redirect
+                  // (its X-STX-Router header makes the follow fail CORS), so
+                  // it is told where to go in a header it can read, and goes
+                  // there itself. Everyone else gets the redirect.
+                  if (req.headers.get(SPA_NAV_HEADER) === 'true')
+                    return new Response(null, { status: 200, headers: { 'X-STX-Location': location, 'Cache-Control': 'no-store', 'Vary': SPA_NAV_HEADER } })
                   return new Response(null, { status: 301, headers: { Location: location } })
+                }
               }
             }
 

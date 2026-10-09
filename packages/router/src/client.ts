@@ -528,7 +528,7 @@ function routerSource(): string {
   //     whole fix — the click then goes to the network, where navigate does
   //     the reload properly.
   function readPrefetchResponse(r,wantsFragment){
-    if(r.redirected)return Promise.resolve(null);
+    if(r.redirected||r.headers.get('X-STX-Location'))return Promise.resolve(null);
     if(isBuildSkew(r.headers.get('X-STX-Build')||''))return Promise.resolve(null);
     var isFrag=wantsFragment&&r.headers.get('X-STX-Fragment')==='true';
     var layout=r.headers.get('X-STX-Layout')||'';
@@ -1057,6 +1057,18 @@ function routerSource(): string {
   // swap() through pendingCtx, the same way pendingContainerAttrs is.
   var navCtxNext=null;
   var pendingCtx=null;
+  // The page belongs to another origin: the server says so with
+  // X-STX-Location (it cannot redirect a router fetch there, because a
+  // cross-origin redirect of a request carrying X-STX-Router fails CORS), or
+  // a plain fetch was redirected off-origin. Either way the browser goes
+  // there itself; a fragment from another origin is never swapped in.
+  function leaveOrigin(r){
+    var away=r.headers.get('X-STX-Location');
+    if(!away&&r.redirected&&r.url&&new URL(r.url,location.href).origin!==location.origin)away=r.url;
+    if(!away)return false;
+    location.href=away;
+    return true;
+  }
   function routerFetch(url,headers){
     var init={headers:headers};
     if(navAbort)init.signal=navAbort.signal;
@@ -1148,10 +1160,11 @@ function routerSource(): string {
         // Layout changed — fetch full page and do full document swap
         log('[router] cache hit but layout changed — fetching full page');
         return routerFetch(url,{'Accept':'text/html'}).then(function(r){
+          if(leaveOrigin(r))return null;
           if(!r.ok)throw httpError(r.status);
           return r.text();
         }).then(function(html){
-          if(stale())return false;
+          if(html===null||stale())return false;
           log('[router] full page fetched from cache path, len:',html.length);
           pendingLayoutDecl={layout:layoutCache[targetPath]||'',group:layoutGroupCache[targetPath]||''};
           return swapWith(html,targetPath);
@@ -1176,6 +1189,7 @@ else {
       var wantsFragment=shouldUseFragmentResponse();
       return routerFetch(url,wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}).then(function(r){
         if(stale())return null;
+        if(leaveOrigin(r))return null;
         if(!r.ok)throw httpError(r.status);
         // A route guard answered with a redirect and fetch followed it
         // transparently, so r.ok is the DESTINATION's 200 and this markup
@@ -1209,6 +1223,7 @@ else {
           log('[router] layout change — fetching full page for document swap');
           return routerFetch(url,{'Accept':'text/html'}).then(function(fullRes){
             log('[router] full page fetched:',fullRes.status,'ok:',fullRes.ok);
+            if(leaveOrigin(fullRes))return null;
             if(!fullRes.ok)throw httpError(fullRes.status);
             return fullRes.text().then(function(html){
               log('[router] full page html length:',html.length);

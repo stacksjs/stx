@@ -171,6 +171,9 @@ serve({ patterns: ['views'], port: ${PORT + 1}, quiet: true, domains: { '{userna
     const moved = await fetch(`${ELSEWHERE}/pricing?x=1`, { headers: host, redirect: 'manual' })
     expect([moved.status, moved.headers.get('location')]).toEqual([301, 'https://example.com/pricing?x=1'])
     expect((await fetch(`${ELSEWHERE}/robots.txt`, { headers: host, redirect: 'manual' })).status).toBe(200)
+    // The client router cannot follow a cross-origin redirect, so it is told.
+    const routed = await fetch(`${ELSEWHERE}/pricing`, { headers: { ...host, 'X-STX-Router': 'true' }, redirect: 'manual' })
+    expect([routed.status, routed.headers.get('x-stx-location')]).toEqual([200, 'https://example.com/pricing'])
     expect(await (await fetch(`${ELSEWHERE}/pricing`)).text()).toContain('page:pricing')
   })
 
