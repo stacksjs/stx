@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.407...v0.2.408)
+
+## 🐛 Bug Fixes
+
+- **serve**: serve apple-app-site-association as JSON ([7922b19](https://github.com/stacksjs/stx/commit/7922b19)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.408 ([8e681ad](https://github.com/stacksjs/stx/commit/8e681ad)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.406...v0.2.407)
 
 ## ✨ Features
