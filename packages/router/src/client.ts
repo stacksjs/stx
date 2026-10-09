@@ -91,9 +91,11 @@ function stripRouterLogs(source: string): string {
   return out.join('')
 }
 
-function minifyRouterScript(source: string): string {
+function minifyRouterScript(source: string, mangle = false): string {
   try {
-    const transpiler = new Bun.Transpiler({ loader: 'js', minifyWhitespace: true })
+    const transpiler = new Bun.Transpiler(mangle
+      ? { loader: 'js', minify: { whitespace: true, identifiers: true } }
+      : { loader: 'js', minifyWhitespace: true })
     return transpiler.transformSync(source)
       .replace(/\}(var |let |const |function )/g, '};$1')
       .trim()
@@ -112,7 +114,7 @@ function routerSource(): string {
   if(window.__stxRouter&&window.__stxRouter.__rev===ROUTER_REV)return;
 
   // ── Configuration ──
-  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false,prefetchCacheMax:50,routeFocus:true,announceRoute:true,interceptForms:false,cssLoadTimeout:1500,scrollRestoration:true};
+  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false,prefetchCacheMax:50,routeFocus:true,announceRoute:true,interceptForms:false,cssLoadTimeout:1500,scrollRestoration:true,screens:'auto',screenLimit:8,navDuration:350,swipeBack:true,swipeEdge:20,prefetchVisible:true,prefetchVisibleMax:12,revalidate:true,revalidateAfter:3000};
   var o=Object.assign({},defaults,window.__stxRouterConfig||{},window.STX_ROUTER_OPTIONS||{});
   var containerSel=o.container;
   var debug=!!o.debug;
@@ -148,6 +150,12 @@ function routerSource(): string {
   // (which carries a scroll token too): going back from a pushed entry stays
   // in the app, from the first it leaves it (or, in a phone app, does nothing).
   var PUSHED_MARK='__stxPushed';
+  // How far above the entry the app opened with this one sits, and which tab
+  // it belongs to. A tab switch rewinds to depth 0 before it writes the next
+  // tab's entries, which is what keeps Back from ever crossing tabs.
+  var DEPTH='__stxDepth';
+  var TAB='__stxTab';
+  var histDepth=(history.state&&history.state[DEPTH])|0;
   var scrollSeq=0;
   var pendingScroll=null;
   var restoreScroll=!!o.scrollRestoration;
@@ -162,11 +170,44 @@ function routerSource(): string {
       return parts.length===2?[parseFloat(parts[0])||0,parseFloat(parts[1])||0]:null;
     }catch(e){return null}
   }
+  // Inner scrollers, marked data-stx-scroll: a screen whose list scrolls
+  // inside its own box rather than the window lost its place on Back exactly
+  // the way the window used to. Keyed by the attribute's value, or by order
+  // for an unnamed one.
+  function scrollerKey(el,i){return el.getAttribute('data-stx-scroll')||('#'+i)}
+  function innerScroll(root){
+    var m=null;
+    if(root&&root.querySelectorAll)root.querySelectorAll('[data-stx-scroll]').forEach(function(el,i){
+      if(el.scrollTop||el.scrollLeft){m=m||{};m[scrollerKey(el,i)]=[el.scrollLeft||0,el.scrollTop||0]}
+    });
+    return m;
+  }
+  function applyInner(root,m){
+    if(!m||!root||!root.querySelectorAll)return;
+    root.querySelectorAll('[data-stx-scroll]').forEach(function(el,i){
+      var at=m[scrollerKey(el,i)];
+      if(at){el.scrollLeft=at[0];el.scrollTop=at[1]}
+    });
+  }
   // Called while the outgoing entry is still the current one, so the position
   // read here belongs to the token being written.
   function rememberScroll(){
+    if(active&&active.el&&!active.el.hasAttribute(HIDDEN))saveScroll(active);
     if(!restoreScroll)return;
-    try{window.sessionStorage.setItem(SCROLL_STORE+scrollToken,(window.pageXOffset||window.scrollX||0)+','+(window.pageYOffset||window.scrollY||0))}catch(e){}
+    try{
+      window.sessionStorage.setItem(SCROLL_STORE+scrollToken,(window.pageXOffset||window.scrollX||0)+','+(window.pageYOffset||window.scrollY||0));
+      // Taken as the swap began when there is one: by the time the history
+      // is written the outgoing page's scrollers have been replaced.
+      var inner=innerSnap!==undefined?innerSnap:innerScroll(activeRoot());
+      innerSnap=undefined;
+      if(inner)window.sessionStorage.setItem(SCROLL_STORE+scrollToken+':i',JSON.stringify(inner));
+      else window.sessionStorage.removeItem(SCROLL_STORE+scrollToken+':i');
+    }catch(e){}
+  }
+  var pendingInner=null;
+  var innerSnap;
+  function readInner(token){
+    try{return JSON.parse(window.sessionStorage.getItem(SCROLL_STORE+token+':i')||'null')}catch(e){return null}
   }
   // One place decides where a swap leaves the viewport, so the fragment path
   // and the whole-document path cannot drift apart.
@@ -175,10 +216,16 @@ function routerSource(): string {
       var at=pendingScroll;
       pendingScroll=null;
       window.scrollTo({left:at[0],top:at[1],behavior:'instant'});
+      // Again once the page has bound: a scroller's content is often drawn
+      // by a :for that has not run yet, and a box with nothing in it cannot
+      // be scrolled anywhere.
+      var inner=pendingInner;pendingInner=null;
+      if(inner){applyInner(activeRoot(),inner);setTimeout(function(){applyInner(activeRoot(),inner)},60)}
       return;
     }
+    pendingInner=null;
     if(o.scrollToTop&&!hash){window.scrollTo({top:0,behavior:'instant'});return}
-    if(hash){var el=qs(hash);if(el)el.scrollIntoView({behavior:'smooth'})}
+    if(hash){var el=findIn(hash);if(el)el.scrollIntoView({behavior:'smooth'})}
   }
   // Keeps whatever another script put in the entry; only adds the token.
   function stampScrollToken(){
@@ -186,6 +233,7 @@ function routerSource(): string {
     var current=history.state;
     if(current&&typeof current==='object')for(var key in current)state[key]=current[key];
     state[SCROLL_TOKEN]=scrollToken;
+    state[DEPTH]=histDepth;
     try{history.replaceState(state,'',location.href)}catch(e){}
   }
   if(restoreScroll){
@@ -239,9 +287,24 @@ function routerSource(): string {
   function isBuildSkew(incoming){
     return !!(loadedBuild&&incoming&&incoming!==loadedBuild);
   }
-  function reloadForSkew(url,incoming){
-    log('[router] build skew: page is',loadedBuild,'server is',incoming,'— full navigation');
-    location.href=url;
+  // A navigation the user asked for loads its destination as a document: no
+  // fragment of the newer build can be hydrated by this runtime, and a tap is
+  // the one moment a page load is expected anyway. Anything else that notices
+  // the newer build (a background revalidation, the offline worker) must not
+  // reload a screen the user is in the middle of using, so the reload waits
+  // until the page is hidden, and a cold start picks the build up regardless.
+  var skewDeferred=false;
+  function reloadForSkew(url,incoming,background){
+    log('[router] build skew: page is',loadedBuild,'server is',incoming,background?'— reload when hidden':'— full navigation');
+    if(!background){location.href=url;return}
+    if(skewDeferred)return;
+    skewDeferred=true;
+    var reloadHidden=function(){
+      if(document.visibilityState!=='hidden')return;
+      document.removeEventListener('visibilitychange',reloadHidden);
+      location.reload();
+    };
+    document.addEventListener('visibilitychange',reloadHidden);
   }
   // A link marked data-stx-transition="none" swaps without the cross-fade. A
   // tab bar is the case: iOS switches tabs instantly, and the fade read as a
@@ -388,6 +451,9 @@ function routerSource(): string {
   }
 
   var cache={};
+  // When each entry was fetched, so a cache hit knows whether it is worth
+  // checking behind the swap (revalidate).
+  var cacheAt={};
   var prefetching={};
   var awaitingKey='';
   var isNavigating=false;
@@ -409,6 +475,7 @@ function routerSource(): string {
     layoutGroupCache[key]=group;
     titleCache[key]=title||'';
     attrsCache[key]=cattrs||'';
+    cacheAt[key]=Date.now();
     while(cacheOrder.length>o.prefetchCacheMax){
       var oldest=cacheOrder.shift();
       delete cache[oldest];
@@ -416,6 +483,7 @@ function routerSource(): string {
       delete layoutGroupCache[oldest];
       delete titleCache[oldest];
       delete attrsCache[oldest];
+      delete cacheAt[oldest];
     }
   }
   // Read a prefetch response into the shape setCache stores, or null when this
@@ -519,6 +587,7 @@ function routerSource(): string {
     delete layoutGroupCache[key];
     delete titleCache[key];
     delete attrsCache[key];
+    delete cacheAt[key];
   }
 
   // Extract top-level CSS blocks (rules AND @media blocks with nested braces).
@@ -928,10 +997,17 @@ function routerSource(): string {
   // pushes, and the string 'replace' replaces. Threading a fourth argument
   // through swap() to each of the three history sites would have been the
   // alternative (#1807).
+  //
+  // 'tab' is a tab's first screen: it takes the place of the entry the app
+  // opened with (selectTab has rewound to it), under a token of its own so
+  // the tab it replaced keeps its positions.
+  var scrollSaved=false;
   function writeHistory(mode,href){
     // The position belongs to the entry being left, and scrollToken still
-    // names it here.
-    rememberScroll();
+    // names it here -- unless the screen swap already saved it, before the
+    // outgoing screen was lifted out of the page and the window clamped.
+    if(!scrollSaved)rememberScroll();
+    scrollSaved=false;
     if(mode==='replace'){
       // A replaced entry is still the one it replaces: pushed by the app or
       // the one the app opened with.
@@ -941,22 +1017,43 @@ function routerSource(): string {
       return;
     }
     scrollToken=newScrollToken();
+    if(mode==='tab'){histDepth=0;history.replaceState(tokenState(),'',href);return}
+    histDepth++;
     var pushed=tokenState();
     pushed[PUSHED_MARK]=true;
     history.pushState(pushed,'',href);
   }
-  function tokenState(){var state={};state[SCROLL_TOKEN]=scrollToken;return state}
+  function tokenState(){var state={};state[SCROLL_TOKEN]=scrollToken;state[DEPTH]=histDepth;if(curTab)state[TAB]=curTab;return state}
 
   // Second arg accepts the legacy pushState boolean OR an options object
   // { replace, instant }. Callers inside this file still pass the boolean.
   // instant is what data-stx-transition="none" is to a link: no cross-fade.
+  //
+  // The newest navigation wins. One already on its way when another starts
+  // (a second tap, Back while a page is still loading) is aborted and its
+  // answer ignored: it used to be the other way round, the later one was
+  // dropped, and a Back during a load left the address bar on the popped
+  // entry while the screen went on to show the page being left.
+  var navSeq=0;
+  var navAbort=null;
+  // What the next swap needs to know about where it is going: set by the
+  // caller right before navigate() (popstate, a tab switch) and carried to
+  // swap() through pendingCtx, the same way pendingContainerAttrs is.
+  var navCtxNext=null;
+  var pendingCtx=null;
+  function routerFetch(url,headers){
+    var init={headers:headers};
+    if(navAbort)init.signal=navAbort.signal;
+    return fetch(url,init);
+  }
   function navigate(url,pushState,force){
+    var ctx=navCtxNext||{};
+    navCtxNext=null;
     if(pushState&&typeof pushState==='object'){if(pushState.instant)instantNext=true;pushState=pushState.replace?'replace':true}
     // Lang-picker passes force=true with an already-localized path (/en/...).
     // Re-localizing would map it back to the *current* locale and no-op.
     if(!force) url=withCurrentLocale(url);
     log('[router] navigate() called:',url,'isNavigating:',isNavigating);
-    if(isNavigating)return Promise.resolve(false);
     // Resolve against the current document URL, matching native <a> semantics.
     // With location.origin as the base, any relative href ('?status=resolved',
     // '#anchor', './sibling') resolved to the SITE ROOT — so filter tabs,
@@ -966,9 +1063,9 @@ function routerSource(): string {
 
     if(t.origin!==location.origin){location.href=url;return Promise.resolve(false)}
 
-    if(t.pathname===location.pathname&&t.hash){
+    if(t.pathname===location.pathname&&t.hash&&pushState!=='tab'){
       if(pushState!==false)writeHistory(pushState,t.href);
-      var el=qs(t.hash);
+      var el=findIn(t.hash);
       if(el)el.scrollIntoView({behavior:'smooth'});
       return Promise.resolve(true);
     }
@@ -979,7 +1076,7 @@ function routerSource(): string {
     // entry — without this allowance, hitting back would early-return
     // and the visible page content would be left frozen on the
     // forward-navigation page.
-    if(pushState!==false&&t.href===location.href&&!t.hash&&!force)return Promise.resolve(false);
+    if(pushState!==false&&pushState!=='tab'&&t.href===location.href&&!t.hash&&!force)return Promise.resolve(false);
 
     // Its prefetch is on the way: wait for that answer rather than asking the
     // server a second time. A later tap elsewhere wins.
@@ -989,11 +1086,17 @@ function routerSource(): string {
       return prefetching[awaitedKey].then(function(){
         if(awaitingKey!==awaitedKey)return false;
         awaitingKey='';
+        navCtxNext=ctx;
         return navigate(url,pushState,force);
       });
     }
     awaitingKey='';
 
+    if(navAbort){try{navAbort.abort()}catch(e){}}
+    navAbort=typeof AbortController==='function'?new AbortController():null;
+    var id=++navSeq;
+    ctx.id=id;
+    if(!ctx.direction)ctx.direction=pushState==='replace'?'replace':pushState==='tab'?'tab':pushState===false?'pop':'push';
     isNavigating=true;
     instantNav=instantNext;
     instantNext=false;
@@ -1004,7 +1107,22 @@ function routerSource(): string {
     var targetPath=cacheKey(url);
     var targetHash=t.hash;
 
-    function done(){isNavigating=false;document.body.classList.remove(o.loadingClass);finishProgress()}
+    function done(){
+      if(id!==navSeq)return;
+      isNavigating=false;navAbort=null;
+      document.body.classList.remove(o.loadingClass);finishProgress();
+      settleDirection();
+    }
+    function stale(){return id!==navSeq}
+    // A failed fetch keeps the app: the destination shows a way to try again
+    // in place of its content, where a document load used to be the answer
+    // to everything -- offline that load is the offline page, or nothing.
+    function failed(err){
+      if(stale()||(err&&err.name==='AbortError'))return false;
+      console.error('[router] fetch error:',err);
+      return showNavError(url,err,pushState,targetHash,ctx);
+    }
+    function swapWith(html,key){pendingCtx=ctx;return swap(html,key,pushState,targetHash)}
 
     if(o.cache&&cache[targetPath]&&!force){
       // Cache hit → promote in LRU order so this entry survives eviction
@@ -1013,22 +1131,24 @@ function routerSource(): string {
       if(checkLayoutChange(layoutCache[targetPath],url,layoutGroupCache[targetPath])){
         // Layout changed — fetch full page and do full document swap
         log('[router] cache hit but layout changed — fetching full page');
-        return fetch(url,{headers:{'Accept':'text/html'}}).then(function(r){
-          if(!r.ok)throw new Error(r.status);
+        return routerFetch(url,{'Accept':'text/html'}).then(function(r){
+          if(!r.ok)throw httpError(r.status);
           return r.text();
         }).then(function(html){
+          if(stale())return false;
           log('[router] full page fetched from cache path, len:',html.length);
           pendingLayoutDecl={layout:layoutCache[targetPath]||'',group:layoutGroupCache[targetPath]||''};
-          return swap(html,targetPath,pushState,targetHash);
-        }).catch(function(err){
-          console.error('[router] full page fetch error:',err);
-          location.href=url;
-        }).finally(done);
+          return swapWith(html,targetPath);
+        }).catch(failed).finally(done);
       }
       pendingContainerAttrs=attrsCache[targetPath]||'';
       pendingLayoutDecl=null;
-      return Promise.resolve(swap(cache[targetPath],targetPath,pushState,targetHash)).then(function(){
+      return Promise.resolve(swapWith(cache[targetPath],targetPath)).then(function(swapped){
+        if(swapped===false)return false;
         applyTitle(titleCache[targetPath]);
+        // Shown from the cache at once; asked again behind it, so a page that
+        // changed since says so (stx:updated) instead of staying stale.
+        revalidate(targetPath,url);
         return true;
       }).finally(done);
     }
@@ -1038,8 +1158,9 @@ else {
       // the page content. Custom app-shell containers need full documents so
       // the router does not inject a <main> fragment into the wrong element.
       var wantsFragment=shouldUseFragmentResponse();
-      return fetch(url,{headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
-        if(!r.ok)throw new Error(r.status);
+      return routerFetch(url,wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}).then(function(r){
+        if(stale())return null;
+        if(!r.ok)throw httpError(r.status);
         // A route guard answered with a redirect and fetch followed it
         // transparently, so r.ok is the DESTINATION's 200 and this markup
         // belongs to r.url — not to the path that was requested. Without
@@ -1070,9 +1191,9 @@ else {
         // Layout change? Fetch the FULL page (no X-STX-Router header) and do full document swap
         if(isFragment&&checkLayoutChange(newLayout,url,newGroup)){
           log('[router] layout change — fetching full page for document swap');
-          return fetch(url,{headers:{'Accept':'text/html'}}).then(function(fullRes){
+          return routerFetch(url,{'Accept':'text/html'}).then(function(fullRes){
             log('[router] full page fetched:',fullRes.status,'ok:',fullRes.ok);
-            if(!fullRes.ok)throw new Error(fullRes.status);
+            if(!fullRes.ok)throw httpError(fullRes.status);
             return fullRes.text().then(function(html){
               log('[router] full page html length:',html.length);
               return{html:html,isFragment:false,layout:newLayout,layoutGroup:newGroup,title:newTitle};
@@ -1081,23 +1202,51 @@ else {
         }
         return r.text().then(function(html){return{html:html,isFragment:isFragment,layout:newLayout,layoutGroup:newGroup,title:newTitle,containerAttrs:newCAttrs,runtime:newRuntime}});
       }).then(function(result){
-        if(!result)return;
+        if(!result||stale())return false;
         if(result.isFragment)result.html=fragmentMarker(result.runtime)+result.html;
         if(o.cache)setCache(targetPath,result.html,result.layout,result.layoutGroup,result.title,result.containerAttrs);
         pendingContainerAttrs=result.isFragment?(result.containerAttrs||''):'';
         pendingLayoutDecl=result.isFragment?null:{layout:result.layout||'',group:result.layoutGroup||''};
-        return Promise.resolve(swap(result.html,targetPath,pushState,targetHash)).then(function(){
+        return Promise.resolve(swapWith(result.html,targetPath)).then(function(swapped){
+          if(swapped===false)return false;
           // Fragment swaps carry no <head>; apply the title from the header.
           // Full-document swaps already set document.title from the <title> tag.
           if(result.isFragment)applyTitle(result.title);
           return true;
         });
-      }).catch(function(err){
-        console.error('[router] fetch error:',err);
-        location.href=url;
-      }).finally(done);
+      }).catch(failed).finally(done);
     }
   }
+  function httpError(status){var err=new Error(String(status));err.status=status;return err}
+
+  // ── A screen that could not be loaded ──
+  // Shown in the routed container (in a screen of its own when screens are
+  // retained, so Back returns to the one before it), with the address bar at
+  // the destination, so "Try again" and coming back online both retry it in
+  // place. A page that wants to draw its own cancels stx:navigate-error.
+  function escAttr(v){return String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+  function showNavError(url,err,pushState,hash,ctx){
+    var status=err&&err.status||0;
+    var offline=!status&&navigator.onLine===false;
+    var ev=new CustomEvent('stx:navigate-error',{cancelable:true,detail:{url:url,status:status,offline:offline,error:err}});
+    window.dispatchEvent(ev);
+    if(ev.defaultPrevented)return false;
+    var title=offline?'You are offline':'This page could not be loaded';
+    var text=offline?'It will load as soon as you are back online.':status?'Something went wrong on the way. Try again in a moment.':'Check your connection and try again.';
+    var html='<!--stx-fragment rt=0--><div class="stx-retry" role="alert" data-stx-retry="'+escAttr(url)+'"><p class="stx-retry-title">'+title+'</p><p class="stx-retry-text">'+text+'</p><button type="button" class="stx-retry-button" data-stx-retry-button>Try again</button></div>';
+    pendingContainerAttrs='';
+    pendingLayoutDecl=null;
+    pendingCtx=ctx;
+    return Promise.resolve(swap(html,cacheKey(url),pushState,hash)).then(function(){return false});
+  }
+  function retryShown(){var root=activeRoot();var el=root&&root.querySelector?root.querySelector('[data-stx-retry]'):null;return el?el.getAttribute('data-stx-retry'):''}
+  document.addEventListener('click',function(e){
+    var b=e.target&&e.target.closest?e.target.closest('[data-stx-retry-button]'):null;
+    if(!b)return;
+    var holder=b.closest('[data-stx-retry]');
+    if(holder)navigate(holder.getAttribute('data-stx-retry'),'replace',true);
+  });
+  window.addEventListener('online',function(){var u=retryShown();if(u)navigate(u,'replace',true)});
 
   // A full document is only safe to partial-swap into the stx shell if it is
   // itself stx-rendered. Pages served by another engine mounted on the same
@@ -1143,7 +1292,7 @@ else {
 
   function announceRoute(){
     if(o.announceRoute===false)return;
-    var c=getContainer();
+    var c=activeRoot();
     var h=c&&c.querySelector?c.querySelector('h1'):null;
     // The heading names the destination better than the title, which often
     // carries a site-name suffix. Falls back to the title, then gives up
@@ -1293,7 +1442,12 @@ else {
     var declaredRuntime=fragMark&&fragMark[1]?fragMark[1]:'';
     if(isFragment)html=html.slice(fragMark[0].length);
     if(!isFragment&&!isStxDocument(html)){log('[router] non-stx document — full navigation to:',url);location.href=url;return Promise.resolve(false)}
+    var ctx=pendingCtx||{direction:pushState==='replace'?'replace':pushState==='tab'?'tab':pushState===false?'pop':'push'};
+    pendingCtx=null;
     var currentContent=getContainer();
+    // The routed container. currentContent is where the page is written: the
+    // container itself, or with screens retained, the new screen inside it.
+    var host=currentContent;
     log('[router] swap: isFragment='+isFragment+' container='+!!currentContent+' tag='+(currentContent&&currentContent.tagName)+' selector='+containerSel+' htmlLen='+html.length);
     if(!currentContent){log('[router] no container — falling back');location.href=url;return Promise.resolve(false)}
 
@@ -1410,14 +1564,16 @@ else {
         // Swap content — apply the destination container's own attributes first
         // so the incoming markup lands in a correctly-laid-out container instead
         // of flashing (or sticking) unstyled.
-        applyContainerAttrs(currentContent,pendingContainerAttrs);
+        if(scr)scr.cattrs=pendingContainerAttrs;
+        applyContainerAttrs(host,pendingContainerAttrs);
         currentContent.innerHTML=cleanFrag;
         // Remove old page scripts
         qsa('script[data-stx-page]').forEach(function(s){s.remove()});
         if(pushState!==false)writeHistory(pushState,url+(hash||''));
+        if(scr)screenCommit(scr,url+(hash||''));
         refreshCurrentLinks();
         applyScroll(hash);
-        window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url}}));
+        window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url,direction:ctx.direction}}));
         // Before page scripts run, so a page that focuses its own control on
         // mount still wins — its script executes after this.
         focusAfterNavigation(hash);
@@ -1522,17 +1678,28 @@ else {
         if(fragPending.length)Promise.all(fragPending).then(runFragScripts).catch(runFragScripts);
         else runFragScripts();
       }
+      // With screens retained, the outgoing page is kept (or disposed once it
+      // has animated away) by screenBegin rather than cleaned up here.
+      var scr=null;
+      var useScreens=screensOn();
       function startFragSwap(){
-        if(window.stx&&window.stx._cleanupContainer)window.stx._cleanupContainer(currentContent);
+        if(ctx.id&&ctx.id!==navSeq)return Promise.resolve(false);
+        if(pushState!==false)innerSnap=innerScroll(activeRoot());
+        if(useScreens)settleAnimation();
+        else if(window.stx&&window.stx._cleanupContainer)window.stx._cleanupContainer(currentContent);
         return new Promise(function(resolve,reject){
           function completeFragSwap(){
             try{
+              setDirection(ctx.direction);
+              if(useScreens){scr=screenBegin(host,ctx,html,pushState!==false);currentContent=scr.el}
               doFragSwap();
+              if(scr)screenEnd(scr);
               resolve(true);
             }catch(err){reject(err)}
           }
           if(instantNav&&swapRunsInOneTask(html,url)){runInOneTask(completeFragSwap)}
           else if(instantNav&&runInstantSwap(completeFragSwap)){}
+          else if(useScreens){completeFragSwap()}
           else if(runViewTransition(completeFragSwap)){}
           else if(instantNav){completeFragSwap()}
           else{currentContent.style.transition='opacity 0.12s ease-out';currentContent.style.opacity='0';setTimeout(function(){completeFragSwap();currentContent.style.opacity='1';setTimeout(function(){currentContent.style.transition=''},150)},120)}
@@ -1584,7 +1751,7 @@ else {
     function doSwap(){
       // ── Swap <head> styles ──
       // Inject new styles FIRST, then remove old to prevent unstyled flash
-      var keepIds={'stx-view-transitions':1,'stx-r-css':1};
+      var keepIds={'stx-r-css':1};
       var curStyles=qsa('head style');
       var newStyles=doc.querySelectorAll('head style');
 
@@ -1918,7 +2085,7 @@ else {
         else curRoot.removeAttribute('data-stx-html-attrs');
       }
 
-      window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url}}));
+      window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url,direction:ctx.direction}}));
 
       // Execute page scripts FIRST — they define setup functions and set _latestSetup
       function execScripts(){
@@ -1972,6 +2139,13 @@ else {
     }
 
     function startSwap(){
+      if(ctx.id&&ctx.id!==navSeq)return Promise.resolve(false);
+      if(pushState!==false)innerSnap=innerScroll(activeRoot());
+      setDirection(ctx.direction);
+      // A whole document is written into the container as it is, so retained
+      // screens go first: they would otherwise outlive the page they belong to.
+      collapseScreens();
+      currentContent=getContainer();
       // Clean up existing signals/effects
       if(window.stx&&window.stx._cleanupContainer){
         window.stx._cleanupContainer(currentContent);
@@ -2005,6 +2179,748 @@ else {
     }
     var docCssReady=preloadGeneratedCss(docCssHrefs,docCssBase);
     return afterCss(docCssReady,url,startSwap);
+  }
+
+  // ── Screens ──
+  // A phone app keeps the screens it has shown. Going back finds the list
+  // exactly where it was left, and switching tabs finds the other tab as it
+  // was: the same DOM, its scroll, its signals still live. Re-rendering each
+  // of them from the server on every visit is what made an stx app read as a
+  // web page in a shell.
+  //
+  // So with screens on, each page is written into a screen of its own,
+  // <div data-stx-screen>, inside the routed container. Leaving one by a push
+  // or a tab switch hides it instead of disposing it; Back and the tab bar
+  // show it again without running anything. Each tab owns a stack of them,
+  // mirrored by the history entries above the one the app opened with.
+  //
+  // The runtime binds whichever element carries data-stx-content before it
+  // falls back to the router's container, so the screen being shown wears
+  // that marker and a navigation binds the new screen alone, leaving the
+  // retained ones as they are. A container that is itself [data-stx-content]
+  // (the app-shell mode) keeps the old behaviour, as does a page without the
+  // signals runtime, which has nothing to retain.
+  //
+  // On when the page has tab links (data-stx-nav="tab"), or always with
+  // screens:true; never with screens:false.
+  var SCREEN='data-stx-screen';
+  var HIDDEN='data-stx-screen-hidden';
+  var TAB_SEL='[data-stx-nav="tab"],[data-native-tab]';
+  var tabs={};
+  var curTab='';
+  var active=null;
+  var shownSeq=0;
+  var screensLive=false;
+  function screensOn(){
+    if(screensLive)return true;
+    if(o.screens===false||o.screens==='false'||!shouldUseFragmentResponse())return false;
+    var stx=window.stx;
+    if(!stx||typeof stx._cleanupContainer!=='function')return false;
+    var host=getContainer();
+    if(!host||(host.closest&&host.closest('[data-stx-content]')))return false;
+    return o.screens===true||!!qs(TAB_SEL);
+  }
+  // Where the current page lives: its screen, or the container.
+  function activeRoot(){return active&&active.el&&active.el.isConnected?active.el:getContainer()}
+  // A selector looked up in the page on screen first: a retained screen
+  // carries the same ids as the page that rendered it.
+  function findIn(sel){
+    var root=activeRoot(),el=null;
+    try{el=root&&root.querySelector?root.querySelector(sel):null;if(!el)el=qs(sel)}catch(e){}
+    return el;
+  }
+  function stackOf(id){return tabs[id]||(tabs[id]=[])}
+  function newEntry(url,token,depth){return{url:url,key:cacheKey(url),token:token,depth:depth,tab:curTab,el:null,sx:0,sy:0,inner:null,destroys:[],cattrs:'',shown:0}}
+  function tabId(href){return cacheKey(withCurrentLocale(href))}
+  function tabLinks(){return qsa(TAB_SEL)}
+  // The tab the page on screen belongs to: the one the tab bar has current,
+  // which the sticky nav keeps lit for a screen opened from it.
+  function currentTabId(){
+    var links=tabLinks(),best='',i;
+    for(i=0;i<links.length;i++)if(links[i].hasAttribute('data-stx-nav-current'))return tabId(links[i].getAttribute('href')||'');
+    for(i=0;i<links.length;i++){
+      var st=linkState(links[i].getAttribute('href')||'',links[i].getAttribute('data-stx-active-match'));
+      if(st&&(st.exact||st.matched))return tabId(links[i].getAttribute('href')||'');
+      if(st&&st.active&&!best)best=tabId(links[i].getAttribute('href')||'');
+    }
+    return best;
+  }
+  // Which tab link the bar shows as current. Set by hand on a switch: the
+  // sticky nav would otherwise keep the old tab lit over the other tab's
+  // pushed screen, since neither tab's own URL is on screen.
+  function markTab(id){
+    tabLinks().forEach(function(a){
+      if(tabId(a.getAttribute('href')||'')===id)a.setAttribute('data-stx-nav-current','');
+      else a.removeAttribute('data-stx-nav-current');
+    });
+  }
+  function hostAttrString(host){
+    var out=[];
+    if(host&&host.getAttributeNames)host.getAttributeNames().forEach(function(n){
+      if(n==='data-stx-cattrs'||n==='data-stx-route-focus'||n==='data-stx-animating'||(n==='tabindex'&&host.hasAttribute('data-stx-route-focus')))return;
+      out.push(n+'="'+escAttr(host.getAttribute(n))+'"');
+    });
+    return encodeURIComponent(out.join(' '));
+  }
+  // The page the app opened with becomes the first screen the first time a
+  // screen is needed. Moved, not re-rendered: its bindings stay on its nodes.
+  function adoptInitial(host){
+    if(active&&active.el&&active.el.isConnected)return;
+    screensLive=true;
+    var el=ce('div');
+    el.setAttribute(SCREEN,'');
+    while(host.firstChild)el.appendChild(host.firstChild);
+    host.appendChild(el);
+    if(host.__stx_disposers){el.__stx_disposers=host.__stx_disposers;host.__stx_disposers=null}
+    if(!curTab)curTab=currentTabId();
+    active=newEntry(location.pathname+location.search+location.hash,scrollToken,histDepth);
+    active.el=el;
+    active.cattrs=hostAttrString(host);
+    active.shown=++shownSeq;
+    stackOf(curTab)[histDepth]=active;
+    markActive(el);
+  }
+  function markActive(el){
+    var host=getContainer();
+    if(host)Array.prototype.forEach.call(host.querySelectorAll('['+SCREEN+'][data-stx-content]'),function(other){if(other!==el)other.removeAttribute('data-stx-content')});
+    el.setAttribute('data-stx-content','');
+    el.removeAttribute(HIDDEN);
+  }
+  function saveScroll(e){
+    e.sx=window.pageXOffset||window.scrollX||0;
+    e.sy=window.pageYOffset||window.scrollY||0;
+    e.inner=innerScroll(e.el);
+  }
+  // Everything that is global to the page on screen, kept with it while it is
+  // hidden: its page-level onDestroy callbacks (the runtime runs whatever is
+  // queued on the next stx:load, which would tear a retained page down), its
+  // setup, its server data and its route params.
+  function saveEntry(e){
+    var stx=window.stx||{};
+    e.title=document.title;
+    e.setup=stx._latestSetup;
+    e.data=window.__STX_DATA__;
+    e.config=window.__STX_RUNTIME_CONFIG__;
+    e.params=stx._rp||window.__stx_rp||{};
+    if(stx._destroyCallbacks)e.destroys=e.destroys.concat(stx._destroyCallbacks.splice(0));
+  }
+  function restoreEntry(e){
+    var stx=window.stx||{};
+    if(e.title)document.title=e.title;
+    if(e.setup)stx._latestSetup=e.setup;
+    window.__STX_DATA__=e.data||{};
+    window.__STX_RUNTIME_CONFIG__=e.config||{};
+    if(stx._destroyCallbacks&&e.destroys.length)Array.prototype.push.apply(stx._destroyCallbacks,e.destroys);
+    e.destroys=[];
+    applyContainerAttrs(getContainer(),e.cattrs);
+  }
+  // A new page must not share the outgoing page's scope object, or its setup
+  // merges into the one the retained screen's bindings read. Cleaning an
+  // empty element resets that scope and nothing else.
+  function resetScope(){
+    var stx=window.stx;
+    if(!stx||!stx._cleanupContainer)return;
+    var keep=stx._mountCallbacks?stx._mountCallbacks.splice(0):[];
+    stx._cleanupContainer(ce('div'));
+    if(stx._mountCallbacks)Array.prototype.push.apply(stx._mountCallbacks,keep);
+  }
+  function hideScreen(e){
+    if(!e||!e.el)return;
+    unfreeze(e.el);
+    e.el.setAttribute(HIDDEN,'');
+    e.el.removeAttribute('data-stx-content');
+  }
+  // Disposal runs the same paths a navigation always has: the runtime's
+  // container cleanup (effects, scopes, element hooks) and the page-level
+  // onDestroy callbacks that were put aside when the screen was hidden.
+  // Pending mount callbacks belong to whatever is arriving, so they survive.
+  function disposeEntry(e){
+    if(!e||!e.el)return;
+    var el=e.el,stx=window.stx;
+    e.el=null;
+    if(e===active)saveEntry(e);
+    if(stx&&stx._cleanupContainer){
+      var keep=stx._mountCallbacks?stx._mountCallbacks.splice(0):[];
+      try{stx._cleanupContainer(el)}catch(err){console.error('[router] screen cleanup failed:',err)}
+      if(stx._mountCallbacks)Array.prototype.push.apply(stx._mountCallbacks,keep);
+    }
+    var fns=e.destroys;e.destroys=[];
+    fns.forEach(function(fn){try{fn()}catch(err){console.warn('[stx] destroy callback error:',err)}});
+    if(el.parentNode)el.parentNode.removeChild(el);
+  }
+  function eachEntry(fn){for(var id in tabs)tabs[id].forEach(function(e){if(e)fn(e,id)})}
+  // Keep at most screenLimit screens alive, the least recently shown going
+  // first. An evicted screen stays in its stack as an address: Back to it
+  // loads it again.
+  function enforceLimit(){
+    var live=[];
+    eachEntry(function(e){if(e.el&&e!==active&&!e.leaving)live.push(e)});
+    live.sort(function(a,b){return a.shown-b.shown});
+    while(live.length+1>Math.max(1,o.screenLimit|0))disposeEntry(live.shift());
+  }
+  // Everything back to the plain container: before a whole-document swap and
+  // when the screens are given up.
+  // The screen on screen is left in place: the swap cleans the container,
+  // and it with it, as it always has.
+  function collapseScreens(){
+    if(!screensLive)return;
+    settleAnimation();
+    eachEntry(function(e){if(e!==active)disposeEntry(e)});
+    tabs={};active=null;screensLive=false;
+  }
+  // Component scopes are keyed by ids the server derives from the page, so a
+  // second visit to the same page, pushed over a retained first one, brings
+  // the same ids. The retained copies are renamed out of the way, registry
+  // entry and all, so each instance keeps its own and disposing one cannot
+  // reach the other.
+  var retagSeq=0;
+  function retagCollisions(html){
+    var ids={},any=false;
+    html.replace(/data-stx-scope="([^"]+)"/g,function(m,id){ids[id]=1;any=true;return m});
+    if(!any)return;
+    var scopes=window.stx&&window.stx._scopes;
+    eachEntry(function(e){
+      if(!e.el)return;
+      Array.prototype.forEach.call(e.el.querySelectorAll('[data-stx-scope]'),function(node){
+        var id=node.getAttribute('data-stx-scope');
+        if(!ids[id])return;
+        var next=id+'-r'+(++retagSeq);
+        node.setAttribute('data-stx-scope',next);
+        if(scopes&&scopes[id]&&(!scopes[id].__el||scopes[id].__el===node)){scopes[next]=scopes[id];delete scopes[id]}
+      });
+    });
+  }
+
+  // The swap's half: before the page is written, the outgoing screen is put
+  // aside (lifted out of the page for a slide, or hidden), and a new screen
+  // is made for the page to go into, first in the container so that a lookup
+  // by id finds the page on screen before any retained copy of it.
+  function screenBegin(host,ctx,html,writes){
+    adoptInitial(host);
+    var from=active;
+    retagCollisions(html);
+    if(from&&from.el){
+      // A popstate saved the outgoing position already, under the token it
+      // has since replaced; saving again here would file it under the wrong one.
+      if(writes){rememberScroll();scrollSaved=true}
+      saveEntry(from);
+    }
+    resetScope();
+    var el=ce('div');
+    el.setAttribute(SCREEN,'');
+    var anim=!!(from&&from.el&&canAnimate(ctx.direction));
+    if(anim)freeze(from.el);
+    else if(from&&from.el)hideScreen(from);
+    host.insertBefore(el,host.firstChild);
+    markActive(el);
+    return{el:el,from:from,ctx:ctx,anim:anim,cattrs:''};
+  }
+  // After the history write, so the entry knows its token and depth.
+  function screenCommit(scr,href){
+    var e=scr.ctx.entry||newEntry(href,scrollToken,histDepth);
+    e.url=href;e.key=cacheKey(href);e.token=scrollToken;e.depth=histDepth;e.tab=curTab;
+    e.el=scr.el;e.cattrs=scr.cattrs;e.shown=++shownSeq;e.destroys=[];
+    var stack=stackOf(curTab);
+    // A push drops whatever was forward of it; a pop or a replacement takes
+    // the place of what was at its depth. The outgoing screen is left to the
+    // transition, which disposes it once it is off screen.
+    for(var i=e.depth;i<stack.length;i++){var x=stack[i];if(x&&x!==e&&x!==scr.from)disposeEntry(x)}
+    stack.length=e.depth;
+    stack[e.depth]=e;
+    active=e;
+    scrollSaved=false;
+  }
+  function screenEnd(scr){
+    var from=scr.from,dir=scr.ctx.direction;
+    if(!from||!from.el){finishScreen();return}
+    // Retained: left by a push, or by a tab switch. Popped or replaced: gone.
+    var keep=dir==='push'||dir==='tab';
+    var stack=tabs[from.tab];
+    if(keep&&!(stack&&stack[from.depth]===from))keep=false;
+    from.leaving=true;
+    var after=function(){
+      from.leaving=false;
+      if(keep&&from.el)hideScreen(from);
+      else disposeEntry(from);
+      finishScreen();
+    };
+    if(scr.anim)animateScreens(from.el,scr.el,dir,after);
+    else after();
+  }
+  function finishScreen(){
+    enforceLimit();
+    observeLinks();
+  }
+
+  // Show a screen that is already here: Back to one below in the stack, or a
+  // tab's top screen. Nothing is fetched and no page script runs; the page is
+  // told it is on screen again (stx:screen-shown) so it can refresh whatever
+  // may have gone stale while it was hidden.
+  function showRetained(to,dir,opts){
+    opts=opts||{};
+    settleAnimation();
+    var from=active,host=getContainer();
+    if(navAbort){try{navAbort.abort()}catch(e){}navAbort=null}
+    navSeq++;
+    isNavigating=false;
+    document.body.classList.remove(o.loadingClass);
+    if(from&&from.el){if(!opts.settled)saveScroll(from);saveEntry(from)}
+    setDirection(dir);
+    var anim=!opts.settled&&from&&from.el&&from!==to&&canAnimate(dir,true);
+    if(anim)freeze(from.el);
+    else if(from&&from.el&&from!==to&&!opts.settled)hideScreen(from);
+    unfreeze(to.el);
+    markActive(to.el);
+    active=to;
+    to.shown=++shownSeq;
+    restoreEntry(to);
+    pendingScroll=null;pendingInner=null;
+    window.scrollTo({left:to.sx,top:to.sy,behavior:'instant'});
+    applyInner(to.el,to.inner);
+    if(opts.settled&&from&&from!==to&&from.el)hideScreen(from);
+    refreshCurrentLinks();
+    window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:to.url,direction:dir,retained:true,params:to.params||{}}}));
+    focusAfterNavigation('');
+    setTimeout(announceRoute,0);
+    window.dispatchEvent(new CustomEvent('stx:screen-shown',{detail:{url:to.url,direction:dir}}));
+    revalidate(to.key,to.url);
+    var keep=dir==='push'||dir==='tab';
+    var after=function(){
+      if(from&&from!==to){
+        if(dir==='pop'){
+          // Everything above the screen shown is gone from the stack.
+          var stack=tabs[to.tab]||[];
+          for(var i=to.depth+1;i<stack.length;i++)if(stack[i]&&stack[i]!==from)disposeEntry(stack[i]);
+          stack.length=to.depth+1;
+        }
+        if(keep&&from.el)hideScreen(from);
+        else if(!keep)disposeEntry(from);
+      }
+      finishScreen();
+      settleDirection();
+    };
+    if(anim){from.leaving=true;animateScreens(from.el,to.el,dir,function(){from.leaving=false;after()})}
+    else after();
+    return true;
+  }
+
+  // ── Direction and motion ──
+  // data-nav-direction on <html> says what kind of move is under way --
+  // push, pop, tab or replace -- for as long as it is, so CSS (and a page's
+  // own transitions) can tell a step forward from a step back.
+  var animEnd=null;
+  function setDirection(d){if(d)document.documentElement.setAttribute('data-nav-direction',d)}
+  function settleDirection(){
+    if(isNavigating||animEnd)return;
+    document.documentElement.removeAttribute('data-nav-direction');
+  }
+  function reducedMotion(){
+    try{return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)}catch(e){return false}
+  }
+  // instantNav belongs to a navigation that fetched; a screen shown from
+  // the stack (Back) is not one, and must not inherit the last tab tap's.
+  function canAnimate(dir,shown){
+    return (dir==='push'||dir==='pop')&&(shown||!instantNav)&&o.navDuration>0&&typeof window.getComputedStyle==='function';
+  }
+  // The first background behind the container that is not transparent: the
+  // screens are transparent, and two of them sliding over each other need
+  // the page's colour to hide the one underneath.
+  function screenBackground(host){
+    for(var n=host;n&&n.nodeType===1;n=n.parentNode){
+      var c='';
+      try{c=getComputedStyle(n).backgroundColor}catch(e){}
+      if(c&&c!=='transparent'&&c!=='rgba(0, 0, 0, 0)')return c;
+    }
+    return '';
+  }
+  // Lifted out of the flow and pinned where it is on screen, as a box the
+  // height of the viewport scrolled to the same place: the page can scroll
+  // to wherever the next screen wants, the outgoing one does not move, and a
+  // sticky header inside it stays stuck.
+  function freeze(el,top){
+    var r=el.getBoundingClientRect();
+    var vh=window.innerHeight||document.documentElement.clientHeight||0;
+    var at=top===undefined?r.top:top;
+    var y=Math.max(at,0);
+    var s=el.style;
+    s.position='fixed';s.top=y+'px';s.left=r.left+'px';s.width=r.width+'px';s.height=Math.max(vh-y,0)+'px';s.overflow='hidden';s.margin='0';
+    el.scrollTop=y-at;
+  }
+  function unfreeze(el){
+    if(!el)return;
+    var s=el.style;
+    ['position','top','left','width','height','overflow','margin','transform','transition','zIndex','backgroundColor','pointerEvents'].forEach(function(k){s[k]=''});
+    el.removeAttribute('data-stx-screen-enter');
+    el.removeAttribute('data-stx-screen-leave');
+    el.scrollTop=0;
+  }
+  function parseDuration(v){
+    v=String(v||'').split(',')[0].trim();
+    var n=parseFloat(v);
+    if(!(n>=0))return -1;
+    return v.indexOf('ms')>0?n:n*1000;
+  }
+  function dimLayer(host){
+    var r=host.getBoundingClientRect();
+    var dim=ce('div');
+    dim.setAttribute('data-stx-screen-dim','');
+    dim.style.left=r.left+'px';
+    dim.style.width=r.width+'px';
+    return dim;
+  }
+  // Two real screens, animated by the shipped CSS: the one arriving and the
+  // one leaving, and a dim between them over the one underneath.
+  function animateScreens(fromEl,toEl,dir,done){
+    var host=getContainer();
+    var bg=screenBackground(host);
+    var dim=dimLayer(host);
+    host.setAttribute('data-stx-animating','');
+    fromEl.style.backgroundColor=bg;toEl.style.backgroundColor=bg;
+    fromEl.style.pointerEvents='none';
+    fromEl.setAttribute('data-stx-screen-leave','');
+    toEl.setAttribute('data-stx-screen-enter','');
+    host.appendChild(dim);
+    var ms=-1;
+    try{ms=parseDuration(getComputedStyle(toEl).animationDuration)}catch(e){}
+    if(!(ms>0))ms=o.navDuration;
+    var timer=setTimeout(end,ms+120);
+    function onEnd(e){if(e.target===toEl)end()}
+    toEl.addEventListener('animationend',onEnd);
+    function end(){
+      if(animEnd!==end)return;
+      animEnd=null;
+      clearTimeout(timer);
+      toEl.removeEventListener('animationend',onEnd);
+      if(dim.parentNode)dim.parentNode.removeChild(dim);
+      host.removeAttribute('data-stx-animating');
+      toEl.removeAttribute('data-stx-screen-enter');
+      toEl.style.backgroundColor='';
+      done();
+      settleDirection();
+    }
+    animEnd=end;
+  }
+  // A navigation that starts while a slide is still running finishes the
+  // slide first, rather than lifting a screen that is halfway across.
+  function settleAnimation(){if(animEnd)animEnd()}
+
+  // ── Tabs ──
+  // Back never crosses tabs: the history above the entry the app opened with
+  // is always the current tab's stack. A switch rewinds to that entry, writes
+  // the target tab's stack in its place, and shows its top screen exactly as
+  // it was left.
+  var rewinding=null;
+  function rewind(){
+    if(histDepth<=0)return Promise.resolve();
+    return new Promise(function(resolve){
+      var n=histDepth;
+      var timer=setTimeout(finish,700);
+      function finish(){
+        clearTimeout(timer);
+        if(rewinding===finish)rewinding=null;
+        histDepth=(history.state&&history.state[DEPTH])|0;
+        var token=history.state&&history.state[SCROLL_TOKEN];
+        if(token)scrollToken=token;
+        resolve();
+      }
+      rewinding=finish;
+      history.go(-n);
+    });
+  }
+  function entryState(e,pushed){
+    var st={};
+    st[SCROLL_TOKEN]=e.token;st[DEPTH]=e.depth;st[TAB]=e.tab;
+    if(pushed)st[PUSHED_MARK]=true;
+    return st;
+  }
+  function selectTab(href){
+    if(!href)return Promise.resolve(false);
+    var id=tabId(href);
+    var on=screensOn();
+    if(on&&!screensLive)adoptInitial(getContainer());
+    if(!curTab)curTab=on&&active?active.tab:currentTabId();
+    if(id===curTab)return reselectTab(href);
+    if(active&&active.el){rememberScroll();saveScroll(active)}
+    settleAnimation();
+    if(navAbort){try{navAbort.abort()}catch(e){}navAbort=null}
+    var seq=++navSeq;
+    return rewind().then(function(){
+      if(seq!==navSeq)return false;
+      curTab=id;
+      markTab(id);
+      var stack=on?(tabs[id]||[]).filter(Boolean):[];
+      if(!stack.length){
+        if(on)tabs[id]=[];
+        navCtxNext={direction:'tab'};
+        instantNext=true;
+        return navigate(href,'tab');
+      }
+      // Rewritten in order, so Back walks this tab's own stack.
+      stack.forEach(function(e,i){
+        e.depth=i;e.tab=id;
+        if(i===0)history.replaceState(entryState(e,false),'',e.url);
+        else history.pushState(entryState(e,true),'',e.url);
+      });
+      tabs[id]=stack;
+      var top=stack[stack.length-1];
+      histDepth=top.depth;
+      scrollToken=top.token;
+      if(top.el)return showRetained(top,'tab');
+      // Its top screen was let go: load it into the same entry.
+      pendingScroll=[top.sx,top.sy];
+      navCtxNext={direction:'tab',entry:top};
+      instantNext=true;
+      return navigate(top.url,false);
+    });
+  }
+  // The tab that is already current, selected again: back to the top of its
+  // screen, and when it is there already, back to the tab's first screen.
+  // stx:tabreselect says which, and a page that cancels it keeps its own.
+  function reselectTab(href){
+    var root=activeRoot();
+    var y=window.pageYOffset||window.scrollY||0;
+    var inner=innerScroll(root);
+    var atRoot=active?active.depth===0&&active.key===tabId(href):cacheKey(location.href)===tabId(href);
+    var action=(y>0||inner)?'top':atRoot?'none':'root';
+    var ev=new CustomEvent('stx:tabreselect',{cancelable:true,detail:{href:href,action:action}});
+    window.dispatchEvent(ev);
+    if(ev.defaultPrevented||action==='none')return Promise.resolve(false);
+    if(action==='top'){
+      window.scrollTo({top:0,left:0,behavior:reducedMotion()?'instant':'smooth'});
+      if(root&&root.querySelectorAll)root.querySelectorAll('[data-stx-scroll]').forEach(function(el){if(el.scrollTo)el.scrollTo({top:0,left:0,behavior:'smooth'});else el.scrollTop=0});
+      return Promise.resolve(true);
+    }
+    var stack=tabs[curTab]||[];
+    var first=stack.filter(Boolean)[0];
+    if(first&&first.el&&first.key===tabId(href)&&histDepth>0){
+      var target=first;
+      return new Promise(function(resolve){
+        history.go(target.depth-histDepth);
+        setTimeout(function(){resolve(true)},0);
+      });
+    }
+    // The tab's first screen is not here (opened on a deep link, or let
+    // go): load the tab's own page in its place.
+    return rewind().then(function(){
+      navCtxNext={direction:'pop'};
+      return navigate(href,'tab');
+    });
+  }
+
+  // ── Swipe back ──
+  // A pan from the left edge drags the screen on top away and shows the
+  // retained one underneath, the way iOS does: the one underneath moves from
+  // -30% and brightens as the top one goes. Released past half way, or
+  // flicked, it completes as a Back (history.back(), shown without a second
+  // animation); otherwise it springs back. Only where there is a screen to
+  // go back to in this tab, never from inside data-stx-no-swipe, and never
+  // over something that pans sideways on its own (touch-action none, pan-x,
+  // pan-y, or a horizontal scroller that is not at its start).
+  var swipe=null;
+  var swipeSettled=null;
+  function swipePrev(){
+    if(o.swipeBack===false||!screensLive||!active||!active.el||isNavigating||animEnd)return null;
+    var prev=(tabs[curTab]||[])[active.depth-1];
+    return prev&&prev.el?prev:null;
+  }
+  function swipeBlocked(target){
+    var host=getContainer();
+    for(var n=target;n&&n.nodeType===1&&n!==host;n=n.parentNode){
+      if(n.hasAttribute('data-stx-no-swipe'))return true;
+      var cs=null;
+      try{cs=getComputedStyle(n)}catch(e){}
+      if(!cs)continue;
+      var ta=String(cs.touchAction||'').split(' ');
+      var has=function(v){return ta.indexOf(v)!==-1};
+      if(has('none')||(has('pan-x')||has('pan-left')||has('pan-right'))!==(has('pan-y')||has('pan-up')||has('pan-down')))return true;
+      var ox=String(cs.overflowX||'');
+      if((ox==='auto'||ox==='scroll')&&n.scrollWidth>n.clientWidth&&n.scrollLeft>0)return true;
+    }
+    return false;
+  }
+  function now(){return window.performance&&performance.now?performance.now():Date.now()}
+  function touchOf(e){return (e.touches&&e.touches[0])||(e.changedTouches&&e.changedTouches[0])||null}
+  function swipeStart(e){
+    if(swipe||!e.touches||e.touches.length!==1)return;
+    var t=e.touches[0];
+    if(t.clientX>o.swipeEdge)return;
+    var prev=swipePrev();
+    if(!prev||swipeBlocked(e.target))return;
+    swipe={prev:prev,x0:t.clientX,y0:t.clientY,x:t.clientX,t:now(),v:0,on:false};
+  }
+  function swipeBegin(){
+    var cur=active,prev=swipe.prev,host=getContainer();
+    var w=host.getBoundingClientRect().width||window.innerWidth||1;
+    saveScroll(cur);
+    var docTop=cur.el.getBoundingClientRect().top+(window.pageYOffset||window.scrollY||0);
+    swipe.w=w;
+    swipe.cur=cur;
+    swipe.bg=screenBackground(host);
+    swipe.dim=dimLayer(host);
+    swipe.dim.setAttribute('data-stx-drag','');
+    // Shown before it is measured: a hidden screen has no box to pin.
+    prev.el.removeAttribute(HIDDEN);
+    freeze(prev.el,docTop-prev.sy);
+    applyInner(prev.el,prev.inner);
+    prev.el.style.zIndex='1';
+    prev.el.style.backgroundColor=swipe.bg;
+    cur.el.style.position='relative';
+    cur.el.style.zIndex='3';
+    cur.el.style.backgroundColor=swipe.bg;
+    host.setAttribute('data-stx-animating','');
+    host.appendChild(swipe.dim);
+    setDirection('pop');
+    swipe.on=true;
+  }
+  function swipeDraw(dx){
+    var p=Math.min(Math.max(dx/swipe.w,0),1);
+    swipe.p=p;
+    swipe.cur.el.style.transform='translateX('+(p*swipe.w)+'px)';
+    swipe.prev.el.style.transform='translateX('+(-0.3*swipe.w*(1-p))+'px)';
+    swipe.dim.style.opacity=String(1-p);
+  }
+  function swipeMove(e){
+    if(!swipe)return;
+    var t=touchOf(e);
+    if(!t)return;
+    var dx=t.clientX-swipe.x0,dy=t.clientY-swipe.y0;
+    if(!swipe.on){
+      if(Math.abs(dx)<8&&Math.abs(dy)<8)return;
+      // Vertical first, or leftwards: a scroll, not a Back.
+      if(dx<=0||Math.abs(dy)>=Math.abs(dx)){swipe=null;return}
+      swipeBegin();
+    }
+    if(e.cancelable)e.preventDefault();
+    var n=now(),dt=n-swipe.t;
+    if(dt>0)swipe.v=swipe.v*0.2+((t.clientX-swipe.x)/dt)*0.8;
+    swipe.x=t.clientX;swipe.t=n;
+    swipeDraw(dx);
+  }
+  function swipeEnd(e){
+    if(!swipe)return;
+    var s=swipe;
+    swipe=null;
+    if(!s.on)return;
+    // A finger held still before lifting has no speed left.
+    if(now()-s.t>80)s.v=0;
+    var commit=e.type!=='touchcancel'&&(s.p>0.5||s.v>0.5);
+    var remaining=commit?(1-s.p)*s.w:s.p*s.w;
+    var ms=Math.round(Math.min(o.navDuration,Math.max(120,remaining/Math.max(Math.abs(s.v),0.6))));
+    var ease='cubic-bezier(0.2, 0.9, 0.3, 1)';
+    [s.cur.el,s.prev.el].forEach(function(el){el.style.transition='transform '+ms+'ms '+ease});
+    s.dim.style.transition='opacity '+ms+'ms '+ease;
+    s.cur.el.style.transform=commit?'translateX('+s.w+'px)':'translateX(0px)';
+    s.prev.el.style.transform=commit?'translateX(0px)':'translateX('+(-0.3*s.w)+'px)';
+    s.dim.style.opacity=commit?'0':'1';
+    var finished=false;
+    var finish=function(){
+      if(finished)return;
+      finished=true;
+      animEnd=null;
+      if(s.dim.parentNode)s.dim.parentNode.removeChild(s.dim);
+      getContainer().removeAttribute('data-stx-animating');
+      if(commit){
+        // Already where Back would put it: the popstate that follows shows
+        // the screen underneath as it is, with no second animation.
+        s.cur.el.style.visibility='hidden';
+        swipeSettled=s.prev;
+        history.back();
+      }
+      else{
+        hideScreen(s.prev);
+        s.cur.el.style.transform='';s.cur.el.style.transition='';s.cur.el.style.position='';s.cur.el.style.zIndex='';s.cur.el.style.backgroundColor='';
+        settleDirection();
+      }
+    };
+    animEnd=finish;
+    setTimeout(finish,ms+40);
+  }
+  document.addEventListener('touchstart',swipeStart,{capture:true,passive:true});
+  document.addEventListener('touchmove',swipeMove,{capture:true,passive:false});
+  document.addEventListener('touchend',swipeEnd,{capture:true,passive:true});
+  document.addEventListener('touchcancel',swipeEnd,{capture:true,passive:true});
+  // The system is short of memory: let go of every hidden screen except the
+  // one a swipe back would show.
+  window.addEventListener('craftMemoryWarning',function(){
+    var keep=active?(tabs[curTab]||[])[active.depth-1]:null;
+    eachEntry(function(e){if(e!==active&&e!==keep&&!e.leaving)disposeEntry(e)});
+  });
+
+  // ── Revalidation and updates ──
+  // A page served from the router's cache, or a screen shown again, is asked
+  // for once more behind the swap. If it changed, the cache takes the new copy
+  // and stx:updated says so, so the page can refresh what it shows; the
+  // screen is never swapped out from under the user.
+  function revalidate(key,url){
+    if(!o.revalidate||!o.cache||!key||prefetching[key])return;
+    if(Date.now()-(cacheAt[key]||0)<o.revalidateAfter)return;
+    var wantsFragment=shouldUseFragmentResponse();
+    var before=cache[key];
+    prefetching[key]=fetch(url,{headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
+      var incoming=r.headers.get('X-STX-Build')||'';
+      if(isBuildSkew(incoming)){reloadForSkew(url,incoming,true);return null}
+      return readPrefetchResponse(r,wantsFragment);
+    }).then(function(result){
+      if(!result)return;
+      if(o.cache)setCache(key,result.html,result.layout,result.layoutGroup,result.title,result.containerAttrs);
+      if(before!==undefined&&before!==result.html&&cacheKey(location.href)===key)emitUpdated(url,'page');
+    }).catch(function(){}).finally(function(){delete prefetching[key]});
+  }
+  // The offline worker answered from its cache and found something newer
+  // behind it. It posts { type: 'stx:updated', url, kind }, which its own
+  // register script turns into a window event; the router does that only
+  // where that script is not on the page, so the event is heard once. Either
+  // way a page the router has cached is dropped, so the next visit gets the
+  // new one.
+  var ownUpdate=false;
+  function emitUpdated(url,kind){
+    ownUpdate=true;
+    try{window.dispatchEvent(new CustomEvent('stx:updated',{detail:{url:url,kind:kind||'page'}}))}finally{ownUpdate=false}
+  }
+  window.addEventListener('stx:updated',function(e){
+    var d=e&&e.detail;
+    if(ownUpdate||!d||!d.url||d.kind==='api')return;
+    try{evictCache(cacheKey(d.url))}catch(err){}
+  });
+  try{
+    var sw=navigator.serviceWorker;
+    if(sw&&sw.addEventListener)sw.addEventListener('message',function(e){
+      var d=e&&e.data;
+      if(!d||d.type!=='stx:updated'||window.stxOffline)return;
+      window.dispatchEvent(new CustomEvent('stx:updated',{detail:{url:d.url,kind:d.kind||'page'}}));
+    });
+  }catch(e){}
+
+  // ── Prefetch on sight ──
+  // Links are fetched as they scroll into view, a few per screen, so most
+  // taps find their page already here. Not on a connection that asked to
+  // save data, and not for a link marked data-stx-prefetch="false" or
+  // "hover" (hover and touch still prefetch everything).
+  var sightObserver=null;
+  var sightCount=0;
+  function observeLinks(){
+    if(!o.prefetch||!o.cache||o.prefetchVisible===false||typeof IntersectionObserver!=='function')return;
+    var c=navigator.connection;
+    if(c&&(c.saveData||/2g/.test(c.effectiveType||'')))return;
+    if(!sightObserver)sightObserver=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(!en.isIntersecting)return;
+        sightObserver.unobserve(en.target);
+        if(sightCount>=o.prefetchVisibleMax)return;
+        sightCount++;
+        prefetchLink(en.target);
+      });
+    });
+    sightCount=0;
+    var root=activeRoot()||document.body;
+    if(!root||!root.querySelectorAll)return;
+    root.querySelectorAll('[data-stx-link][href]').forEach(function(a){
+      if(a.__stxSeen)return;
+      var p=a.getAttribute('data-stx-prefetch');
+      if(p==='false'||p==='hover'||p==='none')return;
+      a.__stxSeen=1;
+      sightObserver.observe(a);
+    });
   }
 
   // ── Link interception ──
@@ -2109,6 +3025,8 @@ else {
     e.preventDefault();
     e.stopPropagation();
     log('[router] navigating to:',href);
+    // A tab: its own stack, never a back entry (selectTab).
+    if(link.getAttribute('data-stx-nav')==='tab'||link.hasAttribute('data-native-tab')){selectTab(href);return}
     instantNext=link.getAttribute('data-stx-transition')==='none';
     navigate(withCurrentLocale(href));
   });
@@ -2250,16 +3168,33 @@ else {
 
   // ── Back/forward ──
   window.addEventListener('popstate',function(){
+    // A tab switch rewinding to the first entry: not a navigation of its own.
+    if(rewinding){rewinding();return}
+    var settled=swipeSettled;
+    swipeSettled=null;
     // Nothing has scrolled yet (restoration is manual), so the viewport still
     // shows the entry being left: save it under its own token before adopting
     // the popped entry's, and hand the swap the position to land on.
-    rememberScroll();
+    if(!settled)rememberScroll();
+    var st=history.state;
+    // An entry the router did not write (a page's own pushState) keeps the
+    // depth it was written at; a lower one is a step back.
+    var depth=st&&typeof st[DEPTH]==='number'?st[DEPTH]:histDepth;
+    var dir=depth<histDepth?'pop':depth>histDepth?'push':'replace';
+    histDepth=depth;
+    var popped=st&&st[SCROLL_TOKEN];
+    scrollToken=popped||newScrollToken();
     if(restoreScroll){
-      var popped=history.state&&history.state[SCROLL_TOKEN];
-      scrollToken=popped||newScrollToken();
       if(!popped)stampScrollToken();
       pendingScroll=readScroll(scrollToken);
+      pendingInner=readInner(scrollToken);
     }
+    if(screensLive){
+      if(st&&st[TAB]!==undefined&&st[TAB]!==curTab&&tabs[st[TAB]]){curTab=st[TAB];markTab(curTab)}
+      var target=(tabs[curTab]||[])[depth];
+      if(target&&target.el&&target.token===scrollToken&&target!==active){showRetained(target,dir==='replace'?'pop':dir,{settled:settled===target});return}
+    }
+    navCtxNext={direction:dir};
     navigate(location.pathname+location.search+location.hash,false);
   });
 
@@ -2303,7 +3238,13 @@ else {
         setCache(key,result.html,result.layout,result.layoutGroup,result.title,result.containerAttrs);
         if(eager)keepPage(key,result);
       }
-      if(result)loadModuleRegistries(result.html,href);
+      if(result){
+        loadModuleRegistries(result.html,href);
+        // Its stylesheet too, so the tap never waits on cssLoadTimeout for a
+        // sheet it could have had all along. Added unapplied (media=print),
+        // as a navigation adds it; the swap makes it live.
+        if(result.html.indexOf('<!--stx-fragment')===0)preloadGeneratedCss(fragmentCssHrefs(result.html),location.href);
+      }
     }).catch(function(){}).finally(function(){delete prefetching[key]});
   }
 
@@ -2399,6 +3340,7 @@ else {
     document.addEventListener('mouseover',onIntent,true);
     document.addEventListener('touchstart',onIntent,{capture:true,passive:true});
     window.addEventListener('stx:load',prefetchEager);
+    window.addEventListener('stx:load',function(){setTimeout(observeLinks,0)});
   }
 
   // ── Active link management ──
@@ -2465,7 +3407,7 @@ else {
   // updateActiveLinks has already rewritten the classes by now.
   function updateNav(){
     var done=new Set();
-    qsa('nav, #mobileNav, [data-stx-nav]').forEach(function(nav){
+    qsa('nav, #mobileNav, [data-stx-nav]:not(a)').forEach(function(nav){
       var states=[];
       Array.prototype.forEach.call(nav.querySelectorAll('a[href]'),function(a){
         if(done.has(a)||!a.hasAttribute('data-stx-link'))return;
@@ -2561,16 +3503,40 @@ else {
       // The container the router focuses after a navigation is not a
       // control, so it draws no focus ring: Safari drew one around the whole
       // page, a blue line along its bottom edge on every screen.
-      var css='[data-stx-route-focus]:focus{outline:none}.stx-navigating{cursor:wait}.stx-navigating a,.stx-navigating button{pointer-events:none}#stx-router-progress{position:fixed;top:0;left:0;right:0;height:'+ph+';background:'+pc+';box-shadow:0 0 8px '+pc+',0 0 4px '+pc+';transform:scaleX(0);transform-origin:left;transition:transform .18s ease-out,opacity .26s ease;opacity:0;pointer-events:none;z-index:999999}html.stx-instant::view-transition-group(*),html.stx-instant::view-transition-old(*),html.stx-instant::view-transition-new(*){animation:none!important}';
+      // Links stay live while a page loads: a tap on another one is the newest
+      // navigation and wins (navigate), where pointer-events:none used to
+      // swallow it.
+      var css='[data-stx-route-focus]:focus{outline:none}.stx-navigating{cursor:progress}#stx-router-progress{position:fixed;top:0;left:0;right:0;height:'+ph+';background:'+pc+';box-shadow:0 0 8px '+pc+',0 0 4px '+pc+';transform:scaleX(0);transform-origin:left;transition:transform .18s ease-out,opacity .26s ease;opacity:0;pointer-events:none;z-index:999999}html.stx-instant::view-transition-group(*),html.stx-instant::view-transition-old(*),html.stx-instant::view-transition-new(*){animation:none!important}';
+      // One View Transitions block. There used to be two, and the second
+      // (injected after this one) silently overrode the first: the page stays
+      // put and only the routed content fades, which is what this now says
+      // once. The retained screen inside it is not named, so the container
+      // and the screen never carry the same name.
       if(o.viewTransitions&&'startViewTransition' in document){
         var dur=(o.viewTransitionDuration||220)+'ms';
         var ease=o.viewTransitionEasing||'cubic-bezier(0.16, 1, 0.3, 1)';
-        css+='::view-transition-old(root),::view-transition-new(root){animation-duration:'+dur+';animation-timing-function:'+ease+'}';
-        css+='::view-transition-old(root){animation-name:stx-r-fade-out}::view-transition-new(root){animation-name:stx-r-fade-in}';
+        css+='::view-transition-old(root),::view-transition-new(root){animation:none}::view-transition{background:transparent}';
+        css+='main,#app-content,[data-stx-content]:not([data-stx-screen]){view-transition-name:stx-content}::view-transition-group(stx-content){overflow:hidden}';
+        css+='::view-transition-old(stx-content){animation:stx-r-fade-out '+dur+' '+ease+' both}::view-transition-new(stx-content){animation:stx-r-fade-in '+dur+' '+ease+' both}';
         css+='@keyframes stx-r-fade-out{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-4px)}}';
         css+='@keyframes stx-r-fade-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}';
-        css+='@media (prefers-reduced-motion: reduce){::view-transition-old(root),::view-transition-new(root){animation-duration:0s;animation-name:none}}';
+        css+='@media (prefers-reduced-motion: reduce){::view-transition-old(stx-content),::view-transition-new(stx-content){animation-duration:0s;animation-name:none}}';
       }
+      // Screens: a hidden one takes no room, and a screen lays its page out
+      // the way the container would have. Push and pop are iOS's: the new
+      // screen slides in from the right edge while the one under it moves a
+      // third of the way left and dims, over --stx-nav-duration on a spring
+      // (linear() where the browser has it). Reduced motion cross-fades.
+      css+='[data-stx-screen]{display:inherit;flex-direction:inherit;flex-wrap:inherit;gap:inherit;align-items:inherit;justify-content:inherit;grid-template-columns:inherit;grid-template-rows:inherit;grid-column:1/-1;flex:1 1 auto;align-self:stretch;min-width:0}['+HIDDEN+']{display:none!important}';
+      css+=':root{--stx-nav-duration:'+(o.navDuration|0)+'ms;--stx-nav-ease:cubic-bezier(0.32,0.72,0,1)}@supports (animation-timing-function:linear(0,1)){:root{--stx-nav-ease:linear(0,.079,.236,.403,.551,.671,.764,.833,.883,.919,.944,.962,.974,.983,.988,.992,.995,.997,.998,.999,1)}}';
+      css+='[data-stx-animating]{overflow-x:clip}[data-stx-screen-enter],[data-stx-screen-leave]{position:relative;will-change:transform;animation-duration:var(--stx-nav-duration);animation-timing-function:var(--stx-nav-ease);animation-fill-mode:both}';
+      css+='html[data-nav-direction=push] [data-stx-screen-enter]{animation-name:stx-nav-in;z-index:3;box-shadow:0 0 24px rgb(0 0 0 / .12)}html[data-nav-direction=push] [data-stx-screen-leave]{animation-name:stx-nav-out;z-index:1}';
+      css+='html[data-nav-direction=pop] [data-stx-screen-enter]{animation-name:stx-nav-back-in;z-index:1}html[data-nav-direction=pop] [data-stx-screen-leave]{animation-name:stx-nav-back-out;z-index:3;box-shadow:0 0 24px rgb(0 0 0 / .12)}';
+      css+='[data-stx-screen-dim]{position:fixed;top:0;bottom:0;z-index:2;background:rgb(0 0 0 / .1);pointer-events:none;animation:stx-nav-dim var(--stx-nav-duration) var(--stx-nav-ease) both}html[data-nav-direction=pop] [data-stx-screen-dim]{animation-direction:reverse}[data-stx-screen-dim][data-stx-drag]{animation:none}';
+      css+='@keyframes stx-nav-in{from{transform:translateX(100%)}to{transform:none}}@keyframes stx-nav-out{from{transform:none}to{transform:translateX(-30%)}}@keyframes stx-nav-back-in{from{transform:translateX(-30%)}to{transform:none}}@keyframes stx-nav-back-out{from{transform:none}to{transform:translateX(100%)}}@keyframes stx-nav-dim{from{opacity:0}to{opacity:1}}@keyframes stx-nav-fade-in{from{opacity:0}}@keyframes stx-nav-fade-out{to{opacity:0}}';
+      css+='@media (prefers-reduced-motion: reduce){html[data-nav-direction] [data-stx-screen-enter]{animation-name:stx-nav-fade-in;animation-duration:200ms;box-shadow:none}html[data-nav-direction] [data-stx-screen-leave]{animation-name:stx-nav-fade-out;animation-duration:200ms;box-shadow:none}[data-stx-screen-dim]{display:none}}';
+      // The screen a failed load leaves behind (showNavError).
+      css+='.stx-retry{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:4rem 1.5rem;text-align:center}.stx-retry-title{margin:0;font-weight:600;font-size:1.0625rem}.stx-retry-text{margin:0;opacity:.7;max-width:20rem}.stx-retry-button{margin-top:.75rem;padding:.5rem 1.25rem;border:0;border-radius:999px;background:var(--native-accent,#2563eb);color:#fff;font:inherit;font-weight:600}';
       s.textContent=css;
       dhead().appendChild(s);
     }
@@ -2590,12 +3556,6 @@ else {
     }
   }
 
-  function injectViewTransitionCSS(){
-    if(document.getElementById('stx-view-transitions'))return;
-    var s=ce('style');s.id='stx-view-transitions';
-    s.textContent='::view-transition-group(root){animation:none}::view-transition-old(root){animation:none}::view-transition-new(root){animation:none}main,#app-content,[data-stx-content]{view-transition-name:stx-content}::view-transition-old(stx-content){animation:stx-fade-out .15s ease-out both}::view-transition-new(stx-content){animation:stx-fade-in .15s ease-in .1s both}@keyframes stx-fade-out{from{opacity:1}to{opacity:0}}@keyframes stx-fade-in{from{opacity:0}to{opacity:1}}::view-transition{background:transparent}::view-transition-group(stx-content){background:inherit;overflow:hidden}';
-    (document.head||document.documentElement).appendChild(s);
-  }
 
   // ── Public API ──
   var router={
@@ -2630,6 +3590,12 @@ else {
       evictCache(cacheKey(url||(location.pathname+location.search)));
     },
     clearCache:function(){for(var k in cache)delete cache[k];for(var lk in layoutCache)delete layoutCache[lk];for(var gk in layoutGroupCache)delete layoutGroupCache[gk];cacheOrder.length=0},
+    // Switch to the tab whose link points at href, as a tap on it would:
+    // its retained screens and its own back stack (selectTab).
+    selectTab:selectTab,
+    back:function(){return history.back()},
+    // The screens kept alive, for a page or a test that wants to look.
+    screens:function(){var out=[];eachEntry(function(e,id){out.push({url:e.url,tab:id,depth:e.depth,live:!!e.el,active:e===active})});return out},
     cache:cache,
     swap:swap,
     updateNav:updateNav
@@ -2643,10 +3609,13 @@ else {
   // ── Initialize ──
   function init(){
     injectStyles();
-    injectViewTransitionCSS();
     refreshCurrentLinks();
+    // The first screen, from the start, so the page never changes shape on
+    // its first navigation.
+    if(screensOn()){var host=getContainer();if(host)adoptInitial(host)}
     restoreKeptPages();
     prefetchEager();
+    observeLinks();
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
@@ -2655,18 +3624,23 @@ else {
 }
 
 /**
- * The router script as it ships: debug logging removed, then minified.
+ * The router script as it ships: debug logging removed, then minified with
+ * its local names mangled.
  *
  * Every page carries this, so the 32 `log()` call sites -- 2.3KB of the
  * delivered bytes, printing nothing unless `debug` is set -- are not part of
  * it. Stripping happens outside the try, as in generateSignalsRuntime: losing
  * minification makes the script bigger, losing the strip would ship the logs.
+ *
+ * Mangling is safe because everything lives in one IIFE and nothing reaches
+ * in by name: the outside sees window.stxRouter and the events. It takes
+ * about a quarter off; the dev build keeps the names for reading.
  */
 export function getRouterScript(): string {
   if (cachedRouterScript)
     return cachedRouterScript
 
-  cachedRouterScript = minifyRouterScript(stripRouterLogs(routerSource()))
+  cachedRouterScript = minifyRouterScript(stripRouterLogs(routerSource()), true)
   return cachedRouterScript
 }
 

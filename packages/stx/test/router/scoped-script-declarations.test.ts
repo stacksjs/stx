@@ -76,7 +76,16 @@ const label = 'not a function'
 `
 
 describe('the router re-publishes what its block wrap would hide', () => {
-  for (const [name, runtime] of [['production', getRouterScript()], ['dev', getRouterScriptDev()]] as const) {
+  // The shipped script has its local names mangled, so the function is lifted
+  // out of the development build, which is the same source with its names.
+  // The shipped one is checked for the code the function emits.
+  it('ships the republish in production', () => {
+    const shipped = getRouterScript()
+    expect(shipped).toContain('=="function"&&(window.')
+    expect(shipped).not.toContain('republishTopLevel')
+  })
+
+  for (const [name, runtime] of [['dev', getRouterScriptDev()]] as const) {
     describe(name, () => {
       it('wraps a re-executed script with the republish suffix', () => {
         // The exact expression in execScripts; if the wrap stops calling it the

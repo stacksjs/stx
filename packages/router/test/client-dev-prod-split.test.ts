@@ -31,14 +31,26 @@ describe('router dev/prod split', () => {
   })
 
   it('keeps the helper itself, so a call the strip missed is still harmless', () => {
-    expect(getRouterScript()).toContain('function log()')
+    // Shipped, its name is mangled along with every reference to it, so a
+    // missed call still finds it; the declaration is the source's.
+    expect(getRouterScriptDev()).toContain('function log()')
+    expect(() => new Function(getRouterScript())).not.toThrow()
   })
 
   it('drops the logged messages, not the code around them', () => {
     const shipped = getRouterScript()
     expect(shipped).not.toContain('[router] build skew')
-    // The function that logged the skew still runs its reload.
-    expect(shipped).toContain('reloadForSkew')
+    // The function that logged the skew still runs its reloads.
+    expect(shipped).toContain('location.reload()')
+    expect(shipped).toContain('visibilitychange')
+  })
+
+  it('mangles the shipped script\'s local names, and only the shipped one', () => {
+    expect(getRouterScriptDev()).toContain('function reloadForSkew(')
+    expect(getRouterScript()).not.toContain('reloadForSkew')
+    // Globals and the public API keep their names.
+    expect(getRouterScript()).toContain('window.stxRouter=')
+    expect(getRouterScript()).toContain('selectTab:')
   })
 
   it('produces a parseable program either way', () => {

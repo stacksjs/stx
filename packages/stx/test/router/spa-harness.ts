@@ -191,6 +191,13 @@ export interface BootOptions {
   serve?: ServeMode
   /** Set on window before any script runs, e.g. counters a component bumps. */
   globals?: Record<string, unknown>
+  /**
+   * Give the document a history entry of its own before it loads, as a
+   * browser does. very-happy-dom starts with none, so replaceState on the
+   * first entry is dropped and Back from the first pushed entry goes nowhere;
+   * anything that walks the history back to where the app opened needs this.
+   */
+  history?: boolean
 }
 
 /**
@@ -281,6 +288,8 @@ export async function boot(app: SpaApp, pathname: string, options: BootOptions =
 
   for (const [key, value] of Object.entries(options.globals ?? {}))
     window[key] = value
+  if (options.history)
+    window.history.pushState(null, '', `${BASE}${pathname}`)
 
   let currentScript: any = null
   Object.defineProperty(document, 'currentScript', { configurable: true, get: () => currentScript })

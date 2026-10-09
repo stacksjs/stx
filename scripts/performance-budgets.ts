@@ -30,7 +30,15 @@ const budgets = {
   // should leave less room than a fresh cap. If this trips again, measure
   // before raising it -- identifier mangling via Bun.build is still the next
   // real win (~25%), and at 55.7KB it is overdue rather than theoretical.
-  routerScriptBytes: 58 * 1024,
+  //
+  // Raised from 58KB to 68KB with the native-feel work, measured first: the
+  // retained screens, per-tab stacks, edge swipe back, push/pop motion and
+  // its CSS, background revalidation and prefetch-on-sight took the script
+  // from 58558 to about 87.7KB. The shipped build now has its local names
+  // mangled (getRouterScript; the dev build keeps them), which is the win the
+  // note above asked for and brings it to 66002 -- 7.4KB over the old size
+  // for all of that, so 68KB leaves the same ~2.3KB of slack as before.
+  routerScriptBytes: 68 * 1024,
 }
 
 async function measure<T>(fn: () => T | Promise<T>, iterations: number): Promise<number> {

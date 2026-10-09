@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from 'bun:test'
-import { getRouterScript } from '../src/client'
+import { getRouterScript, getRouterScriptDev } from '../src/client'
 
 describe('getRouterScript — injected CSS defaults', () => {
   const script = getRouterScript()
@@ -44,18 +44,22 @@ describe('getRouterScript — injected CSS defaults', () => {
     expect(script).toContain('cubic-bezier(0.16, 1, 0.3, 1)')
   })
 
+  // The shipped script has its local names mangled, so the shape of the code
+  // is read from the development build, which is the same source unmangled.
+  const source = getRouterScriptDev()
+
   it('guards the view-transition CSS behind viewTransitions:true AND browser support', () => {
     // The runtime check prevents dead CSS on browsers without the API,
     // and respects opt-out via { viewTransitions: false }.
-    expect(script).toMatch(/o\.viewTransitions\s*&&\s*['"]startViewTransition['"]\s*in\s*document/)
+    expect(source).toMatch(/o\.viewTransitions\s*&&\s*['"]startViewTransition['"]\s*in\s*document/)
   })
 
   it('observes View Transition promise rejections', () => {
     // Browser View Transitions can abort when DOM work takes too long. The
     // router should keep navigation stable instead of leaking unhandled errors.
-    expect(script).toContain('transition.finished.catch')
-    expect(script).toContain('transition.ready.catch')
-    expect(script).toContain('transition.updateCallbackDone.catch')
+    expect(source).toContain('transition.finished.catch')
+    expect(source).toContain('transition.ready.catch')
+    expect(source).toContain('transition.updateCallbackDone.catch')
   })
 
   it('progress-bar color and height come from the config', () => {

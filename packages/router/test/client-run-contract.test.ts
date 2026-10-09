@@ -19,7 +19,7 @@
  */
 import { afterEach, describe, expect, it } from 'bun:test'
 import { Window } from 'very-happy-dom'
-import { getRouterScript } from '../src/client'
+import { getRouterScript, getRouterScriptDev } from '../src/client'
 
 const originalGlobals = {
   window: globalThis.window,
@@ -153,7 +153,8 @@ describe('router — data-stx-run contract', () => {
 
 describe('emitted scripts declare their intent', () => {
   it('the router script reads the attribute rather than only sniffing', () => {
-    const script = getRouterScript()
+    // The development build: the shipped one has its local names mangled.
+    const script = getRouterScriptDev()
     expect(script).toContain('data-stx-run')
     expect(script).toContain('runsAlways')
   })
