@@ -26,10 +26,10 @@ import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { extractLayoutMetadata } from 'stx-router/layout-metadata'
 import { actionRedirectResponse, compressResponse, runPageAction as sharedRunPageAction } from '@stacksjs/stx'
-import { compileDomainRoutes, describeDomainRoutes, requestHost, resolveDomainRoute } from './domain-routes'
+import { compileDomainRoutes, describeDomainRoutes, requestHost, resolveDomainElsewhere, resolveDomainRoute } from './domain-routes'
 import type { DomainRoutesOption } from './domain-routes'
 
-export { compileDomainRoutes, describeDomainRoutes, matchDomain, requestHost, resolveDomainRoute } from './domain-routes'
+export { compileDomainRoutes, describeDomainRoutes, matchDomain, requestHost, resolveDomainElsewhere, resolveDomainRoute } from './domain-routes'
 export type { DomainRoute, DomainRoutesOption } from './domain-routes'
 import { runPageMiddleware } from './page-middleware'
 import type { MiddlewareContext, MiddlewareHandler, MiddlewareRequest, PageMiddleware, PrepareMiddlewareRequest } from './page-middleware'
@@ -1104,7 +1104,9 @@ export interface ServeOptions {
    *
    * `chris.example.com/` renders what `example.com/chris` renders — the same
    * file route and params — while the address bar keeps the host. Only the
-   * root is routed; every other path on the host is the site's own. A label
+   * root is routed; every other path on the host is the site's own, unless
+   * the route names where the site lives (`{ to, elsewhere }`), and then its
+   * other pages redirect there while its assets and `/api` stay. A label
    * written `{name}` matches one DNS label. See `domain-routes.ts`.
    *
    * Falls back to `server.domains` in `stx.config.ts`.
@@ -3759,6 +3761,16 @@ function __stxOverlay(errs){
                 const headers = new Headers(req.headers)
                 headers.set('x-stx-domain-route', requestHost(req))
                 req = new Request(original, { headers, method: req.method, body: req.body, redirect: req.redirect, duplex: 'half' } as RequestInit)
+              }
+              // Another page on a host whose route names where the rest of
+              // the site lives: send the visitor there, so they browse (and
+              // sign in) on one origin. Assets, /api and public files stay.
+              else if (req.method === 'GET' || req.method === 'HEAD') {
+                const location = resolveDomainElsewhere(requestHost(req), original.pathname, original.search, domainRoutes, pathname =>
+                  pathname.startsWith('/api/') || pathname.startsWith('/_stx/') || pathname.startsWith('/.well-known/')
+                  || isStaticAssetPath(pathname) || publicFileExists(pathname, publicDir))
+                if (location)
+                  return new Response(null, { status: 301, headers: { Location: location } })
               }
             }
 

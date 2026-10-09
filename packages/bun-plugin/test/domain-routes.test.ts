@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bu
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { compileDomainRoutes, matchDomain, requestHost, resolveDomainRoute } from '../src/domain-routes'
+import { compileDomainRoutes, matchDomain, requestHost, resolveDomainElsewhere, resolveDomainRoute } from '../src/domain-routes'
 import { freePort } from '../../stx/test-utils/test-port'
 
 /**
@@ -62,6 +62,38 @@ describe('resolveDomainRoute', () => {
   })
 })
 
+describe('elsewhere', () => {
+  const routes = compileDomainRoutes({ '{username}.example.com': { to: '/{username}', elsewhere: 'https://example.com/ignored-path' } })
+  const asset = (pathname: string) => pathname.startsWith('/api/') || /\.[a-z0-9]+$/.test(pathname)
+
+  it('keeps only the origin, and still routes the root', () => {
+    expect(routes[0]!.elsewhere).toBe('https://example.com')
+    expect(resolveDomainRoute('chris.example.com', '/', routes)).toBe('/chris')
+  })
+
+  it('sends the host\'s other pages to where the site lives, query and all', () => {
+    expect(resolveDomainElsewhere('chris.example.com', '/pricing', '?a=1', routes, asset)).toBe('https://example.com/pricing?a=1')
+    expect(resolveDomainElsewhere('chris.example.com', '/', '', routes, asset)).toBeNull()
+  })
+
+  it('answers assets and the API in place', () => {
+    expect(resolveDomainElsewhere('chris.example.com', '/api/u/chris', '', routes, asset)).toBeNull()
+    expect(resolveDomainElsewhere('chris.example.com', '/assets/app.js', '', routes, asset)).toBeNull()
+  })
+
+  it('leaves other hosts, and routes without elsewhere, alone', () => {
+    expect(resolveDomainElsewhere('example.com', '/pricing', '', routes, asset)).toBeNull()
+    const plain = compileDomainRoutes({ '{username}.example.com': '/{username}' })
+    expect(resolveDomainElsewhere('chris.example.com', '/pricing', '', plain, asset)).toBeNull()
+  })
+
+  it('refuses an elsewhere that is not an http(s) origin', () => {
+    const warnings: string[] = []
+    expect(compileDomainRoutes({ '{u}.example.com': { to: '/{u}', elsewhere: 'javascript:alert(1)' } }, m => warnings.push(m))).toEqual([])
+    expect(warnings[0]).toContain('elsewhere')
+  })
+})
+
 describe('requestHost', () => {
   it('prefers the forwarded host, without its port, lowercased', () => {
     expect(requestHost(new Request('http://127.0.0.1:3000/', { headers: { 'host': '127.0.0.1:3000', 'x-forwarded-host': 'Chris.Example.com:443' } }))).toBe('chris.example.com')
@@ -93,7 +125,9 @@ const who = String(route.params?.username ?? '')
 `)
     await Bun.write(path.join(dir, 'driver.ts'), `import { serve } from ${JSON.stringify(SERVE_SRC)}
 serve({ patterns: ['views'], port: ${PORT}, quiet: true, domains: { '{username}.example.com': '/{username}' } })
+serve({ patterns: ['views'], port: ${PORT + 1}, quiet: true, domains: { '{username}.example.com': { to: '/{username}', elsewhere: 'https://example.com' } } })
 `)
+    await Bun.write(path.join(dir, 'public', 'robots.txt'), 'User-agent: *\n')
     proc = Bun.spawn(['bun', 'driver.ts'], { cwd: dir, stdout: 'pipe', stderr: 'pipe' })
     const deadline = Date.now() + 30_000
     while (true) {
@@ -124,6 +158,20 @@ serve({ patterns: ['views'], port: ${PORT}, quiet: true, domains: { '{username}.
 
   it('keeps a static page ahead of the root dynamic one', async () => {
     expect((await page('/pricing')).text).toContain('page:pricing')
+  })
+
+  it('with elsewhere, still renders the root, redirects other pages, and serves files in place', async () => {
+    const ELSEWHERE = `http://127.0.0.1:${PORT + 1}`
+    for (let i = 0; i < 100; i++) {
+      try { await fetch(`${ELSEWHERE}/definitely-not-a-page.txt`); break }
+      catch { await Bun.sleep(150) }
+    }
+    const host = { 'x-forwarded-host': 'chris.example.com' }
+    expect(await (await fetch(`${ELSEWHERE}/`, { headers: host })).text()).toContain('page:profile:chris')
+    const moved = await fetch(`${ELSEWHERE}/pricing?x=1`, { headers: host, redirect: 'manual' })
+    expect([moved.status, moved.headers.get('location')]).toEqual([301, 'https://example.com/pricing?x=1'])
+    expect((await fetch(`${ELSEWHERE}/robots.txt`, { headers: host, redirect: 'manual' })).status).toBe(200)
+    expect(await (await fetch(`${ELSEWHERE}/pricing`)).text()).toContain('page:pricing')
   })
 
   it('leaves the home page of the main host, and the other pages of the routed one, alone', async () => {

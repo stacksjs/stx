@@ -21,6 +21,21 @@
  * site's own, answered as it would be on the main domain, so one page can be
  * given a domain without the rest of the site breaking under it.
  *
+ * Unless the route says where the rest of the site lives:
+ *
+ * ```ts
+ * domains: {
+ *   '{username}.example.com': { to: '/{username}', elsewhere: 'https://example.com' },
+ * }
+ * ```
+ *
+ * Then a request for any other PAGE on that host is redirected there
+ * (`chris.example.com/pricing` → `example.com/pricing`), while its assets,
+ * `/api` and `public/` files are still answered in place, because the page
+ * at its root needs them. A browser keeps a session per origin: without
+ * this, signing in from a profile's own domain signs in to that domain, and
+ * the visitor ends up using the whole app under someone else's name.
+ *
  * A pattern is a hostname whose labels are either literal or `{name}`, which
  * matches exactly one DNS label (`{username}.example.com` matches
  * `chris.example.com`, not `a.b.example.com` and not the bare apex). Literal
@@ -43,11 +58,13 @@ export interface DomainRoute {
   labels: Label[]
   /** The target path, with `{name}` placeholders. */
   to: string
+  /** Where the host's other pages live, an origin like `https://example.com`. */
+  elsewhere?: string
   /** How many labels are literal: more is more specific. */
   literals: number
 }
 
-export type DomainRoutesOption = Record<string, string>
+export type DomainRoutesOption = Record<string, string | { to: string, elsewhere?: string }>
 
 const LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/
 const PARAM = /^\{([A-Za-z_]\w*)\}$/
@@ -59,9 +76,23 @@ const PARAM = /^\{([A-Za-z_]\w*)\}$/
  */
 export function compileDomainRoutes(input: DomainRoutesOption | undefined, warn: (message: string) => void = () => {}): DomainRoute[] {
   const routes: DomainRoute[] = []
-  for (const [rawPattern, rawTo] of Object.entries(input ?? {})) {
+  for (const [rawPattern, target] of Object.entries(input ?? {})) {
     const pattern = String(rawPattern).trim().toLowerCase().replace(/\.$/, '')
+    const rawTo = typeof target === 'object' && target ? target.to : target
     const to = String(rawTo ?? '').trim()
+    let elsewhere: string | undefined
+    if (typeof target === 'object' && target?.elsewhere) {
+      try {
+        const url = new URL(String(target.elsewhere))
+        if (url.protocol === 'https:' || url.protocol === 'http:')
+          elsewhere = url.origin
+      }
+      catch {}
+      if (!elsewhere) {
+        warn(`[stx] domain route "${rawPattern}" ignored: elsewhere "${target.elsewhere}" is not an http(s) origin`)
+        continue
+      }
+    }
     const parts = pattern.split('.')
     if (parts.length < 2 || !to.startsWith('/')) {
       warn(`[stx] domain route "${rawPattern}" -> "${rawTo}" ignored: a route is a hostname with a dot and a path starting with "/"`)
@@ -88,7 +119,7 @@ export function compileDomainRoutes(input: DomainRoutesOption | undefined, warn:
       warn(`[stx] domain route "${rawPattern}" -> "${rawTo}" ignored: ${!valid ? 'a label is neither a hostname label nor {name}' : `the path uses {${missing.join('}, {')}} which the hostname does not capture`}`)
       continue
     }
-    routes.push({ pattern, labels, to, literals: labels.filter(label => 'literal' in label).length })
+    routes.push({ pattern, labels, to, ...(elsewhere ? { elsewhere } : {}), literals: labels.filter(label => 'literal' in label).length })
   }
   return routes.sort((a, b) => b.literals - a.literals || b.labels.length - a.labels.length)
 }
@@ -141,7 +172,29 @@ export function resolveDomainRoute(host: string, pathname: string, routes: Domai
   return null
 }
 
+/**
+ * Where a request for another page on a routed host belongs, or null to
+ * answer it in place.
+ *
+ * Only for a route that names `elsewhere`, only for a host that matches it,
+ * only for paths other than the root, and only for page requests: `isAsset`
+ * is the server's own test for scripts, styles, `/api` and `public/` files,
+ * which stay where the page at the root can load them.
+ */
+export function resolveDomainElsewhere(host: string, pathname: string, search: string, routes: DomainRoute[], isAsset: (pathname: string) => boolean): string | null {
+  if (!routes.length || pathname === '/' || pathname === '' || pathname === '/index')
+    return null
+  for (const route of routes) {
+    if (!matchDomain(host, route))
+      continue
+    if (!route.elsewhere || isAsset(pathname))
+      return null
+    return `${route.elsewhere}${pathname}${search}`
+  }
+  return null
+}
+
 /** One line for boot output: `{username}.example.com/ → /{username}`. */
 export function describeDomainRoutes(routes: DomainRoute[]): string {
-  return routes.map(route => `${route.pattern}/ → ${route.to}`).join(', ')
+  return routes.map(route => `${route.pattern}/ → ${route.to}${route.elsewhere ? ` (other pages: ${route.elsewhere})` : ''}`).join(', ')
 }
