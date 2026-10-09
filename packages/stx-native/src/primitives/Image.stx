@@ -1,5 +1,0 @@
-{{-- Image: the native type, written as an ordinary stx component. --}}
-<script server>
-const classes = $props.class ?? $props.className ?? ''
-</script>
-<img data-stx-native="Image" class="{{ classes }}" />

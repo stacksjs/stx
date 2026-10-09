@@ -8,7 +8,7 @@
  * from the build's point of view nothing failed (stacksjs/stx#1866).
  *
  * The URL is looked for in the places apps actually declare it, because there
- * is more than one: `stx.config.ts` for stx-native apps, `site.config.ts` for
+ * is more than one: `stx.config.ts` for stx native apps, `site.config.ts` for
  * the site-builder path (which has had `site.url` all along — that generator
  * was never wired to this one), and the deploy-platform env vars, which are the
  * only source available in CI where neither file knows the preview domain.

@@ -56,6 +56,10 @@
       "types": "./dist/visual-testing.d.ts",
       "import": "./dist/visual-testing.js"
     },
+    "./native": {
+      "types": "./dist/native/index.d.ts",
+      "import": "./dist/native/index.js"
+    },
     "./bundle-analyzer": {
       "types": "./dist/bundle-analyzer/index.d.ts",
       "import": "./dist/bundle-analyzer.js"

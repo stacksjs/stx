@@ -2809,6 +2809,45 @@ catch (error) {
     })
 
   // ============================================================================
+  // native - Compile .stx screens for Craft's native (UIKit) renderer
+  // ============================================================================
+  cli
+    .command('native <action> [file]', 'Compile .stx screens into the JavaScriptCore bundle Craft renders natively')
+    .option('--format <format>', 'bundle (the JavaScriptCore bundle) or ir (the template as JSON)', { default: 'ir' })
+    .option('--output <path>', 'Write to this file instead of stdout')
+    .option('--minify', 'Minify the bundle', { default: false })
+    .option('--config <file>', 'Screens config (default: native.config.json in the working directory)')
+    .example('stx native compile Screen.stx --format bundle --output native-screen.js')
+    .example('stx native compile --format bundle --output native-screen.js --minify')
+    .example('stx native compile Screen.stx')
+    .action(async (action: string, file: string | undefined, options: { format?: string, output?: string, minify?: boolean, config?: string }) => {
+      if (action !== 'compile') {
+        console.error(`Unknown native command: ${action}`)
+        console.error('Usage: stx native compile [file.stx] --format bundle|ir [--output <file>] [--minify] [--config <file>]')
+        process.exit(1)
+      }
+      try {
+        const { runNativeCompile } = await import('../src/native/cli')
+        const result = await runNativeCompile(file, {
+          format: options.format as 'ir' | 'bundle',
+          output: options.output,
+          minify: Boolean(options.minify),
+          config: options.config,
+        })
+        for (const diagnostic of result.diagnostics)
+          console.warn(`${diagnostic.level}: ${diagnostic.message}`)
+        if (result.written)
+          console.log(`Compiled: ${file ?? 'screens'} → ${path.relative(process.cwd(), result.written) || result.written}`)
+        else
+          console.log(result.output)
+      }
+      catch (error) {
+        console.error(error instanceof Error ? error.message : String(error))
+        process.exit(1)
+      }
+    })
+
+  // ============================================================================
   // compile - Compile stx templates to native Craft code
   // ============================================================================
   cli

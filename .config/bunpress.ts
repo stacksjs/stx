@@ -63,6 +63,7 @@ export default {
             { text: 'Lazy Hydration', link: '/features/lazy-hydration' },
             { text: 'Desktop Apps', link: '/guide/desktop' },
             { text: 'Menu Bar Apps', link: '/guide/menubar' },
+            { text: 'Native Screens', link: '/guide/native' },
             { text: 'Performance', link: '/guide/performance' },
             { text: 'Security', link: '/guide/security' },
             { text: 'Testing', link: '/guide/testing' },

@@ -1671,19 +1671,6 @@
         "ts-syntax-highlighter": "^0.2.1"
       }
     },
-    "packages/stx-native": {
-      "name": "stx-native",
-      "version": "0.2.413",
-      "dependencies": {
-        "@stacksjs/stx": "workspace:*",
-        "ws": "^8.22.0"
-      },
-      "devDependencies": {
-        "@types/bun": "latest",
-        "@types/ws": "^8.18.2",
-        "typescript": "^7.0.2"
-      }
-    },
     "packages/stx-vscode": {
       "name": "@stacksjs/stx-vscode",
       "version": "0.2.413",

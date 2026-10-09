@@ -14,7 +14,6 @@ const config: Partial<PickierConfig> = {
     '**/packages/create-stx/**', // Template strings with file contents trigger false positives
     '**/scripts/**', // Build scripts have different conventions
     '**/packages/iconify-generator/**', // Icon generator has template patterns
-    '**/packages/stx-native/**', // Native compiler has regex patterns
     '**/packages/stx/src/**', // Core template engine has regex patterns for parsing both quote types
   ],
 

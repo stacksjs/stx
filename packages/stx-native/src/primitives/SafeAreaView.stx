@@ -1,5 +1,0 @@
-{{-- SafeAreaView: the native type, written as an ordinary stx component. --}}
-<script server>
-const classes = $props.class ?? $props.className ?? ''
-</script>
-<header data-stx-native="SafeAreaView" class="{{ classes }}"><slot /></header>

@@ -132,7 +132,7 @@ const ATTR = /([^\s"'=<>/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g
  * Works on the rendered output rather than the template on purpose: by then
  * every server directive has run, components are expanded and slots are filled,
  * so what is left is exactly the set of bindings that will reach a client. It
- * is also the same input shape stx-native's translator takes, which keeps one
+ * is also the same input shape stx's native translator takes, which keeps one
  * definition of "a binding" across both.
  */
 export function extractBindingManifest(html: string): { html: string, manifest: BindingManifest } {

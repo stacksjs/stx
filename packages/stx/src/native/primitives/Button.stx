@@ -1,0 +1,5 @@
+{{-- Button: the native type, written as an ordinary stx component. --}}
+<script server>
+const classes = $props.class ?? $props.className ?? ''
+</script>
+<button data-native="Button" class="{{ classes }}" type="button"><slot /></button>

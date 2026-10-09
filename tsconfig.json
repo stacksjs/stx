@@ -43,7 +43,6 @@
     "packages/collections/**/*",
     "packages/benchmarks/**/*",
     "packages/create-stx/**/*",
-    "packages/stx-native/**/*",
     "pantry/**/*",
     "examples/**/*",
     "test-install/**/*",

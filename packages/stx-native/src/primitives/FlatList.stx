@@ -1,5 +1,0 @@
-{{-- FlatList: the native type, written as an ordinary stx component. --}}
-<script server>
-const classes = $props.class ?? $props.className ?? ''
-</script>
-<div data-stx-native="FlatList" class="{{ classes }}" role="list"><slot /></div>

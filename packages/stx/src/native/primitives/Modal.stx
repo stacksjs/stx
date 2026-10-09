@@ -1,0 +1,5 @@
+{{-- Modal: the native type, written as an ordinary stx component. --}}
+<script server>
+const classes = $props.class ?? $props.className ?? ''
+</script>
+<div data-native="Modal" class="{{ classes }}" role="dialog" />

@@ -1681,25 +1681,6 @@
         "ts-syntax-highlighter": "^0.2.1",
       },
     },
-    "packages/stx-native": {
-      "name": "stx-native",
-      "version": "0.2.413",
-      "bin": {
-        "stx-native": "./dist/cli/index.js",
-      },
-      "dependencies": {
-        "@stacksjs/stx": "workspace:*",
-        "ws": "^8.22.0",
-      },
-      "devDependencies": {
-        "@types/bun": "latest",
-        "@types/ws": "^8.18.2",
-        "typescript": "^7.0.2",
-      },
-      "peerDependencies": {
-        "bun": ">=1.4.2",
-      },
-    },
     "packages/stx-vscode": {
       "name": "@stacksjs/stx-vscode",
       "version": "0.2.413",
@@ -2854,7 +2835,6 @@
 
     "strip-bom-string": ["strip-bom-string@1.0.0", "", {}, "sha512-uCC2VHvQRYu+lMh4My/sFNmF2klFymLX1wHJeXnbEJERpV/ZsVuonzerjfrGpIGF7LBVa1O7i9kjiWvJiFck8g=="],
 
-    "stx-native": ["stx-native@workspace:packages/stx-native"],
 
     "stx-router": ["stx-router@workspace:packages/router"],
 

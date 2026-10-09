@@ -1,0 +1,5 @@
+{{-- ImageBackground: the native type, written as an ordinary stx component. --}}
+<script server>
+const classes = $props.class ?? $props.className ?? ''
+</script>
+<div data-native="ImageBackground" class="{{ classes }}"><slot /></div>

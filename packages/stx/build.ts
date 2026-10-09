@@ -330,6 +330,10 @@ emitTscDeclaration('./src/safe-evaluator.ts')
 mkdirSync(resolve('./dist/components'), { recursive: true })
 cpSync(resolve('./src/components'), resolve('./dist/components'), { recursive: true })
 
+// The native primitives (`<View>`, `<Text>` … as stx components) are read from
+// disk by `@stacksjs/stx/native`'s `compileScreenSource`, next to its own module.
+cpSync(resolve('./src/native/primitives'), resolve('./dist/native/primitives'), { recursive: true })
+
 // Ship ambient global type declarations.
 // stx.d.ts contains module declarations for *.stx/*.md imports AND ambient
 // runtime globals (state, derived, effect, defineStore, useHead, etc.) that

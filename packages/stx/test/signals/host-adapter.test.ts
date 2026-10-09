@@ -2,7 +2,7 @@
  * The binding layer writes through a host, so the runtime can drive a tree that
  * is not the document (stacksjs/stx#1984).
  *
- * This is the spike behind stx-native: compiling .stx to native views is only
+ * This is the spike behind stx native (src/native): compiling .stx to native views is only
  * worth anything if the *runtime* can update them, and today it updates the DOM
  * directly in 268 places. The question was whether those calls factor behind an
  * interface without the web path paying for it.
