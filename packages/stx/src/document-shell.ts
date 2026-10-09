@@ -100,6 +100,16 @@ export function metaDedupKey(m: Record<string, string>): string {
   return ''
 }
 
+/** A `<meta>` tag's attributes, lowercased names; null for any other tag. */
+function metaAttributes(tag: string): Record<string, string> | null {
+  const open = /^\s*<meta\b([^>]*)>/i.exec(tag)
+  if (!open) return null
+  const attrs: Record<string, string> = {}
+  for (const match of open[1].matchAll(/([\w:-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?/g))
+    attrs[match[1].toLowerCase()] = match[2] ?? match[3] ?? match[4] ?? ''
+  return attrs
+}
+
 function attrPairs(entries: Record<string, unknown>, skip?: (key: string) => boolean): string {
   return Object.entries(entries)
     .filter(([k]) => !skip?.(k))
@@ -451,10 +461,21 @@ export function generateDocumentShell(
   const configuredMetaKeys = new Set(
     (meta as Record<string, string>[]).map(metaDedupKey).filter(Boolean),
   )
+  // The page's own head tags come out of the fragment body — see
+  // hoistLeadingHeadTags. A <meta> the page or its layout writes itself is
+  // the most specific statement of all, so config and defaults yield to it:
+  // a phone layout's `viewport-fit=cover` beside the site's plain viewport
+  // gave every page two, and WebKit kept the first, so the page never learned
+  // its safe-area insets and content showed through under the status bar.
+  const { body: pageBody, hoisted: pageHeadTags } = hoistLeadingHeadTags(content)
+  const pageMetaKeys = new Set(pageHeadTags.flatMap(tag => {
+    const attrs = metaAttributes(tag)
+    return attrs ? [metaDedupKey(attrs)].filter(Boolean) : []
+  }))
   const allMeta = [
     ...defaultMeta.filter(d => !configuredMetaKeys.has(metaDedupKey(d))),
     ...meta,
-  ]
+  ].filter(m => !pageMetaKeys.has(metaDedupKey(m)))
   const metaTags = allMeta.map(m => {
     return `  <meta ${attrPairs(m)}>`
   }).join('\n')
@@ -483,10 +504,8 @@ export function generateDocumentShell(
   // Compose <head>. The cloak style goes in early (before user styles and
   // scripts) so the [x-cloak] rule is live before first paint — prevents the
   // conditional-directive FOUC (#1736).
-  // The page's own head tags come out of the fragment body — see
-  // hoistLeadingHeadTags. They sit AFTER options.styles (Css) so the page
+  // The hoisted head tags (above) sit AFTER options.styles (Css) so the page
   // still wins the cascade exactly as it did when it rendered inside <body>.
-  const { body: pageBody, hoisted: pageHeadTags } = hoistLeadingHeadTags(content)
 
   const headParts = [
     metaTags,

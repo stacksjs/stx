@@ -38,6 +38,22 @@ describe('generateDocumentShell', () => {
     expect(count(shell([{ name: 'viewport', content: 'width=500' }]), VIEWPORT)).toBe(1)
   })
 
+  it('lets a layout\'s own meta replace the config one of the same name', async () => {
+    // A phone layout asks for viewport-fit=cover; the site config has a plain
+    // viewport. Two tags, and WebKit kept the first: the page never got its
+    // safe-area insets and content showed under the status bar.
+    const html = generateDocumentShell(
+      '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n<main>hi</main>',
+      { meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1' }, { name: 'description', content: 'Site' }] } as never,
+      {},
+    )
+    expect(count(html, VIEWPORT)).toBe(1)
+    expect(html).toContain('viewport-fit=cover')
+    // Unrelated config meta is untouched.
+    expect(html).toContain('content="Site"')
+    expect(count(html, CHARSET)).toBe(1)
+  })
+
   it('lets the configured value win over the default', async () => {
     // Deduping to the wrong one would be its own bug: the author asked for
     // this value.
