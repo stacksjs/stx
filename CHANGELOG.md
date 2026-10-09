@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.412...v0.2.413)
+
+## 🐛 Bug Fixes
+
+- **components**: <Image> serves the variants stx optimized ([fb3a701](https://github.com/stacksjs/stx/commit/fb3a701)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2011](https://github.com/stacksjs/stx/issues/2011))
+
+## 🔧 Chores
+
+- release v0.2.413 ([20c4830](https://github.com/stacksjs/stx/commit/20c4830)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.411...v0.2.412)
 
 ## ✨ Features
