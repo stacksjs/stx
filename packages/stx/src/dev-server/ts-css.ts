@@ -6,6 +6,7 @@
 
 import path from 'node:path'
 import { hasLocalConfig } from 'bunfig'
+import { getServeModuleBundle } from '../caching'
 import { mergeCssConfig } from '../ts-css-config'
 import { stateDir } from '../state-dir'
 import { dedupeScopedStyles, findDuplicateScopedStyleRanges } from '../style-scoping'
@@ -707,6 +708,25 @@ export async function generateCss(htmlContent: string, appDir?: string): Promise
   return css
 }
 
+/**
+ * The page and the module bundles it links (`/_stx/modules.<hash>.js`).
+ *
+ * The stores, composables and module registry used to be inline, and the
+ * extractor read the class names their code assigns at runtime (an icon class
+ * a helper returns, a tone picked by status) straight out of the page. Served
+ * as files they left the page's text, and every such class lost its CSS: the
+ * phone's sport icons drew as empty boxes. The URL carries the bundle's hash,
+ * so the page text still decides what is cached.
+ */
+export function withLinkedModuleBundles(htmlContent: string): string {
+  const bundles: string[] = []
+  for (const match of htmlContent.matchAll(/\/_stx\/modules\.([0-9a-f]{16})\.js/g)) {
+    const code = getServeModuleBundle(match[1])
+    if (code) bundles.push(code)
+  }
+  return bundles.length ? `${htmlContent}\n${bundles.join('\n')}` : htmlContent
+}
+
 async function generateCssUncached(htmlContent: string, appDir?: string): Promise<string> {
   try {
     // Load css module
@@ -717,9 +737,10 @@ async function generateCssUncached(htmlContent: string, appDir?: string): Promis
 
     // Css's extractor when the installed version exports it, ours only
     // as a fallback. See `extractClassNames` for why the difference matters.
+    const scanned = withLinkedModuleBundles(htmlContent)
     const classes = typeof hw.extractClasses === 'function'
-      ? hw.extractClasses(htmlContent)
-      : extractClassNames(htmlContent)
+      ? hw.extractClasses(scanned)
+      : extractClassNames(scanned)
 
     if (classes.size === 0) {
       return ''

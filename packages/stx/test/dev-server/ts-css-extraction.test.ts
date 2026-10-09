@@ -53,3 +53,23 @@ describe('css class extraction', () => {
     expect(local.has('bg-blue-500')).toBe(false)
   })
 })
+
+describe('classes assigned by served module bundles', () => {
+  it('reads the bundles a page links, as it read them when they were inline', async () => {
+    const { registerServeModuleBundle } = await import('../../src/caching')
+    const { withLinkedModuleBundles } = await import('../../src/dev-server/ts-css')
+    // A helper's icon class, only ever in code: the sport icon of a card.
+    const url = registerServeModuleBundle(`export const SPORTS = { run: { icon: 'i-lucide-footprints', tone: 'text-emerald-600 bg-emerald-50' } } // ${Date.now()}`)
+    const page = `<html><body><span x-class="sportStyle(card.type).tone"></span><script data-stx-modules src="${url}"></script></body></html>`
+    const scanned = withLinkedModuleBundles(page)
+    expect(scanned).toContain('i-lucide-footprints')
+    expect(scanned.startsWith(page)).toBe(true)
+    // A page linking nothing, or a bundle this machine never rendered, is scanned as it is.
+    expect(withLinkedModuleBundles('<p class="m-2">x</p>')).toBe('<p class="m-2">x</p>')
+    expect(withLinkedModuleBundles('<script src="/_stx/modules.0123456789abcdef.js"></script>')).toBe('<script src="/_stx/modules.0123456789abcdef.js"></script>')
+
+    const hw = await loadCssEngine()
+    if (hw && typeof hw.extractClasses === 'function')
+      expect(hw.extractClasses(scanned).has('text-emerald-600')).toBe(true)
+  })
+})
