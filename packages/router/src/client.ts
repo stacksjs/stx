@@ -925,6 +925,9 @@ function routerSource(): string {
       // twice — leave the document without it. These are loaded once and stay,
       // the same as the external head scripts beside them.
       el.setAttribute('data-stx-external','');
+      // In document order: a fragment's composables bundle reads the module
+      // registry loaded beside it, and an inserted script is async by default.
+      el.async=false;
       el.onload=function(){resolve()};
       el.onerror=function(){log('[router] container script failed:',key);resolve()};
       dhead().appendChild(el);
@@ -1604,10 +1607,10 @@ else {
             });
             var loopRoot=placeholder.previousSibling;
             while(loopRoot&&(
-              (loopRoot.nodeType===Node.TEXT_NODE&&!(loopRoot.textContent||'').trim())
-              ||loopRoot.nodeType===Node.COMMENT_NODE
+              (loopRoot.nodeType===3&&!(loopRoot.textContent||'').trim())
+              ||loopRoot.nodeType===8
             ))loopRoot=loopRoot.previousSibling;
-            if(loopRoot&&loopRoot.nodeType===Node.ELEMENT_NODE&&loopRoot.hasAttribute('data-stx-scope')
+            if(loopRoot&&loopRoot.nodeType===1&&loopRoot.hasAttribute('data-stx-scope')
               &&(loopRoot.hasAttribute(':for')||loopRoot.hasAttribute('@for')||loopRoot.hasAttribute('x-for'))){
               var loopScopeId=loopRoot.getAttribute('data-stx-scope');
               scopedLoopSetup=!!loopScopeId&&code.indexOf(loopScopeId)!==-1;
