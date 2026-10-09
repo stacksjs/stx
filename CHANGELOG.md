@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.416...v0.2.417)
+
+## 🐛 Bug Fixes
+
+- **css**: read the class names served module bundles assign ([31ec58f](https://github.com/stacksjs/stx/commit/31ec58f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.417 ([d934589](https://github.com/stacksjs/stx/commit/d934589)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.415...v0.2.416)
 
 ## ✨ Features
