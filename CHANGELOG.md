@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.409...v0.2.410)
+
+## ✨ Features
+
+- **serve**: domain routes, a host whose home page is a page of the site ([acc7974](https://github.com/stacksjs/stx/commit/acc7974)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.410 ([581e8e0](https://github.com/stacksjs/stx/commit/581e8e0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.408...v0.2.409)
 
 ## 🐛 Bug Fixes
