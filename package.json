@@ -95,7 +95,9 @@
   },
   "workspaces": [
     "packages/**",
-    "!packages/vscode"
+    "!packages/vscode",
+    "!packages/**/dist",
+    "!packages/**/dist/**"
   ],
   "dependencies": {
     "@stacksjs/ts-css": "^0.3.2",
