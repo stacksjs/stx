@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.413...v0.2.414)
+
+## ♻️ Code Refactoring
+
+- **native**: fold stx-native into stx as @stacksjs/stx/native and `stx native` ([5affa2b](https://github.com/stacksjs/stx/commit/5affa2b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.414 ([03e8961](https://github.com/stacksjs/stx/commit/03e8961)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.412...v0.2.413)
 
 ## 🐛 Bug Fixes
