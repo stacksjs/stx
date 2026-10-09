@@ -388,6 +388,16 @@ describe('a kept screen (stale-while-revalidate)', () => {
     expect(await (await sw.stores.get('stx-shell-b1')!.get('http://app.test/m'))!.text()).toContain('A')
   })
 
+  it('keeps a copy whose headers describe the decoded body it holds', async () => {
+    const sw = runWorker({ enabled: true, pages: ['/m'] }, () => html('Body', { 'Content-Encoding': 'gzip', 'Content-Length': '12' }))
+    await sw.request('http://app.test/m', { Accept: 'text/html' })
+    await sw.settle()
+    const kept = sw.stores.get('stx-shell-b1')!.get('http://app.test/m')!
+    expect(kept.headers.get('Content-Encoding')).toBeNull()
+    expect(kept.headers.get('Content-Length')).toBeNull()
+    expect(kept.headers.get('X-STX-Kept-At')).not.toBeNull()
+  })
+
   it('never keeps a redirect, an error or another origin\'s answer', async () => {
     let answer: () => Response = () => html('Kept')
     const sw = runWorker({ enabled: true, pages: ['/m'] }, () => answer())

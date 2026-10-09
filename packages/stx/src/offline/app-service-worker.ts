@@ -351,6 +351,10 @@ function fingerprint(response) {
 
 function stamped(response, body, hash) {
   var headers = new Headers(response.headers);
+  // The body read here is already decoded: a compressed answer's encoding and
+  // length no longer describe it, and a browser trusting them cut it short.
+  headers.delete('Content-Encoding');
+  headers.delete('Content-Length');
   headers.set(KEPT_AT, String(Date.now()));
   if (hash) headers.set(KEPT_HASH, hash);
   return new Response(body, { status: response.status, statusText: response.statusText, headers: headers });
