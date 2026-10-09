@@ -531,8 +531,22 @@ window.__stx_reactive = (function() {
     // Create signals for each state property so the signals runtime can track dependencies
     var signalState = {};
     var rawState = {};
+    var derivedState = {};
+    var accessors = {};
+    // A getter must NOT be read here. Reading one calls it, and the old loop did
+    // exactly that: the returned value is not a function, so it was wrapped as a
+    // plain state() -- a snapshot of the answer at construction time, frozen
+    // forever while plain properties beside it updated (#2053). A getter is a
+    // derived value, so it is registered as one below, once ctxProxy exists for
+    // it to read through.
+    var ownDescriptors = Object.getOwnPropertyDescriptors ? Object.getOwnPropertyDescriptors(state) : {};
     for (var key in state) {
       if (Object.prototype.hasOwnProperty.call(state, key)) {
+        var descriptor = ownDescriptors[key];
+        if (descriptor && typeof descriptor.get === 'function') {
+          accessors[key] = descriptor;
+          continue;
+        }
         if (typeof state[key] === 'function') {
           // Methods — bind to a proxy so 'this.prop = val' triggers signal updates
           signalState[key] = state[key];
@@ -563,6 +577,19 @@ window.__stx_reactive = (function() {
         return s;
       },
       set: function(target, prop, value) {
+        var accessor = derivedState[prop];
+        if (accessor) {
+          // A getter/setter pair writes through its setter. A getter alone has
+          // nowhere to put the value: a derived has no .value setter, so the
+          // assignment would be a silent no-op, which is the same class of
+          // failure as the stale read this replaces.
+          if (typeof accessor.set === 'function') {
+            accessor.set.call(ctxProxy, value);
+            return true;
+          }
+          console.warn('[stx-reactive] cannot assign to ' + String(prop) + ': it is a getter in x-data, so its value comes from what it reads. Give it a setter, or make it a plain property.');
+          return true;
+        }
         var s = signalState[prop];
         if (rawState[prop] && s && typeof s === 'function') {
           s.value = value; // write through signal — triggers effects
@@ -584,6 +611,25 @@ window.__stx_reactive = (function() {
         return undefined;
       }
     });
+
+    // Now that ctxProxy exists, a getter becomes a derived that reads through it,
+    // so it tracks whatever it touches and recomputes when that changes. derived()
+    // is lazy, so nothing is evaluated until a binding actually reads it.
+    //
+    // Marked rawState as well: that is what makes the proxy unwrap it and what
+    // exposes the signal itself to the runtime below, which is where dependency
+    // tracking comes from. A getter needs both, exactly like a data property.
+    for (var accessorKey in accessors) {
+      if (Object.prototype.hasOwnProperty.call(accessors, accessorKey)) {
+        (function(name, descriptor) {
+          signalState[name] = stx.derived(function() {
+            return descriptor.get.call(ctxProxy);
+          });
+          rawState[name] = true;
+          derivedState[name] = descriptor;
+        })(accessorKey, accessors[accessorKey]);
+      }
+    }
 
     // Build scope vars for the signals runtime — it reads these for expression evaluation.
     // We need to provide getter/setter descriptors so signals track properly.
