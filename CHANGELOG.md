@@ -1,5 +1,27 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.410...v0.2.411)
+
+## ✨ Features
+
+- **serve**: a domain route can say where the rest of the site lives ([936c79c](https://github.com/stacksjs/stx/commit/936c79c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: a global fetch over the host's Network capability ([cc2fa28](https://github.com/stacksjs/stx/commit/cc2fa28)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **router**: keep identifier mangling, and stop tsc failing on it ([a3bd283](https://github.com/stacksjs/stx/commit/a3bd283)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **repo**: a built artifact is not a workspace member ([2cf5eee](https://github.com/stacksjs/stx/commit/2cf5eee)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **reactive**: an x-data getter is a derived value, not a snapshot ([e766e52](https://github.com/stacksjs/stx/commit/e766e52)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2053](https://github.com/stacksjs/stx/issues/2053))
+
+## 🔧 Chores
+
+- release v0.2.411 ([5ec2d2a](https://github.com/stacksjs/stx/commit/5ec2d2a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.409...v0.2.410)
 
 ## ✨ Features
