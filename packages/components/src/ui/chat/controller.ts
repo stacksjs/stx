@@ -1,4 +1,4 @@
-import type { Signal, DerivedSignal } from '@stacksjs/stx'
+import type { DerivedSignal, Signal } from '@stacksjs/stx'
 import { derived, state } from '@stacksjs/stx'
 
 export interface ChatContact { id: number, name: string, role: string }
