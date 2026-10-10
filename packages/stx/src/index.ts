@@ -298,7 +298,7 @@ export * from './render'
 export { extractClassNames, generateCss, getCssServeAsset, injectCss } from './dev-server/ts-css'
 
 // One css merge shared by every render path (#1867)
-export { deepMergeThemes, mergeCssConfig, type MergedCssConfig } from './ts-css-config'
+export { deepMergeThemes, mergeCssConfig, type MergedCssConfig, renderFontCSS } from './ts-css-config'
 
 // Dev-mode invalidation for the store/composable bundles (#1877)
 export { clearStoreCache, getStoreScript } from './store-loader'

@@ -21,7 +21,7 @@ import nodeFs from 'node:fs/promises'
 import nodePath from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
-import { BUILD_ID_HEADER, decodeTitleEntities, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, mergeCssConfig, readResponseHeaders, readResponseStatus, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
+import { BUILD_ID_HEADER, decodeTitleEntities, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, mergeCssConfig, readResponseHeaders, readResponseStatus, renderFontCSS, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
 import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { extractLayoutMetadata } from 'stx-router/layout-metadata'
@@ -2817,7 +2817,8 @@ function __stxOverlay(errs){
 
       // Role-token values first, so the utilities below resolve against them and
       // an app's own stylesheet — which comes after — can still override (#1930).
-      return cssCssCache.remember(cacheKey, tokenCSS + baseCss + shortcutCSS)
+      // Web fonts ahead of even those, once: an `@import` after any rule is void.
+      return cssCssCache.remember(cacheKey, renderFontCSS(cw.CSSGenerator, merged) + tokenCSS + baseCss + shortcutCSS)
     }
     catch (error) {
       console.warn('Failed to generate Css CSS:', error)

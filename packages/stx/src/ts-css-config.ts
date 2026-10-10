@@ -76,6 +76,32 @@ export interface MergedCssConfig {
    * to the light colour.
    */
   tokenCSS: string
+  /**
+   * The project's `fonts` (Google families, self-hosted `@font-face` rules),
+   * kept out of `config`: render them once with {@link renderFontCSS} and put
+   * them first. Every generator reads `fonts` and writes them at the top of
+   * its own output, so a sheet built from two generators (shortcuts, then
+   * utilities) carried each `@font-face` twice, and the role tokens
+   * prepended ahead of it left a Google `@import` behind a rule, where
+   * browsers ignore it.
+   */
+  fonts?: Dict
+}
+
+/** The engine's generator, as far as rendering font rules needs it. */
+type FontRenderer = new (config: any) => { toCSS: (includePreflight: boolean, minify: boolean) => string }
+
+/**
+ * The sheet's web-font CSS, rendered by the engine from `merged.fonts`, or
+ * `''` when the project declares none. A generator that is asked for no
+ * classes, no preflight and no CSS variables writes only its fonts. Callers
+ * put this at the very top of the stylesheet, before the role tokens.
+ */
+export function renderFontCSS(Generator: FontRenderer, merged: MergedCssConfig): string {
+  if (!merged.fonts)
+    return ''
+  const css = new Generator({ ...merged.config, fonts: merged.fonts, cssVariables: false }).toCSS(false, merged.minify)
+  return css && !merged.minify ? `${css}\n` : css
 }
 
 /**
@@ -142,9 +168,13 @@ export function mergeCssConfig(base: Dict = {}, user: Dict = {}): MergedCssConfi
     ...(user.preflights || []),
   ]
 
+  const { fonts: baseFonts, ...baseRest } = base
+  const { fonts: userFonts, ...userRest } = user
+  const fonts = (userFonts ?? baseFonts) as Dict | undefined
+
   const config: Dict = {
-    ...base,
-    ...user,
+    ...baseRest,
+    ...userRest,
     theme,
     safelist,
     shortcuts,
@@ -165,5 +195,6 @@ export function mergeCssConfig(base: Dict = {}, user: Dict = {}): MergedCssConfi
      * appended rather than interleaved.
      */
     tokenCSS: semanticTokenCSS(basePalette) + shapeTokenCSS(),
+    ...(fonts ? { fonts } : {}),
   }
 }

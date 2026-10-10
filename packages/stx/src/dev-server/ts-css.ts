@@ -7,7 +7,7 @@
 import path from 'node:path'
 import { hasLocalConfig } from 'bunfig'
 import { getServeModuleBundle } from '../caching'
-import { mergeCssConfig } from '../ts-css-config'
+import { mergeCssConfig, renderFontCSS } from '../ts-css-config'
 import { stateDir } from '../state-dir'
 import { dedupeScopedStyles, findDuplicateScopedStyleRanges } from '../style-scoping'
 import { colors } from './terminal-colors'
@@ -863,7 +863,8 @@ async function generateCssUncached(htmlContent: string, appDir?: string): Promis
 
     // Role-token values first, so the utilities below resolve against them and
     // an app's own stylesheet — which comes after — can still override (#1930).
-    css = tokenCSS + css
+    // Web fonts ahead of even those, once: an `@import` after any rule is void.
+    css = renderFontCSS(hw.CSSGenerator, merged) + tokenCSS + css
 
     setLruCache(cacheKey, css)
     // Best-effort persistence so the next request after a server
