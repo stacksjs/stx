@@ -15,7 +15,7 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import vm from 'node:vm'
-import { compileNativeBundle, compileScreenBundle } from '../../src/native/compiler/bundle'
+import { compileLegacyScreenBundle, compileNativeBundle } from '../../src/native/compiler/bundle'
 import { compileClassStyles, compileHeadwindToStyle } from '../../src/native/compiler/headwind-to-style'
 import { LUCIDE_TO_SF, resolveIconName } from '../../src/native/compiler/icons'
 import { parseSTX } from '../../src/native/compiler/parser'
@@ -29,7 +29,7 @@ async function compile(source: string, files: Record<string, string> = {}): Prom
     await Bun.write(path.join(root, name), contents)
   const file = path.join(root, 'Screen.stx')
   await Bun.write(file, source)
-  return compileScreenBundle(file)
+  return compileLegacyScreenBundle(file)
 }
 
 /** A host: applies RENDER and MUTATE to its own copy of the tree, like Craft. */

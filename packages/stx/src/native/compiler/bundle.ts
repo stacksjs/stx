@@ -168,8 +168,8 @@ export async function compileNativeBundle(options: CompileNativeBundleOptions): 
   return { code, outFile, diagnostics }
 }
 
-/** One `.stx` file, as the single-screen bundle `compile <file> --format bundle` writes. */
-export function compileScreenBundle(file: string, options: Pick<CompileNativeBundleOptions, 'minify' | 'outFile' | 'root'> = {}): Promise<NativeBundleResult> {
+/** @deprecated Regression-only compiler for the pre-stx parser and runtime. */
+export function compileLegacyScreenBundle(file: string, options: Pick<CompileNativeBundleOptions, 'minify' | 'outFile' | 'root'> = {}): Promise<NativeBundleResult> {
   return compileNativeBundle({ ...options, screens: { main: file }, routed: false })
 }
 
@@ -214,6 +214,11 @@ screen.mount(g.stx, g.__stx_latestSetup || null);
   mkdirSync(path.dirname(outFile), { recursive: true })
   await Bun.write(outFile, code)
   return { code, outFile, diagnostics }
+}
+
+/** One `.stx` file, as the public single-screen native compiler writes it. */
+export function compileScreenBundle(file: string, options: Pick<CompileNativeBundleOptions, 'minify' | 'outFile' | 'root'> = {}): Promise<NativeBundleResult> {
+  return compileSharedScreenBundle(file, options)
 }
 
 export { RUNTIME_SPECIFIER }

@@ -2,13 +2,13 @@ import { describe, expect, it } from 'bun:test'
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { compileScreenBundle } from '../../src/native/compiler/bundle'
+import { compileLegacyScreenBundle } from '../../src/native/compiler/bundle'
 
 async function generate(script: string = '', template: string = '<View><Text>Capabilities</Text></View>'): Promise<string> {
   const root = await mkdtemp(path.join(tmpdir(), 'stx-native-capabilities-'))
   const file = path.join(root, 'Capabilities.stx')
   await Bun.write(file, `<script>${script}</script><template>${template}</template>`)
-  return (await compileScreenBundle(file)).code
+  return (await compileLegacyScreenBundle(file)).code
 }
 
 async function runtime(script: string = '', options: {

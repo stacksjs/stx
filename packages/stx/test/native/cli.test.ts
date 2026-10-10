@@ -20,7 +20,7 @@ import { describe, expect, it } from 'bun:test'
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { compileScreenBundle } from '../../src/native/compiler/bundle'
+import { compileLegacyScreenBundle } from '../../src/native/compiler/bundle'
 
 const CLI = path.join(import.meta.dir, '..', '..', 'bin', 'cli.ts')
 
@@ -133,7 +133,7 @@ describe('the generated bundle', () => {
     const root = await mkdtemp(path.join(tmpdir(), 'stx-native-bundle-'))
     const file = path.join(root, 'Screen.stx')
     await Bun.write(file, source)
-    return (await compileScreenBundle(file)).code
+    return (await compileLegacyScreenBundle(file)).code
   }
 
   it('is valid JavaScript', async () => {
