@@ -104,3 +104,5 @@ export interface FooterProps extends ComponentProps {
 export interface InstallationProps extends ComponentProps {
   packageName?: string
 }
+
+export * from './ui/chat'
