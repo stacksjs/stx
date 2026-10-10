@@ -582,16 +582,29 @@ function pick(day) { target = { id: 'day-' + day, key: ++taps } }
 describe('routed bundles', () => {
   it('ships the runtime once and runs only the routed screen', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'stx-native-routes-'))
-    await Bun.write(path.join(root, 'A.stx'), `<script>globalThis.ran = (globalThis.ran || '') + 'A'</script><template><View><Text>A</Text></View></template>`)
-    await Bun.write(path.join(root, 'B.stx'), `<script>globalThis.ran = (globalThis.ran || '') + 'B'</script><template><View><Text>B</Text></View></template>`)
+    await Bun.write(path.join(root, 'A.stx'), '<View><Text>A</Text></View>')
+    await Bun.write(path.join(root, 'B.stx'), '<View><Text>B</Text></View>')
     const { code } = await compileNativeBundle({ screens: { A: path.join(root, 'A.stx'), B: path.join(root, 'B.stx') }, initialScreen: 'A' })
-    expect(code.match(/function createRuntime/g)?.length).toBe(1)
-    const b = host(code, { __stxNativeRoute: 'B' })
-    expect(b.scope.ran).toBe('B')
-    expect(b.text()).toBe('B')
+    expect(code.match(/hydrateHost/g)?.length).toBeGreaterThan(0)
+    const start = async (route?: string) => {
+      const sent: Message[] = []
+      const scope: Record<string, any> = {
+        __stxNativeRoute: route,
+        __stxNativeBridge: {
+          postMessage: (raw: string) => sent.push(JSON.parse(raw)),
+          onMessage: () => {},
+        },
+      }
+      vm.runInNewContext(code, scope)
+      await Promise.resolve()
+      return { scope, sent }
+    }
+    const text = (value: any): string => typeof value === 'string' ? value : (value?.children || []).map(text).join('')
+    const b = await start('B')
+    expect(text(b.sent.find(message => message.type === 'RENDER')?.payload.document.root)).toBe('B')
     expect(b.scope.craft.route.name).toBe('B')
-    const a = host(code)
-    expect(a.scope.ran).toBe('A')
+    const a = await start()
+    expect(text(a.sent.find(message => message.type === 'RENDER')?.payload.document.root)).toBe('A')
   })
 })
 

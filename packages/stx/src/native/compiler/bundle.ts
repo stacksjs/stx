@@ -4,9 +4,8 @@
  * Layout of the file the host evaluates:
  *
  *   1. a header that settles which route this context shows,
- *   2. the runtime (`runtime/screen.ts`), once, which installs `craft.*`,
- *   3. each screen, built separately by `Bun.build` from its `.stx` file and
- *      guarded by its route name, so only the one being shown runs.
+ *   2. the shared stx signals runtime and native host adapter, once,
+ *   3. the selected screen's rendered IR, manifest and generated setup.
  *
  * A screen's script is TypeScript with imports: the `.stx` file is the build's
  * entry, loaded through a plugin that hands Bun the generated module
@@ -120,7 +119,7 @@ function screenPlugin(warnings: string[]): BunPlugin {
  * })
  * ```
  */
-export async function compileNativeBundle(options: CompileNativeBundleOptions): Promise<NativeBundleResult> {
+async function compileLegacyNativeBundle(options: CompileNativeBundleOptions): Promise<NativeBundleResult> {
   const names = Object.keys(options.screens)
   if (names.length === 0) throw new Error('screens must name at least one .stx file')
   const routed = options.routed ?? true
@@ -170,20 +169,37 @@ export async function compileNativeBundle(options: CompileNativeBundleOptions): 
 
 /** @deprecated Regression-only compiler for the pre-stx parser and runtime. */
 export function compileLegacyScreenBundle(file: string, options: Pick<CompileNativeBundleOptions, 'minify' | 'outFile' | 'root'> = {}): Promise<NativeBundleResult> {
-  return compileNativeBundle({ ...options, screens: { main: file }, routed: false })
+  return compileLegacyNativeBundle({ ...options, screens: { main: file }, routed: false })
 }
 
-/** Compile one screen against stx's shared signals runtime, without the legacy parser/runtime. */
-export async function compileSharedScreenBundle(
-  file: string,
-  options: Pick<CompileNativeBundleOptions, 'minify' | 'outFile' | 'root'> = {},
-): Promise<NativeBundleResult> {
+/** Compile routed screens through stx and run them on the shared signals runtime. */
+export async function compileNativeBundle(options: CompileNativeBundleOptions): Promise<NativeBundleResult> {
+  const names = Object.keys(options.screens)
+  if (names.length === 0) throw new Error('screens must name at least one .stx file')
+  const routed = options.routed ?? true
+  const initialScreen = options.initialScreen ?? names[0]
+  if (!options.screens[initialScreen]) throw new Error(`Initial screen ${initialScreen} is not in screens`)
   const root = path.resolve(options.root ?? process.cwd())
-  const source = path.resolve(root, file)
-  const compiled = await compileScreenFile(source)
+  const compiledScreens: Array<{ name: string, file: string, compiled: Awaited<ReturnType<typeof compileScreenFile>> }> = []
+  for (const name of names) {
+    const file = path.resolve(root, options.screens[name])
+    if (!file.endsWith('.stx')) throw new Error(`Screen ${name} must name a .stx file`)
+    compiledScreens.push({ name, file, compiled: await compileScreenFile(file, { root }) })
+  }
+
   const runtimeGlobals = path.join(import.meta.dir, '..', 'runtime', 'jsc-globals.ts')
   const sharedScreen = path.join(import.meta.dir, '..', 'runtime', 'shared-screen.ts')
-  const setup = compiled.setup?.code ?? 'window.__stx_latestSetup = null;'
+  const route = routed
+    ? `var routeName = g.__stxNativeRoute || ${JSON.stringify(initialScreen)};
+if (routeNames.indexOf(routeName) === -1) throw new Error(['Unknown native screen:', routeName].join(' '));`
+    : "var routeName = 'main';"
+  const selections = compiledScreens.map(({ name, compiled }, index) => `${index === 0 ? 'if' : 'else if'} (routeName === ${JSON.stringify(routed ? name : 'main')}) {
+  nativeDocument = ${JSON.stringify(compiled.document)};
+  manifest = ${JSON.stringify(compiled.manifest)};
+}`).join('\n')
+  const setups = compiledScreens.map(({ name, compiled }, index) => `${index === 0 ? 'if' : 'else if'} (routeName === ${JSON.stringify(routed ? name : 'main')}) {
+${compiled.setup?.code ?? 'g.__stx_latestSetup = null;'}
+}`).join('\n')
   const contents = `
 import { installJSCGlobals } from ${JSON.stringify(runtimeGlobals)};
 import { prepareSharedNativeScreen } from ${JSON.stringify(sharedScreen)};
@@ -191,21 +207,27 @@ var g = globalThis;
 installJSCGlobals(g);
 var bridge = g.__stxNativeBridge;
 if (!bridge) throw new Error('Missing __stxNativeBridge');
-var screen = prepareSharedNativeScreen(${JSON.stringify(compiled.document)}, ${JSON.stringify(compiled.manifest)}, bridge);
+var routeNames = ${JSON.stringify(routed ? names : ['main'])};
+${route}
+g.__stxNativeRoute = routeName;
+var nativeDocument;
+var manifest;
+${selections}
+var screen = prepareSharedNativeScreen(nativeDocument, manifest, bridge, { routeName: routeName, routeNames: routeNames });
 g.__stx_host = screen.host;
 ${generateSignalsRuntime()}
-${setup}
+${setups}
 screen.mount(g.stx, g.__stx_latestSetup || null);
 `
   const plugin: BunPlugin = {
-    name: 'stx-native-shared-screen',
+    name: 'stx-native-shared-screens',
     setup(builder) {
-      builder.onResolve({ filter: /^stx:native-shared-screen$/ }, () => ({ path: 'entry', namespace: 'stx-native-shared-screen' }))
-      builder.onLoad({ filter: /.*/, namespace: 'stx-native-shared-screen' }, () => ({ contents, loader: 'js' }))
+      builder.onResolve({ filter: /^stx:native-shared-screens$/ }, () => ({ path: 'entry', namespace: 'stx-native-shared-screens' }))
+      builder.onLoad({ filter: /.*/, namespace: 'stx-native-shared-screens' }, () => ({ contents, loader: 'js' }))
     },
   }
-  const code = await build('stx:native-shared-screen', [plugin], options.minify ?? false)
-  const diagnostics = compiled.diagnostics.map(diagnostic => ({
+  const code = await build('stx:native-shared-screens', [plugin], options.minify ?? false)
+  const diagnostics = compiledScreens.flatMap(({ compiled }) => compiled.diagnostics).map(diagnostic => ({
     level: 'warning' as const,
     message: [diagnostic.kind, diagnostic.tag, diagnostic.name].filter(Boolean).join(': '),
   }))
@@ -214,6 +236,14 @@ screen.mount(g.stx, g.__stx_latestSetup || null);
   mkdirSync(path.dirname(outFile), { recursive: true })
   await Bun.write(outFile, code)
   return { code, outFile, diagnostics }
+}
+
+/** Compile one screen against stx's shared signals runtime, without the legacy parser/runtime. */
+export async function compileSharedScreenBundle(
+  file: string,
+  options: Pick<CompileNativeBundleOptions, 'minify' | 'outFile' | 'root'> = {},
+): Promise<NativeBundleResult> {
+  return compileNativeBundle({ ...options, screens: { main: file }, routed: false })
 }
 
 /** One `.stx` file, as the public single-screen native compiler writes it. */

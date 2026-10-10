@@ -20,6 +20,7 @@ import { describe, expect, it } from 'bun:test'
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import vm from 'node:vm'
 import { compileLegacyScreenBundle } from '../../src/native/compiler/bundle'
 
 const CLI = path.join(import.meta.dir, '..', '..', 'bin', 'cli.ts')
@@ -408,27 +409,27 @@ let ready = globalThis.craft.device.getInfo()
       initialScreen: 'home',
       screens: { home: 'Home.stx', details: 'Details.stx' },
     }))
-    await Bun.write(path.join(root, 'Home.stx'), `<script>
-let count = 0
-function increment() { count++ }
+    await Bun.write(path.join(root, 'Home.stx'), `<script client>
+const count = state(0)
+function increment() { count.set(count() + 1) }
 function openDetails() { globalThis.craft.navigation.push('details', { id: 7 }) }
 </script>
-<template><View><Text>Count {count}</Text><Button onPress={increment}>Increment</Button><Button onPress={openDetails}>Details</Button></View></template>`)
-    await Bun.write(path.join(root, 'Details.stx'), `<script>
-let id = globalThis.craft.route.params.id
-function replaceHome() { globalThis.craft.navigation.replace('home', { from: id }) }
+<View><Text :text="'Count ' + count" /><Button @click="increment()">Increment</Button><Button @click="openDetails()">Details</Button></View>`)
+    await Bun.write(path.join(root, 'Details.stx'), `<script client>
+const id = state(globalThis.craft.route.params.id)
+function replaceHome() { globalThis.craft.navigation.replace('home', { from: id() }) }
 function goBack() { globalThis.craft.navigation.back() }
 </script>
-<template><View><Text>Item {id}</Text><Button onPress={replaceHome}>Replace</Button><Button onPress={goBack}>Back</Button></View></template>`)
+<View><Text :text="'Item ' + id" /><Button @click="replaceHome()">Replace</Button><Button @click="goBack()">Back</Button></View>`)
     const output = path.join(root, 'routes.js')
     const compiled = await runCli(['compile', '--format', 'bundle', '--output', output], root)
     expect(compiled.code).toBe(0)
     const bundle = await Bun.file(output).text()
     expect(() => new Bun.Transpiler({ loader: 'js' }).transformSync(bundle)).not.toThrow()
 
-    function start(name?: string, params?: Record<string, unknown>) {
+    async function start(name?: string, params?: Record<string, unknown>) {
       const sent: Array<Record<string, any>> = []
-      let callback: (message: Record<string, any>) => void = () => {}
+      let callback: (message: string) => void = () => {}
       const scope: Record<string, any> = {
         __stxNativeRoute: name,
         __stxNativeParams: params,
@@ -437,30 +438,41 @@ function goBack() { globalThis.craft.navigation.back() }
           onMessage: (receiver: typeof callback) => { callback = receiver },
         },
       }
-      new Function('globalThis', bundle)(scope)
-      return { scope, sent, event: (handlerName: string) => callback({ type: 'EVENT', payload: { handlerName, nativeEvent: {} } }) }
+      vm.runInNewContext(bundle, scope)
+      await Bun.sleep(0)
+      const handlers = sent.filter(message => message.type === 'MUTATE')
+        .flatMap(message => message.payload.operations)
+        .flatMap(operation => Object.values(operation.patch?.events || {})) as string[]
+      return {
+        scope,
+        sent,
+        event: async (index: number) => {
+          callback(JSON.stringify({ type: 'EVENT', payload: { handlerId: handlers[index], nativeEvent: {} } }))
+          await Bun.sleep(0)
+        },
+      }
     }
 
-    const home = start()
+    const home = await start()
     expect(home.scope.craft.route).toEqual({ name: 'home', params: {} })
-    expect(home.sent[0].payload.document.children[0].children.join('')).toBe('Count 0')
-    home.event('increment')
-    expect(home.sent.at(-1)?.payload.document.children[0].children.join('')).toBe('Count 1')
-    home.event('openDetails')
+    expect(home.sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)).toContainEqual(expect.objectContaining({ patch: { children: ['Count 0'] } }))
+    await home.event(0)
+    expect(home.sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)).toContainEqual(expect.objectContaining({ patch: { children: ['Count 1'] } }))
+    await home.event(1)
     expect(home.sent.find(message => message.type === 'NAVIGATE')?.payload).toEqual({ screen: 'details', params: { id: 7 } })
 
-    const details = start('details', { id: 7 })
+    const details = await start('details', { id: 7 })
     expect(details.scope.craft.route).toEqual({ name: 'details', params: { id: 7 } })
-    expect(details.sent[0].payload.document.children[0].children.join('')).toBe('Item 7')
-    details.event('replaceHome')
-    details.event('goBack')
+    expect(details.sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)).toContainEqual(expect.objectContaining({ patch: { children: ['Item 7'] } }))
+    await details.event(0)
+    await details.event(1)
     expect(details.sent.find(message => message.type === 'NAVIGATE_REPLACE')?.payload).toEqual({ screen: 'home', params: { from: 7 } })
     expect(details.sent.some(message => message.type === 'NAVIGATE_BACK')).toBe(true)
     expect(() => details.scope.craft.navigation.push('missing')).toThrow('Unknown native screen')
 
     // Native back shows the original controller and JSContext again; the
     // compiled home closure has not been executed a second time.
-    home.event('increment')
-    expect(home.sent.at(-1)?.payload.document.children[0].children.join('')).toBe('Count 2')
+    await home.event(0)
+    expect(home.sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)).toContainEqual(expect.objectContaining({ patch: { children: ['Count 2'] } }))
   })
 })

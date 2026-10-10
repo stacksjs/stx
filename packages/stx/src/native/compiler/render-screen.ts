@@ -17,12 +17,9 @@
  * `@click` and `:text` written on a component tag onto the component's root
  * element, which is exactly where the translator reads them.
  *
- * This is also the CLI's IR path. The bundle path still goes through
- * `parser.ts`, `codegen.ts` and `bundle.ts`, because a native screen's `@if`
- * and `@foreach` must stay in the template and re-run on the device every
- * render; rendering here resolves them once, on the server, with server data.
- * This path is for translating already-rendered stx output (components,
- * static screens) into IR.
+ * This is also the CLI's IR and bundle path. Client-reactive conditions and
+ * loops survive as binding-manifest entries and run through the shared stx
+ * signals runtime; server-only directives resolve here before translation.
  */
 import type { STXDocument } from './ir'
 import type { TranslationDiagnostic } from './html-to-ir'

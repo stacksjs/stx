@@ -3,7 +3,7 @@ import type { NativeBridgeInterface } from '../bridge/protocol'
 import type { STXDocument } from '../compiler/ir'
 import { STXBridge } from '../bridge/protocol'
 import { materializeNativeBindingTree } from './binding-tree'
-import { installCraftBridge } from './craft-bridge'
+import { installCraftBridge, type CraftBridgeOptions } from './craft-bridge'
 import { createNativeHost, type NativeHost } from './native-host'
 
 interface SharedSignalsRuntime {
@@ -20,11 +20,12 @@ export function prepareSharedNativeScreen(
   document: STXDocument,
   manifest: BindingManifest,
   bridge: NativeBridgeInterface,
+  options: CraftBridgeOptions = {},
 ): SharedNativeScreen {
   let revision = 0
   const protocol = new STXBridge()
   protocol.initialize(bridge)
-  installCraftBridge(protocol, bridge)
+  installCraftBridge(protocol, bridge, globalThis as Record<string, any>, options)
 
   const host = createNativeHost({
     send(operations) {
