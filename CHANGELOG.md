@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.427...v0.2.428)
+
+## 🐛 Bug Fixes
+
+- respect no-store requests and responses in offline worker ([71fceb5](https://github.com/stacksjs/stx/commit/71fceb5)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.428 ([c3567b1](https://github.com/stacksjs/stx/commit/c3567b1)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.426...v0.2.427)
 
 ## ✅ Tests
