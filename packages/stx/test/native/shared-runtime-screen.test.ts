@@ -72,6 +72,29 @@ function increment() { count.set(count() + 1) }
     }))
   })
 
+  it('evaluates HTML-encoded bindings like a browser attribute', async () => {
+    const source = `<script client>
+const label = state('Box')
+</script>
+<View><Text :text="label() + &quot;!&quot;" /></View>`
+    const compiled = await compileScreenSource(source, path.join(import.meta.dir, 'EncodedBinding.stx'))
+    const sent: any[] = []
+    const screen = prepareSharedNativeScreen(compiled.document, compiled.manifest, {
+      postMessage: raw => sent.push(JSON.parse(raw)),
+      onMessage: () => {},
+    })
+
+    installNodeConstants()
+    window.__stx_host = screen.host
+    new Function(generateSignalsRuntimeDev())()
+    new Function(compiled.setup!.code)()
+    screen.mount(window.stx, window.__stx_latestSetup)
+    screen.host.flush()
+
+    const updates = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
+    expect(updates).toContainEqual(expect.objectContaining({ patch: { children: ['Box!'] } }))
+  })
+
   it('runs the same path as a DOM-free JavaScriptCore bundle', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'stx-native-shared-'))
     const file = path.join(root, 'Screen.stx')

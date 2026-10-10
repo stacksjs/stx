@@ -23,6 +23,7 @@ import type { ResolvedProps, RenderContext } from './component-registry'
 import { registry } from './component-registry'
 import { processConditionals } from './conditionals'
 import { registerBuiltins } from './builtins'
+import { forwardResolvedAttrs, forwardStaticAttrs } from './builtins/attrs'
 import { decodeAttributeEntities, decodeStxProp, findComponentTags, parseMultilineAttributes, pascalToKebab, readBracedValue, restoreStashedScripts, stashScriptElements, unwrapBracedExpression, uppercaseHtmlTagSkip } from './component-processing'
 import { maskAtElementPosition, matchHtmlComment } from './html-masking'
 import { renderComponentWithSlot, userComponentFileExists } from './utils'
@@ -1070,6 +1071,12 @@ async function processCustomElementTags(
 
       let finalContent = processedContent
 
+      // Native primitives are ordinary file components, but their concrete
+      // host root must retain caller-owned props such as testID, source and
+      // accessibilityLabel. Individual primitive templates should only need
+      // to declare props they consume; forward every other resolved prop once.
+      finalContent = forwardNativeHostAttrs(finalContent, resolvedProps)
+
       // Forward @event attributes from parent to component's root element.
       // This connects parent handlers to child defineEmits() — the child emits
       // a CustomEvent that bubbles up, and the root element's @event listener catches it.
@@ -1168,17 +1175,49 @@ function emitClientReactiveAttrs(html: string, clientReactive: Record<string, st
   return output
 }
 
+/** Forward unconsumed static/server props onto a file component's native root. */
+function forwardNativeHostAttrs(html: string, props: ResolvedProps): string {
+  const root = findRenderedComponentRoot(html)
+  if (!root)
+    return html
+
+  const openingTag = html.slice(root.insertPos, root.tagEnd)
+  if (!/\bdata-native(?:\s|=)/i.test(openingTag))
+    return html
+
+  const existing = new Set(Object.keys(parseAllAttributes(openingTag)))
+  const consumed = new Set<string>(['class', 'className'])
+  for (const key of Object.keys(props.static)) {
+    if (existing.has(props.staticNames[key] ?? key))
+      consumed.add(key)
+  }
+  for (const key of Object.keys(props.serverDynamic)) {
+    if (existing.has(props.serverDynamicNames?.[key] ?? key))
+      consumed.add(key)
+  }
+
+  const forwarded = [
+    ...forwardStaticAttrs(props, consumed),
+    ...forwardResolvedAttrs(props, consumed),
+  ]
+  if (forwarded.length === 0)
+    return html
+
+  return `${html.slice(0, root.insertPos)} ${forwarded.join(' ')}${html.slice(root.insertPos)}`
+}
+
 /**
  * Find the actual rendered component root, not a leading setup script or
  * preserved style tag. Signal components emit their scoped setup script before
  * a `data-stx-scope` wrapper, so forwarding props to the first textual tag
  * incorrectly attached them to `<script>` and made useReactiveProp unreadable.
  */
-function findRenderedComponentRoot(html: string): { insertPos: number } | null {
+function findRenderedComponentRoot(html: string): { insertPos: number, tagEnd: number } | null {
   const scopedRoot = /<([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*\bdata-stx-scope(?:\s|=|>)/i.exec(html)
   if (scopedRoot) {
     return {
       insertPos: scopedRoot.index + 1 + scopedRoot[1].length,
+      tagEnd: findOpeningTagEnd(html, scopedRoot.index + 1 + scopedRoot[1].length),
     }
   }
 
@@ -1211,10 +1250,26 @@ function findRenderedComponentRoot(html: string): { insertPos: number } | null {
     if (!root) return null
     return {
       insertPos: cursor + 1 + root[1].length,
+      tagEnd: findOpeningTagEnd(html, cursor + 1 + root[1].length),
     }
   }
 
   return null
+}
+
+/** Locate an opening tag's end without mistaking a quoted `>` for the end. */
+function findOpeningTagEnd(html: string, cursor: number): number {
+  let quote = ''
+  for (let i = cursor; i < html.length; i++) {
+    const char = html[i]
+    if (quote) {
+      if (char === '\\') i++
+      else if (char === quote) quote = ''
+    }
+    else if (char === '"' || char === '\'') quote = char
+    else if (char === '>') return i
+  }
+  return html.length
 }
 
 /**

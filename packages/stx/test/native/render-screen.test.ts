@@ -190,11 +190,15 @@ describe('the primitives themselves', () => {
     expect(types(document.root)).toEqual(['View', 'TouchableOpacity', 'Text', 'Pressable', 'Text'])
   })
 
-  it('keeps static host props on native primitive roots', async () => {
-    const source = `<View><Text testID="label">Name</Text><Button testID="save">Save</Button><TextInput testID="name-input" placeholder="Type your name" /></View>`
+  it('keeps static host props on every native primitive root', async () => {
+    const source = `<View testID="page"><ScrollView testID="scroll"><Image testID="avatar" source="avatar.png" accessibilityLabel="Profile" /><Text testID="label">Name</Text><Button testID="save">Save</Button><TextInput testID="name-input" placeholder="Type your name" /></ScrollView></View>`
     const { document } = await compileScreenSource(source, screen('HostProps.stx', source))
-    const children = document.root.children.filter((child): child is STXNode => typeof child !== 'string')
+    expect(document.root.props).toEqual({ testID: 'page' })
+    const scroll = document.root.children.find((child): child is STXNode => typeof child !== 'string')!
+    expect(scroll.props).toEqual({ testID: 'scroll' })
+    const children = scroll.children.filter((child): child is STXNode => typeof child !== 'string')
     expect(children.map(child => child.props)).toEqual([
+      { testID: 'avatar', source: 'avatar.png', accessibilityLabel: 'Profile' },
       { testID: 'label' },
       { type: 'button', testID: 'save' },
       { testID: 'name-input', placeholder: 'Type your name' },

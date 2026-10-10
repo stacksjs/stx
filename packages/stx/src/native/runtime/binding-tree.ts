@@ -24,8 +24,24 @@ export interface NativeBindingTree {
   nodes: Map<number, NativeBindingNode>
 }
 
+/** Match the browser's decoded getAttribute() value without pulling compiler code into the runtime bundle. */
+function decodeBindingValue(value: string): string {
+  return value
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, '\'')
+    .replace(/&#x27;/gi, '\'')
+    .replace(/&amp;/g, '&')
+}
+
 function createBindingNode(id: string, type: string, bindings: ManifestEntry['bindings']): NativeBindingNode {
-  const attributes = bindings.map(binding => ({ name: binding.name, value: binding.value }))
+  // Browsers decode attribute entities before getAttribute(). Native binding
+  // nodes must provide the same input to the shared signals runtime.
+  const attributes = bindings.map(binding => ({
+    name: binding.name,
+    value: decodeBindingValue(binding.value),
+  }))
   const node = {
     __stxId: id,
     nodeType: 1 as const,

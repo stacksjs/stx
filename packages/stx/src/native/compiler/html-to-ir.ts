@@ -267,6 +267,9 @@ interface Attributes {
 
 /** HTML parsing lowercases attribute names; restore host props whose case is API-significant. */
 const HOST_PROP_NAMES: Record<string, string> = {
+  accessibilityhint: 'accessibilityHint',
+  accessibilitylabel: 'accessibilityLabel',
+  accessibilityrole: 'accessibilityRole',
   testid: 'testID',
 }
 
