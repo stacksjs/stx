@@ -3,6 +3,11 @@ import { STXBridge } from '../bridge/protocol'
 
 type AnyRecord = Record<string, any>
 
+export interface CraftBridgeOptions {
+  routeName?: string
+  routeNames?: string[]
+}
+
 function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
   return {
     haptics: capabilities.has('haptics'),
@@ -39,6 +44,7 @@ export function installCraftBridge(
   protocol: STXBridge,
   nativeBridge: NativeBridgeInterface,
   target: AnyRecord = globalThis as AnyRecord,
+  options: CraftBridgeOptions = {},
 ): AnyRecord {
   const craft: AnyRecord = target.craft = target.craft || {}
   const capabilities = new Set(nativeBridge.capabilities || [])
@@ -48,10 +54,15 @@ export function installCraftBridge(
   let initialDeepLinkClaimed = false
   const appStateHandlers = new Set<(state: string) => unknown>()
   const deepLinkHandlers = new Set<(link: DeepLinkPayload) => unknown>()
+  const navButtonHandlers = new Set<(event: { id: string }) => unknown>()
+  const navButtonPresses = new Map<string, (event: { id: string }) => unknown>()
+  const routeName = options.routeName || 'main'
+  const routeNames = options.routeNames || [routeName]
 
   craft.platform = nativeBridge.platform || 'unknown'
   craft.capabilityProtocolVersion = Number(nativeBridge.capabilityProtocolVersion || 0)
   craft.capabilities = capabilityFlags(capabilities)
+  craft.route = { name: routeName, params: target.__stxNativeParams || {} }
   craft.appearance = { colorScheme: () => nativeBridge.colorScheme === 'dark' ? 'dark' : 'light' }
   craft.device = { getInfo: () => request('Device', 'getInfo', []) }
   craft.clipboard = {
@@ -108,6 +119,46 @@ export function installCraftBridge(
   craft.cancelAllNotifications = craft.notifications.cancelAll
   craft.getPendingNotifications = craft.notifications.pending
 
+  const navigate = (type: 'NAVIGATE' | 'NAVIGATE_REPLACE', screen: string, params?: Record<string, unknown>): string => {
+    if (!routeNames.includes(screen)) throw new Error(`Unknown native screen: ${screen}`)
+    if (params !== undefined && (params === null || typeof params !== 'object' || Array.isArray(params)))
+      throw new TypeError('Navigation params must be an object')
+    return protocol.send(type, { screen, params: params || {} })
+  }
+  const hostSetOptions = craft.navigation && typeof craft.navigation.setOptions === 'function'
+    ? craft.navigation.setOptions.bind(craft.navigation)
+    : null
+  craft.navigation = Object.assign(craft.navigation || {}, {
+    push: (screen: string, params?: Record<string, unknown>) => navigate('NAVIGATE', screen, params),
+    replace: (screen: string, params?: Record<string, unknown>) => navigate('NAVIGATE_REPLACE', screen, params),
+    back: () => protocol.goBack(),
+    open: (path: string) => {
+      if (typeof path !== 'string' || !path.trim()) throw new TypeError('navigation.open needs a path, such as /m/workout/42')
+      return protocol.send('NAVIGATE_OPEN', { path })
+    },
+    setOptions: (navigationOptions: AnyRecord) => {
+      if (!navigationOptions || typeof navigationOptions !== 'object') throw new TypeError('navigation.setOptions needs an object')
+      const payload: AnyRecord = {}
+      for (const key of Object.keys(navigationOptions)) {
+        if (key === 'rightButtons' && Array.isArray(navigationOptions.rightButtons)) {
+          navButtonPresses.clear()
+          payload.rightButtons = navigationOptions.rightButtons.map((button: AnyRecord) => {
+            const { onPress, ...rest } = button || {}
+            if (typeof onPress === 'function' && rest.id != null) navButtonPresses.set(String(rest.id), onPress)
+            return rest
+          })
+        }
+        else if (typeof navigationOptions[key] !== 'function') payload[key] = navigationOptions[key]
+      }
+      return hostSetOptions ? hostSetOptions(payload) : protocol.send('NAVIGATION_SET_OPTIONS', payload)
+    },
+    onButton: (callback: (event: { id: string }) => unknown) => {
+      if (typeof callback !== 'function') throw new TypeError('navigation.onButton needs a function')
+      navButtonHandlers.add(callback)
+      return () => navButtonHandlers.delete(callback)
+    },
+  })
+
   const onAppStateChange = (callback: (state: string) => unknown): (() => void) => {
     if (typeof callback !== 'function') throw new TypeError('lifecycle.onStateChange needs a function')
     appStateHandlers.add(callback)
@@ -137,6 +188,64 @@ export function installCraftBridge(
     if (initialDeepLinkClaimed && payload.initial) return
     deepLinkHandlers.forEach(handler => handler(payload))
   })
+  const dispatchNavButton = (event: { id?: unknown }): void => {
+    const id = event?.id == null ? '' : String(event.id)
+    navButtonPresses.get(id)?.({ id })
+    navButtonHandlers.forEach(handler => handler({ id }))
+  }
+  protocol.on<{ id?: unknown }>('NAV_BUTTON', ({ payload }) => dispatchNavButton(payload))
+  protocol.on<any>('EVENT', ({ payload }) => {
+    if (payload?.handlerId === 'navButton' || payload?.handlerName === 'navButton')
+      dispatchNavButton(payload.nativeEvent || {})
+  })
+
+  if (capabilities.has('fetch') && typeof target.fetch !== 'function') {
+    target.fetch = (input: any, init: AnyRecord = {}): Promise<any> => {
+      const source = input && typeof input === 'object' ? input : {}
+      const url = typeof input === 'string' ? input : String(source.url || input)
+      const method = String(init.method || source.method || 'GET').toUpperCase()
+      const headers: Record<string, string> = {}
+      const inputHeaders = init.headers || source.headers
+      const addHeader = (name: string, value: unknown): void => { headers[String(name).toLowerCase()] = String(value) }
+      if (Array.isArray(inputHeaders)) inputHeaders.forEach(pair => addHeader(pair[0], pair[1]))
+      else if (inputHeaders && typeof inputHeaders.forEach === 'function') inputHeaders.forEach(addHeader)
+      else if (inputHeaders && typeof inputHeaders === 'object') Object.keys(inputHeaders).forEach(name => addHeader(name, inputHeaders[name]))
+      const body = init.body !== undefined ? init.body : source.body
+      if (body != null && typeof body !== 'string') return Promise.reject(new TypeError('fetch in a native screen sends string bodies only'))
+      if (body != null && (method === 'GET' || method === 'HEAD')) return Promise.reject(new TypeError('A GET or HEAD request cannot have a body'))
+      return request('Network', 'fetch', [{ url, method, headers, body: body == null ? null : body }]).then((data: AnyRecord) => {
+        const responseHeaders = data?.headers && typeof data.headers === 'object' ? data.headers : {}
+        const responseBody = data?.body == null ? '' : String(data.body)
+        let bodyUsed = false
+        const consume = (): Promise<string> => {
+          if (bodyUsed) return Promise.reject(new TypeError('Body has already been consumed'))
+          bodyUsed = true
+          return Promise.resolve(responseBody)
+        }
+        return {
+          type: 'basic',
+          url: data?.url || '',
+          status: Number(data?.status) || 0,
+          statusText: data?.statusText || '',
+          ok: Number(data?.status) >= 200 && Number(data?.status) < 300,
+          redirected: Boolean(data?.redirected),
+          headers: {
+            get: (name: string) => responseHeaders[String(name).toLowerCase()] == null ? null : String(responseHeaders[String(name).toLowerCase()]),
+            has: (name: string) => responseHeaders[String(name).toLowerCase()] != null,
+            forEach: (callback: (value: string, name: string) => void) => Object.keys(responseHeaders).forEach(name => callback(String(responseHeaders[name]), name)),
+          },
+          get bodyUsed() { return bodyUsed },
+          text: consume,
+          json: () => consume().then(JSON.parse),
+        }
+      }, (error: any) => {
+        if (error?.code === 'INVALID_ARGUMENT') throw error
+        const failure: any = new TypeError(error?.message || 'Network request failed')
+        failure.code = error?.code || 'NETWORK_ERROR'
+        throw failure
+      })
+    }
+  }
 
   return craft
 }

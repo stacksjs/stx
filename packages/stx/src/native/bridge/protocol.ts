@@ -38,10 +38,14 @@ export type BridgeMessageType =
   | 'NAVIGATE'            // Navigate to a new screen
   | 'NAVIGATE_BACK'       // Go back
   | 'NAVIGATE_REPLACE'    // Replace current screen
+  | 'NAVIGATE_OPEN'       // Open a native or hybrid app path
+  | 'NAVIGATION_SET_OPTIONS' // Update native navigation chrome
+  | 'NAV_BUTTON'          // Native navigation button pressed
 
   // Lifecycle
   | 'APP_STATE'           // App foreground/background
   | 'DEEP_LINK'           // App opened or resumed through a URL
+  | 'APPEARANCE'          // Native color scheme changed
   | 'SCREEN_FOCUS'        // Screen gained/lost focus
   | 'MEMORY_WARNING'      // Low memory warning
 

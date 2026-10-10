@@ -154,4 +154,51 @@ const ready = craft.storage.get('ready').then(value => status.set(value))
     expect(updates).toContainEqual(expect.objectContaining({ patch: { children: ['ready'] } }))
     expect(updates).toContainEqual(expect.objectContaining({ patch: { children: ['background'] } }))
   })
+
+  it('keeps navigation and native fetch on the shared bridge', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-craft-'))
+    const file = path.join(root, 'Screen.stx')
+    await Bun.write(file, '<View><Text>Craft</Text></View>')
+    const { code } = await compileSharedScreenBundle(file)
+    const sent: any[] = []
+    let receive: (message: string) => void = () => {}
+    const scope: Record<string, any> = {
+      console,
+      setTimeout,
+      clearTimeout,
+      Promise,
+      Date,
+      Map,
+      Set,
+      WeakMap,
+      WeakSet,
+      __stxNativeBridge: {
+        capabilities: ['fetch'],
+        postMessage: (raw: string) => sent.push(JSON.parse(raw)),
+        onMessage: (callback: typeof receive) => { receive = callback },
+      },
+    }
+    vm.runInNewContext(code, scope)
+    expect(scope.craft.route).toEqual({ name: 'main', params: {} })
+    scope.craft.navigation.open('/m/workout/42')
+    scope.craft.navigation.setOptions({ title: 'Today', rightButtons: [{ id: 'me', title: 'Me', onPress: () => {} }] })
+    expect(sent.slice(-2)).toEqual([
+      expect.objectContaining({ type: 'NAVIGATE_OPEN', payload: { path: '/m/workout/42' } }),
+      expect.objectContaining({ type: 'NAVIGATION_SET_OPTIONS', payload: { title: 'Today', rightButtons: [{ id: 'me', title: 'Me' }] } }),
+    ])
+    expect(() => scope.craft.navigation.push('missing')).toThrow('Unknown native screen')
+
+    const response = scope.fetch('https://example.test/profile', { headers: { Accept: 'application/json' } })
+    const request = sent.at(-1)
+    expect(request).toMatchObject({
+      type: 'API_REQUEST',
+      payload: { module: 'Network', method: 'fetch', args: [{ url: 'https://example.test/profile', method: 'GET', headers: { accept: 'application/json' }, body: null }] },
+    })
+    receive(JSON.stringify({
+      type: 'API_RESPONSE',
+      correlationId: request.id,
+      payload: { version: 1, requestId: request.id, data: { status: 200, headers: { 'content-type': 'application/json' }, body: '{"name":"Glenn"}' } },
+    }))
+    expect(await (await response).json()).toEqual({ name: 'Glenn' })
+  })
 })
