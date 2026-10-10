@@ -26,9 +26,9 @@
  * plausible tree that renders as the wrong screen.
  */
 import type { STXDocument, STXNode, STXStyle } from './ir'
+import { mapToNativeComponent } from './component-mapping'
 import { compileHeadwindToStyle } from './headwind-to-style'
 import { createDocument, createNode } from './ir'
-import { mapToNativeComponent } from './parser'
 
 export type TranslationDiagnosticKind =
   /** The tag has no native type, so its subtree would be dropped on the device. */

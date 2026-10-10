@@ -21,10 +21,11 @@
  * ```
  */
 
-import type { STXNode, STXDocument, STXStyle, STXComponentType, STXDirectives } from './ir'
+import type { STXNode, STXDocument, STXStyle, STXDirectives } from './ir'
 import { createNode, createDocument } from './ir'
 import { compileClassStyles } from './headwind-to-style'
 import { iconClassIn, resolveIconName } from './icons'
+export { mapToNativeComponent, transformToNativeComponents } from './component-mapping'
 
 // ============================================================================
 // Tokenizer Types
@@ -948,126 +949,6 @@ export function compileSTXFiles(
   }
 
   return results
-}
-
-// ============================================================================
-// Native Component Type Mapping
-// ============================================================================
-
-/**
- * Map HTML-like tags to native component types
- */
-export function mapToNativeComponent(tag: string): STXComponentType | string {
-  const mapping: Record<string, STXComponentType> = {
-    // Direct mappings
-    view: 'View',
-    text: 'Text',
-    button: 'Button',
-    image: 'Image',
-    img: 'Image',
-    input: 'TextInput',
-    textarea: 'TextInput',
-    scroll: 'ScrollView',
-    scrollview: 'ScrollView',
-    list: 'FlatList',
-    flatlist: 'FlatList',
-    modal: 'Modal',
-    switch: 'Switch',
-    slider: 'Slider',
-    picker: 'Picker',
-    select: 'Picker',
-    loading: 'ActivityIndicator',
-    spinner: 'ActivityIndicator',
-
-    // HTML-like mappings
-    div: 'View',
-    span: 'Text',
-    p: 'Text',
-    h1: 'Text',
-    h2: 'Text',
-    h3: 'Text',
-    h4: 'Text',
-    h5: 'Text',
-    h6: 'Text',
-    a: 'TouchableOpacity',
-    section: 'View',
-    article: 'View',
-    header: 'SafeAreaView',
-    footer: 'View',
-    main: 'View',
-    nav: 'View',
-    aside: 'View',
-    form: 'View',
-    label: 'Text',
-    fieldset: 'View',
-    legend: 'Text',
-    option: 'Text',
-    dialog: 'Modal',
-    figure: 'View',
-    figcaption: 'Text',
-    picture: 'View',
-    hr: 'View',
-
-    // Lists and tables: the container lays out, the leaf holds words. A leaf
-    // mapped to View would drop its text -- the iOS renderer says so in as
-    // many words ("View doesn't render text directly"), and Android agrees.
-    ul: 'View',
-    ol: 'View',
-    li: 'View',
-    dl: 'View',
-    dt: 'Text',
-    dd: 'Text',
-    table: 'View',
-    thead: 'View',
-    tbody: 'View',
-    tfoot: 'View',
-    tr: 'View',
-    th: 'Text',
-    td: 'Text',
-    caption: 'Text',
-
-    // Text-level semantics. Native has no inline markup, so these carry their
-    // words and lose their emphasis rather than losing both.
-    strong: 'Text',
-    b: 'Text',
-    em: 'Text',
-    i: 'Text',
-    u: 'Text',
-    s: 'Text',
-    small: 'Text',
-    mark: 'Text',
-    abbr: 'Text',
-    time: 'Text',
-    code: 'Text',
-    kbd: 'Text',
-    samp: 'Text',
-    pre: 'Text',
-    blockquote: 'Text',
-    cite: 'Text',
-    q: 'Text',
-    sub: 'Text',
-    sup: 'Text',
-  }
-
-  return mapping[tag.toLowerCase()] || tag
-}
-
-/**
- * Transform a node tree to use native component types
- */
-export function transformToNativeComponents(node: STXNode): STXNode {
-  const mappedType = mapToNativeComponent(node.type)
-
-  const transformedChildren = node.children.map(child => {
-    if (typeof child === 'string') return child
-    return transformToNativeComponents(child)
-  })
-
-  return {
-    ...node,
-    type: mappedType,
-    children: transformedChildren,
-  }
 }
 
 // ============================================================================

@@ -16,8 +16,9 @@
 import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
+import { mapToNativeComponent } from '../../src/native/compiler/component-mapping'
 import { compileHeadwindToStyle } from '../../src/native/compiler/headwind-to-style'
-import { mapToNativeComponent, parseSTXToNode } from '../../src/native/compiler/parser'
+import { parseSTXToNode } from '../../src/native/compiler/parser'
 
 describe('compileHeadwindToStyle, by class family', () => {
   /** Each family's spelling and the exact object it must produce. */
