@@ -1,8 +1,8 @@
 /**
  * The `craft` object a native screen's script sees, typed.
  *
- * The runtime (`screen.ts`) and the Craft host install it on `globalThis`
- * before the script runs. A screen written in TypeScript can name it:
+ * The shared native screen adapter and the Craft host install it on
+ * `globalThis` before the script runs. A screen written in TypeScript can name it:
  *
  * ```ts
  * import type { NativeCraft } from '@stacksjs/stx/native'

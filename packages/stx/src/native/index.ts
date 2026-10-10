@@ -75,15 +75,3 @@ export type {
   HotReloadCallback,
   ErrorOverlayOptions,
 } from './hot-reload/client'
-
-// Runtime exports
-export {
-  getRuntime,
-  startRuntime,
-  render,
-  setState,
-  getState,
-  STXRuntime,
-} from './runtime/index'
-
-export type { RuntimeConfig } from './runtime/index'
