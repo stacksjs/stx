@@ -3106,6 +3106,19 @@ else if (part) {
     // Use the passed scope parameter to preserve context through nested processing
     const attrCapturedScope = { ...globalHelpers, ...scope, ...(findElementScope(el) || {}) };
 
+    // Keep the conditional owners captured while the element is in the tree.
+    // Walking parents on each update loses an outer owner when an inner :if
+    // detaches its own root. These signals suspend writes while either owner
+    // is hidden and refresh the latest value AFTER reinsertion, even when the
+    // attribute's source did not change on that show.
+    const attrVisibility = [];
+    for (var attrAncestor = el; attrAncestor; attrAncestor = attrAncestor.parentNode) {
+      if (attrAncestor.__stx_if_visible) attrVisibility.push(attrAncestor.__stx_if_visible);
+    }
+    function attributesVisible() {
+      return attrVisibility.every(function(visible) { return visible(); });
+    }
+
     // Post-eval unwrap: if the expression result is a signal function (e.g.
     // step was resolved via identifier lookup, not via the auto-unwrap
     // proxy — happens when a client script declares const step = state(...)
@@ -3247,6 +3260,7 @@ catch (e2) {
           ? el.__stx_parent_scope
           : attrCapturedScope;
         effect(() => {
+          if (!attributesVisible()) return;
           const v = evalAttrExpr(value, bindingScope);
           // Form control values are live DOM properties. Setting only the HTML
           // attribute does not update a <select>'s chosen option and can leave
@@ -3260,6 +3274,7 @@ catch (e2) {
             controlValue = v === false || v === null || v === undefined ? '' : String(controlValue);
             el.__stx_bound_value = controlValue;
             var applyControlValue = function() {
+              if (!attributesVisible()) return;
               var desiredValue = el.__stx_bound_value == null ? '' : String(el.__stx_bound_value);
               el.value = desiredValue;
               if (desiredValue === '' && el.tagName !== 'OPTION') el.removeAttribute(attrName);
@@ -3350,11 +3365,11 @@ else {
         el.removeAttribute(name);
       }
 else if (name === '@class' || name === ':class' || name === 'x-class') {
-        bindClass(el, value, scope);
+        bindClass(el, value, scope, attributesVisible);
         el.removeAttribute(name);
       }
 else if (name === '@style' || name === ':style' || name === 'x-style') {
-        bindStyle(el, value, scope);
+        bindStyle(el, value, scope, attributesVisible);
         el.removeAttribute(name);
       }
 else if (name === '@text' || name === ':text' || name === 'x-text') {
@@ -3840,7 +3855,7 @@ else {
     el.removeAttribute(attrName);
   }
 
-  function bindClass(el, expr, passedScope = componentScope) {
+  function bindClass(el, expr, passedScope = componentScope, isVisible) {
     const originalClasses = el.className;
     const capturedScope = { ...globalHelpers, ...passedScope, ...(findElementScope(el) || {}) };
     const keys = Object.keys(capturedScope);
@@ -3859,6 +3874,7 @@ else {
     }
 
     effect(() => {
+      if (isVisible && !isVisible()) return;
       // Subscribe to signals by reading them, establishing reactive deps.
       // But pass RAW scope values to the fn so call-expressions like
       // activeTab() === 'overview' work — if we passed unwrapped values,
@@ -3908,7 +3924,7 @@ else {
     });
   }
 
-  function bindStyle(el, expr, passedScope = componentScope) {
+  function bindStyle(el, expr, passedScope = componentScope, isVisible) {
     // Capture scope at setup time - use passed scope to preserve context
     const capturedScope = { ...globalHelpers, ...passedScope, ...(findElementScope(el) || {}) };
 
@@ -3937,6 +3953,7 @@ catch (e2) {
     };
 
     effect(() => {
+      if (isVisible && !isVisible()) return;
       const value = evalExpr();
       if (typeof value === 'object' && value !== null) {
         Object.assign(el.style, value);
@@ -4977,6 +4994,7 @@ catch (e) {
       b.el.__stx_if_bound = true;
       b.el.__stx_chain_member = true;
       b.el.__stx_chain_active = false;
+      b.el.__stx_if_visible = state(false);
       b.capturedElementScope = findElementScope(b.el);
       b.placeholder = stxHost.anchor('stx-if-chain');
       stxHost.insert(parent, b.placeholder, b.el);
@@ -5096,6 +5114,7 @@ catch (e2) {
       if (currentIdx !== -1) {
         var gone = chain[currentIdx];
         gone.el.__stx_chain_active = false;
+        gone.el.__stx_if_visible.set(false);
 
         if (gone.isTemplate) {
           // Everything this branch rendered goes, not just the clones it owns:
@@ -5156,6 +5175,7 @@ catch (e) { /* a disposer of its own is not this branch's problem */ }
           if (pickHost.__stx_detached_if) pickHost.__stx_detached_if.delete(n);
           stxHost.insert(pickHost, n, anchor);
         });
+        pick.el.__stx_if_visible.set(true);
         // Bound AFTER the clones, so hiding can remove whatever a structural
         // directive inside the branch renders as their sibling.
         if (pick.isTemplate) {
@@ -5251,6 +5271,7 @@ catch (e) { /* a disposer of its own is not this branch's problem */ }
 
     // Handle <template> elements specially - clone their content
     const isTemplate = el.tagName === 'TEMPLATE';
+    if (!isTemplate) el.__stx_if_visible = state(true);
     const componentSetupSiblings = isTemplate ? [] : findConditionalComponentSetupSiblings(el);
     let currentNodes = isTemplate ? [] : [el, ...componentSetupSiblings];
 
@@ -5421,11 +5442,13 @@ else {
           const insertionAnchor = placeholder.nextSibling;
           currentNodes.forEach(node => stxHost.insert(parent, node, insertionAnchor));
           if (parent && parent.__stx_detached_if) currentNodes.forEach(node => parent.__stx_detached_if.delete(node));
+          el.__stx_if_visible.set(true);
           el.__stx_shown_at = performance.now();
           isInserted = true;
         }
 else if (!value && isInserted) {
           console.log('[stx] bindIf REMOVING element for :if=' + expr, 'el.isConnected:', el.isConnected, 'parent:', parent.tagName);
+          el.__stx_if_visible.set(false);
           // Do NOT disposeSubtreeScopes here. :if is a TOGGLE — the element is
           // re-shown when the condition flips back — not a permanent unmount.
           // A nested data-stx-scope inside this subtree is created once by its
