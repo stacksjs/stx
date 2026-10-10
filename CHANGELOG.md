@@ -1,5 +1,34 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.429...v0.2.430)
+
+## ✨ Features
+
+- add floating desktop chat and inline phone launcher ([9e380b0](https://github.com/stacksjs/stx/commit/9e380b0)) _(by Chris Breuer <chris@stacksjs.com>)_
+- add native responsive chat components and browser controller ([96731cb](https://github.com/stacksjs/stx/commit/96731cb)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- deliver scoped client props without leaking parent context ([c00766c](https://github.com/stacksjs/stx/commit/c00766c)) _(by Chris <chris@stacksjs.com>)_
+- honor athlete chat shortcuts after inbox preload ([76a4296](https://github.com/stacksjs/stx/commit/76a4296)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 💄 Styles
+
+- format native chat controller ([44694ed](https://github.com/stacksjs/stx/commit/44694ed)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.430 ([0557cbb](https://github.com/stacksjs/stx/commit/0557cbb)) _(by Chris <chris@stacksjs.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' ([aee910f](https://github.com/stacksjs/stx/commit/aee910f)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.428...v0.2.429)
 
 ## ✨ Features
