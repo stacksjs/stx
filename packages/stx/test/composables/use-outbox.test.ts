@@ -48,6 +48,21 @@ describe('useOutbox', () => {
     expect(outbox.pending).toBe(0)
     outbox.stop()
   })
+
+  it('does not fall back to memory when the browser storage quota is full', async () => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+    Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { ...memory(), setItem: () => { throw new Error('Quota exceeded') } } })
+    const outbox = useOutbox(name(), { fetch: async () => new Response('{}') })
+    try {
+      await expect(outbox.send('/api/result', { method: 'POST', background: true })).rejects.toThrow('Quota exceeded')
+      expect(outbox.pending).toBe(0)
+    }
+    finally {
+      outbox.stop()
+      if (original) Object.defineProperty(globalThis, 'localStorage', original)
+      else Reflect.deleteProperty(globalThis, 'localStorage')
+    }
+  })
   it('sends straight away when the server answers', async () => {
     const calls: string[] = []
     const outbox = useOutbox(name(), { storage: memory(), fetch: async (url) => { calls.push(url); return new Response('{}', { status: 200 }) } })

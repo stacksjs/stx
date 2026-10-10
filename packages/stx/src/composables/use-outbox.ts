@@ -137,9 +137,6 @@ function memoryStorage(): Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> {
 function defaultStorage(): Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> {
   try {
     if (typeof localStorage !== 'undefined') {
-      const probe = '__stx_outbox_probe__'
-      localStorage.setItem(probe, '1')
-      localStorage.removeItem(probe)
       return localStorage
     }
   }
@@ -239,6 +236,11 @@ export function useOutbox(name: string, options: OutboxOptions = {}): Outbox {
 
   let opts = options
   const storage = options.storage ?? defaultStorage()
+  let persistent = options.storage !== undefined
+  try {
+    persistent ||= typeof localStorage !== 'undefined' && storage === localStorage
+  }
+  catch {}
   const key = `stx-outbox:${name}`
   const listeners = new Set<(pending: number, entries: OutboxEntry[]) => void>()
   // Inline overlays, by entry id. Functions cannot be stored with the entry,
@@ -385,6 +387,7 @@ export function useOutbox(name: string, options: OutboxOptions = {}): Outbox {
       return { status: 'queued', entry }
     }
     if (background) {
+      if (!persistent) throw new Error('Persistent storage is unavailable. Keep this screen open and try again.')
       const result = keep(0)
       // Let the caller apply its optimistic result before delivery callbacks.
       setTimeout(() => { void flush() }, 0)
