@@ -13,10 +13,8 @@
  * where the screen lives, exactly as it would on the web.
  */
 import type { BunPlugin } from 'bun'
-import { existsSync, mkdirSync } from 'node:fs'
+import { mkdirSync } from 'node:fs'
 import path from 'node:path'
-import { generateScreenModule, RUNTIME_SPECIFIER } from './codegen'
-import { parseSTX } from './parser'
 import { compileScreenFile } from './render-screen'
 import { generateSignalsRuntime } from '../../signals'
 
@@ -55,18 +53,6 @@ export interface NativeBundleResult {
 /** @deprecated Use `CompileNativeBundleOptions`. */
 export type BundleOptions = CompileNativeBundleOptions
 
-function runtimeEntry(): string {
-  // Source (`src/native/compiler`), the published per-module build
-  // (`dist/native/compiler`, plain `.js`), or the bundled `stx` CLI, whose
-  // chunks sit in `dist/` itself.
-  const candidates = [
-    path.join(import.meta.dir, '..', 'runtime', 'entry.ts'),
-    path.join(import.meta.dir, '..', 'runtime', 'entry.js'),
-    path.join(import.meta.dir, 'native', 'runtime', 'entry.js'),
-  ]
-  return candidates.find(candidate => existsSync(candidate)) ?? candidates[0]
-}
-
 async function build(entry: string, plugins: BunPlugin[], minify: boolean): Promise<string> {
   const result = await Bun.build({
     entrypoints: [entry],
@@ -81,26 +67,6 @@ async function build(entry: string, plugins: BunPlugin[], minify: boolean): Prom
     throw new Error(`Could not bundle ${entry}:\n${messages}`)
   }
   return (await result.outputs[0].text()).trim()
-}
-
-/** Loads `.stx` entries as their generated module, and the runtime as a global. */
-function screenPlugin(warnings: string[]): BunPlugin {
-  return {
-    name: 'stx-native-screen',
-    setup(builder) {
-      builder.onResolve({ filter: /^stx:native-runtime$/ }, () => ({ path: 'runtime', namespace: 'stx-native-runtime' }))
-      builder.onLoad({ filter: /.*/, namespace: 'stx-native-runtime' }, () => ({
-        contents: 'export function mount(screen) { return globalThis.__stxNative.mount(screen) }',
-        loader: 'js',
-      }))
-      builder.onLoad({ filter: /\.stx$/ }, async (args) => {
-        const source = await Bun.file(args.path).text()
-        const module = generateScreenModule(parseSTX(source, args.path))
-        warnings.push(...module.warnings)
-        return { contents: module.code, loader: 'ts' }
-      })
-    },
-  }
 }
 
 /**
@@ -119,59 +85,6 @@ function screenPlugin(warnings: string[]): BunPlugin {
  * })
  * ```
  */
-async function compileLegacyNativeBundle(options: CompileNativeBundleOptions): Promise<NativeBundleResult> {
-  const names = Object.keys(options.screens)
-  if (names.length === 0) throw new Error('screens must name at least one .stx file')
-  const routed = options.routed ?? true
-  const initialScreen = options.initialScreen ?? names[0]
-  if (!options.screens[initialScreen]) throw new Error(`Initial screen ${initialScreen} is not in screens`)
-  const minify = options.minify ?? false
-  const root = path.resolve(options.root ?? process.cwd())
-  const warnings: string[] = []
-
-  const header = routed
-    ? `(function () {
-  var names = ${JSON.stringify(names)};
-  var name = globalThis.__stxNativeRoute || ${JSON.stringify(initialScreen)};
-  if (names.indexOf(name) === -1) throw new Error(['Unknown native screen:', name].join(' '));
-  globalThis.__stxNativeRoute = name;
-  globalThis.__stxNativeRuntimeOptions = { routeName: name, routeNames: names };
-})();`
-    : `globalThis.__stxNativeRuntimeOptions = { routeName: 'main', routeNames: ['main'] };`
-
-  const runtime = await build(runtimeEntry(), [], minify)
-  const screens: string[] = []
-  for (const name of names) {
-    const file = path.resolve(root, options.screens[name])
-    if (!file.endsWith('.stx')) throw new Error(`Screen ${name} must name a .stx file`)
-    const code = await build(file, [screenPlugin(warnings)], minify)
-    const guard = routed
-      ? `globalThis.__stxNativeRoute === ${JSON.stringify(name)} && globalThis.__stxNativeBridge`
-      : 'globalThis.__stxNativeBridge'
-    screens.push(`// Screen ${name}: ${path.basename(file)}\nif (${guard}) {\n${code}\n}`)
-  }
-
-  const code = [
-    `// STX Native bundle (${names.join(', ')})`,
-    header,
-    runtime,
-    ...screens,
-    '',
-  ].join('\n')
-  const diagnostics = [...new Set(warnings)].map(message => ({ level: 'warning' as const, message }))
-  if (!options.outFile)
-    return { code, diagnostics }
-  const outFile = path.resolve(root, options.outFile)
-  mkdirSync(path.dirname(outFile), { recursive: true })
-  await Bun.write(outFile, code)
-  return { code, outFile, diagnostics }
-}
-
-/** @deprecated Regression-only compiler for the pre-stx parser and runtime. */
-export function compileLegacyScreenBundle(file: string, options: Pick<CompileNativeBundleOptions, 'minify' | 'outFile' | 'root'> = {}): Promise<NativeBundleResult> {
-  return compileLegacyNativeBundle({ ...options, screens: { main: file }, routed: false })
-}
-
 /** Compile routed screens through stx and run them on the shared signals runtime. */
 export async function compileNativeBundle(options: CompileNativeBundleOptions): Promise<NativeBundleResult> {
   const names = Object.keys(options.screens)
@@ -250,5 +163,3 @@ export async function compileSharedScreenBundle(
 export function compileScreenBundle(file: string, options: Pick<CompileNativeBundleOptions, 'minify' | 'outFile' | 'root'> = {}): Promise<NativeBundleResult> {
   return compileSharedScreenBundle(file, options)
 }
-
-export { RUNTIME_SPECIFIER }

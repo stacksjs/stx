@@ -23,7 +23,6 @@
 // Compiler exports
 export * from './compiler/ir'
 export * from './compiler/headwind-to-style'
-export * from './compiler/parser'
 export * from './compiler/html-to-ir'
 export * from './compiler/client-script'
 export * from './compiler/render-screen'
@@ -60,18 +59,6 @@ export type {
   SwitchProps,
   SliderProps,
 } from './components/primitives'
-
-// Parser exports
-export {
-  parseSTX,
-  parseSTXToNode,
-  compileSTX,
-  compileSTXFiles,
-  mapToNativeComponent,
-  transformToNativeComponents,
-} from './compiler/parser'
-
-export type { Token, TokenType } from './compiler/parser'
 
 // Hot Reload exports
 export {
