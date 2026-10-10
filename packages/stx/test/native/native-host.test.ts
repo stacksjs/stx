@@ -108,6 +108,17 @@ describe('host calls become bridge operations', () => {
     ])
   })
 
+  it('keeps structured native props structured across the bridge', () => {
+    const { host, node, ops } = harness()
+    host.setAttribute(node('n1', 'Image'), 'source', { uri: 'avatar.png' })
+    host.flush()
+    expect(ops()).toEqual([{
+      op: 'updateNode',
+      id: 'n1',
+      patch: { props: { source: { uri: 'avatar.png' } } },
+    }])
+  })
+
   it('removes an attribute with an explicit null, not an omitted key', () => {
     // A patch is merged natively, so an absent key means "unchanged" and would
     // leave the attribute in place.

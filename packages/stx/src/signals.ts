@@ -140,7 +140,14 @@ console.log('[stx] entering IIFE');
   // exactly as it was: same calls, one property lookup earlier.
   var stxHost = window.__stx_host || {
     setText: function(node, value) { node.textContent = value; },
-    setAttribute: function(node, name, value) { node.setAttribute(name, value); },
+    setAttribute: function(node, name, value) {
+      var next = value;
+      if (typeof value === 'object' && value !== null) {
+        try { next = JSON.stringify(value); }
+        catch (e) { next = String(value); }
+      }
+      node.setAttribute(name, next);
+    },
     removeAttribute: function(node, name) { node.removeAttribute(name); },
     setStyle: function(node, value) {
       if (typeof value === 'object' && value !== null) Object.assign(node.style, value);
@@ -3387,6 +3394,9 @@ else {
               catch (e) { attrValue = String(v); }
             }
             var attrValueSafe = safeUrlAttr(attrName, attrValue);
+            // Keep structured values structured for non-DOM hosts. The DOM
+            // host serializes them at its boundary, preserving web output.
+            var hostValue = (typeof v === 'object' && v !== null) ? v : attrValueSafe;
             // Writing the value an attribute already has is not nothing: a
             // frame given its own src again loads again (an entry in the
             // page's history each time) and a video restarts. A player whose
@@ -3403,11 +3413,11 @@ else {
               && el.hasAttribute('src') && el.getAttribute('src') !== String(attrValueSafe)) {
               var nextSibling = el.nextSibling;
               parentNode.removeChild(el);
-              stxHost.setAttribute(el, attrName, attrValueSafe);
+              stxHost.setAttribute(el, attrName, hostValue);
               parentNode.insertBefore(el, nextSibling);
             }
             else {
-              stxHost.setAttribute(el, attrName, attrValueSafe);
+              stxHost.setAttribute(el, attrName, hostValue);
             }
           }
         });

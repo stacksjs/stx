@@ -95,6 +95,31 @@ const wide = state(false)
     expect(updates).toContainEqual(expect.objectContaining({ patch: { style: { width: 100 } } }))
   })
 
+  it('keeps structured native prop bindings as objects', async () => {
+    const source = `<script client>
+const image = state({ uri: 'avatar.png' })
+</script>
+<View :accessibilityState="image"><Text>Image</Text></View>`
+    const compiled = await compileScreenSource(source, path.join(import.meta.dir, 'StructuredProp.stx'))
+    const sent: any[] = []
+    const screen = prepareSharedNativeScreen(compiled.document, compiled.manifest, {
+      postMessage: raw => sent.push(JSON.parse(raw)),
+      onMessage: () => {},
+    })
+
+    installNodeConstants()
+    window.__stx_host = screen.host
+    new Function(generateSignalsRuntimeDev())()
+    new Function(compiled.setup!.code)()
+    screen.mount(window.stx, window.__stx_latestSetup)
+    screen.host.flush()
+
+    const updates = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
+    expect(updates).toContainEqual(expect.objectContaining({
+      patch: { props: { 'accessibility-state': { uri: 'avatar.png' } } },
+    }))
+  })
+
   it('runs the same path as a DOM-free JavaScriptCore bundle', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'stx-native-shared-'))
     const file = path.join(root, 'Screen.stx')
