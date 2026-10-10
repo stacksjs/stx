@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.425...v0.2.426)
+
+## 🐛 Bug Fixes
+
+- **signals**: resume pending child bindings when a parent is reshown ([e71fa60](https://github.com/stacksjs/stx/commit/e71fa60)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.426 ([6837138](https://github.com/stacksjs/stx/commit/6837138)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.424...v0.2.425)
 
 ## 🐛 Bug Fixes
