@@ -102,6 +102,22 @@ export const HOST_METHODS: readonly string[] = [
   'scopesIn',
 ]
 
+const NATIVE_EVENT_NAMES: Record<string, string> = {
+  click: 'onPress',
+  press: 'onPress',
+  longpress: 'onLongPress',
+  contextmenu: 'onLongPress',
+  input: 'onChangeText',
+  change: 'onValueChange',
+  focus: 'onFocus',
+  focusin: 'onFocus',
+  blur: 'onBlur',
+  focusout: 'onBlur',
+  submit: 'onSubmitEditing',
+  scroll: 'onScroll',
+  close: 'onRequestClose',
+}
+
 export function createNativeHost(options: NativeHostOptions): NativeHost {
   const records = new Map<string, NodeRecord>()
   const handlers = new Map<string, (payload?: unknown) => void>()
@@ -166,6 +182,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       visible: true,
     })
     node.__stxOwner = owner ?? null
+    if (owner) {
+      const children = recordOf(owner).children
+      if (!children.some(child => child.__stxId === node.__stxId))
+        children.push(node)
+    }
     return node
   }
 
@@ -198,9 +219,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       // binding layer never needs to know that -- it hands over a closure
       // either way.
       const id = nextId('h')
+      const nativeEvent = NATIVE_EVENT_NAMES[event.toLowerCase()] ?? event
       handlers.set(id, handler)
-      recordOf(node).events[event] = id
-      emit({ op: 'updateNode', id: node.__stxId, patch: { events: { [event]: id } } })
+      recordOf(node).events[nativeEvent] = id
+      emit({ op: 'updateNode', id: node.__stxId, patch: { events: { [nativeEvent]: id } } })
     },
 
     dispatch(handlerId, payload) {

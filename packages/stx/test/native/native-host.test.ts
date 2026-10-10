@@ -23,6 +23,8 @@
  */
 import { describe, expect, it } from 'bun:test'
 import { createNativeHost, HOST_METHODS, type NativeNode } from '../../src/native/runtime/native-host'
+import { materializeNativeBindingTree } from '../../src/native/runtime/binding-tree'
+import { createDocument, createNode } from '../../src/native/compiler/ir'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import type { NativeMutationOperation } from '../../src/native/bridge/protocol'
 
@@ -227,11 +229,18 @@ describe('listeners and scope, without the DOM', () => {
     host.flush()
 
     const patch = (ops()[0] as { patch: { events: Record<string, string> } }).patch
-    const handlerId = patch.events.press
+    const handlerId = patch.events.onPress
     expect(handlerId).toBeTruthy()
 
     host.dispatch(handlerId, { x: 1 })
     expect(seen).toEqual([{ x: 1 }])
+  })
+
+  it('maps web events to the names native renderers dispatch', () => {
+    const { host, node, ops } = harness()
+    host.listen(node('n1'), 'click', () => {})
+    host.flush()
+    expect(ops()[0]).toMatchObject({ patch: { events: { onPress: expect.any(String) } } })
   })
 
   it('finds a scope by ownership rather than by selector', () => {
@@ -252,6 +261,33 @@ describe('listeners and scope, without the DOM', () => {
   it('answers null rather than throwing outside any scope', () => {
     const { host, node } = harness()
     expect(host.scopeOf(node('n1'))).toBeNull()
+  })
+})
+
+describe('materializing rendered IR for shared-runtime hydration', () => {
+  it('builds a manifest lookup without selectors and shares ids with native props', () => {
+    const { host } = harness()
+    const label = createNode('Text')
+    label.bindingId = 0
+    const button = createNode('Button')
+    button.bindingId = 1
+    const root = createNode('View', {}, {}, {}, [label, button])
+    const document = createDocument(root, { exports: {}, functions: [], code: '' })
+    const tree = materializeNativeBindingTree(document, {
+      entries: [
+        { id: 0, bindings: [{ name: ':text', value: 'count', kind: 'text' }] },
+        { id: 1, bindings: [{ name: '@click', value: 'increment()', kind: 'event' }] },
+      ],
+    }, host)
+
+    expect(tree.nodes.get(0)?.getAttribute(':text')).toBe('count')
+    expect(tree.nodes.get(1)?.getAttribute('@click')).toBe('increment()')
+    expect(label.props.__stxId).toBe(tree.nodes.get(0)?.__stxId)
+    expect(button.props.__stxId).toBe(tree.nodes.get(1)?.__stxId)
+    expect(host.descendants(tree.root).map(node => node.__stxId)).toEqual([
+      tree.nodes.get(0)?.__stxId,
+      tree.nodes.get(1)?.__stxId,
+    ])
   })
 })
 
