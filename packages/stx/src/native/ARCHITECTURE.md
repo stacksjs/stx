@@ -4,7 +4,10 @@ Making STX compile to native UI components like React Native.
 
 ## Overview
 
-STX Native transforms `.stx` templates into native UI on iOS, Android, and desktop platforms. Instead of rendering HTML in a WebView, STX components compile to truly native views.
+STX Native renders ordinary `.stx` templates through the normal stx pipeline,
+translates the resulting HTML to a platform-neutral IR, and hydrates that IR
+with the shared stx signals runtime. A native host consumes the IR and mutation
+protocol; it does not load the screen in a WebView.
 
 ## Core Concepts
 
@@ -20,7 +23,7 @@ STX provides platform-agnostic primitives that map to native components:
 | `<Image>` | `UIImageView` | `ImageView` | `<img>` |
 | `<TextInput>` | `UITextField` | `EditText` | `<input>` |
 | `<ScrollView>` | `UIScrollView` | `ScrollView` | `<div style="overflow:scroll">` |
-| `<FlatList>` | Not yet supported | `RecyclerView` | Virtual list |
+| `<FlatList>` | Craft: `UICollectionView`; reference renderer: unsupported | `RecyclerView` | Virtual list |
 | `<TouchableOpacity>` | `UIView` + tap gesture | `View+clickListener` | `<div onclick>` |
 | `<Modal>` | `UIView` overlay | `FrameLayout` overlay | `<dialog>` |
 | `<Switch>` | `UISwitch` | `Switch` | `<input type="checkbox">` |
@@ -29,7 +32,7 @@ STX provides platform-agnostic primitives that map to native components:
 
 ### 2. Styling with Headwind
 
-Headwind classes compile to native layout constraints:
+Headwind classes compile to typed native style values:
 
 ```stx
 <View class="flex-1 flex-row justify-between items-center p-4 bg-blue-500 rounded-lg">
@@ -44,13 +47,18 @@ let view = UIView()
 view.backgroundColor = UIColor(hex: "#3b82f6")
 view.layer.cornerRadius = 8
 
-// Yoga layout constraints
+// The reference renderer applies these through YogaKit.
 view.yoga.flexGrow = 1
 view.yoga.flexDirection = .row
 view.yoga.justifyContent = .spaceBetween
 view.yoga.alignItems = .center
 view.yoga.padding = 16
 ```
+
+The maintained Craft iOS host consumes the same style object through
+`CraftNativeFlexLayout`, its UIKit-native flex layout engine. The reference
+renderers in this package use YogaKit/YogaLayout; neither implementation is a
+fake layout used only to make IR tests pass.
 
 Both renderers apply text sizing, weight, family, line height, tracking,
 decoration and case transforms. Native images support `cover`, `contain`,
@@ -93,7 +101,7 @@ The compiler:
 Each platform has a renderer that:
 1. Reads STX IR
 2. Creates native views
-3. Applies layout (via Yoga/Flexbox)
+3. Applies layout through its renderer-specific flex engine
 4. Binds event handlers to JS bridge
 
 **iOS Renderer** (Swift):
@@ -147,31 +155,28 @@ native view tree instead of replacing it.
 └──────────────┘         └──────────────┘
 ```
 
-## Implementation Plan
+## Current Status
 
-### Phase 1: Core Infrastructure
+- The compiler, IR, style mapping, CLI, bundle generation and shared-runtime
+  adapter live in `packages/stx/src/native`.
+- Native screens use the ordinary stx component resolver, server directives,
+  client-script bundler, signals and binding manifest. There is no second
+  parser or native-only reactivity implementation.
+- The versioned host contract renders the document root, registers events, and
+  applies revisioned mutation batches against stable node ids.
+- The maintained Craft iOS host evaluates bundles in JavaScriptCore, creates
+  UIKit views, and uses its real flex layout engine. The buddy iOS vertical
+  slice passes on the simulator with native tap and input events, signal-driven
+  label updates, preserved focus, and no WebView.
+- The Swift and Kotlin renderers in this directory remain useful reference
+  implementations. They are covered structurally, but the simulator evidence
+  applies to Craft's maintained iOS host, not to those files by implication.
 
-1. **STX IR Schema** - Define JSON format for compiled templates
-2. **Headwind-to-Style Compiler** - Convert classes to style objects
-3. **Event Extraction** - Parse and register event handlers
-
-### Phase 2: iOS Renderer
-
-1. **Yoga Integration** - Flexbox layout engine
-2. **Component Library** - Native UIKit wrappers
-3. **Bridge Protocol** - JavaScriptCore communication
-
-### Phase 3: Android Renderer
-
-1. **Yoga Integration** - Flexbox for Android
-2. **Component Library** - Native View wrappers
-3. **Bridge Protocol** - V8/Hermes communication
-
-### Phase 4: Hot Reload & DevTools
-
-1. **Metro-like bundler** - Fast refresh support
-2. **Inspector** - Component tree visualization
-3. **Performance profiler** - Native metrics
+Unsupported behavior must stay explicit: translating a primitive into IR does
+not prove that every host implements it. Cross-platform screens should use
+`:for` unless their host advertises recycling-list support. Navigation stacks,
+production Android host parity, hot reload, and profiler tooling are separate
+follow-up work rather than prerequisites for the proven iOS vertical slice.
 
 ## STX IR Format
 
@@ -185,7 +190,7 @@ interface STXIR {
 }
 
 interface StyleObject {
-  // Layout (Yoga)
+  // Layout (interpreted by the host's flex engine)
   flex?: number
   flexDirection?: 'row' | 'column'
   justifyContent?: 'flex-start' | 'center' | 'flex-end' | 'space-between'
@@ -296,8 +301,8 @@ interface StyleObject {
 |---------|--------------|------------|------------|
 | Template Syntax | JSX | Vue SFC | Blade-like |
 | Styling | StyleSheet | StyleSheet | Headwind (Tailwind) |
-| State Management | useState/Redux | Vuex/Pinia | Script exports |
-| Native Rendering | Yes | Yes | Yes (planned) |
+| State Management | useState/Redux | Vuex/Pinia | stx signals |
+| Native Rendering | Yes | Yes | Yes |
 | Web Support | React DOM | Vue.js | Same .stx files |
 | Learning Curve | Medium | Medium | Low (HTML-like) |
 
@@ -311,10 +316,7 @@ interface StyleObject {
 
 ## Next Steps
 
-1. [ ] Implement STX IR compiler
-2. [ ] Create Headwind-to-native-style transformer
-3. [ ] Build iOS renderer with Yoga
-4. [ ] Build Android renderer with Yoga
-5. [ ] Implement JS bridge (JavaScriptCore/Hermes)
-6. [ ] Add hot reload support
-7. [ ] Create CLI tooling (`stx run ios`, `stx run android`)
+1. Prove the maintained Android host with the same simulator/device-level bar.
+2. Expand host capability tests for navigation and recycling lists.
+3. Add native hot reload, inspection and performance tooling without forking
+   the compiler or signals runtime again.

@@ -12,6 +12,11 @@ The bundle is what Craft's native iOS renderer evaluates: a WebView-free app (`c
 
 Native hydration uses the same stx signals runtime as browser pages. The compiler supplies its binding manifest and pre-resolved native node handles directly, so the runtime does not query or walk the native view hierarchy.
 
+The maintained iOS host lives in Craft. It creates UIKit views and lays them
+out with Craft's native flex engine; the Swift and Kotlin files shipped in
+`packages/stx/src/native/renderers/` are reference renderers, not the host used
+for the simulator proof below.
+
 From code, for a build tool such as Stacks' `buddy build:ios`:
 
 ```ts
@@ -88,6 +93,22 @@ row recycling is currently unsupported and should not be inferred from IR
 translation alone.
 
 Both renderers support `Modal` visibility and `Slider` value-change events.
-`FlatList` is currently Android-only; use `:for` for cross-platform lists.
+The reference iOS renderer does not implement `FlatList`; the maintained Craft
+iOS host does use a recycling `UICollectionView`. Automatic `FlatList` template
+expansion is still outside the shared-runtime contract, so use `:for` when the
+same screen must work across every host.
+
+### Simulator validation
+
+`examples/buddy-ios` is the reproducible vertical slice. On an iPhone 17 Pro
+simulator running iOS 26.5, Craft's `NativeRenderUITests` passed with one native
+`UITextField`, one native button, signal-driven text mutations, preserved input
+focus, and no `WKWebView` in the hierarchy.
+
+The saved XCTest activity timeline measured the three count updates from the
+end of synthesized tap handling (the app had become idle) to the successful
+updated-label lookup at 281 ms, 268 ms, and 265 ms: a 268 ms median upper bound.
+That number includes XCTest synchronization and accessibility lookup overhead;
+it is intentionally not presented as pure JavaScript-to-UIKit bridge latency.
 
 Types for the `craft` object a screen sees (`NativeCraft`, `NativeNavigation`, …) are exported from `@stacksjs/stx/native`.
