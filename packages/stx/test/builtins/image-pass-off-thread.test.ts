@@ -2,13 +2,32 @@ import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bu
 import { mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { realpathSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { encode } from 'ts-images'
 import { clearImageDeliveryCatalog, getImageDelivery, isTransparentImage, prepareImageDelivery } from '../../src/builtins/image-delivery'
 import { clearImagePlaceholders, getImagePlaceholder, placeholdersWarmed, warmImagePlaceholders } from '../../src/builtins/image-placeholder'
 import { imageWorkerSlots, isInstalledEntry, resetImageWorkerWarning } from '../../src/builtins/image-worker'
 
 setDefaultTimeout(120_000)
+
+/** ts-images loads codecs dynamically, including when it is bundled. */
+async function installFixtureCodecs(root: string): Promise<void> {
+  for (const name of ['@stacksjs/ts-png', 'ts-jpeg', '@stacksjs/ts-webp', '@stacksjs/ts-avif']) {
+    const target = join(root, 'node_modules', name)
+    await mkdir(dirname(target), { recursive: true })
+    await symlink(realpathSync(join(import.meta.dir, '../../../../node_modules', name)), target)
+  }
+}
+
+/** Each server build gets a fresh bundler, as a deployment build does. */
+function bundleFixture(entry: string, outdir: string, splitting = false): void {
+  const result = Bun.spawnSync([
+    'bun', 'build', entry, '--outdir', outdir, '--target=bun',
+    '--entry-naming=serve.js', '--chunk-naming=chunks/[name]-[hash].js',
+    ...(splitting ? ['--splitting'] : []),
+  ], { stdout: 'pipe', stderr: 'pipe' })
+  expect(result.exitCode, result.stderr.toString()).toBe(0)
+}
 
 /**
  * The startup image pass on a worker thread.
@@ -185,11 +204,12 @@ describe('image pass from a bundled server', () => {
   let tempDir: string
 
   afterAll(async () => {
-    await rm(tempDir, { recursive: true, force: true })
+    if (tempDir) await rm(tempDir, { recursive: true, force: true })
   })
 
   it('still runs on a worker, using the installed package entry', async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'stx-image-bundled-'))
+    await installFixtureCodecs(tempDir)
     const src = join(import.meta.dir, '..', '..', 'src')
 
     // The app's install: `@stacksjs/stx` with its `./*` export, pointing at
@@ -222,16 +242,10 @@ const result = await prepareImageDelivery('public', 'out', { offThread: true })
 clearInterval(ticker)
 console.log(JSON.stringify({ entry: imageWorkerEntry(), result, catalogued: !!getImageDelivery('/noise.png'), longestStall }))
 `)
-    const build = await Bun.build({
-      entrypoints: [join(tempDir, 'entry.ts')],
-      outdir: join(tempDir, 'runtime', 'production'),
-      target: 'bun',
-      splitting: true,
-      naming: { entry: 'serve.js', chunk: 'chunks/[name]-[hash].js' },
-    })
-    expect(build.success).toBe(true)
+    bundleFixture(join(tempDir, 'entry.ts'), join(tempDir, 'runtime', 'production'), true)
 
     const run = Bun.spawnSync(['bun', join(tempDir, 'runtime', 'production', 'serve.js')], { cwd: tempDir, stdout: 'pipe', stderr: 'pipe' })
+    expect(run.exitCode, run.stderr.toString()).toBe(0)
     const lines = run.stdout.toString().trim().split('\n')
     const report = JSON.parse(lines.at(-1)!)
 
@@ -248,6 +262,9 @@ console.log(JSON.stringify({ entry: imageWorkerEntry(), result, catalogued: !!ge
   it('falls back to the serving thread, and says why once, when there is no entry to start', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'stx-image-no-entry-'))
     try {
+      // A deployed bundle still has its codec dependencies. Omit stx itself
+      // here so only the worker-entry lookup fails, rather than image decoding.
+      await installFixtureCodecs(dir)
       const src = join(import.meta.dir, '..', '..', 'src')
       const pixels = new Uint8Array(64 * 64 * 4).fill(200)
       await mkdir(join(dir, 'public'), { recursive: true })
@@ -262,10 +279,10 @@ const [placeholders, result] = await Promise.all([
 console.log(JSON.stringify({ placeholders, result, catalogued: !!getImageDelivery('/flat.png'), placeholder: !!getImagePlaceholder('/flat.png') }))
 `)
       // Bundled, and no install beside it: nothing to start.
-      const build = await Bun.build({ entrypoints: [join(dir, 'entry.ts')], outdir: join(dir, 'runtime'), target: 'bun', naming: { entry: 'serve.js' } })
-      expect(build.success).toBe(true)
+      bundleFixture(join(dir, 'entry.ts'), join(dir, 'runtime'))
 
       const run = Bun.spawnSync(['bun', join(dir, 'runtime', 'serve.js')], { cwd: dir, stdout: 'pipe', stderr: 'pipe' })
+      expect(run.exitCode, run.stderr.toString()).toBe(0)
       const report = JSON.parse(run.stdout.toString().trim().split('\n').at(-1)!)
       expect(report.result.count).toBe(1)
       expect(report.catalogued).toBe(true)

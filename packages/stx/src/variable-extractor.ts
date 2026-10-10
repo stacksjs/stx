@@ -406,7 +406,14 @@ export function stripTypeScript(scriptContent: string): string {
  * the message.
  */
 export function withoutStxReferrer(message: string): string {
-  return message.replace(/\s*imported from \S*(?:[/\\]packages[/\\]stx[/\\]|@stacksjs[/\\]stx[/\\])\S*/g, '')
+  // Node uses "imported from <path>"; Bun also uses "from '<path>'".
+  // Quoted paths may contain spaces, so match the complete referrer before
+  // deciding whether it belongs to stx or to the application.
+  return message.replace(/\s*(?:imported from|from)\s+(?:(['"])([^'"\r\n]+)\1|(\S+))/g, (referrer, ...groups) => {
+    const [, quotedPath, barePath] = groups
+    const importer = quotedPath ?? barePath
+    return /(?:[/\\]packages[/\\]stx[/\\]|@stacksjs[/\\]stx[/\\])/.test(importer) ? '' : referrer
+  })
 }
 
 /**

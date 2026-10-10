@@ -53,6 +53,24 @@ describe('withoutStxReferrer', () => {
     )).toBe(`Cannot find package 'bunfig'`)
   })
 
+  for (const importer of [
+    '/Users/me/My Projects/stx/packages/stx/src/variable-extractor.ts',
+    '/app/node_modules/@stacksjs/stx/dist/variable-extractor.js',
+    'C:\\Projects\\stx\\packages\\stx\\src\\variable-extractor.ts',
+  ]) {
+    for (const quote of ["'", '"']) {
+      it(`drops Bun's ${quote}-quoted stx referrer: ${importer}`, () => {
+        expect(withoutStxReferrer(`Cannot find module './missing' from ${quote}${importer}${quote}`))
+          .toBe(`Cannot find module './missing'`)
+      })
+    }
+  }
+
+  it('keeps Bun referrers belonging to the application', () => {
+    const message = `Cannot find module './missing' from '/app/My Views/dashboard.stx'`
+    expect(withoutStxReferrer(message)).toBe(message)
+  })
+
   it('keeps a referrer that is the app\'s own file', () => {
     // The useful half of the message: here the importer really is the file to
     // go and edit, so removing it would throw away the answer.
