@@ -8,7 +8,7 @@ stx compiles `.stx` screens to native iOS (and Android) views. Craft renders the
 stx native compile ./src/Screen.stx --format bundle --output ./native-screen.js [--minify]
 ```
 
-The bundle is what Craft's native iOS renderer evaluates: a WebView-free app (`craft ios init MyApp --renderer native`, then `craft ios build --native-bundle ./native-screen.js`), or the native screens of a hybrid app (`nativeScreens` and `nativeBundle` in Craft's config). Without `--format bundle` the command prints the template's IR as JSON.
+The bundle is what Craft's native iOS renderer evaluates: a WebView-free app (`craft ios init MyApp --renderer native`, then `craft ios build --native-bundle ./native-screen.js`), or the native screens of a hybrid app (`nativeScreens` and `nativeBundle` in Craft's config). Without `--format bundle` the command renders the template through stx, including server directives, components, and slots, then prints the translated IR as JSON.
 
 From code, for a build tool such as Stacks' `buddy build:ios`:
 

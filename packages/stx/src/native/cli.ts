@@ -13,11 +13,10 @@
  * Screen paths are relative to the config file.
  */
 import type { NativeDiagnostic } from './compiler/bundle'
-import type { STXDocument } from './compiler/ir'
 import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { compileNativeBundle, compileScreenBundle } from './compiler/bundle'
-import { parseSTX } from './compiler/parser'
+import { compileScreenFile } from './compiler/render-screen'
 
 /** The config file names looked for, in order. The second is the old name. */
 export const NATIVE_CONFIG_FILES: string[] = ['native.config.json', 'stx-native.config.json']
@@ -99,10 +98,22 @@ export async function runNativeCompile(file: string | undefined, options: Native
     diagnostics = bundle.diagnostics
   }
   else {
-    const parse = (source: string): STXDocument => parseSTX(readFileSync(source, 'utf8'), source)
+    const compile = async (source: string) => {
+      const result = await compileScreenFile(source)
+      diagnostics.push(...result.diagnostics.map(diagnostic => ({
+        level: 'warning' as const,
+        message: [diagnostic.kind, diagnostic.tag, diagnostic.name].filter(Boolean).join(': '),
+      })))
+      return result.document
+    }
     const ir = config
-      ? { initialScreen: config.initialScreen, screens: Object.fromEntries(Object.entries(config.screens).map(([name, source]) => [name, parse(source)])) }
-      : parse(path.resolve(cwd, file!))
+      ? {
+          initialScreen: config.initialScreen,
+          screens: Object.fromEntries(await Promise.all(
+            Object.entries(config.screens).map(async ([name, source]) => [name, await compile(source)] as const),
+          )),
+        }
+      : await compile(path.resolve(cwd, file!))
     output = JSON.stringify(ir, null, 2)
   }
 

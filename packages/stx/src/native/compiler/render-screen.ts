@@ -17,7 +17,7 @@
  * `@click` and `:text` written on a component tag onto the component's root
  * element, which is exactly where the translator reads them.
  *
- * Not the bundle path. `stx native compile --format bundle` goes through
+ * This is also the CLI's IR path. The bundle path still goes through
  * `parser.ts`, `codegen.ts` and `bundle.ts`, because a native screen's `@if`
  * and `@foreach` must stay in the template and re-run on the device every
  * render; rendering here resolves them once, on the server, with server data.
@@ -88,9 +88,13 @@ export async function compileScreenSource(
     _pluginComponentDirs: [nativePrimitivesDir()],
   }
 
+  // Native style classes are translated into IR below. Generating and
+  // injecting browser CSS here is redundant, and its development diagnostics
+  // would corrupt `stx native compile --format ir` JSON on stdout.
+  const context = { ...(options.context ?? {}), __stx_inject_css: false }
   const html = await processDirectives(
     source,
-    options.context ?? {},
+    context,
     filePath,
     config as never,
     new Set<string>(),

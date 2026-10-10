@@ -85,6 +85,24 @@ describe('stx native', () => {
     expect(ir.root.children[0].style.fontSize).toBe(18)
   })
 
+  it('compiles IR through stx directives and project components', async () => {
+    const root = await project()
+    await Bun.write(path.join(root, 'components', 'Greeting.stx'), `<script server>
+const label = $props.label ?? 'missing'
+</script>
+<Text class="text-lg">{{ label }}</Text>`)
+    await Bun.write(path.join(root, 'Screen.stx'), `<script server>
+const visible = true
+</script>
+<View>@if(visible)<Greeting label="Rendered by stx" />@endif</View>`)
+
+    const { code, stdout } = await runCli(['compile', 'Screen.stx'], root)
+    expect(code).toBe(0)
+    const ir = JSON.parse(stdout)
+    expect(ir.root.children[0].type).toBe('Text')
+    expect(ir.root.children[0].children).toEqual(['Rendered by stx'])
+  })
+
   it('still reports a missing file rather than crashing', async () => {
     const { code, stderr } = await runCli(['compile'], await project())
     expect(code).not.toBe(0)
