@@ -142,6 +142,10 @@ console.log('[stx] entering IIFE');
     setText: function(node, value) { node.textContent = value; },
     setAttribute: function(node, name, value) { node.setAttribute(name, value); },
     removeAttribute: function(node, name) { node.removeAttribute(name); },
+    setStyle: function(node, value) {
+      if (typeof value === 'object' && value !== null) Object.assign(node.style, value);
+      else if (typeof value === 'string') node.style.cssText = value;
+    },
 
     // Structural operations, for the bindings that build rows rather than
     // update one node (#1984).
@@ -4000,12 +4004,7 @@ catch (e2) {
     effect(() => {
       if (isVisible && !isVisible()) return;
       const value = evalExpr();
-      if (typeof value === 'object' && value !== null) {
-        Object.assign(el.style, value);
-      }
-else if (typeof value === 'string') {
-        el.style.cssText = value;
-      }
+      stxHost.setStyle(el, value);
     });
   }
 

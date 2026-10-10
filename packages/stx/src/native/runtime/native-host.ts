@@ -68,6 +68,7 @@ export interface NativeHost {
   setText: (node: NativeNode, value: unknown) => void
   setAttribute: (node: NativeNode, name: string, value: unknown) => void
   removeAttribute: (node: NativeNode, name: string) => void
+  setStyle: (node: NativeNode, value: unknown) => void
   listen: (node: NativeNode, event: string, handler: (payload?: unknown) => void, options?: unknown) => void
   scopeOf: (node: NativeNode, from?: boolean) => NativeNode | null
   setVisible: (node: NativeNode, visible: boolean) => boolean
@@ -91,6 +92,7 @@ export const HOST_METHODS: readonly string[] = [
   'setText',
   'setAttribute',
   'removeAttribute',
+  'setStyle',
   'listen',
   'scopeOf',
   'setVisible',
@@ -211,6 +213,14 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       // Null rather than omitted: a patch is merged on the native side, so an
       // absent key means "unchanged" and would leave the attribute in place.
       emit({ op: 'updateNode', id: node.__stxId, patch: { props: { [name]: null } } })
+    },
+
+    setStyle(node, value) {
+      if (typeof value !== 'object' || value === null || Array.isArray(value))
+        return
+      const style = value as Record<string, unknown>
+      Object.assign(recordOf(node).style, style)
+      emit({ op: 'updateNode', id: node.__stxId, patch: { style } })
     },
 
     listen(node, event, handler) {

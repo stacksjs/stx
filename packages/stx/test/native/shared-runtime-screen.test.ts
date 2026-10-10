@@ -72,12 +72,12 @@ function increment() { count.set(count() + 1) }
     }))
   })
 
-  it('evaluates HTML-encoded bindings like a browser attribute', async () => {
+  it('evaluates HTML-encoded style bindings through the native host', async () => {
     const source = `<script client>
-const label = state('Box')
+const wide = state(false)
 </script>
-<View><Text :text="label() + &quot;!&quot;" /></View>`
-    const compiled = await compileScreenSource(source, path.join(import.meta.dir, 'EncodedBinding.stx'))
+<View :style="{ &quot;width&quot;: wide() ? 200 : 100 }"><Text>Box</Text></View>`
+    const compiled = await compileScreenSource(source, path.join(import.meta.dir, 'EncodedStyle.stx'))
     const sent: any[] = []
     const screen = prepareSharedNativeScreen(compiled.document, compiled.manifest, {
       postMessage: raw => sent.push(JSON.parse(raw)),
@@ -92,7 +92,7 @@ const label = state('Box')
     screen.host.flush()
 
     const updates = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
-    expect(updates).toContainEqual(expect.objectContaining({ patch: { children: ['Box!'] } }))
+    expect(updates).toContainEqual(expect.objectContaining({ patch: { style: { width: 100 } } }))
   })
 
   it('runs the same path as a DOM-free JavaScriptCore bundle', async () => {

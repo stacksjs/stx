@@ -88,6 +88,17 @@ describe('host calls become bridge operations', () => {
     expect(ops()[1]).toMatchObject({ patch: { children: [''] } })
   })
 
+  it('turns a style binding into a native style patch', () => {
+    const { host, node, ops } = harness()
+    host.setStyle(node('n1', 'Image'), { width: 24, tintColor: '#2563eb' })
+    host.flush()
+    expect(ops()).toEqual([{
+      op: 'updateNode',
+      id: 'n1',
+      patch: { style: { width: 24, tintColor: '#2563eb' } },
+    }])
+  })
+
   it('sets an attribute as a prop patch', () => {
     const { host, node, ops } = harness()
     host.setAttribute(node('n1'), 'accessibilityLabel', 'Sign in')
