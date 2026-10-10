@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.426...v0.2.427)
+
+## ✅ Tests
+
+- **signals**: align binding assertions with native host adapters ([3fe0aa1](https://github.com/stacksjs/stx/commit/3fe0aa1)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.427 ([a0dfd98](https://github.com/stacksjs/stx/commit/a0dfd98)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.425...v0.2.426)
 
 ## 🐛 Bug Fixes
