@@ -143,7 +143,13 @@ struct STXStyle: Codable {
     var fontSize: CGFloat?
     var fontWeight: String?
     var fontStyle: String?
+    var fontFamily: String?
+    var lineHeight: CGFloat?
+    var letterSpacing: CGFloat?
     var textAlign: String?
+    var textDecorationLine: String?
+    var textDecorationColor: String?
+    var textTransform: String?
 }
 
 enum DimensionValue: Codable {
@@ -668,7 +674,24 @@ class STXRenderer {
             }
         }
 
-        label.font = UIFont.systemFont(ofSize: fontSize, weight: fontWeight)
+        var font = UIFont.systemFont(ofSize: fontSize, weight: fontWeight)
+        if let family = style.fontFamily, let familyFont = UIFont(name: family, size: fontSize) {
+            font = familyFont
+        }
+        if style.fontStyle == "italic",
+           let descriptor = font.fontDescriptor.withSymbolicTraits(.traitItalic) {
+            font = UIFont(descriptor: descriptor, size: fontSize)
+        }
+        label.font = font
+
+        if let transform = style.textTransform, let text = label.text {
+            switch transform {
+            case "uppercase": label.text = text.uppercased()
+            case "lowercase": label.text = text.lowercased()
+            case "capitalize": label.text = text.capitalized
+            default: break
+            }
+        }
 
         // Text alignment
         if let align = style.textAlign {
@@ -679,6 +702,34 @@ class STXRenderer {
             case "justify": label.textAlignment = .justified
             default: label.textAlignment = .natural
             }
+        }
+
+        let attributed = NSMutableAttributedString(string: label.text ?? "")
+        let range = NSRange(location: 0, length: attributed.length)
+        if let lineHeight = style.lineHeight, attributed.length > 0 {
+            let paragraph = NSMutableParagraphStyle()
+            paragraph.minimumLineHeight = lineHeight
+            paragraph.maximumLineHeight = lineHeight
+            paragraph.alignment = label.textAlignment
+            attributed.addAttribute(.paragraphStyle, value: paragraph, range: range)
+        }
+        if let letterSpacing = style.letterSpacing, attributed.length > 0 {
+            attributed.addAttribute(.kern, value: letterSpacing, range: range)
+        }
+        if let decoration = style.textDecorationLine, attributed.length > 0 {
+            if decoration.contains("underline") {
+                attributed.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: range)
+            }
+            if decoration.contains("line-through") {
+                attributed.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: range)
+            }
+        }
+        if let color = style.textDecorationColor.flatMap(UIColor.init(hex:)), attributed.length > 0 {
+            attributed.addAttribute(.underlineColor, value: color, range: range)
+            attributed.addAttribute(.strikethroughColor, value: color, range: range)
+        }
+        if attributed.length > 0 {
+            label.attributedText = attributed
         }
 
         // Apply common styles

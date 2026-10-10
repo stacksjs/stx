@@ -20,11 +20,12 @@ STX provides platform-agnostic primitives that map to native components:
 | `<Image>` | `UIImageView` | `ImageView` | `<img>` |
 | `<TextInput>` | `UITextField` | `EditText` | `<input>` |
 | `<ScrollView>` | `UIScrollView` | `ScrollView` | `<div style="overflow:scroll">` |
-| `<FlatList>` | `UITableView` | `RecyclerView` | Virtual list |
-| `<TouchableOpacity>` | `UIButton` | `View+clickListener` | `<div onclick>` |
-| `<Modal>` | `UIViewController` | `Dialog` | `<dialog>` |
+| `<FlatList>` | Not yet supported | `RecyclerView` | Virtual list |
+| `<TouchableOpacity>` | `UIView` + tap gesture | `View+clickListener` | `<div onclick>` |
+| `<Modal>` | `UIView` overlay | `FrameLayout` overlay | `<dialog>` |
 | `<Switch>` | `UISwitch` | `Switch` | `<input type="checkbox">` |
 | `<Slider>` | `UISlider` | `SeekBar` | `<input type="range">` |
+| `<Picker>` | `UIPickerView` | `Spinner` | `<select>` |
 
 ### 2. Styling with Headwind
 
@@ -62,7 +63,7 @@ function handlePress() {
 }
 </script>
 
-<Button onPress={handlePress}>Click Me</Button>
+<Button @click="handlePress()">Click Me</Button>
 ```
 
 Compiles to bridge calls that invoke JavaScript functions.

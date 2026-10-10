@@ -354,9 +354,8 @@ describe('renderer coverage', () => {
  * into nothing, no error anywhere, and the view is laid out as though the
  * class had never been written.
  *
- * Measured: the IR declares 80 style properties, `android.kt` refers to 68 of
- * them, and `ios.swift` declares 52. So iOS silently drops 28, which is a
- * third of the vocabulary -- on top of the three component types it is missing.
+ * The baseline is generated from the IR and each renderer rather than copied
+ * from a feature table. Every implemented field must leave the list below.
  *
  * Named here rather than asserted away, so the lists can only shrink.
  */
@@ -390,10 +389,8 @@ describe('style vocabulary coverage', () => {
     'alignContent', 'aspectRatio', 'backgroundImage', 'borderBottomColor',
     'borderBottomWidth', 'borderLeftColor', 'borderLeftWidth', 'borderRightColor',
     'borderRightWidth', 'borderStyle', 'borderTopColor', 'borderTopWidth',
-    'columnGap', 'elevation', 'flexBasis', 'fontFamily', 'letterSpacing',
-    'lineHeight', 'overflow', 'resizeMode', 'rowGap', 'shadowOffset',
-    'textDecorationColor', 'textDecorationLine', 'textTransform', 'tintColor',
-    'transform', 'zIndex',
+    'columnGap', 'elevation', 'flexBasis', 'overflow', 'resizeMode', 'rowGap',
+    'shadowOffset', 'tintColor', 'transform', 'zIndex',
     // Craft's native host lays out `display: grid` with `gridColumns`; this
     // older renderer has no grid (added with grid-cols-N, 2026-10).
     'gridColumns',
@@ -418,5 +415,14 @@ describe('style vocabulary coverage', () => {
     const swift = swiftStyleKeys()
     for (const key of ['flex', 'flexDirection', 'justifyContent', 'alignItems', 'padding', 'backgroundColor', 'color', 'fontSize', 'fontWeight'])
       expect(swift.has(key)).toBe(true)
+  })
+
+  it('iOS applies the text styles it accepts instead of merely decoding them', () => {
+    const source = readFileSync(path.join(ROOT, 'renderers', 'ios.swift'), 'utf8')
+    expect(source).toContain('UIFont(name: family, size: fontSize)')
+    expect(source).toContain('paragraph.minimumLineHeight = lineHeight')
+    expect(source).toContain('attributed.addAttribute(.kern, value: letterSpacing')
+    expect(source).toContain('decoration.contains("underline")')
+    expect(source).toContain('case "uppercase": label.text = text.uppercased()')
   })
 })
