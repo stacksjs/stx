@@ -210,8 +210,9 @@ describe('Directive bindings', () => {
 
     it('should handle object and string syntax', () => {
       const runtime = generateSignalsRuntimeDev()
-      expect(runtime).toContain('Object.assign(el.style')
-      expect(runtime).toContain('el.style.cssText')
+      expect(runtime).toContain('stxHost.setStyle(el, value)')
+      expect(runtime).toContain('Object.assign(node.style')
+      expect(runtime).toContain('node.style.cssText')
     })
   })
 

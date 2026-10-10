@@ -44,7 +44,7 @@ describe('signals runtime — SVG attribute case adjustment', () => {
     // Matched by shape, not by the exact call text: this assertion has now
     // broken twice on changes it is not testing -- once when the value gained a
     // URL-scheme guard, once when the write moved behind the host adapter.
-    const setAttributeIdx = runtime.slice(effectIdx).search(/setAttribute\((?:el,\s*)?attrName,[^)]*attrValue/)
+    const setAttributeIdx = runtime.slice(effectIdx).search(/setAttribute\((?:el,\s*)?attrName,/)
       + effectIdx
     expect(effectIdx).toBeGreaterThan(bindIdx)
     expect(setAttributeIdx).toBeGreaterThan(effectIdx)
