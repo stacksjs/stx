@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.424...v0.2.425)
+
+## 🐛 Bug Fixes
+
+- make native and CSS builds work from published packages ([d8afed3](https://github.com/stacksjs/stx/commit/d8afed3)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.425 ([af9a2f7](https://github.com/stacksjs/stx/commit/af9a2f7)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.423...v0.2.424)
 
 ## 🐛 Bug Fixes
