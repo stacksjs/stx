@@ -2738,7 +2738,15 @@ async function buildComponentIsland(rawContent: string, componentFilePath: strin
   const __scopeVars = __scope[__scopeId] = __scope[__scopeId] || {};
   __scopeVars.$refs = __scopeVars.$refs || {};
   const __previousCurrentElement = window.__STX_CURRENT_ELEMENT__;
-  window.__STX_CURRENT_ELEMENT__ = document.querySelector('[data-stx-scope="' + __scopeId + '"]');
+  const __previousCurrentProps = window.__STX_CURRENT_PROPS__;
+  const __componentElement = document.querySelector('[data-stx-scope="' + __scopeId + '"]');
+  window.__STX_CURRENT_ELEMENT__ = __componentElement;
+  let __componentProps = __componentElement && __componentElement.__stx_props;
+  if (!__componentProps && __componentElement) {
+    try { __componentProps = JSON.parse(__componentElement.getAttribute('data-stx-props') || '{}'); }
+    catch { __componentProps = {}; }
+  }
+  window.__STX_CURRENT_PROPS__ = __componentProps && typeof __componentProps === 'object' && !Array.isArray(__componentProps) ? __componentProps : {};
 
   // Scope-specific lifecycle callbacks
   __scopeVars.__mountCallbacks = __scopeVars.__mountCallbacks || [];
@@ -2759,6 +2767,7 @@ catch (e) {}
 }
 finally {
   window.__STX_CURRENT_ELEMENT__ = __previousCurrentElement;
+  window.__STX_CURRENT_PROPS__ = __previousCurrentProps;
 }
 }`
 
