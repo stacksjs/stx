@@ -10,6 +10,8 @@ stx native compile ./src/Screen.stx --format bundle --output ./native-screen.js 
 
 The bundle is what Craft's native iOS renderer evaluates: a WebView-free app (`craft ios init MyApp --renderer native`, then `craft ios build --native-bundle ./native-screen.js`), or the native screens of a hybrid app (`nativeScreens` and `nativeBundle` in Craft's config). Without `--format bundle` the command renders the template through stx, including server directives, components, and slots, then prints the translated IR as JSON.
 
+Native hydration uses the same stx signals runtime as browser pages. The compiler supplies its binding manifest and pre-resolved native node handles directly, so the runtime does not query or walk the native view hierarchy.
+
 From code, for a build tool such as Stacks' `buddy build:ios`:
 
 ```ts

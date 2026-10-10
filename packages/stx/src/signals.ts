@@ -2901,19 +2901,40 @@ catch (e) {
    * Absent a manifest nothing changes: the walk is still the default, and a
    * page that ships no list hydrates exactly as it did.
    */
-  function processFromManifest(root, scope, manifest) {
-    if (!root || !manifest || !manifest.length) return false;
-    for (var i = 0; i < manifest.length; i++) {
-      var entry = manifest[i];
+  function processFromManifest(root, scope, manifest, resolvedNodes) {
+    var entries = manifest && manifest.entries ? manifest.entries : manifest;
+    if (!entries || !entries.length || (!root && !resolvedNodes)) return false;
+    for (var i = 0; i < entries.length; i++) {
+      var entry = entries[i];
       var id = entry && entry.id;
       if (id === undefined || id === null) continue;
-      var node = root.getAttribute && root.getAttribute('data-stx-b') === String(id)
-        ? root
-        : (root.querySelector ? root.querySelector('[data-stx-b="' + id + '"]') : null);
+      // Native compilation already has stable handles for every manifest id.
+      // Accept those handles directly so a non-DOM host never needs selectors
+      // or an attribute walk. The browser keeps its existing lookup fallback.
+      var node = resolvedNodes
+        ? (typeof resolvedNodes.get === 'function' ? resolvedNodes.get(id) : resolvedNodes[id])
+        : null;
+      if (!node && root) {
+        node = root.getAttribute && root.getAttribute('data-stx-b') === String(id)
+          ? root
+          : (root.querySelector ? root.querySelector('[data-stx-b="' + id + '"]') : null);
+      }
       if (!node) continue;
       processElement(node, scope, true);
     }
     return true;
+  }
+
+  // Bind a precompiled host tree without waiting for DOMContentLoaded. Native
+  // passes its manifest id to node-handle table; browser hydration continues
+  // through the document-ready path below. The same state, effect, expression,
+  // event and host implementations are used by both.
+  function hydrateHost(root, setup, manifest, resolvedNodes) {
+    var values = typeof setup === 'function' ? setup() : setup;
+    var scope = Object.assign({ $refs: {} }, values || {});
+    return trackEffects(function() {
+      processFromManifest(root, scope, manifest, resolvedNodes);
+    });
   }
 
   // skipChildren: this element's bindings only, because something else already
@@ -7428,6 +7449,7 @@ catch (e) {} }
   // calling a detached one.
   window.stx = Object.assign(window.stx || {}, {
     hydrate: hydrateSubtree,
+    hydrateHost,
     state,
     derived,
     effect,

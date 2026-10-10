@@ -168,6 +168,30 @@ describe('the runtime writes through a host', () => {
     expect(ops.filter(o => o.op === 'setText').map(o => o.args[0])).toEqual(['two', 'three'])
   })
 
+  it('hydrates pre-resolved host nodes without selectors or a tree walk', async () => {
+    const label = window.stx.state('one')
+    const node = document.createElement('p')
+    node.setAttribute('data-id', 'native-label')
+    node.setAttribute(':text', 'label')
+    shimAttributes(node)
+    const root = {
+      querySelector: () => { throw new Error('native hosts have no selectors') },
+    }
+
+    window.stx.hydrateHost(
+      root,
+      { label },
+      { entries: [{ id: 0, bindings: [{ name: ':text', value: 'label', kind: 'text' }] }] },
+      new Map([[0, node]]),
+    )
+
+    expect(ops).toContainEqual({ op: 'setText', node: 'native-label', args: ['one'] })
+    ops.length = 0
+    label.set('two')
+    await settle()
+    expect(ops).toContainEqual({ op: 'setText', node: 'native-label', args: ['two'] })
+  })
+
   it('sends attribute writes and removals', async () => {
     const title = window.stx.state('hello')
     const gone = window.stx.state('x')
