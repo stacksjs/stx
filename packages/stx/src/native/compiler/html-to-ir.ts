@@ -465,6 +465,19 @@ export async function translateHtmlToIR(
 
   /** A wrapper's children take its place. */
   function hoist(frame: Frame): void {
+    if (frame.node.bindings && Object.keys(frame.node.bindings).length > 0) {
+      const children = frame.node.children
+      const elements = children.filter((child): child is STXNode => typeof child !== 'string')
+      const target = elements.length === 1 && elements.length === children.length
+        ? elements[0]
+        : createNode('View', {}, {}, {}, children)
+      target.bindings = { ...frame.node.bindings, ...target.bindings }
+      if (target.bindingId === undefined && frame.node.bindingId !== undefined)
+        target.bindingId = frame.node.bindingId
+      attach(target)
+      return
+    }
+
     const parent = stack[stack.length - 1]
     for (const child of frame.node.children) {
       if (typeof child === 'string') {

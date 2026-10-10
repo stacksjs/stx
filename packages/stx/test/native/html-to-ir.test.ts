@@ -244,6 +244,20 @@ describe('what is deliberately dropped', () => {
     expect(texts(root)).toEqual(['Hello'])
   })
 
+  it('moves structural template bindings onto the native row root', async () => {
+    const { root } = await translateHtmlToIR(
+      '<template :for="item in items" data-stx-b="7"><span :key="item.id" :text="item.label" data-stx-b="8"></span></template>',
+    )
+
+    expect(root.type).toBe('Text')
+    expect(root.bindingId).toBe(8)
+    expect(root.bindings).toEqual({
+      for: 'item in items',
+      key: 'item.id',
+      text: 'item.label',
+    })
+  })
+
   it('sees through a document body too', async () => {
     const { root } = await translateHtmlToIR('<body><div class="p-1"><span>a</span></div></body>')
     expect(root.type).toBe('View')

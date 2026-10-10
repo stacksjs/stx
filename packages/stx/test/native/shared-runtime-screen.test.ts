@@ -72,6 +72,88 @@ function increment() { count.set(count() + 1) }
     }))
   })
 
+  it('reconciles keyed native :for rows through the shared runtime', async () => {
+    const source = `<script client>
+const items = state([{ id: 'a', label: 'Ada' }, { id: 'b', label: 'Bea' }])
+const selected = state('none')
+function reorder() { items.set([{ id: 'b', label: 'Bea 2' }, { id: 'c', label: 'Cy' }]) }
+function select(id) { selected.set(id) }
+</script>
+<View>
+  <ScrollView testID="list-scroll">
+    <View :for="item in items" :key="item.id">
+      <Text :text="item.label" />
+      <Button @click="select(item.id)">Select</Button>
+      <TextInput placeholder="Draft" />
+    </View>
+  </ScrollView>
+  <Text testID="selected" :text="'Selected ' + selected()" />
+  <Button testID="reorder" @click="reorder()">Reorder</Button>
+</View>`
+    const compiled = await compileScreenSource(source, path.join(import.meta.dir, 'NativeFor.stx'))
+    const scroll = compiled.document.root.children[0] as any
+    expect(scroll.children[0]).toMatchObject({
+      bindings: { for: 'item in items', key: 'item.id' },
+    })
+    const sent: any[] = []
+    let receive: (message: unknown) => void = () => {}
+    const screen = prepareSharedNativeScreen(compiled.document, compiled.manifest, {
+      postMessage: raw => sent.push(JSON.parse(raw)),
+      onMessage: callback => { receive = callback },
+    })
+
+    installNodeConstants()
+    window.__stx_host = screen.host
+    new Function(generateSignalsRuntimeDev())()
+    new Function(compiled.setup!.code)()
+    screen.mount(window.stx, window.__stx_latestSetup)
+    screen.host.flush()
+
+    const initialOps = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
+    const adaLabel = initialOps.find(operation => operation.patch?.children?.[0] === 'Ada')
+    const beaLabel = initialOps.find(operation => operation.patch?.children?.[0] === 'Bea')
+    expect(adaLabel).toBeTruthy()
+    expect(beaLabel).toBeTruthy()
+    const beaRow = initialOps.find(operation => operation.op === 'insertChild' && operation.childId === beaLabel.id)?.parentId
+    const beaButton = initialOps.find(operation => operation.op === 'insertChild' && operation.parentId === beaRow
+      && initialOps.some(candidate => candidate.id === operation.childId && candidate.patch?.events?.onPress))?.childId
+    const beaInput = initialOps.find(operation => operation.op === 'insertChild' && operation.parentId === beaRow
+      && initialOps.some(candidate => candidate.op === 'createNode' && candidate.id === operation.childId && candidate.node?.type === 'TextInput'))?.childId
+    const adaRow = initialOps.find(operation => operation.op === 'insertChild' && operation.childId === adaLabel.id)?.parentId
+    const adaButton = initialOps.find(operation => operation.op === 'insertChild' && operation.parentId === adaRow
+      && initialOps.some(candidate => candidate.id === operation.childId && candidate.patch?.events?.onPress))?.childId
+    expect(beaButton).toBeTruthy()
+    expect(beaInput).toBeTruthy()
+    expect(adaButton).toBeTruthy()
+
+    const reorderId = (compiled.document.root.children[2] as any).props.__stxId
+    const reorderListener = initialOps.find(operation => operation.id === reorderId && operation.patch?.events?.onPress)
+    sent.length = 0
+    receive(JSON.stringify({ type: 'EVENT', payload: { handlerId: reorderListener.patch.events.onPress, nativeEvent: {} } }))
+    screen.host.flush()
+
+    const updateOps = sent.flatMap(message => message.payload.operations)
+    expect(updateOps.filter(operation => operation.op === 'createNode')).toHaveLength(4)
+    expect(updateOps).toContainEqual(expect.objectContaining({ id: beaLabel.id, patch: { children: ['Bea 2'] } }))
+    expect(updateOps).toContainEqual(expect.objectContaining({ patch: { children: ['Cy'] } }))
+    expect(updateOps).toContainEqual(expect.objectContaining({ op: 'moveChild', parentId: scroll.props.__stxId }))
+    expect(updateOps.some(operation => operation.op === 'removeNode' && [beaLabel.id, beaInput].includes(operation.id))).toBe(false)
+
+    const adaListener = initialOps.find(operation => operation.id === adaButton && operation.patch?.events?.onPress)
+    sent.length = 0
+    receive(JSON.stringify({ type: 'EVENT', payload: { handlerId: adaListener.patch.events.onPress, nativeEvent: {} } }))
+    screen.host.flush()
+    expect(sent).toHaveLength(0)
+
+    const beaListener = initialOps.find(operation => operation.id === beaButton && operation.patch?.events?.onPress)
+    sent.length = 0
+    receive(JSON.stringify({ type: 'EVENT', payload: { handlerId: beaListener.patch.events.onPress, nativeEvent: {} } }))
+    screen.host.flush()
+    expect(sent.flatMap(message => message.payload.operations)).toContainEqual(expect.objectContaining({
+      patch: { children: ['Selected b'] },
+    }))
+  })
+
   it('evaluates HTML-encoded style bindings through the native host', async () => {
     const source = `<script client>
 const wide = state(false)

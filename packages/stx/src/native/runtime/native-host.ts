@@ -31,7 +31,9 @@
  */
 
 import type { NativeMutationOperation } from '../bridge/protocol'
+import type { STXNode } from '../compiler/ir'
 import { nativePropName } from '../prop-names'
+import { cloneNativeBindingNode, type NativeBindingNode } from './binding-tree'
 
 /** A handle on a node in the native tree. Not an element; just an identity. */
 export interface NativeNode {
@@ -52,6 +54,10 @@ interface NodeRecord {
   text?: string
   children: NativeNode[]
   visible: boolean
+}
+
+interface RetainedNativeNode extends NativeNode {
+  __stxDetachedRecord?: NodeRecord
 }
 
 export interface NativeHostOptions {
@@ -80,7 +86,7 @@ export interface NativeHost {
   descendants: (node: NativeNode) => NativeNode[]
   scopesIn: (node: NativeNode) => string[]
   /** Register a node the native side already created, so the host can track it. */
-  adopt: (node: NativeNode, type: string, owner?: NativeNode | null) => NativeNode
+  adopt: (node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'props' | 'style' | 'events' | 'children'>) => NativeNode
   /** Send whatever is pending now, rather than waiting for the scheduled flush. */
   flush: () => void
   /** Dispatch an event the native side reported, by the id handed to it. */
@@ -158,6 +164,27 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     return record
   }
 
+  function descriptorOf(node: NativeNode): NodeRecord | undefined {
+    return records.get(node.__stxId) ?? (node as RetainedNativeNode).__stxDetachedRecord
+  }
+
+  function retainDetachedDescriptors(node: NativeNode): void {
+    const record = records.get(node.__stxId)
+    if (!record)
+      return
+    ;(node as RetainedNativeNode).__stxDetachedRecord = record
+    record.children.forEach(retainDetachedDescriptors)
+    records.delete(node.__stxId)
+  }
+
+  function releaseHandlers(node: NativeNode): void {
+    const record = descriptorOf(node)
+    if (!record)
+      return
+    Object.values(record.events).forEach(handlerId => handlers.delete(handlerId))
+    record.children.forEach(releaseHandlers)
+  }
+
   /** Every node under this one, read off the parentage the host recorded. */
   function collectDescendants(node: NativeNode): NativeNode[] {
     const out: NativeNode[] = []
@@ -175,15 +202,77 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     return out
   }
 
-  function adopt(node: NativeNode, type: string, owner?: NativeNode | null): NativeNode {
+  function isBindingNode(node: NativeNode): node is NativeBindingNode {
+    return (node as NativeBindingNode).nodeType === 1
+  }
+
+  function decoratePosition(node: NativeNode): void {
+    const target = node as NativeNode & { __stxPositionDecorated?: boolean }
+    if (target.__stxPositionDecorated)
+      return
+    Object.defineProperties(target, {
+      nextSibling: {
+        configurable: true,
+        get() {
+          const owner = target.__stxOwner
+          if (!owner) return null
+          const siblings = recordOf(owner).children
+          const index = siblings.findIndex(candidate => candidate.__stxId === target.__stxId)
+          return index === -1 ? null : siblings[index + 1] ?? null
+        },
+      },
+      nextElementSibling: {
+        configurable: true,
+        get() {
+          let sibling = (target as any).nextSibling as NativeNode | null
+          while (sibling && !isBindingNode(sibling))
+            sibling = (sibling as any).nextSibling as NativeNode | null
+          return sibling
+        },
+      },
+    })
+    target.__stxPositionDecorated = true
+  }
+
+  function setConnected(node: NativeNode, connected: boolean): void {
+    if ('isConnected' in node)
+      (node as NativeBindingNode).isConnected = connected
+    records.get(node.__stxId)?.children.forEach(child => setConnected(child, connected))
+  }
+
+  function removeFromBindingParent(node: NativeNode): void {
+    const owner = node.__stxOwner
+    if (!owner || !isBindingNode(owner))
+      return
+    owner.childNodes = owner.childNodes.filter(child => child.__stxId !== node.__stxId)
+    owner.children = owner.children.filter(child => child.__stxId !== node.__stxId)
+  }
+
+  function insertIntoBindingParent(parent: NativeNode, node: NativeNode, index: number): void {
+    if (!isBindingNode(parent))
+      return
+    parent.childNodes.splice(index, 0, node)
+    parent.children.splice(index, 0, node)
+    if (isBindingNode(node)) {
+      node.parentNode = parent
+      node.parentElement = parent
+    }
+  }
+
+  function adopt(node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'props' | 'style' | 'events' | 'children'>): NativeNode {
+    const suffix = /(?:^|\D)(\d+)$/.exec(node.__stxId)?.[1]
+    if (suffix)
+      counter = Math.max(counter, Number(suffix))
     records.set(node.__stxId, {
       type,
-      props: {},
-      style: {},
-      events: {},
+      props: { ...(descriptor?.props ?? {}) },
+      style: { ...(descriptor?.style ?? {}) },
+      events: { ...(descriptor?.events ?? {}) },
+      text: descriptor?.children?.find(child => typeof child === 'string') as string | undefined,
       children: [],
       visible: true,
     })
+    decoratePosition(node)
     node.__stxOwner = owner ?? null
     if (owner) {
       const children = recordOf(owner).children
@@ -267,12 +356,18 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     anchor(label) {
       // Logical only: it is a position in this host's ordering and is never
       // created on the native side, so it costs no view.
-      return { __stxId: nextId('a'), __stxAnchor: label }
+      const anchor = { __stxId: nextId('a'), __stxAnchor: label }
+      decoratePosition(anchor)
+      return anchor
     },
 
     clone(node) {
-      const source = records.get(node.__stxId)
-      const copy: NativeNode = { __stxId: nextId('n'), __stxOwner: node.__stxOwner }
+      const source = descriptorOf(node)
+      const id = nextId('n')
+      const copy: NativeNode = isBindingNode(node)
+        ? cloneNativeBindingNode(node, id)
+        : { __stxId: id, __stxOwner: node.__stxOwner }
+      decoratePosition(copy)
       if (node.__stxScope !== undefined)
         copy.__stxScope = node.__stxScope
 
@@ -286,6 +381,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         children: [],
         visible: descriptor.visible,
       })
+      setConnected(copy, false)
 
       emit({
         op: 'createNode',
@@ -309,6 +405,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
     insert(parent, node, before) {
       const record = recordOf(parent)
+      const oldOwner = node.__stxOwner
 
       /*
        * The node comes OUT of the ordering before the target index is worked
@@ -320,6 +417,13 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const existing = record.children.findIndex(child => child.__stxId === node.__stxId)
       if (existing !== -1)
         record.children.splice(existing, 1)
+      else if (oldOwner) {
+        const oldRecord = recordOf(oldOwner)
+        const oldIndex = oldRecord.children.findIndex(child => child.__stxId === node.__stxId)
+        if (oldIndex !== -1)
+          oldRecord.children.splice(oldIndex, 1)
+      }
+      removeFromBindingParent(node)
 
       const index = before
         ? Math.max(0, record.children.findIndex(child => child.__stxId === before.__stxId))
@@ -327,6 +431,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
       record.children.splice(index, 0, node)
       node.__stxOwner = parent
+      insertIntoBindingParent(parent, node, index)
+      setConnected(node, true)
 
       // An anchor holds a place in the ordering and nothing else, so moving one
       // is bookkeeping rather than a native operation.
@@ -380,8 +486,15 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         if (at !== -1)
           record.children.splice(at, 1)
       }
+      removeFromBindingParent(node)
       node.__stxOwner = null
-      records.delete(node.__stxId)
+      if (isBindingNode(node)) {
+        node.parentNode = null
+        node.parentElement = null
+      }
+      setConnected(node, false)
+      releaseHandlers(node)
+      retainDetachedDescriptors(node)
       if (node.__stxAnchor !== undefined)
         return
       emit({ op: 'removeNode', id: node.__stxId })
