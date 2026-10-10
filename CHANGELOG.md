@@ -1,5 +1,27 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.419...v0.2.420)
+
+## ✨ Features
+
+- **native**: type a bar button's image ([89e9924](https://github.com/stacksjs/stx/commit/89e9924)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **css**: write a project's web fonts once, and first ([43a0dd1](https://github.com/stacksjs/stx/commit/43a0dd1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 💚 Continuous Integration
+
+- set up pantry after bun install in publish-commit ([fc96953](https://github.com/stacksjs/stx/commit/fc96953)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.420 ([6b0e5aa](https://github.com/stacksjs/stx/commit/6b0e5aa)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.418...v0.2.419)
 
 ## 🐛 Bug Fixes
