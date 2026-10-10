@@ -6,6 +6,6 @@ const chat = useStore({{ storeName }})
 const unread = chat.unread
 const label = derived(() => unread() + ' unread messages')
 onMount(() => chat.load())
-useInterval(() => chat.refresh(), 15000, { whileVisible: true })
+onMount(() => chat.observe())
 </script>
 <span :if="unread" :aria-label="label" class="inline-flex items-center justify-center min-w-5 px-1.5 py-0.5 text-[11px] font-semibold text-white bg-blue-600 rounded-full" :text="unread"></span>

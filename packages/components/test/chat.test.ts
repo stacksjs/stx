@@ -9,6 +9,39 @@ const contact = { id: 2, name: 'Pawel Athlete', role: 'Athlete' }
 const message = { id: 1, sender_id: 1, body: 'Question', client_key: 'key', created_at: '2026-10-10T12:00:00Z', read_at: null }
 
 describe('native chat components and controller', () => {
+  it('shares one native broadcast stream, updates unread live and closes it on unmount', async () => {
+    let output: ReadableStreamDefaultController<Uint8Array> | null = null
+    let unreadCount = 0, streams = 0, cancelled = false
+    const chat = createChat({
+      selfId: () => 1, scopeKey: () => 'coach', broadcastEndpoint: '/messages/events',
+      request: async (url, init) => {
+        if (url.endsWith('/events')) {
+          streams++
+          return new Response(new ReadableStream<Uint8Array>({
+            start(controller) {
+              output = controller
+              init?.signal?.addEventListener('abort', () => { cancelled = true; controller.close() }, { once: true })
+            },
+            cancel() { cancelled = true },
+          }), { headers: { 'Content-Type': 'text/event-stream' } })
+        }
+        return Response.json({ contacts: [contact], conversations: [{ id: 'thread', recipient_id: 2, unread: unreadCount, last_message: null }], max_length: 4000 })
+      },
+    })
+    const first = chat.observe(), second = chat.observe()
+    await chat.load()
+    for (let i = 0; i < 20 && !chat.connected(); i++) await Bun.sleep(1)
+    expect(streams).toBe(1)
+    unreadCount = 1
+    const frame = new TextEncoder().encode('data: {"channel":"private-messaging.one.1","event":"messaging.sent","data":{"conversation_id":"thread"}}\n\n')
+    output!.enqueue(frame.slice(0, 25)); output!.enqueue(frame.slice(25))
+    for (let i = 0; i < 20 && chat.unread() !== 1; i++) await Bun.sleep(1)
+    expect(chat.unread()).toBe(1)
+    first(); expect(cancelled).toBe(false)
+    second(); expect(cancelled).toBe(true)
+    expect(chat.connected()).toBe(false)
+  })
+
   it('bundles the published browser entry with native signals', async () => {
     const build = Bun.spawnSync(['bun', 'run', 'build.ts'], { cwd: root, stdout: 'pipe', stderr: 'pipe' })
     expect(build.exitCode).toBe(0)

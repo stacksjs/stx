@@ -1,5 +1,6 @@
 import type { DerivedSignal, Signal } from '@stacksjs/stx'
-import { derived, state } from '@stacksjs/stx'
+import { derived, effect, state } from '@stacksjs/stx'
+import { useBroadcastStream } from '@stacksjs/stx/composables/use-broadcast-stream'
 
 export interface ChatContact { id: number, name: string, role: string }
 export interface ChatMessage { id: number, sender_id: number, body: string, created_at: string, read_at: string | null, client_key: string }
@@ -11,6 +12,8 @@ export interface ChatOptions {
   scopeKey: () => string
   initialRecipient?: () => number
   endpoint?: string
+  /** Authenticated native Stacks broadcasting endpoint. */
+  broadcastEndpoint?: string
 }
 
 export interface ChatController {
@@ -39,6 +42,8 @@ export interface ChatController {
   older: () => Promise<void>
   refresh: (markRead?: boolean) => Promise<void>
   reset: () => void
+  observe: (active?: () => boolean) => () => void
+  connected: Signal<boolean>
 }
 
 /** Transport-injected messaging state shared by any STX app. */
@@ -58,6 +63,9 @@ export function createChat(options: ChatOptions): ChatController {
   const unreadOnly = state(false)
   const hasMore = state(false)
   const maxLength = state(4000)
+  const connected = state(false)
+  const observers = new Set<() => boolean>()
+  let stream: { close: () => void } | null = null
   let scope = ''
   let version = 0
   let drafts = new Map<number, string>()
@@ -70,10 +78,12 @@ export function createChat(options: ChatOptions): ChatController {
     contacts.set([]); conversations.set([]); selected.set(null); threadId.set(''); messages.set([])
     draft.set(''); error.set(''); loading.set(false); threadLoading.set(false); sending.set(false)
     drafts = new Map(); retry = null; initialRecipient = 0; hasMore.set(false)
+    stream?.close(); stream = null
   }
   function checkScope() {
     const key = options.scopeKey()
     if (key !== scope) { reset(); scope = key }
+    connect()
     return version
   }
   async function json(path: string, init?: RequestInit) {
@@ -138,7 +148,7 @@ export function createChat(options: ChatOptions): ChatController {
       await refreshThread(token, data.id)
     }
     catch (cause) { if (token === version) failure(cause) }
-    finally { if (token === version) threadLoading.set(false) }
+    finally { if (token === version) threadLoading.set(false); flushInvalidation() }
   }
   function back() {
     if (selected()) drafts.set(selected()!.id, draft())
@@ -160,7 +170,7 @@ export function createChat(options: ChatOptions): ChatController {
       await load()
     }
     catch (cause) { if (token === version) failure(cause) }
-    finally { if (token === version) sending.set(false) }
+    finally { if (token === version) sending.set(false); flushInvalidation() }
   }
   async function older() {
     const id = threadId(), before = messages()[0]?.id, token = version
@@ -171,7 +181,7 @@ export function createChat(options: ChatOptions): ChatController {
       if (token === version && id === threadId()) { messages.set([...data.messages, ...messages()]); hasMore.set(data.has_more) }
     }
     catch (cause) { if (token === version) failure(cause) }
-    finally { if (token === version) threadLoading.set(false) }
+    finally { if (token === version) threadLoading.set(false); flushInvalidation() }
   }
   async function refresh(markRead = false) {
     if (refreshing || sending() || threadLoading()) return
@@ -182,7 +192,29 @@ export function createChat(options: ChatOptions): ChatController {
       else if (markRead && threadId()) await refreshThread(version, threadId())
     }
     catch (cause) { failure(cause) }
-    finally { refreshing = false }
+    finally { refreshing = false; flushInvalidation() }
   }
-  return { contacts, conversations, selected, threadId, messages, loading, threadLoading, sending, error, draft, search, unreadOnly, hasMore, maxLength, rows, unread, canSend, selfId, load, open, back, send, older, refresh, reset }
+  let invalidated = false
+  async function reconcile() {
+    if (refreshing || sending() || threadLoading()) { invalidated = true; return }
+    await refresh([...observers].some(active => active()))
+  }
+  function connect() {
+    if (stream || !observers.size || !options.selfId() || !options.broadcastEndpoint) return
+    const accountScope = scope
+    stream = useBroadcastStream({
+      endpoint: options.broadcastEndpoint, request: options.request,
+      onStatus: value => connected.set(value),
+      onConnected: () => { if (accountScope === options.scopeKey()) void reconcile() },
+      onMessage: frame => { if (accountScope === options.scopeKey() && frame.event.startsWith('messaging.')) void reconcile() },
+    })
+  }
+  function observe(active = () => false) {
+    observers.add(active); checkScope()
+    return () => { observers.delete(active); if (!observers.size) { stream?.close(); stream = null } }
+  }
+  // Coalesce events arriving during a send/read round trip, then reconcile once it finishes.
+  function flushInvalidation() { if (invalidated) { invalidated = false; void reconcile() } }
+  effect(() => { checkScope() })
+  return { contacts, conversations, selected, threadId, messages, loading, threadLoading, sending, error, draft, search, unreadOnly, hasMore, maxLength, rows, unread, canSend, selfId, load, open, back, send, older, refresh, reset, observe, connected }
 }

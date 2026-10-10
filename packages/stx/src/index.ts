@@ -10,6 +10,7 @@ export { useServerData } from './server-data'
 export { useRuntimeConfig, useServerRuntimeConfig } from './runtime-config-server'
 export type { RuntimeConfigDefaults, PublicRuntimeConfig } from './runtime-config-types'
 export { useSearchParams, type SearchParamsRef, type SearchParamsCommitOptions } from './composables/use-router'
+export { useBroadcastStream, type BroadcastStreamFrame, type BroadcastStreamClientOptions } from './composables/use-broadcast-stream'
 export { clearServerData } from './composables/use-fetch'
 export { generateOfflineWorker, OFFLINE_REGISTER_SCRIPT, OFFLINE_WORKER_PATH, type OfflineAppConfig } from './offline/app-service-worker'
 // Exported for servers as well as the static build: SSR inlines the runtime

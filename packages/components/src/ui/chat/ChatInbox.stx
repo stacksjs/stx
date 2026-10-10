@@ -30,6 +30,7 @@ const maxLength = chat.maxLength
 const selfId = chat.selfId
 const history = useRef('chat-history')
 const composer = useRef('chat-composer')
+const visibility = useDocumentVisibility()
 let lastThread = ''
 let lastMessage = 0
 effect(() => {
@@ -60,8 +61,8 @@ function timestamp(value) { return new Date(value).toLocaleString([], { month: '
 function submit() { return chat.send() }
 function keyboard(event) { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !event.isComposing) { event.preventDefault(); chat.send() } }
 onMount(() => chat.load())
-effect(() => { if (active()) chat.refresh(true) })
-useInterval(() => chat.refresh(active()), 10000, { whileVisible: true })
+onMount(() => chat.observe(() => active() && visibility() === 'visible'))
+effect(() => { if (active() && visibility() === 'visible') chat.refresh(true) })
 </script>
 <section aria-label="Messages" class="flex flex-col {{ sizeClasses }} max-h-[900px] overflow-hidden bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl {{ className }}">
   <div :if="error" role="alert" class="flex gap-3 items-center justify-between px-4 py-3 text-sm text-rose-800 dark:text-rose-200 bg-rose-50 dark:bg-rose-950">
