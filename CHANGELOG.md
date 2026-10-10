@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.428...v0.2.429)
+
+## ✨ Features
+
+- add native responsive chat components and browser controller ([96731cb](https://github.com/stacksjs/stx/commit/96731cb)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- align editor extension with the released STX version ([b793ef8](https://github.com/stacksjs/stx/commit/b793ef8)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.427...v0.2.428)
 
 ## 🐛 Bug Fixes

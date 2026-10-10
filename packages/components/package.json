@@ -40,6 +40,11 @@
     "./stx-plugin": {
       "bun": "./stx-plugin.ts",
       "import": "./stx-plugin.ts"
+    },
+    "./chat": {
+      "types": "./dist/ui/chat/controller.d.ts",
+      "bun": "./dist/chat/controller.js",
+      "import": "./dist/chat/controller.js"
     }
   },
   "module": "./dist/index.js",

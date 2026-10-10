@@ -1,0 +1,12 @@
+<script server>
+export const body = $props.body || ''
+export const author = $props.author || ''
+export const time = $props.time || ''
+export const outgoing = $bool($props.outgoing)
+export const className = $props.className || ''
+</script>
+<article class="flex flex-col gap-1 {{ outgoing ? 'items-end' : 'items-start' }} {{ className }}">
+  <span class="text-xs text-fg-muted">{{ author }}</span>
+  <p class="max-w-[85%] whitespace-pre-wrap break-words rounded-panel px-4 py-3 text-sm {{ outgoing ? 'bg-accent text-accent-ink' : 'bg-surface-sunken text-fg' }}">{{ body }}</p>
+  <time class="text-xs text-fg-muted">{{ time }}</time>
+</article>

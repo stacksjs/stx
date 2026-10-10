@@ -88,6 +88,21 @@ if (!result.success) {
   process.exit(1)
 }
 
+// The chat controller is browser code. Publish a focused entry so client stores
+// do not pull server-side rendering and syntax-highlighting utilities into pages.
+const chatResult = await Bun.build({
+  entrypoints: ['./src/ui/chat/controller.ts'],
+  outdir: './dist/chat',
+  plugins: [dts()],
+  target: 'browser',
+  minify: false,
+  external: ['@stacksjs/stx'],
+})
+if (!chatResult.success) {
+  for (const log of chatResult.logs) console.error(log)
+  process.exit(1)
+}
+
 // Build individual component files
 console.log('Building individual components...')
 

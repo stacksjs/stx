@@ -1,0 +1,95 @@
+<script server>
+export const storeName = $props.store || 'chat'
+export const className = $props.className || ''
+</script>
+<script client>
+const chat = useStore({{ storeName }})
+const rows = chat.rows
+const selected = chat.selected
+const messages = chat.messages
+const draft = chat.draft
+const search = chat.search
+const unreadOnly = chat.unreadOnly
+const unread = chat.unread
+const error = chat.error
+const loading = chat.loading
+const threadLoading = chat.threadLoading
+const hasMore = chat.hasMore
+const canSend = chat.canSend
+const sending = chat.sending
+const maxLength = chat.maxLength
+const selfId = chat.selfId
+const history = useRef('chat-history')
+const composer = useRef('chat-composer')
+let lastThread = ''
+let lastMessage = 0
+effect(() => {
+  const id = chat.threadId()
+  const list = messages()
+  const last = list.at(-1)
+  const changedThread = id !== lastThread
+  const newMessage = last && last.id !== lastMessage
+  const element = history()
+  const nearBottom = element && element.scrollHeight - element.scrollTop - element.clientHeight < 120
+  if (element && (changedThread || newMessage && (nearBottom || last.sender_id === selfId()))) {
+    nextTick(() => { element.scrollTop = element.scrollHeight })
+  }
+  if (changedThread && id) nextTick(() => composer()?.focus())
+  lastThread = id
+  lastMessage = last?.id || 0
+})
+const hasSelection = derived(() => !!selected())
+const noSelection = derived(() => !selected())
+const emptyRows = derived(() => !loading() && rows().length === 0)
+const emptyThread = derived(() => hasSelection() && !threadLoading() && messages().length === 0)
+const selectedName = derived(() => selected()?.name || '')
+const selectedRole = derived(() => selected()?.role || '')
+const sendLabel = derived(() => sending() ? 'Sending...' : 'Send message')
+function initials(name) { return String(name || '').split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase() }
+function timestamp(value) { return new Date(value).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
+function submit() { return chat.send() }
+function keyboard(event) { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !event.isComposing) { event.preventDefault(); chat.send() } }
+onMount(() => chat.load())
+useInterval(() => chat.refresh(true), 10000, { whileVisible: true })
+</script>
+<section aria-label="Messages" class="flex flex-col min-h-[540px] h-[calc(100dvh-180px)] max-h-[900px] overflow-hidden bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl {{ className }}">
+  <div :if="error" role="alert" class="flex gap-3 items-center justify-between px-4 py-3 text-sm text-rose-800 dark:text-rose-200 bg-rose-50 dark:bg-rose-950">
+    <span :text="error"></span><button type="button" @click="chat.refresh(true)" class="font-semibold underline">Try again</button>
+  </div>
+  <div class="flex flex-1 min-h-0">
+    <aside aria-label="Conversations" :class="hasSelection ? 'hidden md:flex' : 'flex'" class="flex-col w-full md:w-80 shrink-0 border-r border-slate-200 dark:border-slate-800">
+      <div class="px-5 pt-5 pb-4 space-y-4">
+        <div class="flex items-center justify-between"><h2 class="font-semibold text-slate-900 dark:text-white">Inbox</h2><span :if="unread" class="px-2 py-0.5 text-xs font-semibold text-blue-700 dark:text-blue-200 bg-blue-50 dark:bg-blue-950 rounded-full"><span :text="unread"></span> unread</span></div>
+        <label class="block"><span class="sr-only">Search people</span><input type="search" x-model="search" placeholder="Search athletes or staff" class="w-full px-3 py-2.5 text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></label>
+        <label class="flex gap-2 items-center text-sm text-slate-600 dark:text-slate-300"><input type="checkbox" x-model="unreadOnly" class="accent-blue-600">Unread only</label>
+      </div>
+      <p :if="loading" role="status" class="px-5 pb-2 text-xs text-slate-500 dark:text-slate-400">Updating messages...</p>
+      <div class="flex-1 overflow-y-auto px-2 pb-2">
+        <button :for="person in rows" type="button" @click="chat.open(person)" :aria-pressed="selected && selected.id === person.id" :class="selected && selected.id === person.id ? 'bg-blue-50 dark:bg-blue-950' : 'hover:bg-slate-50 dark:hover:bg-slate-900'" class="flex gap-3 items-start w-full p-3 text-left rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+          <span class="flex items-center justify-center w-10 h-10 shrink-0 text-sm font-semibold text-slate-600 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 rounded-full" :text="initials(person.name)"></span>
+          <span class="flex-1 min-w-0"><span class="flex items-center justify-between gap-2"><span class="font-semibold text-sm text-slate-900 dark:text-white truncate" :text="person.name"></span><span :if="person.conversation && person.conversation.unread" class="px-1.5 min-w-5 text-center text-xs font-semibold text-white bg-blue-600 rounded-full" :text="person.conversation.unread"></span></span><span class="block mt-0.5 text-xs text-slate-500 dark:text-slate-400" :text="person.role"></span><span class="block mt-1 text-sm text-slate-600 dark:text-slate-300 truncate" :text="person.conversation && person.conversation.last_message ? person.conversation.last_message.body : 'Start a conversation'"></span></span>
+        </button>
+        <div :if="emptyRows" class="px-4 py-10 text-center"><p class="font-semibold text-sm text-slate-900 dark:text-white">No conversations here yet</p><p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Try another search or turn off the unread filter. Your connected athletes and gym team appear here.</p></div>
+      </div>
+    </aside>
+    <div :if="noSelection" class="hidden md:flex flex-1 flex-col items-center justify-center px-8 text-center bg-slate-50/50 dark:bg-slate-900/30">
+      <span class="i-lucide-messages-square text-3xl text-blue-600 dark:text-blue-400" aria-hidden="true"></span><h2 class="mt-4 text-lg font-semibold text-slate-900 dark:text-white">A place for the conversation</h2><p class="mt-2 max-w-xs text-sm leading-6 text-slate-500 dark:text-slate-400">Training questions, session feedback, or a quick check-in. Choose someone from your inbox to get started.</p>
+    </div>
+    <div :if="hasSelection" class="flex flex-1 flex-col min-w-0">
+      <header class="flex items-center gap-3 px-4 md:px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+        <button type="button" @click="chat.back()" aria-label="Back to inbox" class="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><span class="i-lucide-arrow-left" aria-hidden="true"></span></button><div class="flex-1"><h2 class="font-semibold text-slate-900 dark:text-white" :text="selectedName"></h2><p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400" :text="selectedRole"></p></div><button type="button" @click="chat.refresh(true)" aria-label="Refresh conversation" class="p-2 text-slate-500 dark:text-slate-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><span class="i-lucide-refresh-cw" aria-hidden="true"></span></button>
+      </header>
+      <div ref="chat-history" role="log" aria-label="Conversation history" aria-live="polite" aria-relevant="additions" :aria-busy="threadLoading" class="flex flex-col flex-1 min-h-0 overflow-y-auto px-4 md:px-6 py-5 gap-4">
+        <button :if="hasMore" type="button" @click="chat.older()" :disabled="threadLoading" class="self-center text-sm text-blue-700 dark:text-blue-300 font-medium underline">Load earlier messages</button>
+        <p :if="threadLoading" role="status" class="text-center text-sm text-slate-500 dark:text-slate-400">Loading conversation...</p>
+        <div :if="emptyThread" class="my-auto text-center"><p class="font-semibold text-slate-900 dark:text-white">Start with a question or a check-in</p><p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Messages stay here so you can pick up where you left off.</p></div>
+        <article :for="message in messages" :class="message.sender_id === selfId ? 'items-end' : 'items-start'" class="flex flex-col gap-1.5">
+          <p :class="message.sender_id === selfId ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'" class="max-w-[88%] md:max-w-[75%] whitespace-pre-wrap break-words px-4 py-3 rounded-2xl text-sm leading-6" :text="message.body"></p><span class="text-[11px] text-slate-500 dark:text-slate-400"><time :datetime="message.created_at" :text="timestamp(message.created_at)"></time><span :if="message.sender_id === selfId" :text="message.read_at ? ' · Read' : ' · Sent'"></span></span>
+        </article>
+      </div>
+      <form @submit.prevent="submit()" class="px-4 md:px-6 pt-3 pb-4 border-t border-slate-200 dark:border-slate-800">
+        <label for="chat-draft" class="sr-only">Write a message</label><textarea ref="chat-composer" id="chat-draft" x-model="draft" @keydown="keyboard($event)" :maxlength="maxLength" :disabled="sending" rows="3" placeholder="Write a message..." class="w-full resize-none px-3 py-2 text-sm leading-6 text-slate-900 dark:text-white placeholder:text-slate-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea><div class="flex items-center justify-between gap-3 mt-2"><span class="text-xs text-slate-500 dark:text-slate-400">Ctrl or ⌘ + Enter to send</span><button type="submit" :disabled="!canSend" class="shrink-0 inline-flex gap-2 items-center px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"><span :text="sendLabel">Send message</span><span class="i-lucide-send" aria-hidden="true"></span></button></div>
+      </form>
+    </div>
+  </div>
+</section>
