@@ -63,6 +63,8 @@ export interface OutboxEntry {
 export type OutboxOverlay = (data: any, entry: OutboxEntry, target: { key: string, url?: string | null }) => any
 
 export interface OutboxSendInit extends RequestInit {
+  /** Persist before sending and return immediately. Delivery runs in the background. */
+  background?: boolean
   meta?: Record<string, unknown>
   /** The reads this write changes: query keys, or the URLs they GET. */
   affects?: string[]
@@ -254,12 +256,15 @@ export function useOutbox(name: string, options: OutboxOptions = {}): Outbox {
       return []
     }
   }
-  const write = (list: OutboxEntry[]): void => {
+  const write = (list: OutboxEntry[], durable = false): void => {
     try {
       if (list.length) storage.setItem(key, JSON.stringify(list))
       else storage.removeItem(key)
     }
-    catch {}
+    catch (error) {
+      // A background save must never acknowledge data it could not keep.
+      if (durable) throw error
+    }
     for (const known of Array.from(applies.keys())) {
       if (!list.some(entry => entry.id === known))
         applies.delete(known)
@@ -355,7 +360,7 @@ export function useOutbox(name: string, options: OutboxOptions = {}): Outbox {
   }
 
   async function send(url: string, init: OutboxSendInit = {}): Promise<OutboxSendResult> {
-    const { meta, affects, apply, overlay, ...requestInit } = init
+    const { background, meta, affects, apply, overlay, ...requestInit } = init
     const id = newId()
     const entry: OutboxEntry = {
       id,
@@ -376,8 +381,14 @@ export function useOutbox(name: string, options: OutboxOptions = {}): Outbox {
     const keep = (nextAt: number): OutboxSendResult => {
       if (typeof apply === 'function')
         applies.set(id, apply)
-      write([...read(), { ...entry, attempts: 1, nextAt }])
+      write([...read(), { ...entry, attempts: background ? 0 : 1, nextAt }], background)
       return { status: 'queued', entry }
+    }
+    if (background) {
+      const result = keep(0)
+      // Let the caller apply its optimistic result before delivery callbacks.
+      setTimeout(() => { void flush() }, 0)
+      return result
     }
     // Behind something already waiting, a write must wait its turn too.
     if (read().length) {

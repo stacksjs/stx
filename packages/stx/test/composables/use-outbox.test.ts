@@ -15,6 +15,39 @@ let n = 0
 const name = () => `test-${++n}`
 
 describe('useOutbox', () => {
+  it('persists a background write before returning while delivery is still waiting', async () => {
+    const storage = memory()
+    let finish!: (response: Response) => void
+    let sent = false
+    const outbox = useOutbox(name(), {
+      storage,
+      fetch: () => new Promise(resolve => { finish = resolve }),
+      onSent: () => { sent = true },
+    })
+    const result = await outbox.send('/api/result', { method: 'POST', body: '{"rpe":8}', background: true })
+    expect(result.status).toBe('queued')
+    expect(outbox.entries()[0]?.body).toBe('{"rpe":8}')
+    expect(storage.data.size).toBe(1)
+    await new Promise(resolve => setTimeout(resolve, 5))
+    expect(sent).toBe(false)
+    finish(new Response('{}'))
+    await outbox.flush()
+    expect(sent).toBe(true)
+    expect(outbox.pending).toBe(0)
+    outbox.stop()
+  })
+
+  it('refuses to acknowledge a background save when persistence fails', async () => {
+    let called = false
+    const outbox = useOutbox(name(), {
+      storage: { ...memory(), setItem: () => { throw new Error('Storage full') } },
+      fetch: async () => { called = true; return new Response('{}') },
+    })
+    await expect(outbox.send('/api/result', { method: 'POST', background: true })).rejects.toThrow('Storage full')
+    expect(called).toBe(false)
+    expect(outbox.pending).toBe(0)
+    outbox.stop()
+  })
   it('sends straight away when the server answers', async () => {
     const calls: string[] = []
     const outbox = useOutbox(name(), { storage: memory(), fetch: async (url) => { calls.push(url); return new Response('{}', { status: 200 }) } })
