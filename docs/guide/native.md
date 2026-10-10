@@ -87,4 +87,7 @@ shared-runtime contract. `FlatList` remains a renderer primitive, but automatic
 row recycling is currently unsupported and should not be inferred from IR
 translation alone.
 
+Both renderers support `Modal` visibility and `Slider` value-change events.
+`FlatList` is currently Android-only; use `:for` for cross-platform lists.
+
 Types for the `craft` object a screen sees (`NativeCraft`, `NativeNavigation`, …) are exported from `@stacksjs/stx/native`.

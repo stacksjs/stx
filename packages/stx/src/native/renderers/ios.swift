@@ -198,6 +198,10 @@ class STXRenderer {
             return renderActivityIndicator(node)
         case "SafeAreaView":
             return renderSafeAreaView(node)
+        case "Modal":
+            return renderModal(node)
+        case "Slider":
+            return renderSlider(node)
         default:
             print("[STX] Unknown component type: \(node.type), rendering as View")
             return renderView(node)
@@ -451,6 +455,64 @@ class STXRenderer {
 
         configureYogaLayout(view: view, style: node.style)
         return view
+    }
+
+    private func renderModal(_ node: STXNode) -> UIView {
+        let container = UIView()
+        container.isHidden = !(node.props["visible"]?.value as? Bool ?? false)
+
+        if node.props["transparent"]?.value as? Bool != true {
+            container.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        }
+
+        for child in node.children {
+            if case .node(let childNode) = child {
+                container.addSubview(render(childNode))
+            }
+        }
+
+        applyStyle(to: container, style: node.style)
+        configureYogaLayout(view: container, style: node.style)
+        return container
+    }
+
+    private func renderSlider(_ node: STXNode) -> UISlider {
+        let slider = UISlider()
+        func number(_ name: String) -> Double? {
+            if let value = node.props[name]?.value as? Double { return value }
+            if let value = node.props[name]?.value as? Int { return Double(value) }
+            return nil
+        }
+        slider.minimumValue = Float(number("minimumValue") ?? 0)
+        slider.maximumValue = Float(number("maximumValue") ?? 1)
+        slider.value = Float(number("value") ?? Double(slider.minimumValue))
+
+        if let color = node.props["minimumTrackTintColor"]?.value as? String {
+            slider.minimumTrackTintColor = UIColor(hex: color)
+        }
+        if let color = node.props["maximumTrackTintColor"]?.value as? String {
+            slider.maximumTrackTintColor = UIColor(hex: color)
+        }
+        if let color = node.props["thumbTintColor"]?.value as? String {
+            slider.thumbTintColor = UIColor(hex: color)
+        }
+        if let handlerName = node.events["onValueChange"] {
+            slider.accessibilityIdentifier = handlerName
+            slider.accessibilityValue = String(number("step") ?? 0)
+            slider.addTarget(self, action: #selector(handleSliderChange(_:)), for: .valueChanged)
+        }
+
+        configureYogaLayout(view: slider, style: node.style)
+        return slider
+    }
+
+    @objc private func handleSliderChange(_ sender: UISlider) {
+        guard let handlerName = sender.accessibilityIdentifier else { return }
+        let step = Float(sender.accessibilityValue ?? "0") ?? 0
+        if step > 0 {
+            sender.value = round(sender.value / step) * step
+        }
+        jsContext.evaluateScript("\(handlerName)(\(sender.value))")
     }
 
     // MARK: - Style Application

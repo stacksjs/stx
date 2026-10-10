@@ -263,9 +263,8 @@ describe('mapToNativeComponent', () => {
  *
  * They already have. Reading the dispatch out of each file:
  *
- *   iOS     View Text Button TextInput Image ScrollView TouchableOpacity
- *           Switch ActivityIndicator SafeAreaView
- *   Android ...the same ten, PLUS FlatList, Modal, Slider
+ *   iOS and Android share Modal and Slider now. FlatList remains Android-only
+ *   until iOS has a real recycling implementation rather than a stack of views.
  *
  * So a template using `<list>`, `<modal>` or `<slider>` renders on Android and
  * silently does not on iOS -- the kind of difference that only shows up on a
@@ -288,7 +287,7 @@ describe('renderer coverage', () => {
   }
 
   /** Implemented on Android and not yet on iOS. This list must only shrink. */
-  const IOS_NOT_YET = ['FlatList', 'Modal', 'Slider']
+  const IOS_NOT_YET = ['FlatList']
 
   /** Emitted by the mapper and rendered by neither. This list must only shrink. */
   const RENDERED_BY_NEITHER = ['Picker']
@@ -327,6 +326,13 @@ describe('renderer coverage', () => {
       expect(iosTypes().has(type)).toBe(true)
       expect(androidTypes().has(type)).toBe(true)
     }
+  })
+
+  it('iOS wires Slider values and renders Modal visibility', () => {
+    const source = readFileSync(path.join(RENDERERS, 'ios.swift'), 'utf8')
+    expect(source).toContain('node.events["onValueChange"]')
+    expect(source).toContain('#selector(handleSliderChange(_:))')
+    expect(source).toContain('node.props["visible"]')
   })
 })
 
