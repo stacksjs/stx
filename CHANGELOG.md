@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.421...v0.2.422)
+
+## 🐛 Bug Fixes
+
+- handle Bun referrers and provision image worker fixtures ([18e5be7](https://github.com/stacksjs/stx/commit/18e5be7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- defer attribute bindings in hidden conditional branches ([daacc0d](https://github.com/stacksjs/stx/commit/daacc0d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.422 ([790a252](https://github.com/stacksjs/stx/commit/790a252)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.420...v0.2.421)
 
 ## 🔧 Chores
