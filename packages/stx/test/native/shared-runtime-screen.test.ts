@@ -28,6 +28,9 @@ function increment() { count.set(count() + 1) }
     const sent: any[] = []
     let receive: (message: unknown) => void = () => {}
     const screen = prepareSharedNativeScreen(compiled.document, compiled.manifest, {
+      platform: 'ios',
+      capabilityProtocolVersion: 1,
+      capabilities: ['storage', 'lifecycle'],
       postMessage: raw => sent.push(JSON.parse(raw)),
       onMessage: callback => { receive = callback },
     })
@@ -49,10 +52,10 @@ function increment() { count.set(count() + 1) }
     expect(listener).toBeTruthy()
 
     sent.length = 0
-    receive({
+    receive(JSON.stringify({
       type: 'EVENT',
       payload: { handlerId: listener.patch.events.onPress, nativeEvent: {} },
-    })
+    }))
     screen.host.flush()
 
     const updateOps = sent.flatMap(message => message.payload.operations)
@@ -84,6 +87,9 @@ function increment() { count.set(count() + 1) }
       WeakMap,
       WeakSet,
       __stxNativeBridge: {
+        platform: 'ios',
+        capabilityProtocolVersion: 1,
+        capabilities: ['storage', 'lifecycle'],
         postMessage: (raw: string) => sent.push(JSON.parse(raw)),
         onMessage: (callback: typeof receive) => { receive = callback },
       },
@@ -95,10 +101,57 @@ function increment() { count.set(count() + 1) }
     const listener = initialOps.find(operation => operation.patch?.events?.onPress)
     expect(listener).toBeTruthy()
     sent.length = 0
-    receive({ type: 'EVENT', payload: { handlerName: listener.patch.events.onPress, nativeEvent: {} } })
+    receive(JSON.stringify({ type: 'EVENT', payload: { handlerName: listener.patch.events.onPress, nativeEvent: {} } }))
     await Promise.resolve()
 
     const updates = sent.flatMap(message => message.payload.operations)
     expect(updates).toContainEqual(expect.objectContaining({ patch: { children: ['1'] } }))
+  })
+
+  it('installs Craft capabilities before client setup executes', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-craft-'))
+    const file = path.join(root, 'Screen.stx')
+    await Bun.write(file, `<script client>
+const status = state(craft.lifecycle.getState())
+craft.lifecycle.onStateChange(next => status.set(next))
+const ready = craft.storage.get('ready').then(value => status.set(value))
+</script>
+<View><Text :text="status" /></View>`)
+    const { code } = await compileSharedScreenBundle(file)
+    const sent: any[] = []
+    let receive: (message: string) => void = () => {}
+    const scope: Record<string, any> = {
+      console,
+      setTimeout,
+      clearTimeout,
+      Promise,
+      Date,
+      Map,
+      Set,
+      WeakMap,
+      WeakSet,
+      __stxNativeBridge: {
+        platform: 'ios',
+        capabilityProtocolVersion: 1,
+        capabilities: ['storage', 'lifecycle'],
+        initialAppState: 'active',
+        postMessage: (raw: string) => sent.push(JSON.parse(raw)),
+        onMessage: (callback: typeof receive) => { receive = callback },
+      },
+    }
+    vm.runInNewContext(code, scope)
+    const request = sent.find(message => message.type === 'API_REQUEST')
+    expect(scope.craft).toMatchObject({ platform: 'ios', capabilities: { storage: true, lifecycle: true } })
+    receive(JSON.stringify({
+      type: 'API_RESPONSE',
+      correlationId: request.id,
+      payload: { version: 1, requestId: request.id, data: 'ready' },
+    }))
+    await Bun.sleep(0)
+    receive(JSON.stringify({ type: 'APP_STATE', payload: { state: 'background' } }))
+    await Bun.sleep(0)
+    const updates = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
+    expect(updates).toContainEqual(expect.objectContaining({ patch: { children: ['ready'] } }))
+    expect(updates).toContainEqual(expect.objectContaining({ patch: { children: ['background'] } }))
   })
 })

@@ -74,6 +74,7 @@ export interface NativeSnapshots {
 
 export interface NativeCraft {
   platform: string
+  capabilityProtocolVersion: number
   route: { name: string, params: Record<string, unknown> }
   capabilities: Record<string, boolean>
   navigation: NativeNavigation
@@ -86,8 +87,32 @@ export interface NativeCraft {
     notification: (type?: 'success' | 'warning' | 'error') => Promise<void>
     selection: () => Promise<void>
   }
+  haptic: (style?: string) => Promise<unknown>
   clipboard: { write: (text: string) => Promise<unknown>, read: () => Promise<string> }
   device: { getInfo: () => Promise<Record<string, unknown>> }
-  lifecycle: { getState: () => 'active' | 'inactive' | 'background', onStateChange: (callback: (state: string) => unknown) => () => void }
+  biometrics: {
+    isAvailable: () => Promise<boolean>
+    getBiometricType: () => Promise<string | null>
+    authenticate: (reason?: string) => Promise<unknown>
+  }
+  db: {
+    execute: (sql: string, params?: unknown[]) => Promise<unknown>
+    query: <T = unknown>(sql: string, params?: unknown[]) => Promise<T[]>
+    beginTransaction: () => Promise<unknown>
+    commit: () => Promise<unknown>
+    rollback: () => Promise<unknown>
+  }
+  notifications: {
+    show: (notification: unknown) => Promise<unknown>
+    schedule: (notification: unknown) => Promise<unknown>
+    cancel: (id: string) => Promise<unknown>
+    cancelAll: () => Promise<unknown>
+    pending: () => Promise<unknown[]>
+  }
+  lifecycle: {
+    getState: () => 'active' | 'inactive' | 'background'
+    onStateChange: (callback: (state: string) => unknown) => () => void
+    onChange: (callback: (state: string) => unknown) => () => void
+  }
   deepLinks: { getInitialURL: () => Promise<string | null>, onLink: (callback: (link: unknown) => unknown) => () => void }
 }

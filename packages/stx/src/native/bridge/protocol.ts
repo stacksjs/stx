@@ -410,6 +410,8 @@ export class STXBridge {
    */
   initialize(nativeBridge: NativeBridgeInterface): void {
     this.nativeBridge = nativeBridge
+    const timeout = Number(nativeBridge.capabilityTimeoutMs)
+    if (Number.isFinite(timeout) && timeout > 0) this.defaultTimeout = timeout
 
     // Set up native → JS message handler
     nativeBridge.onMessage((rawMessage: string) => {
@@ -662,6 +664,9 @@ export interface NativeBridgeInterface {
 
   /** App state captured before the generated bundle starts executing. */
   initialAppState?: 'active' | 'inactive' | 'background'
+
+  /** Color scheme captured before the generated bundle starts executing. */
+  colorScheme?: 'light' | 'dark'
 
   /**
    * Post a message to native
