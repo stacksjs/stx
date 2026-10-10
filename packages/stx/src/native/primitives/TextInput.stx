@@ -1,5 +1,7 @@
 {{-- TextInput: the native type, written as an ordinary stx component. --}}
 <script server>
 const classes = $props.class ?? $props.className ?? ''
+const testID = $props.testID
+const placeholder = $props.placeholder
 </script>
-<input data-native="TextInput" class="{{ classes }}" />
+<input data-native="TextInput" class="{{ classes }}" @if(testID) testID="{{ testID }}" @endif @if(placeholder) placeholder="{{ placeholder }}" @endif />

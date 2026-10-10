@@ -189,6 +189,17 @@ describe('the primitives themselves', () => {
     const { document } = await compileScreenSource(source, screen('Touchables.stx', source))
     expect(types(document.root)).toEqual(['View', 'TouchableOpacity', 'Text', 'Pressable', 'Text'])
   })
+
+  it('keeps static host props on native primitive roots', async () => {
+    const source = `<View><Text testID="label">Name</Text><Button testID="save">Save</Button><TextInput testID="name-input" placeholder="Type your name" /></View>`
+    const { document } = await compileScreenSource(source, screen('HostProps.stx', source))
+    const children = document.root.children.filter((child): child is STXNode => typeof child !== 'string')
+    expect(children.map(child => child.props)).toEqual([
+      { testID: 'label' },
+      { type: 'button', testID: 'save' },
+      { testID: 'name-input', placeholder: 'Type your name' },
+    ])
+  })
 })
 
 describe('extractClientScript', () => {

@@ -265,6 +265,11 @@ interface Attributes {
   classes: string
 }
 
+/** HTML parsing lowercases attribute names; restore host props whose case is API-significant. */
+const HOST_PROP_NAMES: Record<string, string> = {
+  testid: 'testID',
+}
+
 function readAttributes(
   tag: string,
   attributes: Array<[string, string]>,
@@ -317,10 +322,10 @@ function readAttributes(
     }
 
     try {
-      props[rawName] = JSON.parse(value)
+      props[HOST_PROP_NAMES[name] ?? rawName] = JSON.parse(value)
     }
     catch {
-      props[rawName] = decodeEntities(value)
+      props[HOST_PROP_NAMES[name] ?? rawName] = decodeEntities(value)
     }
   }
 

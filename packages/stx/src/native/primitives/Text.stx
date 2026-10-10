@@ -1,5 +1,6 @@
 {{-- Text: the native type, written as an ordinary stx component. --}}
 <script server>
 const classes = $props.class ?? $props.className ?? ''
+const testID = $props.testID
 </script>
-<span data-native="Text" class="{{ classes }}"><slot /></span>
+<span data-native="Text" class="{{ classes }}" @if(testID) testID="{{ testID }}" @endif><slot /></span>

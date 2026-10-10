@@ -1,5 +1,6 @@
 {{-- Button: the native type, written as an ordinary stx component. --}}
 <script server>
 const classes = $props.class ?? $props.className ?? ''
+const testID = $props.testID
 </script>
-<button data-native="Button" class="{{ classes }}" type="button"><slot /></button>
+<button data-native="Button" class="{{ classes }}" type="button" @if(testID) testID="{{ testID }}" @endif><slot /></button>
