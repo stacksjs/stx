@@ -2902,7 +2902,11 @@ catch (e) {
    * page that ships no list hydrates exactly as it did.
    */
   function processFromManifest(root, scope, manifest, resolvedNodes) {
-    var entries = manifest && manifest.entries ? manifest.entries : manifest;
+    // Arrays have an entries() method too. Prefer the array itself before
+    // accepting the compiled document shape { entries: [...] }.
+    var entries = Array.isArray(manifest)
+      ? manifest
+      : (manifest && Array.isArray(manifest.entries) ? manifest.entries : null);
     if (!entries || !entries.length || (!root && !resolvedNodes)) return false;
     for (var i = 0; i < entries.length; i++) {
       var entry = entries[i];

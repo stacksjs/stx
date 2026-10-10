@@ -33,7 +33,10 @@ async function hydrateWithManifest(
   const { html, manifest } = extractBindingManifest(markup)
   const name = `mf_${++booted}`
   window[`__stx_setup_${name}`] = () => scope
-  window.__stx_bindings = shipManifest ? manifest.entries : undefined
+  // The native adapter carries the compiled document shape, while browser
+  // output may carry the entries array directly. Other tests below pin the
+  // array path; use the document shape here so both contracts stay covered.
+  window.__stx_bindings = shipManifest ? manifest : undefined
   document.body.innerHTML = `<main data-stx="__stx_setup_${name}">${html}</main>`
   shimAttributes(document.body)
   document.dispatchEvent(new window.Event('DOMContentLoaded'))

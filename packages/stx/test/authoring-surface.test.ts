@@ -39,6 +39,7 @@ const DELIBERATELY_NOT_GLOBAL: Record<string, string> = {
   mount: 'runtime plumbing',
   mountEl: 'runtime plumbing',
   hydrate: 'runtime plumbing',
+  hydrateHost: 'native host plumbing',
   helpers: 'internal helper bag',
   // Very generic nouns. A bare `modal` / `toast` / `drawer` collides with an
   // ordinary local of the same name, and the destructure would then be a
