@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.423...v0.2.424)
+
+## 🐛 Bug Fixes
+
+- refuse durable saves when browser storage cannot persist ([57d5e26](https://github.com/stacksjs/stx/commit/57d5e26)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.424 ([592452c](https://github.com/stacksjs/stx/commit/592452c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.422...v0.2.423)
 
 ## ✨ Features
