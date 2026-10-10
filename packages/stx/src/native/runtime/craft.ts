@@ -16,6 +16,8 @@ export interface NativeNavigationButton {
   /** An SF Symbol name. */
   symbol?: string
   title?: string
+  /** A picture (https URL), drawn round like an account button; the symbol or title shows until it loads. */
+  image?: string
   color?: string
   accessibilityLabel?: string
   /** Kept in the screen; the host only sees the id. */
