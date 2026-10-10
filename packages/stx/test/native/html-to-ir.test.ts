@@ -134,6 +134,15 @@ describe('events', () => {
     expect(root.events).toEqual({ onPress: 'save()' })
   })
 
+  it('restores case-sensitive native host prop names after HTML parsing', async () => {
+    const { root } = await translateHtmlToIR('<div data-native="ScrollView" testID="feed" keyboardDismissMode="on-drag" contentContainerStyle="{}"></div>')
+    expect(root.props).toMatchObject({
+      testID: 'feed',
+      keyboardDismissMode: 'on-drag',
+      contentContainerStyle: {},
+    })
+  })
+
   it('reports a handler no renderer reads instead of attaching it to nothing', async () => {
     const { root, diagnostics } = await translateHtmlToIR('<div @keydown.enter="go()">x</div>')
     expect(root.events).toEqual({})

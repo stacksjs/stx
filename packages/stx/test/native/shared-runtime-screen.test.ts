@@ -116,7 +116,7 @@ const image = state({ uri: 'avatar.png' })
 
     const updates = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
     expect(updates).toContainEqual(expect.objectContaining({
-      patch: { props: { 'accessibility-state': { uri: 'avatar.png' } } },
+      patch: { props: { accessibilityState: { uri: 'avatar.png' } } },
     }))
   })
 

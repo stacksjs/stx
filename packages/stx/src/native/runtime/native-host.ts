@@ -31,6 +31,7 @@
  */
 
 import type { NativeMutationOperation } from '../bridge/protocol'
+import { nativePropName } from '../prop-names'
 
 /** A handle on a node in the native tree. Not an element; just an identity. */
 export interface NativeNode {
@@ -204,15 +205,17 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     },
 
     setAttribute(node, name, value) {
-      recordOf(node).props[name] = value
-      emit({ op: 'updateNode', id: node.__stxId, patch: { props: { [name]: value } } })
+      const prop = nativePropName(name)
+      recordOf(node).props[prop] = value
+      emit({ op: 'updateNode', id: node.__stxId, patch: { props: { [prop]: value } } })
     },
 
     removeAttribute(node, name) {
-      delete recordOf(node).props[name]
+      const prop = nativePropName(name)
+      delete recordOf(node).props[prop]
       // Null rather than omitted: a patch is merged on the native side, so an
       // absent key means "unchanged" and would leave the attribute in place.
-      emit({ op: 'updateNode', id: node.__stxId, patch: { props: { [name]: null } } })
+      emit({ op: 'updateNode', id: node.__stxId, patch: { props: { [prop]: null } } })
     },
 
     setStyle(node, value) {
