@@ -18,6 +18,8 @@ import { existsSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { generateScreenModule, RUNTIME_SPECIFIER } from './codegen'
 import { parseSTX } from './parser'
+import { compileScreenFile } from './render-screen'
+import { generateSignalsRuntime } from '../../signals'
 
 export interface CompileNativeBundleOptions {
   /** Screen name to `.stx` path, relative to `root`. */
@@ -169,6 +171,49 @@ export async function compileNativeBundle(options: CompileNativeBundleOptions): 
 /** One `.stx` file, as the single-screen bundle `compile <file> --format bundle` writes. */
 export function compileScreenBundle(file: string, options: Pick<CompileNativeBundleOptions, 'minify' | 'outFile' | 'root'> = {}): Promise<NativeBundleResult> {
   return compileNativeBundle({ ...options, screens: { main: file }, routed: false })
+}
+
+/** Compile one screen against stx's shared signals runtime, without the legacy parser/runtime. */
+export async function compileSharedScreenBundle(
+  file: string,
+  options: Pick<CompileNativeBundleOptions, 'minify' | 'outFile' | 'root'> = {},
+): Promise<NativeBundleResult> {
+  const root = path.resolve(options.root ?? process.cwd())
+  const source = path.resolve(root, file)
+  const compiled = await compileScreenFile(source)
+  const runtimeGlobals = path.join(import.meta.dir, '..', 'runtime', 'jsc-globals.ts')
+  const sharedScreen = path.join(import.meta.dir, '..', 'runtime', 'shared-screen.ts')
+  const setup = compiled.setup?.code ?? 'window.__stx_latestSetup = null;'
+  const contents = `
+import { installJSCGlobals } from ${JSON.stringify(runtimeGlobals)};
+import { prepareSharedNativeScreen } from ${JSON.stringify(sharedScreen)};
+var g = globalThis;
+installJSCGlobals(g);
+var bridge = g.__stxNativeBridge;
+if (!bridge) throw new Error('Missing __stxNativeBridge');
+var screen = prepareSharedNativeScreen(${JSON.stringify(compiled.document)}, ${JSON.stringify(compiled.manifest)}, bridge);
+g.__stx_host = screen.host;
+${generateSignalsRuntime()}
+${setup}
+screen.mount(g.stx, g.__stx_latestSetup || null);
+`
+  const plugin: BunPlugin = {
+    name: 'stx-native-shared-screen',
+    setup(builder) {
+      builder.onResolve({ filter: /^stx:native-shared-screen$/ }, () => ({ path: 'entry', namespace: 'stx-native-shared-screen' }))
+      builder.onLoad({ filter: /.*/, namespace: 'stx-native-shared-screen' }, () => ({ contents, loader: 'js' }))
+    },
+  }
+  const code = await build('stx:native-shared-screen', [plugin], options.minify ?? false)
+  const diagnostics = compiled.diagnostics.map(diagnostic => ({
+    level: 'warning' as const,
+    message: [diagnostic.kind, diagnostic.tag, diagnostic.name].filter(Boolean).join(': '),
+  }))
+  if (!options.outFile) return { code, diagnostics }
+  const outFile = path.resolve(root, options.outFile)
+  mkdirSync(path.dirname(outFile), { recursive: true })
+  await Bun.write(outFile, code)
+  return { code, outFile, diagnostics }
 }
 
 export { RUNTIME_SPECIFIER }

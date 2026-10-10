@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import path from 'node:path'
+import vm from 'node:vm'
+import { mkdtemp } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
 import { compileScreenSource } from '../../src/native/compiler/render-screen'
 import { prepareSharedNativeScreen } from '../../src/native/runtime/shared-screen'
 import { generateSignalsRuntimeDev } from '../../src/signals'
@@ -56,5 +60,45 @@ function increment() { count.set(count() + 1) }
       op: 'updateNode',
       patch: { children: ['1'] },
     }))
+  })
+
+  it('runs the same path as a DOM-free JavaScriptCore bundle', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-shared-'))
+    const file = path.join(root, 'Screen.stx')
+    await Bun.write(file, `<script client>
+const count = state(0)
+function increment() { count.set(count() + 1) }
+</script>
+<View><Text :text="count" /><Button @click="increment()">Tap</Button></View>`)
+    const { code } = await compileSharedScreenBundle(file)
+    const sent: any[] = []
+    let receive: (message: unknown) => void = () => {}
+    const scope = {
+      console,
+      setTimeout,
+      clearTimeout,
+      Promise,
+      Date,
+      Map,
+      Set,
+      WeakMap,
+      WeakSet,
+      __stxNativeBridge: {
+        postMessage: (raw: string) => sent.push(JSON.parse(raw)),
+        onMessage: (callback: typeof receive) => { receive = callback },
+      },
+    }
+    vm.runInNewContext(code, scope)
+    await Promise.resolve()
+
+    const initialOps = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
+    const listener = initialOps.find(operation => operation.patch?.events?.onPress)
+    expect(listener).toBeTruthy()
+    sent.length = 0
+    receive({ type: 'EVENT', payload: { handlerName: listener.patch.events.onPress, nativeEvent: {} } })
+    await Promise.resolve()
+
+    const updates = sent.flatMap(message => message.payload.operations)
+    expect(updates).toContainEqual(expect.objectContaining({ patch: { children: ['1'] } }))
   })
 })
