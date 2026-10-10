@@ -2,13 +2,14 @@ import { describe, expect, it } from 'bun:test'
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { compileLegacyScreenBundle } from '../../src/native/compiler/bundle'
+import vm from 'node:vm'
+import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
 
 async function generate(script: string = '', template: string = '<View><Text>Capabilities</Text></View>'): Promise<string> {
   const root = await mkdtemp(path.join(tmpdir(), 'stx-native-capabilities-'))
   const file = path.join(root, 'Capabilities.stx')
-  await Bun.write(file, `<script>${script}</script><template>${template}</template>`)
-  return (await compileLegacyScreenBundle(file)).code
+  await Bun.write(file, `<script client>${script}</script>${template}`)
+  return (await compileSharedScreenBundle(file)).code
 }
 
 async function runtime(script: string = '', options: {
@@ -19,7 +20,7 @@ async function runtime(script: string = '', options: {
   capabilities?: string[]
 } = {}) {
   const sent: Array<Record<string, any>> = []
-  let callback: (message: Record<string, any>) => void = () => {}
+  let callback: (message: string) => void = () => {}
   const scope: Record<string, any> = {
     __stxNativeBridge: {
       platform: 'ios',
@@ -36,11 +37,12 @@ async function runtime(script: string = '', options: {
     scope.setTimeout = setTimeout
     scope.clearTimeout = clearTimeout
   }
-  new Function('globalThis', await generate(script, options.template))(scope)
-  return { scope, sent, receive: (message: Record<string, any>) => callback(message) }
+  vm.runInNewContext(await generate(script, options.template), scope)
+  await Promise.resolve()
+  return { scope, sent, receive: (message: Record<string, any>) => callback(JSON.stringify(message)) }
 }
 
-describe('generated native capability protocol', () => {
+describe('shared-runtime native capability protocol', () => {
   it('publishes the platform and capability flags through the existing Craft shape', async () => {
     const { scope } = await runtime()
     expect(scope.craft.platform).toBe('ios')
@@ -199,14 +201,15 @@ describe('generated native capability protocol', () => {
 
   it('re-renders lifecycle and deep-link subscription state', async () => {
     const { sent, receive } = await runtime(`
-      let state = 'active'
-      let link = 'none'
-      globalThis.craft.lifecycle.onStateChange(function(next) { state = next })
-      globalThis.craft.deepLinks.onLink(function(next) { link = next.url })
-    `, { template: '<View><Text testID="state">{state}</Text><Text testID="link">{link}</Text></View>' })
+      const appState = state('active')
+      const link = state('none')
+      globalThis.craft.lifecycle.onStateChange(function(next) { appState.set(next) })
+      globalThis.craft.deepLinks.onLink(function(next) { link.set(next.url) })
+    `, { template: '<View><Text testID="state" :text="appState" /><Text testID="link" :text="link" /></View>' })
     sent.length = 0
     receive({ type: 'APP_STATE', payload: { state: 'background' } })
     receive({ type: 'DEEP_LINK', payload: { url: 'craft://notes/1', initial: false } })
+    await Bun.sleep(0)
     const updates = sent.filter(message => message.type === 'MUTATE')
       .flatMap(message => message.payload.operations)
       .filter(operation => operation.op === 'updateNode')
@@ -288,16 +291,17 @@ describe('generated native capability protocol', () => {
       payload: { version: 1, requestId: request.id, code: 'NETWORK_ERROR', message: 'The Internet connection appears to be offline.' },
     })
     const failure = await offline.catch((error: Error & { code?: string }) => error)
-    expect(failure).toBeInstanceOf(TypeError)
+    expect(failure.name).toBe('TypeError')
     expect(failure.code).toBe('NETWORK_ERROR')
   })
 
   it('re-renders once top-level async work has used a capability answer', async () => {
     const { sent, receive } = await runtime(`
-      let name = 'loading'
-      globalThis.fetch('https://example.com/me').then(function(r) { return r.json() }).then(function(me) { name = me.name })
-    `, { capabilities: ['fetch'], template: '<View><Text testID="name">{name}</Text></View>' })
+      const name = state('loading')
+      globalThis.fetch('https://example.com/me').then(function(r) { return r.json() }).then(function(me) { name.set(me.name) })
+    `, { capabilities: ['fetch'], template: '<View><Text testID="name" :text="name" /></View>' })
     const request = sent.find(message => message.type === 'API_REQUEST')!
+    sent.length = 0
     receive({
       type: 'API_RESPONSE',
       correlationId: request.id,

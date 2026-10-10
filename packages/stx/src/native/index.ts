@@ -1,9 +1,9 @@
 /**
  * `@stacksjs/stx/native`: stx templates as native iOS/Android screens.
  *
- * A `.stx` screen compiles to a JavaScriptCore bundle that Craft renders with
- * UIKit (and Android views): the template becomes data, its expressions and
- * handlers real functions, and every render re-evaluates them on the device.
+ * A `.stx` screen compiles to rendered IR plus a binding manifest that Craft
+ * draws with UIKit (and Android views). The ordinary stx signals runtime owns
+ * client state and sends targeted native-tree mutations without a WebView.
  *
  * @example
  * ```ts
