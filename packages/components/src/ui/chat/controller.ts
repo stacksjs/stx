@@ -66,6 +66,7 @@ export function createChat(options: ChatOptions): ChatController {
   const connected = state(false)
   const observers = new Set<() => boolean>()
   let stream: { close: () => void } | null = null
+  let scopeEffect: (() => void) | null = null
   let scope = ''
   let version = 0
   let drafts = new Map<number, string>()
@@ -211,10 +212,10 @@ export function createChat(options: ChatOptions): ChatController {
   }
   function observe(active = () => false) {
     observers.add(active); checkScope()
-    return () => { observers.delete(active); if (!observers.size) { stream?.close(); stream = null } }
+    if (!scopeEffect) scopeEffect = effect(() => { checkScope() })
+    return () => { observers.delete(active); if (!observers.size) { stream?.close(); stream = null; scopeEffect?.(); scopeEffect = null } }
   }
   // Coalesce events arriving during a send/read round trip, then reconcile once it finishes.
   function flushInvalidation() { if (invalidated) { invalidated = false; void reconcile() } }
-  effect(() => { checkScope() })
   return { contacts, conversations, selected, threadId, messages, loading, threadLoading, sending, error, draft, search, unreadOnly, hasMore, maxLength, rows, unread, canSend, selfId, load, open, back, send, older, refresh, reset, observe, connected }
 }
