@@ -177,6 +177,7 @@ describe('the three operations a DOM shape would have leaked through', () => {
 
   it('clone materialises a fresh subtree rather than copying views', () => {
     const { host, node, ops } = harness()
+    const parent = node('parent')
     const row = node('row', 'View')
     host.setAttribute(row, 'testID', 'row')
     const label = node('label', 'Text')
@@ -189,11 +190,17 @@ describe('the three operations a DOM shape would have leaked through', () => {
 
     // A new identity, not the one it was made from.
     expect(copy.__stxId).not.toBe('row')
+    // Detached clones are runtime templates, not protocol nodes. Sending one
+    // would make the host reject the atomic batch as an unreachable tree.
+    expect(ops().filter(o => o.op === 'createNode')).toHaveLength(0)
+
+    host.insert(parent, copy)
+    host.flush()
 
     const created = ops().filter(o => o.op === 'createNode')
     expect(created).toHaveLength(2)
     // The descriptor carried over, including the text child.
-    expect(created[0]).toMatchObject({ node: { type: 'View', props: { testID: 'row' } } })
+    expect(created[0]).toMatchObject({ id: copy.__stxId, node: { type: 'View', props: { testID: 'row', __stxId: copy.__stxId } } })
     expect(created[1]).toMatchObject({ node: { type: 'Text', children: ['first'] } })
   })
 })

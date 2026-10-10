@@ -112,6 +112,7 @@ function select(id) { selected.set(id) }
 
     const initialOps = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
     expect(initialOps.some(operation => operation.id === sourceButtonId && operation.patch?.events?.onPress)).toBe(false)
+    expect(initialOps.filter(operation => operation.op === 'createNode')).toHaveLength(8)
     const adaLabel = initialOps.find(operation => operation.patch?.children?.[0] === 'Ada')
     const beaLabel = initialOps.find(operation => operation.patch?.children?.[0] === 'Bea')
     expect(adaLabel).toBeTruthy()

@@ -54,6 +54,7 @@ interface NodeRecord {
   text?: string
   children: NativeNode[]
   visible: boolean
+  materialized: boolean
 }
 
 interface RetainedNativeNode extends NativeNode {
@@ -158,7 +159,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   function recordOf(node: NativeNode): NodeRecord {
     let record = records.get(node.__stxId)
     if (!record) {
-      record = { type: 'View', props: {}, style: {}, events: {}, children: [], visible: true }
+      record = { type: 'View', props: {}, style: {}, events: {}, children: [], visible: true, materialized: true }
       records.set(node.__stxId, record)
     }
     return record
@@ -183,6 +184,30 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       return
     Object.values(record.events).forEach(handlerId => handlers.delete(handlerId))
     record.children.forEach(releaseHandlers)
+  }
+
+  function materialize(node: NativeNode): void {
+    const record = recordOf(node)
+    if (record.materialized || node.__stxAnchor !== undefined)
+      return
+    record.materialized = true
+    emit({
+      op: 'createNode',
+      id: node.__stxId,
+      node: {
+        type: record.type,
+        props: { ...record.props },
+        style: { ...record.style },
+        ...(record.text === undefined ? {} : { children: [record.text] }),
+      },
+    })
+    let index = 0
+    for (const child of record.children) {
+      if (child.__stxAnchor !== undefined)
+        continue
+      materialize(child)
+      emit({ op: 'insertChild', parentId: node.__stxId, childId: child.__stxId, index: index++ })
+    }
   }
 
   /** Every node under this one, read off the parentage the host recorded. */
@@ -271,6 +296,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       text: descriptor?.children?.find(child => typeof child === 'string') as string | undefined,
       children: [],
       visible: true,
+      materialized: true,
     })
     decoratePosition(node)
     node.__stxOwner = owner ?? null
@@ -371,28 +397,26 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       if (node.__stxScope !== undefined)
         copy.__stxScope = node.__stxScope
 
-      const descriptor = source ?? { type: 'View', props: {}, style: {}, events: {}, children: [], visible: true }
+      const descriptor: NodeRecord = source ?? {
+        type: 'View',
+        props: {},
+        style: {},
+        events: {},
+        children: [],
+        visible: true,
+        materialized: true,
+      }
       records.set(copy.__stxId, {
         type: descriptor.type,
-        props: { ...descriptor.props },
+        props: { ...descriptor.props, __stxId: copy.__stxId },
         style: { ...descriptor.style },
         events: { ...descriptor.events },
         text: descriptor.text,
         children: [],
         visible: descriptor.visible,
+        materialized: false,
       })
       setConnected(copy, false)
-
-      emit({
-        op: 'createNode',
-        id: copy.__stxId,
-        node: {
-          type: descriptor.type,
-          props: { ...descriptor.props },
-          style: { ...descriptor.style },
-          ...(descriptor.text === undefined ? {} : { children: [descriptor.text] }),
-        },
-      })
 
       // Materialised from the descriptor, depth first -- a view hierarchy
       // cannot be deep-copied the way a DOM subtree can.
@@ -432,12 +456,14 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       record.children.splice(index, 0, node)
       node.__stxOwner = parent
       insertIntoBindingParent(parent, node, index)
-      setConnected(node, true)
+      setConnected(node, record.materialized)
 
       // An anchor holds a place in the ordering and nothing else, so moving one
       // is bookkeeping rather than a native operation.
-      if (node.__stxAnchor !== undefined)
+      if (node.__stxAnchor !== undefined || !record.materialized)
         return
+
+      materialize(node)
 
       emit({
         op: existing === -1 ? 'insertChild' : 'moveChild',
@@ -479,6 +505,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     },
 
     remove(node) {
+      const wasMaterialized = descriptorOf(node)?.materialized === true
       const owner = node.__stxOwner
       if (owner) {
         const record = recordOf(owner)
@@ -495,7 +522,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       setConnected(node, false)
       releaseHandlers(node)
       retainDetachedDescriptors(node)
-      if (node.__stxAnchor !== undefined)
+      if (node.__stxAnchor !== undefined || !wasMaterialized)
         return
       emit({ op: 'removeNode', id: node.__stxId })
     },
