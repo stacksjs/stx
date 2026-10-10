@@ -5505,6 +5505,10 @@ else {
           el.__stx_if_visible.set(true);
           el.__stx_shown_at = performance.now();
           isInserted = true;
+          // A previously hydrated parent skips hydrateShownBranch on re-show.
+          // Its children may have become visible while it was detached, so
+          // resume their pending bindings now that the subtree is connected.
+          peek(resumeDetachedBranches);
         }
 else if (!value && isInserted) {
           console.log('[stx] bindIf REMOVING element for :if=' + expr, 'el.isConnected:', el.isConnected, 'parent:', parent.tagName);
