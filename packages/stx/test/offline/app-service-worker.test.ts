@@ -457,6 +457,38 @@ describe('API reads', () => {
   const read = (sw: ReturnType<typeof runWorker>, token = 'a', options: RequestOptions = {}) =>
     sw.request('http://app.test/api/calendar', { Authorization: `Bearer ${token}` }, options)
 
+  it('never reads, writes or falls back to an offline copy for no-store requests', async () => {
+    let value = 1
+    let online = true
+    const sw = runWorker({ enabled: true }, () => online ? json({ value }) : null)
+    await read(sw)
+    await sw.settle()
+    value = 2
+    expect(await (await read(sw, 'a', { cache: 'no-store' }))!.json()).toEqual({ value: 2 })
+    await sw.settle()
+    expect(await [...sw.stores.get('stx-data')!.values()][0]!.clone().json()).toEqual({ value: 1 })
+    online = false
+    await expect(read(sw, 'a', { cache: 'no-store' })).rejects.toThrow('offline')
+  })
+
+  it('does not retain no-store responses and evicts a previously kept answer', async () => {
+    let privateRead = false
+    const sw = runWorker({ enabled: true }, () => {
+      const response = json({ value: privateRead ? 'live' : 'kept' })
+      if (privateRead) response.headers.set('Cache-Control', 'private, NO-STORE, max-age=0')
+      return response
+    })
+    await read(sw)
+    await sw.settle()
+    privateRead = true
+    await read(sw)
+    await sw.settle()
+    expect(sw.stores.get('stx-data')!.size).toBe(0)
+    expect(await (await read(sw))!.json()).toEqual({ value: 'live' })
+    await sw.settle()
+    expect(sw.stores.get('stx-data')!.size).toBe(0)
+  })
+
   it('answer the kept copy at once, refresh it behind, and say when it changed', async () => {
     let value = 1
     const sw = runWorker({ enabled: true }, () => json({ value }))

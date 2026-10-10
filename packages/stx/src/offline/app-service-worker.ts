@@ -342,8 +342,11 @@ function wantsNetworkFirst(request, pathname) {
 
 // Only what was asked for, whole and from this origin, is ever kept: not a
 // redirect (to a sign-in page), an error, or a partial answer.
+function noStore(response) {
+  return /(?:^|,)\\s*no-store\\s*(?:,|$)/i.test(response.headers.get('Cache-Control') || '');
+}
 function keepable(response) {
-  return response.status === 200 && !response.redirected && response.type === 'basic';
+  return response.status === 200 && !response.redirected && response.type === 'basic' && !noStore(response);
 }
 
 // A page's body changes on every render where it carries a CSP nonce or a
@@ -412,6 +415,7 @@ function announce(message) {
 // when it was kept.
 function revalidate(request, cache, keys, hit, kind) {
   return fetch(request).then(function (response) {
+    if (noStore(response)) return Promise.all(keys.map(function (key) { return cache.delete(key); }));
     if (!keepable(response)) return;
     return store(cache, keys, response).then(function (print) {
       return unchanged(hit, response, print.hash).then(function (same) {
@@ -810,6 +814,7 @@ function apiResponse(request, event) {
           return hit;
         }
         var network = fetch(request).then(function (response) {
+          if (noStore(response)) keepAlive(event, cache.delete(key));
           if (keepable(response)) keepAlive(event, store(cache, [key], response.clone()));
           return response;
         });
@@ -828,6 +833,12 @@ self.addEventListener('fetch', function (event) {
   if (request.method !== 'GET') {
     // Writes go straight to the network; only when they happened is noted.
     if (url.pathname.indexOf(S.api) === 0) keepAlive(event, noteWrite());
+    return;
+  }
+  // Live status and other explicitly uncached reads must never be answered
+  // from offline storage, including when the network fails.
+  if (request.cache === 'no-store') {
+    event.respondWith(fetch(request));
     return;
   }
   // Media kept for offline is answered from the device, a range included;
