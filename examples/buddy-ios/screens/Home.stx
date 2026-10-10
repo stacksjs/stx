@@ -1,0 +1,16 @@
+<script client>
+const count = state(0)
+const name = state('')
+
+function increment() {
+  count.set(count() + 1)
+}
+
+function changeName(event) {
+  name.set(event.text)
+}
+</script>
+
+<SafeAreaView class="flex-1 justify-center bg-slate-950 p-6">
+  <CounterCard title="Shared stx signals" />
+</SafeAreaView>
