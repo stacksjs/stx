@@ -54,6 +54,22 @@ describe('native chat components and controller', () => {
     expect(keys[0]).toBe(keys[1])
     expect(chat.draft()).toBe('')
   })
+  it('opens an athlete shortcut after the navigation badge has preloaded the inbox', async () => {
+    let person = 0
+    const chat = createChat({ selfId: () => 1, scopeKey: () => 'one', initialRecipient: () => person, request: async (url) => {
+      if (url.endsWith('/conversations')) return Response.json({ id: 'thread' })
+      if (url.endsWith('/thread')) return Response.json({ messages: [], has_more: false })
+      return Response.json({ contacts: [contact], conversations: [], max_length: 4000 })
+    } })
+    await chat.load()
+    expect(chat.selected()).toBeNull()
+    person = contact.id
+    await chat.load()
+    expect(chat.selected()?.id).toBe(contact.id)
+    chat.back()
+    await chat.load()
+    expect(chat.selected()).toBeNull()
+  })
   it('ignores an earlier contact response and clears account-scoped state', async () => {
     let resolveFirst: (response: Response) => void = () => {}
     let calls = 0, account = 'one'

@@ -63,13 +63,13 @@ export function createChat(options: ChatOptions): ChatController {
   let drafts = new Map<number, string>()
   let retry: { body: string, key: string, thread: string } | null = null
   let refreshing = false
-  let initialOpened = false
+  let initialRecipient = 0
 
   function reset() {
     version++
     contacts.set([]); conversations.set([]); selected.set(null); threadId.set(''); messages.set([])
     draft.set(''); error.set(''); loading.set(false); threadLoading.set(false); sending.set(false)
-    drafts = new Map(); retry = null; initialOpened = false; hasMore.set(false)
+    drafts = new Map(); retry = null; initialRecipient = 0; hasMore.set(false)
   }
   function checkScope() {
     const key = options.scopeKey()
@@ -113,10 +113,13 @@ export function createChat(options: ChatOptions): ChatController {
       const data = await json('')
       if (token !== version || options.scopeKey() !== scope) return
       contacts.set(data.contacts); conversations.set(data.conversations); maxLength.set(data.max_length); loading.set(false)
-      if (!initialOpened && options.initialRecipient) {
-        initialOpened = true
-        const person = data.contacts.find((c: ChatContact) => c.id === options.initialRecipient!())
-        if (person) await open(person)
+      const recipientId = options.initialRecipient?.() ?? 0
+      if (recipientId > 0 && recipientId !== initialRecipient) {
+        const person = data.contacts.find((c: ChatContact) => c.id === recipientId)
+        if (person) {
+          initialRecipient = recipientId
+          await open(person)
+        }
       }
     }
     catch (cause) { if (token === version) failure(cause) }
@@ -175,7 +178,8 @@ export function createChat(options: ChatOptions): ChatController {
     refreshing = true
     try {
       await load()
-      if (markRead && threadId()) await refreshThread(version, threadId())
+      if (markRead && selected() && !threadId()) await open(selected()!)
+      else if (markRead && threadId()) await refreshThread(version, threadId())
     }
     catch (cause) { failure(cause) }
     finally { refreshing = false }
