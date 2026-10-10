@@ -1,7 +1,7 @@
 {
   "name": "@stacksjs/components",
   "type": "module",
-  "version": "0.2.430",
+  "version": "0.2.429",
   "description": "A modern component library built with STX, featuring headwind utility classes and TypeScript syntax highlighting.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
@@ -76,7 +76,7 @@
   "devDependencies": {
     "@types/bun": "^1.4.2",
     "bun-plugin-dtsx": "^0.21.17",
-    "pickier": "^0.1.65",
+    "pickier": "^0.1.70",
     "typescript": "^7.0.2"
   }
 }
