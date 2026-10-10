@@ -204,6 +204,17 @@ describe('the primitives themselves', () => {
       { testID: 'name-input', placeholder: 'Type your name' },
     ])
   })
+
+  it('keeps server-evaluated object props on a native primitive root', async () => {
+    const source = `<ScrollView testID="feed" contentContainerStyle={{"paddingTop":12}} style={{"height":72}}><Text>Row</Text></ScrollView>`
+    const { document } = await compileScreenSource(source, screen('StructuredHostProps.stx', source))
+
+    expect(document.root.props).toEqual({
+      testID: 'feed',
+      contentContainerStyle: { paddingTop: 12 },
+    })
+    expect(document.root.style).toEqual({ height: 72 })
+  })
 })
 
 describe('extractClientScript', () => {

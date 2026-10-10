@@ -143,6 +143,12 @@ describe('events', () => {
     })
   })
 
+  it('decodes JSON object props forwarded by native components', async () => {
+    const { root } = await translateHtmlToIR('<div data-native="ScrollView" contentContainerStyle="{&quot;paddingTop&quot;:12}"></div>')
+
+    expect(root.props.contentContainerStyle).toEqual({ paddingTop: 12 })
+  })
+
   it('reports a handler no renderer reads instead of attaching it to nothing', async () => {
     const { root, diagnostics } = await translateHtmlToIR('<div @keydown.enter="go()">x</div>')
     expect(root.events).toEqual({})

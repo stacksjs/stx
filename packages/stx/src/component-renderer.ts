@@ -24,6 +24,7 @@ import { registry } from './component-registry'
 import { processConditionals } from './conditionals'
 import { registerBuiltins } from './builtins'
 import { forwardResolvedAttrs, forwardStaticAttrs } from './builtins/attrs'
+import { escapeAttr } from './builtins/escape'
 import { decodeAttributeEntities, decodeStxProp, findComponentTags, parseMultilineAttributes, pascalToKebab, readBracedValue, restoreStashedScripts, stashScriptElements, unwrapBracedExpression, uppercaseHtmlTagSkip } from './component-processing'
 import { maskAtElementPosition, matchHtmlComment } from './html-masking'
 import { renderComponentWithSlot, userComponentFileExists } from './utils'
@@ -1200,6 +1201,16 @@ function forwardNativeHostAttrs(html: string, props: ResolvedProps): string {
     ...forwardStaticAttrs(props, consumed),
     ...forwardResolvedAttrs(props, consumed),
   ]
+  for (const [key, value] of Object.entries(props.serverDynamic)) {
+    if (consumed.has(key) || value === null || typeof value !== 'object')
+      continue
+
+    const encoded = JSON.stringify(value)
+    if (encoded !== undefined) {
+      const name = props.serverDynamicNames?.[key] ?? key
+      forwarded.push(`${escapeAttr(name)}="${escapeAttr(encoded)}"`)
+    }
+  }
   if (forwarded.length === 0)
     return html
 

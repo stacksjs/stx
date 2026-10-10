@@ -317,11 +317,12 @@ function readAttributes(
       continue
     }
 
+    const decoded = decodeEntities(value)
     try {
-      props[nativePropName(rawName)] = JSON.parse(value)
+      props[nativePropName(rawName)] = JSON.parse(decoded)
     }
     catch {
-      props[nativePropName(rawName)] = decodeEntities(value)
+      props[nativePropName(rawName)] = decoded
     }
   }
 
@@ -340,7 +341,37 @@ function holdsString(property: string, value: string): boolean {
 
 function inlineStyle(tag: string, css: string, diagnostics: TranslationDiagnostic[]): STXStyle {
   const style: Record<string, string | number> = {}
-  for (const declaration of css.split(';')) {
+  const decoded = decodeEntities(css)
+  try {
+    const object = JSON.parse(decoded)
+    if (object && typeof object === 'object' && !Array.isArray(object)) {
+      for (const [rawProperty, rawValue] of Object.entries(object)) {
+        const property = STYLE_KEYS.has(rawProperty)
+          ? rawProperty
+          : camelCase(rawProperty.trim().toLowerCase())
+        if (!STYLE_KEYS.has(property)) {
+          diagnostics.push({ kind: 'unknown-style', tag, name: property })
+          continue
+        }
+        if (rawValue === null || rawValue === undefined)
+          continue
+        const translated = typeof rawValue === 'string' ? styleValue(rawValue) : rawValue
+        if (typeof translated !== 'string' && typeof translated !== 'number')
+          continue
+        if (typeof translated === 'string' && !holdsString(property, translated)) {
+          diagnostics.push({ kind: 'non-numeric-style', tag, name: property })
+          continue
+        }
+        style[property] = translated
+      }
+      return style as STXStyle
+    }
+  }
+  catch {
+    // CSS declarations are handled below.
+  }
+
+  for (const declaration of decoded.split(';')) {
     const colon = declaration.indexOf(':')
     if (colon === -1)
       continue
