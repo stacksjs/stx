@@ -476,6 +476,10 @@ export async function translateHtmlToIR(
     }
 
     const node = createNode(type, props, style, events)
+    const bindingId = props['data-stx-b']
+    if (typeof bindingId === 'number' && Number.isInteger(bindingId))
+      node.bindingId = bindingId
+    delete props['data-stx-b']
     if (classes)
       node._classes = classes
     if (Object.keys(bindings).length > 0)

@@ -28,6 +28,7 @@ import type { STXDocument } from './ir'
 import type { TranslationDiagnostic } from './html-to-ir'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
+import { extractBindingManifest, type BindingManifest } from '../../binding-manifest'
 import { processDirectives } from '../../process'
 import { translateHtmlToDocument } from './html-to-ir'
 import { extractClientScript } from './client-script'
@@ -64,6 +65,8 @@ export interface CompileScreenOptions {
 
 export interface CompiledScreen {
   document: STXDocument
+  /** Bindings keyed to `STXNode.bindingId`, consumed directly by the host runtime. */
+  manifest: BindingManifest
   diagnostics: TranslationDiagnostic[]
   /** The rendered HTML the IR was translated from, for debugging a bad tree. */
   html: string
@@ -92,13 +95,14 @@ export async function compileScreenSource(
   // injecting browser CSS here is redundant, and its development diagnostics
   // would corrupt `stx native compile --format ir` JSON on stdout.
   const context = { ...(options.context ?? {}), __stx_inject_css: false }
-  const html = await processDirectives(
+  const renderedHtml = await processDirectives(
     source,
     context,
     filePath,
     config as never,
     new Set<string>(),
   )
+  const { html, manifest } = extractBindingManifest(renderedHtml)
 
   const { document, diagnostics } = await translateHtmlToDocument(html, {
     source: filePath,
@@ -107,7 +111,7 @@ export async function compileScreenSource(
     script: extractClientScript(source),
   })
 
-  return { document, diagnostics, html }
+  return { document, manifest, diagnostics, html }
 }
 
 /** The same, reading the screen off disk. */

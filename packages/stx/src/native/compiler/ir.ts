@@ -47,6 +47,9 @@ export interface STXNode {
   /** Component type (View, Text, Button, etc.) */
   type: STXComponentType | string
 
+  /** Compiler-assigned binding manifest id for direct host hydration. */
+  bindingId?: number
+
   /** Unique identifier for reconciliation */
   key?: string
 

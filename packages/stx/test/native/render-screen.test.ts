@@ -82,11 +82,15 @@ describe('the reference screen', () => {
   })
 
   it('forwards a binding for the device to evaluate', async () => {
-    const { document } = await compileScreenSource(source, screen('Reference.stx', source))
+    const { document, manifest } = await compileScreenSource(source, screen('Reference.stx', source))
     const bound = document.root.children.find(
       (child): child is STXNode => typeof child !== 'string' && child.bindings?.text !== undefined,
     )
     expect(bound!.bindings).toEqual({ text: 'count()' })
+    expect(bound!.bindingId).toBe(0)
+    expect(manifest.entries[0].bindings).toEqual([
+      { name: ':text', value: 'count()', kind: 'text' },
+    ])
   })
 
   it('carries the screen own script, and only that', async () => {
