@@ -47,6 +47,9 @@ export interface STXNode {
   /** Component type (View, Text, Button, etc.) */
   type: STXComponentType | string
 
+  /** Runtime identity shared with native mutation operations. */
+  id?: string
+
   /** Compiler-assigned binding manifest id for direct host hydration. */
   bindingId?: number
 

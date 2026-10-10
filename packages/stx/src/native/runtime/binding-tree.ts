@@ -75,6 +75,7 @@ export function materializeNativeBindingTree(
     const id = `n${sequence++}`
     const entry = source.bindingId === undefined ? undefined : entries.get(source.bindingId)
     const node = createBindingNode(id, source.type, entry?.bindings ?? [])
+    source.id = id
     source.props.__stxId = id
     node.parentNode = parent
     node.parentElement = parent

@@ -265,7 +265,7 @@ describe('listeners and scope, without the DOM', () => {
 })
 
 describe('materializing rendered IR for shared-runtime hydration', () => {
-  it('builds a manifest lookup without selectors and shares ids with native props', () => {
+  it('builds a manifest lookup without selectors and shares ids with the native protocol', () => {
     const { host } = harness()
     const label = createNode('Text')
     label.bindingId = 0
@@ -282,6 +282,9 @@ describe('materializing rendered IR for shared-runtime hydration', () => {
 
     expect(tree.nodes.get(0)?.getAttribute(':text')).toBe('count')
     expect(tree.nodes.get(1)?.getAttribute('@click')).toBe('increment()')
+    expect(root.id).toBe(tree.root.__stxId)
+    expect(label.id).toBe(tree.nodes.get(0)?.__stxId)
+    expect(button.id).toBe(tree.nodes.get(1)?.__stxId)
     expect(label.props.__stxId).toBe(tree.nodes.get(0)?.__stxId)
     expect(button.props.__stxId).toBe(tree.nodes.get(1)?.__stxId)
     expect(host.descendants(tree.root).map(node => node.__stxId)).toEqual([
