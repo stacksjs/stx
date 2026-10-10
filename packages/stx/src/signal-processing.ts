@@ -1623,6 +1623,7 @@ export async function processScriptSetup(
     if (!signalScripts[i].bundled && hasUserImports(scriptContent)) {
       scriptContent = await bundleClientScript(scriptContent, filePath || '', {
         projectRoot: process.cwd(),
+        externalizeUserModules: options.forceClientSetup ? false : undefined,
       })
     }
     // Rewrite `import ... from 'stx'|'@stacksjs/stx'|'@stacksjs/browser'`

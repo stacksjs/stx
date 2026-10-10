@@ -161,6 +161,8 @@ const ready = craft.storage.get('ready').then(value => status.set(value))
     await Bun.write(file, '<View><Text>Craft</Text></View>')
     const { code } = await compileSharedScreenBundle(file)
     const sent: any[] = []
+    const nativeOptions: any[] = []
+    let navTaps = 0
     let receive: (message: string) => void = () => {}
     const scope: Record<string, any> = {
       console,
@@ -172,6 +174,7 @@ const ready = craft.storage.get('ready').then(value => status.set(value))
       Set,
       WeakMap,
       WeakSet,
+      craft: { navigation: { setOptions: (options: unknown) => nativeOptions.push(options) } },
       __stxNativeBridge: {
         capabilities: ['fetch'],
         postMessage: (raw: string) => sent.push(JSON.parse(raw)),
@@ -181,11 +184,11 @@ const ready = craft.storage.get('ready').then(value => status.set(value))
     vm.runInNewContext(code, scope)
     expect(scope.craft.route).toEqual({ name: 'main', params: {} })
     scope.craft.navigation.open('/m/workout/42')
-    scope.craft.navigation.setOptions({ title: 'Today', rightButtons: [{ id: 'me', title: 'Me', onPress: () => {} }] })
-    expect(sent.slice(-2)).toEqual([
-      expect.objectContaining({ type: 'NAVIGATE_OPEN', payload: { path: '/m/workout/42' } }),
-      expect.objectContaining({ type: 'NAVIGATION_SET_OPTIONS', payload: { title: 'Today', rightButtons: [{ id: 'me', title: 'Me' }] } }),
-    ])
+    scope.craft.navigation.setOptions({ title: 'Today', rightButtons: [{ id: 'me', title: 'Me', onPress: () => { navTaps++ } }] })
+    expect(sent.at(-1)).toMatchObject({ type: 'NAVIGATE_OPEN', payload: { path: '/m/workout/42' } })
+    expect(nativeOptions).toEqual([{ title: 'Today', rightButtons: [{ id: 'me', title: 'Me' }] }])
+    receive(JSON.stringify({ type: 'NAV_BUTTON', payload: { id: 'me' } }))
+    expect(navTaps).toBe(1)
     expect(() => scope.craft.navigation.push('missing')).toThrow('Unknown native screen')
 
     const response = scope.fetch('https://example.test/profile', { headers: { Accept: 'application/json' } })
@@ -233,5 +236,39 @@ function leave() { craft.navigation.back() }
     const listener = operations.find(operation => operation.patch?.events?.onPress).patch.events.onPress
     receive(JSON.stringify({ type: 'EVENT', payload: { handlerId: listener, nativeEvent: {} } }))
     expect(sent.at(-1)).toMatchObject({ type: 'NAVIGATE_BACK' })
+  })
+
+  it('bundles TypeScript imports and preserves host synchronous state', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-import-'))
+    await Bun.write(path.join(root, 'label.ts'), `export type Kind = 'saved'
+export function label(kind: Kind): string { return kind.toUpperCase() }`)
+    const file = path.join(root, 'Screen.stx')
+    await Bun.write(file, `<script client lang="ts">
+import { label, type Kind } from './label'
+const kind: Kind = craft.storage.getSync('kind') || 'saved'
+const title = state(label(kind))
+</script>
+<View><Text :text="title" /></View>`)
+    const { code } = await compileSharedScreenBundle(file)
+    const sent: any[] = []
+    const scope: Record<string, any> = {
+      console,
+      Promise,
+      Date,
+      Map,
+      Set,
+      WeakMap,
+      WeakSet,
+      craft: { storage: { getSync: () => 'saved', setSync: () => {} } },
+      __stxNativeBridge: {
+        postMessage: (raw: string) => sent.push(JSON.parse(raw)),
+        onMessage: () => {},
+      },
+    }
+    vm.runInNewContext(code, scope)
+    await Bun.sleep(0)
+    const operations = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
+    expect(operations).toContainEqual(expect.objectContaining({ patch: { children: ['SAVED'] } }))
+    expect(scope.craft.storage.getSync('kind')).toBe('saved')
   })
 })

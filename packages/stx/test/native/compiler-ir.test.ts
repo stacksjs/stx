@@ -17,8 +17,9 @@ import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { mapToNativeComponent } from '../../src/native/compiler/component-mapping'
-import { compileHeadwindToStyle } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles, compileHeadwindToStyle } from '../../src/native/compiler/headwind-to-style'
 import { translateHtmlToDocument } from '../../src/native/compiler/html-to-ir'
+import { LUCIDE_TO_SF, resolveIconName } from '../../src/native/compiler/icons'
 
 describe('compileHeadwindToStyle, by class family', () => {
   /** Each family's spelling and the exact object it must produce. */
@@ -111,6 +112,32 @@ describe('compileHeadwindToStyle, arbitrary values', () => {
   it('keeps the arbitrary lengths it does understand', () => {
     expect(compileHeadwindToStyle('w-[68px]')).toEqual({ width: 68 })
     expect(compileHeadwindToStyle('p-[7px]')).toEqual({ padding: 7 })
+  })
+})
+
+describe('native class and icon compatibility', () => {
+  it('keeps advanced numeric and alpha styles as renderer-safe values', () => {
+    expect(compileHeadwindToStyle('rounded-[10px] rounded-t-[2px]')).toEqual({ borderRadius: 10, borderTopLeftRadius: 2, borderTopRightRadius: 2 })
+    expect(compileHeadwindToStyle('text-[11px] tracking-[0.1em] leading-[16px]')).toEqual({ fontSize: 11, letterSpacing: 1.1, lineHeight: 16 })
+    expect(compileHeadwindToStyle('bg-emerald-500/10 border-[#ffffff]/50')).toEqual({ backgroundColor: '#10b9811a', borderColor: '#ffffff80' })
+  })
+
+  it('separates dark styles and reports unsupported variants and classes', () => {
+    const compiled = compileClassStyles('text-slate-900 dark:text-white hover:bg-red-500 sm:p-4 truncate i-lucide-sun wobble')
+    expect(compiled.style).toEqual({ color: '#0f172a' })
+    expect(compiled.dark).toEqual({ color: '#ffffff' })
+    expect(compiled.numberOfLines).toBe(1)
+    expect(compiled.icon).toBe('i-lucide-sun')
+    expect(compiled.unknown).toEqual(['wobble'])
+  })
+
+  it('maps the app icon vocabulary to SF Symbols', () => {
+    for (const name of ['sun', 'calendar-days', 'trending-up', 'heart-pulse', 'store', 'play', 'chevron-right', 'check', 'clock', 'flame', 'moon', 'activity', 'dumbbell', 'bike', 'footprints', 'waves', 'zap', 'bell', 'user', 'settings'])
+      expect(LUCIDE_TO_SF[name]).toBeString()
+    expect(resolveIconName('i-lucide-sun')).toEqual({ symbol: 'sun.max', iconify: 'i-lucide-sun', known: true })
+    expect(resolveIconName('lucide:footprints').symbol).toBe('figure.run')
+    expect(resolveIconName('heart.fill')).toEqual({ symbol: 'heart.fill', known: true })
+    expect(resolveIconName('i-mdi-home')).toEqual({ symbol: 'circle', iconify: 'i-mdi-home', known: false })
   })
 })
 

@@ -113,9 +113,9 @@ export async function compileScreenSource(
   })
 
   let setup = extractGeneratedSetupScript(html)
-  if (!setup && extractClientScript(source).code.trim()) {
+  if (extractClientScript(source).code.trim()) {
     const forced = await processScriptSetup(source, filePath, options.context, { forceClientSetup: true })
-    setup = extractGeneratedSetupScript(forced.setupCode ?? '')
+    setup = extractGeneratedSetupScript(forced.setupCode ?? '') ?? setup
   }
 
   return { document, manifest, setup, diagnostics, html }
