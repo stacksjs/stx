@@ -78,35 +78,13 @@ function open(id: string) { craft.navigation.push('Session', { id }) }
 
 Template bindings are carried in stx's binding manifest and evaluated by the shared signals runtime against the screen setup scope.
 
-### Native FlatList
+### Lists
 
-Bind a data array and mark the reusable row template with `listRole="item"`. Expressions inside that template receive `item` and `index`; `keyExtractor` must return a stable primitive key.
-
-```stx
-<script>
-let people = [{ id: 'ada', name: 'Ada' }, { id: 'grace', name: 'Grace' }]
-function loadMore() { /* append records, then return */ }
-</script>
-
-<FlatList
-  data={people}
-  keyExtractor={item.id}
-  numColumns={2}
-  onEndReached={loadMore}
-  onEndReachedThreshold={0.2}
->
-  <Text listRole="header">People</Text>
-  <View listRole="item" accessibilityLabel={item.name}>
-    <Text>{index + 1}. {item.name}</Text>
-  </View>
-  <View listRole="separator" class="h-px bg-gray-200" />
-  <Text listRole="empty">No people yet</Text>
-  <Text listRole="footer">End of list</Text>
-</FlatList>
-```
-
-The compiler removes `data` and `keyExtractor` from the native payload, expands only the keyed native nodes, and emits create/update/insert/move/remove mutations on later renders. Craft hosts recycle off-screen rows with `UICollectionView` on iOS and `RecyclerView` on Android. Header, footer, empty, and separator templates are optional; direct children without a `listRole` retain their previous static-list behavior.
-
-Expression props keep their JavaScript value type: `data={people}` remains an array, `source={{"uri":"avatar.png"}}` remains an object, and `accessibilityLabel={item.name}` resolves to the current row's string rather than the literal text `item.name`.
+Use the ordinary signal-driven `:for` directive for dynamic native lists. The
+old native-only `FlatList` template expansion (`data={...}`, `keyExtractor`,
+and `listRole`) belonged to the retired redraw runtime and is not part of the
+shared-runtime contract. `FlatList` remains a renderer primitive, but automatic
+row recycling is currently unsupported and should not be inferred from IR
+translation alone.
 
 Types for the `craft` object a screen sees (`NativeCraft`, `NativeNavigation`, …) are exported from `@stacksjs/stx/native`.

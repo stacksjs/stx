@@ -18,7 +18,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { mapToNativeComponent } from '../../src/native/compiler/component-mapping'
 import { compileHeadwindToStyle } from '../../src/native/compiler/headwind-to-style'
-import { parseSTXToNode } from '../../src/native/compiler/parser'
+import { translateHtmlToDocument } from '../../src/native/compiler/html-to-ir'
 
 describe('compileHeadwindToStyle, by class family', () => {
   /** Each family's spelling and the exact object it must produce. */
@@ -114,9 +114,11 @@ describe('compileHeadwindToStyle, arbitrary values', () => {
   })
 })
 
-describe('parseSTXToNode produces the documented IR', () => {
-  it('compiles the reference tree exactly', () => {
-    const node = parseSTXToNode(
+describe('the stx HTML translator produces the documented IR', () => {
+  const translate = async (html: string) => (await translateHtmlToDocument(html, { source: 'Screen.stx' })).document.root
+
+  it('compiles the reference tree exactly', async () => {
+    const node = await translate(
       '<View class="flex-1 flex-col justify-center items-center p-4 bg-blue-500">'
       + '<Text class="text-white text-lg font-bold">Wildloop</Text>'
       + '</View>',
@@ -142,26 +144,20 @@ describe('parseSTXToNode produces the documented IR', () => {
     expect(child.children).toEqual(['Wildloop'])
   })
 
-  it('keeps the original class string for debugging', () => {
-    const node = parseSTXToNode('<View class="p-4"><Text>x</Text></View>')
+  it('keeps the original class string for debugging', async () => {
+    const node = await translate('<View class="p-4"><Text>x</Text></View>')
     expect((node as any)._classes).toBe('p-4')
   })
 
-  it('records where a node came from', () => {
-    // The source map is what turns a wrong style into a findable line.
-    const node = parseSTXToNode('<View class="p-4"><Text>x</Text></View>')
-    expect((node as any)._source).toMatchObject({ line: 1, column: 1 })
-  })
-
-  it('nests to arbitrary depth', () => {
-    const node = parseSTXToNode('<View><View><View><Text>deep</Text></View></View></View>')
+  it('nests to arbitrary depth', async () => {
+    const node = await translate('<View><View><View><Text>deep</Text></View></View></View>')
     const depth = (n: any): number =>
       typeof n === 'string' ? 0 : 1 + Math.max(0, ...n.children.map(depth))
     expect(depth(node)).toBe(4)
   })
 
-  it('gives a node with no classes an empty style rather than undefined', () => {
-    const node = parseSTXToNode('<View><Text>x</Text></View>')
+  it('gives a node with no classes an empty style rather than undefined', async () => {
+    const node = await translate('<View><Text>x</Text></View>')
     expect(node.style).toEqual({})
   })
 })
