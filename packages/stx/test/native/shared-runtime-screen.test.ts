@@ -115,6 +115,52 @@ function increment() { count.set(count() + 1) }
     expect(updates).toContainEqual(expect.objectContaining({ patch: { children: ['1'] } }))
   })
 
+  it('mounts and tears down one native screen lifecycle exactly once', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-lifecycle-'))
+    const file = path.join(root, 'Screen.stx')
+    await Bun.write(file, `<script client>
+globalThis.__nativeLifecycle = []
+const count = state(0)
+globalThis.__nativeCount = count
+onMount(() => {
+  globalThis.__nativeLifecycle.push('mount')
+  return () => globalThis.__nativeLifecycle.push('mount cleanup')
+})
+onDestroy(() => globalThis.__nativeLifecycle.push('destroy'))
+</script>
+<View><Text :text="count" /></View>`)
+    const { code } = await compileSharedScreenBundle(file)
+    const sent: any[] = []
+    const scope: Record<string, any> = {
+      console,
+      setTimeout,
+      clearTimeout,
+      Promise,
+      Date,
+      Map,
+      Set,
+      WeakMap,
+      WeakSet,
+      __stxNativeBridge: {
+        postMessage: (raw: string) => sent.push(JSON.parse(raw)),
+        onMessage: () => {},
+      },
+    }
+
+    vm.runInNewContext(code, scope)
+    await Bun.sleep(0)
+    expect(scope.__nativeLifecycle).toEqual(['mount'])
+
+    sent.length = 0
+    scope.__stxNativeUnmount()
+    scope.__stxNativeUnmount()
+    scope.__nativeCount.set(1)
+    await Bun.sleep(0)
+
+    expect(scope.__nativeLifecycle).toEqual(['mount', 'destroy', 'mount cleanup'])
+    expect(sent.filter(message => message.type === 'MUTATE')).toHaveLength(0)
+  })
+
   it('installs Craft capabilities before client setup executes', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'stx-native-craft-'))
     const file = path.join(root, 'Screen.stx')

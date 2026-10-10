@@ -128,6 +128,7 @@ var manifest;
 ${selections}
 var screen = prepareSharedNativeScreen(nativeDocument, manifest, bridge, { routeName: routeName, routeNames: routeNames });
 g.__stx_host = screen.host;
+g.__stxNativeUnmount = function() { screen.unmount(); };
 ${generateSignalsRuntime()}
 ${setups}
 screen.mount(g.stx, g.__stx_latestSetup || null);

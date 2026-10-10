@@ -2934,11 +2934,31 @@ catch (e) {
   // through the document-ready path below. The same state, effect, expression,
   // event and host implementations are used by both.
   function hydrateHost(root, setup, manifest, resolvedNodes) {
-    var values = typeof setup === 'function' ? setup() : setup;
+    var mountStart = mountCallbacks.length;
+    var destroyStart = destroyCallbacks.length;
+    var outerSink = activeDestroySink;
+    activeDestroySink = null;
+    var values;
+    try { values = typeof setup === 'function' ? setup() : setup; }
+    finally { activeDestroySink = outerSink; }
+    var localMountHooks = mountCallbacks.splice(mountStart);
+    var localDestroyHooks = destroyCallbacks.splice(destroyStart);
     var scope = Object.assign({ $refs: {} }, values || {});
-    return trackEffects(function() {
+    var disposeEffects = trackEffects(function() {
       processFromManifest(root, scope, manifest, resolvedNodes);
     });
+    runMountCallbacks(localMountHooks, localDestroyHooks);
+    var mounted = true;
+    return function disposeHost() {
+      if (!mounted) return;
+      mounted = false;
+      disposeEffects();
+      var hooks = localDestroyHooks.splice(0, localDestroyHooks.length);
+      for (var i = 0; i < hooks.length; i++) {
+        try { hooks[i](); }
+        catch (e) { console.warn('[stx] native destroy error:', e); }
+      }
+    };
   }
 
   // skipChildren: this element's bindings only, because something else already

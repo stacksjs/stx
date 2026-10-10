@@ -7,12 +7,13 @@ import { installCraftBridge, type CraftBridgeOptions } from './craft-bridge'
 import { createNativeHost, type NativeHost } from './native-host'
 
 interface SharedSignalsRuntime {
-  hydrateHost: (root: unknown, setup: (() => Record<string, unknown>) | Record<string, unknown> | null, manifest: BindingManifest, nodes: Map<number, unknown>) => unknown
+  hydrateHost: (root: unknown, setup: (() => Record<string, unknown>) | Record<string, unknown> | null, manifest: BindingManifest, nodes: Map<number, unknown>) => (() => void)
 }
 
 export interface SharedNativeScreen {
   host: NativeHost
   mount: (runtime: SharedSignalsRuntime, setup: (() => Record<string, unknown>) | null) => void
+  unmount: () => void
 }
 
 /** Connect translated IR to the ordinary stx signals runtime and native bridge. */
@@ -41,6 +42,7 @@ export function prepareSharedNativeScreen(
     },
   })
   const tree = materializeNativeBindingTree(document, manifest, host)
+  let dispose: (() => void) | null = null
 
   protocol.on<any>('EVENT', (message) => {
     const handlerId = message.payload?.handlerId ?? message.payload?.handlerName
@@ -51,11 +53,16 @@ export function prepareSharedNativeScreen(
   return {
     host,
     mount(runtime, setup) {
+      dispose?.()
       // Native hosts reconcile the root node. The compiler envelope also
       // carries build metadata and scripts, but treating that envelope as a
       // node silently produces an empty fallback View in the UIKit host.
       protocol.render(document.root)
-      runtime.hydrateHost(tree.root, setup, manifest, tree.nodes)
+      dispose = runtime.hydrateHost(tree.root, setup, manifest, tree.nodes)
+    },
+    unmount() {
+      dispose?.()
+      dispose = null
     },
   }
 }
