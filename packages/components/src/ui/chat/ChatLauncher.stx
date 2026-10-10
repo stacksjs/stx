@@ -1,0 +1,45 @@
+<script server>
+export const storeName = $props.store || 'chat'
+export const href = $props.href || '/messages'
+export const inline = $props.placement === 'inline'
+export const className = $props.className || ''
+</script>
+<script client>
+const chat = useStore({{ storeName }})
+const unread = chat.unread
+const open = state(false)
+const toggle = useRef('chat-toggle')
+const closeButton = useRef('chat-close')
+const launcherLabel = derived(() => unread() ? `Messages, ${unread()} unread` : 'Messages')
+function show() {
+  open.set(!open())
+  if (open()) nextTick(() => closeButton()?.focus())
+}
+function close() {
+  open.set(false)
+  nextTick(() => toggle()?.focus())
+}
+function keyboard(event) { if (event.key === 'Escape') close() }
+onMount(() => chat.load())
+useInterval(() => chat.refresh(false), 15000, { whileVisible: true })
+</script>
+<div class="{{ className }}">
+@if(inline)
+  <StxLink to="{{ href }}" :aria-label="launcherLabel" class="relative inline-flex items-center justify-center w-11 h-11 rounded-full text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+    <span class="i-lucide-message-circle text-xl" aria-hidden="true"></span>
+    <span :if="unread" class="absolute -top-1 -right-1 min-w-5 h-5 px-1 flex items-center justify-center text-[10px] font-semibold text-white bg-blue-600 border-2 border-white dark:border-slate-950 rounded-full" :text="unread"></span>
+  </StxLink>
+@else
+  <section :if="open" role="dialog" aria-label="Messages" @keydown="keyboard($event)" class="fixed right-6 bottom-24 z-40 w-[420px] max-w-[calc(100vw-48px)] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-xl overflow-hidden">
+    <header class="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
+      <StxLink to="{{ href }}" class="font-semibold text-sm text-slate-900 dark:text-white hover:text-blue-600">Messages <span aria-hidden="true" class="i-lucide-arrow-up-right inline-block"></span></StxLink>
+      <button ref="chat-close" type="button" @click="close()" aria-label="Close chat" class="inline-flex items-center justify-center w-9 h-9 text-slate-500 dark:text-slate-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-blue-500"><span aria-hidden="true" class="i-lucide-x text-lg"></span></button>
+    </header>
+    <ChatInbox :active="open" store="{{ storeName }}" compact="true" className="border-0 rounded-none" />
+  </section>
+  <button ref="chat-toggle" type="button" @click="show()" :aria-label="launcherLabel" :aria-expanded="open" aria-haspopup="dialog" class="fixed right-6 bottom-6 z-40 inline-flex items-center justify-center w-14 h-14 text-white bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+    <span class="i-lucide-message-circle text-2xl" aria-hidden="true"></span>
+    <span :if="unread" class="absolute -top-1 -right-1 min-w-6 h-6 px-1 flex items-center justify-center text-xs font-semibold text-white bg-rose-600 border-2 border-white dark:border-slate-950 rounded-full" :text="unread"></span>
+  </button>
+@endif
+</div>

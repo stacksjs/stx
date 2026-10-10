@@ -32,6 +32,16 @@ describe('native chat components and controller', () => {
     expect(html).toContain('Write a message')
     expect(html).toContain('coaching')
   })
+  it('renders desktop and inline launchers with accessible unread controls', async () => {
+    const options = { componentsDir: path.join(root, 'src/ui/chat'), root, buildMode: 'serve', cache: false } as any
+    const desktop = await processDirectives('<ChatLauncher store="coaching" href="/coaches/messages" />', {}, path.join(root, 'launcher-test.stx'), options, new Set())
+    expect(desktop).toContain('aria-haspopup="dialog"')
+    expect(desktop).toContain('Close chat')
+    expect(desktop).toContain('bottom-6')
+    const phone = await processDirectives('<ChatLauncher placement="inline" href="/m/messages" />', {}, path.join(root, 'launcher-test.stx'), options, new Set())
+    expect(phone).toContain('/m/messages')
+    expect(phone).not.toContain('aria-haspopup="dialog"')
+  })
   it('keeps failed drafts and retries with the same message key', async () => {
     let fail = true
     const keys: string[] = []

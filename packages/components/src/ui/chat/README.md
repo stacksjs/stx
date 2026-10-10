@@ -19,6 +19,8 @@ defineStore('chat', () => createChat({
 ```html
 <ChatInbox store="chat" />
 <ChatUnreadBadge store="chat" />
+<ChatLauncher store="chat" href="/messages" />
+<ChatLauncher store="chat" href="/m/messages" placement="inline" />
 ```
 
 `store` defaults to `chat`. Both components use the same controller. Polling
@@ -44,3 +46,9 @@ scope selection. Stacks' native `createMessenger` supplies this persistence API.
 The browser controller has its own public entry, `@stacksjs/components/chat`,
 so pages do not import the library's server syntax-highlighting dependencies.
 Run the component build before running its published-entry regression test.
+
+`ChatLauncher` floats at the desktop's bottom right and opens a compact inbox.
+`placement="inline"` gives a 44px icon link for a phone header. Both show unread
+counts. The popup supports Escape and returns focus to its launcher when closed.
+`ChatInbox compact` stacks inbox and thread even on a wide viewport; its `active`
+reactive prop controls read acknowledgement for a hidden or closed panel.
