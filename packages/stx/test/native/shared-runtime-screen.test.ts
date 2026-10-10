@@ -101,6 +101,7 @@ function select(id) { selected.set(id) }
       postMessage: raw => sent.push(JSON.parse(raw)),
       onMessage: callback => { receive = callback },
     })
+    const sourceButtonId = ((scroll.children[0] as any).children[1] as any).props.__stxId
 
     installNodeConstants()
     window.__stx_host = screen.host
@@ -110,6 +111,7 @@ function select(id) { selected.set(id) }
     screen.host.flush()
 
     const initialOps = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
+    expect(initialOps.some(operation => operation.id === sourceButtonId && operation.patch?.events?.onPress)).toBe(false)
     const adaLabel = initialOps.find(operation => operation.patch?.children?.[0] === 'Ada')
     const beaLabel = initialOps.find(operation => operation.patch?.children?.[0] === 'Bea')
     expect(adaLabel).toBeTruthy()

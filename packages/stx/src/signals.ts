@@ -2935,6 +2935,12 @@ catch (e) {
           : (root.querySelector ? root.querySelector('[data-stx-b="' + id + '"]') : null);
       }
       if (!node) continue;
+      // A structural binding can detach its source before a later manifest
+      // entry reaches one of that source's children. Native handles expose
+      // this state directly; do not register effects or handlers for a view
+      // that no longer exists in the host tree. Browser hydration keeps its
+      // existing behaviour because it does not pass resolvedNodes here.
+      if (resolvedNodes && node.__stxId !== undefined && node.isConnected === false) continue;
       processElement(node, scope, true);
     }
     return true;

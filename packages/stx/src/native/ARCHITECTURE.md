@@ -173,10 +173,14 @@ native view tree instead of replacing it.
   applies to Craft's maintained iOS host, not to those files by implication.
 
 Unsupported behavior must stay explicit: translating a primitive into IR does
-not prove that every host implements it. Cross-platform screens should use
-`:for` unless their host advertises recycling-list support. Navigation stacks,
-production Android host parity, hot reload, and profiler tooling are separate
-follow-up work rather than prerequisites for the proven iOS vertical slice.
+not prove that every host implements it. Shared-runtime `:for` performs keyed,
+incremental native mutations: retained rows keep their node identities, event
+scope and input state, while their ScrollView remains mounted. It is not a
+virtualizer and currently materialises every row, so use it for small and
+moderate collections. Large feeds should use `FlatList` only when the selected
+host advertises recycling-list support; there is no cross-host `FlatList`
+guarantee yet. Production Android host parity, hot reload, and profiler tooling
+remain follow-up work rather than implications of the proven iOS path.
 
 ## STX IR Format
 
