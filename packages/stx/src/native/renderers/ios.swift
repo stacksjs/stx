@@ -92,6 +92,7 @@ struct STXStyle: Codable {
     var right: CGFloat?
     var bottom: CGFloat?
     var left: CGFloat?
+    var zIndex: Int?
 
     // Dimensions
     var width: DimensionValue?
@@ -135,6 +136,7 @@ struct STXStyle: Codable {
 
     // Shadow
     var shadowColor: String?
+    var shadowOffset: STXShadowOffset?
     var shadowOpacity: CGFloat?
     var shadowRadius: CGFloat?
 
@@ -150,6 +152,18 @@ struct STXStyle: Codable {
     var textDecorationLine: String?
     var textDecorationColor: String?
     var textTransform: String?
+
+    // Image
+    var resizeMode: String?
+    var tintColor: String?
+
+    // Clipping
+    var overflow: String?
+}
+
+struct STXShadowOffset: Codable {
+    let width: CGFloat
+    let height: CGFloat
 }
 
 enum DimensionValue: Codable {
@@ -362,12 +376,20 @@ class STXRenderer {
 
     private func renderImage(_ node: STXNode) -> UIImageView {
         let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFit
+        switch node.style.resizeMode ?? node.props["resizeMode"]?.value as? String {
+        case "cover": imageView.contentMode = .scaleAspectFill
+        case "stretch": imageView.contentMode = .scaleToFill
+        case "center": imageView.contentMode = .center
+        default: imageView.contentMode = .scaleAspectFit
+        }
+
+        if let tint = node.style.tintColor.flatMap(UIColor.init(hex:)) {
+            imageView.tintColor = tint
+        }
 
         if let source = node.props["source"]?.value as? [String: Any],
            let uri = source["uri"] as? String {
-            // Load image from URL
-            loadImage(from: uri, into: imageView)
+            loadImage(from: uri, into: imageView, renderAsTemplate: node.style.tintColor != nil)
         }
 
         applyStyle(to: imageView, style: node.style)
@@ -375,13 +397,13 @@ class STXRenderer {
         return imageView
     }
 
-    private func loadImage(from urlString: String, into imageView: UIImageView) {
+    private func loadImage(from urlString: String, into imageView: UIImageView, renderAsTemplate: Bool) {
         guard let url = URL(string: urlString) else { return }
 
         URLSession.shared.dataTask(with: url) { data, _, _ in
             if let data = data, let image = UIImage(data: data) {
                 DispatchQueue.main.async {
-                    imageView.image = image
+                    imageView.image = renderAsTemplate ? image.withRenderingMode(.alwaysTemplate) : image
                 }
             }
         }.resume()
@@ -638,11 +660,20 @@ class STXRenderer {
         if let shadowColorHex = style.shadowColor {
             view.layer.shadowColor = UIColor(hex: shadowColorHex)?.cgColor
         }
+        if let shadowOffset = style.shadowOffset {
+            view.layer.shadowOffset = CGSize(width: shadowOffset.width, height: shadowOffset.height)
+        }
         if let shadowOpacity = style.shadowOpacity {
             view.layer.shadowOpacity = Float(shadowOpacity)
         }
         if let shadowRadius = style.shadowRadius {
             view.layer.shadowRadius = shadowRadius
+        }
+        if let zIndex = style.zIndex {
+            view.layer.zPosition = CGFloat(zIndex)
+        }
+        if style.overflow == "hidden" {
+            view.clipsToBounds = true
         }
     }
 

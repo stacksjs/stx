@@ -389,8 +389,7 @@ describe('style vocabulary coverage', () => {
     'alignContent', 'aspectRatio', 'backgroundImage', 'borderBottomColor',
     'borderBottomWidth', 'borderLeftColor', 'borderLeftWidth', 'borderRightColor',
     'borderRightWidth', 'borderStyle', 'borderTopColor', 'borderTopWidth',
-    'columnGap', 'elevation', 'flexBasis', 'overflow', 'resizeMode', 'rowGap',
-    'shadowOffset', 'tintColor', 'transform', 'zIndex',
+    'columnGap', 'elevation', 'flexBasis', 'rowGap', 'transform',
     // Craft's native host lays out `display: grid` with `gridColumns`; this
     // older renderer has no grid (added with grid-cols-N, 2026-10).
     'gridColumns',
@@ -424,5 +423,14 @@ describe('style vocabulary coverage', () => {
     expect(source).toContain('attributed.addAttribute(.kern, value: letterSpacing')
     expect(source).toContain('decoration.contains("underline")')
     expect(source).toContain('case "uppercase": label.text = text.uppercased()')
+  })
+
+  it('iOS applies decoded image and layer styles', () => {
+    const source = readFileSync(path.join(ROOT, 'renderers', 'ios.swift'), 'utf8')
+    expect(source).toContain('case "cover": imageView.contentMode = .scaleAspectFill')
+    expect(source).toContain('image.withRenderingMode(.alwaysTemplate)')
+    expect(source).toContain('view.layer.shadowOffset = CGSize(')
+    expect(source).toContain('view.layer.zPosition = CGFloat(zIndex)')
+    expect(source).toContain('if style.overflow == "hidden"')
   })
 })

@@ -52,6 +52,11 @@ view.yoga.alignItems = .center
 view.yoga.padding = 16
 ```
 
+Both renderers apply text sizing, weight, family, line height, tracking,
+decoration and case transforms. Native images support `cover`, `contain`,
+`stretch` and `center` resize modes plus tint colors. Layer overflow and
+z-order are preserved on both platforms; iOS also applies shadow offsets.
+
 ### 3. Event Handling
 
 STX events map to native callbacks:
