@@ -1,0 +1,2 @@
+{{-- Fragment keeps its children together; structural bindings wrap the slot. --}}
+<slot />

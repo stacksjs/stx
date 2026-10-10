@@ -13,7 +13,7 @@
  * where the screen lives, exactly as it would on the web.
  */
 import type { BunPlugin } from 'bun'
-import { mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { compileScreenFile } from './render-screen'
 import { generateSignalsRuntime } from '../../signals'
@@ -52,6 +52,19 @@ export interface NativeBundleResult {
 
 /** @deprecated Use `CompileNativeBundleOptions`. */
 export type BundleOptions = CompileNativeBundleOptions
+
+function nativeRuntimeModule(name: 'jsc-globals' | 'shared-screen'): string {
+  // Source modules, published ESM modules, and shared CLI chunks have different
+  // directories and extensions. Resolve a shipped file before generating imports.
+  const candidates = [
+    path.join(import.meta.dir, '..', 'runtime', `${name}.ts`),
+    path.join(import.meta.dir, '..', 'runtime', `${name}.js`),
+    path.join(import.meta.dir, 'native', 'runtime', `${name}.js`),
+  ]
+  const resolved = candidates.find(candidate => existsSync(candidate))
+  if (!resolved) throw new Error(`Native runtime module ${name} is missing`)
+  return resolved
+}
 
 async function build(entry: string, plugins: BunPlugin[], minify: boolean): Promise<string> {
   const result = await Bun.build({
@@ -100,8 +113,8 @@ export async function compileNativeBundle(options: CompileNativeBundleOptions): 
     compiledScreens.push({ name, file, compiled: await compileScreenFile(file, { root }) })
   }
 
-  const runtimeGlobals = path.join(import.meta.dir, '..', 'runtime', 'jsc-globals.ts')
-  const sharedScreen = path.join(import.meta.dir, '..', 'runtime', 'shared-screen.ts')
+  const runtimeGlobals = nativeRuntimeModule('jsc-globals')
+  const sharedScreen = nativeRuntimeModule('shared-screen')
   const route = routed
     ? `var routeName = g.__stxNativeRoute || ${JSON.stringify(initialScreen)};
 if (routeNames.indexOf(routeName) === -1) throw new Error(['Unknown native screen:', routeName].join(' '));`

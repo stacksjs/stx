@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 import { $ } from 'bun'
-import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import process from 'node:process'
 
@@ -11,23 +10,14 @@ if (process.env.CI || process.env.npm_lifecycle_event === 'prepublishOnly') {
   process.exit(0)
 }
 
-// Css location
-const cssPath = resolve(process.env.HOME || '~', 'Code/Tools/crosswind/packages/toolkit')
-
-// Check if css is available
-if (!existsSync(cssPath)) {
-  console.log('[css] Skipping CSS build — css not found (optional dependency)')
-  process.exit(0)
-}
-
-console.log('🚀 Building CSS with Css...')
+console.log('🚀 Building example CSS...')
 
 const contentPath = resolve(import.meta.dir, '../../../examples/**/*.stx')
 const outputPath = resolve(import.meta.dir, '../examples/dist/styles.css')
 const configPath = resolve(import.meta.dir, '../config/css.ts')
 
 try {
-  const cssCli = resolve(cssPath, 'bin/cli.ts')
+  const cssCli = Bun.resolveSync('@stacksjs/ts-css/bin/cssx.js', import.meta.dir)
   const result = await $`bun ${cssCli} build --content ${contentPath} --output ${outputPath} --config ${configPath}`.text()
 
   console.log(result)

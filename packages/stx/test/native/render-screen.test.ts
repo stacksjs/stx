@@ -42,6 +42,13 @@ function texts(node: STXNode, out: string[] = []): string[] {
 }
 
 describe('the reference screen', () => {
+  it('retains conditional fragment content through native primitive rendering', async () => {
+    const file = screen('FragmentScreen.stx', '<View><Fragment :if="visible"><Text>Ready</Text><Text>Training</Text></Fragment></View>')
+    const compiled = await compileScreenFile(file)
+    expect(texts(compiled.document.root)).toContain('Ready')
+    expect(texts(compiled.document.root)).toContain('Training')
+    expect(JSON.stringify(compiled.manifest)).toContain('visible')
+  })
   const source = `<script>
   const count = state(0)
   function increment() { count.set(count() + 1) }
@@ -168,7 +175,8 @@ const label = $props.label ?? ''
 describe('the primitives themselves', () => {
   it('ships one component per native type the IR declares', async () => {
     const files = [...new Bun.Glob('*.stx').scanSync(nativePrimitivesDir())].sort()
-    expect(files.length).toBe(22)
+    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(22)
+    expect(files).toContain('Fragment.stx')
     expect(files).toContain('TouchableOpacity.stx')
     expect(files).toContain('ActivityIndicator.stx')
   })
@@ -176,6 +184,8 @@ describe('the primitives themselves', () => {
   it('names a type the translator will accept, in every one of them', async () => {
     const dir = nativePrimitivesDir()
     for (const file of new Bun.Glob('*.stx').scanSync(dir)) {
+      // Fragment groups children and has no native view type of its own.
+      if (file === 'Fragment.stx') continue
       const source = await Bun.file(path.join(dir, file)).text()
       const declared = /data-native="(\w+)"/.exec(source)
       expect(declared, file).toBeTruthy()

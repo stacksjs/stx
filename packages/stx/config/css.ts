@@ -1,5 +1,4 @@
-// Import type from local css package
-import type { CssConfig } from '../../../../css/packages/css/src/types'
+import type { CssConfig } from '@stacksjs/ts-css/engine'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
