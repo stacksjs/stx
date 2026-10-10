@@ -58,6 +58,8 @@ export type {
   ModalProps,
   SwitchProps,
   SliderProps,
+  PickerOption,
+  PickerProps,
 } from './components/primitives'
 
 // Hot Reload exports

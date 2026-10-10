@@ -321,6 +321,7 @@ class STXRenderer(private val context: Context) {
             "FlatList" -> renderFlatList(node)
             "Modal" -> renderModal(node)
             "Slider" -> renderSlider(node)
+            "Picker" -> renderPicker(node)
             else -> {
                 android.util.Log.w("STX", "Unknown component type: ${node.type}, rendering as View")
                 renderView(node)
@@ -808,6 +809,43 @@ class STXRenderer(private val context: Context) {
         }
 
         return seekBar
+    }
+
+    private fun renderPicker(node: STXNode): Spinner {
+        val spinner = Spinner(context)
+        val options = (node.props["items"] as? List<*>)?.mapIndexedNotNull { index, item ->
+            val option = item as? Map<*, *> ?: return@mapIndexedNotNull null
+            val label = option["label"]?.toString() ?: return@mapIndexedNotNull null
+            label to (option["value"] ?: index)
+        } ?: emptyList()
+        val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, options.map { it.first })
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinner.adapter = adapter
+        spinner.isEnabled = node.props["disabled"] != true
+
+        node.props["selectedValue"]?.let { selected ->
+            val index = options.indexOfFirst { it.second.toString() == selected.toString() }
+            if (index >= 0) spinner.setSelection(index, false)
+        }
+
+        node.events["onValueChange"]?.let { handlerName ->
+            spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    if (position in options.indices) {
+                        eventHandler?.invoke(handlerName, mapOf(
+                            "value" to options[position].second,
+                            "index" to position
+                        ))
+                    }
+                }
+
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
+            }
+        }
+
+        applyStyle(spinner, node.style)
+        applyYogaLayout(spinner, node.style)
+        return spinner
     }
 
     // ========================================================================

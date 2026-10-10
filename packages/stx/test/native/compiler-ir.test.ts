@@ -263,14 +263,13 @@ describe('mapToNativeComponent', () => {
  *
  * They already have. Reading the dispatch out of each file:
  *
- *   iOS and Android share Modal and Slider now. FlatList remains Android-only
+ *   iOS and Android share Modal, Slider and Picker now. FlatList remains Android-only
  *   until iOS has a real recycling implementation rather than a stack of views.
  *
- * So a template using `<list>`, `<modal>` or `<slider>` renders on Android and
- * silently does not on iOS -- the kind of difference that only shows up on a
- * device, which is why it went unnoticed. The gap is named here rather than
- * asserted away, so it has to shrink deliberately: adding a renderer makes
- * this test fail until the name comes off the list.
+ * So a template using `<list>` still renders on Android and silently does not
+ * on iOS -- the kind of difference that only shows up on a device. The gap is
+ * named here rather than asserted away, so it has to shrink deliberately:
+ * adding a renderer makes this test fail until the name comes off the list.
  */
 describe('renderer coverage', () => {
   const RENDERERS = path.join(import.meta.dir, '..', '..', 'src', 'native', 'renderers')
@@ -290,7 +289,7 @@ describe('renderer coverage', () => {
   const IOS_NOT_YET = ['FlatList']
 
   /** Emitted by the mapper and rendered by neither. This list must only shrink. */
-  const RENDERED_BY_NEITHER = ['Picker']
+  const RENDERED_BY_NEITHER: string[] = []
 
   it('iOS implements everything Android does, except the known gap', () => {
     const missing = [...androidTypes()].filter(t => !iosTypes().has(t)).sort()
@@ -316,8 +315,6 @@ describe('renderer coverage', () => {
 
     const orphaned = [...emitted].filter(t => !ios.has(t) && !android.has(t)).sort()
 
-    // `<select>` and `<picker>` both compile to Picker, which neither platform
-    // renders — so that markup produces a node nothing can draw.
     expect(orphaned).toEqual([...RENDERED_BY_NEITHER].sort())
   })
 
@@ -333,6 +330,16 @@ describe('renderer coverage', () => {
     expect(source).toContain('node.events["onValueChange"]')
     expect(source).toContain('#selector(handleSliderChange(_:))')
     expect(source).toContain('node.props["visible"]')
+  })
+
+  it('both renderers wire Picker options and value-change payloads', () => {
+    const ios = readFileSync(path.join(RENDERERS, 'ios.swift'), 'utf8')
+    const android = readFileSync(path.join(RENDERERS, 'android.kt'), 'utf8')
+    expect(ios).toContain('STXPickerAdapter')
+    expect(ios).toContain('["value": option.value, "index": index]')
+    expect(android).toContain('private fun renderPicker(node: STXNode): Spinner')
+    expect(android).toContain('"value" to options[position].second')
+    expect(android).toContain('"index" to position')
   })
 })
 

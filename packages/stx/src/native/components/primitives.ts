@@ -284,6 +284,24 @@ export interface SliderProps extends BaseProps {
   thumbTintColor?: string
 }
 
+export interface PickerOption {
+  /** Label shown to the user */
+  label: string
+  /** Stable value delivered by onValueChange */
+  value: string | number
+}
+
+export interface PickerProps extends BaseProps {
+  /** Options shown by the native picker */
+  items: PickerOption[]
+  /** Currently selected option value */
+  selectedValue?: string | number
+  /** Selection change handler */
+  onValueChange?: (value: string | number, index: number) => void
+  /** Disable user interaction */
+  disabled?: boolean
+}
+
 // ============================================================================
 // Media Components
 // ============================================================================

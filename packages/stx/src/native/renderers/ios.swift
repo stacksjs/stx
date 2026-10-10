@@ -9,6 +9,36 @@ import UIKit
 import JavaScriptCore
 import YogaKit
 
+private struct STXPickerOption {
+    let label: String
+    let value: Any
+}
+
+private final class STXPickerAdapter: NSObject, UIPickerViewDataSource, UIPickerViewDelegate {
+    let options: [STXPickerOption]
+    let onChange: (STXPickerOption, Int) -> Void
+
+    init(options: [STXPickerOption], onChange: @escaping (STXPickerOption, Int) -> Void) {
+        self.options = options
+        self.onChange = onChange
+    }
+
+    func numberOfComponents(in pickerView: UIPickerView) -> Int { 1 }
+
+    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        options.count
+    }
+
+    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+        options[row].label
+    }
+
+    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        guard options.indices.contains(row) else { return }
+        onChange(options[row], row)
+    }
+}
+
 // MARK: - STX IR Types (Mirror of TypeScript definitions)
 
 struct STXNode: Codable {
@@ -146,6 +176,7 @@ class STXRenderer {
     private let jsContext: JSContext
     private var viewRegistry: [String: UIView] = [:]
     private var eventHandlers: [String: String] = [:]
+    private var pickerAdapters: [ObjectIdentifier: STXPickerAdapter] = [:]
 
     init() {
         jsContext = JSContext()!
@@ -202,6 +233,8 @@ class STXRenderer {
             return renderModal(node)
         case "Slider":
             return renderSlider(node)
+        case "Picker":
+            return renderPicker(node)
         default:
             print("[STX] Unknown component type: \(node.type), rendering as View")
             return renderView(node)
@@ -513,6 +546,39 @@ class STXRenderer {
             sender.value = round(sender.value / step) * step
         }
         jsContext.evaluateScript("\(handlerName)(\(sender.value))")
+    }
+
+    private func renderPicker(_ node: STXNode) -> UIPickerView {
+        let picker = UIPickerView()
+        let rawItems = node.props["items"]?.value as? [Any] ?? []
+        let options = rawItems.compactMap { item -> STXPickerOption? in
+            guard let item = item as? [String: Any],
+                  let label = item["label"] as? String,
+                  let value = item["value"] else { return nil }
+            return STXPickerOption(label: label, value: value)
+        }
+        let handler = node.events["onValueChange"]
+        let adapter = STXPickerAdapter(options: options) { [weak self] option, index in
+            guard let self, let handler else { return }
+            let payload: [String: Any] = ["value": option.value, "index": index]
+            guard JSONSerialization.isValidJSONObject(payload),
+                  let data = try? JSONSerialization.data(withJSONObject: payload),
+                  let json = String(data: data, encoding: .utf8) else { return }
+            self.jsContext.evaluateScript("(function($event){\(handler)})(\(json))")
+        }
+        picker.dataSource = adapter
+        picker.delegate = adapter
+        picker.isUserInteractionEnabled = !(node.props["disabled"]?.value as? Bool ?? false)
+        pickerAdapters[ObjectIdentifier(picker)] = adapter
+
+        if let selected = node.props["selectedValue"]?.value,
+           let row = options.firstIndex(where: { String(describing: $0.value) == String(describing: selected) }) {
+            picker.selectRow(row, inComponent: 0, animated: false)
+        }
+
+        applyStyle(to: picker, style: node.style)
+        configureYogaLayout(view: picker, style: node.style)
+        return picker
     }
 
     // MARK: - Style Application
