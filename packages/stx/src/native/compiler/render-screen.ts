@@ -27,6 +27,7 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { extractBindingManifest, type BindingManifest } from '../../binding-manifest'
 import { processDirectives } from '../../process'
+import { processScriptSetup } from '../../signal-processing'
 import { translateHtmlToDocument } from './html-to-ir'
 import { extractClientScript } from './client-script'
 import { extractGeneratedSetupScript, type GeneratedSetupScript } from './setup-script'
@@ -111,7 +112,13 @@ export async function compileScreenSource(
     script: extractClientScript(source),
   })
 
-  return { document, manifest, setup: extractGeneratedSetupScript(html), diagnostics, html }
+  let setup = extractGeneratedSetupScript(html)
+  if (!setup && extractClientScript(source).code.trim()) {
+    const forced = await processScriptSetup(source, filePath, options.context, { forceClientSetup: true })
+    setup = extractGeneratedSetupScript(forced.setupCode ?? '')
+  }
+
+  return { document, manifest, setup, diagnostics, html }
 }
 
 /** The same, reading the screen off disk. */

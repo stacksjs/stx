@@ -1513,7 +1513,12 @@ function rebuildSetupOwner(
   return chunks.join('')
 }
 
-export async function processScriptSetup(template: string, filePath?: string, serverData?: Record<string, unknown>): Promise<{ output: string, setupCode: string | null }> {
+export async function processScriptSetup(
+  template: string,
+  filePath?: string,
+  serverData?: Record<string, unknown>,
+  options: { forceClientSetup?: boolean } = {},
+): Promise<{ output: string, setupCode: string | null }> {
   // Walk the template like a browser: find each `<script>` opening tag, then
   // the FIRST `</script>` that closes it — don't re-scan for nested `<script`
   // substrings inside script bodies. This prevents false matches against
@@ -1547,7 +1552,7 @@ export async function processScriptSetup(template: string, filePath?: string, se
     if (shouldTranspileTypeScript(s.attrs)) {
       content = transpileTypeScript(content)
     }
-    if (SIGNAL_API_RE.test(content)) {
+    if (options.forceClientSetup || SIGNAL_API_RE.test(content)) {
       signalScripts.push({ content, start: s.start, end: s.end })
       continue
     }

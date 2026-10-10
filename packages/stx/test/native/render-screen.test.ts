@@ -219,3 +219,16 @@ const enabled = true
     expect(script.exports).toEqual({ limit: 25, name: 'wildloop', enabled: true })
   })
 })
+
+describe('native client setup', () => {
+  it('retains handlers even when the script declares no signal', async () => {
+    const source = `<script client>
+const destination = 'details'
+function open() { craft.navigation.push(destination) }
+</script>
+<View><Text :text="destination" /><Button @click="open()">Open</Button></View>`
+    const compiled = await compileScreenSource(source, path.join(import.meta.dir, 'PlainClient.stx'))
+    expect(compiled.setup?.code).toContain('const destination = "details"')
+    expect(compiled.setup?.code).toContain('open')
+  })
+})

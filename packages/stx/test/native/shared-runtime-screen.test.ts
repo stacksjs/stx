@@ -201,4 +201,37 @@ const ready = craft.storage.get('ready').then(value => status.set(value))
     }))
     expect(await (await response).json()).toEqual({ name: 'Glenn' })
   })
+
+  it('executes a plain client handler without the retired redraw runtime', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-plain-client-'))
+    const file = path.join(root, 'Screen.stx')
+    await Bun.write(file, `<script client>
+const label = 'Ready'
+function leave() { craft.navigation.back() }
+</script>
+<View><Text :text="label" /><Button @click="leave()">Back</Button></View>`)
+    const { code } = await compileSharedScreenBundle(file)
+    const sent: any[] = []
+    let receive: (message: string) => void = () => {}
+    const scope: Record<string, any> = {
+      console,
+      Promise,
+      Date,
+      Map,
+      Set,
+      WeakMap,
+      WeakSet,
+      __stxNativeBridge: {
+        postMessage: (raw: string) => sent.push(JSON.parse(raw)),
+        onMessage: (callback: typeof receive) => { receive = callback },
+      },
+    }
+    vm.runInNewContext(code, scope)
+    await Bun.sleep(0)
+    const operations = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
+    expect(operations).toContainEqual(expect.objectContaining({ patch: { children: ['Ready'] } }))
+    const listener = operations.find(operation => operation.patch?.events?.onPress).patch.events.onPress
+    receive(JSON.stringify({ type: 'EVENT', payload: { handlerId: listener, nativeEvent: {} } }))
+    expect(sent.at(-1)).toMatchObject({ type: 'NAVIGATE_BACK' })
+  })
 })
