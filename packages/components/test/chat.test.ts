@@ -9,6 +9,29 @@ const contact = { id: 2, name: 'Pawel Athlete', role: 'Athlete' }
 const message = { id: 1, sender_id: 1, body: 'Question', client_key: 'key', created_at: '2026-10-10T12:00:00Z', read_at: null }
 
 describe('native chat components and controller', () => {
+  it('initializes auth watchers at mount and clears threads when a contact is revoked', async () => {
+    let mounted = false, allowed = true
+    const chat = createChat({
+      selfId: () => 1,
+      scopeKey: () => { if (!mounted) throw new Error('Auth store not registered yet'); return 'one' },
+      request: async (url) => {
+        if (url === '/messages') return Response.json({ contacts: allowed ? [contact] : [], conversations: [], max_length: 4000 })
+        if (url.endsWith('/conversations')) return Response.json({ id: 'thread' })
+        if (url.endsWith('/read')) return Response.json({ read: true })
+        return Response.json({ messages: [message], has_more: false })
+      },
+    })
+    mounted = true
+    const stop = chat.observe()
+    await chat.load(); await chat.open(contact)
+    expect(chat.messages()).toHaveLength(1)
+    allowed = false
+    await chat.refresh(true)
+    expect(chat.selected()).toBeNull()
+    expect(chat.messages()).toEqual([])
+    stop()
+  })
+
   it('shares one native broadcast stream, updates unread live and closes it on unmount', async () => {
     let output: ReadableStreamDefaultController<Uint8Array> | null = null
     let unreadCount = 0, streams = 0, cancelled = false

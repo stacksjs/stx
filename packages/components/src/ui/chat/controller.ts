@@ -124,6 +124,10 @@ export function createChat(options: ChatOptions): ChatController {
       const data = await json('')
       if (token !== version || options.scopeKey() !== scope) return
       contacts.set(data.contacts); conversations.set(data.conversations); maxLength.set(data.max_length); loading.set(false)
+      if (selected() && !data.contacts.some((contact: ChatContact) => contact.id === selected()!.id)) {
+        const removed = selected()!.id
+        back(); drafts.delete(removed); draft.set(''); retry = null
+      }
       const recipientId = options.initialRecipient?.() ?? 0
       if (recipientId > 0 && recipientId !== initialRecipient) {
         const person = data.contacts.find((c: ChatContact) => c.id === recipientId)
