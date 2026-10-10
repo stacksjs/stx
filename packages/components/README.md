@@ -419,3 +419,12 @@ MIT © [Chris Breuer](https://github.com/chrisbbreuer)
 - Styled with [Headwind](https://github.com/cwcss/crosswind)
 - Syntax highlighting by [ts-syntax-highlighter](https://github.com/stacksjs/ts-syntax-highlighter)
 - Inspired by [Headless UI](https://headlessui.com)
+
+For live updates, pass `broadcastEndpoint: '/messages/events'` to `createChat`.
+Serve it with Stacks `createBroadcastResponse`, restricted to the authenticated
+person's `messagingChannel('users', userId)`. Native inbox, launcher and badge
+components share one stream via `chat.observe()` and clean it up on unmount.
+Messages and read receipts reconcile immediately after native broadcasts and
+again after reconnect. A hidden inbox does not acknowledge incoming messages.
+The application transport supplies bearer authorization in headers, including
+for the stream; no token belongs in the URL.

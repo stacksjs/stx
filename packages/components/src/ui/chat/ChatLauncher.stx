@@ -21,7 +21,7 @@ function close() {
 }
 function keyboard(event) { if (event.key === 'Escape') close() }
 onMount(() => chat.load())
-useInterval(() => chat.refresh(false), 15000, { whileVisible: true })
+onMount(() => chat.observe())
 </script>
 <div class="{{ className }}">
 @if(inline)
