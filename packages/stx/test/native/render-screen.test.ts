@@ -94,12 +94,15 @@ describe('the reference screen', () => {
   })
 
   it('carries the screen own script, and only that', async () => {
-    const { document } = await compileScreenSource(source, screen('Reference.stx', source))
+    const { document, setup } = await compileScreenSource(source, screen('Reference.stx', source))
     expect(document.script.functions).toEqual(['increment'])
     expect(document.script.code).toContain('count.set(count() + 1)')
     // Not the signals runtime, the router or the reactive bridge, all of which
     // are in the rendered page and none of which are the screen's code.
     expect(document.script.code.length).toBeLessThan(400)
+    expect(setup?.name).toMatch(/^__stx_setup_/)
+    expect(setup?.code).toContain('const count = state(0)')
+    expect(setup?.code).toContain('return { count, increment }')
   })
 })
 

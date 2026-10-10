@@ -32,6 +32,7 @@ import { extractBindingManifest, type BindingManifest } from '../../binding-mani
 import { processDirectives } from '../../process'
 import { translateHtmlToDocument } from './html-to-ir'
 import { extractClientScript } from './client-script'
+import { extractGeneratedSetupScript, type GeneratedSetupScript } from './setup-script'
 
 /**
  * Where the native primitive components live, for an app's stx config.
@@ -67,6 +68,8 @@ export interface CompiledScreen {
   document: STXDocument
   /** Bindings keyed to `STXNode.bindingId`, consumed directly by the host runtime. */
   manifest: BindingManifest
+  /** Client setup transformed by stx, ready to run against the shared runtime. */
+  setup: GeneratedSetupScript | null
   diagnostics: TranslationDiagnostic[]
   /** The rendered HTML the IR was translated from, for debugging a bad tree. */
   html: string
@@ -111,7 +114,7 @@ export async function compileScreenSource(
     script: extractClientScript(source),
   })
 
-  return { document, manifest, diagnostics, html }
+  return { document, manifest, setup: extractGeneratedSetupScript(html), diagnostics, html }
 }
 
 /** The same, reading the screen off disk. */
