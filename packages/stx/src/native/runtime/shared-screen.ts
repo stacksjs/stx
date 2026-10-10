@@ -51,7 +51,10 @@ export function prepareSharedNativeScreen(
   return {
     host,
     mount(runtime, setup) {
-      protocol.render(document)
+      // Native hosts reconcile the root node. The compiler envelope also
+      // carries build metadata and scripts, but treating that envelope as a
+      // node silently produces an empty fallback View in the UIKit host.
+      protocol.render(document.root)
       runtime.hydrateHost(tree.root, setup, manifest, tree.nodes)
     },
   }

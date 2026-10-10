@@ -42,7 +42,14 @@ function increment() { count.set(count() + 1) }
     screen.mount(window.stx, window.__stx_latestSetup)
     screen.host.flush()
 
-    expect(sent[0]).toMatchObject({ type: 'RENDER', payload: { mode: 'replace' } })
+    expect(sent[0]).toMatchObject({
+      type: 'RENDER',
+      payload: {
+        mode: 'replace',
+        document: { type: 'View' },
+      },
+    })
+    expect(sent[0].payload.document).not.toHaveProperty('root')
     const initialOps = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
     expect(initialOps).toContainEqual(expect.objectContaining({
       op: 'updateNode',

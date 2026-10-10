@@ -134,6 +134,11 @@ The JS bridge enables:
 - State updates (JS → native)
 - API calls (both directions)
 
+At mount time, the shared screen adapter sends the compiled document's root
+node through `RENDER`, then hydrates its bindings with the ordinary stx signals
+runtime. Reactive changes use revisioned `MUTATE` batches, preserving the live
+native view tree instead of replacing it.
+
 ```
 ┌──────────────┐         ┌──────────────┐
 │  JavaScript  │ ←─────→ │   Native     │
