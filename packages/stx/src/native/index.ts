@@ -31,6 +31,7 @@ export * from './compiler/bundle'
 export * from './compiler/icons'
 export * from './cli'
 export type * from './runtime/craft'
+export * from './runtime/shared-screen'
 
 // Bridge exports
 export * from './bridge/protocol'
