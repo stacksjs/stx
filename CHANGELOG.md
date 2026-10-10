@@ -1,5 +1,71 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.422...v0.2.423)
+
+## ✨ Features
+
+- **native**: add WebView-free iOS signal example (#1983) ([b52ea06](https://github.com/stacksjs/stx/commit/b52ea06)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1983](https://github.com/stacksjs/stx/issues/1983), [#1983](https://github.com/stacksjs/stx/issues/1983))
+- **native**: preserve iOS visual styles (#1987) ([fe46011](https://github.com/stacksjs/stx/commit/fe46011)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1987](https://github.com/stacksjs/stx/issues/1987), [#1987](https://github.com/stacksjs/stx/issues/1987))
+- **native**: apply iOS text styles (#1987) ([fc15df7](https://github.com/stacksjs/stx/commit/fc15df7)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1987](https://github.com/stacksjs/stx/issues/1987), [#1987](https://github.com/stacksjs/stx/issues/1987))
+- **native**: render Picker on both platforms (#1987) ([4331162](https://github.com/stacksjs/stx/commit/4331162)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1987](https://github.com/stacksjs/stx/issues/1987), [#1987](https://github.com/stacksjs/stx/issues/1987))
+- **native**: render modal and slider on iOS (#1987) ([d0cf560](https://github.com/stacksjs/stx/commit/d0cf560)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1987](https://github.com/stacksjs/stx/issues/1987), [#1987](https://github.com/stacksjs/stx/issues/1987))
+- **native**: share navigation and fetch runtime (#1984) ([63532cb](https://github.com/stacksjs/stx/commit/63532cb)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1984](https://github.com/stacksjs/stx/issues/1984), [#1984](https://github.com/stacksjs/stx/issues/1984))
+- **native**: move Craft capabilities onto shared signals (#1984) ([0c294ed](https://github.com/stacksjs/stx/commit/0c294ed)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1984](https://github.com/stacksjs/stx/issues/1984), [#1984](https://github.com/stacksjs/stx/issues/1984))
+- **native**: bundle shared signals runtime for JSC (#1984) ([baa78ed](https://github.com/stacksjs/stx/commit/baa78ed)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1984](https://github.com/stacksjs/stx/issues/1984), [#1984](https://github.com/stacksjs/stx/issues/1984))
+- **native**: drive a screen with shared stx signals (#1984) ([ba1b4b2](https://github.com/stacksjs/stx/commit/ba1b4b2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1984](https://github.com/stacksjs/stx/issues/1984), [#1984](https://github.com/stacksjs/stx/issues/1984))
+- **native**: retain stx-generated client setup (#1983) ([3e622ca](https://github.com/stacksjs/stx/commit/3e622ca)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1983](https://github.com/stacksjs/stx/issues/1983), [#1983](https://github.com/stacksjs/stx/issues/1983))
+- **native**: materialize signal binding handles from IR (#1984) ([3107066](https://github.com/stacksjs/stx/commit/3107066)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1984](https://github.com/stacksjs/stx/issues/1984), [#1984](https://github.com/stacksjs/stx/issues/1984))
+- **native**: carry binding manifest ids into IR (#1984) ([0565545](https://github.com/stacksjs/stx/commit/0565545)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1984](https://github.com/stacksjs/stx/issues/1984), [#1984](https://github.com/stacksjs/stx/issues/1984))
+- **native**: hydrate resolved host bindings with stx signals (#1984) ([b2950bb](https://github.com/stacksjs/stx/commit/b2950bb)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1984](https://github.com/stacksjs/stx/issues/1984), [#1984](https://github.com/stacksjs/stx/issues/1984))
+
+## 🐛 Bug Fixes
+
+- persist background outbox writes before acknowledging saves ([200564b](https://github.com/stacksjs/stx/commit/200564b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: materialize inserted clones only (#1992) ([2ae672c](https://github.com/stacksjs/stx/commit/2ae672c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1992](https://github.com/stacksjs/stx/issues/1992), [#1992](https://github.com/stacksjs/stx/issues/1992))
+- **native**: skip detached manifest bindings (#1992) ([8a49b38](https://github.com/stacksjs/stx/commit/8a49b38)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1992](https://github.com/stacksjs/stx/issues/1992), [#1992](https://github.com/stacksjs/stx/issues/1992))
+- **native**: reconcile keyed signal lists (#1992) ([1a72ed2](https://github.com/stacksjs/stx/commit/1a72ed2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1992](https://github.com/stacksjs/stx/issues/1992), [#1992](https://github.com/stacksjs/stx/issues/1992))
+- **native**: preserve structured primitive props (#1992) ([29a0127](https://github.com/stacksjs/stx/commit/29a0127)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1992](https://github.com/stacksjs/stx/issues/1992), [#1992](https://github.com/stacksjs/stx/issues/1992))
+- **native**: normalize host prop names (#1992) ([eca72f3](https://github.com/stacksjs/stx/commit/eca72f3)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1992](https://github.com/stacksjs/stx/issues/1992), [#1992](https://github.com/stacksjs/stx/issues/1992))
+- **native**: preserve structured prop bindings (#1992) ([dff24de](https://github.com/stacksjs/stx/commit/dff24de)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1992](https://github.com/stacksjs/stx/issues/1992), [#1992](https://github.com/stacksjs/stx/issues/1992))
+- **native**: route style bindings through host (#1992) ([87af90b](https://github.com/stacksjs/stx/commit/87af90b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1992](https://github.com/stacksjs/stx/issues/1992), [#1992](https://github.com/stacksjs/stx/issues/1992))
+- **native**: preserve primitive host bindings (#1992) ([78c7c9a](https://github.com/stacksjs/stx/commit/78c7c9a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1992](https://github.com/stacksjs/stx/issues/1992), [#1992](https://github.com/stacksjs/stx/issues/1992))
+- **native**: dispose shared screen lifecycle (#1992) ([5706788](https://github.com/stacksjs/stx/commit/5706788)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1992](https://github.com/stacksjs/stx/issues/1992), [#1992](https://github.com/stacksjs/stx/issues/1992))
+- **native**: accept both binding manifest shapes (#1983) ([bb6cf8e](https://github.com/stacksjs/stx/commit/bb6cf8e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1983](https://github.com/stacksjs/stx/issues/1983), [#1983](https://github.com/stacksjs/stx/issues/1983))
+- **native**: share node ids with host mutations (#1983) ([8d26ab0](https://github.com/stacksjs/stx/commit/8d26ab0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1983](https://github.com/stacksjs/stx/issues/1983), [#1983](https://github.com/stacksjs/stx/issues/1983))
+- **native**: render the compiled root node (#1983) ([05a6e19](https://github.com/stacksjs/stx/commit/05a6e19)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1983](https://github.com/stacksjs/stx/issues/1983), [#1983](https://github.com/stacksjs/stx/issues/1983))
+- **native**: preserve primitive host props (#1983) ([28d173e](https://github.com/stacksjs/stx/commit/28d173e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1983](https://github.com/stacksjs/stx/issues/1983), [#1983](https://github.com/stacksjs/stx/issues/1983))
+- **native**: retain plain client setup on shared runtime (#1983) ([fe1d07d](https://github.com/stacksjs/stx/commit/fe1d07d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1983](https://github.com/stacksjs/stx/issues/1983), [#1983](https://github.com/stacksjs/stx/issues/1983))
+
+## ♻️ Code Refactoring
+
+- **native**: remove duplicate JSC runtime (#1984) ([1544696](https://github.com/stacksjs/stx/commit/1544696)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1984](https://github.com/stacksjs/stx/issues/1984), [#1984](https://github.com/stacksjs/stx/issues/1984))
+- **native**: remove bespoke template compiler (#1983) ([ee81f5c](https://github.com/stacksjs/stx/commit/ee81f5c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1983](https://github.com/stacksjs/stx/issues/1983), [#1983](https://github.com/stacksjs/stx/issues/1983))
+- **native**: route bundles through shared signals (#1983) ([54e066f](https://github.com/stacksjs/stx/commit/54e066f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1983](https://github.com/stacksjs/stx/issues/1983), [#1983](https://github.com/stacksjs/stx/issues/1983))
+- **native**: make single-screen bundles use shared signals (#1983) ([032a6d7](https://github.com/stacksjs/stx/commit/032a6d7)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1983](https://github.com/stacksjs/stx/issues/1983), [#1983](https://github.com/stacksjs/stx/issues/1983))
+- **native**: decouple rendered IR from parser (#1983) ([2180950](https://github.com/stacksjs/stx/commit/2180950)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1983](https://github.com/stacksjs/stx/issues/1983), [#1983](https://github.com/stacksjs/stx/issues/1983))
+- **native**: compile IR through stx pipeline (#1983) ([47ff049](https://github.com/stacksjs/stx/commit/47ff049)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1983](https://github.com/stacksjs/stx/issues/1983), [#1983](https://github.com/stacksjs/stx/issues/1983))
+
+## 📝 Documentation
+
+- **native**: record simulator proof and boundaries (#1987) ([43c9316](https://github.com/stacksjs/stx/commit/43c9316)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1987](https://github.com/stacksjs/stx/issues/1987), [#1987](https://github.com/stacksjs/stx/issues/1987))
+- **native**: make iOS example source-generated (#1983) ([5dba461](https://github.com/stacksjs/stx/commit/5dba461)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1983](https://github.com/stacksjs/stx/issues/1983), [#1983](https://github.com/stacksjs/stx/issues/1983))
+
+## ✅ Tests
+
+- **native**: replace redraw runtime coverage (#1983) ([e0ecf2f](https://github.com/stacksjs/stx/commit/e0ecf2f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1983](https://github.com/stacksjs/stx/issues/1983), [#1983](https://github.com/stacksjs/stx/issues/1983))
+- **native**: retire legacy compiler assertions (#1983) ([576cfe3](https://github.com/stacksjs/stx/commit/576cfe3)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1983](https://github.com/stacksjs/stx/issues/1983), [#1983](https://github.com/stacksjs/stx/issues/1983))
+- **native**: move capability contract to shared runtime (#1984) ([17e1442](https://github.com/stacksjs/stx/commit/17e1442)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1984](https://github.com/stacksjs/stx/issues/1984), [#1984](https://github.com/stacksjs/stx/issues/1984))
+
+## 🔧 Chores
+
+- release v0.2.423 ([d3dafc1](https://github.com/stacksjs/stx/commit/d3dafc1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: drop generated iOS project (#1983) ([0919c10](https://github.com/stacksjs/stx/commit/0919c10)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1983](https://github.com/stacksjs/stx/issues/1983), [#1983](https://github.com/stacksjs/stx/issues/1983))
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.421...v0.2.422)
 
 ## 🐛 Bug Fixes
