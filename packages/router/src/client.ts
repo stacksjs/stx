@@ -750,6 +750,34 @@ function routerSource(): string {
     var head=code.trimStart();
     return head.charAt(0)==='('||head.charAt(0)===';';
   }
+  // A component rendered inside a client loop is not an instance yet. Its root
+  // and scoped setup script sit in the loop's SOURCE -- the element carrying
+  // :for, or a descendant of it, as in <tr :for> > <td> > <Avatar> -- which
+  // bindFor turns into the row template and clones per item. The runtime runs
+  // the setup once per clone (hydrateComponentScopes), but only from a script
+  // that still carries data-stx-scoped and its code.
+  //
+  // Only the shape where the component root is itself the :for element was
+  // recognised. A component one level down was run here in place instead,
+  // registering a scope for markup that bindFor discards, and its placeholder
+  // was replaced by an executed script without data-stx-scoped. Every row
+  // cloned from that template had no setup to run: the props reached the row's
+  // root, but its own :if/:src stayed raw. Only on a routed visit, which is
+  // when a store already holds the rows, so it read as a timing bug.
+  function hasLoopAttr(el){
+    return el.hasAttribute('@for')||el.hasAttribute(':for')||el.hasAttribute('x-for');
+  }
+  function loopOwnsScopedScript(script,code){
+    if(!script)return false;
+    for(var cursor=script.parentNode;cursor&&cursor.nodeType===1;cursor=cursor.parentNode){
+      if(hasLoopAttr(cursor))return true;
+    }
+    var root=script.previousSibling;
+    while(root&&((root.nodeType===3&&!(root.textContent||'').trim())||root.nodeType===8))root=root.previousSibling;
+    if(!root||root.nodeType!==1||!root.hasAttribute('data-stx-scope')||!hasLoopAttr(root))return false;
+    var scopeId=root.getAttribute('data-stx-scope');
+    return !!scopeId&&code.indexOf(scopeId)!==-1;
+  }
   // A component scope script names the root it binds in data-stx-owner (#1958).
   // On navigation it runs only for a root that just ARRIVED: one swapped in
   // with the new content, which is not bound yet. A layout component that
@@ -1697,16 +1725,7 @@ else {
               if(template.contains(placeholder)||(template.content&&template.content.contains(placeholder)))
                 nestedScopedTemplate=true;
             });
-            var loopRoot=placeholder.previousSibling;
-            while(loopRoot&&(
-              (loopRoot.nodeType===3&&!(loopRoot.textContent||'').trim())
-              ||loopRoot.nodeType===8
-            ))loopRoot=loopRoot.previousSibling;
-            if(loopRoot&&loopRoot.nodeType===1&&loopRoot.hasAttribute('data-stx-scope')
-              &&(loopRoot.hasAttribute(':for')||loopRoot.hasAttribute('@for')||loopRoot.hasAttribute('x-for'))){
-              var loopScopeId=loopRoot.getAttribute('data-stx-scope');
-              scopedLoopSetup=!!loopScopeId&&code.indexOf(loopScopeId)!==-1;
-            }
+            scopedLoopSetup=loopOwnsScopedScript(placeholder,code);
           }
           if(entry.scoped&&(!placeholder||!placeholder.parentNode||nestedScopedTemplate||scopedLoopSetup)){
             log('[router] leaving loop-scoped script for component hydration');
@@ -1973,6 +1992,9 @@ else {
           var executable=!type||type==='text/javascript'||type==='application/javascript'||type==='module';
           if(!executable||!text.trim())return;
           if(isSignalsRuntimeScript(s,text)||text.indexOf('__stxRouter')!==-1){s.remove();return}
+          // Loop-owned component setup stays inert with its code, as the
+          // fragment path leaves it: bindFor runs it per row.
+          if(s.hasAttribute('data-stx-scoped')&&loopOwnsScopedScript(s,text)){s.setAttribute('type','application/stx-pending');return}
           var slot='document-'+(++routedBodyScriptId);
           var setupName=generatedSetupName(text);
           if(setupName)incomingSetupName=setupName;
