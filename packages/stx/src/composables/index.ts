@@ -476,3 +476,6 @@ export {
 // `framework-composables.ts` needs the entry to know to bundle it. One missing
 // re-export, two contradictory test suites. See #1849.
 export { defineForm, useForm } from './use-form'
+
+// Authenticated server broadcasts, demand-bundled for client scripts.
+export { useBroadcastStream, type BroadcastStreamFrame, type BroadcastStreamClientOptions } from './use-broadcast-stream'
