@@ -65,7 +65,9 @@ const tooltipId = {{ tooltipId }}
 const triggerRef = useRef('triggerRef')
 const panelRef = useRef('panelRef')
 const preferredSide = {{ position }}
-const panelLimits = 'max-width:calc(100vw - 16px);margin:0;'
+// The body portal uses viewport coordinates. Fixed positioning also prevents
+// a static body's margins from shifting the measured placement offscreen.
+const panelLimits = 'position:fixed;max-width:calc(100vw - 16px);margin:0;'
 const panelStyle = state(panelLimits)
 const arrowStyle = state('')
 const isDisabled = useReactiveProp('disabled', {{ disabled }})
