@@ -431,7 +431,8 @@ export function runtimeDirectiveNamesLiteral(): string {
 /**
  * Event names a bare `:name` or `@name` is read as a listener for.
  *
- * Prefix-matched, so `click` also covers `click.stop` and `click.prevent`.
+ * A dot starts event modifiers, so `click.stop` matches but `scroll-target`
+ * remains an attribute binding.
  */
 export const RUNTIME_EVENT_NAMES: readonly string[] = [
   'click', 'dblclick', 'mousedown', 'mouseup', 'mousemove', 'mouseenter', 'mouseleave',
@@ -442,7 +443,7 @@ export const RUNTIME_EVENT_NAMES: readonly string[] = [
 
 /** The `EVENT_RE` the generated runtime embeds, as JS source. */
 export function runtimeEventRegexLiteral(): string {
-  return `/^(${RUNTIME_EVENT_NAMES.join('|')})/`
+  return `/^(${RUNTIME_EVENT_NAMES.join('|')})(?:\\.|$)/`
 }
 
 /** Does this name begin with an event the runtime binds as a listener? */

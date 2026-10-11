@@ -213,12 +213,14 @@ const image = state({ uri: 'avatar.png' })
 import { label } from './labels'
 const rows = state([{ id: 'a', title: 'Run', ready: false }])
 const refreshing = state(false)
+const scrollTarget = state(null)
 function refresh() {
+  scrollTarget.set({ id: 'day-1', key: 1 })
   refreshing.set(true)
   rows.set([{ id: 'a', title: 'Ride', ready: true }])
 }
 </script>
-<ScrollView @refresh="refresh()" :refreshing="refreshing">
+<ScrollView @refresh="refresh()" :refreshing="refreshing" :scrollTarget="scrollTarget">
   <View :for="row in rows" :key="row.id">
     <Text :text="label(row.title)" />
     <Text :if="row.ready" :text="'Ready ' + row.title" />
@@ -248,6 +250,7 @@ function refresh() {
     expect(updates).toContainEqual(expect.objectContaining({ patch: { children: ['Session: Ride'] } }))
     expect(updates).toContainEqual(expect.objectContaining({ patch: { children: ['Ready Ride'] } }))
     expect(updates).toContainEqual(expect.objectContaining({ patch: { props: { refreshing: true } } }))
+    expect(updates).toContainEqual(expect.objectContaining({ patch: { props: { scrollTarget: { id: 'day-1', key: 1 } } } }))
   })
 
   it('runs the same path as a DOM-free JavaScriptCore bundle', async () => {
