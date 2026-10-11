@@ -40,7 +40,7 @@ const statusColorClasses = {
   busy: 'bg-danger',
 }
 
-export const containerClasses = `relative inline-block ${className}`.trim()
+export const containerClasses = `relative inline-flex shrink-0 align-top ${className}`.trim()
 export const avatarClasses = `flex items-center justify-center overflow-hidden bg-surface-sunken ${sizeClasses[size] || sizeClasses.md} ${shapeClasses[shape] || shapeClasses.circle}`.trim()
 export const imageClasses = `w-full h-full object-cover`.trim()
 export const initialsClasses = `font-medium text-fg-muted uppercase select-none`.trim()
@@ -88,6 +88,7 @@ const showImage = derived(() => !!avatarSrc() && !imageError())
 
 === Extracted Classes ===
 absolute
+align-top
 alt
 avatarClasses
 avatarSrc
@@ -117,15 +118,18 @@ h-full
 imageClasses
 initials
 initialsClasses
+inline-flex
 items-center
 justify-center
 object-cover
 overflow-hidden
+relative
 right-0
 rounded-full
 rounded-md
 select-none
 showImage
+shrink-0
 src
 statusClasses
 text-2xl

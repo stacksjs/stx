@@ -34,7 +34,7 @@ const statusColorClasses = {
   busy: 'bg-danger',
 }
 
-export const containerClasses = `relative inline-block ${className}`.trim()
+export const containerClasses = `relative inline-flex shrink-0 align-top ${className}`.trim()
 export const avatarClasses = `flex items-center justify-center overflow-hidden bg-surface-sunken ${sizeClasses[size] || sizeClasses.md} ${shapeClasses[shape] || shapeClasses.circle}`.trim()
 export const imageClasses = `w-full h-full object-cover`.trim()
 export const initialsClasses = `font-medium text-fg-muted uppercase select-none`.trim()

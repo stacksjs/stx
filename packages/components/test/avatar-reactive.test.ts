@@ -42,3 +42,21 @@ function changePhoto(src) { photo.set(src) }
   }
   finally { await app.dispose() }
 })
+
+it('top-aligns the container so it adds no baseline space under the circle', async () => {
+  const app = await renderApp({
+    'layouts/app.stx': layout(''),
+    'components/Avatar.stx': readFileSync(path.join(import.meta.dir, '../src/ui/avatar/Avatar.stx'), 'utf8'),
+    'pages/index.stx': page('app', '<Avatar src="/uploads/avatars/chris.jpg" alt="Chris Breuer" className="probe" />'),
+  }, { '/': 'pages/index.stx' })
+  try {
+    const browser = await boot(app, '/')
+    await settle()
+    const classes = find(browser, '.probe').classList
+    expect(classes.contains('align-top')).toBe(true)
+    expect(classes.contains('inline-flex')).toBe(true)
+    expect(classes.contains('shrink-0')).toBe(true)
+    expect(classes.contains('inline-block')).toBe(false)
+  }
+  finally { await app.dispose() }
+})
