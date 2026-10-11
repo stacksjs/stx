@@ -102,6 +102,7 @@ describe('scopeOnRootElement only takes over where a wrapper would move', () => 
     const html = '<span title="a > b and &lt;span&gt;">A<span>B</span><!-- <span> --><script>const text = "<span>"</script></span>'
     expect(scopeOnRootElement(html, ATTRS)).toBe(html.replace('<span ', '<span' + ATTRS + ' '))
     expect(scopeOnRootElement('<span>A</span><span>B</span>', ATTRS)).toBeNull()
+    expect(scopeOnRootElement('<span data-stx-scope="child">A</span>', ATTRS)).toBeNull()
   })
 
   it('skips leading comments to find the root', () => {

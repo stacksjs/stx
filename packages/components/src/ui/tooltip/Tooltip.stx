@@ -184,6 +184,7 @@ onMount(describeTrigger)
     <slot />
   </span>
 
+  <Teleport to="body">
   <span
     x-ref="panelRef"
     :style="panelStyle"
@@ -197,4 +198,5 @@ onMount(describeTrigger)
     <span class="block" style="max-height:calc(100vh - 32px);overflow-y:auto;">{{ content }}</span>
     <span class="{{ arrowClass }}" :style="arrowStyle"></span>
   </span>
+  </Teleport>
 </span>

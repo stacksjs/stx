@@ -183,6 +183,7 @@ describe('Tooltip can be dismissed and can be hovered', () => {
 describe('Tooltip describes the control, not the wrapper', () => {
   const FILES = {
     'layouts/app.stx': layout(''),
+    'components/Teleport.stx': readFileSync(path.join(UI_DIR, 'teleport/Teleport.stx'), 'utf-8'),
     'components/Tooltip.stx': readFileSync(path.join(UI_DIR, 'tooltip/Tooltip.stx'), 'utf-8').replace('../../utils/tooltip-position', path.join(UI_DIR, '../utils/tooltip-position')),
     'pages/index.stx': page('app', `<Tooltip content="Resolve, alerts again only if it comes back">
   <button id="trigger">OK</button>
@@ -204,7 +205,7 @@ describe('Tooltip describes the control, not the wrapper', () => {
       const described = button.getAttribute('aria-describedby')
       expect(described).toBeTruthy()
 
-      const panel = browser.document.getElementById(described!.split(/\s+/)[0])
+      const panel = browser.document.querySelector('[id="' + described!.split(/\s+/)[0] + '"]')
       expect(panel).not.toBeNull()
       expect(panel!.getAttribute('role')).toBe('tooltip')
       expect(panel!.textContent).toContain('Resolve, alerts again only if it comes back')
@@ -212,6 +213,19 @@ describe('Tooltip describes the control, not the wrapper', () => {
     finally {
       closeBrowser()
     }
+  })
+
+  it('portals its panel outside clipping ancestors', async () => {
+    const app = await renderApp(FILES, ROUTES)
+    try {
+      const browser = await boot(app, '/')
+      await settle()
+      const trigger = browser.document.querySelector('#trigger')!
+      const panel = browser.document.querySelector('[role="tooltip"]')!
+      expect(panel.closest('[data-teleport-id]')?.parentElement).toBe(browser.document.body)
+      expect(trigger.closest('[data-teleport-id]')).toBeNull()
+    }
+    finally { closeBrowser() }
   })
 
   it('leaves the wrapper without a description of its own', async () => {

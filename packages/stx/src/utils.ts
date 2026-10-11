@@ -677,6 +677,8 @@ export function scopeOnRootElement(html: string, attrs: string): string | null {
     matcher.lastIndex = index
     return matcher.exec(source)?.index === index ? matcher.lastIndex : -1
   })
+  // A child component already owns this root; keep its scope intact.
+  if (tag === 'span' && /\sdata-stx-scope\s*=/.test(tokens[0]?.token || '')) return null
   let depth = 0
   let complete = false
   for (const token of tokens) {
@@ -1988,7 +1990,9 @@ export async function renderComponentWithSlot(
        * would need a scope per sibling rather than one moved attribute, and
        * nothing in the library does that.
        */
-      output = scopeOnRootElement(result, scopeAttrs) ?? `<div${scopeAttrs}>${result}</div>`
+      const inlineRoot = /^\s*(?:(?:<!--[\s\S]*?-->|\x00STX_HTML_COMMENT_\d+\x00)\s*)*<span(?=[\s/>])/i.test(result)
+      const wrapperTag = inlineRoot ? 'span' : 'div'
+      output = scopeOnRootElement(result, scopeAttrs) ?? `<${wrapperTag}${scopeAttrs}${inlineRoot ? ' style="display:contents"' : ''}>${result}</${wrapperTag}>`
 
       // Modify client scripts to register variables in this scope
       const scopedScripts = await Promise.all(clientScripts.map(async (script) => {

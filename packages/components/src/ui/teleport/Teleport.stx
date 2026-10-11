@@ -36,9 +36,10 @@ function teleport() {
 function returnContent() {
   if (!teleportContainer || !teleportContainer.parentNode) return
   const sourceElement = document.getElementById(teleportId)
-  if (!sourceElement) return
-  while (teleportContainer.firstChild) {
-    sourceElement.appendChild(teleportContainer.firstChild)
+  // A removed caller no longer has a source to restore into, but its portal
+  // still has to leave the body when the component is destroyed.
+  if (sourceElement) {
+    while (teleportContainer.firstChild) sourceElement.appendChild(teleportContainer.firstChild)
   }
   teleportContainer.parentNode.removeChild(teleportContainer)
   teleportContainer = null
@@ -59,7 +60,7 @@ onDestroy(() => {
 @if(disabled)
   <slot />
 @else
-  <div id="{{ teleportId }}" data-teleport-source="true">
+  <span id="{{ teleportId }}" data-teleport-source="true" style="display:contents">
     <slot />
-  </div>
+  </span>
 @endif

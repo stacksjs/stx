@@ -54,6 +54,7 @@ const FILES = {
   'layouts/app.stx': layout(''),
   'components/Progress.stx': component('progress/Progress.stx'),
   'components/Tooltip.stx': component('tooltip/Tooltip.stx'),
+  'components/Teleport.stx': component('teleport/Teleport.stx'),
   'components/Host.stx': HOST,
   'pages/index.stx': page('app', '<Host />'),
 }
