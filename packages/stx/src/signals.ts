@@ -9388,6 +9388,18 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
       el.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
     });
 
+    // The page's own names win over its components' locals. The walk above
+    // merges each component's locals into the scope the container is bound
+    // with, so a component declaring a name the page also declares took it
+    // over for the whole page: HQ's coach dashboard aliases store signals as
+    // loading and roster, a card further down declares its own loading and
+    // roster, and reached by the router the page's
+    // :if="loading && !roster.length" read the card's and never cleared. A
+    // full load binds the page before any component, so it never saw this.
+    // A component's own bindings resolve its locals through its scope element,
+    // and a name only a component declares stays reachable as before.
+    Object.assign(componentScope, spaPageScopeSnapshot);
+
     // Process the container content — bind {{ }}, :attr, @event directives.
     // Run synchronously (not in setTimeout) so componentScope is captured correctly.
     // The DOMContentLoaded path processes body> synchronously — the SPA path must match.
