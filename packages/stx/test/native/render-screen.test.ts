@@ -183,13 +183,24 @@ const label = $props.label ?? ''
 
 describe('the primitives themselves', () => {
   it('keeps leaf div primitives beside following controls', async () => {
-    const source = '<View><Switch testID="switch" /><Modal testID="modal" /><Slider testID="slider" /><ActivityIndicator testID="spinner" /><DatePicker testID="date" /><RefreshControl testID="refresh" /><StatusBar testID="status" /><TextInput testID="after" /></View>'
+    const source = '<View><Switch testID="switch" /><Slider testID="slider" /><ActivityIndicator testID="spinner" /><DatePicker testID="date" /><RefreshControl testID="refresh" /><StatusBar testID="status" /><TextInput testID="after" /></View>'
     const { document } = await compileScreenSource(source, screen('LeafDivPrimitives.stx', source))
     const children = document.root.children.filter((child): child is STXNode => typeof child !== 'string')
 
-    expect(children.map(child => child.type)).toEqual(['Switch', 'Modal', 'Slider', 'ActivityIndicator', 'DatePicker', 'RefreshControl', 'StatusBar', 'TextInput'])
-    expect(children.map(child => child.props.testID)).toEqual(['switch', 'modal', 'slider', 'spinner', 'date', 'refresh', 'status', 'after'])
+    expect(children.map(child => child.type)).toEqual(['Switch', 'Slider', 'ActivityIndicator', 'DatePicker', 'RefreshControl', 'StatusBar', 'TextInput'])
+    expect(children.map(child => child.props.testID)).toEqual(['switch', 'slider', 'spinner', 'date', 'refresh', 'status', 'after'])
     expect(children.every(child => child.children.length === 0)).toBe(true)
+  })
+
+  it('keeps modal content inside the modal and following controls beside it', async () => {
+    const source = '<View><Modal testID="modal"><Text testID="content">Modal content</Text></Modal><TextInput testID="after" /></View>'
+    const { document } = await compileScreenSource(source, screen('ModalContent.stx', source))
+    const children = document.root.children.filter((child): child is STXNode => typeof child !== 'string')
+
+    expect(children.map(child => child.type)).toEqual(['Modal', 'TextInput'])
+    expect(types(children[0])).toEqual(['Modal', 'Text'])
+    expect(texts(children[0])).toEqual(['Modal content'])
+    expect(children[1].props.testID).toBe('after')
   })
 
   it('keeps native icons as leaf nodes beside text, including dynamic labels', async () => {

@@ -92,7 +92,8 @@ shared-runtime contract. `FlatList` remains a renderer primitive, but automatic
 row recycling is currently unsupported and should not be inferred from IR
 translation alone.
 
-Both renderers support `Modal` visibility and `Slider` value-change events.
+Both renderers support `Modal` visibility and preserve its child subtree, and
+support `Slider` value-change events.
 The reference iOS renderer does not implement `FlatList`; the maintained Craft
 iOS host does use a recycling `UICollectionView`. Automatic `FlatList` template
 expansion is still outside the shared-runtime contract, so use `:for` when the
