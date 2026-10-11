@@ -215,6 +215,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const record = records.get(node.__stxId)
     if (!record)
       return
+    // Removing a native view removes its whole subtree. A nested :for or
+    // :if can dispose its own children afterwards; those views are already
+    // gone and must not send another removeNode to the strict native host.
+    record.materialized = false
     ;(node as RetainedNativeNode).__stxDetachedRecord = record
     record.children.forEach(retainDetachedDescriptors)
     records.delete(node.__stxId)

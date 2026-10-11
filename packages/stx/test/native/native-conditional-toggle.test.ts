@@ -188,6 +188,29 @@ describe('native :if branches on a strict native side', () => {
     delete (globalThis as any).__toggle
   })
 
+  it('disposes nested keyed rows after the containing card disappears', async () => {
+    const { native, settle } = await mountScreen(`<script client>
+const data = state({ rows: [[{ key: 'score', value: '56' }], [{ key: 'hrv', value: '33' }]] })
+globalThis.__toggle = () => data.set(data() ? null : { rows: [[{ key: 'score', value: '65' }]] })
+</script>
+<View>
+  <View :if="data">
+    <View :for="(row, index) in data.rows" :key="index">
+      <Text :for="reading in row" :key="reading.key" :text="reading.value" />
+    </View>
+  </View>
+</View>`)
+    expect(native.text()).toEqual(['56', '33'])
+    ;(globalThis as any).__toggle()
+    await settle()
+    expect(native.errors).toEqual([])
+    expect(native.text()).toEqual([])
+    ;(globalThis as any).__toggle()
+    await settle()
+    expect(native.errors).toEqual([])
+    expect(native.text()).toEqual(['65'])
+  })
+
   it('shows the other branch, nested in another :if, and shows the first again', async () => {
     const { native, settle } = await mountScreen(`<script client>
 const data = state(null)

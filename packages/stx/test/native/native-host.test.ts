@@ -70,6 +70,24 @@ describe('the native host satisfies the same contract as the DOM one', () => {
 })
 
 describe('host calls become bridge operations', () => {
+  it('removes a subtree once when nested bindings dispose after their parent', () => {
+    const { host, node, batches, ops } = harness()
+    const parent = node('parent')
+    const child = node('child')
+    host.insert(parent, child)
+    host.flush()
+    batches.length = 0
+    host.remove(parent)
+    host.remove(child)
+    host.flush()
+    expect(ops()).toEqual([{ op: 'removeNode', id: 'parent' }])
+    // Kept descriptors still recreate the removed views on a later insertion.
+    const root = node('root')
+    host.insert(parent, child)
+    host.insert(root, parent)
+    host.flush()
+    expect(ops().filter(op => op.op === 'createNode').map(op => op.id)).toEqual(['parent', 'child'])
+  })
   it('turns setText into an updateNode carrying the text', () => {
     const { host, node, ops } = harness()
     host.setText(node('n1', 'Text'), 'Wildloop')
