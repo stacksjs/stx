@@ -1068,9 +1068,6 @@ catch (error: unknown) {
         catch {}
       }
 
-      // SFC Support: Extract <template>, <script>, and <style> sections
-      let workingContent = partialContent
-
       // Register component tags imported by the partial's own <script> blocks
       // (e.g. `import { Dialog } from '@stacksjs/components'`). Without this
       // step, the import is later stripped during signal-script transformation
@@ -1082,12 +1079,17 @@ catch (error: unknown) {
       // up tags resolved from partial-scoped imports. See stacksjs/stx#1705.
       try {
         const { processESImports } = await import('./component-renderer')
-        await processESImports(partialContent, context, includeFilePath, options, dependencies)
+        partialContent = await processESImports(partialContent, context, includeFilePath, options, dependencies)
       }
       catch (err) {
         if (options.debug)
           console.warn(`[stx] partial ES import extraction skipped for ${includeFilePath}:`, err instanceof Error ? err.message : err)
       }
+
+      // Use the consumed source for both markup and client-script extraction.
+      // Component imports register server-rendered tags; preserving the raw
+      // import here would bundle the package's entire namespace on the client.
+      let workingContent = partialContent
 
       // Extract the explicit wrapper, preserving client loop, conditional,
       // keyed, and slot templates.
