@@ -147,6 +147,15 @@ const signedIn = false
     expect(texts(document.root)).toEqual(['Sign in'])
   })
 
+  it('resolves installed library components before rendering native copy', async () => {
+    const source = '<View><EmptyState title="Loading your day" description="Your sessions will appear here shortly." variant="bare" /></View>'
+    const { document } = await compileScreenSource(source, screen('LibraryEmptyState.stx', source), {
+      root: path.resolve(import.meta.dir, '../../../..'),
+    })
+    expect(texts(document.root)).toContain('Loading your day')
+    expect(texts(document.root)).toContain('Your sessions will appear here shortly.')
+  })
+
   it('composes a screen out of a component', async () => {
     mkdirSync(path.join(SCRATCH, 'components'), { recursive: true })
     writeFileSync(

@@ -25,6 +25,7 @@ import type { STXDocument } from './ir'
 import type { TranslationDiagnostic } from './html-to-ir'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
+import { loadStxConfig } from '../../config'
 import { extractBindingManifest, type BindingManifest } from '../../binding-manifest'
 import { processDirectives } from '../../process'
 import { processScriptSetup } from '../../signal-processing'
@@ -82,6 +83,7 @@ export async function compileScreenSource(
   options: CompileScreenOptions = {},
 ): Promise<CompiledScreen> {
   const root = options.root ?? path.dirname(filePath)
+  const loaded = await loadStxConfig(root)
   const config = {
     root,
     componentsDir: options.componentsDir ?? path.join(root, 'components'),
@@ -89,7 +91,7 @@ export async function compileScreenSource(
     cache: false,
     // Searched after every project directory, so an app's own component of the
     // same name still resolves first.
-    _pluginComponentDirs: [nativePrimitivesDir()],
+    _pluginComponentDirs: [nativePrimitivesDir(), ...((loaded as any)._pluginComponentDirs ?? [])],
   }
 
   // Native style classes are translated into IR below. Generating and
