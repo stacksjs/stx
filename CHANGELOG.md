@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.440...v0.2.441)
+
+## 🐛 Bug Fixes
+
+- adapt chat panes to their available container width ([beb705c](https://github.com/stacksjs/stx/commit/beb705c)) _(by Chris <chris@stacksjs.com>)_
+- render native classes and icons in the current appearance ([c4d3230](https://github.com/stacksjs/stx/commit/c4d3230)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.441 ([b3c377c](https://github.com/stacksjs/stx/commit/b3c377c)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.439...v0.2.440)
 
 ## 🐛 Bug Fixes
