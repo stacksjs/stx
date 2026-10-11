@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.432...v0.2.433)
+
+## 🐛 Bug Fixes
+
+- respect scoped parameters when detecting client auto imports ([771ba43](https://github.com/stacksjs/stx/commit/771ba43)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.433 ([0d6812b](https://github.com/stacksjs/stx/commit/0d6812b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.429...v0.2.430)
 
 ## ✨ Features
