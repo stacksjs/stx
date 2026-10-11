@@ -791,12 +791,23 @@ export async function bundleClientScript(
      * off, since that bundle is where the modules are actually inlined.
      */
     externalizeUserModules?: boolean
+    /**
+     * Re-expose only these names outside the bundle's closure. By default every
+     * top-level binding of the script comes back, imports included, because a
+     * page's template reads whatever its script declared. A composable is
+     * concatenated with the others into one scope instead, and publishes only
+     * its exports: re-declaring a name it merely imported collided with the
+     * composable that owns it (`var X` here, `const X` there, a SyntaxError
+     * that took every composable on the page down).
+     */
+    expose?: readonly string[]
   } = {},
 ): Promise<string> {
   const projectRoot = options.projectRoot || process.cwd()
   const serverApi = (await loadStxConfig(projectRoot)).serverApi
   const minify = options.minify ?? false
   const externalizeUserModules = options.externalizeUserModules ?? true
+  const expose = options.expose?.length ? [...new Set(options.expose)].sort() : undefined
   const cacheDir = options.cacheDir || stateDir(projectRoot, 'bundle-cache')
 
   // Content-hash for caching and temp file naming. The hash covers only
@@ -814,7 +825,7 @@ export async function bundleClientScript(
   // release with a resolution bug kept being served after the fix shipped,
   // because nothing it recorded had moved.
   const hasher = new Bun.CryptoHasher('md5')
-  hasher.update(`${BUNDLE_CACHE_VERSION}\0${cacheEngineFingerprint()}\0${JSON.stringify(serverApi ?? false)}\0${externalizeUserModules ? 'registry' : 'inline'}\0${code}\0${filePath}`)
+  hasher.update(`${BUNDLE_CACHE_VERSION}\0${cacheEngineFingerprint()}\0${JSON.stringify(serverApi ?? false)}\0${externalizeUserModules ? 'registry' : 'inline'}\0${expose ? expose.join(',') : '*'}\0${code}\0${filePath}`)
   const hash = hasher.digest('hex').slice(0, 12)
 
   // Check cache. A cache hit requires both the bundled JS to exist AND
@@ -903,7 +914,7 @@ export async function bundleClientScript(
   }
 
   const build = queueClientBundleBuild(() =>
-    buildBundle(code, filePath, { projectRoot, minify, cacheDir, hash, cachePath, depsPath, collectInputs: options.collectInputs, externalizeUserModules, serverApi }),
+    buildBundle(code, filePath, { projectRoot, minify, cacheDir, hash, cachePath, depsPath, collectInputs: options.collectInputs, externalizeUserModules, serverApi, expose }),
   )
   inFlightBundles.set(hash, build)
   try {
@@ -938,6 +949,7 @@ async function buildBundle(
     collectInputs?: string[]
     externalizeUserModules: boolean
     serverApi?: boolean | ServerApiOptions
+    expose?: readonly string[]
   },
 ): Promise<string> {
   const { projectRoot, minify, cacheDir, hash, cachePath, depsPath, externalizeUserModules } = options
@@ -1115,6 +1127,12 @@ async function buildBundle(
         const name = spec.trim()
         if (/^[A-Za-z_$][\w$]*$/.test(name))
           exposedBindings.push([name, name])
+      }
+    }
+    if (options.expose) {
+      const wanted = new Set(options.expose)
+      for (let i = exposedBindings.length - 1; i >= 0; i--) {
+        if (!wanted.has(exposedBindings[i][0])) exposedBindings.splice(i, 1)
       }
     }
 

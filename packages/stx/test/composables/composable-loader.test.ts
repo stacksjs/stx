@@ -333,3 +333,38 @@ describe('composables that import packages and helpers', () => {
     expect(win.__composables.useGreeting()()).toBe('HI THERE!')
   })
 })
+
+describe('a composable importing a sibling composable', () => {
+  let dir: string
+
+  beforeAll(async () => {
+    // HQ's native-snapshots.ts imports OURA_RECOVERY_SNAPSHOT from
+    // oura-recovery.ts, which imports nothing and so is concatenated as is.
+    dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-composables-sibling-'))
+    await Bun.write(path.join(dir, 'recovery.ts'), `export const RECOVERY_KEY = 'recovery'\nexport function rows() { return [RECOVERY_KEY] }\n`)
+    await Bun.write(
+      path.join(dir, 'snapshots.ts'),
+      `import { RECOVERY_KEY } from './recovery'\n`
+      + `export function saveRecovery(): string { return 'saved ' + RECOVERY_KEY }\n`,
+    )
+    clearComposableCache()
+  })
+
+  afterAll(async () => {
+    clearComposableCache()
+    await fs.promises.rm(dir, { recursive: true, force: true })
+  })
+
+  it('does not re-declare the imported name beside the sibling\'s own declaration', async () => {
+    const code = await getComposableScript(dir)
+    expect(code).not.toBeNull()
+    const win: any = { stx: {} }
+    // A `var RECOVERY_KEY` from the bundle next to recovery.ts's
+    // `const RECOVERY_KEY` used to be a SyntaxError here.
+    // eslint-disable-next-line no-new-func
+    new Function('window', code!)(win)
+    expect(win.__composables.saveRecovery()).toBe('saved recovery')
+    expect(win.__composables.RECOVERY_KEY).toBe('recovery')
+    expect(win.__composables.rows()).toEqual(['recovery'])
+  })
+})

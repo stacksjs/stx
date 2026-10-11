@@ -372,9 +372,13 @@ export async function getComposableScript(
       // Collect exported bindings BEFORE the export keywords are stripped.
       // `default` is skipped: an anonymous default has no name to destructure
       // through `import { … } from '@composables'`.
+      const ownExports: string[] = []
       try {
         for (const name of transpiler.scan(code).exports) {
-          if (name !== 'default') exportedNames.add(name)
+          if (name !== 'default') {
+            exportedNames.add(name)
+            ownExports.push(name)
+          }
         }
       }
       catch {
@@ -393,7 +397,11 @@ export async function getComposableScript(
       // ReferenceError only when the function finally ran. STX runtime imports
       // stay external and resolve from window.stx as before.
       if (hasUserImports(code)) {
-        code = await bundleClientScript(code, file, { projectRoot: process.cwd(), externalizeUserModules: false })
+        // Only this composable's own exports leave the bundle's closure. All
+        // composables share one scope, so re-declaring a name it imported from
+        // another composable (`var X` here, that file's `const X`) was a
+        // SyntaxError that dropped every composable on the page.
+        code = await bundleClientScript(code, file, { projectRoot: process.cwd(), externalizeUserModules: false, expose: ownExports })
         // A bundled dependency importing a runtime name gets it renamed
         // (`state as state2`); map those back before the generic strip.
         code = stripStxRuntimeImports(code)
