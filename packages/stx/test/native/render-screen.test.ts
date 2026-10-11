@@ -203,6 +203,16 @@ describe('the primitives themselves', () => {
     expect(children[1].props.testID).toBe('after')
   })
 
+  it('preserves false-valued props on native primitive roots', async () => {
+    const source = '<View><TextInput testID="readonly" :editable="false" /><ActivityIndicator :animating="false" :hides-when-stopped="false" /></View>'
+    const { document, manifest } = await compileScreenSource(source, screen('FalseNativeProps.stx', source))
+    const children = document.root.children.filter((child): child is STXNode => typeof child !== 'string')
+
+    expect(children[0].props).toMatchObject({ testID: 'readonly', editable: false })
+    expect(children[1].props).toMatchObject({ animating: false, hidesWhenStopped: false })
+    expect(manifest.entries).toEqual([])
+  })
+
   it('keeps native icons as leaf nodes beside text, including dynamic labels', async () => {
     const { document } = await compileScreenSource('<View><Icon name="play" /><Text :text="label">Start</Text><Icon name="moon" /><Text>Rest</Text></View>', screen('AdjacentIcons.stx', ''))
     expect(types(document.root)).toEqual(['View', 'Icon', 'Text', 'Icon', 'Text'])

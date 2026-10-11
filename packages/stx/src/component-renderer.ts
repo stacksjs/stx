@@ -1201,6 +1201,16 @@ function forwardNativeHostAttrs(html: string, props: ResolvedProps): string {
     ...forwardStaticAttrs(props, consumed),
     ...forwardResolvedAttrs(props, consumed),
   ]
+  // HTML drops a server-resolved false binding, but native component props use
+  // false as data (for example TextInput editable and ActivityIndicator
+  // animating). Preserve it only on a declared native host root; the HTML
+  // translator parses the JSON literal back to a boolean.
+  for (const [key, value] of Object.entries(props.serverDynamic)) {
+    if (consumed.has(key) || value !== false)
+      continue
+    const name = props.serverDynamicNames?.[key] ?? key
+    forwarded.push(`${escapeAttr(name)}="false"`)
+  }
   for (const [key, value] of Object.entries(props.serverDynamic)) {
     if (consumed.has(key) || value === null || typeof value !== 'object')
       continue
