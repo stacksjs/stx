@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.459...v0.2.460)
+
+## 🐛 Bug Fixes
+
+- **signals**: leave a loop row to its own loop's scope ([7404699](https://github.com/stacksjs/stx/commit/7404699)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: bind a prop calling a client function a global shares ([9daf97e](https://github.com/stacksjs/stx/commit/9daf97e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: end a tag past a nested self-closing one of its name ([260d512](https://github.com/stacksjs/stx/commit/260d512)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.460 ([a78299f](https://github.com/stacksjs/stx/commit/a78299f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.458...v0.2.459)
 
 ## 🐛 Bug Fixes
