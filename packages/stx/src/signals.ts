@@ -1261,6 +1261,10 @@ finally {
     if (scope) {
       scope.__mountCallbacks = scope.__mountCallbacks || [];
       scope.__mountCallbacks.push(fn);
+      // Kept apart from the queue, which a flush drains: a component behind an
+      // :if mounts again every time it is shown (see suspendSubtreeScopes).
+      scope.__mountHooks = scope.__mountHooks || [];
+      scope.__mountHooks.push(fn);
       return;
     }
     mountCallbacks.push(fn);
@@ -1282,6 +1286,10 @@ finally {
     if (scope) {
       scope.__destroyCallbacks = scope.__destroyCallbacks || [];
       scope.__destroyCallbacks.push(fn);
+      // Registered once, at setup, and owed at every unmount -- including each
+      // time an :if hides the component (see suspendSubtreeScopes).
+      scope.__destroyHooks = scope.__destroyHooks || [];
+      scope.__destroyHooks.push(fn);
       return;
     }
     if (activeDestroySink) {
@@ -4308,7 +4316,20 @@ catch (e2) {
       var resolvedCallerScope = resolveComponentCallerScope(root, callerScope);
       root.__stx_parent_scope = resolvedCallerScope;
       bindParentComponentProps(root, resolvedCallerScope);
-      if (!scopeVars || root.__stx_disposers) return;
+      if (!scopeVars) return;
+      if (root.__stx_disposers) {
+        // Bound already, by the page's scope walk: a component behind a false
+        // :if in a PARTIAL is in the list that walk collects, and is detached
+        // by the time it is reached, so it was bound and its mount deferred
+        // (stacksjs/stx#2036). Showing the branch is that mount. Without this
+        // the component rendered and its onMount never ran at all.
+        if (scopeVars.__mountCallbacks && !scopeVars.__mounted && !scopeVars.__suspended && root.isConnected) {
+          scopeVars.__el = root;
+          scopeVars.__mounted = true;
+          runMountCallbacks(scopeVars.__mountCallbacks, scopeDestroySink(scopeVars));
+        }
+        return;
+      }
       scopeVars.__el = root;
       var childScope = { ...resolvedCallerScope, ...scopeVars };
       root.__stx_disposers = trackEffects(function() {
@@ -5215,6 +5236,14 @@ catch (e2) {
         var gone = chain[currentIdx];
         gone.el.__stx_chain_active = false;
         gone.el.__stx_if_visible.set(false);
+        // Unmount what the branch held, as a single :if does, before any of
+        // it leaves the page.
+        var leavingNodes = gone.nodes.filter(function (n) { return n.parentNode; });
+        if (gone.isTemplate && gone.endMarker && gone.endMarker.parentNode) {
+          leavingNodes = [];
+          for (var walk = gone.placeholder.nextSibling; walk && walk !== gone.endMarker; walk = walk.nextSibling) leavingNodes.push(walk);
+        }
+        suspendSubtreeScopes(leavingNodes);
 
         if (gone.isTemplate) {
           // Everything this branch rendered goes, not just the clones it owns:
@@ -5283,6 +5312,15 @@ catch (e) { /* a disposer of its own is not this branch's problem */ }
           stxHost.insert(pickHost, pick.endMarker, anchor);
         }
         pick.el.__stx_shown_at = performance.now();
+        // An element branch shown before keeps its bindings and its scopes;
+        // the components in it mount again (a template branch is cloned afresh
+        // and mounts through hydrateComponentScopes below).
+        if (pick.childrenProcessed) {
+          var shownNodes = pick.nodes;
+          queueMicrotask(function () {
+            if (pick.el.__stx_chain_active) peek(function () { resumeSubtreeScopes(shownNodes); });
+          });
+        }
         if (!pick.childrenProcessed) {
           pick.childrenProcessed = true;
           // Hydrate before the outer scope walk can see the inserted branch.
@@ -5510,6 +5548,9 @@ else if (!value && isInserted) {
           // parent and took a sibling <template :if> with it -- the initial
           // server-rendered state has no marker to stop at.
           if (endMarker && endMarker.parentNode === parent) {
+            var leaving = [];
+            for (var cursor = placeholder.nextSibling; cursor && cursor !== endMarker; cursor = cursor.nextSibling) leaving.push(cursor);
+            suspendSubtreeScopes(leaving);
             var doomed = placeholder.nextSibling;
             while (doomed && doomed !== endMarker) {
               var nextDoomed = doomed.nextSibling;
@@ -5519,6 +5560,7 @@ else if (!value && isInserted) {
             }
             stxHost.remove(endMarker);
           }
+          suspendSubtreeScopes(currentNodes.filter(node => node.parentNode));
           currentNodes.forEach(node => { disposeSubtreeEffects(node); stxHost.remove(node); });
           currentNodes = [];
           isInserted = false;
@@ -5549,10 +5591,21 @@ else {
           // Its children may have become visible while it was detached, so
           // resume their pending bindings now that the subtree is connected.
           peek(resumeDetachedBranches);
+          // Shown before, so the components in it mounted and were suspended
+          // when it hid. They mount again now -- in a microtask, the same
+          // moment their first mount ran, and only if still shown by then.
+          if (childrenProcessed) {
+            queueMicrotask(function() {
+              if (isInserted) peek(function() { resumeSubtreeScopes(currentNodes); });
+            });
+          }
         }
 else if (!value && isInserted) {
           console.log('[stx] bindIf REMOVING element for :if=' + expr, 'el.isConnected:', el.isConnected, 'parent:', parent.tagName);
           el.__stx_if_visible.set(false);
+          // Unmounted, not disposed: the components in it release what they
+          // hold while their markup is still on the page, and keep their scopes.
+          suspendSubtreeScopes(currentNodes);
           // Do NOT disposeSubtreeScopes here. :if is a TOGGLE — the element is
           // re-shown when the condition flips back — not a permanent unmount.
           // A nested data-stx-scope inside this subtree is created once by its
@@ -8946,6 +8999,70 @@ catch (e) {
     }
   }
 
+  // :if is a toggle, and a component inside one lives through every toggle:
+  // its scope is registered once and kept (#1737), and showing the branch puts
+  // the same markup back. Its LIFECYCLE follows the toggle, though. Hiding runs
+  // what the component registered to release -- its onDestroy, and whatever
+  // its onMount handed back -- and showing it again runs its onMount again.
+  // Each show is a mount and each hide an unmount, which is the pairing every
+  // component on a page already gets.
+  //
+  // Before this, a hidden component never heard about it and a re-shown one
+  // was never told it was back (the asymmetry stacksjs/stx#2036 stopped short
+  // of). A gated modal shell -- one that traps focus, locks body scroll and
+  // claims Escape from onMount, and releases them in onDestroy -- did all of
+  // that on its first opening and on no later one: the second time it opened
+  // with the page scrolling behind it and Escape doing nothing.
+  //
+  // Only scopes that actually mounted are suspended, so a component whose
+  // first mount is still deferred (behind a false :if, or an stx-hydrate
+  // island) keeps waiting for its own flush.
+  function suspendSubtreeScopes(nodes) {
+    if (!nodes || !window.stx || !window.stx._scopes) return;
+    var ids = [];
+    for (var i = 0; i < nodes.length; i++) {
+      var found = stxHost.scopesIn(nodes[i]);
+      for (var k = 0; k < found.length; k++) {
+        if (ids.indexOf(found[k]) === -1) ids.push(found[k]);
+      }
+    }
+    // Innermost first, the order a page unmounts in: a child releases what it
+    // holds before the component it sits in does.
+    for (var n = ids.length - 1; n >= 0; n--) {
+      var scopeVars = window.stx._scopes[ids[n]];
+      if (!scopeVars || !scopeVars.__mounted) continue;
+      scopeVars.__mounted = false;
+      scopeVars.__suspended = true;
+      var release = scopeVars.__destroyCallbacks || [];
+      // What onDestroy registered at setup is owed again at the next hide;
+      // a cleanup a mount handed back belonged to that mount alone.
+      scopeVars.__destroyCallbacks = (scopeVars.__destroyHooks || []).slice();
+      for (var j = 0; j < release.length; j++) {
+        try { release[j](); }
+        catch (e) { console.warn('[stx] scope destroy error:', e); }
+      }
+      scopeVars.__mountCallbacks = (scopeVars.__mountHooks || []).slice();
+    }
+  }
+
+  // The other half: a suspended scope whose markup is back on the page mounts
+  // again. A scope still off the page (hidden by an :if of its own inside this
+  // branch) is left for that :if to resume.
+  function resumeSubtreeScopes(nodes) {
+    if (!nodes || !window.stx || !window.stx._scopes) return;
+    for (var i = 0; i < nodes.length; i++) {
+      var ids = stxHost.scopesIn(nodes[i]);
+      for (var k = 0; k < ids.length; k++) {
+        var scopeVars = window.stx._scopes[ids[k]];
+        if (!scopeVars || scopeVars.__mounted || !scopeVars.__suspended) continue;
+        if (scopeVars.__el && scopeVars.__el.isConnected === false) continue;
+        scopeVars.__suspended = false;
+        scopeVars.__mounted = true;
+        runMountCallbacks(scopeVars.__mountCallbacks, scopeDestroySink(scopeVars));
+      }
+    }
+  }
+
   function disposeSubtreeScopes(root) {
     if (!root || !window.stx || !window.stx._scopes) return;
     // The host reports which scopes live in this subtree: the document finds
@@ -8957,7 +9074,12 @@ catch (e) {
       if (!scopeId) continue;
       var scopeVars = window.stx._scopes[scopeId];
       if (!scopeVars) continue;
-      if (scopeVars.__destroyCallbacks && Array.isArray(scopeVars.__destroyCallbacks)) {
+      // Hidden by an :if, it already released everything on the way out;
+      // running the hooks again would unmount it twice. (A hidden component's
+      // root is detached, so no walk reaches it today; this keeps the next
+      // disposal path that does from unmounting it twice.)
+      var alreadyReleased = scopeVars.__suspended && !scopeVars.__mounted;
+      if (!alreadyReleased && scopeVars.__destroyCallbacks && Array.isArray(scopeVars.__destroyCallbacks)) {
         for (var j = 0; j < scopeVars.__destroyCallbacks.length; j++) {
           try { scopeVars.__destroyCallbacks[j](); }
           catch (e) { console.warn('[stx] scope destroy error:', e); }
@@ -9009,7 +9131,8 @@ catch (e) {
         if (p.__stx_if_bound || p.__stx_chain_member) { retained = true; break; }
       }
       if (retained) continue;
-      if (entry.__destroyCallbacks && Array.isArray(entry.__destroyCallbacks)) {
+      // Suspended by an :if: released when it hid, so not again here.
+      if (!(entry.__suspended && !entry.__mounted) && entry.__destroyCallbacks && Array.isArray(entry.__destroyCallbacks)) {
         for (var k = 0; k < entry.__destroyCallbacks.length; k++) {
           try { entry.__destroyCallbacks[k](); }
           catch (e) { console.warn('[stx] scope destroy error:', e); }

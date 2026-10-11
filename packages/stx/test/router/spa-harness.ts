@@ -393,8 +393,23 @@ export async function boot(app: SpaApp, pathname: string, options: BootOptions =
   document.write(html)
   shimAttributes(document.documentElement)
   document.readyState = 'loading'
-  for (const script of Array.from(document.querySelectorAll('script')))
+  // A browser parses a <template>'s content into an inert document and never
+  // runs its scripts at load; a clone of one runs when it is inserted. The
+  // parser here keeps template content in the tree, so skip it explicitly, or
+  // a component's setup inside a <template :if> runs once at load and again on
+  // insertion and every hook it registers is queued twice.
+  const inTemplateContent = (node: any): boolean => {
+    for (let cursor = node.parentNode; cursor; cursor = cursor.parentNode) {
+      if (cursor.nodeType === 11)
+        return true
+    }
+    return false
+  }
+  for (const script of Array.from(document.querySelectorAll('script'))) {
+    if (inTemplateContent(script))
+      continue
     runScript(script)
+  }
   document.readyState = 'interactive'
   document.dispatchEvent(new window.Event('DOMContentLoaded', { bubbles: true }))
   document.readyState = 'complete'

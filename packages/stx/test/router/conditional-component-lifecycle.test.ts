@@ -28,13 +28,13 @@
  *     partial's own scope is on the page -- so the first change alone does not
  *     cover it.
  *
- * What is NOT claimed here: `:if` going true -> false does not fire
- * `onDestroy`, and a second show does not mount again. `bindIf` deliberately
- * does not dispose scopes on hide, because `:if` is a toggle and #1737 needs
- * the registration to survive for the re-show. So this delivers the deferral
- * the issue named as sufficient ("or for `:if` to defer the mount"), not full
- * symmetry. A component that must release something on hide still needs a
- * bound prop it can watch.
+ * And the symmetry the first fix stopped short of: hiding the branch fires
+ * the component's `onDestroy`, and showing it again fires its `onMount` again.
+ * The scope itself is still kept across the toggle -- #1737 needs the
+ * registration to survive for the re-show -- so this is a lifecycle that
+ * follows the toggle, not a teardown and rebuild. Without it the modal shell
+ * did everything right on its first opening and nothing on any later one:
+ * no focus moved in, the page scrolled behind it, and Escape did nothing.
  */
 import { afterAll, describe, expect, it } from 'bun:test'
 import { boot, closeBrowser, layout, page, renderApp, settle } from './spa-harness'
@@ -125,7 +125,7 @@ describe('a component gated by :if in the view', () => {
     await app.dispose()
   })
 
-  it('does not mount it a second time when shown again', async () => {
+  it('destroys it when the condition goes false', async () => {
     const app = await renderApp(FILES, { '/gate': 'views/gate.stx' })
     const browser = await boot(app, '/gate')
 
@@ -133,10 +133,151 @@ describe('a component gated by :if in the view', () => {
     await settle()
     browser.window.SET_HOST(false)
     await settle()
+
+    expect(browser.window.DESTROYS).toEqual(['gated'])
+    expect(observed(browser)).toEqual({ mounts: ['ungated', 'gated'], rendered: 1 })
+
+    await app.dispose()
+  })
+
+  it('mounts it again each time it is shown again, and destroys it each time it hides', async () => {
+    const app = await renderApp(FILES, { '/gate': 'views/gate.stx' })
+    const browser = await boot(app, '/gate')
+
+    for (const value of [true, false, true, false, true]) {
+      browser.window.SET_HOST(value)
+      await settle()
+    }
+
+    expect(browser.window.MOUNTS).toEqual(['ungated', 'gated', 'gated', 'gated'])
+    expect(browser.window.DESTROYS).toEqual(['gated', 'gated'])
+    expect(observed(browser).rendered).toBe(2)
+    expect(browser.errors).toEqual([])
+
+    await app.dispose()
+  })
+
+  it('never mounts it twice without a hide in between', async () => {
+    // A condition re-evaluating to the same truthy value is not a re-show.
+    const app = await renderApp(FILES, { '/gate': 'views/gate.stx' })
+    const browser = await boot(app, '/gate')
+
     browser.window.SET_HOST(true)
+    await settle()
+    browser.window.SET_HOST(1)
     await settle()
 
     expect(browser.window.MOUNTS).toEqual(['ungated', 'gated'])
+    expect(browser.window.DESTROYS ?? []).toEqual([])
+
+    await app.dispose()
+  })
+})
+
+/**
+ * A cleanup handed back by `onMount` belongs to that mount: it runs at the
+ * hide that ends it, once, and the next mount hands back its own.
+ */
+const CLEANUP_FILES = {
+  'layouts/default.stx': layout('<header>chrome</header>'),
+  'components/Returns.stx': `<script client>
+onMount(() => {
+  window.LIVE = (window.LIVE || 0) + 1
+  return () => { window.LIVE -= 1; (window.CLEANUPS = window.CLEANUPS || []).push('returned') }
+})
+</script>
+<div class="returns">returns</div>
+`,
+  'views/gate.stx': page('default', `<script client>
+const hostOpen = state(false)
+window.SET_HOST = value => hostOpen.set(value)
+</script>
+<div>
+  <div :if="hostOpen">
+    <Returns />
+  </div>
+</div>
+`),
+}
+
+describe('a cleanup returned from onMount', () => {
+  it('runs once per hide, so nothing it released is held twice or leaked', async () => {
+    const app = await renderApp(CLEANUP_FILES, { '/gate': 'views/gate.stx' })
+    const browser = await boot(app, '/gate')
+
+    for (const value of [true, false, true, false]) {
+      browser.window.SET_HOST(value)
+      await settle()
+    }
+
+    expect(browser.window.LIVE).toBe(0)
+    expect(browser.window.CLEANUPS).toEqual(['returned', 'returned'])
+
+    browser.window.SET_HOST(true)
+    await settle()
+    expect(browser.window.LIVE).toBe(1)
+
+    await app.dispose()
+  })
+})
+
+/** The same component in each branch shape a condition can take. */
+const SHAPE_FILES = {
+  'layouts/default.stx': layout('<header>chrome</header>'),
+  'components/Gated.stx': lifecycleChild('gated'),
+  'components/Other.stx': lifecycleChild('other'),
+  'views/chain.stx': page('default', `<script client>
+const pick = state('a')
+window.PICK = value => pick.set(value)
+</script>
+<div>
+  <div :if="pick === 'a'"><Gated /></div>
+  <div :else><Other /></div>
+</div>
+`),
+  'views/template.stx': page('default', `<script client>
+const hostOpen = state(false)
+window.SET_HOST = value => hostOpen.set(value)
+</script>
+<div>
+  <template :if="hostOpen"><Gated /></template>
+</div>
+`),
+}
+
+describe('a component in an :if / :else chain', () => {
+  it('unmounts with its branch and mounts again when the branch comes back', async () => {
+    const app = await renderApp(SHAPE_FILES, { '/chain': 'views/chain.stx' })
+    const browser = await boot(app, '/chain')
+
+    expect(browser.window.MOUNTS).toEqual(['gated'])
+
+    browser.window.PICK('b')
+    await settle()
+    browser.window.PICK('a')
+    await settle()
+
+    expect(browser.window.MOUNTS).toEqual(['gated', 'other', 'gated'])
+    expect(browser.window.DESTROYS).toEqual(['gated', 'other'])
+    expect(browser.errors).toEqual([])
+
+    await app.dispose()
+  })
+})
+
+describe('a component in a <template :if>', () => {
+  it('unmounts when the branch hides and mounts when it is cloned back', async () => {
+    const app = await renderApp(SHAPE_FILES, { '/template': 'views/template.stx' })
+    const browser = await boot(app, '/template')
+
+    for (const value of [true, false, true]) {
+      browser.window.SET_HOST(value)
+      await settle()
+    }
+
+    expect(browser.window.MOUNTS).toEqual(['gated', 'gated'])
+    expect(browser.window.DESTROYS).toEqual(['gated'])
+    expect(browser.errors).toEqual([])
 
     await app.dispose()
   })
@@ -152,6 +293,27 @@ describe('a component gated by :if inside a partial', () => {
 
     expect(observed(browser)).toEqual({ mounts: [], rendered: 0 })
     expect(browser.errors).toEqual([])
+
+    await app.dispose()
+  })
+
+  it('follows the partial\'s condition both ways', async () => {
+    const app = await renderApp({
+      ...PARTIAL_FILES,
+      'partials/gate-local.stx': PARTIAL_FILES['partials/gate-local.stx'].replace(
+        'const localOpen = state(false)',
+        'const localOpen = state(false)\nwindow.SET_LOCAL = value => localOpen.set(value)',
+      ),
+    }, { '/gate': 'views/gate.stx' })
+    const browser = await boot(app, '/gate')
+
+    for (const value of [true, false, true]) {
+      browser.window.SET_LOCAL(value)
+      await settle()
+    }
+
+    expect(browser.window.MOUNTS).toEqual(['gated', 'gated'])
+    expect(browser.window.DESTROYS).toEqual(['gated'])
 
     await app.dispose()
   })

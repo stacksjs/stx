@@ -2849,11 +2849,26 @@ async function buildComponentIsland(rawContent: string, componentFilePath: strin
   }
   window.__STX_CURRENT_PROPS__ = __componentProps && typeof __componentProps === 'object' && !Array.isArray(__componentProps) ? __componentProps : {};
 
-  // Scope-specific lifecycle callbacks
+  // Scope-specific lifecycle callbacks. The queues drain as they run; the
+  // hook lists keep what setup registered, because a component behind an :if
+  // unmounts at each hide and mounts again at each show (signals.ts,
+  // suspendSubtreeScopes).
+  if (__scopeVars.__suspended && !__scopeVars.__mounted) {
+    // Set up again after an :if hid it -- a <template :if> clones the
+    // component afresh on every show, and the clone's script runs. This run's
+    // hooks close over this run's state, so they replace the ones the hide
+    // kept for a re-show rather than queueing beside them.
+    __scopeVars.__mountCallbacks = [];
+    __scopeVars.__destroyCallbacks = [];
+    __scopeVars.__mountHooks = [];
+    __scopeVars.__destroyHooks = [];
+  }
   __scopeVars.__mountCallbacks = __scopeVars.__mountCallbacks || [];
   __scopeVars.__destroyCallbacks = __scopeVars.__destroyCallbacks || [];
-  const onMount = (fn) => __scopeVars.__mountCallbacks.push(fn);
-  const onDestroy = (fn) => __scopeVars.__destroyCallbacks.push(fn);
+  __scopeVars.__mountHooks = __scopeVars.__mountHooks || [];
+  __scopeVars.__destroyHooks = __scopeVars.__destroyHooks || [];
+  const onMount = (fn) => { __scopeVars.__mountCallbacks.push(fn); __scopeVars.__mountHooks.push(fn); };
+  const onDestroy = (fn) => { __scopeVars.__destroyCallbacks.push(fn); __scopeVars.__destroyHooks.push(fn); };
 
 try {
 ${content}
