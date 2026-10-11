@@ -98,6 +98,12 @@ describe('scopeOnRootElement only takes over where a wrapper would move', () => 
     expect(scopeOnRootElement('<tr><td>a</td></tr><tr><td>b</td></tr>', ATTRS)).toBeNull()
   })
 
+  it('scopes nested inline roots without a paragraph-splitting block wrapper', () => {
+    const html = '<span title="a > b and &lt;span&gt;">A<span>B</span><!-- <span> --><script>const text = "<span>"</script></span>'
+    expect(scopeOnRootElement(html, ATTRS)).toBe(html.replace('<span ', '<span' + ATTRS + ' '))
+    expect(scopeOnRootElement('<span>A</span><span>B</span>', ATTRS)).toBeNull()
+  })
+
   it('skips leading comments to find the root', () => {
     expect(scopeOnRootElement('<!-- c -->\n<td>X</td>', ATTRS))
       .toContain('<td data-stx-scope="s1">')

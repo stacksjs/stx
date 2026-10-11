@@ -36,7 +36,7 @@ import { isUsableParamName } from './safe-evaluator'
 import { processScopedStyles } from './style-scoping'
 import { findSfcTemplateBlock } from './sfc-template'
 import { importOnce } from './lazy-module'
-import { stashScriptElements } from './html-masking'
+import { scanAtElementPosition, stashScriptElements } from './html-masking'
 import { markProjectedRefs } from './misc-directives'
 import { collectBlockDeclarations } from './stx-virtual-ts'
 
@@ -647,6 +647,9 @@ const WRAPPER_HOISTED_OUT_BY_PARSER: ReadonlySet<string> = new Set([
   'tr', 'td', 'th', 'thead', 'tbody', 'tfoot', 'caption', 'colgroup', 'col',
   'option', 'optgroup',
   'li', 'dt', 'dd',
+  // Inline components must remain inside a paragraph/heading instead of
+  // forcing the parser to close that parent around a block wrapper.
+  'span',
 ])
 
 /**
@@ -667,13 +670,25 @@ export function scopeOnRootElement(html: string, attrs: string): string | null {
   if (!WRAPPER_HOISTED_OUT_BY_PARSER.has(tag))
     return null
 
-  // One element, not a run of siblings: exactly one opening tag of this name,
-  // and the markup ends with its close.
-  const openings = html.match(new RegExp(`<${tag}(?=[\\s/>])`, 'gi')) ?? []
-  if (openings.length !== 1)
-    return null
-  if (!new RegExp(`</${tag}>\\s*$`, 'i').test(html))
-    return null
+  // Balance nested roots (notably spans) at actual element positions. The
+  // scanner skips comments, raw script/style bodies and quoted attributes.
+  const matcher = new RegExp(`<\\/?${tag}(?=[\\s/>])(?:[^>"']|"[^"]*"|'[^']*')*>`, 'iy')
+  const tokens = scanAtElementPosition(html, (source, index) => {
+    matcher.lastIndex = index
+    return matcher.exec(source)?.index === index ? matcher.lastIndex : -1
+  })
+  let depth = 0
+  let complete = false
+  for (const token of tokens) {
+    depth += token.token.startsWith('</') ? -1 : 1
+    if (depth < 0) return null
+    if (depth === 0) {
+      if (html.slice(token.end).trim()) return null
+      complete = true
+      break
+    }
+  }
+  if (!complete) return null
 
   const insertAt = opening[0].length
   return html.slice(0, insertAt) + attrs + html.slice(insertAt)
@@ -1966,6 +1981,8 @@ export async function renderComponentWithSlot(
        * Same content model problem for <option> inside <select>, <li> inside a
        * list, and <dt>/<dd> inside <dl>.
        *
+       * A span in a paragraph/heading has the same constraint. Keep its scope
+       * on that inline root, even when it contains nested inline components.
        * Only a component whose output is a SINGLE element of one of those kinds
        * takes this path. Several table-section siblings from one component
        * would need a scope per sibling rather than one moved attribute, and

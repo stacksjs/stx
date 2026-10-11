@@ -5,7 +5,7 @@ export type TooltipSide = 'top' | 'bottom' | 'left' | 'right'
 export function tooltipPosition(anchor: TooltipAnchor, panel: { width: number, height: number }, viewport: { width: number, height: number }, preferred: TooltipSide = 'top') {
   const gap = 8
   const edge = 8
-  let side = preferred
+  let side: TooltipSide = ['top', 'bottom', 'left', 'right'].includes(preferred) ? preferred : 'top'
   if (side === 'top' && anchor.top - panel.height - gap < edge && anchor.bottom + gap + panel.height <= viewport.height - edge) side = 'bottom'
   else if (side === 'bottom' && anchor.bottom + gap + panel.height > viewport.height - edge && anchor.top - gap - panel.height >= edge) side = 'top'
   else if (side === 'left' && anchor.left - gap - panel.width < edge && anchor.right + gap + panel.width <= viewport.width - edge) side = 'right'
