@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.453...v0.2.454)
+
+## 🐛 Bug Fixes
+
+- **native**: let a native :if show a branch again ([bc68904](https://github.com/stacksjs/stx/commit/bc68904)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.454 ([429a7b3](https://github.com/stacksjs/stx/commit/429a7b3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.452...v0.2.453)
 
 ## 🔧 Chores
