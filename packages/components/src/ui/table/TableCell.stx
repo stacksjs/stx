@@ -1,7 +1,14 @@
 <script server>
 export const className = $props.className || ''
 
-const baseClasses = 'px-6 py-4 whitespace-nowrap text-sm text-fg'
+/*
+ * Padding and type read the density roles, so an app's tables take its own
+ * cell size from --stx-cell-px, --stx-cell-py, --stx-cell-text and
+ * --stx-cell-leading -- a className of py-2 ties with py-4 on
+ * specificity and wins only by stylesheet order. The fallbacks are px-6 /
+ * py-4 / text-sm, so nothing moves by default (stacksjs/stx#1993).
+ */
+const baseClasses = 'px-cell-x py-cell-y whitespace-nowrap text-cell text-fg'
 const cellClasses = `${baseClasses} ${className}`.trim()
 </script>
 

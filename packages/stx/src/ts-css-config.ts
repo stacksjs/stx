@@ -28,7 +28,7 @@
  * @module ts-css-config
  */
 
-import { semanticColors, semanticTokenCSS, shapeRadii, shapeTokenCSS } from './theme-tokens'
+import { densityFontSizes, densitySpacing, densityTokenCSS, semanticColors, semanticTokenCSS, shapeRadii, shapeTokenCSS } from './theme-tokens'
 
 type Dict = Record<string, any>
 
@@ -146,6 +146,17 @@ export function mergeCssConfig(base: Dict = {}, user: Dict = {}): MergedCssConfi
   const baseRadii = (baseThemeKeys.borderRadius || {}) as Dict
   baseThemeKeys.borderRadius = { ...baseRadii, ...shapeRadii() }
 
+  /*
+   * Density roles too: `py-2` against an app's `py-1.5` is the same
+   * equal-specificity tie, so padding and type size need names a variable can
+   * move. New names in `theme.spacing` and `theme.fontSize` — `px-4` and
+   * `text-base` keep compiling to the values they always did (#1993).
+   */
+  const baseSpacing = (baseThemeKeys.spacing || {}) as Dict
+  baseThemeKeys.spacing = { ...baseSpacing, ...densitySpacing() }
+  const baseFontSizes = (baseThemeKeys.fontSize || {}) as Dict
+  baseThemeKeys.fontSize = { ...baseFontSizes, ...densityFontSizes() }
+
   const theme: Dict = deepMergeThemes(baseThemeKeys, userThemeKeys)
   const extend = deepMergeThemes(baseExtend || {}, userExtend || {})
   if (Object.keys(extend).length > 0)
@@ -190,11 +201,12 @@ export function mergeCssConfig(base: Dict = {}, user: Dict = {}): MergedCssConfi
     includePreflight: user.preflight !== false,
     minify: user.minify === true,
     /*
-     * Colour roles then shape roles, in one block. Shape has no `.dark`
-     * counterpart - a radius does not change with the colour scheme - so it is
-     * appended rather than interleaved.
+     * Colour roles, then shape, then density, in one block. Neither of the
+     * last two has a `.dark` counterpart - a radius or a padding does not
+     * change with the colour scheme - so they are appended rather than
+     * interleaved.
      */
-    tokenCSS: semanticTokenCSS(basePalette) + shapeTokenCSS(),
+    tokenCSS: semanticTokenCSS(basePalette) + shapeTokenCSS() + densityTokenCSS(),
     ...(fonts ? { fonts } : {}),
   }
 }

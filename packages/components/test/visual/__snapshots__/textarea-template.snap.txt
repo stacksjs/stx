@@ -41,7 +41,14 @@ export const resize = $props.resize || 'vertical'
 export const className = $props.className || ''
 
 const resizeClasses = { none: 'resize-none', vertical: 'resize-y', horizontal: 'resize-x', both: 'resize' }
-const baseClasses = 'block w-full border-0 rounded-control shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset px-4 py-2 text-base bg-field'
+/*
+ * The padding and type read the density roles, so an
+ * app sets its own field size with --stx-control-px, --stx-control-py,
+ * --stx-control-text and --stx-control-leading instead of a className
+ * that ties with py-2 on specificity. The fallbacks are px-4 / py-2 /
+ * text-base, so nothing moves by default (stacksjs/stx#1993).
+ */
+const baseClasses = 'block w-full border-0 rounded-control shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset px-control-x py-control-y text-control bg-field'
 /*
  * The two halves of the validity state, exported so the CLIENT can swap them
  * (stacksjs/stx#2047). Toggled per class rather than as a whole string,
@@ -174,61 +181,84 @@ defineExpose({ value: inputValue })
 === Extracted Classes ===
 !isError()
 '{{
+--stx-control-leading
+--stx-control-text
+The
+a
+an
+and
+app
+are
 auto
+baseClasses
 bg-field
 bg-surface
 block
-border-0
+by
+className
+const
 cursor-default
 cursor-not-allowed
-duration-200
+default
+density
 error
+fallbacks
 false
+field
 flex
-focus:ring-2
 focus:ring-accent
 focus:ring-danger-focus
-focus:ring-inset
 font-medium
 helperClasses
 hidden
 input
+instead
 isError(),
 items-center
+its
 justify-between
 labelClasses
 leading-6
 mb-2
 ml-1
+moves
 mt-2
+nothing
+of
+on
 opacity-50
+own
+padding
 placeholder-danger
 placeholder-fg-soft
 px-4
 py-2
+read
 resize
 resize-none
 resize-x
 resize-y
-ring-1
 ring-danger-line
-ring-inset
 ring-line-strong
-rounded-control
-shadow-sm
+sets
+size
+so
 stateInvalidClasses
 stateValidClasses
-text-base
 text-danger
 text-danger-fg
 text-fg
 text-fg-soft
 text-sm
 textareaClasses
-transition-colors
+that
+the
+ties
 true
+type
 value
 w-full
+with
 {
 {{
 }

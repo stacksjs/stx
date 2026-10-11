@@ -42,7 +42,14 @@ export const inputClassName = $props.inputClassName || ''
  * is 3.25rem of content inside a declared 3rem box - so py-2.5 lands on the
  * 3rem it always claimed. sm and md were already exact.
  */
-const sizeClasses = { sm: 'px-3 py-1.5 text-sm', md: 'px-4 py-2 text-base', lg: 'px-5 py-2.5 text-lg' }
+/*
+ * md -- the size nearly every form uses -- reads the density roles, so an
+ * app sets its own field size with --stx-control-px, --stx-control-py,
+ * --stx-control-text and --stx-control-leading instead of a className
+ * that ties with py-2 on specificity. The fallbacks are px-4 / py-2 /
+ * text-base, so nothing moves by default (stacksjs/stx#1993).
+ */
+const sizeClasses = { sm: 'px-3 py-1.5 text-sm', md: 'px-control-x py-control-y text-control', lg: 'px-5 py-2.5 text-lg' }
 const baseClasses = 'block w-full border-0 rounded-control shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset bg-field'
 const stateClasses = error
   ? 'ring-danger-line text-danger-fg placeholder-danger focus:ring-danger-focus'

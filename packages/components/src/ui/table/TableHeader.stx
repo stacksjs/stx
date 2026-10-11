@@ -2,7 +2,14 @@
 export const className = $props.className || ''
 export const sortable = $bool($props.sortable)
 
-const baseClasses = 'px-6 py-3 text-left text-xs font-medium text-fg-soft uppercase tracking-wider'
+/*
+ * The same density roles as TableCell, with a header row's own block padding
+ * and type (--stx-cell-head-py, --stx-cell-head-text,
+ * --stx-cell-head-leading). The inline padding is shared on purpose: a
+ * header starting at a different inset from its column's cells is a
+ * misaligned table (stacksjs/stx#1993).
+ */
+const baseClasses = 'px-cell-x py-cell-head-y text-left text-cell-head font-medium text-fg-soft uppercase tracking-wider'
 const sortableClasses = sortable ? 'cursor-pointer hover:text-fg-strong' : ''
 export const headerClasses = `${baseClasses} ${sortableClasses} ${className}`.trim()
 </script>

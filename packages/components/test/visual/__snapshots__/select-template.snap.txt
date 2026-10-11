@@ -26,7 +26,14 @@ export const className = $props.className || ''
  * is 3.25rem of content inside a declared 3rem box - so py-2.5 lands on the
  * 3rem it always claimed. sm and md were already exact.
  */
-const sizeClasses = { sm: 'px-3 py-1.5 text-sm', md: 'px-4 py-2 text-base', lg: 'px-5 py-2.5 text-lg' }
+/*
+ * md -- the size nearly every form uses -- reads the density roles, so an
+ * app sets its own field size with --stx-control-px, --stx-control-py,
+ * --stx-control-text and --stx-control-leading instead of a className
+ * that ties with py-2 on specificity. The fallbacks are px-4 / py-2 /
+ * text-base, so nothing moves by default (stacksjs/stx#1993).
+ */
+const sizeClasses = { sm: 'px-3 py-1.5 text-sm', md: 'px-control-x py-control-y text-control', lg: 'px-5 py-2.5 text-lg' }
 const baseClasses = 'block w-full border-0 rounded-control shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset bg-field'
 /*
  * The two halves of the validity state, exported so the CLIENT can swap them
@@ -157,59 +164,117 @@ defineExpose({ value: selectedValue })
 ''
 'mt-2'
 '{{
+-
+--
+--stx-control-leading
+--stx-control-text
 :
 ?
+The
+a
+adjusted
+already
+also
+always
+an
+and
+app
+are
+around
 bg-field
 bg-surface
 block
 border-0
+box
+by
 change
+className
+const
+content
 cursor-not-allowed
 cursor-pointer
+declared
+default
+density
 duration-200
 error
+every
+fallbacks
 false
+field
 focus:ring-2
 focus:ring-accent
 focus:ring-danger-focus
 focus:ring-inset
 font-medium
+form
 h-10
 helperClasses
 hover:ring-line-hover
+inside
+instead
+is
 isError(),
+it
+its
 label
 labelClasses
+lands
 leading-6
+line-height
+md
 ml-1
+moves
 mt-2
+nearly
+needed
+nothing
+of
+on
 opacity-50
+own
+padding
 placeholder-danger
 placeholder-fg-soft
-px-3
 px-4
 px-5
+px-control-x
 py-2
+py-3
+py-control-y
+reads
 ring-1
 ring-danger-line
 ring-inset
 ring-line-strong
 rounded-control
 selectClasses
+sets
 shadow-sm
+size
+sizeClasses
+sm
+so
 stateInvalidClasses
 stateValidClasses
-text-base
+step
+text-control
 text-danger
 text-danger-fg
 text-fg
 text-fg-soft
 text-lg
 text-sm
+that
+the
+ties
 transition-colors
 true
+uses
 value
 w-full
+were
+with
 {
 {{
 }

@@ -599,3 +599,138 @@ export function shapeTokenCSS(): string {
 export function shapeTokenNames(): string[] {
   return Object.keys(SHAPE_TOKENS).map(shapeVariable)
 }
+
+/**
+ * Density roles — how much room a control or a table cell takes.
+ *
+ * The last thing an app could not move without a visual change. Colour and
+ * corners became roles, but a text field still carried `px-4 py-2 text-base`
+ * and a table cell `px-6 py-4 text-sm`, and `className` is no escape hatch for
+ * either for the reason it was not one for a colour: `py-2` and `py-1.5` are
+ * single-class selectors of equal specificity, so the winner is whichever the
+ * engine happened to emit later — not something a call site controls
+ * (stacksjs/stx#1993).
+ *
+ * Each token is a CSS variable whose fallback is the value the library already
+ * used, so nothing moves until an app sets one.
+ *
+ * ## Why `px-control-x` and not `px-control`
+ *
+ * `px-*` and `py-*` both read `theme.spacing`, so one spacing name can only
+ * ever resolve to one value: `px-control` and `py-control` would be the SAME
+ * length. Inline and block padding are different decisions (a field is 1rem
+ * across and 0.5rem down), so each gets its own spacing name, and the name
+ * says which axis it is for.
+ *
+ * ## Why the line-height is a token too
+ *
+ * A control's height is its block padding twice plus its line-height — there
+ * is no `h-*` to fight (#1993) — so a font-size token without a line-height
+ * one could shrink the text and leave the box exactly as tall.
+ *
+ * ## One inline padding for a whole table
+ *
+ * Header and body cells share `--stx-cell-px`: a column is aligned only if its
+ * header and its cells start at the same inset, so there is nothing for a
+ * second inline token to decide except misalignment. The block padding and
+ * the type do differ — a header row is `py-3 text-xs`, a body row
+ * `py-4 text-sm` — so those have a header token each.
+ */
+export const DENSITY_TOKENS: Record<string, { value: string, description: string }> = {
+  'control-px': { value: '1rem', description: 'Inline padding of a md text control — px-4' },
+  'control-py': { value: '0.5rem', description: 'Block padding of a md text control — py-2' },
+  'control-text': { value: '1rem', description: 'Font size of a md text control — text-base' },
+  'control-leading': { value: '1.5rem', description: 'Line height of a md text control — text-base' },
+  'cell-px': { value: '1.5rem', description: 'Inline padding of every table cell, header or body — px-6' },
+  'cell-py': { value: '1rem', description: 'Block padding of a body cell — py-4' },
+  'cell-text': { value: '0.875rem', description: 'Font size of a body cell — text-sm' },
+  'cell-leading': { value: '1.25rem', description: 'Line height of a body cell — text-sm' },
+  'cell-head-py': { value: '0.75rem', description: 'Block padding of a header cell — py-3' },
+  'cell-head-text': { value: '0.75rem', description: 'Font size of a header cell — text-xs' },
+  'cell-head-leading': { value: '1rem', description: 'Line height of a header cell — text-xs' },
+}
+
+/**
+ * The `theme.spacing` names, each backed by one density token.
+ *
+ * `px-control-x`, `py-control-y`, `px-cell-x`, `py-cell-y`, `py-cell-head-y` —
+ * and, because they are ordinary spacing, `pl-control-x` and the rest too.
+ */
+export const DENSITY_SPACING: Record<string, string> = {
+  'control-x': 'control-px',
+  'control-y': 'control-py',
+  'cell-x': 'cell-px',
+  'cell-y': 'cell-py',
+  'cell-head-y': 'cell-head-py',
+}
+
+/**
+ * The `theme.fontSize` names, each a size token and its line-height token.
+ *
+ * `text-control`, `text-cell`, `text-cell-head`. A fontSize entry and not a
+ * colour, so `text-control` sets the type and leaves the colour to `text-fg`.
+ */
+export const DENSITY_FONT_SIZES: Record<string, { size: string, leading: string }> = {
+  'control': { size: 'control-text', leading: 'control-leading' },
+  'cell': { size: 'cell-text', leading: 'cell-leading' },
+  'cell-head': { size: 'cell-head-text', leading: 'cell-head-leading' },
+}
+
+/** The CSS custom property that backs a density role. */
+export function densityVariable(name: string): string {
+  return `--stx-${name}`
+}
+
+/** `var(--stx-<token>, <stock value>)`, the form every density entry takes. */
+function densityValue(token: string): string {
+  const entry = DENSITY_TOKENS[token]
+  if (!entry)
+    throw new Error(`[stx] unknown density token "${token}"`)
+  return `var(${densityVariable(token)}, ${entry.value})`
+}
+
+/**
+ * The `theme.spacing` entries to merge in.
+ *
+ * Same shape as {@link shapeRadii}: new names whose value is the variable with
+ * today's value as the fallback, so `px-control-x` is an ordinary utility and
+ * an app moves it by setting `--stx-control-px`.
+ */
+export function densitySpacing(): Record<string, string> {
+  const spacing: Record<string, string> = {}
+  for (const [name, token] of Object.entries(DENSITY_SPACING))
+    spacing[name] = densityValue(token)
+  return spacing
+}
+
+/**
+ * The `theme.fontSize` entries to merge in, in the engine's own
+ * `[size, { lineHeight }]` form so a `text-*` utility sets both.
+ */
+export function densityFontSizes(): Record<string, [string, { lineHeight: string }]> {
+  const sizes: Record<string, [string, { lineHeight: string }]> = {}
+  for (const [name, { size, leading }] of Object.entries(DENSITY_FONT_SIZES))
+    sizes[name] = [densityValue(size), { lineHeight: densityValue(leading) }]
+  return sizes
+}
+
+/**
+ * The `:root` block for the density roles.
+ *
+ * No `.dark` counterpart, for the reason the shape roles have none: room does
+ * not change with the colour scheme.
+ */
+export function densityTokenCSS(): string {
+  return [
+    '/* stx density tokens — how much room a control or a table cell takes. */',
+    ':root {',
+    ...Object.entries(DENSITY_TOKENS).map(([name, token]) => `  ${densityVariable(name)}: ${token.value};`),
+    '}',
+    '',
+  ].join('\n')
+}
+
+/** Every variable a density role reads, for documentation and tooling. */
+export function densityTokenNames(): string[] {
+  return Object.keys(DENSITY_TOKENS).map(densityVariable)
+}

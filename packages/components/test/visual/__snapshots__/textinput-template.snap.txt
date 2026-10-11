@@ -32,7 +32,14 @@ export const inputClassName = $props.inputClassName || ''
  * is 3.25rem of content inside a declared 3rem box - so py-2.5 lands on the
  * 3rem it always claimed. sm and md were already exact.
  */
-const sizeClasses = { sm: 'px-3 py-1.5 text-sm', md: 'px-4 py-2 text-base', lg: 'px-5 py-2.5 text-lg' }
+/*
+ * md -- the size nearly every form uses -- reads the density roles, so an
+ * app sets its own field size with --stx-control-px, --stx-control-py,
+ * --stx-control-text and --stx-control-leading instead of a className
+ * that ties with py-2 on specificity. The fallbacks are px-4 / py-2 /
+ * text-base, so nothing moves by default (stacksjs/stx#1993).
+ */
+const sizeClasses = { sm: 'px-3 py-1.5 text-sm', md: 'px-control-x py-control-y text-control', lg: 'px-5 py-2.5 text-lg' }
 const iconSizeClasses = { sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 w-6' }
 
 const baseClasses = 'block w-full border-0 rounded-control shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset bg-field'
@@ -235,17 +242,42 @@ defineExpose({ value: inputValue, clear: onClear })
 === Extracted Classes ===
 !isError()
 '{{
+-
+--
+--stx-control-leading
+--stx-control-text
+The
+a
 absolute
+adjusted
+already
+also
+always
+an
+and
+app
+are
+around
 bg-field
 bg-surface
 block
 border-0
+box
+by
 className
+const
+content
 cursor-default
 cursor-not-allowed
+declared
+default
+density
 duration-200
 error
+every
+fallbacks
 false
+field
 flex
 focus:outline-none
 focus:ring-2
@@ -253,6 +285,7 @@ focus:ring-accent
 focus:ring-danger-focus
 focus:ring-inset
 font-medium
+form
 h-10
 h-4
 h-5
@@ -263,16 +296,32 @@ iconClasses
 input
 inputClasses
 inset-y-0
+inside
+instead
+is
 isError(),
+it
 items-center
+its
 justify-between
 labelClasses
+lands
 leading-6
 left-0
+line-height
 mb-2
+md
 ml-1
+moves
 mt-2
+nearly
+needed
+nothing
+of
+on
 opacity-50
+own
+padding
 pl-10
 pl-3
 placeholder-danger
@@ -280,10 +329,13 @@ placeholder-fg-soft
 pointer-events-none
 pr-10
 pr-3
-px-3
 px-4
 px-5
+px-control-x
 py-2
+py-3
+py-control-y
+reads
 relative
 right-0
 ring-1
@@ -291,23 +343,35 @@ ring-danger-line
 ring-inset
 ring-line-strong
 rounded-control
+sets
 shadow-sm
+size
+sizeClasses
+sm
+so
 stateInvalidClasses
 stateValidClasses
-text-base
+step
+text-control
 text-danger
 text-danger-fg
 text-fg
 text-fg-soft
 text-lg
 text-sm
+that
+the
+ties
 transition-colors
 true
+uses
 value
 w-4
 w-5
 w-6
 w-full
+were
+with
 {
 {{
 }

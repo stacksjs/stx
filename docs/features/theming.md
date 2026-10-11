@@ -386,6 +386,63 @@ eating a quarter-rem of their own padding. The padding now reproduces all five
 previous heights exactly — 1.75, 2, 2.5, 3 and 3.5rem — so nothing moved on
 screen.
 
+## 0c. Density — how much room a control or a cell takes
+
+Colour and corners moved by role, and a text field still carried
+`px-4 py-2 text-base` and a table cell `px-6 py-4 text-sm`. Those are the last
+things an app could not change without a visual difference: `py-2` and your
+`py-1.5` tie on specificity just as `rounded-md` and `rounded-full` did.
+
+So padding and type are roles too, each a CSS variable with today's value as
+the fallback:
+
+| Variable | Utility | Default | For |
+|---|---|---|---|
+| `--stx-control-px` | `px-control-x` | 1rem (`px-4`) | inline padding of a md text control |
+| `--stx-control-py` | `py-control-y` | 0.5rem (`py-2`) | block padding of a md text control |
+| `--stx-control-text` | `text-control` | 1rem (`text-base`) | its font size |
+| `--stx-control-leading` | `text-control` | 1.5rem | its line height |
+| `--stx-cell-px` | `px-cell-x` | 1.5rem (`px-6`) | inline padding of every table cell, header or body |
+| `--stx-cell-py` | `py-cell-y` | 1rem (`py-4`) | block padding of a body cell |
+| `--stx-cell-text` | `text-cell` | 0.875rem (`text-sm`) | its font size |
+| `--stx-cell-leading` | `text-cell` | 1.25rem | its line height |
+| `--stx-cell-head-py` | `py-cell-head-y` | 0.75rem (`py-3`) | block padding of a header cell |
+| `--stx-cell-head-text` | `text-cell-head` | 0.75rem (`text-xs`) | its font size |
+| `--stx-cell-head-leading` | `text-cell-head` | 1rem | its line height |
+
+```css
+:root {
+  /* compact fields: 0.375rem + 1.25rem + 0.375rem = a 2rem control */
+  --stx-control-px: 0.75rem;
+  --stx-control-py: 0.375rem;
+  --stx-control-text: 0.875rem;
+  --stx-control-leading: 1.25rem;
+
+  /* tighter tables */
+  --stx-cell-px: 0.75rem;
+  --stx-cell-py: 0.5rem;
+  --stx-cell-head-py: 0.5rem;
+}
+```
+
+What reads them: the `md` size of `TextInput`, `EmailInput`, `SearchInput`,
+`PasswordInput`, `NumberInput` and `Select`, `Textarea` (which has no size),
+and `TableCell` / `TableHeader`. `sm` and `lg` keep their literal classes —
+they are the sizes a call site picks by name.
+
+Three things worth knowing:
+
+- **Why `px-control-x` and not `px-control`.** `px-*` and `py-*` both read
+  `theme.spacing`, so one spacing name is one length on both axes. Inline and
+  block padding are different decisions, so each has its own name. Being
+  ordinary spacing, `pl-control-x` and friends work too.
+- **Set the line-height with the size.** A control's height is its block
+  padding twice plus its line-height, so shrinking `--stx-control-text` alone
+  shrinks the letters and leaves the box as tall as it was.
+- **Header and body share `--stx-cell-px`.** A header at a different inset from
+  its column's cells is a misaligned column, so there is one inline token for
+  both; only the block padding and type differ between the two rows.
+
 ## 1. Redefine a shade — build time, works today, no opt-in
 
 A project's `css.config.ts` `theme.colors` **deep-merges** over the base

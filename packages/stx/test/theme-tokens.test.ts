@@ -30,7 +30,7 @@
 
 import { describe, expect, it } from 'bun:test'
 import { mergeCssConfig } from '../src/ts-css-config'
-import { SEMANTIC_TOKENS, semanticColors, semanticTokenCSS, semanticTokenNames, tokenVariable } from '../src/theme-tokens'
+import { DENSITY_FONT_SIZES, DENSITY_SPACING, DENSITY_TOKENS, densityTokenCSS, densityTokenNames, SEMANTIC_TOKENS, semanticColors, semanticTokenCSS, semanticTokenNames, shapeTokenNames, tokenVariable } from '../src/theme-tokens'
 
 const PALETTE = {
   /*
@@ -263,5 +263,83 @@ describe('the merged config every render path uses', () => {
 
     expect(config.theme.borderRadius.md).toBe('0.375rem')
     expect(config.theme.borderRadius.lg).toBe('0.5rem')
+  })
+})
+
+/*
+ * Density, the third half (#1993): a control's padding and type size are as
+ * unthemeable from a call site as its colour was, because `py-2` and an app's
+ * `py-1.5` tie on specificity.
+ */
+describe('the density roles in the merged config', () => {
+  it('carries a spacing name per axis, so px and py can differ', () => {
+    const { config } = mergeCssConfig({}, {})
+
+    // One spacing name serves px- AND py-, so a single `control` entry could
+    // only ever give a field the same padding on both axes.
+    expect(config.theme.spacing['control-x']).toBe('var(--stx-control-px, 1rem)')
+    expect(config.theme.spacing['control-y']).toBe('var(--stx-control-py, 0.5rem)')
+    expect(config.theme.spacing['cell-x']).toBe('var(--stx-cell-px, 1.5rem)')
+    expect(config.theme.spacing['cell-y']).toBe('var(--stx-cell-py, 1rem)')
+    expect(config.theme.spacing['cell-head-y']).toBe('var(--stx-cell-head-py, 0.75rem)')
+    expect(Object.keys(DENSITY_SPACING).sort()).toEqual(['cell-head-y', 'cell-x', 'cell-y', 'control-x', 'control-y'])
+  })
+
+  it('carries a font size with its line-height, in the engine\'s tuple form', () => {
+    const { config } = mergeCssConfig({}, {})
+
+    // The line-height has to move with the size: a control's height is its
+    // padding plus its line-height, so a size alone could not shrink it.
+    expect(config.theme.fontSize.control).toEqual(['var(--stx-control-text, 1rem)', { lineHeight: 'var(--stx-control-leading, 1.5rem)' }])
+    expect(config.theme.fontSize.cell).toEqual(['var(--stx-cell-text, 0.875rem)', { lineHeight: 'var(--stx-cell-leading, 1.25rem)' }])
+    expect(config.theme.fontSize['cell-head']).toEqual(['var(--stx-cell-head-text, 0.75rem)', { lineHeight: 'var(--stx-cell-head-leading, 1rem)' }])
+    expect(Object.keys(DENSITY_FONT_SIZES).sort()).toEqual(['cell', 'cell-head', 'control'])
+  })
+
+  /*
+   * Additive. `px-4` and `text-base` keep compiling to baked values: turning an
+   * existing utility into a variable would change the CSS of every app that
+   * never asked.
+   */
+  it('leaves the stock spacing and type scale alone', () => {
+    const { config } = mergeCssConfig({ theme: { spacing: { 4: '1rem' }, fontSize: { base: ['1rem', { lineHeight: '1.5rem' }] } } }, {})
+
+    expect(config.theme.spacing['4']).toBe('1rem')
+    expect(config.theme.fontSize.base).toEqual(['1rem', { lineHeight: '1.5rem' }])
+  })
+
+  it('lets a project redefine a density role outright', () => {
+    const { config } = mergeCssConfig({}, { theme: { spacing: { 'control-y': '0.375rem' } } })
+
+    expect(config.theme.spacing['control-y']).toBe('0.375rem')
+    expect(config.theme.spacing['control-x']).toBe('var(--stx-control-px, 1rem)')
+  })
+
+  it('declares every density variable in the token block, with no dark half', () => {
+    const { tokenCSS } = mergeCssConfig({}, {})
+
+    for (const [name, token] of Object.entries(DENSITY_TOKENS))
+      expect(tokenCSS).toContain(`--stx-${name}: ${token.value};`)
+    expect(densityTokenCSS()).not.toContain('.dark')
+  })
+
+  it('backs every spacing and font-size name with a declared token', () => {
+    for (const token of Object.values(DENSITY_SPACING))
+      expect(DENSITY_TOKENS[token], token).toBeDefined()
+    for (const { size, leading } of Object.values(DENSITY_FONT_SIZES)) {
+      expect(DENSITY_TOKENS[size], size).toBeDefined()
+      expect(DENSITY_TOKENS[leading], leading).toBeDefined()
+    }
+  })
+
+  /*
+   * The density variables share the `--stx-` prefix with the colour roles, so
+   * a name used by both would have one block silently overwrite the other.
+   */
+  it('shares no variable with a colour or shape role', () => {
+    const others = new Set([...semanticTokenNames(), ...shapeTokenNames()])
+
+    for (const name of densityTokenNames())
+      expect(others.has(name), name).toBe(false)
   })
 })
