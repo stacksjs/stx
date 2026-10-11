@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.462...v0.2.463)
+
+## 🐛 Bug Fixes
+
+- **includes**: warn when a partial with signals has more than one root ([305b842](https://github.com/stacksjs/stx/commit/305b842)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.463 ([aefe773](https://github.com/stacksjs/stx/commit/aefe773)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.461...v0.2.462)
 
 ## 🐛 Bug Fixes
