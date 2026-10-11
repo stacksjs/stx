@@ -24,6 +24,9 @@ export function prepareSharedNativeScreen(
   options: CraftBridgeOptions = {},
 ): SharedNativeScreen {
   let revision = 0
+  // Bumped by every full render: a batch named for an older generation was
+  // sent before that render, so its rejection says nothing about the tree now.
+  let generation = 0
   const protocol = new STXBridge()
   protocol.initialize(bridge)
   installCraftBridge(protocol, bridge, globalThis as Record<string, any>, options)
@@ -35,7 +38,7 @@ export function prepareSharedNativeScreen(
       revision++
       protocol.mutate({
         version: 1,
-        batchId: `mutation_${revision}`,
+        batchId: `mutation_${generation}_${revision}`,
         baseRevision,
         revision,
         operations,
@@ -52,6 +55,25 @@ export function prepareSharedNativeScreen(
 
   const tree = materializeNativeBindingTree(document, manifest, host)
   let dispose: (() => void) | null = null
+
+  /*
+   * The native side applies a batch whole or not at all, and each batch is
+   * based on the revision before it. One rejected batch used to leave the
+   * screen frozen for good: every later batch failed on REVISION_MISMATCH,
+   * so no signal change reached the screen again. A rejection now redraws the
+   * screen from the tree as the host holds it, ids and all, and the next
+   * batches build on that.
+   */
+  protocol.on<any>('MUTATION_ERROR', (message) => {
+    const payload = message.payload ?? {}
+    const batch = String(payload.batchId ?? '')
+    if (batch && !batch.startsWith(`mutation_${generation}_`))
+      return
+    console.error(`[stx native] the screen refused ${batch || 'a mutation batch'} (${payload.code ?? 'error'}: ${payload.message ?? ''}); redrawing it`)
+    generation++
+    revision = 0
+    protocol.render(host.snapshot(tree.root))
+  })
 
   protocol.on<any>('EVENT', (message) => {
     const handlerId = message.payload?.handlerId ?? message.payload?.handlerName

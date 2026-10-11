@@ -59,6 +59,8 @@ interface NodeRecord {
   children: NativeNode[]
   visible: boolean
   materialized: boolean
+  /** Handlers taken out of service while the node is off the screen. */
+  parkedHandlers?: Map<string, (payload?: unknown) => void>
 }
 
 interface RetainedNativeNode extends NativeNode {
@@ -100,6 +102,12 @@ export interface NativeHost {
   /** Dispatch an event the native side reported, by the id handed to it. */
   dispatch: (handlerId: string, payload?: unknown) => void
   pending: () => number
+  /**
+   * The tree as this host holds it now, from `root`, in the shape a RENDER
+   * takes: every node with its id, so later mutations name the same nodes.
+   * Pending operations are dropped, since the tree already includes them.
+   */
+  snapshot: (root: NativeNode) => STXNode
 }
 
 /** Every method the DOM host in `signals.ts` defines. The contract, in one place. */
@@ -191,7 +199,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   }
 
   function recordOf(node: NativeNode): NodeRecord {
-    let record = records.get(node.__stxId)
+    let record = records.get(node.__stxId) ?? revive(node)
     if (!record) {
       record = { type: 'View', props: {}, style: {}, baseStyle: {}, classes: '', events: {}, children: [], visible: true, materialized: true }
       records.set(node.__stxId, record)
@@ -212,12 +220,46 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     records.delete(node.__stxId)
   }
 
+  /*
+   * A removed node is often shown again: an `:if` hides the very node it
+   * later re-inserts. Its handlers are parked on its record rather than
+   * dropped, so the node answers presses again once it is back, and the
+   * closures go with the node when nothing holds it any more.
+   */
   function releaseHandlers(node: NativeNode): void {
     const record = descriptorOf(node)
     if (!record)
       return
-    Object.values(record.events).forEach(handlerId => handlers.delete(handlerId))
+    for (const handlerId of Object.values(record.events)) {
+      const handler = handlers.get(handlerId)
+      if (!handler)
+        continue
+      ;(record.parkedHandlers ??= new Map()).set(handlerId, handler)
+      handlers.delete(handlerId)
+    }
     record.children.forEach(releaseHandlers)
+  }
+
+  /*
+   * The record of a node removed earlier, back in service. The native side
+   * dropped the node and its whole subtree when it was removed, so it is no
+   * longer materialised: inserting it again creates it afresh from what the
+   * record kept (type, props, style, text, events, children). Its children
+   * come back the same way as they are reached.
+   */
+  function revive(node: NativeNode): NodeRecord | undefined {
+    const retained = node as RetainedNativeNode
+    const record = retained.__stxDetachedRecord
+    if (!record)
+      return undefined
+    delete retained.__stxDetachedRecord
+    record.materialized = false
+    if (record.parkedHandlers) {
+      for (const [handlerId, handler] of record.parkedHandlers) handlers.set(handlerId, handler)
+      record.parkedHandlers = undefined
+    }
+    records.set(node.__stxId, record)
+    return record
   }
 
   function materialize(node: NativeNode): void {
@@ -233,6 +275,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         type: record.type,
         props: { ...record.props },
         style: { ...record.style },
+        ...(Object.keys(record.events).length ? { events: { ...record.events } } : {}),
         ...(record.text === undefined ? {} : { children: [record.text] }),
       },
     })
@@ -382,10 +425,34 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     pending: () => queue.length,
     flush,
 
+    snapshot(root) {
+      queue = []
+      const describe = (node: NativeNode): STXNode => {
+        const record = recordOf(node)
+        if (!record.materialized)
+          record.style = resolveStyle(record)
+        record.materialized = true
+        const children = record.children
+          .filter(child => child.__stxAnchor === undefined)
+          .map(describe)
+        return {
+          id: node.__stxId,
+          type: record.type,
+          props: { ...record.props },
+          style: { ...record.style } as STXNode['style'],
+          events: { ...record.events },
+          children: record.text === undefined ? children : [record.text],
+        }
+      }
+      return describe(root)
+    },
+
     setText(node, value) {
       const text = value == null ? '' : String(value)
-      recordOf(node).text = text
-      emit({ op: 'updateNode', id: node.__stxId, patch: { children: [text] } })
+      const record = recordOf(node)
+      record.text = text
+      if (record.materialized)
+        emit({ op: 'updateNode', id: node.__stxId, patch: { children: [text] } })
     },
 
     setAttribute(node, name, value) {
@@ -400,7 +467,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       if (recordOf(node).type === 'Icon' && prop === 'name') {
         this.setAttribute(node, 'symbol', resolveIconName(String(value ?? '')).symbol)
       }
-      emit({ op: 'updateNode', id: node.__stxId, patch: { props: { [prop]: value } } })
+      if (recordOf(node).materialized)
+        emit({ op: 'updateNode', id: node.__stxId, patch: { props: { [prop]: value } } })
     },
 
     removeAttribute(node, name) {
@@ -409,7 +477,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       delete recordOf(node).props[prop]
       // Null rather than omitted: a patch is merged on the native side, so an
       // absent key means "unchanged" and would leave the attribute in place.
-      emit({ op: 'updateNode', id: node.__stxId, patch: { props: { [prop]: null } } })
+      if (recordOf(node).materialized)
+        emit({ op: 'updateNode', id: node.__stxId, patch: { props: { [prop]: null } } })
     },
 
     setStyle(node, value) {
@@ -418,7 +487,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const style = value as Record<string, unknown>
       Object.assign(recordOf(node).baseStyle, style)
       Object.assign(recordOf(node).style, style)
-      emit({ op: 'updateNode', id: node.__stxId, patch: { style } })
+      if (recordOf(node).materialized)
+        emit({ op: 'updateNode', id: node.__stxId, patch: { style } })
     },
 
     listen(node, event, handler) {
@@ -429,8 +499,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const id = nextId('h')
       const nativeEvent = NATIVE_EVENT_NAMES[event.toLowerCase()] ?? event
       handlers.set(id, handler)
-      recordOf(node).events[nativeEvent] = id
-      emit({ op: 'updateNode', id: node.__stxId, patch: { events: { [nativeEvent]: id } } })
+      const record = recordOf(node)
+      record.events[nativeEvent] = id
+      if (record.materialized)
+        emit({ op: 'updateNode', id: node.__stxId, patch: { events: { [nativeEvent]: id } } })
     },
 
     dispatch(handlerId, payload) {
@@ -456,7 +528,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       record.baseStyle.display = visible ? 'flex' : 'none'
       // `display` is how the IR spells it, so the renderers already understand
       // it; the host does not invent a second vocabulary for the same thing.
-      emit({ op: 'updateNode', id: node.__stxId, patch: { style: { display: visible ? 'flex' : 'none' } } })
+      if (record.materialized)
+        emit({ op: 'updateNode', id: node.__stxId, patch: { style: { display: visible ? 'flex' : 'none' } } })
       return was
     },
 
@@ -550,11 +623,25 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
       materialize(node)
 
+      /*
+       * The native parent holds views, never anchors (materialize skips them),
+       * so the position it is told counts only the views before this one. The
+       * binding layer's index counts the anchors too: every `:if` puts one in
+       * front of its element, so showing a branch said "index 2" to a parent
+       * holding no views, the host refused the whole batch as INVALID_INDEX,
+       * and a screen stayed on its first branch for good.
+       */
+      let nativeIndex = 0
+      for (let i = 0; i < index; i++) {
+        if (record.children[i].__stxAnchor === undefined)
+          nativeIndex++
+      }
+
       emit({
         op: existing === -1 ? 'insertChild' : 'moveChild',
         parentId: parent.__stxId,
         childId: node.__stxId,
-        index,
+        index: nativeIndex,
       })
     },
 
