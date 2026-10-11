@@ -54,7 +54,7 @@
     },
     "packages/bun-plugin": {
       "name": "bun-plugin-stx",
-      "version": "0.2.445",
+      "version": "0.2.446",
       "bin": {
         "serve": "./dist/serve.js",
         "stx-serve": "./dist/serve.js",
@@ -1592,7 +1592,7 @@
     },
     "packages/components": {
       "name": "@stacksjs/components",
-      "version": "0.2.445",
+      "version": "0.2.446",
       "dependencies": {
         "@iconify-json/f7": "^1.2.2",
         "@stacksjs/stx": "workspace:*",
