@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.439...v0.2.440)
+
+## 🐛 Bug Fixes
+
+- position portaled tooltips in viewport coordinates ([dbfd5b7](https://github.com/stacksjs/stx/commit/dbfd5b7)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.440 ([644dc3c](https://github.com/stacksjs/stx/commit/644dc3c)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.438...v0.2.439)
 
 ## 🐛 Bug Fixes
