@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.435...v0.2.436)
+
+## 🐛 Bug Fixes
+
+- consume partial component imports before client bundling ([417954d](https://github.com/stacksjs/stx/commit/417954d)) _(by Chris Breuer <chris@stacksjs.com>)_
+- keep chat composer placeholder legible across themes ([c6248af](https://github.com/stacksjs/stx/commit/c6248af)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.436 ([fa60541](https://github.com/stacksjs/stx/commit/fa60541)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.433...v0.2.434)
 
 ## 🐛 Bug Fixes
