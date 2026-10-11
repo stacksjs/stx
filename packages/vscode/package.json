@@ -54,7 +54,7 @@
   },
   "icon": "logo.png",
   "engines": {
-    "vscode": "^1.109.0"
+    "vscode": "^1.141.0"
   },
   "activationEvents": [
     "workspaceContains:**/*.stx",
@@ -257,12 +257,12 @@
     "theme": "light"
   },
   "dependencies": {
-    "@stacksjs/ts-css": "^0.3.7",
-    "prettier": "^3.9.9"
+    "@stacksjs/ts-css": "^0.3.8",
+    "prettier": "^3.9.10"
   },
   "devDependencies": {
-    "@types/vscode": "~1.109.0",
-    "@vscode/vsce": "^3.7.2-13",
+    "@types/vscode": "~1.140.0",
+    "@vscode/vsce": "^3.9.2",
     "typescript": "^7.0.2",
     "vscode-html-languageservice": "^5.6.2",
     "vscode-languageclient": "^10.1.2",

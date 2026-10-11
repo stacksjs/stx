@@ -68,7 +68,7 @@
   },
   "dependencies": {
     "@iconify-json/f7": "^1.2.2",
-    "@stacksjs/ts-css": "^0.3.2",
+    "@stacksjs/ts-css": "^0.3.8",
     "@stacksjs/stx": "workspace:*",
     "bun-plugin-stx": "workspace:*",
     "ts-syntax-highlighter": "^0.2.17"
@@ -76,7 +76,7 @@
   "devDependencies": {
     "@types/bun": "^1.4.2",
     "bun-plugin-dtsx": "^0.21.17",
-    "pickier": "^0.1.65",
+    "pickier": "^0.1.71",
     "typescript": "^7.0.2"
   }
 }
