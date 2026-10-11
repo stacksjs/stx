@@ -4,9 +4,9 @@ export const className = $props.className || ''
 export const active = $props.active == null || $props.active === true || $props.active === 'true'
 export const compact = $props.compact === true || $props.compact === 'true'
 export const sizeClasses = compact ? 'min-h-[340px] h-[min(560px,calc(100dvh-230px))]' : 'min-h-[540px] h-[calc(100dvh-180px)]'
-export const selectedInboxClass = compact ? 'hidden' : 'hidden md:flex'
-export const backButtonClass = compact ? '' : 'md:hidden'
-export const inboxWidth = compact ? 'w-full' : 'w-full md:w-80'
+export const selectedInboxClass = 'hidden'
+export const backButtonClass = ''
+export const inboxWidth = 'w-full'
 </script>
 <script client>
 const active = useReactiveProp('active', {{ active }})
@@ -64,12 +64,12 @@ onMount(() => chat.load())
 onMount(() => chat.observe(() => active() && visibility() === 'visible'))
 effect(() => { if (active() && visibility() === 'visible') chat.refresh(true) })
 </script>
-<section aria-label="Messages" class="flex flex-col {{ sizeClasses }} max-h-[900px] overflow-hidden bg-panel border border-line rounded-2xl {{ className }}">
+<section aria-label="Messages" data-compact="{{ compact }}" class="stx-chat-inbox flex flex-col {{ sizeClasses }} max-h-[900px] overflow-hidden bg-panel border border-line rounded-2xl {{ className }}">
   <div :if="error" role="alert" class="flex gap-3 items-center justify-between px-4 py-3 text-sm text-rose-800 dark:text-rose-200 bg-danger-soft">
     <span :text="error"></span><button type="button" @click="chat.refresh(true)" class="font-semibold underline">Try again</button>
   </div>
   <div class="flex flex-1 min-h-0">
-    <aside aria-label="Conversations" :class="hasSelection ? selectedInboxClass : 'flex'" class="flex-col {{ inboxWidth }} shrink-0 border-r border-line">
+    <aside aria-label="Conversations" :class="hasSelection ? selectedInboxClass : 'flex'" class="stx-chat-sidebar flex-col {{ inboxWidth }} shrink-0 border-r border-line">
       <div class="px-5 pt-5 pb-4 space-y-4">
         <div class="flex items-center justify-between"><h2 class="font-semibold text-fg-strong">Inbox</h2><span :if="unread" class="px-2 py-0.5 text-xs font-semibold text-accent-soft-ink bg-accent-soft rounded-full"><span :text="unread"></span> unread</span></div>
         <label class="block"><span class="sr-only">Search people</span><input type="search" x-model="search" placeholder="Search athletes or staff" class="w-full px-3 py-2.5 text-sm text-fg-strong bg-field border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"></label>
@@ -84,24 +84,35 @@ effect(() => { if (active() && visibility() === 'visible') chat.refresh(true) })
         <div :if="emptyRows" class="px-4 py-10 text-center"><p class="font-semibold text-sm text-fg-strong">No conversations here yet</p><p class="mt-2 text-sm text-fg-muted">Try another search or turn off the unread filter. Your connected athletes and gym team appear here.</p></div>
       </div>
     </aside>
-    <div :if="noSelection" class="hidden md:flex flex-1 flex-col items-center justify-center px-8 text-center bg-surface/50">
+    <div :if="noSelection" class="stx-chat-empty hidden flex-1 flex-col items-center justify-center px-8 text-center bg-surface/50">
       <span class="i-lucide-messages-square text-3xl text-accent" aria-hidden="true"></span><h2 class="mt-4 text-lg font-semibold text-fg-strong">A place for the conversation</h2><p class="mt-2 max-w-xs text-sm leading-6 text-fg-muted">Training questions, session feedback, or a quick check-in. Choose someone from your inbox to get started.</p>
     </div>
     <div :if="hasSelection" class="flex flex-1 flex-col min-w-0">
-      <header class="flex items-center gap-3 px-4 md:px-6 py-4 border-b border-line">
-        <button type="button" @click="chat.back()" aria-label="Back to inbox" class="{{ backButtonClass }} p-2 rounded-lg hover:bg-surface-hover"><span class="i-lucide-arrow-left" aria-hidden="true"></span></button><div class="flex-1"><h2 class="font-semibold text-fg-strong" :text="selectedName"></h2><p class="mt-0.5 text-xs text-fg-muted" :text="selectedRole"></p></div><button type="button" @click="chat.refresh(true)" aria-label="Refresh conversation" class="p-2 text-fg-muted rounded-lg hover:bg-surface-hover"><span class="i-lucide-refresh-cw" aria-hidden="true"></span></button>
+      <header class="flex items-center gap-3 px-4 py-4 border-b border-line">
+        <button type="button" @click="chat.back()" aria-label="Back to inbox" class="stx-chat-back {{ backButtonClass }} p-2 rounded-lg hover:bg-surface-hover"><span class="i-lucide-arrow-left" aria-hidden="true"></span></button><div class="flex-1"><h2 class="font-semibold text-fg-strong" :text="selectedName"></h2><p class="mt-0.5 text-xs text-fg-muted" :text="selectedRole"></p></div><button type="button" @click="chat.refresh(true)" aria-label="Refresh conversation" class="p-2 text-fg-muted rounded-lg hover:bg-surface-hover"><span class="i-lucide-refresh-cw" aria-hidden="true"></span></button>
       </header>
-      <div ref="chat-history" role="log" aria-label="Conversation history" aria-live="polite" aria-relevant="additions" :aria-busy="threadLoading" class="flex flex-col flex-1 min-h-0 overflow-y-auto px-4 md:px-6 py-5 gap-4">
+      <div ref="chat-history" role="log" aria-label="Conversation history" aria-live="polite" aria-relevant="additions" :aria-busy="threadLoading" class="flex flex-col flex-1 min-h-0 overflow-y-auto px-4 py-5 gap-4">
         <button :if="hasMore" type="button" @click="chat.older()" :disabled="threadLoading" class="self-center text-sm text-accent-soft-ink font-medium underline">Load earlier messages</button>
         <p :if="threadLoading" role="status" class="text-center text-sm text-fg-muted">Loading conversation...</p>
         <div :if="emptyThread" class="my-auto text-center"><p class="font-semibold text-fg-strong">Start with a question or a check-in</p><p class="mt-2 text-sm text-fg-muted">Messages stay here so you can pick up where you left off.</p></div>
         <article :for="message in messages" :class="message.sender_id === selfId ? 'items-end' : 'items-start'" class="flex flex-col gap-1.5">
-          <p :class="message.sender_id === selfId ? 'bg-accent-solid text-accent-ink' : 'bg-surface-sunken text-fg-strong'" class="max-w-[88%] md:max-w-[75%] whitespace-pre-wrap break-words px-4 py-3 rounded-2xl text-sm leading-6" :text="message.body"></p><span class="text-[11px] text-fg-muted"><time :datetime="message.created_at" :text="timestamp(message.created_at)"></time><span :if="message.sender_id === selfId" :text="message.read_at ? ' · Read' : ' · Sent'"></span></span>
+          <p :class="message.sender_id === selfId ? 'bg-accent-solid text-accent-ink' : 'bg-surface-sunken text-fg-strong'" class="stx-chat-message max-w-[88%] whitespace-pre-wrap break-words px-4 py-3 rounded-2xl text-sm leading-6" :text="message.body"></p><span class="text-[11px] text-fg-muted"><time :datetime="message.created_at" :text="timestamp(message.created_at)"></time><span :if="message.sender_id === selfId" :text="message.read_at ? ' · Read' : ' · Sent'"></span></span>
         </article>
       </div>
-      <form @submit.prevent="submit()" class="px-4 md:px-6 pt-3 pb-4 border-t border-line">
-        <label class="block"><span class="sr-only">Write a message</span><textarea ref="chat-composer" x-model="draft" @keydown="keyboard($event)" :maxlength="maxLength" :disabled="sending" rows="3" placeholder="Write a message..." class="w-full resize-none px-3 py-2 text-sm leading-6 text-fg-strong placeholder:text-fg-soft bg-field border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-accent"></textarea></label><div class="flex items-center justify-between gap-3 mt-2"><span class="text-xs text-fg-muted">Ctrl or ⌘ + Enter to send</span><button type="submit" :disabled="!canSend" class="shrink-0 inline-flex gap-2 items-center px-4 py-2.5 text-sm font-semibold text-accent-ink bg-accent-solid hover:bg-accent-solid-hover disabled:opacity-50 disabled:cursor-not-allowed rounded-lg focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel"><span :text="sendLabel">Send message</span><span class="i-lucide-send" aria-hidden="true"></span></button></div>
+      <form @submit.prevent="submit()" class="px-4 pt-3 pb-4 border-t border-line">
+        <label class="block"><span class="sr-only">Write a message</span><textarea ref="chat-composer" x-model="draft" @keydown="keyboard($event)" :maxlength="maxLength" :disabled="sending" rows="3" placeholder="Write a message..." class="w-full resize-none px-3 py-2 text-sm leading-6 text-fg-strong placeholder:text-fg-soft bg-field border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-accent"></textarea></label><div class="flex items-center justify-between gap-3 mt-2"><span class="stx-chat-shortcut hidden text-xs text-fg-muted">Ctrl or ⌘ + Enter to send</span><button type="submit" :disabled="!canSend" class="shrink-0 ml-auto inline-flex gap-2 items-center px-4 py-2.5 text-sm font-semibold text-accent-ink bg-accent-solid hover:bg-accent-solid-hover disabled:opacity-50 disabled:cursor-not-allowed rounded-lg focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel"><span :text="sendLabel">Send message</span><span class="i-lucide-send" aria-hidden="true"></span></button></div>
       </form>
     </div>
   </div>
 </section>
+
+<style>
+.stx-chat-inbox { container: stx-chat / inline-size; }
+@container stx-chat (min-width: 48rem) {
+  .stx-chat-inbox[data-compact="false"] .stx-chat-sidebar { display: flex; width: 20rem; }
+  .stx-chat-inbox[data-compact="false"] .stx-chat-back { display: none; }
+  .stx-chat-inbox[data-compact="false"] .stx-chat-empty { display: flex; }
+  .stx-chat-inbox[data-compact="false"] .stx-chat-message { max-width: 75%; }
+  .stx-chat-inbox[data-compact="false"] .stx-chat-shortcut { display: inline; }
+}
+</style>
