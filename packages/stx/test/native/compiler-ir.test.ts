@@ -392,7 +392,7 @@ describe('style vocabulary coverage', () => {
     'columnGap', 'elevation', 'flexBasis', 'rowGap', 'transform',
     // Craft's native host lays out `display: grid` with `gridColumns`; this
     // older renderer has no grid (added with grid-cols-N, 2026-10).
-    'gridColumns',
+    'gridAutoRows', 'gridColumns', 'gridTemplateColumns',
   ]
 
   it('iOS drops exactly the properties on the known list, and no more', () => {

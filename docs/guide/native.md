@@ -75,6 +75,7 @@ function open(id: string) { craft.navigation.push('Session', { id }) }
 
 - **Directives:** `:if` / `:else-if` / `:else`, `:for="item in list"` / `"(item, index) in list"` (arrays, numbers, objects), `:show`, `:key`, `:text`, and stx's `@if … @elseif … @else … @endif` and `@foreach (list as item) … @endforeach`.
 - **Dynamic classes and styles:** `:class` takes a string, an array or `{ class: condition }` and is converted to native style at runtime with the same Headwind table the compiler uses (`dark:` variants follow the host's appearance). `:style` takes an object or CSS text.
+- **Grid styles:** maintained Craft hosts accept `display: 'grid'` with `gridColumns` or `gridTemplateColumns` (including `repeat(N, ...)`) and an optional numeric `gridAutoRows`.
 - **Handlers** use normal stx event attributes such as `@click="select(day)"`; the native host maps click to `onPress`. `$event` is the native event. Inside a `:for`, handlers see that row's variables.
 - **Native boolean props** retain explicit false values. For example, `<TextInput :editable="false" />` compiles with `editable: false` instead of applying HTML's attribute-removal semantics.
 - **Scripts** are TypeScript and may import from the project; each screen is bundled with `Bun.build`. Pass `--minify` for a smaller bundle.

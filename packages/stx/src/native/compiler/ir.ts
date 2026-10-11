@@ -129,6 +129,10 @@ export interface STXStyle {
   display?: 'flex' | 'none' | 'grid'
   /** Equal columns for `display: 'grid'` (`grid-cols-3`). */
   gridColumns?: number
+  /** CSS-shaped grid tracks understood by the maintained Craft hosts. */
+  gridTemplateColumns?: string | number
+  /** Fixed native row height for grid layouts. */
+  gridAutoRows?: number
   flex?: number
   flexGrow?: number
   flexShrink?: number

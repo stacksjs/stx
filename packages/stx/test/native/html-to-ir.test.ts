@@ -265,6 +265,18 @@ describe('what is deliberately dropped', () => {
     expect(root.style).toEqual({ width: '50%', fontSize: 24 })
   })
 
+  it('keeps grid tracks consumed by the maintained native hosts', async () => {
+    const { root, diagnostics } = await translateHtmlToIR(
+      '<div style=\'{"display":"grid","gridTemplateColumns":"repeat(2, 1fr)","gridAutoRows":28}\'><span>a</span></div>',
+    )
+    expect(root.style).toMatchObject({
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, 1fr)',
+      gridAutoRows: 28,
+    })
+    expect(diagnostics).not.toContainEqual(expect.objectContaining({ kind: 'unknown-style' }))
+  })
+
   it('sees through a template wrapper instead of dropping the screen', async () => {
     // A native screen written as `<script>...</script><template>...</template>`
     // keeps the template element in stx's output. Dropping it as a non-view

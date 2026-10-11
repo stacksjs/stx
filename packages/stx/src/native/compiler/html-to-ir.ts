@@ -171,7 +171,8 @@ export const NATIVE_EVENTS = new Set([
 
 /** Every property `STXStyle` declares, for inline `style=""` translation. */
 const STYLE_KEYS = new Set([
-  'display', 'flex', 'flexGrow', 'flexShrink', 'flexBasis', 'flexDirection', 'flexWrap',
+  'display', 'gridColumns', 'gridTemplateColumns', 'gridAutoRows',
+  'flex', 'flexGrow', 'flexShrink', 'flexBasis', 'flexDirection', 'flexWrap',
   'justifyContent', 'alignItems', 'alignSelf', 'alignContent', 'position', 'top', 'right',
   'bottom', 'left', 'zIndex', 'width', 'height', 'minWidth', 'maxWidth', 'minHeight',
   'maxHeight', 'aspectRatio', 'margin', 'marginTop', 'marginRight', 'marginBottom',
@@ -198,7 +199,8 @@ const STYLE_KEYS = new Set([
  * returns typeMismatch and nothing renders. `null` is harmless by comparison.
  */
 const NUMERIC_STYLE_KEYS = new Set([
-  'flex', 'flexGrow', 'flexShrink', 'zIndex', 'aspectRatio', 'gap', 'rowGap', 'columnGap',
+  'gridColumns', 'gridAutoRows', 'flex', 'flexGrow', 'flexShrink', 'zIndex', 'aspectRatio',
+  'gap', 'rowGap', 'columnGap',
   'borderWidth', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
   'borderRadius', 'borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomLeftRadius',
   'borderBottomRightRadius', 'opacity', 'shadowOpacity', 'shadowRadius', 'elevation',
