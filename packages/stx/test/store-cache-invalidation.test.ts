@@ -18,7 +18,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { clearStoreCache, getStoreScript } from '../src/store-loader'
-import { readSigned, type SignedCacheEntry, sourceSignature, writeSigned } from '../src/source-signature'
+import { clearSourceSignatures, readSigned, type SignedCacheEntry, sourceSignature, writeSigned } from '../src/source-signature'
 
 let dir = ''
 
@@ -91,6 +91,28 @@ describe('sourceSignature', () => {
     fs.writeFileSync(file, 'export const a = 2\n')
 
     expect(sourceSignature([file])).not.toBe(before)
+  })
+
+  it('in production, answers from the last stat for a second, until cleared', async () => {
+    // Every render asks, and a production server's sources change only with a
+    // deploy, which is a new process. A watched edit still clears it.
+    const file = path.join(dir, 'a.ts')
+    fs.writeFileSync(file, 'export const a = 1\n')
+    const env = process.env.NODE_ENV
+    process.env.NODE_ENV = 'production'
+    try {
+      clearSourceSignatures()
+      const before = sourceSignature([file])
+      await Bun.sleep(10)
+      fs.writeFileSync(file, 'export const a = 22\n')
+      expect(sourceSignature([file])).toBe(before)
+      clearSourceSignatures()
+      expect(sourceSignature([file])).not.toBe(before)
+    }
+    finally {
+      process.env.NODE_ENV = env
+      clearSourceSignatures()
+    }
   })
 
   it('changes when a file is added or removed', () => {

@@ -589,11 +589,19 @@ async function loadTranslationInternal(
       : await loadTranslationFromFile(locale, i18nConfig, translationsDir)
 
     // No file for this locale: fall back to the default locale once, else empty.
+    //
+    // Remembered like a file that was found. An app with no translations
+    // directory asked for it again on every render, and every component and
+    // partial renders through here: hq.training's coach calendar made 21
+    // failed imports of a translations/en.yaml that does not exist per
+    // request, each one a module-resolution error thrown and caught.
     if (tree === undefined) {
-      if (locale !== i18nConfig.defaultLocale) {
-        return loadTranslationInternal(i18nConfig.defaultLocale, options)
-      }
-      return {}
+      const fallback = locale !== i18nConfig.defaultLocale
+        ? await loadTranslationInternal(i18nConfig.defaultLocale, options)
+        : {}
+      if (i18nConfig.cache)
+        translationsCache[locale] = { translations: fallback, loadedAt: Date.now(), locale }
+      return fallback
     }
 
     const translations = tree as Record<string, any>

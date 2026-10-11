@@ -15,7 +15,7 @@ import { loadStxConfig } from './config'
 import { getPublicEnvDefine } from './public-env'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 import { stripStxRuntimeImports } from './signal-processing'
-import { readSigned, type SignedCacheEntry, sourceSignature, writeSigned } from './source-signature'
+import { clearSourceSignatures, readSigned, type SignedCacheEntry, sourceSignature, writeSigned } from './source-signature'
 import { stripModuleImports, transformStoreImports } from './store-imports'
 import { getSharedTranspiler } from './utils'
 
@@ -245,4 +245,5 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
  */
 export function clearStoreCache(): void {
   _cachedStoreScripts.clear()
+  clearSourceSignatures()
 }

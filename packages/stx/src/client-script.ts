@@ -50,6 +50,7 @@ import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { importOnce } from './lazy-module'
 import { STX_RUNTIME_GLOBALS, usesReactiveRuntime } from './runtime-globals'
 import { escapeScriptBody } from './script-emit'
+import { contentKey, renderMemo } from './render-memo'
 
 // =============================================================================
 // Vendor CSS Side-Effect Imports
@@ -375,7 +376,25 @@ export interface BrowserCoreAutoImportResult {
  * late. A real import lets Bun inline and tree-shake the selected browser
  * helpers together with the component, exactly like an explicit user import.
  */
+/**
+ * Remembered by the script's text, like transformAutoImports: a pure function
+ * of the code, and every scoped partial and component on a page runs through
+ * it on every render (~16ms a request on hq.training's coach calendar, most of
+ * it blanking literals out of the same scripts again).
+ */
+const browserCoreImportsByCode = renderMemo<BrowserCoreAutoImportResult>(256)
+
 export function injectBrowserCoreAutoImports(code: string): BrowserCoreAutoImportResult {
+  const key = contentKey(code)
+  let result = browserCoreImportsByCode.get(key)
+  if (!result) {
+    result = injectBrowserCoreAutoImportsUncached(code)
+    browserCoreImportsByCode.set(key, result)
+  }
+  return { code: result.code, imports: [...result.imports], models: [...result.models] }
+}
+
+function injectBrowserCoreAutoImportsUncached(code: string): BrowserCoreAutoImportResult {
   // Detection reads the code with comments and literals blanked out. A helper
   // name is only an import if it is actually called — matching the bare word
   // anywhere pulled packages in off prose, and the copy "Your Mac can sleep"
@@ -559,7 +578,30 @@ function collectLocalBindings(code: string): Set<string> {
  * const trails = await Trail.all()  // 'Trail' is auto-imported from '@stacksjs/browser'
  * ```
  */
+/**
+ * What a script auto-imports, by its text (stacksjs/stx#1945).
+ *
+ * A pure function of the code, and not a cheap one: every runtime global is
+ * looked for with `referencesName`, which reads the script with comments and
+ * literals blanked and its parameter scopes worked out. The module registry
+ * and the shared bundles run through it on every render of the page, at a
+ * few hundred KB each, so serving the same page again re-derived the same
+ * answer (~35ms a request on hq.training's coach calendar). Copies are
+ * handed out, so a caller cannot edit the remembered lists.
+ */
+const autoImportsByCode = renderMemo<AutoImportResult>(128)
+
 export function transformAutoImports(code: string): AutoImportResult {
+  const key = contentKey(code)
+  let result = autoImportsByCode.get(key)
+  if (!result) {
+    result = transformAutoImportsUncached(code)
+    autoImportsByCode.set(key, result)
+  }
+  return { code: result.code, stxImports: [...result.stxImports], browserImports: [...result.browserImports] }
+}
+
+function transformAutoImportsUncached(code: string): AutoImportResult {
   const usedStxImports: Set<string> = new Set()
   const usedBrowserImports: Set<string> = new Set()
   let transformedCode = code

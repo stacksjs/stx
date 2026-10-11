@@ -264,13 +264,26 @@ export function evictOldest(cache: Map<string, unknown>, maxEntries: number): vo
  * comment mask alone rebuilds 3.1MB of document across 34 calls in one render of
  * the #1945 fixture, twelve of them byte-identical at the same offset.
  *
- * Bounded and large-inputs-only, like the stash cache below it, and for the same
- * reason: this holds documents alive, and caching the small majority of calls
- * would make that unbounded.
+ * Bounded by the characters it holds, like the stash cache below it and for
+ * the same reason: this holds documents alive. A budget rather than twelve
+ * large entries, because a real page masks dozens of distinct templates per
+ * render, every one the same on the next request (see the stash cache).
  */
-const MASK_CACHE_MIN_BYTES = 65536
-const MASK_CACHE_MAX_ENTRIES = 12
+const MASK_CACHE_MIN_BYTES = 1024
+const MASK_CACHE_MAX_CHARS = 16 * 1024 * 1024
 const maskCache = new Map<string, { output: string, tokens: string[] }>()
+let maskCacheChars = 0
+
+function rememberMask(key: string, entry: { output: string, tokens: string[] }): void {
+  maskCache.set(key, entry)
+  maskCacheChars += key.length + entry.output.length
+  for (const [oldest, kept] of maskCache) {
+    if (maskCacheChars <= MASK_CACHE_MAX_CHARS)
+      break
+    maskCache.delete(oldest)
+    maskCacheChars -= oldest.length + kept.output.length
+  }
+}
 
 /**
  * Drop cached mask results.
@@ -283,6 +296,7 @@ const maskCache = new Map<string, { output: string, tokens: string[] }>()
  */
 export function clearMaskCache(): void {
   maskCache.clear()
+  maskCacheChars = 0
 }
 
 /**
@@ -309,8 +323,11 @@ export function maskAtElementPosition(
     const hit = maskCache.get(key)
     // Tokens copied out: callers spread this array into their own, and a shared
     // one would let a later mutation reach an earlier caller's restore.
-    if (hit)
+    if (hit) {
+      maskCache.delete(key)
+      maskCache.set(key, hit)
       return { output: hit.output, tokens: hit.tokens.slice() }
+    }
   }
 
   const matches = scanAtElementPosition(html, match)
@@ -329,8 +346,7 @@ export function maskAtElementPosition(
   output += html.slice(cursor)
 
   if (cacheable) {
-    evictOldest(maskCache, MASK_CACHE_MAX_ENTRIES)
-    maskCache.set(key, { output, tokens })
+    rememberMask(key, { output, tokens })
     return { output, tokens: tokens.slice() }
   }
 
@@ -362,13 +378,30 @@ export function maskAtElementPosition(
  * rather than burying: the win is real for a server rendering the same view
  * repeatedly, and it is a cost, not a free lunch.
  *
- * Small inputs are not cached. They are cheap to redo, they are the vast
- * majority of calls (518 per render), and caching them would make the retention
- * unbounded in the thing it is meant to bound.
+ * Bounded by the characters it holds, not by a count of entries. Four
+ * entries of 64KB and up covered that fixture and not a real app: hq.training's
+ * coach calendar masks 68 distinct documents per request, 1.8MB in all, most
+ * of them component and partial templates between 1KB and 64KB, and every one
+ * of them is the same string on the next request (#1945) -- so each request
+ * re-scanned all of it, ~25ms. A budget keeps a working set of a few pages and
+ * still bounds the retention; least recently used goes first. Inputs under
+ * 1KB are still left alone, being cheaper to redo than to look up.
  */
-const STASH_CACHE_MIN_BYTES = 65536
-const STASH_CACHE_MAX_ENTRIES = 4
+const STASH_CACHE_MIN_BYTES = 1024
+const STASH_CACHE_MAX_CHARS = 16 * 1024 * 1024
 const stashCache = new Map<string, { output: string, scripts: string[] }>()
+let stashCacheChars = 0
+
+function rememberStash(html: string, entry: { output: string, scripts: string[] }): void {
+  stashCache.set(html, entry)
+  stashCacheChars += html.length + entry.output.length
+  for (const [oldest, kept] of stashCache) {
+    if (stashCacheChars <= STASH_CACHE_MAX_CHARS)
+      break
+    stashCache.delete(oldest)
+    stashCacheChars -= oldest.length + kept.output.length
+  }
+}
 
 export interface StashedScripts {
   /** The document with each `<script>` element replaced by a NUL sentinel. */
@@ -407,8 +440,12 @@ export function stashScriptElements(html: string): StashedScripts {
     // The array is copied out. Callers receive it as `stashed.scripts` and a
     // shared array would let one caller's mutation reach another's restore;
     // the strings inside are shared, so this is a handful of pointers.
-    if (hit)
+    if (hit) {
+      // Most recently used last, so the budget drops what is not reused.
+      stashCache.delete(html)
+      stashCache.set(html, hit)
       return stashResult(html, hit.output, hit.scripts.slice())
+    }
   }
 
   const { output, tokens } = maskAtElementPosition(
@@ -418,8 +455,7 @@ export function stashScriptElements(html: string): StashedScripts {
   )
 
   if (cacheable) {
-    evictOldest(stashCache, STASH_CACHE_MAX_ENTRIES)
-    stashCache.set(html, { output, scripts: tokens })
+    rememberStash(html, { output, scripts: tokens })
     return stashResult(html, output, tokens.slice())
   }
 
@@ -436,6 +472,7 @@ export function stashScriptElements(html: string): StashedScripts {
  */
 export function clearStashCache(): void {
   stashCache.clear()
+  stashCacheChars = 0
 }
 
 /** Restore scripts stashed by {@link stashScriptElements}. */

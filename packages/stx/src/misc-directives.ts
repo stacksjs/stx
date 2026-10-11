@@ -8,6 +8,7 @@
 import { errorLogger } from './error-handling'
 import { mightContainOwnTextMustache, scanAtElementPosition } from './html-masking'
 import { createSafeFunction, isExpressionSafe } from './safe-evaluator'
+import { contentKey, renderMemo } from './render-memo'
 
 /**
  * Process @json directive to output JSON
@@ -450,7 +451,28 @@ function ownTextContainsMustache(html: string, contentStart: number): boolean {
  * `ownTextContainsMustache` for why that scoping is the fix rather than a refinement. An
  * element carrying `x-no-cloak` is left visible regardless.
  */
+/**
+ * Remembered by the markup (#1945). A pure function of it, run once per
+ * processDirectives pass -- the page and every component and partial in it --
+ * and each run walks every candidate element's own text. A page renders the
+ * same markup again on the next request, so the answer is too. Inputs under
+ * 1KB are redone, being cheaper than a lookup.
+ */
+const cloakedByMarkup = renderMemo<string>(256)
+
 export function addCloakToUnresolvedExpressions(html: string): string {
+  if (html.length < 1024)
+    return addCloakToUnresolvedExpressionsUncached(html)
+  const key = contentKey(html)
+  const known = cloakedByMarkup.get(key)
+  if (known !== undefined)
+    return known
+  const cloaked = addCloakToUnresolvedExpressionsUncached(html)
+  cloakedByMarkup.set(key, cloaked)
+  return cloaked
+}
+
+function addCloakToUnresolvedExpressionsUncached(html: string): string {
   // A full preflight is cheaper than the nested own-text walk on assembled
   // documents, but not on tiny component fragments. Keep those on the normal
   // path; this threshold changes only how we decide, never what we cloak.

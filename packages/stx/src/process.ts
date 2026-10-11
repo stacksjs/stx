@@ -507,6 +507,18 @@ export async function processDirectives(
     await prepareRuntimeConfig(context, filePath, options.runtimeConfig)
   if (isTopLevel) {
     initializeComponentClientFactories(context)
+    // The render's scope-id sequence (#1945), seeded before anything draws
+    // from it. Components already shared one through the context, created by
+    // the first of them to need it; partials drew from a module counter that
+    // outlived the render, so a page with a scoped partial (a layout's nav)
+    // never rendered the same bytes twice, and every memo keyed on the page --
+    // its stylesheet, its composables, its module registry -- missed on every
+    // request. Seeded here so partials and components draw from one sequence
+    // and no two ids in a document coincide.
+    context.__stx_scope_seq ??= {
+      n: 0,
+      key: Bun.hash(String(context.__filename ?? filePath)).toString(36).slice(0, 6),
+    }
     // Open the render's head collection before the pipeline runs, not after it,
     // so passes deeper in the pipeline can contribute a fragment instead of
     // rebuilding the whole document to splice one in (stacksjs/stx#1945).

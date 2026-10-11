@@ -92,7 +92,7 @@ describe('include <script client>: server expressions and scope stamping', () =>
 
     const html = await render(`@include('skeleton')`)
 
-    const scopeId = html.match(/window\.stx\._scopes\['(stx_scope_skeleton_\d+)'\]/)?.[1]
+    const scopeId = html.match(/window\.stx\._scopes\['(stx_scope_skeleton_\d+(?:_[a-z0-9]+)?)'\]/)?.[1]
     expect(scopeId).toBeTruthy()
 
     // The runtime resolves the scope with querySelector on this attribute, so
@@ -110,7 +110,7 @@ describe('include <script client>: server expressions and scope stamping', () =>
 
     const html = await render(`@include('fragment')`)
 
-    const scopeId = html.match(/window\.stx\._scopes\['(stx_scope_fragment_\d+)'\]/)?.[1]
+    const scopeId = html.match(/window\.stx\._scopes\['(stx_scope_fragment_\d+(?:_[a-z0-9]+)?)'\]/)?.[1]
     expect(scopeId).toBeTruthy()
     expect(html).toContain(`<section data-stx-scope="${scopeId}"`)
   })

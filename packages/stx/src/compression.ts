@@ -163,6 +163,32 @@ export function negotiateEncoding(acceptEncoding: string | null): 'br' | 'gzip' 
 }
 
 /**
+ * Compressed bodies by the bytes they were made from.
+ *
+ * A server-rendered page is the same bytes on every request until something
+ * it depends on changes (#1945), and brotli over a ~500KB page is real CPU
+ * each time it is redone. The key is the body's hash and length plus the
+ * encoding and quality, so a different answer can never be served for it.
+ * Bounded by bytes kept, oldest first out, so a site of many distinct pages
+ * holds a working set rather than everything it ever sent.
+ */
+const COMPRESSED_CACHE_BYTES = 32 * 1024 * 1024
+const compressedByBody = new Map<string, Uint8Array<ArrayBuffer>>()
+let compressedBytes = 0
+function rememberCompressed(key: string, value: Uint8Array<ArrayBuffer>): void {
+  if (value.length > COMPRESSED_CACHE_BYTES / 8)
+    return
+  compressedByBody.set(key, value)
+  compressedBytes += value.length
+  for (const [oldest, kept] of compressedByBody) {
+    if (compressedBytes <= COMPRESSED_CACHE_BYTES)
+      break
+    compressedByBody.delete(oldest)
+    compressedBytes -= kept.length
+  }
+}
+
+/**
  * Return `response` compressed, or unchanged when it should not be.
  *
  * Never throws and never drops a body: a failed compress logs nothing and
@@ -223,16 +249,22 @@ export async function compressResponse(
     return passthrough()
 
   try {
-    const compressed = encoding === 'br'
-      ? await brotliCompress(body, {
-          params: {
-            [zlib.constants.BROTLI_PARAM_QUALITY]: options.quality ?? 5,
-            // Lets brotli size its window to the input instead of assuming a
-            // large one, which is free and helps small payloads.
-            [zlib.constants.BROTLI_PARAM_SIZE_HINT]: body.length,
-          },
-        })
-      : await gzipCompress(body)
+    const quality = options.quality ?? 5
+    const key = `${encoding}:${quality}:${body.length}:${Bun.hash(body)}`
+    let compressed = compressedByBody.get(key)
+    if (!compressed) {
+      compressed = encoding === 'br'
+        ? await brotliCompress(body, {
+            params: {
+              [zlib.constants.BROTLI_PARAM_QUALITY]: quality,
+              // Lets brotli size its window to the input instead of assuming a
+              // large one, which is free and helps small payloads.
+              [zlib.constants.BROTLI_PARAM_SIZE_HINT]: body.length,
+            },
+          })
+        : await gzipCompress(body)
+      rememberCompressed(key, compressed)
+    }
 
     // Rare, but real for already-dense payloads. Sending the larger of the two
     // would be a strict loss.

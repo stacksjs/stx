@@ -456,8 +456,23 @@ function addScopeToRootElement(html: string, scopeId: string): { html: string, m
   return { html, mergedIntoExisting: null, stamped: false, root: null }
 }
 
-// Counter for generating unique scope IDs
+// Ids for a render that carries no scope sequence (a caller outside
+// processDirectives). Unique, and nothing more: such a render was never the
+// same bytes twice.
 let scopeIdCounter = 0
+
+/**
+ * A scoped partial's id: unique within the document, distinct between pages,
+ * and the same every time the page renders (#1945) -- the render's sequence
+ * and page key, which components draw from too (see processDirectives). The
+ * module counter it replaces made every render of a page with a scoped partial
+ * unique, so nothing keyed on the page's bytes could ever be reused.
+ */
+function includeScopeId(includeFilePath: string, context: Record<string, any>): string {
+  const name = path.basename(includeFilePath, '.stx').replace(/[^a-zA-Z0-9]/g, '_')
+  const seq = context.__stx_scope_seq as { n: number, key: string } | undefined
+  return seq ? `stx_scope_${name}_${++seq.n}_${seq.key}` : `stx_scope_${name}_${++scopeIdCounter}`
+}
 
 /**
  * Partials already warned about having signals and no root element.
@@ -1291,7 +1306,7 @@ catch (error: unknown) {
         if (isSignalScript && !isServerScript) {
           declaresSignals = true
           // Generate unique scope ID for this component
-          signalScopeId = `stx_scope_${path.basename(includeFilePath, '.stx').replace(/[^a-zA-Z0-9]/g, '_')}_${++scopeIdCounter}`
+          signalScopeId = includeScopeId(includeFilePath, context)
 
           // Transform store imports after bundling (the bundler leaves @stores
           // imports external; this rewrites them to the runtime store accessor).
@@ -1334,7 +1349,7 @@ catch (e) {
           // for this subtree. The registration MUST exist, since the
           // runtime's scope walker short-circuits on a missing entry in
           // `window.stx._scopes`.
-          signalScopeId = `stx_scope_${path.basename(includeFilePath, '.stx').replace(/[^a-zA-Z0-9]/g, '_')}_${++scopeIdCounter}`
+          signalScopeId = includeScopeId(includeFilePath, context)
 
           // Pass through transformStoreImports for parity — non-signal scripts
           // may still `import { x } from '@stores'`, which the bundler marks

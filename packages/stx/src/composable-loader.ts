@@ -27,7 +27,8 @@ import path from 'node:path'
 import { bundleClientScript, clientBundleDependencies, hasUserImports } from './client-script-bundler'
 import { loadStxConfig } from './config'
 import { getPublicEnvDefine } from './public-env'
-import { readSigned, type SignedCacheEntry, sourceSignature, writeSigned } from './source-signature'
+import { contentKey, renderMemo } from './render-memo'
+import { clearSourceSignatures, readSigned, type SignedCacheEntry, sourceSignature, writeSigned } from './source-signature'
 import { stripModuleImports } from './store-imports'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 import { stripStxRuntimeImports } from './signal-processing'
@@ -35,6 +36,12 @@ import { transformStoreImports } from './store-imports'
 import { getSharedTranspiler } from './utils'
 
 const _cachedComposableScripts = new Map<string, SignedCacheEntry<string>>()
+
+/** Each directory's composable sources and their exports, per signature of them. */
+const _scannedComposables = new Map<string, SignedCacheEntry<{ codeByFile: Map<string, string>, modules: ComposableModule[] }>>()
+
+/** The files a page reaches, by the page's bytes and the sources' signature. */
+const reachableByPage = renderMemo<Set<string>>(64)
 
 /**
  * Cache of resolved directories, including misses (stored as `null`).
@@ -178,6 +185,27 @@ function mentions(text: string, name: string): boolean {
 }
 
 /**
+ * Which of `names` a text mentions, by the same word-boundary rule as
+ * `mentions`, reading the text once.
+ *
+ * One regex per exported name over the whole rendered page was ~120ms a
+ * request on hq.training's coach calendar (~520KB of page against a few
+ * hundred composable exports), the largest single cost of serving it. A
+ * name made only of word characters is mentioned exactly when it is one of
+ * the text's maximal word runs, so a set of those runs answers every such
+ * name at once; any other name (one with a `$`) keeps the regex.
+ */
+function mentionedNames(text: string, names: Iterable<string>): Set<string> {
+  const words = new Set(text.match(/\w+/g))
+  const found = new Set<string>()
+  for (const name of names) {
+    if (/^\w+$/.test(name) ? words.has(name) : mentions(text, name))
+      found.add(name)
+  }
+  return found
+}
+
+/**
  * The subset of composable files a page can actually reach.
  *
  * Every module used to be injected into every page whole, so the cost of adding
@@ -211,10 +239,8 @@ function selectReachable(
 
   const filesMentionedIn = (text: string): string[] => {
     const found: string[] = []
-    for (const [name, file] of fileForName) {
-      if (mentions(text, name))
-        found.push(file)
-    }
+    for (const name of mentionedNames(text, fileForName.keys()))
+      found.push(fileForName.get(name)!)
     return found
   }
 
@@ -281,25 +307,43 @@ export async function getComposableScript(
 
   // Sources are read before the cache lookup because the selection is part of
   // the key: two pages reaching different subsets must not share an entry.
-  const codeByFile = new Map<string, string>()
-  const modules: ComposableModule[] = []
-  for (const file of composableFiles) {
-    try {
-      const code = await Bun.file(file).text()
-      codeByFile.set(file, code)
-      const names = transpiler.scan(code).exports.filter(name => name !== 'default')
-      if (names.length > 0)
-        modules.push({ file, names })
+  // Read and scanned once per version of the sources, not once per request:
+  // the signature above changes with any of them.
+  let scanned = readSigned(_scannedComposables, resolvedDir, signature)
+  if (!scanned) {
+    const codeByFile = new Map<string, string>()
+    const modules: ComposableModule[] = []
+    for (const file of composableFiles) {
+      try {
+        const code = await Bun.file(file).text()
+        codeByFile.set(file, code)
+        const names = transpiler.scan(code).exports.filter(name => name !== 'default')
+        if (names.length > 0)
+          modules.push({ file, names })
+      }
+      catch {
+        // Unparseable — the transpile below reports it with the file name.
+        codeByFile.set(file, '')
+      }
     }
-    catch {
-      // Unparseable — the transpile below reports it with the file name.
-      codeByFile.set(file, '')
-    }
+    scanned = writeSigned(_scannedComposables, resolvedDir, signature, { codeByFile, modules })
   }
+  const { codeByFile, modules } = scanned
 
-  const selected = pageSource === undefined
-    ? new Set(composableFiles)
-    : selectReachable(modules, codeByFile, extraSources ? [pageSource, ...extraSources] : [pageSource])
+  // The selection is a function of the page and the sources, so a page that
+  // renders the same bytes (#1945) is answered without reading it again.
+  let selected: Set<string>
+  if (pageSource === undefined) {
+    selected = new Set(composableFiles)
+  }
+  else {
+    const pageSources = extraSources ? [pageSource, ...extraSources] : [pageSource]
+    const selectionKey = contentKey(pageSources.join('\u0000'), resolvedDir, pageSources.length, signature)
+    const remembered = reachableByPage.get(selectionKey)
+    selected = remembered ?? selectReachable(modules, codeByFile, pageSources)
+    if (!remembered)
+      reachableByPage.set(selectionKey, selected)
+  }
 
   // A page that reaches none of them gets no script at all, which is the whole
   // point: the previous behaviour shipped every body to every route.
@@ -451,5 +495,8 @@ ${assignments}
  */
 export function clearComposableCache(): void {
   _cachedComposableScripts.clear()
+  clearSourceSignatures()
+  _scannedComposables.clear()
+  reachableByPage.clear()
   _cachedDirs.clear()
 }

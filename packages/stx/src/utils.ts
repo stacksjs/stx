@@ -65,6 +65,10 @@ const componentsCache = new LRUCache<string, string>(500)
 // Keep successful resolutions for the dev-server lifetime; clearDevCaches()
 // invalidates this alongside component contents on every watched source edit.
 const componentResolutionCache = new LRUCache<string, string>(1000)
+// userComponentFileExists answers and the real paths it compares by, kept and
+// cleared the same way.
+const userComponentFileCache = new LRUCache<string, boolean>(2000)
+const realDirCache = new LRUCache<string, string>(500)
 interface ComponentRenderCacheEntry {
   output: string
   dependencies: string[]
@@ -822,25 +826,44 @@ export async function userComponentFileExists(
   // recognised too.
   const ownComponentsDir = realDir(path.resolve(import.meta.dir, 'components'))
 
-  for (const dir of searchDirs) {
-    const resolvedDir = path.isAbsolute(dir) ? dir : path.resolve(resolveBase, dir)
+  // Asked for every component tag on every render: a page of a few hundred
+  // tags made thousands of stat and realpath calls per request (~40ms on
+  // hq.training's coach calendar) to learn what the last request learned.
+  // Kept like componentResolutionCache, and cleared with it on every watched
+  // edit, so a component file created under a dev server is seen.
+  const resolvedDirs = searchDirs.map(dir => path.isAbsolute(dir) ? dir : path.resolve(resolveBase, dir))
+  const key = `${variants.join('\0')}\0\0${resolvedDirs.join('\0')}`
+  const known = userComponentFileCache.get(key)
+  if (known !== undefined)
+    return known
+
+  let found = false
+  search: for (const resolvedDir of resolvedDirs) {
     if (realDir(resolvedDir) === ownComponentsDir)
       continue
     for (const variant of variants) {
-      if (await fileExists(path.join(resolvedDir, variant))) return true
+      if (await fileExists(path.join(resolvedDir, variant))) {
+        found = true
+        break search
+      }
     }
   }
-  return false
+  userComponentFileCache.set(key, found)
+  return found
 }
 
 /** The directory's real path, or the path as given when it does not exist. */
 function realDir(dir: string): string {
+  const known = realDirCache.get(dir)
+  if (known !== undefined)
+    return known
+  let real = dir
   try {
-    return fs.realpathSync(dir)
+    real = fs.realpathSync(dir)
   }
-  catch {
-    return dir
-  }
+  catch {}
+  realDirCache.set(dir, real)
+  return real
 }
 
 /**
@@ -2705,6 +2728,8 @@ export function createDetailedErrorMessage(
 export function clearComponentCache(): void {
   componentsCache.clear()
   componentResolutionCache.clear()
+  userComponentFileCache.clear()
+  realDirCache.clear()
   componentRenderCache.clear()
 }
 

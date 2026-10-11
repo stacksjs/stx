@@ -279,3 +279,29 @@ describe('i18n lazy loading', () => {
     })
   })
 })
+
+/**
+ * An app with no translations file at all asked for it again on every
+ * render, and every component and partial renders through the translate
+ * pass: hq.training's coach calendar made 21 failed imports of a
+ * translations/en.yaml that does not exist on each request. The answer for
+ * a missing file is remembered like the answer for a found one.
+ */
+describe('i18n with no translations file', () => {
+  const missing: StxOptions = { ...mockOptions, i18n: { ...mockOptions.i18n, translationsDir: 'test/fixtures/no-such-translations' } }
+
+  beforeEach(() => clearTranslationCache())
+
+  test('is remembered, so a render does not look for it again', async () => {
+    expect(await loadTranslationLazy('en', missing)).toEqual({})
+    expect(isLoaded('en')).toBe(true)
+    expect(getTranslationSync('en')).toEqual({})
+  })
+
+  test('a locale without a file remembers the default it fell back to', async () => {
+    const fallback: StxOptions = { ...mockOptions, i18n: { ...mockOptions.i18n, locale: 'xx' } }
+    const answer = await loadTranslationLazy('xx', fallback)
+    expect(isLoaded('xx')).toBe(true)
+    expect(getTranslationSync('xx')).toEqual(answer)
+  })
+})
