@@ -922,15 +922,28 @@ function routerSource(): string {
     if(key)loadedExternalScripts[key]=1;
     return key;
   }
-  // Returns a promise, or null when there is nothing to wait for — an already
-  // loaded file, or an unparseable src. Resolves rather than rejects on error:
-  // one 404 must not stop the rest of the page hydrating, matching what the
-  // head-script path already does by sending failures to execScripts too.
+  // Returns a promise of whether the file loaded, or null when there is
+  // nothing to wait for — an already loaded file, or an unparseable src.
+  // Resolves rather than rejects on error: one 404 must not stop the rest of
+  // the page hydrating; the caller decides what a failure means.
+  //
+  // A file still on its way is not a loaded one. A prefetch starts loading
+  // the page's module registry (loadModuleRegistries), and this used to count
+  // it loaded the moment it was requested, so a tap that beat it swapped the
+  // page in and ran its setup ahead of the registry it imports from: "is not
+  // registered on this page", every binding dead. Locally a file loads in a
+  // millisecond and the tap never wins; on a phone far from the server it
+  // does. The tap now waits on the same request.
+  //
+  // And a file that failed is forgotten, so a fresh copy of the page that
+  // links it again (recoverUnbound) asks for it again rather than finding it
+  // "loaded" and running without it until the next reload.
+  var pendingExternalScripts={};
   function loadExternalScript(src,base){
     var key=externalScriptKey(src,base);
     if(!key||loadedExternalScripts[key])return null;
-    loadedExternalScripts[key]=1;
-    return new Promise(function(resolve){
+    if(pendingExternalScripts[key])return pendingExternalScripts[key];
+    return pendingExternalScripts[key]=new Promise(function(resolve){
       var el=ce('script');
       el.src=key;
       // Deliberately NOT data-stx-page: both swap paths clear those on every
@@ -941,10 +954,30 @@ function routerSource(): string {
       // In document order: a fragment's composables bundle reads the module
       // registry loaded beside it, and an inserted script is async by default.
       el.async=false;
-      el.onload=function(){resolve()};
-      el.onerror=function(){log('[router] container script failed:',key);resolve()};
+      el.onload=function(){delete pendingExternalScripts[key];loadedExternalScripts[key]=1;resolve(true)};
+      el.onerror=function(){
+        log('[router] container script failed:',key);
+        delete pendingExternalScripts[key];
+        if(el.parentNode)el.parentNode.removeChild(el);
+        resolve(false);
+      };
       dhead().appendChild(el);
     });
+  }
+  // A page's module registry, stores or composables in serve mode: stx's own
+  // file, named by its content (registerServeModuleBundle). Without it the
+  // page's setup cannot run at all, unlike an app's own script, whose
+  // failure the rest of the page survives.
+  var MODULE_BUNDLE=/\\/_stx\\/modules\\.[0-9a-f]{16}\\.js(?:[?#]|$)/;
+  function isModuleBundle(src){return MODULE_BUNDLE.test(src||'')}
+  // Waits for the files a swap loads, then runs its scripts -- or, when one
+  // of them was a module bundle that did not load, recovers the page instead
+  // of running a setup that can only throw.
+  function afterExternalScripts(pending,run,url,ctx){
+    if(!pending.length){run();return}
+    var failed=false;
+    Promise.all(pending.map(function(p){return p.promise.then(function(ok){if(ok===false&&isModuleBundle(p.src))failed=true})}))
+      .then(function(){if(failed)recoverUnbound(url,ctx);else run()},run);
   }
 
   // Record scripts from the initial page load
@@ -1069,9 +1102,13 @@ function routerSource(): string {
     location.href=away;
     return true;
   }
-  function routerFetch(url,headers){
+  // fresh: past every cache, the offline worker's included (it hands a
+  // no-store request straight to the network). For recoverUnbound, whose
+  // whole point is that the kept copy is the broken one.
+  function routerFetch(url,headers,fresh){
     var init={headers:headers};
     if(navAbort)init.signal=navAbort.signal;
+    if(fresh)init.cache='no-store';
     return fetch(url,init);
   }
   function navigate(url,pushState,force){
@@ -1187,7 +1224,7 @@ else {
       // the page content. Custom app-shell containers need full documents so
       // the router does not inject a <main> fragment into the wrong element.
       var wantsFragment=shouldUseFragmentResponse();
-      return routerFetch(url,wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}).then(function(r){
+      return routerFetch(url,wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'},ctx.fresh).then(function(r){
         if(stale())return null;
         if(leaveOrigin(r))return null;
         if(!r.ok)throw httpError(r.status);
@@ -1221,7 +1258,7 @@ else {
         // Layout change? Fetch the FULL page (no X-STX-Router header) and do full document swap
         if(isFragment&&checkLayoutChange(newLayout,url,newGroup)){
           log('[router] layout change — fetching full page for document swap');
-          return routerFetch(url,{'Accept':'text/html'}).then(function(fullRes){
+          return routerFetch(url,{'Accept':'text/html'},ctx.fresh).then(function(fullRes){
             log('[router] full page fetched:',fullRes.status,'ok:',fullRes.ok);
             if(leaveOrigin(fullRes))return null;
             if(!fullRes.ok)throw httpError(fullRes.status);
@@ -1269,6 +1306,33 @@ else {
     pendingLayoutDecl=null;
     pendingCtx=ctx;
     return Promise.resolve(swap(html,cacheKey(url),pushState,hash)).then(function(){return false});
+  }
+  // ── A page whose module bundle did not load ──
+  // Serve mode links a page's registry, stores and composables as
+  // /_stx/modules.<hash>.js, answered from what the server process has
+  // rendered. Its HTML can outlive that process: the router's cache, a
+  // prefetch, the offline worker's kept copy. After a deploy (a new release
+  // directory, a new process that has never rendered the page) the hash is
+  // answered 404, and the page was swapped in with nothing bound -- its
+  // {{ }} empty, its :for lists empty, its :if buttons gone -- until a
+  // revalidation happened to replace the copy (hq.training, a coach's
+  // /coaches/athletes).
+  //
+  // So that copy is dropped and the page fetched again past every cache:
+  // the process answering renders it, which registers the bundle it links,
+  // and a newer build is caught by the skew check and loaded whole (#1772).
+  // Once only. A fresh copy whose bundle fails too is loaded as a document,
+  // where the browser and the server settle it without the router.
+  //
+  // Not a page whose own setup throws: that throws again on a fresh copy, so
+  // retrying would only add a round trip and a reload to every visit.
+  function recoverUnbound(url,ctx){
+    if(ctx&&ctx.id&&ctx.id!==navSeq)return;
+    evictCache(cacheKey(url));
+    if(ctx&&ctx.fresh){log('[router] module bundle failed again — full navigation to:',url);location.href=url;return}
+    log('[router] module bundle failed — fetching',url,'again past the caches');
+    navCtxNext={direction:'replace',fresh:true};
+    navigate(url,'replace',true);
   }
   function retryShown(){var root=activeRoot();var el=root&&root.querySelector?root.querySelector('[data-stx-retry]'):null;return el?el.getAttribute('data-stx-retry'):''}
   document.addEventListener('click',function(e){
@@ -1704,10 +1768,9 @@ else {
         var fragPending=[];
         fragExternalScripts.forEach(function(src){
           var pending=loadExternalScript(src,url);
-          if(pending)fragPending.push(pending);
+          if(pending)fragPending.push({src:src,promise:pending});
         });
-        if(fragPending.length)Promise.all(fragPending).then(runFragScripts).catch(runFragScripts);
-        else runFragScripts();
+        afterExternalScripts(fragPending,runFragScripts,url+(hash||''),ctx);
       }
       // With screens retained, the outgoing page is kept (or disposed once it
       // has animated away) by screenBegin rather than cleaned up here.
@@ -1972,13 +2035,15 @@ else {
         var src=new URL(s.getAttribute('src'),docBase).href;
         if(loadedSrcs[src])return;
         loadedSrcs[src]=1;
-        extPromises.push(new Promise(function(resolve,reject){
+        extPromises.push({src:src,promise:new Promise(function(resolve){
           var ns=ce('script');
           ns.src=src;
-          ns.onload=resolve;
-          ns.onerror=reject;
+          ns.onload=function(){resolve(true)};
+          // Settled either way, as before (a rejection ran the scripts at
+          // once); afterExternalScripts tells a failed module bundle apart.
+          ns.onerror=function(){if(ns.parentNode)ns.parentNode.removeChild(ns);resolve(false)};
           dhead().appendChild(ns);
-        }));
+        })});
       });
 
       // Before the inline scripts, and through the same barrier: an inline
@@ -1986,7 +2051,7 @@ else {
       // so running it first would fail exactly the way this bug did.
       routedExternalScripts.forEach(function(src){
         var pending=loadExternalScript(src,docBase);
-        if(pending)extPromises.push(pending);
+        if(pending)extPromises.push({src:src,promise:pending});
       });
 
       // ── Script re-execution ──
@@ -2161,12 +2226,7 @@ else {
         window.dispatchEvent(new Event('stx:load'));
       }
 
-      if(extPromises.length>0){
-        Promise.all(extPromises).then(execScripts).catch(execScripts);
-      }
-else {
-        execScripts();
-      }
+      afterExternalScripts(extPromises,execScripts,url+(hash||''),ctx);
     }
 
     function startSwap(){
