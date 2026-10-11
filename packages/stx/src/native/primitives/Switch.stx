@@ -2,4 +2,4 @@
 <script server>
 const classes = $props.class ?? $props.className ?? ''
 </script>
-<div data-native="Switch" class="{{ classes }}" role="switch" />
+<div data-native="Switch" class="{{ classes }}" role="switch"></div>

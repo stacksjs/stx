@@ -182,6 +182,16 @@ const label = $props.label ?? ''
 })
 
 describe('the primitives themselves', () => {
+  it('keeps leaf div primitives beside following controls', async () => {
+    const source = '<View><Switch testID="switch" /><Modal testID="modal" /><Slider testID="slider" /><ActivityIndicator testID="spinner" /><TextInput testID="after" /></View>'
+    const { document } = await compileScreenSource(source, screen('LeafDivPrimitives.stx', source))
+    const children = document.root.children.filter((child): child is STXNode => typeof child !== 'string')
+
+    expect(children.map(child => child.type)).toEqual(['Switch', 'Modal', 'Slider', 'ActivityIndicator', 'TextInput'])
+    expect(children.map(child => child.props.testID)).toEqual(['switch', 'modal', 'slider', 'spinner', 'after'])
+    expect(children.every(child => child.children.length === 0)).toBe(true)
+  })
+
   it('keeps native icons as leaf nodes beside text, including dynamic labels', async () => {
     const { document } = await compileScreenSource('<View><Icon name="play" /><Text :text="label">Start</Text><Icon name="moon" /><Text>Rest</Text></View>', screen('AdjacentIcons.stx', ''))
     expect(types(document.root)).toEqual(['View', 'Icon', 'Text', 'Icon', 'Text'])
