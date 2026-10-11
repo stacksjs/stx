@@ -286,6 +286,36 @@ describe('listeners and scope, without the DOM', () => {
     expect(ops()[0]).toMatchObject({ patch: { events: { onPress: expect.any(String) } } })
   })
 
+  it('maps native-specific stx events to bridge event names', () => {
+    const { host, node, ops } = harness()
+    const cases = [
+      ['press-in', 'onPressIn'],
+      ['press-out', 'onPressOut'],
+      ['layout', 'onLayout'],
+      ['end-reached', 'onEndReached'],
+      ['show', 'onShow'],
+      ['dismiss', 'onDismiss'],
+      ['request-close', 'onRequestClose'],
+      ['sliding-complete', 'onSlidingComplete'],
+      ['load-start', 'onLoadStart'],
+      ['load', 'onLoad'],
+      ['load-end', 'onLoadEnd'],
+      ['error', 'onError'],
+      ['end-editing', 'onEndEditing'],
+      ['submit-editing', 'onSubmitEditing'],
+      ['value-change', 'onValueChange'],
+    ] as const
+
+    for (const [event] of cases)
+      host.listen(node(event), event, () => {})
+    host.flush()
+
+    for (const [event, native] of cases) {
+      const operation = ops().find(candidate => candidate.op === 'updateNode' && candidate.id === event)
+      expect(operation).toMatchObject({ patch: { events: { [native]: expect.any(String) } } })
+    }
+  })
+
   it('finds a scope by ownership rather than by selector', () => {
     const { host, node } = harness()
     const scope = node('s1')

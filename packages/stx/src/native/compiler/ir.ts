@@ -258,6 +258,9 @@ export type STXEventType =
   | 'onPressIn'
   | 'onPressOut'
   | 'onLongPress'
+  | 'onShow'
+  | 'onDismiss'
+  | 'onRequestClose'
   // Gesture events
   | 'onSwipe'
   | 'onPan'
@@ -268,6 +271,12 @@ export type STXEventType =
   | 'onFocus'
   | 'onBlur'
   | 'onSubmitEditing'
+  | 'onEndEditing'
+  // Image events
+  | 'onLoadStart'
+  | 'onLoad'
+  | 'onLoadEnd'
+  | 'onError'
   // Scroll events
   | 'onScroll'
   | 'onScrollBeginDrag'
@@ -279,6 +288,9 @@ export type STXEventType =
   // List events
   | 'onEndReached'
   | 'onRefresh'
+  // Slider events
+  | 'onValueChange'
+  | 'onSlidingComplete'
 
 export interface STXEvent {
   type: STXEventType

@@ -134,6 +134,32 @@ describe('events', () => {
     expect(root.events).toEqual({ onPress: 'save()' })
   })
 
+  it('maps ordinary stx event names to the full native control vocabulary', async () => {
+    const cases = [
+      ['press-in', 'onPressIn'],
+      ['press-out', 'onPressOut'],
+      ['layout', 'onLayout'],
+      ['end-reached', 'onEndReached'],
+      ['show', 'onShow'],
+      ['dismiss', 'onDismiss'],
+      ['request-close', 'onRequestClose'],
+      ['sliding-complete', 'onSlidingComplete'],
+      ['load-start', 'onLoadStart'],
+      ['load', 'onLoad'],
+      ['load-end', 'onLoadEnd'],
+      ['error', 'onError'],
+      ['end-editing', 'onEndEditing'],
+      ['submit-editing', 'onSubmitEditing'],
+      ['value-change', 'onValueChange'],
+    ] as const
+
+    for (const [event, native] of cases) {
+      const { root, diagnostics } = await translateHtmlToIR(`<div @${event}="handle($event)"></div>`)
+      expect(root.events).toEqual({ [native]: 'handle($event)' })
+      expect(diagnostics).toEqual([])
+    }
+  })
+
   it('restores case-sensitive native host prop names after HTML parsing', async () => {
     const { root } = await translateHtmlToIR('<div data-native="ScrollView" testID="feed" keyboardDismissMode="on-drag" contentContainerStyle="{}"></div>')
     expect(root.props).toMatchObject({
