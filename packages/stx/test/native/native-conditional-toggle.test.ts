@@ -290,6 +290,35 @@ globalThis.__toggle = () => count.set(count() + 1)
     expect(native.text()).toEqual(['Count 2'])
   })
 
+  it('binds a conditional chip in a nested row inside a shown branch', async () => {
+    // The branch's own deferred pass used to reach the rows first and bind the
+    // chip's children without the row's item: every chip came out empty.
+    const { native, settle, scope } = await mountBundle(`<script client>
+const byDay = state({ mon: [{ id: 1, label: '95% of plan' }] })
+const ready = state(true)
+globalThis.__load = () => byDay.set({ mon: [{ id: 1, label: '95% of plan' }, { id: 2, label: 'Planned' }] })
+function cards(day) { return byDay()[day] || [] }
+function chip(card) { return card.label ? 'bg-emerald-50' : '' }
+</script>
+<View>
+  <View :if="ready()">
+    <View :for="day in ['mon']" :key="day">
+      <View :for="card in cards(day)" :key="card.id">
+        <View class="flex-row">
+          <View :if="card.label" class="px-2" :class="chip(card)"><Text :text="card.label" /></View>
+        </View>
+      </View>
+    </View>
+  </View>
+</View>`)
+    expect(native.errors).toEqual([])
+    expect(native.text()).toEqual(['95% of plan'])
+    ;(scope as any).__load()
+    await settle()
+    expect(native.errors).toEqual([])
+    expect(native.text()).toEqual(['95% of plan', 'Planned'])
+  })
+
   it('keeps a row\'s last child inside its card past a self-closing nested :for', async () => {
     const { native, settle, scope } = await mountBundle(`<script client>
 const byDay = state({})

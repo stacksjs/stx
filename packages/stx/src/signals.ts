@@ -3107,6 +3107,7 @@ else if (part) {
     }
 
     if (el.nodeType !== Node.ELEMENT_NODE) return;
+    if (isForeignToLoopRow(el, scope)) return;
 
     // <stx-link> handling removed — StxLink builtin now produces <a> directly
     // with data-stx-link attribute. The router handles SPA click interception.
@@ -4320,6 +4321,20 @@ catch (e2) {
     });
   }
 
+  // A loop row binds in its own iteration scope, and only its loop puts it
+  // there. A walk from further out (an enclosing :if hydrating the branch it
+  // shows) carries no item, so it used to bind whatever in the row was still
+  // unbound -- a conditional's children, waiting for their own deferred pass
+  // -- against a scope without the row: on a native screen every card's
+  // compliance chip came out empty. Such a walk now leaves the row alone.
+  function markLoopRow(row, itemName, itemSignal) {
+    row.__stx_loop_row = { name: itemName, signal: itemSignal };
+  }
+  function isForeignToLoopRow(el, scope) {
+    var row = el.__stx_loop_row;
+    return !!row && (!scope || scope[row.name] !== row.signal);
+  }
+
   function bindFor(el, passedScope = componentScope, attrName = '@for') {
     if (el.__stx_for_bound) return;
     el.__stx_for_bound = true;
@@ -4609,6 +4624,7 @@ catch (e) {
             // Structural directives need a live parent. Keep the iteration
             // scope on the clone until the keyed diff inserts it, then bind.
             clone.__stx_for_scope = itemScope;
+            markLoopRow(clone, itemName, itemSignal);
           }
           elements.push(clone);
         });
@@ -4616,6 +4632,7 @@ catch (e) {
       } else {
         const clone = stxHost.clone(templateContent);
         clone.__stx_for_scope = itemScope;
+        markLoopRow(clone, itemName, itemSignal);
         elements.push(clone);
         componentSetupTemplates.forEach(function(setupTemplate) {
           elements.push(stxHost.clone(setupTemplate));
