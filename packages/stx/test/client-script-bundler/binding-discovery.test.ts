@@ -52,6 +52,27 @@ export { format }
     expect(scope).not.toHaveProperty('TypeOnly')
   })
 
+  it('does not read the keyword after a side-effect import as a binding', async () => {
+    // Literal-stripped, `import './catalog'` is `import` and blanks; a scan
+    // that let `\s+` cross the line took the next line's `import` for a default
+    // binding, exported it, and the bundle failed to parse.
+    await Bun.write(path.join(projectRoot, 'catalog.ts'), '(globalThis as any).__catalogLoaded = true\n')
+    const output = await bundleClientScript(
+      [
+        `import './catalog'`,
+        `import { LABEL } from './composable'`,
+        `const heading = LABEL`,
+      ].join('\n'),
+      path.join(projectRoot, 'SideEffect.stx'),
+      { projectRoot, externalizeUserModules: false },
+    )
+    expect(output).not.toMatch(/\bvar import\b/)
+    const scope: Record<string, any> = {}
+    vm.runInNewContext(output, scope)
+    expect(scope.__catalogLoaded).toBe(true)
+    expect(scope.heading).toBe('thing')
+  })
+
   it('finds declarations that are indented, as every template script is', async () => {
     // Not every call path dedents the script before bundling, so anchoring the
     // scan at column 0 lost the whole page.

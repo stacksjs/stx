@@ -1038,7 +1038,13 @@ async function buildBundle(
   // Imports are also local template bindings. Without exporting them, a
   // helper used only in :text is tree-shaken away, leaving that label blank.
   // Type-only imports do not create runtime bindings.
-  const importRegex = /^[ \t]*import\s+(?!type\b)(?:(\w+)\s*(?:,\s*)?)?(?:\*\s+as\s+(\w+)|\{([^}]+)\})?\s+from\b/gm
+  //
+  // `[ \t]+` after `import`, not `\s+`: the scan runs over literal-stripped
+  // text, where a side-effect import (`import './catalog'`) is `import`
+  // followed by blanks. With `\s+` the pattern ran on to the next line and
+  // read its `import` keyword as a default binding, so `import` landed in the
+  // generated export list and the whole bundle failed to parse.
+  const importRegex = /^[ \t]*import[ \t]+(?!type\b)(?:(\w+)\s*(?:,\s*)?)?(?:\*\s+as\s+(\w+)|\{([^}]+)\})?\s+from\b/gm
   while ((dm = importRegex.exec(strippedForScan)) !== null) {
     if (!isTopLevel(dm.index)) continue
     const source = /^\s*['"]([^'"]+)['"]/.exec(code.slice(dm.index + dm[0].length))?.[1]
