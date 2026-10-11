@@ -1,5 +1,15 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.452...v0.2.453)
+
+## 🔧 Chores
+
+- release v0.2.453 ([911467e](https://github.com/stacksjs/stx/commit/911467e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.451...v0.2.452)
 
 ## 🐛 Bug Fixes
