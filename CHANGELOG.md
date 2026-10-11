@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.454...v0.2.455)
+
+## 🐛 Bug Fixes
+
+- **offline**: never lead with a kept page whose bundles are not kept ([48f2850](https://github.com/stacksjs/stx/commit/48f2850)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **render**: make a repeated render of an unchanged page cheap ([40c0fa7](https://github.com/stacksjs/stx/commit/40c0fa7)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1945](https://github.com/stacksjs/stx/issues/1945))
+
+## 🔧 Chores
+
+- release v0.2.455 ([da29fa6](https://github.com/stacksjs/stx/commit/da29fa6)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.453...v0.2.454)
 
 ## 🐛 Bug Fixes
