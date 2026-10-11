@@ -72,6 +72,7 @@ export function prepareSharedNativeScreen(
     unmount() {
       dispose?.()
       dispose = null
+      protocol.dispose('screen-closed')
     },
   }
 }

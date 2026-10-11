@@ -504,6 +504,23 @@ catch (error) {
     return unsubscribe
   }
 
+  /** Release a screen's subscriptions and cancel every capability it still owns. */
+  dispose(reason: ApiCancelPayload['reason'] = 'screen-closed'): void {
+    for (const [requestId, pending] of this.pendingRequests) {
+      if (pending.timeout !== null && typeof globalThis.clearTimeout === 'function')
+        globalThis.clearTimeout(pending.timeout)
+      this.postToNative(this.createMessage<ApiCancelPayload>('API_CANCEL', {
+        version: 1,
+        requestId,
+        reason,
+      }))
+      pending.reject(new NativeCapabilityError('CANCELLED', `Request ${requestId} was cancelled because the native screen closed`))
+    }
+    this.pendingRequests.clear()
+    this.handlers.clear()
+    this.nativeBridge = null
+  }
+
   // ========================================================================
   // Convenience Methods
   // ========================================================================

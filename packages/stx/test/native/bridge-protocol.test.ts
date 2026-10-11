@@ -63,4 +63,26 @@ describe('typed native capability bridge', () => {
       payload: { version: 1, requestId: native.sent[0].id, reason: 'timeout' },
     })
   })
+
+  it('cancels every pending capability when its native screen closes', async () => {
+    const native = host()
+    const bridge = new STXBridge()
+    bridge.initialize(native.bridge)
+    const storage = bridge.callNativeAPI('Storage', 'get', 'draft')
+    const network = bridge.callNativeAPI('Network', 'fetch', { url: 'https://example.test', method: 'GET' })
+    const settled = Promise.allSettled([storage, network])
+    const requestIds = native.sent.filter(message => message.type === 'API_REQUEST').map(message => message.id)
+
+    bridge.dispose('screen-closed')
+
+    const results = await settled
+    expect(results).toEqual([
+      { status: 'rejected', reason: expect.objectContaining({ code: 'CANCELLED' }) },
+      { status: 'rejected', reason: expect.objectContaining({ code: 'CANCELLED' }) },
+    ])
+    expect(native.sent.filter(message => message.type === 'API_CANCEL').map(message => message.payload)).toEqual([
+      { version: 1, requestId: requestIds[0], reason: 'screen-closed' },
+      { version: 1, requestId: requestIds[1], reason: 'screen-closed' },
+    ])
+  })
 })
