@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.456...v0.2.457)
+
+## 🐛 Bug Fixes
+
+- **router**: announce bound headings, name one transition element ([f915c11](https://github.com/stacksjs/stx/commit/f915c11)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: keep a routed page's names over its components' locals ([66a57b8](https://github.com/stacksjs/stx/commit/66a57b8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.457 ([c39f20d](https://github.com/stacksjs/stx/commit/c39f20d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.455...v0.2.456)
 
 ## 🐛 Bug Fixes
