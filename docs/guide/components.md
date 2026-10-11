@@ -73,16 +73,21 @@ export const tone = $props.tone || 'neutral'
 <span class="badge badge-{{ tone }}">{{ label }}</span>
 ```
 
-stx keys the cached fragment by component file, props, slot content, build
-mode, and event-processing mode. Nested component dependencies are retained,
+stx keys the cached fragment by component file, props, resolved slot content,
+the serializable caller values a projected slot can read, build mode, and
+event-processing mode. This keeps successive request contexts isolated when a
+slot contains expressions, conditionals, loops, includes, or nested
+components. If the projected caller context contains a function, symbol, or
+cycle, stx safely skips fragment caching for that render instead of guessing
+whether the output is reusable. Nested component dependencies are retained,
 and the development watcher clears the cache whenever component source
 changes.
 
 Do not enable this for components that read request data, authentication,
 cookies, the database, the clock, random values, mutable globals, or any other
 input that is not passed through props or slots. Components with client scripts
-are never memoized by this mechanism because each instance needs its own
-reactive scope.
+may opt in; stx replays their factory and scope bookkeeping on a cache hit so
+each instance still receives its own reactive scope.
 
 ### `@component` Directive
 

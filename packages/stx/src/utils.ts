@@ -152,15 +152,27 @@ function serializeComponentRenderInput(value: unknown): string | null {
         throw new TypeError('Circular component input')
 
       seen.add(input as object)
-      if (input instanceof Date)
-        return { __stxType: 'date', value: input.toISOString() }
-      if (Array.isArray(input))
-        return input.map(normalize)
+      try {
+        if (input instanceof Date)
+          return { __stxType: 'date', value: input.toISOString() }
+        if (Array.isArray(input))
+          return input.map(normalize)
 
-      const normalized: Record<string, unknown> = {}
-      for (const key of Object.keys(input as Record<string, unknown>).sort())
-        normalized[key] = normalize((input as Record<string, unknown>)[key])
-      return normalized
+        const prototype = Object.getPrototypeOf(input)
+        if (prototype !== Object.prototype && prototype !== null)
+          throw new TypeError('Non-plain component input')
+
+        const normalized: Record<string, unknown> = {}
+        for (const key of Object.keys(input as Record<string, unknown>).sort())
+          normalized[key] = normalize((input as Record<string, unknown>)[key])
+        return normalized
+      }
+      finally {
+        // Track the active recursion path, not every object ever visited.
+        // `renderView` deliberately exposes the same prop both under `props`
+        // and at top level; that is shared data, not a circular structure.
+        seen.delete(input as object)
+      }
     }
 
     return JSON.stringify(normalize(value))
@@ -168,6 +180,25 @@ function serializeComponentRenderInput(value: unknown): string | null {
   catch {
     return null
   }
+}
+
+/**
+ * Caller values a projected slot can observe while it is rendered.
+ *
+ * The component cache used to key only the literal slot source. That made
+ * `{{ account.name }}` identical for every request even though the slot is
+ * evaluated in the caller's scope before it reaches the component. Keep the
+ * public caller scope in the key whenever a slot exists. A function, symbol or
+ * cycle makes serialization return null and safely disables caching for that
+ * render rather than guessing which result is reusable.
+ */
+function componentSlotCacheContext(context: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(context)) {
+    if (!key.startsWith('__') || key === '__stxServeContext')
+      result[key] = value
+  }
+  return result
 }
 
 /** Escape a string for safe use in an HTML attribute value */
@@ -1597,11 +1628,11 @@ export async function renderComponentWithSlot(
     let preservedExpressionBaseline: Set<string> | null = null
 
     // `<script server cache>` is an author's promise that the fragment is a pure
-    // function of props and slots, so the caller's scope need not be keyed. Any
-    // other component may still be memoised, but only by keying everything it
-    // could read -- `filteredParentContext` copies every non-internal caller
-    // binding in, so a component can read anything the page declared, and a key
-    // built from props alone would serve one page's render to another's.
+    // function of props and slots. A slot is caller-authored, though, and its
+    // expressions, conditionals, loops and includes read the caller's scope.
+    // Key that scope whenever content was projected; if it cannot be serialized,
+    // the cache is skipped. This is deliberately conservative: serving a stale
+    // account panel is never an acceptable price for a fragment-cache hit.
     applyComponentRenderCacheBudget(options)
     // A 0 budget is a host saying it would rather spend the time than the
     // memory. The budget alone would already deliver that -- every value is
@@ -1612,7 +1643,13 @@ export async function renderComponentWithSlot(
     if (cacheableServerComponent && appliedComponentRenderCacheBytes > 0) {
       const serializedInput = serializeComponentRenderInput({
         props,
-        slot: slotContent,
+        // The expanded slot catches caller expressions and includes that have
+        // already resolved; its context catches directives still waiting for
+        // the component's nested pipeline (#2055).
+        slot: callerSlotContent,
+        slotContext: slotContent.trim()
+          ? componentSlotCacheContext(filteredParentContext)
+          : undefined,
         buildMode: options.buildMode ?? '',
         skipEventDirectives: options.skipEventDirectives === true,
         // One shared source can resolve different named children in each app.
