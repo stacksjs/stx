@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.464...v0.2.465)
+
+## 🐛 Bug Fixes
+
+- **composables**: publish only a bundled composable's own exports ([eb25f3d](https://github.com/stacksjs/stx/commit/eb25f3d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: reconnect a re-shown branch's whole subtree ([110ca0d](https://github.com/stacksjs/stx/commit/110ca0d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.465 ([22b2c4a](https://github.com/stacksjs/stx/commit/22b2c4a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.463...v0.2.464)
 
 ## 🐛 Bug Fixes
