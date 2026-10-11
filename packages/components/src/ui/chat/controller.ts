@@ -88,7 +88,7 @@ export function createChat(options: ChatOptions): ChatController {
     return version
   }
   async function json(path: string, init?: RequestInit) {
-    const response = await options.request(`${endpoint}${path}`, init)
+    const response = await options.request(`${endpoint}${path}`, { ...init, cache: 'no-store' })
     const body = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(body.error || 'Could not load messages. Try again.')
     return body

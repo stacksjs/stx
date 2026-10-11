@@ -14,7 +14,8 @@ describe('native chat components and controller', () => {
     const chat = createChat({
       selfId: () => 1,
       scopeKey: () => { if (!mounted) throw new Error('Auth store not registered yet'); return 'one' },
-      request: async (url) => {
+      request: async (url, init) => {
+        expect(init?.cache).toBe('no-store')
         if (url === '/messages') return Response.json({ contacts: allowed ? [contact] : [], conversations: [], max_length: 4000 })
         if (url.endsWith('/conversations')) return Response.json({ id: 'thread' })
         if (url.endsWith('/read')) return Response.json({ read: true })

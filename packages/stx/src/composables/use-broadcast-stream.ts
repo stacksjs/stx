@@ -19,7 +19,7 @@ export function useBroadcastStream(options: BroadcastStreamClientOptions): { clo
     if (closed) return
     abort = new AbortController()
     try {
-      const response = await options.request(options.endpoint, { signal: abort.signal, headers: { Accept: 'text/event-stream' } })
+      const response = await options.request(options.endpoint, { signal: abort.signal, cache: 'no-store', headers: { Accept: 'text/event-stream' } })
       if (!response.ok || !response.body || !response.headers.get('content-type')?.includes('text/event-stream')) throw new Error('Broadcast stream unavailable')
       if (closed) { await response.body.cancel(); return }
       const reader = response.body.getReader()

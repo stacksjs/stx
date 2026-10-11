@@ -113,6 +113,7 @@ describe('getFrameworkComposableScript', () => {
       request: async (url, init) => {
         expect(url).toBe('/broadcasts')
         expect(init?.headers).toEqual({ Accept: 'text/event-stream' })
+        expect(init?.cache).toBe('no-store')
         signal = init?.signal as AbortSignal
         return new Response('data: {"channel":"private-chat","event":"message","data":{"id":1}}\n\n', { headers: { 'content-type': 'text/event-stream' } })
       },
