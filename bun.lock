@@ -1663,7 +1663,7 @@
     },
     "packages/stx": {
       "name": "@stacksjs/stx",
-      "version": "0.2.447",
+      "version": "0.2.448",
       "bin": {
         "stx": "./dist/cli.js",
       },
