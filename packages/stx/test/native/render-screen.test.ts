@@ -183,12 +183,12 @@ const label = $props.label ?? ''
 
 describe('the primitives themselves', () => {
   it('keeps leaf div primitives beside following controls', async () => {
-    const source = '<View><Switch testID="switch" /><Modal testID="modal" /><Slider testID="slider" /><ActivityIndicator testID="spinner" /><TextInput testID="after" /></View>'
+    const source = '<View><Switch testID="switch" /><Modal testID="modal" /><Slider testID="slider" /><ActivityIndicator testID="spinner" /><DatePicker testID="date" /><RefreshControl testID="refresh" /><StatusBar testID="status" /><TextInput testID="after" /></View>'
     const { document } = await compileScreenSource(source, screen('LeafDivPrimitives.stx', source))
     const children = document.root.children.filter((child): child is STXNode => typeof child !== 'string')
 
-    expect(children.map(child => child.type)).toEqual(['Switch', 'Modal', 'Slider', 'ActivityIndicator', 'TextInput'])
-    expect(children.map(child => child.props.testID)).toEqual(['switch', 'modal', 'slider', 'spinner', 'after'])
+    expect(children.map(child => child.type)).toEqual(['Switch', 'Modal', 'Slider', 'ActivityIndicator', 'DatePicker', 'RefreshControl', 'StatusBar', 'TextInput'])
+    expect(children.map(child => child.props.testID)).toEqual(['switch', 'modal', 'slider', 'spinner', 'date', 'refresh', 'status', 'after'])
     expect(children.every(child => child.children.length === 0)).toBe(true)
   })
 
