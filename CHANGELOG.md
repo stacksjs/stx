@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.458...v0.2.459)
+
+## 🐛 Bug Fixes
+
+- **signals**: don't flag components inside unbound :for/:if sources as stranded ([07cc007](https://github.com/stacksjs/stx/commit/07cc007)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.459 ([cc87cf2](https://github.com/stacksjs/stx/commit/cc87cf2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.457...v0.2.458)
 
 ## 🐛 Bug Fixes
