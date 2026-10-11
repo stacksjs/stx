@@ -80,6 +80,14 @@ export interface OfflineAppConfig {
   /** Where a page that was never cached goes offline (one of `pages`). Default: the first of `pages`. */
   fallback?: string
   /**
+   * The paths the fallback stands in for (a prefix). Default: the fallback's
+   * own section, its first path segment, so a `/m` fallback answers only for
+   * `/m/...`. Outside it a page that was never kept fails as it would without
+   * the worker. A phone app's screen is no answer for a page of the website
+   * beside it, and a dev server restarting looks offline for a moment.
+   */
+  fallbackScope?: string
+  /**
    * Dynamic screens whose page is the same for every value, drawn on the
    * device from the API: `/m/workout/:id` or `/m/workout/[id]`. One that was
    * never opened is answered offline with the route's kept page, its route
@@ -270,6 +278,19 @@ function registerScriptSource(): string {
   }
 }
 
+/**
+ * The section a fallback screen stands in for: `scope` when given, else the
+ * fallback's first path segment (`/m/today` → `/m`, `/` → `/`).
+ */
+export function offlineFallbackScope(fallback: string | null, scope?: string): string | null {
+  if (typeof scope === 'string' && scope.startsWith('/'))
+    return scope === '/' ? '/' : scope.replace(/\/+$/, '')
+  if (!fallback || !fallback.startsWith('/'))
+    return null
+  const first = fallback.split(/[?#]/)[0]!.split('/').filter(Boolean)[0]
+  return first ? `/${first}` : '/'
+}
+
 /** The tag every page carries so the worker is installed. */
 export const OFFLINE_REGISTER_SCRIPT = `<script data-stx-offline>${registerScriptSource()}</script>`
 
@@ -284,6 +305,7 @@ export function generateOfflineWorker(config: OfflineAppConfig, buildId: string)
     networkFirst: (config.networkFirst || []).filter(path => typeof path === 'string' && path.startsWith('/')),
     updateOnColdStart: config.updateOnColdStart === true,
     fallback: config.fallback || (config.pages && config.pages[0]) || null,
+    fallbackScope: offlineFallbackScope(config.fallback || (config.pages && config.pages[0]) || null, config.fallbackScope),
     routes: (config.routes || []).map(offlineRoute).filter(Boolean),
     exclude: ['/_stx/hmr', OFFLINE_WORKER_PATH, ...(config.exclude || [])],
     mediaMax: Math.max(10 * 1024 * 1024, Number(config.mediaMaxBytes) || 600 * 1024 * 1024),
@@ -709,6 +731,13 @@ self.addEventListener('message', function (event) {
   }
 });
 
+// Whether the fallback screen may stand in for this path (S.fallbackScope).
+function inFallbackScope(pathname) {
+  var scope = S.fallbackScope;
+  if (!scope || scope === '/') return true;
+  return pathname === scope || pathname.indexOf(scope + '/') === 0;
+}
+
 // The fallback screen stands in for one this device has not kept whole. It
 // says so, and the router then asks for the screen that was wanted as a
 // fragment: one reached inside the app was kept that way.
@@ -797,7 +826,7 @@ function pageResponse(request, event) {
           return route.then(function (kept) {
             if (kept) return withParams(kept, dynamic.params);
             if (!offline) return null;
-            if (!S.fallback || fragment) return Response.error();
+            if (!S.fallback || fragment || !inFallbackScope(new URL(request.url).pathname)) return Response.error();
             return cache.match(variantUrl(S.fallback, false)).then(function (fallback) { return fallback ? markFallback(fallback) : Response.error(); });
           });
         };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { generateOfflineWorker, OFFLINE_REGISTER_SCRIPT, offlineRoute } from '../../src/offline/app-service-worker'
+import { generateOfflineWorker, OFFLINE_REGISTER_SCRIPT, offlineFallbackScope, offlineRoute } from '../../src/offline/app-service-worker'
 import { processDirectives } from '../../src/process'
 
 describe('the offline worker', () => {
@@ -27,6 +27,7 @@ describe('the offline worker', () => {
     expect(settings.timeout).toBe(2000)
     expect(generateOfflineWorker({ enabled: true }, 'b')).toContain('"timeout":1500')
     expect(settings.fallback).toBe('/m')
+    expect(settings.fallbackScope).toBe('/m')
     expect(settings.exclude).toContain('/_stx/hmr')
   })
 
@@ -235,6 +236,34 @@ describe('a screen not kept whole', () => {
     expect(page!.status).toBe(200)
     expect(html).toContain('<head><meta name="stx-offline-fallback" content="1"><title>Today</title>')
     expect(html).toContain('<body>Today</body>')
+  })
+
+  it('stands in only within its own section', async () => {
+    // A phone app's first screen is no answer for a page of the website
+    // beside it: HQ's coach calendar came back as the phone app's Today
+    // whenever the network failed, a dev server restart included.
+    const kept = () => new Map([
+      ['http://app.test/m', new Response('<html><head></head><body>Today</body></html>', { status: 200 })],
+    ])
+    const sw = runWorker({ enabled: true, pages: ['/m'] }, () => null)
+    sw.stores.set('stx-shell-b1', kept())
+    const outside = await sw.request('http://app.test/coaches/calendar', { Accept: 'text/html' })
+    expect(outside!.type).toBe('error')
+    expect(await (await sw.request('http://app.test/mobile', { Accept: 'text/html' }))!.type).toBe('error')
+    expect(await (await sw.request('http://app.test/m/anything', { Accept: 'text/html' }))!.text()).toContain('stx-offline-fallback')
+
+    const wide = runWorker({ enabled: true, pages: ['/m'], fallbackScope: '/' }, () => null)
+    wide.stores.set('stx-shell-b1', kept())
+    expect(await (await wide.request('http://app.test/coaches/calendar', { Accept: 'text/html' }))!.text()).toContain('stx-offline-fallback')
+  })
+
+  it('takes its section from the fallback unless one is given', () => {
+    expect(offlineFallbackScope('/m')).toBe('/m')
+    expect(offlineFallbackScope('/m/today?x=1')).toBe('/m')
+    expect(offlineFallbackScope('/')).toBe('/')
+    expect(offlineFallbackScope(null)).toBeNull()
+    expect(offlineFallbackScope('/m', '/app/')).toBe('/app')
+    expect(offlineFallbackScope('/m', '/')).toBe('/')
   })
 
   it('leaves a screen it kept unmarked', async () => {
