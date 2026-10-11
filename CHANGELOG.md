@@ -1,5 +1,26 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.448...v0.2.449)
+
+## 🐛 Bug Fixes
+
+- **router**: recover a page whose module bundle did not load ([de9d75e](https://github.com/stacksjs/stx/commit/de9d75e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: retain grid track styles (#1992) ([ea14329](https://github.com/stacksjs/stx/commit/ea14329)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1992](https://github.com/stacksjs/stx/issues/1992), [#1992](https://github.com/stacksjs/stx/issues/1992))
+- **native**: retain false primitive props (#1992) ([0fce781](https://github.com/stacksjs/stx/commit/0fce781)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1992](https://github.com/stacksjs/stx/issues/1992), [#1992](https://github.com/stacksjs/stx/issues/1992))
+- **native**: preserve modal child content (#1992) ([0483ccf](https://github.com/stacksjs/stx/commit/0483ccf)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1992](https://github.com/stacksjs/stx/issues/1992), [#1992](https://github.com/stacksjs/stx/issues/1992))
+- **native**: map ordinary stx control events (#1992) ([604a038](https://github.com/stacksjs/stx/commit/604a038)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1992](https://github.com/stacksjs/stx/issues/1992), [#1992](https://github.com/stacksjs/stx/issues/1992))
+- **native**: close remaining div primitive leaves (#1992) ([04d3ad2](https://github.com/stacksjs/stx/commit/04d3ad2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1992](https://github.com/stacksjs/stx/issues/1992), [#1992](https://github.com/stacksjs/stx/issues/1992))
+- **native**: keep div primitives as leaf nodes (#1992) ([06eb107](https://github.com/stacksjs/stx/commit/06eb107)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#1992](https://github.com/stacksjs/stx/issues/1992), [#1992](https://github.com/stacksjs/stx/issues/1992))
+
+## 🔧 Chores
+
+- release v0.2.449 ([8f97f46](https://github.com/stacksjs/stx/commit/8f97f46)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.444...v0.2.445)
 
 ## 🐛 Bug Fixes
