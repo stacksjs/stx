@@ -19,7 +19,8 @@ const text = useModel({ default: '' })
 The default model uses `modelValue` and `update:modelValue`. Named models use
 `useModel('title', { default: '' })` with `v-model:title="title"`. A component may
 have several independent models, including default and named models together.
-`TextInput` supports `v-model:value`; `Switch` supports `v-model:checked`.
+`TextInput`, `Textarea`, `NumberInput` and `Select` support `v-model:value`;
+`Switch` supports `v-model:checked`.
 Their existing `@input` and `@change` events remain supported.
 
 Parent updates never emit an update event. Child writes update the local signal

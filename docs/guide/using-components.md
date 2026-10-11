@@ -64,6 +64,26 @@ Three separate channels. Mixing them up is the most common mistake.
 
 A component that needs to talk back does it with an event, not a mutated prop. Every `Emits` entry in the reference below is a `@event` you can listen for.
 
+The form controls take a two-way binding instead, so a field and the page's
+signal cannot drift: `v-model:value` on `TextInput`, `Textarea`, `NumberInput`
+and `Select` (with `.lazy`, `.trim` and `.number`), `v-model:checked` on
+`Switch`. Their `@input` / `@change` events are still emitted.
+
+```html
+<TextInput type="date" label="Race day" v-model:value="raceDay" min="2026-01-01" />
+<Select label="Group" v-model:value="group" :options="groups()" />
+<Select label="Athlete" v-model:value="athlete" placeholder="">
+  <option :for="a in athletes()" :value="a.id">{{ a.name }}</option>
+</Select>
+```
+
+`TextInput` takes `type` for the text-like types (`date`, `time`,
+`datetime-local`, `month`, `week`, `url`, `tel`, `color`, `search`, and
+`email` / `number` / `password`), plus `min`, `max`, `step`, `pattern`, `list`,
+`minlength`, `maxlength`, `htmlSize` (the HTML `size`) and `autofocus` where
+that type uses them. `Select`'s `options` may come from client data — they
+render and re-render on the client — or be passed as `<option>` children.
+
 ## Seven things that actually break
 
 Each of these was verified against the current engine, not inherited from older docs.
@@ -222,9 +242,9 @@ Generated from component source. `Props` lists each prop with its default; `Emit
 | `<RadioGroupLabel>` | `className` (`''`), `as` (`'label'`) | — | default |
 | `<RadioGroupOption>` | `value`, `disabled` (`false`), `className` (`''`), `as` (`'div'`) | — | default |
 | `<SearchInput>` | `value` (`''`), `placeholder` (`'Search...'`), `disabled` (`false`), `size` (`'md'`), `error` (`false`), `label` (`''`), `helperText` (`''`), `loading` (`false`), +1 more | `@search` | — |
-| `<Select>` | `value` (`''`), `options` (`[]`), `placeholder` (`'Select an option'`), `disabled` (`false`), `size` (`'md'`), `error` (`false`), `label` (`''`), `helperText` (`''`), +2 more | `@change` | — |
+| `<Select>` | `value` (`''`), `options` (`[]`), `placeholder` (`'Select an option'`), `disabled` (`false`), `size` (`'md'`), `error` (`false`), `label` (`''`), `helperText` (`''`), +2 more | `@change` | default |
 | `<Switch>` | `checked` (`false`), `disabled` (`false`), `size` (`'md'`), `className` (`''`), `label` (`''`) | `@change` | — |
-| `<TextInput>` | `value` (`''`), `placeholder` (`''`), `disabled` (`false`), `readonly` (`false`), `size` (`'md'`), `error` (`false`), `label` (`''`), `helperText` (`''`), +8 more | `@input`, `@clear` | — |
+| `<TextInput>` | `value` (`''`), `placeholder` (`''`), `disabled` (`false`), `readonly` (`false`), `size` (`'md'`), `error` (`false`), `label` (`''`), `helperText` (`''`), +17 more | `@input`, `@clear` | — |
 | `<Textarea>` | `value` (`''`), `placeholder` (`''`), `disabled` (`false`), `readonly` (`false`), `rows` (`4`), `autoResize` (`false`), `maxRows` (`10`), `error` (`false`), +7 more | `@input` | — |
 
 ### Buttons & actions

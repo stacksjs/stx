@@ -11,7 +11,7 @@ export const required = $bool($props.required)
 export const leftIcon = $props.leftIcon || ''
 export const rightIcon = $props.rightIcon || ''
 export const clearable = $bool($props.clearable)
-export const maxLength = $props.maxLength
+export const maxLength = $props.maxLength ?? $props.maxlength
 export const showCount = $bool($props.showCount)
 export const className = $props.className || ''
 export const inputClassName = $props.inputClassName || ''
@@ -105,6 +105,44 @@ export const autocomplete = $props.autocomplete || $props.autoComplete || ''
 export const form = $props.form || ''
 export const inputMode = $props.inputMode || $props.inputmode || ''
 export const enterKeyHint = $props.enterKeyHint || $props.enterkeyhint || ''
+
+/*
+ * The text-like input types (stacksjs/stx#2059).
+ *
+ * `type` was hard-coded to text, so a form with a date, a time, a URL or a
+ * phone number in it had to mix library and native controls -- the
+ * inconsistency the library exists to remove. email, number and password have
+ * components of their own but are accepted here too. Anything else (checkbox,
+ * file, range...) is not a text field, and is served as text rather than as a
+ * control this markup was not drawn for.
+ */
+const TEXT_TYPES = ['text', 'date', 'time', 'datetime-local', 'month', 'week', 'url', 'tel', 'color', 'search', 'email', 'number', 'password']
+export const type = TEXT_TYPES.includes(String($props.type)) ? String($props.type) : 'text'
+
+/*
+ * The constraint attributes, each emitted only when given AND only on the
+ * types HTML applies it to, so a control renders exactly the markup it did
+ * before unless the caller asked for something it can use: min/max/step
+ * bound the date, time and number types; pattern, minlength, maxlength and
+ * size the free-text ones; list every type but password.
+ */
+const RANGED_TYPES = ['date', 'time', 'datetime-local', 'month', 'week', 'number']
+const FREE_TEXT_TYPES = ['text', 'search', 'url', 'tel', 'email', 'password']
+const given = (v) => v !== undefined && v !== null && v !== '' && v !== false
+const ranged = RANGED_TYPES.includes(type)
+export const freeText = FREE_TEXT_TYPES.includes(type)
+export const min = ranged && given($props.min) ? String($props.min) : ''
+export const max = ranged && given($props.max) ? String($props.max) : ''
+export const step = ranged && given($props.step) ? String($props.step) : ''
+export const pattern = freeText && given($props.pattern) ? String($props.pattern) : ''
+export const minLength = freeText && given($props.minLength ?? $props.minlength) ? String($props.minLength ?? $props.minlength) : ''
+/*
+ * The HTML `size` attribute (a width in characters). Not `size`, which is
+ * already this component's sm / md / lg.
+ */
+export const htmlSize = freeText && given($props.htmlSize) ? String($props.htmlSize) : ''
+export const list = type !== 'password' && given($props.list) ? String($props.list) : ''
+export const autofocus = $bool($props.autofocus)
 </script>
 
 <script client>
@@ -160,7 +198,15 @@ defineExpose({ value: inputValue, clear: onClear })
       @if(form)form="{{ form }}"@endif
       @if(inputMode)inputmode="{{ inputMode }}"@endif
       @if(enterKeyHint)enterkeyhint="{{ enterKeyHint }}"@endif
-      type="text"
+      type="{{ type }}"
+      @if(min)min="{{ min }}"@endif
+      @if(max)max="{{ max }}"@endif
+      @if(step)step="{{ step }}"@endif
+      @if(pattern)pattern="{{ pattern }}"@endif
+      @if(minLength)minlength="{{ minLength }}"@endif
+      @if(htmlSize)size="{{ htmlSize }}"@endif
+      @if(list)list="{{ list }}"@endif
+      @if(autofocus)autofocus@endif
       id="{{ inputId }}"
       class="{{ inputClasses }}"
 
@@ -180,7 +226,7 @@ defineExpose({ value: inputValue, clear: onClear })
       @if(disabled)disabled@endif
       @if(readonly)readonly@endif
       @if(required)required@endif
-      @if(maxLength)maxlength="{{ maxLength }}"@endif
+      @if(maxLength && freeText)maxlength="{{ maxLength }}"@endif
       @input="onInput($event)"
       @change="onChange($event)"
       aria-invalid="{{ error ? 'true' : 'false' }}"

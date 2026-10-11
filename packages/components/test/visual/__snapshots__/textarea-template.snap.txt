@@ -96,8 +96,12 @@ export const enterKeyHint = $props.enterKeyHint || $props.enterkeyhint || ''
 const isError = useReactiveProp('error', {{ error }})
 const autoResize = {{ autoResize }}
 const maxRows = {{ maxRows }}
-// Reactive prop binding — parent can drive `value` via signals. See #1704.
-const inputValue = useReactiveProp('value', {{ value }}, { parse: (v) => v == null ? '' : String(v) })
+/*
+ * Two-way, like TextInput (stacksjs/stx#2059): `v-model:value="bio"` keeps the
+ * page's signal in step, with `.lazy` and `.trim` honoured. `input` is still
+ * emitted for the callers that listen for it.
+ */
+const inputValue = useModel('value', { default: {{ value }}, parse: (v) => v == null ? '' : String(v) })
 
 function resizeTextarea(el) {
   if (!autoResize) return
@@ -110,19 +114,26 @@ function resizeTextarea(el) {
 }
 
 function onInput(event) {
-  inputValue.set(event.target.value)
+  inputValue.input(event.target.value)
   resizeTextarea(event.target)
-  emit('input', inputValue())
+  if (!inputValue.modifiers.lazy) emit('input', inputValue())
+}
+
+function onChange(event) {
+  inputValue.change(event.target.value)
+  if (inputValue.modifiers.lazy) emit('input', inputValue())
 }
 
 onMount(() => {
   if (autoResize) {
-    const el = document.getElementById('textarea-input')
+    // The instance's own id: a fixed 'textarea-input' stopped matching
+    // anything once ids became unique per instance.
+    const el = document.getElementById({{ inputId }})
     if (el) resizeTextarea(el)
   }
 })
 
-const charCount = derived(() => `${inputValue().length} / {{ maxLength || 0 }}`)
+const charCount = derived(() => `${String(inputValue()).length} / {{ maxLength || 0 }}`)
 
 defineExpose({ value: inputValue })
   </script>
@@ -151,7 +162,12 @@ defineExpose({ value: inputValue })
     @if(readonly)readonly@endif
     @if(required)required@endif
     @if(maxLength)maxlength="{{ maxLength }}"@endif
+    {{-- The live value. The served text between the tags is the default
+         value; this keeps the element in step when the page's signal moves,
+         which nothing did before -- the field had no binding at all. --}}
+    :value="inputValue()"
     @input="onInput($event)"
+    @change="onChange($event)"
     aria-invalid="{{ error ? 'true' : 'false' }}"
     :aria-invalid="isError() ? 'true' : 'false'"
     :class="{ '{{ stateInvalidClasses }}': isError(), '{{ stateValidClasses }}': !isError() }"

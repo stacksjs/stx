@@ -22,12 +22,32 @@ export interface BaseInputProps {
   inputClassName?: string
 }
 
+/** The text-like input types `TextInput` renders; anything else is served as `text`. */
+export type TextInputType = 'text' | 'date' | 'time' | 'datetime-local' | 'month' | 'week' | 'url' | 'tel' | 'color' | 'search' | 'email' | 'number' | 'password'
+
 export interface TextInputProps extends BaseInputProps {
+  type?: TextInputType
   leftIcon?: string
   rightIcon?: string
   clearable?: boolean
   maxLength?: number
+  maxlength?: number
+  minLength?: number
+  minlength?: number
   showCount?: boolean
+  /** date, time, datetime-local, month, week and number only. */
+  min?: string | number
+  /** date, time, datetime-local, month, week and number only. */
+  max?: string | number
+  /** date, time, datetime-local, month, week and number only; `'any'` allowed. */
+  step?: string | number
+  /** text, search, url, tel, email and password only. */
+  pattern?: string
+  /** The id of a `<datalist>`; every type but password. */
+  list?: string
+  /** The HTML `size` attribute (width in characters); `size` is sm / md / lg. */
+  htmlSize?: number
+  autofocus?: boolean
 }
 
 export interface EmailInputProps extends Omit<BaseInputProps, 'placeholder'> {
@@ -91,6 +111,12 @@ export const textInputPropSchema: PropSchema = {
   clearable: PropTypes.boolean,
   maxLength: PropTypes.number,
   showCount: PropTypes.boolean,
+  type: PropTypes.oneOf(['text', 'date', 'time', 'datetime-local', 'month', 'week', 'url', 'tel', 'color', 'search', 'email', 'number', 'password']),
+  pattern: PropTypes.string,
+  list: PropTypes.string,
+  minLength: PropTypes.number,
+  htmlSize: PropTypes.number,
+  autofocus: PropTypes.boolean,
 }
 
 /**
@@ -157,24 +183,24 @@ const searchInputPropSchema: PropSchema = {
 /**
  * Validate TextInput component props
  */
-export const validateTextInputProps: (props: Record<string, any>) => ValidationResult = createPropValidator('TextInput', textInputPropSchema)
+export const validateTextInputProps: (props: Record<string, unknown>) => ValidationResult = createPropValidator('TextInput', textInputPropSchema)
 
 /**
  * Validate EmailInput component props
  */
-export const validateEmailInputProps: (props: Record<string, any>) => ValidationResult = createPropValidator('EmailInput', baseInputPropSchema)
+export const validateEmailInputProps: (props: Record<string, unknown>) => ValidationResult = createPropValidator('EmailInput', baseInputPropSchema)
 
 /**
  * Validate PasswordInput component props
  */
-export const validatePasswordInputProps: (props: Record<string, any>) => ValidationResult = createPropValidator('PasswordInput', passwordInputPropSchema)
+export const validatePasswordInputProps: (props: Record<string, unknown>) => ValidationResult = createPropValidator('PasswordInput', passwordInputPropSchema)
 
 /**
  * Validate NumberInput component props
  */
-export const validateNumberInputProps: (props: Record<string, any>) => ValidationResult = createPropValidator('NumberInput', numberInputPropSchema)
+export const validateNumberInputProps: (props: Record<string, unknown>) => ValidationResult = createPropValidator('NumberInput', numberInputPropSchema)
 
 /**
  * Validate SearchInput component props
  */
-export const validateSearchInputProps: (props: Record<string, any>) => ValidationResult = createPropValidator('SearchInput', searchInputPropSchema)
+export const validateSearchInputProps: (props: Record<string, unknown>) => ValidationResult = createPropValidator('SearchInput', searchInputPropSchema)

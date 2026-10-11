@@ -5,9 +5,36 @@
 
 === Template ===
 <script server>
-  export const value = $props.value || ''
-export const options = $props.options || []
-export const placeholder = $props.placeholder || 'Select an option'
+  /*
+ * `??`, not `||`: a select whose chosen option is the id 0 is ordinary, and
+ * `||` served it as nothing selected.
+ */
+export const value = $props.value ?? ''
+/*
+ * One shape for every option, whichever way it arrived (stacksjs/stx#2059).
+ *
+ * `{ value, label, disabled }` objects as before, plus bare strings or numbers
+ * (`['S', 'M', 'L']`), which are their own label. A string is parsed as JSON,
+ * because that is how a list written as a plain attribute arrives. The client
+ * script below applies the same rules to a list that arrives later.
+ */
+function normaliseOptions(list) {
+  if (typeof list === 'string') {
+    try { list = JSON.parse(list) }
+    catch { list = [] }
+  }
+  if (!Array.isArray(list))
+    return []
+  return list.map(option => option !== null && typeof option === 'object'
+    ? { value: option.value == null ? '' : String(option.value), label: String(option.label ?? option.value ?? ''), disabled: Boolean(option.disabled) }
+    : { value: String(option), label: String(option), disabled: false })
+}
+export const options = normaliseOptions($props.options)
+/*
+ * `??`: `placeholder=""` means no placeholder option at all, which a select
+ * whose options are its children usually wants. Unset keeps the default.
+ */
+export const placeholder = $props.placeholder ?? 'Select an option'
 export const disabled = $bool($props.disabled)
 export const size = $props.size || 'md'
 export const error = $bool($props.error)
@@ -95,15 +122,43 @@ export const form = $props.form || ''
 // Validity is live, for the same reason `disabled` is: a form posted with
 // fetch learns it after the submit, and nothing re-renders (#2047).
 const isError = useReactiveProp('error', {{ error }})
-// Reactive prop binding — parent can drive `value` via signals. See #1704.
-const selectedValue = useReactiveProp('value', {{ value }}, { parse: (v) => v == null ? '' : String(v) })
+/*
+ * Two-way, like TextInput (stacksjs/stx#2059): `v-model:value="group"` keeps
+ * the page's signal in step, so a call site no longer pairs `:value` with an
+ * `@change` that writes it back. `change` is still emitted for the callers
+ * that listen for it.
+ */
+const selectedValue = useModel('value', { default: {{ value }}, parse: v => v == null ? '' : String(v) })
+
+function normaliseOptions(list) {
+  if (typeof list === 'string') {
+    try { list = JSON.parse(list) }
+    catch (e) { list = [] }
+  }
+  if (!Array.isArray(list)) return []
+  return list.map(option => option !== null && typeof option === 'object'
+    ? { value: option.value == null ? '' : String(option.value), label: String(option.label ?? option.value ?? ''), disabled: Boolean(option.disabled) }
+    : { value: String(option), label: String(option), disabled: false })
+}
+
+/*
+ * The options are live (stacksjs/stx#2059).
+ *
+ * They were read once, in the server script, so a list that arrives with the
+ * page's data -- an athlete's groups, a coach's plans -- was not there to read
+ * and the select rendered its placeholder alone. Now the prop is a signal and
+ * the list below is drawn from it on the client, so a bound `:options` renders
+ * and re-renders when the parent's list changes.
+ */
+const optionSource = useReactiveProp('options', {{ options }}, { parse: v => normaliseOptions(v) })
+const optionList = derived(() => normaliseOptions(optionSource()))
 
 function onChange(event) {
   selectedValue.set(event.target.value)
   emit('change', selectedValue())
 }
 
-defineExpose({ value: selectedValue })
+defineExpose({ value: selectedValue, options: optionList })
   </script>
   <div class="w-full">
     @if(label)
@@ -128,9 +183,9 @@ defineExpose({ value: selectedValue })
       @if(required)required@endif
       @change="onChange($event)"
       aria-invalid="{{ error ? 'true' : 'false' }}"
-    :aria-invalid="isError() ? 'true' : 'false'"
-    :class="{ '{{ stateInvalidClasses }}': isError(), '{{ stateValidClasses }}': !isError() }"
-      aria-describedby="{{ helperText ? helperId : '' }}"
+      :aria-invalid="isError() ? 'true' : 'false'"
+      :class="{ '{{ stateInvalidClasses }}': isError(), '{{ stateValidClasses }}': !isError() }"
+      @if(helperText)aria-describedby="{{ helperId }}"@endif
     >
         @if(placeholder)
         <option value="" disabled>
@@ -138,26 +193,56 @@ defineExpose({ value: selectedValue })
         </option>
         @endif
 
+      {{-- First paint, and the whole list with JavaScript off.
+
+           Server-rendered from a list known at render time, with `selected` on
+           the served choice (defaultSelected: without it a select posted its
+           FIRST option no matter what `value` said). On hydration these step
+           aside for the live list below, which draws the same options from
+           the same prop -- `x-if="false"` removes them in the pass that renders
+           it, and `x-no-cloak` keeps them visible until then. `x-if` rather
+           than `:if` because @foreach pre-evaluates every `:name="…"` inside
+           it as a component prop, which turns `:if` into a dead attribute. --}}
       @foreach(option in options)
         <option
+          x-no-cloak
+          x-if="false"
           value="{{ option.value }}"
           @if(option.disabled)disabled@endif
-          {{-- Which option is served as the choice. `selected` is
-               defaultSelected, so without it a select posted its FIRST option
-               no matter what `value` said. --}}
-          @if(String(option.value) === String(value))selected@endif
+          @if(option.value === String(value))selected@endif
         >
           {{ option.label }}
         </option>
         @endforeach
-      </select>
-    </div>
-    @if(helperText)
-    <p id="{{ helperId }}" class="{{ helperClasses }}">
-      {{ helperText }}
-    </p>
-    @endif
-  </div>
+
+      {{-- The live list. A
+        <template>
+          , so nothing of it shows before the
+           runtime expands it -- an
+          <option :for>
+            would paint as an empty
+           entry first. The select's own `:value` re-applies itself when its
+           options change, so the chosen value is reflected once they arrive. --}}
+            <template :for="option in optionList()" :key="option.value">
+              <option :value="option.value" :disabled="option.disabled" x-text="option.label">
+              </option>
+            </template>
+            {{-- Or the options as children, for a list the page draws itself:
+            <Select v-model:value="x">
+              <option :for="o in list" :value="o.id">
+                …
+              </option>
+            </Select>
+            --}}
+            <slot />
+          </select>
+        </div>
+        @if(helperText)
+        <p id="{{ helperId }}" class="{{ helperClasses }}">
+          {{ helperText }}
+        </p>
+        @endif
+      </div>
 
 === Extracted Classes ===
 !isError()
@@ -170,6 +255,8 @@ defineExpose({ value: selectedValue })
 --stx-control-text
 :
 ?
+M
+S
 The
 a
 adjusted
@@ -211,6 +298,7 @@ form
 h-10
 helperClasses
 hover:ring-line-hover
+in
 inside
 instead
 is
@@ -222,6 +310,7 @@ labelClasses
 lands
 leading-6
 line-height
+list
 md
 ml-1
 moves
@@ -229,9 +318,11 @@ mt-2
 nearly
 needed
 nothing
+o
 of
 on
 opacity-50
+options
 own
 padding
 placeholder-danger

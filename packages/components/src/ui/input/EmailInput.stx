@@ -26,7 +26,10 @@ export const inputMode = $props.inputMode || $props.inputmode || ''
 export const enterKeyHint = $props.enterKeyHint || $props.enterkeyhint || ''
 </script>
 
+{{-- type="email": served as text, an email field got no email keyboard on a
+     phone and no email check from the browser. --}}
 <TextInput
+  type="email"
   :name="name"
   :autocomplete="autocomplete"
   :form="form"

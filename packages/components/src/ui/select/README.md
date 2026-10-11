@@ -13,27 +13,54 @@ bun add @stacksjs/components
 ### Basic Select
 
 ```stx
-<script server>
+<script client>
 const options = [
   { value: 'option1', label: 'Option 1' },
   { value: 'option2', label: 'Option 2' },
   { value: 'option3', label: 'Option 3' },
 ]
-
-const selected = 'option1'
-
-const handleChange = (value) => {
-  console.log('Selected:', value)
-  selected = value
-}
+const selected = state('option1')
 </script>
 
-<Select
-  :value="selected"
-  :onChange="handleChange"
-  :options="options"
-  placeholder="Choose an option"
-/>
+<Select v-model:value="selected" :options="options" placeholder="Choose an option" />
+```
+
+`v-model:value` keeps the page's signal in step both ways, with `.number` when
+the values are numbers. `@change` is still emitted with the chosen value, for
+code that listens for it.
+
+### Options from client data
+
+`options` is live on the client, so a list that arrives with the page's data
+renders, and re-renders when the list changes. A value bound before its option
+exists is selected once the option arrives.
+
+```stx
+<script client>
+const rooms = state([])
+const room = state(null)
+onMount(async () => rooms.set(await (await fetch('/api/rooms')).json()))
+</script>
+
+<Select label="Room" v-model:value="room" :options="rooms()" />
+```
+
+A static list (known when the page renders) is also served in the HTML, with
+the chosen option `selected`, so first paint is right and the form posts
+correctly with JavaScript off.
+
+An option may be a `{ value, label, disabled }` object or a bare string or
+number, which is its own value and label: `:options="['S', 'M', 'L']"`.
+
+### Options as children
+
+For a list the page draws itself, pass `<option>` children. `placeholder=""`
+drops the placeholder option.
+
+```stx
+<Select label="Athlete" v-model:value="athlete" placeholder="">
+  <option :for="a in athletes()" :value="a.id">{{ a.name }}</option>
+</Select>
 ```
 
 ### With Label and Helper Text
@@ -42,8 +69,7 @@ const handleChange = (value) => {
 <Select
   label="Country"
   helperText="Select your country of residence"
-  :value="country"
-  :onChange="(val) => country = val"
+  v-model:value="country"
   :options="countries"
   required
 />
@@ -54,8 +80,7 @@ const handleChange = (value) => {
 ```stx
 <Select
   label="Category"
-  :value="category"
-  :onChange="(val) => category = val"
+  v-model:value="category"
   :options="categories"
   error
   helperText="Please select a valid category"
@@ -100,17 +125,30 @@ const options = [
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `value` | `string \| number` | `''` | Selected value |
-| `onChange` | `function` | - | Callback when selection changes |
-| `options` | `SelectOption[]` | `[]` | Array of options |
-| `placeholder` | `string` | `'Select an option'` | Placeholder text |
+| `value` | `string \| number` | `''` | Selected value; two-way with `v-model:value` |
+| `options` | `Array<SelectOption \| string \| number>` | `[]` | Options; static or bound from client data |
+| `placeholder` | `string` | `'Select an option'` | Placeholder option; `''` renders none |
 | `disabled` | `boolean` | `false` | Disable the select |
-| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Select size |
+| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Select size; `md` reads the `--stx-control-*` density tokens |
 | `error` | `boolean` | `false` | Show error state |
 | `label` | `string` | `''` | Label text |
 | `helperText` | `string` | `''` | Helper/error text below select |
 | `required` | `boolean` | `false` | Mark as required |
+| `name` | `string` | `''` | Form field name |
 | `className` | `string` | `''` | Additional CSS classes |
+
+## Events
+
+| Event | Payload | When |
+|-------|---------|------|
+| `update:value` | the new value | A choice is made (drives `v-model:value`) |
+| `change` | the new value | A choice is made |
+
+## Slots
+
+| Slot | Description |
+|------|-------------|
+| default | `<option>` children, rendered after any `options` |
 
 ## SelectOption Interface
 

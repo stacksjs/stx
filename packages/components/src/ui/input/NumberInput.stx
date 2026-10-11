@@ -25,9 +25,13 @@ export const inputId = $props.id || `number-input-${$uid}`
 export const helperId = `${inputId}-helper`
 export const helperText = $props.helperText || ''
 export const required = $bool($props.required)
-export const min = $props.min
-export const max = $props.max
-export const step = $props.step || 1
+/*
+ * Numbers, not the strings an attribute arrives as: `step="2"` reached the
+ * client script as "2", and the Increment button computed 10 + "2" = "102".
+ */
+export const min = $props.min == null || $props.min === '' ? undefined : $num($props.min)
+export const max = $props.max == null || $props.max === '' ? undefined : $num($props.max)
+export const step = $num($props.step, 1)
 export const showControls = $bool($props.showControls, true)
 export const className = $props.className || ''
 export const inputClassName = $props.inputClassName || ''
@@ -92,12 +96,21 @@ const emit = defineEmits()
 const stepSize = {{ step }}
 const minVal = {{ min === undefined ? 'undefined' : min }}
 const maxVal = {{ max === undefined ? 'undefined' : max }}
-// Reactive prop binding — parent can drive value via signals. See #1704.
-const inputValue = useReactiveProp('value', {{ value }}, { parse: (v) => v == null || v === '' ? '' : String(v) })
+/*
+ * Two-way, like TextInput (stacksjs/stx#2059): `v-model:value="qty"` keeps the
+ * page's signal in step -- typing and the steppers both write it -- and
+ * `.number` hands the page a number. `input` is still emitted.
+ */
+const inputValue = useModel('value', { default: {{ value }}, parse: (v) => v == null || v === '' ? '' : String(v) })
 
 function onInput(event) {
-  inputValue.set(event.target.value)
-  emit('input', inputValue())
+  inputValue.input(event.target.value)
+  if (!inputValue.modifiers.lazy) emit('input', inputValue())
+}
+
+function onChange(event) {
+  inputValue.change(event.target.value)
+  if (inputValue.modifiers.lazy) emit('input', inputValue())
 }
 
 function increment() {
@@ -105,7 +118,7 @@ function increment() {
   const next = current + stepSize
   if (maxVal !== undefined && next > maxVal) return
   inputValue.set(String(next))
-  emit('input', String(next))
+  emit('input', inputValue())
 }
 
 function decrement() {
@@ -113,7 +126,7 @@ function decrement() {
   const next = current - stepSize
   if (minVal !== undefined && next < minVal) return
   inputValue.set(String(next))
-  emit('input', String(next))
+  emit('input', inputValue())
 }
 
 defineExpose({ value: inputValue, increment, decrement })
@@ -160,6 +173,7 @@ defineExpose({ value: inputValue, increment, decrement })
       @if(max !== undefined)max="{{ max }}"@endif
       step="{{ step }}"
       @input="onInput($event)"
+      @change="onChange($event)"
       :aria-invalid="{{ error ? 'true' : 'false' }}"
       @if(helperText)aria-describedby="{{ helperId }}"@endif
     />
