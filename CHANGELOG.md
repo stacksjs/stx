@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.437...v0.2.438)
+
+## 🐛 Bug Fixes
+
+- bypass offline caching for live chat and broadcast streams ([3cecff5](https://github.com/stacksjs/stx/commit/3cecff5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.438 ([a59d20f](https://github.com/stacksjs/stx/commit/a59d20f)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.436...v0.2.437)
 
 ## 🐛 Bug Fixes
