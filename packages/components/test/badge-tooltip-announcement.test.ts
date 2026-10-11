@@ -102,6 +102,13 @@ describe('Tooltip is reachable from what it describes', () => {
     expect(html).not.toContain('whitespace-nowrap')
   })
 
+  it('keeps inline help inside the paragraph that labels it', async () => {
+    const document = parse(await render('<p id="label">Fitness <Tooltip content="A training-load estimate"><button>Explain CTL</button></Tooltip> today</p>'))
+    const label = document.querySelector('#label')!
+    expect(label.querySelector('button')?.textContent).toBe('Explain CTL')
+    expect(label.textContent).toContain(' today')
+  })
+
   it('keeps one line when the caller knows the text is short', async () => {
     const html = markup(await render('<Tooltip content="Save" nowrap>x</Tooltip>'))
     expect(html).toContain('whitespace-nowrap')
@@ -176,7 +183,7 @@ describe('Tooltip can be dismissed and can be hovered', () => {
 describe('Tooltip describes the control, not the wrapper', () => {
   const FILES = {
     'layouts/app.stx': layout(''),
-    'components/Tooltip.stx': readFileSync(path.join(UI_DIR, 'tooltip/Tooltip.stx'), 'utf-8'),
+    'components/Tooltip.stx': readFileSync(path.join(UI_DIR, 'tooltip/Tooltip.stx'), 'utf-8').replace('../../utils/tooltip-position', path.join(UI_DIR, '../utils/tooltip-position')),
     'pages/index.stx': page('app', `<Tooltip content="Resolve, alerts again only if it comes back">
   <button id="trigger">OK</button>
 </Tooltip>`),

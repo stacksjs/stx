@@ -28,7 +28,7 @@ const UI = path.join(import.meta.dir, '..', 'src', 'ui')
 
 /** The shipped component, not a copy: the point is to test what apps install. */
 function component(rel: string): string {
-  return readFileSync(path.join(UI, rel), 'utf-8')
+  return readFileSync(path.join(UI, rel), 'utf-8').replace('../../utils/tooltip-position', path.join(UI, '../utils/tooltip-position'))
 }
 
 /**

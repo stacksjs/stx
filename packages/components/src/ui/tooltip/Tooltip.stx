@@ -55,16 +55,52 @@ export const arrowClass = `absolute w-0 h-0 border-4 border-transparent ${arrowC
 </script>
 
 <script client>
+import { tooltipPosition } from '../../utils/tooltip-position'
 const delay = {{ delay }}
 // A live prop: a tooltip is commonly suppressed by state the page only learns
 // about later — while a field is being edited, or once a hint has been read —
 // and frozen it could only ever reflect the state the page was built in.
 const tooltipId = {{ tooltipId }}
 const triggerRef = useRef('triggerRef')
+const panelRef = useRef('panelRef')
+const preferredSide = {{ position }}
+const panelLimits = 'max-width:calc(100vw - 16px);margin:0;'
+const panelStyle = state(panelLimits)
+const arrowStyle = state('')
 const isDisabled = useReactiveProp('disabled', {{ disabled }})
 // Reactive prop binding — parent can drive `show` via signals. See #1704.
 const isVisible = useReactiveProp('show', {{ show }})
 let timeoutId = null
+
+// Use the actual offset parent, so a tooltip inside a modal or a transformed
+// container still gets viewport bounds rather than assuming document origin.
+function positionTooltip() {
+  if (!isVisible()) return
+  const trigger = triggerRef.value
+  const panel = panelRef.value
+  if (!trigger || !panel) return
+  const rect = panel.getBoundingClientRect()
+  if (!rect.width || !rect.height) return
+  const origin = panel.offsetParent ? panel.offsetParent.getBoundingClientRect() : { left: 0, top: 0 }
+  const viewport = trigger.ownerDocument.defaultView
+  if (!viewport) return
+  const point = tooltipPosition(trigger.getBoundingClientRect(), rect, { width: viewport.innerWidth, height: viewport.innerHeight }, preferredSide)
+  panelStyle.set(panelLimits + 'left:' + (point.left - origin.left) + 'px;top:' + (point.top - origin.top) + 'px;right:auto;bottom:auto;transform:none;translate:none;')
+  const color = 'var(--color-inverse, #0f172a)'
+  const arrows = {
+    top: 'top:auto;bottom:-8px;left:' + (point.arrowX - 4) + 'px;right:auto;border-top-color:' + color,
+    bottom: 'bottom:auto;top:-8px;left:' + (point.arrowX - 4) + 'px;right:auto;border-bottom-color:' + color,
+    left: 'left:auto;right:-8px;top:' + (point.arrowY - 4) + 'px;bottom:auto;border-left-color:' + color,
+    right: 'right:auto;left:-8px;top:' + (point.arrowY - 4) + 'px;bottom:auto;border-right-color:' + color,
+  }
+  arrowStyle.set('transform:none;translate:none;border-color:transparent;' + arrows[point.side] + ';')
+}
+
+// Measurement follows rendering. Reposition on scroll, including scrolling
+// ancestors, and resize; the composable removes these listeners on teardown.
+effect(() => { if (isVisible()) nextTick(positionTooltip) })
+useEventListener('resize', positionTooltip)
+useEventListener('scroll', positionTooltip, { capture: true, passive: true })
 
 function showTooltip() {
   if (isDisabled()) return
@@ -133,12 +169,12 @@ function describeTrigger() {
 onMount(describeTrigger)
 </script>
 
-<div class="relative inline-block {{ disabled ? 'cursor-not-allowed' : '' }}">
+<span class="relative inline-block {{ disabled ? 'cursor-not-allowed' : '' }}">
   {{-- The trigger wrapper carries the EVENTS, which bubble up to it from the
        slotted control, and deliberately not the description, which does not
        bubble anywhere. `describeTrigger` below moves that onto the control
        itself (stacksjs/stx#2048). --}}
-  <div
+  <span
     x-ref="triggerRef"
     @mouseenter="showTooltip()"
     @mouseleave="hideTooltip()"
@@ -146,9 +182,11 @@ onMount(describeTrigger)
     @focusout="hideTooltip()"
   >
     <slot />
-  </div>
+  </span>
 
-  <div
+  <span
+    x-ref="panelRef"
+    :style="panelStyle"
     id="{{ tooltipId }}"
     :show="isVisible() && !{{ disabled }}"
     class="{{ tooltipClasses }}"
@@ -156,7 +194,7 @@ onMount(describeTrigger)
     @mouseenter="showTooltip()"
     @mouseleave="hideTooltip()"
   >
-    {{ content }}
-    <div class="{{ arrowClass }}"></div>
-  </div>
-</div>
+    <span class="block" style="max-height:calc(100vh - 32px);overflow-y:auto;">{{ content }}</span>
+    <span class="{{ arrowClass }}" :style="arrowStyle"></span>
+  </span>
+</span>
