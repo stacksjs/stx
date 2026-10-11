@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.443...v0.2.444)
+
+## 🐛 Bug Fixes
+
+- reveal hydrated layout scopes after SPA navigation ([e288d20](https://github.com/stacksjs/stx/commit/e288d20)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.444 ([fec5ea3](https://github.com/stacksjs/stx/commit/fec5ea3)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.442...v0.2.443)
 
 ## 🐛 Bug Fixes
