@@ -327,6 +327,27 @@ const never = () => new Promise<Response | null>(() => {})
 const later = (ms: number, response: () => Response | null) => new Promise<Response | null>(resolve => setTimeout(() => resolve(response()), ms))
 
 describe('a kept screen (stale-while-revalidate)', () => {
+  it('retains explicitly static shells through no-store revalidation and offline cold starts', async () => {
+    let online = true
+    let body = 'Original relaxation shell'
+    const sw = runWorker({ enabled: true, pages: ['/m/relax'], staticPages: ['/m/relax'] }, () => online ? new Response(body, { headers: { 'Content-Type': 'text/html', 'Cache-Control': 'no-store' } }) : null)
+    await sw.install()
+    body = 'Updated relaxation shell'
+    await sw.request('http://app.test/m/relax', { Accept: 'text/html' })
+    await sw.settle()
+    online = false
+    expect(await (await sw.request('http://app.test/m/relax', { Accept: 'text/html' }))!.text()).toContain(body)
+    expect(await (await sw.request('http://app.test/m/relax', { 'X-STX-Router': 'true', Accept: 'text/html' }))!.text()).toContain('Original relaxation shell')
+    await sw.settle()
+  })
+
+  it('evicts no-store pages unless the app explicitly declares a static shell', async () => {
+    const sw = runWorker({ enabled: true, pages: ['/m/private'] }, () => new Response('Personal page', { headers: { 'Content-Type': 'text/html', 'Cache-Control': 'no-store' } }))
+    await sw.install()
+    await sw.request('http://app.test/m/private', { Accept: 'text/html' })
+    await sw.settle()
+    expect(sw.stores.get('stx-shell-b1')!.has('http://app.test/m/private')).toBe(false)
+  })
   it('is answered at once, without waiting on a network that has not answered', async () => {
     const sw = runWorker({ enabled: true, pages: ['/m'] }, never)
     sw.stores.set('stx-shell-b1', new Map([['http://app.test/m', html('Kept')]]))

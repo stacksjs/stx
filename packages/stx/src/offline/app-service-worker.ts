@@ -44,6 +44,12 @@ export interface OfflineAppConfig {
   enabled: boolean
   /** Screens fetched when the worker installs, so they open offline before they were visited. */
   pages?: string[]
+  /**
+   * Listed pages whose HTML is an account-independent shell. These may be
+   * retained despite the server's default no-store header. Never list pages
+   * containing server-rendered personal data; API no-store remains enforced.
+   */
+  staticPages?: string[]
   /** Path prefix of the app's API, whose GET answers are kept for offline. Default '/api/'. */
   apiPrefix?: string
   /**
@@ -269,6 +275,7 @@ export function generateOfflineWorker(config: OfflineAppConfig, buildId: string)
   const settings = {
     build: String(buildId || 'dev'),
     pages: Array.from(new Set((config.pages || []).filter(page => typeof page === 'string' && page.startsWith('/')))),
+    staticPages: (config.staticPages || []).filter(page => typeof page === 'string' && (config.pages || []).includes(page)),
     api: config.apiPrefix || '/api/',
     timeout: Math.max(500, Number(config.networkTimeoutMs) || 1500),
     networkFirst: (config.networkFirst || []).filter(path => typeof path === 'string' && path.startsWith('/')),
@@ -415,8 +422,9 @@ function announce(message) {
 // when it was kept.
 function revalidate(request, cache, keys, hit, kind) {
   return fetch(request).then(function (response) {
-    if (noStore(response)) return Promise.all(keys.map(function (key) { return cache.delete(key); }));
-    if (!keepable(response)) return;
+    var staticPage = kind === 'page' && keepStaticPage(request, response);
+    if (noStore(response) && !staticPage) return Promise.all(keys.map(function (key) { return cache.delete(key); }));
+    if (!keepable(response) && !staticPage) return;
     return store(cache, keys, response).then(function (print) {
       return unchanged(hit, response, print.hash).then(function (same) {
         if (same) return;
@@ -426,6 +434,11 @@ function revalidate(request, cache, keys, hit, kind) {
       });
     });
   });
+}
+
+function keepStaticPage(request, response) {
+  return response.status === 200 && !response.redirected && response.type === 'basic'
+    && S.staticPages.indexOf(new URL(request.url).pathname) !== -1;
 }
 
 // A dynamic route's kept page, under a key no real path has.
@@ -736,7 +749,7 @@ function pageResponse(request, event) {
         return hit;
       }
       var network = fetch(request).then(function (response) {
-        if (keepable(response)) keepAlive(event, store(cache, keys, response.clone()));
+        if (keepable(response) || keepStaticPage(request, response)) keepAlive(event, store(cache, keys, response.clone()));
         return response;
       });
       // What stands in when the network is not there, or slow: the kept copy,
