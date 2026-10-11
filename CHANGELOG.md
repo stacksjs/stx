@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.449...v0.2.450)
+
+## 🐛 Bug Fixes
+
+- **slots**: keep component setup scripts in loop rows inside slot content ([b547176](https://github.com/stacksjs/stx/commit/b547176)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.450 ([6403eb9](https://github.com/stacksjs/stx/commit/6403eb9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.448...v0.2.449)
 
 ## 🐛 Bug Fixes
