@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import path from 'node:path'
+import vm from 'node:vm'
+import { mkdtemp } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
 import { compileScreenSource } from '../../src/native/compiler/render-screen'
 import { prepareSharedNativeScreen } from '../../src/native/runtime/shared-screen'
 import { generateSignalsRuntimeDev } from '../../src/signals'
@@ -104,6 +108,16 @@ function strictNativeSide(reply: (message: unknown) => void) {
       }
       return root ? walk(root) : []
     },
+    /** The views as nested `Type(text)[children]`, for asserting structure. */
+    tree(): string {
+      const walk = (id: string): string => {
+        const node = nodes.get(id)
+        if (!node) return ''
+        const label = node.text.length ? `${node.type}(${node.text.join('')})` : node.type
+        return node.children.length ? `${label}[${node.children.map(walk).join(' ')}]` : label
+      }
+      return root ? walk(root) : ''
+    },
     handlerFor(label: string): string | undefined {
       for (const node of nodes.values()) {
         if (node.events.onPress && node.children.some(child => nodes.get(child)?.text.includes(label)))
@@ -140,6 +154,32 @@ async function mountScreen(source: string) {
   }
   await settle()
   return { screen, native, settle, press: (label: string) => receive(JSON.stringify({ type: 'EVENT', payload: { handlerId: native.handlerFor(label), nativeEvent: {} } })) }
+}
+
+/** The screen as the device runs it: the JavaScriptCore bundle, with no DOM. */
+async function mountBundle(source: string) {
+  const root = await mkdtemp(path.join(tmpdir(), 'stx-native-rows-'))
+  const file = path.join(root, 'Screen.stx')
+  await Bun.write(file, source)
+  const { code } = await compileSharedScreenBundle(file)
+  let receive: (raw: string) => void = () => {}
+  const native = strictNativeSide(message => receive(JSON.stringify(message)))
+  const scope: Record<string, unknown> = {
+    console, setTimeout, clearTimeout, Promise, Date, Map, Set, WeakMap, WeakSet,
+    __stxNativeBridge: {
+      platform: 'ios',
+      capabilityProtocolVersion: 1,
+      capabilities: [],
+      postMessage: (raw: string) => native.receive(JSON.parse(raw)),
+      onMessage: (callback: (raw: string) => void) => { receive = callback },
+    },
+  }
+  vm.runInNewContext(code, scope)
+  const settle = async () => {
+    for (let i = 0; i < 5; i++) await new Promise(resolve => setTimeout(resolve, 0))
+  }
+  await settle()
+  return { native, settle, scope }
 }
 
 describe('native :if branches on a strict native side', () => {
@@ -249,4 +289,32 @@ globalThis.__toggle = () => count.set(count() + 1)
     expect(native.errors.map(error => error.code)).toEqual(['INVALID_BATCH'])
     expect(native.text()).toEqual(['Count 2'])
   })
+
+  it('keeps a row\'s last child inside its card past a self-closing nested :for', async () => {
+    const { native, settle, scope } = await mountBundle(`<script client>
+const byDay = state({})
+globalThis.__load = () => byDay.set({ mon: [{ id: 1, bars: [1, 2] }], tue: [{ id: 2, bars: [] }] })
+function cards(day) { return byDay()[day] || [] }
+</script>
+<View>
+  <View :for="day in ['mon', 'tue']" :key="day">
+    <Text :text="day" />
+    <View :for="card in cards(day)" :key="card.id">
+      <View class="flex-1 flex-row">
+        <View class="flex-1">
+          <View :if="card.bars.length" class="h-6"><View :for="(bar, bi) in card.bars" :key="bi" /></View>
+        </View>
+        <Text>chevron</Text>
+      </View>
+    </View>
+  </View>
+</View>`)
+    expect(native.tree()).toBe('View[View[Text(mon)] View[Text(tue)]]')
+    ;(scope as any).__load()
+    await settle()
+    expect(native.errors).toEqual([])
+    expect(native.tree()).toBe('View[View[Text(mon) View[View[View[View[View View]] Text(chevron)]]] View[Text(tue) View[View[View Text(chevron)]]]]')
+  })
+
+
 })

@@ -66,4 +66,23 @@ describe('component tag scanning', () => {
     expect(tags[0].startIndex).toBe(prefix.length)
     expect(tags[0].fullMatch).toBe('<Card title="x" />')
   })
+
+  it('ends a tag at its own closing tag past a nested self-closing one', () => {
+    // A nested `<View />` used to count as an open tag, so the outer View
+    // claimed its parent's `</View>` and swallowed the sibling after it.
+    const html = '<View class="row"><View class="bars"><View :for="bar in bars" :key="bar" /></View><Icon name="chevron" /></View>'
+    const tags = findComponentTags(html, PASCAL)
+
+    expect(tags).toHaveLength(1)
+    expect(tags[0].content).toBe('<View class="bars"><View :for="bar in bars" :key="bar" /></View><Icon name="chevron" />')
+    const inner = findComponentTags(tags[0].content, PASCAL)
+    expect(inner.map(t => t.fullMatch)).toEqual(['<View class="bars"><View :for="bar in bars" :key="bar" /></View>', '<Icon name="chevron" />'])
+  })
+
+  it('reads past a quoted > in a nested self-closing tag', () => {
+    const html = '<View><View :if="a > b" /></View><Text>after</Text>'
+    const tags = findComponentTags(html, PASCAL)
+
+    expect(tags.map(t => t.fullMatch)).toEqual(['<View><View :if="a > b" /></View>', '<Text>after</Text>'])
+  })
 })

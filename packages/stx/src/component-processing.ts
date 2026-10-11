@@ -183,6 +183,25 @@ export function uppercaseHtmlTagSkip(htmlTags: Set<string>): (tagName: string) =
   return (tagName: string) => !/[a-z]/.test(tagName) && known.has(tagName.toLowerCase())
 }
 
+/** The index of the `>` that ends the opening tag scanned from `cursor`, past quoted values. */
+function openingTagEnd(html: string, cursor: number): number {
+  let quote = ''
+  for (let i = cursor; i < html.length; i++) {
+    const char = html[i]
+    if (quote) {
+      if (char === '\\') i++
+      else if (char === quote) quote = ''
+    }
+    else if (char === '"' || char === '\'') {
+      quote = char
+    }
+    else if (char === '>') {
+      return i
+    }
+  }
+  return html.length
+}
+
 /**
  * Find component tags in HTML, properly handling quoted strings
  * This solves the issue where `>` inside attribute values would incorrectly end the tag
@@ -323,9 +342,18 @@ export function findComponentTags(
           // Check it's a real tag (followed by space, >, or /)
           const charAfter = html[nextOpen + openingTag.length]
           if (charAfter === ' ' || charAfter === '>' || charAfter === '/' || charAfter === '\n' || charAfter === '\t') {
-            depth++
+            // A nested tag of the same name that closes itself (`<View />`)
+            // opens nothing. Counting it left the depth one too deep, so the
+            // outer tag claimed its parent's closing tag and swallowed the
+            // siblings after it: a row's last child rendered outside its card.
+            const nestedEnd = openingTagEnd(html, nextOpen + openingTag.length)
+            if (html[nestedEnd - 1] !== '/')
+              depth++
+            searchPos = nestedEnd + 1
           }
-          searchPos = nextOpen + openingTag.length
+          else {
+            searchPos = nextOpen + openingTag.length
+          }
         }
         else {
           depth--
