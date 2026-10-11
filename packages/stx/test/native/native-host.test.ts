@@ -99,6 +99,20 @@ describe('host calls become bridge operations', () => {
     }])
   })
 
+  it('changes appearance without revealing hidden native nodes or losing inline styles', () => {
+    const { host, ops } = harness()
+    const node = host.adopt({ __stxId: 'themed' }, 'View', null, {
+      props: {}, style: { backgroundColor: '#ffffff', width: 42 }, events: {}, children: [], _classes: 'bg-white dark:bg-slate-950',
+    })
+    host.setVisible(node, false)
+    host.setColorScheme('dark')
+    host.flush()
+    expect(ops().at(-1)).toMatchObject({ patch: { style: { backgroundColor: '#020617', width: 42, display: 'none' } } })
+    host.setColorScheme('light')
+    host.flush()
+    expect(ops().at(-1)).toMatchObject({ patch: { style: { backgroundColor: '#ffffff', width: 42, display: 'none' } } })
+  })
+
   it('sets an attribute as a prop patch', () => {
     const { host, node, ops } = harness()
     host.setAttribute(node('n1'), 'accessibilityLabel', 'Sign in')

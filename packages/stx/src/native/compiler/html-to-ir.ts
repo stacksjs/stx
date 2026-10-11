@@ -28,7 +28,8 @@
 import type { STXDocument, STXNode, STXStyle } from './ir'
 import { nativePropName } from '../prop-names'
 import { mapToNativeComponent } from './component-mapping'
-import { compileHeadwindToStyle } from './headwind-to-style'
+import { resolveIconName } from './icons'
+import { compileClassStyles } from './headwind-to-style'
 import { createDocument, createNode } from './ir'
 
 export type TranslationDiagnosticKind =
@@ -196,7 +197,7 @@ const NATIVE_TYPES = new Set([
   'View', 'ScrollView', 'SafeAreaView', 'KeyboardAvoidingView',
   'Text', 'TextInput',
   'Button', 'TouchableOpacity', 'TouchableHighlight', 'Pressable',
-  'Image', 'ImageBackground',
+  'Icon', 'Image', 'ImageBackground',
   'FlatList', 'SectionList',
   'Switch', 'Slider', 'Picker', 'DatePicker',
   'Modal', 'ActivityIndicator',
@@ -266,6 +267,7 @@ interface Attributes {
   events: Record<string, string>
   bindings: Record<string, string>
   classes: string
+  inline: STXStyle
 }
 
 function readAttributes(
@@ -328,8 +330,8 @@ function readAttributes(
     }
   }
 
-  const style = { ...(classes ? compileHeadwindToStyle(classes) : {}), ...inline }
-  return { props, style, events, bindings, classes }
+  const style = { ...(classes ? compileClassStyles(classes).style : {}), ...inline }
+  return { props, style, events, bindings, classes, inline }
 }
 
 /** Whether this property's field can hold this string at all. */
@@ -497,8 +499,8 @@ export async function translateHtmlToIR(
   function open(tag: string, attributes: Array<[string, string]>): Frame {
     const dropped = DROP_SUBTREE.has(tag) && !BOX_ONLY.has(tag)
     const inheritedDrop = stack[stack.length - 1]?.dropped ?? false
-    const { props, style, events, bindings, classes } = dropped || inheritedDrop
-      ? { props: {}, style: {}, events: {}, bindings: {}, classes: '' }
+    const { props, style, events, bindings, classes, inline } = dropped || inheritedDrop
+      ? { props: {}, style: {}, events: {}, bindings: {}, classes: '', inline: {} }
       : readAttributes(tag, attributes, diagnostics)
 
     // A primitive component names its own native type, since the HTML tag it
@@ -522,7 +524,12 @@ export async function translateHtmlToIR(
       diagnostics.push({ kind: 'dropped-subtree', tag })
     }
 
+    if (type === 'Icon') {
+      const icon = compileClassStyles(classes).icon
+      props.symbol = resolveIconName(String(props.symbol || props.name || icon || ''), Boolean(props.symbol)).symbol
+    }
     const node = createNode(type, props, style, events)
+    node._inlineStyle = inline
     const bindingId = props['data-stx-b']
     if (typeof bindingId === 'number' && Number.isInteger(bindingId))
       node.bindingId = bindingId

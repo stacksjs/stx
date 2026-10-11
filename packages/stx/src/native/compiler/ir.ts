@@ -26,6 +26,7 @@ export type STXComponentType =
   | 'TouchableHighlight'
   | 'Pressable'
   // Media
+  | 'Icon'
   | 'Image'
   | 'ImageBackground'
   // Lists
@@ -90,7 +91,10 @@ export interface STXNode {
   /** Child nodes or text content */
   children: (STXNode | string)[]
 
-  /** Original Headwind classes (for debugging) */
+  /** Inline styles retain precedence over class styles in every appearance. */
+  _inlineStyle?: STXStyle
+
+  /** Original Headwind classes, retained for native class and appearance updates. */
   _classes?: string
 
   /** Source location (for debugging) */

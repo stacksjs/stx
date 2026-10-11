@@ -32,6 +32,8 @@
 
 import type { NativeMutationOperation } from '../bridge/protocol'
 import type { STXNode } from '../compiler/ir'
+import { compileClassStyles } from '../compiler/headwind-to-style'
+import { resolveIconName } from '../compiler/icons'
 import { nativePropName } from '../prop-names'
 import { cloneNativeBindingNode, type NativeBindingNode } from './binding-tree'
 
@@ -50,6 +52,8 @@ interface NodeRecord {
   type: string
   props: Record<string, unknown>
   style: Record<string, unknown>
+  baseStyle: Record<string, unknown>
+  classes: string
   events: Record<string, string>
   text?: string
   children: NativeNode[]
@@ -62,6 +66,8 @@ interface RetainedNativeNode extends NativeNode {
 }
 
 export interface NativeHostOptions {
+  /** Initial native appearance; later changes arrive through APPEARANCE. */
+  colorScheme?: 'light' | 'dark'
   /** Called with each batch. One call per flush, never per operation. */
   send: (operations: NativeMutationOperation[]) => void
   /**
@@ -73,6 +79,7 @@ export interface NativeHostOptions {
 }
 
 export interface NativeHost {
+  setColorScheme: (scheme: 'light' | 'dark') => void
   setText: (node: NativeNode, value: unknown) => void
   setAttribute: (node: NativeNode, name: string, value: unknown) => void
   removeAttribute: (node: NativeNode, name: string) => void
@@ -87,7 +94,7 @@ export interface NativeHost {
   descendants: (node: NativeNode) => NativeNode[]
   scopesIn: (node: NativeNode) => string[]
   /** Register a node the native side already created, so the host can track it. */
-  adopt: (node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'props' | 'style' | 'events' | 'children'>) => NativeNode
+  adopt: (node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle'>) => NativeNode
   /** Send whatever is pending now, rather than waiting for the scheduled flush. */
   flush: () => void
   /** Dispatch an event the native side reported, by the id handed to it. */
@@ -135,6 +142,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   let queue: NativeMutationOperation[] = []
   let scheduled = false
   let counter = 0
+  let colorScheme = options.colorScheme ?? 'light'
 
   const schedule = options.schedule ?? ((flush: () => void) => queueMicrotask(flush))
 
@@ -160,7 +168,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   function recordOf(node: NativeNode): NodeRecord {
     let record = records.get(node.__stxId)
     if (!record) {
-      record = { type: 'View', props: {}, style: {}, events: {}, children: [], visible: true, materialized: true }
+      record = { type: 'View', props: {}, style: {}, baseStyle: {}, classes: '', events: {}, children: [], visible: true, materialized: true }
       records.set(node.__stxId, record)
     }
     return record
@@ -191,6 +199,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const record = recordOf(node)
     if (record.materialized || node.__stxAnchor !== undefined)
       return
+    record.style = resolveStyle(record)
     record.materialized = true
     emit({
       op: 'createNode',
@@ -208,6 +217,27 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         continue
       materialize(child)
       emit({ op: 'insertChild', parentId: node.__stxId, childId: child.__stxId, index: index++ })
+    }
+  }
+
+  function resolveStyle(record: NodeRecord): Record<string, unknown> {
+    const classes = compileClassStyles(record.classes)
+    return { ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}), ...record.baseStyle }
+  }
+
+  function applyClasses(id: string, record: NodeRecord): void {
+    const style = resolveStyle(record)
+    const patch = Object.fromEntries(Object.keys(record.style).filter(key => !(key in style)).map(key => [key, null]))
+    record.style = style
+    if (record.materialized) emit({ op: 'updateNode', id, patch: { style: { ...patch, ...style } } })
+    const classes = compileClassStyles(record.classes)
+    if (record.type === 'Icon' && classes.icon) {
+      record.props.symbol = resolveIconName(classes.icon).symbol
+      if (record.materialized) emit({ op: 'updateNode', id, patch: { props: { symbol: record.props.symbol } } })
+    }
+    if (classes.numberOfLines !== undefined) {
+      record.props.numberOfLines = classes.numberOfLines
+      if (record.materialized) emit({ op: 'updateNode', id, patch: { props: { numberOfLines: classes.numberOfLines } } })
     }
   }
 
@@ -285,20 +315,28 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     }
   }
 
-  function adopt(node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'props' | 'style' | 'events' | 'children'>): NativeNode {
+  function adopt(node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle'>): NativeNode {
     const suffix = /(?:^|\D)(\d+)$/.exec(node.__stxId)?.[1]
     if (suffix)
       counter = Math.max(counter, Number(suffix))
-    records.set(node.__stxId, {
+    const classes = descriptor?._classes ?? ''
+    const classStyle = compileClassStyles(classes).style as Record<string, unknown>
+    const baseStyle = descriptor?._inlineStyle ? { ...descriptor._inlineStyle } : Object.fromEntries(Object.entries(descriptor?.style ?? {}).filter(([key, value]) => classStyle[key] !== value))
+    const record: NodeRecord = {
       type,
       props: { ...(descriptor?.props ?? {}) },
       style: { ...(descriptor?.style ?? {}) },
+      baseStyle,
+      classes,
       events: { ...(descriptor?.events ?? {}) },
       text: descriptor?.children?.find(child => typeof child === 'string') as string | undefined,
       children: [],
       visible: true,
       materialized: true,
-    })
+    }
+    record.style = resolveStyle(record)
+    if (descriptor) descriptor.style = { ...record.style } as STXNode['style']
+    records.set(node.__stxId, record)
     decoratePosition(node)
     node.__stxOwner = owner ?? null
     if (owner) {
@@ -311,6 +349,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
   return {
     adopt,
+    setColorScheme(scheme) {
+      if (scheme === colorScheme) return
+      colorScheme = scheme
+      for (const [id, record] of records) applyClasses(id, record)
+    },
     pending: () => queue.length,
     flush,
 
@@ -321,12 +364,22 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     },
 
     setAttribute(node, name, value) {
+      if (name === 'class' || name === 'className') {
+        const record = recordOf(node)
+        record.classes = String(value ?? '')
+        applyClasses(node.__stxId, record)
+        return
+      }
       const prop = nativePropName(name)
       recordOf(node).props[prop] = value
+      if (recordOf(node).type === 'Icon' && prop === 'name') {
+        this.setAttribute(node, 'symbol', resolveIconName(String(value ?? '')).symbol)
+      }
       emit({ op: 'updateNode', id: node.__stxId, patch: { props: { [prop]: value } } })
     },
 
     removeAttribute(node, name) {
+      if (name === 'class' || name === 'className') { this.setAttribute(node, name, ''); return }
       const prop = nativePropName(name)
       delete recordOf(node).props[prop]
       // Null rather than omitted: a patch is merged on the native side, so an
@@ -338,6 +391,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       if (typeof value !== 'object' || value === null || Array.isArray(value))
         return
       const style = value as Record<string, unknown>
+      Object.assign(recordOf(node).baseStyle, style)
       Object.assign(recordOf(node).style, style)
       emit({ op: 'updateNode', id: node.__stxId, patch: { style } })
     },
@@ -374,6 +428,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const record = recordOf(node)
       const was = record.visible
       record.visible = visible
+      record.baseStyle.display = visible ? 'flex' : 'none'
       // `display` is how the IR spells it, so the renderers already understand
       // it; the host does not invent a second vocabulary for the same thing.
       emit({ op: 'updateNode', id: node.__stxId, patch: { style: { display: visible ? 'flex' : 'none' } } })
@@ -392,7 +447,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const source = descriptorOf(node)
       const id = nextId('n')
       const copy: NativeNode = isBindingNode(node)
-        ? cloneNativeBindingNode(node, id)
+        ? cloneNativeBindingNode(node, id, value => this.setAttribute(copy, 'class', value))
         : { __stxId: id, __stxOwner: node.__stxOwner }
       decoratePosition(copy)
       if (node.__stxScope !== undefined)
@@ -402,6 +457,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         type: 'View',
         props: {},
         style: {},
+        baseStyle: {},
+        classes: '',
         events: {},
         children: [],
         visible: true,
@@ -411,6 +468,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         type: descriptor.type,
         props: { ...descriptor.props, __stxId: copy.__stxId },
         style: { ...descriptor.style },
+        baseStyle: { ...descriptor.baseStyle },
+        classes: descriptor.classes,
         events: { ...descriptor.events },
         text: descriptor.text,
         children: [],

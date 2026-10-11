@@ -1,0 +1,7 @@
+{{-- Iconify icons rendered as native symbols, without browser SVG markup. --}}
+<script server>
+const classes = $props.class ?? $props.className ?? ''
+const name = $props.name ?? ''
+const symbol = $props.symbol ?? ''
+</script>
+<span data-native="Icon" class="{{ classes }}" name="{{ name }}" symbol="{{ symbol }}" />

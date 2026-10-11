@@ -175,8 +175,9 @@ const label = $props.label ?? ''
 describe('the primitives themselves', () => {
   it('ships one component per native type the IR declares', async () => {
     const files = [...new Bun.Glob('*.stx').scanSync(nativePrimitivesDir())].sort()
-    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(22)
+    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(23)
     expect(files).toContain('Fragment.stx')
+    expect(files).toContain('Icon.stx')
     expect(files).toContain('TouchableOpacity.stx')
     expect(files).toContain('ActivityIndicator.stx')
   })

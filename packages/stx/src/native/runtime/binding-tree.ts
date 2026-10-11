@@ -4,6 +4,8 @@ import type { NativeHost, NativeNode } from './native-host'
 
 export interface NativeBindingNode extends NativeNode {
   nodeType: 1
+  className: string
+  classList: { add: (...tokens: string[]) => void, remove: (...tokens: string[]) => void }
   tagName: string
   attributes: Array<{ name: string, value: string }>
   parentNode: NativeBindingNode | null
@@ -39,16 +41,23 @@ function decodeBindingValue(value: string): string {
     .replace(/&amp;/g, '&')
 }
 
-function createBindingNode(id: string, type: string, bindings: ManifestEntry['bindings'], connected = true): NativeBindingNode {
+function createBindingNode(id: string, type: string, bindings: ManifestEntry['bindings'], connected = true, classes = '', onClassChange?: (value: string) => void): NativeBindingNode {
   // Browsers decode attribute entities before getAttribute(). Native binding
   // nodes must provide the same input to the shared signals runtime.
   const attributes = bindings.map(binding => ({
     name: binding.name,
     value: decodeBindingValue(binding.value),
   }))
+  if (classes && !attributes.some(attribute => attribute.name === 'class')) attributes.push({ name: 'class', value: classes })
   const node = {
     __stxId: id,
     nodeType: 1 as const,
+    get className() { return node.getAttribute('class') ?? '' },
+    set className(value: string) { node.setAttribute('class', value) },
+    classList: {
+      add(...tokens: string[]) { node.className = [...new Set([...node.className.split(/\s+/).filter(Boolean), ...tokens])].join(' ') },
+      remove(...tokens: string[]) { node.className = node.className.split(/\s+/).filter(token => token && !tokens.includes(token)).join(' ') },
+    },
     tagName: type.toUpperCase(),
     attributes,
     parentNode: null,
@@ -69,10 +78,12 @@ function createBindingNode(id: string, type: string, bindings: ManifestEntry['bi
       const existing = attributes.find(attribute => attribute.name === name)
       if (existing) existing.value = String(value)
       else attributes.push({ name, value: String(value) })
+      if (name === 'class') onClassChange?.(String(value))
     },
     removeAttribute(name: string) {
       const index = attributes.findIndex(attribute => attribute.name === name)
       if (index !== -1) attributes.splice(index, 1)
+      if (name === 'class') onClassChange?.('')
     },
     contains(candidate: NativeBindingNode) {
       for (let current: NativeBindingNode | null = candidate; current; current = current.parentNode)
@@ -102,13 +113,13 @@ function createBindingNode(id: string, type: string, bindings: ManifestEntry['bi
 }
 
 /** Clone the DOM-shaped metadata while the host clones the native descriptor. */
-export function cloneNativeBindingNode(source: NativeBindingNode, id: string): NativeBindingNode {
+export function cloneNativeBindingNode(source: NativeBindingNode, id: string, onClassChange?: (value: string) => void): NativeBindingNode {
   const bindings = source.attributes.map(attribute => ({
     name: attribute.name,
     value: attribute.value,
     kind: 'attr' as const,
   }))
-  return createBindingNode(id, source.tagName, bindings, false)
+  return createBindingNode(id, source.tagName, bindings, false, source.className, onClassChange)
 }
 
 /** Build host handles and a manifest-id lookup from already translated IR. */
@@ -130,7 +141,7 @@ export function materializeNativeBindingTree(
         runtimeBindings.push({ name: `:${name}`, value, kind: 'attr' })
       }
     }
-    const node = createBindingNode(id, source.type, runtimeBindings)
+    const node = createBindingNode(id, source.type, runtimeBindings, true, source._classes, value => host.setAttribute(node, 'class', value))
     source.id = id
     source.props.__stxId = id
     node.parentNode = parent

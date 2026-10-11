@@ -16,6 +16,57 @@ describe('a native screen on the shared stx signals runtime', () => {
     delete window.__stx_host
   })
 
+  it('keeps static and reactive native classes readable across appearance changes', async () => {
+    const compiled = await compileScreenSource(`<script client>
+const active = state(true)
+function toggle() { active.set(!active()) }
+</script>
+<View class="bg-white dark:bg-slate-950">
+<Text class="font-semibold text-slate-900 dark:text-white">Title</Text>
+<Text class="text-2xl" :class="active() ? 'text-blue-700 dark:text-blue-300' : 'text-slate-900 dark:text-white'">42</Text>
+<Text :class="{ 'bg-blue-50 dark:bg-blue-900': active }">Badge</Text>
+<Icon class="w-5 h-5" :class="active() ? 'i-lucide-bike text-blue-700 dark:text-blue-300' : 'i-lucide-heart text-slate-900 dark:text-white'" />
+<Button @click="toggle()">Toggle</Button>
+</View>`, path.join(import.meta.dir, 'Appearance.stx'))
+    const sent: any[] = []
+    let receive: (raw: string) => void = () => {}
+    const bridge = {
+      colorScheme: 'dark' as 'light' | 'dark',
+      postMessage: (raw: string) => sent.push(JSON.parse(raw)),
+      onMessage: (callback: typeof receive) => { receive = callback },
+    }
+    const screen = prepareSharedNativeScreen(compiled.document, compiled.manifest, bridge)
+    installNodeConstants()
+    window.__stx_host = screen.host
+    new Function(generateSignalsRuntimeDev())()
+    new Function(compiled.setup!.code)()
+    screen.mount(window.stx, window.__stx_latestSetup)
+    screen.host.flush()
+    const rendered = sent.find(message => message.type === 'RENDER').payload.document
+    expect(rendered.style.backgroundColor).toBe('#020617')
+    expect(rendered.children[0].style.color).toBe('#ffffff')
+    const ops = () => sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
+    expect(ops()).toContainEqual(expect.objectContaining({ patch: { style: expect.objectContaining({ fontSize: 24, color: '#93c5fd' }) } }))
+    expect(ops()).toContainEqual(expect.objectContaining({ patch: { props: { symbol: 'figure.outdoor.cycle' } } }))
+    const press = ops().find(operation => operation.patch?.events?.onPress)
+    sent.length = 0
+    receive(JSON.stringify({ type: 'APPEARANCE', payload: { colorScheme: 'light' } }))
+    screen.host.flush()
+    expect(ops()).toContainEqual(expect.objectContaining({ id: rendered.id, patch: { style: expect.objectContaining({ backgroundColor: '#ffffff' }) } }))
+    expect(ops()).toContainEqual(expect.objectContaining({ patch: { style: expect.objectContaining({ fontSize: 24, color: '#1d4ed8' }) } }))
+    sent.length = 0
+    receive(JSON.stringify({ type: 'EVENT', payload: { handlerId: press.patch.events.onPress, nativeEvent: {} } }))
+    screen.host.flush()
+    expect(ops()).toContainEqual(expect.objectContaining({ patch: { style: expect.objectContaining({ fontSize: 24, color: '#0f172a' }) } }))
+    expect(ops()).toContainEqual(expect.objectContaining({ patch: { props: { symbol: 'heart' } } }))
+    expect(ops()).toContainEqual(expect.objectContaining({ patch: { style: expect.objectContaining({ backgroundColor: null }) } }))
+    sent.length = 0
+    receive(JSON.stringify({ type: 'APPEARANCE', payload: { colorScheme: 'dark' } }))
+    screen.host.flush()
+    expect(ops()).toContainEqual(expect.objectContaining({ patch: { style: expect.objectContaining({ fontSize: 24, color: '#ffffff' }) } }))
+    screen.unmount()
+  })
+
   it('turns a native press into a signal-driven text mutation', async () => {
     const source = `<script client>
 const count = state(0)

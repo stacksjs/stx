@@ -29,6 +29,7 @@ export function prepareSharedNativeScreen(
   installCraftBridge(protocol, bridge, globalThis as Record<string, any>, options)
 
   const host = createNativeHost({
+    colorScheme: bridge.colorScheme === 'dark' ? 'dark' : 'light',
     send(operations) {
       const baseRevision = revision
       revision++
@@ -41,6 +42,14 @@ export function prepareSharedNativeScreen(
       })
     },
   })
+  protocol.on<any>('APPEARANCE', (message) => {
+    const scheme = message.payload?.colorScheme
+    if (scheme === 'light' || scheme === 'dark') {
+      bridge.colorScheme = scheme
+      host.setColorScheme(scheme)
+    }
+  })
+
   const tree = materializeNativeBindingTree(document, manifest, host)
   let dispose: (() => void) | null = null
 

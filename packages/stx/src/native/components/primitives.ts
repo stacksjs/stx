@@ -306,6 +306,13 @@ export interface PickerProps extends BaseProps {
 // Media Components
 // ============================================================================
 
+/** Iconify or SF Symbol rendered by the platform's native icon view. */
+export interface IconProps extends BaseProps {
+  name?: string
+  symbol?: string
+  color?: string
+}
+
 export interface ImageProps extends BaseProps {
   /** Image source */
   source: ImageSource
@@ -498,6 +505,7 @@ export const ComponentRegistry = {
   Slider: 'Slider',
 
   // Media
+  Icon: 'Icon',
   Image: 'Image',
   ImageBackground: 'ImageBackground',
 
