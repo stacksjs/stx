@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.463...v0.2.464)
+
+## 🐛 Bug Fixes
+
+- **native**: dispose removed subtrees only once ([e5d20bf](https://github.com/stacksjs/stx/commit/e5d20bf)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.464 ([62602e5](https://github.com/stacksjs/stx/commit/62602e5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.462...v0.2.463)
 
 ## 🐛 Bug Fixes
