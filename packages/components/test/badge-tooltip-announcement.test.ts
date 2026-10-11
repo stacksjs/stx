@@ -183,8 +183,7 @@ describe('Tooltip can be dismissed and can be hovered', () => {
 describe('Tooltip describes the control, not the wrapper', () => {
   const FILES = {
     'layouts/app.stx': layout(''),
-    'components/Teleport.stx': readFileSync(path.join(UI_DIR, 'teleport/Teleport.stx'), 'utf-8'),
-    'components/Tooltip.stx': readFileSync(path.join(UI_DIR, 'tooltip/Tooltip.stx'), 'utf-8').replace('../../utils/tooltip-position', path.join(UI_DIR, '../utils/tooltip-position')),
+    'components/Tooltip.stx': readFileSync(path.join(UI_DIR, 'tooltip/Tooltip.stx'), 'utf-8').replace('../../utils/tooltip-position', path.join(UI_DIR, '../utils/tooltip-position')).replace('../../utils/element-portal', path.join(UI_DIR, '../utils/element-portal')),
     'pages/index.stx': page('app', `<Tooltip content="Resolve, alerts again only if it comes back">
   <button id="trigger">OK</button>
 </Tooltip>`),
@@ -222,8 +221,28 @@ describe('Tooltip describes the control, not the wrapper', () => {
       await settle()
       const trigger = browser.document.querySelector('#trigger')!
       const panel = browser.document.querySelector('[role="tooltip"]')!
-      expect(panel.closest('[data-teleport-id]')?.parentElement).toBe(browser.document.body)
+      expect(panel.parentElement).toBe(browser.document.body)
       expect(trigger.closest('[data-teleport-id]')).toBeNull()
+    }
+    finally { closeBrowser() }
+  })
+
+  it('keeps its own reactive visibility when portaled', async () => {
+    const app = await renderApp(FILES, ROUTES)
+    try {
+      const browser = await boot(app, '/')
+      await settle()
+      const trigger = browser.document.querySelector('#trigger')!
+      const id = trigger.closest('[data-stx-scope]')!.getAttribute('data-stx-scope')!
+      const scope = browser.window.stx._scopes[id]
+      const panel = browser.document.querySelector('[role="tooltip"]') as HTMLElement
+      expect(panel.style.getPropertyValue('display')).toBe('none')
+      scope.showTooltip()
+      await settle()
+      expect(panel.style.getPropertyValue('display')).not.toBe('none')
+      scope.hideTooltip()
+      await settle()
+      expect(panel.style.getPropertyValue('display')).toBe('none')
     }
     finally { closeBrowser() }
   })

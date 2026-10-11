@@ -28,7 +28,7 @@ const UI = path.join(import.meta.dir, '..', 'src', 'ui')
 
 /** The shipped component, not a copy: the point is to test what apps install. */
 function component(rel: string): string {
-  return readFileSync(path.join(UI, rel), 'utf-8').replace('../../utils/tooltip-position', path.join(UI, '../utils/tooltip-position'))
+  return readFileSync(path.join(UI, rel), 'utf-8').replace('../../utils/tooltip-position', path.join(UI, '../utils/tooltip-position')).replace('../../utils/element-portal', path.join(UI, '../utils/element-portal'))
 }
 
 /**
@@ -54,7 +54,6 @@ const FILES = {
   'layouts/app.stx': layout(''),
   'components/Progress.stx': component('progress/Progress.stx'),
   'components/Tooltip.stx': component('tooltip/Tooltip.stx'),
-  'components/Teleport.stx': component('teleport/Teleport.stx'),
   'components/Host.stx': HOST,
   'pages/index.stx': page('app', '<Host />'),
 }

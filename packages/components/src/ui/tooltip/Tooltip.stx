@@ -56,6 +56,7 @@ export const arrowClass = `absolute w-0 h-0 border-4 border-transparent ${arrowC
 
 <script client>
 import { tooltipPosition } from '../../utils/tooltip-position'
+import { portalElement } from '../../utils/element-portal'
 const delay = {{ delay }}
 // A live prop: a tooltip is commonly suppressed by state the page only learns
 // about later — while a field is being edited, or once a hint has been read —
@@ -166,7 +167,15 @@ function describeTrigger() {
   target.setAttribute('aria-describedby', existing.join(' '))
 }
 
-onMount(describeTrigger)
+let restorePanel = null
+onMount(() => {
+  describeTrigger()
+  // The panel already belongs to this setup scope. Moving the same node keeps
+  // its reactive bindings and refs, unlike passing them through another scope.
+  const panel = panelRef.value
+  if (panel) nextTick(() => { if (panel.isConnected) restorePanel = portalElement(panel, panel.ownerDocument.body) })
+})
+onDestroy(() => { if (restorePanel) restorePanel() })
 </script>
 
 <span class="relative inline-block {{ disabled ? 'cursor-not-allowed' : '' }}">
@@ -184,7 +193,6 @@ onMount(describeTrigger)
     <slot />
   </span>
 
-  <Teleport to="body">
   <span
     x-ref="panelRef"
     :style="panelStyle"
@@ -198,5 +206,4 @@ onMount(describeTrigger)
     <span class="block" style="max-height:calc(100vh - 32px);overflow-y:auto;">{{ content }}</span>
     <span class="{{ arrowClass }}" :style="arrowStyle"></span>
   </span>
-  </Teleport>
 </span>

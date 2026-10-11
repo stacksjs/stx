@@ -152,8 +152,17 @@ console.log('[stx] entering IIFE');
     },
     removeAttribute: function(node, name) { node.removeAttribute(name); },
     setStyle: function(node, value) {
-      if (typeof value === 'object' && value !== null) Object.assign(node.style, value);
-      else if (typeof value === 'string') node.style.cssText = value;
+      if (typeof value === 'object' && value !== null) {
+        Object.assign(node.style, value);
+        if (Object.prototype.hasOwnProperty.call(value, 'display')) node.__stx_display = value.display || '';
+      }
+      else if (typeof value === 'string') {
+        node.style.cssText = value;
+        node.__stx_display = node.style.display || '';
+      }
+      // Reactive style updates must not clear the display:none owned by :show.
+      // This also keeps the latest explicit display for when the gate opens.
+      if (node.__stx_visible === false) node.style.display = 'none';
     },
 
     // Structural operations, for the bindings that build rows rather than
@@ -204,6 +213,7 @@ console.log('[stx] entering IIFE');
         node.__stx_display = (d && d !== 'none') ? d : '';
       }
       var was = node.style.display !== 'none';
+      node.__stx_visible = visible;
       node.style.display = visible ? node.__stx_display : 'none';
       return was;
     },
