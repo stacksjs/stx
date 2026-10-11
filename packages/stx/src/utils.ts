@@ -1341,6 +1341,9 @@ export async function renderComponentWithSlot(
       // through nested component renders so a static prop with the same name
       // cannot make `{{ signalName() }}` look server-evaluable and erase it.
       '__stx_client_signal_names',
+      // The same for every name the caller's client script declares, so a
+      // global of that name does not claim a slot's bound prop for the server.
+      '__stx_client_declared_names',
       // A shared component belongs to the host render, not the layer whose
       // source directory happens to contain its server script.
       '__stx_runtime_config',
