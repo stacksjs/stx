@@ -1497,7 +1497,18 @@ export async function renderComponentWithSlot(
         const attrs = script.match(/^<script\b([^>]*)>/i)?.[1] || ''
         const type = attrs.match(/\btype\s*=\s*["']([^"']+)["']/i)?.[1]?.toLowerCase()
         const executable = !type || ['module', 'text/javascript', 'application/javascript'].includes(type)
-        if (!/\bserver\b/i.test(attrs) && executable) {
+        /*
+         * A component expanded in the slot above emits its own setup script,
+         * stamped data-stx-owner (or data-stx-instance), right after its root.
+         * That one is compiled already and binds its root by id, so it is not
+         * the caller's to hoist, and it must stay where it is: inside a `:for`
+         * row it is cloned with the row, and the runtime runs it for each
+         * clone. Hoisted, it ended up after the slot host, every clone came up
+         * with no setup, and a component in a loop inside a slot rendered its
+         * raw `:class` and `{{ }}` once an `:if` mounted the host.
+         */
+        const instance = /\sdata-stx-(?:owner|instance)(?=[\s=/>])/i.test(` ${attrs}`)
+        if (!/\bserver\b/i.test(attrs) && executable && !instance) {
           callerClientScripts.push(script)
           return ''
         }
