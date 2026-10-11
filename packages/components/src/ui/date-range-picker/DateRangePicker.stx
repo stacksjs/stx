@@ -57,7 +57,6 @@ const activePreset = state(null)
 
 let rootEl = null
 let outsideHandler = null
-let keyHandler = null
 
 function midnight(d) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
@@ -153,19 +152,24 @@ onMount(() => {
     if (!isOpen() || !rootEl) return
     if (!rootEl.contains(event.target)) close()
   }
-  keyHandler = (event) => {
-    if (event.key === 'Escape' && isOpen()) {
-      event.preventDefault()
-      close()
-    }
-  }
   document.addEventListener('click', outsideHandler)
-  document.addEventListener('keydown', keyHandler)
+})
+
+/*
+ * Open means a popup layer on the page's overlay stack (window.stx.overlays):
+ * while it is on top it takes Escape, so a picker inside a dialog closes on
+ * Escape and leaves the dialog open. It listened on the document itself, and
+ * whether its listener or the dialog's ran first was down to which had been
+ * added first (stacksjs/stx#2057).
+ */
+effect(() => {
+  if (isOpen()) window.stx.overlays.open(instanceId, { modal: false, panel: () => rootEl, onEscape: close })
+  else window.stx.overlays.close(instanceId)
 })
 
 onDestroy(() => {
+  window.stx.overlays.close(instanceId)
   if (outsideHandler) document.removeEventListener('click', outsideHandler)
-  if (keyHandler) document.removeEventListener('keydown', keyHandler)
 })
 
 defineExpose({ isOpen, rangeStart, rangeEnd, activePreset, applyPreset, onCalendarChange, clear, label })

@@ -2,6 +2,10 @@
 export const open = $bool($props.open)
 export const position = $props.position || 'right'
 export const title = $props.title || ''
+/** Set `closeOnEscape="false"` for a drawer that must be answered, not dismissed. */
+export const closeOnEscape = $bool($props.closeOnEscape, true)
+/** The same, for a click on the backdrop. */
+export const closeOnBackdrop = $bool($props.closeOnBackdrop, true)
 export const className = $props.className || ''
 
 /*
@@ -122,153 +126,45 @@ const drawerInstanceId = {{ drawerInstanceId }}
 // See stacksjs/stx#1704.
 const isOpen = useReactiveProp('open', {{ open }})
 
+const closeOnEscape = {{ closeOnEscape }}
+const closeOnBackdrop = {{ closeOnBackdrop }}
+
 function close() {
   isOpen.set(false)
   emit('close')
 }
 
 function onBackdropClick() {
-  close()
+  if (closeOnBackdrop && window.stx.overlays.isTop(drawerInstanceId)) close()
 }
 
-function onPanelKey(event) {
-  if (event.key === 'Escape') close()
-}
-
-/*
- * Escape closes it from anywhere, not just from inside the panel.
- *
- * The keydown handler on the panel only fires when focus is already in it, and
- * opening a drawer does not move focus - so the very first Escape, pressed
- * while focus is still on whatever opened it, did nothing. Bound on the
- * document instead, and only while open.
- */
-function onDocumentKey(event) {
-  if (event.key === 'Escape' && isOpen()) close()
+function panelEl() {
+  return document.querySelector(`[data-stx-drawer-panel="${drawerInstanceId}"]`)
 }
 
 /*
- * Hold the page still behind the drawer.
- *
- * Without this the page scrolls under an open drawer, which on a phone means a
- * drag inside the cart scrolls the restaurant behind it and the cart stays
- * put. The scrollbar's width is replaced as padding so the page does not jump
- * sideways when it disappears.
+ * Open means on the page's overlay stack (window.stx.overlays), shared with
+ * Dialog, stxConfirm and the app's own overlays: the page held still from the
+ * first overlay to the last, focus moved in and back out, Escape for the
+ * topmost only, and Tab trapped in the panel - which this drawer did not do at
+ * all before, so Tab walked out of an aria-modal panel into the page behind
+ * it. It also bound its own Escape, so one Escape closed a drawer and the
+ * dialog over it together (stacksjs/stx#2057).
  */
-let restoreScroll = null
-
-function lockScroll() {
-  if (restoreScroll) return
-
-  const gap = window.innerWidth - document.documentElement.clientWidth
-  const previous = { overflow: document.body.style.overflow, paddingRight: document.body.style.paddingRight }
-
-  document.body.style.overflow = 'hidden'
-  if (gap > 0) document.body.style.paddingRight = `${gap}px`
-
-  restoreScroll = () => {
-    document.body.style.overflow = previous.overflow
-    document.body.style.paddingRight = previous.paddingRight
-    restoreScroll = null
-  }
-}
-
-function unlockScroll() {
-  if (restoreScroll) restoreScroll()
-}
-
-/*
- * Focus moves in on open and back on close.
- *
- * A drawer that leaves focus behind is unreachable by keyboard: Tab walks the
- * page underneath it, and a screen reader never learns anything opened. Focus
- * returns to whatever opened it on the way out, so closing does not dump the
- * user at the top of the document.
- */
-let opener = null
-
-/*
- * Retried across frames, because focus is refused before the panel is shown.
- *
- * `:show` toggles the drawer's display, and that has not happened yet on the
- * frame the effect runs: `focus()` on a `display: none` element is a silent
- * no-op, so a single attempt left focus on the body every time. Nothing
- * throws, and the drawer looks right - it is only unreachable by keyboard.
- *
- * So the attempt repeats until `document.activeElement` proves it landed,
- * rather than assuming any one frame is late enough. Bounded, so a panel with
- * nothing focusable in it cannot spin; the panel itself carries `tabindex=-1`
- * and takes focus in that case. It also stops if the drawer closed in the
- * meantime, so a drawer opened and shut inside those few frames does not
- * pull focus back afterwards.
- */
-/*
- * The next chance to try, whichever comes first.
- *
- * `requestAnimationFrame` is the right signal when the page is painting, and
- * it is suspended entirely when the page is not - a background tab, or a
- * window the compositor has parked. A drawer opened in that state would never
- * take focus, and would still not have it when the reader came back, because
- * the one scheduled callback fires long after everything else has moved on.
- * So a timer races the frame and the first to arrive wins.
- */
-function soon(callback) {
-  let done = false
-
-  const once = () => {
-    if (done) return
-    done = true
-    callback()
-  }
-
-  requestAnimationFrame(once)
-  setTimeout(once, 32)
-}
-
-function focusFirst(attempts) {
-  if (!isOpen()) return
-
-  const panel = document.querySelector(`[data-stx-drawer-panel="${drawerInstanceId}"]`)
-  if (!panel) return
-
-  const target = panel.querySelector('[autofocus]') || panel.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])') || panel
-
-  target.focus?.()
-
-  if (document.activeElement === target) return
-  if (attempts > 0) soon(() => focusFirst(attempts - 1))
-}
-
-function captureFocus() {
-  opener = document.activeElement
-
-  soon(() => focusFirst(10))
-}
-
-function releaseFocus() {
-  const target = opener
-  opener = null
-  if (target && typeof target.focus === 'function') target.focus()
-}
-
 effect(() => {
   if (isOpen()) {
-    lockScroll()
-    captureFocus()
-    document.addEventListener('keydown', onDocumentKey)
+    window.stx.overlays.open(drawerInstanceId, {
+      panel: panelEl,
+      onEscape: closeOnEscape ? close : null,
+    })
   }
   else {
-    unlockScroll()
-    releaseFocus()
-    document.removeEventListener('keydown', onDocumentKey)
+    window.stx.overlays.close(drawerInstanceId)
   }
 })
 
 onDestroy(() => {
-  // A drawer removed while open would otherwise leave the page locked, with no
-  // drawer left to unlock it.
-  unlockScroll()
-  document.removeEventListener('keydown', onDocumentKey)
+  window.stx.overlays.close(drawerInstanceId)
 })
 
 defineExpose({
@@ -286,7 +182,7 @@ defineExpose({
     @click="onBackdropClick()"
   ></div>
 
-  <div class="fixed inset-0 z-50 overflow-hidden" @keydown="onPanelKey($event)">
+  <div class="fixed inset-0 z-50 overflow-hidden">
     <div class="absolute inset-0 overflow-hidden">
       <div class="{{ containerClasses }}">
         <div

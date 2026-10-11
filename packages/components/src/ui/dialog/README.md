@@ -49,6 +49,11 @@ function openModal() {
 | `onClose` | `(value: boolean) => void` | - | Close handler |
 | `className` | `string` | `''` | Additional CSS classes |
 | `as` | `string` | `'div'` | HTML element to render |
+| `title` | `string` | `''` | Accessible name, when there is no `DialogTitle` |
+| `closeOnEscape` | `boolean` | `true` | `false` for a dialog that must be answered rather than dismissed |
+| `closeOnBackdrop` | `boolean` | `true` | `false` to keep it open on a backdrop click |
+
+An open dialog goes on the page's overlay stack (`window.stx.overlays`), shared with `Drawer`, `CommandPalette`, `stxConfirm`/`stxAlert`, the library's menus and popovers, and the app's own overlays (`openOverlay` / `closeOverlay` from `@stacksjs/components`). The topmost layer answers Escape and owns Tab, so one Escape closes a menu inside a dialog, or the inner of two dialogs, and nothing else. The page stays locked from the first open to the last close, and focus returns to whatever opened each one.
 
 ### DialogBackdrop
 | Prop | Type | Default | Description |

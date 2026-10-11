@@ -211,8 +211,8 @@ function onQuery(event) {
  * Focus goes back to the trigger, but only if it had moved into the panel:
  * otherwise this would steal it from wherever the user actually is.
  */
-function onDocumentKey(event) {
-  if (event.key !== 'Escape' || !isOpen()) return
+function onEscape() {
+  if (!isOpen()) return
   close()
   if (!rootEl) return
   const active = rootEl.ownerDocument && rootEl.ownerDocument.activeElement
@@ -231,13 +231,25 @@ onMount(() => {
     if (rootEl && !rootEl.contains(event.target)) close()
   }
   document.addEventListener('click', outsideHandler, true)
-  document.addEventListener('keydown', onDocumentKey)
   document.addEventListener('keydown', onComboboxKey)
 })
 
+/*
+ * Open means a layer on the page's overlay stack (window.stx.overlays), as a
+ * popup: while it is on top it takes Escape, so inside a dialog one Escape
+ * closes this and leaves the dialog open. It used to listen for Escape on the
+ * document itself, and whichever of its listener and the dialog's had been
+ * added first won (stacksjs/stx#2057). Not modal: it does not lock the page,
+ * trap Tab or move focus.
+ */
+effect(() => {
+  if (isOpen()) window.stx.overlays.open(comboboxInstanceId, { modal: false, panel: () => rootEl, onEscape })
+  else window.stx.overlays.close(comboboxInstanceId)
+})
+
 onDestroy(() => {
+  window.stx.overlays.close(comboboxInstanceId)
   if (outsideHandler) document.removeEventListener('click', outsideHandler, true)
-  document.removeEventListener('keydown', onDocumentKey)
   document.removeEventListener('keydown', onComboboxKey)
 })
 

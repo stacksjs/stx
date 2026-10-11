@@ -6,6 +6,8 @@ export { default as Hero } from './components/Hero.stx'
 export { default as Installation } from './components/Installation.stx'
 // Export composables
 export * from './composables'
+// The page's overlay stack, for overlays an app draws itself (stacksjs/stx#2057).
+export * from './utils/overlays'
 // Theme seam — see src/theme for how an app redirects the components' colours.
 export * from './theme'
 // Export UI components

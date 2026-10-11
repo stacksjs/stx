@@ -133,9 +133,19 @@ function hideTooltip() {
  * unless this tooltip is the one showing. useEventListener drops it on
  * teardown, so a page of tooltips does not leak one apiece.
  */
-useEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && isVisible())
-    hideTooltip()
+/*
+ * While it shows, the tooltip is a popup layer on the page's overlay stack, so
+ * Escape dismisses it first: a tooltip over a dialog's field goes, and the
+ * dialog stays (stacksjs/stx#2057). It listened on the document itself, where
+ * the dialog's listener could take the same Escape.
+ */
+effect(() => {
+  if (isVisible()) window.stx.overlays.open(tooltipId, { modal: false, panel: null, onEscape: hideTooltip })
+  else window.stx.overlays.close(tooltipId)
+})
+
+onDestroy(() => {
+  window.stx.overlays.close(tooltipId)
 })
 
 /*

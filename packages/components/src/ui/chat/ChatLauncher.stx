@@ -19,7 +19,15 @@ function close() {
   open.set(false)
   nextTick(() => toggle()?.focus())
 }
-function keyboard(event) { if (event.key === 'Escape') close() }
+// Open, the panel is a popup layer on the page's overlay stack, so Escape
+// closes it while it is on top and nothing underneath (stacksjs/stx#2057).
+const chatStoreName = {{ storeName }}
+const chatLayerId = `stx-chat-${chatStoreName}`
+effect(() => {
+  if (open()) window.stx.overlays.open(chatLayerId, { modal: false, panel: null, onEscape: close })
+  else window.stx.overlays.close(chatLayerId)
+})
+onDestroy(() => window.stx.overlays.close(chatLayerId))
 onMount(() => chat.load())
 onMount(() => chat.observe())
 </script>
@@ -30,7 +38,7 @@ onMount(() => chat.observe())
     <span :if="unread" class="absolute -top-1 -right-1 min-w-5 h-5 px-1 flex items-center justify-center text-[10px] font-semibold text-accent-ink bg-accent-solid border-2 border-panel rounded-full" :text="unread"></span>
   </StxLink>
 @else
-  <section :if="open" role="dialog" aria-label="Messages" @keydown="keyboard($event)" class="fixed right-6 bottom-24 z-40 w-[420px] max-w-[calc(100vw-48px)] rounded-2xl border border-line bg-panel shadow-xl overflow-hidden">
+  <section :if="open" role="dialog" aria-label="Messages" class="fixed right-6 bottom-24 z-40 w-[420px] max-w-[calc(100vw-48px)] rounded-2xl border border-line bg-panel shadow-xl overflow-hidden">
     <header class="flex items-center justify-between px-4 py-3 border-b border-line">
       <StxLink to="{{ href }}" class="font-semibold text-sm text-fg-strong hover:text-accent">Messages <span aria-hidden="true" class="i-lucide-arrow-up-right inline-block"></span></StxLink>
       <button ref="chat-close" type="button" @click="close()" aria-label="Close chat" class="inline-flex items-center justify-center w-9 h-9 text-fg-muted rounded-full hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-accent"><span aria-hidden="true" class="i-lucide-x text-lg"></span></button>

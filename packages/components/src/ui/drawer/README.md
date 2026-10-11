@@ -43,6 +43,10 @@ let drawerOpen = false
 | `position` | `'right' \| 'left' \| 'top' \| 'bottom'` | `'right'` | Position of the drawer |
 | `title` | `string` | `''` | Optional title for the drawer |
 | `className` | `string` | `''` | Additional CSS classes |
+| `closeOnEscape` | `boolean` | `true` | `false` for a drawer that must be answered rather than dismissed |
+| `closeOnBackdrop` | `boolean` | `true` | `false` to keep it open on a backdrop click |
+
+An open drawer is a modal layer on the page's overlay stack (`window.stx.overlays`): the page held still, focus moved in and back, Tab trapped in the panel, and Escape for whichever overlay is on top. See the Dialog README.
 
 ## Positions
 

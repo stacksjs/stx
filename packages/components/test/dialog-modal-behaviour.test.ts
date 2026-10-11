@@ -258,3 +258,90 @@ describe('Dialog keeps focus inside itself (#1973)', () => {
     }
   })
 })
+
+/**
+ * One dialog over another (stacksjs/stx#2057).
+ *
+ * Each Dialog used to listen for Escape on the document and trap Tab for
+ * itself, so with a confirmation open over a form one Escape closed both, and
+ * the two traps fought over focus. They share the runtime's overlay stack now:
+ * the topmost has the keyboard, and the page stays locked until the last one
+ * closes.
+ */
+const NESTED = {
+  ...FILES,
+  'pages/nested.stx': page('app', `<Dialog open="true">
+  <DialogBackdrop />
+  <DialogPanel>
+    <DialogTitle>Edit workout</DialogTitle>
+    <button type="button" id="outer-save">Save</button>
+  </DialogPanel>
+</Dialog>
+<Dialog open="true" closeOnBackdrop="false">
+  <DialogBackdrop />
+  <DialogPanel>
+    <DialogTitle>Discard changes?</DialogTitle>
+    <button type="button" id="inner-discard">Discard</button>
+  </DialogPanel>
+</Dialog>
+<Dialog open="true" closeOnEscape="false" id="unused">
+  <DialogPanel><DialogTitle>Never</DialogTitle></DialogPanel>
+</Dialog>`),
+}
+
+describe('Dialog over a dialog', () => {
+  async function openNested() {
+    const app = await renderApp(NESTED, { '/nested': 'pages/nested.stx' })
+    const browser = await boot(app, '/nested')
+    await settle()
+    const scopes = Array.from(browser.document.querySelectorAll('[data-stx-dialog]')).map((root: any) => {
+      const scope = root.closest('[data-stx-scope]') ?? root
+      return browser.window.stx._scopes[scope.getAttribute('data-stx-scope')]
+    })
+    return { browser, scopes, dispose: () => app.dispose() }
+  }
+
+  it('answers one Escape with the topmost dialog that will take it', async () => {
+    const { browser, scopes, dispose } = await openNested()
+    try {
+      const [outer, inner, must] = scopes
+      expect(browser.window.stx.overlays.list().length).toBe(3)
+
+      // The topmost refuses Escape, so nothing closes - not the one under it.
+      browser.document.dispatchEvent(new browser.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }))
+      await settle()
+      expect([outer.isOpen(), inner.isOpen(), must.isOpen()]).toEqual([true, true, true])
+
+      must.close()
+      await settle()
+      browser.document.dispatchEvent(new browser.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }))
+      await settle()
+      expect([outer.isOpen(), inner.isOpen()]).toEqual([true, false])
+      expect(browser.document.body.style.overflow).toBe('hidden')
+
+      browser.document.dispatchEvent(new browser.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }))
+      await settle()
+      expect(outer.isOpen()).toBeFalsy()
+      expect(browser.document.body.style.overflow).not.toBe('hidden')
+    }
+    finally {
+      await dispose()
+    }
+  })
+
+  it('keeps a dialog with closeOnBackdrop="false" open on a backdrop click', async () => {
+    const { browser, scopes, dispose } = await openNested()
+    try {
+      const [, inner, must] = scopes
+      must.close()
+      await settle()
+      const backdrop = browser.document.querySelectorAll('[data-stx-dialog-backdrop]')[1]
+      inner.onRootClick({ target: backdrop })
+      await settle()
+      expect(inner.isOpen()).toBeTruthy()
+    }
+    finally {
+      await dispose()
+    }
+  })
+})

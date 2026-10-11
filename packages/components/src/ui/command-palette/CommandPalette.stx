@@ -13,7 +13,6 @@ const emit = defineEmits()
 const paletteInstanceId = {{ paletteInstanceId }}
 const isOpen = state({{ open }})
 const query = state({{ initialQuery }})
-let escHandler = null
 
 function close() {
   if (!isOpen()) return
@@ -37,15 +36,33 @@ function onItemSelect(event) {
   close()
 }
 
-onMount(() => {
-  escHandler = (event) => {
-    if (event.key === 'Escape' && isOpen()) close()
+function panelEl() {
+  return document.querySelector(`[data-palette-id="${paletteInstanceId}"] [data-stx-command-palette-panel]`)
+}
+
+/*
+ * The palette takes over the page, so it is a modal layer on the page's
+ * overlay stack (window.stx.overlays): the page held still behind it, focus
+ * straight into the search field and back to whatever opened it, Tab kept
+ * inside, and Escape for whichever overlay is on top. It used to listen for
+ * Escape on the document and do none of the rest, so focus stayed behind it
+ * and a palette opened from a dialog closed the dialog too (stacksjs/stx#2057).
+ */
+effect(() => {
+  if (isOpen()) {
+    window.stx.overlays.open(paletteInstanceId, {
+      panel: panelEl,
+      onEscape: close,
+      initialFocus: () => panelEl()?.querySelector('input'),
+    })
   }
-  document.addEventListener('keydown', escHandler)
+  else {
+    window.stx.overlays.close(paletteInstanceId)
+  }
 })
 
 onDestroy(() => {
-  if (escHandler) document.removeEventListener('keydown', escHandler)
+  window.stx.overlays.close(paletteInstanceId)
 })
 
 defineExpose({ isOpen, query, show, close })
@@ -58,9 +75,16 @@ defineExpose({ isOpen, query, show, close })
   data-palette-id="{{ paletteInstanceId }}"
   @stx:command-select="onItemSelect($event)"
 >
-  <div class="fixed inset-0 bg-neutral-500/25 dark:bg-neutral-500/50 transition-opacity" @click="close()"></div>
+  <div class="fixed inset-0 bg-neutral-500/25 dark:bg-neutral-500/50 transition-opacity" aria-hidden="true" @click="close()"></div>
 
-  <div class="mx-auto max-w-xl transform divide-y divide-line overflow-hidden rounded-xl bg-panel shadow-2xl ring-1 ring-line transition-all relative">
+  <div
+    data-stx-command-palette-panel
+    role="dialog"
+    aria-modal="true"
+    aria-label="Command palette"
+    tabindex="-1"
+    class="mx-auto max-w-xl transform divide-y divide-line overflow-hidden rounded-xl bg-panel shadow-2xl ring-1 ring-line transition-all relative"
+  >
     <div class="relative">
       <svg class="pointer-events-none absolute top-3.5 left-4 h-5 w-5 text-fg-soft" viewBox="0 0 20 20" fill="currentColor">
         <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
@@ -69,6 +93,7 @@ defineExpose({ isOpen, query, show, close })
         type="text"
         class="h-12 w-full border-0 bg-transparent pl-11 pr-4 text-fg placeholder-fg-soft focus:ring-0 sm:text-sm"
         placeholder="Search..."
+        aria-label="Search commands"
         :value="query()"
         @input="onQueryInput($event)"
       />
