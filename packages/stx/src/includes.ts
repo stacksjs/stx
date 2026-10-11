@@ -485,9 +485,66 @@ function includeScopeId(includeFilePath: string, context: Record<string, any>): 
  */
 const warnedUnscopedSignalPartials = new Set<string>()
 
+/** Partials already warned about for having more than one root. Once per file, as above. */
+const warnedMultiRootSignalPartials = new Set<string>()
+
 /** Forget which partials were warned about, for tests. */
 export function resetUnscopedSignalWarnings(): void {
   warnedUnscopedSignalPartials.clear()
+  warnedMultiRootSignalPartials.clear()
+}
+
+const VOID_ELEMENTS: ReadonlySet<string> = new Set([
+  'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
+  'link', 'meta', 'param', 'source', 'track', 'wbr',
+])
+
+/**
+ * The tag names of a partial's top-level elements, in order.
+ *
+ * A partial's scope lives on ONE element, its first, and the runtime finds it
+ * with `document.querySelector('[data-stx-scope="id"]')`. Markup after that
+ * element at the top level is not inside it, so its bindings resolve against
+ * whatever scope encloses the include instead — the layout's, or the page's —
+ * where the partial's own signals do not exist. An `:if` on one of them reads
+ * `undefined` and the branch never shows; a click handler that sets one runs
+ * and changes nothing on screen. No error anywhere.
+ *
+ * Scripts and styles are left out: they carry no bindings, and a partial's
+ * trailing `<style>` is ordinary. A coarse count, like the tag-balance check:
+ * scripts, styles, comments and interpolations are blanked first so a `<` in
+ * them is not read as markup.
+ */
+export function topLevelElements(html: string): string[] {
+  const blank = (text: string) => text.replace(/[^\n]/g, ' ')
+  const markup = html
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, blank)
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, blank)
+    .replace(/<!--[\s\S]*?-->/g, blank)
+    // eslint-disable-next-line no-control-regex
+    .replace(/\x00STX_HTML_COMMENT_\d+\x00/g, blank)
+    .replace(/\{\{[\s\S]*?\}\}/g, blank)
+    .replace(/\{!![\s\S]*?!!\}/g, blank)
+
+  const roots: string[] = []
+  let depth = 0
+  const tag = /<(\/?)([A-Za-z][\w-]*)\b(?:[^<>"']|"[^"]*"|'[^']*')*?(\/?)>/g
+  let match: RegExpExecArray | null
+  // eslint-disable-next-line no-cond-assign
+  while ((match = tag.exec(markup)) !== null) {
+    const closing = match[1] === '/'
+    const name = match[2]
+    const opensNothing = match[3] === '/' || VOID_ELEMENTS.has(name.toLowerCase())
+    if (closing) {
+      depth = Math.max(0, depth - 1)
+      continue
+    }
+    if (depth === 0)
+      roots.push(name)
+    if (!opensNothing)
+      depth++
+  }
+  return roots
 }
 
 // Cache for partials to avoid repeated file reads (LRU with max 500 entries)
@@ -1427,6 +1484,22 @@ catch (e) {
             `[stx] ${path.relative(process.cwd(), includeFilePath)} declares signals but has no element to scope them to, `
             + `so nothing in it will hydrate. Wrap the partial's markup in a single root element.`,
           )
+        }
+
+        // Stamped, but on only the first of several top-level elements: the
+        // rest render outside the scope and bind against the page's instead
+        // (see topLevelElements). Silent the same way the unstamped case is,
+        // so said the same way, once per file.
+        if (scopeResult.stamped && scopeResult.root !== 'body' && declaresSignals && !warnedMultiRootSignalPartials.has(includeFilePath)) {
+          const roots = topLevelElements(workingContent)
+          if (roots.length > 1) {
+            warnedMultiRootSignalPartials.add(includeFilePath)
+            console.warn(
+              `[stx] ${path.relative(process.cwd(), includeFilePath)} declares signals and has ${roots.length} top-level elements `
+              + `(${roots.map(name => `<${name}>`).join(', ')}). Only the first is scoped, so bindings in the others cannot see this partial's signals. `
+              + `Wrap the partial's markup in a single root element.`,
+            )
+          }
         }
 
         // Each script was stamped data-stx-owner with its own id, and only the
