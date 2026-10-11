@@ -39,6 +39,7 @@ import type { ParsedEvent, EventModifiers } from './events'
 import { asInvocableStatement, listensPassively } from './events'
 import { transformStoreImports } from './store-imports'
 import { declaresClientIdentifier } from './client-declarations'
+import { parameterAnalysis } from './client-parameter-bindings'
 import { findInterpolationEnd, stripCommentsAndLiterals } from './strip-literals'
 // Re-exported from its old home. It moved to `strip-literals.ts` so the
 // editor-facing extractor could share it without pulling the bundler in behind
@@ -650,8 +651,7 @@ export function transformAutoImports(code: string): AutoImportResult {
     // of those triggers a blanket destructure that happens to rescue the rest.
     // runtime-globals.ts:162 and signal-processing.ts:1165 already spell it
     // this way; this was the third copy and the one that drifted.
-    const symbolRegex = new RegExp(`\\b${symbol}\\s*(?:<[^>]*>)?\\s*\\(`, 'g')
-    if (symbolRegex.test(transformedCode)) {
+    if (referencesName(transformedCode, symbol, true)) {
       usedStxImports.add(symbol)
     }
   }
@@ -741,9 +741,12 @@ export function transformAutoImports(code: string): AutoImportResult {
  * runtime is missing.
  */
 export function referencesName(code: string, name: string, call = false): boolean {
+  const analysis = parameterAnalysis(code)
+  code = analysis.code
   const pattern = new RegExp(`\\b${name.replace(/[$]/g, '\\$')}\\b`, 'g')
   for (const match of code.matchAll(pattern)) {
     const start = match.index ?? 0
+    if (analysis.shadows(name, start)) continue
     const end = start + name.length
     let before = start - 1
     while (before >= 0 && /\s/.test(code[before]!)) before--
