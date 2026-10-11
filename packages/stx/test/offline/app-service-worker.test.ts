@@ -16,6 +16,7 @@ describe('the offline worker', () => {
     expect(worker).toContain('/bytes=(\\d*)-(\\d*)/')
     expect(worker).toContain('/\\.(?:mp4|m4v|mov|webm|m3u8|mp3|m4a)$/i')
     expect(worker).toContain('/\\.(?:js|css|woff2?|png|jpe?g|webp|avif|svg|ico)$/')
+    expect(worker).toContain('/\\/_stx\\/modules\\.[0-9a-f]{16}\\.js/g')
   })
 
   it('carries its build, its screens and its API prefix', () => {
@@ -448,6 +449,56 @@ describe('a kept screen (stale-while-revalidate)', () => {
     const sw = runWorker({ enabled: true, pages: ['/m'], networkTimeoutMs: 500 }, never)
     sw.stores.set('stx-shell-b1', new Map([['http://app.test/m', html('Kept')]]))
     expect(await (await sw.request('http://app.test/m', { Accept: 'text/html' }, { cache: 'no-cache' }))!.text()).toContain('Kept')
+  })
+})
+
+/**
+ * A kept page links its module bundles (/_stx/modules.<hash>.js), which only
+ * the server process that rendered it can answer. After a deploy the new
+ * process answers the old hashes 404, so a kept page whose bundles were not
+ * kept beside it opened cold with nothing bound: every {{ }} empty, every
+ * button dead, until a revalidation happened to replace it.
+ */
+describe('a kept screen whose module bundles are not kept', () => {
+  const BUNDLE = '/_stx/modules.0123456789abcdef.js'
+  const linking = (body: string) => html(`<script data-stx-modules src="${BUNDLE}"></script>${body}`)
+
+  it('is answered at once when its bundles are kept too', async () => {
+    const sw = runWorker({ enabled: true, pages: ['/coaches'] }, never)
+    sw.stores.set('stx-shell-b1', new Map([['http://app.test/coaches', linking('Kept')]]))
+    sw.stores.set('stx-assets', new Map([[`http://app.test${BUNDLE}`, new Response('/* bundle */')]]))
+    const started = Date.now()
+    const page = await sw.request('http://app.test/coaches', { Accept: 'text/html' }, { mode: 'navigate' })
+    expect(await page!.text()).toContain('Kept')
+    expect(Date.now() - started).toBeLessThan(200)
+  })
+
+  it('goes to the network first otherwise, and keeps what it answers', async () => {
+    const sw = runWorker({ enabled: true, pages: ['/coaches'] }, () => html('Fresh'))
+    sw.stores.set('stx-shell-b1', new Map([['http://app.test/coaches', linking('Kept')]]))
+    const page = await sw.request('http://app.test/coaches', { Accept: 'text/html' }, { mode: 'navigate' })
+    expect(await page!.text()).toContain('Fresh')
+    await sw.settle()
+    expect(await sw.stores.get('stx-shell-b1')!.get('http://app.test/coaches')!.clone().text()).toContain('Fresh')
+  })
+
+  it('does the same for a fragment the router asks for', async () => {
+    const sw = runWorker({ enabled: true, pages: ['/coaches'] }, () => html('Fresh'))
+    sw.stores.set('stx-shell-b1', new Map([['http://app.test/coaches?__stx_fragment=1', linking('Kept')]]))
+    const page = await sw.request('http://app.test/coaches', { 'X-STX-Router': 'true', 'Accept': 'text/html' })
+    expect(await page!.text()).toContain('Fresh')
+  })
+
+  it('waits for a slow network rather than show the copy that cannot bind', async () => {
+    const sw = runWorker({ enabled: true, pages: ['/coaches'], networkTimeoutMs: 500 }, () => later(800, () => html('Slow')))
+    sw.stores.set('stx-shell-b1', new Map([['http://app.test/coaches', linking('Kept')]]))
+    expect(await (await sw.request('http://app.test/coaches', { Accept: 'text/html' }))!.text()).toContain('Slow')
+  })
+
+  it('still stands in when there is no network at all', async () => {
+    const sw = runWorker({ enabled: true, pages: ['/coaches'] }, () => null)
+    sw.stores.set('stx-shell-b1', new Map([['http://app.test/coaches', linking('Kept')]]))
+    expect(await (await sw.request('http://app.test/coaches', { Accept: 'text/html' }, { mode: 'navigate' }))!.text()).toContain('Kept')
   })
 })
 

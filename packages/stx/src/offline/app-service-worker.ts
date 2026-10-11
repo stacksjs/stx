@@ -16,7 +16,10 @@
  *   page stands in. The screens named in `pages` are fetched when the worker
  *   installs, so they open offline even before they were visited, with the
  *   stylesheets and scripts they link to. Kept per build: a fragment from
- *   another build would make the router reload into nothing.
+ *   another build would make the router reload into nothing. A kept copy
+ *   whose module bundles (`/_stx/modules.<hash>.js`) are not kept too is not
+ *   answered first, since a later server process cannot answer them and the
+ *   page would never bind; it stands in only with no network at all.
  * - Dynamic screens named in `routes` (`/m/workout/:id`): one never opened is
  *   answered offline with the route's kept page, its params swapped for the
  *   ones asked for. For a page drawn on the device from the API, every value
@@ -735,6 +738,36 @@ function coldStartUpdate(request) {
   }).catch(function () { return false; });
 }
 
+// Whether every module bundle a kept page links to is kept too.
+//
+// A page's registry, stores and composables are /_stx/modules.<hash>.js,
+// answered by the server process that rendered the page, and only by it: a
+// deploy starts a process that has never heard of the old hashes and answers
+// them 404. A kept page whose bundles are not kept beside it is therefore one
+// that may never bind -- opened cold, it showed its markup with every {{ }}
+// empty and no button working, until a revalidation happened to replace it.
+// Such a copy is not answered first: the network is, and the copy only stands
+// in when there is no network at all, where it is the best there is.
+// ignoreVary: a script was kept under the browser's own request, whose
+// Accept-Encoding a lookup by URL does not carry.
+var MODULE_BUNDLE = /\\/_stx\\/modules\\.[0-9a-f]{16}\\.js/g;
+function bundlesKept(response) {
+  return response.clone().text().then(function (html) {
+    var urls = [];
+    var match;
+    MODULE_BUNDLE.lastIndex = 0;
+    while ((match = MODULE_BUNDLE.exec(html))) {
+      if (urls.indexOf(match[0]) === -1) urls.push(match[0]);
+    }
+    if (!urls.length) return true;
+    return caches.open(ASSETS).then(function (assets) {
+      return Promise.all(urls.map(function (url) { return assets.match(url, { ignoreVary: true }); }));
+    }).then(function (kept) {
+      return kept.every(Boolean);
+    });
+  }).catch(function () { return true; });
+}
+
 function pageResponse(request, event) {
   var fragment = isFragment(request);
   var key = variantUrl(request.url, fragment);
@@ -744,34 +777,39 @@ function pageResponse(request, event) {
     var cache = opened[0];
     var networkFirst = opened[1] || wantsNetworkFirst(request, new URL(request.url).pathname);
     return cache.match(key).then(function (hit) {
-      if (hit && !networkFirst) {
-        keepAlive(event, revalidate(request, cache, keys, hit, 'page'));
-        return hit;
-      }
-      var network = fetch(request).then(function (response) {
-        if (keepable(response) || keepStaticPage(request, response)) keepAlive(event, store(cache, keys, response.clone()));
-        return response;
-      });
-      // What stands in when the network is not there, or slow: the kept copy,
-      // then a dynamic route's kept page, then the fallback screen.
-      var standIn = function (offline) {
-        if (hit) return Promise.resolve(hit);
-        var route = dynamic ? cache.match(routeKey(dynamic.route, fragment)) : Promise.resolve(null);
-        return route.then(function (kept) {
-          if (kept) return withParams(kept, dynamic.params);
-          if (!offline) return null;
-          if (!S.fallback || fragment) return Response.error();
-          return cache.match(variantUrl(S.fallback, false)).then(function (fallback) { return fallback ? markFallback(fallback) : Response.error(); });
+      return (hit && !networkFirst ? bundlesKept(hit) : Promise.resolve(false)).then(function (whole) {
+        if (whole) {
+          keepAlive(event, revalidate(request, cache, keys, hit, 'page'));
+          return hit;
+        }
+        // Kept, but without its module bundles: not shown while the network
+        // might answer (bundlesKept).
+        var partial = hit && !networkFirst;
+        var network = fetch(request).then(function (response) {
+          if (keepable(response) || keepStaticPage(request, response)) keepAlive(event, store(cache, keys, response.clone()));
+          return response;
         });
-      };
-      return withTimeout(network, S.timeout).catch(function () {
-        return standIn(false).then(function (kept) {
-          if (kept) {
-            keepAlive(event, network);
-            return kept;
-          }
-          // Slower than the timeout, nothing kept to show: wait for it rather than fail.
-          return network.catch(function () { return standIn(true); });
+        // What stands in when the network is not there, or slow: the kept copy,
+        // then a dynamic route's kept page, then the fallback screen.
+        var standIn = function (offline) {
+          if (hit && (!partial || offline)) return Promise.resolve(hit);
+          var route = dynamic ? cache.match(routeKey(dynamic.route, fragment)) : Promise.resolve(null);
+          return route.then(function (kept) {
+            if (kept) return withParams(kept, dynamic.params);
+            if (!offline) return null;
+            if (!S.fallback || fragment) return Response.error();
+            return cache.match(variantUrl(S.fallback, false)).then(function (fallback) { return fallback ? markFallback(fallback) : Response.error(); });
+          });
+        };
+        return withTimeout(network, S.timeout).catch(function () {
+          return standIn(false).then(function (kept) {
+            if (kept) {
+              keepAlive(event, network);
+              return kept;
+            }
+            // Slower than the timeout, nothing kept to show: wait for it rather than fail.
+            return network.catch(function () { return standIn(true); });
+          });
         });
       });
     });
