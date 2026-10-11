@@ -119,6 +119,34 @@ describe('hydration audit — stranded scopes', () => {
     expect(out).toHaveLength(0)
   })
 
+  it('stays silent for a component inside a :if or :for that has not bound yet', () => {
+    // A loop's source and a :if branch whose deferred pass has not run are
+    // inert markup: the component roots in them are set up per clone when
+    // they bind, under ids of their own. Flagging the source's root (and
+    // "recovering" it against the page) was a false alarm on every routed
+    // visit to hq.training's coach calendar, whose strength cards hold an
+    // ExerciseArt in a loop.
+    g.window.stx._scopes.pending_host = { show: true, rows: [1, 2] }
+    const out = auditErrors(hydrate(
+      '<div data-stx-scope="pending_host"><section :if="show">'
+      + '<span data-stx-scope="pending_branch_child"></span>'
+      + '<ul><li :for="row in rows"><span data-stx-scope="pending_loop_child"></span></li></ul>'
+      + '</section></div>',
+    ))
+    expect(out.filter(e => e.includes('pending_branch_child') || e.includes('pending_loop_child'))).toHaveLength(0)
+  })
+
+  it('still reports a stranded scope outside a pending :if in the same pass', () => {
+    g.window.stx._scopes.pending_narrow = { show: true }
+    const out = auditErrors(hydrate(
+      '<div data-stx-scope="pending_narrow"><section :if="show"><span data-stx-scope="pending_inside"></span></section></div>'
+      + '<div data-stx-scope="really_stranded"></div>',
+    ))
+    expect(out).toHaveLength(1)
+    expect(out[0]).toContain('really_stranded')
+    expect(out[0]).not.toContain('pending_inside')
+  })
+
   it('stays silent on a page with no scopes at all', () => {
     expect(auditErrors(hydrate('<main><h1>Static page</h1></main>'))).toHaveLength(0)
   })

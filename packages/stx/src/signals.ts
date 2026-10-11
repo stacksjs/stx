@@ -9083,6 +9083,19 @@ catch (e) {
     return false;
   }
 
+  // Whether the element is, or sits inside, a structural directive's source that has
+  // not bound yet. Binding replaces the source with a marker and a template,
+  // so a :for / :if still on an element in the document has yet to run.
+  var UNBOUND_STRUCTURE = [':for', '@for', 'x-for', ':if', '@if', 'x-if', ':else-if', '@else-if', 'x-else-if', ':else', '@else', 'x-else'];
+  function inUnboundStructure(el) {
+    for (var p = el; p && p.nodeType === Node.ELEMENT_NODE; p = p.parentElement) {
+      for (var i = 0; i < UNBOUND_STRUCTURE.length; i++) {
+        if (p.hasAttribute(UNBOUND_STRUCTURE[i])) return true;
+      }
+    }
+    return false;
+  }
+
   function findLiteralMoustaches(root) {
     var found = [];
     if (!root || typeof document.createTreeWalker !== 'function') return found;
@@ -9126,6 +9139,12 @@ catch (e) {
       if (el.__stx_audit_recovered) return;
       // Deferred islands are unhydrated ON PURPOSE until their trigger fires.
       if (el.hasAttribute('stx-hydrate') || el.__stx_hydration_scheduled) return;
+      // Inert markup is not a miss: a component inside a :if branch whose
+      // deferred pass has not run, or inside a :for / :if source that has not
+      // bound, is set up when it does, under its own clone's id. The literal
+      // sweep already allowed for the first; recovering the second ran a
+      // loop's source against the page's scope.
+      if (auditSkipped(el) || inUnboundStructure(el)) return;
       var scopeId = el.getAttribute('data-stx-scope');
       var registered = window.stx._scopes[scopeId];
       if (registered && el.__stx_disposers) return;
