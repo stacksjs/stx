@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.441...v0.2.442)
+
+## 🐛 Bug Fixes
+
+- keep native icons as leaves and synchronize shared screen headers ([c6d7d77](https://github.com/stacksjs/stx/commit/c6d7d77)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.442 ([05d32a8](https://github.com/stacksjs/stx/commit/05d32a8)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.440...v0.2.441)
 
 ## 🐛 Bug Fixes
