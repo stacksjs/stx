@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.451...v0.2.452)
+
+## 🐛 Bug Fixes
+
+- **signals**: set up a cloned component on its own root before it is attached ([81d9f12](https://github.com/stacksjs/stx/commit/81d9f12)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **router**: don't rerun the page left on a layout-changing swap ([96462e0](https://github.com/stacksjs/stx/commit/96462e0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.452 ([f8a367b](https://github.com/stacksjs/stx/commit/f8a367b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.450...v0.2.451)
 
 ## 🐛 Bug Fixes
