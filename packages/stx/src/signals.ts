@@ -9368,6 +9368,10 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
       Object.assign(componentScope, scopeVars);
       var disposeEffects = trackEffects(function() { processElement(el, componentScope); });
       el.__stx_disposers = disposeEffects;
+      // A replacement layout's scope can live outside the router container.
+      // Reveal it after binding, matching the initial hydration and mount paths.
+      el.removeAttribute('x-cloak');
+      el.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
     });
 
     // Process the container content — bind {{ }}, :attr, @event directives.
