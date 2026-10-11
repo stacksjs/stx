@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.433...v0.2.434)
+
+## 🐛 Bug Fixes
+
+- distinguish event modifiers from native prop bindings ([cc08b5b](https://github.com/stacksjs/stx/commit/cc08b5b)) _(by Chris <chris@stacksjs.com>)_
+- hydrate native refresh and template-only imports through shared runtime ([6561bd3](https://github.com/stacksjs/stx/commit/6561bd3)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.434 ([4a1df5f](https://github.com/stacksjs/stx/commit/4a1df5f)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.432...v0.2.433)
 
 ## 🐛 Bug Fixes
