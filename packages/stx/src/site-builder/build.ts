@@ -396,8 +396,8 @@ function localizeInternalLinks(
 
 /**
  * Wrap the page's body content in `<main>` if it isn't already, so the
- * SPA router's view-transition CSS (which targets `main, #app-content,
- * [data-stx-content]`) animates the content while leaving `<nav>`,
+ * SPA router's view transition (which names its container, `main` or
+ * `[data-stx-content]` by default) animates the content while leaving `<nav>`,
  * `<header>`, `<footer>`, and any other top-level elements stable
  * across navigation.
  *

@@ -185,4 +185,68 @@ describe('route announcement (#1862)', () => {
 
     expect(window.document.getElementById('stx-route-announcer')).toBeNull()
   })
+
+  // A heading built from page state is the server's template until the
+  // runtime binds it, which happens after stx:load. Read at the swap, screen
+  // readers heard "{{ greeting }}, {{ firstName }}" (HQ's /home), and
+  // "{{ navTitle() }}" on every /m screen.
+  function bindOnLoad(window: any, render: () => void, delay = 5): void {
+    // The runtime's own stx:load handler binds after a short debounce.
+    window.addEventListener('stx:load', () => setTimeout(render, delay))
+  }
+
+  function recordAnnouncements(window: any): string[] {
+    const heard: string[] = []
+    const timer = setInterval(() => {
+      const text = window.document.getElementById('stx-route-announcer')?.textContent
+      if (text && heard[heard.length - 1] !== text)
+        heard.push(text)
+    }, 1)
+    setTimeout(() => clearInterval(timer), 2500)
+    return heard
+  }
+
+  it('announces the heading as bound, not its template', async () => {
+    const window = installRouter('<h1 id="greet">{{ greeting }}, {{ firstName }}</h1><p>x</p>')
+    bindOnLoad(window, () => { window.document.getElementById('greet').textContent = 'Good morning, Chris' })
+    const heard = recordAnnouncements(window)
+
+    await window.stxRouter.navigate('/dashboard')
+    await settle()
+
+    expect(window.document.getElementById('stx-route-announcer').textContent).toBe('Good morning, Chris')
+    expect(heard).toEqual(['Good morning, Chris'])
+  })
+
+  it('waits for a heading that binds later than stx:load', async () => {
+    const window = installRouter('<h1 id="season">{{ seasonLabel }}</h1>')
+    bindOnLoad(window, () => { window.document.getElementById('season').textContent = '2026 season' }, 120)
+    const heard = recordAnnouncements(window)
+
+    await window.stxRouter.navigate('/dashboard')
+    await new Promise(r => setTimeout(r, 400))
+
+    expect(heard).toEqual(['2026 season'])
+  })
+
+  it('falls back to the title when the heading never binds', async () => {
+    const window = installRouter('<h1>{{ editingId ? \'Edit Workout\' : \'New Workout\' }}</h1>', {}, 'Workout builder')
+    const heard = recordAnnouncements(window)
+
+    await window.stxRouter.navigate('/dashboard')
+    await new Promise(r => setTimeout(r, 1800))
+
+    expect(heard).toEqual(['Workout builder'])
+  })
+
+  it('never announces an unrendered @{ } block or title', async () => {
+    const window = installRouter('<h1>@{ navTitle() }</h1>', {}, '{{ navTitle() }}')
+    const heard = recordAnnouncements(window)
+
+    await window.stxRouter.navigate('/dashboard')
+    await new Promise(r => setTimeout(r, 1800))
+
+    expect(heard).toEqual([])
+  })
 })
+

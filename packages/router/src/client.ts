@@ -325,10 +325,34 @@ function routerSource(): string {
   // started the navigation, so programmatic and history navigations keep it.
   var instantNext=false;
   var instantNav=false;
+  // The one element a transition names stx-content: the routed container.
+  // The stylesheet used to name every main, #app-content and
+  // [data-stx-content], and a View Transition with two elements of one name
+  // aborts ("Unexpected duplicate view-transition-name: stx-content"). HQ's
+  // public profile has a <main> inside its layout's <main>, so every
+  // navigation away from it skipped its transition with that error, and a
+  // layout pairing a [data-stx-content] with a <main> did the same. So the
+  // name goes on the container alone, before the old page is captured and
+  // again once the swap has written the new one.
+  var VT_NAME='data-stx-vt-content';
+  function nameTransitionContainer(){
+    var named=getContainer();
+    qsa('['+VT_NAME+']').forEach(function(el){if(el!==named)el.removeAttribute(VT_NAME)});
+    if(named&&!named.hasAttribute(VT_NAME))named.setAttribute(VT_NAME,'');
+  }
+  function namedTransition(callback){
+    nameTransitionContainer();
+    return document.startViewTransition(function(){
+      var out=callback();
+      nameTransitionContainer();
+      if(out&&typeof out.then==='function')return out.then(function(v){nameTransitionContainer();return v});
+      return out;
+    });
+  }
   function runViewTransition(callback){
     if(instantNav||!o.viewTransitions||!document.startViewTransition)return false;
     try{
-      var transition=document.startViewTransition(callback);
+      var transition=namedTransition(callback);
       var onAbort=function(err){log('[router] view transition aborted:',err&&err.message?err.message:err)};
       if(transition&&transition.ready&&transition.ready.catch)transition.ready.catch(onAbort);
       if(transition&&transition.finished&&transition.finished.catch)transition.finished.catch(onAbort);
@@ -398,7 +422,7 @@ function routerSource(): string {
     root.classList.add('stx-instant');
     var clear=function(){root.classList.remove('stx-instant')};
     try{
-      var transition=document.startViewTransition(function(){
+      var transition=namedTransition(function(){
         scriptsPending=0;
         // The runtime binds the page on stx:load after a short debounce; run
         // it now, so the frame this reveals is bound rather than showing its
@@ -1413,21 +1437,52 @@ else {
     return el;
   }
 
-  function announceRoute(){
-    if(o.announceRoute===false)return;
-    var c=activeRoot();
-    var h=c&&c.querySelector?c.querySelector('h1'):null;
-    // The heading names the destination better than the title, which often
-    // carries a site-name suffix. Falls back to the title, then gives up
-    // rather than announcing an empty string.
-    var label=(h&&(h.textContent||'').trim())||document.title||'';
-    if(!label)return;
+  // Text the runtime has not bound yet: an interpolation or an @{ } block as
+  // the server sent it. Never worth saying aloud.
+  function unrendered(text){return text.indexOf('{{')!==-1||text.indexOf('}}')!==-1||text.indexOf('@{')!==-1}
+  function speakRoute(label){
     var el=routeAnnouncer();
     // Cleared first: several screen readers ignore a live-region update whose
     // text is identical to what is already there, so navigating between two
     // pages with the same heading would announce only the first.
     el.textContent='';
     el.textContent=label;
+  }
+  // The heading names the destination better than the title, which often
+  // carries a site-name suffix. It is read once the page has bound: read at
+  // the swap, a heading built from the page's state was still the server's
+  // template, and screen readers said "{{ greeting }}, {{ firstName }}" while
+  // the screen showed "Good morning, Chris". So a swap that binds its page
+  // (awaitBind) waits for stx:load and the runtime's bind after it, and a
+  // heading still holding template text is given until ANNOUNCE_WAIT to fill
+  // in. Past that, or with no heading, the title; neither when it too is
+  // unrendered, rather than announcing an expression or an empty string.
+  var ANNOUNCE_WAIT=1500;
+  var announceSeq=0;
+  function announceRoute(awaitBind){
+    if(o.announceRoute===false)return;
+    var seq=++announceSeq,started=Date.now(),bound=!awaitBind,timer=null;
+    function onLoad(){bound=true;schedule(20)}
+    function stop(){if(timer)clearTimeout(timer);timer=null;window.removeEventListener('stx:load',onLoad)}
+    function schedule(ms){if(timer)clearTimeout(timer);timer=setTimeout(attempt,ms)}
+    function attempt(){
+      timer=null;
+      if(seq!==announceSeq){stop();return}
+      var expired=Date.now()-started>=ANNOUNCE_WAIT;
+      if(!bound&&!expired){schedule(50);return}
+      var c=activeRoot();
+      var h=c&&c.querySelector?c.querySelector('h1'):null;
+      var heading=h?(h.textContent||'').trim():'';
+      if(heading&&!unrendered(heading)){stop();speakRoute(heading);return}
+      if(heading&&!expired){schedule(50);return}
+      stop();
+      var title=(document.title||'').trim();
+      if(title&&!unrendered(title))speakRoute(title);
+    }
+    if(awaitBind)window.addEventListener('stx:load',onLoad);
+    // Deferred a tick regardless: the title is applied by the caller after
+    // the swap resolves, and the announcement should read the new one.
+    schedule(0);
   }
 
   function focusAfterNavigation(hash){
@@ -1700,9 +1755,8 @@ else {
         // Before page scripts run, so a page that focuses its own control on
         // mount still wins — its script executes after this.
         focusAfterNavigation(hash);
-        // Deferred a tick because the title is applied by the caller after this
-        // swap resolves, and the announcement should read the new one.
-        setTimeout(announceRoute,0);
+        // Read once the page's scripts have run and the runtime has bound it.
+        announceRoute(true);
         // Execute page scripts FIRST — they define setup functions and set _latestSetup
         log('[router] frag scripts:', fragScripts.length);
         qsa('script[data-stx-page]').forEach(function(s){s.remove()});
@@ -2208,6 +2262,8 @@ else {
       }
 
       window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:url,direction:ctx.direction}}));
+      // A layout change is a navigation too, and said nothing at all.
+      announceRoute(true);
 
       // Execute page scripts FIRST — they define setup functions and set _latestSetup
       function execScripts(){
@@ -2604,7 +2660,8 @@ else {
     refreshCurrentLinks();
     window.dispatchEvent(new CustomEvent('stx:navigate',{detail:{url:to.url,direction:dir,retained:true,params:to.params||{}}}));
     focusAfterNavigation('');
-    setTimeout(announceRoute,0);
+    // A retained screen is bound already.
+    announceRoute(false);
     window.dispatchEvent(new CustomEvent('stx:screen-shown',{detail:{url:to.url,direction:dir}}));
     revalidate(to.key,to.url);
     var keep=dir==='push'||dir==='tab';
@@ -3633,13 +3690,14 @@ else {
       // One View Transitions block. There used to be two, and the second
       // (injected after this one) silently overrode the first: the page stays
       // put and only the routed content fades, which is what this now says
-      // once. The retained screen inside it is not named, so the container
-      // and the screen never carry the same name.
+      // once. Only the routed container carries the name, set by
+      // nameTransitionContainer as a transition starts: never a retained
+      // screen inside it, a nested <main>, or a second content element.
       if(o.viewTransitions&&'startViewTransition' in document){
         var dur=(o.viewTransitionDuration||220)+'ms';
         var ease=o.viewTransitionEasing||'cubic-bezier(0.16, 1, 0.3, 1)';
         css+='::view-transition-old(root),::view-transition-new(root){animation:none}::view-transition{background:transparent}';
-        css+='main,#app-content,[data-stx-content]:not([data-stx-screen]){view-transition-name:stx-content}::view-transition-group(stx-content){overflow:hidden}';
+        css+='[data-stx-vt-content]{view-transition-name:stx-content}::view-transition-group(stx-content){overflow:hidden}';
         css+='::view-transition-old(stx-content){animation:stx-r-fade-out '+dur+' '+ease+' both}::view-transition-new(stx-content){animation:stx-r-fade-in '+dur+' '+ease+' both}';
         css+='@keyframes stx-r-fade-out{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-4px)}}';
         css+='@keyframes stx-r-fade-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}';
