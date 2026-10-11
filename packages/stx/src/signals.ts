@@ -3514,11 +3514,18 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
 
         // Capture scope at setup time so @for loop variables are available when event fires
         const isForwardedComponentEvent = !!(el.__stx_parent_scope && parentEventNames.includes(eventName));
-        const eventCapturedScope = isForwardedComponentEvent
+        let eventCapturedScope = isForwardedComponentEvent
           ? { ...globalHelpers, ...el.__stx_parent_scope }
           : { ...globalHelpers, ...scope, ...(findElementScope(el) || {}) };
 
         stxHost.listen(el, eventName, (event) => {
+          // A forwarded handler belongs to the caller, whose scope can be
+          // resolved again after this listener is bound: a component inside
+          // another component's :if, in a dialog, was bound against the
+          // page's scope and only later handed its real caller, so
+          // @pick="pickFromBank" found nothing and did nothing. Read it now.
+          if (isForwardedComponentEvent && el.__stx_parent_scope)
+            eventCapturedScope = { ...globalHelpers, ...el.__stx_parent_scope };
           // Vue-style component listeners fall through to the rendered native
           // root unless the child emits the same event. Signal components use
           // a scope wrapper, so native events arrive here from a descendant.
