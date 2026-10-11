@@ -94,18 +94,30 @@
     }
   },
   "workspaces": [
-    "packages/**",
-    "!packages/vscode",
-    "!packages/**/dist",
-    "!packages/**/dist/**"
+    "packages/benchmarks",
+    "packages/bun-plugin",
+    "packages/components",
+    "packages/create-stx",
+    "packages/deploy",
+    "packages/desktop",
+    "packages/devtools",
+    "packages/devtools-extension",
+    "packages/iconify-core",
+    "packages/iconify-generator",
+    "packages/router",
+    "packages/sanitizer",
+    "packages/stx",
+    "packages/stx-vscode",
+    "packages/collections/*",
+    "packages/benchmarks/js-framework-benchmark"
   ],
   "dependencies": {
     "@stacksjs/ts-css": "^0.3.2",
     "very-happy-dom": "^0.3.6"
   },
   "devDependencies": {
-    "@stacksjs/bumpx": "^0.2.18",
     "@iconify/json": "^2.2.535",
+    "@stacksjs/bumpx": "^0.2.21",
     "better-dx": "^0.2.25"
   },
   "overrides": {
