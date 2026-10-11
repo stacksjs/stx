@@ -2019,6 +2019,10 @@ else {
         document.body.innerHTML=bodyHTML;
         // Copy body attributes (class, data-stx, etc.)
         Array.from(newBody.attributes).forEach(function(attr){document.body.setAttribute(attr.name,attr.value)});
+        // Copying only adds. data-stx names the page setup that stx:load falls
+        // back to when no _latestSetup is set, so the outgoing page's name left
+        // behind on a destination without one ran the page being left.
+        if(!newBody.hasAttribute('data-stx'))document.body.removeAttribute('data-stx');
         // Update layout meta tag
         var oldMeta=qs(LAYOUT_META);
         var freshMeta=doc.querySelector(LAYOUT_META);
@@ -2207,6 +2211,12 @@ else {
 
       // Execute page scripts FIRST — they define setup functions and set _latestSetup
       function execScripts(){
+        // The outgoing page's setup is not this page's. A destination whose
+        // script defines no __stx_setup_ (a page that only calls useHead, say)
+        // left it in place, and stx:load ran it again here: its effects, its
+        // onMount -- HQ's calendar wrote ?athlete_id into /relax. Fragments
+        // never hit this only because the server prepends the same clear.
+        if(window.stx)window.stx._latestSetup=null;
         scripts.forEach(function(entry){
           var text=typeof entry==='string'?entry:entry.text;
           var runAlways=typeof entry==='string'?false:entry.runAlways;
