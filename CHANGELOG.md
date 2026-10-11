@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.444...v0.2.445)
+
+## 🐛 Bug Fixes
+
+- keep plugin diagnostics out of native compiler JSON ([bee50ce](https://github.com/stacksjs/stx/commit/bee50ce)) _(by Chris <chris@stacksjs.com>)_
+- share reactive uploaded avatars throughout chat ([e9ef231](https://github.com/stacksjs/stx/commit/e9ef231)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.445 ([2257159](https://github.com/stacksjs/stx/commit/2257159)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.443...v0.2.444)
 
 ## 🐛 Bug Fixes
