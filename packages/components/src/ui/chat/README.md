@@ -33,7 +33,7 @@ The injected transport returns JSON:
 
 | Request | Response |
 | --- | --- |
-| GET /messages | `{ contacts: [{ id, name, role }], conversations: [{ id, recipient_id, unread, last_message }], max_length }` |
+| GET /messages | `{ contacts: [{ id, name, role, avatar? }], conversations: [{ id, recipient_id, unread, last_message }], max_length }` |
 | POST /messages/conversations `{ recipient_id }` | `{ id, recipient_id }` |
 | GET /messages/conversations/:id?before=:messageId | `{ messages, has_more }` |
 | POST /messages/conversations/:id/messages `{ body, client_key }` | saved message |
@@ -52,3 +52,7 @@ Run the component build before running its published-entry regression test.
 counts. The popup supports Escape and returns focus to its launcher when closed.
 `ChatInbox compact` stacks inbox and thread even on a wide viewport; its `active`
 reactive prop controls read acknowledgement for a hidden or closed panel.
+
+Contacts may include an uploaded image URL in `avatar`. The inbox and thread
+header share `Avatar`, which follows refreshed photos and falls back to initials
+when an image is missing or cannot load.

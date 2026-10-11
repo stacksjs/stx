@@ -9,6 +9,23 @@ const contact = { id: 2, name: 'Pawel Athlete', role: 'Athlete' }
 const message = { id: 1, sender_id: 1, body: 'Question', client_key: 'key', created_at: '2026-10-10T12:00:00Z', read_at: null }
 
 describe('native chat components and controller', () => {
+  it('refreshes a selected contact photo without discarding the thread or draft', async () => {
+    let avatar = '/uploads/avatars/old.jpg'
+    const chat = createChat({ selfId: () => 1, scopeKey: () => 'one', request: async (url) => {
+      if (url === '/messages') return Response.json({ contacts: [{ ...contact, avatar }], conversations: [], max_length: 4000 })
+      if (url.endsWith('/conversations')) return Response.json({ id: 'thread' })
+      if (url.endsWith('/read')) return Response.json({ read: true })
+      return Response.json({ messages: [message], has_more: false })
+    } })
+    await chat.load(); await chat.open(chat.contacts()[0])
+    chat.draft.set('Question about tomorrow')
+    avatar = '/uploads/avatars/new.jpg'
+    await chat.load()
+    expect(chat.selected()?.avatar).toBe(avatar)
+    expect(chat.threadId()).toBe('thread')
+    expect(chat.draft()).toBe('Question about tomorrow')
+  })
+
   it('initializes auth watchers at mount and clears threads when a contact is revoked', async () => {
     let mounted = false, allowed = true
     const chat = createChat({
@@ -77,20 +94,20 @@ describe('native chat components and controller', () => {
     expect(bundle).not.toContain('ts-syntax-highlighter')
   })
   it('escapes message text and coerces outgoing=false', async () => {
-    const html = await processDirectives('<ChatMessage body="&lt;img onerror=alert(1)&gt;" author="Athlete" outgoing="false" />', {}, path.join(root, 'chat-test.stx'), { componentsDir: path.join(root, 'src/ui/chat'), root, buildMode: 'serve', cache: false } as any, new Set())
+    const html = await processDirectives('<ChatMessage body="&lt;img onerror=alert(1)&gt;" author="Athlete" outgoing="false" />', {}, path.join(root, 'chat-test.stx'), { componentsDir: path.join(root, 'src/ui'), root, buildMode: 'serve', cache: false } as any, new Set())
     expect(html).toContain('items-start')
     expect(html).not.toContain('<img onerror')
     expect(html).toContain('Athlete')
   })
   it('renders an accessible inbox with a configurable store and mobile back control', async () => {
-    const html = await processDirectives('<ChatInbox store="coaching" />', {}, path.join(root, 'chat-test.stx'), { componentsDir: path.join(root, 'src/ui/chat'), root, buildMode: 'serve', cache: false } as any, new Set())
+    const html = await processDirectives('<ChatInbox store="coaching" />', {}, path.join(root, 'chat-test.stx'), { componentsDir: path.join(root, 'src/ui'), root, buildMode: 'serve', cache: false } as any, new Set())
     expect(html).toContain('Conversation history')
     expect(html).toContain('Back to inbox')
     expect(html).toContain('Write a message')
     expect(html).toContain('coaching')
   })
   it('renders desktop and inline launchers with accessible unread controls', async () => {
-    const options = { componentsDir: path.join(root, 'src/ui/chat'), root, buildMode: 'serve', cache: false } as any
+    const options = { componentsDir: path.join(root, 'src/ui'), root, buildMode: 'serve', cache: false } as any
     const desktop = await processDirectives('<ChatLauncher store="coaching" href="/coaches/messages" />', {}, path.join(root, 'launcher-test.stx'), options, new Set())
     expect(desktop).toContain('aria-haspopup="dialog"')
     expect(desktop).toContain('Close chat')

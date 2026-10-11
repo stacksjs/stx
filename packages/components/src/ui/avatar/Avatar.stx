@@ -45,26 +45,30 @@ export const displayInitials = initials || (alt ? alt.split(' ').map(n => n[0]).
 <script client>
 const emit = defineEmits()
 const imageError = state(false)
-const hasSrc = {{ !!src }}
+const avatarSrc = useReactiveProp('src', {{ src }})
+const avatarAlt = useReactiveProp('alt', {{ alt }})
+const avatarInitials = useReactiveProp('initials', {{ initials }})
+effect(() => { avatarSrc(); imageError.set(false) })
+const fallbackInitials = derived(() => avatarInitials() || String(avatarAlt() || '').trim().split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase() || '?')
 
 function onImageError(event) {
   imageError.set(true)
   emit('error', event)
 }
 
-const showImage = derived(() => hasSrc && !imageError())
+const showImage = derived(() => !!avatarSrc() && !imageError())
 </script>
 
 <div class="{{ containerClasses }}">
   <div class="{{ avatarClasses }}">
     <img
-      :show="showImage()"
-      src="{{ src }}"
-      alt="{{ alt }}"
+      :if="showImage"
+      :src="avatarSrc"
+      :alt="avatarAlt"
       class="{{ imageClasses }}"
       @error="onImageError($event)"
     />
-    <span :show="!showImage()" class="{{ initialsClasses }}">{{ displayInitials }}</span>
+    <span :if="!showImage" class="{{ initialsClasses }}" :text="fallbackInitials">{{ displayInitials }}</span>
   </div>
 
   @if(status)
