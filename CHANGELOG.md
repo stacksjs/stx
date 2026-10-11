@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.442...v0.2.443)
+
+## 🐛 Bug Fixes
+
+- resolve shared STX components in native screen compilation ([d937700](https://github.com/stacksjs/stx/commit/d937700)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.443 ([ab4ea40](https://github.com/stacksjs/stx/commit/ab4ea40)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.441...v0.2.442)
 
 ## 🐛 Bug Fixes
