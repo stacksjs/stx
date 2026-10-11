@@ -125,6 +125,7 @@ const NATIVE_EVENT_NAMES: Record<string, string> = {
   focusout: 'onBlur',
   submit: 'onSubmitEditing',
   scroll: 'onScroll',
+  refresh: 'onRefresh',
   close: 'onRequestClose',
 }
 

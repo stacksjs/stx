@@ -28,7 +28,7 @@ import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 // like it had changed nothing. A new version is the only thing that retires
 // them, because the key is the source and that did not change.
 // 8: server API sources must not survive in an older browser bundle cache.
-const BUNDLE_CACHE_VERSION = 9
+const BUNDLE_CACHE_VERSION = 10
 
 function isPrivateClientSource(file: string, root: string, serverApi: boolean | ServerApiOptions | undefined): boolean {
   return /^(?:(?:stx|ui)\.config\.[cm]?[jt]s|runtime-config-(?:server|loader)\.[cm]?[jt]s)$/.test(path.basename(file))
@@ -1022,6 +1022,29 @@ async function buildBundle(
     if (dm[1]) continue // already exported
     if (!isTopLevel(dm.index)) continue
     declNames.add(dm[2])
+  }
+  // Imports are also local template bindings. Without exporting them, a
+  // helper used only in :text is tree-shaken away, leaving that label blank.
+  // Type-only imports do not create runtime bindings.
+  const importRegex = /^[ \t]*import\s+(?!type\b)(?:(\w+)\s*(?:,\s*)?)?(?:\*\s+as\s+(\w+)|\{([^}]+)\})?\s+from\b/gm
+  while ((dm = importRegex.exec(strippedForScan)) !== null) {
+    if (!isTopLevel(dm.index)) continue
+    const source = /^\s*['"]([^'"]+)['"]/.exec(code.slice(dm.index + dm[0].length))?.[1]
+    if (source && EXTERNAL_PATTERNS.some(pattern => pattern.test(source))) continue
+    if (dm[1]) declNames.add(dm[1])
+    if (dm[2]) declNames.add(dm[2])
+    for (const entry of (dm[3] ?? '').split(',')) {
+      const binding = entry.trim()
+      if (!binding || /^type\s/.test(binding)) continue
+      const local = /\bas\s+(\w+)\s*$/.exec(binding)?.[1] ?? /^\w+$/.exec(binding)?.[0]
+      if (local) declNames.add(local)
+    }
+  }
+  for (const declaration of strippedForScan.matchAll(/\bexport\s*\{([^}]+)\}/g)) {
+    for (const entry of declaration[1].split(',')) {
+      const publicName = /\bas\s+(\w+)\s*$/.exec(entry)?.[1] ?? /^\s*(\w+)\s*$/.exec(entry)?.[1]
+      if (publicName) declNames.delete(publicName)
+    }
   }
   const exportLine = declNames.size > 0 ? `\nexport { ${[...declNames].join(', ')} }` : ''
 

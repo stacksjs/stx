@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
+import vm from 'node:vm'
 import { bundleClientScript } from '../../src/client-script-bundler'
 
 /**
@@ -30,6 +31,25 @@ describe('client-script-bundler binding discovery', () => {
   afterEach(async () => {
     if (fs.existsSync(TMP))
       await fs.promises.rm(TMP, { recursive: true, force: true })
+  })
+
+  it('exposes runtime imports used only by template expressions', async () => {
+    await Bun.write(path.join(projectRoot, 'labels.ts'), `export default (value: string) => 'Hello ' + value
+export const duration = (minutes: number) => minutes + 'm'
+export type Options = { minutes: number }
+`)
+    const output = await bundleClientScript(`import greeting, { duration as format, type Options } from './labels'
+import * as labels from './labels'
+import type { Options as TypeOnly } from './labels'
+export { format }
+`, path.join(projectRoot, 'Imports.stx'), { projectRoot, externalizeUserModules: false })
+    const scope: Record<string, any> = {}
+    vm.runInNewContext(output, scope)
+    expect(scope.greeting('Phone')).toBe('Hello Phone')
+    expect(scope.format(45)).toBe('45m')
+    expect(scope.labels.duration(60)).toBe('60m')
+    expect(scope).not.toHaveProperty('Options')
+    expect(scope).not.toHaveProperty('TypeOnly')
   })
 
   it('finds declarations that are indented, as every template script is', async () => {

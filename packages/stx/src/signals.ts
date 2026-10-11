@@ -141,6 +141,8 @@ console.log('[stx] entering IIFE');
   var stxHost = window.__stx_host || {
     setText: function(node, value) { node.textContent = value; },
     setAttribute: function(node, name, value) {
+      if (value === false) { node.removeAttribute(name); return; }
+      if (value === true) { node.setAttribute(name, ''); return; }
       var next = value;
       if (typeof value === 'object' && value !== null) {
         try { next = JSON.stringify(value); }
@@ -2770,23 +2772,16 @@ catch (e) {
           value = undefined;
         }
 
-        // ARIA states are strings, unlike HTML boolean attributes.
+        // Preserve native prop types; the DOM host reflects boolean presence
+        // and serializes structured values at its own boundary.
         if (name.startsWith('aria-') && typeof value === 'boolean') {
-          el.setAttribute(name, String(value));
+          stxHost.setAttribute(el, name, String(value));
         }
-        else if (value === false || value === null || value === undefined) {
-          el.removeAttribute(name);
-        }
-        else if (value === true) {
-          el.setAttribute(name, '');
+        else if (value === null || value === undefined) {
+          stxHost.removeAttribute(el, name);
         }
         else {
-          var serialized = value;
-          if (typeof value === 'object') {
-            try { serialized = JSON.stringify(value); }
-            catch (e) { serialized = String(value); }
-          }
-          el.setAttribute(name, serialized);
+          stxHost.setAttribute(el, name, value);
         }
         // The component setup scope is already registered for normal and
         // cloned signal components. Update its prop signal directly so object
@@ -3385,13 +3380,13 @@ catch (e2) {
             return;
           }
           if (attrName.startsWith('aria-') && typeof v === 'boolean') {
-            el.setAttribute(attrName, String(v));
+            stxHost.setAttribute(el, attrName, String(v));
           }
-          else if (v === false || v === null || v === undefined) {
+          else if (typeof v === 'boolean') {
+            stxHost.setAttribute(el, attrName, v);
+          }
+          else if (v === null || v === undefined) {
             stxHost.removeAttribute(el, attrName);
-          }
-else if (v === true) {
-            el.setAttribute(attrName, '');
           }
 else {
             var attrValue = v;
@@ -4962,6 +4957,10 @@ catch (e) {
   var FOR_ATTRS = [':for', 'x-for', '@for'];
   function deferRowConditionals(root) {
     if (!root || !root.querySelectorAll || typeof document === 'undefined' || !document.createElement) return;
+    // Inert HTML template content is a DOM allocation optimisation. Native
+    // hosts already clone recorded descriptors and bind conditions through
+    // their host operations; their document facade has no template content.
+    if (!document.createElement('template').content) return;
     // A walk, not a selector: escaping ':' and '@' in an attribute selector
     // through this generated source is easy to get wrong, and wrong throws.
     var candidates = Array.prototype.slice.call(root.querySelectorAll('*'));

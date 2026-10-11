@@ -205,6 +205,51 @@ const image = state({ uri: 'avatar.png' })
     }))
   })
 
+  it('updates conditional rows and imported labels after a native pull-to-refresh', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-refresh-'))
+    const file = path.join(root, 'Screen.stx')
+    await Bun.write(path.join(root, 'labels.ts'), "export const label = value => 'Session: ' + value\n")
+    await Bun.write(file, `<script client>
+import { label } from './labels'
+const rows = state([{ id: 'a', title: 'Run', ready: false }])
+const refreshing = state(false)
+function refresh() {
+  refreshing.set(true)
+  rows.set([{ id: 'a', title: 'Ride', ready: true }])
+}
+</script>
+<ScrollView @refresh="refresh()" :refreshing="refreshing">
+  <View :for="row in rows" :key="row.id">
+    <Text :text="label(row.title)" />
+    <Text :if="row.ready" :text="'Ready ' + row.title" />
+  </View>
+</ScrollView>`)
+    const { code, diagnostics } = await compileSharedScreenBundle(file)
+    expect(diagnostics.some(item => item.message.includes('unread-event'))).toBe(false)
+    const sent: any[] = []
+    let receive: (raw: string) => void = () => {}
+    const scope = {
+      console, Promise, Date, Map, Set, WeakMap, WeakSet,
+      __stxNativeBridge: {
+        postMessage: (raw: string) => sent.push(JSON.parse(raw)),
+        onMessage: (callback: typeof receive) => { receive = callback },
+      },
+    }
+    vm.runInNewContext(code, scope)
+    await Bun.sleep(0)
+    const initial = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
+    expect(initial).toContainEqual(expect.objectContaining({ patch: { children: ['Session: Run'] } }))
+    const listener = initial.find(operation => operation.patch?.events?.onRefresh)
+    expect(listener).toBeTruthy()
+    sent.length = 0
+    receive(JSON.stringify({ type: 'EVENT', payload: { handlerId: listener.patch.events.onRefresh, nativeEvent: {} } }))
+    await Bun.sleep(0)
+    const updates = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
+    expect(updates).toContainEqual(expect.objectContaining({ patch: { children: ['Session: Ride'] } }))
+    expect(updates).toContainEqual(expect.objectContaining({ patch: { children: ['Ready Ride'] } }))
+    expect(updates).toContainEqual(expect.objectContaining({ patch: { props: { refreshing: true } } }))
+  })
+
   it('runs the same path as a DOM-free JavaScriptCore bundle', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'stx-native-shared-'))
     const file = path.join(root, 'Screen.stx')

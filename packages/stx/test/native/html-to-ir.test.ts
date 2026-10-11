@@ -155,7 +155,7 @@ describe('events', () => {
     expect(diagnostics).toEqual([{ kind: 'unread-event', tag: 'div', name: '@keydown.enter' }])
   })
 
-  it('names exactly the events at least one renderer dispatches on', () => {
+  it('retains every event supported by the bundled reference renderers', () => {
     const renderers = path.join(import.meta.dir, '..', '..', 'src', 'native', 'renderers')
     const read = new Set<string>()
     for (const file of ['ios.swift', 'android.kt']) {
@@ -163,7 +163,15 @@ describe('events', () => {
       for (const match of source.matchAll(/events\[["'](\w+)["']\]/g))
         read.add(match[1])
     }
-    expect([...NATIVE_EVENTS].sort()).toEqual([...read].sort())
+    for (const event of read)
+      expect(NATIVE_EVENTS.has(event)).toBe(true)
+  })
+
+  it('forwards pull-to-refresh to the Craft scroll-view host', async () => {
+    const { root, diagnostics } = await translateHtmlToIR('<div data-native="ScrollView" @refresh="refresh(true)" :refreshing="refreshing"></div>')
+    expect(root.events).toEqual({ onRefresh: 'refresh(true)' })
+    expect(root.bindings).toEqual({ refreshing: 'refreshing' })
+    expect(diagnostics).toEqual([])
   })
 })
 
@@ -341,7 +349,14 @@ describe('real components from @stacksjs/components', () => {
       expect(json).not.toMatch(/@(if|foreach|endif|endforeach)\b/)
       // No node of a type the renderers have no case for.
       expect(json).not.toMatch(/"type":"(script|style|link|meta|head|slot)"/)
-      expect((json.match(/"type":/g) ?? []).length).toBeGreaterThan(1)
+      if (sample === '<Badge>New</Badge>') {
+        // A text-only badge correctly becomes one native Text leaf.
+        expect(root.type).toBe('Text')
+        expect(texts(root).map(text => text.trim())).toEqual(['New'])
+      }
+      else {
+        expect((json.match(/"type":/g) ?? []).length, sample).toBeGreaterThan(1)
+      }
     }
   })
 

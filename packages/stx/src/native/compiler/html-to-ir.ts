@@ -108,6 +108,7 @@ const EVENT_NAMES: Record<string, string> = {
   focusout: 'onBlur',
   submit: 'onSubmitEditing',
   scroll: 'onScroll',
+  refresh: 'onRefresh',
   close: 'onRequestClose',
 }
 
@@ -126,6 +127,7 @@ export const NATIVE_EVENTS = new Set([
   'onLongPress',
   'onPress',
   'onRequestClose',
+  'onRefresh',
   'onScroll',
   'onValueChange',
 ])
