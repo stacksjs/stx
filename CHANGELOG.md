@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.438...v0.2.439)
+
+## 🐛 Bug Fixes
+
+- wait for tooltip refs before portaling panels ([4e4db12](https://github.com/stacksjs/stx/commit/4e4db12)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- verify tooltip portals after late hydration ([f143f5c](https://github.com/stacksjs/stx/commit/f143f5c)) _(by Chris <chris@stacksjs.com>)_
+- update tooltip hydration timing snapshot ([148c52e](https://github.com/stacksjs/stx/commit/148c52e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.439 ([8add27f](https://github.com/stacksjs/stx/commit/8add27f)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.437...v0.2.438)
 
 ## 🐛 Bug Fixes
