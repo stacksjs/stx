@@ -342,6 +342,36 @@ function chip(card) { return card.label ? 'bg-emerald-50' : '' }
     expect(native.text()).toEqual(['95% of plan', 'Planned'])
   })
 
+  it('renders the rows of a nested :if shown together with its parent branch', async () => {
+    // Today's Recovery and Coming up: an :if inside the Fragment :if="data",
+    // each holding a :for. Re-inserting the outer branch reconnected only its
+    // root, so the inner :if waited for a reconnect that never came and drew
+    // one empty row.
+    const { native, settle, scope } = await mountBundle(`<script client>
+const data = state(null)
+globalThis.__load = () => data.set({ oura: null, days: [{ date: 'mon', label: 'Monday', cards: [{ id: 1, title: 'Easy Run' }] }] })
+function recovery() { return [{ label: 'Sleep', value: '7.5h' }, { label: 'HRV', value: '41 ms' }] }
+</script>
+<View>
+  <Fragment :if="data">
+    <View :if="!data.oura" class="flex-row">
+      <View :for="m in recovery()" :key="m.label"><Text :text="m.label" /><Text :text="m.value" /></View>
+    </View>
+    <View :if="data.days.length">
+      <View :for="(day, index) in data.days" :key="day.date">
+        <Text :text="day.label" />
+        <View :for="card in day.cards" :key="card.id"><Text :text="card.title" /></View>
+      </View>
+    </View>
+  </Fragment>
+</View>`)
+    expect(native.text()).toEqual([])
+    ;(scope as any).__load()
+    await settle()
+    expect(native.errors).toEqual([])
+    expect(native.text()).toEqual(['Sleep', '7.5h', 'HRV', '41 ms', 'Monday', 'Easy Run'])
+  })
+
   it('keeps a row\'s last child inside its card past a self-closing nested :for', async () => {
     const { native, settle, scope } = await mountBundle(`<script client>
 const byDay = state({})

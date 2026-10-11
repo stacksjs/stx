@@ -365,7 +365,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   function setConnected(node: NativeNode, connected: boolean): void {
     if ('isConnected' in node)
       (node as NativeBindingNode).isConnected = connected
-    records.get(node.__stxId)?.children.forEach(child => setConnected(child, connected))
+    // A node shown again still has its subtree parked on its detached record
+    // (revived only when it materialises, after this). Reading the live
+    // records alone stopped at the node itself, so everything under a
+    // re-inserted branch stayed "disconnected": a nested :if shown with it
+    // waited for a reconnect that never came, and its :for never rendered.
+    descriptorOf(node)?.children.forEach(child => setConnected(child, connected))
   }
 
   function removeFromBindingParent(node: NativeNode): void {
