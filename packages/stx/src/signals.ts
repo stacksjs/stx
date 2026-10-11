@@ -4257,6 +4257,12 @@ catch (e2) {
         if (!scopeId || !originalScopeId) return;
 
         root.setAttribute('data-stx-scope', originalScopeId);
+        // The setup finds its root by id, which a detached clone cannot answer
+        // to: rows a :for builds inside a component's closed :if are set up
+        // before the :if puts them in the document, and found nothing, so they
+        // never read a prop. Hand the root over (utils.ts reads it).
+        var previousSetupRoot = window.__STX_SETUP_ROOT__;
+        window.__STX_SETUP_ROOT__ = root;
         try {
           setup();
           var registeredScope = window.stx._scopes && (window.stx._scopes[originalScopeId] || window.stx._scopes[scopeId]);
@@ -4269,6 +4275,7 @@ catch (e2) {
           console.error('[stx] cloned component setup error:', e);
         }
         finally {
+          window.__STX_SETUP_ROOT__ = previousSetupRoot;
           root.setAttribute('data-stx-scope', scopeId);
         }
       });

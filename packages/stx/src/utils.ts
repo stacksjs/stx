@@ -2808,7 +2808,11 @@ async function buildComponentIsland(rawContent: string, componentFilePath: strin
   __scopeVars.$refs = __scopeVars.$refs || {};
   const __previousCurrentElement = window.__STX_CURRENT_ELEMENT__;
   const __previousCurrentProps = window.__STX_CURRENT_PROPS__;
-  const __componentElement = document.querySelector('[data-stx-scope="' + __scopeId + '"]');
+  // A clone the runtime is setting up may not be in the document yet (rows
+  // a loop builds inside a closed :if), where a lookup cannot see it, so the
+  // runtime hands its root over in __STX_SETUP_ROOT__ (signals.ts).
+  const __setupRoot = window.__STX_SETUP_ROOT__;
+  const __componentElement = (__setupRoot && __setupRoot.getAttribute('data-stx-scope') === __scopeId && __setupRoot) || document.querySelector('[data-stx-scope="' + __scopeId + '"]');
   window.__STX_CURRENT_ELEMENT__ = __componentElement;
   let __componentProps = __componentElement && __componentElement.__stx_props;
   if (!__componentProps && __componentElement) {
