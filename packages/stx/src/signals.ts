@@ -6746,6 +6746,13 @@ catch (e) {} }
     if (initialAttribute.has) {
       lastRaw = initialAttribute.raw;
       initial = parse(lastRaw);
+    } else if (typeof staticValue === 'string' && (opts.parse || typeof defaultValue !== 'string')) {
+      // A prop written as a plain attribute is serialized as the string it was
+      // written as, so it gets the same parse an attribute does. Taken raw,
+      // currentPage="1" reached Pagination as "1": "1" + 1 is "11", the
+      // range maths took the wrong branch, and ten pages rendered as
+      // 1 ... 1 2 3 4 5 6 7 8 9 10 ... 10. A string prop stays a string.
+      initial = parse(staticValue);
     } else {
       initial = staticValue;
     }
