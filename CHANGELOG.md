@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.436...v0.2.437)
+
+## 🐛 Bug Fixes
+
+- keep editor release versions synchronized through bumpx ([acd0226](https://github.com/stacksjs/stx/commit/acd0226)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.437 ([c0996b7](https://github.com/stacksjs/stx/commit/c0996b7)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.435...v0.2.436)
 
 ## 🐛 Bug Fixes
