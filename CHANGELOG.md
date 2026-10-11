@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.461...v0.2.462)
+
+## 🐛 Bug Fixes
+
+- **signals**: type a prop written as an attribute in useReactiveProp ([576b47f](https://github.com/stacksjs/stx/commit/576b47f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: :if unmounts what it hides and mounts what it shows again ([a4e2cae](https://github.com/stacksjs/stx/commit/a4e2cae)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1737](https://github.com/stacksjs/stx/issues/1737), [#2036](https://github.com/stacksjs/stx/issues/2036))
+
+## 🔧 Chores
+
+- release v0.2.462 ([572d30e](https://github.com/stacksjs/stx/commit/572d30e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.460...v0.2.461)
 
 ## 🐛 Bug Fixes
