@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.455...v0.2.456)
+
+## 🐛 Bug Fixes
+
+- **signals**: run a forwarded component event in its caller's current scope ([036894e](https://github.com/stacksjs/stx/commit/036894e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.456 ([a211ff8](https://github.com/stacksjs/stx/commit/a211ff8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.454...v0.2.455)
 
 ## 🐛 Bug Fixes
