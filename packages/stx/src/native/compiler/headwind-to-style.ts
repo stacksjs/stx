@@ -6,6 +6,7 @@
  * that can be consumed by iOS (UIKit), Android, and web renderers.
  */
 
+import { SEMANTIC_TOKENS } from '../../theme-tokens'
 import type { STXStyle } from './ir'
 
 // ============================================================================
@@ -862,14 +863,23 @@ export interface ClassStyles {
 export function compileClassStyles(classes: string): ClassStyles {
   const plain: string[] = []
   const dark: string[] = []
+  const semanticDark: string[] = []
+  function roleClass(name: string, scheme: 'light' | 'dark'): string {
+    const match = /^(text|bg|border|ring)-([a-z-]+)(\/[^\s]+)?$/.exec(name)
+    const role = match && SEMANTIC_TOKENS[match[2]]
+    return role ? `${match![1]}-${role[scheme]}${match![3] || ''}` : name
+  }
   for (const name of classes.split(/\s+/).filter(Boolean)) {
-    if (name.startsWith('dark:')) dark.push(name.slice(5))
-    else if (!name.includes(':') || name.startsWith('[')) plain.push(name)
+    if (name.startsWith('dark:')) dark.push(roleClass(name.slice(5), 'dark'))
+    else if (!name.includes(':') || name.startsWith('[')) {
+      plain.push(roleClass(name, 'light'))
+      if (roleClass(name, 'dark') !== name) semanticDark.push(roleClass(name, 'dark'))
+    }
   }
   const unknown: string[] = []
   const style = compileHeadwindToStyle(plain.join(' '), unknown)
   const result: ClassStyles = { style, unknown }
-  if (dark.length) result.dark = compileHeadwindToStyle(dark.join(' '), unknown)
+  if (dark.length || semanticDark.length) result.dark = compileHeadwindToStyle([...semanticDark, ...dark].join(' '), unknown)
   for (const name of plain) {
     if (name === 'truncate') result.numberOfLines = 1
     const clamp = /^line-clamp-(\d+)$/.exec(name)

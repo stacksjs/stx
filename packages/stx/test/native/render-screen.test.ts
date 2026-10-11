@@ -173,6 +173,14 @@ const label = $props.label ?? ''
 })
 
 describe('the primitives themselves', () => {
+  it('keeps native icons as leaf nodes beside text, including dynamic labels', async () => {
+    const { document } = await compileScreenSource('<View><Icon name="play" /><Text :text="label">Start</Text><Icon name="moon" /><Text>Rest</Text></View>', screen('AdjacentIcons.stx', ''))
+    expect(types(document.root)).toEqual(['View', 'Icon', 'Text', 'Icon', 'Text'])
+    expect((document.root.children[0] as STXNode).children).toEqual([])
+    expect((document.root.children[2] as STXNode).children).toEqual([])
+    expect(texts(document.root)).toEqual(['Start', 'Rest'])
+  })
+
   it('ships one component per native type the IR declares', async () => {
     const files = [...new Bun.Glob('*.stx').scanSync(nativePrimitivesDir())].sort()
     expect(files.filter(file => file !== 'Fragment.stx').length).toBe(23)

@@ -92,6 +92,7 @@ export const LUCIDE_TO_SF: Record<string, string> = {
   'filter': 'line.3.horizontal.decrease',
   'flag': 'flag',
   'flame': 'flame',
+  'flower-2': 'camera.macro',
   'footprints': 'figure.run',
   'gauge': 'gauge',
   'gift': 'gift',

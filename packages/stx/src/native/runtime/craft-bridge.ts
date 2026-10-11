@@ -94,7 +94,11 @@ export function installCraftBridge(
     delete: (key: string) => request('SecureStorage', 'remove', [key]),
     clear: () => request('SecureStorage', 'clear', []),
   })
-  craft.snapshots = Object.assign({ get: () => null, set: () => Promise.resolve(false) }, craft.snapshots || {})
+  craft.snapshots = Object.assign({ get: () => null, set: () => Promise.resolve(false) }, craft.snapshots || {}, {
+    onChange: (callback: (name: string) => void) => protocol.on<{ name: string }>('SNAPSHOT_CHANGED', (message) => {
+      if (typeof message.payload?.name === 'string') callback(message.payload.name)
+    }),
+  })
   craft.biometrics = {
     isAvailable: () => request('Biometrics', 'isAvailable', []),
     getBiometricType: () => request('Biometrics', 'getBiometricType', []),

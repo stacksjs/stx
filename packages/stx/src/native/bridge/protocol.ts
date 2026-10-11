@@ -45,6 +45,7 @@ export type BridgeMessageType =
   // Lifecycle
   | 'APP_STATE'           // App foreground/background
   | 'DEEP_LINK'           // App opened or resumed through a URL
+  | 'SNAPSHOT_CHANGED'    // An app snapshot was saved or removed
   | 'APPEARANCE'          // Native color scheme changed
   | 'SCREEN_FOCUS'        // Screen gained/lost focus
   | 'MEMORY_WARNING'      // Low memory warning

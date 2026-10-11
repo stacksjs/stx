@@ -20,6 +20,9 @@ export interface NativeNavigationButton {
   image?: string
   color?: string
   accessibilityLabel?: string
+  variant?: 'accent' | 'account'
+  badge?: number
+  badgeStyle?: 'count' | 'dot'
   /** Kept in the screen; the host only sees the id. */
   onPress?: (event: { id: string }) => unknown
 }
@@ -68,6 +71,8 @@ export interface NativeSecureStorage {
 }
 
 export interface NativeSnapshots {
+  /** An app snapshot changed; read the current value with get(). */
+  onChange: (callback: (name: string) => void) => () => void
   get: <T = unknown>(name: string) => T | null
   set: (name: string, value: unknown) => Promise<unknown>
 }
