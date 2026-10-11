@@ -854,7 +854,8 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
             await plugin.setup(pluginOptions, setupCtx)
           }
 
-          console.log(`[stx] Plugin loaded: ${plugin.name || pluginPath}`)
+          // Configuration diagnostics must not prefix machine-readable CLI output.
+          process.stderr.write(`[stx] Plugin loaded: ${plugin.name || pluginPath}\n`)
         }
         catch (e: any) {
           console.warn(`[stx] Failed to load plugin ${pluginPath}:`, e.message)

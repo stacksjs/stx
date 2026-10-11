@@ -104,6 +104,18 @@ const visible = true
     expect(ir.root.children[0].children).toEqual(['Rendered by stx'])
   })
 
+  it('keeps plugin diagnostics on stderr while emitting complete IR JSON on stdout', async () => {
+    const root = await project()
+    const plugin = path.join(root, 'native-test-plugin.ts')
+    await Bun.write(plugin, `export default { name: 'native-test-plugin', components: 'components' }`)
+    await Bun.write(path.join(root, 'stx.config.ts'), `export default { plugins: [${JSON.stringify(plugin)}] }`)
+
+    const { code, stdout, stderr } = await runCli(['compile', 'Screen.stx'], root)
+    expect(code).toBe(0)
+    expect(JSON.parse(stdout).root.type).toBe('View')
+    expect(stderr).toContain('[stx] Plugin loaded: native-test-plugin')
+  })
+
   it('still reports a missing file rather than crashing', async () => {
     const { code, stderr } = await runCli(['compile'], await project())
     expect(code).not.toBe(0)
