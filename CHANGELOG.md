@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.460...v0.2.461)
+
+## 🐛 Bug Fixes
+
+- **components**: top-align the avatar so it adds no baseline space ([7781649](https://github.com/stacksjs/stx/commit/7781649)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.461 ([95cfd8c](https://github.com/stacksjs/stx/commit/95cfd8c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.459...v0.2.460)
 
 ## 🐛 Bug Fixes
