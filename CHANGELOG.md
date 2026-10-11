@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.457...v0.2.458)
+
+## 🐛 Bug Fixes
+
+- **offline**: keep the fallback screen to its own section ([c2b86e5](https://github.com/stacksjs/stx/commit/c2b86e5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **dev**: reload a page after a dev server restart only once the server is back ([3218880](https://github.com/stacksjs/stx/commit/3218880)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.458 ([c2f821a](https://github.com/stacksjs/stx/commit/c2f821a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.456...v0.2.457)
 
 ## 🐛 Bug Fixes
