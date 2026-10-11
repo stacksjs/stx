@@ -179,8 +179,10 @@ onMount(() => {
   describeTrigger()
   // The panel already belongs to this setup scope. Moving the same node keeps
   // its reactive bindings and refs, unlike passing them through another scope.
-  const panel = panelRef.value
-  if (panel) nextTick(() => { if (panel.isConnected) restorePanel = portalElement(panel, panel.ownerDocument.body) })
+  nextTick(() => {
+    const panel = panelRef.value
+    if (panel && panel.isConnected) restorePanel = portalElement(panel, panel.ownerDocument.body)
+  })
 })
 onDestroy(() => { if (restorePanel) restorePanel() })
   </script>
