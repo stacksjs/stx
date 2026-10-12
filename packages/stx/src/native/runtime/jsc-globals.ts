@@ -460,6 +460,57 @@ class NativeURL {
 
 export { NativeURL }
 
+const BASE64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+
+/** A browser throws a DOMException named InvalidCharacterError: a plain Error with that name here. */
+function invalidCharacter(message: string): Error {
+  const error = new Error(message)
+  error.name = 'InvalidCharacterError'
+  return error
+}
+
+/**
+ * `btoa`, which JavaScriptCore does not have: it is a web API. Code shared
+ * with web pages (a session handoff, base64url) encodes with it. Latin-1 in,
+ * as a browser's: anything above U+00FF throws.
+ */
+function nativeBtoa(input: unknown): string {
+  const text = String(input)
+  let out = ''
+  for (let i = 0; i < text.length; i += 3) {
+    const a = text.charCodeAt(i)
+    const b = i + 1 < text.length ? text.charCodeAt(i + 1) : -1
+    const c = i + 2 < text.length ? text.charCodeAt(i + 2) : -1
+    if (a > 0xFF || b > 0xFF || c > 0xFF) throw invalidCharacter('btoa: the string has characters outside Latin-1')
+    out += BASE64[a >> 2]!
+    out += BASE64[((a & 3) << 4) | (b === -1 ? 0 : b >> 4)]!
+    out += b === -1 ? '=' : BASE64[((b & 15) << 2) | (c === -1 ? 0 : c >> 6)]!
+    out += c === -1 ? '=' : BASE64[c & 63]!
+  }
+  return out
+}
+
+/** `atob`, the other way, with a browser's forgiveness: whitespace ignored, padding optional. */
+function nativeAtob(input: unknown): string {
+  let text = String(input).replace(/[\t\n\f\r ]/g, '')
+  if (text.length % 4 === 0) text = text.replace(/={1,2}$/, '')
+  if (text.length % 4 === 1 || /[^A-Z\d+/]/i.test(text)) throw invalidCharacter('atob: the string is not correctly encoded')
+  let out = ''
+  let buffer = 0
+  let bits = 0
+  for (const char of text) {
+    buffer = (buffer << 6) | BASE64.indexOf(char)
+    bits += 6
+    if (bits >= 8) {
+      bits -= 8
+      out += String.fromCharCode((buffer >> bits) & 0xFF)
+    }
+  }
+  return out
+}
+
+export { nativeAtob, nativeBtoa }
+
 /** Install only the browser-shaped globals the shared runtime needs to boot in JSC. */
 export function installJSCGlobals(target: AnyRecord = globalThis as AnyRecord): void {
   const listeners = new Map<string, Set<(event: unknown) => void>>()
@@ -488,6 +539,8 @@ export function installJSCGlobals(target: AnyRecord = globalThis as AnyRecord): 
   target.dispatchEvent ??= dispatchEvent
   target.URLSearchParams ??= NativeURLSearchParams
   target.URL ??= NativeURL
+  target.atob ??= nativeAtob
+  target.btoa ??= nativeBtoa
   target.TextEncoder ??= NativeTextEncoder
   target.TextDecoder ??= NativeTextDecoder
   target.performance ??= { now: () => Date.now() }
