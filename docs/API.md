@@ -5235,6 +5235,25 @@ const sitemap = generateSitemap([
 Returns a complete XML string ready to write to disk or return from a
 request handler.
 
+A page in several languages lists each version under `alternates`. They are
+written as `<xhtml:link rel="alternate" hreflang="…">` on that `<url>`, and
+`xmlns:xhtml` is added to `<urlset>` only when an entry has alternates. List
+every version, this one included: Google ignores a set that isn't
+reciprocal.
+
+```typescript
+generateSitemap([
+  {
+    loc: '/pricing',
+    alternates: [
+      { hreflang: 'en', href: '/pricing' },
+      { hreflang: 'de', href: '/pricing?locale=de' },
+      { hreflang: 'x-default', href: '/pricing' },
+    ],
+  },
+], { baseUrl: 'https://example.com' })
+```
+
 ### scanForSitemapEntries
 
 Auto-discover routes by scanning a pages directory. Returns sitemap entries

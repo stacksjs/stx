@@ -118,6 +118,30 @@ function attrPairs(entries: Record<string, unknown>, skip?: (key: string) => boo
 }
 
 /**
+ * The body of an inline head script. A JSON data block (`application/ld+json`,
+ * `application/json`, an importmap) gets `</` escaped as `<\/`, which JSON reads
+ * as the same `/`, so a value containing `</script>` cannot close the block
+ * and open markup of its own. JavaScript is left alone: `<\/` is only
+ * equivalent inside a string literal.
+ */
+export function inlineScriptContent(s: { content?: unknown, type?: unknown }): string {
+  const content = String(s.content)
+  const type = typeof s.type === 'string' ? s.type.trim().toLowerCase() : ''
+  return /json$|^importmap$/.test(type) ? content.replace(/<\//g, '<\\/') : content
+}
+
+/**
+ * An inline head `<script>` with its attributes. `useHead({ script: [{ type:
+ * 'application/ld+json', id, content }] })` has to reach the browser as the
+ * data block it declared, not as JavaScript, so `type`, `id` and the rest are
+ * kept and only `content` becomes the body.
+ */
+function inlineScriptTag(s: Record<string, unknown>): string {
+  const attrs = attrPairs(s, k => k === 'content')
+  return `<script${attrs ? ` ${attrs}` : ''}>${inlineScriptContent(s)}</script>`
+}
+
+/**
  * Build the attribute string for the shell's `<html>` open tag.
  *
  * `htmlAttrs.lang` wins over the `lang` option so `useHead({ htmlAttrs: { lang } })`
@@ -491,7 +515,7 @@ export function generateDocumentShell(
       return `  <script ${attrPairs(s, k => k === 'content')}></script>`
     }
     if (s.content) {
-      return `  <script>${s.content}</script>`
+      return `  ${inlineScriptTag(s)}`
     }
     return ''
   }).filter(Boolean).join('\n')
@@ -699,9 +723,9 @@ export function injectConfigHeadTags(html: string, headConfig: AppHeadConfig = {
       parts.push(`  <script ${attrPairs(s, k => k === 'content')}></script>`)
     }
     else if (s.content) {
-      if (head.includes(s.content))
+      if (head.includes(inlineScriptContent(s)))
         continue
-      parts.push(`  <script>${s.content}</script>`)
+      parts.push(`  ${inlineScriptTag(s)}`)
     }
   }
 

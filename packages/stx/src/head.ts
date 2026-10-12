@@ -29,6 +29,7 @@
  * ```
  */
 import { replaceDirectiveCalls, reportDirectiveFailure, splitTopLevelArgs } from './directive-arguments'
+import { inlineScriptContent } from './document-shell'
 import { ErrorCodes } from './error-handling'
 import { resolveMetaArguments } from './meta-arguments'
 import { normalizeHeadKeys, USE_HEAD_KEYS } from './head-keys'
@@ -519,7 +520,7 @@ export function renderHead(config: HeadConfig = currentHead): string {
       .join(' ')
 
     if (content) {
-      parts.push(`<script ${attrStr}>${content}</script>`)
+      parts.push(`<script ${attrStr}>${inlineScriptContent(script)}</script>`)
     }
 else {
       parts.push(`<script ${attrStr}></script>`)

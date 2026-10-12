@@ -1010,6 +1010,35 @@ describe('generateSitemap', () => {
     )
     expect(result).toContain('<priority>1.0</priority>')
   })
+
+  it('writes language alternates as xhtml:link on the entry', () => {
+    const result = generateSitemap(
+      [{
+        loc: '/pricing',
+        alternates: [
+          { hreflang: 'en', href: '/pricing' },
+          { hreflang: 'de', href: '/pricing?locale=de&x=1' },
+          { hreflang: 'x-default', href: 'https://example.com/pricing' },
+        ],
+      }],
+      { baseUrl: 'https://example.com', includeLastmod: false },
+    )
+    expect(result).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">')
+    expect(result).toContain(`    <loc>https://example.com/pricing</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://example.com/pricing"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://example.com/pricing?locale=de&amp;x=1"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://example.com/pricing"/>
+    <changefreq>`)
+  })
+
+  it('leaves the xhtml namespace off a sitemap without alternates', () => {
+    const result = generateSitemap(
+      [{ loc: '/' }, { loc: '/about', alternates: [] }],
+      { baseUrl: 'https://example.com', includeLastmod: false },
+    )
+    expect(result).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+    expect(result).not.toContain('xhtml')
+  })
 })
 
 // =============================================================================

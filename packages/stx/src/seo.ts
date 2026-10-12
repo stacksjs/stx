@@ -831,6 +831,23 @@ export interface SitemapEntry {
   changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never'
   /** Priority (0.0 to 1.0) */
   priority?: number
+  /**
+   * The page in other languages, written as `<xhtml:link rel="alternate">`
+   * on this `<url>`. List every version, this one included, plus an
+   * `x-default` when there is one: Google ignores a set that is not
+   * reciprocal. An `href` that is a path is resolved like `loc`.
+   *
+   * @example [{ hreflang: 'en', href: '/pricing' }, { hreflang: 'de', href: '/de/pricing' }, { hreflang: 'x-default', href: '/pricing' }]
+   */
+  alternates?: SitemapAlternate[]
+}
+
+/** One language version of a sitemap entry. */
+export interface SitemapAlternate {
+  /** A language (`de`), a language and region (`en-GB`), or `x-default`. */
+  hreflang: string
+  /** A path or an absolute URL. */
+  href: string
 }
 
 /**
@@ -874,10 +891,12 @@ export function generateSitemap(entries: SitemapEntry[], options: SitemapOptions
   // Normalize base URL (remove trailing slash)
   const base = baseUrl.replace(/\/$/, '')
 
+  const absolute = (url: string): string => url.startsWith('http')
+    ? url
+    : `${base}${url.startsWith('/') ? '' : '/'}${url}`
+
   const urlEntries = entries.map((entry) => {
-    const loc = entry.loc.startsWith('http')
-      ? entry.loc
-      : `${base}${entry.loc.startsWith('/') ? '' : '/'}${entry.loc}`
+    const loc = absolute(entry.loc)
 
     const lastmod = entry.lastmod
       || (includeLastmod ? new Date().toISOString().split('T')[0] : undefined)
@@ -886,6 +905,10 @@ export function generateSitemap(entries: SitemapEntry[], options: SitemapOptions
     const priority = entry.priority ?? defaultPriority
 
     let urlXml = `  <url>\n    <loc>${escapeXml(loc)}</loc>`
+
+    for (const alternate of entry.alternates ?? []) {
+      urlXml += `\n    <xhtml:link rel="alternate" hreflang="${escapeXml(alternate.hreflang)}" href="${escapeXml(absolute(alternate.href))}"/>`
+    }
 
     if (lastmod) {
       urlXml += `\n    <lastmod>${lastmod}</lastmod>`
@@ -898,8 +921,14 @@ export function generateSitemap(entries: SitemapEntry[], options: SitemapOptions
     return urlXml
   })
 
+  // The xhtml namespace is declared only when an entry uses it, so a sitemap
+  // without alternates is byte-for-byte what it always was.
+  const xhtml = entries.some(entry => entry.alternates?.length)
+    ? ' xmlns:xhtml="http://www.w3.org/1999/xhtml"'
+    : ''
+
   return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"${xhtml}>
 ${urlEntries.join('\n')}
 </urlset>`
 }
