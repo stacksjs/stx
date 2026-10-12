@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.470...v0.2.471)
+
+## ✨ Features
+
+- **native**: draw svg on native screens ([4526479](https://github.com/stacksjs/stx/commit/4526479)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.471 ([b3ec49d](https://github.com/stacksjs/stx/commit/b3ec49d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.469...v0.2.470)
 
 ## ✨ Features
