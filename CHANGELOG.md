@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.475...v0.2.476)
+
+## 🐛 Bug Fixes
+
+- a :for variable shadows an auto-imported global ([5b22d06](https://github.com/stacksjs/stx/commit/5b22d06)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.476 ([28b0e5c](https://github.com/stacksjs/stx/commit/28b0e5c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.474...v0.2.475)
 
 ## ✨ Features
