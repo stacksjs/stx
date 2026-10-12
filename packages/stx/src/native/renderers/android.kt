@@ -153,6 +153,12 @@ data class STXStyle(
     val resizeMode: String? = null,
     val tintColor: String? = null,
 
+    // Linear gradient (bg-gradient-to-br from-* via-* to-*)
+    val gradientDirection: String? = null,
+    val gradientFrom: String? = null,
+    val gradientVia: String? = null,
+    val gradientTo: String? = null,
+
     // Vector drawing (svg.ts)
     val fill: String? = null,
     val stroke: String? = null,
@@ -239,6 +245,10 @@ data class STXStyle(
 
                 resizeMode = json.optString("resizeMode", null),
                 tintColor = json.optString("tintColor", null),
+                gradientDirection = json.optString("gradientDirection", null),
+                gradientFrom = json.optString("gradientFrom", null),
+                gradientVia = json.optString("gradientVia", null),
+                gradientTo = json.optString("gradientTo", null),
                 fill = json.optString("fill", null),
                 stroke = json.optString("stroke", null),
                 strokeWidth = json.optDouble("strokeWidth").takeIf { !it.isNaN() }?.toFloat(),
@@ -876,6 +886,24 @@ class STXRenderer(private val context: Context) {
 
         style.backgroundColor?.let {
             drawable.setColor(parseColor(it))
+            hasDrawable = true
+        }
+
+        // Linear gradient (bg-gradient-to-br from-* via-* to-*), over the colour
+        val from = style.gradientFrom
+        val to = style.gradientTo
+        if (style.gradientDirection != null && from != null && to != null) {
+            drawable.orientation = when (style.gradientDirection) {
+                "to-t" -> GradientDrawable.Orientation.BOTTOM_TOP
+                "to-tr" -> GradientDrawable.Orientation.BL_TR
+                "to-r" -> GradientDrawable.Orientation.LEFT_RIGHT
+                "to-br" -> GradientDrawable.Orientation.TL_BR
+                "to-bl" -> GradientDrawable.Orientation.TR_BL
+                "to-l" -> GradientDrawable.Orientation.RIGHT_LEFT
+                "to-tl" -> GradientDrawable.Orientation.BR_TL
+                else -> GradientDrawable.Orientation.TOP_BOTTOM
+            }
+            drawable.colors = listOfNotNull(from, style.gradientVia, to).map { parseColor(it) }.toIntArray()
             hasDrawable = true
         }
 

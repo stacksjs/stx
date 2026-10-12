@@ -132,6 +132,10 @@ struct STXStyle: Codable {
 
     // Background
     var backgroundColor: String?
+    var gradientDirection: String?
+    var gradientFrom: String?
+    var gradientVia: String?
+    var gradientTo: String?
     var opacity: CGFloat?
 
     // Shadow
@@ -633,6 +637,9 @@ class STXRenderer {
             view.backgroundColor = UIColor(hex: bgColorHex)
         }
 
+        // Linear gradient (bg-gradient-to-br from-* via-* to-*)
+        STXGradientLayer.apply(style, to: view)
+
         // Border
         if let borderWidth = style.borderWidth {
             view.layer.borderWidth = borderWidth
@@ -904,6 +911,44 @@ class STXRenderer {
             if let right = style.right { layout.right = YGValue(right) }
             if let bottom = style.bottom { layout.bottom = YGValue(bottom) }
             if let left = style.left { layout.left = YGValue(left) }
+        }
+    }
+}
+
+// MARK: - Gradients
+
+/// A view's linear gradient, kept as the first sublayer and resized with it.
+final class STXGradientLayer: CAGradientLayer {
+    private var observation: NSKeyValueObservation?
+
+    static func points(_ direction: String) -> (CGPoint, CGPoint) {
+        switch direction {
+        case "to-t": return (CGPoint(x: 0.5, y: 1), CGPoint(x: 0.5, y: 0))
+        case "to-tr": return (CGPoint(x: 0, y: 1), CGPoint(x: 1, y: 0))
+        case "to-r": return (CGPoint(x: 0, y: 0.5), CGPoint(x: 1, y: 0.5))
+        case "to-br": return (CGPoint(x: 0, y: 0), CGPoint(x: 1, y: 1))
+        case "to-bl": return (CGPoint(x: 1, y: 0), CGPoint(x: 0, y: 1))
+        case "to-l": return (CGPoint(x: 1, y: 0.5), CGPoint(x: 0, y: 0.5))
+        case "to-tl": return (CGPoint(x: 1, y: 1), CGPoint(x: 0, y: 0))
+        default: return (CGPoint(x: 0.5, y: 0), CGPoint(x: 0.5, y: 1))
+        }
+    }
+
+    static func apply(_ style: STXStyle, to view: UIView) {
+        let existing = view.layer.sublayers?.first as? STXGradientLayer
+        guard let direction = style.gradientDirection,
+              let from = style.gradientFrom.flatMap({ UIColor(hex: $0) }),
+              let to = style.gradientTo.flatMap({ UIColor(hex: $0) }) else {
+            existing?.removeFromSuperlayer()
+            return
+        }
+        let layer = existing ?? STXGradientLayer()
+        layer.colors = [from, style.gradientVia.flatMap { UIColor(hex: $0) }, to].compactMap { $0?.cgColor }
+        (layer.startPoint, layer.endPoint) = points(direction)
+        layer.frame = view.bounds
+        if existing == nil {
+            view.layer.insertSublayer(layer, at: 0)
+            layer.observation = view.observe(\.bounds) { [weak layer] view, _ in layer?.frame = view.bounds }
         }
     }
 }

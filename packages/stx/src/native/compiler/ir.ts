@@ -215,6 +215,15 @@ export interface STXStyle {
   // Background
   backgroundColor?: string
   backgroundImage?: string
+  /**
+   * A linear gradient behind the view (`bg-gradient-to-br from-blue-600
+   * to-indigo-700`): the direction it runs, as the class names it (`to-br`),
+   * and its colours. Drawn under the background colour's place.
+   */
+  gradientDirection?: string
+  gradientFrom?: string
+  gradientVia?: string
+  gradientTo?: string
   opacity?: number
 
   // Shadow (iOS)

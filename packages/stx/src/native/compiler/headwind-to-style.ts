@@ -457,6 +457,29 @@ function parseTextColor(className: string, style: STXStyle): boolean {
 }
 
 /**
+ * A linear gradient: `bg-gradient-to-{t,tr,r,br,b,bl,l,tl}` (or `bg-linear-to-*`)
+ * for its direction and `from-*`, `via-*`, `to-*` for its colours. Each class
+ * sets its own part; the renderer draws once the direction and both ends are
+ * there.
+ */
+const GRADIENT_DIRECTIONS = new Set(['t', 'tr', 'r', 'br', 'b', 'bl', 'l', 'tl'])
+function parseGradient(className: string, style: STXStyle): boolean {
+  const direction = /^bg-(?:gradient|linear)-to-([a-z]+)$/.exec(className)
+  if (direction && GRADIENT_DIRECTIONS.has(direction[1])) {
+    style.gradientDirection = `to-${direction[1]}`
+    return true
+  }
+  const stop = /^(from|via|to)-(.+)$/.exec(className)
+  if (!stop) return false
+  const color = resolveColor(stop[2])
+  if (!color) return false
+  if (stop[1] === 'from') style.gradientFrom = color
+  else if (stop[1] === 'via') style.gradientVia = color
+  else style.gradientTo = color
+  return true
+}
+
+/**
  * A vector shape's paint: `fill-*` and `stroke-*` colours, `fill-none` /
  * `stroke-none`, and `stroke-0`..`stroke-8` widths (svg.ts).
  */
@@ -936,6 +959,7 @@ export function compileHeadwindToStyle(classes: string, unknown?: string[]): STX
     }
 
     // Try pattern-based parsers
+    if (parseGradient(className, style)) continue
     if (parseBackgroundColor(className, style)) continue
     if (parseVectorPaint(className, style)) continue
     if (parseTextColor(className, style)) continue

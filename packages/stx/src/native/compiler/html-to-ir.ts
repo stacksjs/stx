@@ -185,6 +185,7 @@ const STYLE_KEYS = new Set([
   'letterSpacing', 'textAlign', 'textDecorationLine', 'textDecorationColor',
   'textTransform', 'resizeMode', 'tintColor', 'transform', 'overflow',
   'fill', 'stroke', 'strokeWidth',
+  'gradientDirection', 'gradientFrom', 'gradientVia', 'gradientTo',
 ])
 
 /**
