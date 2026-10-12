@@ -3,12 +3,41 @@ export const className = $props.className || ''
 export const striped = $bool($props.striped)
 export const hoverable = $bool($props.hoverable, true)
 
+/*
+ * The table's accessible name (stacksjs/stx#2060).
+ *
+ * A table is named by its <caption>, and there was no way to give a library
+ * table one: no prop, and no slot ahead of <thead>. It is the table's first
+ * child, as HTML requires, and visually hidden unless `captionVisible` -- most
+ * tables sit under a heading that already says what they are, and a second
+ * visible title would repeat it.
+ */
+export const caption = $props.caption || ''
+export const captionVisible = $bool($props.captionVisible)
+export const captionClasses = captionVisible
+  ? 'caption-top px-cell-x py-2 text-left text-sm font-semibold text-fg'
+  : 'sr-only'
+
 const baseClasses = 'min-w-full divide-y divide-line'
-const tableClasses = `${baseClasses} ${className}`.trim()
+export const tableClasses = `${baseClasses} ${className}`.trim()
 </script>
 
 <div class="overflow-x-auto">
-  <table class="{{ tableClasses }}">
+  <table class="{{ tableClasses }}" @if(caption)data-stx-caption@endif>
+    @if(caption)<caption class="{{ captionClasses }}">{{ caption }}</caption>@endif
     <slot :striped="striped" :hoverable="hoverable" />
   </table>
 </div>
+
+<style>
+/*
+ * `divide-y` borders every child after the first, and with a caption first
+ * that includes the header row: a captioned table grew a rule along its top
+ * edge that an uncaptioned one does not have. This takes it back off. The
+ * selector has to outrank divide-y's own (0,3,0) -- hence the table's
+ * :not([hidden]) -- or which one won would be stylesheet order again.
+ */
+table[data-stx-caption]:not([hidden]) > caption + :not([hidden]) {
+  border-top-width: 0;
+}
+</style>

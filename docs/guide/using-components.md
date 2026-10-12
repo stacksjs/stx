@@ -292,11 +292,11 @@ Generated from component source. `Props` lists each prop with its default; `Emit
 | `<Heatmap>` | `id` (`$uid`), `mode` (`'overlay'`), `width` (`null`), `height` (`null`), `radius` (`20`), `blur` (`15`), `opacity` (`0.6`), `showLegend` (`true`), +4 more | — | — |
 | `<Pagination>` | `currentPage` (`1`), `totalPages` (`1`), `siblingCount` (`1`), `showFirstLast` (`true`), `showPrevNext` (`true`), `className` (`''`) | `@change` | — |
 | `<TabPanel>` | `label` (`''`), `icon` (`''`), `className` (`''`) | — | default |
-| `<Table>` | `className` (`''`), `striped` (`false`), `hoverable` (`true`) | — | default |
+| `<Table>` | `caption` (`''`), `captionVisible` (`false`), `className` (`''`), `striped` (`false`), `hoverable` (`true`) | — | default |
 | `<TableBody>` | `className` (`''`) | — | default |
 | `<TableCell>` | `className` (`''`) | — | default |
 | `<TableHead>` | `className` (`''`) | — | default |
-| `<TableHeader>` | `className` (`''`), `sortable` (`false`) | `@click` | default |
+| `<TableHeader>` | `className` (`''`), `sortable` (`false`), `scope` (`'col'`), `sort` (`''`) | `@click` | default |
 | `<TableRow>` | `className` (`''`), `hoverable` (`true`) | — | default |
 | `<Tabs>` | `tabs` (`[]`), `defaultTab` (`0`), `orientation` (`'horizontal'`), `variant` (`'line'`), `className` (`''`) | `@change` | default |
 | `<VirtualList>` | `items` (`[]`), `itemHeight` (`50`), `height` (`400`), `overscan` (`3`), `className` (`''`) | — | default |

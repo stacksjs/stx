@@ -6,6 +6,10 @@ export { default as TableHeader } from './TableHeader.stx'
 export { default as TableRow } from './TableRow.stx'
 
 export interface TableProps {
+  /** The table's accessible name, rendered as its first child `<caption>`. */
+  caption?: string
+  /** Show the caption; it is visually hidden (`sr-only`) by default. */
+  captionVisible?: boolean
   className?: string
   striped?: boolean
   hoverable?: boolean
@@ -26,7 +30,12 @@ export interface TableRowProps {
 
 export interface TableHeaderProps {
   className?: string
+  /** Which cells this header heads; `col` by default. */
+  scope?: 'col' | 'row' | 'colgroup' | 'rowgroup'
+  /** Render the label as a `<button>` that emits `click`. */
   sortable?: boolean
+  /** The current direction, set as `aria-sort` on the `<th>`. */
+  sort?: 'asc' | 'desc' | ''
   onClick?: () => void
 }
 

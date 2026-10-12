@@ -3,25 +3,60 @@ export const className = $props.className || ''
 export const sortable = $bool($props.sortable)
 
 /*
- * The same density roles as TableCell, with a header row's own block padding
- * and type (--stx-cell-head-py, --stx-cell-head-text,
- * --stx-cell-head-leading). The inline padding is shared on purpose: a
- * header starting at a different inset from its column's cells is a
- * misaligned table (stacksjs/stx#1993).
+ * Which cells this header heads (stacksjs/stx#2060).
+ *
+ * A <th> without `scope` leaves a screen reader to guess, and it guesses wrong
+ * in any table with row headers. `col` by default, because that is what a
+ * header in a <thead> is; `row` for a header at the start of a body row. An
+ * attribute written on <TableHeader> never reached the <th>, so there was no
+ * way to say it at all.
  */
+const SCOPES = ['col', 'row', 'colgroup', 'rowgroup']
+export const scope = SCOPES.includes(String($props.scope)) ? String($props.scope) : 'col'
+
+/*
+ * Which way the column is sorted now, as `aria-sort` on the <th> -- the one
+ * place a screen reader looks for it. `asc` / `desc`; anything else is
+ * unsorted, `none`. Served on every sortable header (and on any header given
+ * a `sort`), and live, so a page re-sorting a table moves it without a
+ * re-render.
+ */
+const SORTS = { asc: 'ascending', desc: 'descending' }
+export const sortDirection = SORTS[String($props.sort)] ? String($props.sort) : ''
+export const announcesSort = sortable || ($props.sort !== undefined && $props.sort !== null)
+export const servedAriaSort = SORTS[sortDirection] || 'none'
+
 const baseClasses = 'px-cell-x py-cell-head-y text-left text-cell-head font-medium text-fg-soft uppercase tracking-wider'
-const sortableClasses = sortable ? 'cursor-pointer hover:text-fg-strong' : ''
-export const headerClasses = `${baseClasses} ${sortableClasses} ${className}`.trim()
+export const headerClasses = `${baseClasses} ${className}`.trim()
+/*
+ * The control that sorts. A <th> is not focusable, so a click handler on it
+ * made sorting mouse-only (stacksjs/stx#2060); a <button> inside it is
+ * reachable by Tab and operated by Enter and Space, and it is what emits
+ * `click`. It takes on the header's type -- the preflight resets a button's
+ * text-transform, so `uppercase` is restated -- and draws a ring on keyboard
+ * focus only.
+ */
+export const buttonClasses = 'inline-flex items-center gap-1 uppercase tracking-wider text-left rounded-control cursor-pointer hover:text-fg-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-accent'
 </script>
 
 <script client>
 const emit = defineEmits()
+const sortState = useReactiveProp('sort', {{ sortDirection }}, { parse: v => v === 'asc' || v === 'desc' ? v : '' })
+const ariaSort = derived(() => sortState() === 'asc' ? 'ascending' : sortState() === 'desc' ? 'descending' : 'none')
 
 function onClick() {
   emit('click')
 }
 </script>
 
-<th class="{{ headerClasses }}" @if(sortable)@click="onClick()"@endif>
-  <slot />
+<th
+  scope="{{ scope }}"
+  class="{{ headerClasses }}"
+  @if(announcesSort)aria-sort="{{ servedAriaSort }}" :aria-sort="ariaSort()"@endif
+>
+  @if(sortable)
+    <button type="button" class="{{ buttonClasses }}" @click="onClick()"><slot /></button>
+  @else
+    <slot />
+  @endif
 </th>

@@ -66,14 +66,15 @@ describe('a table cell component is scoped in place (#1980)', () => {
     expect(row?.[1].trim().startsWith('<th')).toBe(true)
   })
 
-  it('keeps the sortable header its click handler', async () => {
+  it('keeps the sortable header its click handler, inside the scope', async () => {
     const html = markup(await render(TABLE))
-    const header = html.match(/<th\b[^>]*>/)?.[0] ?? ''
+    const header = html.match(/<th\b[^>]*>([\s\S]*?)<\/th>/)
 
-    // The handler and the scope have to be on the same element for the
-    // handler to be bound to what a reader clicks.
-    expect(header).toContain('data-stx-scope')
-    expect(html).toMatch(/<th[^>]*@click/)
+    // The handler has to be inside the element carrying the scope for it to
+    // be bound to what a reader clicks. Since #2060 it sits on a <button> in
+    // the <th> rather than on the <th> itself, so it is reachable by keyboard.
+    expect(header?.[0]).toContain('data-stx-scope')
+    expect(header?.[1]).toMatch(/<button[^>]*@click/)
   })
 })
 
