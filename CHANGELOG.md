@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.471...v0.2.472)
+
+## 🐛 Bug Fixes
+
+- **signals**: reconnect a component's props when an :if shows it again ([5d1b704](https://github.com/stacksjs/stx/commit/5d1b704)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.472 ([fc193de](https://github.com/stacksjs/stx/commit/fc193de)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.470...v0.2.471)
 
 ## ✨ Features
