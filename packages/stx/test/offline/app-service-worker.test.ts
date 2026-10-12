@@ -371,6 +371,36 @@ describe('a kept screen (stale-while-revalidate)', () => {
     await sw.settle()
   })
 
+  it('keeps a route declared static through no-store visits, so any value of it opens offline', async () => {
+    let online = true
+    let build = 'install'
+    const page = (id: string) => `<html><script data-stx-route-params>(function(){var p={"id":"${id}"};window.__stx_rp=p})()</script>Player ${build}</html>`
+    const sw = runWorker({ enabled: true, pages: [], routes: ['/m/go/:id'], staticPages: ['/m/go/:id'] }, url => online
+      ? new Response(page(url.split('/').pop()!), { headers: { 'Content-Type': 'text/html', 'Cache-Control': 'private, no-store' } })
+      : null)
+    await sw.install()
+    build = 'visited'
+    await sw.request('http://app.test/m/go/7', { Accept: 'text/html' })
+    await sw.settle()
+    online = false
+    // The one visited, and one never opened: both from the visit's copy.
+    expect(await (await sw.request('http://app.test/m/go/7', { Accept: 'text/html' }))!.text()).toContain('Player visited')
+    const never = await (await sw.request('http://app.test/m/go/9', { Accept: 'text/html' }))!.text()
+    expect(never).toContain('Player visited')
+    expect(never).toContain('"id":"9"')
+    await sw.settle()
+  })
+
+  it('does not keep a no-store route that is not declared static beyond its install copy', async () => {
+    let build = 'install'
+    const sw = runWorker({ enabled: true, pages: [], routes: ['/m/go/:id'] }, () => new Response(`Player ${build}`, { headers: { 'Content-Type': 'text/html', 'Cache-Control': 'no-store' } }))
+    await sw.install()
+    build = 'visited'
+    await sw.request('http://app.test/m/go/7', { Accept: 'text/html' })
+    await sw.settle()
+    expect(sw.stores.get('stx-shell-b1')!.has('http://app.test/m/go/7')).toBe(false)
+  })
+
   it('evicts no-store pages unless the app explicitly declares a static shell', async () => {
     const sw = runWorker({ enabled: true, pages: ['/m/private'] }, () => new Response('Personal page', { headers: { 'Content-Type': 'text/html', 'Cache-Control': 'no-store' } }))
     await sw.install()
@@ -557,6 +587,29 @@ describe('a screen never kept', () => {
 describe('API reads', () => {
   const read = (sw: ReturnType<typeof runWorker>, token = 'a', options: RequestOptions = {}) =>
     sw.request('http://app.test/api/calendar', { Authorization: `Bearer ${token}` }, options)
+
+  it('tells open pages when the server cannot be reached, and when it can again', async () => {
+    let online = true
+    const sw = runWorker({ enabled: true }, () => online ? json({ value: 1 }) : null)
+    sw.clients.push(client())
+    await read(sw)
+    await sw.settle()
+    expect(sw.clients[0]!.messages).toEqual([])
+    online = false
+    // Answered from the kept copy, so the page itself never sees a failure.
+    expect(await (await read(sw))!.json()).toEqual({ value: 1 })
+    await sw.settle()
+    expect(sw.clients[0]!.messages.at(-1)).toMatchObject({ type: 'stx:reachability', reachable: false })
+    expect(sw.clients[0]!.messages.at(-1).at).toBeGreaterThan(0)
+    online = true
+    await read(sw)
+    await sw.settle()
+    expect(sw.clients[0]!.messages.at(-1)).toMatchObject({ type: 'stx:reachability', reachable: true })
+    expect(sw.clients[0]!.messages.filter((m: any) => m.type === 'stx:reachability')).toHaveLength(2)
+    // A page that opens later asks, and hears the current answer.
+    await sw.message({ type: 'stx:reachability?' })
+    expect(sw.clients[0]!.messages.at(-1)).toMatchObject({ type: 'stx:reachability', reachable: true })
+  })
 
   it('never reads, writes or falls back to an offline copy for no-store requests', async () => {
     let value = 1

@@ -2,6 +2,10 @@
  * useNetwork - Reactive network status composables
  *
  * Provides reactive tracking of network connectivity and information.
+ *
+ * Online means the app can reach its server: the browser's own flag, and,
+ * where stx's offline worker runs, whether its last request to the server got
+ * there (`window.stxOffline.reachable`, kept current by `stx:reachability`).
  */
 
 export interface NetworkState {
@@ -67,10 +71,14 @@ export function useNetwork(): NetworkRef {
     }
 
     const connection = getConnection()
+    // A network the server cannot be reached over (one bar of gym wifi, a
+    // captive portal) is offline for the app: the offline worker says so
+    // (stx:reachability), since the browser keeps saying online.
+    const online = navigator.onLine && (window as any).stxOffline?.reachable !== false
 
     return {
-      isOnline: navigator.onLine,
-      isOffline: !navigator.onLine,
+      isOnline: online,
+      isOffline: !online,
       type: connection?.type || null,
       effectiveType: connection?.effectiveType || null,
       downlink: connection?.downlink || null,
@@ -97,6 +105,7 @@ catch (e) {
   if (isClient) {
     window.addEventListener('online', notify)
     window.addEventListener('offline', notify)
+    window.addEventListener('stx:reachability', notify)
 
     const connection = getConnection()
     if (connection) {

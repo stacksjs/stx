@@ -3,7 +3,8 @@
  *
  * A request that cannot reach the server right now (no signal in a gym, a
  * tunnel, a server restarting) is kept on the device and sent when it can be:
- * when the browser says it is online again, when the page comes back to the
+ * when the browser says it is online again (or stx's offline worker reaches
+ * the server again, `stx:reachability`), when the page comes back to the
  * foreground, and on a backoff timer while anything is waiting. The caller
  * learns at once whether its write went through or is waiting, so a screen
  * can say "Saved on this phone, it syncs when you are back online" instead of
@@ -104,6 +105,14 @@ export interface OutboxOptions {
   overlays?: Record<string, OutboxOverlay>
   /** The overlay for an entry that names none. */
   apply?: OutboxOverlay
+  /**
+   * One sender at a time, where several outboxes share one storage: two tabs
+   * of the app, or two native screens, each with its own outbox over the same
+   * queue. Both flushing at once sent each waiting entry twice. A flush sends
+   * only once `acquire()` says yes, and calls `release()` when it is done; a
+   * flush that is refused tries again a few seconds later.
+   */
+  lock?: { acquire: () => boolean, release: () => void }
 }
 
 export interface Outbox {
@@ -329,35 +338,56 @@ export function useOutbox(name: string, options: OutboxOptions = {}): Outbox {
 
   async function flush(force = false): Promise<void> {
     if (flushing) return flushing
-    flushing = (async () => {
-      // One at a time and in order: a later write may depend on an earlier one.
-      for (const entry of read()) {
-        if (!force && entry.nextAt > Date.now()) break
-        const outcome = await deliver(entry)
-        const list = read()
-        const at = list.findIndex(item => item.id === entry.id)
-        if (outcome === 'kept') {
-          if (at >= 0) {
-            list[at] = { ...list[at]!, attempts: list[at]!.attempts + 1, nextAt: Date.now() + delayFor(list[at]!.attempts + 1) }
-            write(list)
-          }
-          break
-        }
-        if (at >= 0) {
-          // Heard while the entry is still listed, so a cached query can keep
-          // showing it until its refetch includes it.
-          if (outcome === 'sent')
-            announce(name, list, list[at])
-          list.splice(at, 1)
-          write(list)
-        }
-      }
-    })()
+    flushing = opts.lock && read().length ? lockedFlush(opts.lock, force) : sendDue(force)
     try {
       await flushing
     }
     finally {
       flushing = null
+    }
+  }
+
+  async function lockedFlush(lock: NonNullable<OutboxOptions['lock']>, force: boolean): Promise<void> {
+    let held = false
+    try { held = lock.acquire() }
+    catch {}
+    if (!held) {
+      // Another outbox over this queue is sending: look again shortly.
+      if (timer) clearTimeout(timer)
+      timer = typeof setTimeout === 'undefined' ? null : setTimeout(() => { void flush(force) }, 5000)
+      return
+    }
+    try {
+      await sendDue(force)
+    }
+    finally {
+      try { lock.release() }
+      catch {}
+    }
+  }
+
+  async function sendDue(force: boolean): Promise<void> {
+    // One at a time and in order: a later write may depend on an earlier one.
+    for (const entry of read()) {
+      if (!force && entry.nextAt > Date.now()) break
+      const outcome = await deliver(entry)
+      const list = read()
+      const at = list.findIndex(item => item.id === entry.id)
+      if (outcome === 'kept') {
+        if (at >= 0) {
+          list[at] = { ...list[at]!, attempts: list[at]!.attempts + 1, nextAt: Date.now() + delayFor(list[at]!.attempts + 1) }
+          write(list)
+        }
+        break
+      }
+      if (at >= 0) {
+        // Heard while the entry is still listed, so a cached query can keep
+        // showing it until its refetch includes it.
+        if (outcome === 'sent')
+          announce(name, list, list[at])
+        list.splice(at, 1)
+        write(list)
+      }
     }
   }
 
@@ -434,10 +464,18 @@ export function useOutbox(name: string, options: OutboxOptions = {}): Outbox {
   }
 
   const onOnline = (): void => { void flush(true) }
+  // The offline worker reached the server again: a network the browser never
+  // called offline (one bar of gym wifi) is back, and no 'online' event comes.
+  const onReachable = (event: Event): void => {
+    if ((event as CustomEvent).detail?.reachable !== false) void flush(true)
+  }
   const onVisible = (): void => {
     if (typeof document !== 'undefined' && document.visibilityState === 'visible') void flush(true)
   }
-  if (typeof addEventListener === 'function') addEventListener('online', onOnline)
+  if (typeof addEventListener === 'function') {
+    addEventListener('online', onOnline)
+    addEventListener('stx:reachability', onReachable)
+  }
   if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVisible)
 
   const outbox: Outbox & { __setOptions: (o: OutboxOptions) => void } = {
@@ -454,7 +492,10 @@ export function useOutbox(name: string, options: OutboxOptions = {}): Outbox {
     stop() {
       if (timer) clearTimeout(timer)
       timer = null
-      if (typeof removeEventListener === 'function') removeEventListener('online', onOnline)
+      if (typeof removeEventListener === 'function') {
+        removeEventListener('online', onOnline)
+        removeEventListener('stx:reachability', onReachable)
+      }
       if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisible)
       outboxes.delete(name)
       if (registry().get(name) === outbox)

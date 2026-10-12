@@ -34,6 +34,12 @@
  *   before the app's last write is not answered at once (the write would
  *   seem not to have happened), nor is one for a request made with
  *   `cache: 'no-cache'` (a pull to refresh) or under a `networkFirst` prefix.
+ * - Whether the server can be reached: a page whose reads are all answered
+ *   from kept copies cannot tell that the network behind them is gone (a
+ *   phone on one bar of gym wifi says it is online). When a request to the
+ *   server fails for want of a network, or succeeds again, every open page
+ *   hears `stx:reachability` { reachable, at }, `at` being when the server
+ *   last answered; `useNetwork()` counts an unreachable server as offline.
  * - Writes are never cached or replayed here. The page queues them itself
  *   (`useOutbox`), where it can tell the person what happened.
  * - A new build installs beside the running one and waits. It takes over when
@@ -51,6 +57,12 @@ export interface OfflineAppConfig {
    * Listed pages whose HTML is an account-independent shell. These may be
    * retained despite the server's default no-store header. Never list pages
    * containing server-rendered personal data; API no-store remains enforced.
+   *
+   * A route of `routes` may be listed too (`/m/go/:id`, as written there):
+   * its kept page, the one every value of it stands in with offline, is then
+   * refreshed by each visit despite no-store. Without that, a server that
+   * marks every page no-store left a route only the copy fetched when the
+   * worker installed, and a page in `pages` none at all after its first visit.
    */
   staticPages?: string[]
   /** Path prefix of the app's API, whose GET answers are kept for offline. Default '/api/'. */
@@ -172,6 +184,10 @@ export function registerOfflineWorker(path: string): void {
   const waitingCallbacks: Array<() => void> = []
   const api = {
     updateReady: false,
+    /** Whether the worker last reached the server (false after a request failed for want of a network). */
+    reachable: true,
+    /** When the server last answered a request through the worker, ms; 0 before it has. */
+    reachedAt: 0,
     registration: (): ServiceWorkerRegistration | null => registration,
     onUpdateReady(callback: () => void): () => void {
       if (api.updateReady) {
@@ -216,6 +232,12 @@ export function registerOfflineWorker(path: string): void {
       try { window.dispatchEvent(new CustomEvent('stx:updated', { detail: { url: data.url, kind: data.kind, fragment: !!data.fragment } })) }
       catch {}
     }
+    if (data.type === 'stx:reachability') {
+      w.stxOffline.reachable = data.reachable !== false
+      if (Number(data.at) > 0) w.stxOffline.reachedAt = Number(data.at)
+      try { window.dispatchEvent(new CustomEvent('stx:reachability', { detail: { reachable: data.reachable !== false, at: Number(data.at) || 0 } })) }
+      catch {}
+    }
   })
   sw.addEventListener('controllerchange', () => {
     if (reloadOnTakeOver) {
@@ -231,6 +253,8 @@ export function registerOfflineWorker(path: string): void {
   const register = (): void => {
     sw.register(path, { scope: '/' }).then((reg) => {
       registration = reg
+      try { sw.controller?.postMessage({ type: 'stx:reachability?' }) }
+      catch {}
       if (reg.waiting) {
         ready(reg)
         // Opened with no other page of the app: the worker takes over if
@@ -299,7 +323,7 @@ export function generateOfflineWorker(config: OfflineAppConfig, buildId: string)
   const settings = {
     build: String(buildId || 'dev'),
     pages: Array.from(new Set((config.pages || []).filter(page => typeof page === 'string' && page.startsWith('/')))),
-    staticPages: (config.staticPages || []).filter(page => typeof page === 'string' && (config.pages || []).includes(page)),
+    staticPages: (config.staticPages || []).filter(page => typeof page === 'string' && ((config.pages || []).includes(page) || (config.routes || []).includes(page))),
     api: config.apiPrefix || '/api/',
     timeout: Math.max(500, Number(config.networkTimeoutMs) || 1500),
     networkFirst: (config.networkFirst || []).filter(path => typeof path === 'string' && path.startsWith('/')),
@@ -431,6 +455,29 @@ function unchanged(hit, response, hash) {
   return keptHash(hit).then(function (known) { return known === hash; });
 }
 
+// Whether the server answered the last request that went to it, and when it
+// last did. Pages hear a change of the first (stx:reachability).
+var reachable = true;
+var reachedAt = 0;
+function reached(yes) {
+  if (yes) reachedAt = Date.now();
+  if (yes === reachable) return;
+  reachable = yes;
+  announce({ type: 'stx:reachability', reachable: yes, at: reachedAt });
+}
+// A fetch to the server, noting whether it got there. Any answer counts,
+// an error status included: the server was reached.
+function network(request, init) {
+  return fetch(request, init).then(function (response) {
+    reached(true);
+    return response;
+  }, function (error) {
+    // A TypeError is the network's; an abort is the page's own doing.
+    if (!error || error.name !== 'AbortError') reached(false);
+    throw error;
+  });
+}
+
 // Every open page of the app hears what changed, so it can redraw.
 function announce(message) {
   if (!self.clients || !self.clients.matchAll) return Promise.resolve();
@@ -446,7 +493,7 @@ function announce(message) {
 // answer replaces the copy and is announced; the same one only refreshes
 // when it was kept.
 function revalidate(request, cache, keys, hit, kind) {
-  return fetch(request).then(function (response) {
+  return network(request).then(function (response) {
     var staticPage = kind === 'page' && keepStaticPage(request, response);
     if (noStore(response) && !staticPage) return Promise.all(keys.map(function (key) { return cache.delete(key); }));
     if (!keepable(response) && !staticPage) return;
@@ -462,8 +509,12 @@ function revalidate(request, cache, keys, hit, kind) {
 }
 
 function keepStaticPage(request, response) {
-  return response.status === 200 && !response.redirected && response.type === 'basic'
-    && S.staticPages.indexOf(new URL(request.url).pathname) !== -1;
+  if (response.status !== 200 || response.redirected || response.type !== 'basic') return false;
+  var pathname = new URL(request.url).pathname;
+  if (S.staticPages.indexOf(pathname) !== -1) return true;
+  // A route declared static: every value of it is the same shell.
+  var dynamic = routeOf(pathname);
+  return !!dynamic && S.staticPages.indexOf(dynamic.route.path) !== -1;
 }
 
 // A dynamic route's kept page, under a key no real path has.
@@ -712,6 +763,10 @@ function mediaResponse(request) {
 
 self.addEventListener('message', function (event) {
   var data = event.data || {};
+  if (data.type === 'stx:reachability?') {
+    // A page just opened: what this worker last saw of the server.
+    event.waitUntil(announce({ type: 'stx:reachability', reachable: reachable, at: reachedAt }));
+  }
   if (data.type === 'stx:clear-offline-data') {
     lastWrite = null;
     event.waitUntil(Promise.all([caches.delete(DATA), caches.delete(MEDIA)]));
@@ -814,7 +869,7 @@ function pageResponse(request, event) {
         // Kept, but without its module bundles: not shown while the network
         // might answer (bundlesKept).
         var partial = hit && !networkFirst;
-        var network = fetch(request).then(function (response) {
+        var asked = network(request).then(function (response) {
           if (keepable(response) || keepStaticPage(request, response)) keepAlive(event, store(cache, keys, response.clone()));
           return response;
         });
@@ -830,14 +885,14 @@ function pageResponse(request, event) {
             return cache.match(variantUrl(S.fallback, false)).then(function (fallback) { return fallback ? markFallback(fallback) : Response.error(); });
           });
         };
-        return withTimeout(network, S.timeout).catch(function () {
+        return withTimeout(asked, S.timeout).catch(function () {
           return standIn(false).then(function (kept) {
             if (kept) {
-              keepAlive(event, network);
+              keepAlive(event, asked);
               return kept;
             }
             // Slower than the timeout, nothing kept to show: wait for it rather than fail.
-            return network.catch(function () { return standIn(true); });
+            return asked.catch(function () { return standIn(true); });
           });
         });
       });
@@ -893,13 +948,13 @@ function apiResponse(request, event) {
           keepAlive(event, revalidate(request, cache, [key], hit, 'api'));
           return hit;
         }
-        var network = fetch(request).then(function (response) {
+        var asked = network(request).then(function (response) {
           if (noStore(response)) keepAlive(event, cache.delete(key));
           if (keepable(response)) keepAlive(event, store(cache, [key], response.clone()));
           return response;
         });
-        return withTimeout(network, S.timeout).catch(function () {
-          return hit || network;
+        return withTimeout(asked, S.timeout).catch(function () {
+          return hit || asked;
         });
       });
     });
@@ -918,7 +973,7 @@ self.addEventListener('fetch', function (event) {
   // Live status and other explicitly uncached reads must never be answered
   // from offline storage, including when the network fails.
   if (request.cache === 'no-store') {
-    event.respondWith(fetch(request));
+    event.respondWith(network(request));
     return;
   }
   // Media kept for offline is answered from the device, a range included;

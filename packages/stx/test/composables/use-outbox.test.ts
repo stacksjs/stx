@@ -37,6 +37,48 @@ describe('useOutbox', () => {
     outbox.stop()
   })
 
+  it('sends each waiting entry once when two outboxes share a queue and a lock', async () => {
+    const storage = memory()
+    const queue = name()
+    storage.setItem(`stx-outbox:${queue}`, JSON.stringify([{ id: 'e1', url: '/api/comment', method: 'POST', headers: {}, body: '{"body":"hi"}', createdAt: 1, attempts: 1, nextAt: 0, idempotencyKey: 'e1' }]))
+    let holder = ''
+    let sends = 0
+    const lockFor = (who: string) => ({
+      acquire: () => { if (holder && holder !== who) return false; holder = who; return true },
+      release: () => { if (holder === who) holder = '' },
+    })
+    const slowFetch = async () => { sends++; await new Promise(resolve => setTimeout(resolve, 20)); return new Response('{}') }
+    // Two screens, each with its own outbox object over the one stored queue.
+    const first = useOutbox(queue, { storage, fetch: slowFetch, lock: lockFor('first') })
+    first.stop()
+    const second = useOutbox(queue, { storage, fetch: slowFetch, lock: lockFor('second') })
+    await Promise.all([first.flush(true), second.flush(true)])
+    expect(sends).toBe(1)
+    expect(second.pending).toBe(0)
+    expect(holder).toBe('')
+    second.stop()
+  })
+
+  it('looks again later when another outbox holds the lock', async () => {
+    const storage = memory()
+    let held = true
+    let sent = 0
+    const outbox = useOutbox(name(), {
+      storage,
+      fetch: async () => { sent++; return new Response('{}', { status: 503 }) },
+      lock: { acquire: () => !held, release: () => {} },
+    })
+    await outbox.send('/api/result', { method: 'POST', body: '{}' })
+    expect(outbox.pending).toBe(1)
+    const before = sent
+    await outbox.flush(true)
+    expect(sent).toBe(before)
+    held = false
+    await outbox.flush(true)
+    expect(sent).toBe(before + 1)
+    outbox.stop()
+  })
+
   it('refuses to acknowledge a background save when persistence fails', async () => {
     let called = false
     const outbox = useOutbox(name(), {
