@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.487...v0.2.488)
+
+## ✨ Features
+
+- **native**: craft.dialog on native screens ([4de3236](https://github.com/stacksjs/stx/commit/4de3236)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.488 ([433b5e1](https://github.com/stacksjs/stx/commit/433b5e1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.486...v0.2.487)
 
 ## 🐛 Bug Fixes
