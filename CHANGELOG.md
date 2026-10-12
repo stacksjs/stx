@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.472...v0.2.473)
+
+## ✨ Features
+
+- **native**: URLSearchParams in a native screen's JavaScriptCore ([9605983](https://github.com/stacksjs/stx/commit/9605983)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: linear gradients on native screens ([fa09ea2](https://github.com/stacksjs/stx/commit/fa09ea2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.473 ([0bb3d55](https://github.com/stacksjs/stx/commit/0bb3d55)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.471...v0.2.472)
 
 ## 🐛 Bug Fixes

@@ -19,7 +19,7 @@
     },
     "packages/benchmarks": {
       "name": "@stacksjs/benchmarks",
-      "version": "0.2.472",
+      "version": "0.2.473",
       "dependencies": {
         "@11ty/eleventy": "^3.1.6",
         "@stacksjs/sanitizer": "workspace:*",
@@ -50,14 +50,14 @@
     },
     "packages/benchmarks/js-framework-benchmark": {
       "name": "js-framework-benchmark-stx",
-      "version": "0.2.472",
+      "version": "0.2.473",
       "dependencies": {
         "happy-dom": "^20.14.5"
       }
     },
     "packages/bun-plugin": {
       "name": "bun-plugin-stx",
-      "version": "0.2.472",
+      "version": "0.2.473",
       "dependencies": {
         "@stacksjs/stx": "workspace:*",
         "stx-router": "workspace:*"
@@ -1591,7 +1591,7 @@
     },
     "packages/components": {
       "name": "@stacksjs/components",
-      "version": "0.2.472",
+      "version": "0.2.473",
       "dependencies": {
         "@iconify-json/f7": "^1.2.2",
         "@stacksjs/stx": "workspace:*",
@@ -1608,55 +1608,55 @@
     },
     "packages/create-stx": {
       "name": "create-stx",
-      "version": "0.2.472"
+      "version": "0.2.473"
     },
     "packages/deploy": {
       "name": "@stx/deploy",
-      "version": "0.2.472",
+      "version": "0.2.473",
       "dependencies": {
         "@stacksjs/ts-cloud": "^0.16.15"
       }
     },
     "packages/desktop": {
       "name": "@stacksjs/desktop",
-      "version": "0.2.472",
+      "version": "0.2.473",
       "dependencies": {
         "craft-native": ">=0.0.104"
       }
     },
     "packages/devtools": {
       "name": "@stacksjs/devtools",
-      "version": "0.2.472",
+      "version": "0.2.473",
       "dependencies": {
         "bun-plugin-stx": "workspace:*"
       }
     },
     "packages/devtools-extension": {
       "name": "@stacksjs/stx-devtools-extension",
-      "version": "0.2.472"
+      "version": "0.2.473"
     },
     "packages/iconify-core": {
       "name": "@stacksjs/iconify-core",
-      "version": "0.2.472"
+      "version": "0.2.473"
     },
     "packages/iconify-generator": {
       "name": "@stacksjs/iconify-generator",
-      "version": "0.2.472",
+      "version": "0.2.473",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*"
       }
     },
     "packages/router": {
       "name": "stx-router",
-      "version": "0.2.472"
+      "version": "0.2.473"
     },
     "packages/sanitizer": {
       "name": "@stacksjs/sanitizer",
-      "version": "0.2.472"
+      "version": "0.2.473"
     },
     "packages/stx": {
       "name": "@stacksjs/stx",
-      "version": "0.2.472",
+      "version": "0.2.473",
       "dependencies": {
         "@stacksjs/clapp": "^0.2.16",
         "@stacksjs/desktop": "workspace:*",
@@ -1673,7 +1673,7 @@
     },
     "packages/stx-vscode": {
       "name": "@stacksjs/stx-vscode",
-      "version": "0.2.472",
+      "version": "0.2.473",
       "dependencies": {
         "@stacksjs/ts-css": "^0.3.7",
         "prettier": "^3.9.9"
@@ -1681,7 +1681,7 @@
     },
     "packages/vscode": {
       "name": "vscode-stx",
-      "version": "0.2.472",
+      "version": "0.2.473",
       "dependencies": {
         "@stacksjs/ts-css": "^0.3.7",
         "prettier": "^3.9.9"
