@@ -20,6 +20,79 @@ class NativeEvent {
 }
 
 /**
+ * `TextEncoder` and `TextDecoder`, which JavaScriptCore does not have either:
+ * they are web APIs. UTF-8 only, which is all the web's TextEncoder speaks
+ * and what code shared with a page (hashing a nonce) hands them.
+ */
+class NativeTextEncoder {
+  readonly encoding = 'utf-8'
+
+  encode(input = ''): Uint8Array {
+    const bytes: number[] = []
+    const text = String(input)
+    for (let i = 0; i < text.length; i++) {
+      let code = text.charCodeAt(i)
+      // A surrogate pair is one code point; a lone surrogate is U+FFFD.
+      if (code >= 0xD800 && code <= 0xDBFF && i + 1 < text.length) {
+        const low = text.charCodeAt(i + 1)
+        if (low >= 0xDC00 && low <= 0xDFFF) {
+          code = 0x10000 + ((code - 0xD800) << 10) + (low - 0xDC00)
+          i++
+        }
+        else {
+          code = 0xFFFD
+        }
+      }
+      else if (code >= 0xD800 && code <= 0xDFFF) {
+        code = 0xFFFD
+      }
+      if (code < 0x80) bytes.push(code)
+      else if (code < 0x800) bytes.push(0xC0 | (code >> 6), 0x80 | (code & 63))
+      else if (code < 0x10000) bytes.push(0xE0 | (code >> 12), 0x80 | ((code >> 6) & 63), 0x80 | (code & 63))
+      else bytes.push(0xF0 | (code >> 18), 0x80 | ((code >> 12) & 63), 0x80 | ((code >> 6) & 63), 0x80 | (code & 63))
+    }
+    return new Uint8Array(bytes)
+  }
+}
+
+class NativeTextDecoder {
+  readonly encoding = 'utf-8'
+
+  decode(input?: ArrayBuffer | ArrayBufferView): string {
+    if (!input) return ''
+    const bytes = input instanceof ArrayBuffer ? new Uint8Array(input) : new Uint8Array(input.buffer, input.byteOffset, input.byteLength)
+    let out = ''
+    for (let i = 0; i < bytes.length;) {
+      const first = bytes[i]!
+      const need = first < 0x80 ? 0 : first >= 0xF0 ? 3 : first >= 0xE0 ? 2 : first >= 0xC0 ? 1 : -1
+      if (need < 0 || i + need >= bytes.length) {
+        out += '\uFFFD'
+        i++
+        continue
+      }
+      let code = need === 0 ? first : first & (0x3F >> need)
+      let valid = true
+      for (let k = 1; k <= need; k++) {
+        const next = bytes[i + k]
+        if (next === undefined || (next & 0xC0) !== 0x80) {
+          valid = false
+          break
+        }
+        code = (code << 6) | (next & 0x3F)
+      }
+      if (!valid) {
+        out += '\uFFFD'
+        i++
+        continue
+      }
+      out += String.fromCodePoint(code)
+      i += need + 1
+    }
+    return out
+  }
+}
+
+/**
  * `URLSearchParams`, which JavaScriptCore does not have: it is a web API, not
  * a language one. Helpers shared with web pages build query strings with it,
  * and on a native screen they threw. The form encoding a browser uses:
@@ -110,6 +183,8 @@ export function installJSCGlobals(target: AnyRecord = globalThis as AnyRecord): 
   target.removeEventListener ??= removeEventListener
   target.dispatchEvent ??= dispatchEvent
   target.URLSearchParams ??= NativeURLSearchParams
+  target.TextEncoder ??= NativeTextEncoder
+  target.TextDecoder ??= NativeTextDecoder
   target.performance ??= { now: () => Date.now() }
   target.queueMicrotask ??= (callback: () => void) => Promise.resolve().then(callback)
   target.requestAnimationFrame ??= (callback: (time: number) => void) => target.setTimeout(() => callback(Date.now()), 0)

@@ -259,6 +259,25 @@ describe('shared-runtime native capability protocol', () => {
     expect(await chosen).toBeNull()
   })
 
+  it('signs in with Apple and opens the web sign-in sheet when the app can, untimed', async () => {
+    const without = await runtime()
+    expect(without.scope.craft.browser).toBeUndefined()
+    expect(without.scope.craft.signInWithApple).toBeUndefined()
+    const { scope, sent, receive } = await runtime('', { timeout: 5, capabilities: ['browser', 'appleSignIn'] })
+    expect(scope.craft.capabilities).toMatchObject({ browser: true, appleSignIn: true })
+    const apple = scope.craft.signInWithApple({ nonce: 'abc' })
+    const sheet = scope.craft.browser.open('https://example.com/auth', { mode: 'auth', callbackScheme: 'hq' })
+    const [appleRequest, sheetRequest] = sent.filter(message => message.type === 'API_REQUEST')
+    expect(appleRequest!.payload).toMatchObject({ module: 'Auth', method: 'signInWithApple', args: [{ nonce: 'abc' }] })
+    expect(sheetRequest!.payload).toMatchObject({ module: 'Browser', method: 'open', args: ['https://example.com/auth', { mode: 'auth', callbackScheme: 'hq' }] })
+    await new Promise(resolve => setTimeout(resolve, 30))
+    expect(sent.some(message => message.type === 'API_CANCEL')).toBe(false)
+    receive({ type: 'API_RESPONSE', correlationId: appleRequest!.id, payload: { version: 1, requestId: appleRequest!.id, data: { userId: 'u1', authorizationCode: 'c' } } })
+    receive({ type: 'API_RESPONSE', correlationId: sheetRequest!.id, payload: { version: 1, requestId: sheetRequest!.id, data: { cancelled: false, url: 'hq://done' } } })
+    expect(await apple).toEqual({ userId: 'u1', authorizationCode: 'c' })
+    expect(await sheet).toEqual({ cancelled: false, url: 'hq://done' })
+  })
+
   it('names the phone in the user agent code shared with the page reads', async () => {
     const { scope } = await runtime()
     expect(scope.navigator.userAgent).toContain('iPhone')

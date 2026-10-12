@@ -107,6 +107,12 @@ export interface NativeCraft {
     commit: () => Promise<unknown>
     rollback: () => Promise<unknown>
   }
+  /** The in-app browser, or with `mode: 'auth'` the system's web sign-in sheet (`capabilities.browser`). */
+  browser?: {
+    open: (url: string, options?: { mode?: 'safari' | 'auth', callbackScheme?: string }) => Promise<{ cancelled: boolean, url?: string, error?: string }>
+  }
+  /** Sign in with Apple (`capabilities.appleSignIn`). */
+  signInWithApple?: (options?: { nonce?: string }) => Promise<{ userId: string, email?: string, name?: string, identityToken?: string, authorizationCode?: string }>
   /** The system's alert, confirmation and action sheet (`capabilities.dialogs`). */
   dialog?: {
     alert: (options?: { title?: string, message?: string, okLabel?: string }) => Promise<void>

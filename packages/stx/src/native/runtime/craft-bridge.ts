@@ -38,6 +38,8 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     appReview: false,
     health: capabilities.has('health'),
     dialogs: capabilities.has('dialog'),
+    browser: capabilities.has('browser'),
+    appleSignIn: capabilities.has('appleSignIn'),
   }
 }
 
@@ -143,6 +145,14 @@ export function installCraftBridge(
       actionSheet: (options: AnyRecord = {}) => ask('Dialog', 'actionSheet', [options]).then((id: unknown) => (typeof id === 'string' ? id : null)),
     }
   }
+
+  // The in-app browser and the system's web sign-in sheet, and Sign in with
+  // Apple: the page's `craft.browser` and `craft.signInWithApple`. A person
+  // answers each, so they are never timed out.
+  if (capabilities.has('browser'))
+    craft.browser = { open: (url: string, options: AnyRecord = {}) => ask('Browser', 'open', [url, options]) }
+  if (capabilities.has('appleSignIn'))
+    craft.signInWithApple = (options: AnyRecord = {}) => ask('Auth', 'signInWithApple', [options])
 
   // Apple Health, the page's `craft.health` shape: present only when the app
   // reads it, so `health.supports(method)` stays true to the build.
