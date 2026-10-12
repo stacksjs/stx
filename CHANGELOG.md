@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.483...v0.2.484)
+
+## ✨ Features
+
+- **native**: read Apple Health from a native screen ([5a59aa9](https://github.com/stacksjs/stx/commit/5a59aa9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.484 ([88efd3e](https://github.com/stacksjs/stx/commit/88efd3e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.482...v0.2.483)
 
 ## 🐛 Bug Fixes
