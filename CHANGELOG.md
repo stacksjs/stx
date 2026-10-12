@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.474...v0.2.475)
+
+## ✨ Features
+
+- **components**: Pager and PagerDots, full-width pages to swipe or step through ([631963d](https://github.com/stacksjs/stx/commit/631963d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.475 ([8b3f908](https://github.com/stacksjs/stx/commit/8b3f908)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.473...v0.2.474)
 
 ## ✨ Features
