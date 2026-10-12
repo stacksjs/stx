@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.494...v0.2.495)
+
+## ✨ Features
+
+- **native**: GPS, keep awake, brightness and status bar on a screen ([cf5000b](https://github.com/stacksjs/stx/commit/cf5000b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.495 ([3880b6d](https://github.com/stacksjs/stx/commit/3880b6d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.493...v0.2.494)
 
 ## ✨ Features
