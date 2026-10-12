@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.469...v0.2.470)
+
+## ✨ Features
+
+- **color-mode**: the document follows the system, not a component ([90432e1](https://github.com/stacksjs/stx/commit/90432e1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **router**: a page-level onDestroy belongs to the page that registered it ([f61645e](https://github.com/stacksjs/stx/commit/f61645e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **dev**: key cached page CSS on the engine that compiled it ([ec74d90](https://github.com/stacksjs/stx/commit/ec74d90)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.470 ([a501a62](https://github.com/stacksjs/stx/commit/a501a62)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.468...v0.2.469)
 
 ## 🐛 Bug Fixes
