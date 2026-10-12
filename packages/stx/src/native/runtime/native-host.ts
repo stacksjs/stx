@@ -34,6 +34,7 @@ import type { NativeMutationOperation } from '../bridge/protocol'
 import type { STXNode } from '../compiler/ir'
 import { compileClassStyles } from '../compiler/headwind-to-style'
 import { resolveIconName } from '../compiler/icons'
+import { affectsGeometry, parseViewBox, SVG_NODE_TYPES, svgGeometry } from '../compiler/svg'
 import { nativePropName } from '../prop-names'
 import { cloneNativeBindingNode, type NativeBindingNode } from './binding-tree'
 
@@ -472,22 +473,38 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         return
       }
       const prop = nativePropName(name)
-      recordOf(node).props[prop] = value
-      if (recordOf(node).type === 'Icon' && prop === 'name') {
+      const record = recordOf(node)
+      record.props[prop] = value
+      if (record.type === 'Icon' && prop === 'name') {
         this.setAttribute(node, 'symbol', resolveIconName(String(value ?? '')).symbol)
       }
-      if (recordOf(node).materialized)
-        emit({ op: 'updateNode', id: node.__stxId, patch: { props: { [prop]: value } } })
+      const patch: Record<string, unknown> = { [prop]: value }
+      // A drawing's bound attribute: the renderers read the outline as
+      // commands (svg.ts), so a new `d` or `x1` is a new `geometry`.
+      if (SVG_NODE_TYPES.has(record.type)) {
+        if (prop === 'strokeDasharray' && value != null && !Array.isArray(value))
+          patch[prop] = record.props[prop] = String(value).split(/[\s,]+/).map(Number).filter(Number.isFinite)
+        if (record.type === 'Svg' && prop === 'viewBox')
+          patch[prop] = record.props[prop] = parseViewBox(value)
+        if (affectsGeometry(record.type, prop))
+          patch.geometry = record.props.geometry = svgGeometry(record.type, record.props)
+      }
+      if (record.materialized)
+        emit({ op: 'updateNode', id: node.__stxId, patch: { props: patch } })
     },
 
     removeAttribute(node, name) {
       if (name === 'class' || name === 'className') { this.setAttribute(node, name, ''); return }
       const prop = nativePropName(name)
-      delete recordOf(node).props[prop]
+      const record = recordOf(node)
+      delete record.props[prop]
       // Null rather than omitted: a patch is merged on the native side, so an
       // absent key means "unchanged" and would leave the attribute in place.
-      if (recordOf(node).materialized)
-        emit({ op: 'updateNode', id: node.__stxId, patch: { props: { [prop]: null } } })
+      const patch: Record<string, unknown> = { [prop]: null }
+      if (affectsGeometry(record.type, prop))
+        patch.geometry = record.props.geometry = svgGeometry(record.type, record.props)
+      if (record.materialized)
+        emit({ op: 'updateNode', id: node.__stxId, patch: { props: patch } })
     },
 
     setStyle(node, value) {

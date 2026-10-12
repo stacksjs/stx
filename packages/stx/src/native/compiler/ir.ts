@@ -43,6 +43,17 @@ export type STXComponentType =
   // Platform specific
   | 'StatusBar'
   | 'RefreshControl'
+  // Vector drawing (svg.ts)
+  | 'Svg'
+  | 'G'
+  | 'Path'
+  | 'Line'
+  | 'Rect'
+  | 'Circle'
+  | 'Ellipse'
+  | 'Polyline'
+  | 'Polygon'
+  | 'SvgText'
 
 export interface STXNode {
   /** Component type (View, Text, Button, etc.) */
@@ -217,6 +228,12 @@ export interface STXStyle {
 
   // Text styling
   color?: string
+  /** A vector shape's paint (`fill-blue-600`, `fill-none`); 'none' paints nothing. */
+  fill?: string
+  /** A vector shape's outline colour (`stroke-slate-200`). */
+  stroke?: string
+  /** A vector shape's outline width in viewBox units (`stroke-2`). */
+  strokeWidth?: number
   fontSize?: number
   fontWeight?: 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900'
   fontStyle?: 'normal' | 'italic'

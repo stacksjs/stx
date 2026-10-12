@@ -233,7 +233,9 @@ describe('mapToNativeComponent', () => {
     'component', 'slot',
     // Unwrapped by html-to-ir, which keeps its children (Select's live list).
     'template',
-    // Drawing primitives. An icon's box survives as a View; its glyph does not.
+    // Drawing elements: mapped by svg.ts inside an <svg> (as Svg, Path,
+    // Circle...), not by tag alone, since `text` means one thing outside a
+    // drawing and another inside it.
     'svg', 'path', 'circle',
     // Media and embedding, with no IR counterpart yet.
     'audio', 'video', 'canvas', 'source',

@@ -456,6 +456,36 @@ function parseTextColor(className: string, style: STXStyle): boolean {
   return false
 }
 
+/**
+ * A vector shape's paint: `fill-*` and `stroke-*` colours, `fill-none` /
+ * `stroke-none`, and `stroke-0`..`stroke-8` widths (svg.ts).
+ */
+function parseVectorPaint(className: string, style: STXStyle): boolean {
+  for (const property of ['fill', 'stroke'] as const) {
+    const prefix = `${property}-`
+    if (!className.startsWith(prefix)) continue
+    const value = className.slice(prefix.length)
+    if (value === 'none') {
+      style[property] = 'none'
+      return true
+    }
+    if (property === 'stroke' && /^\d+(?:\.\d+)?$/.test(value)) {
+      style.strokeWidth = Number.parseFloat(value)
+      return true
+    }
+    if (property === 'stroke' && /^\[\d+(?:\.\d+)?(?:px)?\]$/.test(value)) {
+      style.strokeWidth = Number.parseFloat(value.slice(1))
+      return true
+    }
+    const color = resolveColor(value)
+    if (color) {
+      style[property] = color
+      return true
+    }
+  }
+  return false
+}
+
 function parsePadding(className: string, style: STXStyle): boolean {
   // p-{size}
   if (className.startsWith('p-')) {
@@ -907,6 +937,7 @@ export function compileHeadwindToStyle(classes: string, unknown?: string[]): STX
 
     // Try pattern-based parsers
     if (parseBackgroundColor(className, style)) continue
+    if (parseVectorPaint(className, style)) continue
     if (parseTextColor(className, style)) continue
     if (parsePadding(className, style)) continue
     if (parseMargin(className, style)) continue

@@ -1,5 +1,10 @@
+import { SVG_PROP_NAMES } from './compiler/svg'
+
 /** Native prop names whose camel-case spelling is part of the host protocol. */
 const NATIVE_PROP_NAMES = [
+  // A drawing's attributes: `viewbox` from the HTML parser, `stroke-width`
+  // from a template, both read as one spelling by the renderers.
+  ...SVG_PROP_NAMES,
   'accessibilityHint', 'accessibilityLabel', 'accessibilityRole', 'accessibilityState', 'accessibilityValue',
   'activeOpacity', 'alwaysBounceHorizontal', 'alwaysBounceVertical', 'animationType', 'autoCapitalize',
   'autoCorrect', 'autoFocus', 'blurRadius', 'contentContainerStyle', 'defaultSource', 'defaultValue',
@@ -13,7 +18,7 @@ const NATIVE_PROP_NAMES = [
   'showsHorizontalScrollIndicator', 'showsVerticalScrollIndicator', 'statusBarTranslucent',
   'stickyHeaderIndices', 'testID', 'thumbColor', 'thumbTintColor', 'titleColor', 'trackColor',
   'underlayColor', 'windowSize',
-] as const
+]
 
 const nativePropNames = new Map(
   NATIVE_PROP_NAMES.map(name => [normaliseKey(name), name]),

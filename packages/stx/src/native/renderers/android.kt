@@ -153,6 +153,11 @@ data class STXStyle(
     val resizeMode: String? = null,
     val tintColor: String? = null,
 
+    // Vector drawing (svg.ts)
+    val fill: String? = null,
+    val stroke: String? = null,
+    val strokeWidth: Float? = null,
+
     // Overflow
     val overflow: String? = null
 ) {
@@ -234,6 +239,9 @@ data class STXStyle(
 
                 resizeMode = json.optString("resizeMode", null),
                 tintColor = json.optString("tintColor", null),
+                fill = json.optString("fill", null),
+                stroke = json.optString("stroke", null),
+                strokeWidth = json.optDouble("strokeWidth").takeIf { !it.isNaN() }?.toFloat(),
                 overflow = json.optString("overflow", null)
             )
         }
@@ -322,6 +330,7 @@ class STXRenderer(private val context: Context) {
             "Modal" -> renderModal(node)
             "Slider" -> renderSlider(node)
             "Picker" -> renderPicker(node)
+            "Svg" -> renderSvg(node)
             else -> {
                 android.util.Log.w("STX", "Unknown component type: ${node.type}, rendering as View")
                 renderView(node)
@@ -345,6 +354,14 @@ class STXRenderer(private val context: Context) {
     // ========================================================================
     // Component Renderers
     // ========================================================================
+
+    /** A vector drawing, replayed from each shape's `geometry` commands (svg.ts). */
+    private fun renderSvg(node: STXNode): View {
+        val view = STXSvgView(context, node)
+        applyStyle(view, node.style)
+        applyYogaLayout(view, node.style)
+        return view
+    }
 
     private fun renderView(node: STXNode): ViewGroup {
         val layout = YogaLayout(context)
@@ -1341,3 +1358,149 @@ class YogaLayout(context: Context) : ViewGroup(context) {
         return p is LayoutParams
     }
 }
+
+// ============================================================================
+// Vector drawing
+// ============================================================================
+
+/** What a shape inherits from the groups above it, as SVG does. */
+data class STXSvgPaint(
+    val fill: String? = "#000000",
+    val stroke: String? = null,
+    val strokeWidth: Float = 1f,
+    val color: String? = "#000000",
+    val opacity: Float = 1f,
+) {
+    fun merged(node: STXNode): STXSvgPaint = copy(
+        color = node.style.color ?: color,
+        fill = node.style.fill ?: (node.props["fill"] as? String) ?: fill,
+        stroke = node.style.stroke ?: (node.props["stroke"] as? String) ?: stroke,
+        strokeWidth = node.style.strokeWidth ?: (node.props["strokeWidth"] as? Number)?.toFloat() ?: strokeWidth,
+        opacity = opacity * ((node.props["opacity"] as? Number)?.toFloat() ?: 1f),
+    )
+
+    fun resolve(value: String?): Int? {
+        if (value == null || value == "none" || value == "transparent") return null
+        val hex = if (value == "currentColor") color else value
+        return try {
+            android.graphics.Color.parseColor(if (hex!!.startsWith("#")) hex else "#$hex")
+        } catch (e: Exception) {
+            null
+        }
+    }
+}
+
+class STXSvgView(context: Context, private val node: STXNode) : View(context) {
+    private val viewBox: FloatArray? = (node.props["viewBox"] as? List<*>)
+        ?.mapNotNull { (it as? Number)?.toFloat() }
+        ?.takeIf { it.size == 4 && it[2] > 0f && it[3] > 0f }
+        ?.toFloatArray()
+
+    /** Height from the viewBox's proportions when no style set one. */
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val box = viewBox
+        val width = MeasureSpec.getSize(widthMeasureSpec)
+        if (box != null && MeasureSpec.getMode(heightMeasureSpec) != MeasureSpec.EXACTLY && width > 0) {
+            setMeasuredDimension(width, (width * box[3] / box[2]).toInt())
+            return
+        }
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+    }
+
+    override fun onDraw(canvas: android.graphics.Canvas) {
+        super.onDraw(canvas)
+        canvas.save()
+        viewBox?.let { box ->
+            val scale = minOf(width / box[2], height / box[3])
+            canvas.translate((width - box[2] * scale) / 2f, (height - box[3] * scale) / 2f)
+            canvas.scale(scale, scale)
+            canvas.translate(-box[0], -box[1])
+        }
+        draw(node, STXSvgPaint().merged(node), canvas)
+        canvas.restore()
+    }
+
+    private fun draw(parent: STXNode, paint: STXSvgPaint, canvas: android.graphics.Canvas) {
+        for (child in parent.children) {
+            val shape = (child as? STXChild.Node)?.node ?: continue
+            val own = paint.merged(shape)
+            if (shape.type == "G") draw(shape, own, canvas)
+            else if (shape.type == "SvgText") drawText(shape, own, canvas)
+            else {
+                val path = path(shape.props["geometry"])
+                if (path != null) {
+                    val alpha = (own.opacity * 255).toInt().coerceIn(0, 255)
+                    own.resolve(own.fill)?.let { color ->
+                        val fill = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+                        fill.style = android.graphics.Paint.Style.FILL
+                        fill.color = color
+                        fill.alpha = alpha
+                        canvas.drawPath(path, fill)
+                    }
+                    own.resolve(own.stroke)?.let { color ->
+                        if (own.strokeWidth <= 0f) return@let
+                        val stroke = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+                        stroke.style = android.graphics.Paint.Style.STROKE
+                        stroke.color = color
+                        stroke.alpha = alpha
+                        stroke.strokeWidth = own.strokeWidth
+                        stroke.strokeCap = when (shape.props["strokeLinecap"]) {
+                            "round" -> android.graphics.Paint.Cap.ROUND
+                            "square" -> android.graphics.Paint.Cap.SQUARE
+                            else -> android.graphics.Paint.Cap.BUTT
+                        }
+                        stroke.strokeJoin = when (shape.props["strokeLinejoin"]) {
+                            "round" -> android.graphics.Paint.Join.ROUND
+                            "bevel" -> android.graphics.Paint.Join.BEVEL
+                            else -> android.graphics.Paint.Join.MITER
+                        }
+                        (shape.props["strokeDasharray"] as? List<*>)
+                            ?.mapNotNull { (it as? Number)?.toFloat() }
+                            ?.takeIf { it.isNotEmpty() }
+                            ?.let { dashes ->
+                                val pattern = if (dashes.size % 2 == 1) dashes + dashes else dashes
+                                stroke.pathEffect = android.graphics.DashPathEffect(pattern.toFloatArray(), 0f)
+                            }
+                        canvas.drawPath(path, stroke)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun drawText(shape: STXNode, paint: STXSvgPaint, canvas: android.graphics.Canvas) {
+        val text = shape.children.mapNotNull { (it as? STXChild.Text)?.text }.joinToString("")
+        if (text.isEmpty()) return
+        val brush = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        brush.textSize = (shape.props["fontSize"] as? Number)?.toFloat() ?: shape.style.fontSize ?: 12f
+        brush.color = paint.resolve(paint.fill) ?: android.graphics.Color.BLACK
+        brush.textAlign = when (shape.props["textAnchor"]) {
+            "middle" -> android.graphics.Paint.Align.CENTER
+            "end" -> android.graphics.Paint.Align.RIGHT
+            else -> android.graphics.Paint.Align.LEFT
+        }
+        val x = (shape.props["x"] as? Number)?.toFloat() ?: 0f
+        val y = (shape.props["y"] as? Number)?.toFloat() ?: 0f
+        canvas.drawText(text, x, y, brush)
+    }
+
+    /** The `geometry` commands: 0 move, 1 line, 2 cubic, 3 quadratic, 4 close. */
+    private fun path(value: Any?): android.graphics.Path? {
+        val n = (value as? List<*>)?.mapNotNull { (it as? Number)?.toFloat() } ?: return null
+        if (n.isEmpty()) return null
+        val path = android.graphics.Path()
+        var i = 0
+        while (i < n.size) {
+            when (n[i].toInt()) {
+                0 -> { if (i + 2 >= n.size) return path; path.moveTo(n[i + 1], n[i + 2]); i += 3 }
+                1 -> { if (i + 2 >= n.size) return path; path.lineTo(n[i + 1], n[i + 2]); i += 3 }
+                2 -> { if (i + 6 >= n.size) return path; path.cubicTo(n[i + 1], n[i + 2], n[i + 3], n[i + 4], n[i + 5], n[i + 6]); i += 7 }
+                3 -> { if (i + 4 >= n.size) return path; path.quadTo(n[i + 1], n[i + 2], n[i + 3], n[i + 4]); i += 5 }
+                4 -> { path.close(); i += 1 }
+                else -> return path
+            }
+        }
+        return path
+    }
+}
+

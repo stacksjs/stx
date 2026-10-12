@@ -142,6 +142,10 @@ struct STXStyle: Codable {
 
     // Text
     var color: String?
+    // Vector drawing (svg.ts)
+    var fill: String?
+    var stroke: String?
+    var strokeWidth: CGFloat?
     var fontSize: CGFloat?
     var fontWeight: String?
     var fontStyle: String?
@@ -255,6 +259,8 @@ class STXRenderer {
             return renderSlider(node)
         case "Picker":
             return renderPicker(node)
+        case "Svg":
+            return renderSvg(node)
         default:
             print("[STX] Unknown component type: \(node.type), rendering as View")
             return renderView(node)
@@ -262,6 +268,16 @@ class STXRenderer {
     }
 
     // MARK: - Component Renderers
+
+    /// A vector drawing: the shapes below it, replayed from their `geometry`
+    /// commands (svg.ts) and scaled from the viewBox to the view.
+    private func renderSvg(_ node: STXNode) -> UIView {
+        let view = STXSvgView(node: node)
+        view.backgroundColor = .clear
+        applyStyle(to: view, style: node.style)
+        configureYogaLayout(view: view, style: node.style)
+        return view
+    }
 
     private func renderView(_ node: STXNode) -> UIView {
         let view = UIView()
@@ -889,6 +905,140 @@ class STXRenderer {
             if let bottom = style.bottom { layout.bottom = YGValue(bottom) }
             if let left = style.left { layout.left = YGValue(left) }
         }
+    }
+}
+
+// MARK: - Vector drawing
+
+/// What a shape inherits from the groups above it, as SVG does.
+struct STXSvgPaint {
+    var fill: String? = "#000000"
+    var stroke: String? = nil
+    var strokeWidth: CGFloat = 1
+    var color: String? = "#000000"
+    var opacity: CGFloat = 1
+
+    func merged(with node: STXNode) -> STXSvgPaint {
+        var next = self
+        let props = node.props
+        if let color = node.style.color { next.color = color }
+        if let fill = node.style.fill ?? props["fill"]?.value as? String { next.fill = fill }
+        if let stroke = node.style.stroke ?? props["stroke"]?.value as? String { next.stroke = stroke }
+        if let width = node.style.strokeWidth ?? (props["strokeWidth"]?.value as? NSNumber).map({ CGFloat(truncating: $0) }) { next.strokeWidth = width }
+        if let opacity = props["opacity"]?.value as? NSNumber { next.opacity *= CGFloat(truncating: opacity) }
+        return next
+    }
+
+    func resolve(_ value: String?) -> UIColor? {
+        guard let value, value != "none", value != "transparent" else { return nil }
+        if value == "currentColor" { return color.flatMap { UIColor(hex: $0) } }
+        return UIColor(hex: value)
+    }
+}
+
+final class STXSvgView: UIView {
+    let node: STXNode
+
+    init(node: STXNode) {
+        self.node = node
+        super.init(frame: .zero)
+        isOpaque = false
+        contentMode = .redraw
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    private var viewBox: CGRect? {
+        guard let box = node.props["viewBox"]?.value as? [Any], box.count == 4 else { return nil }
+        let n = box.compactMap { ($0 as? NSNumber).map { CGFloat(truncating: $0) } }
+        guard n.count == 4, n[2] > 0, n[3] > 0 else { return nil }
+        return CGRect(x: n[0], y: n[1], width: n[2], height: n[3])
+    }
+
+    /// Height from the viewBox's proportions when no style set one.
+    override func sizeThatFits(_ size: CGSize) -> CGSize {
+        guard let box = viewBox, size.width > 0 else { return super.sizeThatFits(size) }
+        return CGSize(width: size.width, height: size.width * box.height / box.width)
+    }
+
+    override func draw(_ rect: CGRect) {
+        guard let context = UIGraphicsGetCurrentContext() else { return }
+        if let box = viewBox {
+            let scale = min(bounds.width / box.width, bounds.height / box.height)
+            context.translateBy(x: (bounds.width - box.width * scale) / 2, y: (bounds.height - box.height * scale) / 2)
+            context.scaleBy(x: scale, y: scale)
+            context.translateBy(x: -box.minX, y: -box.minY)
+        }
+        draw(node, paint: STXSvgPaint().merged(with: node), in: context)
+    }
+
+    private func draw(_ node: STXNode, paint: STXSvgPaint, in context: CGContext) {
+        for child in node.children {
+            guard case .node(let shape) = child else { continue }
+            let own = paint.merged(with: shape)
+            if shape.type == "G" { draw(shape, paint: own, in: context); continue }
+            if shape.type == "SvgText" { drawText(shape, paint: own); continue }
+            guard let path = STXSvgView.path(shape.props["geometry"]?.value) else { continue }
+            context.saveGState()
+            context.setAlpha(own.opacity)
+            if let fill = own.resolve(own.fill) {
+                fill.setFill()
+                path.fill()
+            }
+            if let stroke = own.resolve(own.stroke), own.strokeWidth > 0 {
+                stroke.setStroke()
+                path.lineWidth = own.strokeWidth
+                path.lineCapStyle = (shape.props["strokeLinecap"]?.value as? String) == "round" ? .round : (shape.props["strokeLinecap"]?.value as? String) == "square" ? .square : .butt
+                path.lineJoinStyle = (shape.props["strokeLinejoin"]?.value as? String) == "round" ? .round : (shape.props["strokeLinejoin"]?.value as? String) == "bevel" ? .bevel : .miter
+                if let dashes = shape.props["strokeDasharray"]?.value as? [Any] {
+                    let pattern = dashes.compactMap { ($0 as? NSNumber).map { CGFloat(truncating: $0) } }
+                    if !pattern.isEmpty { path.setLineDash(pattern, count: pattern.count, phase: 0) }
+                }
+                path.stroke()
+            }
+            context.restoreGState()
+        }
+    }
+
+    private func drawText(_ node: STXNode, paint: STXSvgPaint) {
+        let text = node.children.compactMap { child -> String? in if case .text(let value) = child { return value }; return nil }.joined()
+        guard !text.isEmpty else { return }
+        let size = (node.props["fontSize"]?.value as? NSNumber).map { CGFloat(truncating: $0) } ?? node.style.fontSize ?? 12
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: size),
+            .foregroundColor: paint.resolve(paint.fill) ?? .label,
+        ]
+        let string = NSAttributedString(string: text, attributes: attributes)
+        let width = string.size().width
+        var x = (node.props["x"]?.value as? NSNumber).map { CGFloat(truncating: $0) } ?? 0
+        let y = (node.props["y"]?.value as? NSNumber).map { CGFloat(truncating: $0) } ?? 0
+        switch node.props["textAnchor"]?.value as? String {
+        case "middle": x -= width / 2
+        case "end": x -= width
+        default: break
+        }
+        string.draw(at: CGPoint(x: x, y: y - size))
+    }
+
+    /// The `geometry` commands: 0 move, 1 line, 2 cubic, 3 quadratic, 4 close.
+    static func path(_ value: Any?) -> UIBezierPath? {
+        guard let list = value as? [Any] else { return nil }
+        let n = list.compactMap { ($0 as? NSNumber).map { CGFloat(truncating: $0) } }
+        guard !n.isEmpty else { return nil }
+        let path = UIBezierPath()
+        var i = 0
+        func point(_ at: Int) -> CGPoint { CGPoint(x: n[at], y: n[at + 1]) }
+        while i < n.count {
+            switch Int(n[i]) {
+            case 0 where i + 2 < n.count: path.move(to: point(i + 1)); i += 3
+            case 1 where i + 2 < n.count: path.addLine(to: point(i + 1)); i += 3
+            case 2 where i + 6 < n.count: path.addCurve(to: point(i + 5), controlPoint1: point(i + 1), controlPoint2: point(i + 3)); i += 7
+            case 3 where i + 4 < n.count: path.addQuadCurve(to: point(i + 3), controlPoint: point(i + 1)); i += 5
+            case 4: path.close(); i += 1
+            default: return path
+            }
+        }
+        return path
     }
 }
 

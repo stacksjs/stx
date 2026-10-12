@@ -238,14 +238,16 @@ describe('what is deliberately dropped', () => {
     expect(types(root)).toEqual(['View', 'Text'])
   })
 
-  it('keeps an icon box and drops its geometry', async () => {
+  it('draws an svg, keeping its box (svg.test.ts covers the shapes)', async () => {
+    // It used to keep the box and drop the geometry, so a chart or a route
+    // map on a native screen was an empty rectangle.
     const { root, diagnostics } = await translateHtmlToIR(
       '<svg class="h-5 w-5"><path d="M4 12a8 8"></path></svg>',
     )
-    expect(root.type).toBe('View')
+    expect(root.type).toBe('Svg')
     expect(root.style).toEqual({ height: 20, width: 20 })
-    expect(root.children).toEqual([])
-    expect(diagnostics).toContainEqual({ kind: 'dropped-subtree', tag: 'svg' })
+    expect((root.children[0] as STXNode).type).toBe('Path')
+    expect(diagnostics).not.toContainEqual({ kind: 'dropped-subtree', tag: 'svg' })
   })
 
   it('drops a value a numeric field cannot hold, rather than bricking the screen', async () => {

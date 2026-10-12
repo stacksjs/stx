@@ -29,6 +29,7 @@ import type { STXDocument, STXNode, STXStyle } from './ir'
 import { nativePropName } from '../prop-names'
 import { mapToNativeComponent } from './component-mapping'
 import { resolveIconName } from './icons'
+import { parseViewBox, SVG_DROPPED, SVG_NODE_TYPES, SVG_TYPES, svgGeometry } from './svg'
 import { compileClassStyles } from './headwind-to-style'
 import { createDocument, createNode } from './ir'
 
@@ -65,15 +66,11 @@ export interface TranslateOptions {
 }
 
 /**
- * Tags whose entire subtree is deliberately not translated.
- *
- * Scripts and styles are not views. `svg` is the interesting one: its box is
- * kept as a View so an icon still occupies the space the layout gave it, and
- * its children -- `path`, `circle`, raw geometry -- are dropped, because the
- * IR has no way to express a glyph. Pretending otherwise would ship an empty
- * square claiming to be an icon.
+ * Tags whose entire subtree is deliberately not translated: scripts and styles
+ * are not views. (`svg` used to be here, keeping its box and dropping its
+ * shapes; it is now drawn - see `svg.ts`.)
  */
-const DROP_SUBTREE = new Set(['script', 'style', 'head', 'meta', 'link', 'title', 'base', 'noscript', 'svg'])
+const DROP_SUBTREE = new Set(['script', 'style', 'head', 'meta', 'link', 'title', 'base', 'noscript'])
 
 /**
  * Elements that are not views but whose children are.
@@ -86,8 +83,8 @@ const DROP_SUBTREE = new Set(['script', 'style', 'head', 'meta', 'link', 'title'
  */
 const UNWRAP = new Set(['template', 'body', 'html', 'main', 'fragment'])
 
-/** Mapped to a View so the icon's box survives, with the geometry dropped. */
-const BOX_ONLY = new Set(['svg'])
+/** Nothing is mapped to a bare box any more; kept for the shape of `open`. */
+const BOX_ONLY = new Set<string>()
 
 /**
  * Web event name to the native name, as the renderers spell it.
@@ -187,6 +184,7 @@ const STYLE_KEYS = new Set([
   'color', 'fontSize', 'fontWeight', 'fontStyle', 'fontFamily', 'lineHeight',
   'letterSpacing', 'textAlign', 'textDecorationLine', 'textDecorationColor',
   'textTransform', 'resizeMode', 'tintColor', 'transform', 'overflow',
+  'fill', 'stroke', 'strokeWidth',
 ])
 
 /**
@@ -204,7 +202,7 @@ const NUMERIC_STYLE_KEYS = new Set([
   'borderWidth', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
   'borderRadius', 'borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomLeftRadius',
   'borderBottomRightRadius', 'opacity', 'shadowOpacity', 'shadowRadius', 'elevation',
-  'fontSize', 'lineHeight', 'letterSpacing',
+  'fontSize', 'lineHeight', 'letterSpacing', 'strokeWidth',
 ])
 
 /**
@@ -240,6 +238,7 @@ const NATIVE_TYPES = new Set([
   'Switch', 'Slider', 'Picker', 'DatePicker',
   'Modal', 'ActivityIndicator',
   'StatusBar', 'RefreshControl',
+  ...SVG_NODE_TYPES,
 ])
 
 /** A container type: it lays children out and does not render text itself. */
@@ -291,6 +290,8 @@ function styleValue(raw: string): string | number {
 interface Frame {
   tag: string
   node: STXNode
+  /** Inside an `<svg>`: tags are shapes, and text belongs to `SvgText`. */
+  svg?: boolean
   /** Inside a dropped subtree: children and text are discarded. */
   dropped: boolean
   /** The node itself is not part of the tree. Discarded on close. */
@@ -462,6 +463,17 @@ function settle(frame: Frame, diagnostics: TranslationDiagnostic[]): STXNode {
   const elements = node.children.filter((child): child is STXNode => typeof child !== 'string')
   const text = node.children.filter(child => typeof child === 'string').join('').trim()
 
+  // A drawing holds shapes; the whitespace between them is not a label.
+  if (node.type === 'Svg' || node.type === 'G') {
+    node.children = elements
+    return node
+  }
+  if (node.type === 'SvgText') {
+    const flattened = flattenText(node)
+    node.children = flattened ? [flattened] : []
+    return node
+  }
+
   if (CONTAINER_TYPES.has(node.type) && elements.length === 0 && text) {
     node.type = 'Text'
     node.children = [text]
@@ -535,6 +547,9 @@ export async function translateHtmlToIR(
   }
 
   function open(tag: string, attributes: Array<[string, string]>): Frame {
+    const parentFrame = stack[stack.length - 1]
+    if (tag === 'svg' || parentFrame?.svg)
+      return openSvg(tag, attributes, parentFrame)
     const dropped = DROP_SUBTREE.has(tag) && !BOX_ONLY.has(tag)
     const inheritedDrop = stack[stack.length - 1]?.dropped ?? false
     const { props, style, events, bindings, classes, inline } = dropped || inheritedDrop
@@ -593,6 +608,56 @@ export async function translateHtmlToIR(
       discard: dropped || inheritedDrop,
       unwrap: UNWRAP.has(tag),
     }
+  }
+
+  /**
+   * An element of a vector drawing (`svg.ts`). Its tag names a shape, not a
+   * view; what is not drawn yet (gradients, clips, definitions) is dropped
+   * with its subtree and reported rather than drawn wrong.
+   */
+  function openSvg(tag: string, attributes: Array<[string, string]>, parent: Frame | undefined): Frame {
+    const inheritedDrop = parent?.dropped ?? false
+    const type = SVG_TYPES[tag]
+    if (inheritedDrop || !type) {
+      if (!inheritedDrop && !seenUnmapped.has(`drop:${tag}`)) {
+        seenUnmapped.add(`drop:${tag}`)
+        diagnostics.push({ kind: SVG_DROPPED.has(tag) ? 'dropped-subtree' : 'unmapped-tag', tag })
+      }
+      return { tag, node: createNode('G', {}, {}, {}), svg: true, dropped: true, discard: true, unwrap: false }
+    }
+    const { props, style, events, bindings, classes, inline } = readAttributes(tag, attributes, diagnostics)
+    if (type === 'Svg') {
+      const viewBox = parseViewBox(props.viewBox)
+      if (viewBox) props.viewBox = viewBox
+      else delete props.viewBox
+      // `width="24"` on the element is its size when no class gave one.
+      for (const axis of ['width', 'height'] as const) {
+        if (typeof props[axis] === 'number' && style[axis] === undefined)
+          style[axis] = props[axis] as number
+        delete props[axis]
+      }
+    }
+    if (typeof props.strokeDasharray === 'string' || typeof props.strokeDasharray === 'number') {
+      const dashes = String(props.strokeDasharray).split(/[\s,]+/).map(Number).filter(Number.isFinite)
+      props.strokeDasharray = dashes
+    }
+    const geometry = svgGeometry(type, props)
+    if (geometry) props.geometry = geometry
+    const node = createNode(type, props, style, events)
+    node._inlineStyle = inline
+    const bindingId = props['data-stx-b']
+    if (typeof bindingId === 'number' && Number.isInteger(bindingId))
+      node.bindingId = bindingId
+    delete props['data-stx-b']
+    if (classes)
+      node._classes = classes
+    if (Object.keys(bindings).length > 0)
+      node.bindings = bindings
+    if (typeof props.key === 'string') {
+      node.key = props.key
+      delete props.key
+    }
+    return { tag, node, svg: true, dropped: false, discard: false, unwrap: false }
   }
 
   await new HTMLRewriter()
