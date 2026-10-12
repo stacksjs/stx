@@ -1,5 +1,26 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.480...v0.2.481)
+
+## 🐛 Bug Fixes
+
+- **bundler**: bundle and register bare side-effect imports in client scripts ([03282fd](https://github.com/stacksjs/stx/commit/03282fd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: register handlers before first bridge render ([ef97de5](https://github.com/stacksjs/stx/commit/ef97de5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: dispatch modal show lifecycle events ([b18eb55](https://github.com/stacksjs/stx/commit/b18eb55)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ✅ Tests
+
+- **serve**: keep shell-wrapped page scripts in fragments ([a845744](https://github.com/stacksjs/stx/commit/a845744)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.481 ([3d9e8d3](https://github.com/stacksjs/stx/commit/3d9e8d3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.479...v0.2.480)
 
 ## 🐛 Bug Fixes
