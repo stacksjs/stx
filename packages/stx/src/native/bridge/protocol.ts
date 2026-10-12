@@ -455,7 +455,7 @@ catch (error) {
       const scheduleTimeout = timeout !== null && typeof globalThis.setTimeout === 'function'
         ? globalThis.setTimeout.bind(globalThis)
         : null
-      const timeoutId = scheduleTimeout ? scheduleTimeout(() => {
+      const timeoutId = scheduleTimeout && timeout !== null ? scheduleTimeout(() => {
         this.pendingRequests.delete(message.id)
         if (type === 'API_REQUEST') {
           this.postToNative(this.createMessage<ApiCancelPayload>('API_CANCEL', {
