@@ -13,7 +13,6 @@
  * })
  * ```
  */
-import process from 'node:process'
 
 /**
  * Base URL for documentation

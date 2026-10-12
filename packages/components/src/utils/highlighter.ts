@@ -6,6 +6,13 @@ import type { Highlighter as TSHighlighter } from 'ts-syntax-highlighter'
 // server block that throws renders the component as nothing at all. 0.2.17
 // ships a bundle that imports `bunfig` while declaring no dependencies, which
 // is exactly the resolution failure that has to stay survivable.
+//
+// In a browser bundle it is not there at all: package.json's `browser` map
+// swaps it for an empty module, since it needs Node's streams and zlib. The
+// package root re-exports this file, so without that a page importing anything
+// from the root -- a component, the overlay stack -- failed to bundle. A
+// browser call lands in the "could not be loaded" path below; highlighting is
+// a server render's job (CodeBlock's <script server>).
 async function loadCreateHighlighter(): Promise<typeof import('ts-syntax-highlighter')['createHighlighter'] | null> {
   try {
     const mod = await import('ts-syntax-highlighter')

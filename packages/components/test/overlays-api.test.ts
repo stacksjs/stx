@@ -43,14 +43,16 @@ describe('the overlay API', () => {
 })
 
 /**
- * The entry a page imports the stack from.
+ * What a page's `<script client>` can import.
  *
- * The package root also reaches the syntax highlighter, which imports Node's
- * `stream/promises`; a `<script client>` importing the stack from the root
- * made the page's whole module registry fail to bundle, and every module on
- * the page with it. `@stacksjs/components/overlays` is the stack alone.
+ * The package root reached the syntax highlighter, which imports Node's
+ * `stream/promises`, and `node:process` for a default export the browser
+ * polyfill does not have. Any client import from the root -- even a component,
+ * `import { Spinner } from '@stacksjs/components'` -- put the root in the
+ * page's module registry, the registry failed to bundle, and every module on
+ * the page went with it. `@stacksjs/components/overlays` is the stack alone.
  */
-describe('the published browser entry', () => {
+describe('the published browser entries', () => {
   const root = path.resolve(import.meta.dir, '..')
 
   it('bundles for a page, with nothing of the highlighter in it', async () => {
@@ -66,5 +68,12 @@ describe('the published browser entry', () => {
     expect(bundle).toContain('function openOverlay')
     expect(bundle).not.toContain('stream/promises')
     expect(bundle).not.toContain('ts-syntax-highlighter')
+
+    // The root, as the registry imports it: the whole namespace.
+    const rootSource = `import * as components from '../${(await Bun.file(path.join(root, 'package.json')).json()).exports['.'].import.slice(2)}'\nglobalThis.__probe = components.openOverlay`
+    const rootBundle = await bundleClientScript(rootSource, path.join(root, 'test', 'root-browser.ts'), { projectRoot: root, externalizeUserModules: false, throwOnFailure: true })
+    // Minified, so the export is what names it.
+    expect(rootBundle).toContain('openOverlay: () =>')
+    expect(rootBundle).not.toContain('stream/promises')
   })
 })

@@ -53,6 +53,9 @@
     }
   },
   "module": "./dist/index.js",
+  "browser": {
+    "ts-syntax-highlighter": false
+  },
   "types": "./dist/index.d.ts",
   "files": [
     "README.md",
