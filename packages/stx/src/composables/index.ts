@@ -479,3 +479,16 @@ export { defineForm, useForm } from './use-form'
 
 // Authenticated server broadcasts, demand-bundled for client scripts.
 export { useBroadcastStream, type BroadcastStreamFrame, type BroadcastStreamClientOptions } from './use-broadcast-stream'
+
+// Breathing exercises: a step-by-step pacer and generated ambient sound,
+// demand-bundled for client scripts. The pure helpers (positionAt, pacerScale,
+// endStepEarly, seekBreath) are imported from the module path.
+export {
+  useBreathPacer,
+  type BreathPacer,
+  type BreathPacerOptions,
+  type BreathPacerStep,
+  type BreathPosition,
+  type BreathStepKind,
+} from './use-breath-pacer'
+export { useAmbientSound, type AmbientGenre, type AmbientSound } from './use-ambient-sound'
