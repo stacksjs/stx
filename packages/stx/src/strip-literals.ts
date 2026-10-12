@@ -66,6 +66,11 @@ function skipTemplate(code: string, start: number): number {
 export function findInterpolationEnd(code: string, start: number): number {
   let depth = 1
   let i = start
+  // The last significant token, for telling a regex `/` from division, as
+  // stripCommentsAndLiterals does: `${s.replace(/"/g, '%22')}` read the `"`
+  // in the regex as a string that ran past the interpolation's end.
+  let lastSig = '{'
+  let lastWord = ''
   while (i < code.length) {
     const ch = code[i]
     if (ch === '\\') {
@@ -74,10 +79,14 @@ export function findInterpolationEnd(code: string, start: number): number {
     }
     if (ch === '"' || ch === '\'') {
       i = skipQuoted(code, i)
+      lastSig = LITERAL_END
+      lastWord = ''
       continue
     }
     if (ch === '`') {
       i = skipTemplate(code, i)
+      lastSig = LITERAL_END
+      lastWord = ''
       continue
     }
     if (ch === '/' && code[i + 1] === '/') {
@@ -90,17 +99,30 @@ export function findInterpolationEnd(code: string, start: number): number {
       i += 2
       continue
     }
+    if (ch === '/' && startsRegex(lastSig, lastWord)) {
+      const end = regexEnd(code, i)
+      if (end !== -1) {
+        i = end
+        lastSig = LITERAL_END
+        lastWord = ''
+        continue
+      }
+    }
     if (ch === '{') {
       depth++
-      i++
-      continue
     }
-    if (ch === '}') {
+    else if (ch === '}') {
       depth--
       if (depth === 0)
         return i
-      i++
-      continue
+    }
+    if (/[\w$]/.test(ch)) {
+      lastWord = /[\w$]/.test(lastSig) ? lastWord + ch : ch
+      lastSig = ch
+    }
+    else if (!/\s/.test(ch)) {
+      lastSig = ch
+      lastWord = ''
     }
     i++
   }

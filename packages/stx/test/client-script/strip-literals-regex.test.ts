@@ -26,4 +26,16 @@ describe('stripCommentsAndLiterals and regex literals', () => {
   it('treats a string or template as the end of an expression', () => {
     expect(stripCommentsAndLiterals(`'a' / 2 / 'b'`)).toBe(`    / 2 /    `)
   })
+
+  it('reads a regex inside a template interpolation, quote and all', () => {
+    // Stacks' NativeBarButton: the `"` in /"/g was taken for a string that ran
+    // past the interpolation, so the function after it scanned as nested and
+    // was left out of the page's scope ("tapBarButton is not defined").
+    const code = "const photo = derived(() => `url(\"${String(src()).replace(/\"/g, '%22')}\")`)\n\nfunction tap(): void {\n  go()\n}\n"
+    const out = stripCommentsAndLiterals(code)
+    expect(out).toHaveLength(code.length)
+    const { depths, balanced } = bracketDepths(out)
+    expect(balanced).toBe(true)
+    expect(depths[out.indexOf('function tap')]).toBe(0)
+  })
 })
