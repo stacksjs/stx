@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.476...v0.2.477)
+
+## ✨ Features
+
+- **composables**: useBreathPacer and useAmbientSound ([66fe257](https://github.com/stacksjs/stx/commit/66fe257)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.477 ([7cdeb96](https://github.com/stacksjs/stx/commit/7cdeb96)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.475...v0.2.476)
 
 ## 🐛 Bug Fixes
