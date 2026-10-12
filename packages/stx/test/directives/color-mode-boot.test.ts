@@ -46,18 +46,27 @@ const store = new MemoryStorage()
 let systemPrefersDark = false
 const saved: Record<string, unknown> = {}
 
+/** Every colour-scheme listener added, so a test can flip the system under them. */
+let schemeListeners: Array<() => void> = []
+
 function fakeMatchMedia(query: string) {
-  const matches = /prefers-color-scheme:\s*dark/i.test(query) ? systemPrefersDark : false
+  const scheme = /prefers-color-scheme:\s*dark/i.test(query)
   return {
-    matches,
+    get matches() { return scheme ? systemPrefersDark : false },
     media: query,
     onchange: null,
-    addListener() {},
-    removeListener() {},
-    addEventListener() {},
-    removeEventListener() {},
+    addListener(fn: () => void) { if (scheme) schemeListeners.push(fn) },
+    removeListener(fn: () => void) { schemeListeners = schemeListeners.filter(f => f !== fn) },
+    addEventListener(_type: string, fn: () => void) { if (scheme) schemeListeners.push(fn) },
+    removeEventListener(_type: string, fn: () => void) { schemeListeners = schemeListeners.filter(f => f !== fn) },
     dispatchEvent: () => true,
   }
+}
+
+/** The system switching, as the OS does it: the media query changes and says so. */
+function switchSystem(dark: boolean): void {
+  systemPrefersDark = dark
+  for (const fn of [...schemeListeners]) fn()
 }
 
 /** Run the JS out of a generated `<script …>BODY</script>` string. */
@@ -115,6 +124,7 @@ beforeEach(() => {
   store.clear()
   store.failGet = null
   systemPrefersDark = false
+  schemeListeners = []
   resetRoot()
   delete g.window.__STX_COLOR_MODE__
 })
@@ -500,3 +510,84 @@ describe('lockstep with useColorMode (no flash on hydration)', () => {
     expect(rootState()).toEqual(afterBoot)
   })
 })
+
+/**
+ * The document keeps following the system after the first paint, on its own.
+ *
+ * Following it used to be useColorMode's job, so it lasted exactly as long as
+ * the component that called it: in an app whose router tore that component's
+ * listener down on navigation, every page after the first stayed in the mode
+ * it loaded in when the phone switched to dark at sunset - while the native
+ * screens beside it switched.
+ */
+describe('after the first paint', () => {
+  it('follows a system switch with no component alive at all', () => {
+    runBootScript(generateColorModeBootScript({}))
+    expect(root().classList.contains('dark')).toBe(false)
+    switchSystem(true)
+    expect(root().classList.contains('dark')).toBe(true)
+    expect(g.window.__STX_COLOR_MODE__).toMatchObject({ mode: 'dark', preference: 'auto', watching: true })
+    switchSystem(false)
+    expect(root().classList.contains('dark')).toBe(false)
+  })
+
+  it('leaves an explicit choice alone when the system switches', () => {
+    store.seed('stx-color-mode', 'light')
+    runBootScript(generateColorModeBootScript({}))
+    switchSystem(true)
+    expect(root().classList.contains('dark')).toBe(false)
+  })
+
+  it('picks up a choice another tab stored, on sync', () => {
+    runBootScript(generateColorModeBootScript({ attribute: 'data-theme' }))
+    store.seed('stx-color-mode', 'dark')
+    g.window.__STX_COLOR_MODE__.sync()
+    expect(rootState()).toEqual({ class: 'dark', theme: 'dark' })
+  })
+
+  it('announces a change so every useColorMode follows it', () => {
+    runBootScript(generateColorModeBootScript({}))
+    const cm = g.window.stx.useColorMode()
+    const seen: string[] = []
+    cm.subscribe((mode: string) => seen.push(mode))
+    switchSystem(true)
+    expect(cm.mode).toBe('dark')
+    expect(seen).toEqual(['dark'])
+  })
+
+  it('adds no listener of its own to the system when the boot watches', () => {
+    runBootScript(generateColorModeBootScript({}))
+    const before = schemeListeners.length
+    g.window.stx.useColorMode()
+    g.window.stx.useColorMode()
+    expect(schemeListeners.length).toBe(before)
+  })
+
+  it('tells the other instances about a choice made in one', () => {
+    runBootScript(generateColorModeBootScript({}))
+    const settings = g.window.stx.useColorMode()
+    const nav = g.window.stx.useColorMode()
+    settings.set('dark')
+    expect(root().classList.contains('dark')).toBe(true)
+    expect(nav.mode).toBe('dark')
+    expect(nav.preference).toBe('dark')
+    expect(store.getItem('stx-color-mode')).toBe('dark')
+  })
+
+  it('keeps its own listeners when called with a storage key the boot does not watch', () => {
+    runBootScript(generateColorModeBootScript({}))
+    const before = schemeListeners.length
+    g.window.stx.useColorMode({ storageKey: 'other' })
+    expect(schemeListeners.length).toBe(before + 1)
+  })
+
+  it('runs once per document: a second run re-syncs instead of listening twice', () => {
+    runBootScript(generateColorModeBootScript({}))
+    const listening = schemeListeners.length
+    systemPrefersDark = true
+    runBootScript(generateColorModeBootScript({}))
+    expect(schemeListeners.length).toBe(listening)
+    expect(root().classList.contains('dark')).toBe(true)
+  })
+})
+

@@ -6222,15 +6222,43 @@ catch (e) {} }
     // persistChoice: only an explicit user choice is written back. Persisting
     // on init would stamp the resolved default over a stored value this
     // composable didn't recognise, destroying it.
+    // The boot script keeps the document in step for its whole life when it
+    // was configured with what this instance manages (see color-mode-boot.ts):
+    // then the system, the foreground and other tabs are its to follow, and
+    // this instance only mirrors what it announces. Following them here as
+    // well was what made the mode a component's: the listener left with the
+    // component, and with it the page's following of the system.
+    var bootSync = fromBoot('sync');
+    var bootWatches = typeof bootSync === 'function' && fromBoot('watching') === true
+      && fromBoot('storageKey') === storageKey && fromBoot('darkClass') === darkClass && fromBoot('attribute') === attribute;
+
     function update(pref, persistChoice) {
       preference = normalizeMode(pref) || 'auto';
       resolved = effective(preference);
       applyDOM(resolved);
       if (persistChoice !== false) persist(preference);
       listeners.forEach(function(fn) { fn(resolved, preference); });
+      // A choice made here is announced to every other instance by the boot.
+      if (persistChoice !== false && bootWatches) bootSync();
     }
 
     update(normalizeMode(storedRaw) || initialMode, false);
+
+    if (bootWatches) {
+      var onAnnounced = function(e) {
+        var detail = (e && e.detail) || {};
+        var pref = normalizeMode(detail.preference) || preference;
+        var mode = forcedMode || (detail.mode === 'dark' ? 'dark' : 'light');
+        if (pref === preference && mode === resolved) return;
+        preference = pref;
+        resolved = mode;
+        listeners.forEach(function(fn) { fn(resolved, preference); });
+      };
+      window.addEventListener('stx:color-mode', onAnnounced);
+      cleanups.push(function() { window.removeEventListener('stx:color-mode', onAnnounced); });
+      onDestroy(function() { cleanups.forEach(function(fn) { fn(); }); listeners = []; });
+      return colorModeHandle();
+    }
 
     var mql = window.matchMedia('(prefers-color-scheme: dark)');
     var onSystemChange = function() {
@@ -6259,17 +6287,21 @@ catch (e) {} }
 
     onDestroy(function() { cleanups.forEach(function(fn) { fn(); }); listeners = []; });
 
-    return {
-      get mode() { return resolved; },
-      get preference() { return preference; },
-      get isDark() { return resolved === 'dark'; },
-      set: function(mode) { update(mode); },
-      toggle: function() { update(resolved === 'dark' ? 'light' : 'dark'); },
-      subscribe: function(fn) {
-        listeners.push(fn);
-        return function() { listeners = listeners.filter(function(f) { return f !== fn; }); };
-      }
-    };
+    return colorModeHandle();
+
+    function colorModeHandle() {
+      return {
+        get mode() { return resolved; },
+        get preference() { return preference; },
+        get isDark() { return resolved === 'dark'; },
+        set: function(mode) { update(mode); },
+        toggle: function() { update(resolved === 'dark' ? 'light' : 'dark'); },
+        subscribe: function(fn) {
+          listeners.push(fn);
+          return function() { listeners = listeners.filter(function(f) { return f !== fn; }); };
+        }
+      };
+    }
   }
 
   function useDark(options) {

@@ -201,7 +201,19 @@ export function generateColorModeBootScript(options: ColorModeBootConfig = {}): 
   //
   // `p` stays the stored preference even when forced, so a settings panel
   // shows the visitor what they chose rather than what the page is showing.
-  const body = `(function(){"use strict";var c=${c};var p=c.initialMode;var a=c.autoValue;try{var v=localStorage.getItem(c.storageKey);if(v==="light"||v==="dark"){p=v}else if(v==="auto"||v==="system"){p="auto";if(!a)a=v}}catch(e){}var r=document.documentElement;var f=null;if(c.respectExisting&&c.attribute){var x=r.getAttribute(c.attribute);if(x==="light"||x==="dark")f=x}var m=f;if(!m){m=p;if(p==="auto"){try{m=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}catch(e){m="light"}}}if(c.attribute)r.setAttribute(c.attribute,m);if(c.darkClass){if(m==="dark")r.classList.add(c.darkClass);else r.classList.remove(c.darkClass)}try{window.${COLOR_MODE_BOOT_GLOBAL}={storageKey:c.storageKey,initialMode:c.initialMode,darkClass:c.darkClass,attribute:c.attribute,autoValue:a||"auto",respectExisting:c.respectExisting,forced:f,preference:p,mode:m}}catch(e){}}());`
+  //
+  // After the first stamp the script stays on duty for the document's life.
+  // Following the system used to be left to useColorMode, whose listener
+  // lives and dies with the component that called it - so a page whose
+  // component had been torn down, or never hydrated, stopped following the
+  // system while everything around it (a native screen beside a web view,
+  // say) switched. The mode is the document's, not a component's: `sync`
+  // re-resolves on a system change, on return to the foreground, on a
+  // back/forward restore and on another tab's write, stamps the root, and
+  // announces it as `stx:color-mode` for every useColorMode to follow.
+  // Running it twice in one document (a whole-document swap carrying the
+  // head again) re-syncs instead of adding a second set of listeners.
+  const body = `(function(){"use strict";var o=window.${COLOR_MODE_BOOT_GLOBAL};if(o&&typeof o.sync==="function"){o.sync();return}var c=${c};var r=document.documentElement;function read(){var p=c.initialMode,a=c.autoValue;try{var v=localStorage.getItem(c.storageKey);if(v==="light"||v==="dark"){p=v}else if(v==="auto"||v==="system"){p="auto";if(!a)a=v}}catch(e){}return{p:p,a:a}}function sys(){try{return matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}catch(e){return"light"}}function stamp(m){if(c.attribute)r.setAttribute(c.attribute,m);if(c.darkClass){if(m==="dark")r.classList.add(c.darkClass);else r.classList.remove(c.darkClass)}}var s=read();var f=null;if(c.respectExisting&&c.attribute){var x=r.getAttribute(c.attribute);if(x==="light"||x==="dark")f=x}var m=f||(s.p==="auto"?sys():s.p);var p=s.p;stamp(m);var g=null;function sync(){var t=read(),n=f||(t.p==="auto"?sys():t.p);var moved=n!==m,chose=t.p!==p;if(moved){r.style.setProperty("transition","none","important");stamp(n);void r.offsetHeight;r.style.removeProperty("transition")}else stamp(n);m=n;p=t.p;if(g){g.mode=n;g.preference=t.p;if(t.a)g.autoValue=t.a}if(moved||chose){try{window.dispatchEvent(new CustomEvent("stx:color-mode",{detail:{mode:n,preference:t.p}}))}catch(e){}}}try{g=window.${COLOR_MODE_BOOT_GLOBAL}={storageKey:c.storageKey,initialMode:c.initialMode,darkClass:c.darkClass,attribute:c.attribute,autoValue:s.a||"auto",respectExisting:c.respectExisting,forced:f,preference:p,mode:m,watching:true,sync:sync}}catch(e){}try{var q=matchMedia("(prefers-color-scheme: dark)");if(q.addEventListener)q.addEventListener("change",sync);else if(q.addListener)q.addListener(sync)}catch(e){}try{addEventListener("pageshow",sync);addEventListener("storage",function(e){if(e.key===null||e.key===c.storageKey)sync()});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")sync()})}catch(e){}}());`
 
   return `<script ${COLOR_MODE_BOOT_MARKER}>${body}</script>`
 }
