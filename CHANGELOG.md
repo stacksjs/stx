@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.486...v0.2.487)
+
+## 🐛 Bug Fixes
+
+- **native**: narrow the request timeout before scheduling it ([d47d0ca](https://github.com/stacksjs/stx/commit/d47d0ca)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.487 ([261e952](https://github.com/stacksjs/stx/commit/261e952)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.485...v0.2.486)
 
 ## 🐛 Bug Fixes
