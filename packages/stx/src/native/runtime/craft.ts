@@ -88,6 +88,24 @@ export interface NativeSound {
 
 export type NativePermissionStatus = 'granted' | 'denied' | 'undetermined'
 
+export interface NativeLocation {
+  latitude: number
+  longitude: number
+  altitude?: number
+  accuracy?: number
+  altitudeAccuracy?: number
+  heading?: number
+  speed?: number
+  timestamp: number
+}
+
+export interface NativeLocationRecordingState {
+  id: string | null
+  active: boolean
+  paused: boolean
+  startedAt: number | null
+}
+
 export interface NativeShareOptions {
   title?: string
   text?: string
@@ -212,6 +230,29 @@ export interface NativeCraft {
    * when dismissed. `image` is a picture's URL, shared as the picture.
    */
   share?: ((options: NativeShareOptions) => Promise<boolean>) & { share: (options: NativeShareOptions) => Promise<boolean> }
+  /**
+   * GPS (`capabilities.geolocation`): the page's own recorder, which keeps
+   * recording in the background and survives a relaunch. Fixes are
+   * `{ latitude, longitude, altitude, accuracy, altitudeAccuracy, heading, speed, timestamp }`.
+   */
+  location?: {
+    getCurrentPosition: (options?: { enableHighAccuracy?: boolean, timeout?: number, maximumAge?: number }) => Promise<NativeLocation>
+    watchPosition: (callback: (location: NativeLocation) => unknown, options?: Record<string, unknown>) => number
+    clearWatch: (id?: number) => void
+    startRecording: (options?: Record<string, unknown>) => Promise<NativeLocationRecordingState>
+    pauseRecording: () => Promise<NativeLocationRecordingState>
+    resumeRecording: () => Promise<NativeLocationRecordingState>
+    stopRecording: () => Promise<NativeLocationRecordingState & { locations: NativeLocation[] }>
+    getRecordingState: () => Promise<NativeLocationRecordingState & { sampleCount: number }>
+    readRecording: () => Promise<NativeLocation[]>
+  }
+  /** Keeps the screen from locking (`capabilities.keepAwake`), the page's name. */
+  setKeepAwake?: (enabled: boolean) => Promise<boolean>
+  /** The backlight, 0 to 1, system-wide (`capabilities.brightness`), the page's names. */
+  getBrightness?: () => Promise<number>
+  setBrightness?: (level: number) => Promise<number>
+  /** The status bar's text colour (`capabilities.statusBar`). */
+  statusBar?: { setStyle: (style: 'light' | 'dark' | 'default') => Promise<boolean> }
   /** Apple Health, when the app reads it (`capabilities.health`). */
   health?: {
     requestAuthorization: (types: string[], options?: { write?: boolean }) => Promise<boolean>

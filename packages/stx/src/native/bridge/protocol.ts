@@ -52,6 +52,7 @@ export type BridgeMessageType =
   | 'PUSH_TOKEN'          // A new push device token
   | 'SOUND_EVENT'         // A craft.audio sound ended or failed
   | 'NETWORK_STREAM'      // A piece, the end or the failure of a streaming fetch
+  | 'CRAFT_EVENT'         // A host event in the page's name (craftLocationUpdate)
   | 'MEMORY_WARNING'      // Low memory warning
 
   // API

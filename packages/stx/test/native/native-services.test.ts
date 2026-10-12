@@ -23,7 +23,7 @@ async function generate(): Promise<string> {
   return bundle
 }
 
-const ALL = ['fetch', 'eventStream', 'speech', 'audio', 'push', 'linking', 'share']
+const ALL = ['fetch', 'eventStream', 'speech', 'audio', 'push', 'linking', 'share', 'geolocation', 'keepAwake', 'brightness', 'statusBar']
 
 async function runtime(capabilities: string[] = ALL, params: Record<string, unknown> = {}) {
   const sent: Array<Record<string, any>> = []
@@ -165,6 +165,63 @@ describe('services', () => {
     answer(requests().at(-1)!, false)
     expect(await shared).toBe(false)
     expect(typeof scope.craft.share.share).toBe('function')
+  })
+})
+
+describe('a workout player\'s services, in the page\'s names', () => {
+  it('keeps the screen awake, dims it and styles the status bar', async () => {
+    const { scope, requests, answer } = await runtime()
+    expect(scope.craft.capabilities).toMatchObject({ keepAwake: true, brightness: true, statusBar: true, geolocation: true })
+    const awake = scope.craft.setKeepAwake(true)
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'KeepAwake', method: 'set', args: [true] })
+    answer(requests().at(-1)!, true)
+    expect(await awake).toBe(true)
+    const level = scope.craft.getBrightness()
+    answer(requests().at(-1)!, 0.7)
+    expect(await level).toBe(0.7)
+    const dimmed = scope.craft.setBrightness(0.3)
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'Brightness', method: 'set', args: [0.3] })
+    answer(requests().at(-1)!, 0.3)
+    expect(await dimmed).toBe(0.3)
+    const styled = scope.craft.statusBar.setStyle('light')
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'StatusBar', method: 'setStyle', args: ['light'] })
+    answer(requests().at(-1)!, true)
+    expect(await styled).toBe(true)
+    const none = await runtime([])
+    expect(none.scope.craft.setKeepAwake).toBeUndefined()
+    expect(none.scope.craft.location).toBeUndefined()
+  })
+
+  it('watches and records GPS, with fixes from the host\'s page events', async () => {
+    const { scope, requests, answer, receive } = await runtime()
+    const fixes: unknown[] = []
+    const id = scope.craft.location.watchPosition((fix: unknown) => fixes.push(fix), { enableHighAccuracy: true })
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'Location', method: 'watchPosition', args: [{ enableHighAccuracy: true }] })
+    const watches = requests().length
+    const second = scope.craft.location.watchPosition(() => {})
+    expect(requests().length).toBe(watches)
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftLocationUpdate', detail: { latitude: 52.5, longitude: 13.4, timestamp: 1 } } })
+    expect(fixes).toEqual([{ latitude: 52.5, longitude: 13.4, timestamp: 1 }])
+    scope.craft.location.clearWatch(id)
+    expect(requests().length).toBe(watches)
+    scope.craft.location.clearWatch(second)
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'Location', method: 'clearWatch' })
+
+    const started = scope.craft.location.startRecording()
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'Location', method: 'startRecording' })
+    answer(requests().at(-1)!, { id: 'r1', active: true, paused: false, startedAt: 5 })
+    expect(await started).toMatchObject({ id: 'r1', active: true })
+    for (const method of ['pauseRecording', 'resumeRecording', 'getRecordingState', 'readRecording', 'stopRecording']) {
+      const answered = scope.craft.location[method]()
+      expect(requests().at(-1)!.payload).toMatchObject({ module: 'Location', method })
+      answer(requests().at(-1)!, method === 'readRecording' ? [] : { id: 'r1' })
+      await answered
+    }
+
+    let heard: unknown = null
+    scope.addEventListener('craftLocationError', (event: { detail: unknown }) => { heard = event.detail })
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftLocationError', detail: { message: 'denied' } } })
+    expect(heard).toEqual({ message: 'denied' })
   })
 })
 

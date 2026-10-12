@@ -22,13 +22,15 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     storage: capabilities.has('storage'),
     localDatabase: capabilities.has('database'),
     lifecycle: capabilities.has('lifecycle'),
-    geolocation: false,
+    geolocation: capabilities.has('geolocation'),
     clipboard: capabilities.has('clipboard'),
     contacts: false,
     calendar: false,
     localNotifications: capabilities.has('notifications'),
     inAppPurchase: false,
-    keepAwake: false,
+    keepAwake: capabilities.has('keepAwake'),
+    brightness: capabilities.has('brightness'),
+    statusBar: capabilities.has('statusBar'),
     orientationLock: false,
     deepLinks: capabilities.has('deepLinks'),
     flashlight: false,
@@ -252,6 +254,61 @@ export function installCraftBridge(
       else handlers.error.forEach(handler => handler(String(payload?.message || 'The sound could not be played')))
     })
   }
+
+  // The page's own services, in the page's names, so `@stacksjs/mobile`'s
+  // keepAwake, brightness and statusBar work on a native screen unchanged.
+  if (capabilities.has('keepAwake'))
+    craft.setKeepAwake = (enabled: boolean) => request('KeepAwake', 'set', [enabled !== false])
+  if (capabilities.has('brightness')) {
+    craft.getBrightness = () => request('Brightness', 'get', [])
+    craft.setBrightness = (level: number) => request('Brightness', 'set', [Number(level)])
+  }
+  if (capabilities.has('statusBar'))
+    craft.statusBar = { setStyle: (style: string) => request('StatusBar', 'setStyle', [style]) }
+
+  // GPS: one fix, a watch, and the route recording that keeps going in the
+  // background (the page's recorder, so a run started on either is the same
+  // run). `@stacksjs/mobile`'s location and createRouteRecorder call these.
+  if (capabilities.has('geolocation')) {
+    const watchers = new Map<number, (location: AnyRecord) => unknown>()
+    let nextWatch = 0
+    const unwatched = (): void => {
+      if (watchers.size === 0) request('Location', 'clearWatch', []).catch(() => {})
+    }
+    craft.location = {
+      // A first fix may wait on the permission sheet; the host bounds it by `timeout`.
+      getCurrentPosition: (options: AnyRecord = {}) => ask('Location', 'getCurrentPosition', [options]),
+      watchPosition: (callback: (location: AnyRecord) => unknown, options: AnyRecord = {}) => {
+        if (typeof callback !== 'function') throw new TypeError('location.watchPosition needs a function')
+        const id = ++nextWatch
+        const first = watchers.size === 0
+        watchers.set(id, callback)
+        if (first) ask('Location', 'watchPosition', [options]).catch(() => {})
+        return id
+      },
+      clearWatch: (id?: number) => {
+        if (id === undefined) watchers.clear()
+        else if (!watchers.delete(id)) return
+        unwatched()
+      },
+      startRecording: (options: AnyRecord = {}) => ask('Location', 'startRecording', [options]),
+      pauseRecording: () => request('Location', 'pauseRecording', []),
+      resumeRecording: () => request('Location', 'resumeRecording', []),
+      stopRecording: () => request('Location', 'stopRecording', []),
+      getRecordingState: () => request('Location', 'getRecordingState', []),
+      readRecording: () => request('Location', 'readRecording', []),
+    }
+    target.addEventListener?.('craftLocationUpdate', (event: AnyRecord) => {
+      watchers.forEach(callback => callback(event?.detail))
+    })
+  }
+
+  // The host's events in the page's names (`craftLocationUpdate`), as
+  // CustomEvents on the screen's global, where the page's code listens.
+  protocol.on<{ event?: string, detail?: unknown }>('CRAFT_EVENT', ({ payload }) => {
+    if (typeof payload?.event !== 'string' || typeof target.dispatchEvent !== 'function' || typeof target.CustomEvent !== 'function') return
+    target.dispatchEvent(new target.CustomEvent(payload.event, { detail: payload.detail ?? {} }))
+  })
 
   // Push, as the page has it: the permission, the device token and new
   // tokens. `craft.registerPush`, `craft.permissions` and the
