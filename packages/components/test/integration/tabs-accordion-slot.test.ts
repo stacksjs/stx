@@ -109,7 +109,7 @@ describe('#1703 — exports and type interfaces', () => {
     expect(src).toContain("export { default as TabPanel } from './TabPanel.stx'")
     expect(src).toContain('export interface TabPanelProps')
     // Legacy `tabs` prop is now optional (was required) since slot mode is valid
-    expect(src).toMatch(/tabs\?:\s*Tab\[\]/)
+    expect(src).toMatch(/tabs\?:\s*TabDefinition\[\]/)
   })
 
   it('accordion/index.ts re-exports AccordionItem and types both APIs', () => {
