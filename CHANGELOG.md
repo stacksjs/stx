@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.468...v0.2.469)
+
+## 🐛 Bug Fixes
+
+- **components**: the package root bundles for a browser ([d16edc9](https://github.com/stacksjs/stx/commit/d16edc9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.469 ([e7f6018](https://github.com/stacksjs/stx/commit/e7f6018)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.467...v0.2.468)
 
 ## ✨ Features
