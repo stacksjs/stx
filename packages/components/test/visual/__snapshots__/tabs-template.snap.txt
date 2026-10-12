@@ -180,7 +180,10 @@ function onTabKey(event, index) {
   else if (event.key === 'End') { event.preventDefault(); next = tabCount - 1 }
   if (next !== index) {
     selectTab(next)
-    document.getElementById(`tab-${next}`)?.focus()
+    // Slot mode numbers its tabs per instance; `tab-N` is the prop mode's id,
+    // so arrowing in slot mode moved the selection and left focus behind.
+    const id = hasPropTabs ? `tab-${next}` : discoveredTabs()[next]?.tabId
+    if (id) document.getElementById(id)?.focus()
   }
 }
 

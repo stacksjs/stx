@@ -1,0 +1,154 @@
+<script server>
+/*
+ * A tab strip whose selection and panels belong to the page (stacksjs/stx#2058).
+ *
+ * <Tabs> owns both its selection and its panels: it renders every panel inside
+ * itself and remembers the tab it was told to start on. That suits a settings
+ * card. It does not suit tabs that switch between whole sections of a page,
+ * where the selection is kept in the URL or a store and each section is behind
+ * its own `:if`, so a section nobody opened never fetches its data.
+ *
+ * TabList is the behaviour alone. Its children are `role="tab"` elements, a
+ * `<Tab>` or any element with `role="tab"` and `data-value` (a `:for` row
+ * works), and it gives them what the role promises: one tab stop on the
+ * selected tab, the arrow keys, Home and End moving between them and selecting
+ * as they go, and `aria-selected` kept true on exactly one. The selection is a
+ * `v-model:value`, or `:value` with `@change`.
+ *
+ *   <TabList v-model:value="tab" label="Store sections" variant="line">
+ *     <Tab value="products" controls="products-panel">Products</Tab>
+ *     <Tab value="sales" controls="sales-panel">Sales</Tab>
+ *   </TabList>
+ *   <section :if="tab === 'products'" id="products-panel" role="tabpanel">…</section>
+ */
+export const value = $props.value ?? ''
+export const label = $props.label || ''
+export const labelledby = $props.labelledby || ''
+export const orientation = $props.orientation === 'vertical' ? 'vertical' : 'horizontal'
+export const variant = $props.variant || 'line'
+export const className = $props.className || ''
+
+const variantClasses = {
+  line: 'flex gap-1 border-b border-line',
+  pills: 'inline-flex gap-1 p-1 bg-surface-raised rounded-panel',
+  none: '',
+}
+const directionClasses = orientation === 'vertical' ? 'flex-col' : ''
+export const listClasses = `${variantClasses[variant] ?? variantClasses.line} ${directionClasses} ${className}`.replace(/\s+/g, ' ').trim()
+</script>
+
+<script client>
+const emit = defineEmits()
+const orientation = {{ orientation }}
+const selected = useModel('value', { default: {{ value }}, parse: v => v == null ? '' : String(v) })
+const listRef = useRef('listRef')
+const mounted = state(false)
+let observer = null
+
+/** This list's own tabs: not a nested list's, and not a disabled one. */
+function ownTabs(includeDisabled) {
+  const root = listRef.value
+  if (!root) return []
+  return Array.from(root.querySelectorAll('[role="tab"]')).filter(tab =>
+    tab.closest('[role="tablist"]') === root
+    && (includeDisabled || (!tab.hasAttribute('disabled') && tab.getAttribute('aria-disabled') !== 'true')))
+}
+
+function valueOf(tab, index) {
+  const value = tab.getAttribute('data-value')
+  return value == null ? String(index) : value
+}
+
+/*
+ * One stop in the tab order, on the selected tab; the first enabled tab when
+ * nothing is selected yet, so the strip can still be reached. Run on every
+ * change of selection and of the tabs themselves, because a `:for` adds and
+ * removes them after mount.
+ */
+function sync() {
+  const tabs = ownTabs(true)
+  const current = selected()
+  let any = false
+  tabs.forEach((tab, index) => {
+    const on = valueOf(tab, index) === current
+    if (on) any = true
+    tab.setAttribute('aria-selected', on ? 'true' : 'false')
+    tab.setAttribute('tabindex', on ? '0' : '-1')
+  })
+  if (!any) {
+    const first = ownTabs(false)[0]
+    if (first) first.setAttribute('tabindex', '0')
+  }
+}
+
+function select(tab) {
+  const index = ownTabs(true).indexOf(tab)
+  const value = valueOf(tab, index)
+  if (value === selected()) return
+  selected.set(value)
+  emit('change', value)
+}
+
+function onClick(event) {
+  const tab = event.target && event.target.closest ? event.target.closest('[role="tab"]') : null
+  if (!tab || !ownTabs(false).includes(tab)) return
+  select(tab)
+}
+
+/*
+ * The keys the role announces. Selection follows focus (automatic
+ * activation), which is what a tab that switches a section of the page wants.
+ */
+function onKey(event) {
+  const tabs = ownTabs(false)
+  const from = event.target && event.target.closest ? event.target.closest('[role="tab"]') : null
+  const index = tabs.indexOf(from)
+  if (index === -1) return
+  const forward = orientation === 'vertical' ? 'ArrowDown' : 'ArrowRight'
+  const back = orientation === 'vertical' ? 'ArrowUp' : 'ArrowLeft'
+  let next = -1
+  if (event.key === forward) next = (index + 1) % tabs.length
+  else if (event.key === back) next = (index - 1 + tabs.length) % tabs.length
+  else if (event.key === 'Home') next = 0
+  else if (event.key === 'End') next = tabs.length - 1
+  if (next === -1) return
+  event.preventDefault()
+  tabs[next].focus()
+  select(tabs[next])
+}
+
+effect(() => {
+  selected()
+  if (mounted()) sync()
+})
+
+onMount(() => {
+  mounted.set(true)
+  sync()
+  const root = listRef.value
+  if (root && typeof MutationObserver !== 'undefined') {
+    observer = new MutationObserver(() => sync())
+    observer.observe(root, { childList: true, subtree: true })
+  }
+})
+
+onDestroy(() => {
+  if (observer) observer.disconnect()
+  observer = null
+})
+
+defineExpose({ selected })
+</script>
+
+<div
+  x-ref="listRef"
+  role="tablist"
+  aria-orientation="{{ orientation }}"
+  @if(label)aria-label="{{ label }}"@endif
+  @if(labelledby)aria-labelledby="{{ labelledby }}"@endif
+  class="{{ listClasses }}"
+  @click="onClick($event)"
+  @keydown="onKey($event)"
+>
+  <slot />
+</div>

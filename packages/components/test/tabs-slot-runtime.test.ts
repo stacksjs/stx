@@ -125,6 +125,29 @@ describe('Tabs in slot mode renders a tab per panel (#1979)', () => {
     }
   })
 
+  /*
+   * The arrow keys moved the selection and left focus behind: the handler
+   * focused `tab-N`, which is prop mode's id, while slot mode numbers its tabs
+   * per instance. Called through the handler for the same reason as above.
+   */
+  it('moves focus with the selection when arrowing between tabs', async () => {
+    const app = await renderApp(FILES, ROUTES)
+    try {
+      const browser = await boot(app, '/tabs')
+      await settle()
+
+      const scopeId = browser.document.querySelector('[data-stx-scope]').getAttribute('data-stx-scope')
+      browser.window.stx._scopes[scopeId].onTabKey({ key: 'ArrowRight', preventDefault() {} }, 0)
+      await settle()
+
+      const tabs = [...browser.document.querySelectorAll('[role="tab"]')]
+      expect(browser.document.activeElement).toBe(tabs[1])
+    }
+    finally {
+      await app.dispose()
+    }
+  })
+
   it('renders the tab buttons with their click and key handlers', async () => {
     const app = await renderApp(FILES, ROUTES)
     try {

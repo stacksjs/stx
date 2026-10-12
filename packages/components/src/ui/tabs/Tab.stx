@@ -1,0 +1,35 @@
+<script server>
+/*
+ * One tab in a <TabList>. A plain button with the role, its value and the
+ * panel it controls; the list keeps `aria-selected` and `tabindex` on it.
+ *
+ * No client script, so no scope of its own: it is a button in the strip,
+ * nothing around it, and `@click` or bound attributes written on it land on
+ * the button in the caller's scope. Style the selected state with
+ * `aria-selected:` utilities, which outrank the base classes.
+ */
+export const value = $props.value ?? ''
+export const controls = $props.controls || ''
+export const disabled = $bool($props.disabled)
+export const variant = $props.variant || 'line'
+export const className = $props.className || ''
+
+const focusRing = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel'
+const variantClasses = {
+  line: `-mb-px px-4 py-2 font-medium text-sm border-b-2 border-transparent text-fg-muted hover:text-fg aria-selected:border-accent aria-selected:text-accent transition-colors ${focusRing}`,
+  pills: `px-3 py-1.5 font-medium text-sm rounded-control text-fg-muted hover:text-fg aria-selected:bg-field aria-selected:text-fg aria-selected:shadow-sm transition-colors ${focusRing}`,
+  none: '',
+}
+export const tabClasses = `${variantClasses[variant] ?? variantClasses.line} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`.replace(/\s+/g, ' ').trim()
+</script>
+
+<button
+  type="button"
+  role="tab"
+  data-value="{{ value }}"
+  aria-selected="false"
+  tabindex="-1"
+  @if(controls)aria-controls="{{ controls }}"@endif
+  @if(disabled)disabled@endif
+  class="{{ tabClasses }}"
+><slot /></button>
