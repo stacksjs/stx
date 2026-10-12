@@ -39,7 +39,7 @@ import type { ParsedEvent, EventModifiers } from './events'
 import { asInvocableStatement, listensPassively } from './events'
 import { transformStoreImports } from './store-imports'
 import { declaresClientIdentifier } from './client-declarations'
-import { parameterAnalysis } from './client-parameter-bindings'
+import { declaredNames, parameterAnalysis } from './client-parameter-bindings'
 import { findInterpolationEnd, stripCommentsAndLiterals } from './strip-literals'
 // Re-exported from its old home. It moved to `strip-literals.ts` so the
 // editor-facing extractor could share it without pulling the bundler in behind
@@ -411,16 +411,7 @@ function injectBrowserCoreAutoImportsUncached(code: string): BrowserCoreAutoImpo
     }
   }
 
-  const locallyDeclared = new Set<string>()
-  for (const match of searchable.matchAll(/\b(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/g))
-    locallyDeclared.add(match[1])
-  for (const match of searchable.matchAll(/\b(?:const|let|var)\s*\{([^}]*)\}/g)) {
-    for (const binding of match[1].split(',')) {
-      const localName = binding.trim().split(/[:=]/).pop()?.trim()
-      if (localName)
-        locallyDeclared.add(localName)
-    }
-  }
+  const locallyDeclared = declaredNames(searchable)
 
   const imports = BROWSER_CORE_IMPORTS.filter((symbol) => {
     if (explicitlyImported.has(symbol) || locallyDeclared.has(symbol))
@@ -479,17 +470,25 @@ const JS_BUILTINS = new Set([
 
 function detectModelUsage(code: string): string[] {
   const models: Set<string> = new Set()
+  // Read with comments and literals blanked, and with parameter scopes known:
+  // `(J) => J.get(key)` queries the parameter, not a model.
+  const analysis = parameterAnalysis(code)
+  const declared = declaredNames(code)
 
   // Pattern: PascalCase identifier followed by query method
   // e.g., Trail.all(), User.find(1), Activity.where('type', 'run')
-  const modelPattern = /\b([A-Z][a-zA-Z0-9]*)\s*\.\s*(all|find|first|get|where|orderBy|orderByDesc|limit|select|pluck|create|update|delete)\s*\(/g
+  const modelPattern = /(?<![\w$.])([A-Z][a-zA-Z0-9]*)\s*\.\s*(all|find|first|get|where|orderBy|orderByDesc|limit|select|pluck|create|update|delete)\s*\(/g
 
-  let match
-  while ((match = modelPattern.exec(code)) !== null) {
-    // Skip JS built-ins that happen to have matching method names
-    if (!JS_BUILTINS.has(match[1])) {
-      models.add(match[1])
-    }
+  for (const match of analysis.code.matchAll(modelPattern)) {
+    const name = match[1]
+    // Skip JS built-ins that happen to have matching method names, and names
+    // the script binds itself. A model is never one or two characters, which
+    // is exactly what a minifier names a `new Map()` (`J.get(key)`).
+    if (JS_BUILTINS.has(name) || declared.has(name) || name.length < 3)
+      continue
+    if (analysis.shadows(name, match.index ?? 0))
+      continue
+    models.add(name)
   }
 
   return Array.from(models)
@@ -549,62 +548,9 @@ interface AutoImportResult {
   browserImports: string[]
 }
 
-/**
- * The names after the first in a declaration list: `const a = 1, b = f(1, 2), c`
- * gives `b` and `c`. Minified bundles (a demand-bundled composable, say) fold
- * consecutive declarations into one list, and only the first name used to
- * count as local, so a later one that shares a browser auto-import's name
- * (`delay`) was reported as a missing auto-import on every page.
- */
-function laterDeclarators(code: string, from: number): string[] {
-  const names: string[] = []
-  let depth = 0
-  let quote = ''
-  for (let index = from; index < code.length; index++) {
-    const char = code[index]!
-    if (quote) {
-      if (char === '\\') index++
-      else if (char === quote) quote = ''
-      continue
-    }
-    if (char === '"' || char === '\'' || char === '`') {
-      quote = char
-      continue
-    }
-    if (char === '(' || char === '[' || char === '{') depth++
-    else if (char === ')' || char === ']' || char === '}') {
-      if (depth === 0) break
-      depth--
-    }
-    else if (depth === 0 && char === ';') break
-    // A line break ends the declaration unless the list carries on (`a = 1,\n b = 2`).
-    else if (depth === 0 && char === '\n' && !/,\s*$/.test(code.slice(Math.max(from, index - 200), index))) break
-    else if (depth === 0 && char === ',') {
-      const next = /^\s*([A-Za-z_$][\w$]*)\s*(?=[=,;\n)]|$)/.exec(code.slice(index + 1, index + 200))
-      if (next) names.push(next[1]!)
-    }
-  }
-  return names
-}
-
 function collectLocalBindings(code: string): Set<string> {
-  const bindings = new Set<string>()
-
-  for (const match of code.matchAll(/\b(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/g)) {
-    bindings.add(match[1])
-    if (!/^(?:function|class)/.test(match[0]))
-      for (const name of laterDeclarators(code, (match.index ?? 0) + match[0].length)) bindings.add(name)
-  }
-
-  for (const match of code.matchAll(/\b(?:const|let|var)\s*\{([^}]*)\}/g)) {
-    for (const binding of match[1].split(',')) {
-      const localName = binding.trim().split(/[:=]/).pop()?.trim()
-      if (localName && /^[A-Za-z_$][\w$]*$/.test(localName))
-        bindings.add(localName)
-    }
-  }
-
-  return bindings
+  // Every declarator of a list (`var a=0,J=new Map`), not just the first.
+  return declaredNames(code)
 }
 
 /**
@@ -798,7 +744,7 @@ function transformAutoImportsUncached(code: string): AutoImportResult {
   }
 
   // Dynamically detect app-specific models (PascalCase with query methods)
-  const detectedModels = detectModelUsage(transformedCode)
+  const detectedModels = detectModelUsage(searchableForBrowser)
   for (const model of detectedModels) {
     if (!existingImports.has(model) && !locallyDeclared.has(model)) {
       usedBrowserImports.add(model)
