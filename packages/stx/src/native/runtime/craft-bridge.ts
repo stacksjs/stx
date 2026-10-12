@@ -23,6 +23,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     localDatabase: capabilities.has('database'),
     lifecycle: capabilities.has('lifecycle'),
     geolocation: capabilities.has('geolocation'),
+    music: capabilities.has('music'),
     clipboard: capabilities.has('clipboard'),
     contacts: false,
     calendar: false,
@@ -230,8 +231,14 @@ export function installCraftBridge(
         resume: () => request('Audio', 'resume', [id]).then(done),
         stop: (options: { fadeOut?: number } = {}) => request('Audio', 'stop', [id, options]).then(done),
         setVolume: (volume: number, options: { fade?: number } = {}) => request('Audio', 'setVolume', [id, Number(volume), options]).then(done),
-        onEnd: (callback: () => unknown) => { handlers.end.add(callback); return () => handlers.end.delete(callback) },
-        onError: (callback: (message: string) => unknown) => { handlers.error.add(callback); return () => handlers.error.delete(callback) },
+        onEnd: (callback: () => unknown) => {
+          handlers.end.add(callback)
+          return () => handlers.end.delete(callback)
+        },
+        onError: (callback: (message: string) => unknown) => {
+          handlers.error.add(callback)
+          return () => handlers.error.delete(callback)
+        },
       }
     }
     craft.audio = {
@@ -301,6 +308,24 @@ export function installCraftBridge(
     target.addEventListener?.('craftLocationUpdate', (event: AnyRecord) => {
       watchers.forEach(callback => callback(event?.detail))
     })
+  }
+
+  // The Music app's song and transport, in the page's names: `craft.music`
+  // and its `craftMusicChange` events, so `@stacksjs/mobile`'s `music` works
+  // on a native screen too. Asking for access is a question to the person.
+  if (capabilities.has('music')) {
+    const control = (command: string, extra: AnyRecord = {}) => request('Music', 'control', [{ command, ...extra }])
+    craft.music = {
+      getAuthorizationStatus: () => request('Music', 'getAuthorizationStatus', []),
+      requestAuthorization: () => ask('Music', 'requestAuthorization', []),
+      getNowPlaying: () => request('Music', 'getNowPlaying', []),
+      play: () => control('play'),
+      pause: () => control('pause'),
+      togglePlayPause: () => control('togglePlayPause'),
+      skipToNext: () => control('skipToNext'),
+      skipToPrevious: (options: AnyRecord = {}) => control('skipToPrevious', { restartAfter: typeof options.restartAfter === 'number' ? options.restartAfter : null }),
+      observe: (enabled?: boolean) => request('Music', 'observe', [{ enabled: enabled !== false }]),
+    }
   }
 
   // The host's events in the page's names (`craftLocationUpdate`), as
@@ -415,7 +440,8 @@ export function installCraftBridge(
   })
   protocol.on<{ focused?: boolean }>('SCREEN_FOCUS', ({ payload }) => {
     focused = payload?.focused !== false
-    ;(focused ? appearHandlers : disappearHandlers).forEach(handler => handler())
+    const handlers = focused ? appearHandlers : disappearHandlers
+    handlers.forEach(handler => handler())
   })
 
   const onAppStateChange = (callback: (state: string) => unknown): (() => void) => {
@@ -486,7 +512,9 @@ export function installCraftBridge(
     return new Promise((resolve, reject) => {
       signal?.addEventListener?.('abort', () => {
         stream.body.cancel()
-        if (!settled) { settled = true; reject(abortError(signal.reason)) }
+        if (settled) return
+        settled = true
+        reject(abortError(signal.reason))
       })
       request('Network', 'stream', [{ id, url, method, headers, body }]).then((data: AnyRecord) => {
         if (settled) return

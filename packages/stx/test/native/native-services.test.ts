@@ -223,6 +223,37 @@ describe('a workout player\'s services, in the page\'s names', () => {
     receive({ type: 'CRAFT_EVENT', payload: { event: 'craftLocationError', detail: { message: 'denied' } } })
     expect(heard).toEqual({ message: 'denied' })
   })
+
+  it('shows and steers the Music app in the page\'s names, its changes as page events', async () => {
+    const { scope, requests, answer, receive } = await runtime([...ALL, 'music'])
+    expect(scope.craft.capabilities.music).toBe(true)
+    const asked = scope.craft.music.requestAuthorization()
+    // A question to the person: never timed out.
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'Music', method: 'requestAuthorization' })
+    await new Promise(resolve => setTimeout(resolve, 1100))
+    answer(requests().at(-1)!, 'authorized')
+    expect(await asked).toBe('authorized')
+    for (const [call, payload] of [
+      [() => scope.craft.music.getNowPlaying(), { method: 'getNowPlaying' }],
+      [() => scope.craft.music.togglePlayPause(), { method: 'control', args: [{ command: 'togglePlayPause' }] }],
+      [() => scope.craft.music.skipToPrevious({ restartAfter: 3 }), { method: 'control', args: [{ command: 'skipToPrevious', restartAfter: 3 }] }],
+      [() => scope.craft.music.observe(), { method: 'observe', args: [{ enabled: true }] }],
+    ] as Array<[() => Promise<unknown>, Record<string, unknown>]>) {
+      const answered = call()
+      expect(requests().at(-1)!.payload).toMatchObject({ module: 'Music', ...payload })
+      answer(requests().at(-1)!, true)
+      await answered
+    }
+    let heard: unknown = null
+    scope.addEventListener('craftMusicChange', (event: { detail: unknown }) => { heard = event.detail })
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftMusicChange', detail: { title: 'Run', playing: true } } })
+    expect(heard).toEqual({ title: 'Run', playing: true })
+  })
+
+  it('has no Music app where the host offers none', async () => {
+    const { scope } = await runtime()
+    expect(scope.craft.music).toBeUndefined()
+  })
 })
 
 describe('responses read as they arrive', () => {
