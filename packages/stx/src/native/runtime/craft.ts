@@ -48,6 +48,54 @@ export interface NativeNavigation {
   setOptions: (options: NativeNavigationOptions) => unknown
   /** A right button was tapped; returns an unsubscribe function. */
   onButton: (callback: (event: { id: string }) => unknown) => () => void
+  /**
+   * The screen is on screen again (not its first showing): what was pushed
+   * over it was popped, or its tab was chosen again. Reload what may have
+   * changed meanwhile. Returns an unsubscribe function.
+   */
+  onAppear: (callback: () => unknown) => () => void
+  /** Something was pushed over the screen, or another tab was chosen. */
+  onDisappear: (callback: () => unknown) => () => void
+  /** Whether the screen is on screen now. */
+  isFocused: () => boolean
+}
+
+export interface NativeRoute {
+  name: string
+  /** The params the screen was opened with; replaced when it is opened again with others. */
+  params: Record<string, unknown>
+  /**
+   * The screen was opened again with new params (`/m/messages?person=8` while
+   * it shows, or a tab's path with a query). `params` is already the new set.
+   */
+  onParams: (callback: (params: Record<string, unknown>, previous: Record<string, unknown>) => unknown) => () => void
+}
+
+/** A sound `craft.audio.play` started. */
+export interface NativeSound {
+  id: string
+  pause: () => Promise<void>
+  resume: () => Promise<void>
+  /** Stops it, fading out over `fadeOut` milliseconds first. */
+  stop: (options?: { fadeOut?: number }) => Promise<void>
+  /** 0 to 1, over `fade` milliseconds when given. */
+  setVolume: (volume: number, options?: { fade?: number }) => Promise<void>
+  /** It played to its end (never, for a looping sound). */
+  onEnd: (callback: () => unknown) => () => void
+  /** It stopped because it could not be played. */
+  onError: (callback: (message: string) => unknown) => () => void
+}
+
+export type NativePermissionStatus = 'granted' | 'denied' | 'undetermined'
+
+export interface NativeShareOptions {
+  title?: string
+  text?: string
+  url?: string
+  /** Local files, as paths or file URLs. */
+  files?: string[]
+  /** A picture by https, file or data URL. */
+  image?: string
 }
 
 export interface NativeStorage {
@@ -80,7 +128,7 @@ export interface NativeSnapshots {
 export interface NativeCraft {
   platform: string
   capabilityProtocolVersion: number
-  route: { name: string, params: Record<string, unknown> }
+  route: NativeRoute
   capabilities: Record<string, boolean>
   navigation: NativeNavigation
   storage: NativeStorage
@@ -119,6 +167,51 @@ export interface NativeCraft {
     confirm: (options?: { title?: string, message?: string, confirmLabel?: string, cancelLabel?: string, destructive?: boolean }) => Promise<boolean>
     actionSheet: (options?: { title?: string, message?: string, actions?: Array<{ id?: string, title: string, style?: 'default' | 'destructive' | 'cancel' }> }) => Promise<string | null>
   }
+  /** Speech (`capabilities.speech`): true once the words were said, false when cut off. */
+  speech?: {
+    speak: (text: string, options?: { language?: string, rate?: number, interrupt?: boolean }) => Promise<boolean>
+    stop: () => Promise<void>
+  }
+  /**
+   * Background sound under the screen (`capabilities.audio`), stopped when
+   * the screen closes. Muted by the silent switch unless
+   * `respectSilentSwitch: false`; mixes with the person's music.
+   */
+  audio?: {
+    play: (url: string, options?: { loop?: boolean, volume?: number, fadeIn?: number, respectSilentSwitch?: boolean }) => Promise<NativeSound>
+    stopAll: (options?: { fadeOut?: number }) => Promise<void>
+  }
+  /** Push notifications (`capabilities.pushNotifications`). */
+  push?: {
+    getPermissionStatus: () => Promise<NativePermissionStatus>
+    /** Asks, when iOS has not been answered yet. */
+    requestPermission: () => Promise<NativePermissionStatus>
+    /** The device token, asking for permission first if it never was. */
+    register: () => Promise<string>
+    /** A new token (after a reinstall or a restore). */
+    onToken: (callback: (token: string) => unknown) => () => void
+    /** This app's page in Settings, where a refused permission is turned back on. */
+    openSettings: () => Promise<boolean>
+  }
+  /** The page's names for push, which `@stacksjs/mobile` reads. */
+  registerPush?: () => Promise<string>
+  permissions?: {
+    check: (permission: string) => Promise<NativePermissionStatus>
+    request: (permission: string) => Promise<NativePermissionStatus>
+    openSettings: () => Promise<void>
+  }
+  /** Another app or the system (`capabilities.linking`): `webcal:`, `mailto:`, `tel:`, the App Store. */
+  linking?: {
+    openURL: (url: string) => Promise<boolean>
+    /** Only for the schemes the app lists in LSApplicationQueriesSchemes, and http(s). */
+    canOpenURL: (url: string) => Promise<boolean>
+  }
+  openURL?: (url: string) => Promise<boolean>
+  /**
+   * The system share sheet (`capabilities.share`): true once shared, false
+   * when dismissed. `image` is a picture's URL, shared as the picture.
+   */
+  share?: ((options: NativeShareOptions) => Promise<boolean>) & { share: (options: NativeShareOptions) => Promise<boolean> }
   /** Apple Health, when the app reads it (`capabilities.health`). */
   health?: {
     requestAuthorization: (types: string[], options?: { write?: boolean }) => Promise<boolean>

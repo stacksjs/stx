@@ -511,6 +511,74 @@ function nativeAtob(input: unknown): string {
 
 export { nativeAtob, nativeBtoa }
 
+/** The error an aborted `fetch` rejects with, named as the web names it. */
+export function abortError(reason?: unknown): Error {
+  if (reason instanceof Error) return reason
+  const error = new Error(typeof reason === 'string' ? reason : 'The operation was aborted.')
+  error.name = 'AbortError'
+  return error
+}
+
+/**
+ * `AbortController` and `AbortSignal`, which are DOM APIs JavaScriptCore does
+ * not have. Code shared with the page cancels its requests with them (a
+ * broadcast stream closing), and `fetch` on a native screen honours them.
+ */
+class NativeAbortSignal {
+  aborted = false
+  reason: unknown = undefined
+  onabort: ((event: unknown) => void) | null = null
+  private listeners = new Set<(event: unknown) => void>()
+
+  static abort(reason?: unknown): NativeAbortSignal {
+    const signal = new NativeAbortSignal()
+    signal.abortWith(reason)
+    return signal
+  }
+
+  static timeout(milliseconds: number): NativeAbortSignal {
+    const signal = new NativeAbortSignal()
+    const error = new Error('The operation timed out.')
+    error.name = 'TimeoutError'
+    ;(globalThis as AnyRecord).setTimeout(() => signal.abortWith(error), milliseconds)
+    return signal
+  }
+
+  addEventListener(type: string, listener: (event: unknown) => void): void {
+    if (type === 'abort' && typeof listener === 'function') this.listeners.add(listener)
+  }
+
+  removeEventListener(type: string, listener: (event: unknown) => void): void {
+    if (type === 'abort') this.listeners.delete(listener)
+  }
+
+  throwIfAborted(): void {
+    if (this.aborted) throw this.reason
+  }
+
+  /** @internal */
+  abortWith(reason?: unknown): void {
+    if (this.aborted) return
+    this.aborted = true
+    this.reason = abortError(reason)
+    const event = new NativeEvent('abort')
+    event.target = this
+    this.onabort?.(event)
+    for (const listener of [...this.listeners]) listener(event)
+    this.listeners.clear()
+  }
+}
+
+class NativeAbortController {
+  readonly signal = new NativeAbortSignal()
+
+  abort(reason?: unknown): void {
+    this.signal.abortWith(reason)
+  }
+}
+
+export { NativeAbortController, NativeAbortSignal }
+
 /** Install only the browser-shaped globals the shared runtime needs to boot in JSC. */
 export function installJSCGlobals(target: AnyRecord = globalThis as AnyRecord): void {
   const listeners = new Map<string, Set<(event: unknown) => void>>()
@@ -543,6 +611,8 @@ export function installJSCGlobals(target: AnyRecord = globalThis as AnyRecord): 
   target.btoa ??= nativeBtoa
   target.TextEncoder ??= NativeTextEncoder
   target.TextDecoder ??= NativeTextDecoder
+  target.AbortController ??= NativeAbortController
+  target.AbortSignal ??= NativeAbortSignal
   target.performance ??= { now: () => Date.now() }
   target.queueMicrotask ??= (callback: () => void) => Promise.resolve().then(callback)
   target.requestAnimationFrame ??= (callback: (time: number) => void) => target.setTimeout(() => callback(Date.now()), 0)

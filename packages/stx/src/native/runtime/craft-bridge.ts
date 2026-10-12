@@ -1,5 +1,7 @@
 import type { AppStatePayload, DeepLinkPayload, NativeBridgeInterface } from '../bridge/protocol'
 import { STXBridge } from '../bridge/protocol'
+import { createEventSourceClass, createStreamingBody, type StreamSink } from './event-stream'
+import { abortError } from './jsc-globals'
 
 type AnyRecord = Record<string, any>
 
@@ -12,10 +14,10 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
   return {
     haptics: capabilities.has('haptics'),
     speechRecognition: false,
-    share: false,
+    share: capabilities.has('share'),
     camera: false,
     biometric: capabilities.has('biometric'),
-    pushNotifications: false,
+    pushNotifications: capabilities.has('push'),
     secureStorage: capabilities.has('secureStorage'),
     storage: capabilities.has('storage'),
     localDatabase: capabilities.has('database'),
@@ -30,7 +32,10 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     orientationLock: false,
     deepLinks: capabilities.has('deepLinks'),
     flashlight: false,
-    speech: false,
+    speech: capabilities.has('speech'),
+    audio: capabilities.has('audio'),
+    eventStream: capabilities.has('eventStream'),
+    linking: capabilities.has('linking'),
     network: false,
     deviceInfo: capabilities.has('device'),
     fetch: capabilities.has('fetch'),
@@ -69,6 +74,9 @@ export function installCraftBridge(
   const deepLinkHandlers = new Set<(link: DeepLinkPayload) => unknown>()
   const navButtonHandlers = new Set<(event: { id: string }) => unknown>()
   const navButtonPresses = new Map<string, (event: { id: string }) => unknown>()
+  const appearHandlers = new Set<() => unknown>()
+  const disappearHandlers = new Set<() => unknown>()
+  let focused = true
   const routeName = options.routeName || 'main'
   const routeNames = options.routeNames || [routeName]
 
@@ -80,7 +88,26 @@ export function installCraftBridge(
     navigatorObject.userAgent = platformUserAgent(craft.platform)
   craft.capabilityProtocolVersion = Number(nativeBridge.capabilityProtocolVersion || 0)
   craft.capabilities = capabilityFlags(capabilities)
+  // The params a screen was opened with. A hybrid app that opens the screen
+  // again with others (`/m/messages?person=8`, or a tab's path with a query)
+  // changes them in place and tells `route.onParams`.
+  const paramsHandlers = new Set<(params: Record<string, unknown>, previous: Record<string, unknown>) => unknown>()
   craft.route = { name: routeName, params: target.__stxNativeParams || {} }
+  // Not enumerable: `route` stays the plain `{ name, params }` it always was.
+  Object.defineProperty(craft.route, 'onParams', {
+    value: (callback: (params: Record<string, unknown>, previous: Record<string, unknown>) => unknown) => {
+      if (typeof callback !== 'function') throw new TypeError('route.onParams needs a function')
+      paramsHandlers.add(callback)
+      return () => paramsHandlers.delete(callback)
+    },
+  })
+  protocol.on<{ params?: Record<string, unknown> }>('ROUTE_PARAMS', ({ payload }) => {
+    const previous = craft.route.params
+    const params = payload?.params && typeof payload.params === 'object' ? payload.params : {}
+    craft.route.params = params
+    target.__stxNativeParams = params
+    paramsHandlers.forEach(handler => handler(params, previous))
+  })
   craft.appearance = { colorScheme: () => nativeBridge.colorScheme === 'dark' ? 'dark' : 'light' }
   craft.device = { getInfo: () => request('Device', 'getInfo', []) }
   craft.clipboard = {
@@ -154,6 +181,110 @@ export function installCraftBridge(
   if (capabilities.has('appleSignIn'))
     craft.signInWithApple = (options: AnyRecord = {}) => ask('Auth', 'signInWithApple', [options])
 
+  // Another app or the system: `webcal:` subscriptions, `mailto:`, `tel:`,
+  // the App Store, `app-settings:` for this app's page in Settings.
+  if (capabilities.has('linking')) {
+    craft.linking = {
+      openURL: (url: string) => request('Linking', 'openURL', [String(url)]).then(Boolean),
+      canOpenURL: (url: string) => request('Linking', 'canOpenURL', [String(url)]).then(Boolean),
+    }
+    craft.openURL = craft.linking.openURL
+  }
+
+  // The system share sheet, in the page's shape: callable, and as
+  // `craft.share.share(options)`, which `@stacksjs/mobile` calls. True once
+  // something was shared, false when the sheet was dismissed.
+  if (capabilities.has('share')) {
+    const share = (options: AnyRecord = {}) => ask('Share', 'share', [options]).then(Boolean)
+    craft.share = Object.assign(share, { share })
+  }
+
+  // Speech, the page's `craft.speech`: settles true once the words were said,
+  // false when they were cut off. Never timed out, since a long cue takes as
+  // long as it takes.
+  if (capabilities.has('speech')) {
+    craft.speech = {
+      speak: (text: string, options: AnyRecord = {}) => {
+        if (typeof text !== 'string' || !text.trim())
+          return Promise.reject(Object.assign(new TypeError('speech.speak needs some text to say'), { code: 'INVALID_ARGUMENT' }))
+        return ask('Speech', 'speak', [text, options]).then(spoken => spoken === true)
+      },
+      stop: () => request('Speech', 'stop', []).then(() => undefined),
+    }
+  }
+
+  // Background sound under the screen (rain under a breathing exercise),
+  // stopped when the screen closes. Each `play` answers a handle.
+  if (capabilities.has('audio')) {
+    let nextSound = 0
+    const soundHandlers = new Map<string, { end: Set<() => unknown>, error: Set<(message: string) => unknown> }>()
+    const done = (): undefined => undefined
+    const handle = (id: string): AnyRecord => {
+      const handlers = { end: new Set<() => unknown>(), error: new Set<(message: string) => unknown>() }
+      soundHandlers.set(id, handlers)
+      return {
+        id,
+        pause: () => request('Audio', 'pause', [id]).then(done),
+        resume: () => request('Audio', 'resume', [id]).then(done),
+        stop: (options: { fadeOut?: number } = {}) => request('Audio', 'stop', [id, options]).then(done),
+        setVolume: (volume: number, options: { fade?: number } = {}) => request('Audio', 'setVolume', [id, Number(volume), options]).then(done),
+        onEnd: (callback: () => unknown) => { handlers.end.add(callback); return () => handlers.end.delete(callback) },
+        onError: (callback: (message: string) => unknown) => { handlers.error.add(callback); return () => handlers.error.delete(callback) },
+      }
+    }
+    craft.audio = {
+      play: (url: string, options: AnyRecord = {}) => {
+        if (typeof url !== 'string' || !url) return Promise.reject(new TypeError('audio.play needs a URL'))
+        const id = `sound-${++nextSound}`
+        const sound = handle(id)
+        return request('Audio', 'play', [id, url, options]).then(() => sound, (error) => {
+          soundHandlers.delete(id)
+          throw error
+        })
+      },
+      stopAll: (options: { fadeOut?: number } = {}) => request('Audio', 'stopAll', [options]).then(done),
+    }
+    protocol.on<{ id?: string, event?: string, message?: string }>('SOUND_EVENT', ({ payload }) => {
+      const handlers = soundHandlers.get(String(payload?.id))
+      if (!handlers) return
+      soundHandlers.delete(String(payload?.id))
+      if (payload?.event === 'ended') handlers.end.forEach(handler => handler())
+      else handlers.error.forEach(handler => handler(String(payload?.message || 'The sound could not be played')))
+    })
+  }
+
+  // Push, as the page has it: the permission, the device token and new
+  // tokens. `craft.registerPush`, `craft.permissions` and the
+  // `craftPushToken` event are the page's own names, so `@stacksjs/mobile`'s
+  // `pushNotifications` and `permissions` work on a native screen too.
+  if (capabilities.has('push')) {
+    const tokenHandlers = new Set<(token: string) => unknown>()
+    craft.push = {
+      getPermissionStatus: () => request('Push', 'getPermissionStatus', []),
+      requestPermission: () => ask('Push', 'requestPermission', []),
+      register: () => ask('Push', 'register', []).then(String),
+      onToken: (callback: (token: string) => unknown) => {
+        if (typeof callback !== 'function') throw new TypeError('push.onToken needs a function')
+        tokenHandlers.add(callback)
+        return () => tokenHandlers.delete(callback)
+      },
+      openSettings: () => request('Push', 'openSettings', []).then(Boolean),
+    }
+    craft.registerPush = craft.push.register
+    craft.permissions = Object.assign({}, craft.permissions, {
+      check: (permission: string) => permission === 'notifications' ? craft.push.getPermissionStatus() : Promise.resolve('undetermined'),
+      request: (permission: string) => permission === 'notifications' ? craft.push.requestPermission() : Promise.resolve('undetermined'),
+      openSettings: () => craft.push.openSettings().then(() => undefined),
+    })
+    protocol.on<{ token?: string }>('PUSH_TOKEN', ({ payload }) => {
+      const token = String(payload?.token || '')
+      if (!token) return
+      tokenHandlers.forEach(handler => handler(token))
+      if (typeof target.dispatchEvent === 'function' && typeof target.CustomEvent === 'function')
+        target.dispatchEvent(new target.CustomEvent('craftPushToken', { detail: { token } }))
+    })
+  }
+
   // Apple Health, the page's `craft.health` shape: present only when the app
   // reads it, so `health.supports(method)` stays true to the build.
   if (capabilities.has('health')) {
@@ -210,6 +341,24 @@ export function installCraftBridge(
       navButtonHandlers.add(callback)
       return () => navButtonHandlers.delete(callback)
     },
+    // The screen is on screen again: what was pushed over it (a web page, a
+    // screen) was popped, or its tab was chosen again. Not its first showing.
+    onAppear: (callback: () => unknown) => {
+      if (typeof callback !== 'function') throw new TypeError('navigation.onAppear needs a function')
+      appearHandlers.add(callback)
+      return () => appearHandlers.delete(callback)
+    },
+    // Something was pushed over the screen, or another tab was chosen.
+    onDisappear: (callback: () => unknown) => {
+      if (typeof callback !== 'function') throw new TypeError('navigation.onDisappear needs a function')
+      disappearHandlers.add(callback)
+      return () => disappearHandlers.delete(callback)
+    },
+    isFocused: () => focused,
+  })
+  protocol.on<{ focused?: boolean }>('SCREEN_FOCUS', ({ payload }) => {
+    focused = payload?.focused !== false
+    ;(focused ? appearHandlers : disappearHandlers).forEach(handler => handler())
   })
 
   const onAppStateChange = (callback: (state: string) => unknown): (() => void) => {
@@ -252,6 +401,50 @@ export function installCraftBridge(
       dispatchNavButton(payload.nativeEvent || {})
   })
 
+  // A response read as it arrives (`Accept: text/event-stream`), from hosts
+  // that can send one (`eventStream`): event-stream.ts.
+  const streaming = capabilities.has('eventStream')
+  const streamSinks = new Map<string, StreamSink>()
+  let nextStream = 0
+  if (streaming) {
+    protocol.on<{ id?: string, chunk?: string, done?: boolean, error?: string }>('NETWORK_STREAM', ({ payload }) => {
+      const sink = streamSinks.get(String(payload?.id))
+      if (!sink) return
+      if (typeof payload.chunk === 'string') return sink.push(payload.chunk)
+      streamSinks.delete(String(payload.id))
+      if (payload.error) sink.fail(payload.error)
+      else sink.end()
+    })
+  }
+  const streamingFetch = (url: string, method: string, headers: Record<string, string>, body: string | null, signal?: AnyRecord): Promise<any> => {
+    const id = `stream-${++nextStream}`
+    const encoder = new target.TextEncoder()
+    let settled = false
+    const cancel = (): void => {
+      streamSinks.delete(id)
+      request('Network', 'cancelStream', [id]).catch(() => {})
+    }
+    const stream = createStreamingBody(text => encoder.encode(text), cancel)
+    streamSinks.set(id, stream.sink)
+    return new Promise((resolve, reject) => {
+      signal?.addEventListener?.('abort', () => {
+        stream.body.cancel()
+        if (!settled) { settled = true; reject(abortError(signal.reason)) }
+      })
+      request('Network', 'stream', [{ id, url, method, headers, body }]).then((data: AnyRecord) => {
+        if (settled) return
+        settled = true
+        resolve(response(data, { get bodyUsed() { return stream.used() }, text: stream.text, body: stream.body }))
+      }, (error: any) => {
+        streamSinks.delete(id)
+        if (settled) return
+        settled = true
+        try { networkFailure(error) }
+        catch (failure) { reject(failure) }
+      })
+    })
+  }
+
   if (capabilities.has('fetch') && typeof target.fetch !== 'function') {
     target.fetch = (input: any, init: AnyRecord = {}): Promise<any> => {
       const source = input && typeof input === 'object' ? input : {}
@@ -266,8 +459,11 @@ export function installCraftBridge(
       const body = init.body !== undefined ? init.body : source.body
       if (body != null && typeof body !== 'string') return Promise.reject(new TypeError('fetch in a native screen sends string bodies only'))
       if (body != null && (method === 'GET' || method === 'HEAD')) return Promise.reject(new TypeError('A GET or HEAD request cannot have a body'))
-      return request('Network', 'fetch', [{ url, method, headers, body: body == null ? null : body }]).then((data: AnyRecord) => {
-        const responseHeaders = data?.headers && typeof data.headers === 'object' ? data.headers : {}
+      const signal: AnyRecord | undefined = init.signal || source.signal
+      if (signal?.aborted) return Promise.reject(abortError(signal.reason))
+      if (streaming && /text\/event-stream/i.test(headers.accept || ''))
+        return streamingFetch(url, method, headers, body == null ? null : body, signal)
+      const answer = request('Network', 'fetch', [{ url, method, headers, body: body == null ? null : body }]).then((data: AnyRecord) => {
         const responseBody = data?.body == null ? '' : String(data.body)
         let bodyUsed = false
         const consume = (): Promise<string> => {
@@ -275,30 +471,48 @@ export function installCraftBridge(
           bodyUsed = true
           return Promise.resolve(responseBody)
         }
-        return {
-          type: 'basic',
-          url: data?.url || '',
-          status: Number(data?.status) || 0,
-          statusText: data?.statusText || '',
-          ok: Number(data?.status) >= 200 && Number(data?.status) < 300,
-          redirected: Boolean(data?.redirected),
-          headers: {
-            get: (name: string) => responseHeaders[String(name).toLowerCase()] == null ? null : String(responseHeaders[String(name).toLowerCase()]),
-            has: (name: string) => responseHeaders[String(name).toLowerCase()] != null,
-            forEach: (callback: (value: string, name: string) => void) => Object.keys(responseHeaders).forEach(name => callback(String(responseHeaders[name]), name)),
-          },
-          get bodyUsed() { return bodyUsed },
-          text: consume,
-          json: () => consume().then(JSON.parse),
-        }
-      }, (error: any) => {
-        if (error?.code === 'INVALID_ARGUMENT') throw error
-        const failure: any = new TypeError(error?.message || 'Network request failed')
-        failure.code = error?.code || 'NETWORK_ERROR'
-        throw failure
-      })
+        return response(data, { get bodyUsed() { return bodyUsed }, text: consume })
+      }, networkFailure)
+      // The host's request runs to its end; an aborted fetch stops waiting for it.
+      return signal ? Promise.race([answer, aborted(signal)]) : answer
     }
   }
+  if (streaming && typeof target.fetch === 'function' && typeof target.EventSource !== 'function')
+    target.EventSource = createEventSourceClass(target)
 
   return craft
+}
+
+function aborted(signal: AnyRecord): Promise<never> {
+  return new Promise((_, reject) => signal.addEventListener?.('abort', () => reject(abortError(signal.reason))))
+}
+
+function networkFailure(error: any): never {
+  if (error?.code === 'INVALID_ARGUMENT') throw error
+  const failure: any = new TypeError(error?.message || 'Network request failed')
+  failure.code = error?.code || 'NETWORK_ERROR'
+  throw failure
+}
+
+/** A `Response` from the host's answer, with the body `reading` gives it. */
+function response(data: AnyRecord, reading: AnyRecord): AnyRecord {
+  const responseHeaders = data?.headers && typeof data.headers === 'object' ? data.headers : {}
+  const result: AnyRecord = {
+    type: 'basic',
+    url: data?.url || '',
+    status: Number(data?.status) || 0,
+    statusText: data?.statusText || '',
+    ok: Number(data?.status) >= 200 && Number(data?.status) < 300,
+    redirected: Boolean(data?.redirected),
+    headers: {
+      get: (name: string) => responseHeaders[String(name).toLowerCase()] == null ? null : String(responseHeaders[String(name).toLowerCase()]),
+      has: (name: string) => responseHeaders[String(name).toLowerCase()] != null,
+      forEach: (callback: (value: string, name: string) => void) => Object.keys(responseHeaders).forEach(name => callback(String(responseHeaders[name]), name)),
+    },
+    text: reading.text,
+    json: () => reading.text().then(JSON.parse),
+  }
+  Object.defineProperty(result, 'bodyUsed', { enumerable: true, get: () => reading.bodyUsed })
+  if (reading.body) result.body = reading.body
+  return result
 }

@@ -47,7 +47,11 @@ export type BridgeMessageType =
   | 'DEEP_LINK'           // App opened or resumed through a URL
   | 'SNAPSHOT_CHANGED'    // An app snapshot was saved or removed
   | 'APPEARANCE'          // Native color scheme changed
-  | 'SCREEN_FOCUS'        // Screen gained/lost focus
+  | 'SCREEN_FOCUS'        // Screen gained/lost focus (shown again, or covered)
+  | 'ROUTE_PARAMS'        // The screen was opened again with other params
+  | 'PUSH_TOKEN'          // A new push device token
+  | 'SOUND_EVENT'         // A craft.audio sound ended or failed
+  | 'NETWORK_STREAM'      // A piece, the end or the failure of a streaming fetch
   | 'MEMORY_WARNING'      // Low memory warning
 
   // API
