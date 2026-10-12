@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.479...v0.2.480)
+
+## 🐛 Bug Fixes
+
+- a minified local is not an auto-imported model ([89900a2](https://github.com/stacksjs/stx/commit/89900a2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.480 ([296b559](https://github.com/stacksjs/stx/commit/296b559)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.478...v0.2.479)
 
 ## 🐛 Bug Fixes
