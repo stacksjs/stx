@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.496...v0.2.497)
+
+## ✨ Features
+
+- **native**: popToRoot on a native screen ([49a7e03](https://github.com/stacksjs/stx/commit/49a7e03)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.497 ([cc9db36](https://github.com/stacksjs/stx/commit/cc9db36)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.495...v0.2.496)
 
 ## ✨ Features
