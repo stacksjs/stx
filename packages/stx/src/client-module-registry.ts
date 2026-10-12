@@ -99,11 +99,20 @@ export async function buildModuleRegistryScript(
       minify: options.minify,
       externalizeUserModules: false,
       collectInputs: options.collectInputs,
+      throwOnFailure: true,
     })
   }
   catch (error) {
-    console.warn('[stx] could not build the page module registry (#1957):', error)
-    return null
+    // Said in the browser too, where the failure shows. Without it every
+    // module on the page reports only that it "is not registered", which
+    // names the symptom on each one and the cause on none - a module the
+    // registry imports that cannot run in a browser (a Node builtin, say)
+    // takes every other module down with it.
+    const { formatBuildFailure } = await import('./build-message')
+    const failure = formatBuildFailure(error)
+    console.warn(`[stx] could not build the page module registry (#1957): ${failure}`)
+    const message = `[stx] the page module registry did not build, so ${ids.join(', ')} cannot load (#1957): ${failure}`
+    return `;console.error(${JSON.stringify(message)});`
   }
 
   // The modules may import from `stx` or `@stores` / `@composables`. Give them

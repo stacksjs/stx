@@ -329,4 +329,29 @@ describe('what a component bundle resolves to', () => {
     expect(g.__stxModules[id].bump()).toBe(1)
     expect(g.__stxModules[id].bump()).toBe(2)
   })
+
+  it('says in the browser why the registry did not build', async () => {
+    // A module no browser can run. The registry used to fall back to its own
+    // unbundled entry - bare `import` lines inside an IIFE, a SyntaxError -
+    // so the page reported each module as "not registered" and the reason
+    // nowhere.
+    const dir = project({ 'functions/server-only.ts': `import { pipeline } from 'stream/promises'\nexport const run = pipeline\n` })
+    const id = path.relative(process.cwd(), path.join(dir, 'functions', 'server-only.ts')).split(path.sep).join('/')
+    const script = await buildModuleRegistryScript([id])
+    expect(script).not.toMatch(/^\s*import\s/m)
+
+    const errors: string[] = []
+    const original = console.error
+    console.error = (...args: unknown[]) => { errors.push(args.join(' ')) }
+    try {
+      // eslint-disable-next-line no-eval
+      ;(0, eval)(script!)
+    }
+    finally {
+      console.error = original
+    }
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toContain(id)
+    expect(errors[0]).toContain('stream/promises')
+  })
 })

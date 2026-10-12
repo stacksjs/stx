@@ -801,6 +801,16 @@ export async function bundleClientScript(
      * that took every composable on the page down).
      */
     expose?: readonly string[]
+    /**
+     * Throw on a failed build instead of returning the script unbundled.
+     *
+     * The unbundled fallback keeps a dev server usable for a page's own
+     * script. It is no use to a caller whose source is nothing BUT imports -
+     * the page registry's entry is `import * as m from '...'` lines that only
+     * mean something once bundled, so falling back shipped them inside an IIFE,
+     * a SyntaxError, and the build error never reached the browser.
+     */
+    throwOnFailure?: boolean
   } = {},
 ): Promise<string> {
   const projectRoot = options.projectRoot || process.cwd()
@@ -914,7 +924,7 @@ export async function bundleClientScript(
   }
 
   const build = queueClientBundleBuild(() =>
-    buildBundle(code, filePath, { projectRoot, minify, cacheDir, hash, cachePath, depsPath, collectInputs: options.collectInputs, externalizeUserModules, serverApi, expose }),
+    buildBundle(code, filePath, { projectRoot, minify, cacheDir, hash, cachePath, depsPath, collectInputs: options.collectInputs, externalizeUserModules, serverApi, expose, throwOnFailure: options.throwOnFailure }),
   )
   inFlightBundles.set(hash, build)
   try {
@@ -950,6 +960,7 @@ async function buildBundle(
     externalizeUserModules: boolean
     serverApi?: boolean | ServerApiOptions
     expose?: readonly string[]
+    throwOnFailure?: boolean
   },
 ): Promise<string> {
   const { projectRoot, minify, cacheDir, hash, cachePath, depsPath, externalizeUserModules } = options
@@ -1105,7 +1116,7 @@ async function buildBundle(
       const details = describeBuildFailure(result.logs, filePath || undefined)
       console.warn('[stx:bundler] build failed:', failure)
       recordBundleFailure(filePath || '', failure, details)
-      if (resolveBundlerFallback() === 'error')
+      if (options.throwOnFailure || resolveBundlerFallback() === 'error')
         throw new Error(failure)
       // Fall back to original code — let existing pipeline handle it
       return code
@@ -1269,7 +1280,7 @@ ${publicAssignments}`.trim()
     // shipping the unbundled source is what keeps a dev server usable while you
     // fix the import; 'error' is for anyone who would rather nothing rendered
     // than something that renders with its bindings quietly doing nothing.
-    if (resolveBundlerFallback() === 'error')
+    if (options.throwOnFailure || resolveBundlerFallback() === 'error')
       throw error
 
     // Fall back to original code
