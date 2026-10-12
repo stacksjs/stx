@@ -1,5 +1,25 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.466...v0.2.467)
+
+## ✨ Features
+
+- **components**: table caption, header scope and keyboard sorting ([26d1961](https://github.com/stacksjs/stx/commit/26d1961)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2060](https://github.com/stacksjs/stx/issues/2060), [#1980](https://github.com/stacksjs/stx/issues/1980))
+- **components**: v-model and client options on the form controls ([56ef6f7](https://github.com/stacksjs/stx/commit/56ef6f7)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2059](https://github.com/stacksjs/stx/issues/2059))
+- **components**: density tokens for control and table cell size ([5634262](https://github.com/stacksjs/stx/commit/5634262)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993))
+
+## ✅ Tests
+
+- Select, Textarea and NumberInput bind through useModel, and template unwraps natively ([525b69b](https://github.com/stacksjs/stx/commit/525b69b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.467 ([d02ee6d](https://github.com/stacksjs/stx/commit/d02ee6d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.465...v0.2.466)
 
 ## ✨ Features
