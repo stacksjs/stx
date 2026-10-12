@@ -440,17 +440,19 @@ catch (error) {
   }
 
   /**
-   * Send a request to native and wait for response
+   * Send a request to native and wait for response. A `timeout` of `null`
+   * waits for as long as native takes: a sheet a person is reading answers
+   * when they do.
    */
   async request<T, R>(
     type: BridgeMessageType,
     payload: T,
-    timeout = this.defaultTimeout
+    timeout: number | null = this.defaultTimeout
   ): Promise<R> {
     const message = this.createMessage(type, payload)
 
     return new Promise<R>((resolve, reject) => {
-      const scheduleTimeout = typeof globalThis.setTimeout === 'function'
+      const scheduleTimeout = timeout !== null && typeof globalThis.setTimeout === 'function'
         ? globalThis.setTimeout.bind(globalThis)
         : null
       const timeoutId = scheduleTimeout ? scheduleTimeout(() => {
@@ -586,6 +588,20 @@ catch (error) {
       method,
       args,
     })
+  }
+
+  /**
+   * A native API that puts something in front of the person, such as a
+   * permission sheet or Face ID: never timed out, since a timeout would
+   * cancel the sheet while they are still reading it.
+   */
+  async callPersonFacingAPI<T>(module: string, method: string, ...args: unknown[]): Promise<T> {
+    return this.request<ApiRequestPayload, T>('API_REQUEST', {
+      version: 1,
+      module,
+      method,
+      args,
+    }, null)
   }
 
   /**

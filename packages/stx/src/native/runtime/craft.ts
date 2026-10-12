@@ -107,6 +107,16 @@ export interface NativeCraft {
     commit: () => Promise<unknown>
     rollback: () => Promise<unknown>
   }
+  /** Apple Health, when the app reads it (`capabilities.health`). */
+  health?: {
+    requestAuthorization: (types: string[], options?: { write?: boolean }) => Promise<boolean>
+    getData: (type: string, options?: { startDate?: number, endDate?: number }) => Promise<unknown>
+    saveWorkout: (workout: Record<string, unknown>) => Promise<{ id?: string }>
+    getWorkouts: (options?: { startDate?: number, endDate?: number, limit?: number }) => Promise<Array<Record<string, unknown>>>
+    getDailyStatistics: (type: string, options?: { startDate?: number, endDate?: number }) => Promise<Array<{ date: string, value: number }>>
+    getHeartRateSamples: (options?: { startDate?: number, endDate?: number, limit?: number }) => Promise<Array<Record<string, unknown>>>
+    getSleepIntervals: (options?: { startDate?: number, endDate?: number }) => Promise<Array<Record<string, unknown>>>
+  }
   notifications: {
     show: (notification: unknown) => Promise<unknown>
     schedule: (notification: unknown) => Promise<unknown>

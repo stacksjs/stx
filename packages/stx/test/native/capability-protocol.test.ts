@@ -199,6 +199,56 @@ describe('shared-runtime native capability protocol', () => {
     })
   })
 
+  it('reads Apple Health in the page\'s shape, only when the app does', async () => {
+    const without = await runtime()
+    expect(without.scope.craft.health).toBeUndefined()
+    expect(without.scope.craft.capabilities.health).toBe(false)
+
+    const { scope, sent, receive } = await runtime('', { capabilities: ['health'] })
+    expect(scope.craft.capabilities.health).toBe(true)
+    const workouts = scope.craft.health.getWorkouts({ startDate: 1, endDate: 2, limit: 5 })
+    scope.craft.health.getDailyStatistics('steps', { startDate: 1, endDate: 2 })
+    scope.craft.health.getHeartRateSamples({ startDate: 1, endDate: 2 })
+    scope.craft.health.getSleepIntervals()
+    scope.craft.health.requestAuthorization(['workouts'], { write: false })
+    const requests = sent.filter(message => message.type === 'API_REQUEST')
+    expect(requests.map(message => [message.payload.method, message.payload.args])).toEqual([
+      ['getWorkouts', [{ startDate: 1, endDate: 2, limit: 5 }]],
+      ['getDailyStatistics', ['steps', { startDate: 1, endDate: 2 }]],
+      ['getHeartRateSamples', [{ startDate: 1, endDate: 2 }]],
+      ['getSleepIntervals', [{}]],
+      ['requestAuthorization', [['workouts'], { write: false }]],
+    ])
+    expect(requests.every(message => message.payload.module === 'Health')).toBe(true)
+    requests.forEach((request, index) => receive({
+      type: 'API_RESPONSE',
+      correlationId: request.id,
+      payload: { version: 1, requestId: request.id, data: index === 0 ? [{ id: 'w1' }] : [] },
+    }))
+    expect(await workouts).toEqual([{ id: 'w1' }])
+  })
+
+  it('never times out a sheet the person is reading', async () => {
+    const { scope, sent, receive } = await runtime('', { timeout: 5, capabilities: ['health', 'biometric'] })
+    const grant = scope.craft.health.requestAuthorization(['workouts'])
+    const faceId = scope.craft.biometrics.authenticate('Unlock')
+    const [grantRequest, faceRequest] = sent.filter(message => message.type === 'API_REQUEST')
+    await new Promise(resolve => setTimeout(resolve, 30))
+    expect(sent.some(message => message.type === 'API_CANCEL')).toBe(false)
+    receive({ type: 'API_RESPONSE', correlationId: grantRequest!.id, payload: { version: 1, requestId: grantRequest!.id, data: true } })
+    receive({ type: 'API_RESPONSE', correlationId: faceRequest!.id, payload: { version: 1, requestId: faceRequest!.id, data: true } })
+    expect(await grant).toBe(true)
+    expect(await faceId).toBe(true)
+    // A read still times out.
+    await expect(scope.craft.health.getWorkouts()).rejects.toMatchObject({ code: 'TIMEOUT' })
+  })
+
+  it('names the phone in the user agent code shared with the page reads', async () => {
+    const { scope } = await runtime()
+    expect(scope.navigator.userAgent).toContain('iPhone')
+    expect(scope.navigator.language).toBe('en')
+  })
+
   it('re-renders lifecycle and deep-link subscription state', async () => {
     const { sent, receive } = await runtime(`
       const appState = state('active')

@@ -36,7 +36,15 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     fetch: capabilities.has('fetch'),
     badge: false,
     appReview: false,
+    health: capabilities.has('health'),
   }
+}
+
+/** A user agent that names the phone, in the words a browser on it would use. */
+function platformUserAgent(platform: string): string {
+  if (platform === 'ios') return 'Mozilla/5.0 (iPhone; CPU iPhone OS like Mac OS X) Craft'
+  if (platform === 'android') return 'Mozilla/5.0 (Linux; Android) Craft'
+  return 'Craft'
 }
 
 /** Install the Craft capability surface on top of the shared typed bridge. */
@@ -50,6 +58,8 @@ export function installCraftBridge(
   const capabilities = new Set(nativeBridge.capabilities || [])
   const request = (module: string, method: string, args: unknown[]): Promise<any> =>
     protocol.callNativeAPI(module, method, ...args)
+  const ask = (module: string, method: string, args: unknown[]): Promise<any> =>
+    protocol.callPersonFacingAPI(module, method, ...args)
   let appState = nativeBridge.initialAppState || 'active'
   let initialDeepLinkClaimed = false
   const appStateHandlers = new Set<(state: string) => unknown>()
@@ -60,6 +70,11 @@ export function installCraftBridge(
   const routeNames = options.routeNames || [routeName]
 
   craft.platform = nativeBridge.platform || 'unknown'
+  // Code shared with the page tells the phone apart by its user agent, which a
+  // JavaScriptCore screen does not have: say which phone this is.
+  const navigatorObject: AnyRecord = target.navigator = target.navigator || {}
+  if (typeof navigatorObject.userAgent !== 'string')
+    navigatorObject.userAgent = platformUserAgent(craft.platform)
   craft.capabilityProtocolVersion = Number(nativeBridge.capabilityProtocolVersion || 0)
   craft.capabilities = capabilityFlags(capabilities)
   craft.route = { name: routeName, params: target.__stxNativeParams || {} }
@@ -102,7 +117,7 @@ export function installCraftBridge(
   craft.biometrics = {
     isAvailable: () => request('Biometrics', 'isAvailable', []),
     getBiometricType: () => request('Biometrics', 'getBiometricType', []),
-    authenticate: (reason?: string) => request('Biometrics', 'authenticate', [reason || 'Authenticate to continue']),
+    authenticate: (reason?: string) => ask('Biometrics', 'authenticate', [reason || 'Authenticate to continue']),
   }
   craft.db = {
     execute: (sql: string, params: unknown[] = []) => request('Database', 'execute', [sql, params]),
@@ -117,6 +132,19 @@ export function installCraftBridge(
     cancel: (id: string) => request('Notifications', 'cancel', [id]),
     cancelAll: () => request('Notifications', 'cancelAll', []),
     pending: () => request('Notifications', 'pending', []),
+  }
+  // Apple Health, the page's `craft.health` shape: present only when the app
+  // reads it, so `health.supports(method)` stays true to the build.
+  if (capabilities.has('health')) {
+    craft.health = {
+      requestAuthorization: (types: string[], options: AnyRecord = {}) => ask('Health', 'requestAuthorization', [types, options]),
+      getData: (type: string, options: AnyRecord = {}) => request('Health', 'getData', [type, options]),
+      saveWorkout: (workout: AnyRecord) => request('Health', 'saveWorkout', [workout]),
+      getWorkouts: (options: AnyRecord = {}) => request('Health', 'getWorkouts', [options]),
+      getDailyStatistics: (type: string, options: AnyRecord = {}) => request('Health', 'getDailyStatistics', [type, options]),
+      getHeartRateSamples: (options: AnyRecord = {}) => request('Health', 'getHeartRateSamples', [options]),
+      getSleepIntervals: (options: AnyRecord = {}) => request('Health', 'getSleepIntervals', [options]),
+    }
   }
   craft.scheduleNotification = craft.notifications.schedule
   craft.cancelNotification = craft.notifications.cancel
