@@ -107,6 +107,12 @@ export interface NativeCraft {
     commit: () => Promise<unknown>
     rollback: () => Promise<unknown>
   }
+  /** The system's alert, confirmation and action sheet (`capabilities.dialogs`). */
+  dialog?: {
+    alert: (options?: { title?: string, message?: string, okLabel?: string }) => Promise<void>
+    confirm: (options?: { title?: string, message?: string, confirmLabel?: string, cancelLabel?: string, destructive?: boolean }) => Promise<boolean>
+    actionSheet: (options?: { title?: string, message?: string, actions?: Array<{ id?: string, title: string, style?: 'default' | 'destructive' | 'cancel' }> }) => Promise<string | null>
+  }
   /** Apple Health, when the app reads it (`capabilities.health`). */
   health?: {
     requestAuthorization: (types: string[], options?: { write?: boolean }) => Promise<boolean>

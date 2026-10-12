@@ -243,6 +243,22 @@ describe('shared-runtime native capability protocol', () => {
     await expect(scope.craft.health.getWorkouts()).rejects.toMatchObject({ code: 'TIMEOUT' })
   })
 
+  it('asks with the system\'s dialogs when the app has them, never timing them out', async () => {
+    expect((await runtime()).scope.craft.dialog).toBeUndefined()
+    const { scope, sent, receive } = await runtime('', { timeout: 5, capabilities: ['dialog'] })
+    expect(scope.craft.capabilities.dialogs).toBe(true)
+    const confirmed = scope.craft.dialog.confirm({ title: 'Delete?', destructive: true })
+    const chosen = scope.craft.dialog.actionSheet({ actions: [{ id: 'a', title: 'A' }] })
+    const [confirmRequest, sheetRequest] = sent.filter(message => message.type === 'API_REQUEST')
+    expect(confirmRequest!.payload).toMatchObject({ module: 'Dialog', method: 'confirm', args: [{ title: 'Delete?', destructive: true }] })
+    await new Promise(resolve => setTimeout(resolve, 30))
+    expect(sent.some(message => message.type === 'API_CANCEL')).toBe(false)
+    receive({ type: 'API_RESPONSE', correlationId: confirmRequest!.id, payload: { version: 1, requestId: confirmRequest!.id, data: true } })
+    receive({ type: 'API_RESPONSE', correlationId: sheetRequest!.id, payload: { version: 1, requestId: sheetRequest!.id, data: null } })
+    expect(await confirmed).toBe(true)
+    expect(await chosen).toBeNull()
+  })
+
   it('names the phone in the user agent code shared with the page reads', async () => {
     const { scope } = await runtime()
     expect(scope.navigator.userAgent).toContain('iPhone')

@@ -37,6 +37,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     badge: false,
     appReview: false,
     health: capabilities.has('health'),
+    dialogs: capabilities.has('dialog'),
   }
 }
 
@@ -133,6 +134,16 @@ export function installCraftBridge(
     cancelAll: () => request('Notifications', 'cancelAll', []),
     pending: () => request('Notifications', 'pending', []),
   }
+  // The system's alert, confirmation and action sheet, the page's
+  // `craft.dialog` shape. A person answers them, so they are never timed out.
+  if (capabilities.has('dialog')) {
+    craft.dialog = {
+      alert: (options: AnyRecord = {}) => ask('Dialog', 'alert', [options]).then(() => undefined),
+      confirm: (options: AnyRecord = {}) => ask('Dialog', 'confirm', [options]).then(Boolean),
+      actionSheet: (options: AnyRecord = {}) => ask('Dialog', 'actionSheet', [options]).then((id: unknown) => (typeof id === 'string' ? id : null)),
+    }
+  }
+
   // Apple Health, the page's `craft.health` shape: present only when the app
   // reads it, so `health.supports(method)` stays true to the build.
   if (capabilities.has('health')) {
