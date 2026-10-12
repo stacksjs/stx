@@ -39,6 +39,7 @@ import { importOnce } from './lazy-module'
 import { scanAtElementPosition, stashScriptElements } from './html-masking'
 import { markProjectedRefs } from './misc-directives'
 import { collectBlockDeclarations } from './stx-virtual-ts'
+import { CLIENT_LOOP_NAMES_KEY, inheritedClientLoopNames } from './loop-binding'
 
 // Re-export from extracted modules for backward compatibility
 export {
@@ -1046,6 +1047,14 @@ export async function renderComponentWithSlot(
   options: StxOptions,
   processedComponents: Set<string> | undefined = new Set<string>(),
   dependencies: Set<string>,
+  /**
+   * The client loop variables in scope where the tag stands: those of any
+   * `:for` around it and of a `:for` on the tag itself. The slot is the
+   * caller's markup inside that loop, but it is rendered here, away from the
+   * loop, so the names have to be handed over. Defaults to the ones the
+   * caller's context already carries.
+   */
+  clientLoopNames: readonly string[] = inheritedClientLoopNames(parentContext),
 ): Promise<string> {
   // Import locally to avoid circular dependency at module load time
   const { extractVariables } = await importOnce('stx/variable-extractor', () => import('./variable-extractor'))
@@ -1387,6 +1396,22 @@ export async function renderComponentWithSlot(
         filteredParentContext[key] = val
       }
     }
+    /*
+     * The caller's loop variables, for every caller-side pass below.
+     *
+     * `<Card :for="tile in tiles()"><Text :text="tile.label" /></Card>`: the
+     * slot is inside the loop, but by the time it is rendered here the `:for`
+     * is an attribute of a tag that no longer exists, so no pass can find it
+     * by looking at the markup. Every pass then judged `tile` by the server
+     * alone, and an app that auto-imports a global called `tile` -- or a page
+     * whose context has one -- had the binding evaluated against that value
+     * and dropped. Handed over in the context, the names shadow the server's
+     * here exactly as a loop around ordinary markup does.
+     */
+    const callerLoopScope: Record<string, unknown> = clientLoopNames.length > 0
+      ? { [CLIENT_LOOP_NAMES_KEY]: [...clientLoopNames] }
+      : {}
+
     // A script authored by the caller belongs to the caller's reactive scope,
     // not to the component receiving its slot. Leaving it in `slotContent`
     // sends it through the component's nested `skipSignalsRuntime` pass, where
@@ -1452,7 +1477,7 @@ export async function renderComponentWithSlot(
       const { processComponents } = await importOnce('stx/component-renderer', () => import('./component-renderer'))
       callerSlotContent = await processComponents(
         callerSlotContent,
-        { ...parentContext, __processedComponents: components },
+        { ...parentContext, __processedComponents: components, ...callerLoopScope },
         parentFilePath,
         options,
         dependencies,
@@ -1497,8 +1522,8 @@ export async function renderComponentWithSlot(
        * belonged to the client is not.
        */
       const callerExpressionContext = parentContext.__stx_signals_gate === undefined
-        ? { ...parentContext, __stx_signals_gate: true }
-        : parentContext
+        ? { ...parentContext, __stx_signals_gate: true, ...callerLoopScope }
+        : clientLoopNames.length > 0 ? { ...parentContext, ...callerLoopScope } : parentContext
       callerSlotContent = resolveCallerExpressions(callerSlotContent, callerExpressionContext, parentFilePath)
 
       /*
@@ -1689,6 +1714,9 @@ export async function renderComponentWithSlot(
           : undefined,
         buildMode: options.buildMode ?? '',
         skipEventDirectives: options.skipEventDirectives === true,
+        // The same slot renders differently inside a client loop, where its
+        // loop variables stay bindings instead of resolving on the server.
+        clientLoopNames: [...clientLoopNames].sort(),
         // One shared source can resolve different named children in each app.
         // Props/slots alone cannot distinguish those resource namespaces.
         layers: options._layerGraph?.layers.map(layer => layer.configFile),
@@ -1946,6 +1974,16 @@ export async function renderComponentWithSlot(
       componentContext.__stx_client_signal_names = [...new Set([...inheritedClientSignalNames, ...clientSignalNames])]
     else
       delete componentContext.__stx_client_signal_names
+
+    // The caller's loop variables, for the slot markup this component's own
+    // passes evaluate once it is placed (its plain elements' `:class`, `:title`
+    // and the rest). A name the component binds itself -- a prop, or its own
+    // server script -- is the component's in its own template, so it is not
+    // handed down; the caller's `{{ }}` stay protected through the preserved
+    // expressions above either way.
+    const slotLoopNames = clientLoopNames.filter(name => !ownServerNames.has(name) && !(name in props))
+    if (slotLoopNames.length > 0)
+      componentContext[CLIENT_LOOP_NAMES_KEY] = slotLoopNames
 
     // First, process any nested components in this component
     const componentOptions = {

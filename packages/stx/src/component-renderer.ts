@@ -31,7 +31,8 @@ import { renderComponentWithSlot, userComponentFileExists } from './utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluateObject, freeIdentifiers } from './safe-evaluator'
 import { BOOLEAN_ATTRIBUTE_SENTINEL } from './prop-sentinels'
 import { COMPONENT_PASSTHROUGH_X_ATTRS } from './runtime-globals'
-import { reactiveLoopRanges } from './server-bindings'
+import { reactiveLoopScopes } from './server-bindings'
+import { inheritedClientLoopNames, loopBoundNames, readsAnyName } from './loop-binding'
 import { stripCommentsAndLiterals } from './strip-literals'
 import { collectTopLevelDeclarations } from './stx-virtual-ts'
 import fs from 'node:fs'
@@ -65,6 +66,11 @@ function parseComponentProps(
   context: Record<string, any>,
   options: StxOptions,
   deferDynamicToClient = false,
+  /**
+   * Variables of the client loops this tag stands in, wherever those loops
+   * were written. They shadow the server context and every global.
+   */
+  clientLoopNames: ReadonlySet<string> = new Set(),
 ): ResolvedProps {
   const resolved: ResolvedProps = {
     static: {},
@@ -196,6 +202,17 @@ function parseComponentProps(
         continue
       }
 
+      // The same boundary when the loop is not in this markup: a component's
+      // slot is rendered on its own, away from the `:for` on the component
+      // tag, and its names arrive in the context. A loop variable that shares
+      // its name with an app global (an auto-imported `tile`) passed the
+      // free-identifier check below as resolvable, was evaluated to undefined
+      // and the binding was dropped.
+      if (readsAnyName(expression, clientLoopNames)) {
+        resolved.clientReactive[propName] = expression
+        continue
+      }
+
       // A client signal may deliberately shadow a static server prop with the
       // same name, then forward itself into a nested component. Evaluating the
       // expression against the server context sees the static value instead,
@@ -254,6 +271,14 @@ function parseComponentProps(
 
     // --- {{ }} interpolation ---
     if (typeof attrValue === 'string' && attrValue.includes('{{') && attrValue.includes('}}')) {
+      // An interpolation over a client loop variable has no server value; it
+      // is the same binding as `:prop`, so it becomes one for the browser to
+      // evaluate per row rather than being baked in as the server's guess.
+      const loopBinding = clientLoopInterpolation(attrValue, clientLoopNames)
+      if (loopBinding !== null) {
+        resolved.clientReactive[kebabToCamel(attrName)] = loopBinding
+        continue
+      }
       const singleExprMatch = attrValue.match(/^\{\{\s*([\s\S]+?)\s*\}\}$/)
       if (singleExprMatch) {
         // Entire value is a single expression
@@ -319,6 +344,34 @@ function parseComponentProps(
   }
 
   return resolved
+}
+
+/**
+ * `value` as a client expression when one of its `{{ }}` reads a client loop
+ * variable, otherwise null. A lone interpolation is its own expression; text
+ * around interpolations becomes a template literal.
+ */
+function clientLoopInterpolation(value: string, clientLoopNames: ReadonlySet<string>): string | null {
+  if (clientLoopNames.size === 0)
+    return null
+  const pattern = /\{\{\s*([\s\S]+?)\s*\}\}/g
+  const parts = [...value.matchAll(pattern)]
+  if (!parts.some(part => readsAnyName(part[1], clientLoopNames)))
+    return null
+
+  const single = value.match(/^\{\{\s*([\s\S]+?)\s*\}\}$/)
+  if (single && parts.length === 1)
+    return single[1]
+
+  let literal = ''
+  let cursor = 0
+  for (const part of parts) {
+    literal += value.slice(cursor, part.index).replace(/[`\\$]/g, ch => `\\${ch}`)
+    literal += `\${${part[1]}}`
+    cursor = part.index! + part[0].length
+  }
+  literal += value.slice(cursor).replace(/[`\\$]/g, ch => `\\${ch}`)
+  return `\`${literal}\``
 }
 
 /**
@@ -945,7 +998,9 @@ async function processCustomElementTags(
   }
   const stashed = stashScriptElements(output)
   output = stashed.output
-  const clientLoopRanges = reactiveLoopRanges(output)
+  // Client loop variables this markup inherits from a loop it was cut out of
+  // (it is a component's slot; see renderComponentWithSlot).
+  const inheritedLoopNames = inheritedClientLoopNames(context)
 
   // Process kebab-case components (e.g., <my-component />)
   const kebabPattern = /[a-z][a-z0-9]*-[a-z0-9-]*/
@@ -980,6 +1035,9 @@ async function processCustomElementTags(
 
     // Find all matching component tags
     const tags = findComponentTags(result, tagPattern, skipTags)
+    // Scanned per pass, over the string the tag offsets index into: an earlier
+    // pass has already replaced tags and moved everything after them.
+    const clientLoopScopes = reactiveLoopScopes(result)
 
     // What each tag is replaced by, if anything. Collected rather than spliced
     // in one at a time: a splice rebuilds the whole document, so N component
@@ -1006,8 +1064,21 @@ async function processCustomElementTags(
       const rawProps = parseAllAttributes(resolveTagConditionals(tag.attributes, context, filePath))
 
       // Categorize into ResolvedProps
-      const inClientLoop = clientLoopRanges.some(([start, end]) => tag.startIndex >= start && tag.startIndex < end)
-      const resolvedProps = parseComponentProps(rawProps, context, options, inClientLoop)
+      const enclosingLoops = clientLoopScopes.filter(({ start, end }) => tag.startIndex >= start && tag.startIndex < end)
+      const inClientLoop = enclosingLoops.length > 0
+      // Every loop variable in scope at this tag -- including those of a
+      // `:for` on the tag itself, which its other attributes and its slot
+      // both see.
+      const loopNames = new Set(inheritedLoopNames)
+      for (const loop of enclosingLoops) {
+        for (const name of loop.names)
+          loopNames.add(name)
+      }
+      const resolvedProps = parseComponentProps(rawProps, context, options, inClientLoop, loopNames)
+      if (typeof resolvedProps.clientReactive.for === 'string') {
+        for (const name of loopBoundNames(resolvedProps.clientReactive.for))
+          loopNames.add(name)
+      }
 
       // --- Check if this is a builtin component ---
       // A project-authored component file of the same name takes precedence so
@@ -1084,6 +1155,7 @@ async function processCustomElementTags(
         options,
         processedComponents,
         dependencies,
+        [...loopNames],
       )
 
       let finalContent = processedContent

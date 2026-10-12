@@ -20,6 +20,7 @@
  * @module server-bindings
  */
 
+import { inheritedClientLoopNames, loopBoundNames, readsAnyName } from './loop-binding'
 import { isRuntimeOwnedColonAttr } from './runtime-globals'
 
 /** Boolean HTML attributes that should render as attribute-present/absent */
@@ -46,21 +47,33 @@ const VOID_TAGS = new Set([
  * must remain intact until each row is cloned in the browser.
  */
 export function reactiveLoopRanges(template: string): Array<[number, number]> {
-  const ranges: Array<[number, number]> = []
+  return reactiveLoopScopes(template).map(scope => [scope.start, scope.end])
+}
+
+/**
+ * The same regions, each with the names its loop binds.
+ *
+ * A component tag inside one of these renders its slot in a separate pass,
+ * which needs the names to keep treating them as the loop's.
+ */
+export function reactiveLoopScopes(template: string): Array<{ start: number, end: number, names: string[] }> {
+  const ranges: Array<{ start: number, end: number, names: string[] }> = []
   const openingTag = /<([a-zA-Z][a-zA-Z0-9-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)\s*\/?>/g
   let match: RegExpExecArray | null
 
   // eslint-disable-next-line no-cond-assign
   while ((match = openingTag.exec(template)) !== null) {
     const attributes = match[2] || ''
-    if (!/(?:^|\s)(?::for|x-for|v-for|@for)\s*=/.test(attributes))
+    const loopAttr = /(?:^|\s)(?::for|x-for|v-for|@for)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/.exec(attributes)
+    if (!loopAttr)
       continue
+    const names = loopBoundNames(loopAttr[1] ?? loopAttr[2] ?? loopAttr[3] ?? '')
 
     const start = match.index
     const openingEnd = start + match[0].length
     const tagName = match[1].toLowerCase()
     if (match[0].endsWith('/>') || VOID_TAGS.has(tagName)) {
-      ranges.push([start, openingEnd])
+      ranges.push({ start, end: openingEnd, names })
       continue
     }
 
@@ -84,7 +97,7 @@ export function reactiveLoopRanges(template: string): Array<[number, number]> {
         depth++
       }
     }
-    ranges.push([start, closingEnd])
+    ranges.push({ start, end: closingEnd, names })
   }
 
   return ranges
@@ -135,6 +148,7 @@ export function processServerBindings(
     protectedRanges.push([match.index, match.index + match[0].length])
   }
   protectedRanges.push(...reactiveLoopRanges(template))
+  const enclosingLoopNames = new Set(inheritedClientLoopNames(context))
 
   function isProtected(pos: number): boolean {
     return protectedRanges.some(([start, end]) => pos >= start && pos < end)
@@ -193,6 +207,14 @@ export function processServerBindings(
        * 0.2.173, which is why it surfaced then rather than when it was written.
        */
       if (isRuntimeOwnedColonAttr(attrName))
+        continue
+
+      // A variable of a client loop around this markup belongs to the browser,
+      // whatever the server context or a global holds under its name. The
+      // loop itself may be outside this template — a component's slot is
+      // rendered away from the `:for` on its tag — so its names arrive in the
+      // context rather than being found by the scan above.
+      if (readsAnyName(expression, enclosingLoopNames))
         continue
 
       // Skip bindings that look like they're for client-side (signal calls, $store, etc.)

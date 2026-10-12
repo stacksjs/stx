@@ -41,6 +41,7 @@ import { neutralizeTemplateSyntax } from './template-syntax-escape'
 import { sanitizeSubstitutedUrl, schemeWindow } from './url-safety'
 import { maskAtElementPosition, matchScriptElement, matchStyleElement, restoreStashedScripts, stashScriptElements, type TokenMatcher } from './html-masking'
 import { importsSignalDeclarations } from './imported-signals'
+import { inheritedClientLoopNames, loopBoundNames, readsAnyName } from './loop-binding'
 
 /**
  * Add basic filter support to expressions
@@ -667,10 +668,9 @@ export function clientLoopScopes(html: string): Array<{ start: number, end: numb
 
   for (let match = opener.exec(html); match; match = opener.exec(html)) {
     const tag = match[1]!.toLowerCase()
-    const binding = /^\s*\(?\s*([A-Za-z_$][\w$]*)\s*(?:,\s*([A-Za-z_$][\w$]*)\s*)?\)?\s+(?:in|of)\s/.exec(match[3]!)
-    if (!binding)
+    const names = new Set(loopBoundNames(match[3]!))
+    if (names.size === 0)
       continue
-    const names = new Set([binding[1]!, ...(binding[2] ? [binding[2]] : [])])
 
     const openEnd = match.index + match[0].length
     if (match[0].endsWith('/>')) {
@@ -1175,8 +1175,15 @@ export function processExpressions(template: string, context: Record<string, any
 
   // Replace {{ expr }} with escaped expressions
   const loopScopes = hasSignals ? clientLoopScopes(output) : []
+  // The variables of a client loop this markup was cut out of (a component's
+  // slot, rendered away from the `:for` on its tag). They shadow the server's
+  // names exactly as a loop found in `output` does.
+  const enclosingLoopNames = new Set(inheritedClientLoopNames(context))
   output = replaceInterpolations(output, (match, expr, offset) => {
     const trimmedExpr = expr.trim()
+
+    if (readsAnyName(trimmedExpr, enclosingLoopNames))
+      return match
 
     // Inside a client loop, its variable shadows any server binding of the
     // same name; the browser evaluates this one.
