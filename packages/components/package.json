@@ -45,6 +45,11 @@
       "types": "./dist/ui/chat/controller.d.ts",
       "bun": "./dist/chat/controller.js",
       "import": "./dist/chat/controller.js"
+    },
+    "./overlays": {
+      "types": "./dist/utils/overlays.d.ts",
+      "bun": "./dist/overlays/overlays.js",
+      "import": "./dist/overlays/overlays.js"
     }
   },
   "module": "./dist/index.js",

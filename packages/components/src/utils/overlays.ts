@@ -9,7 +9,7 @@
  * library's dialogs instead of competing with them (stacksjs/stx#2057).
  *
  * ```ts
- * import { closeOverlay, openOverlay } from '@stacksjs/components'
+ * import { closeOverlay, openOverlay } from '@stacksjs/components/overlays'
  *
  * effect(() => {
  *   if (panelOpen()) openOverlay('workout-panel', { panel: '#wp-panel', onEscape: close })
@@ -20,6 +20,10 @@
  *
  * Every call is a no-op where there is no runtime (server rendering, tests
  * without a DOM), so shared code can call them unguarded.
+ *
+ * Import them from `@stacksjs/components/overlays` in a `<script client>`. The
+ * package root re-exports them too, but the root also reaches the syntax
+ * highlighter, which needs Node's streams and cannot be bundled for a browser.
  */
 
 export interface OverlayOptions {

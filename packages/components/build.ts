@@ -103,6 +103,21 @@ if (!chatResult.success) {
   process.exit(1)
 }
 
+// The overlay stack is browser code too, and an app calls it from its own
+// `<script client>`. The package root reaches the syntax highlighter, which
+// needs Node's streams, so a page importing the stack from the root failed its
+// whole module registry. This entry is the stack alone, with no imports.
+const overlaysResult = await Bun.build({
+  entrypoints: ['./src/utils/overlays.ts'],
+  outdir: './dist/overlays',
+  target: 'browser',
+  minify: false,
+})
+if (!overlaysResult.success) {
+  for (const log of overlaysResult.logs) console.error(log)
+  process.exit(1)
+}
+
 // Build individual component files
 console.log('Building individual components...')
 
