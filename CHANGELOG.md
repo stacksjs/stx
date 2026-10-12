@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.492...v0.2.493)
+
+## ✨ Features
+
+- **native**: atob and btoa on a native screen ([c22003c](https://github.com/stacksjs/stx/commit/c22003c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.493 ([9fe5672](https://github.com/stacksjs/stx/commit/9fe5672)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.491...v0.2.492)
 
 ## ✨ Features
