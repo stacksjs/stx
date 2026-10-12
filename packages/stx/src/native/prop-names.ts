@@ -7,18 +7,31 @@ const NATIVE_PROP_NAMES = [
   ...SVG_PROP_NAMES,
   'accessibilityHint', 'accessibilityLabel', 'accessibilityRole', 'accessibilityState', 'accessibilityValue',
   'activeOpacity', 'alwaysBounceHorizontal', 'alwaysBounceVertical', 'animationType', 'autoCapitalize',
-  'autoCorrect', 'autoFocus', 'blurRadius', 'contentContainerStyle', 'defaultSource', 'defaultValue',
+  'autoComplete', 'autoCorrect', 'autoFocus', 'blurRadius', 'contentContainerStyle', 'defaultSource', 'defaultValue',
   'ellipsizeMode', 'fadeDuration', 'hidesWhenStopped', 'hitSlop', 'imageStyle', 'initialNumToRender',
   'iosBackgroundColor', 'keyboardDismissMode', 'keyboardShouldPersistTaps', 'keyboardType',
-  'keyboardVerticalOffset', 'keyExtractor', 'maxLength', 'maximumTrackTintColor', 'maximumValue',
-  'maxToRenderPerBatch', 'minimumTrackTintColor', 'minimumValue', 'numberOfLines', 'numColumns',
-  'onEndReachedThreshold', 'pagingEnabled', 'placeholderTextColor', 'pointerEvents', 'presentationStyle',
+  'keyboardVerticalOffset', 'keyExtractor', 'maxLength', 'maximumDate', 'maximumTrackTintColor', 'maximumValue',
+  'maxToRenderPerBatch', 'minimumDate', 'minimumTrackTintColor', 'minimumValue', 'minuteInterval', 'numberOfLines',
+  'numColumns', 'onEndReachedThreshold', 'pagingEnabled', 'passwordRules', 'placeholderTextColor', 'pointerEvents',
+  'presentationStyle',
   'pressRetentionOffset', 'progressBackgroundColor', 'progressViewOffset', 'refreshControl', 'resizeMode',
   'returnKeyType', 'scrollEnabled', 'scrollTarget', 'secureTextEntry', 'selectedValue', 'selectionColor',
   'showsHorizontalScrollIndicator', 'showsVerticalScrollIndicator', 'statusBarTranslucent',
-  'stickyHeaderIndices', 'testID', 'thumbColor', 'thumbTintColor', 'titleColor', 'trackColor',
+  'stickyHeaderIndices', 'testID', 'textContentType', 'thumbColor', 'thumbTintColor', 'titleColor', 'trackColor',
   'underlayColor', 'windowSize',
 ]
+
+/**
+ * Native props that are booleans, where an attribute written bare means true
+ * as it does in HTML. HTML hands a bare attribute over as an empty string, so
+ * `<video controls>` or a folded `:multiline="true"` reached the host as "".
+ */
+export const NATIVE_BOOLEAN_PROPS = new Set([
+  'animating', 'autoCorrect', 'autoFocus', 'autoplay', 'autoPlay', 'bounces', 'controls', 'disabled',
+  'editable', 'hidesWhenStopped', 'horizontal', 'loop', 'multiline', 'muted', 'pagingEnabled', 'paused',
+  'refreshing', 'scrollEnabled', 'secureTextEntry', 'selectTextOnFocus', 'showsHorizontalScrollIndicator',
+  'showsVerticalScrollIndicator', 'transparent', 'visible',
+])
 
 const nativePropNames = new Map(
   NATIVE_PROP_NAMES.map(name => [normaliseKey(name), name]),

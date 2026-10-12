@@ -141,6 +141,10 @@ describe('native class and icon compatibility', () => {
     // A notification list's marks (HQ): who joined or left, what was cancelled.
     for (const name of ['user-check', 'user-x', 'user-round-plus', 'user-round-check', 'user-minus', 'user-round-minus', 'user-round-x', 'calendar-minus', 'calendar-minus-2', 'calendar-x', 'calendar-x-2', 'calendar-off', 'badge-x', 'hourglass'])
       expect(resolveIconName(name)).toMatchObject({ known: true })
+    // HQ's store, gear and breathwork screens.
+    for (const name of ['battery-charging', 'bell-ring', 'ban', 'music-2', 'circle-arrow-down', 'clock-3', 'leaf', 'triangle-alert', 'heart-off', 'rectangle-horizontal', 'cylinder', 'disc', 'cable', 'armchair', 'box'])
+      expect(resolveIconName(name)).toMatchObject({ known: true })
+    expect(resolveIconName('triangle-alert').symbol).toBe('exclamationmark.triangle')
     expect(resolveIconName('heart.fill')).toEqual({ symbol: 'heart.fill', known: true })
     expect(resolveIconName('i-mdi-home')).toEqual({ symbol: 'circle', iconify: 'i-mdi-home', known: false })
   })
@@ -242,8 +246,8 @@ describe('mapToNativeComponent', () => {
     // Circle...), not by tag alone, since `text` means one thing outside a
     // drawing and another inside it.
     'svg', 'path', 'circle',
-    // Media and embedding, with no IR counterpart yet.
-    'audio', 'video', 'canvas', 'source',
+    // Media and embedding, with no IR counterpart yet. (`video` is Video.)
+    'audio', 'canvas', 'source',
     // A line break, which has no element form natively.
     'br',
   ]

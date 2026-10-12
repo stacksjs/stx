@@ -29,6 +29,7 @@ export type STXComponentType =
   | 'Icon'
   | 'Image'
   | 'ImageBackground'
+  | 'Video'
   // Lists
   | 'FlatList'
   | 'SectionList'

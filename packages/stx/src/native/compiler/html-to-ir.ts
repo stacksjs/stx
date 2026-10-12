@@ -26,7 +26,7 @@
  * plausible tree that renders as the wrong screen.
  */
 import type { STXDocument, STXNode, STXStyle } from './ir'
-import { nativePropName } from '../prop-names'
+import { NATIVE_BOOLEAN_PROPS, nativePropName } from '../prop-names'
 import { mapToNativeComponent } from './component-mapping'
 import { resolveIconName } from './icons'
 import { parseViewBox, SVG_DROPPED, SVG_NODE_TYPES, SVG_TYPES, svgGeometry } from './svg'
@@ -133,6 +133,15 @@ const EVENT_NAMES: Record<string, string> = {
   'load-end': 'onLoadEnd',
   loadend: 'onLoadEnd',
   error: 'onError',
+  // A video's playback, in the web's names.
+  play: 'onPlay',
+  playing: 'onPlay',
+  pause: 'onPause',
+  ended: 'onEnd',
+  end: 'onEnd',
+  timeupdate: 'onProgress',
+  progress: 'onProgress',
+  loadedmetadata: 'onLoad',
 }
 
 /**
@@ -145,6 +154,7 @@ export const NATIVE_EVENTS = new Set([
   'onBlur',
   'onChangeText',
   'onDismiss',
+  'onEnd',
   'onEndEditing',
   'onEndReached',
   'onError',
@@ -154,9 +164,12 @@ export const NATIVE_EVENTS = new Set([
   'onLoadEnd',
   'onLoadStart',
   'onLongPress',
+  'onPause',
+  'onPlay',
   'onPress',
   'onPressIn',
   'onPressOut',
+  'onProgress',
   'onRequestClose',
   'onRefresh',
   'onScroll',
@@ -234,7 +247,7 @@ const NATIVE_TYPES = new Set([
   'View', 'ScrollView', 'SafeAreaView', 'KeyboardAvoidingView',
   'Text', 'TextInput',
   'Button', 'TouchableOpacity', 'TouchableHighlight', 'Pressable',
-  'Icon', 'Image', 'ImageBackground',
+  'Icon', 'Image', 'ImageBackground', 'Video',
   'FlatList', 'SectionList',
   'Switch', 'Slider', 'Picker', 'DatePicker',
   'Modal', 'ActivityIndicator',
@@ -362,11 +375,16 @@ function readAttributes(
     }
 
     const decoded = decodeEntities(value)
+    const prop = nativePropName(rawName)
+    if (decoded === '' && NATIVE_BOOLEAN_PROPS.has(prop)) {
+      props[prop] = true
+      continue
+    }
     try {
-      props[nativePropName(rawName)] = JSON.parse(decoded)
+      props[prop] = JSON.parse(decoded)
     }
     catch {
-      props[nativePropName(rawName)] = decoded
+      props[prop] = decoded
     }
   }
 
@@ -588,6 +606,11 @@ export async function translateHtmlToIR(
       diagnostics.push({ kind: 'dropped-subtree', tag })
     }
 
+    // `<video src>` as the web writes it: the host reads `source`.
+    if (type === 'Video' && props.source === undefined && props.src !== undefined) {
+      props.source = props.src
+      delete props.src
+    }
     if (type === 'Icon') {
       const icon = compileClassStyles(classes).icon
       props.symbol = resolveIconName(String(props.symbol || props.name || icon || ''), Boolean(props.symbol)).symbol

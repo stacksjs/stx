@@ -6,6 +6,7 @@ const COMPONENT_MAPPING: Record<string, STXComponentType> = {
   button: 'Button',
   image: 'Image',
   img: 'Image',
+  video: 'Video',
   input: 'TextInput',
   textarea: 'TextInput',
   scroll: 'ScrollView',

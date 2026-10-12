@@ -171,6 +171,17 @@ export interface TextInputProps extends BaseProps {
   editable?: boolean
   /** Selection color */
   selectionColor?: string
+  /**
+   * What the field holds, for the system's autofill: `username`, `password`,
+   * `newPassword`, `oneTimeCode`, `emailAddress`, `telephoneNumber`, `name`
+   * and the rest of UITextContentType's names. HTML's `autocomplete` words
+   * (`current-password`, `email`, `tel`) are read the same way.
+   */
+  textContentType?: string
+  /** HTML's spelling of `textContentType` (`current-password`, `one-time-code`). */
+  autoComplete?: string
+  /** The rules a suggested strong password follows (`minlength: 12; required: digit;`). */
+  passwordRules?: string
 }
 
 export type KeyboardType =
@@ -183,6 +194,10 @@ export type KeyboardType =
   | 'url'
   | 'web-search'
   | 'visible-password'
+  | 'ascii-capable'
+  | 'numbers-and-punctuation'
+  | 'name-phone-pad'
+  | 'twitter'
 
 export type ReturnKeyType =
   | 'done'
@@ -190,6 +205,10 @@ export type ReturnKeyType =
   | 'next'
   | 'search'
   | 'send'
+  | 'join'
+  | 'route'
+  | 'continue'
+  | 'emergency-call'
   | 'default'
 
 // ============================================================================
@@ -302,6 +321,34 @@ export interface PickerProps extends BaseProps {
   disabled?: boolean
 }
 
+/** A value as `<input type="date|time|datetime-local">` writes it. */
+export interface DatePickerChange {
+  /** `2026-10-12` for a date, `07:30` for a time, `2026-10-12T07:30` for both, in local time. */
+  value: string
+  /** The same moment as an ISO 8601 string in UTC. */
+  iso: string
+  /** Milliseconds since 1970. */
+  timestamp: number
+}
+
+export interface DatePickerProps extends BaseProps {
+  /** What is picked. Defaults to `date`. */
+  mode?: 'date' | 'time' | 'datetime'
+  /** The picked value: `2026-10-12`, `07:30`, `2026-10-12T07:30`, a full ISO string or milliseconds. */
+  value?: string | number
+  /** The earliest value that can be picked, written the same way. */
+  minimumDate?: string | number
+  /** The latest value that can be picked, written the same way. */
+  maximumDate?: string | number
+  /** Minutes between the times offered (`5` offers 07:25 and 07:30). */
+  minuteInterval?: number
+  /** `compact` (the default) shows a button that opens a calendar or clock; `inline` and `wheels` show them in place. */
+  display?: 'compact' | 'inline' | 'wheels'
+  /** A change, as `@change` hears it. */
+  onValueChange?: (event: DatePickerChange) => void
+  disabled?: boolean
+}
+
 // ============================================================================
 // Media Components
 // ============================================================================
@@ -332,6 +379,32 @@ export interface ImageProps extends BaseProps {
   fadeDuration?: number
   /** Default source (placeholder) */
   defaultSource?: ImageSource
+}
+
+/** A video drawn by the platform's player (AVPlayer on iOS). */
+export interface VideoProps extends BaseProps {
+  /** A URL, or `{ uri }`. `src` is read the same way. */
+  source?: string | { uri: string }
+  src?: string
+  /** The system's playback controls. */
+  controls?: boolean
+  autoplay?: boolean
+  loop?: boolean
+  muted?: boolean
+  /** Paused while true, playing (when `autoplay` is set) once false again. */
+  paused?: boolean
+  resizeMode?: 'contain' | 'cover' | 'stretch'
+  /** `@load`: the duration is known, in seconds. */
+  onLoad?: (event: { duration: number }) => void
+  /** `@play` and `@pause`, from the controls as well as from props. */
+  onPlay?: () => void
+  onPause?: () => void
+  /** `@ended`: it played to the end (each time round, when looping). */
+  onEnd?: () => void
+  /** `@timeupdate`: about every half second while playing, in seconds. */
+  onProgress?: (event: { currentTime: number, duration: number }) => void
+  /** `@error`: the video could not be loaded or played. */
+  onError?: (event: { message: string }) => void
 }
 
 export type ImageSource =
@@ -503,11 +576,14 @@ export const ComponentRegistry = {
   Pressable: 'Pressable',
   Switch: 'Switch',
   Slider: 'Slider',
+  Picker: 'Picker',
+  DatePicker: 'DatePicker',
 
   // Media
   Icon: 'Icon',
   Image: 'Image',
   ImageBackground: 'ImageBackground',
+  Video: 'Video',
 
   // Lists
   FlatList: 'FlatList',

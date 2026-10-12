@@ -12,6 +12,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { extractClientScript } from '../../src/native/compiler/client-script'
+import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import type { STXNode } from '../../src/native/compiler/ir'
 import { compileScreenFile, compileScreenSource, nativePrimitivesDir } from '../../src/native/compiler/render-screen'
 
@@ -213,6 +214,36 @@ describe('the primitives themselves', () => {
     expect(manifest.entries).toEqual([])
   })
 
+  it('keeps true-valued props true on native primitive roots, bound or bare', async () => {
+    const source = '<View><TextInput :multiline="true" :secureTextEntry="true" :autoCorrect="false" /><TextInput multiline secureTextEntry /><Video src="https://example.com/a.mp4" controls :autoplay="true" :muted="true" /></View>'
+    const { document } = await compileScreenSource(source, screen('TrueNativeProps.stx', source))
+    const children = document.root.children.filter((child): child is STXNode => typeof child !== 'string')
+
+    expect(children[0].props).toMatchObject({ multiline: true, secureTextEntry: true, autoCorrect: false })
+    expect(children[1].props).toMatchObject({ multiline: true, secureTextEntry: true })
+    expect(children[2].type).toBe('Video')
+    expect(children[2].props).toMatchObject({ source: 'https://example.com/a.mp4', controls: true, autoplay: true, muted: true })
+  })
+
+  it('reads a bare boolean attribute on a plain tag as true', async () => {
+    const { root, diagnostics } = await translateHtmlToIR('<video src="https://example.com/a.mp4" controls loop muted @ended="done()" @timeupdate="tick($event)" @play="playing()"></video>')
+    expect(root.type).toBe('Video')
+    expect(root.props).toEqual({ source: 'https://example.com/a.mp4', controls: true, loop: true, muted: true })
+    expect(root.events).toEqual({ onEnd: 'done()', onProgress: 'tick($event)', onPlay: 'playing()' })
+    expect(diagnostics).toEqual([])
+  })
+
+  it('restores the autofill and date props HTML lowercased', async () => {
+    const source = '<script>\nconst time = state(\'07:30\')\nfunction picked(value) { time.set(value) }\n</script>\n<View><TextInput textContentType="password" autoComplete="current-password" passwordRules="minlength: 12;" /><DatePicker mode="time" value="07:30" minuteInterval="5" minimumDate="2026-10-01" maximumDate="2026-12-31" @change="picked($event.value)" /></View>'
+    const { document } = await compileScreenSource(source, screen('AutofillProps.stx', source))
+    const children = document.root.children.filter((child): child is STXNode => typeof child !== 'string')
+
+    expect(children[0].props).toMatchObject({ textContentType: 'password', autoComplete: 'current-password', passwordRules: 'minlength: 12;' })
+    expect(children[1].type).toBe('DatePicker')
+    expect(children[1].props).toMatchObject({ mode: 'time', value: '07:30', minuteInterval: 5, minimumDate: '2026-10-01', maximumDate: '2026-12-31' })
+    expect(children[1].events).toEqual({ onValueChange: 'picked($event.value)' })
+  })
+
   it('keeps native icons as leaf nodes beside text, including dynamic labels', async () => {
     const { document } = await compileScreenSource('<View><Icon name="play" /><Text :text="label">Start</Text><Icon name="moon" /><Text>Rest</Text></View>', screen('AdjacentIcons.stx', ''))
     expect(types(document.root)).toEqual(['View', 'Icon', 'Text', 'Icon', 'Text'])
@@ -223,7 +254,7 @@ describe('the primitives themselves', () => {
 
   it('ships one component per native type the IR declares', async () => {
     const files = [...new Bun.Glob('*.stx').scanSync(nativePrimitivesDir())].sort()
-    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(23)
+    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(24)
     expect(files).toContain('Fragment.stx')
     expect(files).toContain('Icon.stx')
     expect(files).toContain('TouchableOpacity.stx')

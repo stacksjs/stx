@@ -1285,9 +1285,26 @@ function forwardNativeHostAttrs(html: string, props: ResolvedProps): string {
       consumed.add(key)
   }
 
+  // A true prop goes as the word, as false does below. HTML writes true as a
+  // bare attribute, which reads back as an empty string: `:multiline="true"`
+  // reached the host as "" and drew a one-line field.
+  const forwardedTrue: string[] = []
+  for (const [key, value] of Object.entries(props.static)) {
+    if (consumed.has(key) || (value !== true && value !== BOOLEAN_ATTRIBUTE_SENTINEL))
+      continue
+    consumed.add(key)
+    forwardedTrue.push(`${escapeAttr(props.staticNames?.[key] ?? key)}="true"`)
+  }
+  for (const [key, value] of Object.entries(props.serverDynamic)) {
+    if (consumed.has(key) || value !== true)
+      continue
+    consumed.add(key)
+    forwardedTrue.push(`${escapeAttr(props.serverDynamicNames?.[key] ?? key)}="true"`)
+  }
   const forwarded = [
     ...forwardStaticAttrs(props, consumed),
     ...forwardResolvedAttrs(props, consumed),
+    ...forwardedTrue,
   ]
   // HTML drops a server-resolved false binding, but native component props use
   // false as data (for example TextInput editable and ActivityIndicator

@@ -1,0 +1,5 @@
+{{-- Video: the native type (AVPlayer on iOS), written as an ordinary stx component. --}}
+<script server>
+const classes = $props.class ?? $props.className ?? ''
+</script>
+<video data-native="Video" class="{{ classes }}"></video>
