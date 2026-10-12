@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.482...v0.2.483)
+
+## 🐛 Bug Fixes
+
+- **head**: an inline head script keeps its type, and a sitemap its languages ([6da1fb7](https://github.com/stacksjs/stx/commit/6da1fb7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.483 ([618c416](https://github.com/stacksjs/stx/commit/618c416)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.481...v0.2.482)
 
 ## 🐛 Bug Fixes
