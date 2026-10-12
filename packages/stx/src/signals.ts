@@ -7904,6 +7904,7 @@ catch (e) {} }
     _destroyCallbacks: destroyCallbacks,
     _cleanupContainer: cleanupContainer,
     _flushLoad: flushStxLoad,
+    _beginSwap: beginSwap,
     _registerSuspense: registerSuspense,  // <Suspense> query registration (#1742)
     _tg: { enter: tgEnter, leave: tgLeave, flip: tgFlip, snapshot: tgSnapshot },  // <TransitionGroup> helpers (#1742)
     _scopes: {},  // Component-level scopes
@@ -9583,16 +9584,38 @@ catch (e) {
     _handleStxLoad();
     return true;
   }
+  // The page-level onDestroy callbacks a navigation is leaving behind.
+  //
+  // stx:load used to run everything in destroyCallbacks, on the reading that
+  // the queue held the outgoing page. It does not by then: the router runs the
+  // incoming page's scripts BEFORE it fires stx:load, and a page-level
+  // onDestroy registered by one of them (a layout partial's useColorMode, a
+  // listener, a stream) joined the same queue and was run at once - its owner
+  // still on screen. A tab bar that retains screens made it certain, since
+  // that path had already filed the outgoing page's callbacks with its screen,
+  // so the queue stx:load drained held only the new page's. The page then
+  // stopped following the system theme, among other things, until a reload.
+  //
+  // The router marks the boundary with _beginSwap just before the incoming
+  // scripts run. Null means no boundary was marked since the last stx:load (a
+  // re-fire, an older router), and then the queue is drained as before.
+  var departingDestroys = null;
+  function beginSwap() {
+    departingDestroys = (departingDestroys || []).concat(destroyCallbacks.splice(0));
+  }
   function _handleStxLoad() {
     _stxLoadTimer = null;
     console.log('[stx:load] START. mountQueue:', mountQueue.length, '_latestSetup:', !!window.stx._latestSetup);
 
-    // Run any pending destroy callbacks before re-initializing
-    destroyCallbacks.forEach(function(fn) {
+    // Run the outgoing page's destroy callbacks before re-initializing. Taken
+    // out of their queue first, so one that registers another lands in the
+    // next generation instead of being cleared unrun.
+    var departing = departingDestroys !== null ? departingDestroys : destroyCallbacks.splice(0);
+    departingDestroys = null;
+    departing.forEach(function(fn) {
       try { fn(); }
 catch (e) { console.warn('[stx] destroy callback error:', e); }
     });
-    destroyCallbacks.length = 0;
 
     // Re-process scoped components in new content
     var routerOpts = window.STX_ROUTER_OPTIONS || window.__stxRouterConfig || {};

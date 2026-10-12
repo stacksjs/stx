@@ -1614,6 +1614,12 @@ else {
     return hrefs;
   }
 
+  // Everything page-level the outgoing page registered stays its own from
+  // here on: the runtime runs those on stx:load and keeps whatever the
+  // incoming page's scripts register next (see beginSwap in the runtime).
+  // Called after the outgoing page is put aside and before any incoming
+  // script runs. Absent on an older runtime, which drains as it always has.
+  function beginPageSwap(){if(window.stx&&typeof window.stx._beginSwap==='function')window.stx._beginSwap()}
   function swap(html,url,pushState,hash){
     var fragMark=/^<!--stx-fragment(?: rt=([01]))?-->/.exec(html);
     var isFragment=!!fragMark;
@@ -1859,6 +1865,7 @@ else {
             try{
               setDirection(ctx.direction);
               if(useScreens){scr=screenBegin(host,ctx,html,pushState!==false);currentContent=scr.el}
+              beginPageSwap();
               doFragSwap();
               if(scr)screenEnd(scr);
               resolve(true);
@@ -2332,6 +2339,7 @@ else {
       return new Promise(function(resolve,reject){
         function completeSwap(){
           try{
+            beginPageSwap();
             doSwap();
             resolve(true);
           }catch(err){reject(err)}
