@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.489...v0.2.490)
+
+## ✨ Features
+
+- **native**: sign-in on a native screen ([daee383](https://github.com/stacksjs/stx/commit/daee383)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.490 ([472e754](https://github.com/stacksjs/stx/commit/472e754)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.488...v0.2.489)
 
 ## ✨ Features
