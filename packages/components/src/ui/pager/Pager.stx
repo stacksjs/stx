@@ -1,0 +1,232 @@
+<script server>
+/*
+ * A row of full-width pages you swipe or step through: the first-run tour,
+ * an onboarding questionnaire, a gallery of screenshots.
+ *
+ * The pages are the slot's elements, laid side by side in a native
+ * scroll-snap track, so a swipe is the browser's own (momentum, rubber band,
+ * the system's reduced-motion setting) and costs no script per frame. The
+ * page shown is a `v-model:index`, or `:index` with `@change`, which the page
+ * moves with its own buttons; Pager scrolls to follow and reports a swipe back.
+ *
+ *   <Pager v-model:index="step" label="Welcome tour" dotsLabel="Tour pages">
+ *     <section>…</section>
+ *     <section :for="slide in slides" :key="slide.id">…</section>
+ *   </Pager>
+ *   <button @click="step.set(step() + 1)">Next</button>
+ *
+ * `swipe="false"` keeps the pages but leaves moving to the page's buttons: a
+ * questionnaire whose next page waits on an answer. `dots="false"` drops the
+ * built-in dots for a `<PagerDots>` placed elsewhere.
+ *
+ * Accessibility follows the APG carousel pattern: a named region with
+ * `aria-roledescription="carousel"`, each page a "slide" group labelled
+ * "2 of 5", pages off screen inert, and the arrow keys (outside a field)
+ * stepping between them.
+ */
+export const index = Math.max(0, Math.trunc($num($props.index) || 0))
+export const label = $props.label || ''
+export const swipe = $bool($props.swipe, true)
+export const dots = $bool($props.dots, true)
+export const dotsLabel = $props.dotsLabel || 'Pages'
+export const slideLabel = $props.slideLabel || '{n} of {total}'
+export const goToLabel = $props.goToLabel || 'Go to page {n}'
+export const className = $props.className || ''
+export const trackClass = $props.trackClass || ''
+export const dotsClass = $props.dotsClass || ''
+
+export const rootClasses = `stx-pager relative flex flex-col min-w-0 ${className}`.replace(/\s+/g, ' ').trim()
+export const trackClasses = `stx-pager-track flex flex-1 min-h-0 ${swipe ? 'overflow-x-auto snap-x snap-mandatory' : 'overflow-x-hidden'} overflow-y-hidden overscroll-x-contain ${trackClass}`.replace(/\s+/g, ' ').trim()
+export const dotRowClasses = `flex items-center justify-center gap-1.5 py-3 ${dotsClass}`.replace(/\s+/g, ' ').trim()
+</script>
+
+<script client>
+const emit = defineEmits()
+const allowSwipe = {{ swipe }}
+const slideWords = {{ slideLabel }}
+const goToWords = {{ goToLabel }}
+const selected = useModel('index', { default: {{ index }}, parse: v => Math.max(0, Math.trunc(Number(v)) || 0) })
+const trackRef = useRef('trackRef')
+const count = state(0)
+const mounted = state(false)
+const dotList = derived(() => Array.from({ length: count() }, (_, i) => i))
+
+let observer = null
+let resizer = null
+let frame = 0
+// A scroll the pager started itself, and the page it is heading for: the
+// scroll events on the way there are not a swipe.
+let steering = -1
+let steerTimer = null
+// The page a swipe just settled on, so following the model does not scroll
+// back to where the finger already is.
+let fromSwipe = -1
+
+function words(template, n, total) {
+  return String(template).replace('{n}', String(n)).replace('{total}', String(total))
+}
+
+/** The slot's pages: the track's own elements, whatever rendered them. */
+function pages() {
+  const track = trackRef.value
+  if (!track) return []
+  return Array.from(track.children).filter(el => !['TEMPLATE', 'SCRIPT', 'STYLE'].includes(el.tagName) && !el.hasAttribute('data-pager-ignore'))
+}
+
+function reducedMotion() {
+  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+/** Labels every page, and takes the ones off screen out of reach. */
+function labelPages() {
+  const list = pages()
+  if (count() !== list.length) count.set(list.length)
+  const current = selected()
+  list.forEach((page, i) => {
+    page.setAttribute('role', 'group')
+    page.setAttribute('aria-roledescription', 'slide')
+    if (!page.hasAttribute('aria-labelledby')) page.setAttribute('aria-label', words(slideWords, i + 1, list.length))
+    if (i === current) { page.removeAttribute('inert'); page.removeAttribute('aria-hidden') }
+    else { page.setAttribute('inert', ''); page.setAttribute('aria-hidden', 'true') }
+  })
+}
+
+function clamp(i) {
+  const total = count() || pages().length
+  return Math.min(Math.max(0, i), Math.max(0, total - 1))
+}
+
+function scrollToPage(i, smooth) {
+  const track = trackRef.value
+  if (!track || !track.clientWidth) return
+  const left = i * track.clientWidth
+  if (Math.abs(track.scrollLeft - left) < 2) return
+  steering = i
+  if (steerTimer) clearTimeout(steerTimer)
+  steerTimer = setTimeout(() => { steering = -1 }, 800)
+  if (typeof track.scrollTo === 'function') track.scrollTo({ left, behavior: smooth && !reducedMotion() ? 'smooth' : 'auto' })
+  else track.scrollLeft = left
+}
+
+function settle() {
+  frame = 0
+  const track = trackRef.value
+  if (!track || !track.clientWidth) return
+  const i = clamp(Math.round(track.scrollLeft / track.clientWidth))
+  if (steering !== -1) {
+    if (i === steering && Math.abs(track.scrollLeft - i * track.clientWidth) < 2) steering = -1
+    return
+  }
+  if (i === selected()) return
+  fromSwipe = i
+  selected.set(i)
+  emit('change', i)
+}
+
+function onScroll() {
+  if (frame) return
+  frame = typeof requestAnimationFrame === 'function' ? requestAnimationFrame(settle) : setTimeout(settle, 16)
+}
+
+/** Moves to page `i` (clamped), as the page's own buttons do. */
+function go(i) {
+  const next = clamp(Number(i) || 0)
+  if (next === selected()) return
+  selected.set(next)
+  emit('change', next)
+}
+
+function next() { go(selected() + 1) }
+function prev() { go(selected() - 1) }
+
+function onKey(event) {
+  if (!allowSwipe || event.defaultPrevented) return
+  // The arrows already mean something in a field, a tab strip, a radio group
+  // and a slider: they stay theirs.
+  const target = event.target
+  const tag = target && target.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (target && target.isContentEditable)) return
+  if (target && target.closest && target.closest('[role="tablist"], [role="radiogroup"], [role="slider"]')) return
+  const rtl = !!(trackRef.value && trackRef.value.closest('[dir="rtl"]'))
+  if (event.key === (rtl ? 'ArrowLeft' : 'ArrowRight')) { event.preventDefault(); next() }
+  else if (event.key === (rtl ? 'ArrowRight' : 'ArrowLeft')) { event.preventDefault(); prev() }
+}
+
+function isCurrent(i) { return i === selected() }
+function dotClass(i) {
+  return i === selected()
+    ? 'stx-pager-dot block h-1.5 w-5 rounded-full bg-current transition-all duration-300'
+    : 'stx-pager-dot block h-1.5 w-1.5 rounded-full bg-current opacity-35 transition-all duration-300'
+}
+function dotLabel(i) { return words(goToWords, i + 1, count()) }
+
+effect(() => {
+  const i = selected()
+  if (!mounted()) return
+  labelPages()
+  if (fromSwipe === i) { fromSwipe = -1; return }
+  fromSwipe = -1
+  scrollToPage(i, true)
+})
+
+onMount(() => {
+  mounted.set(true)
+  labelPages()
+  const track = trackRef.value
+  if (!track) return
+  // Where the page asked to start, without a slide in from the first page.
+  track.scrollLeft = clamp(selected()) * track.clientWidth
+  if (typeof MutationObserver !== 'undefined') {
+    observer = new MutationObserver(() => labelPages())
+    observer.observe(track, { childList: true })
+  }
+  if (typeof ResizeObserver !== 'undefined') {
+    // A rotation or a resized window changes the page width under the
+    // current page: put it back square rather than half way to the next.
+    resizer = new ResizeObserver(() => {
+      if (track.clientWidth) track.scrollLeft = clamp(selected()) * track.clientWidth
+    })
+    resizer.observe(track)
+  }
+})
+
+onDestroy(() => {
+  if (observer) observer.disconnect()
+  if (resizer) resizer.disconnect()
+  if (steerTimer) clearTimeout(steerTimer)
+  observer = null
+  resizer = null
+})
+
+defineExpose({ selected, count, go, next, prev })
+</script>
+
+<section class="{{ rootClasses }}" aria-roledescription="carousel" @if(label)aria-label="{{ label }}"@endif @keydown="onKey($event)">
+  <div x-ref="trackRef" class="{{ trackClasses }}" aria-live="polite" @scroll="onScroll()">
+    <slot />
+  </div>
+  @if(dots)
+    <div class="{{ dotRowClasses }}" role="group" aria-label="{{ dotsLabel }}">
+      <button
+        :for="i in dotList"
+        :key="i"
+        type="button"
+        class="flex items-center justify-center h-6 min-w-6 px-0.5"
+        :aria-label="dotLabel(i)"
+        :aria-current="isCurrent(i) ? 'step' : null"
+        @click="go(i)"
+      ><span aria-hidden="true" :class="dotClass(i)"></span></button>
+    </div>
+  @endif
+</section>
+
+<style>
+/* Every page takes the whole width and snaps to it; the scrollbar is the
+   swipe itself, so it is not drawn. */
+.stx-pager-track { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.stx-pager-track::-webkit-scrollbar { display: none; }
+.stx-pager-track > * { flex: 0 0 100%; width: 100%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always; }
+@media (prefers-reduced-motion: reduce) {
+  .stx-pager-dot { transition: none; }
+}
+</style>

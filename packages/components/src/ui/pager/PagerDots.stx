@@ -1,0 +1,60 @@
+<script server>
+/*
+ * A pager's dots, placed wherever the page wants them: above a tour's
+ * "Next" button rather than under the pages, where <Pager> draws its own.
+ *
+ *   <Pager v-model:index="step" dots="false">…</Pager>
+ *   <PagerDots v-model:index="step" :count="slides.length" label="Tour pages" />
+ *
+ * The current page is a wider pill; each dot is a button that moves there.
+ * Colour comes from the text colour (`className="text-white"`).
+ */
+export const index = Math.max(0, Math.trunc($num($props.index) || 0))
+export const count = Math.max(0, Math.trunc($num($props.count) || 0))
+export const label = $props.label || 'Pages'
+export const goToLabel = $props.goToLabel || 'Go to page {n}'
+export const className = $props.className || ''
+
+export const rowClasses = `flex items-center justify-center gap-1.5 ${className}`.replace(/\s+/g, ' ').trim()
+</script>
+
+<script client>
+const emit = defineEmits()
+const goToWords = {{ goToLabel }}
+const selected = useModel('index', { default: {{ index }}, parse: v => Math.max(0, Math.trunc(Number(v)) || 0) })
+const total = useReactiveProp('count', {{ count }})
+const dotList = derived(() => Array.from({ length: Math.max(0, Number(total()) || 0) }, (_, i) => i))
+
+function go(i) {
+  if (i === selected()) return
+  selected.set(i)
+  emit('change', i)
+}
+function isCurrent(i) { return i === selected() }
+function dotClass(i) {
+  return i === selected()
+    ? 'stx-pager-dot block h-1.5 w-5 rounded-full bg-current transition-all duration-300'
+    : 'stx-pager-dot block h-1.5 w-1.5 rounded-full bg-current opacity-35 transition-all duration-300'
+}
+function dotLabel(i) { return String(goToWords).replace('{n}', String(i + 1)) }
+
+defineExpose({ selected, go })
+</script>
+
+<div class="{{ rowClasses }}" role="group" aria-label="{{ label }}">
+  <button
+    :for="i in dotList"
+    :key="i"
+    type="button"
+    class="flex items-center justify-center h-6 min-w-6 px-0.5"
+    :aria-label="dotLabel(i)"
+    :aria-current="isCurrent(i) ? 'step' : null"
+    @click="go(i)"
+  ><span aria-hidden="true" :class="dotClass(i)"></span></button>
+</div>
+
+<style>
+@media (prefers-reduced-motion: reduce) {
+  .stx-pager-dot { transition: none; }
+}
+</style>
