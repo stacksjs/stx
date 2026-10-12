@@ -372,3 +372,14 @@ describe('a popup on the stack', () => {
     expect(document.body.style.overflow).toBe('hidden')
   })
 })
+
+describe('a panel given as a selector', () => {
+  it('is looked up when it is needed, so it can render after the overlay opens', () => {
+    overlays().open('later', { panel: '#later', onEscape: () => overlays().close('later') })
+    const el = panel('later')
+    const [first, last] = Array.from(el.querySelectorAll('button')) as any[]
+    last.focus()
+    key('Tab')
+    expect(document.activeElement).toBe(first)
+  })
+})

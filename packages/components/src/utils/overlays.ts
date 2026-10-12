@@ -12,7 +12,7 @@
  * import { closeOverlay, openOverlay } from '@stacksjs/components'
  *
  * effect(() => {
- *   if (panelOpen()) openOverlay('workout-panel', { panel: () => document.querySelector('#wp-panel'), onEscape: close })
+ *   if (panelOpen()) openOverlay('workout-panel', { panel: '#wp-panel', onEscape: close })
  *   else closeOverlay('workout-panel')
  * })
  * onDestroy(() => closeOverlay('workout-panel'))
@@ -23,8 +23,8 @@
  */
 
 export interface OverlayOptions {
-  /** Where focus is kept while this overlay is on top: an element, or a function returning one (it may not be rendered yet when the overlay opens). */
-  panel: Element | null | (() => Element | null)
+  /** Where focus is kept while this overlay is on top: an element, a selector, or a function returning one. A selector or function is looked up each time, since the panel may not be rendered yet when the overlay opens. */
+  panel: Element | string | null | (() => Element | null)
   /** The overlay's outermost element, when it is not the panel. An overlay that is a direct child of `<body>` makes the rest of the page inert while it is on top. */
   root?: Element | null
   /** Escape while this overlay is on top. Leave it out for one that must be answered rather than dismissed. */

@@ -7152,7 +7152,12 @@ catch (e) {} }
   // yet on the frame it opens, and may be replaced while open.
   function _overlayPanel(entry) {
     var panel = entry && entry.panel;
-    try { panel = typeof panel === 'function' ? panel() : panel; }
+    try {
+      // A selector is looked up each time, like a function: the element it
+      // names may be rendered after the overlay opens, or replaced while open.
+      if (typeof panel === 'string') panel = document.querySelector(panel);
+      else if (typeof panel === 'function') panel = panel();
+    }
     catch (_e) { panel = null; }
     return panel || entry.root || null;
   }
@@ -7257,7 +7262,7 @@ catch (e) {} }
 
     // inert, rather than aria-hidden, takes the page behind out of the tab
     // order and the accessibility tree together (#1998). Only for an overlay
-    // that is itself a child of <body> - one the runtime appended. An overlay
+    // that is itself a child of the body element - one the runtime appended. An overlay
     // rendered inside the page's own markup would go inert with the page; its
     // Tab trap is what holds it.
     var root = modal && modal.root;
@@ -7308,8 +7313,8 @@ catch (e) {} }
      * options and nothing else, so it is safe from an effect that re-runs.
      *
      * options: modal (default true; false for a popup, which takes Escape
-     * while on top but does not lock, trap or move focus), panel (element or
-     * function returning one; focus stays inside it), root (the overlay's outermost element, if it is not the panel),
+     * while on top but does not lock, trap or move focus), panel (an element,
+     * a selector, or a function returning one; focus stays inside it), root (the overlay's outermost element, if it is not the panel),
      * onEscape (leave out for one that must be answered), initialFocus
      * (element or function; defaults to [autofocus], then the first focusable,
      * then the panel), opener (where focus goes back; defaults to whatever had

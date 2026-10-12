@@ -47,6 +47,7 @@ const DELIBERATELY_NOT_GLOBAL: Record<string, string> = {
   modal: 'too generic as a bare identifier',
   drawer: 'too generic as a bare identifier',
   toast: 'too generic as a bare identifier',
+  overlays: 'too generic as a bare identifier; apps use openOverlay/closeOverlay from @stacksjs/components, or window.stx.overlays',
   // Compiler-facing aliases; `watch` and `computed` are the authored spellings.
   $watch: 'alias of watch',
   $computed: 'alias of computed',
