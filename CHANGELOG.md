@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.481...v0.2.482)
+
+## 🐛 Bug Fixes
+
+- **bundler**: keep minified client bundles bundled ([acccda5](https://github.com/stacksjs/stx/commit/acccda5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.482 ([0e5e8bb](https://github.com/stacksjs/stx/commit/0e5e8bb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.480...v0.2.481)
 
 ## 🐛 Bug Fixes
