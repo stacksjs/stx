@@ -138,6 +138,9 @@ describe('native class and icon compatibility', () => {
     expect(resolveIconName('lucide:footprints').symbol).toBe('figure.run')
     // The store's gear row (HQ): a known symbol, not the circle fallback.
     expect(resolveIconName('backpack')).toMatchObject({ symbol: 'backpack', known: true })
+    // A notification list's marks (HQ): who joined or left, what was cancelled.
+    for (const name of ['user-check', 'user-x', 'user-round-plus', 'user-round-check', 'user-minus', 'user-round-minus', 'user-round-x', 'calendar-minus', 'calendar-minus-2', 'calendar-x', 'calendar-x-2', 'calendar-off', 'badge-x', 'hourglass'])
+      expect(resolveIconName(name)).toMatchObject({ known: true })
     expect(resolveIconName('heart.fill')).toEqual({ symbol: 'heart.fill', known: true })
     expect(resolveIconName('i-mdi-home')).toEqual({ symbol: 'circle', iconify: 'i-mdi-home', known: false })
   })
