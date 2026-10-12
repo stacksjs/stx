@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.488...v0.2.489)
+
+## ✨ Features
+
+- **native**: SF Symbols for people and calendar changes ([2172bfe](https://github.com/stacksjs/stx/commit/2172bfe)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.489 ([074d9df](https://github.com/stacksjs/stx/commit/074d9df)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.487...v0.2.488)
 
 ## ✨ Features
