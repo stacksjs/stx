@@ -4,6 +4,7 @@
  * Provides on-the-fly Tailwind CSS generation using Css
  */
 
+import fs from 'node:fs'
 import path from 'node:path'
 import { hasLocalConfig } from 'bunfig'
 import { getServeModuleBundle } from '../caching'
@@ -50,6 +51,23 @@ interface CSSGenerator {
 
 // Css lazy loading cache
 let cssModule: CssModule | null = null
+/**
+ * Which engine file compiled the cached CSS: its path and modification time.
+ * The disk cache outlives the process, and an upgraded ts-css compiles the
+ * same classes differently, so a stylesheet cached by the previous version
+ * was served until the class set changed.
+ */
+let cssEngineStamp = ''
+
+function stampEngine(file: string): void {
+  try {
+    const resolved = file.startsWith('file:') ? new URL(file).pathname : file
+    cssEngineStamp = `${resolved}@${Math.trunc(fs.statSync(resolved).mtimeMs)}`
+  }
+  catch {
+    cssEngineStamp = file
+  }
+}
 let cssLoadAttempted = false
 
 // Cached config and CSS for dev server
@@ -274,6 +292,7 @@ export async function loadCssEngine(): Promise<CssModule | null> {
           continue
         const result = await tryImportCss(candidate)
         if (result) {
+          stampEngine(candidate)
           if (!process.env.STACKS_DEV_QUIET)
             console.log(`${colors.green}[ts-css]${colors.reset} CSS engine loaded from ${path.dirname(path.dirname(candidate))}`)
           return result
@@ -310,6 +329,8 @@ export async function loadCssEngine(): Promise<CssModule | null> {
       const result = await tryImportCss(importPath)
       if (result) {
         cssModule = result
+        try { stampEngine(import.meta.resolve(importPath)) }
+        catch { cssEngineStamp = importPath }
         if (!process.env.STACKS_DEV_QUIET)
           console.log(`${colors.green}[ts-css]${colors.reset} CSS engine loaded`)
         return cssModule
@@ -774,7 +795,7 @@ async function generateCssUncached(htmlContent: string, appDir?: string): Promis
     // same class set, otherwise a stale CSS file outlives the config
     // edit that produced it.
     const classSetKey = [...classes].sort().join(' ')
-    const cacheKey = `${rootConfig.fingerprint || 'default'}::${classSetKey}`
+    const cacheKey = `${cssEngineStamp}::${rootConfig.fingerprint || 'default'}::${classSetKey}`
     const cached = cssByClassSet.get(cacheKey)
     if (cached !== undefined) {
       // LRU bump — re-insert to mark as most-recently-used.
