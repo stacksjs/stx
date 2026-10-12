@@ -79,7 +79,12 @@ ${body}
  * Write `files` into a temp app and render every route, the way the dev
  * server's buildPage does it: processDirectives, then the router script.
  */
-export async function renderApp(files: Record<string, string>, routes: Record<string, string>): Promise<SpaApp> {
+export async function renderApp(
+  files: Record<string, string>,
+  routes: Record<string, string>,
+  /** Merged over the harness config, e.g. `{ buildMode: 'compile' }` for a minified build. */
+  overrides: Record<string, unknown> = {},
+): Promise<SpaApp> {
   const dir = await mkdtemp(path.join(tmpdir(), 'stx-spa-harness-'))
   for (const [rel, source] of Object.entries(files))
     await Bun.write(path.join(dir, rel), source)
@@ -91,6 +96,7 @@ export async function renderApp(files: Record<string, string>, routes: Record<st
     componentsDir: path.join(dir, 'components'),
     layoutsDir: path.join(dir, 'layouts'),
     partialsDir: path.join(dir, 'partials'),
+    ...overrides,
   } as any
 
   const documents = new Map<string, string>()

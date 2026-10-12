@@ -1096,7 +1096,12 @@ async function buildBundle(
       outdir: tmpOutDir,
       target: 'browser',
       format: 'esm',
-      minify,
+      // Never whitespace: a fully minified bundle is ONE line, and every pass
+      // below reads statements line by line (the registry rewrite, the
+      // external-import hoist, the export capture). On one line none of them
+      // matched, the export capture found nothing, and the script shipped
+      // unbundled with raw imports in a classic <script>.
+      minify: minify ? { whitespace: false, identifiers: true, syntax: true } : false,
       plugins: [createBundlePlugin(projectRoot, templateDir, tmpEntry, inputFiles, externalizeUserModules, registrySpecifiers, options.serverApi)],
       define: {
         'process.env.NODE_ENV': minify ? '"production"' : '"development"',
@@ -1177,6 +1182,18 @@ async function buildBundle(
       .replace(/^\s*export\s*\{[^}]*\}\s*;?\s*$/gm, '')
       .replace(/^\s*export\s+default\s+.*$/gm, '')
       .trim()
+
+    // The whitespace the build kept (see its `minify`), dropped now that
+    // nothing reads the body by lines. Only the body: the hoisted imports
+    // above still go to passes that do.
+    if (minify && bundled) {
+      try {
+        bundled = new Bun.Transpiler({ loader: 'js', minifyWhitespace: true }).transformSync(bundled)
+      }
+      catch {
+        // Readable is still correct.
+      }
+    }
 
     const namespace = `__stxBundle_${hash}`
     const returnedBindings = exposedBindings
