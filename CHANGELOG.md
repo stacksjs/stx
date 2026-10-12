@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.495...v0.2.496)
+
+## ✨ Features
+
+- **native**: the Music app on a native screen ([049970f](https://github.com/stacksjs/stx/commit/049970f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.496 ([d0bc9e8](https://github.com/stacksjs/stx/commit/d0bc9e8)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.494...v0.2.495)
 
 ## ✨ Features
