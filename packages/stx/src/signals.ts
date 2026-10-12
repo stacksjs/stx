@@ -6792,10 +6792,13 @@ catch (e) {} }
     if (!root) return s;
     var propSignals = root.__stx_reactive_prop_signals
       || (root.__stx_reactive_prop_signals = {});
-    propSignals[name] = s;
-    propSignals[kebabName] = s;
-    propSignals[lowerName] = s;
-    var observer = new MutationObserver(function() {
+    function register() {
+      propSignals[name] = s;
+      propSignals[kebabName] = s;
+      propSignals[lowerName] = s;
+    }
+    register();
+    function sync() {
       var attribute = readAttribute();
       var hasAttr = attribute.has;
       var raw = attribute.raw;
@@ -6815,9 +6818,23 @@ catch (e) {} }
         next = hasAttr ? parse(raw) : staticValue;
       }
       if (next !== s()) s.set(next);
-    });
+    }
+    var observer = new MutationObserver(sync);
+    var connected = true;
     observer.observe(root, { attributes: true, attributeFilter: attributeNames });
+    // An :if hides a component and shows it again with the same setup, so
+    // the link to the parent is dropped on unmount and made again on mount.
+    // Disconnected for good, a component re-shown in an :if kept the prop it
+    // had when it hid: a chat header's avatar showed the previous person.
+    onMount(function() {
+      if (connected) return;
+      connected = true;
+      register();
+      observer.observe(root, { attributes: true, attributeFilter: attributeNames });
+      sync();
+    });
     onDestroy(function() {
+      connected = false;
       observer.disconnect();
       attributeNames.forEach(function(attributeName) {
         if (propSignals[attributeName] === s) delete propSignals[attributeName];

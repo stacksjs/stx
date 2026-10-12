@@ -587,7 +587,9 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
     expect(runtime).toContain('new MutationObserver(')
     expect(runtime).toMatch(/attributeFilter:\s*attributeNames/)
     // Cleanup on component teardown
-    expect(runtime).toMatch(/onDestroy\(function\s*\(\)\s*\{\s*observer\.disconnect/)
+    expect(runtime).toMatch(/onDestroy\(function\s*\(\)\s*\{\s*connected = false;\s*observer\.disconnect/)
+    // ...and reconnected when an :if shows the component again.
+    expect(runtime).toMatch(/onMount\(function\s*\(\)\s*\{\s*if \(connected\) return;/)
   })
 
   it('only updates the local signal when the parsed value actually changes', () => {

@@ -60,3 +60,33 @@ it('top-aligns the container so it adds no baseline space under the circle', asy
   }
   finally { await app.dispose() }
 })
+
+it('keeps the initials current in an :if that hides and shows again (a chat header)', async () => {
+  const app = await renderApp({
+    'layouts/app.stx': layout(''),
+    'components/Avatar.stx': readFileSync(path.join(import.meta.dir, '../src/ui/avatar/Avatar.stx'), 'utf8'),
+    'components/Host.stx': `<script client>
+const selected = state({ name: 'Jx Bee', avatar: '' })
+const has = derived(() => !!selected())
+const selectedName = derived(() => selected()?.name || '')
+const selectedAvatar = derived(() => selected()?.avatar || '')
+function pick(next) { selected.set(next) }
+</script>
+<div id="host"><div :if="has"><Avatar :src="selectedAvatar" :alt="selectedName" className="probe" /><h2 class="name" :text="selectedName"></h2></div></div>`,
+    'pages/index.stx': page('app', '<Host />'),
+  }, { '/': 'pages/index.stx' })
+  try {
+    const browser = await boot(app, '/')
+    await settle()
+    const host = find(browser, '#host').closest('[data-stx-scope]')
+    const scope = browser.window.stx._scopes[host.getAttribute('data-stx-scope')]
+    expect(find(browser, '.probe').textContent).toContain('JB')
+    scope.pick(null)
+    await settle()
+    scope.pick({ name: 'Clara Winter', avatar: '' })
+    await settle()
+    expect(find(browser, '.name').textContent).toBe('Clara Winter')
+    expect(find(browser, '.probe').textContent).toContain('CW')
+  }
+  finally { await app.dispose() }
+})
