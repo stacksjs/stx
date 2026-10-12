@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.493...v0.2.494)
+
+## ✨ Features
+
+- **native**: appear, new params, speech, sound, push, share, streams ([7e8210f](https://github.com/stacksjs/stx/commit/7e8210f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: true props stay true, and Video, autofill and icons compile ([78c6b57](https://github.com/stacksjs/stx/commit/78c6b57)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.494 ([574d3e4](https://github.com/stacksjs/stx/commit/574d3e4)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.492...v0.2.493)
 
 ## ✨ Features
