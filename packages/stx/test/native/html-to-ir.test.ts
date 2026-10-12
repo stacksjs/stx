@@ -109,6 +109,17 @@ describe('what the renderers can actually draw', () => {
     expect(diagnostics).toEqual([{ kind: 'flattened-text', tag: 'p' }])
   })
 
+  it('draws a Text\'s words given as a text attribute, as a binding would', async () => {
+    // `<Text :text="'Apple Health'" />` reaches here folded to a plain
+    // attribute, and no renderer draws a `text` prop on a Text.
+    const { root } = await translateHtmlToIR('<View><Text text="Apple Health"></Text><Text text=""></Text><Text text="Kept">Content</Text></View>')
+    expect(root.children.map(child => typeof child === 'string' ? child : [child.children, child.props.text ?? null])).toEqual([
+      [['Apple Health'], null],
+      [[], null],
+      [['Content'], 'Kept'],
+    ])
+  })
+
   it('keeps a container a container when it has element children', async () => {
     const { root } = await translateHtmlToIR('<div><span>a</span><span>b</span></div>')
     expect(types(root)).toEqual(['View', 'Text', 'Text'])

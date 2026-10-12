@@ -458,6 +458,10 @@ function flattenText(node: STXNode): string {
  * - A Text with element children keeps the words and drops the markup, since
  *   the renderers' Text path reads string children only. `<p>a <b>b</b></p>`
  *   renders "a b" rather than "a".
+ * - A Text whose words are a `text` attribute gets them as its content, where
+ *   a `:text` binding puts them. That is `<Text text="Apple Health" />`, and
+ *   `:text="'Apple Health'"` too: stx folds a constant binding into a plain
+ *   attribute before it gets here, and a renderer draws no `text` prop.
  */
 function settle(frame: Frame, diagnostics: TranslationDiagnostic[]): STXNode {
   const node = frame.node
@@ -478,6 +482,12 @@ function settle(frame: Frame, diagnostics: TranslationDiagnostic[]): STXNode {
   if (CONTAINER_TYPES.has(node.type) && elements.length === 0 && text) {
     node.type = 'Text'
     node.children = [text]
+    return node
+  }
+
+  if (node.type === 'Text' && !text && elements.length === 0 && typeof node.props.text === 'string') {
+    node.children = node.props.text ? [node.props.text] : []
+    delete node.props.text
     return node
   }
 
