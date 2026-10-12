@@ -3167,7 +3167,9 @@ else if (part) {
     }
 
     // Handle @show / :show / x-show (visibility toggle - keeps element in DOM)
-    if (el.hasAttribute('@show') || el.hasAttribute(':show') || el.hasAttribute('x-show')) {
+    var isNativeModal = el.tagName === 'MODAL';
+    if ((el.hasAttribute('@show') && !isNativeModal)
+      || el.hasAttribute(':show') || el.hasAttribute('x-show')) {
       var showAttr = el.hasAttribute(':show') ? ':show' : el.hasAttribute('x-show') ? 'x-show' : '@show';
       bindShow(el, el.getAttribute(showAttr), scope, showAttr);
     }
@@ -3511,8 +3513,13 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
         }) || parts[0];
         const modifiers = parts.slice(1);
 
+        // Native Modal uses @show as a lifecycle event. On ordinary elements
+        // it remains the visibility directive, so keep that browser behavior.
+        const isNativeModalLifecycleEvent = eventName === 'show'
+          && el.tagName === 'MODAL';
         // Skip special directives (already handled above or in processElement)
-        if (['if', 'for', 'show', 'model', 'class', 'style', 'text', 'html', 'ref'].includes(eventName)) {
+        if (['if', 'for', 'show', 'model', 'class', 'style', 'text', 'html', 'ref'].includes(eventName)
+          && !isNativeModalLifecycleEvent) {
           return;
         }
 
@@ -9866,7 +9873,9 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
       return;
     }
     // Process other attributes...
-    if (el.hasAttribute && (el.hasAttribute('@show') || el.hasAttribute(':show') || el.hasAttribute('x-show'))) {
+    var isNativeModal = el.tagName === 'MODAL';
+    if (el.hasAttribute && ((el.hasAttribute('@show') && !isNativeModal)
+      || el.hasAttribute(':show') || el.hasAttribute('x-show'))) {
       var sa = el.hasAttribute(':show') ? ':show' : el.hasAttribute('x-show') ? 'x-show' : '@show';
       bindShow(el, el.getAttribute(sa), componentScope, sa);
     }

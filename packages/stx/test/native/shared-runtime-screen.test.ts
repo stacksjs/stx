@@ -123,6 +123,48 @@ function increment() { count.set(count() + 1) }
     }))
   })
 
+  it('binds native Modal show lifecycle listeners without changing @show visibility', async () => {
+    const source = `<script client>
+const visible = state(false)
+const status = state('idle')
+function shown() { status.set('shown') }
+</script>
+<View>
+  <Modal :visible="visible" @show="shown()"><Text>Modal</Text></Modal>
+  <Text :text="status" />
+</View>`
+    const compiled = await compileScreenSource(source, path.join(import.meta.dir, 'NativeModalLifecycle.stx'))
+    const sent: any[] = []
+    let receive: (message: unknown) => void = () => {}
+    const screen = prepareSharedNativeScreen(compiled.document, compiled.manifest, {
+      postMessage: raw => sent.push(JSON.parse(raw)),
+      onMessage: callback => { receive = callback },
+    })
+
+    installNodeConstants()
+    window.__stx_host = screen.host
+    new Function(generateSignalsRuntimeDev())()
+    new Function(compiled.setup!.code)()
+    screen.mount(window.stx, window.__stx_latestSetup)
+    screen.host.flush()
+
+    const initialOps = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
+    const showListener = initialOps.find(operation => operation.patch?.events?.onShow)
+    expect(showListener).toBeTruthy()
+
+    sent.length = 0
+    receive(JSON.stringify({
+      type: 'EVENT',
+      payload: { handlerId: showListener.patch.events.onShow, nativeEvent: {} },
+    }))
+    screen.host.flush()
+
+    expect(sent.flatMap(message => message.payload.operations)).toContainEqual(expect.objectContaining({
+      patch: { children: ['shown'] },
+    }))
+    screen.unmount()
+  })
+
   it('reconciles keyed native :for rows through the shared runtime', async () => {
     const source = `<script client>
 const items = state([{ id: 'a', label: 'Ada' }, { id: 'b', label: 'Bea' }])
