@@ -845,6 +845,24 @@ function parseSize(className: string, style: STXStyle): boolean {
   return true
 }
 
+/** `min-h-[44px]`, `max-w-sm`, `min-w-full`: the bounds flex layout keeps a box within. */
+const MAX_WIDTHS: Record<string, number> = { xs: 320, sm: 384, md: 448, lg: 512, xl: 576, '2xl': 672, '3xl': 768, '4xl': 896, '5xl': 1024, '6xl': 1152, '7xl': 1280 }
+function parseMinMax(className: string, style: STXStyle): boolean {
+  const match = /^(min|max)-(w|h)-(.+)$/.exec(className)
+  if (!match) return false
+  const [, bound, axis, value] = match
+  const size = value === 'full' || value === 'screen'
+    ? '100%'
+    : value === 'none'
+      ? undefined
+      : (axis === 'w' && bound === 'max' && MAX_WIDTHS[value]) || resolveSpacing(value)
+  if (size === undefined && value !== 'none') return false
+  const key = `${bound}${axis === 'w' ? 'Width' : 'Height'}` as 'minWidth' | 'maxWidth' | 'minHeight' | 'maxHeight'
+  if (size === undefined) delete style[key]
+  else style[key] = size
+  return true
+}
+
 /** `top-0`, `left-[12px]`, `-top-1`. */
 function parsePosition(className: string, style: STXStyle): boolean {
   const match = /^(-?)(top|right|bottom|left)-(.+)$/.exec(className)
@@ -974,6 +992,7 @@ export function compileHeadwindToStyle(classes: string, unknown?: string[]): STX
     if (parseGap(className, style)) continue
     if (parseTypography(className, style)) continue
     if (parseSize(className, style)) continue
+    if (parseMinMax(className, style)) continue
     if (parseGridColumns(className, style)) continue
     if (parsePosition(className, style)) continue
     if (parseSpace(className, style)) continue
