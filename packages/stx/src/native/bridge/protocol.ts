@@ -201,16 +201,16 @@ export interface EventPayload {
     }>
 
     /** Scroll data */
-    contentOffset?: { x: number; y: number }
-    contentSize?: { width: number; height: number }
-    layoutMeasurement?: { width: number; height: number }
+    contentOffset?: { x: number, y: number }
+    contentSize?: { width: number, height: number }
+    layoutMeasurement?: { width: number, height: number }
 
     /** Text input data */
     text?: string
-    selection?: { start: number; end: number }
+    selection?: { start: number, end: number }
 
     /** Layout data */
-    layout?: { x: number; y: number; width: number; height: number }
+    layout?: { x: number, y: number, width: number, height: number }
 
     /** Generic data */
     [key: string]: unknown
@@ -537,7 +537,7 @@ catch (error) {
    */
   render(
     document: import('../compiler/ir').STXDocument | import('../compiler/ir').STXNode,
-    options: { containerId?: string; mode?: 'replace' | 'append' | 'prepend' } = {}
+    options: { containerId?: string, mode?: 'replace' | 'append' | 'prepend' } = {}
   ): string {
     return this.send<RenderPayload>('RENDER', {
       document,
@@ -581,6 +581,13 @@ catch (error) {
    */
   goBack(): string {
     return this.send('NAVIGATE_BACK', {})
+  }
+
+  /**
+   * Back to the first screen of this screen's stack, in one move
+   */
+  popToRoot(): string {
+    return this.send('NAVIGATE_POP_TO_ROOT', {})
   }
 
   /**

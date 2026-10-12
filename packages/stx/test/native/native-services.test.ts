@@ -57,6 +57,14 @@ async function runtime(capabilities: string[] = ALL, params: Record<string, unkn
 const tick = () => new Promise(resolve => setTimeout(resolve, 0))
 
 describe('the screen coming back, and new params', () => {
+  it('goes back one screen, or to the first of the stack', async () => {
+    const { scope, sent } = await runtime()
+    scope.craft.navigation.back()
+    expect(sent.at(-1)).toMatchObject({ type: 'NAVIGATE_BACK' })
+    scope.craft.navigation.popToRoot()
+    expect(sent.at(-1)).toMatchObject({ type: 'NAVIGATE_POP_TO_ROOT' })
+  })
+
   it('tells onAppear and onDisappear, and unsubscribes', async () => {
     const { scope, receive } = await runtime([])
     const seen: string[] = []

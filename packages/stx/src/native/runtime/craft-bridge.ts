@@ -398,6 +398,8 @@ export function installCraftBridge(
     push: (screen: string, params?: Record<string, unknown>) => navigate('NAVIGATE', screen, params),
     replace: (screen: string, params?: Record<string, unknown>) => navigate('NAVIGATE_REPLACE', screen, params),
     back: () => protocol.goBack(),
+    // A finished task (a saved workout) closes to where its stack began.
+    popToRoot: () => protocol.popToRoot(),
     open: (path: string) => {
       if (typeof path !== 'string' || !path.trim()) throw new TypeError('navigation.open needs a path, such as /m/workout/42')
       return protocol.send('NAVIGATE_OPEN', { path })
