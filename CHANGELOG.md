@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.490...v0.2.491)
+
+## ✨ Features
+
+- **offline**: keep static routes, say when the server is unreachable, one outbox sender ([9e1aa7f](https://github.com/stacksjs/stx/commit/9e1aa7f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.491 ([fc5fdd1](https://github.com/stacksjs/stx/commit/fc5fdd1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.489...v0.2.490)
 
 ## ✨ Features
