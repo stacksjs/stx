@@ -69,4 +69,19 @@ describe('browser auto-import detection reads code, not prose', () => {
     expect(browserImportsFor('const helpers = { delay }')).toContain('delay')
     expect(browserImportsFor('const all = [...delay]')).toContain('delay')
   })
+
+  it('knows a name declared later in a declaration list is local', () => {
+    // Minified bundles fold declarations together: a demand-bundled composable
+    // shipped `const bpm = 100, delay = context.createDelay(1);` and only `bpm`
+    // counted as local, so `delay` was reported missing on every page.
+    expect(browserImportsFor('const bpm = 100, delay = ctx.createDelay(1); delay.connect(out)')).not.toContain('delay')
+    expect(browserImportsFor('let a = f(1, 2), sleep = 3, wait\nsleep + wait')).not.toContain('sleep')
+    expect(browserImportsFor('var x = [1, 2],\n  retry = 4\nretry')).not.toContain('retry')
+  })
+
+  it('does not read past the end of a declaration', () => {
+    expect(browserImportsFor('const a = 1\nrun(a, delay)')).toContain('delay')
+    expect(browserImportsFor('const a = 1; go(1, delay)')).toContain('delay')
+    expect(browserImportsFor('const { a, b } = o, c = 2\nawait delay(5)')).toContain('delay')
+  })
 })

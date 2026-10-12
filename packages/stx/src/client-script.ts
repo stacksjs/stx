@@ -549,11 +549,52 @@ interface AutoImportResult {
   browserImports: string[]
 }
 
+/**
+ * The names after the first in a declaration list: `const a = 1, b = f(1, 2), c`
+ * gives `b` and `c`. Minified bundles (a demand-bundled composable, say) fold
+ * consecutive declarations into one list, and only the first name used to
+ * count as local, so a later one that shares a browser auto-import's name
+ * (`delay`) was reported as a missing auto-import on every page.
+ */
+function laterDeclarators(code: string, from: number): string[] {
+  const names: string[] = []
+  let depth = 0
+  let quote = ''
+  for (let index = from; index < code.length; index++) {
+    const char = code[index]!
+    if (quote) {
+      if (char === '\\') index++
+      else if (char === quote) quote = ''
+      continue
+    }
+    if (char === '"' || char === '\'' || char === '`') {
+      quote = char
+      continue
+    }
+    if (char === '(' || char === '[' || char === '{') depth++
+    else if (char === ')' || char === ']' || char === '}') {
+      if (depth === 0) break
+      depth--
+    }
+    else if (depth === 0 && char === ';') break
+    // A line break ends the declaration unless the list carries on (`a = 1,\n b = 2`).
+    else if (depth === 0 && char === '\n' && !/,\s*$/.test(code.slice(Math.max(from, index - 200), index))) break
+    else if (depth === 0 && char === ',') {
+      const next = /^\s*([A-Za-z_$][\w$]*)\s*(?=[=,;\n)]|$)/.exec(code.slice(index + 1, index + 200))
+      if (next) names.push(next[1]!)
+    }
+  }
+  return names
+}
+
 function collectLocalBindings(code: string): Set<string> {
   const bindings = new Set<string>()
 
-  for (const match of code.matchAll(/\b(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/g))
+  for (const match of code.matchAll(/\b(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/g)) {
     bindings.add(match[1])
+    if (!/^(?:function|class)/.test(match[0]))
+      for (const name of laterDeclarators(code, (match.index ?? 0) + match[0].length)) bindings.add(name)
+  }
 
   for (const match of code.matchAll(/\b(?:const|let|var)\s*\{([^}]*)\}/g)) {
     for (const binding of match[1].split(',')) {
