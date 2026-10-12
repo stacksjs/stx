@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.467...v0.2.468)
+
+## ✨ Features
+
+- **components**: @stacksjs/components/overlays, the stack as a browser entry ([3c406d5](https://github.com/stacksjs/stx/commit/3c406d5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **registry**: a registry that fails to bundle says why in the browser ([3bfefcc](https://github.com/stacksjs/stx/commit/3bfefcc)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#1957](https://github.com/stacksjs/stx/issues/1957))
+
+## 🔧 Chores
+
+- release v0.2.468 ([6cc52cb](https://github.com/stacksjs/stx/commit/6cc52cb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.466...v0.2.467)
 
 ## ✨ Features
