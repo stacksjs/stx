@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.478...v0.2.479)
+
+## 🐛 Bug Fixes
+
+- a name later in a declaration list is local, not a missing auto-import ([08f74ec](https://github.com/stacksjs/stx/commit/08f74ec)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.479 ([6388a1a](https://github.com/stacksjs/stx/commit/6388a1a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.477...v0.2.478)
 
 ## 🐛 Bug Fixes
