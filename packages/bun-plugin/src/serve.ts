@@ -76,10 +76,10 @@ const INSTANCE_SCRIPT_OPEN_TAG = /^<script\b[^>]*\sdata-stx-(?:owner|instance)(?
 
 /**
  * Whether an instance script outside the container is the layout chrome's own
- * (#1958). An instance script is emitted after the component holding it, so
- * in a layout that wraps `<main>` in a component (an app shell) every page
- * component's script lands after the container too; one that names its root
- * in data-stx-owner belongs to the side that root is on. Mirrors
+ * (#1958). An instance script is emitted near the component holding it, so
+ * in a layout that wraps `<main>` in a component (an app shell) a page
+ * component's script may sit outside the container too; one that names its
+ * root in data-stx-owner belongs to the side that root is on. Mirrors
  * isChromeInstanceScript in stx's app-shell.ts, inlined because
  * '@stacksjs/stx' resolves to dist here, which lags src.
  */

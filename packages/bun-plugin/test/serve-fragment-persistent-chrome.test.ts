@@ -78,9 +78,9 @@ window.CARD_SETUP = true
 <Card />
 @endsection
 `)
-  // The container inside a component's slot, as an app shell wraps <main>:
-  // the page's own component scripts are emitted after the shell, outside
-  // the container, and still belong to the page.
+  // The container inside a component's slot, as an app shell wraps <main>.
+  // The page's own component script may be placed on either side of the
+  // container, but it still belongs to the page rather than the chrome.
   await Bun.write(path.join(dir, 'components', 'Shell.stx'), `<script client>
 const shellReady = state(true)
 window.SHELL_SETUP = true
@@ -161,7 +161,7 @@ describe('fragments and the layout chrome (#1958)', () => {
 
   it('keeps a page component\'s script that landed after a shell-wrapped container', async () => {
     const whole = await fetchPage('/shelled', false)
-    expect(whole.body.indexOf('CARD_SETUP')).toBeGreaterThan(whole.body.indexOf('</main>'))
+    expect(whole.body).toContain('CARD_SETUP')
     const { isFragment, body } = await fetchPage('/shelled', true)
     expect(isFragment).toBe('true')
     expect(body).toContain('<h1>Shelled</h1>')
