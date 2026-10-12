@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.477...v0.2.478)
+
+## 🐛 Bug Fixes
+
+- **native**: lucide's backpack is a known symbol ([e419b27](https://github.com/stacksjs/stx/commit/e419b27)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.478 ([e176ec7](https://github.com/stacksjs/stx/commit/e176ec7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.476...v0.2.477)
 
 ## ✨ Features
