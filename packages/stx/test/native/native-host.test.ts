@@ -286,15 +286,19 @@ describe('listeners and scope, without the DOM', () => {
     // either way and never learns the difference.
     const { host, node, ops } = harness()
     const seen: unknown[] = []
-    host.listen(node('n1'), 'press', payload => seen.push(payload))
+    const pressed = node('n1')
+    host.listen(pressed, 'press', payload => seen.push(payload))
     host.flush()
 
     const patch = (ops()[0] as { patch: { events: Record<string, string> } }).patch
     const handlerId = patch.events.onPress
     expect(handlerId).toBeTruthy()
 
+    // What native reports, at the node listening: its target, as in a browser.
     host.dispatch(handlerId, { x: 1 })
-    expect(seen).toEqual([{ x: 1 }])
+    host.dispatch(handlerId)
+    host.dispatch(handlerId, 0.5)
+    expect(seen).toEqual([{ x: 1, target: pressed, currentTarget: pressed }, { target: pressed, currentTarget: pressed }, 0.5])
   })
 
   it('maps web events to the names native renderers dispatch', () => {

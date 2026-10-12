@@ -68,6 +68,22 @@ interface RetainedNativeNode extends NativeNode {
   __stxDetachedRecord?: NodeRecord
 }
 
+/**
+ * A native event says what happened (a value, a position) but not where:
+ * the node listening is where, as `target` and `currentTarget` are in a
+ * browser. Without them the runtime could not tell a press on a control an
+ * `:if` has just shown from the click that showed it, and dropped it for
+ * 50ms; a `.self` handler never ran at all.
+ */
+function eventAt(payload: unknown, node: NativeNode): unknown {
+  if (payload === undefined || payload === null)
+    return { target: node, currentTarget: node }
+  if (typeof payload !== 'object' || Array.isArray(payload))
+    return payload
+  const event = payload as Record<string, unknown>
+  return { ...event, target: event.target ?? node, currentTarget: event.currentTarget ?? node }
+}
+
 export interface NativeHostOptions {
   /** Initial native appearance; later changes arrive through APPEARANCE. */
   colorScheme?: 'light' | 'dark'
@@ -524,7 +540,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       // either way.
       const id = nextId('h')
       const nativeEvent = NATIVE_EVENT_NAMES[event.toLowerCase()] ?? event
-      handlers.set(id, handler)
+      handlers.set(id, payload => handler(eventAt(payload, node)))
       const record = recordOf(node)
       record.events[nativeEvent] = id
       if (record.materialized)
