@@ -30,6 +30,7 @@ export const LUCIDE_TO_SF: Record<string, string> = {
   'at-sign': 'at',
   'audio-lines': 'waveform',
   'award': 'rosette',
+  'backpack': 'backpack',
   'badge-check': 'checkmark.seal',
   'bar-chart': 'chart.bar',
   'bar-chart-2': 'chart.bar',

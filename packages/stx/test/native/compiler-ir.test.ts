@@ -136,6 +136,8 @@ describe('native class and icon compatibility', () => {
       expect(LUCIDE_TO_SF[name]).toBeString()
     expect(resolveIconName('i-lucide-sun')).toEqual({ symbol: 'sun.max', iconify: 'i-lucide-sun', known: true })
     expect(resolveIconName('lucide:footprints').symbol).toBe('figure.run')
+    // The store's gear row (HQ): a known symbol, not the circle fallback.
+    expect(resolveIconName('backpack')).toMatchObject({ symbol: 'backpack', known: true })
     expect(resolveIconName('heart.fill')).toEqual({ symbol: 'heart.fill', known: true })
     expect(resolveIconName('i-mdi-home')).toEqual({ symbol: 'circle', iconify: 'i-mdi-home', known: false })
   })
