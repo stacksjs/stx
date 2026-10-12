@@ -128,9 +128,10 @@ function increment() { count.set(count() + 1) }
 const visible = state(false)
 const status = state('idle')
 function shown() { status.set('shown') }
+function requested() { status.set('requested') }
 </script>
 <View>
-  <Modal :visible="visible" @show="shown()"><Text>Modal</Text></Modal>
+  <Modal :visible="visible" @show="shown()" @request-close="requested()"><Text>Modal</Text></Modal>
   <Text :text="status" />
 </View>`
     const compiled = await compileScreenSource(source, path.join(import.meta.dir, 'NativeModalLifecycle.stx'))
@@ -150,7 +151,9 @@ function shown() { status.set('shown') }
 
     const initialOps = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
     const showListener = initialOps.find(operation => operation.patch?.events?.onShow)
+    const requestListener = initialOps.find(operation => operation.patch?.events?.onRequestClose)
     expect(showListener).toBeTruthy()
+    expect(requestListener).toBeTruthy()
 
     sent.length = 0
     receive(JSON.stringify({
@@ -161,6 +164,16 @@ function shown() { status.set('shown') }
 
     expect(sent.flatMap(message => message.payload.operations)).toContainEqual(expect.objectContaining({
       patch: { children: ['shown'] },
+    }))
+    sent.length = 0
+    receive(JSON.stringify({
+      type: 'EVENT',
+      payload: { handlerId: requestListener.patch.events.onRequestClose, nativeEvent: {} },
+    }))
+    screen.host.flush()
+
+    expect(sent.flatMap(message => message.payload.operations)).toContainEqual(expect.objectContaining({
+      patch: { children: ['requested'] },
     }))
     screen.unmount()
   })

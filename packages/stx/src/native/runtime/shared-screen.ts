@@ -88,8 +88,14 @@ export function prepareSharedNativeScreen(
       // Native hosts reconcile the root node. The compiler envelope also
       // carries build metadata and scripts, but treating that envelope as a
       // node silently produces an empty fallback View in the UIKit host.
-      protocol.render(document.root)
       dispose = runtime.hydrateHost(tree.root, setup, manifest, tree.nodes)
+      // Bindings must be installed before the first render reaches the host.
+      // Otherwise native lifecycle events see the source expression (for
+      // example `modalRequested()`) instead of the handler id registered by
+      // the shared runtime. Keep the initial render as the first bridge
+      // message, then flush the hydrated values and handler ids immediately.
+      protocol.render(document.root)
+      host.flush()
     },
     unmount() {
       dispose?.()
