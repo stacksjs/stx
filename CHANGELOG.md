@@ -1,5 +1,30 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.465...v0.2.466)
+
+## ✨ Features
+
+- **tabs**: TabList and Tab, a strip whose selection belongs to the page ([48742a4](https://github.com/stacksjs/stx/commit/48742a4)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2058](https://github.com/stacksjs/stx/issues/2058))
+
+## 🐛 Bug Fixes
+
+- read a regex inside a template interpolation ([da38575](https://github.com/stacksjs/stx/commit/da38575)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **overlays**: take a selector for the panel, and keep body tokens out ([535cdad](https://github.com/stacksjs/stx/commit/535cdad)) _(by Chris <chrisbreuer93@gmail.com>)_
+- one overlay stack for every dialog, drawer, popup and confirm ([9805b58](https://github.com/stacksjs/stx/commit/9805b58)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2057](https://github.com/stacksjs/stx/issues/2057), [#1998](https://github.com/stacksjs/stx/issues/1998))
+- **bundler**: a side-effect import no longer exports the next line's import keyword ([b31d1bd](https://github.com/stacksjs/stx/commit/b31d1bd)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **tabs**: the legacy prop API's item type is TabDefinition ([f5ec8b5](https://github.com/stacksjs/stx/commit/f5ec8b5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.466 ([c4bece5](https://github.com/stacksjs/stx/commit/c4bece5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.464...v0.2.465)
 
 ## 🐛 Bug Fixes
