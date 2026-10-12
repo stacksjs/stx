@@ -231,6 +231,8 @@ describe('mapToNativeComponent', () => {
   const NOT_NATIVE = [
     // Expanded away by the stx pipeline before the translator sees them.
     'component', 'slot',
+    // Unwrapped by html-to-ir, which keeps its children (Select's live list).
+    'template',
     // Drawing primitives. An icon's box survives as a View; its glyph does not.
     'svg', 'path', 'circle',
     // Media and embedding, with no IR counterpart yet.
