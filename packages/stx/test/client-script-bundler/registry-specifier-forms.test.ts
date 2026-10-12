@@ -13,7 +13,7 @@
  * whichever version happens to be installed.
  */
 import { describe, expect, it } from 'bun:test'
-import { normalizeRegistrySpecifiers, rewriteRegistryImports } from '../../src/client-script-bundler'
+import { hasUserImports, normalizeRegistrySpecifiers, rewriteRegistryImports } from '../../src/client-script-bundler'
 
 const registered = new Map([
   ['./first', 'stx-module:resources/first.ts'],
@@ -65,5 +65,39 @@ describe('normalizeRegistrySpecifiers', () => {
     expect(reads.join('\n')).toContain(`globalThis.__stxModules["resources/first.ts"]`)
     expect(reads.join('\n')).toContain(`globalThis.__stxModules["npm:@stacksjs/mobile"]`)
     expect(reads.join('\n')).toContain('var device = ')
+  })
+})
+
+/**
+ * Bun prints a side-effect import with no space after `import`, both from the
+ * transpiler and in a bundle: `import"stx-module:resources/functions/steps.ts";`.
+ * Every pass matched `import\s+`, so the script was not bundled at all, or its
+ * bundle kept the raw import and the component's scope never registered.
+ */
+describe('side-effect imports printed without a space', () => {
+  it('counts as a user import, so the script is bundled', () => {
+    expect(hasUserImports(`import"../functions/steps";\nconst a = 1`)).toBe(true)
+    expect(hasUserImports(`import"stx";`)).toBe(false)
+  })
+
+  it('maps the written specifier onto its registry path', () => {
+    const out = normalizeRegistrySpecifiers(`import"./first";`, registered)
+    expect(out).toBe(`import"stx-module:resources/first.ts";`)
+  })
+
+  it('becomes a registry presence check, leaving no import behind', () => {
+    const reads: string[] = []
+    const out = rewriteRegistryImports(`import"stx-module:resources/functions/steps.ts";\nvar a = 1;`, reads)
+
+    expect(out).not.toContain('import')
+    expect(reads.join('\n')).toContain(`globalThis.__stxModules["resources/functions/steps.ts"]`)
+  })
+
+  it('still binds a named import printed without spaces', () => {
+    const reads: string[] = []
+    const out = rewriteRegistryImports(`import{X as o}from"stx-module:resources/functions/steps.ts";`, reads)
+
+    expect(out.trim()).toBe('')
+    expect(reads.join('\n')).toContain('var o = __stxMod0["X"];')
   })
 })

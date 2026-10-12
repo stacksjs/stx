@@ -305,7 +305,9 @@ export function hasUserImports(code: string): boolean {
   // that bypasses the extractor can't trip Bun.build with an unsupported
   // loader. The `?inline`/`?raw` query suffix is tolerated to match how
   // bundlers conventionally disambiguate CSS variants.
-  const sideEffectRegex = /^[ \t]*import[ \t]+['"]([^'"]+)['"]/gm
+  // Bun's transpiler prints one with no space (`import"./steps";`), so the
+  // space is optional here and in every later pass that reads these.
+  const sideEffectRegex = /^[ \t]*import[ \t]*['"]([^'"]+)['"]/gm
   while ((match = sideEffectRegex.exec(code)) !== null) {
     const source = match[1]
     if (/\.css(?:\?.*)?$/.test(source))
@@ -371,7 +373,7 @@ export function normalizeRegistrySpecifiers(code: string, registered: ReadonlyMa
   if (registered.size === 0)
     return code
   return code.replace(
-    /^([ \t]*import\s+(?:[^;"']*?\s+from\s+)?)(["'])([^"']+)\2/gm,
+    /^([ \t]*import(?:(?:\s+|(?=[{*]))[^;"']*?\s*from\s*|\s*))(["'])([^"']+)\2/gm,
     (whole, head: string, quote: string, spec: string) => {
       const target = registered.get(spec)
       return target && !spec.startsWith(MODULE_SPECIFIER_PREFIX) ? `${head}${quote}${target}${quote}` : whole
@@ -414,7 +416,7 @@ export function rewriteRegistryImports(code: string, reads: string[]): string {
     }
   }
 
-  code = code.replace(/^[ \t]*import\s+([^;"']*?)\s+from\s+["'](stx-module:[^"']+)["'];?[ \t]*$/gm, (_all, rawClause: string, spec: string) => {
+  code = code.replace(/^[ \t]*import(?:\s+|(?=[{*]))([^;"']+?)\s*from\s*["'](stx-module:[^"']+)["'];?[ \t]*$/gm, (_all, rawClause: string, spec: string) => {
     const id = spec.slice(MODULE_SPECIFIER_PREFIX.length)
     const mod = moduleVar(id)
     let clause = rawClause.trim()
@@ -432,7 +434,7 @@ export function rewriteRegistryImports(code: string, reads: string[]): string {
   })
   // A side-effect import: the page bundle already evaluated it, so only the
   // presence check is emitted.
-  code = code.replace(/^[ \t]*import\s+["'](stx-module:[^"']+)["'];?[ \t]*$/gm, (_all, spec: string) => {
+  code = code.replace(/^[ \t]*import\s*["'](stx-module:[^"']+)["'];?[ \t]*$/gm, (_all, spec: string) => {
     moduleVar(spec.slice(MODULE_SPECIFIER_PREFIX.length))
     return ''
   })
@@ -1161,7 +1163,7 @@ async function buildBundle(
 
     // External runtime imports must remain at top level so the downstream
     // auto-import transform can replace them with window.stx bindings.
-    const externalImports = bundled.match(/^\s*import\s+[^;]+;?\s*$/gm) || []
+    const externalImports = bundled.match(/^\s*import(?:\s+|(?=["'{*]))[^;]+;?\s*$/gm) || []
 
     // Isolate every Bun bundle in its own function scope. Layout and page
     // scripts are bundled independently, and Bun commonly assigns identical
@@ -1171,7 +1173,7 @@ async function buildBundle(
     // re-exposed outside the closure, using `var` so separate setup blocks can
     // intentionally share a public name without creating a syntax error.
     bundled = bundled
-      .replace(/^\s*import\s+[^;]+;?\s*$/gm, '')
+      .replace(/^\s*import(?:\s+|(?=["'{*]))[^;]+;?\s*$/gm, '')
       .replace(/^\s*export\s*\{[^}]*\}\s*;?\s*$/gm, '')
       .replace(/^\s*export\s+default\s+.*$/gm, '')
       .trim()
