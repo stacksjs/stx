@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.484...v0.2.485)
+
+## 🐛 Bug Fixes
+
+- **native**: a press on what an :if just showed reaches it ([608aebf](https://github.com/stacksjs/stx/commit/608aebf)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.485 ([106a60c](https://github.com/stacksjs/stx/commit/106a60c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.483...v0.2.484)
 
 ## ✨ Features
