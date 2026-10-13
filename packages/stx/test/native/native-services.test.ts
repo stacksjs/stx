@@ -308,6 +308,39 @@ describe('a workout player\'s services, in the page\'s names', () => {
     expect(scope.craft.heartRate).toBeUndefined()
     expect(scope.craft.capabilities.heartRate).toBe(false)
   })
+
+  it('schedules workouts onto the Apple Watch in the page\'s names', async () => {
+    const { scope, requests, answer } = await runtime([...ALL, 'scheduledWorkouts'])
+    expect(scope.craft.capabilities.scheduledWorkouts).toBe(true)
+    // Asking to schedule shows iOS's prompt: never timed out.
+    const asked = scope.craft.scheduledWorkouts.requestAuthorization()
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'ScheduledWorkouts', method: 'requestAuthorization' })
+    await new Promise(resolve => setTimeout(resolve, 1100))
+    answer(requests().at(-1)!, 'authorized')
+    expect(await asked).toBe('authorized')
+    const plan = { id: '6f1c2b8e-5a7d-4c3e-9b1a-2d4e6f8a0b1c', date: '2026-10-20', workout: { activity: 'running', location: 'outdoor', displayName: 'Easy', blocks: [] } }
+    for (const [call, payload, data] of [
+      [() => scope.craft.scheduledWorkouts.isSupported(), { method: 'isSupported', args: [{}] }, true],
+      [() => scope.craft.scheduledWorkouts.authorization(), { method: 'authorization', args: [{}] }, 'authorized'],
+      [() => scope.craft.scheduledWorkouts.list(), { method: 'list', args: [{}] }, [{ id: plan.id, date: plan.date, hour: 7, minute: 0, complete: false }]],
+      [() => scope.craft.scheduledWorkouts.schedule(plan), { method: 'schedule', args: [plan] }, { id: plan.id }],
+      [() => scope.craft.scheduledWorkouts.remove(plan.id), { method: 'remove', args: [{ id: plan.id }] }, true],
+      [() => scope.craft.scheduledWorkouts.remove({ id: plan.id }), { method: 'remove', args: [{ id: plan.id }] }, false],
+      [() => scope.craft.scheduledWorkouts.removeAll(), { method: 'removeAll', args: [{}] }, 2],
+    ] as Array<[() => Promise<unknown>, Record<string, unknown>, unknown]>) {
+      const answered = call()
+      expect(requests().at(-1)!.payload).toMatchObject({ module: 'ScheduledWorkouts', ...payload })
+      answer(requests().at(-1)!, data)
+      expect(await answered).toEqual(data)
+    }
+    await expect(scope.craft.scheduledWorkouts.schedule(null)).rejects.toThrow('needs a plan')
+  })
+
+  it('has no watch scheduling where the host offers none', async () => {
+    const { scope } = await runtime()
+    expect(scope.craft.scheduledWorkouts).toBeUndefined()
+    expect(scope.craft.capabilities.scheduledWorkouts).toBe(false)
+  })
 })
 
 describe('files: a picked photo, a download, a form', () => {

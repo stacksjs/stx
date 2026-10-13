@@ -266,6 +266,19 @@ export interface NativeCraft {
     saveMindfulSession: (session: { id: string, startDate: number, endDate: number }) => Promise<{ id: string, externalId: string, existing: boolean }>
     getMindfulSessions: (options?: { startDate?: number, endDate?: number, limit?: number }) => Promise<Array<Record<string, unknown>>>
   }
+  /**
+   * Structured workouts on the paired Apple Watch (`capabilities.scheduledWorkouts`,
+   * WorkoutKit, iOS 17+). A plan is `{ id, date: 'YYYY-MM-DD', hour?, minute?, workout }`.
+   */
+  scheduledWorkouts?: {
+    isSupported: () => Promise<boolean>
+    authorization: () => Promise<'authorized' | 'denied' | 'notDetermined' | 'restricted' | 'unsupported'>
+    requestAuthorization: () => Promise<'authorized' | 'denied' | 'notDetermined' | 'restricted' | 'unsupported'>
+    list: () => Promise<Array<{ id: string, date: string, hour?: number, minute?: number, complete: boolean }>>
+    schedule: (plan: Record<string, unknown>) => Promise<{ id: string, droppedAlerts?: string[] }>
+    remove: (id: string) => Promise<boolean>
+    removeAll: () => Promise<number>
+  }
   notifications: {
     show: (notification: unknown) => Promise<unknown>
     schedule: (notification: unknown) => Promise<unknown>

@@ -26,6 +26,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     geolocation: capabilities.has('geolocation'),
     music: capabilities.has('music'),
     heartRate: capabilities.has('heartRate'),
+    scheduledWorkouts: capabilities.has('scheduledWorkouts'),
     clipboard: capabilities.has('clipboard'),
     contacts: false,
     calendar: false,
@@ -369,6 +370,25 @@ export function installCraftBridge(
       stopRecording: () => strap('stopRecording'),
       getRecordingState: () => strap('getRecordingState'),
       readRecording: (options: AnyRecord = {}) => strap('readRecording', { since: typeof options.since === 'number' ? options.since : null }),
+    }
+  }
+
+  // Structured workouts on the paired Apple Watch (WorkoutKit, iOS 17+), in
+  // the page's names: `craft.scheduledWorkouts`, so `@stacksjs/mobile`'s
+  // `scheduledWorkouts` works on a native screen too. Asking to schedule is a
+  // question to the person; the rest answer from WorkoutKit.
+  if (capabilities.has('scheduledWorkouts')) {
+    const scheduled = (method: string, options: AnyRecord = {}) => request('ScheduledWorkouts', method, [options])
+    craft.scheduledWorkouts = {
+      isSupported: () => scheduled('isSupported'),
+      authorization: () => scheduled('authorization'),
+      requestAuthorization: () => ask('ScheduledWorkouts', 'requestAuthorization', [{}]),
+      list: () => scheduled('list'),
+      schedule: (plan: AnyRecord) => plan && typeof plan === 'object'
+        ? scheduled('schedule', plan)
+        : Promise.reject(new TypeError('scheduledWorkouts.schedule needs a plan')),
+      remove: (id: string | AnyRecord) => scheduled('remove', { id: typeof id === 'string' ? id : id?.id }),
+      removeAll: () => scheduled('removeAll'),
     }
   }
 
