@@ -579,6 +579,22 @@ class NativeAbortController {
 
 export { NativeAbortController, NativeAbortSignal }
 
+/** A display's frame, in milliseconds: 60 a second. */
+export const NATIVE_FRAME_MS = 1000 / 60
+
+/**
+ * `requestAnimationFrame` where the host has none: the callback runs on the
+ * next 60 Hz frame boundary of the host's clock, with that clock's time, as
+ * a browser runs it before its next paint. A loop that asks again from its
+ * callback (an animated scene) runs at 60 frames a second, not as fast as
+ * the run loop allows, which a zero-delay timer did.
+ */
+export function nativeAnimationFrame(target: AnyRecord, callback: (time: number) => void): unknown {
+  const now = (): number => typeof target.performance?.now === 'function' ? target.performance.now() : Date.now()
+  const wait = NATIVE_FRAME_MS - (now() % NATIVE_FRAME_MS)
+  return target.setTimeout(() => callback(now()), Math.max(1, Math.round(wait)))
+}
+
 /** Install only the browser-shaped globals the shared runtime needs to boot in JSC. */
 export function installJSCGlobals(target: AnyRecord = globalThis as AnyRecord): void {
   const listeners = new Map<string, Set<(event: unknown) => void>>()
@@ -615,7 +631,7 @@ export function installJSCGlobals(target: AnyRecord = globalThis as AnyRecord): 
   target.AbortSignal ??= NativeAbortSignal
   target.performance ??= { now: () => Date.now() }
   target.queueMicrotask ??= (callback: () => void) => Promise.resolve().then(callback)
-  target.requestAnimationFrame ??= (callback: (time: number) => void) => target.setTimeout(() => callback(Date.now()), 0)
+  target.requestAnimationFrame ??= (callback: (time: number) => void) => nativeAnimationFrame(target, callback)
   target.cancelAnimationFrame ??= (id: unknown) => target.clearTimeout(id)
   target.location ??= { href: '', pathname: '/', search: '', hash: '' }
   target.history ??= { back() {}, forward() {}, pushState() {}, replaceState() {} }
