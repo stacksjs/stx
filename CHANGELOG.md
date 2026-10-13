@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.510...v0.2.511)
+
+## ✨ Features
+
+- **native**: craft.media keeps video on the phone for offline ([2aba0fa](https://github.com/stacksjs/stx/commit/2aba0fa)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.511 ([fcf78b0](https://github.com/stacksjs/stx/commit/fcf78b0)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.509...v0.2.510)
 
 ## ✨ Features
