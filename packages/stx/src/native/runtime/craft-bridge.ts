@@ -457,6 +457,8 @@ export function installCraftBridge(
       getDailyStatistics: (type: string, options: AnyRecord = {}) => request('Health', 'getDailyStatistics', [type, options]),
       getHeartRateSamples: (options: AnyRecord = {}) => request('Health', 'getHeartRateSamples', [options]),
       getSleepIntervals: (options: AnyRecord = {}) => request('Health', 'getSleepIntervals', [options]),
+      saveMindfulSession: (session: AnyRecord) => request('Health', 'saveMindfulSession', [session]),
+      getMindfulSessions: (options: AnyRecord = {}) => request('Health', 'getMindfulSessions', [options]),
     }
   }
   craft.scheduleNotification = craft.notifications.schedule

@@ -212,6 +212,8 @@ describe('shared-runtime native capability protocol', () => {
     scope.craft.health.getHeartRateSamples({ startDate: 1, endDate: 2 })
     scope.craft.health.getSleepIntervals()
     scope.craft.health.requestAuthorization(['workouts'], { write: false })
+    scope.craft.health.saveMindfulSession({ id: 'hq-1', startDate: 1, endDate: 2 })
+    scope.craft.health.getMindfulSessions({ startDate: 1 })
     const requests = sent.filter(message => message.type === 'API_REQUEST')
     expect(requests.map(message => [message.payload.method, message.payload.args])).toEqual([
       ['getWorkouts', [{ startDate: 1, endDate: 2, limit: 5 }]],
@@ -219,6 +221,8 @@ describe('shared-runtime native capability protocol', () => {
       ['getHeartRateSamples', [{ startDate: 1, endDate: 2 }]],
       ['getSleepIntervals', [{}]],
       ['requestAuthorization', [['workouts'], { write: false }]],
+      ['saveMindfulSession', [{ id: 'hq-1', startDate: 1, endDate: 2 }]],
+      ['getMindfulSessions', [{ startDate: 1 }]],
     ])
     expect(requests.every(message => message.payload.module === 'Health')).toBe(true)
     requests.forEach((request, index) => receive({
