@@ -430,10 +430,14 @@ export {
 // Timers
 export {
   useDebounce,
+  useDebounceFn,
   useDebouncedValue,
+  refDebounced,
   useThrottle,
+  useThrottleFn,
   useInterval,
   useTimeout,
+  useTimeoutFn,
   type DebouncedFn,
   type ThrottledFn,
   type DebouncedValueRef,

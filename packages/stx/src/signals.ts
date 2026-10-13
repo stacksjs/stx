@@ -5799,6 +5799,9 @@ else if (!value && isInserted) {
     return debounced;
   }
 
+  // VueUse-compatible alias; both names use the same callback contract.
+  var useDebounceFn = useDebounce;
+
   function useDebouncedValue(getter, delay) {
     delay = delay || 250;
     var current = getter();
@@ -5825,6 +5828,9 @@ else if (!value && isInserted) {
       }
     };
   }
+
+  // VueUse-compatible alias; keep the existing value-ref shape.
+  var refDebounced = useDebouncedValue;
 
   function useThrottle(fn, limit) {
     limit = limit || 250;
@@ -5853,6 +5859,8 @@ else if (timer === null) {
     onDestroy(throttled.cancel);
     return throttled;
   }
+
+  var useThrottleFn = useThrottle;
 
   function useInterval(interval, options, thirdOptions) {
     // Accept the callback-first form too — useInterval(fn, 1000) is what most
@@ -5961,6 +5969,8 @@ else if (timer === null) {
       }
     };
   }
+
+  var useTimeoutFn = useTimeout;
 
   function useToggle(initial) {
     var current = !!initial;
@@ -7857,10 +7867,14 @@ catch (e) {} }
     watch,
     watchEffect,
     useDebounce,
+    useDebounceFn,
     useDebouncedValue,
+    refDebounced,
     useThrottle,
+    useThrottleFn,
     useInterval,
     useTimeout,
+    useTimeoutFn,
     useToggle,
     useCounter,
     useClickOutside,

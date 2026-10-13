@@ -121,6 +121,9 @@ export function useDebounce<T extends (...args: any[]) => any>(
   return debounced
 }
 
+/** VueUse-compatible alias for useDebounce. */
+export const useDebounceFn = useDebounce
+
 // =============================================================================
 // useDebouncedValue
 // =============================================================================
@@ -177,6 +180,9 @@ export function useDebouncedValue<T>(
   }
 }
 
+/** VueUse-compatible alias for the existing debounced value ref. */
+export const refDebounced = useDebouncedValue
+
 // =============================================================================
 // useThrottle
 // =============================================================================
@@ -231,6 +237,9 @@ export function useThrottle<T extends (...args: any[]) => any>(
 
   return throttled
 }
+
+/** VueUse-compatible alias for useThrottle. */
+export const useThrottleFn = useThrottle
 
 // =============================================================================
 // useInterval
@@ -384,3 +393,6 @@ export function useTimeout(
     },
   }
 }
+
+/** VueUse-compatible alias for useTimeout. */
+export const useTimeoutFn = useTimeout
