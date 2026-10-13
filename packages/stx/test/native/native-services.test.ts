@@ -343,6 +343,38 @@ describe('a workout player\'s services, in the page\'s names', () => {
   })
 })
 
+describe('media kept on the phone for offline', () => {
+  it('keeps a video untimed with the screen\'s headers, and answers where it is', async () => {
+    const { scope, requests, answer } = await runtime([...ALL, 'media'])
+    expect(scope.craft.capabilities.media).toBe(true)
+    const url = 'https://hq.training/api/exercise-videos/8eaf.mp4'
+    const kept = scope.craft.media.keep(url, { headers: { Authorization: 'Bearer t' } })
+    const keep = requests().at(-1)!
+    // Untimed: a long video on a slow signal outlasts the bridge's deadline.
+    expect(keep.payload).toEqual({ version: 1, module: 'Media', method: 'keep', args: [url, { headers: { Authorization: 'Bearer t' } }], untimed: true })
+    const copy = { ok: true, url, path: '/var/mobile/Library/Application Support/craft-media/ab.mp4', size: 1338153 }
+    answer(keep, copy)
+    expect(await kept).toEqual(copy)
+
+    const where = scope.craft.media.path(url)
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'Media', method: 'path', args: [url] })
+    answer(requests().at(-1)!, null)
+    expect(await where).toBeNull()
+
+    const pruned = scope.craft.media.prune([url, 7])
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'Media', method: 'prune', args: [[url]] })
+    answer(requests().at(-1)!, 3)
+    expect(await pruned).toBe(3)
+    await expect(scope.craft.media.keep('')).rejects.toThrow('media.keep needs a URL')
+  })
+
+  it('has no media store where the host offers none', async () => {
+    const { scope } = await runtime(ALL)
+    expect(scope.craft.capabilities.media).toBe(false)
+    expect(scope.craft.media).toBeUndefined()
+  })
+})
+
 describe('files: a picked photo, a download, a form', () => {
   const photo = { path: '/tmp/craft-files/A1/IMG_1234.jpg', name: 'IMG_1234.jpg', type: 'image/jpeg', size: 312004, width: 2048, height: 1536 }
 

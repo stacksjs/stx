@@ -17,6 +17,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     share: capabilities.has('share'),
     camera: capabilities.has('camera'),
     files: capabilities.has('files'),
+    media: capabilities.has('media'),
     biometric: capabilities.has('biometric'),
     pushNotifications: capabilities.has('push'),
     secureStorage: capabilities.has('secureStorage'),
@@ -389,6 +390,28 @@ export function installCraftBridge(
         : Promise.reject(new TypeError('scheduledWorkouts.schedule needs a plan')),
       remove: (id: string | AnyRecord) => scheduled('remove', { id: typeof id === 'string' ? id : id?.id }),
       removeAll: () => scheduled('removeAll'),
+    }
+  }
+
+  // Video and audio kept on the phone for offline (CraftNativeMedia): `keep`
+  // fetches an address once and resolves `{ ok, url, path, size }` (or
+  // `{ ok: false, status }`); a native Video given that address then plays
+  // the copy. `keep` is untimed: a long video on a slow signal outlasts the
+  // bridge's deadline, and the host's own download timeout still applies.
+  if (capabilities.has('media')) {
+    craft.media = {
+      keep: (url: string, options: AnyRecord = {}) => {
+        if (typeof url !== 'string' || !url) return Promise.reject(new TypeError('media.keep needs a URL'))
+        const headers: Record<string, string> = {}
+        const given = options.headers
+        if (given && typeof given === 'object') Object.keys(given).forEach((name) => { headers[name] = String(given[name]) })
+        return ask('Media', 'keep', [url, { headers }])
+      },
+      path: (url: string) => typeof url === 'string' && url
+        ? request('Media', 'path', [url]).then((path: unknown) => (typeof path === 'string' ? path : null))
+        : Promise.resolve(null),
+      prune: (urls: string[] = []) => request('Media', 'prune', [(Array.isArray(urls) ? urls : []).filter(url => typeof url === 'string')]),
+      usage: () => request('Media', 'usage', []),
     }
   }
 
