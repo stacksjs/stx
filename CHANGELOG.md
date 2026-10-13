@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.497...v0.2.498)
+
+## 🐛 Bug Fixes
+
+- **native**: requestAnimationFrame runs at 60 Hz on a native screen ([dd13f96](https://github.com/stacksjs/stx/commit/dd13f96)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.498 ([7c37d0a](https://github.com/stacksjs/stx/commit/7c37d0a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.496...v0.2.497)
 
 ## ✨ Features
