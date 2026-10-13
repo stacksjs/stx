@@ -358,7 +358,7 @@ describe('files: a picked photo, a download, a form', () => {
     void scope.craft.share({ files: [csv] })
     expect(requests().at(-1)!.payload).toMatchObject({ module: 'Share', method: 'share', args: [{ files: [csv] }], untimed: true })
 
-    void scope.craft.files.write('dot.png', 'iVBORw0KGgo=', { encoding: 'base64' })
+    scope.craft.files.write('dot.png', 'iVBORw0KGgo=', { encoding: 'base64' }).catch(() => {})
     expect(requests().at(-1)!.payload.args[2]).toEqual({ encoding: 'base64' })
     await expect(scope.craft.files.write('', 'x')).rejects.toThrow('files.write needs a file name')
     await expect(scope.craft.files.write('x.txt', 42)).rejects.toThrow('files.write needs its contents as a string')
@@ -408,7 +408,7 @@ describe('files: a picked photo, a download, a form', () => {
     const { scope, requests } = await runtime()
     void scope.craft.share({ title: 'HQ' })
     expect(requests().at(-1)!.payload.untimed).toBe(true)
-    void scope.craft.clipboard.read()
+    scope.craft.clipboard.read().catch(() => {})
     expect(requests().at(-1)!.payload.untimed).toBeUndefined()
   })
 })
