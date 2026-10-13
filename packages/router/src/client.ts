@@ -2459,6 +2459,9 @@ else {
     while(host.firstChild)el.appendChild(host.firstChild);
     host.appendChild(el);
     if(host.__stx_disposers){el.__stx_disposers=host.__stx_disposers;host.__stx_disposers=null}
+    // What the runtime keeps on the container for its top-level :if nodes that
+    // are hidden (off the page, so out of reach of a DOM walk) goes with them.
+    if(host.__stx_detached_if){el.__stx_detached_if=host.__stx_detached_if;host.__stx_detached_if=null}
     if(!curTab)curTab=currentTabId();
     active=newEntry(location.pathname+location.search+location.hash,scrollToken,histDepth);
     active.el=el;

@@ -4368,6 +4368,33 @@ catch (e2) {
     return !!row && (!scope || scope[row.name] !== row.signal);
   }
 
+  // Where a structural directive's output goes is wherever its placeholder
+  // is NOW, not the parent it was bound under. Something may move the
+  // placeholder after binding: the router adopts the first page into a
+  // retained screen (<div data-stx-screen>) by moving the container's
+  // children, and an app may move a node itself. A :for or :if at the top
+  // level of a page kept inserting into the container while its placeholder
+  // sat in the screen, and the browser threw "insertBefore: the node before
+  // which the new node is to be inserted is not a child of this node" -- the
+  // page went blank the first time a top-level condition changed. The
+  // if/else chain has always inserted at its placeholder's parent; :if and
+  // :for now do the same. Hidden nodes registered on the old parent (#1954)
+  // follow, so a later disposal walk of the new one still finds them.
+  function followPlaceholder(placeholder, parent, nodes) {
+    var now = placeholder.parentNode;
+    if (!now || now === parent) return parent;
+    var held = parent && parent.__stx_detached_if;
+    if (held && nodes) {
+      nodes.forEach(function(node) {
+        if (!held.has(node)) return;
+        held.delete(node);
+        if (!now.__stx_detached_if) now.__stx_detached_if = new Set();
+        now.__stx_detached_if.add(node);
+      });
+    }
+    return now;
+  }
+
   function bindFor(el, passedScope = componentScope, attrName = '@for') {
     if (el.__stx_for_bound) return;
     el.__stx_for_bound = true;
@@ -4381,7 +4408,7 @@ catch (e2) {
     }
 
     const [, itemName, indexName, listExpr] = match;
-    const parent = el.parentNode;
+    let parent = el.parentNode;
 
     // Guard: if element has no parent, it's detached - skip processing
     if (!parent) {
@@ -4690,6 +4717,7 @@ catch (e) {
     };
 
     effect(() => {
+      parent = followPlaceholder(placeholder, parent);
       // Use evalLazy for the list expression — only tracks the list signal,
       // not every signal in the component scope. This prevents unrelated
       // signals (modalOpen, menuOpen, etc.) from triggering a full rebuild.
@@ -5400,7 +5428,7 @@ catch (e) { /* a disposer of its own is not this branch's problem */ }
     el.__stx_if_bound = true;
 
     const expr = el.getAttribute(attrName);
-    const parent = el.parentNode;
+    let parent = el.parentNode;
 
     // Guard: if element has no parent, it's detached - skip processing
     if (!parent) {
@@ -5521,6 +5549,7 @@ catch (e2) {
     const directSignal = fullScope[expr];
 
     effect(() => {
+      parent = followPlaceholder(placeholder, parent, currentNodes);
       var value;
       if (directSignal && (directSignal._isSignal || directSignal._isDerived)) {
         value = directSignal();
