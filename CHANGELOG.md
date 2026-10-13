@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.509...v0.2.510)
+
+## ✨ Features
+
+- **native**: craft.scheduledWorkouts schedules Apple Watch workouts on native screens ([0fe1261](https://github.com/stacksjs/stx/commit/0fe1261)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.510 ([bb63c7d](https://github.com/stacksjs/stx/commit/bb63c7d)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.508...v0.2.509)
 
 ## 🐛 Bug Fixes
