@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.498...v0.2.499)
+
+## ✨ Features
+
+- **native**: craft.heartRate reads a heart-rate strap on native screens ([4dec69f](https://github.com/stacksjs/stx/commit/4dec69f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.499 ([22808a5](https://github.com/stacksjs/stx/commit/22808a5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.497...v0.2.498)
 
 ## 🐛 Bug Fixes
