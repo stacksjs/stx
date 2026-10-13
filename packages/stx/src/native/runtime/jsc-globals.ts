@@ -511,6 +511,113 @@ function nativeAtob(input: unknown): string {
 
 export { nativeAtob, nativeBtoa }
 
+/**
+ * A file `craft.files` made on the phone (a picked photo, a download): a path
+ * the host reads itself, so its bytes never pass through JavaScriptCore.
+ */
+export interface NativeFile {
+  path: string
+  name: string
+  type: string
+  size: number
+  [key: string]: unknown
+}
+
+export function isNativeFile(value: unknown): value is NativeFile {
+  return !!value && typeof value === 'object' && typeof (value as AnyRecord).path === 'string' && typeof (value as AnyRecord).name === 'string'
+}
+
+type FormValue = string | NativeFile
+
+/**
+ * `FormData`, which JavaScriptCore does not have: the web's shape, holding
+ * text and the files `craft.files` made (a `File` on the page). `fetch` on a
+ * native screen sends it as multipart/form-data, built by the host, so code
+ * shared with the page posts a photo the same way on both
+ * (`form.append('photo', file)`). Installed where the host can send one (the
+ * `files` capability).
+ */
+export class NativeFormData {
+  private list: Array<[string, FormValue]> = []
+
+  constructor(form?: unknown) {
+    if (form !== undefined) throw new TypeError('FormData on a native screen is built with append(); there is no <form> to read')
+  }
+
+  append(name: string, value: unknown, filename?: string): void {
+    this.list.push([String(name), formValue(value, filename)])
+  }
+
+  set(name: string, value: unknown, filename?: string): void {
+    const key = String(name)
+    const entry: [string, FormValue] = [key, formValue(value, filename)]
+    const first = this.list.findIndex(([at]) => at === key)
+    if (first === -1) {
+      this.list.push(entry)
+      return
+    }
+    this.list = this.list.filter(([at], index) => index === first || at !== key)
+    this.list[first] = entry
+  }
+
+  get(name: string): FormValue | null {
+    return this.list.find(([at]) => at === String(name))?.[1] ?? null
+  }
+
+  getAll(name: string): FormValue[] {
+    return this.list.filter(([at]) => at === String(name)).map(([, value]) => value)
+  }
+
+  has(name: string): boolean {
+    return this.list.some(([at]) => at === String(name))
+  }
+
+  delete(name: string): void {
+    this.list = this.list.filter(([at]) => at !== String(name))
+  }
+
+  forEach(callback: (value: FormValue, name: string, form: NativeFormData) => void): void {
+    for (const [name, value] of [...this.list]) callback(value, name, this)
+  }
+
+  entries(): IterableIterator<[string, FormValue]> {
+    return this.list.map(([name, value]): [string, FormValue] => [name, value])[Symbol.iterator]()
+  }
+
+  keys(): IterableIterator<string> {
+    return this.list.map(([name]) => name)[Symbol.iterator]()
+  }
+
+  values(): IterableIterator<FormValue> {
+    return this.list.map(([, value]) => value)[Symbol.iterator]()
+  }
+
+  [Symbol.iterator](): IterableIterator<[string, FormValue]> {
+    return this.entries()
+  }
+
+  get [Symbol.toStringTag](): string {
+    return 'FormData'
+  }
+}
+
+function formValue(value: unknown, filename?: string): FormValue {
+  // A file keeps its own name unless one is given, as a page's File does.
+  if (isNativeFile(value)) return { ...value, name: filename === undefined ? value.name : String(filename) }
+  return String(value)
+}
+
+/** A form as `Network.fetch` sends it: text fields and file paths. */
+export function nativeFormParts(form: NativeFormData): Array<{ name: string, value: string } | { name: string, path: string, filename: string, type: string }> {
+  const parts: Array<{ name: string, value: string } | { name: string, path: string, filename: string, type: string }> = []
+  form.forEach((value, name) => {
+    parts.push(typeof value === 'string'
+      ? { name, value }
+      : { name, path: value.path, filename: value.name, type: typeof value.type === 'string' && value.type ? value.type : 'application/octet-stream' })
+  })
+  return parts
+}
+
 /** The error an aborted `fetch` rejects with, named as the web names it. */
 export function abortError(reason?: unknown): Error {
   if (reason instanceof Error) return reason

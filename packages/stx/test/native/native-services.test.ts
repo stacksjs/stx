@@ -310,6 +310,92 @@ describe('a workout player\'s services, in the page\'s names', () => {
   })
 })
 
+describe('files: a picked photo, a download, a form', () => {
+  const photo = { path: '/tmp/craft-files/A1/IMG_1234.jpg', name: 'IMG_1234.jpg', type: 'image/jpeg', size: 312004, width: 2048, height: 1536 }
+
+  it('picks a photo untimed, here and at the host, and answers null when the picker was closed', async () => {
+    const { scope, requests, answer } = await runtime([...ALL, 'files'])
+    expect(scope.craft.capabilities.files).toBe(true)
+    expect(scope.craft.capabilities.camera).toBe(false)
+    const picked = scope.craft.files.pickImage({ maxPixels: 1600 })
+    const ask = requests().at(-1)!
+    expect(ask.payload).toEqual({ version: 1, module: 'Files', method: 'pickImage', args: [{ source: 'library', maxPixels: 1600 }], untimed: true })
+    // Longer than any deadline: a person is choosing.
+    await new Promise(resolve => setTimeout(resolve, 1100))
+    answer(ask, photo)
+    expect(await picked).toEqual(photo)
+
+    const closed = scope.craft.files.pickImage({ source: 'camera' })
+    expect(requests().at(-1)!.payload.args).toEqual([{ source: 'camera' }])
+    answer(requests().at(-1)!, null)
+    expect(await closed).toBeNull()
+  })
+
+  it('downloads to a file with the screen\'s headers, and forgets it', async () => {
+    const { scope, requests, answer } = await runtime([...ALL, 'files'])
+    const fetched = scope.craft.files.download('https://hq.training/api/activities/9/gpx', { headers: { Authorization: 'Bearer t' } })
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'Files', method: 'download', args: ['https://hq.training/api/activities/9/gpx', { headers: { Authorization: 'Bearer t' } }] })
+    expect(requests().at(-1)!.payload.untimed).toBeUndefined()
+    const file = { ok: true, status: 200, path: '/tmp/craft-files/B2/long-run.gpx', name: 'long-run.gpx', type: 'application/gpx+xml', size: 812 }
+    answer(requests().at(-1)!, file)
+    expect(await fetched).toEqual(file)
+
+    const removed = scope.craft.files.remove(file)
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'Files', method: 'remove', args: [file.path] })
+    answer(requests().at(-1)!, true)
+    expect(await removed).toBe(true)
+    await expect(scope.craft.files.download('')).rejects.toThrow('files.download needs a URL')
+  })
+
+  it('posts a FormData as parts the host sends as multipart, the file by its path', async () => {
+    const { scope, requests, answer } = await runtime([...ALL, 'files'])
+    const form = new scope.FormData()
+    form.append('caption', 'Long run')
+    form.append('photo', photo)
+    form.append('photo', photo, 'cover.jpg')
+    expect(form.get('caption')).toBe('Long run')
+    expect(form.getAll('photo').map((file: { name: string }) => file.name)).toEqual(['IMG_1234.jpg', 'cover.jpg'])
+    // A name given to append is the part's, not the picked file's.
+    expect(photo.name).toBe('IMG_1234.jpg')
+    form.set('photo', photo)
+    expect([...form.keys()]).toEqual(['caption', 'photo'])
+    expect(Object.prototype.toString.call(form)).toBe('[object FormData]')
+
+    const sent = scope.fetch('https://hq.training/api/activities/9/photo', { method: 'POST', headers: { 'Authorization': 'Bearer t', 'Content-Type': 'application/json' }, body: form })
+    const request = requests().at(-1)!
+    expect(request.payload).toMatchObject({ module: 'Network', method: 'fetch' })
+    expect(request.payload.args[0]).toEqual({
+      url: 'https://hq.training/api/activities/9/photo',
+      method: 'POST',
+      // The host sets the content type, with its boundary.
+      headers: { authorization: 'Bearer t' },
+      body: null,
+      form: [
+        { name: 'caption', value: 'Long run' },
+        { name: 'photo', path: photo.path, filename: 'IMG_1234.jpg', type: 'image/jpeg' },
+      ],
+    })
+    answer(request, { status: 200, headers: { 'content-type': 'application/json' }, body: '{"ok":true}' })
+    expect(await (await sent).json()).toEqual({ ok: true })
+    await expect(scope.fetch('https://hq.training/api/x', { method: 'GET', body: form })).rejects.toThrow('A GET or HEAD request cannot have a body')
+  })
+
+  it('has no files, no FormData and no form bodies where the host offers none', async () => {
+    const { scope } = await runtime()
+    expect(scope.craft.files).toBeUndefined()
+    expect(scope.craft.capabilities.files).toBe(false)
+    expect(scope.FormData).toBeUndefined()
+  })
+
+  it('says a person-facing request is untimed, and a plain one is not', async () => {
+    const { scope, requests } = await runtime()
+    void scope.craft.share({ title: 'HQ' })
+    expect(requests().at(-1)!.payload.untimed).toBe(true)
+    void scope.craft.clipboard.read()
+    expect(requests().at(-1)!.payload.untimed).toBeUndefined()
+  })
+})
+
 describe('responses read as they arrive', () => {
   const head = { url: 'https://hq.training/api/messages/events', status: 200, statusText: 'OK', redirected: false, headers: { 'content-type': 'text/event-stream' } }
 

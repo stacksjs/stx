@@ -106,7 +106,8 @@ describe('shared-runtime native capability protocol', () => {
       { version: 1, module: 'SecureStorage', method: 'clear', args: [] },
       { version: 1, module: 'Biometrics', method: 'isAvailable', args: [] },
       { version: 1, module: 'Biometrics', method: 'getBiometricType', args: [] },
-      { version: 1, module: 'Biometrics', method: 'authenticate', args: ['Unlock WildLoop'] },
+      // Face ID waits on the person, so the host keeps no deadline for it either.
+      { version: 1, module: 'Biometrics', method: 'authenticate', args: ['Unlock WildLoop'], untimed: true },
     ])
   })
 

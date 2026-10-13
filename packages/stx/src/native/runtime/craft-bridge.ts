@@ -1,7 +1,7 @@
 import type { AppStatePayload, DeepLinkPayload, NativeBridgeInterface } from '../bridge/protocol'
 import { STXBridge } from '../bridge/protocol'
 import { createEventSourceClass, createStreamingBody, type StreamSink } from './event-stream'
-import { abortError } from './jsc-globals'
+import { abortError, NativeFormData, nativeFormParts } from './jsc-globals'
 
 type AnyRecord = Record<string, any>
 
@@ -15,7 +15,8 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     haptics: capabilities.has('haptics'),
     speechRecognition: false,
     share: capabilities.has('share'),
-    camera: false,
+    camera: capabilities.has('camera'),
+    files: capabilities.has('files'),
     biometric: capabilities.has('biometric'),
     pushNotifications: capabilities.has('push'),
     secureStorage: capabilities.has('secureStorage'),
@@ -355,6 +356,31 @@ export function installCraftBridge(
     }
   }
 
+  // Files on the phone (CraftNativeFiles.swift): a photo picked from the
+  // library or taken with the camera (`source: 'camera'`, capability
+  // `camera`), a file downloaded for the share sheet, and FormData, which
+  // `fetch` sends as multipart with the files read natively. A file is
+  // `{ path, name, type, size }`; its bytes stay on disk. Picking waits on
+  // the person; null when they closed the picker.
+  if (capabilities.has('files')) {
+    craft.files = {
+      pickImage: (options: AnyRecord = {}) => ask('Files', 'pickImage', [{
+        source: options.source === 'camera' ? 'camera' : 'library',
+        ...(typeof options.maxPixels === 'number' ? { maxPixels: options.maxPixels } : {}),
+        ...(typeof options.quality === 'number' ? { quality: options.quality } : {}),
+      }]).then((file: unknown) => file ?? null),
+      download: (url: string, options: AnyRecord = {}) => {
+        if (typeof url !== 'string' || !url) return Promise.reject(new TypeError('files.download needs a URL'))
+        const headers: Record<string, string> = {}
+        const given = options.headers
+        if (given && typeof given === 'object') Object.keys(given).forEach((name) => { headers[name] = String(given[name]) })
+        return request('Files', 'download', [url, { headers, ...(typeof options.name === 'string' ? { name: options.name } : {}) }])
+      },
+      remove: (file: string | AnyRecord) => request('Files', 'remove', [typeof file === 'string' ? file : file?.path]).then(Boolean),
+    }
+    target.FormData ??= NativeFormData
+  }
+
   // The host's events in the page's names (`craftLocationUpdate`), as
   // CustomEvents on the screen's global, where the page's code listens.
   protocol.on<{ event?: string, detail?: unknown }>('CRAFT_EVENT', ({ payload }) => {
@@ -570,14 +596,23 @@ export function installCraftBridge(
       if (Array.isArray(inputHeaders)) inputHeaders.forEach(pair => addHeader(pair[0], pair[1]))
       else if (inputHeaders && typeof inputHeaders.forEach === 'function') inputHeaders.forEach(addHeader)
       else if (inputHeaders && typeof inputHeaders === 'object') Object.keys(inputHeaders).forEach(name => addHeader(name, inputHeaders[name]))
-      const body = init.body !== undefined ? init.body : source.body
+      let body = init.body !== undefined ? init.body : source.body
+      // A FormData: the host builds the multipart body and its boundary.
+      let form: ReturnType<typeof nativeFormParts> | undefined
+      if (body instanceof NativeFormData) {
+        if (!capabilities.has('files')) return Promise.reject(new TypeError('This app cannot send a form from a native screen'))
+        if (method === 'GET' || method === 'HEAD') return Promise.reject(new TypeError('A GET or HEAD request cannot have a body'))
+        form = nativeFormParts(body)
+        body = null
+        delete headers['content-type']
+      }
       if (body != null && typeof body !== 'string') return Promise.reject(new TypeError('fetch in a native screen sends string bodies only'))
       if (body != null && (method === 'GET' || method === 'HEAD')) return Promise.reject(new TypeError('A GET or HEAD request cannot have a body'))
       const signal: AnyRecord | undefined = init.signal || source.signal
       if (signal?.aborted) return Promise.reject(abortError(signal.reason))
-      if (streaming && /text\/event-stream/i.test(headers.accept || ''))
+      if (streaming && !form && /text\/event-stream/i.test(headers.accept || ''))
         return streamingFetch(url, method, headers, body == null ? null : body, signal)
-      const answer = request('Network', 'fetch', [{ url, method, headers, body: body == null ? null : body }]).then((data: AnyRecord) => {
+      const answer = request('Network', 'fetch', [{ url, method, headers, body: body == null ? null : body, ...(form ? { form } : {}) }]).then((data: AnyRecord) => {
         const responseBody = data?.body == null ? '' : String(data.body)
         let bodyUsed = false
         const consume = (): Promise<string> => {

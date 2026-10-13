@@ -283,6 +283,12 @@ export interface ApiRequestPayload {
 
   /** Method arguments */
   args: unknown[]
+
+  /**
+   * A person answers it (a share sheet, a dialog, the photo picker): the host
+   * keeps no deadline for it either.
+   */
+  untimed?: true
 }
 
 /**
@@ -297,7 +303,18 @@ export interface NativeFetchRequest {
   headers: Record<string, string>
   /** UTF-8 request body. A `GET` or `HEAD` request has none. */
   body: string | null
+  /**
+   * A `FormData` body, which the host sends as multipart/form-data with a
+   * boundary of its own: text fields, and files `craft.files` made, read from
+   * disk natively (hosts with the `files` capability).
+   */
+  form?: NativeFormPart[]
 }
+
+/** One field of a form sent through `Network.fetch`. */
+export type NativeFormPart =
+  | { name: string, value: string }
+  | { name: string, path: string, filename: string, type: string }
 
 /**
  * The `API_RESPONSE` data for `Network.fetch`. HTTP error statuses are
@@ -606,7 +623,8 @@ catch (error) {
   /**
    * A native API that puts something in front of the person, such as a
    * permission sheet or Face ID: never timed out, since a timeout would
-   * cancel the sheet while they are still reading it.
+   * cancel the sheet while they are still reading it. `untimed` tells the
+   * host so, which otherwise answers TIMEOUT after its own deadline.
    */
   async callPersonFacingAPI<T>(module: string, method: string, ...args: unknown[]): Promise<T> {
     return this.request<ApiRequestPayload, T>('API_REQUEST', {
@@ -614,6 +632,7 @@ catch (error) {
       module,
       method,
       args,
+      untimed: true,
     }, null)
   }
 
