@@ -365,10 +365,10 @@ describe('markup guards narrow the expressions inside them', () => {
 describe('the names stx auto-imports into a client script are declared', () => {
   /*
    * `BROWSER_CORE_IMPORTS` is injected at build time from `@stacksjs/browser` -
-   * `debounce`, `useTimeoutFn`, `useDocumentVisibility` and a dozen more. They
+   * `debounce`, `useObjectUrl`, `useDocumentVisibility` and a dozen more. They
    * were declared nowhere, so the checker reported each one as "Cannot find
    * name" against a script that runs, and suggested the nearest global instead:
-   * "Cannot find name 'useTimeoutFn'. Did you mean 'useTimeout'?"
+   * "Cannot find name 'useObjectUrl'. Did you mean 'useObjectURL'?"
    */
   it('declares every browser-core auto-import', () => {
     const virtual = buildVirtualTypeScript('<script client>\nconst x = 1\n</script>')
@@ -379,9 +379,11 @@ describe('the names stx auto-imports into a client script are declared', () => {
 
   it('covers the ones a real component reached for', () => {
     // Each of these was a diagnostic in the Stacks dashboard components.
-    for (const name of ['useTimeoutFn', 'debounce'])
+    for (const name of ['debounce'])
       expect(BROWSER_CORE_IMPORTS).toContain(name)
-    // Now provided by the signals runtime itself.
+    // These timer aliases are provided by the signals runtime itself.
+    for (const name of ['useTimeoutFn', 'useDebounceFn', 'refDebounced', 'useThrottleFn'])
+      expect(STX_RUNTIME_GLOBALS).toContain(name)
     expect(STX_RUNTIME_GLOBALS).toContain('useDocumentVisibility')
   })
 })
@@ -428,10 +430,10 @@ describe('a client script may call the browser auto-imports', () => {
    * There are two declaration paths and only one of them knew about these.
    * `buildVirtualTypeScript` covers TEMPLATE expressions; script blocks
    * assemble their globals separately in `typecheck.ts`, so a block calling
-   * `debounce(…)` or `useTimeoutFn(…)` was told it was a typo, with the nearest
+   * `debounce(…)` or `useObjectUrl(…)` was told it was a typo, with the nearest
    * runtime global offered as a correction:
    *
-   *   Cannot find name 'useTimeoutFn'. Did you mean 'useTimeout'?
+   *   Cannot find name 'useObjectUrl'. Did you mean 'useObjectURL'?
    *
    * The list is a leaf module for the same reason: reached across
    * `client-script.ts`, the chunked build stopped emitting the template half

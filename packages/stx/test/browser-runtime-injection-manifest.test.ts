@@ -5,12 +5,11 @@
  * `injectBrowserRuntime` decides whether to load the module; the client-script
  * pass decides what to destructure out of `window.StacksBrowser`. They read
  * the same manifest now, but they used to read two hand-maintained lists, and
- * the injector's copy had drifted seven names behind: BrowserQueryError,
- * browserAuth, getBrowserConfig, createBrowserDb, isBrowser, useObjectUrl and
- * useTimeoutFn.
+ * the injector's copy had drifted several names behind: BrowserQueryError,
+ * browserAuth, getBrowserConfig, createBrowserDb, isBrowser and useObjectUrl.
  *
  * A page whose client code used only those got the destructure without the
- * module — `var { useTimeoutFn } = window.StacksBrowser || {}` against a global
+ * module — `var { useObjectUrl } = window.StacksBrowser || {}` against a global
  * nothing had defined. Every name came out undefined. It surfaced through the
  * auto-import guard rather than at the call site, so it read as a packaging
  * warning about exports rather than as the missing bootstrap it actually was.
@@ -36,9 +35,10 @@ describe('browser runtime injection follows the auto-import manifest', () => {
     expect(missed).toEqual([])
   })
 
-  it('injects for the seven that the drifted list missed', () => {
+  it('injects for the drifted browser names', () => {
     // Named individually so a regression reports which one came back rather
-    // than only that the set changed.
+    // than only that the set changed. useTimeoutFn is an stx runtime global
+    // now, so it deliberately no longer belongs to this browser manifest.
     for (const symbol of [
       'BrowserQueryError',
       'browserAuth',
@@ -46,7 +46,6 @@ describe('browser runtime injection follows the auto-import manifest', () => {
       'createBrowserDb',
       'isBrowser',
       'useObjectUrl',
-      'useTimeoutFn',
     ]) {
       expect(injects(symbol)).toBe(true)
     }
@@ -62,8 +61,8 @@ describe('browser runtime injection follows the auto-import manifest', () => {
 
   it('ignores the names when they appear in prose rather than in code', () => {
     // The injector reads client code, not copy. A doc page describing
-    // useTimeoutFn should not acquire a module import from having said so.
-    const prose = '<html><body><p>Call useTimeoutFn to defer work.</p></body></html>'
+    // useObjectUrl should not acquire a module import from having said so.
+    const prose = '<html><body><p>Call useObjectUrl to create a blob URL.</p></body></html>'
     expect(injectBrowserRuntime(prose)).not.toContain('@stacksjs/browser')
   })
 })
@@ -76,14 +75,14 @@ describe('the already-injected check does not suppress the bootstrap', () => {
     // done — so the module never loaded and every name in that destructure
     // resolved to undefined.
     const template = '<html><head></head><body><script>'
-      + 'var { useTimeoutFn } = window.StacksBrowser || {}; useTimeoutFn()'
+      + 'var { useObjectUrl } = window.StacksBrowser || {}; useObjectUrl()'
       + '</script></body></html>'
     expect(injectBrowserRuntime(template)).toContain('import \'@stacksjs/browser\'')
   })
 
   it('does not inject a second time when the bootstrap is already there', () => {
     const template = '<html><head><script type="module">import \'@stacksjs/browser\'</script></head>'
-      + '<body><script>useTimeoutFn()</script></body></html>'
+      + '<body><script>useObjectUrl()</script></body></html>'
     const out = injectBrowserRuntime(template)
     expect(out.match(/@stacksjs\/browser/g)?.length).toBe(1)
   })
@@ -92,7 +91,7 @@ describe('the already-injected check does not suppress the bootstrap', () => {
     // An assignment means someone else has supplied a bootstrap; a read is what
     // asks for one. Only the assignment should suppress injection.
     const template = '<html><head></head><body><script>'
-      + 'window.StacksBrowser = {}; useTimeoutFn()'
+      + 'window.StacksBrowser = {}; useObjectUrl()'
       + '</script></body></html>'
     expect(injectBrowserRuntime(template)).not.toContain('import \'@stacksjs/browser\'')
   })
