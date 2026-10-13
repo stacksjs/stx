@@ -248,6 +248,8 @@ function select(id) { selected.set(id) }
     expect(updateOps).toContainEqual(expect.objectContaining({ id: beaLabel.id, patch: { children: ['Bea 2'] } }))
     expect(updateOps).toContainEqual(expect.objectContaining({ patch: { children: ['Cy'] } }))
     expect(updateOps).toContainEqual(expect.objectContaining({ op: 'moveChild', parentId: scroll.props.__stxId }))
+    expect(updateOps.some(operation => operation.op === 'removeNode' && operation.id === scroll.props.__stxId)).toBe(false)
+    expect(updateOps.some(operation => operation.op === 'createNode' && operation.id === scroll.props.__stxId)).toBe(false)
     expect(updateOps.some(operation => operation.op === 'removeNode' && [beaLabel.id, beaInput].includes(operation.id))).toBe(false)
     expect(updateOps.some(operation => operation.op === 'createNode' && operation.id === beaInput)).toBe(false)
 

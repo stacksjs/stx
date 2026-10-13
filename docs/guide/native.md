@@ -184,10 +184,11 @@ row. `FlatList` recycling is therefore an explicit host-specific boundary, not
 an implication of translating a `<FlatList>` tag.
 
 The shared-runtime regression also covers a keyed `TextInput`: a reorder moves
-the existing native node instead of removing and recreating it, so the host can
-preserve focus, caret and scroll state while the row's event scope continues to
-identify the same item. `scrollTarget` is the portable explicit scroll command;
-automatic virtualization remains host-specific.
+the existing native node instead of removing and recreating it, and retains the
+containing `ScrollView`, so the host can preserve focus, caret and scroll
+position while the row's event scope continues to identify the same item.
+`scrollTarget` is the portable explicit scroll command; automatic virtualization
+remains host-specific.
 
 ### Simulator validation
 
