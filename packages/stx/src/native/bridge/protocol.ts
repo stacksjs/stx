@@ -37,6 +37,7 @@ export type BridgeMessageType =
   // Navigation
   | 'NAVIGATE'            // Navigate to a new screen
   | 'NAVIGATE_BACK'       // Go back
+  | 'NAVIGATE_POP_TO_ROOT' // Back to the first screen of the stack
   | 'NAVIGATE_REPLACE'    // Replace current screen
   | 'NAVIGATE_OPEN'       // Open a native or hybrid app path
   | 'NAVIGATION_SET_OPTIONS' // Update native navigation chrome
