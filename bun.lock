@@ -5,7 +5,7 @@
     "": {
       "name": "stx",
       "dependencies": {
-        "@stacksjs/ts-css": "^0.3.10",
+        "@stacksjs/ts-css": "^0.3.11",
         "very-happy-dom": "^0.3.6",
       },
       "devDependencies": {
@@ -1685,7 +1685,7 @@
       "name": "@stacksjs/stx-vscode",
       "version": "0.2.504",
       "dependencies": {
-        "@stacksjs/ts-css": "^0.3.7",
+        "@stacksjs/ts-css": "^0.3.10",
         "prettier": "^3.9.9",
       },
     },
@@ -2229,7 +2229,7 @@
 
     "@stacksjs/ts-cloud": ["@stacksjs/ts-cloud@0.16.15", "", { "dependencies": { "@stacksjs/ts-xml": "^0.1.2", "@ts-cloud/aws-types": "0.16.15", "@ts-cloud/core": "0.16.15", "hash-wasm": "^4.12.0" }, "bin": { "cloud": "./dist/bin/cli.js" } }, "sha512-hbgzS9URgliBi+tlPeImHtR5Of65nB7wh4ETSb2M3hv23iw0qK7Fj+fB/20fWbFLRBadx0EGIiozLEfENybZXg=="],
 
-    "@stacksjs/ts-css": ["@stacksjs/ts-css@0.3.10", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0", "bunfig": "^0.15.17" }, "bin": { "cssx": "./dist/bin/cssx.js", "ts-css": "./dist/bin/cli.js" } }, "sha512-g3EEwMc/ZbFO2cwhYX7VPt2ICQr62n6osteqxePUdr4Hs5R96IO4EK9cbu+VhSnbF6QOjHqSdSRCy2mRBnUZYg=="],
+    "@stacksjs/ts-css": ["@stacksjs/ts-css@0.3.11", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0", "bunfig": "^0.15.17" }, "bin": { "cssx": "./dist/bin/cssx.js", "ts-css": "./dist/bin/cli.js" } }, "sha512-2IDXJ7ZtpDAwYOWYtuVcM+AGTZZUSZW7FjMLe95+2G1TFqldIreD6uPEtFgnRHf5ISR1GCGKR3QiytZZMm4Ujg=="],
 
     "@stacksjs/ts-i18n": ["@stacksjs/ts-i18n@0.1.11", "", { "dependencies": { "@stacksjs/clapp": "^0.2.9", "bunfig": "^0.15.6" }, "bin": { "i18n": "./dist/cli.js" } }, "sha512-33FM0gKdxBy6EUsUZLGAMe0D7QUZ4f/BQXRsQIyzkZgs2+juruUTevPuJGCjWSZsgJuiaBfEJn8Oq8ctuo1OWQ=="],
 
@@ -2919,7 +2919,7 @@
 
     "@stacksjs/ts-i18n/@stacksjs/clapp": ["@stacksjs/clapp@0.2.10", "", {}, "sha512-l/2F0u5ihpae8R4kJ3Pdh6tV7aEpSxu6hCyafhw38Fl9+x2YKxZfUK+fF/G5AVwSzJar3dkKuMxbMcQ0PXKGRg=="],
 
-    "@stacksjs/ts-svg/@stacksjs/ts-css": ["@stacksjs/ts-css@0.1.0", "", { "dependencies": { "bunfig": "^0.15.6" }, "bin": { "ts-css": "./dist/bin/cli.js" } }, "sha512-373WvzZeXdqwi6lRwyfr05r3KOtbo4QXWPhmoGFI6NSa5ZcUEiyYJGL2KsV9mfQNTsBp+0q3wPnj1EQ/1zuieg=="],
+    "@stacksjs/ts-svg/@stacksjs/ts-css": ["@stacksjs/ts-css@0.1.0", "", { "dependencies": { "bunfig": "^0.15.6" }, "bin": { "ts-css": "./dist/bin/cli.js" } }, "sha512-373WvzPNZYI6lRwyfr05r3KOtbo4QXWPhmoGFI6NSa5ZcUEiyYGL2KsV9mfQNTsBp+0q3wPnj1EQ/1zuieg=="],
 
     "@types/marked/marked": ["marked@17.0.6", "", { "bin": { "marked": "bin/marked.js" } }, "sha512-gB0gkNafnonOw0obSTEGZTT86IuhILt2Wfx0mWH/1Au83kybTayroZ/V6nS25mN7u8ASy+5fMhgB3XPNrOZdmA=="],
 
