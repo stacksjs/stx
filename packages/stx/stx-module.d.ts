@@ -65,6 +65,7 @@ declare module 'stx' {
   export const provide: typeof globalThis.provide
   export const reactive: typeof globalThis.reactive
   export const ref: typeof globalThis.ref
+  export const refDebounced: typeof globalThis.refDebounced
   export const refresh: typeof globalThis.refresh
   export const registerStoresClient: typeof globalThis.registerStoresClient
   export const setResponseHeader: (name: string, value: string) => void // <script server> only
@@ -79,6 +80,7 @@ declare module 'stx' {
   export const useCounter: typeof globalThis.useCounter
   export const useDark: typeof globalThis.useDark
   export const useDebounce: typeof globalThis.useDebounce
+  export const useDebounceFn: typeof globalThis.useDebounceFn
   export const useDebouncedValue: typeof globalThis.useDebouncedValue
   export const useDocumentVisibility: typeof globalThis.useDocumentVisibility
   export const useEventListener: typeof globalThis.useEventListener
@@ -118,7 +120,9 @@ declare module 'stx' {
   export const useSlots: typeof globalThis.useSlots
   export const useStore: typeof globalThis.useStore
   export const useThrottle: typeof globalThis.useThrottle
+  export const useThrottleFn: typeof globalThis.useThrottleFn
   export const useTimeout: typeof globalThis.useTimeout
+  export const useTimeoutFn: typeof globalThis.useTimeoutFn
   export const useToggle: typeof globalThis.useToggle
   export const useWebSocket: typeof globalThis.useWebSocket
   export const watch: typeof globalThis.watch

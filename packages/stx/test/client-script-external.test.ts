@@ -91,7 +91,7 @@ const result = retry(() => 'ready')
     expect(output).toContain('function retry(callback)')
   })
 
-  it('auto-imports browser utilities and Stacks-only composables as bundle inputs', () => {
+  it('auto-imports browser utilities while leaving STX timer aliases on the runtime', () => {
     const output = injectBrowserCoreAutoImports(`
 const load = debounce(() => {}, 250)
 const activeElement = useActiveElement()
@@ -99,9 +99,10 @@ const controls = useIntervalFn(load, 15000)
 const timeout = useTimeoutFn(load, 5000, { immediate: false })
 `)
 
-    expect(output.imports).toEqual(['debounce', 'useActiveElement', 'useIntervalFn', 'useTimeoutFn'])
+    expect(output.imports).toEqual(['debounce', 'useActiveElement', 'useIntervalFn'])
     expect(output.models).toEqual([])
-    expect(output.code).toContain(`import { debounce, useActiveElement, useIntervalFn, useTimeoutFn } from '@stacksjs/browser'`)
+    expect(output.code).toContain(`import { debounce, useActiveElement, useIntervalFn } from '@stacksjs/browser'`)
+    expect(output.code).not.toContain('useTimeoutFn } from')
   })
 
   it('leaves useDocumentVisibility to the runtime rather than bundling @stacksjs/browser for it', () => {

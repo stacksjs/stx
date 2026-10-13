@@ -50,14 +50,15 @@ describe('stx-module.d.ts', () => {
   })
 
   it('types each value by the stx.d.ts global of the same name, not by a second copy', () => {
-    const functions = new Set([...runtimeDeclaration.matchAll(/^declare function\s+([\w$]+)/gm)].map(m => m[1]))
+    const globals = new Set([...runtimeDeclaration.matchAll(/^declare (?:function|const)\s+([\w$]+)/gm)].map(m => m[1]))
     for (const [name, type] of exportedValues()) {
       const global = /^typeof globalThis\.([\w$]+)$/.exec(type)?.[1]
       if (global) {
         expect(global).toBe(name)
-        // `typeof globalThis.x` only finds a FUNCTION or `var`; a `const`
-        // global would make this an error in the declaration file.
-        expect(functions.has(name)).toBe(true)
+        // `typeof globalThis.x` must point at a declared runtime global. The
+        // timer compatibility aliases are `const` bindings, while the older
+        // API surface is mostly declared as functions.
+        expect(globals.has(name)).toBe(true)
       }
       else {
         // Only the server-only names, which stx.d.ts does not declare.

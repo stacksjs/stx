@@ -25,6 +25,7 @@ import { describe, expect, it } from 'bun:test'
 import { transformAutoImports } from '../src/client-script'
 
 const browserImportsFor = (code: string): string[] => transformAutoImports(code).browserImports
+const stxImportsFor = (code: string): string[] => transformAutoImports(code).stxImports
 
 describe('browser auto-import detection reads code, not prose', () => {
   it('ignores a name that appears only in a line comment', () => {
@@ -41,7 +42,7 @@ describe('browser auto-import detection reads code, not prose', () => {
   })
 
   it('still detects a real call', () => {
-    expect(browserImportsFor('const t = useTimeoutFn(() => {}, 10)')).toContain('useTimeoutFn')
+    expect(stxImportsFor('const t = useTimeoutFn(() => {}, 10)')).toContain('useTimeoutFn')
   })
 
   it('still detects a class used through instanceof', () => {
