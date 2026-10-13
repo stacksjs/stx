@@ -1,5 +1,53 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.504...v0.2.505)
+
+## ✨ Features
+
+- **native**: diagnose legacy list props ([7b1a9b7](https://github.com/stacksjs/stx/commit/7b1a9b7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **composables**: expose timer compatibility aliases ([f86b8ab](https://github.com/stacksjs/stx/commit/f86b8ab)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **vscode**: keep CSS engine fallback config compatible ([20df7c2](https://github.com/stacksjs/stx/commit/20df7c2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **stx**: keep timer aliases on the virtual module surface ([58edb00](https://github.com/stacksjs/stx/commit/58edb00)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: unwrap returned values in text interpolation ([66c2e87](https://github.com/stacksjs/stx/commit/66c2e87)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **auto-imports**: keep timer aliases on the stx runtime ([46c9dbb](https://github.com/stacksjs/stx/commit/46c9dbb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: hydrate revealed if handlers in the same batch ([87af825](https://github.com/stacksjs/stx/commit/87af825)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **config**: merge root and UI config files (#2056) ([7dda50e](https://github.com/stacksjs/stx/commit/7dda50e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2056](https://github.com/stacksjs/stx/issues/2056), [#2056](https://github.com/stacksjs/stx/issues/2056))
+- **stx**: forward component DOM attributes (#2063) ([102940c](https://github.com/stacksjs/stx/commit/102940c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2063](https://github.com/stacksjs/stx/issues/2063), [#2063](https://github.com/stacksjs/stx/issues/2063))
+
+## 📝 Documentation
+
+- **auto-imports**: align browser manifest explanations ([9124f65](https://github.com/stacksjs/stx/commit/9124f65)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: explain TypeScript authoring and package-owned shells ([2741057](https://github.com/stacksjs/stx/commit/2741057)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- **native**: prove scroll containers survive keyed moves ([f4b1d02](https://github.com/stacksjs/stx/commit/f4b1d02)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: prove keyed input state survives list moves ([5b7c01e](https://github.com/stacksjs/stx/commit/5b7c01e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- avoid fixed production server ports ([6aca369](https://github.com/stacksjs/stx/commit/6aca369)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: pin routed screen lifecycle and host commands ([ac95188](https://github.com/stacksjs/stx/commit/ac95188)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **stx**: allow scoped attributes on included component roots ([8ce5e74](https://github.com/stacksjs/stx/commit/8ce5e74)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **auto-imports**: cover timer alias availability ([142153b](https://github.com/stacksjs/stx/commit/142153b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: cover head signal interpolation ([cc08bff](https://github.com/stacksjs/stx/commit/cc08bff)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: cover signal interpolation forms ([7a78d73](https://github.com/stacksjs/stx/commit/7a78d73)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: assert conditional handlers receive native ids ([6132932](https://github.com/stacksjs/stx/commit/6132932)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: cover interactive nodes behind false if ([0f563e3](https://github.com/stacksjs/stx/commit/0f563e3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.505 ([9e77b97](https://github.com/stacksjs/stx/commit/9e77b97)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- align ts-css dependencies with latest release ([3e3a559](https://github.com/stacksjs/stx/commit/3e3a559)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- consume ts-css v0.3.11 ([fd91571](https://github.com/stacksjs/stx/commit/fd91571)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **css**: align editor packages with ts-css 0.3.10 ([b3fb4e1](https://github.com/stacksjs/stx/commit/b3fb4e1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **css**: align workspace with ts-css 0.3.10 ([fcbb13b](https://github.com/stacksjs/stx/commit/fcbb13b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.503...v0.2.504)
 
 ## ✨ Features
