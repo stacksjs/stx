@@ -73,14 +73,8 @@ async function writeFixtures(outputDir: string, fixtures: CompiledFixture[]): Pr
   return routes
 }
 
-// Each test uses a unique port to avoid races when bun runs them in parallel.
-let nextPort = 4710
-function pickPort(): number {
-  return nextPort++
-}
-
 describe('production-server error page lookup (#1722)', () => {
-  let server: { stop: () => void } | null = null
+  let server: Awaited<ReturnType<typeof startProductionServer>> | null = null
 
   beforeEach(async () => {
     await fs.promises.mkdir(TMP, { recursive: true })
@@ -107,10 +101,9 @@ describe('production-server error page lookup (#1722)', () => {
       { pattern: '/500', html: '<!doctype html><html><body><h1>Branded 500</h1></body></html>' },
     ])
 
-    const port = pickPort()
-    server = await startProductionServer({ outputDir: TMP, port })
+    server = await startProductionServer({ outputDir: TMP, port: 0 })
 
-    const res = await fetch(`http://localhost:${port}/broken`)
+    const res = await fetch(`http://localhost:${server.port}/broken`)
     expect(res.status).toBe(500)
     const body = await res.text()
     expect(body).toContain('Branded 500')
@@ -123,10 +116,9 @@ describe('production-server error page lookup (#1722)', () => {
       // Deliberately no /500 in the manifest.
     ])
 
-    const port = pickPort()
-    server = await startProductionServer({ outputDir: TMP, port })
+    server = await startProductionServer({ outputDir: TMP, port: 0 })
 
-    const res = await fetch(`http://localhost:${port}/broken`)
+    const res = await fetch(`http://localhost:${server.port}/broken`)
     expect(res.status).toBe(500)
     const body = await res.text()
     expect(body).toBe('Internal Server Error')
@@ -138,10 +130,9 @@ describe('production-server error page lookup (#1722)', () => {
       { pattern: '/404', html: '<!doctype html><html><body><h1>Branded 404</h1></body></html>' },
     ])
 
-    const port = pickPort()
-    server = await startProductionServer({ outputDir: TMP, port })
+    server = await startProductionServer({ outputDir: TMP, port: 0 })
 
-    const res = await fetch(`http://localhost:${port}/totally-unknown`)
+    const res = await fetch(`http://localhost:${server.port}/totally-unknown`)
     expect(res.status).toBe(404)
     const body = await res.text()
     expect(body).toContain('Branded 404')
