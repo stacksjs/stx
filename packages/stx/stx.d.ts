@@ -411,8 +411,11 @@ declare function useFocus(_target: HTMLElement | StxRef<HTMLElement | null> | st
 // ============================================================================
 
 declare function useDebounce<T extends (..._args: any[]) => any>(_fn: T, _delay: number): T
+declare const useDebounceFn: typeof useDebounce
 declare function useDebouncedValue<T>(_value: StxSignal<T>, _delay: number): StxSignal<T>
+declare const refDebounced: typeof useDebouncedValue
 declare function useThrottle<T extends (..._args: any[]) => any>(_fn: T, _delay: number): T
+declare const useThrottleFn: typeof useThrottle
 interface StxIntervalOptions {
   /** Tick once on start/resume instead of waiting out the first interval. */
   immediate?: boolean
@@ -454,6 +457,7 @@ declare function useTimeout(_fn: () => void, _ms?: number): {
   stop: () => void
   subscribe: (_fn: (_pending: boolean) => void) => () => void
 }
+declare const useTimeoutFn: typeof useTimeout
 declare function nextTick(_fn?: () => void): Promise<void>
 
 // ============================================================================
@@ -951,10 +955,14 @@ interface StxRuntimeRegistry {
 
   // Utilities
   useDebounce: typeof useDebounce
+  useDebounceFn: typeof useDebounceFn
   useDebouncedValue: typeof useDebouncedValue
+  refDebounced: typeof refDebounced
   useThrottle: typeof useThrottle
+  useThrottleFn: typeof useThrottleFn
   useInterval: typeof useInterval
   useTimeout: typeof useTimeout
+  useTimeoutFn: typeof useTimeoutFn
   useToggle: typeof useToggle
   useCounter: typeof useCounter
   useClickOutside: typeof useClickOutside

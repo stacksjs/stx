@@ -48,13 +48,13 @@ export const STX_RUNTIME_GLOBALS: readonly string[] = [
   'invalidateRoute', 'isDerived', 'isSignal', 'keptState', 'navigate',
   'nextTick', 'onBeforeMount', 'onBeforeUnmount', 'onDestroy', 'onMount', 'onMounted', 'onUnmounted',
   'peek', 'provide', 'reactive',
-  'ref', 'refresh', 'registerStoresClient', 'setKeptScope', 'setRouteParams', 'state', 'untrack', 'useAsync', 'useClickOutside', 'useColorMode',
-  'useCookie', 'useCounter', 'useDark', 'useDebounce', 'useDebouncedValue', 'useDocumentVisibility', 'useEventListener',
+  'ref', 'refDebounced', 'refresh', 'registerStoresClient', 'setKeptScope', 'setRouteParams', 'state', 'untrack', 'useAsync', 'useClickOutside', 'useColorMode',
+  'useCookie', 'useCounter', 'useDark', 'useDebounce', 'useDebounceFn', 'useDebouncedValue', 'useDocumentVisibility', 'useEventListener',
   'useFetch', 'useFocus', 'useHead', 'useId', 'useInterval', 'useLocalStorage', 'useMediaQuery',
   'useModel', 'useMutation', 'useOptimistic', 'usePreferredContrast', 'usePreferredDark',
   'usePreferredLight', 'usePreferredReducedMotion', 'useQuery', 'useReactiveProp',
   'useRef', 'useRoute', 'useRouteParam', 'useRouteParams', 'useScrollLock', 'useSearchParams', 'useSeoMeta', 'useSessionStorage', 'useSlots', 'useStore',
-  'useThrottle', 'useTimeout', 'useToggle', 'useWebSocket', 'watch', 'watchEffect', 'watchMultiple', 'withDefaults',
+  'useThrottle', 'useThrottleFn', 'useTimeout', 'useTimeoutFn', 'useToggle', 'useWebSocket', 'watch', 'watchEffect', 'watchMultiple', 'withDefaults',
 ]
 
 /**

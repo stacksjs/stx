@@ -6,7 +6,7 @@
  * Keeping it in `client-script.ts` made the second import reach across a
  * module that pulls in most of the package - and in the chunked build the
  * declarations silently stopped being emitted, so the checker went back to
- * reporting `debounce` and `useTimeoutFn` as typos. A leaf has no order to get
+ * reporting `debounce` and `useObjectUrl` as typos. A leaf has no order to get
  * wrong.
  */
 export const BROWSER_CORE_IMPORTS: readonly string[] = [
@@ -18,5 +18,5 @@ export const BROWSER_CORE_IMPORTS: readonly string[] = [
   'debounce', 'throttle', 'retry', 'sleep', 'wait', 'delay', 'waitUntil', 'waitWhile',
   'lazy', 'clamp', 'rand', 'readableSize',
   // Stacks composables that are not part of the STX-native runtime
-  'useActiveElement', 'useIntervalFn', 'useObjectUrl', 'useTimeoutFn',
+  'useActiveElement', 'useIntervalFn', 'useObjectUrl',
 ]
