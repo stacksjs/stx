@@ -84,6 +84,25 @@ To bundle multiple screens, name them in `native.config.json` (paths relative to
 
 Run `stx native compile --format bundle --output ./native-screen.js` without an input file. The single-file command above remains unchanged for projects without `screens`. Each screen's `<script>` gets its own JavaScriptCore context when opened by a navigation-capable Craft host. Use `craft.navigation.push('details', { id: 7 })`, `craft.navigation.replace('home')`, or `craft.navigation.back()` in a screen script, and `craft.navigation.open('/m/workout/42')` to open a path of a hybrid app (the host shows its native screen, or the web view at that path); the destination reads `craft.route.name` and `craft.route.params`. Unknown screen names and non-object parameters fail before a navigation message is sent.
 
+The maintained-host navigation gate is in Craft, not in the reference renderers:
+
+```bash
+# From a sibling Craft checkout, with this stx checkout as the compiler.
+STX_CLI=/absolute/path/to/stx/packages/stx/bin/cli.ts \
+  bun packages/ios/scripts/test-native-navigation.ts
+STX_CLI=/absolute/path/to/stx/packages/stx/bin/cli.ts \
+  bun packages/android/scripts/test-native-navigation.ts
+```
+
+Both scripts compile the same multi-screen bundle and exercise native route
+parameters, push/replace/back, retained controls, keyed rows, lifecycle
+cleanup, and the absence of `WKWebView`/`WebView`. Add `--prepare-only` when a
+simulator or emulator is not available; it still proves bundle generation,
+route selection, and project wiring. The iOS command requires Xcode and a
+bootable simulator. The Android command requires the Android SDK, Gradle and a
+bootable emulator. A host build failure is not evidence that STX fell back to a
+WebView; inspect the generated host error instead.
+
 Inside a native screen's `<script>`, the JavaScriptCore bridge exposes `craft.device.getInfo()`, `craft.clipboard.write(text)`, `craft.clipboard.read()`, `craft.haptic(style)`, and high-level `craft.haptics.impact(style)`, `.notification(type)`, and `.selection()`. Calls return promises. Rejections retain a `code` such as `CAPABILITY_DISABLED` or `INVALID_ARGUMENT`; the high-level haptics helpers intentionally treat `CAPABILITY_DISABLED` as a no-op, matching Craft's web bridge. The generated app must enable haptics and clipboard in its Craft config before those capabilities perform work.
 
 When the host advertises the `fetch` capability (Craft's iOS host does), the bundle installs a global `fetch` with the common subset: `method`, `headers`, a string `body`, and a response with `ok`, `status`, `statusText`, `url`, `headers.get()`, `text()` and `json()`. The host performs the request under the same request deadline as the other capabilities; transport failures reject with a `TypeError` carrying a `code`. Set a signal from a promise continuation to update native bindings, exactly as on the web.
@@ -144,6 +163,25 @@ The reference iOS renderer does not implement `FlatList`; the maintained Craft
 iOS host does use a recycling `UICollectionView`. Automatic `FlatList` template
 expansion is still outside the shared-runtime contract, so use `:for` when the
 same screen must work across every host.
+
+Wildloop is the maintained real-application integration. Its native bundle is
+built from `resources/native.config.json` and currently includes manual
+activity, saved confirmation, records, notifications, and leaderboard screens:
+
+```bash
+cd /absolute/path/to/wildloop
+bun run build:native-screens --debug
+bun test tests/unit/native-manual-activity-flow.test.ts \
+  tests/unit/native-records-screen.test.ts \
+  tests/unit/native-notifications-screen.test.ts \
+  tests/unit/native-leaderboard-screen.test.ts
+```
+
+Those screens use application-owned components and shared data helpers. The
+records, notifications, and leaderboard lists use keyed `:for` rows inside a
+`ScrollView`; they retain row identity and event scope but materialize every
+row. `FlatList` recycling is therefore an explicit host-specific boundary, not
+an implication of translating a `<FlatList>` tag.
 
 ### Simulator validation
 

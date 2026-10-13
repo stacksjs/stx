@@ -196,6 +196,10 @@ function goBack() { globalThis.craft.navigation.back() }
     expect(compiled.code).toBe(0)
     const bundle = await Bun.file(output).text()
     expect(() => new Bun.Transpiler({ loader: 'js' }).transformSync(bundle)).not.toThrow()
+    expect(() => vm.runInNewContext(bundle, {
+      __stxNativeRoute: 'missing',
+      __stxNativeBridge: { postMessage: () => {}, onMessage: () => {} },
+    })).toThrow('Unknown native screen')
 
     async function start(name?: string, params?: Record<string, unknown>) {
       const sent: Array<Record<string, any>> = []
