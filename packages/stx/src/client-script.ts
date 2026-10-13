@@ -690,10 +690,10 @@ function transformAutoImportsUncached(code: string): AutoImportResult {
   // Read with comments and string literals blanked out, for the same reason
   // injectBrowserCoreAutoImports does it one screen down: a bare word match
   // over raw source counts prose. A component whose comment mentioned
-  // useTimeoutFn, or whose copy said "Your Mac can sleep", got that name added
+  // useObjectUrl, or whose copy said "Your Mac can sleep", got that name added
   // to the destructure — and since nothing actually called it, neither the
   // real-import conversion nor the bootstrap ever supplied it. The page then
-  // shipped `var { useTimeoutFn } = window.StacksBrowser || {}` for a symbol it
+  // shipped `var { useObjectUrl } = window.StacksBrowser || {}` for a symbol it
   // never used, and reported it on every navigation through the auto-import
   // guard as a name the client runtime does not provide. True, and unfixable
   // from the other end: no export could satisfy a reference nothing needed.
@@ -725,7 +725,7 @@ function transformAutoImportsUncached(code: string): AutoImportResult {
       // imported name still appears in the import statement itself — which the
       // bare-word scan below reads, since stripCommentsAndLiterals removes
       // comments and strings but not import syntax. Recording only the local
-      // name left `import { useTimeoutFn as timeout }` matching on the original
+      // name left `import { useObjectUrl as objectUrl }` matching on the original
       // and auto-importing a name that is not even a binding here.
       const parts = specifier.trim().replace(/^type\s+/, '').split(/\s+as\s+/)
       for (const part of parts) {

@@ -1796,7 +1796,7 @@ export function buildVirtualTypeScript(
         declareAny(name)
       /*
        * The names stx auto-imports into a client script from
-       * `@stacksjs/browser` - `debounce`, `useTimeoutFn`, `useDocumentVisibility`
+       * `@stacksjs/browser` - `debounce`, `useObjectUrl`, `useDocumentVisibility`
        * and the rest of `BROWSER_CORE_IMPORTS`. They are injected at build time
        * and were declared nowhere, so the checker reported each one as
        * "Cannot find name" against a script that runs.

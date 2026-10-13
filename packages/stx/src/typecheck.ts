@@ -652,11 +652,11 @@ export async function typecheckStxFiles(
       : ['declare const window: any', ...STX_RUNTIME_GLOBALS.map(name => `declare const ${name}: any`)]),
     /*
      * The names stx injects into a client script from `@stacksjs/browser` -
-     * `debounce`, `throttle`, `sleep`, `useTimeoutFn`, `useDocumentVisibility`
+     * `debounce`, `throttle`, `sleep`, `useObjectUrl`, `useDocumentVisibility`
      * and the rest. They are declared for TEMPLATE expressions by
      * `buildVirtualTypeScript`, and script blocks assemble their globals here
      * instead - so a block calling one was told it was a typo, with the nearest
-     * runtime global offered as a correction: "Cannot find name 'useTimeoutFn'.
+     * runtime global offered as a correction: "Cannot find name 'useObjectUrl'.
      * Did you mean 'useTimeout'?"
      *
      * `any` on purpose. Their real types live in a package these buffers do not

@@ -31,7 +31,7 @@ export function injectBrowserRuntime(template: string): string {
   // global itself.
   //
   // Deliberately NOT a bare `includes('window.StacksBrowser')`. The
-  // client-script pass emits `var { useTimeoutFn } = window.StacksBrowser || {}`
+  // client-script pass emits `var { useObjectUrl } = window.StacksBrowser || {}`
   // for exactly the templates that need this module, and it runs first — so
   // that test saw its own reason to inject and read it as proof the work was
   // already done. The module was then never loaded, and every auto-imported
@@ -73,13 +73,13 @@ export function injectBrowserRuntime(template: string): string {
 
   // The names that make this template need @stacksjs/browser are exactly the
   // names the client-script pass will auto-import from it. This used to be a
-  // second hand-maintained list, and it had drifted seven names behind:
+  // second hand-maintained list, and it had drifted several names behind:
   // BrowserQueryError, browserAuth, getBrowserConfig, createBrowserDb,
-  // isBrowser, useObjectUrl and useTimeoutFn were all promised by the
+  // isBrowser and useObjectUrl were both promised by the
   // auto-import manifest but did not count as a reason to load the module.
   //
   // A page whose client code used only those got the destructure without the
-  // module: `var { useTimeoutFn } = window.StacksBrowser || {}` against a
+  // module: `var { useObjectUrl } = window.StacksBrowser || {}` against a
   // global nothing had defined. Every one of them came out undefined, and the
   // page reported it through the auto-import guard rather than by failing at
   // the call site — so it read as a packaging warning rather than as the
