@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.499...v0.2.500)
+
+## 🐛 Bug Fixes
+
+- **native**: NAVIGATE_POP_TO_ROOT is a bridge message type ([fb7a80c](https://github.com/stacksjs/stx/commit/fb7a80c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.500 ([33a95de](https://github.com/stacksjs/stx/commit/33a95de)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.498...v0.2.499)
 
 ## ✨ Features
