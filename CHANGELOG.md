@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.505...v0.2.506)
+
+## 🐛 Bug Fixes
+
+- **deps**: correct the recorded integrity for ts-css 0.1.0 ([1d4463a](https://github.com/stacksjs/stx/commit/1d4463a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **ci**: pin ts-css to stable 0.3.11 resolution ([97e3c19](https://github.com/stacksjs/stx/commit/97e3c19)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.506 ([9839ce3](https://github.com/stacksjs/stx/commit/9839ce3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.504...v0.2.505)
 
 ## ✨ Features
