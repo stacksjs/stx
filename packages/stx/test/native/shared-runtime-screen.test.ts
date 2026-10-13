@@ -190,7 +190,7 @@ function select(id) { selected.set(id) }
     <View :for="item in items" :key="item.id">
       <Text :text="item.label" />
       <Button @click="select(item.id)">Select</Button>
-      <TextInput placeholder="Draft" />
+      <TextInput placeholder="Draft" @focus="select(item.id)" />
     </View>
   </ScrollView>
   <Text testID="selected" :text="'Selected ' + selected()" />
@@ -234,6 +234,8 @@ function select(id) { selected.set(id) }
     expect(beaButton).toBeTruthy()
     expect(beaInput).toBeTruthy()
     expect(adaButton).toBeTruthy()
+    const beaFocus = initialOps.find(operation => operation.id === beaInput && operation.patch?.events?.onFocus)?.patch.events.onFocus
+    expect(beaFocus).toMatch(/^h/)
 
     const reorderId = (compiled.document.root.children[2] as any).props.__stxId
     const reorderListener = initialOps.find(operation => operation.id === reorderId && operation.patch?.events?.onPress)
@@ -247,6 +249,16 @@ function select(id) { selected.set(id) }
     expect(updateOps).toContainEqual(expect.objectContaining({ patch: { children: ['Cy'] } }))
     expect(updateOps).toContainEqual(expect.objectContaining({ op: 'moveChild', parentId: scroll.props.__stxId }))
     expect(updateOps.some(operation => operation.op === 'removeNode' && [beaLabel.id, beaInput].includes(operation.id))).toBe(false)
+    expect(updateOps.some(operation => operation.op === 'createNode' && operation.id === beaInput)).toBe(false)
+
+    // Craft keeps the native control focused when its keyed node is moved.
+    // Dispatching the retained handler proves the row scope stayed attached too.
+    sent.length = 0
+    receive(JSON.stringify({ type: 'EVENT', payload: { handlerId: beaFocus, nativeEvent: {} } }))
+    screen.host.flush()
+    expect(sent.flatMap(message => message.payload.operations)).toContainEqual(expect.objectContaining({
+      patch: { children: ['Selected b'] },
+    }))
 
     const adaListener = initialOps.find(operation => operation.id === adaButton && operation.patch?.events?.onPress)
     sent.length = 0
@@ -254,13 +266,6 @@ function select(id) { selected.set(id) }
     screen.host.flush()
     expect(sent).toHaveLength(0)
 
-    const beaListener = initialOps.find(operation => operation.id === beaButton && operation.patch?.events?.onPress)
-    sent.length = 0
-    receive(JSON.stringify({ type: 'EVENT', payload: { handlerId: beaListener.patch.events.onPress, nativeEvent: {} } }))
-    screen.host.flush()
-    expect(sent.flatMap(message => message.payload.operations)).toContainEqual(expect.objectContaining({
-      patch: { children: ['Selected b'] },
-    }))
   })
 
   it('evaluates HTML-encoded style bindings through the native host', async () => {
