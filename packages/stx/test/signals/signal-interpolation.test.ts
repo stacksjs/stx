@@ -23,6 +23,7 @@ async function hydrate(scope: Record<string, unknown>): Promise<string[]> {
     <p id="compound">{{ "for " + query }}</p>
     <p id="called-compound">{{ "for " + query() }}</p>
     <p id="called">{{ query() }}</p>
+    <p id="returned-signal">{{ readQuery() }}</p>
   </main>`
   shimAttributes(document.body)
   document.dispatchEvent(new window.Event('DOMContentLoaded'))
@@ -32,6 +33,7 @@ async function hydrate(scope: Record<string, unknown>): Promise<string[]> {
     'compound',
     'called-compound',
     'called',
+    'returned-signal',
   ].map(id => document.querySelector(`#${id}`).textContent)
     .concat(document.title, document.querySelector('#signal-description').getAttribute('content'))
 }
@@ -39,16 +41,18 @@ async function hydrate(scope: Record<string, unknown>): Promise<string[]> {
 describe('signal interpolation', () => {
   it('unwraps signals in bare and compound expressions', async () => {
     const query = window.stx.state('Ada')
-    expect(await hydrate({ query })).toEqual(['Ada', 'for Ada', 'for Ada', 'Ada', 'Ada', 'for Ada'])
+    const readQuery = () => query
+    expect(await hydrate({ query, readQuery })).toEqual(['Ada', 'for Ada', 'for Ada', 'Ada', 'Ada', 'Ada', 'for Ada'])
   })
 
   it('keeps every interpolation reactive after the signal changes', async () => {
     const query = window.stx.state('Ada')
-    expect(await hydrate({ query })).toEqual(['Ada', 'for Ada', 'for Ada', 'Ada', 'Ada', 'for Ada'])
+    const readQuery = () => query
+    expect(await hydrate({ query, readQuery })).toEqual(['Ada', 'for Ada', 'for Ada', 'Ada', 'Ada', 'Ada', 'for Ada'])
     query.set('Grace')
     await new Promise(resolve => setTimeout(resolve, 30))
-    expect(['bare', 'compound', 'called-compound', 'called'].map(id => document.querySelector(`#${id}`).textContent)
+    expect(['bare', 'compound', 'called-compound', 'called', 'returned-signal'].map(id => document.querySelector(`#${id}`).textContent)
       .concat(document.title, document.querySelector('#signal-description').getAttribute('content')))
-      .toEqual(['Grace', 'for Grace', 'for Grace', 'Grace', 'Grace', 'for Grace'])
+      .toEqual(['Grace', 'for Grace', 'for Grace', 'Grace', 'Grace', 'Grace', 'for Grace'])
   })
 })

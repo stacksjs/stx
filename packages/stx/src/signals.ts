@@ -3041,6 +3041,13 @@ catch (e) {
         } catch(e) {}
       }
     }
+    // Normalize a signal returned by an interpolation expression before the
+    // DOM coerces it to text. The proxy handles ordinary signal references,
+    // but a helper or pipe can return the signal function itself.
+    const maybeUnwrapSignal = (v) => {
+      if (v && typeof v === 'function' && (v._isSignal || v._isDerived)) return v();
+      return v;
+    };
     if (el.nodeType === Node.TEXT_NODE) {
       // DOM textContent is specified as a string, but lightweight DOM
       // implementations and user-created nodes can retain a numeric value
@@ -3080,13 +3087,15 @@ catch (e) {
                   const pipeResult = parsePipeExpression(expr, capturedScope);
                   if (pipeResult) {
                     const unwrapScope = createExpressionAutoUnwrapProxy(capturedScope, expr);
-                    bindingNode.textContent = executePipeExpression(pipeResult.valueExpr, pipeResult.pipes, unwrapScope);
+                    bindingNode.textContent = maybeUnwrapSignal(
+                      executePipeExpression(pipeResult.valueExpr, pipeResult.pipes, unwrapScope),
+                    );
                   }
 else {
                     // Use auto-unwrap proxy (Feature #1)
                     const unwrapScope = createExpressionAutoUnwrapProxy(capturedScope, expr);
                     const fn = __stxCompileScoped(capturedScope, [], 'return ' + expr);
-                    bindingNode.textContent = fn(...__stxArgs(fn, unwrapScope));
+                    bindingNode.textContent = maybeUnwrapSignal(fn(...__stxArgs(fn, unwrapScope)));
                   }
                 }
 catch (e) {
@@ -3095,7 +3104,7 @@ catch (e) {
                   // Retry without auto-unwrap so signal functions remain callable.
                   try {
                     const fn = __stxCompileScoped(capturedScope, [], 'return ' + expr);
-                    bindingNode.textContent = fn(...__stxArgs(fn, capturedScope));
+                    bindingNode.textContent = maybeUnwrapSignal(fn(...__stxArgs(fn, capturedScope)));
                   }
 catch (e2) {
                     if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Expression error:', expr, e2);
@@ -3204,10 +3213,6 @@ else if (part) {
     // appearing in the Proxy Object.keys), call it to get the value.
     // Without this, :text="step" sets textContent to the stringified
     // signal function instead of the value.
-    const maybeUnwrapSignal = (v) => {
-      if (v && typeof v === 'function' && (v._isSignal || v._isDerived)) return v();
-      return v;
-    };
     const evalAttrExpr = (rawExpr, evaluationScope) => {
       const activeScope = evaluationScope || attrCapturedScope;
       // Decode HTML entities that browsers may encode in attribute values
