@@ -104,3 +104,71 @@ export function prepareSharedNativeScreen(
     },
   }
 }
+
+/**
+ * The app script: one context for the app's whole life, with no screen.
+ *
+ * What a phone app does whatever is on screen lives here: registering for
+ * push and following a tapped notification, background refresh, keeping the
+ * account's details fresh for the screens. The host runs it from the same
+ * bundle as the screens, under the route `__app` (Craft's `nativeApp`), and
+ * it gets the same `craft` bridge a screen does, minus drawing. The host's
+ * app events - a notification tapped or received, a silent push, a
+ * background refresh - arrive as the page's CustomEvents on its global
+ * (`craftNotificationResponse`, `craftBackgroundRefresh`, ...), so code
+ * shared with the page (`@stacksjs/mobile`) hears them unchanged.
+ */
+export type NativeAppMain = (craft: Record<string, any>) => void | (() => void) | Promise<void | (() => void)>
+
+export interface SharedNativeApp {
+  /** Run the app script's main function, once. */
+  start: (main: NativeAppMain | { default?: NativeAppMain } | null | undefined) => void
+  /** The app is going away: the main function's cleanup, then the bridge's. */
+  unmount: () => void
+}
+
+/** The route a host names to run the app script rather than a screen. */
+export const NATIVE_APP_ROUTE = '__app'
+
+export function prepareNativeApp(bridge: NativeBridgeInterface, options: CraftBridgeOptions = {}): SharedNativeApp {
+  const protocol = new STXBridge()
+  protocol.initialize(bridge)
+  const craft = installCraftBridge(protocol, bridge, globalThis as Record<string, any>, { ...options, routeName: options.routeName || NATIVE_APP_ROUTE })
+  let cleanup: (() => void) | null = null
+  let stopped = false
+  const report = (error: unknown) => console.error(`[stx native] the app script failed: ${error instanceof Error ? error.stack || error.message : String(error)}`)
+  const keep = (value: unknown) => {
+    if (typeof value !== 'function') return
+    if (stopped) (value as () => void)()
+    else cleanup = value as () => void
+  }
+  return {
+    start(main) {
+      const run = typeof main === 'function' ? main : main?.default
+      if (typeof run !== 'function') {
+        console.error('[stx native] the app script exports no function to run')
+        return
+      }
+      try {
+        const answer = run(craft)
+        if (answer && typeof (answer as Promise<unknown>).then === 'function') (answer as Promise<unknown>).then(keep, report)
+        else keep(answer)
+      }
+      catch (error) {
+        report(error)
+      }
+    },
+    unmount() {
+      stopped = true
+      try {
+        cleanup?.()
+      }
+      catch (error) {
+        report(error)
+      }
+      cleanup = null
+      // The host knows one reason for calls left open by a context it ends.
+      protocol.dispose('screen-closed')
+    },
+  }
+}

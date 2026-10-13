@@ -276,4 +276,12 @@ export interface NativeCraft {
     onChange: (callback: (state: string) => unknown) => () => void
   }
   deepLinks: { getInitialURL: () => Promise<string | null>, onLink: (callback: (link: unknown) => unknown) => () => void }
+  /** The app: its site (`''` when it has none), version and build. */
+  app: { url: string, version: string, build: string }
+  /**
+   * Background time handed back to iOS (`capabilities.background`), for the
+   * app script's `craftBackgroundRefresh` and `craftSilentPush`: with the
+   * event's `id`, or none for everything pending.
+   */
+  background?: { complete: (ok?: boolean, id?: string) => Promise<boolean> }
 }

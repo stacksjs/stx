@@ -50,6 +50,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     dialogs: capabilities.has('dialog'),
     browser: capabilities.has('browser'),
     appleSignIn: capabilities.has('appleSignIn'),
+    background: capabilities.has('background'),
   }
 }
 
@@ -183,6 +184,21 @@ export function installCraftBridge(
   // answers each, so they are never timed out.
   if (capabilities.has('browser'))
     craft.browser = { open: (url: string, options: AnyRecord = {}) => ask('Browser', 'open', [url, options]) }
+
+  // The app itself: its site (where the API and its web pages are, so a
+  // screen needs no page to have told it), version and build.
+  craft.app = {
+    url: typeof nativeBridge.appURL === 'string' ? nativeBridge.appURL : '',
+    version: typeof nativeBridge.appVersion === 'string' ? nativeBridge.appVersion : '',
+    build: typeof nativeBridge.appBuild === 'string' ? nativeBridge.appBuild : '',
+  }
+
+  // Background time handed back to iOS: the page's `craft.background.complete`
+  // for a `craftBackgroundRefresh` or `craftSilentPush` the app script heard
+  // (with the event's `id`, or none for everything pending), so
+  // `@stacksjs/mobile`'s background work runs unchanged with no page.
+  if (capabilities.has('background'))
+    craft.background = { complete: (ok: boolean = true, id?: string) => request('Background', 'complete', [ok !== false, typeof id === 'string' ? id : null]).then(() => true, () => false) }
   if (capabilities.has('appleSignIn'))
     craft.signInWithApple = (options: AnyRecord = {}) => ask('Auth', 'signInWithApple', [options])
 

@@ -16,6 +16,7 @@ import type { BunPlugin } from 'bun'
 import { existsSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { compileScreenFile } from './render-screen'
+import { NATIVE_APP_ROUTE } from '../runtime/shared-screen'
 import { generateSignalsRuntime } from '../../signals'
 
 export interface CompileNativeBundleOptions {
@@ -34,6 +35,14 @@ export interface CompileNativeBundleOptions {
   outFile?: string
   /** Base directory for `screens` and `outFile`. Defaults to `process.cwd()`. */
   root?: string
+  /**
+   * The app script (relative to `root`): a module whose default export runs
+   * once for the app's life, with no screen, when the host names the route
+   * `__app` (Craft's `nativeApp`). It is called with `craft` and may return
+   * a cleanup. Its imports are bundled with the screens', so its module body
+   * runs in every context: keep the work in the default export.
+   */
+  app?: string
 }
 
 /** Something the compiler could not translate exactly: an unknown icon or class. */
@@ -115,10 +124,15 @@ export async function compileNativeBundle(options: CompileNativeBundleOptions): 
 
   const runtimeGlobals = nativeRuntimeModule('jsc-globals')
   const sharedScreen = nativeRuntimeModule('shared-screen')
+  const appFile = options.app ? path.resolve(root, options.app) : null
+  if (appFile && !existsSync(appFile)) throw new Error(`The app script ${options.app} does not exist`)
+  if (appFile && !routed) throw new Error('An app script needs a routed bundle')
+  if (appFile && options.screens[NATIVE_APP_ROUTE]) throw new Error(`${NATIVE_APP_ROUTE} is the app script's route, not a screen name`)
   const route = routed
     ? `var routeName = g.__stxNativeRoute || ${JSON.stringify(initialScreen)};
-if (routeNames.indexOf(routeName) === -1) throw new Error(['Unknown native screen:', routeName].join(' '));`
-    : "var routeName = 'main';"
+var isApp = ${appFile ? `routeName === ${JSON.stringify(NATIVE_APP_ROUTE)}` : 'false'};
+if (!isApp && routeNames.indexOf(routeName) === -1) throw new Error(['Unknown native screen:', routeName].join(' '));`
+    : "var routeName = 'main';\nvar isApp = false;"
   const selections = compiledScreens.map(({ name, compiled }, index) => `${index === 0 ? 'if' : 'else if'} (routeName === ${JSON.stringify(routed ? name : 'main')}) {
   nativeDocument = ${JSON.stringify(compiled.document)};
   manifest = ${JSON.stringify(compiled.manifest)};
@@ -128,7 +142,8 @@ ${compiled.setup?.code ?? 'g.__stx_latestSetup = null;'}
 }`).join('\n')
   const contents = `
 import { installJSCGlobals } from ${JSON.stringify(runtimeGlobals)};
-import { prepareSharedNativeScreen } from ${JSON.stringify(sharedScreen)};
+import { prepareNativeApp, prepareSharedNativeScreen } from ${JSON.stringify(sharedScreen)};
+${appFile ? `import * as nativeAppModule from ${JSON.stringify(appFile)};` : 'var nativeAppModule = null;'}
 var g = globalThis;
 installJSCGlobals(g);
 var bridge = g.__stxNativeBridge;
@@ -139,12 +154,21 @@ g.__stxNativeRoute = routeName;
 var nativeDocument;
 var manifest;
 ${selections}
-var screen = prepareSharedNativeScreen(nativeDocument, manifest, bridge, { routeName: routeName, routeNames: routeNames });
-g.__stx_host = screen.host;
-g.__stxNativeUnmount = function() { screen.unmount(); };
+var screen = null;
+var app = null;
+if (isApp) {
+  app = prepareNativeApp(bridge, { routeName: routeName, routeNames: routeNames });
+  g.__stxNativeUnmount = function() { app.unmount(); };
+}
+else {
+  screen = prepareSharedNativeScreen(nativeDocument, manifest, bridge, { routeName: routeName, routeNames: routeNames });
+  g.__stx_host = screen.host;
+  g.__stxNativeUnmount = function() { screen.unmount(); };
+}
 ${generateSignalsRuntime()}
 ${setups}
-screen.mount(g.stx, g.__stx_latestSetup || null);
+if (isApp) app.start(nativeAppModule);
+else screen.mount(g.stx, g.__stx_latestSetup || null);
 `
   const plugin: BunPlugin = {
     name: 'stx-native-shared-screens',

@@ -155,6 +155,21 @@ native view tree instead of replacing it.
 └──────────────┘         └──────────────┘
 ```
 
+### The app script
+
+`compileNativeBundle({ screens, app: 'app.ts' })` adds a context with no
+screen. When the host names the route `__app` (Craft's `nativeApp`), the
+bundle installs the `craft` bridge and calls the app module's default export
+with `craft` instead of drawing; a function it returns runs when the host ends
+the context. It runs once for the app's life, so it is where a phone app keeps
+what does not belong to one screen: push registration and following a tapped
+notification, background refresh, session housekeeping. The host's app events
+arrive as the page's CustomEvents on its global (`craftNotificationResponse`,
+`craftNotificationReceived`, `craftSilentPush`, `craftBackgroundRefresh`), and
+`craft.background.complete(ok, id)` hands background time back. Every context,
+screens included, has `craft.app` (`url`, `version`, `build`): the app's site,
+so code reaching its API needs no page to have said where it is.
+
 ## Current Status
 
 - The compiler, IR, style mapping, CLI, bundle generation and shared-runtime

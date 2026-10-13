@@ -8,9 +8,10 @@
  * Without a file, the screens come from `native.config.json` in the working
  * directory (or `--config <file>`):
  *
- *   { "initialScreen": "Today", "screens": { "Today": "Today.stx", "Session": "Session.stx" } }
+ *   { "initialScreen": "Today", "screens": { "Today": "Today.stx", "Session": "Session.stx" }, "app": "app.ts" }
  *
- * Screen paths are relative to the config file.
+ * Screen paths, and the optional app script (`compileNativeBundle`'s `app`),
+ * are relative to the config file.
  */
 import type { NativeDiagnostic } from './compiler/bundle'
 import { existsSync, mkdirSync, readFileSync } from 'node:fs'
@@ -27,6 +28,8 @@ export interface NativeScreensConfig {
   screens: Record<string, string>
   /** The config file the screens came from. */
   file: string
+  /** The app script's absolute path, when the config names one. */
+  app?: string
 }
 
 export interface NativeCompileOptions {
@@ -57,7 +60,7 @@ export function loadNativeScreensConfig(cwd: string = process.cwd(), configFile?
     return null
   if (!existsSync(file))
     throw new Error(`Native config not found: ${file}`)
-  const raw = JSON.parse(readFileSync(file, 'utf8')) as { screens?: Record<string, unknown>, initialScreen?: string }
+  const raw = JSON.parse(readFileSync(file, 'utf8')) as { screens?: Record<string, unknown>, initialScreen?: string, app?: unknown }
   const entries = Object.entries(raw.screens ?? {})
   if (entries.length === 0)
     throw new Error(`${path.basename(file)} must name at least one screen in "screens"`)
@@ -74,7 +77,12 @@ export function loadNativeScreensConfig(cwd: string = process.cwd(), configFile?
   const initialScreen = raw.initialScreen || entries[0][0]
   if (!screens[initialScreen])
     throw new Error(`Initial screen ${initialScreen} is not in screens`)
-  return { initialScreen, screens, file }
+  if (raw.app !== undefined && typeof raw.app !== 'string')
+    throw new Error('"app" must name the app script\'s file')
+  const app = raw.app ? path.resolve(path.dirname(file), raw.app) : undefined
+  if (app && !existsSync(app))
+    throw new Error(`App script not found: ${app}`)
+  return { initialScreen, screens, file, ...(app ? { app } : {}) }
 }
 
 /** What `stx native compile` does, without the process around it. */
@@ -92,7 +100,7 @@ export async function runNativeCompile(file: string | undefined, options: Native
   let diagnostics: NativeDiagnostic[] = []
   if (format === 'bundle') {
     const bundle = config
-      ? await compileNativeBundle({ screens: config.screens, initialScreen: config.initialScreen, minify: options.minify, root: cwd })
+      ? await compileNativeBundle({ screens: config.screens, initialScreen: config.initialScreen, minify: options.minify, root: cwd, ...(config.app ? { app: config.app } : {}) })
       : await compileScreenBundle(path.resolve(cwd, file!), { minify: options.minify })
     output = bundle.code
     diagnostics = bundle.diagnostics

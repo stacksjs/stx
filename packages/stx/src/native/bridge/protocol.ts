@@ -739,6 +739,16 @@ export interface NativeBridgeInterface {
   colorScheme?: 'light' | 'dark'
 
   /**
+   * The app's site (Craft's `devServerURL`): where its web pages and API
+   * live. '' or omitted when the app has none.
+   */
+  appURL?: string
+
+  /** The app's version and build, as the phone shows them. */
+  appVersion?: string
+  appBuild?: string
+
+  /**
    * Post a message to native
    */
   postMessage(message: string): void
