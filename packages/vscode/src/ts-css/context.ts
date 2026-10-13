@@ -189,6 +189,7 @@ export function getDefaultConfig(vscodeModule: typeof vscode): CssConfig {
       fontSize: {},
       fontFamily: {},
       screens: {},
+      containers: {},
       borderRadius: {},
       boxShadow: {},
     },
