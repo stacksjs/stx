@@ -376,6 +376,16 @@ export function installCraftBridge(
         if (given && typeof given === 'object') Object.keys(given).forEach((name) => { headers[name] = String(given[name]) })
         return request('Files', 'download', [url, { headers, ...(typeof options.name === 'string' ? { name: options.name } : {}) }])
       },
+      // What the screen made itself (a CSV export): text as it is, bytes as
+      // `{ encoding: 'base64' }`. `craft.share({ files: [file] })` takes it.
+      write: (name: string, data: string, options: AnyRecord = {}) => {
+        if (typeof name !== 'string' || !name.trim()) return Promise.reject(new TypeError('files.write needs a file name'))
+        if (typeof data !== 'string') return Promise.reject(new TypeError('files.write needs its contents as a string'))
+        return request('Files', 'write', [name, data, {
+          encoding: options.encoding === 'base64' ? 'base64' : 'utf8',
+          ...(typeof options.type === 'string' ? { type: options.type } : {}),
+        }])
+      },
       remove: (file: string | AnyRecord) => request('Files', 'remove', [typeof file === 'string' ? file : file?.path]).then(Boolean),
     }
     target.FormData ??= NativeFormData

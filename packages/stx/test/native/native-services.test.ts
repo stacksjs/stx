@@ -347,6 +347,23 @@ describe('files: a picked photo, a download, a form', () => {
     await expect(scope.craft.files.download('')).rejects.toThrow('files.download needs a URL')
   })
 
+  it('writes what the screen made as a file, and shares it as it is', async () => {
+    const { scope, requests, answer } = await runtime([...ALL, 'files'])
+    const written = scope.craft.files.write('health-data.csv', 'date,steps\n2026-10-12,9120\n', { type: 'text/csv' })
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'Files', method: 'write', args: ['health-data.csv', 'date,steps\n2026-10-12,9120\n', { encoding: 'utf8', type: 'text/csv' }] })
+    const csv = { path: '/tmp/craft-files/C3/health-data.csv', name: 'health-data.csv', type: 'text/csv', size: 27 }
+    answer(requests().at(-1)!, csv)
+    expect(await written).toEqual(csv)
+
+    void scope.craft.share({ files: [csv] })
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'Share', method: 'share', args: [{ files: [csv] }], untimed: true })
+
+    void scope.craft.files.write('dot.png', 'iVBORw0KGgo=', { encoding: 'base64' })
+    expect(requests().at(-1)!.payload.args[2]).toEqual({ encoding: 'base64' })
+    await expect(scope.craft.files.write('', 'x')).rejects.toThrow('files.write needs a file name')
+    await expect(scope.craft.files.write('x.txt', 42)).rejects.toThrow('files.write needs its contents as a string')
+  })
+
   it('posts a FormData as parts the host sends as multipart, the file by its path', async () => {
     const { scope, requests, answer } = await runtime([...ALL, 'files'])
     const form = new scope.FormData()
