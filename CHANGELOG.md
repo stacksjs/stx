@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.503...v0.2.504)
+
+## ✨ Features
+
+- **native**: an app script beside the screens, craft.app and craft.background ([79daf83](https://github.com/stacksjs/stx/commit/79daf83)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **native**: answer or catch every request the files tests leave open ([cf815c2](https://github.com/stacksjs/stx/commit/cf815c2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.504 ([f0643ae](https://github.com/stacksjs/stx/commit/f0643ae)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.502...v0.2.503)
 
 ## ✨ Features
