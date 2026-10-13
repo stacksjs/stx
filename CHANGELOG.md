@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.506...v0.2.507)
+
+## ✨ Features
+
+- **native**: mindful sessions on a native screen's craft.health ([2f914f8](https://github.com/stacksjs/stx/commit/2f914f8)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- **ci**: bypass stale Bun package caches ([4021e68](https://github.com/stacksjs/stx/commit/4021e68)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.507 ([83dfebb](https://github.com/stacksjs/stx/commit/83dfebb)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.505...v0.2.506)
 
 ## 🐛 Bug Fixes
