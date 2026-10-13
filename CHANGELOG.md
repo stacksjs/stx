@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.501...v0.2.502)
+
+## ✨ Features
+
+- **native**: craft.files.write shares what a screen made ([05f5e3d](https://github.com/stacksjs/stx/commit/05f5e3d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.502 ([680796c](https://github.com/stacksjs/stx/commit/680796c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.500...v0.2.501)
 
 ## ✨ Features
