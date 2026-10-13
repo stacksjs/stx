@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.502...v0.2.503)
+
+## ✨ Features
+
+- **native**: scroll drag and momentum events, and 20 more icons ([a041b7c](https://github.com/stacksjs/stx/commit/a041b7c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.503 ([0e89dae](https://github.com/stacksjs/stx/commit/0e89dae)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.501...v0.2.502)
 
 ## ✨ Features
