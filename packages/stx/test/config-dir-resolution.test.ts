@@ -115,3 +115,30 @@ describe('a directory that does not exist is reported', () => {
     expect(warnings.filter(w => w.includes('resolves to'))).toEqual([])
   })
 })
+
+describe('root and config/ui.ts compose', () => {
+  it('keeps UI-only keys while root stx config takes precedence', async () => {
+    const app = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-config-ui-'))
+    try {
+      fs.mkdirSync(path.join(app, 'config'), { recursive: true })
+      fs.writeFileSync(
+        path.join(app, 'config', 'ui.ts'),
+        'export default { plugins: ["ui-plugin"], app: { head: { title: "UI" } }, debug: true }\n',
+      )
+      fs.writeFileSync(
+        path.join(app, 'stx.config.ts'),
+        'export default { root: "resources", debug: false }\n',
+      )
+
+      const config = await loadStxConfig(app)
+
+      expect(config.plugins).toEqual(['ui-plugin'])
+      expect(config.app?.head?.title).toBe('UI')
+      expect(config.root).toBe('resources')
+      expect(config.debug).toBe(false)
+    }
+    finally {
+      fs.rmSync(app, { recursive: true, force: true })
+    }
+  })
+})

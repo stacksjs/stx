@@ -699,14 +699,42 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
   if (cached) return cached
 
   const promise = (async () => {
-    const configResult = await loadConfigWithResult({
-      name: 'stx',
-      alias: 'ui',
-      cwd: effectiveCwd, // Load config from the requested directory, not the stx package
-      defaultConfig,
-      verbose: false,
-    })
-    let loaded = configResult.config
+    const rootConfigExtensions = ['.ts', '.js', '.mjs', '.cjs', '.json']
+    const hasRootConfig = rootConfigExtensions.some(ext => fs.existsSync(path.join(effectiveCwd, `stx.config${ext}`)))
+    const hasUiConfig = rootConfigExtensions.some(ext => fs.existsSync(path.join(effectiveCwd, 'config', `ui${ext}`)))
+
+    let loaded: StxConfig
+    if (hasRootConfig && hasUiConfig) {
+      // bunfig deliberately stops at the first matching file. In a Stacks app
+      // that means a root stx.config.ts silently hides config/ui.ts, even when
+      // the latter owns plugins or other keys the root file does not repeat.
+      // Use the UI config as the base and load the root file over it: this is
+      // the shallow, root-wins merge promised by Partial<StxConfig> (#2056).
+      const uiResult = await loadConfigWithResult({
+        name: 'ui',
+        cwd: path.join(effectiveCwd, 'config'),
+        defaultConfig,
+        verbose: false,
+      })
+      const rootResult = await loadConfigWithResult({
+        name: 'stx',
+        alias: 'ui',
+        cwd: effectiveCwd, // Load config from the requested directory, not the stx package
+        defaultConfig: uiResult.config,
+        verbose: false,
+      })
+      loaded = rootResult.config
+    }
+    else {
+      const configResult = await loadConfigWithResult({
+        name: 'stx',
+        alias: 'ui',
+        cwd: effectiveCwd, // Load config from the requested directory, not the stx package
+        defaultConfig,
+        verbose: false,
+      })
+      loaded = configResult.config
+    }
     if (loaded.extends !== undefined || snapshot) {
       const resolved = await resolveApplicationLayers(effectiveCwd, defaultConfig)
       loaded = resolved.config as StxConfig

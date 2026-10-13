@@ -2,6 +2,24 @@
 
 STX is configured through `stx.config.ts` (or `.config/stx.config.ts`) in your project root.
 
+Stacks projects may also keep shared UI configuration in `config/ui.ts`. When
+both files exist, stx shallow-merges them: keys from `config/ui.ts` are
+retained and keys declared in the root file win. This lets a root config
+override `root`, `debug`, or another setting without silently dropping UI
+plugins.
+
+```typescript
+// config/ui.ts
+export default {
+  plugins: ['@stacksjs/components/stx-plugin'],
+}
+
+// stx.config.ts
+export default {
+  root: 'resources',
+}
+```
+
 ## Basic Configuration
 
 ```typescript
