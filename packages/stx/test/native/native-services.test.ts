@@ -262,6 +262,52 @@ describe('a workout player\'s services, in the page\'s names', () => {
     const { scope } = await runtime()
     expect(scope.craft.music).toBeUndefined()
   })
+
+  it('reads a heart-rate strap in the page\'s names, its readings as page events', async () => {
+    const { scope, requests, answer, receive } = await runtime([...ALL, 'heartRate'])
+    expect(scope.craft.capabilities.heartRate).toBe(true)
+    // Scanning and connecting can show the Bluetooth prompt: never timed out.
+    for (const [call, payload] of [
+      [() => scope.craft.heartRate.scan({ timeout: 10 }), { method: 'scan', args: [{ timeout: 10 }] }],
+      [() => scope.craft.heartRate.connect('A1B2'), { method: 'connect', args: [{ id: 'A1B2' }] }],
+      [() => scope.craft.heartRate.connect({ id: 'A1B2' }), { method: 'connect', args: [{ id: 'A1B2' }] }],
+      [() => scope.craft.heartRate.requestAuthorization(), { method: 'requestAuthorization' }],
+    ] as Array<[() => Promise<unknown>, Record<string, unknown>]>) {
+      const asked = call()
+      expect(requests().at(-1)!.payload).toMatchObject({ module: 'HeartRate', ...payload })
+      await new Promise(resolve => setTimeout(resolve, 1100))
+      answer(requests().at(-1)!, { connection: 'connected' })
+      expect(await asked).toEqual({ connection: 'connected' })
+    }
+    for (const [call, payload] of [
+      [() => scope.craft.heartRate.getState(), { method: 'getState', args: [{}] }],
+      [() => scope.craft.heartRate.reconnect(), { method: 'reconnect' }],
+      [() => scope.craft.heartRate.disconnect({ forget: true }), { method: 'disconnect', args: [{ forget: true }] }],
+      [() => scope.craft.heartRate.startRecording(), { method: 'startRecording' }],
+      [() => scope.craft.heartRate.pauseRecording(), { method: 'pauseRecording' }],
+      [() => scope.craft.heartRate.resumeRecording(), { method: 'resumeRecording' }],
+      [() => scope.craft.heartRate.readRecording({ since: 5 }), { method: 'readRecording', args: [{ since: 5 }] }],
+      [() => scope.craft.heartRate.stopRecording(), { method: 'stopRecording' }],
+      [() => scope.craft.heartRate.getRecordingState(), { method: 'getRecordingState' }],
+      [() => scope.craft.heartRate.getDevices(), { method: 'getDevices' }],
+      [() => scope.craft.heartRate.stopScan(), { method: 'stopScan' }],
+    ] as Array<[() => Promise<unknown>, Record<string, unknown>]>) {
+      const answered = call()
+      expect(requests().at(-1)!.payload).toMatchObject({ module: 'HeartRate', ...payload })
+      answer(requests().at(-1)!, true)
+      await answered
+    }
+    let heard: unknown = null
+    scope.addEventListener('craftHeartRate', (event: { detail: unknown }) => { heard = event.detail })
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftHeartRate', detail: { type: 'reading', bpm: 148, rrIntervals: [405.3] } } })
+    expect(heard).toEqual({ type: 'reading', bpm: 148, rrIntervals: [405.3] })
+  })
+
+  it('has no heart-rate strap where the host offers none', async () => {
+    const { scope } = await runtime()
+    expect(scope.craft.heartRate).toBeUndefined()
+    expect(scope.craft.capabilities.heartRate).toBe(false)
+  })
 })
 
 describe('responses read as they arrive', () => {

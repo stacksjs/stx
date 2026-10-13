@@ -24,6 +24,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     lifecycle: capabilities.has('lifecycle'),
     geolocation: capabilities.has('geolocation'),
     music: capabilities.has('music'),
+    heartRate: capabilities.has('heartRate'),
     clipboard: capabilities.has('clipboard'),
     contacts: false,
     calendar: false,
@@ -325,6 +326,32 @@ export function installCraftBridge(
       skipToNext: () => control('skipToNext'),
       skipToPrevious: (options: AnyRecord = {}) => control('skipToPrevious', { restartAfter: typeof options.restartAfter === 'number' ? options.restartAfter : null }),
       observe: (enabled?: boolean) => request('Music', 'observe', [{ enabled: enabled !== false }]),
+    }
+  }
+
+  // A Bluetooth heart-rate strap, in the page's names: `craft.heartRate` and
+  // its `craftHeartRate` events, so `@stacksjs/mobile`'s `heartRate` works on
+  // a native screen too. One connection and one recording for the whole app,
+  // whichever side started them. Scanning and connecting can show iOS's
+  // Bluetooth prompt, so they wait on the person (connect answers TIMEOUT
+  // natively after 15 s).
+  if (capabilities.has('heartRate')) {
+    const strap = (method: string, options: AnyRecord = {}) => request('HeartRate', method, [options])
+    craft.heartRate = {
+      getState: () => strap('getState'),
+      requestAuthorization: () => ask('HeartRate', 'requestAuthorization', [{}]),
+      scan: (options: AnyRecord = {}) => ask('HeartRate', 'scan', [{ timeout: typeof options.timeout === 'number' ? options.timeout : null }]),
+      stopScan: () => strap('stopScan'),
+      getDevices: () => strap('getDevices'),
+      connect: (id: string | AnyRecord) => ask('HeartRate', 'connect', [{ id: typeof id === 'string' ? id : id?.id }]),
+      reconnect: () => strap('reconnect'),
+      disconnect: (options: AnyRecord = {}) => strap('disconnect', { forget: !!options.forget }),
+      startRecording: () => strap('startRecording'),
+      pauseRecording: () => strap('pauseRecording'),
+      resumeRecording: () => strap('resumeRecording'),
+      stopRecording: () => strap('stopRecording'),
+      getRecordingState: () => strap('getRecordingState'),
+      readRecording: (options: AnyRecord = {}) => strap('readRecording', { since: typeof options.since === 'number' ? options.since : null }),
     }
   }
 
