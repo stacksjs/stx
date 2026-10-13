@@ -5704,7 +5704,14 @@ else if (!value && isInserted) {
           // the branch is bound in the first frame all the same. A branch
           // shown while detached (inside content not on the page yet) waits a
           // macrotask, when it has been placed.
-          if (el.isConnected) queueMicrotask(function() { peek(hydrateShownBranch); });
+          if (el.isConnected) {
+            // A native host sends the insertion as soon as its current
+            // mutation turn ends. Hydrating in a later microtask would put the
+            // handler registration in a second batch, leaving a same-turn tap
+            // with the source expression instead of a native handler id.
+            if (stxHost.isNative) peek(hydrateShownBranch);
+            else queueMicrotask(function() { peek(hydrateShownBranch); });
+          }
           else setTimeout(hydrateShownBranch, 0);
         }
       }

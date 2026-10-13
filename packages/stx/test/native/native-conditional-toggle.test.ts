@@ -297,7 +297,7 @@ function bump() { count.set(count() + 1) }
 
   it('hydrates an interactive node whose :if starts false', async () => {
     ;(globalThis as any).__pressed = 0
-    const { native, settle, press } = await mountScreen(`<script client>
+    const { screen, native, settle, press } = await mountScreen(`<script client>
 const unread = state(0)
 globalThis.__toggle = () => unread.set(1)
 function markAllRead() { globalThis.__pressed++ }
@@ -308,11 +308,14 @@ function markAllRead() { globalThis.__pressed++ }
     expect(native.text()).toEqual([])
 
     ;(globalThis as any).__toggle()
+    // The native side can report the tap in the same turn as the signal
+    // mutation. The handler must be registered as part of revealing the node,
+    // not only after a later hydration tick.
+    screen.host.flush()
+    press('Mark all')
     await settle()
     expect(native.text()).toEqual(['Mark all'])
     expect(native.handlerFor('Mark all')).toMatch(/^h/)
-    press('Mark all')
-    await settle()
     expect((globalThis as any).__pressed).toBe(1)
   })
 

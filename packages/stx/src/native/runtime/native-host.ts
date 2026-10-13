@@ -98,6 +98,8 @@ export interface NativeHostOptions {
 }
 
 export interface NativeHost {
+  /** Native mutations and binding registration must reach one bridge batch. */
+  readonly isNative: true
   setColorScheme: (scheme: 'light' | 'dark') => void
   setText: (node: NativeNode, value: unknown) => void
   setAttribute: (node: NativeNode, name: string, value: unknown) => void
@@ -452,6 +454,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   }
 
   return {
+    isNative: true as const,
     adopt,
     setColorScheme(scheme) {
       if (scheme === colorScheme) return
