@@ -4,6 +4,44 @@ stx compiles `.stx` screens to native iOS (and Android) views. Craft renders the
 
 ## Usage
 
+### Authoring without Swift
+
+Application screens, state, handlers and imported functions stay in STX and typed
+TypeScript. `compileNativeBundle` emits JavaScript and native IR. Craft owns and
+publishes the platform shells; an application should not copy or edit the reference
+renderers under `packages/stx/src/native/renderers/`.
+
+For Stacks, `config/mobile.ts` controls native capabilities and shell behavior,
+and `buddy build:ios` generates the Xcode project under
+`storage/framework/mobile/ios`. Its Swift is ignored build output. Xcode Cloud
+can retain the project metadata and restore Swift from locked packages using the
+generated post-clone hook. Simulator shells and mutation validation also come
+from packages, through the Bun-only `@stacksjs/mobile/testing` entrypoint:
+
+```ts
+import { createNativeMutationValidator } from '@stacksjs/mobile/testing'
+
+const validator = createNativeMutationValidator() // macOS + swiftc
+try {
+  const result = validator.validate(capturedBridgeMessages)
+  if (result.exitCode !== 0) throw new Error(result.stdout + result.stderr)
+}
+finally {
+  validator.dispose()
+}
+```
+
+`capturedBridgeMessages` are the `RENDER` and versioned `MUTATE` messages emitted
+by a compiled screen (other message types are ignored). This tests the same
+mutation validation code the Craft host runs, without embedding Swift in the
+application test suite. UIKit rendering still requires simulator or device tests.
+
+Craft applications can import the same tools from `craft-native/ios` directly.
+New native features belong in Craft's shared host with a typed bridge API; screens
+consume that API rather than forking a shell. See
+[Craft's mobile architecture](https://github.com/craft-native/craft/blob/main/docs/architecture/mobile.md)
+for the test host and source restoration contracts.
+
 ```bash
 stx native compile ./src/Screen.stx --format bundle --output ./native-screen.js [--minify]
 ```
