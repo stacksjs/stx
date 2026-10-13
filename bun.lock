@@ -5,7 +5,7 @@
     "": {
       "name": "stx",
       "dependencies": {
-        "@stacksjs/ts-css": "^0.3.2",
+        "@stacksjs/ts-css": "^0.3.10",
         "very-happy-dom": "^0.3.6",
       },
       "devDependencies": {
@@ -1596,7 +1596,7 @@
       "dependencies": {
         "@iconify-json/f7": "^1.2.2",
         "@stacksjs/stx": "workspace:*",
-        "@stacksjs/ts-css": "^0.3.2",
+        "@stacksjs/ts-css": "^0.3.10",
         "bun-plugin-stx": "workspace:*",
         "ts-syntax-highlighter": "^0.2.17",
       },
@@ -1671,7 +1671,7 @@
         "@stacksjs/clapp": "^0.2.16",
         "@stacksjs/desktop": "workspace:*",
         "@stacksjs/sanitizer": "workspace:*",
-        "@stacksjs/ts-css": "^0.3.2",
+        "@stacksjs/ts-css": "^0.3.10",
         "@stacksjs/ts-i18n": "^0.1.11",
         "bun-plugin-stx": "workspace:*",
         "bunfig": "^0.15.19",
@@ -2229,7 +2229,7 @@
 
     "@stacksjs/ts-cloud": ["@stacksjs/ts-cloud@0.16.15", "", { "dependencies": { "@stacksjs/ts-xml": "^0.1.2", "@ts-cloud/aws-types": "0.16.15", "@ts-cloud/core": "0.16.15", "hash-wasm": "^4.12.0" }, "bin": { "cloud": "./dist/bin/cli.js" } }, "sha512-hbgzS9URgliBi+tlPeImHtR5Of65nB7wh4ETSb2M3hv23iw0qK7Fj+fB/20fWbFLRBadx0EGIiozLEfENybZXg=="],
 
-    "@stacksjs/ts-css": ["@stacksjs/ts-css@0.3.7", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0", "bunfig": "^0.15.17" }, "bin": { "cssx": "./dist/bin/cssx.js", "ts-css": "./dist/bin/cli.js" } }, "sha512-ZP8TTLErkqQ7Q68jln7xQt0ZxDEafZNYLKnbyNtLgSwdFbMEXSKJ1VBZMmHbScfhmRTbU03juD+WELMtYbIs7A=="],
+    "@stacksjs/ts-css": ["@stacksjs/ts-css@0.3.10", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0", "bunfig": "^0.15.17" }, "bin": { "cssx": "./dist/bin/cssx.js", "ts-css": "./dist/bin/cli.js" } }, "sha512-g3EEwMc/ZbFO2cwhYX7VPt2ICQr62n6osteqxePUdr4Hs5R96IO4EK9cbu+VhSnbF6QOjHqSdSRCy2mRBnUZYg=="],
 
     "@stacksjs/ts-i18n": ["@stacksjs/ts-i18n@0.1.11", "", { "dependencies": { "@stacksjs/clapp": "^0.2.9", "bunfig": "^0.15.6" }, "bin": { "i18n": "./dist/cli.js" } }, "sha512-33FM0gKdxBy6EUsUZLGAMe0D7QUZ4f/BQXRsQIyzkZgs2+juruUTevPuJGCjWSZsgJuiaBfEJn8Oq8ctuo1OWQ=="],
 
