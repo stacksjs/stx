@@ -43,7 +43,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@stacksjs/ts-css": "^0.3.12",
+    "@stacksjs/ts-css": "^0.3.11",
     "prettier": "^3.9.9"
   }
 }
