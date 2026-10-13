@@ -23,7 +23,7 @@ import type { ResolvedProps, RenderContext } from './component-registry'
 import { registry } from './component-registry'
 import { processConditionals } from './conditionals'
 import { registerBuiltins } from './builtins'
-import { forwardResolvedAttrs, forwardStaticAttrs } from './builtins/attrs'
+import { forwardResolvedAttrs, forwardStaticAttrs, isFallthroughAttribute } from './builtins/attrs'
 import { escapeAttr } from './builtins/escape'
 import { decodeAttributeEntities, decodeStxProp, findComponentTags, parseMultilineAttributes, pascalToKebab, readBracedValue, restoreStashedScripts, stashScriptElements, unwrapBracedExpression, uppercaseHtmlTagSkip } from './component-processing'
 import { maskAtElementPosition, matchHtmlComment } from './html-masking'
@@ -1140,6 +1140,7 @@ async function processCustomElementTags(
       }
 
       // Render the file component
+      const renderMetadata = { declaredProps: new Set<string>() }
       const processedContent = await renderComponentWithSlot(
         componentPath,
         mergedProps,
@@ -1156,6 +1157,7 @@ async function processCustomElementTags(
         processedComponents,
         dependencies,
         [...loopNames],
+        renderMetadata,
       )
 
       let finalContent = processedContent
@@ -1164,7 +1166,7 @@ async function processCustomElementTags(
       // host root must retain caller-owned props such as testID, source and
       // accessibilityLabel. Individual primitive templates should only need
       // to declare props they consume; forward every other resolved prop once.
-      finalContent = forwardNativeHostAttrs(finalContent, resolvedProps)
+      finalContent = forwardHostAttrs(finalContent, resolvedProps, renderMetadata.declaredProps)
 
       // Forward @event attributes from parent to component's root element.
       // This connects parent handlers to child defineEmits() — the child emits
@@ -1264,24 +1266,32 @@ function emitClientReactiveAttrs(html: string, clientReactive: Record<string, st
   return output
 }
 
-/** Forward unconsumed static/server props onto a file component's native root. */
-function forwardNativeHostAttrs(html: string, props: ResolvedProps): string {
-  const root = findRenderedComponentRoot(html)
+/**
+ * Forward DOM attributes onto a file component's concrete root.
+ *
+ * Native primitives accept their full prop surface, so they keep the old
+ * behaviour. Ordinary file components only receive DOM fallthrough attrs;
+ * component API props such as `variant` remain private unless the component
+ * explicitly renders them.
+ */
+function forwardHostAttrs(html: string, props: ResolvedProps, declaredProps = new Set<string>()): string {
+  const root = findRenderedComponentHostRoot(html)
   if (!root)
     return html
 
   const openingTag = html.slice(root.insertPos, root.tagEnd)
-  if (!/\bdata-native(?:\s|=)/i.test(openingTag))
-    return html
+  const isNativeHost = /\bdata-native(?:\s|=)/i.test(openingTag)
 
   const existing = new Set(Object.keys(parseAllAttributes(openingTag)))
   const consumed = new Set<string>(['class', 'className'])
   for (const key of Object.keys(props.static)) {
-    if (existing.has(props.staticNames[key] ?? key))
+    const name = props.staticNames[key] ?? key
+    if (existing.has(name) || (!isNativeHost && (declaredProps.has(key) || !isFallthroughAttribute(name))))
       consumed.add(key)
   }
   for (const key of Object.keys(props.serverDynamic)) {
-    if (existing.has(props.serverDynamicNames?.[key] ?? key))
+    const name = props.serverDynamicNames?.[key] ?? key
+    if (existing.has(name) || (!isNativeHost && (declaredProps.has(key) || !isFallthroughAttribute(name))))
       consumed.add(key)
   }
 
@@ -1289,17 +1299,19 @@ function forwardNativeHostAttrs(html: string, props: ResolvedProps): string {
   // bare attribute, which reads back as an empty string: `:multiline="true"`
   // reached the host as "" and drew a one-line field.
   const forwardedTrue: string[] = []
-  for (const [key, value] of Object.entries(props.static)) {
-    if (consumed.has(key) || (value !== true && value !== BOOLEAN_ATTRIBUTE_SENTINEL))
-      continue
-    consumed.add(key)
-    forwardedTrue.push(`${escapeAttr(props.staticNames?.[key] ?? key)}="true"`)
-  }
-  for (const [key, value] of Object.entries(props.serverDynamic)) {
-    if (consumed.has(key) || value !== true)
-      continue
-    consumed.add(key)
-    forwardedTrue.push(`${escapeAttr(props.serverDynamicNames?.[key] ?? key)}="true"`)
+  if (isNativeHost) {
+    for (const [key, value] of Object.entries(props.static)) {
+      if (consumed.has(key) || (value !== true && value !== BOOLEAN_ATTRIBUTE_SENTINEL))
+        continue
+      consumed.add(key)
+      forwardedTrue.push(`${escapeAttr(props.staticNames?.[key] ?? key)}="true"`)
+    }
+    for (const [key, value] of Object.entries(props.serverDynamic)) {
+      if (consumed.has(key) || value !== true)
+        continue
+      consumed.add(key)
+      forwardedTrue.push(`${escapeAttr(props.serverDynamicNames?.[key] ?? key)}="true"`)
+    }
   }
   const forwarded = [
     ...forwardStaticAttrs(props, consumed),
@@ -1310,20 +1322,22 @@ function forwardNativeHostAttrs(html: string, props: ResolvedProps): string {
   // false as data (for example TextInput editable and ActivityIndicator
   // animating). Preserve it only on a declared native host root; the HTML
   // translator parses the JSON literal back to a boolean.
-  for (const [key, value] of Object.entries(props.serverDynamic)) {
-    if (consumed.has(key) || value !== false)
-      continue
-    const name = props.serverDynamicNames?.[key] ?? key
-    forwarded.push(`${escapeAttr(name)}="false"`)
-  }
-  for (const [key, value] of Object.entries(props.serverDynamic)) {
-    if (consumed.has(key) || value === null || typeof value !== 'object')
-      continue
-
-    const encoded = JSON.stringify(value)
-    if (encoded !== undefined) {
+  if (isNativeHost) {
+    for (const [key, value] of Object.entries(props.serverDynamic)) {
+      if (consumed.has(key) || value !== false)
+        continue
       const name = props.serverDynamicNames?.[key] ?? key
-      forwarded.push(`${escapeAttr(name)}="${escapeAttr(encoded)}"`)
+      forwarded.push(`${escapeAttr(name)}="false"`)
+    }
+    for (const [key, value] of Object.entries(props.serverDynamic)) {
+      if (consumed.has(key) || value === null || typeof value !== 'object')
+        continue
+
+      const encoded = JSON.stringify(value)
+      if (encoded !== undefined) {
+        const name = props.serverDynamicNames?.[key] ?? key
+        forwarded.push(`${escapeAttr(name)}="${escapeAttr(encoded)}"`)
+      }
     }
   }
   if (forwarded.length === 0)
@@ -1380,6 +1394,60 @@ function findRenderedComponentRoot(html: string): { insertPos: number, tagEnd: n
     }
   }
 
+  return null
+}
+
+/**
+ * Find the component's actual DOM root. Signal-bearing file components are
+ * wrapped in a generated scope container so setup can find its props. DOM
+ * attributes belong on the wrapped element, not that implementation detail.
+ */
+function findRenderedComponentHostRoot(html: string): { insertPos: number, tagEnd: number } | null {
+  const wrapper = findRenderedComponentRoot(html)
+  if (!wrapper)
+    return null
+
+  const wrapperOpeningTag = html.slice(wrapper.insertPos, wrapper.tagEnd)
+  if (!/\bdata-stx-component-wrapper(?:\s|=|>|$)/i.test(wrapperOpeningTag))
+    return wrapper
+
+  return findFirstRenderedElement(html, wrapper.tagEnd + 1)
+}
+
+/** Find the first real element at or after an offset, skipping raw text. */
+function findFirstRenderedElement(html: string, start: number): { insertPos: number, tagEnd: number } | null {
+  let cursor = start
+  while (cursor < html.length) {
+    const rest = html.slice(cursor)
+    const whitespace = rest.match(/^\s+/)
+    if (whitespace) {
+      cursor += whitespace[0].length
+      continue
+    }
+
+    if (rest.startsWith('<!--')) {
+      const end = html.indexOf('-->', cursor + 4)
+      if (end === -1) return null
+      cursor = end + 3
+      continue
+    }
+
+    const nonRootTag = rest.match(/^<(script|style)\b[^>]*>/i)
+    if (nonRootTag) {
+      const closeTag = `</${nonRootTag[1].toLowerCase()}>`
+      const end = html.toLowerCase().indexOf(closeTag, cursor + nonRootTag[0].length)
+      if (end === -1) return null
+      cursor = end + closeTag.length
+      continue
+    }
+
+    const root = rest.match(/^<([a-zA-Z][a-zA-Z0-9-]*)(?:\s|>|\/)/)
+    if (!root) return null
+    return {
+      insertPos: cursor + 1 + root[1].length,
+      tagEnd: findOpeningTagEnd(html, cursor + 1 + root[1].length),
+    }
+  }
   return null
 }
 

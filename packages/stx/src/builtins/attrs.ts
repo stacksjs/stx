@@ -18,6 +18,38 @@ import { escapeAttr } from './escape'
 import { BOOLEAN_ATTRIBUTE_SENTINEL, stripControlChars } from '../prop-sentinels'
 
 /**
+ * Attributes that belong to the rendered DOM element rather than to the
+ * component's private prop API. Component props such as `variant` and `size`
+ * must stay inside the component, while accessibility, data and ordinary
+ * global/element attributes should fall through to its root.
+ */
+const FALLTHROUGH_ATTRIBUTES = new Set([
+  'accesskey', 'autocapitalize', 'autofocus', 'class', 'contenteditable',
+  'dir', 'draggable', 'enterkeyhint', 'exportparts', 'hidden', 'id', 'inert',
+  'inputmode', 'is', 'itemid', 'itemprop', 'itemref', 'itemscope', 'itemtype',
+  'lang', 'nonce', 'part', 'role', 'slot', 'spellcheck', 'style', 'tabindex',
+  'title', 'translate',
+  'accept', 'action', 'alt', 'autocomplete', 'capture', 'cite', 'cols',
+  'colspan', 'content', 'controls', 'datetime', 'default', 'download',
+  'enctype', 'for', 'form', 'formaction', 'formenctype', 'formmethod',
+  'formnovalidate', 'formtarget', 'height', 'href', 'hreflang', 'kind',
+  'label', 'loading', 'loop', 'max', 'maxlength', 'media', 'method', 'min',
+  'minlength', 'multiple', 'muted', 'name', 'open', 'pattern', 'placeholder',
+  'playsinline', 'poster', 'preload', 'readonly', 'referrerpolicy', 'rel',
+  'required', 'reversed', 'rows', 'rowspan', 'scope', 'selected', 'shape',
+  'size', 'span', 'src', 'srcdoc', 'srclang', 'srcset', 'start', 'step',
+  'target', 'type', 'usemap', 'value', 'width', 'wrap',
+])
+
+/** Whether an attribute should be visible on a component's DOM root. */
+export function isFallthroughAttribute(name: string): boolean {
+  const normalized = name.toLowerCase()
+  return normalized.startsWith('aria-')
+    || normalized.startsWith('data-')
+    || FALLTHROUGH_ATTRIBUTES.has(normalized)
+}
+
+/**
  * Render the static props a builtin did not consume as HTML attributes.
  *
  * Names come back spelled the way the author wrote them: prop resolution

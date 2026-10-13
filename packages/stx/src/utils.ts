@@ -40,6 +40,7 @@ import { scanAtElementPosition, stashScriptElements } from './html-masking'
 import { markProjectedRefs } from './misc-directives'
 import { collectBlockDeclarations } from './stx-virtual-ts'
 import { CLIENT_LOOP_NAMES_KEY, inheritedClientLoopNames } from './loop-binding'
+import { isFallthroughAttribute } from './builtins/attrs'
 
 // Re-export from extracted modules for backward compatibility
 export {
@@ -1055,6 +1056,7 @@ export async function renderComponentWithSlot(
    * caller's context already carries.
    */
   clientLoopNames: readonly string[] = inheritedClientLoopNames(parentContext),
+  renderMetadata?: { declaredProps: Set<string> },
 ): Promise<string> {
   // Import locally to avoid circular dependency at module load time
   const { extractVariables } = await importOnce('stx/variable-extractor', () => import('./variable-extractor'))
@@ -1335,6 +1337,20 @@ export async function renderComponentWithSlot(
         const message = error instanceof Error ? error.message : String(error)
         reportUnresolvedComponent(componentPath, parentFilePath, [componentFilePath], message)
         return unresolvedComponentMarkup(componentPath)
+      }
+    }
+
+    // Keep the caller-side renderer aware of which attributes are the
+    // component's API. This lets unknown DOM/data/ARIA attrs fall through
+    // without leaking props such as `variant` onto the root element.
+    if (renderMetadata) {
+      for (const propName of Object.keys(props)) {
+        const normalized = propName.toLowerCase()
+        if (normalized.startsWith('aria-') || normalized.startsWith('data-'))
+          continue
+        const escaped = propName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        if (new RegExp(`\\b${escaped}\\b`).test(componentContent))
+          renderMetadata.declaredProps.add(propName)
       }
     }
 
@@ -2104,7 +2120,7 @@ export async function renderComponentWithSlot(
        */
       const inlineRoot = /^\s*(?:(?:<!--[\s\S]*?-->|\x00STX_HTML_COMMENT_\d+\x00)\s*)*<span(?=[\s/>])/i.test(result)
       const wrapperTag = inlineRoot ? 'span' : 'div'
-      output = scopeOnRootElement(result, scopeAttrs) ?? `<${wrapperTag}${scopeAttrs}${inlineRoot ? ' style="display:contents"' : ''}>${result}</${wrapperTag}>`
+      output = scopeOnRootElement(result, scopeAttrs) ?? `<${wrapperTag}${scopeAttrs} data-stx-component-wrapper${inlineRoot ? ' style="display:contents"' : ''}>${result}</${wrapperTag}>`
 
       // Modify client scripts to register variables in this scope
       const scopedScripts = await Promise.all(clientScripts.map(async (script) => {
