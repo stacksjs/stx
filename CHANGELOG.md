@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.508...v0.2.509)
+
+## 🐛 Bug Fixes
+
+- **native**: native primitives win over an app's web components of the same name ([d7e4d76](https://github.com/stacksjs/stx/commit/d7e4d76)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.509 ([c9c2ee3](https://github.com/stacksjs/stx/commit/c9c2ee3)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.507...v0.2.508)
 
 ## ✨ Features
