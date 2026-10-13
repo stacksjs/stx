@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.507...v0.2.508)
+
+## ✨ Features
+
+- **composables**: sleep beds and a sleep timer in useAmbientSound ([eb75c3e](https://github.com/stacksjs/stx/commit/eb75c3e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.508 ([4b04921](https://github.com/stacksjs/stx/commit/4b04921)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.506...v0.2.507)
 
 ## ✨ Features
