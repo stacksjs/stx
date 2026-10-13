@@ -29,7 +29,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Install Dependencies
-        run: bun install
+        run: bun install --frozen-lockfile --force --no-cache
 
       - name: Setup Pantry
         uses: home-lang/pantry/packages/action@main
@@ -126,7 +126,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Install Dependencies
-        run: bun install
+        run: bun install --frozen-lockfile --force --no-cache
 
       - name: Setup Pantry
         uses: home-lang/pantry/packages/action@main
