@@ -204,6 +204,12 @@ describe('events', () => {
       expect(NATIVE_EVENTS.has(event)).toBe(true)
   })
 
+  it('hears where a swipe came to rest, for a pager', async () => {
+    const { root, diagnostics } = await translateHtmlToIR('<div data-native="ScrollView" horizontal pagingEnabled @momentum-scroll-end="settled($event)" @scroll-begin-drag="dragging()" @scroll-end-drag="dropped()"></div>')
+    expect(root.events).toEqual({ onMomentumScrollEnd: 'settled($event)', onScrollBeginDrag: 'dragging()', onScrollEndDrag: 'dropped()' })
+    expect(diagnostics).toEqual([])
+  })
+
   it('forwards pull-to-refresh to the Craft scroll-view host', async () => {
     const { root, diagnostics } = await translateHtmlToIR('<div data-native="ScrollView" @refresh="refresh(true)" :refreshing="refreshing"></div>')
     expect(root.events).toEqual({ onRefresh: 'refresh(true)' })

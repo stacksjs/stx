@@ -167,6 +167,16 @@ const NATIVE_EVENT_NAMES: Record<string, string> = {
   'end-editing': 'onEndEditing',
   endediting: 'onEndEditing',
   scroll: 'onScroll',
+  // A drag starting and ending, and the deceleration after it: a pager reads
+  // where a swipe came to rest from 'momentum-scroll-end', once per swipe.
+  'scroll-begin-drag': 'onScrollBeginDrag',
+  scrollbegindrag: 'onScrollBeginDrag',
+  'scroll-end-drag': 'onScrollEndDrag',
+  scrollenddrag: 'onScrollEndDrag',
+  'momentum-scroll-begin': 'onMomentumScrollBegin',
+  momentumscrollbegin: 'onMomentumScrollBegin',
+  'momentum-scroll-end': 'onMomentumScrollEnd',
+  momentumscrollend: 'onMomentumScrollEnd',
   refresh: 'onRefresh',
   layout: 'onLayout',
   'end-reached': 'onEndReached',
