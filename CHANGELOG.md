@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.512...v0.2.513)
+
+## ✨ Features
+
+- **native**: Apple Health heart rate as it arrives on a native screen's craft.health ([cb7919a](https://github.com/stacksjs/stx/commit/cb7919a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.513 ([c13a25e](https://github.com/stacksjs/stx/commit/c13a25e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.511...v0.2.512)
 
 ## 🐛 Bug Fixes
