@@ -120,7 +120,7 @@
     "typecheck": "bun tsc -p tsconfig.src.json --noEmit"
   },
   "dependencies": {
-    "@stacksjs/ts-css": "^0.3.10",
+    "@stacksjs/ts-css": "^0.3.12",
     "@stacksjs/clapp": "^0.2.16",
     "@stacksjs/desktop": "workspace:*",
     "@stacksjs/sanitizer": "workspace:*",

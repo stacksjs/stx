@@ -257,7 +257,7 @@
     "theme": "light"
   },
   "dependencies": {
-    "@stacksjs/ts-css": "^0.3.10",
+    "@stacksjs/ts-css": "^0.3.12",
     "prettier": "^3.9.9"
   },
   "devDependencies": {
