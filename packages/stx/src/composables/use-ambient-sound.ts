@@ -12,7 +12,14 @@
  *   house       ~118 bpm: soft kick, off-beat hats and bass, pads
  *   electronic  ~100 bpm: plucked arpeggios through a delay, light drums
  *   drone       low drones and dark noise, for sleep
+ *   rain        steady rain on leaves and a roof, with the odd nearer drop
+ *   ocean       long, slow swells on a far shore, no melody
+ *   brown       even brown noise, the plainest bed to fall asleep to
  *
+ * Every bed plays until stopped, so a sleep session can run for an hour.
+ * `fadeOut(seconds, after)` is a sleep timer: the fade is scheduled on the
+ * audio clock, so it happens with the screen locked and the page asleep, and
+ * it pauses with `suspend()`.
  * Breath tones (rising on the in-breath, falling on the out) and a chime play
  * on their own bus, so they stay audible at any music level.
  *
@@ -29,7 +36,20 @@
  * ```
  */
 
-export type AmbientGenre = 'ambient' | 'nature' | 'house' | 'electronic' | 'drone'
+export type AmbientGenre = 'ambient' | 'nature' | 'house' | 'electronic' | 'drone' | 'rain' | 'ocean' | 'brown'
+
+/** A fade to silence on the audio clock: level held until `start`, zero at `end` (context seconds). */
+export interface AmbientFade { start: number, end: number }
+
+/**
+ * How loud the music is at `now` under a fade, for a set `level`: the level
+ * until the fade starts, falling in a straight line to nothing at its end.
+ */
+export function fadedLevel(level: number, now: number, fade: AmbientFade | null): number {
+  if (!fade || now <= fade.start) return level
+  if (now >= fade.end) return 0
+  return level * (fade.end - now) / (fade.end - fade.start)
+}
 
 const CHORDS: number[][] = [
   [50, 57, 62, 66, 69], // D  (D3 A3 D4 F#4 A4)
@@ -53,9 +73,11 @@ export class AmbientSound {
   private voices = new Set<Voice>()
   private noise: AudioBuffer | null = null
   private white: AudioBuffer | null = null
+  private hiss: AudioBuffer | null = null
   private genre: AmbientGenre | null = null
   private level = 0.5
   private generation = 0
+  private fade: AmbientFade | null = null
 
   get playing(): boolean {
     return !!this.context && !!this.genre
@@ -73,15 +95,21 @@ export class AmbientSound {
       return
     }
     this.genre = genre
-    this.music!.gain.cancelScheduledValues(context.currentTime)
-    this.music!.gain.setValueAtTime(0, context.currentTime)
-    this.music!.gain.linearRampToValueAtTime(this.level, context.currentTime + 1.5)
+    const now = context.currentTime
+    this.music!.gain.cancelScheduledValues(now)
+    this.music!.gain.setValueAtTime(0, now)
+    this.music!.gain.linearRampToValueAtTime(fadedLevel(this.level, now + 1.5, this.fade), now + 1.5)
+    // A sleep timer outlives a change of bed: the new one fades on schedule.
+    this.continueFade(now + 1.5)
     const beds: Record<AmbientGenre, (context: AudioContext) => void> = {
       ambient: c => this.ambient(c),
       nature: c => this.nature(c),
       house: c => this.house(c),
       electronic: c => this.electronic(c),
       drone: c => this.drone(c),
+      rain: c => this.rain(c),
+      ocean: c => this.ocean(c),
+      brown: c => this.brown(c),
     }
     beds[genre](context)
   }
@@ -93,7 +121,44 @@ export class AmbientSound {
 
   volume(value: number): void {
     this.level = clamp(value)
-    if (this.context && this.music && this.genre) this.music.gain.setTargetAtTime(this.level, this.context.currentTime, 0.2)
+    if (!this.context || !this.music || !this.genre) return
+    if (this.fade) this.scheduleFade(this.context, this.context.currentTime)
+    else this.music.gain.setTargetAtTime(this.level, this.context.currentTime, 0.2)
+  }
+
+  /**
+   * A sleep timer: keep playing for `after` seconds, then fade the music to
+   * silence over `seconds`. Scheduled on the audio clock, so it runs while
+   * the screen is locked and pauses with `suspend()`. The music keeps
+   * running silently until `stop()`; breath tones and chimes are not faded.
+   * Calling it again replaces the timer.
+   */
+  fadeOut(seconds: number, after = 0): void {
+    const context = this.context
+    if (!context) return
+    const now = context.currentTime
+    const start = now + Math.max(0, Number.isFinite(after) ? after : 0)
+    this.fade = { start, end: start + Math.max(0.05, Number.isFinite(seconds) ? seconds : 0) }
+    if (this.music && this.genre) this.scheduleFade(context, now)
+  }
+
+  /** Call off a sleep timer: the music returns to its set volume. */
+  cancelFade(): void {
+    this.fade = null
+    const context = this.context
+    if (!context || !this.music || !this.genre) return
+    this.music.gain.cancelScheduledValues(context.currentTime)
+    this.music.gain.setTargetAtTime(this.level, context.currentTime, 0.3)
+  }
+
+  /** The sleep timer, in the audio clock's seconds (`null` when none is set). */
+  get fadeSchedule(): AmbientFade | null {
+    return this.fade ? { ...this.fade } : null
+  }
+
+  /** Whether a sleep timer has run its course. */
+  get faded(): boolean {
+    return !!this.fade && !!this.context && this.context.currentTime >= this.fade.end
   }
 
   /** Quiet the music without losing it (pause). */
@@ -166,12 +231,14 @@ export class AmbientSound {
     const context = this.context
     this.context = null
     this.genre = null
+    this.fade = null
     for (const timer of this.timers) clearInterval(timer)
     this.timers = []
     this.voices.clear()
     this.music = null
     this.tones = null
     this.reverb = null
+    this.hiss = null
     if (context && context.state !== 'closed') await context.close().catch(() => {})
   }
 
@@ -208,6 +275,24 @@ export class AmbientSound {
     this.noise = this.noiseBuffer(context)
     this.white = this.whiteBuffer(context, 1)
     return context
+  }
+
+  /** Lay the fade onto the music bus from `from` on, at the current level. */
+  private scheduleFade(context: AudioContext, from: number): void {
+    const gain = this.music?.gain
+    if (!this.fade || !gain) return
+    gain.cancelScheduledValues(from)
+    gain.setValueAtTime(fadedLevel(this.level, from, this.fade), from)
+    this.continueFade(from)
+  }
+
+  /** The rest of a fade after `from`, where the bus already holds the faded level. */
+  private continueFade(from: number): void {
+    const fade = this.fade
+    const gain = this.music?.gain
+    if (!fade || !gain) return
+    if (from < fade.start) gain.setValueAtTime(this.level, fade.start)
+    gain.linearRampToValueAtTime(0, Math.max(fade.end, from + 0.05))
   }
 
   private stopMusic(at: number): void {
@@ -446,6 +531,76 @@ export class AmbientSound {
         oscillator.start(start)
         oscillator.stop(start + 0.1)
       }
+    })
+  }
+
+  /** Rain: a hiss of fine drops, a duller roof under it, and now and then a nearer drop. */
+  private rain(context: AudioContext): void {
+    this.whiteBed(context, 'bandpass', 2400, 0.07, 0.5, 23, 0.25)
+    this.whiteBed(context, 'lowpass', 900, 0.08, 0.4, 31, 0.3)
+    this.noiseBed(context, 'lowpass', 220, 0.12, 19, 0.35)
+    this.every(400, () => {
+      if (!this.context || Math.random() > 0.45) return
+      const at = context.currentTime + Math.random() * 0.4
+      const source = context.createBufferSource()
+      source.buffer = this.white
+      const filter = context.createBiquadFilter()
+      filter.type = 'bandpass'
+      filter.frequency.value = 1800 + Math.random() * 2600
+      filter.Q.value = 4
+      const gain = context.createGain()
+      const level = 0.01 + Math.random() * 0.025
+      gain.gain.setValueAtTime(0, at)
+      gain.gain.linearRampToValueAtTime(level, at + 0.004)
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.06)
+      source.connect(filter).connect(gain).connect(this.music!)
+      source.start(at, Math.random() * 0.8, 0.08)
+    })
+  }
+
+  /** The sea: long, slow swells of dark noise, a lighter wash on each, no melody. */
+  private ocean(context: AudioContext): void {
+    this.noiseBed(context, 'lowpass', 420, 0.2, 11, 0.9)
+    this.noiseBed(context, 'lowpass', 1100, 0.06, 13, 0.95)
+    this.whiteBed(context, 'highpass', 3200, 0.012, 0.6, 11, 0.95)
+  }
+
+  /** Brown noise, held steady: the plainest bed, nothing in it to listen for. */
+  private brown(context: AudioContext): void {
+    this.noiseBed(context, 'lowpass', 500, 0.24, 40, 0.06)
+  }
+
+  /** White noise through a filter with a slow swell (rain's hiss, the sea's wash). */
+  private whiteBed(context: AudioContext, type: BiquadFilterType, frequency: number, level: number, q: number, swellSeconds: number, depth: number): void {
+    // Six seconds of noise, so the loop has no pattern a waking ear can find.
+    this.hiss ||= this.whiteBuffer(context, 6)
+    const source = context.createBufferSource()
+    source.buffer = this.hiss
+    source.loop = true
+    const filter = context.createBiquadFilter()
+    filter.type = type
+    filter.frequency.value = frequency
+    filter.Q.value = q
+    const gain = context.createGain()
+    gain.gain.value = level
+    const lfo = context.createOscillator()
+    lfo.frequency.value = 1 / swellSeconds
+    const lfoGain = context.createGain()
+    lfoGain.gain.value = level * depth
+    lfo.connect(lfoGain).connect(gain.gain)
+    source.connect(filter).connect(gain).connect(this.music!)
+    const start = context.currentTime
+    source.start(start, Math.random() * 5)
+    lfo.start(start)
+    this.voices.add({
+      stop: (at) => {
+        gain.gain.setTargetAtTime(0, context.currentTime, 0.4)
+        try {
+          source.stop(at)
+          lfo.stop(at)
+        }
+        catch {}
+      },
     })
   }
 
