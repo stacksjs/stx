@@ -310,6 +310,7 @@ function markAllRead() { globalThis.__pressed++ }
     ;(globalThis as any).__toggle()
     await settle()
     expect(native.text()).toEqual(['Mark all'])
+    expect(native.handlerFor('Mark all')).toMatch(/^h/)
     press('Mark all')
     await settle()
     expect((globalThis as any).__pressed).toBe(1)
