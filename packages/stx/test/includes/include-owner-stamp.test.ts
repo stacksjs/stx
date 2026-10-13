@@ -108,7 +108,7 @@ describe('an @include\'s script names the root it binds (#1958)', () => {
     it(`stamps nothing when the root is a ${shape} component`, async () => {
       const html = await render(name)
       // The component rendered, and the script still ships.
-      expect(html).toContain(`<article class="${rendered}">`)
+      expect(html).toMatch(new RegExp(`<article\\b[^>]*\\bclass="${rendered}"`))
       expect(html).toMatch(/<script\b[^>]*\bdata-stx-run="always"[^>]*>[\s\S]*?const hits = state\(0\)/)
       expect(owners(html)).toEqual([])
     })
