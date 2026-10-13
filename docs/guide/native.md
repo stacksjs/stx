@@ -132,7 +132,11 @@ old native-only `FlatList` template expansion (`data={...}`, `keyExtractor`,
 and `listRole`) belonged to the retired redraw runtime and is not part of the
 shared-runtime contract. `FlatList` remains a renderer primitive, but automatic
 row recycling is currently unsupported and should not be inferred from IR
-translation alone.
+translation alone. The compiler emits an `unsupported-list-prop` diagnostic when
+one of those legacy row-template props is present, so a native build cannot
+silently ship a list with no rows. Use a keyed `:for` inside a `ScrollView` for
+portable screens; use a host's documented recycling-list API only when the
+selected Craft host is intentionally targeted.
 
 Both renderers support `Modal` visibility and preserve its child subtree, and
 support `Slider` value-change events.

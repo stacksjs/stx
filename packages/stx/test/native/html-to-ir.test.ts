@@ -336,6 +336,30 @@ describe('what is deliberately dropped', () => {
   })
 })
 
+describe('shared-runtime list boundaries', () => {
+  it('warns when legacy FlatList expansion props would otherwise be silently ignored', async () => {
+    const { root, diagnostics } = await translateHtmlToIR(
+      '<div data-native="FlatList" :data="rows" :renderItem="renderRow" keyExtractor="rowKey" listRole="item"><Text>Rows</Text></div>',
+    )
+
+    expect(root.type).toBe('FlatList')
+    expect(diagnostics).toEqual([
+      { kind: 'unsupported-list-prop', tag: 'FlatList', name: 'data' },
+      { kind: 'unsupported-list-prop', tag: 'FlatList', name: 'renderItem' },
+      { kind: 'unsupported-list-prop', tag: 'FlatList', name: 'keyExtractor' },
+      { kind: 'unsupported-list-prop', tag: 'FlatList', name: 'listRole' },
+    ])
+  })
+
+  it('keeps ordinary keyed :for list props warning-free', async () => {
+    const { diagnostics } = await translateHtmlToIR(
+      '<div data-native="FlatList"><Text :for="row in rows" :key="row.id" :text="row.label" /></div>',
+    )
+
+    expect(diagnostics).toEqual([])
+  })
+})
+
 /**
  * The three components the issue sampled, through the real pipeline.
  *

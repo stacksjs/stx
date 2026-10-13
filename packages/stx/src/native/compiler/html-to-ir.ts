@@ -46,6 +46,8 @@ export type TranslationDiagnosticKind =
   | 'unknown-style'
   /** A value the IR's field cannot hold, so emitting it would brick the screen. */
   | 'non-numeric-style'
+  /** A legacy virtual-list prop has no meaning in the shared-runtime tree. */
+  | 'unsupported-list-prop'
 
 export interface TranslationDiagnostic {
   kind: TranslationDiagnosticKind
@@ -267,6 +269,22 @@ const NATIVE_TYPES = new Set([
   'Modal', 'ActivityIndicator',
   'StatusBar', 'RefreshControl',
   ...SVG_NODE_TYPES,
+])
+
+/**
+ * Props from the retired native-only list expander. The shared runtime owns
+ * rows through keyed `:for`, so forwarding these props would look successful
+ * while leaving the host with no row template (or no reactive update path).
+ * Host-specific layout props such as `numColumns` remain valid and are not in
+ * this set.
+ */
+const SHARED_RUNTIME_UNSUPPORTED_LIST_PROPS = new Map<string, string>([
+  ['data', 'data'],
+  ['sections', 'sections'],
+  ['renderitem', 'renderItem'],
+  ['rendersectionheader', 'renderSectionHeader'],
+  ['keyextractor', 'keyExtractor'],
+  ['listrole', 'listRole'],
 ])
 
 /** A container type: it lays children out and does not render text itself. */
@@ -628,6 +646,13 @@ export async function translateHtmlToIR(
     if (type === 'Icon') {
       const icon = compileClassStyles(classes).icon
       props.symbol = resolveIconName(String(props.symbol || props.name || icon || ''), Boolean(props.symbol)).symbol
+    }
+    if (type === 'FlatList' || type === 'SectionList') {
+      const names = new Set([...Object.keys(props), ...Object.keys(bindings)].map(name => name.toLowerCase()))
+      for (const [lowerName, publicName] of SHARED_RUNTIME_UNSUPPORTED_LIST_PROPS) {
+        if (names.has(lowerName))
+          diagnostics.push({ kind: 'unsupported-list-prop', tag: type, name: publicName })
+      }
     }
     const node = createNode(type, props, style, events)
     node._inlineStyle = inline
