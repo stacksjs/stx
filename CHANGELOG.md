@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.500...v0.2.501)
+
+## ✨ Features
+
+- **native**: craft.files and FormData on native screens ([f619b6e](https://github.com/stacksjs/stx/commit/f619b6e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.501 ([46e8f0f](https://github.com/stacksjs/stx/commit/46e8f0f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.499...v0.2.500)
 
 ## 🐛 Bug Fixes
