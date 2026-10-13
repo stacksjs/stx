@@ -33,9 +33,23 @@ window.PAGE = { filter, options }
 <TabList v-model:value="filter" label="Show" variant="pills" orientation="vertical">
   <button :for="o in options" :key="o.value" type="button" role="tab" :data-value="o.value">{{ o.label }}</button>
 </TabList>`),
+  // A tab only some people get, and a strip drawn once what they may see is
+  // known: both conditions start false and come true after mount, the way a
+  // permission arrives from the API (#250 in hq.training).
+  'pages/conditional.stx': page('app', `<script client>
+const section = state('visits')
+const canReport = state(false)
+const ready = state(false)
+window.PAGE = { section, canReport, ready }
+</script>
+<TabList :if="ready" :value="section" @change="section.set($event)" label="Sections" variant="none">
+  <button type="button" role="tab" data-value="visits" x-class="section === 'visits' ? 'on' : 'off'">Visits</button>
+  <button :if="canReport" type="button" role="tab" data-value="report" x-class="section === 'report' ? 'on' : 'off'">Report</button>
+  <button type="button" role="tab" data-value="settings" x-class="section === 'settings' ? 'on' : 'off'">Settings</button>
+</TabList>`),
 }
 
-const ROUTES = { '/static': 'pages/static.stx', '/loop': 'pages/loop.stx' }
+const ROUTES = { '/static': 'pages/static.stx', '/loop': 'pages/loop.stx', '/conditional': 'pages/conditional.stx' }
 
 async function open(route: string) {
   const app = await renderApp(FILES, ROUTES)
@@ -137,6 +151,37 @@ describe('TabList', () => {
       browser.window.PAGE.options.set([...browser.window.PAGE.options(), { value: 'ride', label: 'Ride' }])
       await settle(20)
       expect(state(browser)).toEqual(['All:false/-1', 'Run:true/0', 'Ride:false/-1'])
+    }
+    finally { await dispose() }
+  })
+
+  it('shows a tab behind its own :if, and keeps it in the strip\'s keyboard order', async () => {
+    const { browser, dispose } = await open('/conditional')
+    try {
+      expect(browser.document.querySelector('[role="tablist"]')).toBeNull()
+
+      browser.window.PAGE.ready.set(true)
+      await settle()
+      expect(state(browser)).toEqual(['Visits:true/0', 'Settings:false/-1'])
+
+      browser.window.PAGE.canReport.set(true)
+      await settle()
+      expect(state(browser)).toEqual(['Visits:true/0', 'Report:false/-1', 'Settings:false/-1'])
+
+      press(browser, tabs(browser)[0], 'ArrowRight')
+      await settle()
+      expect(browser.window.PAGE.section()).toBe('report')
+      expect(state(browser)).toEqual(['Visits:false/-1', 'Report:true/0', 'Settings:false/-1'])
+      expect(tabs(browser)[1].className).toContain('on')
+
+      // Taken away again: the strip loses it, and the arrows skip it.
+      browser.window.PAGE.section.set('visits')
+      browser.window.PAGE.canReport.set(false)
+      await settle()
+      expect(state(browser)).toEqual(['Visits:true/0', 'Settings:false/-1'])
+      press(browser, tabs(browser)[0], 'ArrowRight')
+      await settle()
+      expect(browser.window.PAGE.section()).toBe('settings')
     }
     finally { await dispose() }
   })

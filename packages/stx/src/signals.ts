@@ -2841,6 +2841,13 @@ catch (e) {
   // :options="environmentOptions".
   function preserveConditionalComponentScopes(root, callerScope) {
     if (!root || !root.querySelectorAll) return;
+    // A <template :if> branch is inert source: what shows is a clone of its
+    // content, hydrated and bound by processTemplateNodes when it is inserted.
+    // A DOM whose querySelectorAll reaches into template content (the test
+    // DOM, a native host) would otherwise bind the SOURCE component's caller
+    // props here, consuming :value on the source, so every clone carried the
+    // value of the moment it was cloned and stopped following the page.
+    if (root.tagName === 'TEMPLATE') return;
     var scopeEls = [];
     if (root.matches && root.matches('[data-stx-scope]')) scopeEls.push(root);
     root.querySelectorAll('[data-stx-scope]').forEach(function(scopeEl) { scopeEls.push(scopeEl); });
