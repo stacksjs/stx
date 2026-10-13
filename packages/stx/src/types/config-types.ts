@@ -750,6 +750,14 @@ export interface StxConfig {
   componentsDir: string
   /** @internal Configured component root retained while nested components resolve locally. */
   _rootComponentsDir?: string
+  /**
+   * @internal Components that belong to the render target, such as the native
+   * primitives (`View`, `Button`, ...). Searched after the directories a
+   * caller names (`componentsDir`, a template's own `components/`) and before
+   * the convention directories (`resources/components`, ...) and plugins, so a
+   * web app's component of the same name never stands in for one.
+   */
+  _targetComponentDirs?: string[]
   /** Path to layouts directory, defaults to 'layouts' in the project root */
   layoutsDir?: string
   /**

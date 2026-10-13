@@ -307,6 +307,102 @@ describe('the primitives themselves', () => {
   })
 })
 
+describe('an app whose web components share a primitive\'s name', () => {
+  // A Stacks app keeps its web components in resources/components, and most
+  // have a Button. Those directories used to be searched before the native
+  // primitives, so a native screen's <Button> rendered the app's web button:
+  // its own markup and classes, none of the static props the screen wrote. A
+  // bound `:testID` survived only because stx forwards bindings onto whatever
+  // root a component renders.
+  const APP = mkdtempSync(path.join(tmpdir(), 'stx-native-app-'))
+  const WEB_COMPONENT = `<script server>
+const variant = $props.variant ?? 'primary'
+</script>
+<button type="button" class="btn-{{ variant }}"><slot /></button>`
+  const PRIMITIVES = ['ActivityIndicator', 'Button', 'DatePicker', 'Image', 'Modal', 'Pressable', 'ScrollView', 'Switch', 'Text', 'TextInput', 'View']
+  for (const dir of ['resources/components', 'resources/views/components', 'src/components']) {
+    mkdirSync(path.join(APP, dir), { recursive: true })
+    for (const name of PRIMITIVES)
+      writeFileSync(path.join(APP, dir, `${name}.stx`), WEB_COMPONENT)
+  }
+  mkdirSync(path.join(APP, 'resources/native'), { recursive: true })
+
+  function compile(name: string, source: string, options: { componentsDir?: string } = {}) {
+    const file = path.join(APP, 'resources/native', name)
+    writeFileSync(file, source)
+    return compileScreenSource(source, file, { root: APP, ...options })
+  }
+
+  it('keeps a static testID on a Button, as a bound one is kept', async () => {
+    const source = `<script client>
+const label = state('Manage')
+function open() {}
+</script>
+<View>
+  <Button @click="open()" class="text-[15px]" :text="label()" testID="manage" accessibilityLabel="Manage habits" />
+  <Button @click="open()" :text="label()" :testID="'bound-' + label()" />
+</View>`
+    const { document } = await compile('ButtonTestID.stx', source)
+    const [staticButton, boundButton] = document.root.children.filter((child): child is STXNode => typeof child !== 'string')
+
+    expect(staticButton.type).toBe('Button')
+    expect(staticButton.props.testID).toBe('manage')
+    expect(staticButton.props.accessibilityLabel).toBe('Manage habits')
+    expect(staticButton.style.fontSize).toBe(15)
+    expect(boundButton.type).toBe('Button')
+    expect(boundButton.props['data-stx-parent-bindings']).toContain('test-id')
+  })
+
+  it('renders every primitive as itself, with its static props', async () => {
+    const source = `<View testID="page">
+  <ActivityIndicator testID="spinner" />
+  <Button testID="save" text="Save" />
+  <DatePicker testID="date" />
+  <Image testID="avatar" src="https://example.com/a.png" accessibilityLabel="Avatar" />
+  <Modal testID="sheet"><Text testID="sheet-text">In the sheet</Text></Modal>
+  <Pressable testID="press" accessibilityRole="button" />
+  <ScrollView testID="scroll"><Text testID="row">Row</Text></ScrollView>
+  <Switch testID="toggle" accessibilityLabel="Share" />
+  <TextInput testID="name" placeholder="Name" />
+</View>`
+    const { document } = await compile('EveryPrimitive.stx', source)
+    const children = document.root.children.filter((child): child is STXNode => typeof child !== 'string')
+
+    expect(document.root.type).toBe('View')
+    expect(document.root.props.testID).toBe('page')
+    expect(children.map(child => [child.type, child.props.testID])).toEqual([
+      ['ActivityIndicator', 'spinner'],
+      ['Button', 'save'],
+      ['DatePicker', 'date'],
+      ['Image', 'avatar'],
+      ['Modal', 'sheet'],
+      ['Pressable', 'press'],
+      ['ScrollView', 'scroll'],
+      ['Switch', 'toggle'],
+      ['TextInput', 'name'],
+    ])
+    expect(children[1].props.text).toBe('Save')
+    expect(children[3].props.accessibilityLabel).toBe('Avatar')
+    expect(children[7].props.accessibilityLabel).toBe('Share')
+    expect(children[8].props.placeholder).toBe('Name')
+    expect(texts(document.root)).toEqual(['In the sheet', 'Row'])
+  })
+
+  it('still lets a screen\'s own components replace a primitive', async () => {
+    const own = path.join(APP, 'resources/native/components')
+    mkdirSync(own, { recursive: true })
+    writeFileSync(path.join(own, 'Button.stx'), `<script server>
+const label = $props.label ?? ''
+</script>
+<View class="p-2" testID="own-button"><Text>{{ label }}</Text></View>`)
+    const source = '<View><Button label="Mine" /></View>'
+    const { document } = await compile('OwnButton.stx', source, { componentsDir: own })
+
+    expect(types(document.root)).toEqual(['View', 'View', 'Text'])
+    expect(texts(document.root)).toEqual(['Mine'])
+  })
+})
+
 describe('extractClientScript', () => {
   it('leaves a server script out, since it already ran', () => {
     const script = extractClientScript(`<script server>

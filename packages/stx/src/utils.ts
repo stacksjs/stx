@@ -789,6 +789,9 @@ export async function userComponentFileExists(
   push(options._rootComponentsDir)
   push(path.join(path.dirname(parentFilePath), 'components'))
   push(options.componentsDir)
+  // The render target's own components (the native primitives) rank above
+  // the convention directories, as in `renderComponentWithSlot`.
+  for (const dir of options._targetComponentDirs ?? []) push(dir)
   // Convention fallbacks — only within a configured project root, and never stx's
   // own `import.meta.dir/components` (where built-ins live).
   //
@@ -1161,6 +1164,20 @@ export async function renderComponentWithSlot(
       }
       if (options.componentsDir && options.componentsDir !== componentsDir && !searchDirs.includes(options.componentsDir)) {
         searchDirs.push(options.componentsDir)
+      }
+
+      // The render target's own components: a native screen's `View`,
+      // `Button` and the rest. They come after the directories the caller
+      // named, so a screen can still replace one with its own, and before the
+      // convention directories below, which hold a web app's components. A
+      // Stacks app has a `resources/components/Button.stx`, and while the
+      // primitives were searched after it, every native `<Button>` rendered
+      // that web button: its markup, its classes, and none of the static
+      // props the screen wrote (a bound `:testID` survived only because
+      // bindings are forwarded onto whatever root a component renders).
+      for (const dir of options._targetComponentDirs ?? []) {
+        if (dir && !searchDirs.includes(dir))
+          searchDirs.push(dir)
       }
 
       // Also search common project component directories as fallbacks. Root these
