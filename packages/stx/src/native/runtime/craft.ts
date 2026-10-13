@@ -265,6 +265,9 @@ export interface NativeCraft {
     /** Mindful minutes: `id` is kept as the sample's external UUID, and saving it again keeps the first sample. */
     saveMindfulSession: (session: { id: string, startDate: number, endDate: number }) => Promise<{ id: string, externalId: string, existing: boolean }>
     getMindfulSessions: (options?: { startDate?: number, endDate?: number, limit?: number }) => Promise<Array<Record<string, unknown>>>
+    /** Heart rate as Apple Health receives it, from `since` (epoch ms), as `craftHealthHeartRate` events (`{ samples }`); one stream at a time. */
+    startHeartRateUpdates: (options?: { since?: number }) => Promise<boolean>
+    stopHeartRateUpdates: () => Promise<boolean>
   }
   /**
    * Structured workouts on the paired Apple Watch (`capabilities.scheduledWorkouts`,

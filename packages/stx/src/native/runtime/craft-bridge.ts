@@ -502,6 +502,10 @@ export function installCraftBridge(
       getSleepIntervals: (options: AnyRecord = {}) => request('Health', 'getSleepIntervals', [options]),
       saveMindfulSession: (session: AnyRecord) => request('Health', 'saveMindfulSession', [session]),
       getMindfulSessions: (options: AnyRecord = {}) => request('Health', 'getMindfulSessions', [options]),
+      // Heart rate as Apple Health receives it (Craft 0.0.165): each batch
+      // arrives as a `craftHealthHeartRate` event, like the strap's readings.
+      startHeartRateUpdates: (options: AnyRecord = {}) => request('Health', 'startHeartRateUpdates', [{ since: typeof options.since === 'number' ? options.since : null }]),
+      stopHeartRateUpdates: () => request('Health', 'stopHeartRateUpdates', [{}]),
     }
   }
   craft.scheduleNotification = craft.notifications.schedule
