@@ -295,6 +295,26 @@ function bump() { count.set(count() + 1) }
     expect(native.text()).toEqual(['Count 1', 'Add'])
   })
 
+  it('hydrates an interactive node whose :if starts false', async () => {
+    ;(globalThis as any).__pressed = 0
+    const { native, settle, press } = await mountScreen(`<script client>
+const unread = state(0)
+globalThis.__toggle = () => unread.set(1)
+function markAllRead() { globalThis.__pressed++ }
+</script>
+<View>
+  <Button :if="unread() > 0" testID="mark-all" @click="markAllRead()">Mark all</Button>
+</View>`)
+    expect(native.text()).toEqual([])
+
+    ;(globalThis as any).__toggle()
+    await settle()
+    expect(native.text()).toEqual(['Mark all'])
+    press('Mark all')
+    await settle()
+    expect((globalThis as any).__pressed).toBe(1)
+  })
+
   it('redraws a screen whose batch the native side refused, and keeps updating it', async () => {
     const { native, settle } = await mountScreen(`<script client>
 const count = state(0)
