@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.511...v0.2.512)
+
+## 🐛 Bug Fixes
+
+- **signals**: a component in a <template :if> keeps following its caller's props ([a10861f](https://github.com/stacksjs/stx/commit/a10861f)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **signals**: top-level :if and :for follow their page into its first screen ([ba56a4f](https://github.com/stacksjs/stx/commit/ba56a4f)) _(by Chris Breuer <chris@stacksjs.com>)_ ([#1954](https://github.com/stacksjs/stx/issues/1954))
+
+## 🔧 Chores
+
+- release v0.2.512 ([2f70a02](https://github.com/stacksjs/stx/commit/2f70a02)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.510...v0.2.511)
 
 ## ✨ Features
