@@ -7,11 +7,16 @@ export const sizeClasses = compact ? 'min-h-[340px] h-[min(560px,calc(100dvh-230
 export const selectedInboxClass = 'hidden'
 export const backButtonClass = ''
 export const inboxWidth = 'w-full'
+// Where the selected contact's face and name lead (contact-link.ts): a URL
+// with {field} placeholders filled from the contact, e.g. "/people/{username}".
+export const contactHref = $props.contactHref || ''
 </script>
 <script client>
+import { contactLink } from './contact-link'
 const active = useReactiveProp('active', {{ active }})
 const compact = {{ compact }}
 const selectedInboxClass = {{ selectedInboxClass }}
+const contactHref = {{ contactHref }}
 const chat = useStore({{ storeName }})
 const rows = chat.rows
 const selected = chat.selected
@@ -56,6 +61,7 @@ const emptyThread = derived(() => hasSelection() && !threadLoading() && messages
 const selectedName = derived(() => selected()?.name || '')
 const selectedRole = derived(() => selected()?.role || '')
 const selectedAvatar = derived(() => selected()?.avatar || '')
+const selectedHref = derived(() => contactLink(selected(), contactHref))
 const sendLabel = derived(() => sending() ? 'Sending...' : 'Send message')
 function timestamp(value) { return new Date(value).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
 function submit() { return chat.send() }
@@ -89,7 +95,7 @@ effect(() => { if (active() && visibility() === 'visible') chat.refresh(true) })
     </div>
     <div :if="hasSelection" class="flex flex-1 flex-col min-w-0">
       <header class="flex items-center gap-3 px-4 py-4 border-b border-line">
-        <button type="button" @click="chat.back()" aria-label="Back to inbox" class="stx-chat-back {{ backButtonClass }} p-2 rounded-lg hover:bg-surface-hover"><span class="i-lucide-arrow-left" aria-hidden="true"></span></button><Avatar :src="selectedAvatar" :alt="selectedName" size="md" className="shrink-0" /><div class="flex-1"><h2 class="font-semibold text-fg-strong" :text="selectedName"></h2><p class="mt-0.5 text-xs text-fg-muted" :text="selectedRole"></p></div><button type="button" @click="chat.refresh(true)" aria-label="Refresh conversation" class="p-2 text-fg-muted rounded-lg hover:bg-surface-hover"><span class="i-lucide-refresh-cw" aria-hidden="true"></span></button>
+        <button type="button" @click="chat.back()" aria-label="Back to inbox" class="stx-chat-back {{ backButtonClass }} p-2 rounded-lg hover:bg-surface-hover"><span class="i-lucide-arrow-left" aria-hidden="true"></span></button><StxLink :if="selectedHref" :to="selectedHref" className="stx-chat-person flex flex-1 gap-3 items-center min-w-0 rounded-lg hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"><Avatar :src="selectedAvatar" :alt="selectedName" size="md" className="shrink-0" /><div class="min-w-0"><h2 class="font-semibold text-fg-strong truncate" :text="selectedName"></h2><p class="mt-0.5 text-xs text-fg-muted" :text="selectedRole"></p></div></StxLink><div :if="!selectedHref" class="stx-chat-person flex flex-1 gap-3 items-center min-w-0"><Avatar :src="selectedAvatar" :alt="selectedName" size="md" className="shrink-0" /><div class="min-w-0"><h2 class="font-semibold text-fg-strong truncate" :text="selectedName"></h2><p class="mt-0.5 text-xs text-fg-muted" :text="selectedRole"></p></div></div><button type="button" @click="chat.refresh(true)" aria-label="Refresh conversation" class="p-2 text-fg-muted rounded-lg hover:bg-surface-hover"><span class="i-lucide-refresh-cw" aria-hidden="true"></span></button>
       </header>
       <div ref="chat-history" role="log" aria-label="Conversation history" aria-live="polite" aria-relevant="additions" :aria-busy="threadLoading" class="flex flex-col flex-1 min-h-0 overflow-y-auto px-4 py-5 gap-4">
         <button :if="hasMore" type="button" @click="chat.older()" :disabled="threadLoading" class="self-center text-sm text-accent-soft-ink font-medium underline">Load earlier messages</button>

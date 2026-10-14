@@ -2,6 +2,7 @@ import path from 'node:path'
 import { describe, expect, it } from 'bun:test'
 import { processDirectives } from '../../stx/src/process'
 import { bundleClientScript } from '../../stx/src/client-script-bundler'
+import { contactLink } from '../src/ui/chat/contact-link'
 import { createChat } from '../src/ui/chat/controller'
 
 const root = path.resolve(import.meta.dir, '..')
@@ -105,6 +106,27 @@ describe('native chat components and controller', () => {
     expect(html).toContain('Back to inbox')
     expect(html).toContain('Write a message')
     expect(html).toContain('coaching')
+  })
+  it('links the thread header to a contact only when the app gives it somewhere to go', async () => {
+    const options = { componentsDir: path.join(root, 'src/ui'), root, buildMode: 'serve', cache: false } as any
+    const linked = await processDirectives('<ChatInbox contactHref="/people/{username}?from=chat" />', {}, path.join(root, 'chat-test.stx'), options, new Set())
+    expect(linked).toContain('/people/{username}?from=chat')
+    expect(linked).toContain('contactLink(selected(), contactHref)')
+    expect(linked).toMatch(/<a[^>]*:href="selectedHref"[^>]*stx-chat-person[^>]*data-stx-link/)
+    expect(linked).toContain(':if="!selectedHref"')
+    const plain = await processDirectives('<ChatInbox />', {}, path.join(root, 'chat-test.stx'), options, new Set())
+    expect(plain).not.toContain('{username}')
+    expect(plain).toMatch(/<div[^>]*:if="!selectedHref"[^>]*stx-chat-person/)
+
+    expect(contactLink({ ...contact, username: 'pawel' }, '/people/{username}?from=chat')).toBe('/people/pawel?from=chat')
+    expect(contactLink({ ...contact, username: 'a b/c' }, '/u/{username}')).toBe('/u/a%20b%2Fc')
+    // A private profile sends no handle: no link rather than a link to a 404.
+    expect(contactLink({ ...contact, username: null }, '/people/{username}')).toBe('')
+    expect(contactLink({ ...contact, username: '' }, '/people/{username}')).toBe('')
+    expect(contactLink(contact, '/people/{username}')).toBe('')
+    expect(contactLink({ ...contact, href: '/team/2', username: 'pawel' }, '/people/{username}')).toBe('/team/2')
+    expect(contactLink({ ...contact, username: 'pawel' })).toBe('')
+    expect(contactLink(null, '/people/{username}')).toBe('')
   })
   it('renders desktop and inline launchers with accessible unread controls', async () => {
     const options = { componentsDir: path.join(root, 'src/ui'), root, buildMode: 'serve', cache: false } as any

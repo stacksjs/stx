@@ -53,6 +53,16 @@ counts. The popup supports Escape and returns focus to its launcher when closed.
 `ChatInbox compact` stacks inbox and thread even on a wide viewport; its `active`
 reactive prop controls read acknowledgement for a hidden or closed panel.
 
+The selected contact's face and name in the thread header link wherever the
+app says. `contactHref` is a URL with `{field}` placeholders filled from the
+contact; a contact whose field is empty or missing gets no link, so send a
+handle only for people whose page the viewer may open. A contact's own `href`
+wins over the template.
+
+```html
+<ChatInbox store="chat" contactHref="/people/{username}?from=messages" />
+```
+
 Contacts may include an uploaded image URL in `avatar`. The inbox and thread
 header share `Avatar`, which follows refreshed photos and falls back to initials
 when an image is missing or cannot load.

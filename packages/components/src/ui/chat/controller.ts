@@ -2,7 +2,7 @@ import type { DerivedSignal, Signal } from '@stacksjs/stx'
 import { derived, effect, state } from '@stacksjs/stx'
 import { useBroadcastStream } from '@stacksjs/stx/composables/use-broadcast-stream'
 
-export interface ChatContact { id: number, name: string, role: string, avatar?: string | null }
+export interface ChatContact { id: number, name: string, role: string, avatar?: string | null, href?: string | null }
 export interface ChatMessage { id: number, sender_id: number, body: string, created_at: string, read_at: string | null, client_key: string }
 export interface ChatConversation { id: string, recipient_id: number, unread: number, last_message: ChatMessage | null }
 export interface ChatOptions {

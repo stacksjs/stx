@@ -1,7 +1,8 @@
 export { default as ChatInbox } from './ChatInbox.stx'
 export { default as ChatMessage } from './ChatMessage.stx'
+export * from './contact-link'
 export * from './controller'
-export interface ChatInboxProps { store?: string, compact?: boolean, active?: boolean, className?: string }
+export interface ChatInboxProps { store?: string, compact?: boolean, active?: boolean, className?: string, contactHref?: string }
 export interface ChatMessageProps { body?: string, author?: string, time?: string, outgoing?: boolean, className?: string }
 export { default as ChatUnreadBadge } from './ChatUnreadBadge.stx'
 
