@@ -1,5 +1,29 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.519...v0.2.520)
+
+## ✨ Features
+
+- **native**: expose map primitives ([968a6e4](https://github.com/stacksjs/stx/commit/968a6e4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: add map types to the stx IR ([06685d0](https://github.com/stacksjs/stx/commit/06685d0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **ci**: refresh vscode extension lockfile ([837c640](https://github.com/stacksjs/stx/commit/837c640)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ✅ Tests
+
+- **native**: cover map screen compilation ([1bb9d58](https://github.com/stacksjs/stx/commit/1bb9d58)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: cover native html host writes ([b1fcf7d](https://github.com/stacksjs/stx/commit/b1fcf7d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.520 ([e233b4d](https://github.com/stacksjs/stx/commit/e233b4d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.518...v0.2.519)
 
 ## ✨ Features
