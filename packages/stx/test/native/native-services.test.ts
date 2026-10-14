@@ -356,6 +356,12 @@ describe('media kept on the phone for offline', () => {
     answer(keep, copy)
     expect(await kept).toEqual(copy)
 
+    // Wi-Fi only goes to the host as it was asked; anything else is not sent at all.
+    void scope.craft.media.keep(url, { cellular: false })
+    expect(requests().at(-1)!.payload.args).toEqual([url, { headers: {}, cellular: false }])
+    void scope.craft.media.keep(url, { cellular: 'no' })
+    expect(requests().at(-1)!.payload.args).toEqual([url, { headers: {} }])
+
     const where = scope.craft.media.path(url)
     expect(requests().at(-1)!.payload).toMatchObject({ module: 'Media', method: 'path', args: [url] })
     answer(requests().at(-1)!, null)

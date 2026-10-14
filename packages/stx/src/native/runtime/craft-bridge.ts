@@ -398,6 +398,9 @@ export function installCraftBridge(
   // `{ ok: false, status }`); a native Video given that address then plays
   // the copy. `keep` is untimed: a long video on a slow signal outlasts the
   // bridge's deadline, and the host's own download timeout still applies.
+  // `cellular: false` keeps it to Wi-Fi: on a metered connection nothing is
+  // fetched and the answer is `{ ok: false, reason: 'cellular' }` (Craft
+  // >= 0.0.170; an older host fetches it anyway).
   if (capabilities.has('media')) {
     craft.media = {
       keep: (url: string, options: AnyRecord = {}) => {
@@ -405,7 +408,7 @@ export function installCraftBridge(
         const headers: Record<string, string> = {}
         const given = options.headers
         if (given && typeof given === 'object') Object.keys(given).forEach((name) => { headers[name] = String(given[name]) })
-        return ask('Media', 'keep', [url, { headers }])
+        return ask('Media', 'keep', [url, options.cellular === false ? { headers, cellular: false } : { headers }])
       },
       path: (url: string) => typeof url === 'string' && url
         ? request('Media', 'path', [url]).then((path: unknown) => (typeof path === 'string' ? path : null))
