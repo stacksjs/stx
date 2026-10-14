@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.521...v0.2.522)
+
+## ✨ Features
+
+- **native**: craft.crashReporter on native screens and the app script ([b8cdd1d](https://github.com/stacksjs/stx/commit/b8cdd1d)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: apply conditional visibility and map bindings ([8b1a22a](https://github.com/stacksjs/stx/commit/8b1a22a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.522 ([47e4a24](https://github.com/stacksjs/stx/commit/47e4a24)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.520...v0.2.521)
 
 ## 🐛 Bug Fixes
