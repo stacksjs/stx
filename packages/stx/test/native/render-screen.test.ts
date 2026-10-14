@@ -252,13 +252,35 @@ describe('the primitives themselves', () => {
     expect(texts(document.root)).toEqual(['Start', 'Rest'])
   })
 
+  it('compiles map overlays to the renderer contract', async () => {
+    const source = `<script client>
+const route = state([47, 11, 47.1, 11.2])
+</script>
+<Map testID="trail-map" fitToBounds showsUserLocation>
+  <MapPolyline testID="route" :geometry="route()" strokeColor="#111111" strokeWidth="4" />
+  <MapMarker id="start" testID="start" geometry="[47, 11]" @press="openMarker($event)" />
+</Map>`
+    const { document, manifest } = await compileScreenSource(source, screen('MapScreen.stx', source))
+    expect(types(document.root)).toEqual(['Map', 'MapPolyline', 'MapMarker'])
+    expect(document.root.props).toMatchObject({ testID: 'trail-map', fitToBounds: true, showsUserLocation: true })
+    const [polyline, marker] = document.root.children.filter((child): child is STXNode => typeof child !== 'string')
+    expect(polyline.props).toMatchObject({ testID: 'route', strokeColor: '#111111', strokeWidth: 4 })
+    expect(polyline.bindings).toEqual({ geometry: 'route()' })
+    expect(marker.props).toMatchObject({ id: 'start', testID: 'start', geometry: [47, 11] })
+    expect(marker.events).toEqual({ onPress: 'openMarker($event)' })
+    expect(manifest.entries.some(entry => entry.bindings.some(binding => binding.name === ':geometry'))).toBe(true)
+  })
+
   it('ships one component per native type the IR declares', async () => {
     const files = [...new Bun.Glob('*.stx').scanSync(nativePrimitivesDir())].sort()
-    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(25)
+    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(28)
     expect(files).toContain('Fragment.stx')
     expect(files).toContain('Icon.stx')
     expect(files).toContain('TouchableOpacity.stx')
     expect(files).toContain('ActivityIndicator.stx')
+    expect(files).toContain('Map.stx')
+    expect(files).toContain('MapPolyline.stx')
+    expect(files).toContain('MapMarker.stx')
   })
 
   it('names a type the translator will accept, in every one of them', async () => {

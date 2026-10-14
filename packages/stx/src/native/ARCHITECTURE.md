@@ -29,6 +29,9 @@ STX provides platform-agnostic primitives that map to native components:
 | `<Switch>` | `UISwitch` | `Switch` | `<input type="checkbox">` |
 | `<Slider>` | `UISlider` | `SeekBar` | `<input type="range">` |
 | `<Picker>` | `UIPickerView` | `Spinner` | `<select>` |
+| `<Map>` | `MKMapView` | Google Maps SDK | map container with native overlays |
+| `<MapPolyline>` | `MKPolyline` | `Polyline` | flat latitude/longitude geometry |
+| `<MapMarker>` | `MKPointAnnotation` | `Marker` | flat coordinate plus marker id |
 
 ### 2. Styling with Headwind
 
