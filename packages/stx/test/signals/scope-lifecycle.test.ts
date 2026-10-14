@@ -247,7 +247,10 @@ describe('Directive bindings', () => {
     it('should handle @html', () => {
       const runtime = generateSignalsRuntimeDev()
       expect(runtime).toContain("name === '@html'")
-      expect(runtime).toContain('el.innerHTML = evalAttrExpr')
+      // HTML writes use the host adapter for native targets while retaining
+      // the direct DOM fallback for browsers (stacksjs/stx#1984).
+      expect(runtime).toContain('stxHost.setMarkup(el, markup)')
+      expect(runtime).toContain('el.innerHTML = markup')
     })
   })
 
