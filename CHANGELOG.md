@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.514...v0.2.515)
+
+## ✨ Features
+
+- **native**: media.keep on Wi-Fi only ([b61e1a7](https://github.com/stacksjs/stx/commit/b61e1a7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.515 ([1d11759](https://github.com/stacksjs/stx/commit/1d11759)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.513...v0.2.514)
 
 ## ✨ Features
