@@ -32,6 +32,9 @@ export type STXComponentType =
   | 'Image'
   | 'ImageBackground'
   | 'Video'
+  | 'Map'
+  | 'MapPolyline'
+  | 'MapMarker'
   // Lists
   | 'FlatList'
   | 'SectionList'

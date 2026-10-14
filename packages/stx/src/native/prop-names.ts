@@ -19,6 +19,7 @@ const NATIVE_PROP_NAMES = [
   'showsHorizontalScrollIndicator', 'showsVerticalScrollIndicator', 'statusBarTranslucent',
   'stickyHeaderIndices', 'testID', 'textContentType', 'thumbColor', 'thumbTintColor', 'titleColor', 'trackColor',
   'underlayColor', 'windowSize',
+  'fitToBounds', 'showsUserLocation', 'zoomEnabled', 'rotateEnabled', 'mapType', 'strokeColor',
   'autoScrollBottom', 'scrollKey',
 ]
 
@@ -32,6 +33,7 @@ export const NATIVE_BOOLEAN_PROPS = new Set([
   'editable', 'hidesWhenStopped', 'horizontal', 'loop', 'multiline', 'muted', 'pagingEnabled', 'paused',
   'refreshing', 'scrollEnabled', 'secureTextEntry', 'selectTextOnFocus', 'showsHorizontalScrollIndicator',
   'showsVerticalScrollIndicator', 'transparent', 'visible',
+  'fitToBounds', 'showsUserLocation', 'zoomEnabled', 'rotateEnabled',
 ])
 
 const nativePropNames = new Map(
