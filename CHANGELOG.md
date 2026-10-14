@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.523...v0.2.524)
+
+## 🐛 Bug Fixes
+
+- **native**: showing an :if branch gives back the node's own display ([465bfbc](https://github.com/stacksjs/stx/commit/465bfbc)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.524 ([0cbef60](https://github.com/stacksjs/stx/commit/0cbef60)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.522...v0.2.523)
 
 ## ✨ Features
