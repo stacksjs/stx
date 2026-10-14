@@ -279,6 +279,9 @@ function resolveSpacing(value: string): number | undefined {
   // Handle arbitrary values (e.g., "[20px]", "[1.5rem]")
   if (value.startsWith('[') && value.endsWith(']')) {
     const inner = value.slice(1, -1)
+    // `[78%]` is not 78 points. Hosts take a percentage only as a size (see
+    // resolveSize), so here it is a value this function does not have.
+    if (inner.endsWith('%')) return undefined
     const length = inner.endsWith('rem')
       ? Number.parseFloat(inner) * 16
       : Number.parseFloat(inner)
@@ -289,6 +292,18 @@ function resolveSpacing(value: string): number | undefined {
   }
 
   return spacing[value]
+}
+
+/**
+ * A box size: `w-`, `h-`, `size-`, `min-`/`max-` bounds. Like spacing, except
+ * an arbitrary percentage stays a percentage of the parent, so `max-w-[78%]`
+ * reaches the host as `'78%'`. It used to read as 78 points, which squeezed a
+ * shrink-to-fit chat bubble until its words broke mid-way.
+ */
+function resolveSize(value: string): number | string | undefined {
+  const percent = /^\[(-?\d*\.?\d+)%\]$/.exec(value)
+  if (percent) return `${Number.parseFloat(percent[1])}%`
+  return resolveSpacing(value)
 }
 
 // ============================================================================
@@ -654,7 +669,7 @@ function parseWidth(className: string, style: STXStyle): boolean {
     return true
   }
 
-  const size = resolveSpacing(value)
+  const size = resolveSize(value)
   if (size !== undefined) {
     style.width = size
     return true
@@ -680,7 +695,7 @@ function parseHeight(className: string, style: STXStyle): boolean {
     return true
   }
 
-  const size = resolveSpacing(value)
+  const size = resolveSize(value)
   if (size !== undefined) {
     style.height = size
     return true
@@ -838,7 +853,7 @@ function parseGridColumns(className: string, style: STXStyle): boolean {
 function parseSize(className: string, style: STXStyle): boolean {
   if (!className.startsWith('size-')) return false
   const value = className.slice(5)
-  const size = value === 'full' ? '100%' : resolveSpacing(value)
+  const size = value === 'full' ? '100%' : resolveSize(value)
   if (size === undefined) return false
   style.width = size
   style.height = size
@@ -855,7 +870,7 @@ function parseMinMax(className: string, style: STXStyle): boolean {
     ? '100%'
     : value === 'none'
       ? undefined
-      : (axis === 'w' && bound === 'max' && MAX_WIDTHS[value]) || resolveSpacing(value)
+      : (axis === 'w' && bound === 'max' && MAX_WIDTHS[value]) || resolveSize(value)
   if (size === undefined && value !== 'none') return false
   const key = `${bound}${axis === 'w' ? 'Width' : 'Height'}` as 'minWidth' | 'maxWidth' | 'minHeight' | 'maxHeight'
   if (size === undefined) delete style[key]
