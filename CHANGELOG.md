@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.516...v0.2.517)
+
+## ✨ Features
+
+- **components**: ChatInbox links the thread header to the contact ([5dcb846](https://github.com/stacksjs/stx/commit/5dcb846)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2070](https://github.com/stacksjs/stx/issues/2070))
+- **native**: add desktop window capabilities and AppKit primitives ([2960569](https://github.com/stacksjs/stx/commit/2960569)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.517 ([20f857d](https://github.com/stacksjs/stx/commit/20f857d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.515...v0.2.516)
 
 ## 🐛 Bug Fixes
