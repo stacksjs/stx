@@ -9,6 +9,7 @@
  */
 import { describe, expect, it } from 'bun:test'
 import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
+import { parseSvgMarkup } from '../../src/native/compiler/svg'
 import { compileClassStyles } from '../../src/native/compiler/headwind-to-style'
 import { CLOSE, CUBIC, LINE, MOVE, pathGeometry, svgGeometry } from '../../src/native/compiler/svg'
 import type { STXNode } from '../../src/native/compiler/ir'
@@ -208,5 +209,32 @@ describe('the native host', () => {
     const props = ops().filter(op => op.op === 'updateNode').map((op: any) => op.patch.props)
     expect(props).toContainEqual({ strokeDasharray: [4, 2] })
     expect(props.find(patch => 'geometry' in patch)?.geometry).toEqual([MOVE, 0, 0, LINE, 9, 0])
+  })
+
+  it('turns runtime SVG markup into native nodes and replaces it reactively', () => {
+    const { host, ops } = harness()
+    const root: NativeNode = host.adopt({ __stxId: 'root' }, 'View')
+    host.snapshot(root)
+
+    host.setMarkup(root, '<svg viewBox="0 0 10 10"><path d="M0 0 L2 2" /><circle cx="5" cy="5" r="2" /></svg>')
+    host.flush()
+    const first = ops()
+    expect(first.filter(op => op.op === 'createNode').map((op: any) => op.node.type)).toEqual(['Svg', 'Path', 'Circle'])
+    expect(first.find((op: any) => op.op === 'createNode' && op.node.type === 'Path').node.props.geometry)
+      .toEqual([MOVE, 0, 0, LINE, 2, 2])
+
+    host.setMarkup(root, '<svg viewBox="0 0 10 10"><line x1="0" y1="1" x2="9" y2="1" /></svg>')
+    host.flush()
+    const second = ops().slice(first.length)
+    expect(second.some(op => op.op === 'removeNode')).toBe(true)
+    expect(second.filter(op => op.op === 'createNode').map((op: any) => op.node.type)).toEqual(['Svg', 'Line'])
+  })
+
+  it('parses the same SVG shape vocabulary as inline translation', () => {
+    const [root] = parseSvgMarkup('<svg width="24" height="24" viewBox="0 0 24 24"><polyline points="0,1 2,3" /></svg>')
+    expect(root.type).toBe('Svg')
+    expect(root.style).toMatchObject({ width: 24, height: 24 })
+    expect((root.children[0] as STXNode).type).toBe('Polyline')
+    expect((root.children[0] as STXNode).props.geometry).toEqual([MOVE, 0, 1, LINE, 2, 3])
   })
 })

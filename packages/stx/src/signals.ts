@@ -140,6 +140,7 @@ console.log('[stx] entering IIFE');
   // exactly as it was: same calls, one property lookup earlier.
   var stxHost = window.__stx_host || {
     setText: function(node, value) { node.textContent = value; },
+    setMarkup: function(node, value) { node.innerHTML = value == null ? '' : value; },
     setAttribute: function(node, name, value) {
       if (value === false) { node.removeAttribute(name); return; }
       if (value === true) { node.setAttribute(name, ''); return; }
@@ -3475,7 +3476,9 @@ else if (name === '@html' || name === ':html' || name === 'x-html') {
         effect(() => {
           // Coerce null/undefined to '' so a missing/unresolved binding renders
           // nothing rather than the literal string "undefined" (#1767).
-          el.innerHTML = evalAttrExpr(value) ?? '';
+          var markup = evalAttrExpr(value) ?? '';
+          if (stxHost.isNative && stxHost.setMarkup) stxHost.setMarkup(el, markup);
+          else el.innerHTML = markup;
         });
         el.removeAttribute(name);
       }

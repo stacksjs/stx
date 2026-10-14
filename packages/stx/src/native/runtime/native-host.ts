@@ -34,7 +34,7 @@ import type { NativeMutationOperation } from '../bridge/protocol'
 import type { STXNode } from '../compiler/ir'
 import { compileClassStyles } from '../compiler/headwind-to-style'
 import { resolveIconName } from '../compiler/icons'
-import { affectsGeometry, parseViewBox, SVG_NODE_TYPES, svgGeometry } from '../compiler/svg'
+import { affectsGeometry, parseSvgMarkup, parseViewBox, SVG_NODE_TYPES, svgGeometry } from '../compiler/svg'
 import { nativePropName } from '../prop-names'
 import { cloneNativeBindingNode, type NativeBindingNode } from './binding-tree'
 
@@ -62,6 +62,8 @@ interface NodeRecord {
   materialized: boolean
   /** Handlers taken out of service while the node is off the screen. */
   parkedHandlers?: Map<string, (payload?: unknown) => void>
+  /** Last runtime markup assigned through a native `:html` binding. */
+  markup?: string
 }
 
 interface RetainedNativeNode extends NativeNode {
@@ -102,6 +104,7 @@ export interface NativeHost {
   readonly isNative: true
   setColorScheme: (scheme: 'light' | 'dark') => void
   setText: (node: NativeNode, value: unknown) => void
+  setMarkup: (node: NativeNode, value: unknown) => void
   setAttribute: (node: NativeNode, name: string, value: unknown) => void
   removeAttribute: (node: NativeNode, name: string) => void
   setStyle: (node: NativeNode, value: unknown) => void
@@ -513,6 +516,30 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       record.text = text
       if (record.materialized)
         emit({ op: 'updateNode', id: node.__stxId, patch: { children: [text] } })
+    },
+
+    setMarkup(node, value) {
+      const record = recordOf(node)
+      const markup = value == null ? '' : String(value)
+      if (record.markup === markup)
+        return
+      for (const child of [...record.children])
+        this.remove(child)
+      record.markup = markup
+      for (const source of parseSvgMarkup(markup)) {
+        const materializeMarkup = (parent: NativeNode, descriptor: STXNode): void => {
+          const child = { __stxId: nextId('n') } as NativeNode
+          decoratePosition(child)
+          adopt(child, descriptor.type, null, descriptor)
+          records.get(child.__stxId)!.materialized = false
+          this.insert(parent, child)
+          for (const nested of descriptor.children) {
+            if (typeof nested !== 'string')
+              materializeMarkup(child, nested)
+          }
+        }
+        materializeMarkup(node, source)
+      }
     },
 
     setAttribute(node, name, value) {

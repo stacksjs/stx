@@ -1,3 +1,5 @@
+import type { STXNode, STXStyle } from './ir'
+
 /**
  * Vector drawing for native screens: `<svg>` and the shapes inside it.
  *
@@ -456,4 +458,155 @@ export function svgGeometry(type: string, props: Record<string, unknown>): numbe
 /** Whether changing `attribute` on a `type` node changes its outline. */
 export function affectsGeometry(type: string, attribute: string): boolean {
   return SVG_GEOMETRY_ATTRIBUTES[type]?.includes(attribute) ?? false
+}
+
+/**
+ * Parse an SVG fragment that arrived at runtime into the same IR used for
+ * inline SVG. This deliberately has no DOM or Bun dependency: native screens
+ * run in JavaScriptCore, where the markup often came from an API response.
+ */
+export function parseSvgMarkup(markup: string): STXNode[] {
+  type Frame = { tag: string, node?: STXNode, dropped: boolean }
+  const roots: STXNode[] = []
+  const stack: Frame[] = []
+  let cursor = 0
+
+  const decode = (value: string): string => value
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&#x27;/gi, '\'')
+    .replace(/&amp;/g, '&')
+
+  const camel = (name: string): string => {
+    const lower = name.toLowerCase()
+    const known: Record<string, string> = {
+      viewbox: 'viewBox', preserveaspectratio: 'preserveAspectRatio',
+      'stroke-width': 'strokeWidth', 'stroke-dasharray': 'strokeDasharray',
+      'stroke-dashoffset': 'strokeDashoffset', 'stroke-linecap': 'strokeLinecap',
+      'stroke-linejoin': 'strokeLinejoin', 'stroke-miterlimit': 'strokeMiterlimit',
+      'stroke-opacity': 'strokeOpacity', 'fill-opacity': 'fillOpacity',
+      'fill-rule': 'fillRule', 'vector-effect': 'vectorEffect',
+      'text-anchor': 'textAnchor', 'dominant-baseline': 'dominantBaseline',
+      'font-size': 'fontSize', 'font-weight': 'fontWeight',
+    }
+    return known[lower] ?? lower.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())
+  }
+
+  const valueOf = (name: string, value: string): unknown => {
+    const decoded = decode(value)
+    if (name === 'viewBox') return parseViewBox(decoded) ?? decoded
+    if (name === 'strokeDasharray') return decoded.split(/[\s,]+/).map(Number).filter(Number.isFinite)
+    if (/^(?:[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)$/i.test(decoded.trim()))
+      return Number(decoded)
+    return decoded
+  }
+
+  const styleOf = (value: string): STXStyle => {
+    const style: STXStyle = {}
+    for (const declaration of decode(value).split(';')) {
+      const separator = declaration.indexOf(':')
+      if (separator < 1) continue
+      const name = camel(declaration.slice(0, separator).trim())
+      const raw = declaration.slice(separator + 1).trim()
+      style[name] = /^-?(?:\d+\.?\d*|\.\d+)$/.test(raw) ? Number(raw) : raw
+    }
+    return style
+  }
+
+  const attributesOf = (source: string): { props: Record<string, unknown>, style: STXStyle, classes: string } => {
+    const props: Record<string, unknown> = {}
+    const style: STXStyle = {}
+    let classes = ''
+    const attribute = /([^\s=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s]+)))?/g
+    let match: RegExpExecArray | null
+    while ((match = attribute.exec(source))) {
+      const rawName = match[1].toLowerCase()
+      const rawValue = match[2] ?? match[3] ?? match[4] ?? ''
+      if (rawName === 'class') { classes = decode(rawValue); continue }
+      if (rawName === 'style') { Object.assign(style, styleOf(rawValue)); continue }
+      if (rawName === 'data-native' || rawName.startsWith('data-stx-')) continue
+      props[camel(rawName)] = valueOf(camel(rawName), rawValue)
+    }
+    return { props, style, classes }
+  }
+
+  const endOfTag = (start: number): number => {
+    let quote = ''
+    for (let i = start; i < markup.length; i++) {
+      const character = markup[i]
+      if (quote) { if (character === quote) quote = ''; continue }
+      if (character === '"' || character === '\'') { quote = character; continue }
+      if (character === '>') return i
+    }
+    return markup.length - 1
+  }
+
+  const append = (node: STXNode): void => {
+    const parent = stack[stack.length - 1]
+    if (parent?.node && !parent.dropped) parent.node.children.push(node)
+    else if (!parent) roots.push(node)
+  }
+
+  while (cursor < markup.length) {
+    const open = markup.indexOf('<', cursor)
+    if (open === -1) {
+      const text = decode(markup.slice(cursor)).replace(/\s+/g, ' ')
+      if (text.trim() && stack[stack.length - 1]?.node && !stack[stack.length - 1].dropped)
+        stack[stack.length - 1].node!.children.push(text)
+      break
+    }
+    if (open > cursor) {
+      const text = decode(markup.slice(cursor, open)).replace(/\s+/g, ' ')
+      if (text.trim() && stack[stack.length - 1]?.node && !stack[stack.length - 1].dropped)
+        stack[stack.length - 1].node!.children.push(text)
+    }
+    const close = endOfTag(open + 1)
+    const token = markup.slice(open + 1, close).trim()
+    cursor = close + 1
+    if (!token || token.startsWith('!') || token.startsWith('?')) continue
+    if (token.startsWith('/')) {
+      const tag = token.slice(1).trim().toLowerCase()
+      while (stack.length) {
+        const frame = stack.pop()!
+        if (frame.tag === tag) break
+      }
+      continue
+    }
+
+    const selfClosing = token.endsWith('/')
+    const source = selfClosing ? token.slice(0, -1).trim() : token
+    const name = source.match(/^([^\s/>]+)/)?.[1]?.toLowerCase()
+    if (!name) continue
+    const parentDropped = stack[stack.length - 1]?.dropped ?? false
+    const type = SVG_TYPES[name]
+    const dropped = parentDropped || SVG_DROPPED.has(name) || !type
+    if (dropped) {
+      if (!selfClosing) stack.push({ tag: name, dropped: true })
+      continue
+    }
+
+    const parsed = attributesOf(source.slice(name.length))
+    const node = {
+      type,
+      props: parsed.props,
+      style: parsed.style,
+      events: {},
+      children: [],
+      _inlineStyle: { ...parsed.style },
+    } as STXNode
+    if (parsed.classes) node._classes = parsed.classes
+    if (type === 'Svg') {
+      for (const axis of ['width', 'height'] as const) {
+        if (typeof node.props[axis] === 'number' && node.style[axis] === undefined)
+          node.style[axis] = node.props[axis]
+        delete node.props[axis]
+      }
+    }
+    const geometry = svgGeometry(type, node.props)
+    if (geometry) node.props.geometry = geometry
+    append(node)
+    if (!selfClosing) stack.push({ tag: name, node, dropped: false })
+  }
+  return roots
 }
