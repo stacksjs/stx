@@ -20,3 +20,13 @@ export const BROWSER_CORE_IMPORTS: readonly string[] = [
   // Stacks composables that are not part of the STX-native runtime
   'useActiveElement', 'useIntervalFn', 'useObjectUrl',
 ]
+
+/** The shipped ambient declarations for the same browser auto-import manifest. */
+export function generateBrowserAutoImportsDts(): string {
+  return [
+    '// Generated from src/browser-core-imports.ts. Do not edit by hand.',
+    '/* eslint-disable ts/no-explicit-any */',
+    ...BROWSER_CORE_IMPORTS.map(name => `declare const ${name}: any`),
+    '',
+  ].join('\n')
+}
