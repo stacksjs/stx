@@ -268,6 +268,16 @@ export interface NativeCraft {
     /** Heart rate as Apple Health receives it, from `since` (epoch ms), as `craftHealthHeartRate` events (`{ samples }`); one stream at a time. */
     startHeartRateUpdates: (options?: { since?: number }) => Promise<boolean>
     stopHeartRateUpdates: () => Promise<boolean>
+    /**
+     * Whether the store can be used (`capabilities.healthAvailability`,
+     * Health Connect): `updateRequired` and `unavailable` want
+     * `openSettings`, which opens the store (or its install page).
+     */
+    availability?: () => Promise<'available' | 'updateRequired' | 'unavailable'>
+    /** The types whose reads are granted now (Health Connect says; HealthKit never does). */
+    grantedTypes?: () => Promise<string[]>
+    /** The store's own screen for this app's permissions, or its install page. */
+    openSettings?: () => Promise<boolean>
   }
   /**
    * Structured workouts on the paired Apple Watch (`capabilities.scheduledWorkouts`,

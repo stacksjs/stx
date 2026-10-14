@@ -237,6 +237,34 @@ describe('shared-runtime native capability protocol', () => {
     expect(await workouts).toEqual([{ id: 'w1' }])
   })
 
+  it('asks a store that may be missing whether it can be used, only on hosts that say so', async () => {
+    const apple = await runtime('', { capabilities: ['health'] })
+    expect(apple.scope.craft.health.availability).toBeUndefined()
+    expect(apple.scope.craft.health.openSettings).toBeUndefined()
+
+    const { scope, sent, receive } = await runtime('', { capabilities: ['health', 'healthAvailability'] })
+    const availability = scope.craft.health.availability()
+    const granted = scope.craft.health.grantedTypes()
+    const opened = scope.craft.health.openSettings()
+    const requests = sent.filter(message => message.type === 'API_REQUEST')
+    expect(requests.map(message => [message.payload.module, message.payload.method])).toEqual([
+      ['Health', 'availability'],
+      ['Health', 'grantedTypes'],
+      ['Health', 'openSettings'],
+    ])
+    // Opening a screen waits on the person.
+    expect(requests[2].payload.untimed).toBe(true)
+    const answers = ['updateRequired', ['sleep', 7], 1]
+    requests.forEach((request, index) => receive({
+      type: 'API_RESPONSE',
+      correlationId: request.id,
+      payload: { version: 1, requestId: request.id, data: answers[index] },
+    }))
+    expect(await availability).toBe('updateRequired')
+    expect(await granted).toEqual(['sleep'])
+    expect(await opened).toBe(true)
+  })
+
   it('never times out a sheet the person is reading', async () => {
     const { scope, sent, receive } = await runtime('', { timeout: 5, capabilities: ['health', 'biometric'] })
     const grant = scope.craft.health.requestAuthorization(['workouts'])

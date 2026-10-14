@@ -507,6 +507,15 @@ export function installCraftBridge(
       startHeartRateUpdates: (options: AnyRecord = {}) => request('Health', 'startHeartRateUpdates', [{ since: typeof options.since === 'number' ? options.since : null }]),
       stopHeartRateUpdates: () => request('Health', 'stopHeartRateUpdates', [{}]),
     }
+    // A store that may be missing or out of date, with grants managed in its
+    // own screen (Health Connect on Android): whether it can be used, the
+    // types granted now, and its screen for this app. Only on hosts that
+    // report them, so `health.supports('availability')` is true to the build.
+    if (capabilities.has('healthAvailability')) {
+      craft.health.availability = () => request('Health', 'availability', [])
+      craft.health.grantedTypes = () => request('Health', 'grantedTypes', []).then((types: unknown) => (Array.isArray(types) ? types.filter(type => typeof type === 'string') : []))
+      craft.health.openSettings = () => ask('Health', 'openSettings', []).then(Boolean)
+    }
   }
   craft.scheduleNotification = craft.notifications.schedule
   craft.cancelNotification = craft.notifications.cancel
