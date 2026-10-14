@@ -1519,11 +1519,17 @@ ${escapeScriptBody(`${autoImportCode}${code}\n${eventCode}`)}
     const returnStmt = declarations.length > 0
       ? `\n  return { ${declarations.join(', ')} };`
       : ''
+    const failureMessage = JSON.stringify(`[stx] client block failed${options.filePath ? ` (${options.filePath})` : ''}; this block will not hydrate`)
 
     return `${vendorStyleTags}<script data-stx-scoped data-stx-run="always"${instance}>
 window.stx.mount(function() {
   'use strict';
+  try {
 ${escapeScriptBody(`${autoImportCode}${code}\n${eventCode}${returnStmt}`)}
+  } catch (error) {
+    console.error(${failureMessage}, error);
+    return {};
+  }
 })</script>`
   }
 
@@ -1551,6 +1557,10 @@ ${escapeScriptBody(`${autoImportCode}${code}\n${eventCode}${returnStmt}`)}
   return `${vendorStyleTags}<script data-stx-scoped data-stx-run="always"${instance}>
 ;(function() {
   'use strict';
+  try {
 ${escapeScriptBody(`${autoImportCode}${code}\n${eventCode}`)}
+  } catch (error) {
+    console.error(${JSON.stringify(`[stx] client block failed${options.filePath ? ` (${options.filePath})` : ''}; this block will not hydrate`)}, error);
+  }
 })()</script>`
 }

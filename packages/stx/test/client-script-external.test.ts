@@ -170,6 +170,12 @@ const users = await User.all()
     expect(hasUserImports(output.code)).toBe(true)
   })
 
+  it('contains a failing client block without aborting later blocks', async () => {
+    const output = await processClientScript('useMissingBrowserHelper()', { filePath: 'pages/search.stx' })
+    expect(output).toContain('try {')
+    expect(output).toContain('client block failed (pages/search.stx); this block will not hydrate')
+  })
+
   it('does not bootstrap a locally declared model-shaped identifier', () => {
     const output = injectBrowserCoreAutoImports(`
 const User = createFixtureModel()
