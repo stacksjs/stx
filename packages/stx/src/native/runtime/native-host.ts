@@ -295,6 +295,26 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     return record
   }
 
+  function decorateControl(node: NativeNode, type: string): void {
+    if (type === 'TextInput' || type === 'Picker') {
+      // The shared x-model binder reads/writes a control's live value. A
+      // native handle needs that property too, and writes must cross the
+      // mutation bridge (including resets coming from application state).
+      Object.defineProperty(node, 'value', {
+        configurable: true,
+        enumerable: true,
+        get: () => descriptorOf(node)?.props.value ?? '',
+        set: (value: unknown) => {
+          const record = recordOf(node)
+          if (Object.is(record.props.value, value)) return
+          record.props.value = value
+          if (record.materialized) emit({ op: 'updateNode', id: node.__stxId, patch: { props: { value } } })
+        },
+      })
+      Object.defineProperty(node, 'type', { configurable: true, get: () => descriptorOf(node)?.props.type ?? 'text' })
+    }
+  }
+
   function materialize(node: NativeNode): void {
     const record = recordOf(node)
     if (record.materialized || node.__stxAnchor !== undefined)
@@ -443,6 +463,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     record.style = resolveStyle(record)
     if (descriptor) descriptor.style = { ...record.style } as STXNode['style']
     records.set(node.__stxId, record)
+    decorateControl(node, type)
     decoratePosition(node)
     node.__stxOwner = owner ?? null
     if (owner) {
@@ -553,7 +574,16 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       // either way.
       const id = nextId('h')
       const nativeEvent = NATIVE_EVENT_NAMES[event.toLowerCase()] ?? event
-      handlers.set(id, payload => handler(eventAt(payload, node)))
+      handlers.set(id, (payload) => {
+        if (nativeEvent === 'onChangeText' || nativeEvent === 'onValueChange') {
+          const data = payload && typeof payload === 'object' ? payload as Record<string, any> : {}
+          const value = data.text ?? data.value ?? data.nativeEvent?.text ?? data.nativeEvent?.value
+          const record = recordOf(node)
+          if (value !== undefined && (record.type === 'TextInput' || record.type === 'Picker'))
+            record.props.value = value
+        }
+        handler(eventAt(payload, node))
+      })
       const record = recordOf(node)
       record.events[nativeEvent] = id
       if (record.materialized)
@@ -629,6 +659,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         visible: descriptor.visible,
         materialized: false,
       })
+      decorateControl(copy, descriptor.type)
       setConnected(copy, false)
 
       // Materialised from the descriptor, depth first -- a view hierarchy

@@ -12,6 +12,54 @@ import { installNodeConstants } from '../../test-utils/dom-runtime-shim'
 declare const window: any
 
 describe('a native screen on the shared stx signals runtime', () => {
+  it('round trips native text and picker edits through x-model and application resets', async () => {
+    const compiled = await compileScreenSource(`<script client>
+const draft = state('Seed')
+const choice = state('one')
+function reset() { draft.set('Reset'); choice.set('one') }
+</script>
+<View>
+<TextInput x-model="draft" testID="draft" />
+<Picker x-model="choice" :options="[{value:'one',label:'One'},{value:'two',label:'Two'}]" testID="choice" />
+<Text :text="draft() + ':' + choice()" />
+<Button @click="reset()">Reset</Button>
+</View>`, path.join(import.meta.dir, 'Model.stx'))
+    const sent: any[] = []
+    let receive: (raw: string) => void = () => {}
+    const screen = prepareSharedNativeScreen(compiled.document, compiled.manifest, {
+      postMessage: raw => sent.push(JSON.parse(raw)),
+      onMessage: callback => { receive = callback },
+    })
+    installNodeConstants()
+    window.__stx_host = screen.host
+    new Function(generateSignalsRuntimeDev())()
+    new Function(compiled.setup!.code)()
+    screen.mount(window.stx, window.__stx_latestSetup)
+    screen.host.flush()
+    const rendered = sent.find(m => m.type === 'RENDER').payload.document
+    const [input, picker, , button] = rendered.children
+    const send = (id: string, data: unknown) => {
+      receive(JSON.stringify({ type: 'EVENT', payload: { handlerId: id, nativeEvent: data } }))
+      screen.host.flush()
+    }
+    const initial = sent.filter(m => m.type === 'MUTATE').flatMap(m => m.payload.operations)
+    expect(initial).toContainEqual(expect.objectContaining({ id: input.id, patch: { props: { value: 'Seed' } } }))
+    expect(initial).toContainEqual(expect.objectContaining({ id: picker.id, patch: { props: { value: 'one' } } }))
+    const inputHandler = initial.find(op => op.id === input.id && op.patch?.events?.onChangeText).patch.events.onChangeText
+    const pickerHandler = initial.find(op => op.id === picker.id && op.patch?.events?.onValueChange).patch.events.onValueChange
+    const resetHandler = initial.find(op => op.id === button.id && op.patch?.events?.onPress).patch.events.onPress
+    sent.length = 0
+    send(inputHandler, { text: 'Typed' })
+    send(pickerHandler, { value: 'two' })
+    const operations = () => sent.filter(m => m.type === 'MUTATE').flatMap(m => m.payload.operations)
+    expect(operations()).toContainEqual(expect.objectContaining({ patch: { children: ['Typed:two'] } }))
+    sent.length = 0
+    send(resetHandler, {})
+    expect(operations()).toContainEqual(expect.objectContaining({ id: input.id, patch: { props: { value: 'Reset' } } }))
+    expect(operations()).toContainEqual(expect.objectContaining({ id: picker.id, patch: { props: { value: 'one' } } }))
+    screen.unmount()
+  })
+
   afterEach(() => {
     delete window.__stx_host
   })

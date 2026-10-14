@@ -58,7 +58,7 @@ function createBindingNode(id: string, type: string, bindings: ManifestEntry['bi
       add(...tokens: string[]) { node.className = [...new Set([...node.className.split(/\s+/).filter(Boolean), ...tokens])].join(' ') },
       remove(...tokens: string[]) { node.className = node.className.split(/\s+/).filter(token => token && !tokens.includes(token)).join(' ') },
     },
-    tagName: type.toUpperCase(),
+    tagName: type === 'TextInput' ? 'INPUT' : type === 'Picker' ? 'SELECT' : type.toUpperCase(),
     attributes,
     parentNode: null,
     parentElement: null,
