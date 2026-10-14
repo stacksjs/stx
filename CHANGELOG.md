@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.517...v0.2.518)
+
+## 🐛 Bug Fixes
+
+- **native**: a container keeps its props around a library component, Checkbox is native, and a style keeps its transform ([9282a03](https://github.com/stacksjs/stx/commit/9282a03)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: retain edited values across unrelated mutations ([ea81294](https://github.com/stacksjs/stx/commit/ea81294)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: round trip form controls through shared x-model bindings ([43b581b](https://github.com/stacksjs/stx/commit/43b581b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.518 ([4912662](https://github.com/stacksjs/stx/commit/4912662)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.516...v0.2.517)
 
 ## ✨ Features
