@@ -624,3 +624,22 @@ describe('responses read as they arrive', () => {
     expect(source.readyState).toBe(2)
   })
 })
+
+describe('generic Bluetooth channel', () => {
+  it('gates access and carries scan, connect and correlated exchange options', async () => {
+    expect((await runtime([])).scope.craft.bluetooth).toBeUndefined()
+    const host = await runtime(['bluetooth'])
+    expect(host.scope.craft.capabilities.bluetooth).toBe(true)
+    for (const [method, options, data] of [
+      ['scan', { services: ['180a'], namePrefix: 'LARQ_' }, []],
+      ['connect', { id: 'cap', service: 'nus', write: 'rx', notify: 'tx' }, { id: 'cap' }],
+      ['exchange', { bytes: [13, 1, 0, 0, 0], responsePrefix: [13, 1, 0, 0, 0] }, [13, 1, 0, 0, 0, 16, 1]],
+    ] as const) {
+      const promise = host.scope.craft.bluetooth[method](options)
+      const request = host.requests().at(-1)!
+      expect(request.payload).toMatchObject({ module: 'Bluetooth', method, args: [options] })
+      host.answer(request, data)
+      expect(await promise).toEqual(data)
+    }
+  })
+})

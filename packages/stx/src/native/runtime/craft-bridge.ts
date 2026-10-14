@@ -28,6 +28,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     geolocation: capabilities.has('geolocation'),
     music: capabilities.has('music'),
     heartRate: capabilities.has('heartRate'),
+    bluetooth: capabilities.has('bluetooth'),
     scheduledWorkouts: capabilities.has('scheduledWorkouts'),
     clipboard: capabilities.has('clipboard'),
     contacts: false,
@@ -392,6 +393,18 @@ export function installCraftBridge(
   // whichever side started them. Scanning and connecting can show iOS's
   // Bluetooth prompt, so they wait on the person (connect answers TIMEOUT
   // natively after 15 s).
+  // A generic, selected GATT channel. Permission prompts have no JS deadline.
+  if (capabilities.has('bluetooth')) {
+    craft.bluetooth = {
+      getState: () => request('Bluetooth', 'getState', []),
+      scan: (options: AnyRecord) => ask('Bluetooth', 'scan', [options]),
+      stopScan: () => request('Bluetooth', 'stopScan', []),
+      connect: (options: AnyRecord) => ask('Bluetooth', 'connect', [options]),
+      exchange: (options: AnyRecord) => request('Bluetooth', 'exchange', [options]),
+      disconnect: () => request('Bluetooth', 'disconnect', []),
+    }
+  }
+
   if (capabilities.has('heartRate')) {
     const strap = (method: string, options: AnyRecord = {}) => request('HeartRate', method, [options])
     craft.heartRate = {
