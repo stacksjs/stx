@@ -12,6 +12,8 @@
 // ============================================================================
 
 export type STXComponentType =
+  | 'Sidebar'
+  | 'SplitView'
   // Layout
   | 'View'
   | 'ScrollView'

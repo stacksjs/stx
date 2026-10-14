@@ -144,6 +144,8 @@ export interface NativeSnapshots {
 }
 
 export interface NativeCraft {
+  /** AppKit window and menu operations (`capabilities.desktop`). */
+  desktop?: NativeDesktop
   platform: string
   capabilityProtocolVersion: number
   route: NativeRoute
@@ -313,4 +315,19 @@ export interface NativeCraft {
    * event's `id`, or none for everything pending.
    */
   background?: { complete: (ok?: boolean, id?: string) => Promise<boolean> }
+}
+
+export interface NativeDesktop {
+  openWindow: (options: { name: string, route: string, title?: string, width?: number, height?: number, minWidth?: number, minHeight?: number, params?: Record<string, unknown> }) => Promise<{ name: string }>
+  closeWindow: () => Promise<void>
+  focus: (identifier: string) => Promise<void>
+  setMenus: (menus: Array<{ label: string, items: Array<{ id?: string, label?: string, shortcut?: string, separator?: boolean, disabled?: boolean }> }>) => Promise<boolean>
+  contextMenu: (items: Array<{ id?: string, title?: string, icon?: string, checked?: boolean, separator?: boolean, disabled?: boolean }>) => Promise<string | null>
+  pickFiles: () => Promise<Array<{ path: string, name: string, type: string }>>
+  uploadFiles: <T = unknown>(files: Array<{ path: string, name: string, type: string }>, url: string) => Promise<T>
+  preview: (options: { url: string, title?: string, type?: 'image' | 'video' | 'audio' }) => Promise<boolean>
+  exportFile: (options: { url: string, name?: string }) => Promise<boolean>
+  qrCode: (text: string) => Promise<string>
+  setBadge: (count: number) => Promise<boolean>
+  onCommand: (callback: (id: string) => void) => () => void
 }

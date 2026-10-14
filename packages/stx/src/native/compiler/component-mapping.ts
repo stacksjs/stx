@@ -2,6 +2,11 @@ import type { STXComponentType, STXNode } from './ir'
 
 const COMPONENT_MAPPING: Record<string, STXComponentType> = {
   view: 'View',
+  sidebar: 'Sidebar',
+  splitview: 'SplitView',
+  textinput: 'TextInput',
+  pressable: 'Pressable',
+  icon: 'Icon',
   text: 'Text',
   button: 'Button',
   image: 'Image',

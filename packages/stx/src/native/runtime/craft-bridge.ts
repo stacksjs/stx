@@ -12,6 +12,7 @@ export interface CraftBridgeOptions {
 
 function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
   return {
+    desktop: capabilities.has('desktop'),
     haptics: capabilities.has('haptics'),
     speechRecognition: false,
     share: capabilities.has('share'),
@@ -193,6 +194,27 @@ export function installCraftBridge(
     url: typeof nativeBridge.appURL === 'string' ? nativeBridge.appURL : '',
     version: typeof nativeBridge.appVersion === 'string' ? nativeBridge.appVersion : '',
     build: typeof nativeBridge.appBuild === 'string' ? nativeBridge.appBuild : '',
+  }
+
+  // AppKit screens use the same native protocol as mobile screens. These
+  // operations are available only when the host advertises desktop support.
+  if (capabilities.has('desktop')) {
+    craft.desktop = {
+      openWindow: (options: AnyRecord) => request('Desktop', 'openWindow', [options]),
+      closeWindow: () => request('Desktop', 'closeWindow', []),
+      focus: (identifier: string) => request('Desktop', 'focus', [identifier]),
+      setMenus: (menus: unknown[]) => request('Desktop', 'setMenus', [menus]),
+      contextMenu: (items: unknown[]) => ask('Desktop', 'contextMenu', [items]),
+      pickFiles: () => ask('Desktop', 'pickFiles', []),
+      uploadFiles: (files: unknown[], url: string) => request('Desktop', 'uploadFiles', [files, url]),
+      preview: (options: AnyRecord) => request('Desktop', 'preview', [options]),
+      exportFile: (options: AnyRecord) => ask('Desktop', 'exportFile', [options]),
+      qrCode: (text: string) => request('Desktop', 'qrCode', [text]),
+      setBadge: (count: number) => request('Desktop', 'setBadge', [count]),
+      onCommand: (callback: (id: string) => void) => protocol.on<AnyRecord>('CRAFT_EVENT', ({ payload }) => {
+        if (payload?.event === 'craftDesktopCommand' && typeof payload.detail?.id === 'string') callback(payload.detail.id)
+      }),
+    }
   }
 
   // Background time handed back to iOS: the page's `craft.background.complete`

@@ -56,6 +56,27 @@ async function runtime(capabilities: string[] = ALL, params: Record<string, unkn
 
 const tick = () => new Promise(resolve => setTimeout(resolve, 0))
 
+describe('desktop window capabilities', () => {
+  it('exposes desktop services only when the host advertises them', async () => {
+    const unsupported = await runtime([])
+    expect(unsupported.scope.craft.desktop).toBeUndefined()
+    expect(unsupported.scope.craft.capabilities.desktop).toBe(false)
+    const host = await runtime(['desktop'])
+    expect(host.scope.craft.capabilities.desktop).toBe(true)
+    const result = host.scope.craft.desktop.openWindow({ name: 'settings', route: 'Settings' })
+    const request = host.requests().at(-1)!
+    expect(request.payload).toMatchObject({ module: 'Desktop', method: 'openWindow', args: [{ name: 'settings', route: 'Settings' }] })
+    host.answer(request, { name: 'settings' })
+    expect(await result).toEqual({ name: 'settings' })
+    const seen: string[] = []
+    const unsubscribe = host.scope.craft.desktop.onCommand((id: string) => seen.push(id))
+    host.receive({ type: 'CRAFT_EVENT', payload: { event: 'craftDesktopCommand', detail: { id: 'archive' } } })
+    unsubscribe()
+    host.receive({ type: 'CRAFT_EVENT', payload: { event: 'craftDesktopCommand', detail: { id: 'settings' } } })
+    expect(seen).toEqual(['archive'])
+  })
+})
+
 describe('the screen coming back, and new params', () => {
   it('goes back one screen, or to the first of the stack', async () => {
     const { scope, sent } = await runtime()

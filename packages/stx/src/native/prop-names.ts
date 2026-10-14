@@ -19,6 +19,7 @@ const NATIVE_PROP_NAMES = [
   'showsHorizontalScrollIndicator', 'showsVerticalScrollIndicator', 'statusBarTranslucent',
   'stickyHeaderIndices', 'testID', 'textContentType', 'thumbColor', 'thumbTintColor', 'titleColor', 'trackColor',
   'underlayColor', 'windowSize',
+  'autoScrollBottom', 'scrollKey',
 ]
 
 /**

@@ -260,6 +260,7 @@ const DIMENSION_STYLE_KEYS = new Set([
  * its type and the translator takes its word for it, against this list.
  */
 const NATIVE_TYPES = new Set([
+  'Sidebar', 'SplitView',
   'View', 'ScrollView', 'SafeAreaView', 'KeyboardAvoidingView',
   'Text', 'TextInput',
   'Button', 'TouchableOpacity', 'TouchableHighlight', 'Pressable',
