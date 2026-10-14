@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.524...v0.2.525)
+
+## ✨ Features
+
+- **native**: picture in picture, transitionID and craft.animation.next ([3029bac](https://github.com/stacksjs/stx/commit/3029bac)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.525 ([291c1ed](https://github.com/stacksjs/stx/commit/291c1ed)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.523...v0.2.524)
 
 ## 🐛 Bug Fixes
