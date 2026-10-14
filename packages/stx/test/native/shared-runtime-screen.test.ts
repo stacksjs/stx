@@ -53,6 +53,8 @@ function reset() { draft.set('Reset'); choice.set('one') }
     send(pickerHandler, { value: 'two' })
     const operations = () => sent.filter(m => m.type === 'MUTATE').flatMap(m => m.payload.operations)
     expect(operations()).toContainEqual(expect.objectContaining({ patch: { children: ['Typed:two'] } }))
+    expect(operations()).toContainEqual(expect.objectContaining({ id: input.id, patch: { props: { value: 'Typed' } } }))
+    expect(operations()).toContainEqual(expect.objectContaining({ id: picker.id, patch: { props: { value: 'two' } } }))
     sent.length = 0
     send(resetHandler, {})
     expect(operations()).toContainEqual(expect.objectContaining({ id: input.id, patch: { props: { value: 'Reset' } } }))

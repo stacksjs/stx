@@ -579,8 +579,13 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
           const data = payload && typeof payload === 'object' ? payload as Record<string, any> : {}
           const value = data.text ?? data.value ?? data.nativeEvent?.text ?? data.nativeEvent?.value
           const record = recordOf(node)
-          if (value !== undefined && (record.type === 'TextInput' || record.type === 'Picker'))
+          if (value !== undefined && !Object.is(record.props.value, value) && (record.type === 'TextInput' || record.type === 'Picker')) {
             record.props.value = value
+            // The platform already displays the edit, but its retained tree
+            // must receive it too. Otherwise the next unrelated mutation
+            // reconciles against the old value and erases the user's input.
+            if (record.materialized) emit({ op: 'updateNode', id: node.__stxId, patch: { props: { value } } })
+          }
         }
         handler(eventAt(payload, node))
       })
