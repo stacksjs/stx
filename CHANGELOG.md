@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.513...v0.2.514)
+
+## ✨ Features
+
+- **native**: ask a health store whether it can be used, what it granted, and open its screen ([217885a](https://github.com/stacksjs/stx/commit/217885a)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.514 ([0393c79](https://github.com/stacksjs/stx/commit/0393c79)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.512...v0.2.513)
 
 ## ✨ Features
