@@ -4330,6 +4330,14 @@ catch (e2) {
     });
 
     roots.forEach(function(root) {
+      // Still inside a conditional or loop this walk has not bound: the
+      // directive decides whether the component is on the page at all, and
+      // hydrates it through this same function when it is. Mounting it from
+      // here is what ran a hidden pane's onMount when an enclosing :if opened
+      // (stacksjs/stx#2071): the walk reached the pane's root while the pane's
+      // own :if was still an attribute, so its condition was never asked. The
+      // setup half above already leaves these roots alone.
+      if (hasPendingStructuralAncestor(root)) return;
       var scopeId = root.getAttribute('data-stx-scope');
       var scopeVars = scopeId && window.stx._scopes && window.stx._scopes[scopeId];
       var resolvedCallerScope = resolveComponentCallerScope(root, callerScope);
