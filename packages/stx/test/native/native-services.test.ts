@@ -140,6 +140,34 @@ describe('services', () => {
     expect(requests().at(-1)!.payload).toMatchObject({ module: 'Speech', method: 'stop', args: [] })
   })
 
+  it('hands the crash reporter events, the user id and breadcrumbs when the app has one', async () => {
+    const none = await runtime()
+    expect(none.scope.craft.crashReporter).toBeUndefined()
+    expect(none.scope.craft.capabilities.crashReporter).toBe(false)
+
+    const { scope, requests, answer } = await runtime([...ALL, 'crashReporter'])
+    expect(scope.craft.capabilities.crashReporter).toBe(true)
+    const queued = scope.craft.crashReporter.capture({ type: 'TypeError', message: 'boom' })
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'CrashReporter', method: 'capture', args: [{ type: 'TypeError', message: 'boom' }] })
+    answer(requests().at(-1)!, true)
+    expect(await queued).toBe(true)
+
+    const named = scope.craft.crashReporter.setUser(967)
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'CrashReporter', method: 'setUser', args: ['967'] })
+    answer(requests().at(-1)!, true)
+    expect(await named).toBe(true)
+
+    const crumb = scope.craft.crashReporter.addBreadcrumb({ type: 'navigation', message: 'calendar' })
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'CrashReporter', method: 'addBreadcrumb', args: [{ type: 'navigation', message: 'calendar' }] })
+    answer(requests().at(-1)!, true)
+    await crumb
+
+    const context = scope.craft.crashReporter.context()
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'CrashReporter', method: 'context', args: [] })
+    answer(requests().at(-1)!, { enabled: true, release: '1.0.0+41' })
+    expect(await context).toEqual({ enabled: true, release: '1.0.0+41' })
+  })
+
   it('plays a sound and steers it by its handle', async () => {
     const { scope, requests, answer, receive } = await runtime()
     const playing = scope.craft.audio.play('https://example.com/rain.m4a', { loop: true, volume: 0.4, fadeIn: 1500 })

@@ -54,6 +54,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     browser: capabilities.has('browser'),
     appleSignIn: capabilities.has('appleSignIn'),
     background: capabilities.has('background'),
+    crashReporter: capabilities.has('crashReporter'),
   }
 }
 
@@ -242,6 +243,21 @@ export function installCraftBridge(
   if (capabilities.has('share')) {
     const share = (options: AnyRecord = {}) => ask('Share', 'share', [options]).then(Boolean)
     craft.share = Object.assign(share, { share })
+  }
+
+  // The app's crash and error reporter (bughq), when the app's config turns it
+  // on: an error SDK on a screen or in the app script hands its events here,
+  // so they share the native outbox (sent when online), the session and the
+  // device's context. Craft already reports a screen's uncaught errors on its
+  // own; this is for handled ones, the signed-in user and breadcrumbs.
+  if (capabilities.has('crashReporter')) {
+    craft.crashReporter = {
+      capture: (event: AnyRecord) => request('CrashReporter', 'capture', [event || {}]).then(queued => queued !== false),
+      setUser: (id: string | number | null) => request('CrashReporter', 'setUser', [id == null ? null : String(id)]).then(Boolean),
+      addBreadcrumb: (breadcrumb: AnyRecord) => request('CrashReporter', 'addBreadcrumb', [breadcrumb || {}]).then(Boolean),
+      flush: () => request('CrashReporter', 'flush', []).then(Boolean),
+      context: () => request('CrashReporter', 'context', []),
+    }
   }
 
   // Speech, the page's `craft.speech`: settles true once the words were said,
