@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.515...v0.2.516)
+
+## 🐛 Bug Fixes
+
+- **signals**: a component in a false :if stays unmounted when an enclosing :if opens ([679ba29](https://github.com/stacksjs/stx/commit/679ba29)) _(by Chris Breuer <chris@stacksjs.com>)_ ([#2071](https://github.com/stacksjs/stx/issues/2071))
+
+## ✅ Tests
+
+- **native**: the strict host refuses children of a leaf, as Craft does, and a drawing revealed by :if takes its shapes ([0ab4c18](https://github.com/stacksjs/stx/commit/0ab4c18)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#272](https://github.com/stacksjs/stx/issues/272))
+
+## 🔧 Chores
+
+- release v0.2.516 ([4a54e2f](https://github.com/stacksjs/stx/commit/4a54e2f)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.514...v0.2.515)
 
 ## ✨ Features
