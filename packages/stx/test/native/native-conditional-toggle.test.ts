@@ -14,6 +14,17 @@ declare const window: any
 interface ModelNode { id: string, type: string, text: string[], children: string[], parent: string | null, events: Record<string, string> }
 
 /**
+ * The types Craft's hosts draw children of, and so take an insert into
+ * (CraftNativeMutation's containerTypes on iOS, CONTAINER_TYPES on Android);
+ * anything else (a Text, an Image, an Icon) is refused as INVALID_PARENT.
+ */
+const CONTAINER_TYPES = new Set([
+  'View', 'SafeAreaView', 'ScrollView', 'KeyboardAvoidingView', 'Modal', 'Pressable',
+  'TouchableOpacity', 'TouchableHighlight', 'ImageBackground', 'FlatList', 'SectionList',
+  'Fragment', 'Svg', 'G',
+].map(type => type.toLowerCase()))
+
+/**
  * The native side as strict as Craft's CraftNativeMutation: a batch applies
  * whole or not at all, on the revision before it; anchors are never views, an
  * index is checked against the views a parent holds, removing a node drops
@@ -72,6 +83,8 @@ function strictNativeSide(reply: (message: unknown) => void) {
           const child = next.get(op.childId)
           if (!parent || !child)
             return fail(batchId, 'UNKNOWN_NODE', `node ${parent ? op.childId : op.parentId} does not exist`)
+          if (!CONTAINER_TYPES.has(parent.type.toLowerCase()))
+            return fail(batchId, 'INVALID_PARENT', `node ${op.parentId} cannot contain child nodes`)
           if (op.op === 'moveChild')
             parent.children = parent.children.filter(id => id !== op.childId)
           if (op.index < 0 || op.index > parent.children.length)
@@ -420,6 +433,34 @@ function cards(day) { return byDay()[day] || [] }
     await settle()
     expect(native.errors).toEqual([])
     expect(native.tree()).toBe('View[View[Text(mon) View[View[View[View[View View]] Text(chevron)]]] View[Text(tue) View[View[View Text(chevron)]]]]')
+  })
+
+  it('reveals a drawing after the first paint with its shapes inside it, and text only in its Text', async () => {
+    // HQ's Health screen: the heart-rate chart is behind `:if` until the
+    // day's readings arrive, so its <svg> and paths come in one batch after
+    // the first paint. iOS refused the paths (INVALID_PARENT) until Craft
+    // 0.0.171 and the whole screen was drawn again (stacksjs/hq.training#272).
+    const { native, settle, scope } = await mountBundle(`<script client>
+const day = state(null)
+globalThis.__load = () => day.set({ line: 'M0 10L10 0', hours: ['6', '12'] })
+</script>
+<View>
+  <Text :if="!day()" text="Waiting" />
+  <View :if="day()" class="flex-row">
+    <svg viewBox="0 0 10 10" class="h-8 flex-1">
+      <path :d="day().line" fill="none" stroke="#ff3b30" />
+      <g><circle cx="5" cy="5" r="1" fill="#ff3b30" /></g>
+    </svg>
+  </View>
+  <View :if="day()" class="flex-row">
+    <Text :for="hour in day().hours" :key="hour" :text="hour" />
+  </View>
+</View>`)
+    expect(native.tree()).toBe('View[Text(Waiting)]')
+    ;(scope as any).__load()
+    await settle()
+    expect(native.errors).toEqual([])
+    expect(native.tree()).toBe('View[View[Svg[Path G[Circle]]] View[Text(6) Text(12)]]')
   })
 
 
