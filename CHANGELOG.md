@@ -1,5 +1,29 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.518...v0.2.519)
+
+## ✨ Features
+
+- **native**: render runtime SVG markup strings ([b8b524e](https://github.com/stacksjs/stx/commit/b8b524e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: keep markup in the host contract ([084f501](https://github.com/stacksjs/stx/commit/084f501)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **client**: contain auto-import setup failures ([b6d1286](https://github.com/stacksjs/stx/commit/b6d1286)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **types**: generate browser auto-import declarations ([6e1fdcc](https://github.com/stacksjs/stx/commit/6e1fdcc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ✅ Tests
+
+- **client**: cover signal interpolation forms ([c51e5d2](https://github.com/stacksjs/stx/commit/c51e5d2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.519 ([0babbb0](https://github.com/stacksjs/stx/commit/0babbb0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.517...v0.2.518)
 
 ## 🐛 Bug Fixes
