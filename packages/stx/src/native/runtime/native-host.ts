@@ -59,6 +59,8 @@ interface NodeRecord {
   text?: string
   children: NativeNode[]
   visible: boolean
+  /** The node's own `display` (from its inline style) while :if hides it. */
+  shownDisplay?: unknown
   materialized: boolean
   /** Handlers taken out of service while the node is off the screen. */
   parkedHandlers?: Map<string, (payload?: unknown) => void>
@@ -643,11 +645,24 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const record = recordOf(node)
       const was = record.visible
       record.visible = visible
-      record.baseStyle.display = visible ? 'flex' : 'none'
+      // Hiding is an override on top of the node; showing takes it off again,
+      // so the node's own display comes back — its inline style, else its
+      // classes in this appearance (`hidden dark:flex` stays hidden in light).
+      // Forcing 'flex' on show drew a dark-only logo in light mode.
+      if (!visible) {
+        if (was) record.shownDisplay = record.baseStyle.display
+        record.baseStyle.display = 'none'
+      }
+      else if (!was) {
+        if (record.shownDisplay === undefined) delete record.baseStyle.display
+        else record.baseStyle.display = record.shownDisplay
+        record.shownDisplay = undefined
+      }
       // `display` is how the IR spells it, so the renderers already understand
       // it; the host does not invent a second vocabulary for the same thing.
+      const display = visible ? (resolveStyle(record).display ?? 'flex') : 'none'
       if (record.materialized)
-        emit({ op: 'updateNode', id: node.__stxId, patch: { style: { display: visible ? 'flex' : 'none' } } })
+        emit({ op: 'updateNode', id: node.__stxId, patch: { style: { display } } })
       return was
     },
 

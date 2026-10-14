@@ -182,6 +182,30 @@ describe('the three operations a DOM shape would have leaked through', () => {
     expect(ops()[0]).toMatchObject({ patch: { style: { display: 'none' } } })
   })
 
+  it('showing a node again gives back its own display, not flex', () => {
+    // An :if branch classed `hidden dark:flex` (a dark-only logo) was shown
+    // with display: flex in light mode too.
+    const { host, ops } = harness()
+    const logo = host.adopt({ __stxId: 'logo' }, 'Image', null, {
+      props: {}, style: { display: 'none', height: 48 }, events: {}, children: [], _classes: 'hidden dark:flex h-12',
+    })
+    host.setVisible(logo, false)
+    host.setVisible(logo, true)
+    host.flush()
+    expect(ops().at(-1)).toMatchObject({ patch: { style: { display: 'none' } } })
+    host.setColorScheme('dark')
+    host.flush()
+    expect(ops().at(-1)).toMatchObject({ patch: { style: { display: 'flex' } } })
+    // An inline display survives a hide and a show.
+    const row = host.adopt({ __stxId: 'row' }, 'View', null, {
+      props: {}, style: { display: 'flex', width: 10 }, events: {}, children: [], _classes: '', _inlineStyle: { display: 'flex', width: 10 },
+    } as any)
+    host.setVisible(row, false)
+    host.setVisible(row, true)
+    host.flush()
+    expect(ops().filter(op => op.id === 'row').at(-1)).toMatchObject({ patch: { style: { display: 'flex' } } })
+  })
+
   it('an anchor holds a position and never reaches the native tree', () => {
     const { host, node, ops } = harness()
     const parent = node('p1')
