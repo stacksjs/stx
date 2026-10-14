@@ -135,6 +135,7 @@ export interface NativeHost {
 /** Every method the DOM host in `signals.ts` defines. The contract, in one place. */
 export const HOST_METHODS: readonly string[] = [
   'setText',
+  'setMarkup',
   'setAttribute',
   'removeAttribute',
   'setStyle',
