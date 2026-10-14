@@ -20,6 +20,7 @@ const COMPONENT_MAPPING: Record<string, STXComponentType> = {
   flatlist: 'FlatList',
   modal: 'Modal',
   switch: 'Switch',
+  checkbox: 'Checkbox',
   slider: 'Slider',
   picker: 'Picker',
   select: 'Picker',

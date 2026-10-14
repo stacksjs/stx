@@ -280,6 +280,23 @@ export interface SwitchProps extends BaseProps {
   ios_backgroundColor?: string
 }
 
+/** A checkbox: the platform's own (UIButton with a checkmark, Android's CheckBox). */
+export interface CheckboxProps extends BaseProps {
+  /** Checked or not (`checked` is read too). */
+  value?: boolean
+  checked?: boolean
+  /** Neither: a parent of mixed choices. */
+  indeterminate?: boolean
+  /** The words beside the box (the children are used when it is unset). */
+  label?: string
+  /** Value change handler */
+  onValueChange?: (value: boolean) => void
+  /** Disabled state */
+  disabled?: boolean
+  /** The box's tint */
+  color?: string
+}
+
 export interface SliderProps extends BaseProps {
   /** Current value */
   value?: number
@@ -575,6 +592,7 @@ export const ComponentRegistry = {
   TouchableHighlight: 'TouchableHighlight',
   Pressable: 'Pressable',
   Switch: 'Switch',
+  Checkbox: 'Checkbox',
   Slider: 'Slider',
   Picker: 'Picker',
   DatePicker: 'DatePicker',

@@ -266,7 +266,7 @@ const NATIVE_TYPES = new Set([
   'Button', 'TouchableOpacity', 'TouchableHighlight', 'Pressable',
   'Icon', 'Image', 'ImageBackground', 'Video',
   'FlatList', 'SectionList',
-  'Switch', 'Slider', 'Picker', 'DatePicker',
+  'Switch', 'Checkbox', 'Slider', 'Picker', 'DatePicker',
   'Modal', 'ActivityIndicator',
   'StatusBar', 'RefreshControl',
   ...SVG_NODE_TYPES,
@@ -425,6 +425,27 @@ function readAttributes(
   return { props, style, events, bindings, classes, inline }
 }
 
+/**
+ * The style properties whose value is a structure, as the IR declares them:
+ * an offset is `{ width, height }` and a transform a list of one-key steps.
+ * Kept whole from a `style={{...}}` object; every other property is a number
+ * or a string.
+ */
+function structuredStyle(property: string, value: unknown): unknown {
+  if (property === 'shadowOffset') {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
+    const { width, height } = value as Record<string, unknown>
+    return typeof width === 'number' && typeof height === 'number' ? { width, height } : undefined
+  }
+  if (property === 'transform') {
+    if (!Array.isArray(value)) return undefined
+    const steps = value.filter((step): step is Record<string, unknown> => Boolean(step) && typeof step === 'object' && !Array.isArray(step) && Object.keys(step).length === 1)
+      .filter(step => ['number', 'string'].includes(typeof Object.values(step)[0]))
+    return steps.length ? steps : undefined
+  }
+  return undefined
+}
+
 /** Whether this property's field can hold this string at all. */
 function holdsString(property: string, value: string): boolean {
   if (NUMERIC_STYLE_KEYS.has(property))
@@ -435,7 +456,7 @@ function holdsString(property: string, value: string): boolean {
 }
 
 function inlineStyle(tag: string, css: string, diagnostics: TranslationDiagnostic[]): STXStyle {
-  const style: Record<string, string | number> = {}
+  const style: Record<string, unknown> = {}
   const decoded = decodeEntities(css)
   try {
     const object = JSON.parse(decoded)
@@ -451,6 +472,15 @@ function inlineStyle(tag: string, css: string, diagnostics: TranslationDiagnosti
         if (rawValue === null || rawValue === undefined)
           continue
         const translated = typeof rawValue === 'string' ? styleValue(rawValue) : rawValue
+        if (typeof translated === 'object') {
+          // A shadow's offset and a transform: kept as the structure the
+          // hosts read, which used to be dropped here with every other object.
+          const kept = structuredStyle(property, translated)
+          if (kept === undefined)
+            diagnostics.push({ kind: 'non-numeric-style', tag, name: property })
+          else style[property] = kept
+          continue
+        }
         if (typeof translated !== 'string' && typeof translated !== 'number')
           continue
         if (typeof translated === 'string' && !holdsString(property, translated)) {

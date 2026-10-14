@@ -254,7 +254,7 @@ describe('the primitives themselves', () => {
 
   it('ships one component per native type the IR declares', async () => {
     const files = [...new Bun.Glob('*.stx').scanSync(nativePrimitivesDir())].sort()
-    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(24)
+    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(25)
     expect(files).toContain('Fragment.stx')
     expect(files).toContain('Icon.stx')
     expect(files).toContain('TouchableOpacity.stx')
@@ -293,6 +293,49 @@ describe('the primitives themselves', () => {
       { type: 'button', testID: 'save' },
       { testID: 'name-input', placeholder: 'Type your name' },
     ])
+  })
+
+  it('compiles a Checkbox to the hosts\' own checkbox, not a library one', async () => {
+    const source = `<script client>
+const accepted = state(false)
+function accept(value) { accepted.set(value) }
+</script>
+<View testID="form"><Checkbox testID="terms" label="Accept terms" :value="accepted" @value-change="accept($event)" /><Checkbox testID="mixed" indeterminate>Some</Checkbox></View>`
+    const { document } = await compileScreenSource(source, screen('CheckboxScreen.stx', source), {
+      root: path.resolve(import.meta.dir, '../../../..'),
+    })
+    expect(document.root.props.testID).toBe('form')
+    const [terms, mixed] = document.root.children.filter((child): child is STXNode => typeof child !== 'string')
+    expect(terms.type).toBe('Checkbox')
+    expect(terms.props).toMatchObject({ testID: 'terms', label: 'Accept terms' })
+    expect(Object.keys(terms.events)).toContain('onValueChange')
+    expect(mixed.type).toBe('Checkbox')
+    expect(mixed.props).toMatchObject({ testID: 'mixed', indeterminate: true })
+    expect(texts(mixed)).toEqual(['Some'])
+  })
+
+  it('keeps a container\'s own props when a library component sits inside it', async () => {
+    // The host finds a screen by these: a library Card in the slot used to
+    // take the View's testID and accessibilityLabel, and filter them away.
+    const source = '<View testID="page" accessibilityLabel="Today"><ScrollView testID="scroll"><Card><Text testID="inside">Ready</Text></Card></ScrollView><Text testID="after">Done</Text></View>'
+    const { document } = await compileScreenSource(source, screen('LibraryInside.stx', source), {
+      root: path.resolve(import.meta.dir, '../../../..'),
+    })
+    expect(document.root.props).toMatchObject({ testID: 'page', accessibilityLabel: 'Today' })
+    const scroll = document.root.children.find((child): child is STXNode => typeof child !== 'string')!
+    expect(scroll.props).toMatchObject({ testID: 'scroll' })
+    expect(JSON.stringify(document.root)).toContain('"testID":"inside"')
+    expect(JSON.stringify(document.root)).toContain('"testID":"after"')
+  })
+
+  it('keeps a shadow offset and a transform written in a style object', async () => {
+    const source = `<View testID="card" style={{"width":240,"shadowOffset":{"width":0,"height":3},"transform":[{"translateX":4},{"scaleX":0.9},{"rotate":"2deg"}]}}><Text>Card</Text></View>`
+    const { document } = await compileScreenSource(source, screen('StructuredStyle.stx', source))
+    expect(document.root.style).toMatchObject({
+      width: 240,
+      shadowOffset: { width: 0, height: 3 },
+      transform: [{ translateX: 4 }, { scaleX: 0.9 }, { rotate: '2deg' }],
+    })
   })
 
   it('keeps server-evaluated object props on a native primitive root', async () => {

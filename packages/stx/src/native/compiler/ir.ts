@@ -37,6 +37,7 @@ export type STXComponentType =
   | 'SectionList'
   // Form
   | 'Switch'
+  | 'Checkbox'
   | 'Slider'
   | 'Picker'
   | 'DatePicker'

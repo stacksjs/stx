@@ -1353,44 +1353,19 @@ function forwardHostAttrs(html: string, props: ResolvedProps, declaredProps = ne
  * incorrectly attached them to `<script>` and made useReactiveProp unreadable.
  */
 function findRenderedComponentRoot(html: string): { insertPos: number, tagEnd: number } | null {
+  // The component's own first element is its root. A scope further in belongs
+  // to a component in its slot: forwarding there gave a `<View testID>` around
+  // a library `<Card>` the card's attributes to filter, and the View lost its
+  // testID and accessibilityLabel (the host found no `root`).
+  const first = findFirstRenderedElement(html, 0)
+  if (first)
+    return first
+
   const scopedRoot = /<([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*\bdata-stx-scope(?:\s|=|>)/i.exec(html)
   if (scopedRoot) {
     return {
       insertPos: scopedRoot.index + 1 + scopedRoot[1].length,
       tagEnd: findOpeningTagEnd(html, scopedRoot.index + 1 + scopedRoot[1].length),
-    }
-  }
-
-  let cursor = 0
-  while (cursor < html.length) {
-    const rest = html.slice(cursor)
-    const whitespace = rest.match(/^\s+/)
-    if (whitespace) {
-      cursor += whitespace[0].length
-      continue
-    }
-
-    if (rest.startsWith('<!--')) {
-      const end = html.indexOf('-->', cursor + 4)
-      if (end === -1) return null
-      cursor = end + 3
-      continue
-    }
-
-    const nonRootTag = rest.match(/^<(script|style)\b[^>]*>/i)
-    if (nonRootTag) {
-      const closeTag = `</${nonRootTag[1].toLowerCase()}>`
-      const end = html.toLowerCase().indexOf(closeTag, cursor + nonRootTag[0].length)
-      if (end === -1) return null
-      cursor = end + closeTag.length
-      continue
-    }
-
-    const root = rest.match(/^<([a-zA-Z][a-zA-Z0-9-]*)(?:\s|>|\/)/)
-    if (!root) return null
-    return {
-      insertPos: cursor + 1 + root[1].length,
-      tagEnd: findOpeningTagEnd(html, cursor + 1 + root[1].length),
     }
   }
 
