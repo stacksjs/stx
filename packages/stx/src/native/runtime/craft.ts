@@ -187,9 +187,19 @@ export interface NativeCraft {
     confirm: (options?: { title?: string, message?: string, confirmLabel?: string, cancelLabel?: string, destructive?: boolean }) => Promise<boolean>
     actionSheet: (options?: { title?: string, message?: string, actions?: Array<{ id?: string, title: string, style?: 'default' | 'destructive' | 'cancel' }> }) => Promise<string | null>
   }
+  /**
+   * Animated changes (`capabilities.animation`): `next()` makes the screen's
+   * next change (state changed right after it) animate instead of cutting.
+   * Views that stay move and resize, new ones fade in, removed ones fade
+   * out, and two with the same `transitionID` move as one. Reduce Motion
+   * gives a crossfade.
+   */
+  animation?: {
+    next: (options?: { duration?: number, curve?: 'spring' | 'easeInOut' | 'linear', bounce?: number }) => void
+  }
   /** Speech (`capabilities.speech`): true once the words were said, false when cut off. */
   speech?: {
-    speak: (text: string, options?: { language?: string, rate?: number, interrupt?: boolean }) => Promise<boolean>
+    speak: (text: string, options?: { language?: string, rate?: number, interrupt?: boolean, pitch?: number, preDelay?: number }) => Promise<boolean>
     stop: () => Promise<void>
   }
   /**

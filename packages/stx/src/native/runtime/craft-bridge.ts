@@ -56,6 +56,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     appleSignIn: capabilities.has('appleSignIn'),
     background: capabilities.has('background'),
     crashReporter: capabilities.has('crashReporter'),
+    animation: capabilities.has('animation'),
   }
 }
 
@@ -258,6 +259,16 @@ export function installCraftBridge(
       addBreadcrumb: (breadcrumb: AnyRecord) => request('CrashReporter', 'addBreadcrumb', [breadcrumb || {}]).then(Boolean),
       flush: () => request('CrashReporter', 'flush', []).then(Boolean),
       context: () => request('CrashReporter', 'context', []),
+    }
+  }
+
+  // The screen's next change animates rather than cutting: sent before the
+  // state changes, so the host has it before the patch that follows.
+  if (capabilities.has('animation')) {
+    craft.animation = {
+      next: (options: AnyRecord = {}) => {
+        protocol.send('ANIMATE_NEXT', options && typeof options === 'object' ? options : {})
+      },
     }
   }
 

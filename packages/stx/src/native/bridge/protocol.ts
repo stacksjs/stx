@@ -41,6 +41,7 @@ export type BridgeMessageType =
   | 'NAVIGATE_REPLACE'    // Replace current screen
   | 'NAVIGATE_OPEN'       // Open a native or hybrid app path
   | 'NAVIGATION_SET_OPTIONS' // Update native navigation chrome
+  | 'ANIMATE_NEXT'        // The screen's next change animates (craft.animation.next)
   | 'NAV_BUTTON'          // Native navigation button pressed
 
   // Lifecycle

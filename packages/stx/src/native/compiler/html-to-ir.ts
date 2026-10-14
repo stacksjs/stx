@@ -154,6 +154,8 @@ const EVENT_NAMES: Record<string, string> = {
   timeupdate: 'onProgress',
   progress: 'onProgress',
   loadedmetadata: 'onLoad',
+  enterpictureinpicture: 'onPictureInPictureStart',
+  leavepictureinpicture: 'onPictureInPictureStop',
 }
 
 /**
@@ -179,6 +181,8 @@ export const NATIVE_EVENTS = new Set([
   'onMomentumScrollBegin',
   'onMomentumScrollEnd',
   'onPause',
+  'onPictureInPictureStart',
+  'onPictureInPictureStop',
   'onPlay',
   'onPress',
   'onPressIn',

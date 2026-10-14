@@ -27,6 +27,12 @@ export interface BaseProps {
   accessibilityHint?: string
   /** Accessibility role */
   accessibilityRole?: AccessibilityRole
+  /**
+   * One element across an animated change (`craft.animation.next`): a view
+   * leaving and a view arriving with the same id move and scale as one, from
+   * the old place to the new.
+   */
+  transitionID?: string
 }
 
 export type AccessibilityRole =
@@ -422,6 +428,15 @@ export interface VideoProps extends BaseProps {
   onProgress?: (event: { currentTime: number, duration: number }) => void
   /** `@error`: the video could not be loaded or played. */
   onError?: (event: { message: string }) => void
+  /**
+   * Carries on in a floating window (Picture in Picture) when the app goes
+   * to the background while it plays, and comes back into its place with
+   * the app. A video with sound plays mixed with the person's music.
+   */
+  pictureInPicture?: boolean
+  /** `@enterpictureinpicture` and `@leavepictureinpicture` (iOS). */
+  onPictureInPictureStart?: () => void
+  onPictureInPictureStop?: () => void
 }
 
 export type ImageSource =

@@ -21,6 +21,9 @@ const NATIVE_PROP_NAMES = [
   'underlayColor', 'windowSize',
   'fitToBounds', 'showsUserLocation', 'zoomEnabled', 'rotateEnabled', 'mapType', 'strokeColor',
   'autoScrollBottom', 'scrollKey',
+  // A video floating in Picture in Picture, and one element across an
+  // animated change (craft.animation.next).
+  'pictureInPicture', 'transitionID',
 ]
 
 /**
@@ -34,6 +37,7 @@ export const NATIVE_BOOLEAN_PROPS = new Set([
   'refreshing', 'scrollEnabled', 'secureTextEntry', 'selectTextOnFocus', 'showsHorizontalScrollIndicator',
   'showsVerticalScrollIndicator', 'transparent', 'visible',
   'fitToBounds', 'showsUserLocation', 'zoomEnabled', 'rotateEnabled',
+  'pictureInPicture',
 ])
 
 const nativePropNames = new Map(

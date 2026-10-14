@@ -140,6 +140,24 @@ describe('services', () => {
     expect(requests().at(-1)!.payload).toMatchObject({ module: 'Speech', method: 'stop', args: [] })
   })
 
+  it('speaks with a pitch and a pause before the words when asked', async () => {
+    const { scope, requests } = await runtime()
+    void scope.craft.speech.speak('3', { language: 'de-DE', rate: 0.9, pitch: 0.95, preDelay: 0.3, interrupt: false })
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'Speech', method: 'speak', args: ['3', { language: 'de-DE', rate: 0.9, pitch: 0.95, preDelay: 0.3, interrupt: false }] })
+  })
+
+  it('asks the host to animate the next change, before the change it animates', async () => {
+    const none = await runtime()
+    expect(none.scope.craft.animation).toBeUndefined()
+    expect(none.scope.craft.capabilities.animation).toBe(false)
+    const { scope, sent } = await runtime([...ALL, 'animation'])
+    expect(scope.craft.capabilities.animation).toBe(true)
+    scope.craft.animation.next({ duration: 0.35, curve: 'spring' })
+    expect(sent.at(-1)).toMatchObject({ type: 'ANIMATE_NEXT', payload: { duration: 0.35, curve: 'spring' } })
+    scope.craft.animation.next()
+    expect(sent.at(-1)).toMatchObject({ type: 'ANIMATE_NEXT', payload: {} })
+  })
+
   it('hands the crash reporter events, the user id and breadcrumbs when the app has one', async () => {
     const none = await runtime()
     expect(none.scope.craft.crashReporter).toBeUndefined()

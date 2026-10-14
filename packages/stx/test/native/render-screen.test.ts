@@ -233,6 +233,17 @@ describe('the primitives themselves', () => {
     expect(diagnostics).toEqual([])
   })
 
+  it('keeps a video\'s Picture in Picture and a shared element\'s transitionID through HTML lowercasing', async () => {
+    const source = '<View><Video src="https://example.com/a.mp4" pictureInPicture :paused="false" transitionID="demo" /><Text transitionID="timer" :text="\'4:59\'" /></View>'
+    const { document } = await compileScreenSource(source, screen('PictureInPicture.stx', source))
+    const children = document.root.children.filter((child): child is STXNode => typeof child !== 'string')
+    expect(children[0].props).toMatchObject({ pictureInPicture: true, paused: false, transitionID: 'demo' })
+    expect(children[1].props).toMatchObject({ transitionID: 'timer' })
+    const { root, diagnostics } = await translateHtmlToIR('<video src="https://example.com/a.mp4" @enterpictureinpicture="floated()" @leavepictureinpicture="back()"></video>')
+    expect(root.events).toEqual({ onPictureInPictureStart: 'floated()', onPictureInPictureStop: 'back()' })
+    expect(diagnostics).toEqual([])
+  })
+
   it('restores the autofill and date props HTML lowercased', async () => {
     const source = '<script>\nconst time = state(\'07:30\')\nfunction picked(value) { time.set(value) }\n</script>\n<View><TextInput textContentType="password" autoComplete="current-password" passwordRules="minlength: 12;" /><DatePicker mode="time" value="07:30" minuteInterval="5" minimumDate="2026-10-01" maximumDate="2026-12-31" @change="picked($event.value)" /></View>'
     const { document } = await compileScreenSource(source, screen('AutofillProps.stx', source))
