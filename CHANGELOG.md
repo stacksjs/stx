@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.520...v0.2.521)
+
+## 🐛 Bug Fixes
+
+- **native**: an arbitrary percentage size stays a percentage ([8243877](https://github.com/stacksjs/stx/commit/8243877)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.521 ([0b94192](https://github.com/stacksjs/stx/commit/0b94192)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.519...v0.2.520)
 
 ## ✨ Features
