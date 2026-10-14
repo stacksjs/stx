@@ -1,0 +1,2 @@
+{{-- MapMarker: a native map overlay carrying one coordinate and an id. --}}
+<div data-native="MapMarker"></div>

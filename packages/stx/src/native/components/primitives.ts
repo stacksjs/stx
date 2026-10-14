@@ -434,6 +434,45 @@ export interface ImageBackgroundProps extends ImageProps {
 }
 
 // ============================================================================
+// Map Components
+// ============================================================================
+
+export interface MapRegion {
+  center: { latitude: number; longitude: number }
+  span: { latitudeDelta: number; longitudeDelta: number }
+}
+
+export interface MapProps extends BaseProps {
+  /** Explicit camera region; omit it to let fitToBounds choose the camera. */
+  region?: MapRegion
+  /** Fit the camera to all marker and polyline overlay geometry. */
+  fitToBounds?: boolean
+  /** Show the user dot only when the app already has location permission. */
+  showsUserLocation?: boolean
+  scrollEnabled?: boolean
+  zoomEnabled?: boolean
+  rotateEnabled?: boolean
+  mapType?: 'standard' | 'satellite' | 'hybrid' | 'terrain'
+  onMarkerPress?: (event: { nativeEvent: { id: string } }) => void
+}
+
+export interface MapPolylineProps extends BaseProps {
+  /** Flat [latitude, longitude, ...] coordinate pairs. */
+  geometry: number[]
+  strokeColor?: string
+  strokeWidth?: number
+}
+
+export interface MapMarkerProps extends BaseProps {
+  /** Flat [latitude, longitude] coordinate pair. */
+  geometry: number[]
+  id: string
+  title?: string
+  onPress?: (event: { nativeEvent: { id: string } }) => void
+  onMarkerPress?: (event: { nativeEvent: { id: string } }) => void
+}
+
+// ============================================================================
 // List Components
 // ============================================================================
 
@@ -602,6 +641,9 @@ export const ComponentRegistry = {
   Image: 'Image',
   ImageBackground: 'ImageBackground',
   Video: 'Video',
+  Map: 'Map',
+  MapPolyline: 'MapPolyline',
+  MapMarker: 'MapMarker',
 
   // Lists
   FlatList: 'FlatList',

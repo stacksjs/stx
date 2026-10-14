@@ -1,0 +1,2 @@
+{{-- Map: a native map host with overlay children. --}}
+<div data-native="Map"><slot /></div>
