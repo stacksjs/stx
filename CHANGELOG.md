@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.522...v0.2.523)
+
+## ✨ Features
+
+- expose selected Bluetooth GATT channels to native screens ([57f0c04](https://github.com/stacksjs/stx/commit/57f0c04)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.523 ([1df931f](https://github.com/stacksjs/stx/commit/1df931f)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.521...v0.2.522)
 
 ## ✨ Features
