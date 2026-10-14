@@ -504,12 +504,13 @@ export function parseSvgMarkup(markup: string): STXNode[] {
 
   const styleOf = (value: string): STXStyle => {
     const style: STXStyle = {}
+    const styleRecord = style as Record<string, unknown>
     for (const declaration of decode(value).split(';')) {
       const separator = declaration.indexOf(':')
       if (separator < 1) continue
       const name = camel(declaration.slice(0, separator).trim())
       const raw = declaration.slice(separator + 1).trim()
-      style[name] = /^-?(?:\d+\.?\d*|\.\d+)$/.test(raw) ? Number(raw) : raw
+      styleRecord[name] = /^-?(?:\d+\.?\d*|\.\d+)$/.test(raw) ? Number(raw) : raw
     }
     return style
   }
