@@ -5638,6 +5638,12 @@ else if (!value && isInserted) {
         }
       }
 else {
+        // Native hosts keep a view hierarchy rather than a DOM subtree. Route
+        // the conditional through the same visibility contract as :show so a
+        // false branch is hidden in the first render and in every loop row;
+        // the structural remove/insert below still preserves browser and
+        // native lifecycle behaviour when the branch changes.
+        if (stxHost.isNative) stxHost.setVisible(el, !!value);
         if (value && !isInserted) {
           console.log('[stx] bindIf INSERTING element for :if=' + expr);
           const insertionAnchor = placeholder.nextSibling;
