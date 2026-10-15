@@ -22,6 +22,7 @@ import { SIGNALS_CLASS_RUNTIME } from './client/signals-class-runtime'
 import { SIGNALS_CONTEXT_RUNTIME } from './client/signals-context-runtime'
 import { SIGNALS_COMPONENT_PROPS_RUNTIME } from './client/signals-component-props-runtime'
 import { SIGNALS_COMPONENT_HYDRATION_RUNTIME } from './client/signals-component-hydration-runtime'
+import { SIGNALS_CONDITIONAL_CHAIN_RUNTIME } from './client/signals-conditional-chain-runtime'
 import { SIGNALS_CONDITIONAL_COMPONENT_RUNTIME } from './client/signals-conditional-component-runtime'
 import { SIGNALS_CONTAINER_CLEANUP_RUNTIME } from './client/signals-container-cleanup-runtime'
 import { SIGNALS_COOKIE_RUNTIME } from './client/signals-cookie-runtime'
@@ -1847,45 +1848,7 @@ catch (e) {
   }
 
 ${SIGNALS_LOOP_CONDITIONAL_RUNTIME}
-  var __bindIfCounter = 0;
-  // ── x-else / x-else-if chain support (stacksjs/stx#1734) ──────────────
-  // Returns { name, terminal } for an else/else-if attribute present on el,
-  // or null. terminal=true for the catch-all x-else (no further siblings
-  // join the chain). Checks all three prefixes (:, x-, @).
-  function getElseAttrInfo(el) {
-    if (!el || !el.hasAttribute) return null;
-    if (el.hasAttribute(':else-if')) return { name: ':else-if', terminal: false };
-    if (el.hasAttribute('x-else-if')) return { name: 'x-else-if', terminal: false };
-    if (el.hasAttribute('@else-if')) return { name: '@else-if', terminal: false };
-    if (el.hasAttribute(':else')) return { name: ':else', terminal: true };
-    if (el.hasAttribute('x-else')) return { name: 'x-else', terminal: true };
-    if (el.hasAttribute('@else')) return { name: '@else', terminal: true };
-    return null;
-  }
-
-  // Walk forward from an x-if/:if/@if head element collecting consecutive
-  // else-if/else siblings (nextElementSibling skips text/comment nodes, so
-  // whitespace between branches is tolerated — matches Vue). Returns a chain
-  // array whose first entry is the if head; trailing x-else (if any) has
-  // expr=null and terminal=true.
-  function findIfChain(el, ifAttr) {
-    var chain = [{ el: el, attr: ifAttr, expr: el.getAttribute(ifAttr), terminal: false }];
-    var sib = el.nextElementSibling;
-    while (sib) {
-      var info = getElseAttrInfo(sib);
-      if (!info) break;
-      chain.push({
-        el: sib,
-        attr: info.name,
-        expr: info.terminal ? null : sib.getAttribute(info.name),
-        terminal: info.terminal,
-      });
-      if (info.terminal) break; // x-else is the chain terminator
-      sib = sib.nextElementSibling;
-    }
-    return chain;
-  }
-
+${SIGNALS_CONDITIONAL_CHAIN_RUNTIME}
   // Reactive if/else-if/else chain. A single effect drives mutual exclusion:
   // on each run it picks the first branch whose condition is truthy (the
   // trailing x-else always matches), inserts that branch, and removes
