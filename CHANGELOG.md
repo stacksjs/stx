@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.525...v0.2.526)
+
+## ✨ Features
+
+- **components**: <Video> is ts-video-player, and follows the chosen video ([61a8bca](https://github.com/stacksjs/stx/commit/61a8bca)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.526 ([65130ff](https://github.com/stacksjs/stx/commit/65130ff)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.524...v0.2.525)
 
 ## ✨ Features
