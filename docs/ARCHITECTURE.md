@@ -120,7 +120,8 @@ STX has two independent client-side reactivity runtimes:
 - **Bindings:** `{{ }}`, `:class`, `:style`, `:if`, `:show`, `@click`, `@model`, `@for`
 - **Processing:** Build-time script wrapping (via `signal-processing.ts`) → runtime `processElement()` DOM walk
 - **Build marker:** `data-stx-scope` on component wrapper, `data-stx` on root element
-- **Split:** `signals.ts` (~3075 lines) contains runtime generation as a template literal; `signals-api.ts` (~550 lines) provides the TypeScript API (state, derived, effect, batch, lifecycle, type guards)
+- **Split:** `signals.ts` is a small runtime assembler and public generator API; focused generated-runtime fragments live in `packages/stx/src/client/signals-*-runtime.ts`; `signals-api.ts` provides the build-time TypeScript API
+- **Module map:** [Signals Runtime Architecture](advanced/signals-runtime-architecture.md)
 
 ### Isolation
 
@@ -361,7 +362,8 @@ The old `components/StxLink.stx` and `components/StxImage.stx` template files ha
 
 | File | Purpose | Lines |
 |---|---|---|
-| `signals.ts` | Signals reactive runtime generation (template literal) | ~3075 |
+| `signals.ts` | Runtime assembler, production minification, and public generators | ~280 |
+| `client/signals-*-runtime.ts` | Focused browser/native generated-runtime fragments | — |
 | `signals-api.ts` | TypeScript API (state, derived, effect, batch, lifecycle, type guards) | ~550 |
 
 ### Component System
