@@ -59,6 +59,7 @@ import { SIGNALS_SPA_LOAD_CONTROL_RUNTIME } from './client/signals-spa-load-cont
 import { SIGNALS_SPA_LOAD_RUNTIME } from './client/signals-spa-load-runtime'
 import { SIGNALS_STATE_RUNTIME } from './client/signals-state-runtime'
 import { SIGNALS_STORAGE_RUNTIME } from './client/signals-storage-runtime'
+import { SIGNALS_STYLE_RUNTIME } from './client/signals-style-runtime'
 import { SIGNALS_SUSPENSE_RUNTIME } from './client/signals-suspense-runtime'
 import { SIGNALS_TIMER_RUNTIME } from './client/signals-timer-runtime'
 import { SIGNALS_TOOLTIP_RUNTIME } from './client/signals-tooltip-runtime'
@@ -1188,41 +1189,7 @@ ${SIGNALS_SUSPENSE_RUNTIME}
 ${SIGNALS_SHOW_RUNTIME}
 ${SIGNALS_MODEL_RUNTIME}
 ${SIGNALS_CLASS_RUNTIME}
-  function bindStyle(el, expr, passedScope = componentScope, isVisible) {
-    // Capture scope at setup time - use passed scope to preserve context
-    const capturedScope = { ...globalHelpers, ...passedScope, ...(findElementScope(el) || {}) };
-
-    const evalExpr = () => {
-      // Mirror bindClass: first try the auto-unwrap proxy (so an expression
-      // like { active: count > 5 } reads signals as primitives), then retry
-      // with the raw scope so call-syntax expressions like
-      // { color: theme() } still work — the proxy unwraps signals to
-      // values, which would make theme() try to call a primitive and
-      // throw TypeError.
-      try {
-        const unwrapScope = createExpressionAutoUnwrapProxy(capturedScope, expr);
-        const fn = __stxCompileScoped(capturedScope, [], 'return ' + expr);
-        return fn(...__stxArgs(fn, unwrapScope));
-      }
-catch (e1) {
-        try {
-          const fn2 = __stxCompileScoped(capturedScope, [], 'return ' + expr);
-          return fn2(...__stxArgs(fn2, capturedScope));
-        }
-catch (e2) {
-          if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Style expression error:', expr, e2);
-          return {};
-        }
-      }
-    };
-
-    effect(() => {
-      if (isVisible && !isVisible()) return;
-      const value = evalExpr();
-      stxHost.setStyle(el, value);
-    });
-  }
-
+${SIGNALS_STYLE_RUNTIME}
   // ── <TransitionGroup> support (#1742) ────────────────────────────────────
   // Class-driven enter/leave + FLIP move animations for keyed :for lists whose
   // parent is a [data-stx-transition-group]. All helpers are self-contained and
