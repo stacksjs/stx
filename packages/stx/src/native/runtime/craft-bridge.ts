@@ -85,7 +85,10 @@ export function installCraftBridge(
   const appStateHandlers = new Set<(state: string) => unknown>()
   const deepLinkHandlers = new Set<(link: DeepLinkPayload) => unknown>()
   const navButtonHandlers = new Set<(event: { id: string }) => unknown>()
-  const navButtonPresses = new Map<string, (event: { id: string }) => unknown>()
+  const navButtonPresses = {
+    leftButtons: new Map<string, (event: { id: string }) => unknown>(),
+    rightButtons: new Map<string, (event: { id: string }) => unknown>(),
+  }
   const appearHandlers = new Set<() => unknown>()
   const disappearHandlers = new Set<() => unknown>()
   let focused = true
@@ -614,11 +617,12 @@ export function installCraftBridge(
       if (!navigationOptions || typeof navigationOptions !== 'object') throw new TypeError('navigation.setOptions needs an object')
       const payload: AnyRecord = {}
       for (const key of Object.keys(navigationOptions)) {
-        if (key === 'rightButtons' && Array.isArray(navigationOptions.rightButtons)) {
-          navButtonPresses.clear()
-          payload.rightButtons = navigationOptions.rightButtons.map((button: AnyRecord) => {
+        if ((key === 'leftButtons' || key === 'rightButtons') && Array.isArray(navigationOptions[key])) {
+          const presses = navButtonPresses[key]
+          presses.clear()
+          payload[key] = navigationOptions[key].map((button: AnyRecord) => {
             const { onPress, ...rest } = button || {}
-            if (typeof onPress === 'function' && rest.id != null) navButtonPresses.set(String(rest.id), onPress)
+            if (typeof onPress === 'function' && rest.id != null) presses.set(String(rest.id), onPress)
             return rest
           })
         }
@@ -683,7 +687,8 @@ export function installCraftBridge(
   })
   const dispatchNavButton = (event: { id?: unknown }): void => {
     const id = event?.id == null ? '' : String(event.id)
-    navButtonPresses.get(id)?.({ id })
+    const onPress = navButtonPresses.rightButtons.get(id) ?? navButtonPresses.leftButtons.get(id)
+    onPress?.({ id })
     navButtonHandlers.forEach(handler => handler({ id }))
   }
   protocol.on<{ id?: unknown }>('NAV_BUTTON', ({ payload }) => dispatchNavButton(payload))

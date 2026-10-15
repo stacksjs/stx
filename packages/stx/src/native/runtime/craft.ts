@@ -20,7 +20,7 @@ export interface NativeNavigationButton {
   image?: string
   color?: string
   accessibilityLabel?: string
-  variant?: 'accent' | 'account'
+  variant?: 'accent' | 'account' | 'neutral'
   badge?: number
   badgeStyle?: 'count' | 'dot'
   /** Kept in the screen; the host only sees the id. */
@@ -32,6 +32,7 @@ export interface NativeNavigationOptions {
   largeTitle?: boolean
   hidden?: boolean
   backTitle?: string
+  leftButtons?: NativeNavigationButton[]
   rightButtons?: NativeNavigationButton[]
   /** Patch a tab's icon without replacing tabs, stacks or the selected tab. Null restores its configured icon. */
   tabItem?: { id: string, iconText?: string | null, image?: string | null, badge?: string | null, accessibilityLabel?: string | null }
@@ -48,7 +49,7 @@ export interface NativeNavigation {
    */
   open: (path: string) => string
   setOptions: (options: NativeNavigationOptions) => unknown
-  /** A right button was tapped; returns an unsubscribe function. */
+  /** A toolbar button was tapped; returns an unsubscribe function. */
   onButton: (callback: (event: { id: string }) => unknown) => () => void
   /**
    * The screen is on screen again (not its first showing): what was pushed
