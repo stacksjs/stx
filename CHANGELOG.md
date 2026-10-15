@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.527...v0.2.528)
+
+## 🐛 Bug Fixes
+
+- **router**: taps answer at once, Back keeps its place, pages bind whole ([7d6c5e9](https://github.com/stacksjs/stx/commit/7d6c5e9)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.528 ([f7ed30a](https://github.com/stacksjs/stx/commit/f7ed30a)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.526...v0.2.527)
 
 ## 🐛 Bug Fixes
