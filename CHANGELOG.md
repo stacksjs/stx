@@ -1,5 +1,84 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.532...v0.2.533)
+
+## ✨ Features
+
+- **components**: preserve media defaults and support protected DASH ([a0664dc](https://github.com/stacksjs/stx/commit/a0664dc)) _(by Chris <chris@stacksjs.com>)_
+
+## ♻️ Code Refactoring
+
+- **signals**: extract reactive core bootstrap (#2075) ([713f222](https://github.com/stacksjs/stx/commit/713f222)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract public API registration (#2075) ([8e1c5b1](https://github.com/stacksjs/stx/commit/8e1c5b1)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract component mount runtime (#2075) ([c0d3598](https://github.com/stacksjs/stx/commit/c0d3598)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract store registry runtime (#2075) ([71fff67](https://github.com/stacksjs/stx/commit/71fff67)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract component composition runtime (#2075) ([925a1c4](https://github.com/stacksjs/stx/commit/925a1c4)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract element binding runtime (#2075) ([a422315](https://github.com/stacksjs/stx/commit/a422315)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract fetch transport runtime (#2075) ([948f93d](https://github.com/stacksjs/stx/commit/948f93d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract expression compiler runtime (#2075) ([dfbe0fa](https://github.com/stacksjs/stx/commit/dfbe0fa)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract conditional binding runtime (#2075) ([18ef602](https://github.com/stacksjs/stx/commit/18ef602)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract if-chain binding runtime (#2075) ([d4d1399](https://github.com/stacksjs/stx/commit/d4d1399)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract list binding runtime (#2075) ([f866b50](https://github.com/stacksjs/stx/commit/f866b50)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract conditional chain runtime (#2075) ([0f17d70](https://github.com/stacksjs/stx/commit/0f17d70)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract loop conditional runtime (#2075) ([fdf9701](https://github.com/stacksjs/stx/commit/fdf9701)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract loop row runtime (#2075) ([afa8491](https://github.com/stacksjs/stx/commit/afa8491)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract component hydration runtime (#2075) ([fe58d65](https://github.com/stacksjs/stx/commit/fe58d65)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract loop component remap runtime (#2075) ([f09276b](https://github.com/stacksjs/stx/commit/f09276b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract transition group runtime (#2075) ([5e29275](https://github.com/stacksjs/stx/commit/5e29275)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract style runtime (#2075) ([8e1df67](https://github.com/stacksjs/stx/commit/8e1df67)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract class runtime (#2075) ([6160ba0](https://github.com/stacksjs/stx/commit/6160ba0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract model runtime (#2075) ([6ff6101](https://github.com/stacksjs/stx/commit/6ff6101)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract show runtime (#2075) ([52f65d1](https://github.com/stacksjs/stx/commit/52f65d1)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract suspense runtime (#2075) ([6153db0](https://github.com/stacksjs/stx/commit/6153db0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract manifest hydration runtime (#2075) ([f870c07](https://github.com/stacksjs/stx/commit/f870c07)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract conditional component runtime (#2075) ([fc4a0cc](https://github.com/stacksjs/stx/commit/fc4a0cc)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract component props runtime (#2075) ([9845ef9](https://github.com/stacksjs/stx/commit/9845ef9)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract binding utilities runtime (#2075) ([f5d70cd](https://github.com/stacksjs/stx/commit/f5d70cd)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract lazy hydration runtime (#2075) ([85aa859](https://github.com/stacksjs/stx/commit/85aa859)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract event handler runtime (#2075) ([8fa43f0](https://github.com/stacksjs/stx/commit/8fa43f0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract expression runtime (#2075) ([342b672](https://github.com/stacksjs/stx/commit/342b672)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract browser globals runtime (#2075) ([4a5940a](https://github.com/stacksjs/stx/commit/4a5940a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract DevTools runtime (#2075) ([f719ed0](https://github.com/stacksjs/stx/commit/f719ed0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract scope traversal runtime (#2075) ([22a5cee](https://github.com/stacksjs/stx/commit/22a5cee)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract SPA load runtime (#2075) ([38c95ec](https://github.com/stacksjs/stx/commit/38c95ec)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract SPA load controls (#2075) ([2ed57a3](https://github.com/stacksjs/stx/commit/2ed57a3)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract container cleanup runtime (#2075) ([25eecdd](https://github.com/stacksjs/stx/commit/25eecdd)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract hydration audit runtime (#2075) ([d092cde](https://github.com/stacksjs/stx/commit/d092cde)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract scope disposal runtime (#2075) ([f7e738f](https://github.com/stacksjs/stx/commit/f7e738f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract DOM-ready runtime (#2075) ([6b3617a](https://github.com/stacksjs/stx/commit/6b3617a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract hydration runtime (#2075) ([bdfe314](https://github.com/stacksjs/stx/commit/bdfe314)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract tooltip runtime (#2075) ([8dd52b9](https://github.com/stacksjs/stx/commit/8dd52b9)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract drawer runtime (#2075) ([0391290](https://github.com/stacksjs/stx/commit/0391290)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract dialog runtime (#2075) ([49bdb03](https://github.com/stacksjs/stx/commit/49bdb03)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract overlay runtime (#2075) ([7ba6720](https://github.com/stacksjs/stx/commit/7ba6720)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract toast runtime (#2075) ([d77c88f](https://github.com/stacksjs/stx/commit/d77c88f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract component authoring runtime (#2075) ([d201253](https://github.com/stacksjs/stx/commit/d201253)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract cookie runtime (#2075) ([cfafa95](https://github.com/stacksjs/stx/commit/cfafa95)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract kept-state runtime (#2075) ([7067961](https://github.com/stacksjs/stx/commit/7067961)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract browser storage runtime (#2075) ([008c32c](https://github.com/stacksjs/stx/commit/008c32c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract reactive compatibility (#2075) ([53f5cdb](https://github.com/stacksjs/stx/commit/53f5cdb)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: extract appearance runtime (#2075) ([d353483](https://github.com/stacksjs/stx/commit/d353483)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+
+## 📝 Documentation
+
+- **signals**: map extracted runtime modules (#2075) ([8a0ce53](https://github.com/stacksjs/stx/commit/8a0ce53)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+
+## ✅ Tests
+
+- **signals**: assert assembled runtime shims (#2075) ([68f9cfb](https://github.com/stacksjs/stx/commit/68f9cfb)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: follow extracted lifecycle runtime (#2075) ([b90e51c](https://github.com/stacksjs/stx/commit/b90e51c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **router**: ignore script body stamp literals (#2075) ([4b373c9](https://github.com/stacksjs/stx/commit/4b373c9)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+- **signals**: follow extracted runtime chunks (#2075) ([598ecfc](https://github.com/stacksjs/stx/commit/598ecfc)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2075](https://github.com/stacksjs/stx/issues/2075), [#2075](https://github.com/stacksjs/stx/issues/2075))
+
+## 🔧 Chores
+
+- release v0.2.533 ([61cbe1f](https://github.com/stacksjs/stx/commit/61cbe1f)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.531...v0.2.532)
 
 ## 🐛 Bug Fixes
