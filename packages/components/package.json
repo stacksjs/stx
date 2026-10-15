@@ -1,7 +1,7 @@
 {
   "name": "@stacksjs/components",
   "type": "module",
-  "version": "0.2.529",
+  "version": "0.2.530",
   "description": "A modern component library built with STX, featuring headwind utility classes and TypeScript syntax highlighting.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",

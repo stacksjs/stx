@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.529...v0.2.530)
+
+## 🐛 Bug Fixes
+
+- **router**: a page reached by the router has its framework composables ([412acd7](https://github.com/stacksjs/stx/commit/412acd7)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.530 ([e449a58](https://github.com/stacksjs/stx/commit/e449a58)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.528...v0.2.529)
 
 ## ✨ Features
