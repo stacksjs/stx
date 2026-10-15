@@ -207,7 +207,7 @@ export class BrowserScreenRenderer {
     listen('blur', () => { this.fire(record, 'onBlur'); this.fire(record, 'onEndEditing', { text: (element as HTMLInputElement).value }) })
     listen('keydown', (event) => {
       const key = (event as KeyboardEvent).key
-      if (record.events.onPress && !['input', 'button', 'select', 'textarea', 'a'].includes(element.tagName.toLowerCase()) && (key === ' ' || key === 'Enter')) {
+      if (record.events.onPress && !['input', 'button', 'select', 'textarea', 'a'].includes(element.tagName.toLowerCase()) && (key === ' ' || key === 'Enter') && (event.target as Element)?.closest('[data-stx-pressable]') === element) {
         event.preventDefault()
         this.fire(record, 'onPress')
         return

@@ -94,6 +94,13 @@ describe('the browser peer of the native screen renderer', () => {
     expect(events).toHaveLength(1)
   })
 
+  it('does not activate an ancestor when a nested control is pressed from the keyboard', () => {
+    const { renderer, container, node, events, window } = fixture()
+    renderer.render(node('parent', 'View', [node('child', 'View', ['Child'], {}, { onPress: 'child' })], {}, { onPress: 'parent' }))
+    container.querySelector('[data-stx-node="child"]')!.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    expect(events).toEqual([{ id: 'child', payload: {} }])
+  })
+
   it('applies accessibility disabled state to form controls and ignores disabled edits', () => {
     const { renderer, container, node, events, window } = fixture()
     renderer.render(node('root', 'View', [node('input', 'TextInput', [], { value: 'Original', accessibilityState: { disabled: true } }, { onChangeText: 'edit' })]))
