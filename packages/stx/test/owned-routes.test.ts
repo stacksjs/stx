@@ -16,12 +16,13 @@ import os from 'node:os'
 import path from 'node:path'
 import { clearOwnedRoutesCache, getOwnedRouteMatchers } from '../src/owned-routes'
 import { injectRouterScript } from '../src/runtime-injection'
+import { createTempDir } from '../src/temp-dir'
 
 let dir = ''
 const originalCwd = process.cwd()
 
 beforeEach(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-owned-routes-'))
+  dir = createTempDir('stx-owned-routes-')
   fs.mkdirSync(path.join(dir, 'pages', 'cars'), { recursive: true })
   fs.writeFileSync(path.join(dir, 'pages', 'index.stx'), '<main>Home</main>\n')
   fs.writeFileSync(path.join(dir, 'pages', 'login.stx'), '<main>Login</main>\n')

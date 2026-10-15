@@ -11,12 +11,12 @@
  * over in `__STX_SETUP_ROOT__`, and the setup prefers it.
  */
 import { beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { processDirectives } from '../../src/process'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import { installNodeConstants, shimAttributes } from '../../test-utils/dom-runtime-shim'
+import { createTempDir } from '../../src/temp-dir'
 
 // eslint-disable-next-line ts/no-explicit-any
 declare const window: any
@@ -60,7 +60,7 @@ describe('cloned component setup root', () => {
   })
 
   it('reads the props of a handed-over root that is not in the document', async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), 'stx-setup-root-'))
+    const dir = createTempDir('stx-setup-root-')
     writeFileSync(path.join(dir, 'SizedLeaf.stx'), `<script client>
 const sizedLeafSize = useReactiveProp('size', 'md')
 </script>

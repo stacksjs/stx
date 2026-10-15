@@ -16,15 +16,15 @@
  */
 
 import { afterAll, describe, expect, it } from 'bun:test'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createComponentInstance, mountComponent, onMount, setCurrentInstance } from '../../src/composables'
 import { typecheckStxFiles } from '../../src/typecheck'
 import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+import { createTempDir } from '../../src/temp-dir'
 
 allowForATypeScriptProgram()
 
-const dir = join(tmpdir(), `stx-lifecycle-${crypto.randomUUID()}`)
+const dir = createTempDir('stx-lifecycle-')
 
 afterAll(async () => {
   await Bun.$`rm -rf ${dir}`.quiet().catch(() => {})

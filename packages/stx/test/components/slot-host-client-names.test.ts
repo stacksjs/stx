@@ -9,16 +9,16 @@
  * video player's aria-label read "{{ title }}" to VoiceOver.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 let tempDir: string
 let componentsDir: string
 
 beforeAll(async () => {
-  tempDir = await mkdtemp(join(tmpdir(), 'stx-slot-host-names-'))
+  tempDir = createTempDir('stx-slot-host-names-')
   componentsDir = join(tempDir, 'components')
   await mkdir(componentsDir, { recursive: true })
   // A sheet: its own client `title`, and a slot.

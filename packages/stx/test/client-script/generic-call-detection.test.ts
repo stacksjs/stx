@@ -21,13 +21,13 @@
  * store in the bundle with it, reported as a misleading "Store not found".
  */
 import { describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
 import { stripModuleImports } from '../../src/store-imports'
 import { getStoreScript } from '../../src/store-loader'
+import { createTempDir } from '../../src/temp-dir'
 
 const base = {
   ...defaultConfig,
@@ -104,7 +104,7 @@ describe('a store written with a multi-line import still loads (#1859)', () => {
   it('produces a bundle that parses', async () => {
     // The end-to-end failure: the store body reaches the shared IIFE with its
     // import intact and SyntaxErrors, killing every store in the app.
-    const dir = await mkdtemp(path.join(tmpdir(), 'stx-store-import-'))
+    const dir = createTempDir('stx-store-import-')
     try {
       await Bun.write(path.join(dir, 'cart.ts'), `import {
   state,

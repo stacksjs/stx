@@ -19,11 +19,12 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { Glob } from 'bun'
+import { createTempDir } from '../src/temp-dir'
 
 let dir: string
 
 beforeAll(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-pages-'))
+  dir = createTempDir('stx-pages-')
   for (const rel of [
     'views/index.stx',
     'views/about.stx',

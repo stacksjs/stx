@@ -9,11 +9,11 @@
  * context, which is the boundary that failed in stacksjs/stx#2055.
  */
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { renderView } from '../../src/build-views'
 import { clearDevCaches } from '../../src/caching'
+import { createTempDir } from '../../src/temp-dir'
 
 const made: string[] = []
 
@@ -24,7 +24,7 @@ afterEach(() => {
 })
 
 function project(page: string): { page: string, componentsDir: string, root: string } {
-  const root = mkdtempSync(path.join(tmpdir(), 'stx-cached-slot-'))
+  const root = createTempDir('stx-cached-slot-')
   made.push(root)
   const componentsDir = path.join(root, 'components')
   mkdirSync(componentsDir, { recursive: true })

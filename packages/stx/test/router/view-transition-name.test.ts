@@ -14,11 +14,11 @@
  */
 import { WebView } from 'bun'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { getRouterScript } from '../../../router/src/client'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir: string
 let view: WebView
@@ -37,7 +37,7 @@ async function page(name: string, group: string, body: string, title = name): Pr
 }
 
 beforeAll(async () => {
-  dir = mkdtempSync(join(tmpdir(), 'stx-view-transition-name-'))
+  dir = createTempDir('stx-view-transition-name-')
   // A profile page that renders its own <main> inside the layout's.
   await page('pawel', 'marketing', `<script client>
 const name = state('Pawel')

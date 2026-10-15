@@ -7,12 +7,13 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { findConfigFile, getConfigModifiedTime } from '../../src/story/config-watcher'
+import { createTempDir } from '../../src/temp-dir'
 
 describe('findConfigFile', () => {
   let tmpRoot: string
 
   beforeEach(() => {
-    tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-config-watcher-'))
+    tmpRoot = createTempDir('stx-config-watcher-')
   })
 
   afterEach(() => {

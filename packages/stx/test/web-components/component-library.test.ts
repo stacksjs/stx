@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { readFile, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { buildComponentLibrary } from '../../src/component-library'
+import { createTempDir } from '../../src/temp-dir'
 
 const temporaryDirectories: string[] = []
 
 async function workspace(): Promise<{ input: string, output: string }> {
-  const root = await mkdtemp(path.join(tmpdir(), 'stx-component-library-'))
+  const root = createTempDir('stx-component-library-')
   temporaryDirectories.push(root)
   const input = path.join(root, 'components')
   const output = path.join(root, 'dist')

@@ -11,16 +11,16 @@
  * a variable, silently: no canonical, no og:image, no JSON-LD.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { processIncludes } from '../../src/includes'
+import { createTempDir } from '../../src/temp-dir'
 
 describe('SEO directives inside a partial', () => {
   let dir: string
 
   beforeAll(async () => {
-    dir = await mkdtemp(join(tmpdir(), 'stx-partial-seo-'))
+    dir = createTempDir('stx-partial-seo-')
     await writeFile(join(dir, 'head.stx'), `
 <script server>
 const pageUrl = \`https://example.com\${path}\`

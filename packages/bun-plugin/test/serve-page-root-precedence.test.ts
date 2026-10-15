@@ -16,11 +16,11 @@
  */
 
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { orderDynamicRouteFiles, pageRootOf } from '../src/serve'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 setDefaultTimeout(60_000)
 
@@ -57,7 +57,7 @@ definePageMeta({ middleware: ['deny'] })
 `
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-page-roots-'))
+  dir = createTempDir('stx-page-roots-')
   const page = (root: string, file: string, body: string) => Bun.write(path.join(dir, root, file), body)
 
   await page(APP, 'password/reset/[token].stx', '<p>APP-RESET</p>\n')

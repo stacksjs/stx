@@ -25,16 +25,16 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { existsSync, readFileSync } from 'node:fs'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import type { SSGResult } from '../../src/ssg'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir = ''
 const originalCwd = process.cwd()
 
 beforeEach(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-include-fail-'))
+  dir = createTempDir('stx-include-fail-')
   await Bun.write(path.join(dir, 'partials', 'Thing.stx'), '<p>THING MARKUP</p>\n')
 })
 

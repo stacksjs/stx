@@ -18,11 +18,12 @@ import os from 'node:os'
 import path from 'node:path'
 import { processDirectives } from '../src/process'
 import { extractPageMetaFromSource, pageMetaLayout } from '../src/page-meta'
+import { createTempDir } from '../src/temp-dir'
 
 let dir = ''
 
 beforeEach(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-page-layout-'))
+  dir = createTempDir('stx-page-layout-')
   fs.mkdirSync(path.join(dir, 'layouts'), { recursive: true })
   fs.writeFileSync(
     path.join(dir, 'layouts', 'app.stx'),

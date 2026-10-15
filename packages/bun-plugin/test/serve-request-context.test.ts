@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 /**
  * Request context + dynamic params in `<script server>` (stacksjs/stacks#1967).
@@ -45,7 +45,7 @@ function parseProbe(html: string): Record<string, unknown> {
 }
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-serve-ctx-'))
+  dir = createTempDir('stx-serve-ctx-')
 
   // A dynamic route probing every request-context surface at once.
   await Bun.write(path.join(dir, 'views', 'probe', '[id].stx'), `<script server>

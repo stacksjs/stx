@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { buildComponentLibrary } from '../../src/component-library'
+import { createTempDir } from '../../src/temp-dir'
 
 /**
  * Components that carry logic, not just markup.
@@ -24,7 +24,7 @@ function renderOf(source: string): string {
 }
 
 async function build(component: string, extra?: { file: string, contents: string }): Promise<string> {
-  const dir = await mkdtemp(path.join(tmpdir(), 'stx-compiled-'))
+  const dir = createTempDir('stx-compiled-')
   const input = path.join(dir, 'src')
   const output = path.join(dir, 'dist')
   await Bun.write(path.join(input, 'Widget.stx'), component)
@@ -170,7 +170,7 @@ const { value } = defineProps<Props>()
   })
 
   it('types a prop from its declaration, not from whether it has a default', async () => {
-    const dir = await mkdtemp(path.join(tmpdir(), 'stx-typed-'))
+    const dir = createTempDir('stx-typed-')
     const input = path.join(dir, 'src')
     const output = path.join(dir, 'dist')
     await Bun.write(path.join(input, 'Widget.stx'), `

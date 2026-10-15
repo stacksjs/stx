@@ -21,11 +21,11 @@
  * mirrors, so this stays true if that default is ever changed.
  */
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { deriveLayoutGroup } from 'stx-router/layout-metadata'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 setDefaultTimeout(60_000)
 
@@ -50,7 +50,7 @@ function standalonePage(title: string, heading: string): string {
 }
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-nolayout-spa-'))
+  dir = createTempDir('stx-nolayout-spa-')
 
   await Bun.write(path.join(dir, 'views', 'benefits.stx'), standalonePage('Benefits', 'A club, not a gym floor'))
   await Bun.write(path.join(dir, 'views', 'classes.stx'), standalonePage('Classes', 'Sixteen classes'))

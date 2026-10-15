@@ -19,11 +19,12 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { discoverLayoutNames, generateLayoutTypes, LAYOUT_TYPES_FILE, renderLayoutTypes } from '../src/layout-types'
+import { createTempDir } from '../src/temp-dir'
 
 let dir = ''
 
 beforeEach(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-layout-types-'))
+  dir = createTempDir('stx-layout-types-')
   fs.mkdirSync(path.join(dir, 'layouts'), { recursive: true })
 })
 
@@ -109,7 +110,7 @@ describe('type checking a real project', () => {
   let linkError = ''
 
   beforeAll(() => {
-    project = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-layout-tsc-'))
+    project = createTempDir('stx-layout-tsc-')
     fs.mkdirSync(path.join(project, 'layouts'), { recursive: true })
     fs.writeFileSync(path.join(project, 'layouts', 'app.stx'), '<div></div>\n')
     fs.writeFileSync(path.join(project, 'layouts', 'marketing.stx'), '<div></div>\n')

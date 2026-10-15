@@ -19,19 +19,19 @@
  * The fix expands caller-authored includes in `renderComponentWithSlot`,
  * against `parentFilePath`, before the slot reaches the component.
  */
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { processComponents } from '../../src/component-renderer'
 import { defaultConfig } from '../../src/config'
+import { createTempDir } from '../../src/temp-dir'
 
 let root = ''
 let layoutPath = ''
 let componentsDir = ''
 
 beforeAll(async () => {
-  root = await mkdtemp(path.join(tmpdir(), 'stx-slot-include-'))
+  root = createTempDir('stx-slot-include-')
   componentsDir = path.join(root, 'components')
   const layoutsDir = path.join(root, 'layouts')
   const shellDir = path.join(root, 'vendor', 'components')

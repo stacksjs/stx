@@ -10,18 +10,18 @@
  * is the existing, separately-tested stx-hydrate/deferHydration behavior.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { tmpdir } from 'node:os'
 import { processDirectives } from '../../src/process'
 import { isHydrateTrigger } from '../../src/utils'
+import { createTempDir } from '../../src/temp-dir'
 
 describe('islands: client="<trigger>" component directive (#1746)', () => {
   let dir: string
   let componentsDir: string
 
   beforeAll(async () => {
-    dir = await mkdtemp(join(tmpdir(), 'stx-islands-'))
+    dir = createTempDir('stx-islands-')
     componentsDir = join(dir, 'components')
     await mkdir(componentsDir, { recursive: true })
     // An interactive component (has <script client> with signals → gets a scope).

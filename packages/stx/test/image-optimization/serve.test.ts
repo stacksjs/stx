@@ -11,6 +11,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { handleImageRequest } from '../../src/image-optimization/serve'
+import { createTempDir } from '../../src/temp-dir'
 
 // ts-images' pure-TS codec is slow on real-world JPEGs — each transform
 // takes ~5-15s, which blows past the 5s default per-test timeout. Bump it
@@ -21,7 +22,7 @@ let publicDir: string
 let cacheDir: string
 
 beforeAll(async () => {
-  publicDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-img-serve-'))
+  publicDir = createTempDir('stx-img-serve-')
   cacheDir = path.join(publicDir, '.cache')
   await fs.promises.mkdir(path.join(publicDir, 'images'), { recursive: true })
 

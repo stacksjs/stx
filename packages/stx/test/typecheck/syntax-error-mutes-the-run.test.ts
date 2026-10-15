@@ -24,16 +24,16 @@
  */
 
 import { afterAll, describe, expect, it } from 'bun:test'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { typecheckStxFiles } from '../../src/typecheck'
 import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+import { createTempDir } from '../../src/temp-dir'
 
 allowForATypeScriptProgram()
 
 // Outside the repo: a fixture inside it is reached by this repository's own
 // tsconfig, and unrelated errors would muddy exactly the counts under test.
-const dir = join(tmpdir(), `stx-mute-${crypto.randomUUID()}`)
+const dir = createTempDir('stx-mute-')
 
 async function page(name: string, source: string): Promise<string> {
   const file = join(dir, name)

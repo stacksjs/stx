@@ -16,12 +16,12 @@
  * back/forward cache is the whole bug, and nothing else has one.
  */
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { existsSync, readFileSync, rmSync } from 'node:fs'
+import { rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 setDefaultTimeout(120_000)
 
@@ -44,7 +44,7 @@ function page(name: string, extra = ''): string {
 }
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-hmr-bfcache-'))
+  dir = createTempDir('stx-hmr-bfcache-')
   for (const name of ['index', 'a', 'b', 'c'])
     await Bun.write(path.join(dir, 'views', `${name}.stx`), page(name))
   await Bun.write(path.join(dir, 'layouts', 'app.stx'), `<div>@yield('content')</div>\n`)
@@ -169,7 +169,7 @@ interface Browser {
 }
 
 async function launchChrome(): Promise<Browser> {
-  const profile = mkdtempSync(path.join(tmpdir(), 'stx-hmr-chrome-'))
+  const profile = createTempDir('stx-hmr-chrome-')
   const chrome = Bun.spawn([CHROME!, '--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', 'about:blank'], { stdout: 'ignore', stderr: 'ignore' })
   const portFile = path.join(profile, 'DevToolsActivePort')
 

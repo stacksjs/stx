@@ -20,6 +20,7 @@ import path from 'node:path'
 import { clearOwnedRoutesCache } from '../src/owned-routes'
 import { injectRouterScript } from '../src/runtime-injection'
 import { escapeJsonForScript, toScriptJson } from '../src/script-json'
+import { createTempDir } from '../src/temp-dir'
 
 const LINE_SEP = '\u2028'
 const PARA_SEP = '\u2029'
@@ -103,7 +104,7 @@ describe('the router config injection site', () => {
     // named `a<` holding `script>.stx` gives the pattern `/a</script>`. Today
     // the regex compiler escapes `/` as `\/`, so it emits `<\/script>` and is
     // harmless by accident. Pinned so the accident is visible if it changes.
-    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-script-json-'))
+    dir = createTempDir('stx-script-json-')
     fs.mkdirSync(path.join(dir, 'pages', 'a<'), { recursive: true })
     fs.writeFileSync(path.join(dir, 'pages', 'index.stx'), '<main>Home</main>\n')
     fs.writeFileSync(path.join(dir, 'pages', 'a<', 'script>.stx'), '<main>Odd</main>\n')

@@ -19,6 +19,7 @@
 import { describe, expect, it } from 'bun:test'
 import { neutralizeTemplateSyntax } from '../../src/template-syntax-escape'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 const render = async (template: string, context: Record<string, unknown>): Promise<string> =>
   (await processDirectives(template, context, '/tmp/directive-in-value.stx', {}, new Set<string>())).trim()
@@ -38,11 +39,10 @@ describe('directive text in a value is not run', () => {
   })
 
   it('leaves a directive in a server-evaluated component prop as text', async () => {
-    const { mkdirSync, mkdtempSync, writeFileSync } = await import('node:fs')
-    const { tmpdir } = await import('node:os')
+    const { mkdirSync, writeFileSync } = await import('node:fs')
     const path = (await import('node:path')).default
 
-    const dir = mkdtempSync(path.join(tmpdir(), 'stx-directive-prop-'))
+    const dir = createTempDir('stx-directive-prop-')
     mkdirSync(path.join(dir, 'components'), { recursive: true })
     writeFileSync(path.join(dir, 'components', 'Card.stx'), '<div>[{{ t }}]</div>')
 

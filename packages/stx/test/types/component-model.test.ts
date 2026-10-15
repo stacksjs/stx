@@ -1,10 +1,10 @@
 import { expect, it } from 'bun:test'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { createTempDir } from '../../src/temp-dir'
 
 it('checks useModel types for both module imports and auto-imported globals', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'stx-model-types-'))
+  const dir = createTempDir('stx-model-types-')
   const file = join(dir, 'model-types.ts')
   const source = `
 import { useModel as importedModel } from '${resolve(import.meta.dir, '../../src/component-model')}'

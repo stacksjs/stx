@@ -4,6 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { processExpressions, resetRejectedExpressionWarnings } from '../../src/expressions'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 /**
  * A `{{ }}` the safe evaluator rejects still renders as an empty string, but
@@ -70,7 +71,7 @@ describe('rejected expression warning', () => {
   })
 
   it('reads the line from the file on disk', () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-reject-'))
+    const dir = createTempDir('stx-reject-')
     const file = path.join(dir, 'footer.stx')
     const source = '<footer>\n  <p>Made here</p>\n  <p>© {{ new Map().size }}</p>\n</footer>\n'
     fs.writeFileSync(file, source)

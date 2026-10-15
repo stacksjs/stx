@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { rm, writeFile } from 'node:fs/promises'
 import { mkdirSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { createTempDir } from '../src/temp-dir'
 
 /**
  * The utility-CSS engine has shipped under three package names: it now lives
@@ -29,7 +29,7 @@ afterEach(async () => {
 
 /** A project whose store holds an engine at `relPath`, marked with `marker`. */
 async function projectWithEngine(relPath: string[], marker: string): Promise<string> {
-  const dir = await mkdtemp(path.join(tmpdir(), 'stx-engine-'))
+  const dir = createTempDir('stx-engine-')
   created.push(dir)
   const file = path.join(dir, 'node_modules', ...relPath)
   mkdirSync(path.dirname(file), { recursive: true })

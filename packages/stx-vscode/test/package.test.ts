@@ -1,8 +1,12 @@
-import { beforeAll, describe, expect, test } from 'bun:test'
-import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync } from 'node:fs'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { cpSync, existsSync, readFileSync, realpathSync, rmSync } from 'node:fs'
 import { builtinModules, createRequire } from 'node:module'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { createTempDir, removeAllTempDirs } from '../../stx/src/temp-dir'
+
+// No bunfig preload here when this package's tests run on their own, so
+// this file removes its own scratch directories (packages/stx/src/temp-dir.ts).
+afterAll(removeAllTempDirs)
 
 // `@stacksjs/stx-vscode` is the npm build of the stx extension's language
 // support, which the Stacks extension embeds (stacksjs/stx#2020). These pin the
@@ -110,7 +114,7 @@ describe('the TypeScript server plugin', () => {
 
   test('loads from an extension\'s node_modules the way tsserver loads it, and finds its declarations', () => {
     // Real path: require() resolves symlinks, and macOS's tmpdir is one.
-    const extension = realpathSync(mkdtempSync(join(tmpdir(), 'stx-vscode-plugin-')))
+    const extension = realpathSync(createTempDir('stx-vscode-plugin-'))
     try {
       cpSync(plugin, join(extension, 'node_modules/@stacksjs/stx-typescript-plugin'), { recursive: true })
       const factory = createRequire(join(extension, 'node_modules', 'index.js'))('@stacksjs/stx-typescript-plugin')

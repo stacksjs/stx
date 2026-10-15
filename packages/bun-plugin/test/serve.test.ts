@@ -1,9 +1,9 @@
 import { describe, expect, it, setDefaultTimeout } from 'bun:test'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 // Increase timeout for CI environments where Bun.build() can be slow
 setDefaultTimeout(30000)
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import stxPlugin from '../src/index'
 import { bundleBrowserAsset } from '../src/serve'
@@ -122,7 +122,7 @@ describe('bun-plugin-stx serving', () => {
   })
 
   it('should bundle TypeScript assets for browser modules', async () => {
-    const dir = await mkdtemp(path.join(tmpdir(), 'stx-asset-'))
+    const dir = createTempDir('stx-asset-')
 
     try {
       const helperPath = path.join(dir, 'helper.ts')

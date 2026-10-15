@@ -5,14 +5,13 @@
  * real press through at once (native-host.ts `eventAt`).
  */
 import { describe, expect, it } from 'bun:test'
-import { mkdtemp } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
 import path from 'node:path'
 import vm from 'node:vm'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
+import { createTempDir } from '../../src/temp-dir'
 
 async function pressedAt(template: string): Promise<boolean> {
-  const root = await mkdtemp(path.join(tmpdir(), 'stx-repro-'))
+  const root = createTempDir('stx-repro-')
   const file = path.join(root, 'Repro.stx')
   await Bun.write(file, `<script client>
 const items = state([])

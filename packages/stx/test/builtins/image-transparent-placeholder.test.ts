@@ -20,7 +20,7 @@
  *    browser painted the clear pixels solid.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { deflateSync } from 'node:zlib'
@@ -35,6 +35,7 @@ import {
 import { clearImagePlaceholders, setImagePlaceholder } from '../../src/builtins/image-placeholder'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 function chunk(type: string, data: Uint8Array): Buffer {
   const out = Buffer.alloc(12 + data.length)
@@ -100,7 +101,7 @@ describe('StxImage over a transparent source', () => {
   let outputDir: string
 
   beforeAll(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'stx-image-alpha-'))
+    tempDir = createTempDir('stx-image-alpha-')
     publicDir = join(tempDir, 'public')
     outputDir = join(tempDir, 'dist')
     await mkdir(join(publicDir, 'images'), { recursive: true })

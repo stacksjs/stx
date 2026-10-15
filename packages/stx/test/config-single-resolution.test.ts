@@ -24,13 +24,14 @@ import os from 'node:os'
 import path from 'node:path'
 import { resolveStxDirectories } from '../src/config'
 import type { StxConfig } from '../src/types'
+import { createTempDir } from '../src/temp-dir'
 
 let dir = ''
 let warnings: string[] = []
 const realWarn = console.warn
 
 beforeEach(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-single-res-'))
+  dir = createTempDir('stx-single-res-')
   warnings = []
   console.warn = (...args: unknown[]) => { warnings.push(args.map(String).join(' ')) }
 })
@@ -121,7 +122,7 @@ describe('a relative directory is anchored to the config, not to the cwd', () =>
   it('does not depend on process.cwd()', () => {
     // Same config object, two different config directories: the results have to
     // differ by exactly the config directory, and neither may mention the cwd.
-    const other = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-single-res-b-'))
+    const other = createTempDir('stx-single-res-b-')
     try {
       const a = resolveStxDirectories({ componentsDir: 'kit' } as StxConfig, dir)
       const b = resolveStxDirectories({ componentsDir: 'kit' } as StxConfig, other)

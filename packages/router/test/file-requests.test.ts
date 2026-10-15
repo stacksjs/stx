@@ -6,11 +6,15 @@
  * scanner sent. See file-requests.ts for the rule and why it is a list of
  * known extensions rather than "anything with a dot".
  */
-import { describe, expect, it } from 'bun:test'
+import { afterAll, describe, expect, it } from 'bun:test'
 import { bracketPathToRegex, createRouter, isFileRequestPath, matchRoute, patternToRegex } from '../src'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { createTempDir, removeAllTempDirs } from '../../stx/src/temp-dir'
+
+// No bunfig preload here when this package's tests run on their own, so
+// this file removes its own scratch directories (packages/stx/src/temp-dir.ts).
+afterAll(removeAllTempDirs)
 
 describe('isFileRequestPath', () => {
   it('names the files browsers and scanners ask a site for', () => {
@@ -91,7 +95,7 @@ describe('patternToRegex — page routes refuse a final file segment', () => {
 
 describe('file router — the route table refuses file names too', () => {
   it('routes /chris to [username] and /favicon.ico to nothing', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'stx-file-requests-'))
+    const dir = createTempDir('stx-file-requests-')
     try {
       mkdirSync(join(dir, 'pages'), { recursive: true })
       writeFileSync(join(dir, 'pages', '[username].stx'), '<p>profile</p>')

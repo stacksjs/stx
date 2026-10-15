@@ -6,4 +6,5 @@ linker = "hoisted"
 # The DOM the components render into, then the two guards the suite needs as a
 # whole: a working directory that still exists, and a timeout big enough for a
 # test that builds a TypeScript program. See `suite-guards.ts`.
-preload = ["./packages/stx/test-utils/happy-dom.ts", "./packages/stx/test-utils/suite-guards.ts"]
+# Last, the removal of every scratch directory the run made (`temp-dirs.ts`).
+preload = ["./packages/stx/test-utils/happy-dom.ts", "./packages/stx/test-utils/suite-guards.ts", "./packages/stx/test-utils/temp-dirs.ts"]

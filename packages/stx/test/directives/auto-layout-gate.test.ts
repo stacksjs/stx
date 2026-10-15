@@ -22,11 +22,12 @@ import os from 'node:os'
 import path from 'node:path'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir: string
 
 beforeAll(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-layout-gate-'))
+  dir = createTempDir('stx-layout-gate-')
   fs.mkdirSync(path.join(dir, 'layouts'), { recursive: true })
   fs.writeFileSync(
     path.join(dir, 'layouts', 'default.stx'),

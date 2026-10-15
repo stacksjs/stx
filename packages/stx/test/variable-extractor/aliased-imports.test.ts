@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { convertToCommonJS, extractVariables, isMissingBindingFailure, isModuleResolutionFailure } from '../../src/variable-extractor'
+import { createTempDir } from '../../src/temp-dir'
 
 /**
  * `import { a as b }` in a `<script server>`.
@@ -57,7 +57,7 @@ describe('aliased named imports', () => {
    * going missing with it is what makes the cause so hard to see.
    */
   it('binds every local name to its export', async () => {
-    const dir = await mkdtemp(path.join(tmpdir(), 'stx-alias-'))
+    const dir = createTempDir('stx-alias-')
     try {
       await Bun.write(
         path.join(dir, 'mod.ts'),
@@ -116,7 +116,7 @@ describe('isModuleResolutionFailure', () => {
 
 describe('an unresolvable import is reported', () => {
   it('warns rather than falling through quietly', async () => {
-    const dir = await mkdtemp(path.join(tmpdir(), 'stx-badimport-'))
+    const dir = createTempDir('stx-badimport-')
     const warnings: string[] = []
     const original = console.warn
     console.warn = (...args: unknown[]) => { warnings.push(args.join(' ')) }

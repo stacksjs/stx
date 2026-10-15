@@ -4,6 +4,7 @@ import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { clearComposableCache, getComposableScript } from '../../src/composable-loader'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 // Regression: stacksjs/stx#1780
 //
@@ -27,7 +28,7 @@ describe('stx#1780: composables directory populates window.__composables', () =>
   let dir: string
 
   beforeAll(async () => {
-    dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-composables-'))
+    dir = createTempDir('stx-composables-')
     await Bun.write(
       path.join(dir, 'use-op-confirm.ts'),
       `import { state } from 'stx'\n`
@@ -76,7 +77,7 @@ describe('stx#1780: composables directory populates window.__composables', () =>
   })
 
   it('returns null for a directory with no composables', async () => {
-    const empty = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-empty-'))
+    const empty = createTempDir('stx-empty-')
     try {
       expect(await getComposableScript(empty)).toBeNull()
     }
@@ -119,7 +120,7 @@ describe('stx#1780: composables directory populates window.__composables', () =>
   })
 
   it('does not clobber a built-in of the same name, and warns instead', async () => {
-    const collide = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-collide-'))
+    const collide = createTempDir('stx-collide-')
     try {
       await Bun.write(path.join(collide, 'useFetch.ts'), `export function useFetch(u: string) { return { mine: true, u } }\n`)
       clearComposableCache()
@@ -148,7 +149,7 @@ describe('stx#1780: composables directory populates window.__composables', () =>
   })
 
   it('does not overwrite an existing window property', async () => {
-    const collide = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-winprop-'))
+    const collide = createTempDir('stx-winprop-')
     try {
       await Bun.write(path.join(collide, 'name.ts'), `export const name = 'mine'\n`)
       clearComposableCache()
@@ -179,7 +180,7 @@ describe('stx#1780: composables directory populates window.__composables', () =>
   })
 
   it('keeps the runtime ahead of layout-hoisted setup and composable scripts', async () => {
-    const layoutDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-composable-layout-'))
+    const layoutDir = createTempDir('stx-composable-layout-')
     try {
       await Bun.write(
         path.join(layoutDir, 'guest.stx'),
@@ -217,7 +218,7 @@ const ready = state(true)
   })
 
   it('binds preferred media helpers directly from the runtime', async () => {
-    const mediaDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-media-composable-'))
+    const mediaDir = createTempDir('stx-media-composable-')
     try {
       await Bun.write(
         path.join(mediaDir, 'dark.ts'),
@@ -246,8 +247,8 @@ const ready = state(true)
 // or warned about.
 describe('a later page\'s composables arrive on navigation', () => {
   it('publishes what is new, keeps what an earlier page published, and runs a bundle once', async () => {
-    const first = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-nav-a-'))
-    const second = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-nav-b-'))
+    const first = createTempDir('stx-nav-a-')
+    const second = createTempDir('stx-nav-b-')
     try {
       const useA = `export function useA() { return 'a' }\n`
       await Bun.write(path.join(first, 'use-a.ts'), useA)
@@ -299,7 +300,7 @@ describe('composables that import packages and helpers', () => {
   beforeAll(async () => {
     // The helper lives OUTSIDE the composables directory, as a package or a
     // shared module does: a file inside it is concatenated anyway.
-    root = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-composables-imports-'))
+    root = createTempDir('stx-composables-imports-')
     dir = path.join(root, 'functions')
     await Bun.write(
       path.join(root, 'shared', 'format.ts'),
@@ -340,7 +341,7 @@ describe('a composable importing a sibling composable', () => {
   beforeAll(async () => {
     // HQ's native-snapshots.ts imports OURA_RECOVERY_SNAPSHOT from
     // oura-recovery.ts, which imports nothing and so is concatenated as is.
-    dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-composables-sibling-'))
+    dir = createTempDir('stx-composables-sibling-')
     await Bun.write(path.join(dir, 'recovery.ts'), `export const RECOVERY_KEY = 'recovery'\nexport function rows() { return [RECOVERY_KEY] }\n`)
     await Bun.write(
       path.join(dir, 'snapshots.ts'),

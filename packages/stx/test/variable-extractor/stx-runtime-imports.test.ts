@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'bun:test'
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { processDirectives } from '../../src/process'
 import { convertToCommonJS, STX_ENGINE_BINDING_NAMES } from '../../src/variable-extractor'
+import { createTempDir } from '../../src/temp-dir'
 
 /**
  * `import { defineProps } from 'stx'` in a `<script server>` block — the form
@@ -85,7 +85,7 @@ describe('importing the stx runtime in a server script', () => {
 
 describe('a component that imports defineProps end to end', () => {
   it('receives its props', async () => {
-    const dir = await mkdtemp(path.join(tmpdir(), 'stx-runtime-import-'))
+    const dir = createTempDir('stx-runtime-import-')
     const componentsDir = path.join(dir, 'components')
     await mkdir(componentsDir, { recursive: true })
     await writeFile(path.join(componentsDir, 'row.stx'), `<script server>

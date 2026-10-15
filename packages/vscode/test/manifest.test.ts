@@ -1,11 +1,16 @@
-import { describe, expect, test } from 'bun:test'
-import { existsSync, mkdtempSync, realpathSync, rmSync } from 'node:fs'
+import { afterAll, describe, expect, test } from 'bun:test'
+import { existsSync, realpathSync, rmSync } from 'node:fs'
 import { builtinModules, createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { packageExtension } from '../scripts/package'
 import { TS_PLUGIN_BUNDLE, TS_PLUGIN_DIR, TS_PLUGIN_PACKAGE, tsPluginPackageFiles } from '../scripts/ts-plugin-package'
 import { STACKS_EXTENSION_ID, STX_EXTENSION_ID } from '../src/ids'
+import { createTempDir, removeAllTempDirs } from '../../stx/src/temp-dir'
+
+// No bunfig preload here when this package's tests run on their own, so
+// this file removes its own scratch directories (packages/stx/src/temp-dir.ts).
+afterAll(removeAllTempDirs)
 
 const PACKAGE_ROOT = path.join(import.meta.dir, '..')
 
@@ -209,7 +214,7 @@ describe('VSCODE: TypeScript server plugin', () => {
   // VS Code extension workflow has it.
   test.skipIf(!INSTALLED || !Bun.which('npm') || !Bun.which('zip') || !Bun.which('unzip'))('the VSIX carries the package, and it loads from the installed layout', () => {
     // Real path: require() resolves symlinks, and macOS's tmpdir is one.
-    const dir = realpathSync(mkdtempSync(path.join(tmpdir(), 'stx-vsix-test-')))
+    const dir = realpathSync(createTempDir('stx-vsix-test-'))
     try {
       const vsix = packageExtension(path.join(dir, 'stx.vsix'))
       const unzip = Bun.spawnSync(['unzip', '-q', vsix, 'extension/*', '-d', dir])

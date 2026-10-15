@@ -20,15 +20,15 @@
  */
 
 import { describe, expect, it } from 'bun:test'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { processConditionals } from '../src/conditionals'
 import { processDirectives } from '../src/process'
+import { createTempDir } from '../src/temp-dir'
 
 /** Render a page and its components the way the pipeline does. */
 async function render(files: Record<string, string>, page: string): Promise<string> {
-  const root = mkdtempSync(join(tmpdir(), 'stx-masking-'))
+  const root = createTempDir('stx-masking-')
 
   try {
     const components = join(root, 'components')

@@ -1,12 +1,12 @@
 import { WebView } from 'bun'
 import { expect, it } from 'bun:test'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 it('binds rendered default/named models, library components, and remounted instances in a real browser', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'stx-model-'))
+  const dir = createTempDir('stx-model-')
   const view = new WebView({ headless: true })
   try {
     await Bun.write(join(dir, 'TextInput.stx'), Bun.file(resolve(import.meta.dir, '../../../components/src/ui/input/TextInput.stx')))

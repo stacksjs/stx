@@ -25,11 +25,12 @@ import os from 'node:os'
 import path from 'node:path'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir: string
 
 beforeAll(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-dyn-'))
+  dir = createTempDir('stx-dyn-')
   fs.mkdirSync(path.join(dir, 'components'), { recursive: true })
   fs.writeFileSync(path.join(dir, 'components', 'Card.stx'), '<article class="card"><slot /></article>')
   fs.writeFileSync(path.join(dir, 'components', 'Inner.stx'), '<b class="inner">deep</b>')

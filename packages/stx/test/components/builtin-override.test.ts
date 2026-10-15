@@ -2,8 +2,9 @@ import { describe, expect, it, beforeAll, afterAll } from 'bun:test'
 import { processDirectives } from '../../src/process'
 import { userComponentFileExists } from '../../src/utils'
 import { join } from 'node:path'
-import { mkdtemp, writeFile, mkdir, rm } from 'node:fs/promises'
+import { writeFile, mkdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { createTempDir } from '../../src/temp-dir'
 
 /**
  * A project-authored component file must take precedence over a built-in
@@ -15,7 +16,7 @@ describe('user components override built-ins', () => {
   let componentsDir: string
 
   beforeAll(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'stx-builtin-override-'))
+    tempDir = createTempDir('stx-builtin-override-')
     componentsDir = join(tempDir, 'components')
     await mkdir(componentsDir, { recursive: true })
     await writeFile(
@@ -97,7 +98,7 @@ describe('component override resolution is cwd-independent', () => {
   })
 
   it('honors a user override under an explicitly configured root', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'stx-root-override-'))
+    const dir = createTempDir('stx-root-override-')
     await mkdir(join(dir, 'components'), { recursive: true })
     await writeFile(join(dir, 'components', 'Widget.stx'), '<div>w</div>')
     const exists = await userComponentFileExists(

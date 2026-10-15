@@ -11,10 +11,10 @@
  * navigation, since a full load parses the script correctly.
  */
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 setDefaultTimeout(60_000)
 
@@ -28,7 +28,7 @@ let proc: ReturnType<typeof Bun.spawn> | null = null
 const COMPONENT = 'customElements.define("x-player", class extends HTMLElement { connectedCallback() { this.attachShadow({ mode: "open" }).innerHTML = "<style>:host { display: flex } button { width: 40px; height: 40px }</style><button>Play</button>" } })'
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-frag-script-styles-'))
+  dir = createTempDir('stx-frag-script-styles-')
   await Bun.write(path.join(dir, 'layouts', 'default.stx'), `<!DOCTYPE html>
 <html lang="en">
 <head>

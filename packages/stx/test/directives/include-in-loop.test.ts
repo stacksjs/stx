@@ -17,16 +17,16 @@
  * values — keeps its original expression and its original evaluation.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir = ''
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-include-loop-'))
+  dir = createTempDir('stx-include-loop-')
   await Bun.write(path.join(dir, 'partials', 'Row.stx'), '<article class="row">{{ item.label }}</article>\n')
 })
 

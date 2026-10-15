@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 /**
  * A component can see the request it is part of serving.
@@ -30,7 +30,7 @@ let dir: string
 let proc: ReturnType<typeof Bun.spawn> | null = null
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-serve-compreq-'))
+  dir = createTempDir('stx-serve-compreq-')
 
   // Reports what it can see, so a regression names which half broke.
   await Bun.write(path.join(dir, 'components', 'WhereAmI.stx'), `<script server>

@@ -1,11 +1,11 @@
 import { afterAll, expect, test } from 'bun:test'
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { processDirectives } from '../src/process'
 import type { StxOptions } from '../src/types'
+import { createTempDir } from '../src/temp-dir'
 
-const root = mkdtempSync(join(tmpdir(), 'stx-client-props-'))
+const root = createTempDir('stx-client-props-')
 afterAll(() => rmSync(root, { recursive: true, force: true }))
 let number = 0
 async function script(content: string) {

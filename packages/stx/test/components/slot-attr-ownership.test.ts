@@ -21,11 +21,11 @@
  * that order, so three children of one slot rendered 3, 2, 1.
  */
 import { describe, expect, it } from 'bun:test'
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { processDirectives } from '../../src/process'
 import { parseSlots } from '../../src/slots'
+import { createTempDir } from '../../src/temp-dir'
 
 /** Markers make it unambiguous WHICH component a child rendered into. */
 const CARD = '<div class="c">[T:<slot name="t"></slot>][D:<slot></slot>]</div>'
@@ -33,7 +33,7 @@ const OUTER = '<section>[O:<slot></slot>]</section>'
 const OUTER_WITH_T = '<section>[OT:<slot name="t"></slot>][O:<slot></slot>]</section>'
 
 function project(): string {
-  const dir = mkdtempSync(path.join(tmpdir(), 'stx-slot-owner-'))
+  const dir = createTempDir('stx-slot-owner-')
   mkdirSync(path.join(dir, 'components'), { recursive: true })
   writeFileSync(path.join(dir, 'components', 'Card.stx'), CARD)
   writeFileSync(path.join(dir, 'components', 'Outer.stx'), OUTER)

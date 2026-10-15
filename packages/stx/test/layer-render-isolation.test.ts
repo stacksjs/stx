@@ -1,15 +1,15 @@
 import { expect, it } from 'bun:test'
-import { mkdtemp, realpath, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { realpath, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { loadStxConfig } from '../src/config'
 import { processDirectives } from '../src/process'
 import { clearComponentCache } from '../src/utils'
 import { serve } from '../src/serve'
 import { renderTemplateString } from '../src/render'
+import { createTempDir } from '../src/temp-dir'
 
 it('isolates shared component caches and runtime config between host applications', async () => {
-  const root = await realpath(await mkdtemp(path.join(tmpdir(), 'stx-layer-isolation-')))
+  const root = await realpath(createTempDir('stx-layer-isolation-'))
   try {
     await Bun.write(path.join(root, 'base/stx.config.ts'), "export default { runtimeConfig: { public: { site: 'BASE' } } }")
     await Bun.write(path.join(root, 'base/components/CachedShell.stx'), '<script server cache>const marker = true</script><NestedLabel />')

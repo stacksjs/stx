@@ -18,15 +18,15 @@
  * (`grep -rn 'getStoreScript\|store-loader' packages/stx/test | wc -l` -> 0).
  */
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { clearStoreCache, getStoreScript } from '../../src/store-loader'
+import { createTempDir } from '../../src/temp-dir'
 
 const dirs: string[] = []
 
 async function storesDir(files: Record<string, string>): Promise<string> {
-  const dir = await mkdtemp(path.join(tmpdir(), 'stx-stores-'))
+  const dir = createTempDir('stx-stores-')
   dirs.push(dir)
   for (const [name, body] of Object.entries(files)) {
     await mkdir(path.dirname(path.join(dir, name)), { recursive: true })

@@ -27,14 +27,14 @@
  * inserted again.
  */
 import path from 'node:path'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import { Window } from 'very-happy-dom'
 import { extractContainerContent, extractLayoutMetadata } from '../../src/app-shell'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
 import { injectRouterScript, pageShipsSignalsRuntime } from '../../src/runtime-injection'
 import { shimAttributes } from '../../src/testing'
+import { createTempDir } from '../../src/temp-dir'
 
 export const BASE = 'http://localhost'
 
@@ -85,7 +85,7 @@ export async function renderApp(
   /** Merged over the harness config, e.g. `{ buildMode: 'compile' }` for a minified build. */
   overrides: Record<string, unknown> = {},
 ): Promise<SpaApp> {
-  const dir = await mkdtemp(path.join(tmpdir(), 'stx-spa-harness-'))
+  const dir = createTempDir('stx-spa-harness-')
   for (const [rel, source] of Object.entries(files))
     await Bun.write(path.join(dir, rel), source)
 

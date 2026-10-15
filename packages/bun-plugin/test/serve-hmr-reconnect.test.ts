@@ -13,11 +13,11 @@
  * against a fake EventSource, so each step of a restart can be played.
  */
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 setDefaultTimeout(120_000)
 
@@ -30,7 +30,7 @@ let proc: ReturnType<typeof Bun.spawn> | null = null
 let client = ''
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-hmr-reconnect-'))
+  dir = createTempDir('stx-hmr-reconnect-')
   await Bun.write(path.join(dir, 'views', 'index.stx'), '<main><h1>index</h1></main>\n')
   await Bun.write(path.join(dir, 'layouts', 'app.stx'), `<div>@yield('content')</div>\n`)
   await Bun.write(path.join(dir, 'stx.config.ts'), 'export default {}\n')

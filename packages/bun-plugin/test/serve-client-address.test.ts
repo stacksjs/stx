@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 /**
  * The ambient `ip` a page sees, and the render cache it can fragment.
@@ -35,7 +35,7 @@ async function render(base: string, headers: Record<string, string> = {}): Promi
 }
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-client-address-'))
+  dir = createTempDir('stx-client-address-')
 
   await Bun.write(path.join(dir, 'views', 'index.stx'), `<script server>
 const seen = typeof ip === 'string' ? ip : 'none'

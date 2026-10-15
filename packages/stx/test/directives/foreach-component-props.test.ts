@@ -1,8 +1,8 @@
 import { describe, expect, it, beforeAll } from 'bun:test'
 import { processDirectives } from '../../src/process'
 import { join } from 'node:path'
-import { mkdtemp, writeFile, mkdir } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { writeFile, mkdir } from 'node:fs/promises'
+import { createTempDir } from '../../src/temp-dir'
 
 /**
  * Regression tests for passing loop variables as object props to a component
@@ -20,7 +20,7 @@ describe('@foreach passing object props to a component', () => {
   let componentsDir: string
 
   beforeAll(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'stx-foreach-props-'))
+    tempDir = createTempDir('stx-foreach-props-')
     componentsDir = join(tempDir, 'components')
     await mkdir(componentsDir, { recursive: true })
     await writeFile(

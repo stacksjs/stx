@@ -30,15 +30,15 @@
  * across pages. A page renders once, so its own ids stay bare.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir = ''
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-event-ids-'))
+  dir = createTempDir('stx-event-ids-')
   // One event binding, no signal API: the shape that goes through events.ts.
   await Bun.write(path.join(dir, 'components', 'Tap.stx'), `<script client>\nfunction onTap(e) { void e }\n</script>\n<button data-tap @click="onTap($event)"><slot /></button>\n`)
 })

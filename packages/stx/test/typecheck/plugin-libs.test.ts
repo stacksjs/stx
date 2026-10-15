@@ -8,16 +8,16 @@
  * gate and showed "Cannot find name" in the editor. Both now read this list.
  */
 import { afterAll, describe, expect, it } from 'bun:test'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { findStxPluginEntry, STX_TS_PLUGIN_NAME } from '../../src/stx-plugin-config'
 import { typecheckStxFiles } from '../../src/typecheck'
 import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+import { createTempDir } from '../../src/temp-dir'
 
 allowForATypeScriptProgram()
 
-const root = mkdtempSync(join(tmpdir(), 'stx-plugin-libs-'))
+const root = createTempDir('stx-plugin-libs-')
 afterAll(() => rmSync(root, { recursive: true, force: true }))
 
 function read(file: string): Record<string, any> | undefined {

@@ -1,13 +1,13 @@
 import { afterAll, beforeAll, expect, test } from 'bun:test'
-import { cp, mkdir, mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { cp, mkdir, rm } from 'node:fs/promises'
 import path from 'node:path'
 import vm from 'node:vm'
+import { createTempDir } from '../../src/temp-dir'
 
 let directory: string
 
 beforeAll(async () => {
-  directory = await mkdtemp(path.join(tmpdir(), 'stx-published-native-'))
+  directory = createTempDir('stx-published-native-')
   const source = path.resolve(import.meta.dir, '../../src/native')
   const runtime = await Bun.build({
     entrypoints: [path.join(source, 'runtime/jsc-globals.ts'), path.join(source, 'runtime/shared-screen.ts')],

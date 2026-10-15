@@ -3,14 +3,14 @@
  * internal `data-stx-props` transport object (#2063).
  */
 import { describe, expect, it } from 'bun:test'
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { processDirectives } from '../src/process'
+import { createTempDir } from '../src/temp-dir'
 
 describe('#2063 — component attributes fall through to the concrete root', () => {
   it('forwards static and server-bound DOM, data and ARIA attributes', async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), 'stx-component-attrs-'))
+    const dir = createTempDir('stx-component-attrs-')
     const components = path.join(dir, 'components')
     mkdirSync(components, { recursive: true })
     writeFileSync(path.join(components, 'Button.stx'), `<script client>
@@ -37,7 +37,7 @@ const active = state(true)
   })
 
   it('does not forward component API props that are not DOM attributes', async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), 'stx-component-attrs-'))
+    const dir = createTempDir('stx-component-attrs-')
     const components = path.join(dir, 'components')
     mkdirSync(components, { recursive: true })
     writeFileSync(path.join(components, 'Badge.stx'), '<span class="badge">{{ variant }}</span>')

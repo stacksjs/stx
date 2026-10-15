@@ -13,15 +13,15 @@
  * every page, so they are never marked.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir = ''
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-instance-stamp-'))
+  dir = createTempDir('stx-instance-stamp-')
   const components: Record<string, string> = {
     // No signals, nothing in the template reads it: a plain IIFE.
     'Plain.stx': `<script client>\n  window.__plainRuns = (window.__plainRuns || 0) + 1\n</script>\n<div class="plain">plain</div>\n`,

@@ -6,10 +6,10 @@
  * node_modules) and stays quiet when everything's aligned.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, rm, symlink, utimes, writeFile } from 'node:fs/promises'
+import { mkdir, rm, symlink, utimes, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { tmpdir } from 'node:os'
 import { findPantryPackage, formatDoctorReport, runDoctor } from '../../src/doctor'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir: string
 
@@ -33,7 +33,7 @@ async function makePantry(root: string, opts: { distAgeSeconds?: number, srcAgeS
 }
 
 beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), 'stx-doctor-'))
+  dir = createTempDir('stx-doctor-')
 })
 afterEach(async () => {
   await rm(dir, { recursive: true, force: true })

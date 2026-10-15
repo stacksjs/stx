@@ -4,14 +4,14 @@
 import { describe, expect, it, beforeAll } from 'bun:test'
 import { processIncludes } from '../../src/includes'
 import { join } from 'node:path'
-import { mkdtemp, writeFile, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { writeFile, rm } from 'node:fs/promises'
+import { createTempDir } from '../../src/temp-dir'
 
 describe('processIncludes with server scripts', () => {
   let tempDir: string
 
   beforeAll(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'stx-test-'))
+    tempDir = createTempDir('stx-test-')
   })
 
   const createTempFile = async (name: string, content: string): Promise<string> => {

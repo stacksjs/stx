@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 setDefaultTimeout(60_000)
 
@@ -14,7 +14,7 @@ let dir: string
 let proc: ReturnType<typeof Bun.spawn> | null = null
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-production-'))
+  dir = createTempDir('stx-production-')
   await Bun.write(
     path.join(dir, 'views', 'index.stx'),
     `<script>const count = state(0)</script><main>${'production '.repeat(300)}<span x-text="count"></span></main>`,

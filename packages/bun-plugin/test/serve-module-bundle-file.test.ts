@@ -8,10 +8,10 @@
  * answers that URL immutably.
  */
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 setDefaultTimeout(60_000)
 
@@ -23,7 +23,7 @@ let dir: string
 let proc: ReturnType<typeof Bun.spawn> | null = null
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-module-file-'))
+  dir = createTempDir('stx-module-file-')
   await Bun.write(path.join(dir, 'lib', 'greeting.ts'), `export const GREETING = 'module-bundle-marker'\n`)
   await Bun.write(path.join(dir, 'components', 'Hello.stx'), `<p id="hello">hello</p>
 <script client>

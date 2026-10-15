@@ -33,11 +33,12 @@ import os from 'node:os'
 import path from 'node:path'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir: string
 
 beforeAll(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-gate-'))
+  dir = createTempDir('stx-gate-')
   fs.mkdirSync(path.join(dir, 'partials'), { recursive: true })
 
   // Owns its own signal. Its <script> is stripped before the expression pass,

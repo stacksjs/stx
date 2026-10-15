@@ -27,8 +27,9 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { generateStaticSite } from '../../src/ssg'
+import { createTempDir } from '../../src/temp-dir'
 
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-client-import-cache-'))
+const TMP = createTempDir('stx-client-import-cache-')
 const pagesDir = path.join(TMP, 'pages')
 const outputDir = path.join(TMP, 'dist')
 const cacheDir = path.join(TMP, 'cache')

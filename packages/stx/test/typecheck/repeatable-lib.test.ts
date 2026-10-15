@@ -30,15 +30,15 @@
  */
 
 import { afterAll, describe, expect, it } from 'bun:test'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { collectRepeatedFlag } from '../../src/cli-flags'
 import { typecheckStxFiles } from '../../src/typecheck'
 import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+import { createTempDir } from '../../src/temp-dir'
 
 allowForATypeScriptProgram()
 
-const dir = join(tmpdir(), `stx-lib-repeat-${crypto.randomUUID()}`)
+const dir = createTempDir('stx-lib-repeat-')
 const domain = join(dir, 'types', 'domain.d.ts')
 const globals = join(dir, 'types', 'globals.d.ts')
 const page = join(dir, 'views', 'page.stx')

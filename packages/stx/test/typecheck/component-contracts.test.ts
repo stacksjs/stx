@@ -1,8 +1,8 @@
 import { afterEach, expect, it } from 'bun:test'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { typecheckStxFiles } from '../../src/typecheck'
+import { createTempDir } from '../../src/temp-dir'
 
 const dirs: string[] = []
 afterEach(() => {
@@ -10,7 +10,7 @@ afterEach(() => {
 })
 
 async function fixture(parent: string) {
-  const dir = mkdtempSync(join(tmpdir(), 'stx-callsite-'))
+  const dir = createTempDir('stx-callsite-')
   dirs.push(dir)
   await Bun.write(join(dir, 'components/Counter.stx'), `<script client>
 interface Props { count: number; label?: string }

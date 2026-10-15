@@ -14,10 +14,10 @@
  */
 
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 setDefaultTimeout(60_000)
 
@@ -36,7 +36,7 @@ function parseProbe(html: string): Record<string, unknown> {
 }
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-comp-dyn-'))
+  dir = createTempDir('stx-comp-dyn-')
 
   // A component that does async work and reports what it got back. Bun.sleep
   // stands in for the database round trip that first showed this.

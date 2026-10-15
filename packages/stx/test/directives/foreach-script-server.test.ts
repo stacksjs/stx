@@ -3,14 +3,14 @@ import { processIncludes } from '../../src/includes'
 import { processDirectives } from '../../src/process'
 import { extractVariables } from '../../src/variable-extractor'
 import { join } from 'node:path'
-import { mkdtemp, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { writeFile } from 'node:fs/promises'
+import { createTempDir } from '../../src/temp-dir'
 
 describe('@foreach with objects from script server block', () => {
   let tempDir: string
 
   beforeAll(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'stx-test-'))
+    tempDir = createTempDir('stx-test-')
   })
 
   const createTempFile = async (name: string, content: string): Promise<string> => {

@@ -19,6 +19,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { bundleClientScript } from '../src/client-script-bundler'
+import { createTempDir } from '../src/temp-dir'
 
 const made: string[] = []
 
@@ -27,7 +28,7 @@ afterEach(() => {
 })
 
 function workspace(): { dir: string, cacheDir: string, host: string } {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-bundle-prune-'))
+  const dir = createTempDir('stx-bundle-prune-')
   made.push(dir)
   const cacheDir = path.join(dir, 'bundle-cache')
   fs.mkdirSync(cacheDir, { recursive: true })

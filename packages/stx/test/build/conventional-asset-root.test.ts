@@ -17,21 +17,21 @@
  * other two.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { rm } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import path from 'node:path'
 import {
   CONVENTIONAL_ASSET_OUTPUT,
   CONVENTIONAL_ASSET_ROOT,
   resolveConventionalAssetRoot,
 } from '../../src/asset-roots'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir = ''
 const originalCwd = process.cwd()
 
 beforeEach(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-asset-root-'))
+  dir = createTempDir('stx-asset-root-')
   await Bun.write(path.join(dir, 'pages', 'index.stx'), '<main><h1>Home</h1></main>\n')
   await Bun.write(path.join(dir, 'public', 'img', 'logo.txt'), 'x\n')
   await Bun.write(path.join(dir, CONVENTIONAL_ASSET_ROOT, 'scripts', 'site-mode.js'), 'console.log(1)\n')
@@ -49,7 +49,7 @@ describe('resolveConventionalAssetRoot', () => {
   })
 
   it('returns null when it does not', async () => {
-    const bare = await mkdtemp(path.join(tmpdir(), 'stx-no-assets-'))
+    const bare = createTempDir('stx-no-assets-')
     try {
       expect(resolveConventionalAssetRoot(bare)).toBeNull()
     }

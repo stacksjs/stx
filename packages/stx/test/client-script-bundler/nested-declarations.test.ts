@@ -17,13 +17,13 @@
  * `Cannot use import statement outside a module`.
  */
 import { afterEach, describe, expect, it, spyOn } from 'bun:test'
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { bundleClientScript } from '../../src/client-script-bundler'
+import { createTempDir } from '../../src/temp-dir'
 
 function project(): string {
-  const dir = mkdtempSync(path.join(tmpdir(), 'stx-1959-'))
+  const dir = createTempDir('stx-1959-')
   mkdirSync(path.join(dir, 'functions'), { recursive: true })
   writeFileSync(path.join(dir, 'functions', 'greet.ts'), 'export function greet() { return "hi" }\n')
   return dir

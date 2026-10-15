@@ -4,18 +4,17 @@
  * and responses read as they arrive (a server-sent event stream).
  */
 import { describe, expect, it } from 'bun:test'
-import { mkdtemp } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
 import path from 'node:path'
 import vm from 'node:vm'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
 import { useBroadcastStream } from '../../src/composables/use-broadcast-stream'
+import { createTempDir } from '../../src/temp-dir'
 
 let bundle: Promise<string> | null = null
 
 async function generate(): Promise<string> {
   bundle ??= (async () => {
-    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-services-'))
+    const root = createTempDir('stx-native-services-')
     const file = path.join(root, 'Services.stx')
     await Bun.write(file, '<script client></script><View><Text>Services</Text></View>')
     return (await compileSharedScreenBundle(file)).code

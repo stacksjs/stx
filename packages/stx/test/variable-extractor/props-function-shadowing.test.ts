@@ -3,6 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 /**
  * `$props` is a callable (so `$props({ count: 0 })` can supply defaults), which
@@ -30,7 +31,7 @@ describe('$props does not leak Function internals for unpassed props', () => {
   let dir: string
 
   beforeAll(async () => {
-    dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-props-shadow-'))
+    dir = createTempDir('stx-props-shadow-')
     await Bun.write(
       path.join(dir, 'Probe.stx'),
       `<script server>\n`

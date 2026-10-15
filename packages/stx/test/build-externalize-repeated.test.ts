@@ -3,11 +3,12 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { externalizeRepeatedAssets } from '../src/build-externalize-repeated'
+import { createTempDir } from '../src/temp-dir'
 
 const made: string[] = []
 
 function site(pages: Record<string, string>): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-repeated-'))
+  const dir = createTempDir('stx-repeated-')
   made.push(dir)
   for (const [name, html] of Object.entries(pages)) {
     const file = path.join(dir, name)

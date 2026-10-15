@@ -1,9 +1,10 @@
-import { mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { tmpdir } from 'node:os'
+import { createTempDir, removeTempDir } from '../packages/stx/src/temp-dir'
 
 const root = process.cwd()
-const smokeRoot = join(tmpdir(), `stx-installed-smoke-${Date.now()}`)
+// Removed when the smoke passes, and on exit or interrupt when it does not.
+const smokeRoot = createTempDir('installed-smoke')
 
 function run(cmd: string[], cwd = smokeRoot): void {
   const result = Bun.spawnSync(cmd, {
@@ -26,7 +27,6 @@ function linkPackage(name: string, packageDir: string): void {
   symlinkSync(join(root, packageDir), join(smokeRoot, 'node_modules', ...parts), 'dir')
 }
 
-rmSync(smokeRoot, { recursive: true, force: true })
 mkdirSync(join(smokeRoot, 'pages'), { recursive: true })
 mkdirSync(join(smokeRoot, 'node_modules'), { recursive: true })
 
@@ -89,5 +89,5 @@ if (!html.includes('Lumen & Lather')) throw new Error('missing page title')
 if (!html.includes('Cedar Wick Candle')) throw new Error('missing rendered product')
 `])
 
-rmSync(smokeRoot, { recursive: true, force: true })
+removeTempDir(smokeRoot)
 console.log('installed package smoke passed')

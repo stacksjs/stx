@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { createRouteRuleResolver, validateRouteRules } from '../../src/route-rules'
 import { RouteResponseCache } from '../../src/route-response-cache'
 import { buildForProduction } from '../../src/production-builder'
 import { startProductionServer } from '../../src/production-server'
 import { loadManifest } from '../../src/manifest'
+import { createTempDir } from '../../src/temp-dir'
 
 const policy = { public: true as const, maxAge: 1, swr: 2 }
 const request = (path = '/page', headers?: Record<string, string>, method = 'GET'): Request => new Request(`http://localhost${path}`, { headers, method })
@@ -146,7 +146,7 @@ afterEach(async () => {
 })
 
 it('builds and serves prerender/dynamic rules with matching SPA policy and explicit invalidation', async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-rules-'))
+  dir = createTempDir('stx-rules-')
   const source = `<script server>
 globalThis.__route_rule_count = (globalThis.__route_rule_count || 0) + 1
 const count = globalThis.__route_rule_count
@@ -176,7 +176,7 @@ if (globalThis.__route_rule_fail) throw new Error('upstream failed')
 })
 
 it('never shares authenticated SSR data, including hydration payloads and fragments', async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-private-rules-'))
+  dir = createTempDir('stx-private-rules-')
   await Bun.write(path.join(dir, 'pages/profile.stx'), `<script server>
 const user = await useServerData('user', () => typeof request === 'undefined' ? 'build-user' : (request.headers.get('Cookie') || 'anonymous'))
 </script><html><head></head><body><main><p>{{ user }}</p></main></body></html>`)

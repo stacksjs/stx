@@ -26,11 +26,11 @@
  * Asserted on BYTE ORDER rather than on presence, because presence was never
  * the problem: both rules were in the stylesheet and the wrong one was last.
  */
-import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { generateCss } from '../src/dev-server/ts-css'
+import { createTempDir } from '../src/temp-dir'
 
 const REPO = path.resolve(import.meta.dir, '../../..')
 let root = ''
@@ -38,7 +38,7 @@ let root = ''
 const SHORTCUT = 'inline-flex px-4 py-2 font-semibold text-sm text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 rounded-xl'
 
 beforeAll(() => {
-  root = mkdtempSync(path.join(tmpdir(), 'stx-2000-'))
+  root = createTempDir('stx-2000-')
   writeFileSync(
     path.join(root, 'css.config.ts'),
     `export default { shortcuts: { 'btn-primary': '${SHORTCUT}' } }\n`,

@@ -1,6 +1,5 @@
 import { afterEach, expect, it } from 'bun:test'
-import { mkdtemp, realpath, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { realpath, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { loadStxConfig } from '../src/config'
 import { layerManifest, mergeLayerConfig, resolveApplicationLayers } from '../src/application-layers'
@@ -10,6 +9,7 @@ import { startProductionServer } from '../src/production-server'
 import { getComposableScript, listComposableModules } from '../src/composable-loader'
 import { serve } from '../src/serve'
 import { createRouter } from '../src/router'
+import { createTempDir } from '../src/temp-dir'
 
 const dirs: string[] = []
 const stop: Array<() => void> = []
@@ -19,7 +19,7 @@ afterEach(async () => {
   delete (globalThis as any).__layerSetupCount
 })
 async function fixture(): Promise<string> {
-  const dir = await realpath(await mkdtemp(path.join(tmpdir(), 'stx-layers-')))
+  const dir = await realpath(createTempDir('stx-layers-'))
   dirs.push(dir)
   return dir
 }

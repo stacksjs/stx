@@ -50,7 +50,6 @@ import type { DevServerOptions } from '../src/dev-server'
 import type { SyntaxHighlightTheme } from '../src/types'
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { CLI } from '@stacksjs/clapp'
@@ -274,10 +273,13 @@ async function runTests(
     // Bun currently only supports 'junit' reporter with a required output file
     if (options.reporter && options.reporter !== 'default') {
       if (options.reporter === 'junit') {
-        // Create a temp file for junit output
-        const junitOutputFile = path.join(os.tmpdir(), `stx-test-report-${Date.now()}.xml`)
+        // Into the project, where CI and the user can find it. It used to go
+        // to a timestamped file in the OS temp folder that nothing read,
+        // printed or removed, one more per run.
+        const junitOutputFile = path.resolve('stx-test-report.xml')
         args.push('--reporter', options.reporter)
         args.push('--reporter-outfile', junitOutputFile)
+        console.log(`JUnit report: ${junitOutputFile}`)
       }
       else {
         console.warn(`Warning: Reporter '${options.reporter}' is not supported. Using default reporter.`)

@@ -16,18 +16,19 @@
  * the old behaviour `'kit'` resolved beneath the repo root and nothing matched.
  */
 import { describe, expect, it } from 'bun:test'
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve as resolvePath } from 'node:path'
 import { loadStxConfig } from '../../src/config'
 import { serve } from '../../src/serve'
+import { createTempDir } from '../../src/temp-dir'
 
 /**
  * A project whose config registers a component directory by a RELATIVE name,
  * with the templates in a subdirectory — the layout that exposed the bug.
  */
 function project(componentsDir = 'kit'): { dir: string, views: string } {
-  const dir = mkdtempSync(join(tmpdir(), 'stx-config-anchor-'))
+  const dir = createTempDir('stx-config-anchor-')
   const views = join(dir, 'src', 'views')
   mkdirSync(views, { recursive: true })
   mkdirSync(join(dir, componentsDir), { recursive: true })
@@ -89,7 +90,7 @@ describe('a relative componentsDir resolves against the config, not the cwd', ()
     // The warning is all that stands between a mistyped key and a silent miss,
     // so it has to keep pointing at the config line rather than echoing back
     // the absolute path it just computed.
-    const dir = mkdtempSync(join(tmpdir(), 'stx-config-anchor-'))
+    const dir = createTempDir('stx-config-anchor-')
     writeFileSync(join(dir, 'stx.config.ts'), `export default { componentsDir: "nope" }\n`)
 
     const warnings: string[] = []
@@ -120,7 +121,7 @@ describe('a relative componentsDir resolves against the config, not the cwd', ()
  */
 describe('config loading is order-independent across cwds', () => {
   function pluginProject(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'stx-config-order-'))
+    const dir = createTempDir('stx-config-order-')
     writeFileSync(join(dir, 'leaky-plugin.ts'), [
       `export default {`,
       `  name: 'leaky',`,
@@ -137,7 +138,7 @@ describe('config loading is order-independent across cwds', () => {
   }
 
   function plainProject(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'stx-config-order-'))
+    const dir = createTempDir('stx-config-order-')
     writeFileSync(join(dir, 'stx.config.ts'), `export default { componentsDir: "components" }\n`)
     return dir
   }

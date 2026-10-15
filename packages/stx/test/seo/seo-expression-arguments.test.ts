@@ -15,8 +15,7 @@
 import type { HeadConfig } from '../../src/head'
 import type { CustomDirective, StxOptions } from '../../src/types'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, spyOn } from 'bun:test'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { defaultConfig } from '../../src/config'
 import { processCustomDirectives } from '../../src/custom-directives'
@@ -25,6 +24,7 @@ import { processMetaDirective } from '../../src/head'
 import { processIncludes } from '../../src/includes'
 import { processDirectives } from '../../src/process'
 import { metaDirective, processMetaDirectives, processSeoDirective, processStructuredData } from '../../src/seo'
+import { createTempDir } from '../../src/temp-dir'
 
 const options = { ...defaultConfig } as StxOptions
 const FILE = 'views/page.stx'
@@ -504,7 +504,7 @@ describe('expression arguments inside a partial', () => {
   let dir: string
 
   beforeAll(async () => {
-    dir = await mkdtemp(join(tmpdir(), 'stx-seo-expr-'))
+    dir = createTempDir('stx-seo-expr-')
     await writeFile(join(dir, 'head.stx'), `
 <script server>
 const seo = { title: \`\${name} | Example\`, openGraph: { image: '/og.png' } }

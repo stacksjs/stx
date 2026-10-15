@@ -1,13 +1,12 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import path from 'node:path'
 import vm from 'node:vm'
-import { mkdtemp } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
 import { compileScreenSource } from '../../src/native/compiler/render-screen'
 import { prepareSharedNativeScreen } from '../../src/native/runtime/shared-screen'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import { installNodeConstants } from '../../test-utils/dom-runtime-shim'
+import { createTempDir } from '../../src/temp-dir'
 
 declare const window: any
 
@@ -369,7 +368,7 @@ const image = state({ uri: 'avatar.png' })
   })
 
   it('updates conditional rows and imported labels after a native pull-to-refresh', async () => {
-    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-refresh-'))
+    const root = createTempDir('stx-native-refresh-')
     const file = path.join(root, 'Screen.stx')
     await Bun.write(path.join(root, 'labels.ts'), "export const label = value => 'Session: ' + value\n")
     await Bun.write(file, `<script client>
@@ -417,7 +416,7 @@ function refresh() {
   })
 
   it('runs the same path as a DOM-free JavaScriptCore bundle', async () => {
-    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-shared-'))
+    const root = createTempDir('stx-native-shared-')
     const file = path.join(root, 'Screen.stx')
     await Bun.write(file, `<script client>
 const count = state(0)
@@ -460,7 +459,7 @@ function increment() { count.set(count() + 1) }
   })
 
   it('mounts and tears down one native screen lifecycle exactly once', async () => {
-    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-lifecycle-'))
+    const root = createTempDir('stx-native-lifecycle-')
     const file = path.join(root, 'Screen.stx')
     await Bun.write(file, `<script client>
 globalThis.__nativeLifecycle = []
@@ -506,7 +505,7 @@ onDestroy(() => globalThis.__nativeLifecycle.push('destroy'))
   })
 
   it('installs Craft capabilities before client setup executes', async () => {
-    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-craft-'))
+    const root = createTempDir('stx-native-craft-')
     const file = path.join(root, 'Screen.stx')
     await Bun.write(file, `<script client>
 const status = state(craft.lifecycle.getState())
@@ -553,7 +552,7 @@ const ready = craft.storage.get('ready').then(value => status.set(value))
   })
 
   it('keeps navigation and native fetch on the shared bridge', async () => {
-    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-craft-'))
+    const root = createTempDir('stx-native-craft-')
     const file = path.join(root, 'Screen.stx')
     await Bun.write(file, '<View><Text>Craft</Text></View>')
     const { code } = await compileSharedScreenBundle(file)
@@ -603,7 +602,7 @@ const ready = craft.storage.get('ready').then(value => status.set(value))
   })
 
   it('executes a plain client handler without the retired redraw runtime', async () => {
-    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-plain-client-'))
+    const root = createTempDir('stx-native-plain-client-')
     const file = path.join(root, 'Screen.stx')
     await Bun.write(file, `<script client>
 const label = 'Ready'
@@ -636,7 +635,7 @@ function leave() { craft.navigation.back() }
   })
 
   it('bundles TypeScript imports and preserves host synchronous state', async () => {
-    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-import-'))
+    const root = createTempDir('stx-native-import-')
     await Bun.write(path.join(root, 'label.ts'), `export type Kind = 'saved'
 export function label(kind: Kind): string { return kind.toUpperCase() }`)
     const file = path.join(root, 'Screen.stx')

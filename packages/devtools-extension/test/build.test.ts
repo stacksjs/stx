@@ -5,12 +5,16 @@
  */
 import { existsSync } from 'node:fs'
 import { rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterAll, describe, expect, it } from 'bun:test'
+import { createTempDir, removeAllTempDirs } from '../../stx/src/temp-dir'
 import { build } from '../build'
 
-const out = path.join(tmpdir(), 'stx-devtools-ext-build-test')
+// No bunfig preload here when this package's tests run on their own, so
+// this file removes its own scratch directories (packages/stx/src/temp-dir.ts).
+afterAll(removeAllTempDirs)
+
+const out = createTempDir('devtools-ext-build-test')
 
 describe('extension build', () => {
   afterAll(async () => { await rm(out, { recursive: true, force: true }) })

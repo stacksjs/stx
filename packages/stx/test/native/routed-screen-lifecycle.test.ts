@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 import path from 'node:path'
 import vm from 'node:vm'
-import { mkdtemp } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
 import { compileNativeBundle } from '../../src/native/compiler/bundle'
+import { createTempDir } from '../../src/temp-dir'
 
 interface NativeSession {
   scope: Record<string, any>
@@ -78,7 +77,7 @@ async function press(session: NativeSession, testID: string): Promise<void> {
 
 describe('routed native screens keep navigation and lifecycle state isolated', () => {
   it('supports params, push/back/replace, focus callbacks, and cleanup', async () => {
-    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-routes-'))
+    const root = createTempDir('stx-native-routes-')
     await Bun.write(path.join(root, 'Home.stx'), `<script client>
 const count = state(0)
 function bump() { count.update(value => value + 1) }

@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'bun:test'
-import { mkdtemp } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
 import path from 'node:path'
 import vm from 'node:vm'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
+import { createTempDir } from '../../src/temp-dir'
 
 async function generate(script: string = '', template: string = '<View><Text>Capabilities</Text></View>'): Promise<string> {
-  const root = await mkdtemp(path.join(tmpdir(), 'stx-native-capabilities-'))
+  const root = createTempDir('stx-native-capabilities-')
   const file = path.join(root, 'Capabilities.stx')
   await Bun.write(file, `<script client>${script}</script>${template}`)
   return (await compileSharedScreenBundle(file)).code

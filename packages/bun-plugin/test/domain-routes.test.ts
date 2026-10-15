@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { compileDomainRoutes, matchDomain, requestHost, resolveDomainElsewhere, resolveDomainRoute } from '../src/domain-routes'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 /**
  * Domain routes: `{username}.example.com/` renders `example.com/{username}`.
@@ -114,7 +114,7 @@ describe('serve() with domains', () => {
   }
 
   beforeAll(async () => {
-    dir = await mkdtemp(path.join(tmpdir(), 'stx-domain-routes-'))
+    dir = createTempDir('stx-domain-routes-')
     await Bun.write(path.join(dir, 'views', 'index.stx'), '<main><p>page:home</p></main>\n')
     await Bun.write(path.join(dir, 'views', 'pricing.stx'), '<main><p>page:pricing</p></main>\n')
     await Bun.write(path.join(dir, 'views', '[username].stx'), `<script server>

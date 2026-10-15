@@ -20,18 +20,18 @@
  * The five cases below are the reporter's own isolation table.
  */
 
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'bun:test'
 import { typecheckStxFiles } from '../../src/typecheck'
 import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+import { createTempDir } from '../../src/temp-dir'
 
 allowForATypeScriptProgram()
 
 // Outside the repo: a fixture inside it is reached by this repository's own
 // tsconfig, so tsc reports unrelated errors and the fixture stops testing what
 // it says it tests.
-const dir = join(tmpdir(), `stx-2013-${crypto.randomUUID()}`)
+const dir = createTempDir('stx-2013-')
 
 const HEAD = `<script client>
 interface N { ok: boolean }

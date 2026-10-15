@@ -7,13 +7,13 @@
 // exactly how a whole staff dashboard shipped blank to production.
 
 import { describe, expect, test } from 'bun:test'
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { resolveTemplatePath } from '../src/utils'
+import { createTempDir } from '../src/temp-dir'
 
 function tree(files: Record<string, string>): string {
-  const root = mkdtempSync(join(tmpdir(), 'stx-layouts-'))
+  const root = createTempDir('stx-layouts-')
   for (const [rel, body] of Object.entries(files)) {
     const full = join(root, rel)
     mkdirSync(join(full, '..'), { recursive: true })

@@ -3,11 +3,12 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { detectBuildMode, validateComponentScripts } from '../src/build-mode-detector'
+import { createTempDir } from '../src/temp-dir'
 
 const tempDirs: string[] = []
 
 async function makeTempProject() {
-  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-build-mode-'))
+  const dir = createTempDir('stx-build-mode-')
   tempDirs.push(dir)
 
   await fs.promises.mkdir(path.join(dir, 'pages'), { recursive: true })

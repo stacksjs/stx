@@ -1,8 +1,8 @@
 import path, { join } from 'node:path'
 import process from 'node:process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dts } from 'bun-plugin-dtsx'
+import { createTempDir, removeTempDir } from '../stx/src/temp-dir'
 
 console.log('Building @stacksjs/components...')
 
@@ -26,7 +26,8 @@ if (!existsSync('./dist')) {
 const srcDir = path.resolve('./src')
 const srcIndex = readFileSync(join(srcDir, 'index.ts'), 'utf8')
 
-const tmpRoot = mkdtempSync(join(tmpdir(), 'stx-components-build-'))
+// Removed in the finally below, and on exit or interrupt before it is reached.
+const tmpRoot = createTempDir('components-build')
 const stubsDir = join(tmpRoot, 'stubs')
 mkdirSync(stubsDir, { recursive: true })
 
@@ -77,7 +78,7 @@ try {
   })
 }
 finally {
-  rmSync(tmpRoot, { recursive: true, force: true })
+  removeTempDir(tmpRoot)
 }
 
 if (!result.success) {

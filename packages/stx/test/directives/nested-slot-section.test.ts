@@ -11,14 +11,14 @@
  * fix, not a stale dist.
  */
 import fs from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 import type { StxOptions } from '../../src/types'
 
 const opts: StxOptions = { debug: false, componentsDir: 'components' }
-const tmp = path.join(os.tmpdir(), 'stx-1752-nested-slot')
+const tmp = createTempDir('1752-nested-slot')
 const layoutPath = path.join(tmp, 'base.stx')
 
 beforeAll(async () => {

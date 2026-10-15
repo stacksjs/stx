@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 /**
  * `onRequest` receives the Bun server beside the request.
@@ -24,7 +24,7 @@ let dir: string
 let proc: ReturnType<typeof Bun.spawn> | null = null
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-on-request-server-'))
+  dir = createTempDir('stx-on-request-server-')
 
   await Bun.write(path.join(dir, 'views', 'index.stx'), '<h1>home</h1>')
   await Bun.write(path.join(dir, 'driver.ts'), `import { serve } from ${JSON.stringify(SERVE_SRC)}

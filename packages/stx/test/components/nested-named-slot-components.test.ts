@@ -1,13 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 let fixtureDir = ''
 
 beforeAll(() => {
-  fixtureDir = mkdtempSync(join(tmpdir(), 'stx-nested-slots-'))
+  fixtureDir = createTempDir('stx-nested-slots-')
   writeFileSync(join(fixtureDir, 'card.stx'), '<section><slot name="header" /></section>')
   writeFileSync(
     join(fixtureDir, 'input.stx'),

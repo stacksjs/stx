@@ -7,17 +7,17 @@
  * theme. In the full suite that made the #2000 shortcut tests fail whenever
  * another file had generated CSS first.
  */
-import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { afterAll, describe, expect, it } from 'bun:test'
 import { generateCss } from '../src/dev-server/ts-css'
+import { createTempDir } from '../src/temp-dir'
 
 const REPO = path.resolve(import.meta.dir, '../../..')
 const roots: string[] = []
 
 function app(shortcut: string): string {
-  const root = mkdtempSync(path.join(tmpdir(), 'stx-css-root-'))
+  const root = createTempDir('stx-css-root-')
   writeFileSync(path.join(root, 'css.config.ts'), `export default { shortcuts: { 'btn': '${shortcut}' } }\n`)
   symlinkSync(path.join(REPO, 'node_modules'), path.join(root, 'node_modules'))
   roots.push(root)

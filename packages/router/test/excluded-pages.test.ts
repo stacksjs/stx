@@ -1,8 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import { Router } from '../src/file-router'
+import { createTempDir, removeAllTempDirs } from '../../stx/src/temp-dir'
+
+// No bunfig preload here when this package's tests run on their own, so
+// this file removes its own scratch directories (packages/stx/src/temp-dir.ts).
+afterAll(removeAllTempDirs)
 
 /**
  * `exclude`: files a page root holds that are not routes.
@@ -19,7 +24,7 @@ describe('Router exclude', () => {
   let defaultsDir: string
 
   beforeEach(() => {
-    baseDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-router-exclude-'))
+    baseDir = createTempDir('stx-router-exclude-')
     userDir = path.join(baseDir, 'resources', 'views')
     defaultsDir = path.join(baseDir, 'defaults', 'views')
     fs.mkdirSync(userDir, { recursive: true })

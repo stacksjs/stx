@@ -8,12 +8,12 @@
  * nav and blank buttons with nothing in the markup to explain it.
  */
 
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { existsSync, mkdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 import { afterEach, describe, expect, it } from 'bun:test'
 import { preloadIconCollection, resolveCollectionPath } from '../src/builtins/icon'
+import { createTempDir } from '../src/temp-dir'
 
 const originalCwd = process.cwd()
 const roots: string[] = []
@@ -21,7 +21,7 @@ const roots: string[] = []
 // realpath because macOS hands out /var/folders/… which is a symlink to
 // /private/var/folders/…, and `process.cwd()` reports the resolved form.
 function makeRoot(): string {
-  const root = realpathSync(mkdtempSync(join(tmpdir(), 'stx-icons-')))
+  const root = realpathSync(createTempDir('stx-icons-'))
   roots.push(root)
   return root
 }

@@ -1,6 +1,5 @@
 import path from 'node:path'
-import { mkdtemp, rm, symlink } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm, symlink } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { apiFetch } from '../../src/api-client'
 import { bundleClientScript, clearBundleFailures, getBundleFailures } from '../../src/client-script-bundler'
@@ -8,11 +7,12 @@ import { buildForProduction } from '../../src/production-builder'
 import { startProductionServer } from '../../src/production-server'
 import { serve } from '../../src/serve'
 import { createServerApi, discoverServerApi, generateApiTypes } from '../../src/server-api'
+import { createTempDir } from '../../src/temp-dir'
 
 let root = ''
 const stops: Array<() => void> = []
 beforeEach(async () => {
-  root = await mkdtemp(path.join(tmpdir(), 'stx-api-'))
+  root = createTempDir('stx-api-')
   await Bun.write(path.join(root, 'pages/index.stx'), '<main>Home</main>')
 })
 afterEach(async () => {

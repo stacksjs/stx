@@ -28,6 +28,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { loadStxConfig } from '../src/config'
+import { createTempDir } from '../src/temp-dir'
 
 let root: string
 let warnings: string[] = []
@@ -39,7 +40,7 @@ function captureWarnings() {
 }
 
 beforeAll(() => {
-  root = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-cfg-'))
+  root = createTempDir('stx-cfg-')
 
   // A Stacks-shaped app: resources/views + resources/layouts is what triggers
   // the root inference.
@@ -118,7 +119,7 @@ describe('a directory that does not exist is reported', () => {
 
 describe('root and config/ui.ts compose', () => {
   it('keeps UI-only keys while root stx config takes precedence', async () => {
-    const app = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-config-ui-'))
+    const app = createTempDir('stx-config-ui-')
     try {
       fs.mkdirSync(path.join(app, 'config'), { recursive: true })
       fs.writeFileSync(

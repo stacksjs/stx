@@ -25,8 +25,9 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { renderView } from '../src/build-views'
+import { createTempDir } from '../src/temp-dir'
 
-const APP = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-determinism-'))
+const APP = createTempDir('stx-determinism-')
 const componentsDir = path.join(APP, 'components')
 
 const options = { componentsDir } as Record<string, unknown>

@@ -28,17 +28,17 @@
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { scanA11yTargets } from '../../src/a11y'
 import { resolveStxTargets } from '../../src/resolve-stx-targets'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir = ''
 let bad = ''
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-a11y-targets-'))
+  dir = createTempDir('stx-a11y-targets-')
   bad = path.join(dir, 'emails', 'subscription-confirmation.stx')
   // Three findings: no alt, a data table with no headers, an empty link.
   await Bun.write(bad, `<html lang="en"><body><main>

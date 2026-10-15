@@ -12,13 +12,13 @@
  */
 import type { StxOptions } from '../src/types'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { defaultConfig } from '../src/config'
 import { findFirstScriptTag } from '../src/first-script-tag'
 import { processDirectives } from '../src/process'
 import { injectSignalsRuntime } from '../src/runtime-injection'
+import { createTempDir } from '../src/temp-dir'
 
 /** Whether `offset` sits inside a `<template>` element. */
 function insideTemplate(html: string, offset: number): boolean {
@@ -73,7 +73,7 @@ describe('a bare layout with a component rooted in <template :if>', () => {
   let dir: string
 
   beforeAll(async () => {
-    dir = await mkdtemp(path.join(tmpdir(), 'stx-runtime-template-'))
+    dir = createTempDir('stx-runtime-template-')
     await Bun.write(path.join(dir, 'layouts', 'default.stx'), `@yield('content')\n\n@yield('footer')\n\n@stack('scripts')\n`)
     await Bun.write(path.join(dir, 'components', 'Inner.stx'), `<script client>
 const email = state('')

@@ -3,18 +3,17 @@
  * when the host names the route `__app` (Craft's `nativeApp`).
  */
 import { describe, expect, it } from 'bun:test'
-import { mkdtemp } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
 import path from 'node:path'
 import vm from 'node:vm'
 import { compileNativeBundle } from '../../src/native/compiler/bundle'
 import { NATIVE_APP_ROUTE } from '../../src/native/runtime/shared-screen'
+import { createTempDir } from '../../src/temp-dir'
 
 let bundle: Promise<string> | null = null
 
 async function generate(): Promise<string> {
   bundle ??= (async () => {
-    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-app-'))
+    const root = createTempDir('stx-native-app-')
     await Bun.write(path.join(root, 'Home.stx'), '<script client></script><View><Text>Home</Text></View>')
     await Bun.write(path.join(root, 'helper.ts'), 'export function where(craft: any): string { return craft.app.url + "/api" }\n')
     await Bun.write(path.join(root, 'app.ts'), `
@@ -95,7 +94,7 @@ describe('the app script', () => {
   it('has no background without the capability, and no app route without an app script', async () => {
     const { scope } = await run(NATIVE_APP_ROUTE, [])
     expect(scope.craft.background).toBeUndefined()
-    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-noapp-'))
+    const root = createTempDir('stx-native-noapp-')
     await Bun.write(path.join(root, 'Home.stx'), '<script client></script><View><Text>Home</Text></View>')
     const { code } = await compileNativeBundle({ root, screens: { Home: 'Home.stx' } })
     const scope2: Record<string, any> = { __stxNativeRoute: NATIVE_APP_ROUTE, __stxNativeParams: {}, __stxNativeBridge: { platform: 'ios', capabilities: [], onMessage: () => {}, postMessage: () => {} }, setTimeout, clearTimeout }
@@ -103,7 +102,7 @@ describe('the app script', () => {
   })
 
   it('refuses an app script that does not exist, or a screen named for its route', async () => {
-    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-badapp-'))
+    const root = createTempDir('stx-native-badapp-')
     await Bun.write(path.join(root, 'Home.stx'), '<script client></script><View><Text>Home</Text></View>')
     await expect(compileNativeBundle({ root, screens: { Home: 'Home.stx' }, app: 'missing.ts' })).rejects.toThrow(/does not exist/)
     await Bun.write(path.join(root, 'app.ts'), 'export default () => {}\n')

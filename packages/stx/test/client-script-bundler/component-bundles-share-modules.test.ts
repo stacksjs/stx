@@ -12,14 +12,14 @@
  * not that the instance is shared.
  */
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { bundleClientScript, rewriteRegistryImports } from '../../src/client-script-bundler'
 import { buildModuleRegistryScript, registeredModuleIdsIn } from '../../src/client-module-registry'
 import { processDirectives } from '../../src/process'
 import { getServeModuleBundle } from '../../src/caching'
 import { generateSignalsRuntimeDev } from '../../src/signals'
+import { createTempDir } from '../../src/temp-dir'
 
 // eslint-disable-next-line ts/no-explicit-any
 const g = globalThis as any
@@ -39,7 +39,7 @@ afterEach(() => {
 })
 
 function project(files: Record<string, string>): string {
-  const dir = mkdtempSync(path.join(tmpdir(), 'stx-1957-'))
+  const dir = createTempDir('stx-1957-')
   for (const [file, content] of Object.entries(files)) {
     mkdirSync(path.dirname(path.join(dir, file)), { recursive: true })
     writeFileSync(path.join(dir, file), content)

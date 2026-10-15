@@ -14,18 +14,18 @@
  * auth-walled page — three hand-maintained lists standing in for one build.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { rm } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { isExcludedFromSitemap } from '../../src/ssg'
 import { resolveSiteUrl, SITE_URL_FALLBACK } from '../../src/site-url'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir = ''
 const originalCwd = process.cwd()
 
 beforeEach(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-sitemap-'))
+  dir = createTempDir('stx-sitemap-')
   await Bun.write(path.join(dir, 'views', 'index.stx'), '<main><h1>Home</h1></main>\n')
   await Bun.write(path.join(dir, 'views', 'login.stx'), '<main><h1>Login</h1></main>\n')
   await Bun.write(path.join(dir, 'views', 'components', 'site-nav.stx'), '<nav>nav</nav>\n')

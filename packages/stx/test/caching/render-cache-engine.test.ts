@@ -8,17 +8,17 @@
  * starting clean, passed.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { cacheEngineFingerprint, cacheTemplate, checkCache } from '../../src/caching'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir: string
 let template: string
 let options: any
 
 beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), 'stx-render-cache-'))
+  dir = createTempDir('stx-render-cache-')
   template = join(dir, 'page.stx')
   await writeFile(template, '<h1>{{ title }}</h1>')
   options = { cachePath: join(dir, 'cache'), cacheVersion: '1.0.0' }

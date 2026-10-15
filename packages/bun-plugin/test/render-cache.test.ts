@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { access, mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { access, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { fillRouteParams, isRenderableCacheCandidate, ROUTE_PARAMS_PLACEHOLDER, serverScriptsReadParams } from '../src/serve'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 const PORT = freePort()
 const BASE = `http://localhost:${PORT}`
@@ -30,7 +30,7 @@ async function waitForContent(expected: string): Promise<string> {
 }
 
 beforeAll(async () => {
-  fixtureDir = await mkdtemp(path.join(tmpdir(), 'stx-render-cache-'))
+  fixtureDir = createTempDir('stx-render-cache-')
   await Bun.write(path.join(fixtureDir, 'data', 'manifest.json'), 'alpha')
   await Bun.write(path.join(fixtureDir, 'views', 'index.stx'), `<script server>
 const marker = crypto.randomUUID()

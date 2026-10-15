@@ -17,11 +17,11 @@
  */
 import { WebView } from 'bun'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { getRouterScript } from '../../../router/src/client'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 const GIF = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='
 const ROWS = `[{ id: 1, name: 'Ada Lovelace', avatar_url: '${GIF}' }, { id: 2, name: 'Grace Hopper', avatar_url: '' }]`
@@ -62,7 +62,7 @@ async function page(name: string, group: string, body: string): Promise<void> {
 }
 
 beforeAll(async () => {
-  dir = mkdtempSync(join(tmpdir(), 'stx-routed-loop-component-'))
+  dir = createTempDir('stx-routed-loop-component-')
   await Bun.write(join(dir, 'Avatar.stx'), Bun.file(resolve(import.meta.dir, '../../../components/src/ui/avatar/Avatar.stx')))
   await page('home', 'app', `<script client>
 window.__roster = window.__roster || state([])

@@ -11,17 +11,21 @@
  * layouts could not be routed — a structural workaround for a framework bug,
  * which is the signal that this belonged in the scanner.
  */
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { Router } from '../src/file-router'
 import { isNonPageRoutePath, isNonPageRoutePattern, NON_PAGE_DIRS } from '../src/page-routes'
+import { createTempDir, removeAllTempDirs } from '../../stx/src/temp-dir'
+
+// No bunfig preload here when this package's tests run on their own, so
+// this file removes its own scratch directories (packages/stx/src/temp-dir.ts).
+afterAll(removeAllTempDirs)
 
 let dir = ''
 
 beforeEach(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-page-routes-'))
+  dir = createTempDir('stx-page-routes-')
 })
 
 afterEach(async () => {

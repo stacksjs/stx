@@ -1,8 +1,8 @@
 /* eslint-disable import/first */
 import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { createTempDir, removeTempDir } from '../../stx/src/temp-dir'
 
 // Mock craft-native before importing window module
 // Note: mock.module() MUST be called before importing the module being mocked
@@ -137,7 +137,7 @@ describe('Window Management', () => {
       // matched during ordinary development and took precedence over PATH and
       // CRAFT_BIN. It only passed on CI because craft was absent there — the
       // test was green exactly where it could not exercise the behaviour.
-      const binDir = join(tmpdir(), `stx-craft-bin-${Date.now()}`)
+      const binDir = createTempDir('stx-craft-bin-')
       mkdirSync(binDir, { recursive: true })
       writeFileSync(join(binDir, 'craft'), '')
       const previous = process.execPath
@@ -157,7 +157,8 @@ describe('Window Management', () => {
       // The gate must not simply disable the step: a shipped app carries its own
       // craft in Contents/MacOS and must resolve that rather than depending on
       // the user having pantry installed.
-      const bundle = join(tmpdir(), `stx-craft-${Date.now()}.app`)
+      const scratch = createTempDir('craft-app')
+      const bundle = join(scratch, 'MyApp.app')
       const macos = join(bundle, 'Contents', 'MacOS')
       mkdirSync(macos, { recursive: true })
       writeFileSync(join(macos, 'craft'), '')
@@ -170,7 +171,7 @@ describe('Window Management', () => {
       }
       finally {
         Object.defineProperty(process, 'execPath', { value: previous, configurable: true })
-        rmSync(bundle, { recursive: true, force: true })
+        removeTempDir(scratch)
       }
     })
   })

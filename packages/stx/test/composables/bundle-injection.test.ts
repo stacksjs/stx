@@ -23,8 +23,9 @@ import path from 'node:path'
 import { clearComposableCache } from '../../src/composable-loader'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
-const APP = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-bundle-injection-'))
+const APP = createTempDir('stx-bundle-injection-')
 const storesDir = path.join(APP, 'stores')
 const composablesDir = path.join(APP, 'functions')
 

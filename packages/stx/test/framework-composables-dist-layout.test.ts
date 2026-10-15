@@ -23,14 +23,14 @@
  * source. These fixtures are shaped like `dist/` on purpose.
  */
 import { afterAll, beforeAll, describe, expect, it, spyOn } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import {
   clearFrameworkComposableCache,
   getFrameworkComposableScript,
   selectComposableFiles,
 } from '../src/framework-composables'
+import { createTempDir } from '../src/temp-dir'
 
 /** `notify` is in the server-only set, so a page calling it requests a bundle. */
 const PAGE = `<script client>\nonMount(() => { notify('hi') })\n</script>`
@@ -79,7 +79,7 @@ describe('bundling from a dist-shaped directory', () => {
   let dir = ''
 
   beforeAll(async () => {
-    dir = await mkdtemp(path.join(tmpdir(), 'stx-composables-dist-'))
+    dir = createTempDir('stx-composables-dist-')
 
     // Exactly the shape a built package has: compiled JS beside declarations,
     // and a barrel that only exists as a declaration file.
@@ -146,7 +146,7 @@ describe('the missing-name warning', () => {
   let dir = ''
 
   beforeAll(async () => {
-    dir = await mkdtemp(path.join(tmpdir(), 'stx-composables-empty-'))
+    dir = createTempDir('stx-composables-empty-')
   })
 
   afterAll(async () => {

@@ -9,14 +9,14 @@
  * Rendered via the src processDirectives (not Bun.build).
  */
 import fs from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 import type { StxOptions } from '../../src/types'
 
 const opts: StxOptions = { debug: false, componentsDir: 'components' }
-const tmp = path.join(os.tmpdir(), 'stx-1746-stream-partial')
+const tmp = createTempDir('1746-stream-partial')
 const partialPath = path.join(tmp, 'tabs.stx')
 
 beforeAll(async () => {

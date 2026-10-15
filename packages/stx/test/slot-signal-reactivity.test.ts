@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { slotContentHasExpressions } from '../src/utils'
+import { createTempDir } from '../src/temp-dir'
 
 /**
  * Slot content belongs to the caller, so `{{ ... }}` inside it names the
@@ -19,7 +19,7 @@ import { slotContentHasExpressions } from '../src/utils'
 let dir: string
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-slot-signals-'))
+  dir = createTempDir('stx-slot-signals-')
 
   await Bun.write(path.join(dir, 'components', 'Callout.stx'), `<template>
   <div class="callout"><slot /></div>

@@ -23,8 +23,9 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { clearComposableCache, getComposableScript } from '../../src/composable-loader'
+import { createTempDir } from '../../src/temp-dir'
 
-const APP = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-composable-prune-'))
+const APP = createTempDir('stx-composable-prune-')
 const dir = path.join(APP, 'functions')
 
 beforeAll(async () => {

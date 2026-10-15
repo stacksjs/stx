@@ -15,15 +15,15 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { existsSync } from 'node:fs'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { buildViews } from '../../src/build-views'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir = ''
 
 beforeEach(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-build-views-fail-'))
+  dir = createTempDir('stx-build-views-fail-')
   await Bun.write(path.join(dir, 'lib', 'copy.ts'), `export const headline = 'REAL HEADLINE'\n`)
 })
 

@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { pageExcluder } from '../src/serve'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 /**
  * `exclude`: page files a pattern directory holds that the server must not
@@ -26,7 +26,7 @@ let dir: string
 let proc: ReturnType<typeof Bun.spawn> | null = null
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-serve-exclude-'))
+  dir = createTempDir('stx-serve-exclude-')
 
   await Bun.write(path.join(dir, 'app', 'index.stx'), '<main>home</main>\n')
   // The app's own page at the path of an excluded default: excluding the

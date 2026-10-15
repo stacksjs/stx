@@ -12,13 +12,13 @@
  * pictures in a strength editor inside a dialog drew blank.
  */
 import { describe, expect, it } from 'bun:test'
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 function project(files: Record<string, string>): string {
-  const dir = mkdtempSync(path.join(tmpdir(), 'stx-slot-loop-'))
+  const dir = createTempDir('stx-slot-loop-')
   for (const [file, content] of Object.entries(files)) {
     mkdirSync(path.dirname(path.join(dir, file)), { recursive: true })
     writeFileSync(path.join(dir, file), content)

@@ -1,13 +1,12 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import path from 'node:path'
 import vm from 'node:vm'
-import { mkdtemp } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
 import { compileScreenSource } from '../../src/native/compiler/render-screen'
 import { prepareSharedNativeScreen } from '../../src/native/runtime/shared-screen'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import { installNodeConstants } from '../../test-utils/dom-runtime-shim'
+import { createTempDir } from '../../src/temp-dir'
 
 declare const window: any
 
@@ -171,7 +170,7 @@ async function mountScreen(source: string) {
 
 /** The screen as the device runs it: the JavaScriptCore bundle, with no DOM. */
 async function mountBundle(source: string) {
-  const root = await mkdtemp(path.join(tmpdir(), 'stx-native-rows-'))
+  const root = createTempDir('stx-native-rows-')
   const file = path.join(root, 'Screen.stx')
   await Bun.write(file, source)
   const { code } = await compileSharedScreenBundle(file)
@@ -462,6 +461,5 @@ globalThis.__load = () => day.set({ line: 'M0 10L10 0', hours: ['6', '12'] })
     expect(native.errors).toEqual([])
     expect(native.tree()).toBe('View[View[Svg[Path G[Circle]]] View[Text(6) Text(12)]]')
   })
-
 
 })

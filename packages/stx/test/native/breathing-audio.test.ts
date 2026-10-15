@@ -5,12 +5,11 @@
  * Also the animation frame such a screen's scene runs on.
  */
 import { describe, expect, it } from 'bun:test'
-import { mkdtemp } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
 import path from 'node:path'
 import vm from 'node:vm'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
 import { installJSCGlobals, NATIVE_FRAME_MS } from '../../src/native/runtime/jsc-globals'
+import { createTempDir } from '../../src/temp-dir'
 
 const composables = path.resolve(import.meta.dir, '../../src/composables')
 
@@ -67,7 +66,7 @@ function fakeWebAudio() {
 }
 
 async function breathingScreen() {
-  const root = await mkdtemp(path.join(tmpdir(), 'stx-native-breathing-'))
+  const root = createTempDir('stx-native-breathing-')
   const file = path.join(root, 'Breathe.stx')
   await Bun.write(file, `<script client>
 import { useAmbientSound } from '${composables}/use-ambient-sound'

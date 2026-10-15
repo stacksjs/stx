@@ -3,11 +3,12 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { extractVariables } from '../src/variable-extractor'
+import { createTempDir } from '../src/temp-dir'
 
 const made: string[] = []
 
 function project(files: Record<string, string>): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-require-'))
+  const dir = createTempDir('stx-require-')
   made.push(dir)
   for (const [name, contents] of Object.entries(files)) {
     const file = path.join(dir, name)

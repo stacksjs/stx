@@ -16,10 +16,10 @@
  * connecting would pass while that was broken.
  */
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 setDefaultTimeout(90_000)
 
@@ -31,7 +31,7 @@ let dir: string
 let proc: ReturnType<typeof Bun.spawn> | null = null
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-build-err-'))
+  dir = createTempDir('stx-build-err-')
 
   // A client script importing a module that does not exist.
   await Bun.write(path.join(dir, 'views', 'broken.stx'), `<main><h1>Broken</h1></main>

@@ -29,8 +29,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { processDirectives } from '../src/process'
 import type { StxOptions } from '../src/types'
+import { createTempDir } from '../src/temp-dir'
 
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-layout-precedence-'))
+const TMP = createTempDir('stx-layout-precedence-')
 
 // The stray directory the walk finds: a sibling of the page, named `layouts`.
 const STRAY = path.join(TMP, 'layouts')
@@ -113,7 +114,7 @@ describe('a layouts/-prefixed reference is not doubled', () => {
   // slash is resolved relative to the page before any layouts directory is
   // consulted, so a stray sibling would answer this one on that earlier path
   // and the assertion would say nothing about prefix stripping.
-  const PREFIX_TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-layout-prefix-'))
+  const PREFIX_TMP = createTempDir('stx-layout-prefix-')
   const PREFIX_LAYOUTS = path.join(PREFIX_TMP, 'configured-layouts')
 
   beforeAll(() => {

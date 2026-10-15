@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { chmodSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { bundlePathForExecutable, createGitHubUpdateManifest, createSelfUpdater, githubLatestAssetUrl, githubReleaseAssetUrl, relaunchBundle } from '../src/self-update'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 describe('GitHub release URLs', () => {
   it('points the app at whatever release is latest, without knowing a version', () => {
@@ -18,7 +18,7 @@ describe('GitHub release URLs', () => {
 
 describe('GitHub update manifest', () => {
   it('hashes each artifact and derives its download URL from the tag', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'stx-update-'))
+    const dir = createTempDir('stx-update-')
     try {
       const dmg = join(dir, 'Barista-0.1.0.dmg')
       writeFileSync(dmg, 'pretend disk image')
@@ -45,7 +45,7 @@ describe('GitHub update manifest', () => {
   })
 
   it('honours an explicit tag and skips platforms with no artifact', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'stx-update-'))
+    const dir = createTempDir('stx-update-')
     try {
       const dmg = join(dir, 'App.dmg')
       writeFileSync(dmg, 'x')
@@ -103,7 +103,7 @@ describe('createSelfUpdater', () => {
   })
 
   it('pins the signing team to whoever signed the running copy', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'stx-selfupdate-'))
+    const dir = createTempDir('stx-selfupdate-')
     try {
       // No bundle to read an identity from, so the team resolves to undefined
       // and the updater is still constructed — an unsigned development build
@@ -122,7 +122,7 @@ describe('createSelfUpdater', () => {
   })
 
   it('honours an explicit team over the running copy', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'stx-selfupdate-'))
+    const dir = createTempDir('stx-selfupdate-')
     try {
       const updater = await createSelfUpdater({
         repository: 'stacksjs/barista',

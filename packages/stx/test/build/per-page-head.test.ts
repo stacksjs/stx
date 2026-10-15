@@ -7,15 +7,15 @@
  * processHeadDirective but discarded at the call site.
  */
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { defaultConfig, processDirectives } from '../../src/index'
+import { createTempDir } from '../../src/temp-dir'
 
 const tmpDirs: string[] = []
 
 function tmp(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'stx-per-page-head-'))
+  const dir = createTempDir('stx-per-page-head-')
   tmpDirs.push(dir)
   return dir
 }

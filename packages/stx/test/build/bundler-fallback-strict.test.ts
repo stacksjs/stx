@@ -12,8 +12,7 @@
  * rather nothing rendered at all than a page whose bindings quietly do nothing.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import {
   bundleClientScript,
@@ -23,6 +22,7 @@ import {
   setBundlerFallbackMode,
 } from '../../src/client-script-bundler'
 import { config } from '../../src/config'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir = ''
 let file = ''
@@ -31,7 +31,7 @@ let file = ''
 const BROKEN = `import { missing } from './does-not-exist'\nconst n = missing(1)\nconsole.warn(n)\n`
 
 beforeEach(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-fallback-'))
+  dir = createTempDir('stx-fallback-')
   file = path.join(dir, 'page.stx')
   await Bun.write(file, '<main>x</main>\n')
   clearBundleFailures()

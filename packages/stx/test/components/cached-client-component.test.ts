@@ -27,6 +27,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { renderView } from '../../src/build-views'
 import { clearDevCaches } from '../../src/caching'
+import { createTempDir } from '../../src/temp-dir'
 
 const made: string[] = []
 
@@ -37,7 +38,7 @@ afterEach(() => {
 })
 
 function app(): { dir: string, componentsDir: string, options: Record<string, unknown> } {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-cached-client-'))
+  const dir = createTempDir('stx-cached-client-')
   made.push(dir)
   const componentsDir = path.join(dir, 'components')
   fs.mkdirSync(componentsDir, { recursive: true })

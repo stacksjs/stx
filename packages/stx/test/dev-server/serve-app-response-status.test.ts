@@ -12,10 +12,10 @@
  * and hands back no stop handle.
  */
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { freePort } from '../../../stx/test-utils/test-port'
+import { createTempDir } from '../../src/temp-dir'
 
 setDefaultTimeout(60_000)
 
@@ -27,7 +27,7 @@ let dir: string
 let proc: ReturnType<typeof Bun.spawn> | null = null
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-serve-app-status-'))
+  dir = createTempDir('stx-serve-app-status-')
 
   // One file, two answers, and only the render knows which.
   await Bun.write(path.join(dir, 'pages', 'thing', '[id].stx'), `<script server>

@@ -28,11 +28,11 @@
  * class of bug hides. The same sweep is what surfaced stacksjs/stx#2033.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { readFileSync } from 'node:fs'
 import { processDirectives } from '../../stx/src/process'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 const SRC = path.join(import.meta.dir, '..', 'src')
 
@@ -65,7 +65,7 @@ const CONTROL_SOURCES = [
 let dir = ''
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-form-ids-'))
+  dir = createTempDir('stx-form-ids-')
   // The tree is preserved: a component that imports a sibling by relative path
   // renders with raw `{{ }}` in every attribute once it is flattened.
   await Bun.$`cp -R ${SRC} ${dir}/components`.quiet()

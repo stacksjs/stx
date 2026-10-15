@@ -30,6 +30,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { generateRouteTypes } from '../src/router'
 import { $path } from '../src/route-types'
+import { createTempDir } from '../src/temp-dir'
 
 describe('$path', () => {
   it('fills a dynamic segment', () => {
@@ -65,7 +66,7 @@ describe('the generated declaration', () => {
   let dir = ''
 
   beforeAll(() => {
-    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-route-decl-'))
+    dir = createTempDir('stx-route-decl-')
   })
 
   afterAll(() => {
@@ -130,7 +131,7 @@ describe('type checking a real project', () => {
   let linkError = ''
 
   beforeAll(() => {
-    project = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-route-tsc-'))
+    project = createTempDir('stx-route-tsc-')
 
     const modules = path.join(project, 'node_modules', '@stacksjs')
     fs.mkdirSync(modules, { recursive: true })

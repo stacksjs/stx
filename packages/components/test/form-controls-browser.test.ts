@@ -11,17 +11,17 @@
  */
 import { WebView } from 'bun'
 import { afterAll, beforeAll, expect, it } from 'bun:test'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 // `../../stx/src`, never `@stacksjs/stx`, which resolves to a lagging dist.
 import { processDirectives } from '../../stx/src/process'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 let dir = ''
 let view: InstanceType<typeof WebView>
 
 beforeAll(async () => {
-  dir = mkdtempSync(join(tmpdir(), 'stx-select-options-'))
+  dir = createTempDir('stx-select-options-')
   await Bun.write(join(dir, 'Select.stx'), Bun.file(resolve(import.meta.dir, '../src/ui/select/Select.stx')))
   await Bun.write(join(dir, 'Textarea.stx'), Bun.file(resolve(import.meta.dir, '../src/ui/textarea/Textarea.stx')))
   const html = await processDirectives(`<!doctype html><html><head></head><body>

@@ -1,11 +1,11 @@
 import { afterAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
 import { existsSync } from 'node:fs'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { encode } from 'ts-images'
 import { DEFAULT_IMAGE_WARMUP_BIND_BUDGET_MS, projectUsesImageBuiltins, resolveImageWarmupBindBudget, settleWithin } from '../src/serve'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 setDefaultTimeout(60_000)
 
@@ -66,7 +66,7 @@ async function boot(
   page = USES_IMAGE,
   files: Record<string, string> = {},
 ): Promise<Boot> {
-  const dir = await mkdtemp(path.join(tmpdir(), 'stx-bind-'))
+  const dir = createTempDir('stx-bind-')
   dirs.push(dir)
   await Bun.write(path.join(dir, 'views', 'index.stx'), page)
   for (const [name, content] of Object.entries(files))
@@ -186,7 +186,7 @@ describe('startup image pass and the bind', () => {
   // A release directory is new on every deploy; variants kept inside it were
   // re-encoded by every release. STX_IMAGE_CACHE_DIR lets them outlive it.
   it('keeps the variants under STX_IMAGE_CACHE_DIR when it is set', async () => {
-    const cache = await mkdtemp(path.join(tmpdir(), 'stx-image-cache-'))
+    const cache = createTempDir('stx-image-cache-')
     dirs.push(cache)
     await timeToBind({ APP_ENV: 'production', NODE_ENV: 'production', STX_IMAGE_CACHE_DIR: cache }, freePort())
 
@@ -268,7 +268,7 @@ describe('serving while the pass runs', () => {
   // cold cache after a deploy kept pages at 14-18s and the proxy in front saw
   // empty responses for the minutes the pass took.
   it('answers a page quickly while a cold pass is still encoding', async () => {
-    const dir = await mkdtemp(path.join(tmpdir(), 'stx-busy-'))
+    const dir = createTempDir('stx-busy-')
     dirs.push(dir)
     const port = freePort()
     await Bun.write(path.join(dir, 'views', 'index.stx'), '<main><StxImage src="/photo-0.png" alt="Photo" /></main>')
@@ -345,7 +345,7 @@ serve({ patterns: ['views'], port: ${port}, stxModule: stxModule as any, imageWa
 
 describe('projectUsesImageBuiltins', () => {
   async function project(files: Record<string, string>): Promise<string> {
-    const dir = await mkdtemp(path.join(tmpdir(), 'stx-uses-image-'))
+    const dir = createTempDir('stx-uses-image-')
     dirs.push(dir)
     for (const [name, content] of Object.entries(files))
       await Bun.write(path.join(dir, name), content)

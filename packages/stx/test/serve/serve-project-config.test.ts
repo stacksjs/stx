@@ -15,10 +15,10 @@
  * loaded the config.
  */
 import { describe, expect, it } from 'bun:test'
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { serve } from '../../src/serve'
+import { createTempDir } from '../../src/temp-dir'
 
 /**
  * A project whose config registers a component directory, with the templates
@@ -26,7 +26,7 @@ import { serve } from '../../src/serve'
  * `loadStxConfig` deliberately does not search parent directories.
  */
 function project(): { dir: string, views: string } {
-  const dir = mkdtempSync(join(tmpdir(), 'stx-serve-config-'))
+  const dir = createTempDir('stx-serve-config-')
   const views = join(dir, 'src', 'views')
   const components = join(dir, 'kit')
   mkdirSync(views, { recursive: true })

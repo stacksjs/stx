@@ -2,8 +2,8 @@ import { describe, expect, it, beforeAll, afterAll } from 'bun:test'
 import { processDirectives } from '../../src/process'
 import { usesSignalsInScript } from '../../src/expressions'
 import { join } from 'node:path'
-import { mkdtemp, writeFile, mkdir, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { writeFile, mkdir, rm } from 'node:fs/promises'
+import { createTempDir } from '../../src/temp-dir'
 
 /**
  * Regression for stacksjs/stx#1748: `{{ loopVar.prop }}` text interpolation
@@ -24,7 +24,7 @@ describe('{{ }} interpolation inside a component x-for (#1748)', () => {
   let componentsDir: string
 
   beforeAll(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'stx-1748-'))
+    tempDir = createTempDir('stx-1748-')
     componentsDir = join(tempDir, 'components')
     await mkdir(componentsDir, { recursive: true })
     await writeFile(
@@ -85,7 +85,7 @@ describe('{{ }} interpolation from reactive component props', () => {
   let componentsDir: string
 
   beforeAll(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'stx-reactive-prop-text-'))
+    tempDir = createTempDir('stx-reactive-prop-text-')
     componentsDir = join(tempDir, 'components')
     await mkdir(componentsDir, { recursive: true })
     await writeFile(

@@ -18,10 +18,10 @@
  * feeding it to the router, which swaps a whole document inside `<main>`.
  */
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 setDefaultTimeout(60_000)
 
@@ -41,7 +41,7 @@ function varyFields(res: Response): string[] {
 }
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-frag-cache-key-'))
+  dir = createTempDir('stx-frag-cache-key-')
 
   await Bun.write(path.join(dir, 'views', 'benefits.stx'), `<!DOCTYPE html>
 <html lang="en">

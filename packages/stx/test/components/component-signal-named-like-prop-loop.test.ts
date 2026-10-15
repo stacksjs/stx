@@ -13,16 +13,16 @@
  * control rendered an empty track.
  */
 import { afterAll, beforeAll, describe, expect, it, spyOn } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 let tempDir: string
 let componentsDir: string
 
 beforeAll(async () => {
-  tempDir = await mkdtemp(join(tmpdir(), 'stx-signal-like-prop-'))
+  tempDir = createTempDir('stx-signal-like-prop-')
   componentsDir = join(tempDir, 'components')
   await mkdir(componentsDir, { recursive: true })
   await writeFile(join(componentsDir, 'Segments.stx'), `<script client>

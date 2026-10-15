@@ -11,11 +11,12 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { rewriteImagesWithSiblings } from '../../src/image-optimization/auto-sibling'
+import { createTempDir } from '../../src/temp-dir'
 
 let publicDir: string
 
 beforeAll(async () => {
-  publicDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-autosib-'))
+  publicDir = createTempDir('stx-autosib-')
   await fs.promises.mkdir(path.join(publicDir, 'images'), { recursive: true })
 
   // hero.jpg has both .webp AND .avif siblings — full picture wrap

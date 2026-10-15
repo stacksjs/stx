@@ -8,16 +8,16 @@
  * components that name their own native type.
  */
 import { describe, expect, it } from 'bun:test'
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { extractClientScript } from '../../src/native/compiler/client-script'
 import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import type { STXNode } from '../../src/native/compiler/ir'
 import { compileScreenFile, compileScreenSource, nativePrimitivesDir } from '../../src/native/compiler/render-screen'
+import { createTempDir } from '../../src/temp-dir'
 
 // Outside the repo: these are throwaway templates, not fixtures.
-const SCRATCH = mkdtempSync(path.join(tmpdir(), 'stx-native-screens-'))
+const SCRATCH = createTempDir('stx-native-screens-')
 
 function screen(name: string, source: string): string {
   const file = path.join(SCRATCH, name)
@@ -390,7 +390,7 @@ describe('an app whose web components share a primitive\'s name', () => {
   // its own markup and classes, none of the static props the screen wrote. A
   // bound `:testID` survived only because stx forwards bindings onto whatever
   // root a component renders.
-  const APP = mkdtempSync(path.join(tmpdir(), 'stx-native-app-'))
+  const APP = createTempDir('stx-native-app-')
   const WEB_COMPONENT = `<script server>
 const variant = $props.variant ?? 'primary'
 </script>

@@ -11,11 +11,11 @@
  */
 import { WebView } from 'bun'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { getRouterScript } from '../../../router/src/client'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir: string
 let view: WebView
@@ -31,7 +31,7 @@ async function page(name: string, group: string, body: string): Promise<void> {
 }
 
 beforeAll(async () => {
-  dir = mkdtempSync(join(tmpdir(), 'stx-layout-change-setup-'))
+  dir = createTempDir('stx-layout-change-setup-')
   await page('calendar', 'coach', `<script client>
 window.__calendarRuns = (window.__calendarRuns || 0) + 1
 const athlete = state('3057')

@@ -1,8 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import { Router } from '../src/file-router'
+import { createTempDir, removeAllTempDirs } from '../../stx/src/temp-dir'
+
+// No bunfig preload here when this package's tests run on their own, so
+// this file removes its own scratch directories (packages/stx/src/temp-dir.ts).
+afterAll(removeAllTempDirs)
 
 /**
  * Layered page roots: the Router accepts an ordered stack of page
@@ -17,7 +22,7 @@ describe('Router with layered pagesDirs', () => {
   let defaultsDir: string
 
   beforeEach(() => {
-    baseDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-router-roots-'))
+    baseDir = createTempDir('stx-router-roots-')
     userDir = path.join(baseDir, 'resources', 'views')
     defaultsDir = path.join(baseDir, 'storage', 'framework', 'defaults', 'resources', 'views')
     fs.mkdirSync(userDir, { recursive: true })

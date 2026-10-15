@@ -24,11 +24,11 @@
  *   { a: 1 }     { a: 1 }       { a: 1 }
  */
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { readFileSync } from 'node:fs'
 import { processDirectives } from '../../stx/src/process'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 const UI = path.join(import.meta.dir, '..', 'src', 'ui')
 
@@ -47,7 +47,7 @@ const CARRIED_THE_SENTINEL = [
 let dir = ''
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-absent-value-'))
+  dir = createTempDir('stx-absent-value-')
   for (const [rel] of CARRIED_THE_SENTINEL) {
     const name = path.basename(rel)
     await Bun.write(path.join(dir, 'components', name), readFileSync(path.join(UI, rel), 'utf-8'))

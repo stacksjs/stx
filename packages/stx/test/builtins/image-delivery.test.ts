@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { encode } from 'ts-images'
 import { clearImageDeliveryCatalog, getImageDelivery, imageEncoderIdentity, prepareImageDelivery, setImageEncoderIdentity, webpHeaderHasAlpha } from '../../src/builtins/image-delivery'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 describe('build-time Image delivery', () => {
   let tempDir: string
@@ -13,7 +13,7 @@ describe('build-time Image delivery', () => {
   let outputDir: string
 
   beforeAll(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'stx-image-delivery-'))
+    tempDir = createTempDir('stx-image-delivery-')
     publicDir = join(tempDir, 'public')
     outputDir = join(tempDir, 'dist')
     await mkdir(join(publicDir, 'images'), { recursive: true })
@@ -222,7 +222,7 @@ describe('variants written by an older encoder', () => {
   // names hashed the source and the options, not the encoder, so every later
   // release found them, and with a fixed encoder still served PNG forever.
   it('does not reuse them once the encoder changes', async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'stx-image-encoder-'))
+    tempDir = createTempDir('stx-image-encoder-')
     const publicDir = join(tempDir, 'public')
     const sharedCache = join(tempDir, 'shared-cache')
     await mkdir(publicDir, { recursive: true })

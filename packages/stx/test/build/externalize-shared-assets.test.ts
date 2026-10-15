@@ -20,15 +20,15 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { EXTERNALIZED_ASSET_DIR, externalizeSharedAssets } from '../../src/build-externalize'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir = ''
 
 beforeEach(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-externalize-'))
+  dir = createTempDir('stx-externalize-')
 })
 
 afterEach(async () => {

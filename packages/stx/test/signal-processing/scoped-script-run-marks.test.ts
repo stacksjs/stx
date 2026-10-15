@@ -20,11 +20,11 @@
  * an IntersectionObserver on every navigation.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 const base = {
   ...defaultConfig,
@@ -81,7 +81,7 @@ describe('a component used more than once', () => {
   let dir = ''
 
   beforeAll(async () => {
-    dir = await mkdtemp(path.join(tmpdir(), 'stx-run-marks-'))
+    dir = createTempDir('stx-run-marks-')
   })
 
   afterAll(async () => {

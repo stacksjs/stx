@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { processInlineAssets } from '../src/inline-assets'
+import { createTempDir } from '../src/temp-dir'
 
 /**
  * What gets inlined is a classic `<script>`, where `import.meta` is a
@@ -12,7 +12,7 @@ import { processInlineAssets } from '../src/inline-assets'
  */
 describe('inlining browser code into a classic script', () => {
   it('refuses code that still references import.meta', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'stx-inline-'))
+    const dir = createTempDir('stx-inline-')
     try {
       await writeFile(join(dir, 'boom.ts'), 'export const where = import.meta.url\n')
       const html = '<script src="./boom.ts"></script>'
@@ -26,7 +26,7 @@ describe('inlining browser code into a classic script', () => {
   })
 
   it('inlines ordinary browser code untouched', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'stx-inline-ok-'))
+    const dir = createTempDir('stx-inline-ok-')
     try {
       await writeFile(join(dir, 'fine.ts'), 'export const n: number = 41 + 1\n')
       const html = '<script src="./fine.ts"></script>'

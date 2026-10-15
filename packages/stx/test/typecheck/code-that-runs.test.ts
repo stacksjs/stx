@@ -9,11 +9,11 @@
  */
 
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { typecheckStxFiles } from '../../src/typecheck'
 import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+import { createTempDir } from '../../src/temp-dir'
 
 allowForATypeScriptProgram()
 
@@ -24,7 +24,7 @@ afterEach(() => {
 
 // Outside the repo, so this repository's tsconfig cannot reach the fixture.
 async function check(source: string, files: Record<string, string> = {}) {
-  const dir = mkdtempSync(join(tmpdir(), 'stx-runs-'))
+  const dir = createTempDir('stx-runs-')
   dirs.push(dir)
   for (const [name, content] of Object.entries(files))
     await Bun.write(join(dir, name), content)

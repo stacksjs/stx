@@ -16,10 +16,11 @@
 import { existsSync, mkdirSync, copyFileSync, chmodSync } from 'node:fs'
 import { join, dirname, basename, resolve } from 'node:path'
 import { spawn, execSync } from 'node:child_process'
-import { tmpdir, homedir, platform as osPlatform } from 'node:os'
+import { homedir, platform as osPlatform } from 'node:os'
 import { injectCraftBridge } from './craft-bridge'
 import { processCraftComponents, CRAFT_COMPONENT_STYLES } from './craft-components'
 import { renderTemplate } from './render'
+import { createTempDir, removeTempDir } from './temp-dir'
 
 export type NativeTarget = 'macos' | 'windows' | 'linux' | 'ios' | 'android'
 export type NativeFormat = 'app' | 'dmg' | 'pkg' | 'msi' | 'zip' | 'deb' | 'rpm' | 'appimage' | 'ipa' | 'apk'
@@ -804,8 +805,12 @@ async function createDEB(
   config: NativeBuildConfig,
 ): Promise<{ success: boolean; error?: string }> {
   return new Promise((resolve) => {
+    // Removed on every path out, and on exit or interrupt if none is reached.
+    // The package root is a subdirectory: mkdtemp's 0700 is not a mode
+    // dpkg-deb should copy into the package.
+    const scratch = createTempDir('deb')
     try {
-      const tempDir = join(tmpdir(), `stx-deb-${Date.now()}`)
+      const tempDir = join(scratch, 'pkg')
       const debianDir = join(tempDir, 'DEBIAN')
       const binDir = join(tempDir, 'usr', 'bin')
       const shareDir = join(tempDir, 'usr', 'share', 'applications')
@@ -843,8 +848,7 @@ Description: ${config.description || appName}
       const proc = spawn('dpkg-deb', ['--build', tempDir, outputPath])
 
       proc.on('close', (code) => {
-        // Cleanup
-        require('fs').rmSync(tempDir, { recursive: true, force: true })
+        removeTempDir(scratch)
 
         if (code === 0) {
           resolve({ success: true })
@@ -855,11 +859,12 @@ Description: ${config.description || appName}
       })
 
       proc.on('error', (err) => {
-        require('fs').rmSync(tempDir, { recursive: true, force: true })
+        removeTempDir(scratch)
         resolve({ success: false, error: err.message })
       })
     }
     catch (error) {
+      removeTempDir(scratch)
       resolve({ success: false, error: (error as Error).message })
     }
   })
@@ -875,8 +880,9 @@ async function createAppImage(
   config: NativeBuildConfig,
 ): Promise<{ success: boolean; error?: string }> {
   return new Promise((resolve) => {
+    // Removed on every path out, and on exit or interrupt if none is reached.
+    const tempDir = createTempDir('appimage')
     try {
-      const tempDir = join(tmpdir(), `stx-appimage-${Date.now()}`)
       const appDirPath = join(tempDir, `${appName}.AppDir`)
       const usrDir = join(appDirPath, 'usr')
       const binDir = join(usrDir, 'bin')
@@ -936,7 +942,7 @@ Icon=${appName.toLowerCase()}
       })
 
       proc.on('close', (code) => {
-        require('fs').rmSync(tempDir, { recursive: true, force: true })
+        removeTempDir(tempDir)
 
         if (code === 0) {
           chmodSync(outputPath, 0o755)
@@ -951,11 +957,12 @@ Icon=${appName.toLowerCase()}
       })
 
       proc.on('error', (err) => {
-        require('fs').rmSync(tempDir, { recursive: true, force: true })
+        removeTempDir(tempDir)
         resolve({ success: false, error: `appimagetool not found: ${err.message}` })
       })
     }
     catch (error) {
+      removeTempDir(tempDir)
       resolve({ success: false, error: (error as Error).message })
     }
   })

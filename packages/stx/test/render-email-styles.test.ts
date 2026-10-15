@@ -1,15 +1,15 @@
 import { afterAll, describe, expect, it } from 'bun:test'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { renderEmail } from '../src/build-views'
+import { createTempDir } from '../src/temp-dir'
 
 // renderEmail stripped every <style> block on the grounds that utility CSS had
 // been inlined. That also removed the template author's own rules, and `@media`
 // cannot be inlined - so no email could have a dark mode or a phone layout, and
 // a caller's own CSS inliner (Stacks runs one) received nothing.
 
-const dir = mkdtempSync(join(tmpdir(), 'stx-render-email-'))
+const dir = createTempDir('stx-render-email-')
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
 async function render(body: string) {

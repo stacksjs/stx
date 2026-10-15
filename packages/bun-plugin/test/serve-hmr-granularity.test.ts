@@ -26,10 +26,10 @@
  * would have been handed the already-correct absolute path.
  */
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 setDefaultTimeout(90_000)
 
@@ -43,7 +43,7 @@ let proc: ReturnType<typeof Bun.spawn> | null = null
 const seen: string[] = []
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-hmr-gran-'))
+  dir = createTempDir('stx-hmr-gran-')
 
   await Bun.write(path.join(dir, 'views', 'index.stx'), '<main><h1>Home</h1></main>\n')
   await Bun.write(path.join(dir, 'layouts', 'app.stx'), `<div>@yield('content')</div>\n`)

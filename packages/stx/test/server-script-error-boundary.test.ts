@@ -14,11 +14,10 @@
  * broken script.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { mkdtemp } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { processDirectives } from '../src/process'
 import { extractVariables, isMissingBindingFailure, isModuleResolutionFailure } from '../src/variable-extractor'
+import { createTempDir } from '../src/temp-dir'
 
 let originalNodeEnv: string | undefined
 let originalWarn: typeof console.warn
@@ -43,7 +42,7 @@ afterEach(() => {
 })
 
 async function render(script: string): Promise<string> {
-  const root = await mkdtemp(path.join(tmpdir(), 'stx-server-script-boundary-'))
+  const root = createTempDir('stx-server-script-boundary-')
   const file = path.join(root, 'Widget.stx')
   const source = `<div class="wrapper">
   <script server>

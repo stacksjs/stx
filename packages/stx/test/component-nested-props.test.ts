@@ -37,8 +37,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { processDirectives } from '../src/process'
 import type { StxOptions } from '../src/types'
+import { createTempDir } from '../src/temp-dir'
 
-const ROOT = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-nested-props-'))
+const ROOT = createTempDir('stx-nested-props-')
 let caseId = 0
 
 afterAll(() => fs.rmSync(ROOT, { recursive: true, force: true }))

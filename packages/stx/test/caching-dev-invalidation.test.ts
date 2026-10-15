@@ -32,6 +32,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { __setSignalsGeneratorsForTest, clearDevCaches, getCachedSignalsRuntime } from '../src/caching'
 import { getComponentCacheStats, renderComponentWithSlot } from '../src/utils'
+import { createTempDir } from '../src/temp-dir'
 
 let prodGenCount = 0
 let devGenCount = 0
@@ -79,7 +80,7 @@ describe('signals runtime cache + clearDevCaches (stacksjs/stx#1745 item C)', ()
   })
 
   it('clears cached child component source after an edit', async () => {
-    const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-dev-cache-'))
+    const tempDir = createTempDir('stx-dev-cache-')
     try {
       const componentPath = path.join(tempDir, 'StatusCard.stx')
       await Bun.write(componentPath, '<p>first version</p>')

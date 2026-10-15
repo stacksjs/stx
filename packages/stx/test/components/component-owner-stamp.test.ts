@@ -9,13 +9,13 @@
  * once is inlined as a call, one used twice goes through a shared factory.
  */
 import { describe, expect, it } from 'bun:test'
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 function project(files: Record<string, string>): string {
-  const dir = mkdtempSync(path.join(tmpdir(), 'stx-1958-'))
+  const dir = createTempDir('stx-1958-')
   for (const [file, content] of Object.entries(files)) {
     mkdirSync(path.dirname(path.join(dir, file)), { recursive: true })
     writeFileSync(path.join(dir, file), content)

@@ -1,13 +1,13 @@
 import type { StxOptions } from '../../src/types'
 import { expect, it } from 'bun:test'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { getBundleFailures, clearBundleFailures } from '../../src/client-script-bundler'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 it('consumes included component imports before building browser scripts', async () => {
-  const root = mkdtempSync(path.join(tmpdir(), 'stx-partial-browser-'))
+  const root = createTempDir('stx-partial-browser-')
   try {
     mkdirSync(path.join(root, 'partials'), { recursive: true })
     const pkg = path.join(root, 'node_modules', 'component-kit')

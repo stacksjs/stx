@@ -1,12 +1,12 @@
 import { afterEach, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { useModel } from '../../src/component-model'
 import { createComponentInstance, resetComponentState, setCurrentInstance } from '../../src/composition-api'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import { runDestroyCallbacks, state } from '../../src/signals-api'
 import { installNodeConstants } from '../../test-utils/dom-runtime-shim'
+import { createTempDir } from '../../src/temp-dir'
 
 declare const window: any
 declare const document: any
@@ -29,7 +29,7 @@ afterEach(() => {
 })
 
 it('keeps the shared model factory executable after bundling and minification', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'stx-model-bundle-'))
+  const dir = createTempDir('stx-model-bundle-')
   try {
     const result = await Bun.build({
       entrypoints: [resolve(import.meta.dir, '../../src/signals.ts')],

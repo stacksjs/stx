@@ -15,19 +15,19 @@
  * single Preflight reset.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { tmpdir } from 'node:os'
 import { composeShellWithPage, processShell } from '../../src/app-shell'
 import { getCssServeAsset, injectCss } from '../../src/dev-server/ts-css'
 import { dedupeScopedStyles } from '../../src/style-scoping'
+import { createTempDir } from '../../src/temp-dir'
 
 describe('css + app shell composition (#1749)', () => {
   let dir: string
   let shellPath: string
 
   beforeAll(async () => {
-    dir = await mkdtemp(join(tmpdir(), 'stx-1749-'))
+    dir = createTempDir('stx-1749-')
     shellPath = join(dir, 'shell.stx')
     // A shell whose nav uses gap-4 (so the shell's own css pass emits it).
     await writeFile(

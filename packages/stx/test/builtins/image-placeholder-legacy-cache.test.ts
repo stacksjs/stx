@@ -11,12 +11,12 @@
  * could only ever have answered `false`.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { encode } from 'ts-images'
 import { sourceAlpha } from '../../src/builtins/image-alpha'
 import { clearImagePlaceholders, getImagePlaceholder, warmImagePlaceholders } from '../../src/builtins/image-placeholder'
+import { createTempDir } from '../../src/temp-dir'
 
 const LEGACY = 'data:image/svg+xml,legacy'
 
@@ -36,7 +36,7 @@ let publicDir: string
 let cachePath: string
 
 beforeAll(async () => {
-  dir = await mkdtemp(join(tmpdir(), 'stx-placeholder-legacy-'))
+  dir = createTempDir('stx-placeholder-legacy-')
   publicDir = join(dir, 'public')
   cachePath = join(dir, 'placeholders.json')
   const w = 32

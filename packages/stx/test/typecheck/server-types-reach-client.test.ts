@@ -20,15 +20,15 @@
  */
 
 import { afterAll, describe, expect, it } from 'bun:test'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { extractTypeDeclarations } from '../../src/stx-virtual-ts'
 import { typecheckStxFiles } from '../../src/typecheck'
 import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+import { createTempDir } from '../../src/temp-dir'
 
 allowForATypeScriptProgram()
 
-const dir = join(tmpdir(), `stx-server-types-${crypto.randomUUID()}`)
+const dir = createTempDir('stx-server-types-')
 
 afterAll(async () => {
   await Bun.$`rm -rf ${dir}`.quiet().catch(() => {})

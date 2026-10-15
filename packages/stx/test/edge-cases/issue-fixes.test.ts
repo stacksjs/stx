@@ -11,8 +11,9 @@ import path from 'node:path'
 import { processDirectives } from '../../src/process'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import { runtimeWindowStxSurface } from '../../test-utils/runtime-surface'
+import { createTempDir } from '../../src/temp-dir'
 
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-issue-fixes-'))
+const TMP = createTempDir('stx-issue-fixes-')
 
 afterAll(() => fs.rmSync(TMP, { recursive: true, force: true }))
 
@@ -441,7 +442,7 @@ describe('#1705 — partials register component imports for parent resolution', 
   // with `ENOENT: open 'dialog'`. The fix runs processESImports against
   // the partial's raw content during processIncludes so __importedComponents
   // is populated before the strip pass.
-  const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-1705-'))
+  const TMP = createTempDir('stx-1705-')
 
   beforeAll(() => {
     fs.mkdirSync(path.join(TMP, 'partials'), { recursive: true })

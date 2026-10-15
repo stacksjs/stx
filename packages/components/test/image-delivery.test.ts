@@ -9,13 +9,13 @@
  * with no modern format on offer. Nothing failed; pages just got heavier.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { encode } from 'ts-images'
 // `../../stx/src`, never `@stacksjs/stx`, which resolves to a lagging dist.
 import { clearImageDeliveryCatalog, prepareImageDelivery } from '../../stx/src/builtins/image-delivery'
 import { processDirectives } from '../../stx/src/process'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 const ROOT = path.resolve(import.meta.dir, '..')
 const IMAGE_DIR = path.join(ROOT, 'src/ui/image')
@@ -34,7 +34,7 @@ describe('<Image> with a prepared delivery catalog', () => {
   let tempDir: string
 
   beforeAll(async () => {
-    tempDir = await mkdtemp(path.join(tmpdir(), 'stx-components-image-'))
+    tempDir = createTempDir('stx-components-image-')
     const publicDir = path.join(tempDir, 'public')
     await mkdir(path.join(publicDir, 'images'), { recursive: true })
 

@@ -14,11 +14,11 @@
  * than two. `={{ ... }}` unwraps to the object literal `{ ... }`.
  */
 import { describe, expect, it } from 'bun:test'
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { findComponentTags, parseMultilineAttributes, unwrapBracedExpression } from '../src/component-processing'
 import { processDirectives } from '../src/process'
+import { createTempDir } from '../src/temp-dir'
 
 const Q = String.fromCharCode(39)
 
@@ -95,7 +95,7 @@ describe('unwrapBracedExpression', () => {
 
 describe('prop={expr} reaches the component as a value, not a string', () => {
   it('evaluates an object literal and a function reference', async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), 'stx-braced-props-'))
+    const dir = createTempDir('stx-braced-props-')
     mkdirSync(path.join(dir, 'components'), { recursive: true })
     writeFileSync(
       path.join(dir, 'components', 'Probe.stx'),
@@ -121,7 +121,7 @@ describe('quoted interpolation is not a braced expression', () => {
     // fully-braced VALUE after parsing also caught this form and evaluated it
     // as the object literal `{ expr }`, which rendered href="[object Object]"
     // in <StxLink to="{{ href }}"> across the auth components.
-    const dir = mkdtempSync(path.join(tmpdir(), 'stx-quoted-interp-'))
+    const dir = createTempDir('stx-quoted-interp-')
     mkdirSync(path.join(dir, 'components'), { recursive: true })
     writeFileSync(
       path.join(dir, 'components', 'Echo.stx'),

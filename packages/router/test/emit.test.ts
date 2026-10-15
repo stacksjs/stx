@@ -1,8 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import { Router } from '../src/file-router'
+import { createTempDir, removeAllTempDirs } from '../../stx/src/temp-dir'
+
+// No bunfig preload here when this package's tests run on their own, so
+// this file removes its own scratch directories (packages/stx/src/temp-dir.ts).
+afterAll(removeAllTempDirs)
 
 /**
  * Building a router writes the route manifest and types into the state
@@ -15,7 +20,7 @@ describe('Router emit option', () => {
   let stateDir: string
 
   beforeEach(() => {
-    baseDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-router-emit-'))
+    baseDir = createTempDir('stx-router-emit-')
     stateDir = path.join(baseDir, 'state')
     fs.mkdirSync(path.join(baseDir, 'pages'), { recursive: true })
     fs.writeFileSync(path.join(baseDir, 'pages', 'index.stx'), '<main>Home</main>\n')

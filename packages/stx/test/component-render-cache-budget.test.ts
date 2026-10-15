@@ -15,6 +15,7 @@ import path from 'node:path'
 import { renderView } from '../src/build-views'
 import { clearDevCaches } from '../src/caching'
 import { LRUCache } from '../src/performance-utils'
+import { createTempDir } from '../src/temp-dir'
 
 const made: string[] = []
 
@@ -25,7 +26,7 @@ afterEach(() => {
 })
 
 function app(counter: string): { page: string, options: Record<string, unknown> } {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-budget-'))
+  const dir = createTempDir('stx-budget-')
   made.push(dir)
   const componentsDir = path.join(dir, 'components')
   fs.mkdirSync(componentsDir, { recursive: true })
@@ -65,7 +66,7 @@ describe('componentRenderCacheBytes', () => {
 
   it('renders the same page whether or not it was cached', async () => {
     // The budget is a memory decision, never a correctness one.
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-budget-eq-'))
+    const dir = createTempDir('stx-budget-eq-')
     made.push(dir)
     const componentsDir = path.join(dir, 'components')
     fs.mkdirSync(componentsDir, { recursive: true })

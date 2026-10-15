@@ -21,13 +21,13 @@
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+import { createTempDir } from '../../src/temp-dir'
 
 allowForATypeScriptProgram()
 
-const dir = join(tmpdir(), `stx-multi-${crypto.randomUUID()}`)
+const dir = createTempDir('stx-multi-')
 const cli = join(import.meta.dir, '..', '..', 'bin', 'cli.ts')
 
 const CLEAN = `<script client>\nconst n: number = 1\nconsole.log(n)\n</script>\n<main>x</main>`

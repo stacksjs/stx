@@ -17,6 +17,7 @@ import {
   preloadTranslations,
   preloadTranslationsBackground,
 } from '../src/i18n'
+import { createTempDir } from '../src/temp-dir'
 
 // Mock options for testing.
 // Resolve `root` from this test file (test/ → packages/stx) so the suite passes
@@ -82,7 +83,7 @@ describe('i18n lazy loading', () => {
 
   describe('loadTranslationLazy', () => {
     test('resolves relative translationsDir from the project root', async () => {
-      const root = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-i18n-root-'))
+      const root = createTempDir('stx-i18n-root-')
       await fs.promises.mkdir(path.join(root, 'translations'), { recursive: true })
       await fs.promises.writeFile(path.join(root, 'translations', 'en.json'), JSON.stringify({ greeting: 'Hello from app' }))
 

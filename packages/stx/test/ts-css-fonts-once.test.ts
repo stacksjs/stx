@@ -7,12 +7,12 @@
  * tokens were prepended ahead of both, so a Google `@import` sat behind a
  * rule, where browsers ignore it and the family never loads.
  */
-import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { generateCss } from '../src/dev-server/ts-css'
 import { mergeCssConfig, renderFontCSS } from '../src/ts-css-config'
+import { createTempDir } from '../src/temp-dir'
 
 const REPO = path.resolve(import.meta.dir, '../../..')
 let root = ''
@@ -20,7 +20,7 @@ let root = ''
 const FACE = `@font-face { font-family: 'Geist'; src: url('/fonts/geist.woff2') format('woff2'); font-display: swap; }`
 
 beforeAll(() => {
-  root = mkdtempSync(path.join(tmpdir(), 'stx-fonts-'))
+  root = createTempDir('stx-fonts-')
   writeFileSync(
     path.join(root, 'css.config.ts'),
     `export default {

@@ -15,17 +15,17 @@
  * define. Everything it did define serialized fine and never reached the client.
  */
 import { describe, expect, it } from 'bun:test'
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { serve } from '../src/serve'
+import { createTempDir } from '../src/temp-dir'
 
 /**
  * A page with a component rendered inside `@foreach`, where the first item
  * omits two of the props the invocation binds.
  */
 function project(): { dir: string, views: string } {
-  const dir = mkdtempSync(join(tmpdir(), 'stx-loop-prop-'))
+  const dir = createTempDir('stx-loop-prop-')
   const views = join(dir, 'views')
   const components = join(dir, 'kit')
   mkdirSync(views, { recursive: true })
@@ -99,7 +99,7 @@ describe('a loop prop that evaluates to undefined', () => {
     // no label EVALUATED — the answer is "no value". `unknownVar.property` did
     // not: the safe evaluator returns undefined for a name it has no binding
     // for rather than throwing, and that binding must survive for a later pass.
-    const dir = mkdtempSync(join(tmpdir(), 'stx-loop-unknown-'))
+    const dir = createTempDir('stx-loop-unknown-')
     const views = join(dir, 'views')
     mkdirSync(views, { recursive: true })
     writeFileSync(join(dir, 'stx.config.ts'), 'export default {}\n')

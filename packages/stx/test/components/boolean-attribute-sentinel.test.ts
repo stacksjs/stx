@@ -30,11 +30,12 @@ import { forwardStaticAttrs } from '../../src/builtins/attrs'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
 import { BOOLEAN_ATTRIBUTE_SENTINEL, stripControlChars } from '../../src/prop-sentinels'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir: string
 
 beforeAll(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-nul-'))
+  dir = createTempDir('stx-nul-')
   fs.mkdirSync(path.join(dir, 'components'), { recursive: true })
   fs.writeFileSync(path.join(dir, 'components', 'Btn.stx'), '<button class="btn"><slot /></button>')
 })

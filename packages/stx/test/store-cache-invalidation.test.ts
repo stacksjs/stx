@@ -19,11 +19,12 @@ import os from 'node:os'
 import path from 'node:path'
 import { clearStoreCache, getStoreScript } from '../src/store-loader'
 import { clearSourceSignatures, readSigned, type SignedCacheEntry, sourceSignature, writeSigned } from '../src/source-signature'
+import { createTempDir } from '../src/temp-dir'
 
 let dir = ''
 
 beforeEach(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-store-memo-'))
+  dir = createTempDir('stx-store-memo-')
   fs.mkdirSync(path.join(dir, 'stores'), { recursive: true })
   clearStoreCache()
 })

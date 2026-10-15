@@ -29,8 +29,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { fingerprintConfig } from '../../src/dev-server/ts-css'
 import { generateStaticSite } from '../../src/ssg'
+import { createTempDir } from '../../src/temp-dir'
 
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-cw-cache-'))
+const TMP = createTempDir('stx-cw-cache-')
 const pagesDir = path.join(TMP, 'pages')
 const outputDir = path.join(TMP, 'dist')
 const cacheDir = path.join(TMP, 'cache')

@@ -16,15 +16,15 @@
  * tag is that case: the component renders in the tag's place without the id.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir = ''
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-include-owner-'))
+  dir = createTempDir('stx-include-owner-')
   const partials: Record<string, string> = {
     'signal.stx': `<script client>\n  const open = state(false)\n</script>\n<div class="signal">{{ open() }}</div>\n`,
     'plain.stx': `<script client>\n  function ping() { return 'pong' }\n</script>\n<div class="plain" :text="ping()"></div>\n`,

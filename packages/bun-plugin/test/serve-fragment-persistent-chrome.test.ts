@@ -13,10 +13,10 @@
  * extractContainerContent, so it carries its own copy of the test.
  */
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 setDefaultTimeout(60_000)
 
@@ -33,7 +33,7 @@ async function fetchPage(pathname: string, spa: boolean): Promise<{ isFragment: 
 }
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-frag-chrome-'))
+  dir = createTempDir('stx-frag-chrome-')
 
   // The layout's chrome: a component tag, an @include and a component with
   // no signals, each marking its script with a sentinel.

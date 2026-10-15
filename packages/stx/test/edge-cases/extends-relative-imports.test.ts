@@ -27,8 +27,9 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-extends-imports-'))
+const TMP = createTempDir('stx-extends-imports-')
 const LAYOUTS = path.join(TMP, 'layouts')
 const NESTED = path.join(TMP, 'views', 'compare')
 

@@ -31,17 +31,17 @@
  */
 
 import { afterAll, describe, expect, it } from 'bun:test'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { formatTypecheckDiagnostics, typecheckStxFiles } from '../../src/typecheck'
 import { allowForATypeScriptProgram } from '../../test-utils/checker-timeout'
+import { createTempDir } from '../../src/temp-dir'
 
 allowForATypeScriptProgram()
 
 // Outside the repo on purpose: a fixture inside it is reached by this
 // repository's own tsconfig, so tsc reports unrelated errors and the fixture
 // stops testing what it says it tests.
-const dir = join(tmpdir(), `stx-bare-${crypto.randomUUID()}`)
+const dir = createTempDir('stx-bare-')
 
 /** Write a page and check it, cleaning up whatever the assertion does. */
 async function check(name: string, source: string): Promise<Awaited<ReturnType<typeof typecheckStxFiles>>> {

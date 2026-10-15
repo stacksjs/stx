@@ -10,9 +10,9 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
-import os from 'node:os'
 import crypto from 'node:crypto'
 import { generatePlaceholder as tsGeneratePlaceholder, processImage as tsProcessImage } from 'ts-images'
+import { createTempDir, removeTempDir, withTempDir } from '../temp-dir'
 
 // ============================================================================
 // Types
@@ -382,11 +382,10 @@ export async function resizeAndConvert(
     return instance.toBuffer()
   }
 
-  const tempOut = path.join(
-    os.tmpdir(),
-    `stx-img-${crypto.randomBytes(8).toString('hex')}.${options.format}`,
-  )
-  try {
+  // A scratch directory rather than a bare file in the temp folder, so an
+  // interrupted build cannot leave the output behind (see temp-dir.ts).
+  return await withTempDir('img', async (dir) => {
+    const tempOut = path.join(dir, `out.${options.format}`)
     await tsProcessImage({
       input: buffer,
       output: tempOut,
@@ -399,10 +398,7 @@ export async function resizeAndConvert(
       },
     })
     return Buffer.from(await Bun.file(tempOut).arrayBuffer())
-  }
-  finally {
-    await fs.promises.unlink(tempOut).catch(() => {})
-  }
+  })
 }
 
 /**
@@ -457,10 +453,8 @@ async function generatePlaceholder(
   // ts-images fallback. It only takes file paths, so write the buffer to a
   // temp file, call generatePlaceholder, parse the dataURL out of the result.
   const meta = await getImageMetadata(buffer)
-  const tempIn = path.join(
-    os.tmpdir(),
-    `stx-ph-${crypto.randomBytes(8).toString('hex')}.${meta.format === 'unknown' ? 'bin' : meta.format}`,
-  )
+  const scratch = createTempDir('ph')
+  const tempIn = path.join(scratch, `in.${meta.format === 'unknown' ? 'bin' : meta.format}`)
   try {
     await Bun.write(tempIn, buffer)
     // Map our public strategy names to ts-images' internal strategy names.
@@ -485,7 +479,7 @@ async function generatePlaceholder(
     return 'rgb(128, 128, 128)'
   }
   finally {
-    await fs.promises.unlink(tempIn).catch(() => {})
+    removeTempDir(scratch)
   }
 }
 

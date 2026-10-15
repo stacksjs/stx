@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { processDirectives } from '../../src'
+import { createTempDir } from '../../src/temp-dir'
 
 /**
  * A plugin supplies a DEFAULT component. A component the project actually
@@ -16,7 +16,7 @@ import { processDirectives } from '../../src'
  */
 describe('component resolution precedence', () => {
   it("prefers the project's own component over a plugin's of the same name", async () => {
-    const root = await mkdtemp(path.join(tmpdir(), 'stx-precedence-'))
+    const root = createTempDir('stx-precedence-')
     try {
       const projectComponents = path.join(root, 'resources/components')
       const pluginComponents = path.join(root, 'node_modules/some-plugin/components')
@@ -50,7 +50,7 @@ describe('component resolution precedence', () => {
   })
 
   it("still resolves a plugin's component when the project has none", async () => {
-    const root = await mkdtemp(path.join(tmpdir(), 'stx-precedence-'))
+    const root = createTempDir('stx-precedence-')
     try {
       const pluginComponents = path.join(root, 'node_modules/some-plugin/components')
       await mkdir(path.join(root, 'resources/components'), { recursive: true })
@@ -89,7 +89,7 @@ describe('component resolution precedence', () => {
  */
 describe('fallbackComponentsDir', () => {
   it("lets the app override by name while the framework's own still resolve", async () => {
-    const root = await mkdtemp(path.join(tmpdir(), 'stx-fallback-'))
+    const root = createTempDir('stx-fallback-')
     try {
       const app = path.join(root, 'resources/components')
       const framework = path.join(root, 'framework/components')

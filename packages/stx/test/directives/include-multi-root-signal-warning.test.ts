@@ -13,12 +13,12 @@
  * warning, a page that looked like it was waiting on data.
  */
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { defaultConfig } from '../../src/config'
 import { resetUnscopedSignalWarnings, topLevelElements } from '../../src/includes'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir = ''
 
@@ -28,7 +28,7 @@ const open = state(false)
 `
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-multi-root-'))
+  dir = createTempDir('stx-multi-root-')
   await Bun.write(path.join(dir, 'partials', 'two-roots.stx'), `${SCRIPT}<aside><button @click="open.set(true)">Open</button></aside>
 <div :if="open"><p>Dialog</p></div>
 `)

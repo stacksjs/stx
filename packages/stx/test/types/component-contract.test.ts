@@ -1,11 +1,11 @@
 import { expect, it } from 'bun:test'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { COMPONENT_CONTRACT_HELPERS, componentContract } from '../../src/component-contract'
+import { createTempDir } from '../../src/temp-dir'
 
 it('projects imported types, defaulted props, constructor props and typed events without executing scripts', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'stx-contract-'))
+  const dir = createTempDir('stx-contract-')
   try {
     const types = join(dir, 'types.ts')
     await Bun.write(types, 'export interface Item { id: number }')

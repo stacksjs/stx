@@ -3,10 +3,10 @@ import { useServerData, withServerData, serverDataTag } from '../src/server-data
 import { extractVariables } from '../src/variable-extractor'
 import { processDirectives } from '../src/process'
 import { extractContainerContent, stripDocumentWrapper } from '../src/app-shell'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { renderTemplate } from '../src/render'
+import { createTempDir } from '../src/temp-dir'
 
 describe('request-scoped server data', () => {
   it('deduplicates a key inside one request but isolates concurrent requests', async () => {
@@ -72,7 +72,7 @@ const first = await load('x', () => 42)`, context, '/tmp/server-data.stx')
   })
 
   it('shares one request across an explicit page/layout render and emits one final payload', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'stx-data-layout-'))
+    const dir = createTempDir('stx-data-layout-')
     try {
       await Bun.write(join(dir, 'page.stx'), `<script server>const result = await useServerData('shared', () => 'page')</script><main>{{ result }}</main>`)
       await Bun.write(join(dir, 'layout.stx'), `<script server>

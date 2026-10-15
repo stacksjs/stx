@@ -18,12 +18,12 @@
  * than a hand-built options object, because the whole bug lived in what the
  * loader did or did not put on the config.
  */
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { loadStxConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 const REPO = path.resolve(import.meta.dir, '../../../..')
 const ROOT = path.join(import.meta.dir, '.tmp-2011')
@@ -132,7 +132,7 @@ describe('#2011 — an installed component package resolves by bare tag', () => 
    * checks nothing.
    */
   it('says nothing and breaks nothing when the package is absent', async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), 'stx-2011-nodeps-'))
+    const dir = createTempDir('stx-2011-nodeps-')
     try {
       mkdirSync(path.join(dir, 'resources/views'), { recursive: true })
       writeFileSync(path.join(dir, 'stx.config.ts'), `export default { root: 'resources', pagesDir: 'views' }\n`)

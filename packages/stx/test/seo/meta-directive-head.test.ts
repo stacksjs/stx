@@ -26,6 +26,7 @@ import { processDirectives } from '../../src/process'
 import { metaDirective } from '../../src/seo'
 import type { HeadConfig } from '../../src/head'
 import type { StxOptions } from '../../src/types'
+import { createTempDir } from '../../src/temp-dir'
 
 /** Run the directive the way processCustomDirectives does, returning both halves. */
 function run(params: string[], context: Record<string, any> = {}): { output: string, head: HeadConfig } {
@@ -113,7 +114,7 @@ describe('metaDirective staging', () => {
 })
 
 describe('@meta through a full render', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stx-meta-head-'))
+  const dir = createTempDir('stx-meta-head-')
 
   async function render(source: string, head: Record<string, any>): Promise<string> {
     const file = path.join(dir, 'page.stx')

@@ -16,10 +16,10 @@
  * content page must still say 'false', or the router full-reloads everywhere.
  */
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { freePort } from '../../stx/test-utils/test-port'
+import { createTempDir } from '../../stx/src/temp-dir'
 
 setDefaultTimeout(60_000)
 
@@ -41,7 +41,7 @@ async function fetchFragment(pathname: string) {
 }
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-frag-runtime-'))
+  dir = createTempDir('stx-frag-runtime-')
 
   // The reproducing shape: reactive bindings, no client script anywhere. The
   // server ships this page the runtime; the fragment carries no marker at all.

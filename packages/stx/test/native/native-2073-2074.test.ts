@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 import path from 'node:path'
 import vm from 'node:vm'
-import { mkdtemp } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
+import { createTempDir } from '../../src/temp-dir'
 
 interface BridgeMessage {
   type: string
@@ -17,7 +16,7 @@ interface RunResult {
 }
 
 async function runBundle(source: string): Promise<RunResult> {
-  const root = await mkdtemp(path.join(tmpdir(), 'stx-native-issues-'))
+  const root = createTempDir('stx-native-issues-')
   const file = path.join(root, 'Screen.stx')
   await Bun.write(file, source)
   const { code } = await compileSharedScreenBundle(file, { minify: true })

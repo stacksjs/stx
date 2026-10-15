@@ -1,12 +1,12 @@
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { existsSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'bun:test'
 import { captureScreenshot, captureScreenshots } from '../src/screenshot'
+import { createTempDir } from '../src/temp-dir'
 
 /** A trivial HTML page on disk. */
 function fixture(): { dir: string, file: string } {
-  const dir = mkdtempSync(join(tmpdir(), 'stx-shot-'))
+  const dir = createTempDir('stx-shot-')
   const file = join(dir, 'page.html')
   writeFileSync(file, '<!doctype html><html><body style="background:#0b1020;color:#fff"><h1>stx screenshot</h1></body></html>')
   return { dir, file }
@@ -44,7 +44,7 @@ describe('screenshot (Bun WebView)', () => {
   }, 75_000)
 
   it('full-page captures the whole scrollable document, not just the viewport', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'stx-shot-full-'))
+    const dir = createTempDir('stx-shot-full-')
     // A page far taller than the viewport (a tall column).
     const tall = join(dir, 'tall.html')
     writeFileSync(tall, '<!doctype html><html><body style="margin:0"><div style="height:3000px;background:#0b1020"></div></body></html>')
@@ -69,7 +69,7 @@ describe('screenshot (Bun WebView)', () => {
   }, 45_000)
 
   it('wait-selector resolves and still captures when the selector exists', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'stx-shot-sel-'))
+    const dir = createTempDir('stx-shot-sel-')
     const file = join(dir, 'sel.html')
     writeFileSync(file, '<!doctype html><html><body><div id="ready">ok</div></body></html>')
     const out = join(dir, 'sel.png')

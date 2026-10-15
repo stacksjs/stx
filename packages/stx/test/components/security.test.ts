@@ -9,6 +9,7 @@ import { StxModalBuiltin } from '../../src/builtins/modal'
 import { StxToastBuiltin } from '../../src/builtins/toast'
 import { processDynamicComponents } from '../../src/dynamic-components'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 function staticProps(s: Record<string, unknown>): ResolvedProps {
   return { static: s, serverDynamic: {}, clientReactive: {}, events: {} } as ResolvedProps
@@ -20,7 +21,7 @@ const BREAKOUT = 'x" onload="alert(1)'
 const tempDirs: string[] = []
 
 async function makeTempDir() {
-  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'stx-component-security-'))
+  const dir = createTempDir('stx-component-security-')
   tempDirs.push(dir)
   return dir
 }

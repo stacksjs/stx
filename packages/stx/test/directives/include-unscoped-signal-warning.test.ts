@@ -11,12 +11,12 @@
  * enough to be read.
  */
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { defaultConfig } from '../../src/config'
 import { resetUnscopedSignalWarnings } from '../../src/includes'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir = ''
 
@@ -36,7 +36,7 @@ const SIGNAL_SCRIPT = `<script>
 `
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-unscoped-signal-'))
+  dir = createTempDir('stx-unscoped-signal-')
   await Bun.write(path.join(dir, 'partials', 'reveal-script.stx'), PLAIN_SCRIPT)
   await Bun.write(path.join(dir, 'partials', 'counter-script.stx'), SIGNAL_SCRIPT)
 })

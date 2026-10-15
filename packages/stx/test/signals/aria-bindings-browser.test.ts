@@ -1,15 +1,15 @@
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { WebView } from 'bun'
 import { expect, it } from 'bun:test'
 import { extractContainerContent } from '../../src/app-shell'
 import { processDirectives } from '../../src/process'
 import { injectRouterScript } from '../../src/runtime-injection'
+import { createTempDir } from '../../src/temp-dir'
 
 for (const debug of [true, false]) {
   it(`preserves ARIA booleans on initial and SPA renders (debug=${debug})`, async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'stx-aria-'))
+    const dir = createTempDir('stx-aria-')
     let view: WebView | undefined
     let server: ReturnType<typeof Bun.serve> | undefined
     try {

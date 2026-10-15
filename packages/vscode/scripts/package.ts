@@ -10,10 +10,10 @@
  * ts-plugin-package.ts). So it is added to the VSIX after vsce writes it, and
  * a publish uploads that VSIX rather than letting vsce package a second time.
  */
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { existsSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
+import { createTempDir, removeTempDir } from '../../stx/src/temp-dir'
 import { TS_PLUGIN_DIR, writeTsPluginPackage } from './ts-plugin-package'
 
 const ROOT = join(import.meta.dir, '..')
@@ -40,13 +40,13 @@ export function packageExtension(out: string): string {
 
   // A staging tree whose layout is the VSIX's, so zip records the paths
   // VS Code extracts: extension/node_modules/<package>/...
-  const stage = mkdtempSync(join(tmpdir(), 'stx-vsix-'))
+  const stage = createTempDir('vsix')
   try {
     writeTsPluginPackage(join(stage, 'extension'), manifest.version)
     run(['zip', '-q', '-r', '-X', '-D', out, `extension/${TS_PLUGIN_DIR}`], stage)
   }
   finally {
-    rmSync(stage, { recursive: true, force: true })
+    removeTempDir(stage)
   }
 
   const listing = run(['unzip', '-Z1', out], ROOT, true)

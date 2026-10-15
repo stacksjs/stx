@@ -12,15 +12,15 @@
  * `stat` made it work, which is how it was found.
  */
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { defaultConfig } from '../src/config'
 import { loopBoundNames, readsAnyName } from '../src/loop-binding'
 import { compileScreenSource } from '../src/native/compiler/render-screen'
 import { processDirectives } from '../src/process'
+import { createTempDir } from '../src/temp-dir'
 
-const SCRATCH = mkdtempSync(path.join(tmpdir(), 'stx-loop-shadow-'))
+const SCRATCH = createTempDir('stx-loop-shadow-')
 const COMPONENTS = path.join(SCRATCH, 'components')
 mkdirSync(COMPONENTS)
 writeFileSync(path.join(COMPONENTS, 'Box.stx'), '<div class="box"><slot /></div>')

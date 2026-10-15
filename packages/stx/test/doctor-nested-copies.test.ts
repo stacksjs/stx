@@ -17,10 +17,9 @@
  */
 import { describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
-import { mkdtempSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { findInstalledCopies, runDoctor, versionAgreementChecks } from '../src/doctor'
+import { createTempDir } from '../src/temp-dir'
 
 /** Write a package.json at `dir` with just a name and version. */
 function pkg(dir: string, name: string, version: string): void {
@@ -30,7 +29,7 @@ function pkg(dir: string, name: string, version: string): void {
 
 /** The layout the issue found: a stale stx nested inside the serve tool. */
 function appWithNestedStx(topVersion: string, nestedVersion: string | null): string {
-  const root = mkdtempSync(path.join(tmpdir(), 'stx-doctor-'))
+  const root = createTempDir('stx-doctor-')
   pkg(path.join(root, 'node_modules', '@stacksjs', 'stx'), '@stacksjs/stx', topVersion)
   pkg(path.join(root, 'node_modules', 'bun-plugin-stx'), 'bun-plugin-stx', topVersion)
   pkg(path.join(root, 'node_modules', '@stacksjs', 'buddy'), '@stacksjs/buddy', '1.0.0')
@@ -62,7 +61,7 @@ describe('finding every installed copy', () => {
     // `grep -r` does not follow symlinks, which is the second blind spot this
     // had: the layer is present and the obvious search cannot see it.
     const root = appWithNestedStx('0.2.401', null)
-    const real = mkdtempSync(path.join(tmpdir(), 'stx-linked-'))
+    const real = createTempDir('stx-linked-')
     pkg(path.join(real, '@stacksjs', 'stx'), '@stacksjs/stx', '0.2.343')
     const toolModules = path.join(root, 'node_modules', '@stacksjs', 'buddy', 'node_modules')
     fs.mkdirSync(path.dirname(toolModules), { recursive: true })

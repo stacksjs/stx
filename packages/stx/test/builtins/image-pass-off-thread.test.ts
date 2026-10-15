@@ -1,12 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
-import { mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { realpathSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { encode } from 'ts-images'
 import { clearImageDeliveryCatalog, getImageDelivery, isTransparentImage, prepareImageDelivery } from '../../src/builtins/image-delivery'
 import { clearImagePlaceholders, getImagePlaceholder, placeholdersWarmed, warmImagePlaceholders } from '../../src/builtins/image-placeholder'
 import { imageWorkerSlots, isInstalledEntry, resetImageWorkerWarning } from '../../src/builtins/image-worker'
+import { createTempDir } from '../../src/temp-dir'
 
 setDefaultTimeout(120_000)
 
@@ -56,7 +56,7 @@ describe('image pass off the serving thread', () => {
   }
 
   beforeAll(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'stx-image-off-thread-'))
+    tempDir = createTempDir('stx-image-off-thread-')
     publicDir = join(tempDir, 'public')
     await mkdir(join(publicDir, 'photos'), { recursive: true })
     await writeFile(join(publicDir, 'photos', 'noise.png'), await encode({ data: noise(900, 600, false), width: 900, height: 600, channels: 4 }, 'png'))
@@ -208,7 +208,7 @@ describe('image pass from a bundled server', () => {
   })
 
   it('still runs on a worker, using the installed package entry', async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'stx-image-bundled-'))
+    tempDir = createTempDir('stx-image-bundled-')
     await installFixtureCodecs(tempDir)
     const src = join(import.meta.dir, '..', '..', 'src')
 
@@ -260,7 +260,7 @@ console.log(JSON.stringify({ entry: imageWorkerEntry(), result, catalogued: !!ge
   // With no entry to start, the pass still happens, on this thread, and the
   // log says so once instead of leaving slow first pages unexplained.
   it('falls back to the serving thread, and says why once, when there is no entry to start', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'stx-image-no-entry-'))
+    const dir = createTempDir('stx-image-no-entry-')
     try {
       // A deployed bundle still has its codec dependencies. Omit stx itself
       // here so only the worker-entry lookup fails, rather than image decoding.

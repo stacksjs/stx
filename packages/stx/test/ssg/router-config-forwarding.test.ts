@@ -16,15 +16,15 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { existsSync, readFileSync } from 'node:fs'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
+import { createTempDir } from '../../src/temp-dir'
 
 let dir = ''
 const originalCwd = process.cwd()
 
 beforeEach(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'stx-router-cfg-'))
+  dir = createTempDir('stx-router-cfg-')
   await Bun.write(path.join(dir, 'views', 'index.stx'), '<main><h1>Home</h1></main>\n')
 })
 

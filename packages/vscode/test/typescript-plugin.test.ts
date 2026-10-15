@@ -15,12 +15,16 @@
  */
 import type * as ts from 'typescript/lib/tsserverlibrary'
 import { afterAll, describe, expect, test } from 'bun:test'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { existsSync, mkdirSync, readFileSync, rmdirSync, rmSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { buildVirtualTypeScript, lineStarts, positionToOffset } from '../../stx/src/stx-virtual-ts'
 import { writeStxDeclarations } from '../src/ts-plugin-declarations'
 import init, { declarationEntry, findInstalledStxDeclarations } from '../src/typescript-stx-plugin'
+import { createTempDir, removeAllTempDirs } from '../../stx/src/temp-dir'
+
+// No bunfig preload here when this package's tests run on their own, so
+// this file removes its own scratch directories (packages/stx/src/temp-dir.ts).
+afterAll(removeAllTempDirs)
 
 /** Everything the plugin uses from the `typescript` module. */
 const tsLib = {
@@ -87,7 +91,7 @@ const PAGE = [
 
 describe('the virtual buffer', () => {
   test('uses the shared contracts and refreshes when an unsaved child declaration changes', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'stx-editor-contract-'))
+    const dir = createTempDir('stx-editor-contract-')
     try {
       const child = join(dir, 'components/Counter.stx')
       const source = '<Counter count="bad" />'
@@ -307,7 +311,7 @@ describe('registered twice', () => {
 })
 
 describe('the runtime declarations (stacksjs/stx#2028)', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'stx-plugin-declarations-'))
+  const dir = createTempDir('stx-plugin-declarations-')
   afterAll(() => rmSync(dir, { recursive: true, force: true }))
   const [stxModule] = writeStxDeclarations(join(dir, 'types')).filter(file => file.endsWith('stx-module.d.ts'))
   const source = '<script client>\nimport { onMount, useServerData } from \'stx\'\nconst n = state(0)\n</script>\n<p>{{ n }}</p>'
@@ -440,7 +444,7 @@ describe('definitions', () => {
 
 describe('the tsconfig libs', () => {
   test('are referenced alongside the runtime declarations, through one generated entry', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'stx-plugin-libs-'))
+    const dir = createTempDir('stx-plugin-libs-')
     let entry = ''
     try {
       const types = join(dir, 'ext-types')
@@ -464,8 +468,15 @@ describe('the tsconfig libs', () => {
     finally {
       rmSync(dir, { recursive: true, force: true })
       // The generated entry lives in the shared temp directory, by design.
-      if (entry)
+      // Take the directory too when this test was its only user; a running
+      // tsserver's entries keep it (rmdir refuses a non-empty directory).
+      if (entry) {
         rmSync(entry, { force: true })
+        try {
+          rmdirSync(dirname(entry))
+        }
+        catch {}
+      }
     }
   })
 })

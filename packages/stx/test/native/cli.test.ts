@@ -17,11 +17,10 @@
  * proves less than one that runs it the way a person does.
  */
 import { describe, expect, it } from 'bun:test'
-import { mkdtemp } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
 import path from 'node:path'
 import vm from 'node:vm'
 import { compileScreenBundle } from '../../src/native/compiler/bundle'
+import { createTempDir } from '../../src/temp-dir'
 
 const CLI = path.join(import.meta.dir, '..', '..', 'bin', 'cli.ts')
 
@@ -52,7 +51,7 @@ async function runCli(args: string[], cwd?: string): Promise<{ code: number, std
 }
 
 async function project(): Promise<string> {
-  const root = await mkdtemp(path.join(tmpdir(), 'stx-native-cli-'))
+  const root = createTempDir('stx-native-cli-')
   await Bun.write(path.join(root, 'Screen.stx'), SCREEN)
   return root
 }
@@ -143,7 +142,7 @@ const visible = true
 describe('the generated bundle', () => {
   /** One screen, compiled the way `compile <file> --format bundle` does. */
   async function generate(source: string): Promise<string> {
-    const root = await mkdtemp(path.join(tmpdir(), 'stx-native-bundle-'))
+    const root = createTempDir('stx-native-bundle-')
     const file = path.join(root, 'Screen.stx')
     await Bun.write(file, source)
     return (await compileScreenBundle(file)).code

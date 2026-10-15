@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'bun:test'
-import { mkdtemp } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
 
 const options = {
   ...defaultConfig,
@@ -54,7 +53,7 @@ describe('component props naming what the client script declares', () => {
     const globals = globalThis as Record<string, unknown>
     globals.weekShare = (totals: { done: number }) => totals.done
     try {
-      const dir = await mkdtemp(path.join(tmpdir(), 'stx-client-names-'))
+      const dir = createTempDir('stx-client-names-')
       await Bun.write(path.join(dir, 'Box.stx'), '<div class="box"><slot /></div>')
       const html = await processDirectives(
         `<script client>

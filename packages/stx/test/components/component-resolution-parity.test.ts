@@ -1,9 +1,9 @@
 import { afterEach, expect, it } from 'bun:test'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { ComponentRegistry } from '../../src/component-registry'
 import { resolveComponentFileSync } from '../../src/component-resolution'
+import { createTempDir } from '../../src/temp-dir'
 
 const directories: string[] = []
 afterEach(() => {
@@ -12,7 +12,7 @@ afterEach(() => {
 })
 
 function fixture() {
-  const dir = mkdtempSync(join(tmpdir(), 'stx-lookup-'))
+  const dir = createTempDir('stx-lookup-')
   directories.push(dir)
   return { dir, page: join(dir, 'pages/page.stx'), components: join(dir, 'global') }
 }

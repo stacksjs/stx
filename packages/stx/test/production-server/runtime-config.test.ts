@@ -1,6 +1,5 @@
 import { afterEach, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { buildForProduction } from '../../src/production-builder'
 import { startProductionServer } from '../../src/production-server'
@@ -11,6 +10,7 @@ import { useRuntimeConfig } from '../../src/runtime-config'
 import { Window } from 'happy-dom'
 import { bundleClientScript, clearBundleFailures, getBundleFailures } from '../../src/client-script-bundler'
 import { generateRuntimeConfigTypes } from '../../src/runtime-config-loader'
+import { createTempDir } from '../../src/temp-dir'
 
 const dirs: string[] = []
 const servers: Awaited<ReturnType<typeof startProductionServer>>[] = []
@@ -21,7 +21,7 @@ afterEach(async () => {
   delete process.env.STX_RUNTIME_PRIVATE__TOKEN
 })
 async function fixture(): Promise<string> {
-  const dir = await mkdtemp(path.join(tmpdir(), 'stx-runtime-config-'))
+  const dir = createTempDir('stx-runtime-config-')
   dirs.push(dir)
   return dir
 }
