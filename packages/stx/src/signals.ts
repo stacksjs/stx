@@ -7293,10 +7293,14 @@ catch (e) {} }
     return panel || entry.root || null;
   }
 
-  function _overlayFocusable(panel) {
-    return Array.prototype.filter.call(panel.querySelectorAll(_OVERLAY_FOCUSABLE), function(el) {
+  function _overlayShown(nodes) {
+    return Array.prototype.filter.call(nodes, function(el) {
       return el.offsetParent !== null || el === document.activeElement;
     });
+  }
+
+  function _overlayFocusable(panel) {
+    return _overlayShown(panel.querySelectorAll(_OVERLAY_FOCUSABLE));
   }
 
   // One listener for every overlay, in the bubble phase: a widget inside an
@@ -7432,7 +7436,10 @@ catch (e) {} }
     try { target = typeof entry.initialFocus === 'function' ? entry.initialFocus() : entry.initialFocus; }
     catch (_e) { target = null; }
     var panel = _overlayPanel(entry);
-    if (!target && panel) target = panel.querySelector('[autofocus]') || _overlayFocusable(panel)[0] || panel;
+    // An [autofocus] that is not shown (behind a :show, a player in a
+    // dialog that is showing something else) cannot take focus: skipped, or
+    // focus went nowhere and the panel's first control never got it.
+    if (!target && panel) target = _overlayShown(panel.querySelectorAll('[autofocus]'))[0] || _overlayFocusable(panel)[0] || panel;
     if (target && target.focus) target.focus();
     if (target && document.activeElement === target) return;
     if (attempts > 0) _overlaySoon(function() { _overlayFocusIn(entry, attempts - 1); });

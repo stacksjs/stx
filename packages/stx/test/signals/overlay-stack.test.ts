@@ -281,6 +281,32 @@ describe('moving focus in', () => {
     expect(frames).toBe(3)
   })
 
+  it('passes over an [autofocus] that is not shown', () => {
+    const el = panel('player', 0)
+    const hidden = document.createElement('div')
+    hidden.style.display = 'none'
+    const autofocus = document.createElement('button')
+    autofocus.setAttribute('autofocus', '')
+    // The test DOM lays nothing out; a browser gives an element under
+    // display:none no offsetParent.
+    Object.defineProperty(autofocus, 'offsetParent', { get: () => null })
+    hidden.appendChild(autofocus)
+    const close = document.createElement('button')
+    el.appendChild(hidden)
+    el.appendChild(close)
+    open('player', el)
+    expect(document.activeElement).toBe(close)
+  })
+
+  it('takes an [autofocus] that is shown before the first control', () => {
+    const el = panel('player', 1)
+    const autofocus = document.createElement('button')
+    autofocus.setAttribute('autofocus', '')
+    el.appendChild(autofocus)
+    open('player', el)
+    expect(document.activeElement).toBe(autofocus)
+  })
+
   it('gives up rather than spinning when nothing can take focus', () => {
     const p = refusing('never')
     let frames = 0
