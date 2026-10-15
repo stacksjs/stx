@@ -7405,13 +7405,25 @@ catch (e) {} }
       _overlayListening = true;
     }
 
+    // An overlay given a z-index stacks by the order it opened in, not by
+    // where it sits in the document: one lifted into the body early (a sheet
+    // mounted before the sheet it later opens over) drew underneath. Set on
+    // every change, so what stays open closes up when one under it closes. A
+    // closed overlay keeps its last value, so it slides away above the one
+    // it was over.
+    for (var z = 0; z < _overlays.length; z++) {
+      var layer = _overlays[z];
+      if (typeof layer.zIndex === 'number' && layer.root && layer.root.style) layer.root.style.zIndex = String(layer.zIndex + z);
+    }
+
     // inert, rather than aria-hidden, takes the page behind out of the tab
-    // order and the accessibility tree together (#1998). Only for an overlay
-    // that is itself a child of the body element - one the runtime appended. An overlay
-    // rendered inside the page's own markup would go inert with the page; its
-    // Tab trap is what holds it.
-    var root = modal && modal.root;
-    if (root && root.parentNode === document.body) {
+    // order and the accessibility tree together (#1998). Only behind an
+    // overlay that is a child of the body element - one the runtime appended,
+    // or one an app lifted there - or one opened inside such an overlay (a
+    // dialog in a sheet's content). An overlay rendered inside the page's own
+    // markup would go inert with the page; its Tab trap is what holds it.
+    var root = _overlayInertRoot(modal);
+    if (root) {
       var kids = document.body.children;
       for (var k = 0; k < kids.length; k++) {
         var kid = kids[k];
@@ -7423,6 +7435,23 @@ catch (e) {} }
         catch (_e) { /* inert unsupported; the Tab trap still holds */ }
       }
     }
+  }
+
+  // The child of the body that keeps the rest of the page inert while this
+  // modal layer is on top: its own root when that is in the body, or the
+  // root of the open overlay it sits inside. A dialog opened from a sheet's
+  // content is not itself in the body, and the page behind the sheet used to
+  // come back to the keyboard and screen readers while it was up.
+  function _overlayInertRoot(modal) {
+    if (!modal) return null;
+    var el = modal.root || _overlayPanel(modal);
+    while (el && el.parentNode && el.parentNode !== document.body) el = el.parentNode;
+    if (!el || el.parentNode !== document.body) return null;
+    if (el === modal.root) return el;
+    for (var i = 0; i < _overlays.length; i++) {
+      if (_overlays[i] !== modal && _overlays[i].root === el) return el;
+    }
+    return null;
   }
 
   // The next chance to act, whichever comes first: rAF is suspended in a
@@ -7463,7 +7492,9 @@ catch (e) {} }
      * options: modal (default true; false for a popup, which takes Escape
      * while on top but does not lock, trap or move focus), panel (an element,
      * a selector, or a function returning one; focus stays inside it), root (the overlay's outermost element, if it is not the panel),
-     * onEscape (leave out for one that must be answered), initialFocus
+     * zIndex (a base: the root's z-index becomes it plus the overlay's place
+     * in the stack, so a later overlay draws over an earlier one wherever it
+     * sits in the document), onEscape (leave out for one that must be answered), initialFocus
      * (element or function; defaults to [autofocus], then the first focusable,
      * then the panel), opener (where focus goes back; defaults to whatever had
      * it), restoreFocus (default true).
@@ -7485,6 +7516,7 @@ catch (e) {} }
         modal: isModal,
         panel: opts.panel,
         root: opts.root || null,
+        zIndex: typeof opts.zIndex === 'number' ? opts.zIndex : null,
         onEscape: opts.onEscape || null,
         initialFocus: opts.initialFocus || null,
         // A popup hands focus back itself, to its own trigger, and only when

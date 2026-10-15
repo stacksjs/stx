@@ -55,6 +55,12 @@ function openModal() {
 
 An open dialog goes on the page's overlay stack (`window.stx.overlays`), shared with `Drawer`, `CommandPalette`, `stxConfirm`/`stxAlert`, the library's menus and popovers, and the app's own overlays (`openOverlay` / `closeOverlay` from `@stacksjs/components`). The topmost layer answers Escape and owns Tab, so one Escape closes a menu inside a dialog, or the inner of two dialogs, and nothing else. The page stays locked from the first open to the last close, and focus returns to whatever opened each one.
 
+An overlay the app lifts into `<body>` itself, such as a bottom sheet, passes that element as `root` (import the functions from `@stacksjs/components/overlays` in a `<script client>`). The rest of the page goes inert behind it, and stays inert while a dialog opened from its content is on top. Give it `zIndex` as well and the stack sets the root's z-index to that base plus its place in the stack, so a sheet opened over another draws above it wherever the two sit in the document:
+
+```ts
+openOverlay('my-sheet', { panel: () => panelEl, root: sheetEl, zIndex: 70, onEscape: close })
+```
+
 ### DialogBackdrop
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|

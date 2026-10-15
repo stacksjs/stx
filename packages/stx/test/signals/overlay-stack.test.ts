@@ -409,3 +409,118 @@ describe('a panel given as a selector', () => {
     expect(document.activeElement).toBe(first)
   })
 })
+
+/**
+ * An overlay the app lifts into the body itself, a bottom sheet the way
+ * @stacksjs/mobile's NativeSheet draws one: its root is a child of <body>, so
+ * it makes the page inert, and things open inside it and over it.
+ */
+describe('an overlay lifted to the body', () => {
+  /** A body-level root holding a panel, the way a lifted sheet sits. */
+  function sheet(id: string, where: 'end' | 'start' = 'end'): { root: any, panel: any } {
+    const root = document.createElement('div')
+    root.id = `${id}-root`
+    const sheetPanel = document.createElement('section')
+    sheetPanel.id = id
+    sheetPanel.tabIndex = -1
+    const b = document.createElement('button')
+    b.textContent = `${id}-done`
+    sheetPanel.appendChild(b)
+    root.appendChild(sheetPanel)
+    if (where === 'start') document.body.insertBefore(root, document.body.firstChild)
+    else document.body.appendChild(root)
+    return { root, panel: sheetPanel }
+  }
+
+  function openSheet(id: string, s: { root: any, panel: any }, extra: Record<string, unknown> = {}): void {
+    open(id, s.panel, { root: s.root, ...extra })
+  }
+
+  it('keeps the page inert under an overlay opened inside it', () => {
+    const outer = sheet('sheet')
+    openSheet('sheet', outer)
+    const main = document.querySelector('main')
+    expect(main.inert).toBe(true)
+
+    // A dialog the sheet's own content opens: its panel is inside the sheet,
+    // not a child of the body. The page behind the sheet stayed reachable
+    // while it was on top.
+    const inner = document.createElement('div')
+    inner.id = 'inner'
+    inner.innerHTML = '<button>inner-ok</button>'
+    outer.panel.appendChild(inner)
+    open('inner', inner)
+    expect(main.inert).toBe(true)
+    expect(!!outer.root.inert).toBe(false)
+
+    key('Escape')
+    expect(closed).toEqual(['inner'])
+    expect(main.inert).toBe(true)
+
+    key('Escape')
+    expect(!!main.inert).toBe(false)
+  })
+
+  it('leaves an overlay in the page usable when it opens over a lifted one', () => {
+    openSheet('sheet', sheet('sheet'))
+    const el = panel('page-dialog')
+    open('page-dialog', el)
+    // Its root is the page, which is not an open overlay: nothing is made
+    // inert under it, as for any overlay in the page's own markup.
+    expect(!!document.querySelector('main').inert).toBe(false)
+  })
+
+  it('lets a closed lifted overlay open over the one that made it inert', () => {
+    const first = sheet('first')
+    const second = sheet('second')
+    openSheet('first', first)
+    expect(second.root.inert).toBe(true)
+
+    openSheet('second', second)
+    expect(!!second.root.inert).toBe(false)
+    expect(first.root.inert).toBe(true)
+    expect(document.querySelector('main').inert).toBe(true)
+
+    key('Escape')
+    expect(!!first.root.inert).toBe(false)
+    expect(second.root.inert).toBe(true)
+    expect(document.querySelector('main').inert).toBe(true)
+  })
+
+  it('stacks by opening order, not by document order, when given a z-index', () => {
+    // The second sheet comes first in the body, so with equal z-indexes it
+    // would draw under the one it was opened over.
+    const first = sheet('first')
+    const second = sheet('second', 'start')
+    openSheet('first', first, { zIndex: 70 })
+    openSheet('second', second, { zIndex: 70 })
+    expect(Number(second.root.style.zIndex)).toBeGreaterThan(Number(first.root.style.zIndex))
+    expect(first.root.style.zIndex).toBe('70')
+
+    // Closing, it keeps its place while it slides away over the first.
+    overlays().close('second')
+    expect(Number(second.root.style.zIndex)).toBeGreaterThan(Number(first.root.style.zIndex))
+
+    overlays().close('first')
+    openSheet('second', second, { zIndex: 70 })
+    expect(second.root.style.zIndex).toBe('70')
+  })
+
+  it('renumbers what stays open when one underneath closes', () => {
+    const a = sheet('a')
+    const b = sheet('b')
+    const c = sheet('c', 'start')
+    openSheet('a', a, { zIndex: 70 })
+    openSheet('b', b, { zIndex: 70 })
+    overlays().close('a')
+    openSheet('c', c, { zIndex: 70 })
+    expect(Number(c.root.style.zIndex)).toBeGreaterThan(Number(b.root.style.zIndex))
+  })
+
+  it('leaves the z-index alone without one', () => {
+    const s = sheet('plain')
+    s.root.style.zIndex = '5'
+    openSheet('plain', s)
+    expect(s.root.style.zIndex).toBe('5')
+  })
+})
