@@ -52,9 +52,10 @@ export const aspectRatio = ratio($props.aspectRatio)
 
 const sources = Array.isArray($props.sources) ? $props.sources : []
 const tracks = Array.isArray($props.tracks) ? $props.tracks : []
-const playerSources = sources.length ? sources : src ? [{ src }] : []
+const drm = $props.drm
+const playerSources = (sources.length ? sources : src ? [{ src }] : []).map(source => drm && (source.type === 'application/dash+xml' || source.src.split(/[?#]/, 1)[0].toLowerCase().endsWith('.mpd')) ? { ...source, type: 'application/dash+xml', drm } : source)
 const playerTracks = tracks.map(track => ({ ...track, language: track.srclang }))
-export const playerConfig = JSON.stringify({ sources: playerSources, tracks: playerTracks })
+export const playerConfig = JSON.stringify({ sources: playerSources, tracks: playerTracks, ...(drm ? { drm } : {}) })
   .replaceAll('<', '\\u003c').replaceAll('>', '\\u003e').replaceAll('&', '\\u0026')
 
 /*

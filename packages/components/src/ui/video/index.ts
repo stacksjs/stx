@@ -1,8 +1,16 @@
 export { default as Video } from './Video.stx'
 
+/** License endpoints for already encrypted media. */
+export interface MediaDrm {
+  widevine?: { url: string, headers?: Record<string, string> }
+  playready?: { url: string, headers?: Record<string, string> }
+  fairplay?: { url: string, certificateUrl: string, headers?: Record<string, string> }
+}
+
 export interface VideoProps {
   src: string
   poster?: string
+  drm?: MediaDrm
   /** The player's accessible name. Follows a binding. */
   label?: string
   sources?: Array<{ src: string, type?: string }>

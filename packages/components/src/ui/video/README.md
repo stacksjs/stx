@@ -48,6 +48,7 @@ itself, muted only where the browser refuses sound:
 | `playsinline` | `boolean` | `true` | Play inline on iOS |
 | `preload` | `'none' \| 'metadata' \| 'auto'` | `'metadata'` | Preload strategy |
 | `sources` | `{ src, type? }[]` | - | Several sources for the browser to choose from |
+| `drm` | `MediaDrm` | - | Widevine / PlayReady license URLs and optional headers; FairPlay also requires `certificateUrl`. Applied to DASH sources |
 | `tracks` | `{ src, kind, srclang?, label?, default? }[]` | - | Captions and subtitles (WebVTT) |
 | `crossorigin` | `'anonymous' \| 'use-credentials'` | - | CORS mode |
 | `controlslist` | `string` | `'nodownload'` | Native controls list |
@@ -63,3 +64,23 @@ itself, muted only where the browser refuses sound:
 - **Any shape**: a Short is tall, a landscape clip wide, and the shape can change with the video
 - **Accessible**: named controls and announcements in the page's language, keyboard shortcuts
 - **Captions**: WebVTT tracks through `tracks`
+
+## Protected DASH
+
+Pass license descriptors for media that is already encrypted:
+
+```stx
+<Video src="/media/manifest.mpd" label="Protected lesson" :drm="licenses" />
+```
+
+```ts
+const licenses = {
+  widevine: { url: '/licenses/widevine', headers: { Authorization: token } },
+  playready: { url: '/licenses/playready' },
+  fairplay: { url: '/licenses/fairplay', certificateUrl: '/licenses/certificate' },
+}
+```
+
+The player config contains `drm` and attaches it to DASH sources, recognized by
+MIME type or a `.mpd` URL, including query strings. Progressive fallbacks keep
+their original configuration. License routes must authorize the viewer.

@@ -39,7 +39,7 @@ function stxFiles(dir: string): string[] {
 
 async function render(markup: string, dir: string): Promise<string> {
   return processDirectives(
-    markup,
+    path.basename(dir) === 'image' ? markup.replace('<Image', '<Image alt="Audit image"') : markup,
     {},
     path.join(ROOT, 'boolean-prop-audit.stx'),
     { componentsDir: dir, root: ROOT, buildMode: 'serve', cache: false } as any,

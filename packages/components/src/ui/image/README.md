@@ -92,7 +92,11 @@ opts out: your sources are used as written.
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `src` | `string` | - | Image source URL (required) |
-| `alt` | `string` | - | Alt text (required) |
+| `alt` | `string` | - | Meaningful alt text, required unless decorative |
+| `decorative` | `boolean` | `false` | Empty alt and aria-hidden |
+| `srcset` | `string` | - | Alias for srcSet |
+| `sources` | `{ srcset, type?, media?, sizes? }[]` | - | Explicit picture sources for art direction |
+| `loading` | `'lazy' \| 'eager'` | - | Overrides lazy; priority still loads eagerly |
 | `srcSet` | `string` | - | Responsive candidates, e.g. `"a.jpg 320w, b.jpg 640w"` |
 | `sizes` | `string` | - | How wide the slot is. Pair it with a `w` srcset |
 | `width` | `number \| string` | - | Intrinsic width, to reserve space |
@@ -101,12 +105,15 @@ opts out: your sources are used as written.
 | `priority` | `boolean` | `false` | Above the fold: eager, `fetchpriority="high"` |
 | `decoding` | `'async' \| 'sync' \| 'auto'` | `'async'` | Decode hint |
 | `fetchpriority` | `'high' \| 'low' \| 'auto'` | `'auto'` | Priority hint |
-| `placeholder` | `string` | - | CSS painted *behind* the image while it loads |
+| `placeholder` | `string` | - | CSS background, or blur / thumbhash / color / empty / none |
+| `placeholderColor` | `string` | `#e5e7eb` | Color when a derived preview is unavailable |
 | `aspectRatio` | `number \| string` | - | Only when you want one — see below |
 | `objectFit` | `'contain' \| 'cover' \| 'fill' \| 'none' \| 'scale-down'` | `'cover'` | How the image fills its box |
 | `objectPosition` | `string` | `'center'` | Focal point of the crop |
 | `rounded` | `boolean \| 'full' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| '2xl'` | `false` | Corner radius |
 | `zoomOnHover` | `boolean` | `false` | Transition hook for a hover scale |
+| `fit` / `position` | `string` | - | Aliases for objectFit / objectPosition |
+| `class` | `string` | - | Alias for className |
 | `className` | `string` | `''` | Extra classes on the `<picture>` |
 
 ### Blur-up placeholders
@@ -174,8 +181,7 @@ images come out the wrong shape.
 ## Accessibility
 
 - Always provide meaningful `alt` text
-- Component automatically handles loading states
-- Error states show user-friendly fallback
+- Use `decorative` for images that convey no content
 - Works without JavaScript (progressive enhancement)
 
 ## Performance Tips

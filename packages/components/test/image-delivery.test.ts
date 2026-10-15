@@ -68,7 +68,7 @@ describe('<Image> with a prepared delivery catalog', () => {
 
     // Still this component's markup, not the builtin's.
     expect(html).toContain('<picture class="" style="position: relative')
-    expect(html).toMatch(/<source type="image\/(avif|webp)" srcset="\/_stx\/images\/images-hero-[^"]+\.(avif|webp) \d+w/)
+    expect(html).toMatch(/<source\s+type="image\/(avif|webp)"\s+srcset="\/_stx\/images\/images-hero-[^"]+\.(avif|webp) \d+w/)
     expect(html).toMatch(/<img\s+src="\/_stx\/images\/images-hero-[^"]+\.png"/)
     expect(html).toMatch(/srcset="\/_stx\/images\/images-hero-[^"]+\.png \d+w/)
     expect(html).toContain('sizes="50vw"')

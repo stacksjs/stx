@@ -3,10 +3,19 @@ export { default as Image } from './Image.stx'
 export interface ImageProps {
   src: string
   srcSet?: string
+  srcset?: string
+  sources?: Array<{ srcset: string, type?: string, media?: string, sizes?: string }>
+  loading?: 'lazy' | 'eager'
+  decorative?: boolean
+  placeholderColor?: string
+  fit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down'
+  position?: string
+  class?: string
   sizes?: string
   webpSrc?: string
   webpSrcSet?: string
-  alt: string
+  /** Required unless decorative is true. */
+  alt?: string
   width?: number | string
   height?: number | string
   /** Native lazy loading. Ignored when `priority` is set. Defaults to true. */

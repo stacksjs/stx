@@ -1,50 +1,73 @@
 <script server>
-export const src = $props.src || ''
-export const autoplay = $bool($props.autoplay)
-export const loop = $bool($props.loop)
-export const muted = $bool($props.muted)
-export const controls = $bool($props.controls, true)
-export const preload = $props.preload || 'metadata'
-export const className = $props.className || ''
-export const showWaveform = $bool($props.showWaveform)
-export const title = $props.title || ''
-
-export const containerClasses = `relative w-full ${className}`.trim()
-export const audioClasses = 'w-full rounded-control bg-surface-raised'
+const src = $props.src || ''
+const sources = Array.isArray($props.sources) ? $props.sources : []
+const tracks = Array.isArray($props.tracks) ? $props.tracks : []
+const title = $props.title || 'Audio player'
+const artist = $props.artist || ''
+const artwork = $props.artwork || ''
+const waveform = $props.waveform || ''
+const controls = $bool($props.controls, true)
+const preload = $props.preload || 'metadata'
+const crossorigin = $props.crossorigin || ''
+const className = $props.className || $props.class || ''
+const playerSources = (sources.length ? sources : src ? [{ src }] : []).map(source => $props.drm && (source.type === 'application/dash+xml' || source.src.split(/[?#]/, 1)[0].toLowerCase().endsWith('.mpd')) ? { ...source, type: 'application/dash+xml', drm: $props.drm } : source)
+const playerTracks = tracks.map(track => ({ ...track, language: track.srclang }))
+const playerConfig = JSON.stringify({ sources: playerSources, tracks: playerTracks, ...($props.drm ? { drm: $props.drm } : {}) }).replaceAll('<', '\\u003c').replaceAll('>', '\\u003e').replaceAll('&', '\\u0026')
+const autoplay = $bool($props.autoplay)
+const loop = $bool($props.loop)
+const muted = $bool($props.muted)
+const showWaveform = $bool($props.showWaveform)
+const waveformBars = [20, 35, 60, 90, 55, 25, 45, 70, 40, 25]
 </script>
 
-<div class="{{ containerClasses }}">
-  @if(title)
-    <div class="mb-2 px-1">
-      <h3 class="text-sm font-medium text-fg">
-        {{ title }}
-      </h3>
-    </div>
-  @endif
+<script client>
+import { registerElements } from 'ts-video-player/elements'
+registerElements()
+</script>
 
-  <audio
-    class="{{ audioClasses }}"
-    src="{{ src }}"
-    @if(controls)controls@endif
-    @if(autoplay)autoplay@endif
-    @if(loop)loop@endif
-    @if(muted)muted@endif
-    preload="{{ preload }}"
-  >
-    Your browser does not support the audio element.
-  </audio>
-
-  @if(showWaveform)
-    <div class="mt-2 h-16 bg-surface-raised rounded-control flex items-center justify-center">
-      <svg class="w-full h-full px-4" viewBox="0 0 100 40" preserveAspectRatio="none">
-        <path
-          d="M 0,20 L 10,15 L 20,10 L 30,5 L 40,15 L 50,20 L 60,25 L 70,30 L 80,20 L 90,15 L 100,20"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          class="text-accent"
-        />
-      </svg>
+<figure class="m-0 overflow-hidden rounded-2xl bg-panel shadow-sm ring-1 ring-line {{ className }}">
+  <div class="flex gap-4 items-center p-4 sm:p-5">
+    @if(artwork)
+      <img src="{{ artwork }}" alt="" width="72" height="72" loading="lazy" decoding="async" class="object-cover shrink-0 h-18 w-18 ring-1 ring-line rounded-control">
+    @else
+      <div class="flex items-center justify-center shrink-0 h-18 w-18 text-fg-muted bg-surface-raised rounded-xl" aria-hidden="true"><span class="h-7 w-7 i-hugeicons-music-note-01"></span></div>
+    @endif
+    <div class="flex-1 min-w-0">
+      <figcaption class="font-semibold text-sm text-fg truncate">{{ title }}</figcaption>
+      @if(artist)<p class="mt-0.5 text-sm text-fg-muted truncate">{{ artist }}</p>@endif
+      @if(showWaveform && !waveform)<div aria-hidden="true" class="flex items-center gap-1 mt-3 h-10 rounded bg-surface-raised">@foreach(waveformBars as bar)<span class="flex-1 bg-current opacity-40" style="height: {{ bar }}%"></span>@endforeach</div>@endif
+      @if(waveform)<img src="{{ waveform }}" alt="" loading="lazy" decoding="async" class="object-cover mt-3 h-10 w-full opacity-70 dark:opacity-80">@endif
     </div>
-  @endif
-</div>
+  </div>
+  <div class="p-3 bg-surface border-line border-t">
+    <video-player @if(src) src="{{ src }}" @endif title="{{ title }}" data-media-config="{{ playerConfig }}" @if(controls) controls @endif @if(autoplay) autoplay @endif @if(loop) loop @endif @if(muted) muted @endif preload="{{ preload }}" @if(crossorigin) crossorigin="{{ crossorigin }}" @endif keep-alive aria-label="{{ title }}" class="block overflow-hidden relative h-16 w-full text-white rounded-xl focus-within:ring-2 focus-within:ring-accent">
+      <media-error-display></media-error-display>
+      <audio data-native-fallback @if(src) src="{{ src }}" @endif @if(controls) controls @endif @if(loop) loop @endif @if(muted) muted @endif preload="none" @if(crossorigin) crossorigin="{{ crossorigin }}" @endif aria-label="{{ title }}" class="block h-16 w-full accent-accent">
+        @foreach (sources as source)<source src="{{ source.src }}" @if(source.type) type="{{ source.type }}" @endif>@endforeach
+        @foreach (tracks as track)<track src="{{ track.src }}" kind="{{ track.kind }}" @if(track.srclang) srclang="{{ track.srclang }}" @endif @if(track.label) label="{{ track.label }}" @endif @if(track.default) default @endif>@endforeach
+        Your browser does not support audio playback.
+      </audio>
+      @if(controls)
+        <video-skin>
+          <media-seek-button slot="left" seconds="-10"></media-seek-button>
+          <media-play-button slot="left"></media-play-button>
+          <media-seek-button slot="left" seconds="10"></media-seek-button>
+          <media-time-group slot="center" class="font-mono tabular-nums text-xs"></media-time-group>
+          <media-progress-bar slot="center" @if(waveform) waveform="{{ waveform }}" @endif></media-progress-bar>
+          <media-mute-button slot="right"></media-mute-button>
+          <media-volume-slider slot="right"></media-volume-slider>
+          <media-playback-rate-button slot="right" rates="0.5,0.75,1,1.25,1.5,2"></media-playback-rate-button>
+          <media-settings-menu slot="right"></media-settings-menu>
+          <media-airplay-button slot="right"></media-airplay-button>
+          <media-remote-playback-button slot="right"></media-remote-playback-button>
+        </video-skin>
+      @endif
+    </video-player>
+  </div>
+</figure>
+
+<style>
+video-player:not(:defined) video-skin { display: none; }
+video-player:defined > [data-native-fallback] { display: none; }
+@media (prefers-reduced-motion: reduce) { video-player, video-player * { transition-duration: 0.01ms !important; } }
+</style>
