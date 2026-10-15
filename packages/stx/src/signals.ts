@@ -20,6 +20,7 @@ import { SIGNALS_CLOAK_RUNTIME, SIGNALS_PREAMBLE_RUNTIME } from './client/signal
 import { SIGNALS_CONTEXT_RUNTIME } from './client/signals-context-runtime'
 import { SIGNALS_COOKIE_RUNTIME } from './client/signals-cookie-runtime'
 import { SIGNALS_DIALOG_RUNTIME } from './client/signals-dialog-runtime'
+import { SIGNALS_DRAWER_RUNTIME } from './client/signals-drawer-runtime'
 import { SIGNALS_EFFECT_RUNTIME } from './client/signals-effect-runtime'
 import { SIGNALS_EVENT_SHORTHAND_RUNTIME } from './client/signals-event-shorthand-runtime'
 import { signalsFetchRuntime } from './client/signals-fetch-runtime'
@@ -3915,45 +3916,7 @@ ${SIGNALS_TOAST_RUNTIME}
 
 ${SIGNALS_OVERLAY_RUNTIME}
 ${SIGNALS_DIALOG_RUNTIME}
-  // ── Drawer system ───────────────────────────────────────────────
-  // Same pattern as modal but slides from a side
-  var drawer = {
-    open: function(id) {
-      var el = document.querySelector('[data-stx-drawer="' + id + '"]');
-      if (!el) { console.warn('[stx:drawer] Drawer "' + id + '" not found'); return; }
-      el.style.display = 'flex';
-      // Force reflow then animate
-      void el.offsetHeight;
-      el.setAttribute('data-stx-drawer-open', '');
-      // The lock, Escape for the topmost and the Tab trap come from the
-      // overlay stack, shared with every other overlay (stacksjs/stx#2057).
-      // Each drawer used to bind its own Escape and set body overflow itself,
-      // so two open closed together and the first to close unlocked the page.
-      overlays.open('stx-drawer:' + id, {
-        panel: el,
-        onEscape: el.getAttribute('data-close-escape') !== 'false' ? function() { drawer.close(id); } : null
-      });
-      if (el.getAttribute('data-close-backdrop') !== 'false') {
-        el.onclick = function(e) { if (e.target === el) drawer.close(id); };
-      }
-    },
-    close: function(id) {
-      var el = document.querySelector('[data-stx-drawer="' + id + '"]');
-      if (!el) return;
-      el.removeAttribute('data-stx-drawer-open');
-      el.onclick = null;
-      overlays.close('stx-drawer:' + id);
-      setTimeout(function() {
-        if (!el.hasAttribute('data-stx-drawer-open')) el.style.display = 'none';
-      }, 300);
-    },
-    toggle: function(id) {
-      var el = document.querySelector('[data-stx-drawer="' + id + '"]');
-      if (el && el.hasAttribute('data-stx-drawer-open')) drawer.close(id);
-      else drawer.open(id);
-    }
-  };
-
+${SIGNALS_DRAWER_RUNTIME}
   // ── Tooltip runtime ─────────────────────────────────────────────
   (function() {
     var tip = null;
