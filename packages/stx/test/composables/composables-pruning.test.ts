@@ -153,6 +153,38 @@ describe('bundles that ship with the page but are not in it yet', () => {
   })
 })
 
+describe('a bundle that inlined the helper itself', () => {
+  // The store bundle carries the helpers its stores import, declared in the
+  // bundle. Its mentions of them are calls to its own copy, so they must not
+  // pull in the global composable of the same name: on hq.training they
+  // pulled 75 of 125 composables into every page, ~4.7MB a page.
+  const inlined = '<script data-stx-stores>var __b = function() { function renderAnalyticsChart() { return 1 } return { draw: () => renderAnalyticsChart() } }()</script>'
+
+  it('does not ship a second copy of what it declares', async () => {
+    clearComposableCache()
+    const bundle = await getComposableScript(dir, '<script client>const n = increment(1)</script>', [inlined]) ?? ''
+
+    expect(bundle).toContain('COUNTER_STEP')
+    expect(bundle).not.toContain('drawAnalyticsChart')
+  })
+
+  it('still ships it to a store that calls it outside the scope that declares it', async () => {
+    clearComposableCache()
+    const storeTag = '<script data-stx-stores>var __a = function() { function renderAnalyticsChart() { return 1 } }(); var __b = function() { return renderAnalyticsChart() }()</script>'
+    const bundle = await getComposableScript(dir, '<html></html>', [storeTag]) ?? ''
+
+    expect(bundle).toContain('drawAnalyticsChart')
+  })
+
+  it('still ships one destructured from window.__composables (an @composables import)', async () => {
+    clearComposableCache()
+    const storeTag = '<script data-stx-stores>const { renderAnalyticsChart } = window.__composables\ndefineStore("x", () => ({ go: () => renderAnalyticsChart() }))</script>'
+    const bundle = await getComposableScript(dir, '<html></html>', [storeTag]) ?? ''
+
+    expect(bundle).toContain('drawAnalyticsChart')
+  })
+})
+
 describe('the import form', () => {
   it('is recognised as a reference', async () => {
     const bundle = await bundleFor(`<script client>import { increment } from '@composables'</script>`)

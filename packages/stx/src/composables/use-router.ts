@@ -219,8 +219,12 @@ export function useSearchParams(): SearchParamsRef {
     // Pushed entries are marked as the router marks them, and a replaced one
     // stays what it was, so Back knows whether it stays in the app.
     const wasPushed = !!(window.history.state && window.history.state.__stxPushed)
-    if (replace)
-      window.history.replaceState(wasPushed ? { __stxPushed: true } : {}, '', url)
+    // A replaced entry keeps the state it had (the router's scroll token,
+    // depth and tab live there), exactly as the client runtime's commit does.
+    if (replace) {
+      const current = window.history.state
+      window.history.replaceState(current && typeof current === 'object' ? { ...current } : (wasPushed ? { __stxPushed: true } : {}), '', url)
+    }
     else
       window.history.pushState({ __stxPushed: true }, '', url)
     sync()

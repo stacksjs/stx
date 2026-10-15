@@ -31,7 +31,7 @@ function installRouter(body: string, connection?: { saveData?: boolean, effectiv
   const window = new Window({ url: 'http://localhost/m' })
   window.document.write(`<html><head><meta name="stx-layout" content="layouts/mobile.stx"></head><body>${body}<main>Today</main></body></html>`)
   ;(window as any).stx = {}
-  ;(window as any).__stxRouterConfig = { cache: true, prefetch: true, progress: false, viewTransitions: false }
+  ;(window as any).__stxRouterConfig = { keepOpening: false, cache: true, prefetch: true, progress: false, viewTransitions: false }
   if (connection) Object.defineProperty(window.navigator, 'connection', { configurable: true, value: connection })
   const requested: string[] = []
   Object.assign(globalThis, {

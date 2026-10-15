@@ -1784,6 +1784,13 @@ else if (immediate) {
     return value === undefined ? fallback : value;
   }
 
+  function keptHistoryState(wasPushed) {
+    var current = window.history.state;
+    if (!current || typeof current !== 'object') return wasPushed ? { __stxPushed: true } : {};
+    var copy = {};
+    for (var key in current) copy[key] = current[key];
+    return copy;
+  }
   function useSearchParams() {
     var params = state(Object.fromEntries(new URLSearchParams(window.location.search)));
     var syncFromUrl = function() {
@@ -1827,8 +1834,11 @@ else if (immediate) {
       // Pushed entries are marked as the router marks them, and a replaced
       // one stays what it was, so Back knows whether it stays in the app.
       var wasPushed = !!(window.history.state && window.history.state.__stxPushed);
+      // A replaced entry keeps the state it had: the router's scroll token,
+      // its depth and tab are in there, and an entry stripped of them was
+      // restored to the top on Back and miscounted by the tab bar.
       if (replace)
-        window.history.replaceState(wasPushed ? { __stxPushed: true } : {}, '', url);
+        window.history.replaceState(keptHistoryState(wasPushed), '', url);
       else
         window.history.pushState({ __stxPushed: true }, '', url);
       syncFromUrl();

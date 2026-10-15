@@ -25,6 +25,7 @@ let realWindow: any
 let stx: any
 let pushed: string[] = []
 let replaced: string[] = []
+let replacedStates: unknown[] = []
 
 beforeAll(() => {
   // eslint-disable-next-line no-new-func
@@ -61,7 +62,9 @@ function installWindow(search: string, withRuntime = true) {
       // Recorded separately so a test can tell "the URL changed" from "the URL
       // changed AND the old one is still reachable with Back" — which is the
       // whole distinction #1825 is about.
-      replaceState: (_s: unknown, _t: string, url: unknown) => {
+      state: { __stxScroll: 's1-1', __stxDepth: 2, __stxPushed: true },
+      replaceState: (state: unknown, _t: string, url: unknown) => {
+        replacedStates.push(state)
         const next = new URL(String(url), 'http://localhost')
         loc.href = next.href
         loc.search = next.search
@@ -74,7 +77,7 @@ function installWindow(search: string, withRuntime = true) {
   g.location = loc
 }
 
-beforeEach(() => { pushed = []; replaced = [] })
+beforeEach(() => { pushed = []; replaced = []; replacedStates = [] })
 afterEach(() => {
   g.window = realWindow
   delete g.location
@@ -192,6 +195,15 @@ for (const [name, create] of impls) {
       sp.delete('code')
       expect(pushed).toEqual([''])
       expect(replaced).toEqual([])
+    })
+
+    it('keeps the router\'s state on the entry it replaces', () => {
+      // The scroll token, depth and tab live in history.state; a replace that
+      // dropped them sent Back to that page to the top (hq.training's coach
+      // calendar picks its athlete this way on every visit).
+      installWindow('?athlete_id=1')
+      create().set('athlete_id', '2', { replace: true })
+      expect(replacedStates.at(-1)).toEqual({ __stxScroll: 's1-1', __stxDepth: 2, __stxPushed: true })
     })
 
     it('replaces the entry when asked, so Back cannot replay the param', () => {

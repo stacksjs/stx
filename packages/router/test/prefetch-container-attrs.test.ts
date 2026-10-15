@@ -36,7 +36,7 @@ function installRouter(html: string, fetchImpl: typeof fetch, config: Record<str
   // eslint-disable-next-line ts/no-explicit-any
   ;(window as any).stx = {}
   // eslint-disable-next-line ts/no-explicit-any
-  ;(window as any).__stxRouterConfig = {
+  ;(window as any).__stxRouterConfig = { keepOpening: false,
     cache: true,
     prefetch: true,
     progress: false,

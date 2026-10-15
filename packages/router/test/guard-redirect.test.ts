@@ -74,7 +74,7 @@ function installRouter(body: string, fetchImpl: (url: string) => Promise<Respons
     <meta name="stx-layout-group" content="default">
   </head><body><main>Home</main>${body}</body></html>`)
   ;(window as any).stx = {}
-  ;(window as any).__stxRouterConfig = {
+  ;(window as any).__stxRouterConfig = { keepOpening: false,
     cache: true,
     prefetch: true,
     progress: false,

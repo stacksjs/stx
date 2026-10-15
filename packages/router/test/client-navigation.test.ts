@@ -21,7 +21,7 @@ function installRouter(html: string, fetchImpl: typeof fetch, config: Record<str
   const window = new Window({ url: 'http://localhost/' })
   window.document.write(html)
   ;(window as any).stx = {}
-  ;(window as any).__stxRouterConfig = {
+  ;(window as any).__stxRouterConfig = { keepOpening: false,
     cache: true,
     prefetch: true,
     progress: false,
@@ -684,7 +684,7 @@ describe('which links are current', () => {
     const window = new Window({ url })
     window.document.write(`<html><head></head><body><${wrapper} class="links">${links}</${wrapper}><main>page</main></body></html>`)
     ;(window as any).stx = {}
-    ;(window as any).__stxRouterConfig = { cache: true, prefetch: false, progress: false, viewTransitions: false }
+    ;(window as any).__stxRouterConfig = { keepOpening: false, cache: true, prefetch: false, progress: false, viewTransitions: false }
     Object.assign(globalThis, {
       window,
       document: window.document,

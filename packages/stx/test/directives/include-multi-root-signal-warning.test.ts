@@ -38,6 +38,19 @@ beforeAll(async () => {
 </div>
 <style>.x { color: red }</style>
 `)
+  // The calendar grid's shape (hq.training): no signal, an imported helper
+  // its later roots call.
+  await Bun.write(path.join(dir, 'partials', 'helper-roots.stx'), `<script client>
+import { basename as label } from 'node:path'
+</script>
+<div :if="hint">Hint</div>
+<div :for="w in items"><span>{{ label(w) }}</span></div>
+`)
+  await Bun.write(path.join(dir, 'partials', 'helper-one-root.stx'), `<script client>
+import { basename as label } from 'node:path'
+</script>
+<div><div :if="hint">Hint</div><div :for="w in items"><span>{{ label(w) }}</span></div></div>
+`)
 })
 
 afterAll(async () => {
@@ -80,6 +93,19 @@ describe('a partial with signals and more than one root', () => {
 
   it('is not, with one root and a trailing style', async () => {
     expect(await warningsFor('one-root')).toEqual([])
+  })
+})
+
+describe('a partial whose script names helpers, with more than one root', () => {
+  it('is warned about the same way: a later root cannot see the helper', async () => {
+    const warnings = await warningsFor('helper-roots')
+    expect(warnings.length).toBe(1)
+    expect(warnings[0]).toContain('helper-roots.stx declares bindings')
+    expect(warnings[0]).toContain('<div>, <div>')
+  })
+
+  it('is not, wrapped in one root', async () => {
+    expect(await warningsFor('helper-one-root')).toEqual([])
   })
 })
 

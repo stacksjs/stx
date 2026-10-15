@@ -1234,6 +1234,10 @@ catch (error: unknown) {
       // gets a scope id too (so useRef and friends can bind), which is why
       // `signalScopeId` alone cannot answer this.
       let declaresSignals = false
+      // Whether a plain (non-signal) script registers names for the template:
+      // an import, a helper, a store handle (#1766). Those bind against the
+      // partial's scope exactly as signals do, so the same element rules apply.
+      let registersBindings = false
 
       for (const scriptMatch of scriptMatches) {
         const scriptAttrs = scriptMatch[1] || ''
@@ -1432,6 +1436,8 @@ catch (e) {
           // onDestroy land on its own scope instead of the global queues that
           // every stx:load drains.
           const wrapped = transformScopedScript(resolvedContent, signalScopeId)
+          if (/__scopeRegistration\["(?!__stx)[^"]+"\]\s*=/.test(wrapped))
+            registersBindings = true
           preservedScript += `${vendorStyleTags}<script data-stx-scoped data-stx-run="always" data-stx-owner="${signalScopeId}"${extraAttrs ? ` ${extraAttrs}` : ''}>${wrapped}</script>\n`
         }
       }
@@ -1490,13 +1496,21 @@ catch (e) {
         // rest render outside the scope and bind against the page's instead
         // (see topLevelElements). Silent the same way the unstamped case is,
         // so said the same way, once per file.
-        if (scopeResult.stamped && scopeResult.root !== 'body' && declaresSignals && !warnedMultiRootSignalPartials.has(includeFilePath)) {
+        //
+        // Not only for signals: an import or a helper the partial's script
+        // names is registered on the same scope, and a binding in a later
+        // top-level element cannot see it either. hq.training's calendar grid
+        // imported its compliance label helper and drew the grid in its third
+        // top-level element, so on a full load every card's "91% of plan"
+        // came out empty while a router swap (which merges scopes into the
+        // page's) showed it.
+        if (scopeResult.stamped && scopeResult.root !== 'body' && (declaresSignals || registersBindings) && !warnedMultiRootSignalPartials.has(includeFilePath)) {
           const roots = topLevelElements(workingContent)
           if (roots.length > 1) {
             warnedMultiRootSignalPartials.add(includeFilePath)
             console.warn(
-              `[stx] ${path.relative(process.cwd(), includeFilePath)} declares signals and has ${roots.length} top-level elements `
-              + `(${roots.map(name => `<${name}>`).join(', ')}). Only the first is scoped, so bindings in the others cannot see this partial's signals. `
+              `[stx] ${path.relative(process.cwd(), includeFilePath)} declares ${declaresSignals ? 'signals' : 'bindings'} and has ${roots.length} top-level elements `
+              + `(${roots.map(name => `<${name}>`).join(', ')}). Only the first is scoped, so bindings in the others cannot see what this partial's script declares. `
               + `Wrap the partial's markup in a single root element.`,
             )
           }

@@ -39,3 +39,20 @@ describe('ambient helpers respect function parameter scope', () => {
     expect(referencesName('const 𐐀 = 1; function schedule(delay) { return delay }', 'delay')).toBe(false)
   })
 })
+
+describe('method definitions are not references', () => {
+  test('does not auto-import a name a class or object only defines as a method', () => {
+    // bughq's client, bundled into a page: its own `retry` method, called on `this`.
+    const source = 'class Client { send(e) { fetch(e).then(() => this.retry(e, 1)) }\n  retry(e, t, r, s = false) { return s } }'
+    expect(referencesName(source, 'retry')).toBe(false)
+    expect(transformAutoImports(source).browserImports).not.toContain('retry')
+    expect(referencesName('const api = { retry(n) { return n } }', 'retry')).toBe(false)
+    expect(referencesName('class A { async retry(n) { return n } }', 'retry')).toBe(false)
+  })
+
+  test('still sees a call, and a call that runs into a block on the next line', () => {
+    expect(referencesName('retry(load, 3)', 'retry')).toBe(true)
+    expect(referencesName('if (ok) retry(load, 3)\n{ done() }', 'retry')).toBe(true)
+    expect(referencesName('const x = ok ? retry(load) : {}', 'retry')).toBe(true)
+  })
+})

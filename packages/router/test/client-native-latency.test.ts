@@ -336,6 +336,27 @@ describe('prefetch on sight', () => {
     expect(sheet?.hasAttribute('data-stx-css-pending')).toBe(true)
   })
 
+  it('leaves a sighted page\'s module bundles for an intent to follow it', async () => {
+    // Each page links its own bundles (megabytes of script on hq.training);
+    // loading one for every link that scrolled into view competed with the
+    // page being read. A hover, a touch or the tap loads them.
+    FakeObserver.last = null
+    const bundle = (path: string) => `/_stx/modules.${path === '/one' ? '0123456789abcdef' : 'fedcba9876543210'}.js`
+    const { window } = install(page(LINKS), path => fragment(`<p>${path}</p><script data-stx-scoped data-stx-run="always" data-stx-modules src="${bundle(path)}"><\/script>`), { prefetch: true, prefetchVisible: true }, {
+      IntersectionObserver: FakeObserver,
+    })
+    await sleep(20)
+    FakeObserver.last!.callback([{ isIntersecting: true, target: window.document.getElementById('one') }])
+    await sleep(20)
+    expect(window.stxRouter.cache['/one']).toBeDefined()
+    const loading = () => [...window.document.querySelectorAll('head script[src]')].map((el: any) => new URL(el.getAttribute('src'), 'http://localhost').pathname)
+    expect(loading()).not.toContain('/_stx/modules.0123456789abcdef.js')
+
+    window.document.getElementById('one').dispatchEvent(new window.Event('mouseover', { bubbles: true }))
+    await sleep(20)
+    expect(loading()).toContain('/_stx/modules.0123456789abcdef.js')
+  })
+
   it('does nothing on a connection that asked to save data', async () => {
     FakeObserver.last = null
     install(page(LINKS), path => fragment(`<p>${path}</p>`), { prefetch: true, prefetchVisible: true }, {

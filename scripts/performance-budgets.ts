@@ -38,7 +38,14 @@ const budgets = {
   // mangled (getRouterScript; the dev build keeps them), which is the win the
   // note above asked for and brings it to 66002 -- 7.4KB over the old size
   // for all of that, so 68KB leaves the same ~2.3KB of slack as before.
-  routerScriptBytes: 68 * 1024,
+  //
+  // Raised to 71KB for the navigation work hq.training's Calendar asked for,
+  // measured first: a tap answered while its prefetch is out, the window's
+  // position taken as the swap begins and held while the page fills in, a
+  // swap that waits for its module bundles, the opening page kept for Back
+  // and prefetch-on-sight leaving bundles for an intent took it from 68285
+  // to 70782 bytes. The same ~2KB of slack.
+  routerScriptBytes: 71 * 1024,
 }
 
 async function measure<T>(fn: () => T | Promise<T>, iterations: number): Promise<number> {

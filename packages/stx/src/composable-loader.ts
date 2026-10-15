@@ -24,6 +24,7 @@
  */
 
 import path from 'node:path'
+import { unboundNames } from './client-parameter-bindings'
 import { bundleClientScript, clientBundleDependencies, hasUserImports } from './client-script-bundler'
 import { loadStxConfig } from './config'
 import { getPublicEnvDefine } from './public-env'
@@ -224,6 +225,48 @@ function mentionedNames(text: string, names: Iterable<string>): Set<string> {
  * mention. The only thing it cannot see is a name assembled at runtime, and such
  * a name could never have resolved as a bare global either.
  */
+/**
+ * Which composable names a script (not a page) actually uses: the ones it
+ * mentions without binding them itself.
+ *
+ * A bundle names the functions it inlined. The store bundle carries every
+ * helper its stores import, and a composable carries the ones it imports,
+ * and a bare word scan read each of those as a call to the composable of the
+ * same name, so the page shipped a second, global copy of everything already
+ * inlined. On hq.training that was 75 of 125 composables on every page, a
+ * ~4.7MB bundle per page where 20 were reachable.
+ *
+ * Kept, whatever the scope analysis says: names destructured from
+ * `window.__composables` (what `import { x } from '@composables'` compiles to)
+ * and named imports from '@composables', which resolve to the composable.
+ * Remembered per text, since the same bundles are scanned for every page.
+ */
+const usesByText = renderMemo<Set<string>>(64)
+function composableUses(text: string, names: ReadonlySet<string>): Set<string> {
+  const key = contentKey(text, names.size)
+  const remembered = usesByText.get(key)
+  if (remembered) return remembered
+  let used: Set<string>
+  try {
+    used = unboundNames(text, names)
+  }
+  catch {
+    used = mentionedNames(text, names)
+  }
+  const forced = [
+    ...text.matchAll(/(?:const|let|var)\s*\{([^}]*)\}\s*=\s*window\.__composables/g),
+    ...text.matchAll(/import\s*\{([^}]*)\}\s*from\s*['"]@composables['"]/g),
+  ]
+  for (const match of forced) {
+    for (const specifier of match[1]!.split(',')) {
+      const name = specifier.trim().split(/\s*(?::|as)\s*/)[0]
+      if (name && names.has(name)) used.add(name)
+    }
+  }
+  usesByText.set(key, used)
+  return used
+}
+
 function selectReachable(
   modules: ComposableModule[],
   codeByFile: Map<string, string>,
@@ -243,16 +286,27 @@ function selectReachable(
       found.push(fileForName.get(name)!)
     return found
   }
+  // A script read for what it uses rather than for every word in it: the
+  // bundles beside the page, and the composables themselves.
+  const allNames = new Set(fileForName.keys())
+  const filesUsedBy = (text: string): string[] => {
+    const found: string[] = []
+    for (const name of composableUses(text, allNames))
+      found.push(fileForName.get(name)!)
+    return found
+  }
 
   const selected = new Set<string>()
-  let frontier = pageSources.flatMap(filesMentionedIn)
+  // The page itself is markup as much as script ({{ fmt(x) }}, @click="…"),
+  // so it keeps the loose word scan; what ships beside it is plain script.
+  let frontier = pageSources.flatMap((source, index) => index === 0 ? filesMentionedIn(source) : filesUsedBy(source))
   while (frontier.length > 0) {
     const next: string[] = []
     for (const file of frontier) {
       if (selected.has(file))
         continue
       selected.add(file)
-      for (const dependency of filesMentionedIn(codeByFile.get(file) ?? '')) {
+      for (const dependency of filesUsedBy(codeByFile.get(file) ?? '')) {
         if (!selected.has(dependency))
           next.push(dependency)
       }

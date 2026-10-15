@@ -127,7 +127,7 @@ function routerSource(): string {
   if(window.__stxRouter&&window.__stxRouter.__rev===ROUTER_REV)return;
 
   // ── Configuration ──
-  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false,prefetchCacheMax:50,routeFocus:true,announceRoute:true,interceptForms:false,cssLoadTimeout:1500,scrollRestoration:true,screens:'auto',screenLimit:8,navDuration:350,swipeBack:true,swipeEdge:20,prefetchVisible:true,prefetchVisibleMax:12,revalidate:true,revalidateAfter:3000};
+  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false,prefetchCacheMax:50,routeFocus:true,announceRoute:true,interceptForms:false,cssLoadTimeout:1500,scrollRestoration:true,screens:'auto',screenLimit:8,navDuration:350,swipeBack:true,swipeEdge:20,prefetchVisible:true,prefetchVisibleMax:12,revalidate:true,revalidateAfter:3000,keepOpening:true};
   var o=Object.assign({},defaults,window.__stxRouterConfig||{},window.STX_ROUTER_OPTIONS||{});
   var containerSel=o.container;
   var debug=!!o.debug;
@@ -207,8 +207,14 @@ function routerSource(): string {
   function rememberScroll(){
     if(active&&active.el&&!active.el.hasAttribute(HIDDEN))saveScroll(active);
     if(!restoreScroll)return;
+    // The window's position as the swap began, like the scrollers' below.
+    // Read now it is wrong: the outgoing page has been replaced by one still
+    // filling in, a few hundred pixels tall, and the window has clamped to it
+    // -- every entry was filed at 0,0 and Back went to the top.
+    var win=winSnap||[window.pageXOffset||window.scrollX||0,window.pageYOffset||window.scrollY||0];
+    winSnap=undefined;
     try{
-      window.sessionStorage.setItem(SCROLL_STORE+scrollToken,(window.pageXOffset||window.scrollX||0)+','+(window.pageYOffset||window.scrollY||0));
+      window.sessionStorage.setItem(SCROLL_STORE+scrollToken,win[0]+','+win[1]);
       // Taken as the swap began when there is one: by the time the history
       // is written the outgoing page's scrollers have been replaced.
       var inner=innerSnap!==undefined?innerSnap:innerScroll(activeRoot());
@@ -219,16 +225,76 @@ function routerSource(): string {
   }
   var pendingInner=null;
   var innerSnap;
+  var winSnap;
+  function snapScroll(){
+    innerSnap=innerScroll(activeRoot());
+    winSnap=[window.pageXOffset||window.scrollX||0,window.pageYOffset||window.scrollY||0];
+  }
   function readInner(token){
     try{return JSON.parse(window.sessionStorage.getItem(SCROLL_STORE+token+':i')||'null')}catch(e){return null}
   }
   // One place decides where a swap leaves the viewport, so the fragment path
   // and the whole-document path cannot drift apart.
+  // A page put back by Back is often shorter when it is swapped in than when
+  // it was left: its lists are drawn from data that is still on its way (or
+  // from a store a moment later), so scrollTo clamps to the little there is
+  // and the place is lost -- Back always landed at the top of a long page.
+  // For a moment after, hold the position: try again each time the page
+  // changes size. The person scrolling, a key, a tap, the page scrolling
+  // itself, the next navigation or four seconds (a page whose data is slow
+  // to come) end the hold.
+  var scrollHold=null;
+  var HOLD_ENDERS=['wheel','touchstart','keydown','pointerdown'];
+  function releaseScrollHold(){
+    if(!scrollHold)return;
+    var h=scrollHold;scrollHold=null;
+    if(h.ro)h.ro.disconnect();
+    clearTimeout(h.timer);
+    // The window and root the hold was made on: by the time its timer fires
+    // the document may be another one.
+    if(h.onScroll)h.win.removeEventListener('scroll',h.onScroll);
+    if(h.anchor!==null&&h.root)h.root.style.overflowAnchor=h.anchor;
+    HOLD_ENDERS.forEach(function(n){h.win.removeEventListener(n,h.stop,true)});
+  }
+  function holdScroll(x,y){
+    releaseScrollHold();
+    var reached=function(){return Math.abs((window.pageYOffset||window.scrollY||0)-y)<2};
+    if(typeof ResizeObserver!=='function')return;
+    var h={stop:releaseScrollHold,ro:null,timer:0,onScroll:null,anchor:null,win:window,root:document.documentElement};
+    // Scroll anchoring off while held: content filling in above the place
+    // would otherwise carry the window down with it (Chrome keeps what is
+    // on screen in view), and Back landed thousands of pixels past it.
+    var rootStyle=document.documentElement&&document.documentElement.style;
+    if(rootStyle){h.anchor=rootStyle.overflowAnchor||'';rootStyle.overflowAnchor='none'}
+    h.ro=new ResizeObserver(function(){
+      // Held for the whole window even once reached: a page that is tall
+      // enough when it is put back is often still drawing, above the place
+      // as much as below it.
+      if(scrollHold!==h||reached())return;
+      window.scrollTo({left:x,top:y,behavior:'instant'});
+    });
+    h.ro.observe(document.body||document.documentElement);
+    h.timer=setTimeout(releaseScrollHold,4000);
+    HOLD_ENDERS.forEach(function(n){window.addEventListener(n,h.stop,{capture:true,passive:true})});
+    // Moved by something else (a scrollbar dragged, the page scrolling to
+    // what it wants to show): theirs wins. Only the clamp to a page still
+    // too short, at its very end, is the hold's own business.
+    h.onScroll=function(){
+      var at=window.pageYOffset||window.scrollY||0;
+      var end=Math.max(0,(document.documentElement.scrollHeight||0)-(window.innerHeight||0));
+      if(Math.abs(at-y)<2||(at<y&&at>=end-1))return;
+      releaseScrollHold();
+    };
+    window.addEventListener('scroll',h.onScroll,{passive:true});
+    scrollHold=h;
+  }
   function applyScroll(hash){
+    releaseScrollHold();
     if(pendingScroll){
       var at=pendingScroll;
       pendingScroll=null;
       window.scrollTo({left:at[0],top:at[1],behavior:'instant'});
+      holdScroll(at[0],at[1]);
       // Again once the page has bound: a scroller's content is often drawn
       // by a :for that has not run yet, and a box with nothing in it cannot
       // be scrolled anywhere.
@@ -257,7 +323,7 @@ function routerSource(): string {
     if(known){
       var saved=readScroll(scrollToken);
       if(saved&&(saved[0]||saved[1])){
-        var restoreAt=function(){window.scrollTo({left:saved[0],top:saved[1],behavior:'instant'})};
+        var restoreAt=function(){window.scrollTo({left:saved[0],top:saved[1],behavior:'instant'});holdScroll(saved[0],saved[1])};
         if(document.readyState==='complete')restoreAt();
         else window.addEventListener('load',restoreAt,{once:true});
       }
@@ -460,8 +526,9 @@ function routerSource(): string {
   var progDelay=null;
   function startProgress(){
     if(!o.progress||!progEl)return;
-    if(progTimer){clearInterval(progTimer);progTimer=null}
-    if(progDelay)clearTimeout(progDelay);
+    // Already counting for this tap (it waited on a prefetch, then went on
+    // to swap): keep the bar where it is rather than start it again.
+    if(progTimer||progDelay)return;
     progDelay=setTimeout(function(){
       progDelay=null;
       setProgress(8);
@@ -1164,6 +1231,8 @@ function routerSource(): string {
     return fetch(url,init);
   }
   function navigate(url,pushState,force){
+    releaseScrollHold();
+    winSnap=undefined;
     var ctx=navCtxNext||{};
     navCtxNext=null;
     if(pushState&&typeof pushState==='object'){if(pushState.instant)instantNext=true;pushState=pushState.replace?'replace':true}
@@ -1200,6 +1269,14 @@ function routerSource(): string {
     var awaitedKey=cacheKey(url);
     if(o.cache&&!force&&!cache[awaitedKey]&&prefetching[awaitedKey]&&prefetching[awaitedKey].then){
       awaitingKey=awaitedKey;
+      // Answer the tap now, not when the prefetch lands. The page it asked
+      // for is on the way, but until then nothing on screen said so: no
+      // loading class, no progress bar. On a server a second or two away
+      // (the hover started the fetch a moment before the click) a link read
+      // as dead, and was clicked again, and again (hq.training's Calendar).
+      // The navigation this hands over to keeps both going and ends them.
+      document.body.classList.add(o.loadingClass);
+      startProgress();
       return prefetching[awaitedKey].then(function(){
         if(awaitingKey!==awaitedKey)return false;
         awaitingKey='';
@@ -1259,9 +1336,15 @@ function routerSource(): string {
           return swapWith(html,targetPath);
         }).catch(failed).finally(done);
       }
-      pendingContainerAttrs=attrsCache[targetPath]||'';
-      pendingLayoutDecl=null;
-      return Promise.resolve(swapWith(cache[targetPath],targetPath)).then(function(swapped){
+      var cached=cache[targetPath];
+      var swapCached=function(){
+        if(stale())return false;
+        pendingContainerAttrs=attrsCache[targetPath]||'';
+        pendingLayoutDecl=null;
+        return swapWith(cached,targetPath);
+      };
+      var loading=beforeSwap(cached,url);
+      return (loading?loading.then(function(ok){if(!ok){if(!stale())recoverUnbound(url,ctx);return false}return swapCached()}):Promise.resolve(swapCached())).then(function(swapped){
         if(swapped===false)return false;
         applyTitle(titleCache[targetPath]);
         // Shown from the cache at once; asked again behind it, so a page that
@@ -1325,6 +1408,14 @@ else {
         if(!result||stale())return false;
         if(result.isFragment)result.html=fragmentMarker(result.runtime)+result.html;
         if(o.cache)setCache(targetPath,result.html,result.layout,result.layoutGroup,result.title,result.containerAttrs);
+        var loading=beforeSwap(result.html,url);
+        return loading?loading.then(function(ok){
+          if(ok||stale())return result;
+          recoverUnbound(url,ctx);
+          return null;
+        }):result;
+      }).then(function(result){
+        if(!result||stale())return false;
         pendingContainerAttrs=result.isFragment?(result.containerAttrs||''):'';
         pendingLayoutDecl=result.isFragment?null:{layout:result.layout||'',group:result.layoutGroup||''};
         return Promise.resolve(swapWith(result.html,targetPath)).then(function(swapped){
@@ -1857,7 +1948,7 @@ else {
       var useScreens=screensOn();
       function startFragSwap(){
         if(ctx.id&&ctx.id!==navSeq)return Promise.resolve(false);
-        if(pushState!==false)innerSnap=innerScroll(activeRoot());
+        if(pushState!==false)snapScroll();
         if(useScreens)settleAnimation();
         else if(window.stx&&window.stx._cleanupContainer)window.stx._cleanupContainer(currentContent);
         return new Promise(function(resolve,reject){
@@ -2326,7 +2417,7 @@ else {
 
     function startSwap(){
       if(ctx.id&&ctx.id!==navSeq)return Promise.resolve(false);
-      if(pushState!==false)innerSnap=innerScroll(activeRoot());
+      if(pushState!==false)snapScroll();
       setDirection(ctx.direction);
       // A whole document is written into the container as it is, so retained
       // screens go first: they would otherwise outlive the page they belong to.
@@ -3099,7 +3190,7 @@ else {
         sightObserver.unobserve(en.target);
         if(sightCount>=o.prefetchVisibleMax)return;
         sightCount++;
-        prefetchLink(en.target);
+        prefetchLink(en.target,false,true);
       });
     });
     sightCount=0;
@@ -3412,14 +3503,24 @@ else {
   // prefetch has finished waits for that answer instead of asking again.
   // 'fresh' refetches a page that is cached, for an entry restored from an
   // earlier launch that is shown at once and replaced behind it.
-  function prefetchLink(link,fresh){
+  // 'glance' is a link that merely came into view (prefetchVisible): its
+  // page is fetched, but its module bundles are left for an intent (a hover,
+  // a touch) or the tap itself, which waits for them (beforeSwap). Each page
+  // links bundles of its own, hq.training's ~4.7MB of script apiece, and a
+  // screen with a dozen links in view used to download and evaluate every
+  // one of them on arrival, competing with the page being read.
+  function prefetchLink(link,fresh,glance){
     // Same opt-out set as the click path. Without it, hovering a link the
     // router is not allowed to claim still fired a real GET at it — a
     // logout or OAuth URL was requested on hover alone.
     if(isRouterExcluded(link))return;
     var href=withCurrentLocale(link.getAttribute('href'));
     var key=cacheKey(href);
-    if((cache[key]&&!fresh)||prefetching[key])return;
+    if(cache[key]&&!fresh){if(!glance)loadModuleRegistries(cache[key],href);return}
+    if(prefetching[key]){
+      if(!glance)prefetching[key].then(function(){if(cache[key])loadModuleRegistries(cache[key],href)});
+      return;
+    }
     var eager=link.getAttribute('data-stx-prefetch')==='eager';
     var wantsFragment=shouldUseFragmentResponse();
     prefetching[key]=fetch(href,{headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
@@ -3430,7 +3531,7 @@ else {
         if(eager)keepPage(key,result);
       }
       if(result){
-        loadModuleRegistries(result.html,href);
+        if(!glance)loadModuleRegistries(result.html,href);
         // Its stylesheet too, so the tap never waits on cssLoadTimeout for a
         // sheet it could have had all along. Added unapplied (media=print),
         // as a navigation adds it; the swap makes it live.
@@ -3483,14 +3584,41 @@ else {
   // registers modules, once, so loading it early changes nothing but timing,
   // and the tap then finds every script it needs already here: the swap runs
   // in one task and the first visit to a tab paints whole, like the second.
+  //
+  // The composables bundle too (also stx's own /_stx/modules.<hash>.js): it
+  // only registers what is not registered yet. Answers a promise for the
+  // files still on their way, or null when there are none.
   function loadModuleRegistries(html,base){
+    var waits=[];
     html.replace(new RegExp('<scr'+'ipt\\\\b([^>]*)>','gi'),function(m,attrs){
-      if(!/(?:^|\\s)data-stx-modules(?:[\\s=]|$)/i.test(attrs))return m;
       var srcMatch=attrs.match(/\\bsrc\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))/i);
       var src=srcMatch&&(srcMatch[1]||srcMatch[2]||srcMatch[3]);
-      if(src)loadExternalScript(src,base);
+      if(!src)return m;
+      if(!/(?:^|\\s)data-stx-modules(?:[\\s=]|$)/i.test(attrs)&&!isModuleBundle(src))return m;
+      var pending=loadExternalScript(src,base);
+      if(pending)waits.push(pending);
       return m;
     });
+    return waits.length?Promise.all(waits):null;
+  }
+  // A page swapped in before its module bundles have loaded is drawn bare
+  // (everything behind :if and x-cloak) and bound a network round trip
+  // later: the main area went blank for a moment on every page the router
+  // had not prefetched -- Back to the page the app opened on, a link it never
+  // hovered. Waiting for them first keeps the outgoing page up, under the
+  // progress bar, and lets the swap, its scripts and the first paint happen
+  // in one task. Capped, so a bundle that hangs costs a delay, not the page.
+  // Null when there is nothing to wait for, so a cached page still swaps in
+  // the task of the tap that asked for it.
+  // Answers false when a bundle failed: that page cannot bind, and is
+  // recovered (recoverUnbound) rather than swapped in bare.
+  function beforeSwap(html,base){
+    var waits=loadModuleRegistries(html,base);
+    if(!waits)return null;
+    return Promise.race([
+      waits.then(function(results){return results.indexOf(false)===-1}),
+      new Promise(function(resolve){setTimeout(function(){resolve(true)},4000)}),
+    ]);
   }
 
   // Links marked data-stx-prefetch="eager", fetched once the page is idle, so
@@ -3519,6 +3647,25 @@ else {
     // a distant server each page is a second away, and the first tap comes fast.
     if(window.requestIdleCallback)window.requestIdleCallback(run,{timeout:500});
     else setTimeout(run,100);
+  }
+
+  // The page the app was opened on came as a whole document, so it is the
+  // one page the cache never holds: Back to it went to the server and left
+  // the page being read on screen under the new address until it answered
+  // (a second or more on a distant server). Once the page is idle its
+  // fragment is fetched, the same request a link to it would make, so Back
+  // is a swap like every other.
+  function keepOpeningPage(){
+    if(!o.cache||!shouldUseFragmentResponse())return;
+    var c=navigator.connection;
+    if(c&&(c.saveData||/2g/.test(c.effectiveType||'')))return;
+    var url=location.pathname+location.search;
+    var key=cacheKey(url);
+    // Late by design, so it can find the page gone (a test's document torn
+    // down, a full navigation begun): never let that throw from a timer.
+    var run=function(){try{if(!cache[key]&&!prefetching[key])revalidate(key,url)}catch(e){}};
+    if(window.requestIdleCallback)window.requestIdleCallback(run,{timeout:3000});
+    else setTimeout(run,1500);
   }
 
   if(o.prefetch){
@@ -3808,6 +3955,8 @@ else {
     restoreKeptPages();
     prefetchEager();
     observeLinks();
+    // The runtime's first stx:load has usually gone by when this runs.
+    if(o.prefetch&&o.keepOpening!==false)keepOpeningPage();
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();

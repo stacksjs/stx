@@ -429,6 +429,9 @@ export async function injectRouterScript(template: string, options?: StxOptions)
       if (routerConfig.cache !== undefined) configObj.cache = routerConfig.cache
       if (routerConfig.progressColor !== undefined) configObj.progressColor = routerConfig.progressColor
       if (routerConfig.progressHeight !== undefined) configObj.progressHeight = routerConfig.progressHeight
+      if (routerConfig.prefetchVisible !== undefined) configObj.prefetchVisible = routerConfig.prefetchVisible
+      if (routerConfig.prefetchVisibleMax !== undefined) configObj.prefetchVisibleMax = routerConfig.prefetchVisibleMax
+      if (routerConfig.keepOpening !== undefined) configObj.keepOpening = routerConfig.keepOpening
     }
 
     // The paths the router can actually render, so interception stops claiming

@@ -789,9 +789,45 @@ export function referencesName(code: string, name: string, call = false): boolea
       continue
     if (call && !/^\s*(?:<[^>]*>)?\s*\(/.test(code.slice(end)))
       continue
+    // `name(a, b) {` -- a method of a class or object literal being defined,
+    // not a call: bughq's `retry(e, t, r, s = false) {` in a bundled client
+    // made every page that shipped it destructure `retry` off
+    // window.StacksBrowser and report it missing on each navigation.
+    if (definesMethod(code, end))
+      continue
     return true
   }
   return false
+}
+
+/**
+ * Whether the identifier ending at `end` names a method being defined:
+ * its parameter list is followed, on the same line, by the body's `{`. A call
+ * is never followed by a block on its own line (`f() {` does not parse), so
+ * this cannot drop a real reference. Literals are blanked by the caller.
+ */
+function definesMethod(code: string, end: number): boolean {
+  let i = end
+  while (i < code.length && (code[i] === ' ' || code[i] === '\t')) i++
+  if (code[i] !== '(')
+    return false
+  let depth = 0
+  for (; i < code.length; i++) {
+    const ch = code[i]
+    if (ch === '(') depth++
+    else if (ch === ')') {
+      depth--
+      if (depth === 0)
+        break
+    }
+  }
+  if (depth !== 0)
+    return false
+  i++
+  while (i < code.length && (code[i] === ' ' || code[i] === '\t')) i++
+  // Not `name(): Type {`: a ternary's `? name(x) : {}` reads the same, and
+  // keeping a name that is not needed is harmless where dropping one is not.
+  return code[i] === '{'
 }
 
 /**

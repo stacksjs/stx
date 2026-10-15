@@ -1063,6 +1063,19 @@ export interface StxConfig {
      * Progress-bar height including units (e.g. '2px', '3px'). Default: '2px'.
      */
     progressHeight?: string
+    /**
+     * Fetch the pages of links as they scroll into view, so the first tap on
+     * one is a swap. Their module bundles wait for an intent (a hover, a
+     * touch) or the tap. Default: true.
+     */
+    prefetchVisible?: boolean
+    /** At most this many links prefetched on sight per page. Default: 12. */
+    prefetchVisibleMax?: number
+    /**
+     * Fetch the fragment of the page the app was opened on once it is idle,
+     * so Back to it is a swap rather than a round trip. Default: true.
+     */
+    keepOpening?: boolean
   }
 
   /**

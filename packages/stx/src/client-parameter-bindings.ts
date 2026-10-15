@@ -3,7 +3,8 @@ import { stripCommentsAndLiterals } from './strip-literals'
 
 interface Token { text: string, start: number, end: number }
 interface Scope { start: number, end: number, names: Set<string> }
-interface Analysis { code: string, scopes: Scope[], declarations: Set<string> }
+interface Site { name: string, token: number, file?: boolean }
+interface Analysis { code: string, scopes: Scope[], declarations: Set<string>, sites: Site[], tokens: Token[], pairs: Map<number, number> }
 let cachedSource = ''
 let cached: Analysis | undefined
 
@@ -54,11 +55,17 @@ function analyze(source: string): Analysis {
     result.push([begin, end])
     return result
   }
+  // Where each declared name is declared, for unboundNames.
+  const sites: Site[] = []
   function pattern(start: number, end: number, names: Set<string>): void {
     if (tokens[start]?.text === '...') start++
     if (start >= end) return
     const first = tokens[start].text
-    if (identifier.test(first)) { names.add(first); return }
+    if (identifier.test(first)) {
+      names.add(first)
+      if (names === declarations) sites.push({ name: first, token: start })
+      return
+    }
     if (first !== '{' && first !== '[') return
     const close = pairs.get(start)
     if (close === undefined || close >= end) return
@@ -89,6 +96,7 @@ function analyze(source: string): Analysis {
     return tokens[Math.max(start, index - 1)]?.end ?? code.length
   }
 
+  const declarations = new Set<string>()
   const scopes: Scope[] = []
   for (let index = 0; index < tokens.length; index++) {
     if (tokens[index].text === '=>') {
@@ -127,7 +135,6 @@ function analyze(source: string): Analysis {
   // (`Trail.get(…)`). @stacksjs/mobile's image cache, minified to `J` in
   // the phone build, was auto-imported from @stacksjs/browser that way, and
   // every phone page reported a "J" the client runtime does not provide.
-  const declarations = new Set<string>()
   // Where a declaration list ends: a `;`, the bracket that encloses it (a
   // `for (…)` head), or a line break between two statements under ASI.
   function declarationEnd(start: number): number {
@@ -181,7 +188,10 @@ function analyze(source: string): Analysis {
     else if (token === 'function' || token === 'class') {
       let name = index + 1
       if (tokens[name]?.text === '*') name++
-      if (tokens[name] && identifier.test(tokens[name].text) && tokens[name].text !== 'extends') declarations.add(tokens[name].text)
+      if (tokens[name] && identifier.test(tokens[name].text) && tokens[name].text !== 'extends') {
+        declarations.add(tokens[name].text)
+        sites.push({ name: tokens[name].text, token: name })
+      }
     }
     else if (token === 'import') {
       // `import X from`, `import * as X from`, `import X, { … } from`. Named
@@ -189,13 +199,26 @@ function analyze(source: string): Analysis {
       let name = index + 1
       if (tokens[name]?.text === '*' && tokens[name + 1]?.text === 'as') name += 2
       const binding = tokens[name]?.text
-      if (binding && identifier.test(binding) && binding !== 'type' && tokens[name + 1]?.text !== '(' && tokens[name + 1]?.text !== '.')
+      if (binding && identifier.test(binding) && binding !== 'type' && tokens[name + 1]?.text !== '(' && tokens[name + 1]?.text !== '.') {
         declarations.add(binding)
+        sites.push({ name: binding, token: name, file: true })
+      }
+      // Named specifiers bind too, for the whole file: `{ a, b as c }`.
+      const brace = tokens[name]?.text === '{' ? name : tokens[name + 1]?.text === ',' && tokens[name + 2]?.text === '{' ? name + 2 : -1
+      if (brace !== -1 && pairs.has(brace)) {
+        const close = pairs.get(brace)!
+        for (const [begin, finish] of parts(brace + 1, close)) {
+          let local = finish - 1
+          while (local >= begin && !identifier.test(tokens[local].text)) local--
+          if (local >= begin && tokens[local].text !== 'type')
+            sites.push({ name: tokens[local].text, token: local, file: true })
+        }
+      }
     }
   }
 
   cachedSource = source
-  cached = { code, scopes, declarations }
+  cached = { code, scopes, declarations, sites, tokens, pairs }
   return cached
 }
 
@@ -211,4 +234,67 @@ export function parameterAnalysis(source: string): { code: string, shadows: (nam
  */
 export function declaredNames(source: string): Set<string> {
   return new Set(analyze(source).declarations)
+}
+
+/**
+ * Which of `candidates` the source uses without binding them itself: a
+ * mention that no declaration of the same name encloses, and no parameter
+ * shadows. A declaration binds the innermost braces it is in (or the file),
+ * which is exact for `let`, `const` and `class` and narrower than the truth
+ * for `var` and `function`, so a mention can only ever be kept wrongly, never
+ * dropped. A property (`x.name`), a key (`{ name: … }`) and a declaration
+ * itself are not uses.
+ *
+ * What it is for: a bundle that inlined a module refers to that module's
+ * functions by name, and those mentions must not pull in a second, global
+ * copy of the same functions (composable-loader's reachability scan).
+ */
+export function unboundNames(source: string, candidates: ReadonlySet<string>): Set<string> {
+  const { scopes, sites, tokens, pairs } = analyze(source)
+  // The innermost '{' enclosing each token, or -1 for the file.
+  const enclosing = Array.from({ length: tokens.length }, () => -1)
+  const open: number[] = []
+  for (let index = 0; index < tokens.length; index++) {
+    enclosing[index] = open.length ? open[open.length - 1]! : -1
+    const text = tokens[index].text
+    if (text === '{' && pairs.has(index)) open.push(index)
+    else if (text === '}' && open.length && pairs.get(index) === open[open.length - 1]) open.pop()
+  }
+  const declaredAt = new Set<number>()
+  const ranges = new Map<string, Array<[number, number]>>()
+  for (const site of sites) {
+    if (!candidates.has(site.name)) continue
+    declaredAt.add(site.token)
+    const brace = site.file ? -1 : enclosing[site.token]!
+    const range: [number, number] = brace === -1 ? [0, Number.POSITIVE_INFINITY] : [tokens[brace].start, tokens[pairs.get(brace)!].end]
+    const list = ranges.get(site.name)
+    if (list) list.push(range)
+    else ranges.set(site.name, [range])
+  }
+  // `import { a as b }`: the imported name is a module's export, not a use.
+  const inImport = new Set<number>()
+  for (let index = 0; index < tokens.length; index++) {
+    if (tokens[index].text !== 'import' || tokens[index - 1]?.text === '.') continue
+    // Only `import {`, `import type {` or `import X, {`: anything else
+    // (a side-effect import, `import(`) has no specifier braces to skip.
+    let at = index + 1
+    if (tokens[at]?.text === 'type') at++
+    if (tokens[at] && identifier.test(tokens[at].text) && tokens[at + 1]?.text === ',') at += 2
+    if (tokens[at]?.text === '{' && pairs.has(at)) {
+      for (let inner = at + 1; inner < pairs.get(at)!; inner++) inImport.add(inner)
+    }
+  }
+  const found = new Set<string>()
+  for (let index = 0; index < tokens.length; index++) {
+    const name = tokens[index].text
+    if (!candidates.has(name) || found.has(name) || declaredAt.has(index) || inImport.has(index)) continue
+    const previous = tokens[index - 1]?.text
+    if (previous === '.' && tokens[index - 2]?.text !== '..') continue
+    if (tokens[index + 1]?.text === ':' && (previous === '{' || previous === ',')) continue
+    const at = tokens[index].start
+    if (ranges.get(name)?.some(([from, to]) => at >= from && at < to)) continue
+    if (scopes.some(scope => at >= scope.start && at < scope.end && scope.names.has(name))) continue
+    found.add(name)
+  }
+  return found
 }
