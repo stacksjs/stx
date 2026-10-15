@@ -168,8 +168,14 @@ export class BrowserScreenRenderer {
     return record
   }
 
+  private disabled(record: RecordNode): boolean {
+    const state = record.props.accessibilityState as Record<string, unknown> | undefined
+    return Boolean(record.props.disabled || state?.disabled)
+  }
+
   private fire(record: RecordNode, name: string, payload: Record<string, unknown> = {}): void {
-    if (record.props.disabled && ['onPress', 'onLongPress', 'onPressIn', 'onPressOut'].includes(name)) return
+    if (this.disabled(record) && ['onPress', 'onLongPress', 'onPressIn', 'onPressOut', 'onChangeText', 'onValueChange', 'onSlidingComplete', 'onSubmitEditing'].includes(name)) return
+    if (record.props.editable === false && ['onChangeText', 'onValueChange', 'onSubmitEditing'].includes(name)) return
     const handler = record.events[name]
     if (handler) this.options.event(handler, payload)
   }
@@ -181,7 +187,7 @@ export class BrowserScreenRenderer {
       record.dispose.push(() => element.removeEventListener(name, listener))
     }
     listen('click', (event) => {
-      if (record.props.disabled || record.props.editable === false) return
+      if (this.disabled(record) || record.props.editable === false) return
       // Native events do not bubble through other pressable controls.
       if ((event.target as Element)?.closest('[data-stx-pressable]') !== element && element.hasAttribute('data-stx-pressable')) return
       this.fire(record, 'onPress')
@@ -200,7 +206,13 @@ export class BrowserScreenRenderer {
     listen('focus', () => this.fire(record, 'onFocus'))
     listen('blur', () => { this.fire(record, 'onBlur'); this.fire(record, 'onEndEditing', { text: (element as HTMLInputElement).value }) })
     listen('keydown', (event) => {
-      if ((event as KeyboardEvent).key === 'Enter' && !record.props.multiline) this.fire(record, 'onSubmitEditing', { text: (element as HTMLInputElement).value })
+      const key = (event as KeyboardEvent).key
+      if (record.events.onPress && !['input', 'button', 'select', 'textarea', 'a'].includes(element.tagName.toLowerCase()) && (key === ' ' || key === 'Enter')) {
+        event.preventDefault()
+        this.fire(record, 'onPress')
+        return
+      }
+      if (key === 'Enter' && !record.props.multiline) this.fire(record, 'onSubmitEditing', { text: (element as HTMLInputElement).value })
     })
     listen('contextmenu', (event) => { if (record.events.onLongPress) { event.preventDefault(); this.fire(record, 'onLongPress') } })
     listen('pointerdown', () => this.fire(record, 'onPressIn'))
@@ -246,14 +258,21 @@ export class BrowserScreenRenderer {
     if (props.accessibilityLabel != null || (type === 'TextInput' && props.placeholder)) element.setAttribute('aria-label', String(props.accessibilityLabel ?? props.placeholder))
     else element.removeAttribute('aria-label')
     if (props.accessibilityHint != null) element.setAttribute('aria-description', String(props.accessibilityHint))
+    else element.removeAttribute('aria-description')
+    const accessibilityState = props.accessibilityState as Record<string, unknown> | undefined
+    for (const key of ['selected', 'checked', 'disabled', 'busy', 'expanded']) {
+      const value = key === 'disabled' && (props.disabled != null || accessibilityState?.disabled != null) ? this.disabled(record) : accessibilityState?.[key]
+      if (value == null) element.removeAttribute(`aria-${key}`)
+      else element.setAttribute(`aria-${key}`, String(value))
+    }
     const role = props.accessibilityRole
     if (role && role !== 'none') element.setAttribute('role', String(role === 'header' ? 'heading' : role))
     else element.removeAttribute('role')
     if (record.events.onPress || ['Button', 'TouchableOpacity', 'TouchableHighlight', 'Pressable'].includes(type)) {
       element.setAttribute('data-stx-pressable', '')
-      if (!['input', 'button', 'select', 'textarea', 'a'].includes(element.tagName.toLowerCase())) { element.setAttribute('role', String(role || 'button')); element.setAttribute('tabindex', props.disabled ? '-1' : '0'); element.onkeydown = (event) => { if (event.key === ' ' || event.key === 'Enter') { event.preventDefault(); this.fire(record, 'onPress') } } }
+      if (!['input', 'button', 'select', 'textarea', 'a'].includes(element.tagName.toLowerCase())) { element.setAttribute('role', String(role || 'button')); element.setAttribute('tabindex', this.disabled(record) ? '-1' : '0') }
     }
-    if (['Switch', 'Checkbox', 'Slider', 'TextInput', 'DatePicker', 'Button', 'Picker'].includes(type)) (element as HTMLInputElement).disabled = Boolean(props.disabled)
+    if (['Switch', 'Checkbox', 'Slider', 'TextInput', 'DatePicker', 'Button', 'Picker'].includes(type)) (element as HTMLInputElement).disabled = this.disabled(record)
     if (type === 'Switch' || type === 'Checkbox') { const input = element as HTMLInputElement; input.type = 'checkbox'; input.checked = Boolean(props.value ?? props.checked); input.setAttribute('role', type === 'Switch' ? 'switch' : 'checkbox') }
     if (type === 'Slider') { const input = element as HTMLInputElement; input.type = 'range'; input.min = String(props.minimumValue ?? 0); input.max = String(props.maximumValue ?? 1); input.step = String(props.step ?? 'any'); input.value = String(props.value ?? 0) }
     if (type === 'TextInput' || type === 'DatePicker') {

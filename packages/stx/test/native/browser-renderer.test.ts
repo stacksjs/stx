@@ -64,6 +64,51 @@ describe('the browser peer of the native screen renderer', () => {
     expect(events).toEqual([])
   })
 
+  it('reconciles native accessibility states and suppresses disabled actions', () => {
+    const { renderer, container, node, events, window } = fixture()
+    renderer.render(node('root', 'View', [node('tab', 'View', ['Range'], { accessibilityRole: 'tab', accessibilityHint: 'Choose a range', accessibilityState: { selected: true, disabled: true, checked: 'mixed', expanded: false, busy: false } }, { onPress: 'pick' })]))
+    const tab = container.querySelector('[role="tab"]')!
+    expect(tab.getAttribute('aria-selected')).toBe('true')
+    expect(tab.getAttribute('aria-checked')).toBe('mixed')
+    expect(tab.getAttribute('aria-disabled')).toBe('true')
+    expect(tab.getAttribute('aria-expanded')).toBe('false')
+    expect(tab.getAttribute('aria-busy')).toBe('false')
+    expect(tab.getAttribute('tabindex')).toBe('-1')
+    tab.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
+    tab.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter' }))
+    expect(events).toEqual([])
+    renderer.mutate({ version: 1, batchId: 'enable', baseRevision: 0, revision: 1, operations: [{ op: 'updateNode', id: 'tab', patch: { props: { accessibilityRole: 'tab', accessibilityHint: null, accessibilityState: { selected: false, disabled: false, expanded: true, busy: true } } } }] })
+    expect(tab.getAttribute('aria-selected')).toBe('false')
+    expect(tab.getAttribute('aria-disabled')).toBe('false')
+    expect(tab.getAttribute('aria-expanded')).toBe('true')
+    expect(tab.getAttribute('aria-busy')).toBe('true')
+    expect(tab.getAttribute('aria-checked')).toBeNull()
+    expect(tab.getAttribute('aria-description')).toBeNull()
+    expect(tab.getAttribute('tabindex')).toBe('0')
+    tab.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter' }))
+    expect(events).toEqual([{ id: 'pick', payload: {} }])
+    renderer.mutate({ version: 1, batchId: 'clear', baseRevision: 1, revision: 2, operations: [{ op: 'updateNode', id: 'tab', patch: { props: { accessibilityState: null } } }] })
+    for (const key of ['selected', 'checked', 'disabled', 'expanded', 'busy']) expect(tab.hasAttribute(`aria-${key}`)).toBe(false)
+    renderer.dispose()
+    tab.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter' }))
+    expect(events).toHaveLength(1)
+  })
+
+  it('applies accessibility disabled state to form controls and ignores disabled edits', () => {
+    const { renderer, container, node, events, window } = fixture()
+    renderer.render(node('root', 'View', [node('input', 'TextInput', [], { value: 'Original', accessibilityState: { disabled: true } }, { onChangeText: 'edit' })]))
+    const input = container.querySelector('input')!
+    expect(input.disabled).toBe(true)
+    input.value = 'Disabled edit'
+    input.dispatchEvent(new window.Event('input'))
+    expect(events).toEqual([])
+    renderer.mutate({ version: 1, batchId: 'enable-input', baseRevision: 0, revision: 1, operations: [{ op: 'updateNode', id: 'input', patch: { props: { value: 'Original', accessibilityState: { disabled: false } } } }] })
+    expect(input.disabled).toBe(false)
+    input.value = 'Enabled edit'
+    input.dispatchEvent(new window.Event('input'))
+    expect(events).toEqual([{ id: 'edit', payload: { text: 'Enabled edit', value: 'Enabled edit' } }])
+  })
+
   it('preserves SVG geometry and clears detached node handlers', () => {
     const { renderer, container, node } = fixture()
     renderer.render(node('root', 'View', [node('svg', 'Svg', [node('path', 'Path', [], { d: 'M0 0L10 10', strokeWidth: 2 })], { viewBox: [0, 0, 10, 10] }), node('button', 'Button', ['Press'], {}, { onPress: 'press' })]))
