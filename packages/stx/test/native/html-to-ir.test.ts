@@ -57,6 +57,29 @@ function texts(node: STXNode, out: string[] = []): string[] {
   return out
 }
 
+describe('native utility diagnostics', () => {
+  it('reports unsupported static classes without losing supported styles', async () => {
+    const { root, diagnostics } = await translateHtmlToIR('<div class="p-4 made-up-layout made-up-layout dark:made-up-dark" style="margin-top: 8px"><span>Content</span></div>')
+    expect(root.style.padding).toBe(16)
+    expect(root.style.marginTop).toBe(8)
+    expect(texts(root)).toEqual(['Content'])
+    expect(diagnostics).toEqual([
+      { kind: 'unknown-class', tag: 'div', name: 'made-up-layout' },
+      { kind: 'unknown-class', tag: 'div', name: 'made-up-dark' },
+    ])
+  })
+
+  it('does not report native styles, icons or line clamps as unknown classes', async () => {
+    const { diagnostics } = await translateHtmlToIR('<div class="p-4 bg-white dark:bg-slate-950"><span class="line-clamp-2 text-sm">Content</span><Icon class="i-lucide-heart w-5 h-5" /></div>')
+    expect(diagnostics).toEqual([])
+  })
+
+  it('includes classes on translated SVG elements in diagnostics', async () => {
+    const { diagnostics } = await translateHtmlToIR('<svg viewBox="0 0 10 10" class="unsupported-drawing"><circle cx="5" cy="5" r="4" /></svg>')
+    expect(diagnostics).toContainEqual({ kind: 'unknown-class', tag: 'svg', name: 'unsupported-drawing' })
+  })
+})
+
 describe('the documented reference tree', () => {
   // The example from the issue, which the old parser compiled correctly. The
   // translator has to agree with it exactly, or this is a regression dressed

@@ -44,6 +44,8 @@ export type TranslationDiagnosticKind =
   | 'unread-event'
   /** An inline CSS property the IR has no field for. */
   | 'unknown-style'
+  /** A static utility class has no native style translation. */
+  | 'unknown-class'
   /** A value the IR's field cannot hold, so emitting it would brick the screen. */
   | 'non-numeric-style'
   /** A legacy virtual-list prop has no meaning in the shared-runtime tree. */
@@ -426,7 +428,10 @@ function readAttributes(
     }
   }
 
-  const style = { ...(classes ? compileClassStyles(classes).style : {}), ...inline }
+  const compiledClasses = classes ? compileClassStyles(classes) : undefined
+  for (const name of new Set(compiledClasses?.unknown ?? []))
+    diagnostics.push({ kind: 'unknown-class', tag, name })
+  const style = { ...compiledClasses?.style, ...inline }
   return { props, style, events, bindings, classes, inline }
 }
 

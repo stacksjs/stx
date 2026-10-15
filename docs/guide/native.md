@@ -4,6 +4,35 @@ stx compiles `.stx` screens to native iOS (and Android) views. Craft renders the
 
 ## Usage
 
+### One component model, multiple render targets
+
+stx owns template composition, slots, signals and bindings for both browser and
+native targets. The native compiler renders the ordinary stx template pipeline,
+then translates that output into native view IR. Craft owns the platform controls,
+navigation, permissions and device services that consume it. Application authors
+should reuse stx components and typed composables rather than maintaining another
+template parser, signals runtime or application-owned Swift/Kotlin renderer.
+
+This shared pipeline does not imply that an existing application's separately
+authored browser and native screens have already become one source. Consolidate
+their common UI and state deliberately. Browser DOM calls, custom CSS and
+unsupported controls do not acquire native equivalents merely by compiling.
+Keep platform access behind typed adapters and fix reusable translation gaps in
+stx or native host gaps in Craft.
+
+Review native compilation diagnostics. In particular, `unknown-class` reports a
+static utility class with no native style translation, including classes in the
+dark appearance. Supported styles still compile, so a successful build with that
+warning is not proof of visual parity. Runtime-computed class strings require
+interaction tests too; a static diagnostic cannot inspect every future value.
+
+A browser preview verifies HTML and browser behavior. Check the compiled native
+bundle's bindings and events, then validate the same route, data and interactions
+with the maintained Craft hosts. Native screens and their imported client code
+ship in the application bundle: changing them requires a new app build. API data
+can refresh independently. A native app is not automatically updated by deploying
+the website.
+
 ### Authoring without Swift
 
 Application screens, state, handlers and imported functions stay in STX and typed
