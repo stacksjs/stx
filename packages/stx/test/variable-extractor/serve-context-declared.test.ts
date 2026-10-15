@@ -99,3 +99,36 @@ const rendered = field(token)`,
     expect(context.ctx).toBeUndefined()
   })
 })
+
+
+describe('request cookies in every server-script context', () => {
+  const script = `function language(value) { return value.locale || 'en' }
+const out = language(cookies)`
+
+  it('runs execution-dependent helpers without a request, including an undefined cookie binding', async () => {
+    for (const context of [{}, { cookies: undefined }]) {
+      const values: Record<string, unknown> = context
+      await extractVariables(script, values, FILE)
+      expect(values.out).toBe('en')
+    }
+  })
+
+  it('preserves supplied cookies and gives top-level request cookies precedence', async () => {
+    const context: Record<string, unknown> = { cookies: { locale: 'de' }, __stxServeContext: { cookies: { locale: 'en' } } }
+    await extractVariables(script, context, FILE)
+    expect(context.out).toBe('de')
+  })
+
+  it('reads cookies from the serve context when no separate binding was supplied', async () => {
+    const context: Record<string, unknown> = { __stxServeContext: { cookies: { locale: 'de' } } }
+    await extractVariables(script, context, FILE)
+    expect(context.out).toBe('de')
+  })
+
+  it('creates a fresh empty record for each static render', async () => {
+    await extractVariables(`cookies.locale = 'de'`, {}, FILE)
+    const context: Record<string, unknown> = {}
+    await extractVariables(script, context, FILE)
+    expect(context.out).toBe('en')
+  })
+})

@@ -135,6 +135,16 @@ describe('a server script whose import cannot be resolved', () => {
   })
 })
 
+describe('request-free server scripts', () => {
+  it('provides empty cookies while statically rendering a page', async () => {
+    const result = await buildPage(`function language(value) { return value.locale || 'en' }
+const headline = language(cookies)`)
+    expect(result.failedCount).toBe(0)
+    expect(result.successCount).toBe(1)
+    expect(output()).toContain('<h1>en</h1>')
+  })
+})
+
 describe('which failures count', () => {
   it('counts a script that does not parse', async () => {
     const result = await buildPage(`export const headline = (`)

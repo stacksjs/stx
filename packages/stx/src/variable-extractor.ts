@@ -1086,6 +1086,25 @@ catch {
       filteredContextValues.push(undefined)
     }
 
+    // Static renders and isolated components have no request cookies. Bind an
+    // empty record there, just as params is always defined below. A missing
+    // identifier aborts the entire server block, even with optional chaining.
+    // Preserve real request data and let explicitly authored props keep their
+    // normal binding rules; never share a mutable default across renders.
+    if (!propsKeys.has('cookies')) {
+      const requestCookies = context.cookies
+        ?? (context.__stxServeContext as { cookies?: Record<string, string> } | undefined)?.cookies
+        ?? {}
+      const cookieIndex = filteredContextKeys.indexOf('cookies')
+      if (cookieIndex < 0) {
+        filteredContextKeys.push('cookies')
+        filteredContextValues.push(requestCookies)
+      }
+      else {
+        filteredContextValues[cookieIndex] = requestCookies
+      }
+    }
+
     // Expose each prop as a bare identifier (e.g. `car`, `rating`) in the
     // outer scope of the script IIFE — so components can reference props
     // directly without `const { car } = $props()` boilerplate. Skipped for
