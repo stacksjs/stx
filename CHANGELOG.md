@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.530...v0.2.531)
+
+## 🐛 Bug Fixes
+
+- tests and builds no longer leave stx-* directories in temp ([e6abf85](https://github.com/stacksjs/stx/commit/e6abf85)) _(by Chris Breuer <chris@stacksjs.com>)_ ([#357](https://github.com/stacksjs/stx/issues/357))
+
+## 🔧 Chores
+
+- release v0.2.531 ([e587498](https://github.com/stacksjs/stx/commit/e587498)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.529...v0.2.530)
 
 ## 🐛 Bug Fixes
