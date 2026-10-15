@@ -1,5 +1,28 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.534...v0.2.535)
+
+## ✨ Features
+
+- render portable stx screens in browsers with the shared signals host ([46331b5](https://github.com/stacksjs/stx/commit/46331b5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- report unsupported native utility classes ([0fb437a](https://github.com/stacksjs/stx/commit/0fb437a)) _(by Chris <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- **native**: account for web audio text tracks ([07a4b44](https://github.com/stacksjs/stx/commit/07a4b44)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.535 ([00bf4bc](https://github.com/stacksjs/stx/commit/00bf4bc)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.533...v0.2.534)
 
 ## 🐛 Bug Fixes

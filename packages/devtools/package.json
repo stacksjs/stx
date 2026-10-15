@@ -1,6 +1,6 @@
 {
   "name": "@stacksjs/devtools",
-  "version": "0.2.534",
+  "version": "0.2.535",
   "private": true,
   "description": "Development tools for stx templating engine",
   "main": "src/index.ts",
