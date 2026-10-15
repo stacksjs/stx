@@ -64,7 +64,29 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
     bridge.colorScheme = dark ? 'dark' : 'light'
     send('APPEARANCE', { colorScheme: bridge.colorScheme })
   }
-  const navigation = (settings: Record<string, unknown>): void => {
+  let currentNavigation: Record<string, unknown> = {}
+  const tabIcons = new Map<string, { root: HTMLElement, fallback: string, link: HTMLAnchorElement }>()
+  const navigation = (patch: Record<string, unknown>): void => {
+    currentNavigation = { ...currentNavigation, ...patch }
+    const settings = currentNavigation
+    const item = patch.tabItem as { id?: string, iconText?: string | null, image?: string | null, accessibilityLabel?: string | null } | undefined
+    const tab = item?.id ? tabIcons.get(item.id) : null
+    if (tab && item) {
+      if ('image' in item && item.image && /^https:\/\//.test(item.image)) {
+        const image = document.createElement('img')
+        image.src = item.image; image.alt = ''; image.style.cssText = 'width:27px;height:27px;border-radius:50%;object-fit:cover'
+        image.onerror = () => { tab.root.innerHTML = tab.fallback }
+        tab.root.replaceChildren(image)
+      }
+      else if ('iconText' in item || 'image' in item) {
+        if (item.iconText) { tab.root.textContent = item.iconText.slice(0, 8); tab.root.style.cssText = 'font-size:23px;font-weight:650;font-variant-numeric:tabular-nums;color:#ff2d55;line-height:27px' }
+        else { tab.root.innerHTML = tab.fallback; tab.root.style.cssText = '' }
+      }
+      if ('accessibilityLabel' in item) {
+        if (item.accessibilityLabel) tab.link.setAttribute('aria-label', item.accessibilityLabel)
+        else tab.link.removeAttribute('aria-label')
+      }
+    }
     const title = typeof settings.title === 'string' ? settings.title : options.title ?? ''
     if (title) document.title = title
     if (typeof settings.tabBarHidden === 'boolean') { tabs.hidden = settings.tabBarHidden; tabs.style.display = settings.tabBarHidden ? 'none' : 'flex' }
@@ -113,6 +135,7 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
       chromeRenderers.push(icon)
       icon.render({ id: `tab_${tab.id}`, type: 'Icon', props: { symbol: tab.symbol }, style: { width: 23, height: 23 }, events: {}, children: [] })
     }
+    tabIcons.set(tab.id, { root: iconRoot, fallback: iconRoot.innerHTML, link })
     const label = document.createElement('span'); label.textContent = tab.title; link.append(label)
     if (location.pathname.replace(/\/$/, '') === tab.id || (tab.id !== rootPath && location.pathname.startsWith(`${tab.id}/`))) { link.setAttribute('aria-current', 'page'); link.style.color = '#007aff' }
     tabs.append(link)

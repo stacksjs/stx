@@ -33,6 +33,8 @@ export interface NativeNavigationOptions {
   hidden?: boolean
   backTitle?: string
   rightButtons?: NativeNavigationButton[]
+  /** Patch a tab's icon without replacing tabs, stacks or the selected tab. Null restores its configured icon. */
+  tabItem?: { id: string, iconText?: string | null, image?: string | null, badge?: string | null, accessibilityLabel?: string | null }
 }
 
 export interface NativeNavigation {
