@@ -1,5 +1,25 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.531...v0.2.532)
+
+## 🐛 Bug Fixes
+
+- **router**: a component under :if gets its setup after a swap ([a1dc3f0](https://github.com/stacksjs/stx/commit/a1dc3f0)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **router**: keep the opening page out of the cache until it is left ([6e75e0e](https://github.com/stacksjs/stx/commit/6e75e0e)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: show() and hide() pass the IR a display it can hold ([17c7708](https://github.com/stacksjs/stx/commit/17c7708)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 💄 Styles
+
+- sort the temp-dir import in the SPA harness ([dec2a7c](https://github.com/stacksjs/stx/commit/dec2a7c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.532 ([95b835d](https://github.com/stacksjs/stx/commit/95b835d)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.530...v0.2.531)
 
 ## 🐛 Bug Fixes
