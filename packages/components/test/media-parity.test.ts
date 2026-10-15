@@ -76,6 +76,8 @@ describe('media features formerly shadowed in Stacks defaults', () => {
       expect(html).toContain('background: #123456')
       expect(html).not.toContain(`background: ${placeholder}`)
     }
+    for (const placeholder of ['/preview.jpg', 'data:image/png;base64,AAAA'])
+      expect(await render('Image', { src: '/photo.jpg', alt: 'Photo', placeholder })).toContain(`background: url(&quot;${placeholder}&quot;)`)
     for (const placeholder of ['empty', 'none'])
       expect(await render('Image', { src: '/photo.jpg', alt: 'Photo', placeholder })).not.toContain('background:')
   })

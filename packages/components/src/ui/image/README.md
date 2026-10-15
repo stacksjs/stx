@@ -105,7 +105,7 @@ opts out: your sources are used as written.
 | `priority` | `boolean` | `false` | Above the fold: eager, `fetchpriority="high"` |
 | `decoding` | `'async' \| 'sync' \| 'auto'` | `'async'` | Decode hint |
 | `fetchpriority` | `'high' \| 'low' \| 'auto'` | `'auto'` | Priority hint |
-| `placeholder` | `string` | - | CSS background, or blur / thumbhash / color / empty / none |
+| `placeholder` | `string` | - | CSS background, preview URL, or blur / thumbhash / color / empty / none |
 | `placeholderColor` | `string` | `#e5e7eb` | Color when a derived preview is unavailable |
 | `aspectRatio` | `number \| string` | - | Only when you want one — see below |
 | `objectFit` | `'contain' \| 'cover' \| 'fill' \| 'none' \| 'scale-down'` | `'cover'` | How the image fills its box |

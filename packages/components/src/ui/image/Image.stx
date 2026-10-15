@@ -47,13 +47,16 @@ export const fetchpriority = priority ? 'high' : ($props.fetchpriority || 'auto'
  * which is a permanent artefact on every PNG with an alpha channel.
  */
 const placeholderMode = $props.placeholder
+// Stacks' former default accepted a preview URL; keep CSS backgrounds too.
+const customPlaceholder = typeof placeholderMode === 'string' && /^(?:data:image\/|https?:\/\/|\/|\.{1,2}\/)/i.test(placeholderMode)
+  ? `url(${JSON.stringify(placeholderMode)})` : placeholderMode
 const imagePlaceholder = getImagePlaceholder($props.src || '')
 const placeholderColor = $props.placeholderColor || imagePlaceholder?.color || '#e5e7eb'
 const preview = delivered?.placeholder || imagePlaceholder?.dataUrl
 export const placeholder = placeholderMode === 'empty' || placeholderMode === 'none' ? ''
   : placeholderMode === 'color' ? (imagePlaceholder?.transparent ? '' : placeholderColor)
     : placeholderMode === 'blur' || placeholderMode === 'thumbhash' ? (imagePlaceholder?.transparent ? '' : preview ? `url("${preview}")` : placeholderColor)
-      : placeholderMode || (delivered?.placeholder ? `url("${delivered.placeholder}")` : '')
+      : customPlaceholder || (delivered?.placeholder ? `url("${delivered.placeholder}")` : '')
 export const aspectRatio = $props.aspectRatio
 export const objectFit = $props.objectFit || $props.fit || 'cover'
 export const objectPosition = $props.objectPosition || $props.position || 'center'
