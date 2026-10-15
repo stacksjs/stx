@@ -32,6 +32,8 @@ export const muted = $bool($props.muted)
 export const controls = $bool($props.controls, true)
 export const playsinline = $bool($props.playsinline, true)
 export const disablePictureInPicture = $bool($props.disablePictureInPicture)
+/** Focus the player when it is drawn (a dialog's first focus): its keys then work at once. */
+export const autofocus = $bool($props.autofocus)
 export const preload = $props.preload || 'metadata'
 export const crossorigin = $props.crossorigin || ''
 export const controlslist = $props.controlslist || 'nodownload'
@@ -117,6 +119,7 @@ effect(() => {
     controlslist="{{ controlslist }}"
     @if(disablePictureInPicture) disable-picture-in-picture @endif
     keep-alive
+    @if(autofocus) autofocus @endif
     @if(label) aria-label="{{ label }}" @endif
     class="block overflow-hidden relative w-full bg-black rounded-panel focus-within:ring-2 focus-within:ring-accent"
     style="aspect-ratio: {{ aspectRatio }};"
@@ -132,7 +135,11 @@ effect(() => {
       <media-play-button slot="left"></media-play-button>
       <media-seek-button slot="left" seconds="10"></media-seek-button>
       <media-live-button slot="left"></media-live-button>
-      <media-time-group slot="center" class="font-mono tabular-nums text-xs"></media-time-group>
+      <media-time-group slot="center" class="font-mono tabular-nums text-xs">
+        <media-time-display type="current"></media-time-display>
+        <media-time-separator></media-time-separator>
+        <media-time-display type="duration"></media-time-display>
+      </media-time-group>
       <media-progress-bar slot="center" previews="metadata"></media-progress-bar>
       <media-mute-button slot="right"></media-mute-button>
       <media-volume-slider slot="right"></media-volume-slider>

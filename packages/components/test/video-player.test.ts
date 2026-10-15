@@ -25,8 +25,17 @@ describe('Video', () => {
     expect(html).toContain('<video-player')
     expect(html).toContain('src="/media/demo.mp4"')
     expect(html).toContain('aria-label="Demo"')
+    expect(html).not.toMatch(/<video-player[^>]*\sautofocus/)
+    expect(await render('<Video src="/media/demo.mp4" autofocus />')).toMatch(/<video-player[^>]*\sautofocus/)
     expect(html).toContain('<video-skin>')
     expect(html).toContain('<media-play-button')
+    // The time beside the seek bar: where it is, and how long it is.
+    expect(html).toContain('<media-time-display type="current">')
+    expect(html).toContain('<media-time-display type="duration">')
+    expect(html).toMatch(/<media-seek-button[^>]*seconds="-10"/)
+    expect(html).toMatch(/<media-seek-button[^>]*seconds="10"/)
+    for (const control of ['media-progress-bar', 'media-mute-button', 'media-volume-slider', 'media-playback-rate-button', 'media-settings-menu', 'media-pip-button', 'media-fullscreen-button'])
+      expect(html).toContain(`<${control}`)
     expect(SOURCE).toContain(`import { registerElements } from 'ts-video-player/elements'`)
   })
 

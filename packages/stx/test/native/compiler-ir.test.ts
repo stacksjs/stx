@@ -253,6 +253,14 @@ describe('mapToNativeComponent', () => {
     'audio', 'canvas', 'source',
     // A line break, which has no element form natively.
     'br',
+    // <Video>'s web player, ts-video-player's custom elements: the player,
+    // its skin and its controls. A native screen plays with the Video
+    // primitive, whose controls are the system's own, so these have nothing
+    // to become on a device.
+    'video-player', 'video-skin',
+    'media-airplay-button', 'media-error-display', 'media-fullscreen-button', 'media-live-button', 'media-mute-button',
+    'media-pip-button', 'media-play-button', 'media-playback-rate-button', 'media-progress-bar', 'media-remote-playback-button',
+    'media-seek-button', 'media-settings-menu', 'media-time-display', 'media-time-group', 'media-time-separator', 'media-volume-slider',
   ]
 
   it('maps every tag the component library writes, or names it as unmapped', () => {
