@@ -79,8 +79,13 @@ describe('a tap waiting on its prefetch', () => {
 })
 
 describe('the page the app opened on', () => {
-  it('is fetched into the cache once the page is idle, so Back to it is a swap', async () => {
+  it('is fetched into the cache once the router has left it, so Back to it is a swap', async () => {
     const { window, requested } = installRouter(10)
+    await wait(1700)
+    // Not on load: a no-store fetch keeps the document out of the
+    // back/forward cache, which a full-document Back relies on.
+    expect(requested).not.toContain('/home')
+    await window.stxRouter.navigate('/calendar')
     await wait(1700)
     expect(requested).toContain('/home')
     expect(window.stxRouter.cache['/home']).toContain('Calendar page')

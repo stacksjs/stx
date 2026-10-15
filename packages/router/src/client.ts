@@ -1308,6 +1308,7 @@ function routerSource(): string {
       isNavigating=false;navAbort=null;
       document.body.classList.remove(o.loadingClass);finishProgress();
       settleDirection();
+      if(openingUrl&&location.pathname+location.search!==openingUrl)keepOpeningPage();
     }
     function stale(){return id!==navSeq}
     // A failed fetch keeps the app: the destination shows a way to try again
@@ -3656,14 +3657,22 @@ else {
   // The page the app was opened on came as a whole document, so it is the
   // one page the cache never holds: Back to it went to the server and left
   // the page being read on screen under the new address until it answered
-  // (a second or more on a distant server). Once the page is idle its
-  // fragment is fetched, the same request a link to it would make, so Back
-  // is a swap like every other.
+  // (a second or more on a distant server). Once the router has taken the
+  // person somewhere else its fragment is fetched, the same request a link
+  // to it would make, so Back is a swap like every other.
+  //
+  // Not before: the fragment is answered no-store, and a document that has
+  // fetched a no-store response is kept out of the back/forward cache. Done
+  // on load, it cost the opening page its instant restore when the person
+  // left the app and came back (a full-document Back). A router navigation
+  // has already fetched one, so after it nothing more is lost.
+  var openingUrl=location.pathname+location.search;
   function keepOpeningPage(){
-    if(!o.cache||!shouldUseFragmentResponse())return;
+    var url=openingUrl;
+    openingUrl='';
+    if(!url||!o.prefetch||o.keepOpening===false||!o.cache||!shouldUseFragmentResponse())return;
     var c=navigator.connection;
     if(c&&(c.saveData||/2g/.test(c.effectiveType||'')))return;
-    var url=location.pathname+location.search;
     var key=cacheKey(url);
     // Late by design, so it can find the page gone (a test's document torn
     // down, a full navigation begun): never let that throw from a timer.
@@ -3959,8 +3968,6 @@ else {
     restoreKeptPages();
     prefetchEager();
     observeLinks();
-    // The runtime's first stx:load has usually gone by when this runs.
-    if(o.prefetch&&o.keepOpening!==false)keepOpeningPage();
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
