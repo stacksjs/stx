@@ -25,9 +25,10 @@
  *
  * Since the entries are built together with code splitting, the bundled copy
  * is a single shared chunk rather than one per entry, so the count is also
- * asserted: it went from five copies to two (the chunk every bundled entry
- * imports, and the per-module `signals.js` the ESM graph uses). A rise means
- * splitting silently stopped working, which is how the original bug returns.
+ * asserted. `signals.js` remains the public ESM entry, but its extracted
+ * runtime fragments now live in that shared chunk too. A rise in carriers
+ * means splitting silently stopped working, which is how the original bug
+ * returns.
  */
 import { describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
@@ -75,21 +76,24 @@ describe('bundled runtime copies agree', () => {
   it('finds the bundled entries at all', () => {
     // If dist has not been built this suite cannot say anything, and silently
     // passing would be the same failure mode the issue describes.
-    if (entries.length === 0) {
+    if (!fs.existsSync(distDir)) {
       console.warn('[stx] dist/ not built — skipping bundled-runtime comparison')
       return
     }
+
+    // The package subpath remains stable even when code splitting moves the
+    // generator body into a chunk imported by this entry.
+    expect(fs.existsSync(path.join(distDir, 'signals.js'))).toBe(true)
     expect(entries.length).toBeGreaterThan(0)
-    expect(entries).toContain('signals.js')
   })
 
   it('keeps the bundled copies down to the one shared chunk', () => {
     if (entries.length === 0)
       return
 
-    // signals.js (the per-module ESM copy) plus the chunk the bundled entries
-    // share. Each additional carrier is an entry that inlined its own.
-    expect(entries.length).toBeLessThanOrEqual(2)
+    // Every published entry and signals.js should delegate to one carrier.
+    // Each additional carrier is a duplicated runtime body.
+    expect(entries.length).toBeLessThanOrEqual(1)
   })
 
   it('every copy carries every current marker', () => {
