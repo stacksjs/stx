@@ -23,6 +23,7 @@ import { signalsFetchRuntime } from './client/signals-fetch-runtime'
 import { SIGNALS_HEAD_RUNTIME } from './client/signals-head-runtime'
 import { SIGNALS_HELPERS_RUNTIME } from './client/signals-helpers-runtime'
 import { SIGNALS_HOST_RUNTIME } from './client/signals-host-runtime'
+import { signalsKeptRuntime } from './client/signals-kept-runtime'
 import { SIGNALS_LIFECYCLE_RUNTIME } from './client/signals-lifecycle-runtime'
 import { SIGNALS_NAVIGATION_RUNTIME } from './client/signals-navigation-runtime'
 import { SIGNALS_OPTIMISTIC_RUNTIME } from './client/signals-optimistic-runtime'
@@ -3901,66 +3902,7 @@ ${SIGNALS_REACTIVE_RUNTIME}
 
 ${SIGNALS_STORAGE_RUNTIME}
 
-  // A value kept between visits, for a phone app between launches: the tab a
-  // user opens right after starting the app draws last time's data at once
-  // and the fresh answer replaces it. Kept under stx:kept:, in a scope such as
-  // the signed-in account, so one person's data is never shown to another. A
-  // scope of false, null or '' keeps nothing (a plain state), for a page or a
-  // visitor that should not leave data behind; no scope at all uses the one
-  // given to setKeptScope. forgetKeptState(scope) removes a scope's values, or
-  // every kept value.
-  //
-  // Stored by the kept store (offline/kept-store.ts): small values in
-  // localStorage, readable on the first draw, large ones in IndexedDB, written
-  // off the critical path and read back asynchronously. Values kept before it
-  // are read where they are.
-  var STX_KEPT_PREFIX = 'stx:kept:';
-  var __stxKept = (${createKeptStore.toString()})(undefined, ${indexedDbBackend.toString()});
-  var __stxQueries = (${createQueryCache.toString()})({ state: state, kept: __stxKept, prefix: STX_KEPT_PREFIX, matches: ${queryTargetMatches.toString()} });
-  function stxKeptPrefix(scope) {
-    return STX_KEPT_PREFIX + (scope === undefined || scope === null || scope === '' ? '' : String(scope) + ':');
-  }
-  function keptState(name, initialValue, options) {
-    var scope = options ? options.scope : undefined;
-    if (scope === undefined) scope = __stxQueries.scope();
-    if (scope === false || scope === null || scope === '') return state(initialValue);
-    var key = stxKeptPrefix(scope) + name;
-    var hit = __stxKept.peek(key);
-    var s = state(hit ? hit.value : initialValue);
-    var restored = {};
-    var touched = false;
-    s.subscribe(function(value) {
-      if (value === restored) return;
-      touched = true;
-      __stxKept.set(key, value);
-    });
-    // Large values are kept where only an asynchronous read reaches: they
-    // arrive a moment later, unless the screen set its own first.
-    if (!hit) {
-      __stxKept.load(key).then(function(found) {
-        if (!found || touched) return;
-        restored = found.value;
-        s.set(found.value);
-      });
-    }
-    return s;
-  }
-  function forgetKeptState(scope) {
-    return __stxKept.forget(stxKeptPrefix(scope));
-  }
-  // The account kept state and cached queries belong to when they name none.
-  function setKeptScope(scope) {
-    __stxQueries.setScope(scope);
-  }
-  // Finish writing what is kept (before signing out, or in a test).
-  function flushKeptState() {
-    return __stxKept.flush();
-  }
-  // A query kept per account and refreshed behind: see offline/query-cache.ts.
-  function cachedQuery(key, options) {
-    return __stxQueries.cachedQuery(key, options);
-  }
-
+${signalsKeptRuntime(createKeptStore.toString(), indexedDbBackend.toString(), createQueryCache.toString(), queryTargetMatches.toString())}
   // Reactive cookie binding. Mirrors useLocalStorage's shape: returns a string-
   // valued signal, writes on .set(), and respects cookie attributes via opts.
   // Setting the signal to '' deletes the cookie (max-age=0). Cookies don't fire
