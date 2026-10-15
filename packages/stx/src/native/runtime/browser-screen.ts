@@ -104,24 +104,27 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
       back.onclick = () => history.length > 1 ? history.back() : platform.navigate(rootPath)
       nav.append(back)
     }
-    nav.append(heading)
-    if (Array.isArray(settings.rightButtons)) for (const item of settings.rightButtons as Array<Record<string, unknown>>) {
-      const button = document.createElement('button')
-      button.type = 'button'
-      button.style.cssText = 'display:flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;border:0;border-radius:50%;background:transparent;color:inherit;font:inherit;position:relative'
-      button.setAttribute('aria-label', String(item.accessibilityLabel ?? item.title ?? item.id))
-      if (item.image) { const image = document.createElement('img'); image.src = String(item.image); image.alt = ''; image.style.cssText = 'width:32px;height:32px;border-radius:50%;object-fit:cover'; button.append(image) }
-      else if (item.title) button.textContent = String(item.title)
-      else {
-        const holder = document.createElement('span')
-        button.append(holder)
-        const icon = new BrowserScreenRenderer(holder, { icons: options.icons, event() {} })
-        chromeRenderers.push(icon)
-        icon.render({ id: `nav_${item.id}`, type: 'Icon', props: { symbol: item.symbol }, style: { width: 24, height: 24 }, events: {}, children: [] })
+    for (const side of ['leftButtons', 'rightButtons']) {
+      if (side === 'rightButtons') nav.append(heading)
+      if (!Array.isArray(settings[side])) continue
+      for (const item of settings[side] as Array<Record<string, unknown>>) {
+        const button = document.createElement('button')
+        button.type = 'button'
+        button.style.cssText = 'display:flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;border:0;border-radius:50%;background:transparent;color:inherit;font:inherit;position:relative'
+        button.setAttribute('aria-label', String(item.accessibilityLabel ?? item.title ?? item.id))
+        if (item.image) { const image = document.createElement('img'); image.src = String(item.image); image.alt = ''; image.style.cssText = 'width:32px;height:32px;border-radius:50%;object-fit:cover'; button.append(image) }
+        else if (item.title) button.textContent = String(item.title)
+        else {
+          const holder = document.createElement('span')
+          button.append(holder)
+          const icon = new BrowserScreenRenderer(holder, { icons: options.icons, event() {} })
+          chromeRenderers.push(icon)
+          icon.render({ id: `nav_${item.id}`, type: 'Icon', props: { symbol: item.symbol }, style: { width: 24, height: 24 }, events: {}, children: [] })
+        }
+        if (Number(item.badge) > 0) { const badge = document.createElement('span'); badge.textContent = item.badgeStyle === 'dot' ? '' : String(item.badge); badge.style.cssText = 'position:absolute;top:0;right:0;background:#ff3b30;color:white;border-radius:10px;padding:1px 4px;font-size:10px'; if (item.badgeStyle === 'dot') badge.style.cssText += ';width:8px;height:8px;padding:0'; button.append(badge) }
+        button.onclick = () => send('NAV_BUTTON', { id: String(item.id) })
+        nav.append(button)
       }
-      if (Number(item.badge) > 0) { const badge = document.createElement('span'); badge.textContent = item.badgeStyle === 'dot' ? '' : String(item.badge); badge.style.cssText = 'position:absolute;top:0;right:0;background:#ff3b30;color:white;border-radius:10px;padding:1px 4px;font-size:10px'; if (item.badgeStyle === 'dot') badge.style.cssText += ';width:8px;height:8px;padding:0'; button.append(badge) }
-      button.onclick = () => send('NAV_BUTTON', { id: String(item.id) })
-      nav.append(button)
     }
   }
   for (const tab of options.tabs ?? []) {

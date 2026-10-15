@@ -17,7 +17,7 @@ describe('portable browser screens', () => {
     folders.push(root)
     writeFileSync(path.join(root, 'Screen.stx'), `<script client>
 const craft = globalThis.craft
-onMount(() => craft.navigation.setOptions({title:'Health',rightButtons:[{id:'store',title:'Store'}]}))
+onMount(() => craft.navigation.setOptions({title:'Health',leftButtons:[{id:'calendar',title:'Calendar',variant:'neutral'}],rightButtons:[{id:'store',title:'Store'}]}))
 function rate() { craft.navigation.setOptions({tabItem:{id:'/m/health',iconText:'142',accessibilityLabel:'Heart rate 142 bpm'}}) }
 function clear() { craft.navigation.setOptions({tabItem:{id:'/m/health',iconText:null,accessibilityLabel:null}}) }
 function avatar() { craft.navigation.setOptions({tabItem:{id:'/m/me',image:'https://fixture.invalid/avatar.png'}}) }
@@ -43,6 +43,8 @@ function avatar() { craft.navigation.setOptions({tabItem:{id:'/m/me',image:'http
     expect(health.getAttribute('aria-current')).toBe('page')
     expect(browser.document.querySelector('header h1')!.textContent).toBe('Health')
     expect(browser.document.querySelector('header button[aria-label="Store"]')).not.toBeNull()
+    expect(browser.document.querySelector('header button[aria-label="Calendar"]')).not.toBeNull()
+    expect([...browser.document.querySelector('header')!.children].map(child => child.textContent)).toEqual(['Calendar', 'Health', 'Store'])
     await click('avatar')
     expect(browser.document.querySelector('nav a[href="/m/me"] img')!.getAttribute('src')).toBe('https://fixture.invalid/avatar.png')
     await click('clear')
