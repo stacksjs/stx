@@ -768,7 +768,13 @@ for (const serve of MODES) {
 
 describe('what a fragment carries', () => {
   const fragment = (route: string) => extractContainerContent(app.documents.get(route)!, 'main')
-  const stamps = (html: string) => html.match(/data-stx-(?:owner|instance)="[^"]*"/g) ?? []
+  const stamps = (html: string) => Array.from(html.matchAll(/<script\b[^>]*>/gi))
+    .flatMap(([tag]) => tag.match(/data-stx-(?:owner|instance)="[^"]*"/g) ?? [])
+
+  it('counts script attributes, not matching source text inside scripts', () => {
+    const html = '<script data-stx-owner="real">const attr = \'data-stx-owner="source"\'</script>'
+    expect(stamps(html)).toEqual(['data-stx-owner="real"'])
+  })
 
   it('leaves out the layout components\' own scripts', () => {
     // Tag, @include, a pair through the factory, no signals, stx.mount, and a
