@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
-
-const source = readFileSync(resolve(import.meta.dir, '../src/signals.ts'), 'utf-8')
+import { SIGNALS_LIFECYCLE_RUNTIME } from '../src/client/signals-lifecycle-runtime'
 
 /**
  * `runMountCallbacks` is the single place every onMount hook is flushed
@@ -18,9 +15,9 @@ const source = readFileSync(resolve(import.meta.dir, '../src/signals.ts'), 'utf-
  */
 describe('runMountCallbacks', () => {
   const body = (() => {
-    const start = source.indexOf('function runMountCallbacks(list, sink)')
+    const start = SIGNALS_LIFECYCLE_RUNTIME.indexOf('function runMountCallbacks(list, sink)')
     expect(start).toBeGreaterThan(-1)
-    return source.slice(start, start + 1400)
+    return SIGNALS_LIFECYCLE_RUNTIME.slice(start, start + 1400)
   })()
 
   it('drains the queue it is given', () => {
