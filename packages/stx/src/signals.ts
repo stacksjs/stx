@@ -14,6 +14,7 @@ import { createModelSignal } from './component-model'
 import { readHydratedData, clearServerData } from './composables/use-fetch'
 import { createKeptStore, indexedDbBackend } from './offline/kept-store'
 import { createQueryCache, queryTargetMatches } from './offline/query-cache'
+import { SIGNALS_CLOAK_RUNTIME, SIGNALS_PREAMBLE_RUNTIME } from './client/signals-bootstrap-runtime'
 import { SIGNALS_HOST_RUNTIME } from './client/signals-host-runtime'
 
 export * from './signals-api'
@@ -113,31 +114,8 @@ function stripConsoleLog(src: string): string {
  * @returns Human-readable JavaScript runtime code
  */
 export function generateSignalsRuntimeDev(): string {
-  return `
-// STX Signals Runtime (Development Build)
-console.log('[stx] signals runtime loading');
-// Pre-initialization shim: capture onMount/onDestroy calls made before the runtime IIFE runs
-// (e.g. from partial scripts that execute before the full runtime is ready)
-if(!window.__stx_early_mounts)window.__stx_early_mounts=[];
-if(!window.__stx_early_destroys)window.__stx_early_destroys=[];
-if(!window.onMount)window.onMount=function(fn){window.__stx_early_mounts.push(fn)};
-if(!window.onDestroy)window.onDestroy=function(fn){window.__stx_early_destroys.push(fn)};
-console.log('[stx] entering IIFE');
-(function() {
-  'use strict';
-
-${SIGNALS_HOST_RUNTIME}
-  // Inject x-cloak CSS to prevent FOUC (Flash of Unstyled Content)
-  // Elements with x-cloak are hidden until the runtime removes the attribute after mount
-  var cloakStyle = document.getElementById ? document.getElementById('stx-cloak-style') : null;
-  if (!cloakStyle) {
-    cloakStyle = document.createElement('style');
-    cloakStyle.id = 'stx-cloak-style';
-    cloakStyle.textContent = '[x-cloak] { display: none !important; }';
-    document.head.appendChild(cloakStyle);
-  }
-
-  // ==========================================================================
+  return `${SIGNALS_PREAMBLE_RUNTIME}${SIGNALS_HOST_RUNTIME}
+${SIGNALS_CLOAK_RUNTIME}  // ==========================================================================
   // Reactive Core
   // ==========================================================================
 
