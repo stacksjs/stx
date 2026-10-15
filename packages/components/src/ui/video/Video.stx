@@ -1,45 +1,153 @@
 <script server>
+/*
+ * A video player: ts-video-player's <video-player>, with its own controls,
+ * for a file, an HLS or DASH stream, a YouTube link (played from
+ * youtube-nocookie.com) or a Vimeo link (with Do Not Track). The player draws
+ * its controls over a YouTube or Vimeo embed, so the provider's title bar and
+ * "Watch on YouTube" are not a way out of the page: the video plays here.
+ *
+ *   <Video src="/videos/demo.mp4" poster="/demo.jpg" label="Product demo" />
+ *
+ * One player can play whichever video is chosen. `src`, `poster`,
+ * `aspectRatio` and `label` follow a parent's binding:
+ *
+ *   <Video :src="current.url" :aspectRatio="current.aspect" autoplay />
+ *
+ * An empty `src` pauses it, which is what closing the dialog or sheet it sits
+ * in should do. With `autoplay`, each video chosen starts by itself (the
+ * person just asked for it).
+ *
+ * The controls speak the page's language (`<html lang>`): ts-video-player
+ * names its buttons and announces playback in it.
+ */
 export const src = $props.src || ''
 export const poster = $props.poster || ''
+/** The accessible name of the player. Follows a binding. */
+export const label = $props.label || $props.title || ''
+/** A heading shown above the player. */
+export const title = $props.title || ''
 export const autoplay = $bool($props.autoplay)
 export const loop = $bool($props.loop)
 export const muted = $bool($props.muted)
 export const controls = $bool($props.controls, true)
+export const playsinline = $bool($props.playsinline, true)
+export const disablePictureInPicture = $bool($props.disablePictureInPicture)
 export const preload = $props.preload || 'metadata'
-export const width = $props.width
-export const height = $props.height
-export const aspectRatio = $props.aspectRatio || '16/9'
-export const className = $props.className || ''
-export const title = $props.title || ''
+export const crossorigin = $props.crossorigin || ''
+export const controlslist = $props.controlslist || 'nodownload'
+export const width = $props.width || ''
+export const height = $props.height || ''
+export const className = $props.className || $props.class || ''
 
-export const containerClasses = `relative w-full overflow-hidden rounded-panel ${className}`.trim()
-export const videoClasses = 'w-full h-full object-cover bg-neutral-900 dark:bg-neutral-950'
-export const aspectRatioClass = aspectRatio === '16/9' ? 'aspect-video' : aspectRatio === '4/3' ? 'aspect-[4/3]' : aspectRatio === '1/1' ? 'aspect-square' : ''
+/** Width over height as CSS takes it: "16/9", "4/3", 0.5625. */
+function ratio(value) {
+  if (value === undefined || value === null || value === '')
+    return width && height ? `${width} / ${height}` : '16 / 9'
+  const text = String(value).trim()
+  return /^\d+(?:\.\d+)?(?:\s*\/\s*\d+(?:\.\d+)?)?$/.test(text) ? text : '16 / 9'
+}
+export const aspectRatio = ratio($props.aspectRatio)
+
+const sources = Array.isArray($props.sources) ? $props.sources : []
+const tracks = Array.isArray($props.tracks) ? $props.tracks : []
+const playerSources = sources.length ? sources : src ? [{ src }] : []
+const playerTracks = tracks.map(track => ({ ...track, language: track.srclang }))
+export const playerConfig = JSON.stringify({ sources: playerSources, tracks: playerTracks })
+  .replaceAll('<', '\\u003c').replaceAll('>', '\\u003e').replaceAll('&', '\\u0026')
+
+/*
+ * A YouTube or Vimeo link is a web page, not a media file. Before the player
+ * is defined (or without JavaScript) the native <video> beneath it can play
+ * only a file, so for a page it stays empty rather than offering the link.
+ */
+export const isPage = /^https?:\/\/(?:[\w-]+\.)*(?:youtube\.com|youtube-nocookie\.com|youtu\.be|vimeo\.com)\//i.test(src)
+
+export const containerClasses = `relative w-full ${className}`.trim()
 </script>
 
-<div class="{{ containerClasses }}">
-  @if(title)
-    <div class="mb-2 px-1">
-      <h3 class="text-sm font-medium text-fg">
-        {{ title }}
-      </h3>
-    </div>
-  @endif
+<script client>
+import { registerElements } from 'ts-video-player/elements'
+registerElements()
 
-  <div class="{{ aspectRatioClass }}">
-    <video
-      class="{{ videoClasses }}"
-      src="{{ src }}"
-      poster="{{ poster }}"
-      @if(controls)controls@endif
-      @if(autoplay)autoplay@endif
-      @if(loop)loop@endif
-      @if(muted)muted@endif
-      preload="{{ preload }}"
-      width="{{ width }}"
-      height="{{ height }}"
-    >
-      Your browser does not support the video element.
-    </video>
-  </div>
-</div>
+const liveSrc = useReactiveProp('src', {{ src }})
+const livePoster = useReactiveProp('poster', {{ poster }})
+const liveLabel = useReactiveProp('label', {{ label }})
+const liveRatio = useReactiveProp('aspectRatio', {{ aspectRatio }})
+const element = useRef('player')
+
+/** Width over height as CSS takes it, whatever the parent bound: "9/16", 0.5625. */
+const playerStyle = derived(() => {
+  const value = String(liveRatio() ?? '').trim()
+  return 'aspect-ratio: ' + (/^\d+(?:\.\d+)?(?:\s*\/\s*\d+(?:\.\d+)?)?$/.test(value) ? value : '16 / 9')
+})
+
+/*
+ * No src, nothing playing: closing the dialog a player sits in stops its
+ * video. With `autoplay` each new src starts by itself once loaded
+ * (ts-video-player), muted only where the browser refuses sound.
+ */
+effect(() => {
+  if (!liveSrc())
+    element.current?.player?.pause()
+})
+</script>
+
+<figure class="m-0 {{ containerClasses }}">
+  @if(title)
+    <figcaption class="mb-2 px-1 font-medium text-sm text-fg">{{ title }}</figcaption>
+  @endif
+  {{-- No src attribute until there is a video: an empty one resolves to the
+       page's own URL, which the browser then downloads as the video. --}}
+  <video-player
+    ref="player"
+    @if(src) src="{{ src }}" @endif
+    :src="liveSrc() || null"
+    :poster="livePoster() || null"
+    :aria-label="liveLabel() || null"
+    :style="playerStyle()"
+    data-media-config="{{ playerConfig }}"
+    @if(poster) poster="{{ poster }}" @endif
+    @if(controls) controls @endif
+    @if(autoplay) autoplay @endif
+    @if(loop) loop @endif
+    @if(muted) muted @endif
+    @if(playsinline) playsinline @endif
+    preload="{{ preload }}"
+    @if(crossorigin) crossorigin="{{ crossorigin }}" @endif
+    controlslist="{{ controlslist }}"
+    @if(disablePictureInPicture) disable-picture-in-picture @endif
+    keep-alive
+    @if(label) aria-label="{{ label }}" @endif
+    class="block overflow-hidden relative w-full bg-black rounded-panel focus-within:ring-2 focus-within:ring-accent"
+    style="aspect-ratio: {{ aspectRatio }};"
+  >
+    <media-error-display></media-error-display>
+    @if(isPage)
+      <span data-native-fallback class="block h-full w-full"></span>
+    @else
+      <video data-native-fallback @if(src) src="{{ src }}" @endif @if(poster) poster="{{ poster }}" @endif @if(controls) controls @endif @if(loop) loop @endif @if(playsinline) playsinline @endif preload="none" @if(crossorigin) crossorigin="{{ crossorigin }}" @endif controlslist="{{ controlslist }}" @if(disablePictureInPicture) disablepictureinpicture @endif @if(label) aria-label="{{ label }}" @endif class="object-contain h-full w-full"></video>
+    @endif
+    <video-skin>
+      <media-seek-button slot="left" seconds="-10"></media-seek-button>
+      <media-play-button slot="left"></media-play-button>
+      <media-seek-button slot="left" seconds="10"></media-seek-button>
+      <media-live-button slot="left"></media-live-button>
+      <media-time-group slot="center" class="font-mono tabular-nums text-xs"></media-time-group>
+      <media-progress-bar slot="center" previews="metadata"></media-progress-bar>
+      <media-mute-button slot="right"></media-mute-button>
+      <media-volume-slider slot="right"></media-volume-slider>
+      <media-playback-rate-button slot="right" rates="0.5,0.75,1,1.25,1.5,2"></media-playback-rate-button>
+      <media-settings-menu slot="right"></media-settings-menu>
+      <media-airplay-button slot="right"></media-airplay-button>
+      <media-remote-playback-button slot="right"></media-remote-playback-button>
+      <media-pip-button slot="right"></media-pip-button>
+      <media-fullscreen-button slot="right"></media-fullscreen-button>
+    </video-skin>
+  </video-player>
+</figure>
+
+<style>
+video-player:not(:defined) video-skin { display: none; }
+video-player:defined > [data-native-fallback] { display: none; }
+@media (prefers-reduced-motion: reduce) { video-player, video-player * { transition-duration: 0.01ms !important; } }
+</style>
