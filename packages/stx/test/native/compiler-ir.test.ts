@@ -250,7 +250,7 @@ describe('mapToNativeComponent', () => {
     // drawing and another inside it.
     'svg', 'path', 'circle',
     // Media and embedding, with no IR counterpart yet. (`video` is Video.)
-    'audio', 'canvas', 'source',
+    'audio', 'canvas', 'source', 'track',
     // A line break, which has no element form natively.
     'br',
     // <Video>'s web player, ts-video-player's custom elements: the player,
