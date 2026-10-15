@@ -95,7 +95,7 @@ export function installCraftBridge(
   craft.platform = nativeBridge.platform || 'unknown'
   // Code shared with the page tells the phone apart by its user agent, which a
   // JavaScriptCore screen does not have: say which phone this is.
-  const navigatorObject: AnyRecord = target.navigator = target.navigator || {}
+  const navigatorObject: AnyRecord = target.navigator || (target.navigator = {})
   if (typeof navigatorObject.userAgent !== 'string')
     navigatorObject.userAgent = platformUserAgent(craft.platform)
   craft.capabilityProtocolVersion = Number(nativeBridge.capabilityProtocolVersion || 0)
@@ -104,7 +104,7 @@ export function installCraftBridge(
   // again with others (`/m/messages?person=8`, or a tab's path with a query)
   // changes them in place and tells `route.onParams`.
   const paramsHandlers = new Set<(params: Record<string, unknown>, previous: Record<string, unknown>) => unknown>()
-  craft.route = { name: routeName, params: target.__stxNativeParams || {} }
+  craft.route = { name: routeName, params: target.__stxNativeParams || {}, ...(nativeBridge.routeURL ? { path: nativeBridge.routeURL } : {}) }
   // Not enumerable: `route` stays the plain `{ name, params }` it always was.
   Object.defineProperty(craft.route, 'onParams', {
     value: (callback: (params: Record<string, unknown>, previous: Record<string, unknown>) => unknown) => {
@@ -488,17 +488,21 @@ export function installCraftBridge(
   // the person; null when they closed the picker.
   if (capabilities.has('files')) {
     craft.files = {
+      pickVideo: (options: AnyRecord = {}) => ask('Files', 'pickVideo', [{
+        source: options.source === 'files' ? 'files' : 'library',
+        ...(typeof options.maxBytes === 'number' ? { maxBytes: options.maxBytes } : {}),
+      }]).then((file: unknown) => nativeBridge.resolveFile ? nativeBridge.resolveFile(file) : file ?? null),
       pickImage: (options: AnyRecord = {}) => ask('Files', 'pickImage', [{
         source: options.source === 'camera' ? 'camera' : 'library',
         ...(typeof options.maxPixels === 'number' ? { maxPixels: options.maxPixels } : {}),
         ...(typeof options.quality === 'number' ? { quality: options.quality } : {}),
-      }]).then((file: unknown) => file ?? null),
+      }]).then((file: unknown) => nativeBridge.resolveFile ? nativeBridge.resolveFile(file) : file ?? null),
       download: (url: string, options: AnyRecord = {}) => {
         if (typeof url !== 'string' || !url) return Promise.reject(new TypeError('files.download needs a URL'))
         const headers: Record<string, string> = {}
         const given = options.headers
         if (given && typeof given === 'object') Object.keys(given).forEach((name) => { headers[name] = String(given[name]) })
-        return request('Files', 'download', [url, { headers, ...(typeof options.name === 'string' ? { name: options.name } : {}) }])
+        return request('Files', 'download', [url, { headers, ...(typeof options.name === 'string' ? { name: options.name } : {}) }]).then(file => nativeBridge.resolveFile ? nativeBridge.resolveFile(file) : file)
       },
       // What the screen made itself (a CSV export): text as it is, bytes as
       // `{ encoding: 'base64' }`. `craft.share({ files: [file] })` takes it.
@@ -508,7 +512,7 @@ export function installCraftBridge(
         return request('Files', 'write', [name, data, {
           encoding: options.encoding === 'base64' ? 'base64' : 'utf8',
           ...(typeof options.type === 'string' ? { type: options.type } : {}),
-        }])
+        }]).then(file => nativeBridge.resolveFile ? nativeBridge.resolveFile(file) : file)
       },
       remove: (file: string | AnyRecord) => request('Files', 'remove', [typeof file === 'string' ? file : file?.path]).then(Boolean),
     }
@@ -761,7 +765,7 @@ export function installCraftBridge(
       if (signal?.aborted) return Promise.reject(abortError(signal.reason))
       if (streaming && !form && /text\/event-stream/i.test(headers.accept || ''))
         return streamingFetch(url, method, headers, body == null ? null : body, signal)
-      const answer = request('Network', 'fetch', [{ url, method, headers, body: body == null ? null : body, ...(form ? { form } : {}) }]).then((data: AnyRecord) => {
+      const answer = (form ? ask : request)('Network', 'fetch', [{ url, method, headers, body: body == null ? null : body, ...(form ? { form } : {}) }]).then((data: AnyRecord) => {
         const responseBody = data?.body == null ? '' : String(data.body)
         let bodyUsed = false
         const consume = (): Promise<string> => {

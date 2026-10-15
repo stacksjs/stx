@@ -1,0 +1,333 @@
+import type { NativeMutationOperation, NativeMutationPayload } from '../bridge/protocol'
+import { LUCIDE_TO_SF } from '../compiler/icons'
+import type { STXNode } from '../compiler/ir'
+
+const SYMBOL_TO_ICON = Object.fromEntries(Object.entries(LUCIDE_TO_SF).map(([name, symbol]) => [symbol, name]))
+const SVG_NS = 'http://www.w3.org/2000/svg'
+const SVG: Record<string, string> = { Svg: 'svg', G: 'g', Path: 'path', Line: 'line', Rect: 'rect', Circle: 'circle', Ellipse: 'ellipse', Polyline: 'polyline', Polygon: 'polygon', SvgText: 'text' }
+const TAGS: Record<string, string> = { View: 'div', SafeAreaView: 'div', ScrollView: 'div', KeyboardAvoidingView: 'div', Text: 'span', TextInput: 'input', Button: 'button', TouchableOpacity: 'button', TouchableHighlight: 'button', Pressable: 'button', Icon: 'span', Image: 'img', ImageBackground: 'div', Video: 'video', FlatList: 'div', SectionList: 'div', Switch: 'input', Checkbox: 'input', Slider: 'input', Picker: 'select', DatePicker: 'input', Modal: 'dialog', ActivityIndicator: 'progress', StatusBar: 'div', RefreshControl: 'progress', Sidebar: 'aside', SplitView: 'div' }
+const CONTAINERS = new Set(['View', 'SafeAreaView', 'ScrollView', 'KeyboardAvoidingView', 'FlatList', 'SectionList', 'Sidebar', 'SplitView', 'ImageBackground'])
+const UNITLESS = new Set(['opacity', 'flex', 'flexGrow', 'flexShrink', 'fontWeight', 'zIndex', 'aspectRatio', 'order'])
+const SVG_PROPS: Record<string, string> = { viewBox: 'viewBox', fillRule: 'fill-rule', clipRule: 'clip-rule', strokeWidth: 'stroke-width', strokeLinecap: 'stroke-linecap', strokeLinejoin: 'stroke-linejoin', strokeDasharray: 'stroke-dasharray', strokeDashoffset: 'stroke-dashoffset', fillOpacity: 'fill-opacity', strokeOpacity: 'stroke-opacity', textAnchor: 'text-anchor' }
+
+interface RecordNode {
+  element: HTMLElement | SVGElement
+  type: string
+  props: Record<string, unknown>
+  style: Record<string, unknown>
+  events: Record<string, string>
+  children: string[]
+  parent: string | null
+  dispose: Array<() => void>
+}
+
+export interface BrowserRendererOptions {
+  /** Iconify bodies, indexed by Iconify class, bare name or platform symbol. */
+  icons?: Record<string, { body: string, width?: number, height?: number }>
+  event: (handlerId: string, payload: Record<string, unknown>) => void
+  resolveMedia?: (url: string) => Promise<string>
+}
+
+/** Real browser controls for the same view descriptors and mutations as Craft. */
+export class BrowserScreenRenderer {
+  readonly nodes = new Map<string, RecordNode>()
+  private revision = 0
+  private root: string | null = null
+
+  constructor(readonly container: HTMLElement, private readonly options: BrowserRendererOptions) {}
+
+  render(tree: STXNode): void {
+    this.dispose()
+    const create = (node: STXNode, parent: string | null): HTMLElement | SVGElement => {
+      if (!node.id) throw new Error('A portable screen node needs an id')
+      const record = this.create(node.id, node.type, node.props, { ...node.style }, node.events)
+      record.parent = parent
+      for (const child of node.children) {
+        if (typeof child === 'string') record.element.append(this.container.ownerDocument.createTextNode(child))
+        else {
+          record.element.append(create(child, node.id))
+          record.children.push(child.id!)
+        }
+      }
+      return record.element
+    }
+    this.container.replaceChildren(create(tree, null))
+    this.root = tree.id!
+    this.revision = 0
+  }
+
+  mutate(batch: NativeMutationPayload): void {
+    if (batch.version !== 1 || batch.baseRevision !== this.revision || batch.revision !== this.revision + 1)
+      throw new Error('REVISION_MISMATCH')
+    this.validate(batch.operations)
+    for (const operation of batch.operations) {
+      if (operation.op === 'createNode') {
+        const record = this.create(operation.id, operation.node.type, operation.node.props ?? {}, operation.node.style ?? {}, operation.node.events ?? {})
+        if (operation.node.children) record.element.textContent = operation.node.children.join('')
+      }
+      else if (operation.op === 'updateNode') {
+        const record = this.nodes.get(operation.id)!
+        Object.assign(record.props, operation.patch.props)
+        Object.assign(record.style, operation.patch.style)
+        Object.assign(record.events, operation.patch.events)
+        if (operation.patch.children) record.element.textContent = operation.patch.children.join('')
+        this.update(record)
+      }
+      else if (operation.op === 'removeNode') this.remove(operation.id)
+      else {
+        const parent = this.nodes.get(operation.parentId)!
+        const child = this.nodes.get(operation.childId)!
+        if (child.parent) {
+          const old = this.nodes.get(child.parent)!
+          old.children = old.children.filter(id => id !== operation.childId)
+        }
+        parent.children.splice(operation.index, 0, operation.childId)
+        child.parent = operation.parentId
+        const before = parent.children[operation.index + 1]
+        parent.element.insertBefore(child.element, before ? this.nodes.get(before)!.element : null)
+      }
+    }
+    this.revision = batch.revision
+  }
+
+  private validate(operations: NativeMutationOperation[]): void {
+    const parents = new Map([...this.nodes].map(([id, node]) => [id, node.parent]))
+    const children = new Map([...this.nodes].map(([id, node]) => [id, [...node.children]]))
+    const remove = (id: string): void => {
+      for (const child of children.get(id) ?? []) remove(child)
+      parents.delete(id)
+      children.delete(id)
+    }
+    for (const operation of operations) {
+      if (operation.op === 'createNode') {
+        if (parents.has(operation.id) || !this.tag(operation.node.type)) throw new Error(`Invalid create: ${operation.id}`)
+        parents.set(operation.id, null)
+        children.set(operation.id, [])
+      }
+      else if (operation.op === 'insertChild' || operation.op === 'moveChild') {
+        if (!parents.has(operation.parentId) || !parents.has(operation.childId)) throw new Error('Missing mutation node')
+        let ancestor: string | null = operation.parentId
+        while (ancestor) {
+          if (ancestor === operation.childId) throw new Error('A screen tree cannot contain a cycle')
+          ancestor = parents.get(ancestor) ?? null
+        }
+        const old = parents.get(operation.childId)
+        if (old) children.set(old, children.get(old)!.filter(id => id !== operation.childId))
+        const list = children.get(operation.parentId)!
+        if (!Number.isInteger(operation.index) || operation.index < 0 || operation.index > list.length) throw new Error('Invalid child index')
+        list.splice(operation.index, 0, operation.childId)
+        parents.set(operation.childId, operation.parentId)
+      }
+      else {
+        if (!parents.has(operation.id)) throw new Error(`Unknown mutation node: ${operation.id}`)
+        if (operation.op === 'removeNode') {
+          if (operation.id === this.root) throw new Error('Cannot remove the screen root')
+          const parent = parents.get(operation.id)
+          if (parent) children.set(parent, children.get(parent)!.filter(id => id !== operation.id))
+          remove(operation.id)
+        }
+        else if (operation.patch.children && children.get(operation.id)!.length) throw new Error('Cannot replace structural children with text')
+      }
+    }
+  }
+
+  private tag(type: string): string {
+    const tag = SVG[type] ?? TAGS[type]
+    if (!tag) throw new Error(`Unsupported browser primitive: ${type}`)
+    return tag
+  }
+
+  private create(id: string, type: string, props: Record<string, unknown>, style: Record<string, unknown>, events: Record<string, string>): RecordNode {
+    const doc = this.container.ownerDocument
+    const tag = type === 'TextInput' && props.multiline ? 'textarea' : this.tag(type)
+    const element = SVG[type] ? doc.createElementNS(SVG_NS, tag) : doc.createElement(tag)
+    const record: RecordNode = { element, type, props: { ...props }, style: { ...style }, events: { ...events }, parent: null, children: [], dispose: [] }
+    this.nodes.set(id, record)
+    element.setAttribute('data-stx-node', id)
+    element.setAttribute('data-stx-primitive', type)
+    this.events(record)
+    this.update(record)
+    return record
+  }
+
+  private fire(record: RecordNode, name: string, payload: Record<string, unknown> = {}): void {
+    const handler = record.events[name]
+    if (handler) this.options.event(handler, payload)
+  }
+
+  private events(record: RecordNode): void {
+    const element = record.element
+    const listen = (name: string, listener: EventListener): void => {
+      element.addEventListener(name, listener)
+      record.dispose.push(() => element.removeEventListener(name, listener))
+    }
+    listen('click', (event) => {
+      if (record.props.disabled || record.props.editable === false) return
+      // Native events do not bubble through other pressable controls.
+      if ((event.target as Element)?.closest('[data-stx-pressable]') !== element && element.hasAttribute('data-stx-pressable')) return
+      this.fire(record, 'onPress')
+    })
+    listen('input', () => {
+      const input = element as HTMLInputElement
+      if (record.type === 'Slider') this.fire(record, 'onValueChange', { value: Number(input.value) })
+      else this.fire(record, 'onChangeText', { text: input.value, value: input.value })
+    })
+    listen('change', () => {
+      const input = element as HTMLInputElement
+      const value = record.type === 'Switch' || record.type === 'Checkbox' ? input.checked : record.type === 'Slider' ? Number(input.value) : input.value
+      this.fire(record, 'onValueChange', { value, text: input.value })
+      if (record.type === 'Slider') this.fire(record, 'onSlidingComplete', { value })
+    })
+    listen('focus', () => this.fire(record, 'onFocus'))
+    listen('blur', () => { this.fire(record, 'onBlur'); this.fire(record, 'onEndEditing', { text: (element as HTMLInputElement).value }) })
+    listen('keydown', (event) => {
+      if ((event as KeyboardEvent).key === 'Enter' && !record.props.multiline) this.fire(record, 'onSubmitEditing', { text: (element as HTMLInputElement).value })
+    })
+    listen('contextmenu', (event) => { if (record.events.onLongPress) { event.preventDefault(); this.fire(record, 'onLongPress') } })
+    listen('pointerdown', () => this.fire(record, 'onPressIn'))
+    listen('pointerup', () => this.fire(record, 'onPressOut'))
+    listen('cancel', (event) => { if (record.events.onRequestClose) { event.preventDefault(); this.fire(record, 'onRequestClose') } })
+    listen('close', () => this.fire(record, 'onDismiss'))
+    listen('scroll', () => this.fire(record, 'onScroll', { contentOffset: { x: element.scrollLeft, y: element.scrollTop }, layoutMeasurement: { width: element.clientWidth, height: element.clientHeight }, contentSize: { width: element.scrollWidth, height: element.scrollHeight } }))
+    const videoEvents: Record<string, string> = { play: 'onPlay', pause: 'onPause', ended: 'onEnd', timeupdate: 'onProgress', loadedmetadata: 'onLoad', loadstart: 'onLoadStart', loadeddata: 'onLoadEnd', error: 'onError', enterpictureinpicture: 'onPictureInPictureStart', leavepictureinpicture: 'onPictureInPictureStop' }
+    if (record.type === 'Video') {
+      for (const [name, native] of Object.entries(videoEvents)) listen(name, () => {
+        const video = element as HTMLVideoElement
+        this.fire(record, native, { currentTime: video.currentTime, duration: Number.isFinite(video.duration) ? video.duration : 0, position: video.currentTime, error: video.error?.message })
+      })
+    }
+    if (record.type === 'ScrollView') {
+      let start: number | null = null
+      listen('touchstart', (event) => { start = element.scrollTop <= 0 ? (event as TouchEvent).touches[0]?.clientY ?? null : null })
+      listen('touchend', (event) => {
+        const end = (event as TouchEvent).changedTouches[0]?.clientY
+        if (start !== null && end !== undefined && end - start > 80 && !record.props.refreshing) this.fire(record, 'onRefresh')
+        start = null
+      })
+    }
+  }
+
+  private update(record: RecordNode): void {
+    const { element, props, type, style } = record
+    const css = element.style
+    css.cssText = ''
+    css.boxSizing = 'border-box'
+    css.borderStyle = 'solid'
+    css.borderWidth = '0'
+    if (CONTAINERS.has(type)) { css.display = 'flex'; css.flexDirection = 'column'; css.minWidth = '0'; css.flexShrink = '0' }
+    if (type === 'Text') { css.display = 'block'; css.whiteSpace = 'pre-wrap'; css.flexShrink = '1'; css.minWidth = '0'; css.overflowWrap = 'anywhere' }
+    if (['Button', 'TouchableOpacity', 'TouchableHighlight', 'Pressable'].includes(type)) { css.display = 'flex'; css.flexDirection = 'column'; css.alignItems = 'stretch'; css.font = 'inherit'; css.color = 'inherit'; css.background = 'transparent'; css.border = '0'; css.padding = '0'; css.textAlign = 'inherit'; css.cursor = 'pointer' }
+    if (type === 'ScrollView') { css.overflowY = 'auto'; css.overscrollBehaviorY = 'contain'; css.flex = '1'; css.minHeight = '0'; css.flexDirection = props.horizontal ? 'row' : 'column'; if (props.horizontal) css.overflowX = 'auto' }
+    if (type === 'Image') { css.objectFit = String(props.resizeMode ?? 'cover'); css.display = 'block' }
+    if (type === 'TextInput') { css.font = 'inherit'; css.color = 'inherit'; css.background = 'transparent'; css.border = '0'; css.minWidth = '0'; css.minHeight = '32px'; css.outlineOffset = '2px' }
+    if (type === 'Icon') { css.display = 'inline-block'; css.width = '20px'; css.height = '20px'; css.flexShrink = '0' }
+    this.style(css, style)
+    if (props.contentContainerStyle && typeof props.contentContainerStyle === 'object') this.style(css, props.contentContainerStyle as Record<string, unknown>)
+    if (props.testID != null) element.setAttribute('data-testid', String(props.testID))
+    if (props.accessibilityLabel != null || (type === 'TextInput' && props.placeholder)) element.setAttribute('aria-label', String(props.accessibilityLabel ?? props.placeholder))
+    else element.removeAttribute('aria-label')
+    if (props.accessibilityHint != null) element.setAttribute('aria-description', String(props.accessibilityHint))
+    const role = props.accessibilityRole
+    if (role && role !== 'none') element.setAttribute('role', String(role === 'header' ? 'heading' : role))
+    else element.removeAttribute('role')
+    if (record.events.onPress || ['Button', 'TouchableOpacity', 'TouchableHighlight', 'Pressable'].includes(type)) {
+      element.setAttribute('data-stx-pressable', '')
+      if (!['input', 'button', 'select', 'textarea', 'a'].includes(element.tagName.toLowerCase())) { element.setAttribute('role', String(role || 'button')); element.setAttribute('tabindex', props.disabled ? '-1' : '0'); element.onkeydown = (event) => { if (event.key === ' ' || event.key === 'Enter') { event.preventDefault(); this.fire(record, 'onPress') } } }
+    }
+    if (['Switch', 'Checkbox', 'Slider', 'TextInput', 'DatePicker', 'Button', 'Picker'].includes(type)) (element as HTMLInputElement).disabled = Boolean(props.disabled)
+    if (type === 'Switch' || type === 'Checkbox') { const input = element as HTMLInputElement; input.type = 'checkbox'; input.checked = Boolean(props.value ?? props.checked); input.setAttribute('role', type === 'Switch' ? 'switch' : 'checkbox') }
+    if (type === 'Slider') { const input = element as HTMLInputElement; input.type = 'range'; input.min = String(props.minimumValue ?? 0); input.max = String(props.maximumValue ?? 1); input.step = String(props.step ?? 'any'); input.value = String(props.value ?? 0) }
+    if (type === 'TextInput' || type === 'DatePicker') {
+      const input = element as HTMLInputElement
+      if (type === 'DatePicker') {
+        input.type = props.mode === 'time' ? 'time' : props.mode === 'datetime' ? 'datetime-local' : 'date'
+        input.min = String(props.minimumDate ?? props.min ?? '')
+        input.max = String(props.maximumDate ?? props.max ?? '')
+        if (props.mode === 'time') input.step = String(Number(props.minuteInterval ?? 1) * 60)
+      }
+      else if (!props.multiline) input.type = props.secureTextEntry ? 'password' : props.keyboardType === 'email-address' ? 'email' : 'text'
+      const inputMode = props.keyboardType === 'decimal-pad' ? 'decimal' : props.keyboardType === 'number-pad' || props.keyboardType === 'numeric' ? 'numeric' : props.keyboardType === 'phone-pad' ? 'tel' : ''
+      if (inputMode) input.inputMode = inputMode
+      const value = props.value == null ? '' : String(props.value)
+      if (input.value !== value) input.value = value
+      input.placeholder = String(props.placeholder ?? '')
+      input.readOnly = props.editable === false
+      if (props.maxLength != null) input.maxLength = Number(props.maxLength)
+      if (props.autoComplete) input.autocomplete = String(props.autoComplete) as AutoFill
+    }
+    if (type === 'Picker') {
+      const select = element as HTMLSelectElement
+      const options = Array.isArray(props.options) ? props.options as Array<{ value: unknown, label?: unknown }> : []
+      const signature = JSON.stringify(options)
+      if (select.dataset.options !== signature) { select.replaceChildren(...options.map(option => { const node = element.ownerDocument.createElement('option'); node.value = String(option.value); node.textContent = String(option.label ?? option.value); return node })); select.dataset.options = signature }
+      select.value = String(props.value ?? '')
+    }
+    if (type === 'Image' || type === 'Video' || type === 'ImageBackground') {
+      const source = props.source ?? props.src
+      const url = typeof source === 'string' ? source : source && typeof source === 'object' ? String((source as { uri?: string }).uri ?? '') : ''
+      if (type === 'ImageBackground') css.backgroundImage = `url(${JSON.stringify(url)})`
+      if (url !== element.getAttribute('data-source')) {
+        element.setAttribute('data-source', url)
+        const apply = (resolved: string): void => { if (!this.nodes.has(element.getAttribute('data-stx-node') ?? '') || element.getAttribute('data-source') !== url) return; if (type === 'ImageBackground') css.backgroundImage = `url(${JSON.stringify(resolved)})`; else (element as HTMLImageElement).src = resolved }
+        apply(url)
+        if (url && this.options.resolveMedia) void this.options.resolveMedia(url).then(apply).catch(() => {})
+      }
+    }
+    if (type === 'Image') (element as HTMLImageElement).alt = String(props.accessibilityLabel ?? '')
+    if (type === 'Video') { const video = element as HTMLVideoElement; video.controls = props.controls !== false; video.autoplay = Boolean(props.autoplay ?? props.autoPlay); video.poster = String(props.poster ?? ''); video.disablePictureInPicture = props.pictureInPicture === false; css.objectFit = props.resizeMode === 'contain' ? 'contain' : 'cover'; video.loop = Boolean(props.repeat ?? props.loop); video.muted = Boolean(props.muted); video.playsInline = true; if (typeof props.currentTime === 'number' && Math.abs(video.currentTime - props.currentTime) > 0.5) video.currentTime = props.currentTime; if (props.paused === true && !video.paused) video.pause(); if ((props.paused === false || (props.paused === undefined && video.autoplay)) && video.paused && video.src) void video.play().catch(() => {}) }
+    if (type === 'Modal') {
+      const dialog = element as HTMLDialogElement
+      css.position = 'fixed'; css.inset = '0'; css.maxWidth = '100%'; css.maxHeight = '100%'; css.width = '100%'; css.height = '100%'; css.padding = '0'; css.margin = '0'; css.border = '0'
+      const visible = Boolean(props.visible)
+      if (!visible) { if (dialog.open) dialog.close(); css.display = 'none' }
+      else queueMicrotask(() => { if (!dialog.isConnected || !record.props.visible) return; css.display = 'flex'; css.flexDirection = 'column'; if (!dialog.open) { dialog.showModal(); this.fire(record, 'onShow') } })
+    }
+    if (type === 'ActivityIndicator' || type === 'RefreshControl') { element.setAttribute('aria-label', String(props.accessibilityLabel ?? 'Loading')); css.width = '24px'; css.height = '24px' }
+    if (type === 'StatusBar') css.display = 'none'
+    if (type === 'Icon') {
+      const name = String(props.iconify ?? props.name ?? props.symbol ?? '')
+      const icon = this.options.icons?.[SYMBOL_TO_ICON[name]!] ?? this.options.icons?.[name] ?? this.options.icons?.[name.replace(/^i-lucide-/, '')] ?? this.options.icons?.[String(props.symbol)]
+      if (icon) { css.backgroundColor = 'currentColor'; const data = `<svg xmlns="${SVG_NS}" viewBox="0 0 ${icon.width ?? 24} ${icon.height ?? 24}">${icon.body}</svg>`; css.mask = `url("data:image/svg+xml,${encodeURIComponent(data)}") center / contain no-repeat`; css.webkitMask = css.mask; element.setAttribute('aria-hidden', props.accessibilityLabel ? 'false' : 'true') }
+      else throw new Error(`No browser icon registered for ${name}`)
+    }
+    if (type === 'Text' && props.numberOfLines) { css.overflow = 'hidden'; css.display = '-webkit-box'; css.webkitBoxOrient = 'vertical'; css.webkitLineClamp = String(props.numberOfLines) }
+    if (SVG[type]) for (const [key, value] of Object.entries(props)) { if (['geometry', 'testID', 'accessibilityLabel'].includes(key)) continue; const name = SVG_PROPS[key] ?? key; if (value == null) element.removeAttribute(name); else element.setAttribute(name, Array.isArray(value) ? value.join(' ') : String(value)) }
+    if (props.scrollTarget && typeof props.scrollTarget === 'object') { const target = props.scrollTarget as { id?: string, key?: unknown, animated?: boolean }; const signature = JSON.stringify(target); if (element.getAttribute('data-scroll-target') !== signature) { element.setAttribute('data-scroll-target', signature); queueMicrotask(() => { for (const candidate of this.nodes.values()) if (candidate.props.testID === target.id) candidate.element.scrollIntoView?.({ behavior: target.animated === false ? 'instant' : 'smooth', block: 'start' }) }) } }
+  }
+
+  private style(css: CSSStyleDeclaration, values: Record<string, unknown>): void {
+    const set = (key: string, value: unknown): void => {
+      const property = key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)
+      if (value == null) css.removeProperty(property)
+      else css.setProperty(property, typeof value === 'number' && !UNITLESS.has(key) ? `${value}px` : String(value))
+    }
+    for (const [key, value] of Object.entries(values)) {
+      if (key.endsWith('Horizontal')) { const base = key.slice(0, -10); set(`${base}Left`, value); set(`${base}Right`, value) }
+      else if (key.endsWith('Vertical')) { const base = key.slice(0, -8); set(`${base}Top`, value); set(`${base}Bottom`, value) }
+      else if (key === 'gridColumns') css.gridTemplateColumns = value ? `repeat(${value}, minmax(0, 1fr))` : ''
+      else if (key === 'transform' && Array.isArray(value)) css.transform = value.flatMap(step => Object.entries(step as Record<string, unknown>).map(([name, amount]) => `${name}(${amount}${typeof amount === 'number' && (name.startsWith('translate') || name === 'perspective') ? 'px' : ''})`)).join(' ')
+      else if (key.startsWith('shadow') || key === 'elevation' || key.startsWith('gradient') || key === 'resizeMode' || key === 'tintColor') continue
+      else set(key, value)
+    }
+    if (values.gradientFrom && values.gradientTo) css.backgroundImage = `linear-gradient(${String(values.gradientDirection || 'to-b').replace(/^to-/, 'to ').replace('br', 'bottom right').replace('bl', 'bottom left').replace(/^to b$/, 'to bottom').replace(/^to r$/, 'to right').replace(/^to l$/, 'to left').replace(/^to t$/, 'to top')}, ${[values.gradientFrom, values.gradientVia, values.gradientTo].filter(Boolean).join(', ')})`
+    if (values.shadowColor || values.shadowRadius) { const offset = values.shadowOffset as { width?: number, height?: number } | undefined; css.boxShadow = `${offset?.width ?? 0}px ${offset?.height ?? 0}px ${values.shadowRadius ?? 0}px ${values.shadowColor ?? 'transparent'}` }
+  }
+
+  private remove(id: string): void {
+    const record = this.nodes.get(id)
+    if (!record) return
+    for (const child of [...record.children]) this.remove(child)
+    for (const dispose of record.dispose) dispose()
+    if (record.type === 'Video') { (record.element as HTMLVideoElement).pause(); (record.element as HTMLVideoElement).removeAttribute('src') }
+    record.element.remove()
+    if (record.parent) { const parent = this.nodes.get(record.parent); if (parent) parent.children = parent.children.filter(child => child !== id) }
+    this.nodes.delete(id)
+  }
+
+  dispose(): void {
+    for (const id of [...this.nodes.keys()]) this.remove(id)
+    this.container.replaceChildren()
+    this.root = null
+    this.revision = 0
+  }
+}

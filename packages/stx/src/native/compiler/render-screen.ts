@@ -68,6 +68,8 @@ export interface CompileScreenOptions {
 }
 
 export interface CompiledScreen {
+  /** Template and component inputs used by this compilation. */
+  dependencies: string[]
   document: STXDocument
   /** Bindings keyed to `STXNode.bindingId`, consumed directly by the host runtime. */
   manifest: BindingManifest
@@ -102,12 +104,13 @@ export async function compileScreenSource(
   // injecting browser CSS here is redundant, and its development diagnostics
   // would corrupt `stx native compile --format ir` JSON on stdout.
   const context = { ...(options.context ?? {}), __stx_inject_css: false }
+  const dependencies = new Set<string>([filePath])
   const renderedHtml = await processDirectives(
     source,
     context,
     filePath,
     config as never,
-    new Set<string>(),
+    dependencies,
   )
   const { html, manifest } = extractBindingManifest(renderedHtml)
 
@@ -124,7 +127,7 @@ export async function compileScreenSource(
     setup = extractGeneratedSetupScript(forced.setupCode ?? '') ?? setup
   }
 
-  return { document, manifest, setup, diagnostics, html }
+  return { document, manifest, setup, diagnostics, html, dependencies: [...dependencies] }
 }
 
 /** The same, reading the screen off disk. */

@@ -81,6 +81,8 @@ export const LUCIDE_TO_SF: Record<string, string> = {
   'chevron-up': 'chevron.up',
   'circle': 'circle',
   'circle-alert': 'exclamationmark.circle',
+  'circle-arrow-out-up-left': 'arrow.uturn.backward.circle',
+  'circle-minus': 'minus.circle',
   'circle-arrow-down': 'arrow.down.circle',
   'circle-check': 'checkmark.circle',
   'circle-check-big': 'checkmark.circle',

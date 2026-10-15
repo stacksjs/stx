@@ -18,6 +18,7 @@ import path from 'node:path'
 import { compileScreenFile } from './render-screen'
 import { NATIVE_APP_ROUTE } from '../runtime/shared-screen'
 import { generateSignalsRuntime } from '../../signals'
+import type { BrowserScreenOptions } from '../runtime/browser-screen'
 
 export interface CompileNativeBundleOptions {
   /** Screen name to `.stx` path, relative to `root`. */
@@ -43,6 +44,8 @@ export interface CompileNativeBundleOptions {
    * runs in every context: keep the work in the default export.
    */
   app?: string
+  /** Compile the same component for the browser host instead of a device host. */
+  browser?: BrowserScreenOptions & { platformModule: string, platformOptions?: Record<string, unknown> }
 }
 
 /** Something the compiler could not translate exactly: an unknown icon or class. */
@@ -52,6 +55,8 @@ export interface NativeDiagnostic {
 }
 
 export interface NativeBundleResult {
+  /** All template and imported module inputs, for dependency-aware build caches. */
+  dependencies: string[]
   /** The bundle the host evaluates (Craft's `native-screen.js`). */
   code: string
   /** The absolute path written, when `outFile` was given. */
@@ -62,7 +67,7 @@ export interface NativeBundleResult {
 /** @deprecated Use `CompileNativeBundleOptions`. */
 export type BundleOptions = CompileNativeBundleOptions
 
-function nativeRuntimeModule(name: 'jsc-globals' | 'shared-screen'): string {
+function nativeRuntimeModule(name: 'jsc-globals' | 'shared-screen' | 'browser-screen'): string {
   // Source modules, published ESM modules, and shared CLI chunks have different
   // directories and extensions. Resolve a shipped file before generating imports.
   const candidates = [
@@ -75,13 +80,16 @@ function nativeRuntimeModule(name: 'jsc-globals' | 'shared-screen'): string {
   return resolved
 }
 
-async function build(entry: string, plugins: BunPlugin[], minify: boolean): Promise<string> {
+async function build(entry: string, plugins: BunPlugin[], minify: boolean, dependencies: Set<string>): Promise<string> {
+  const track: BunPlugin = { name: 'stx-screen-inputs', setup(builder) {
+    builder.onLoad({ filter: /.*/, namespace: 'file' }, ({ path: file }) => { dependencies.add(file); return undefined })
+  } }
   const result = await Bun.build({
     entrypoints: [entry],
     target: 'browser',
     format: 'iife',
     minify,
-    plugins,
+    plugins: [track, ...plugins],
     define: { 'process.env.NODE_ENV': JSON.stringify(minify ? 'production' : 'development') },
   })
   if (!result.success) {
@@ -128,6 +136,7 @@ export async function compileNativeBundle(options: CompileNativeBundleOptions): 
   if (appFile && !existsSync(appFile)) throw new Error(`The app script ${options.app} does not exist`)
   if (appFile && !routed) throw new Error('An app script needs a routed bundle')
   if (appFile && options.screens[NATIVE_APP_ROUTE]) throw new Error(`${NATIVE_APP_ROUTE} is the app script's route, not a screen name`)
+  const browser = options.browser
   const route = routed
     ? `var routeName = g.__stxNativeRoute || ${JSON.stringify(initialScreen)};
 var isApp = ${appFile ? `routeName === ${JSON.stringify(NATIVE_APP_ROUTE)}` : 'false'};
@@ -140,13 +149,17 @@ if (!isApp && routeNames.indexOf(routeName) === -1) throw new Error(['Unknown na
   const setups = compiledScreens.map(({ name, compiled }, index) => `${index === 0 ? 'if' : 'else if'} (routeName === ${JSON.stringify(routed ? name : 'main')}) {
 ${compiled.setup?.code ?? 'g.__stx_latestSetup = null;'}
 }`).join('\n')
+  const browserRuntime = browser ? nativeRuntimeModule('browser-screen') : null
+  const platformModule = browser ? Bun.resolveSync(browser.platformModule, root) : null
   const contents = `
 import { installJSCGlobals } from ${JSON.stringify(runtimeGlobals)};
 import { prepareNativeApp, prepareSharedNativeScreen } from ${JSON.stringify(sharedScreen)};
+${browser ? `import { createBrowserScreenBridge } from ${JSON.stringify(browserRuntime)};\nimport { createBrowserPlatform } from ${JSON.stringify(platformModule)};` : ''}
 ${appFile ? `import * as nativeAppModule from ${JSON.stringify(appFile)};` : 'var nativeAppModule = null;'}
+${browser ? '(async function() {' : ''}
 var g = globalThis;
 installJSCGlobals(g);
-var bridge = g.__stxNativeBridge;
+${browser ? `var browserPlatform = await createBrowserPlatform(${JSON.stringify(browser.platformOptions ?? {})});\nvar browserBridge = createBrowserScreenBridge(browserPlatform, ${JSON.stringify(browser)});\nvar bridge = browserBridge;\ng.__stxNativeRoute = ${JSON.stringify(initialScreen)};` : 'var bridge = g.__stxNativeBridge;'}
 if (!bridge) throw new Error('Missing __stxNativeBridge');
 var routeNames = ${JSON.stringify(routed ? names : ['main'])};
 ${route}
@@ -169,6 +182,12 @@ ${generateSignalsRuntime()}
 ${setups}
 if (isApp) app.start(nativeAppModule);
 else screen.mount(g.stx, g.__stx_latestSetup || null);
+${browser ? `var stopApp = nativeAppModule && typeof nativeAppModule.default === 'function' ? nativeAppModule.default(g.craft) : null;
+var unmount = g.__stxNativeUnmount;
+var ended = false;
+g.__stxNativeUnmount = function() { if (ended) return; ended = true; if (typeof stopApp === 'function') stopApp(); unmount(); browserBridge.dispose(); };
+g.addEventListener('pagehide', function(event) { if (!event.persisted) g.__stxNativeUnmount(); });
+})().catch(function(error) { console.error('[stx browser screen]', error); var node = document.querySelector(${JSON.stringify(browser.container)}); if (node) { node.textContent = 'This screen could not start. Reload to try again.'; node.setAttribute('role', 'alert'); } });` : ''}
 `
   const plugin: BunPlugin = {
     name: 'stx-native-shared-screens',
@@ -177,16 +196,17 @@ else screen.mount(g.stx, g.__stx_latestSetup || null);
       builder.onLoad({ filter: /.*/, namespace: 'stx-native-shared-screens' }, () => ({ contents, loader: 'js' }))
     },
   }
-  const code = await build('stx:native-shared-screens', [plugin], options.minify ?? false)
+  const dependencies = new Set(compiledScreens.flatMap(({ compiled }) => compiled.dependencies))
+  const code = await build('stx:native-shared-screens', [plugin], options.minify ?? false, dependencies)
   const diagnostics = compiledScreens.flatMap(({ compiled }) => compiled.diagnostics).map(diagnostic => ({
     level: 'warning' as const,
     message: [diagnostic.kind, diagnostic.tag, diagnostic.name].filter(Boolean).join(': '),
   }))
-  if (!options.outFile) return { code, diagnostics }
+  if (!options.outFile) return { code, diagnostics, dependencies: [...dependencies] }
   const outFile = path.resolve(root, options.outFile)
   mkdirSync(path.dirname(outFile), { recursive: true })
   await Bun.write(outFile, code)
-  return { code, outFile, diagnostics }
+  return { code, outFile, diagnostics, dependencies: [...dependencies] }
 }
 
 /** Compile one screen against stx's shared signals runtime, without the legacy parser/runtime. */

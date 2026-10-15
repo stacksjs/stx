@@ -686,7 +686,9 @@ export async function translateHtmlToIR(
     }
     if (type === 'Icon') {
       const icon = compileClassStyles(classes).icon
-      props.symbol = resolveIconName(String(props.symbol || props.name || icon || ''), Boolean(props.symbol)).symbol
+      const resolved = resolveIconName(String(props.symbol || props.name || icon || ''), Boolean(props.symbol))
+      props.symbol = resolved.symbol
+      if (resolved.iconify) props.iconify = resolved.iconify
     }
     if (type === 'FlatList' || type === 'SectionList') {
       const names = new Set([...Object.keys(props), ...Object.keys(bindings)].map(name => name.toLowerCase()))

@@ -96,7 +96,7 @@ function toggle() { active.set(!active()) }
     expect(rendered.children[0].style.color).toBe('#ffffff')
     const ops = () => sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
     expect(ops()).toContainEqual(expect.objectContaining({ patch: { style: expect.objectContaining({ fontSize: 24, color: '#93c5fd' }) } }))
-    expect(ops()).toContainEqual(expect.objectContaining({ patch: { props: { symbol: 'figure.outdoor.cycle' } } }))
+    expect(ops()).toContainEqual(expect.objectContaining({ patch: { props: { symbol: 'figure.outdoor.cycle', iconify: 'i-lucide-bike' } } }))
     const press = ops().find(operation => operation.patch?.events?.onPress)
     sent.length = 0
     receive(JSON.stringify({ type: 'APPEARANCE', payload: { colorScheme: 'light' } }))
@@ -107,7 +107,7 @@ function toggle() { active.set(!active()) }
     receive(JSON.stringify({ type: 'EVENT', payload: { handlerId: press.patch.events.onPress, nativeEvent: {} } }))
     screen.host.flush()
     expect(ops()).toContainEqual(expect.objectContaining({ patch: { style: expect.objectContaining({ fontSize: 24, color: '#0f172a' }) } }))
-    expect(ops()).toContainEqual(expect.objectContaining({ patch: { props: { symbol: 'heart' } } }))
+    expect(ops()).toContainEqual(expect.objectContaining({ patch: { props: { symbol: 'heart', iconify: 'i-lucide-heart' } } }))
     expect(ops()).toContainEqual(expect.objectContaining({ patch: { style: expect.objectContaining({ backgroundColor: null }) } }))
     sent.length = 0
     receive(JSON.stringify({ type: 'APPEARANCE', payload: { colorScheme: 'dark' } }))

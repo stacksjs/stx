@@ -1513,7 +1513,11 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
         if (source.startsWith('~/') || source.startsWith('@/')) {
           return path.resolve(projectRoot, source.slice(2))
         }
-        return source
+        // A script belongs to its template's application. Resolving from the
+        // engine would pick a nested transitive dependency instead of the
+        // package the application installed (including package subpaths).
+        try { return Bun.resolveSync(source, templateDir) }
+        catch { return source }
       }
 
       if (defaultImportMatch) {

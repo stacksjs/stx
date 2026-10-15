@@ -33,6 +33,45 @@ ship in the application bundle: changing them requires a new app build. API data
 can refresh independently. A native app is not automatically updated by deploying
 the website.
 
+### Compile the same screen for the browser
+
+`compileBrowserScreen` uses the same component pipeline, view descriptors,
+binding manifest and signals host as `compileNativeBundle`. Its browser renderer
+creates semantic HTML controls and SVG, applies the same versioned mutations and
+normalizes edits and gestures into the same events. It does not display a native
+app inside a web view.
+
+```ts
+import { renderBrowserScreen } from '@stacksjs/stx/native'
+
+const html = await renderBrowserScreen({
+  root: process.cwd(),
+  source: 'resources/components/screens/Today.stx',
+  screen: 'Today',
+  app: 'resources/mobile-app.ts',
+  browser: {
+    screen: 'Today', container: '#screen', appURL: '/m',
+    routes: { '/m': 'Today' },
+    platformModule: 'craft-native/browser',
+    platformOptions: { namespace: 'training', tokenKey: 'auth_token' },
+    icons: {}, // Supply the Iconify bodies used by the application.
+  },
+})
+```
+
+Embed the returned HTML as trusted compiler output in a server component. The
+framework marks the bundle as opaque so the outer stx page does not compile it
+again. Compilation is deduplicated and cached against all template and imported
+module inputs. `compileBrowserScreen` returns the code and dependencies for build
+tools that manage assets themselves.
+
+Craft’s browser platform implements storage, dialogs, files, sharing and media
+using browser APIs. Supply one route registry to the browser and both native
+hosts; route adapters should contain no duplicated screen state or markup. Test
+nested keyed rows, conditional branches, controls, navigation, account changes
+and supported services on each renderer. Device-only capabilities remain absent
+in the browser and must be gated by capability checks.
+
 ### Authoring without Swift
 
 Application screens, state, handlers and imported functions stay in STX and typed

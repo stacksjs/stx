@@ -369,8 +369,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     if (record.materialized) emit({ op: 'updateNode', id, patch: { style: { ...patch, ...style } } })
     const classes = compileClassStyles(record.classes)
     if (record.type === 'Icon' && classes.icon) {
-      record.props.symbol = resolveIconName(classes.icon).symbol
-      if (record.materialized) emit({ op: 'updateNode', id, patch: { props: { symbol: record.props.symbol } } })
+      const icon = resolveIconName(classes.icon)
+      record.props.symbol = icon.symbol
+      record.props.iconify = icon.iconify
+      if (record.materialized) emit({ op: 'updateNode', id, patch: { props: { symbol: record.props.symbol, iconify: icon.iconify } } })
     }
     if (classes.numberOfLines !== undefined) {
       record.props.numberOfLines = classes.numberOfLines
@@ -566,7 +568,9 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const record = recordOf(node)
       record.props[prop] = value
       if (record.type === 'Icon' && prop === 'name') {
-        this.setAttribute(node, 'symbol', resolveIconName(String(value ?? '')).symbol)
+        const icon = resolveIconName(String(value ?? ''))
+        this.setAttribute(node, 'iconify', icon.iconify ?? null)
+        this.setAttribute(node, 'symbol', icon.symbol)
       }
       const patch: Record<string, unknown> = { [prop]: value }
       // A drawing's bound attribute: the renderers read the outline as

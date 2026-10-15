@@ -721,7 +721,7 @@ export function installJSCGlobals(target: AnyRecord = globalThis as AnyRecord): 
   const documentElement = { setAttribute() {}, removeAttribute() {}, getAttribute() { return null } }
   const head = { appendChild() {} }
 
-  target.window = target
+  target.window ??= target
   target.Node ??= { ELEMENT_NODE: 1, TEXT_NODE: 3, COMMENT_NODE: 8 }
   target.Event ??= NativeEvent
   target.CustomEvent ??= NativeEvent

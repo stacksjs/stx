@@ -15,7 +15,7 @@ export const SIGNALS_LOOP_CONDITIONAL_RUNTIME = `  // A :for row is a clone of i
   var IF_ATTRS = [':if', 'x-if', '@if'];
   var FOR_ATTRS = [':for', 'x-for', '@for'];
   function deferRowConditionals(root) {
-    if (!root || !root.querySelectorAll || typeof document === 'undefined' || !document.createElement) return;
+    if (stxHost.isNative || !root || !root.querySelectorAll || typeof document === 'undefined' || !document.createElement) return;
     // Inert HTML template content is a DOM allocation optimisation. Native
     // hosts already clone recorded descriptors and bind conditions through
     // their host operations; their document facade has no template content.

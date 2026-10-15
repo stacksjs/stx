@@ -714,8 +714,12 @@ catch (error) {
  * Interface that native code must implement
  */
 export interface NativeBridgeInterface {
+  /** Materialize a browser file handle after the JSON capability response. */
+  resolveFile?: (value: unknown) => unknown
+  /** The complete current application path, when the host exposes it. */
+  routeURL?: string
   /** Native host platform. */
-  platform?: 'ios' | 'android'
+  platform?: 'ios' | 'android' | 'web'
 
   /** Versioned API request/response contract. Omitted by legacy hosts. */
   capabilityProtocolVersion?: 1

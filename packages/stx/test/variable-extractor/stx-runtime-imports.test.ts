@@ -56,7 +56,7 @@ describe('importing the stx runtime in a server script', () => {
     // out of the import would turn a working script into a ReferenceError.
     const out = convertToCommonJS(`import { defineProps, defineStore } from 'stx'\nconst a = 1\n`, 'test.stx')
 
-    expect(out).toContain(`await import('stx')`)
+    expect(out).toContain(`await import('${Bun.resolveSync('stx', process.cwd())}')`)
     expect(out).toContain('defineStore')
     expect(out).not.toContain('const { defineProps, defineStore }')
   })
