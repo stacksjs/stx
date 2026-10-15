@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.526...v0.2.527)
+
+## 🐛 Bug Fixes
+
+- **components**: <Video> shows its time, takes autofocus, touch controls ([c1edaac](https://github.com/stacksjs/stx/commit/c1edaac)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **overlays**: first focus passes over an [autofocus] that is not shown ([c038a0b](https://github.com/stacksjs/stx/commit/c038a0b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.527 ([8c783e7](https://github.com/stacksjs/stx/commit/8c783e7)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.525...v0.2.526)
 
 ## ✨ Features
