@@ -17,11 +17,8 @@
  * client setup function resolves it safely.
  */
 import { describe, expect, it } from 'bun:test'
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
 import { STX_RUNTIME_GLOBALS, buildRuntimeGlobalsDestructure } from '../src/runtime-globals'
-
-const ROOT = path.resolve(__dirname, '..', 'src')
+import { generateSignalsRuntimeDev } from '../src/signals'
 
 describe('client signal-setup shims — definePageMeta', () => {
   it('the setup destructure includes definePageMeta', () => {
@@ -39,11 +36,9 @@ describe('client signal-setup shims — definePageMeta', () => {
     expect(buildRuntimeGlobalsDestructure('var')).toContain('definePageMeta')
   })
 
-  it('signals.ts window.stx assignment exposes definePageMeta', () => {
-    const source = readFileSync(path.join(ROOT, 'signals.ts'), 'utf8')
-    // Loose check: somewhere in the window.stx object literal there's a
-    // `definePageMeta:` field. The runtime string is enormous so we
-    // anchor on the literal property name.
-    expect(source).toMatch(/\bdefinePageMeta\s*:\s*function/)
+  it('the generated window.stx assignment exposes definePageMeta', () => {
+    // Assert the assembled browser runtime rather than one source file. The
+    // public API registration is intentionally split out of signals.ts.
+    expect(generateSignalsRuntimeDev()).toMatch(/\bdefinePageMeta\s*:\s*function/)
   })
 })
