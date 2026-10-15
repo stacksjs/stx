@@ -18,6 +18,7 @@ import { SIGNALS_APPEARANCE_RUNTIME } from './client/signals-appearance-runtime'
 import { signalsAuthoringRuntime } from './client/signals-authoring-runtime'
 import { SIGNALS_CLOAK_RUNTIME, SIGNALS_PREAMBLE_RUNTIME } from './client/signals-bootstrap-runtime'
 import { SIGNALS_CONTEXT_RUNTIME } from './client/signals-context-runtime'
+import { SIGNALS_CONTAINER_CLEANUP_RUNTIME } from './client/signals-container-cleanup-runtime'
 import { SIGNALS_COOKIE_RUNTIME } from './client/signals-cookie-runtime'
 import { SIGNALS_DIALOG_RUNTIME } from './client/signals-dialog-runtime'
 import { SIGNALS_DOM_READY_RUNTIME } from './client/signals-dom-ready-runtime'
@@ -4999,48 +5000,7 @@ else {
 ${SIGNALS_DOM_READY_RUNTIME}
 ${SIGNALS_SCOPE_DISPOSAL_RUNTIME}
 ${SIGNALS_HYDRATION_AUDIT_RUNTIME}
-  // ==========================================================================
-  // Container Cleanup (for SPA navigation)
-  // ==========================================================================
-
-  function cleanupContainer(container) {
-    if (!container) return;
-
-    // Clear pending mount callbacks from the departing page
-    mountCallbacks.length = 0;
-
-    // Reset componentScope — clear old page variables to prevent scope leaking
-    // between SPA navigations. Preserve $refs and re-apply shell-level scope
-    // from persistent elements (sidebar, nav) that live outside the container.
-    var preservedRefs = componentScope.$refs || {};
-    componentScope = { $refs: preservedRefs };
-    // Re-apply scope from shell elements (outside the swap container)
-    var shellElements = document.querySelectorAll('[data-stx-content] ~ *');
-    document.querySelectorAll('body > *').forEach(function(el) {
-      if (el === container) return;
-      if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE') return;
-      if (el.__stx_scope) Object.assign(componentScope, el.__stx_scope);
-    });
-
-    // 1-2. Every descendant, then the container: cancel pending island
-    // hydration (#1746), fire destroy hooks, dispose effects. Shared with
-    // :for row removal and template :if hide so all three release the same
-    // trackers, including the row and branch ones added for #1954.
-    disposeSubtreeEffects(container);
-    // Clear __stx_scope so _handleStxLoad's processElement guard doesn't skip it
-    container.__stx_scope = null;
-
-    // 3. Clean up scopes registered on departing components. Routed
-    // through disposeSubtreeScopes so the same walk runs for SPA
-    // navigation and for :if/:for-driven unmount (see #1727).
-    disposeSubtreeScopes(container);
-
-    // 4. Reclaim entries the container walk can't see — components rendered
-    // outside the swap container, or already detached before step 3 ran its
-    // querySelectorAll. Without this the registry grew every navigation (#1775).
-    sweepOrphanedScopes();
-  }
-
+${SIGNALS_CONTAINER_CLEANUP_RUNTIME}
   // Re-initialize components after SPA content swap.
   // Debounce to handle rapid re-fires (HMR triggers navigate which triggers stx:load again).
   var _stxLoadTimer = null;
