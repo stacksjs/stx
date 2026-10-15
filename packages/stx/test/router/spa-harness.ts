@@ -33,8 +33,8 @@ import { extractContainerContent, extractLayoutMetadata } from '../../src/app-sh
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
 import { injectRouterScript, pageShipsSignalsRuntime } from '../../src/runtime-injection'
-import { shimAttributes } from '../../src/testing'
 import { createTempDir } from '../../src/temp-dir'
+import { shimAttributes } from '../../src/testing'
 
 export const BASE = 'http://localhost'
 
