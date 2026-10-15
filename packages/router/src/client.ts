@@ -260,7 +260,13 @@ function routerSource(): string {
     releaseScrollHold();
     var reached=function(){return Math.abs((window.pageYOffset||window.scrollY||0)-y)<2};
     if(typeof ResizeObserver!=='function')return;
-    var h={stop:releaseScrollHold,ro:null,timer:0,onScroll:null,anchor:null,win:window,root:document.documentElement};
+    var h={stop:releaseScrollHold,ro:null,timer:0,onScroll:null,anchor:null,win:window,root:document.documentElement,seen:{}};
+    // Every place the page was at while the hold kept it: where the hold put
+    // it, and where the page's own height clamped it as it grew and shrank.
+    // Their scroll events arrive a frame later, when the height they were
+    // clamped to may be gone, so they are recognised by place, not by height.
+    var note=function(){h.seen[Math.round(window.pageYOffset||window.scrollY||0)]=true};
+    note();
     // Scroll anchoring off while held: content filling in above the place
     // would otherwise carry the window down with it (Chrome keeps what is
     // on screen in view), and Back landed thousands of pixels past it.
@@ -270,8 +276,11 @@ function routerSource(): string {
       // Held for the whole window even once reached: a page that is tall
       // enough when it is put back is often still drawing, above the place
       // as much as below it.
-      if(scrollHold!==h||reached())return;
+      if(scrollHold!==h)return;
+      note();
+      if(reached())return;
       window.scrollTo({left:x,top:y,behavior:'instant'});
+      note();
     });
     h.ro.observe(document.body||document.documentElement);
     h.timer=setTimeout(releaseScrollHold,4000);
@@ -282,7 +291,7 @@ function routerSource(): string {
     h.onScroll=function(){
       var at=window.pageYOffset||window.scrollY||0;
       var end=Math.max(0,(document.documentElement.scrollHeight||0)-(window.innerHeight||0));
-      if(Math.abs(at-y)<2||(at<y&&at>=end-1))return;
+      if(Math.abs(at-y)<2||(at<y&&at>=end-1)||h.seen[Math.round(at)])return;
       releaseScrollHold();
     };
     window.addEventListener('scroll',h.onScroll,{passive:true});
@@ -870,6 +879,35 @@ function routerSource(): string {
     if(!root||root.nodeType!==1||!root.hasAttribute('data-stx-scope')||!hasLoopAttr(root))return false;
     var scopeId=root.getAttribute('data-stx-scope');
     return !!scopeId&&code.indexOf(scopeId)!==-1;
+  }
+  // A script inside an :if (or :else) template runs when the branch is
+  // drawn: on a whole page the browser runs it as the runtime clones the
+  // template into the page, which is how a component used under :if gets its
+  // scope. A fragment's scripts are all turned into inert placeholders, and
+  // one inside template.content is out of the router's reach, so it never ran
+  // at all: the component's markup appeared with no setup behind it (an
+  // <OuraRecovery :if> on a page reached by a link stayed empty). Such a
+  // placeholder is made a live script again, so the branch runs it exactly as
+  // a whole page would. Loop templates keep theirs inert: bindFor runs those per
+  // row. Returns the slots it handed over, for runFragScripts to leave alone.
+  function armBranchScripts(root,slots){
+    if(!root||!root.querySelectorAll)return slots;
+    root.querySelectorAll('template').forEach(function(template){
+      if(hasLoopAttr(template)||!template.content)return;
+      template.content.querySelectorAll('script[type="application/stx-pending"][data-stx-route-script]').forEach(function(script){
+        if(script.hasAttribute('data-stx-scoped')&&loopOwnsScopedScript(script,script.textContent||''))return;
+        slots[script.getAttribute('data-stx-route-script')]=true;
+        // A new element, not the placeholder untyped: a script parsed by
+        // innerHTML is marked as already run, and so is every clone of it.
+        var live=script.ownerDocument.createElement('script');
+        var names=script.getAttributeNames?script.getAttributeNames():Array.prototype.map.call(script.attributes,function(a){return a.name});
+        names.forEach(function(name){if(name!=='type')live.setAttribute(name,script.getAttribute(name))});
+        live.textContent=script.textContent;
+        script.parentNode.replaceChild(live,script);
+      });
+      armBranchScripts(template.content,slots);
+    });
+    return slots;
   }
   // A component scope script names the root it binds in data-stx-owner (#1958).
   // On navigation it runs only for a root that just ARRIVED: one swapped in
@@ -1787,6 +1825,7 @@ else {
             return '<scr'+'ipt type="application/stx-pending" data-stx-route-script="'+slot+'"'
               +(scoped?' data-stx-scoped':'')
               +(runDecl?' data-stx-run="'+runDecl.toLowerCase()+'"':'')
+              +(ownerDecl?' data-stx-owner="'+ownerDecl+'"':'')
               +'>'+code+'<\\/scr'+'ipt>';
           }
           return '';
@@ -1847,6 +1886,7 @@ else {
         if(scr)scr.cattrs=pendingContainerAttrs;
         applyContainerAttrs(host,pendingContainerAttrs);
         currentContent.innerHTML=cleanFrag;
+        var branchSlots=armBranchScripts(currentContent,{});
         // Remove old page scripts
         qsa('script[data-stx-page]').forEach(function(s){s.remove()});
         if(pushState!==false)writeHistory(pushState,url+(hash||''));
@@ -1873,6 +1913,10 @@ else {
         fragScripts.forEach(function(entry){
           var code=entry.text;
           log('[router] exec script len:', code.length, 'has __stx_setup:', code.indexOf('__stx_setup')>-1);
+          if(branchSlots&&branchSlots[entry.slot]){
+            log('[router] leaving a branch script to its :if');
+            return;
+          }
           var placeholder=qs('script[data-stx-route-script="'+entry.slot+'"]');
           var nestedScopedTemplate=false;
           var scopedLoopSetup=false;

@@ -98,6 +98,38 @@ describe('a restored position on a page still filling in', () => {
     expect(window.scrollY).toBe(1400)
   })
 
+  it('keeps holding when the scroll event of a clamp arrives after the page grew', async () => {
+    // The clamp to a short page fires its scroll event a frame later. By then
+    // the page had grown, the clamped place no longer looked like the end of
+    // it, and the hold took the event for the page scrolling itself and let
+    // go: Back to hq.training's Home landed 74px down instead of 600px.
+    const { window, page } = installRouter()
+    const entry = await leaveAt(window, 1400)
+    page.height = 300
+    goBackTo(window, '/list', entry)
+    await settle()
+    expect(window.scrollY).toBe(300)
+
+    page.height = 5000
+    window.dispatchEvent(new window.Event('scroll'))
+    FakeResizeObserver.grow()
+    expect(window.scrollY).toBe(1400)
+  })
+
+  it('is let go when the page scrolls itself somewhere else', async () => {
+    const { window, page } = installRouter()
+    const entry = await leaveAt(window, 1400)
+    page.height = 300
+    goBackTo(window, '/list', entry)
+    await settle()
+
+    window.scrollTo({ left: 0, top: 120, behavior: 'instant' })
+    window.dispatchEvent(new window.Event('scroll'))
+    page.height = 5000
+    FakeResizeObserver.grow()
+    expect(window.scrollY).toBe(120)
+  })
+
   it('is let go when the person scrolls first', async () => {
     const { window, page } = installRouter()
     const entry = await leaveAt(window, 1400)
