@@ -22,6 +22,7 @@ import { SIGNALS_CLASS_RUNTIME } from './client/signals-class-runtime'
 import { SIGNALS_CONTEXT_RUNTIME } from './client/signals-context-runtime'
 import { SIGNALS_COMPONENT_PROPS_RUNTIME } from './client/signals-component-props-runtime'
 import { SIGNALS_COMPONENT_HYDRATION_RUNTIME } from './client/signals-component-hydration-runtime'
+import { SIGNALS_COMPONENT_API_RUNTIME } from './client/signals-component-api-runtime'
 import { SIGNALS_CONDITIONAL_CHAIN_RUNTIME } from './client/signals-conditional-chain-runtime'
 import { SIGNALS_CONDITIONAL_COMPONENT_RUNTIME } from './client/signals-conditional-component-runtime'
 import { SIGNALS_CONTAINER_CLEANUP_RUNTIME } from './client/signals-container-cleanup-runtime'
@@ -368,63 +369,7 @@ ${SIGNALS_HYDRATION_RUNTIME}
     confirm: stxConfirm,
     helpers: globalHelpers,
 
-    // Component composition API (Phase 4)
-    defineProps: function(definitions) {
-      var props = window.__STX_CURRENT_PROPS__ || {};
-      if (!definitions) return props;
-      var result = Object.assign({}, props);
-      for (var key in definitions) {
-        if (!definitions.hasOwnProperty(key)) continue;
-        var def = definitions[key];
-        var opts = (typeof def === 'function' || Array.isArray(def)) ? { type: def } : (def || {});
-        if (result[key] === undefined && opts['default'] !== undefined) {
-          result[key] = typeof opts['default'] === 'function' ? opts['default']() : opts['default'];
-        }
-      }
-      return result;
-    },
-    withDefaults: function(props, defaults) {
-      var result = Object.assign({}, props);
-      for (var key in defaults) {
-        if (!defaults.hasOwnProperty(key)) continue;
-        if (result[key] === undefined) {
-          result[key] = typeof defaults[key] === 'function' ? defaults[key]() : defaults[key];
-        }
-      }
-      return result;
-    },
-    defineEmits: function(events) {
-      var el = window.__STX_CURRENT_ELEMENT__ || null;
-      var declaredEvents = Array.isArray(events)
-        ? events
-        : (events && typeof events === 'object' ? Object.keys(events) : []);
-      if (el && declaredEvents.length) {
-        el.__stx_component_emits = el.__stx_component_emits || Object.create(null);
-        declaredEvents.forEach(function(event) {
-          el.__stx_component_emits[event] = true;
-        });
-      }
-      return function(event, payload) {
-        var target = el || document.body;
-        if (el) {
-          el.__stx_component_emits = el.__stx_component_emits || Object.create(null);
-          el.__stx_component_emits[event] = true;
-        }
-        target.dispatchEvent(new CustomEvent(event, { detail: payload, bubbles: true, cancelable: true }));
-      };
-    },
-    defineExpose: function(exposed) {
-      var el = window.__STX_CURRENT_ELEMENT__;
-      if (el) el.__stx_exposed = exposed;
-    },
-    defineSlots: function() {
-      return window.__STX_CURRENT_SLOTS__ || {};
-    },
-    // Vue spells the same lookup useSlots(); it was auto-imported with no
-    // implementation behind it (#1804).
-    useSlots: function() {
-      return window.__STX_CURRENT_SLOTS__ || {};
-    },
+${SIGNALS_COMPONENT_API_RUNTIME}
 
     _mountCallbacks: mountCallbacks,
     _destroyCallbacks: destroyCallbacks,
