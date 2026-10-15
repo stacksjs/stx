@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.533...v0.2.534)
+
+## 🐛 Bug Fixes
+
+- **components**: accept preview URLs in image placeholders ([383de6e](https://github.com/stacksjs/stx/commit/383de6e)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.534 ([2895095](https://github.com/stacksjs/stx/commit/2895095)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.532...v0.2.533)
 
 ## ✨ Features
