@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.539...v0.2.540)
+
+## 🐛 Bug Fixes
+
+- **browser**: keep nested keyboard presses scoped to their control ([b82c24b](https://github.com/stacksjs/stx/commit/b82c24b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.540 ([21751a6](https://github.com/stacksjs/stx/commit/21751a6)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.538...v0.2.539)
 
 ## 🐛 Bug Fixes
