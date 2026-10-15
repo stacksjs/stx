@@ -31,7 +31,7 @@
  */
 
 import type { NativeMutationOperation } from '../bridge/protocol'
-import type { STXNode } from '../compiler/ir'
+import type { STXNode, STXStyle } from '../compiler/ir'
 import { compileClassStyles } from '../compiler/headwind-to-style'
 import { resolveIconName } from '../compiler/icons'
 import { affectsGeometry, parseSvgMarkup, parseViewBox, SVG_NODE_TYPES, svgGeometry } from '../compiler/svg'
@@ -79,6 +79,16 @@ interface RetainedNativeNode extends NativeNode {
  * `:if` has just shown from the click that showed it, and dropped it for
  * 50ms; a `.self` handler never ran at all.
  */
+/**
+ * The display a shown node takes, in the IR's own words: what its classes and
+ * style resolve to (`hidden dark:flex` stays `none` in light), else `flex`.
+ * The resolved style is an open record, so the value is checked rather than
+ * asserted: anything the renderers do not understand reads as `flex`.
+ */
+function irDisplay(value: unknown): NonNullable<STXStyle['display']> {
+  return value === 'none' || value === 'grid' || value === 'flex' ? value : 'flex'
+}
+
 function eventAt(payload: unknown, node: NativeNode): unknown {
   if (payload === undefined || payload === null)
     return { target: node, currentTarget: node }
@@ -660,7 +670,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       }
       // `display` is how the IR spells it, so the renderers already understand
       // it; the host does not invent a second vocabulary for the same thing.
-      const display = visible ? (resolveStyle(record).display ?? 'flex') : 'none'
+      const display = visible ? irDisplay(resolveStyle(record).display) : 'none'
       if (record.materialized)
         emit({ op: 'updateNode', id: node.__stxId, patch: { style: { display } } })
       return was
