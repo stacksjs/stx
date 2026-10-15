@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.528...v0.2.529)
+
+## ✨ Features
+
+- **overlays**: app-lifted overlays keep the page inert under nested layers, and stack by opening order ([dc2ccea](https://github.com/stacksjs/stx/commit/dc2ccea)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.529 ([f497922](https://github.com/stacksjs/stx/commit/f497922)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.527...v0.2.528)
 
 ## 🐛 Bug Fixes
