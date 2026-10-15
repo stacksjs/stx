@@ -184,12 +184,25 @@ __bundles["def456"] = true;
 window.timerLabel = function (s) { return String(s) };
 })();`
 
+/**
+ * The framework's composables (useOnline, useForm, …), which a page reached
+ * by the router now carries too. Emitted after the content like the bundles
+ * above, so it has to be run ahead of the component that calls useOnline()
+ * (hq.training's video modal threw "useOnline is not defined").
+ */
+const FRAMEWORK = `;(function(){
+  var __s = window.stx = window.stx || {};
+  function useOnline() { return true }
+  try { if (!("useOnline" in __s)) __s.useOnline = useOnline } catch (e) {}
+})();`
+
 const FRAGMENT = `<div data-stx-scope="stx_video_1"><video-player></video-player></div>
 <script data-stx-scoped data-stx-run="always" data-stx-instance="stx_video_1">${COMPONENT}<\/script>
 <script data-stx-page>function __stx_setup_video() { return {} }
 window.stx._latestSetup = __stx_setup_video<\/script>
 <script data-stx-scoped data-stx-run="always" data-stx-modules>${REGISTRY}<\/script>
-<script data-stx-scoped data-stx-run="always" data-stx-composables>${COMPOSABLES}<\/script>`
+<script data-stx-scoped data-stx-run="always" data-stx-composables>${COMPOSABLES}<\/script>
+<script data-stx-scoped data-stx-run="always" data-stx-framework-composables>${FRAMEWORK}<\/script>`
 
 async function fragmentRunOrder(): Promise<string[]> {
   const window = new Window({ url: 'http://localhost/' })
@@ -241,6 +254,7 @@ async function fragmentRunOrder(): Promise<string[]> {
       const text = String(s.textContent || '')
       if (text.includes('__stxModuleBundles')) return 'registry'
       if (text.includes('__stxComposableBundles')) return 'composables'
+      if (text.includes('function useOnline')) return 'framework'
       if (text.includes('__stx_setup_video')) return 'setup'
       if (text.includes('ts-video-player/elements')) return 'component'
       return 'other'
@@ -249,6 +263,6 @@ async function fragmentRunOrder(): Promise<string[]> {
 
 describe('router: a fragment runs the module registry first (#1957)', () => {
   it('runs the registry before the components that import from it, and the page setup last', async () => {
-    expect(await fragmentRunOrder()).toEqual(['registry', 'composables', 'component', 'setup'])
+    expect(await fragmentRunOrder()).toEqual(['registry', 'composables', 'framework', 'component', 'setup'])
   })
 })

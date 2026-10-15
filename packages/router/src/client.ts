@@ -794,10 +794,12 @@ function routerSource(): string {
   // globals its templates call. Each page ships the ones it reaches, so the
   // next page can need one the first never loaded: it runs right after the
   // registry, before anything that calls into it. Guarded per bundle, so a
-  // repeat is a no-op.
+  // repeat is a no-op. The framework's composables (useOnline, useForm, …,
+  // data-stx-framework-composables) are the same kind of script and run in
+  // the same place: after a component that calls one, it was too late.
   var COMPOSABLES_TEXT=/__stxComposableBundles/;
   function isComposablesScript(s){
-    return !!s&&((s.hasAttribute&&s.hasAttribute('data-stx-composables'))||COMPOSABLES_TEXT.test(s.textContent||''));
+    return !!s&&((s.hasAttribute&&(s.hasAttribute('data-stx-composables')||s.hasAttribute('data-stx-framework-composables')))||COMPOSABLES_TEXT.test(s.textContent||''));
   }
   /*
    * What the block wrap below would otherwise hide (stacksjs/stx#2041).
@@ -1555,7 +1557,9 @@ else {
     var seq=++announceSeq,started=Date.now(),bound=!awaitBind,timer=null;
     function onLoad(){bound=true;schedule(20)}
     function stop(){if(timer)clearTimeout(timer);timer=null;window.removeEventListener('stx:load',onLoad)}
-    function schedule(ms){if(timer)clearTimeout(timer);timer=setTimeout(attempt,ms)}
+    // Guarded: it runs on a timer, so it can outlive the document it was
+    // scheduled for (a test's window torn down, a whole-document swap).
+    function schedule(ms){if(timer)clearTimeout(timer);timer=setTimeout(function(){try{attempt()}catch(e){stop()}},ms)}
     function attempt(){
       timer=null;
       if(seq!==announceSeq){stop();return}
@@ -1774,7 +1778,7 @@ else {
             var runDecl=(attrs.match(/data-stx-run\\s*=\\s*["']?(always|once)["']?/i)||[])[1];
             var ownerDecl=(attrs.match(/data-stx-owner\\s*=\\s*["']([^"']+)["']/i)||[])[1]||'';
             var registry=/(?:^|\\s)data-stx-modules(?:\\s|=|$)/i.test(attrs)||REGISTRY_TEXT.test(code);
-            var composables=/(?:^|\\s)data-stx-composables(?:\\s|=|$)/i.test(attrs)||COMPOSABLES_TEXT.test(code);
+            var composables=/(?:^|\\s)data-stx-(?:framework-)?composables(?:\\s|=|$)/i.test(attrs)||COMPOSABLES_TEXT.test(code);
             fragScripts.push({text:code,slot:slot,setupName:generatedSetupName(code),scoped:scoped,run:runDecl?runDecl.toLowerCase():'',owner:ownerDecl,registry:registry,composables:composables});
             // Retain scoped setup code in its inert placeholder. A placeholder
             // inside template.content is unreachable through document, so the

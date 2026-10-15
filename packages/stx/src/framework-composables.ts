@@ -273,7 +273,13 @@ export async function getFrameworkComposableScript(source: string, composablesDi
     .map(name => `  try { if (!(${JSON.stringify(name)} in __s)) { __s[${JSON.stringify(name)}] = ${name}; if (!(${JSON.stringify(name)} in window)) window[${JSON.stringify(name)}] = ${name}; } } catch (e) {}`)
     .join('\n')
 
-  const script = `<script data-stx-framework-composables>
+  // Scoped and always-run like the module registry and the app's composables
+  // bundle, so a fragment navigation carries it and the router runs it. A
+  // page reached by the router used to arrive without it: hq.training's video
+  // modal called useOnline() on a product page opened from the store and
+  // threw "useOnline is not defined", while a full load of the same address
+  // worked. Running it again is harmless: every name is skip-never-clobber.
+  const script = `<script data-stx-scoped data-stx-run="always" data-stx-framework-composables>
 ;(function(){
   var __s = window.stx = window.stx || {};
 ${chunks.join('\n\n')}

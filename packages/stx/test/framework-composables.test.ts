@@ -238,3 +238,20 @@ const form = useForm({ email: v.required() })
     expect(out).toContain('function useForm')
   })
 })
+
+describe('a page reached by the router', () => {
+  it('carries the framework composables in its fragment', async () => {
+    // A fragment carries the container and the head scripts marked
+    // data-stx-scoped. The framework composables sit in <head> beside the
+    // runtime and were not marked, so a page that called one (useOnline in
+    // hq.training's video modal) threw on arriving by the router while a
+    // full load of the same address worked.
+    const { extractContainerContent } = await import('../src/app-shell')
+    const script = await getFrameworkComposableScript('<script client>const form = useForm({})</script>') ?? ''
+    expect(script).toContain('function useForm')
+    const fragment = extractContainerContent(`<!DOCTYPE html><html><head>${script}</head><body><nav>chrome</nav><main><p>page</p></main></body></html>`, 'main')
+    expect(fragment).toContain('function useForm')
+    expect(fragment).toContain('<p>page</p>')
+    expect(fragment).not.toContain('chrome')
+  })
+})
