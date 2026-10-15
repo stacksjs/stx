@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.535...v0.2.536)
+
+## ✨ Features
+
+- support tab icon and avatar updates in browser screens ([105a71a](https://github.com/stacksjs/stx/commit/105a71a)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- **browser**: validate renders atomically and block disabled keyboard actions ([fd3e911](https://github.com/stacksjs/stx/commit/fd3e911)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.534...v0.2.535)
 
 ## ✨ Features

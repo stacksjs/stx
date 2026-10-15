@@ -37,6 +37,15 @@ export class BrowserScreenRenderer {
   constructor(readonly container: HTMLElement, private readonly options: BrowserRendererOptions) {}
 
   render(tree: STXNode): void {
+    const ids = new Set<string>()
+    const validate = (node: STXNode): void => {
+      if (!node.id || ids.has(node.id)) throw new Error('Screen node ids must be unique and non-empty')
+      ids.add(node.id)
+      this.tag(node.type)
+      if (node.type === 'Icon') this.icon(node.props)
+      for (const child of node.children) if (typeof child !== 'string') validate(child)
+    }
+    validate(tree)
     this.dispose()
     const create = (node: STXNode, parent: string | null): HTMLElement | SVGElement => {
       if (!node.id) throw new Error('A portable screen node needs an id')
@@ -93,6 +102,7 @@ export class BrowserScreenRenderer {
   private validate(operations: NativeMutationOperation[]): void {
     const parents = new Map([...this.nodes].map(([id, node]) => [id, node.parent]))
     const children = new Map([...this.nodes].map(([id, node]) => [id, [...node.children]]))
+    const descriptors = new Map([...this.nodes].map(([id, node]) => [id, { type: node.type, props: { ...node.props } }]))
     const remove = (id: string): void => {
       for (const child of children.get(id) ?? []) remove(child)
       parents.delete(id)
@@ -101,6 +111,9 @@ export class BrowserScreenRenderer {
     for (const operation of operations) {
       if (operation.op === 'createNode') {
         if (parents.has(operation.id) || !this.tag(operation.node.type)) throw new Error(`Invalid create: ${operation.id}`)
+        const props = operation.node.props ?? {}
+        if (operation.node.type === 'Icon') this.icon(props)
+        descriptors.set(operation.id, { type: operation.node.type, props: { ...props } })
         parents.set(operation.id, null)
         children.set(operation.id, [])
       }
@@ -126,7 +139,12 @@ export class BrowserScreenRenderer {
           if (parent) children.set(parent, children.get(parent)!.filter(id => id !== operation.id))
           remove(operation.id)
         }
-        else if (operation.patch.children && children.get(operation.id)!.length) throw new Error('Cannot replace structural children with text')
+        else {
+          if (operation.patch.children && children.get(operation.id)!.length) throw new Error('Cannot replace structural children with text')
+          const descriptor = descriptors.get(operation.id)!
+          Object.assign(descriptor.props, operation.patch.props)
+          if (descriptor.type === 'Icon') this.icon(descriptor.props)
+        }
       }
     }
   }
@@ -151,6 +169,7 @@ export class BrowserScreenRenderer {
   }
 
   private fire(record: RecordNode, name: string, payload: Record<string, unknown> = {}): void {
+    if (record.props.disabled && ['onPress', 'onLongPress', 'onPressIn', 'onPressOut'].includes(name)) return
     const handler = record.events[name]
     if (handler) this.options.event(handler, payload)
   }
@@ -285,14 +304,23 @@ export class BrowserScreenRenderer {
     if (type === 'ActivityIndicator' || type === 'RefreshControl') { element.setAttribute('aria-label', String(props.accessibilityLabel ?? 'Loading')); css.width = '24px'; css.height = '24px' }
     if (type === 'StatusBar') css.display = 'none'
     if (type === 'Icon') {
-      const name = String(props.iconify ?? props.name ?? props.symbol ?? '')
-      const icon = this.options.icons?.[SYMBOL_TO_ICON[name]!] ?? this.options.icons?.[name] ?? this.options.icons?.[name.replace(/^i-lucide-/, '')] ?? this.options.icons?.[String(props.symbol)]
-      if (icon) { css.backgroundColor = 'currentColor'; const data = `<svg xmlns="${SVG_NS}" viewBox="0 0 ${icon.width ?? 24} ${icon.height ?? 24}">${icon.body}</svg>`; css.mask = `url("data:image/svg+xml,${encodeURIComponent(data)}") center / contain no-repeat`; css.webkitMask = css.mask; element.setAttribute('aria-hidden', props.accessibilityLabel ? 'false' : 'true') }
-      else throw new Error(`No browser icon registered for ${name}`)
+      const icon = this.icon(props)
+      css.backgroundColor = 'currentColor'
+      const data = `<svg xmlns="${SVG_NS}" viewBox="0 0 ${icon.width ?? 24} ${icon.height ?? 24}">${icon.body}</svg>`
+      css.mask = `url("data:image/svg+xml,${encodeURIComponent(data)}") center / contain no-repeat`
+      css.webkitMask = css.mask
+      element.setAttribute('aria-hidden', props.accessibilityLabel ? 'false' : 'true')
     }
     if (type === 'Text' && props.numberOfLines) { css.overflow = 'hidden'; css.display = '-webkit-box'; css.webkitBoxOrient = 'vertical'; css.webkitLineClamp = String(props.numberOfLines) }
     if (SVG[type]) for (const [key, value] of Object.entries(props)) { if (['geometry', 'testID', 'accessibilityLabel'].includes(key)) continue; const name = SVG_PROPS[key] ?? key; if (value == null) element.removeAttribute(name); else element.setAttribute(name, Array.isArray(value) ? value.join(' ') : String(value)) }
     if (props.scrollTarget && typeof props.scrollTarget === 'object') { const target = props.scrollTarget as { id?: string, key?: unknown, animated?: boolean }; const signature = JSON.stringify(target); if (element.getAttribute('data-scroll-target') !== signature) { element.setAttribute('data-scroll-target', signature); queueMicrotask(() => { for (const candidate of this.nodes.values()) if (candidate.props.testID === target.id) candidate.element.scrollIntoView?.({ behavior: target.animated === false ? 'instant' : 'smooth', block: 'start' }) }) } }
+  }
+
+  private icon(props: Record<string, unknown>): { body: string, width?: number, height?: number } {
+    const name = String(props.iconify ?? props.name ?? props.symbol ?? '')
+    const icon = this.options.icons?.[SYMBOL_TO_ICON[name]!] ?? this.options.icons?.[name] ?? this.options.icons?.[name.replace(/^i-lucide-/, '')] ?? this.options.icons?.[String(props.symbol)]
+    if (!icon) throw new Error(`No browser icon registered for ${name}`)
+    return icon
   }
 
   private style(css: CSSStyleDeclaration, values: Record<string, unknown>): void {

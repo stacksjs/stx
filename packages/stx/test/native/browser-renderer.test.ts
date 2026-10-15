@@ -48,6 +48,22 @@ describe('the browser peer of the native screen renderer', () => {
     expect(container.textContent).toBe('Committed')
   })
 
+  it('rejects an unrenderable icon before committing a batch or replacing a valid screen', () => {
+    const { renderer, container, node } = fixture()
+    renderer.render(node('root', 'View', [node('text', 'Text', ['Original'])]))
+    expect(() => renderer.mutate({ version: 1, batchId: 'bad-icon', baseRevision: 0, revision: 1, operations: [{ op: 'updateNode', id: 'text', patch: { children: ['Partial'] } }, { op: 'createNode', id: 'icon', node: { type: 'Icon', props: { name: 'missing' } } }] })).toThrow('No browser icon registered')
+    expect(container.textContent).toBe('Original')
+    expect(() => renderer.render(node('new', 'View', [node('bad', 'Icon', [], { name: 'missing' })]))).toThrow('No browser icon registered')
+    expect(container.textContent).toBe('Original')
+  })
+
+  it('does not activate a disabled view button from the keyboard', () => {
+    const { renderer, container, node, events, window } = fixture()
+    renderer.render(node('root', 'View', [node('button', 'View', ['Disabled'], { disabled: true }, { onPress: 'press' })]))
+    container.querySelector('[data-stx-node="button"]')!.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter' }))
+    expect(events).toEqual([])
+  })
+
   it('preserves SVG geometry and clears detached node handlers', () => {
     const { renderer, container, node } = fixture()
     renderer.render(node('root', 'View', [node('svg', 'Svg', [node('path', 'Path', [], { d: 'M0 0L10 10', strokeWidth: 2 })], { viewBox: [0, 0, 10, 10] }), node('button', 'Button', ['Press'], {}, { onPress: 'press' })]))
