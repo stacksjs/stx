@@ -60,6 +60,7 @@ import { SIGNALS_NAVIGATION_RUNTIME } from './client/signals-navigation-runtime'
 import { SIGNALS_OPTIMISTIC_RUNTIME } from './client/signals-optimistic-runtime'
 import { SIGNALS_OVERLAY_RUNTIME } from './client/signals-overlay-runtime'
 import { SIGNALS_QUERY_RUNTIME } from './client/signals-query-runtime'
+import { signalsReactiveCoreBootstrapRuntime } from './client/signals-reactive-core-bootstrap-runtime'
 import { SIGNALS_REACTIVE_RUNTIME } from './client/signals-reactive-runtime'
 import { SIGNALS_PIPE_RUNTIME } from './client/signals-pipe-runtime'
 import { signalsProcessElementRuntime } from './client/signals-process-element-runtime'
@@ -180,34 +181,7 @@ function stripConsoleLog(src: string): string {
  */
 export function generateSignalsRuntimeDev(): string {
   return `${SIGNALS_PREAMBLE_RUNTIME}${SIGNALS_HOST_RUNTIME}
-${SIGNALS_CLOAK_RUNTIME}  // ==========================================================================
-  // Reactive Core
-  // ==========================================================================
-
-${SIGNALS_EXPRESSION_COMPILER_RUNTIME}
-  let activeEffect = null;
-  const effectStack = [];
-  const pendingEffects = new Set();
-  let isBatching = false;
-
-  // DevTools Phase 2 (#1747): dev-mode reactivity instrumentation. OFF by
-  // default — even in the dev runtime — so set()/effect-run stay zero-overhead
-  // until window.__stxDevtools.enable() turns counting on. The reactive graph
-  // (each signal's subscriber set) is always available via the _effects handle.
-  var __stxDevtoolsTracking = false;
-  var __stxDevtoolsStats = { signalSets: 0, effectRuns: 0 };
-  var __stxEffectId = 0;
-  // Phase 3 (#1747): bounded trace buffers, recorded only while tracking.
-  var __stxDevtoolsIfTrace = [];
-  var __stxDevtoolsQueries = [];
-  var __stxDevtoolsMutations = []; // state-change log (signal id + prev/next)
-  var __stxSignalId = 0;
-  function __stxDevtoolsNow() { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); }
-  function __stxDevtoolsRecordIf(rec) { if (!__stxDevtoolsTracking) return; __stxDevtoolsIfTrace.push(rec); if (__stxDevtoolsIfTrace.length > 100) __stxDevtoolsIfTrace.shift(); }
-  function __stxDevtoolsRecordQuery(rec) { if (!__stxDevtoolsTracking) return; __stxDevtoolsQueries.push(rec); if (__stxDevtoolsQueries.length > 100) __stxDevtoolsQueries.shift(); }
-${SIGNALS_FETCH_TRANSPORT_RUNTIME}
-  let activeDisposers = null; // Array | null — when non-null, effects auto-register their dispose fn
-  const targetMap = new WeakMap();
+${signalsReactiveCoreBootstrapRuntime(SIGNALS_CLOAK_RUNTIME, SIGNALS_EXPRESSION_COMPILER_RUNTIME, SIGNALS_FETCH_TRANSPORT_RUNTIME)}
 
 ${SIGNALS_HELPERS_RUNTIME}
 ${SIGNALS_PROXY_RUNTIME}
