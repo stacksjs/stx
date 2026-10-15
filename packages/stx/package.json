@@ -1,7 +1,7 @@
 {
   "name": "@stacksjs/stx",
   "type": "module",
-  "version": "0.2.536",
+  "version": "0.2.537",
   "description": "A performant UI Framework. Powered by Bun.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",

@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.536...v0.2.537)
+
+## 🐛 Bug Fixes
+
+- **ssr**: bind request cookies in static and isolated server scripts ([a7582f8](https://github.com/stacksjs/stx/commit/a7582f8)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.537 ([b7224af](https://github.com/stacksjs/stx/commit/b7224af)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.535...v0.2.536)
 
 ## ✨ Features
