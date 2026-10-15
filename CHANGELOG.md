@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.538...v0.2.539)
+
+## 🐛 Bug Fixes
+
+- **browser**: preserve native accessibility states and keyboard lifecycle ([78ac157](https://github.com/stacksjs/stx/commit/78ac157)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.539 ([713c3a9](https://github.com/stacksjs/stx/commit/713c3a9)) _(by Chris <chris@stacksjs.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' ([f042309](https://github.com/stacksjs/stx/commit/f042309)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.536...v0.2.537)
 
 ## 🐛 Bug Fixes
