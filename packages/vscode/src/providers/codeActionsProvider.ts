@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { directiveDiagnosticAction } from '../utils/directive-code-actions'
 
 /**
  * Creates a code actions provider for quick fixes
@@ -16,138 +17,76 @@ export function createCodeActionsProvider(): vscode.CodeActionProvider {
 
       const actions: vscode.CodeAction[] = []
 
-      // Directive pairs (unused but kept for potential future use)
-      const _directivePairs: Record<string, string> = {
-        if: 'endif',
-        unless: 'endunless',
-        for: 'endfor',
-        foreach: 'endforeach',
-        forelse: 'endforelse',
-        while: 'endwhile',
-        switch: 'endswitch',
-        ts: 'endts',
-        js: 'endjs',
-        script: 'endscript',
-        css: 'endcss',
-        markdown: 'endmarkdown',
-        raw: 'endraw',
-        verbatim: 'endverbatim',
-        component: 'endcomponent',
-        slot: 'endslot',
-        webcomponent: 'endwebcomponent',
-        section: 'endsection',
-        push: 'endpush',
-        pushIf: 'endpushIf',
-        pushOnce: 'endpushOnce',
-        prepend: 'endprepend',
-        prependOnce: 'endprependOnce',
-        auth: 'endauth',
-        guest: 'endguest',
-        can: 'endcan',
-        cannot: 'endcannot',
-        env: 'endenv',
-        isset: 'endisset',
-        empty: 'endempty',
-        error: 'enderror',
-        once: 'endonce',
-        transition: 'endtransition',
-        motion: 'endmotion',
-        scrollAnimate: 'endscrollAnimate',
-      }
-
       // Check for diagnostics at the current position
       for (const diagnostic of context.diagnostics) {
-        // Handle unclosed directives
-        if (diagnostic.message.includes('Unclosed @')) {
-          const match = diagnostic.message.match(/Unclosed @(\w).*Expected @(\w+)/)
-          if (match) {
-            const _directiveName = match[1]
-            const endDirective = match[2]
+        const diagnosticAction = directiveDiagnosticAction(diagnostic.message)
 
-            // Create a quick fix to add the closing directive
-            const fix = new vscode.CodeAction(
-              `Add missing @${endDirective}`,
-              vscode.CodeActionKind.QuickFix,
-            )
-            fix.diagnostics = [diagnostic]
-            fix.isPreferred = true
+        if (diagnosticAction?.kind === 'add-closing') {
+          const endDirective = diagnosticAction.directive
 
-            // Find the end of the directive block (or end of document)
-            let insertLine = document.lineCount - 1
+          const fix = new vscode.CodeAction(
+            `Add missing @${endDirective}`,
+            vscode.CodeActionKind.QuickFix,
+          )
+          fix.diagnostics = [diagnostic]
+          fix.isPreferred = true
 
-            // Try to find a good insertion point (after the last line with content)
-            for (let i = diagnostic.range.start.line + 1; i < document.lineCount; i++) {
-              const line = document.lineAt(i).text.trim()
-              // Stop at another directive at the same indentation level
-              if (line.match(/^@\w+/) && !line.startsWith(`@end`)) {
-                insertLine = i - 1
-                break
-              }
+          // Find the end of the directive block (or end of document)
+          let insertLine = document.lineCount - 1
+
+          // Try to find a good insertion point (after the last line with content)
+          for (let i = diagnostic.range.start.line + 1; i < document.lineCount; i++) {
+            const line = document.lineAt(i).text.trim()
+            // Stop at another directive at the same indentation level
+            if (line.match(/^@\w+/) && !line.startsWith(`@end`)) {
+              insertLine = i - 1
+              break
             }
-
-            // Get indentation of the opening directive
-            const openingLine = document.lineAt(diagnostic.range.start.line)
-            const indent = openingLine.text.match(/^\s*/)?.[0] || ''
-
-            fix.edit = new vscode.WorkspaceEdit()
-            fix.edit.insert(
-              document.uri,
-              new vscode.Position(insertLine + 1, 0),
-              `${indent}@${endDirective}\n`,
-            )
-
-            actions.push(fix)
           }
+
+          // Get indentation of the opening directive
+          const openingLine = document.lineAt(diagnostic.range.start.line)
+          const indent = openingLine.text.match(/^\s*/)?.[0] || ''
+
+          fix.edit = new vscode.WorkspaceEdit()
+          fix.edit.insert(
+            document.uri,
+            new vscode.Position(insertLine + 1, 0),
+            `${indent}@${endDirective}\n`,
+          )
+
+          actions.push(fix)
         }
 
-        // Handle mismatched directives
-        if (diagnostic.message.includes('Mismatched directive')) {
-          const match = diagnostic.message.match(/Expected @(\w+) but found @(\w+)/)
-          if (match) {
-            const expectedEnd = match[1]
-            const _foundEnd = match[2]
+        if (diagnosticAction?.kind === 'replace-closing') {
+          const expectedEnd = diagnosticAction.directive
 
-            // Create a quick fix to replace with correct directive
-            const fix = new vscode.CodeAction(
-              `Change to @${expectedEnd}`,
-              vscode.CodeActionKind.QuickFix,
-            )
-            fix.diagnostics = [diagnostic]
-            fix.isPreferred = true
+          const fix = new vscode.CodeAction(
+            `Change to @${expectedEnd}`,
+            vscode.CodeActionKind.QuickFix,
+          )
+          fix.diagnostics = [diagnostic]
+          fix.isPreferred = true
 
-            fix.edit = new vscode.WorkspaceEdit()
-            fix.edit.replace(
-              document.uri,
-              diagnostic.range,
-              expectedEnd,
-            )
+          fix.edit = new vscode.WorkspaceEdit()
+          fix.edit.replace(document.uri, diagnostic.range, expectedEnd)
 
-            actions.push(fix)
-          }
+          actions.push(fix)
         }
 
-        // Handle unexpected closing directives
-        if (diagnostic.message.includes('Unexpected @end')) {
-          const match = diagnostic.message.match(/Unexpected @(\w+)/)
-          if (match) {
-            const directiveName = match[1]
-
-            // Create a quick fix to remove the directive
-            const removeFix = new vscode.CodeAction(
-              `Remove @${directiveName}`,
-              vscode.CodeActionKind.QuickFix,
-            )
-            removeFix.diagnostics = [diagnostic]
-
-            const line = document.lineAt(diagnostic.range.start.line)
-            removeFix.edit = new vscode.WorkspaceEdit()
-            removeFix.edit.delete(
-              document.uri,
-              line.range,
-            )
-
-            actions.push(removeFix)
-          }
+        if (diagnosticAction?.kind === 'remove-closing') {
+          const directiveName = diagnosticAction.directive
+          const removeFix = new vscode.CodeAction(
+            `Remove @${directiveName}`,
+            vscode.CodeActionKind.QuickFix,
+          )
+          removeFix.diagnostics = [diagnostic]
+          removeFix.edit = new vscode.WorkspaceEdit()
+          removeFix.edit.delete(document.uri, diagnostic.range.with(
+            diagnostic.range.start.translate(0, -1),
+            diagnostic.range.end,
+          ))
+          actions.push(removeFix)
         }
       }
 
