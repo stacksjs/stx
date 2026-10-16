@@ -21,9 +21,11 @@ onMount(() => craft.navigation.setOptions({title:'Health',leftButtons:[{id:'cale
 function rate() { craft.navigation.setOptions({tabItem:{id:'/m/health',iconText:'142',accessibilityLabel:'Heart rate 142 bpm'}}) }
 function clear() { craft.navigation.setOptions({tabItem:{id:'/m/health',iconText:null,accessibilityLabel:null}}) }
 function avatar() { craft.navigation.setOptions({tabItem:{id:'/m/me',image:'https://fixture.invalid/avatar.png'}}) }
-</script><View><Button testID="rate" @click="rate()">Rate</Button><Button testID="clear" @click="clear()">Clear</Button><Button testID="avatar" @click="avatar()">Avatar</Button></View>`)
-    writeFileSync(path.join(root, 'platform.ts'), 'export async function createBrowserPlatform() { return {craft:{},capabilities:[],call:async()=>null,navigate(){},dispose(){}} }')
-    const compiled = await compileBrowserScreen({ root, source: 'Screen.stx', screen: 'Screen', browser: { screen: 'Screen', container: '#screen', appURL: '/m', routes: { '/m/health': 'Screen' }, tabs: [{ id: '/m/health', title: 'Health' }, { id: '/m/me', title: 'Me' }], platformModule: path.join(root, 'platform.ts') } })
+function accessory() { craft.navigation.setOptions({tabAccessory:{path:'/m/messages',title:'Messages',symbol:'message',badge:'3'}}) }
+function hideAccessory() { craft.navigation.setOptions({tabAccessory:null}) }
+</script><View><Button testID="rate" @click="rate()">Rate</Button><Button testID="clear" @click="clear()">Clear</Button><Button testID="avatar" @click="avatar()">Avatar</Button><Button testID="accessory" @click="accessory()">Messages</Button><Button testID="hideAccessory" @click="hideAccessory()">Hide</Button></View>`)
+    writeFileSync(path.join(root, 'platform.ts'), 'export async function createBrowserPlatform() { return {craft:{},capabilities:[],call:async()=>null,navigate(path){globalThis.lastNavigation=path},dispose(){}} }')
+    const compiled = await compileBrowserScreen({ root, source: 'Screen.stx', screen: 'Screen', browser: { screen: 'Screen', container: '#screen', appURL: '/m', routes: { '/m/health': 'Screen' }, icons: { message: { body: '', width: 24, height: 24 } }, tabs: [{ id: '/m/health', title: 'Health' }, { id: '/m/me', title: 'Me' }], platformModule: path.join(root, 'platform.ts') } })
     const browser = new Window({ url: 'https://fixture.invalid/m/health' })
     const container = browser.document.createElement('div')
     container.id = 'screen'
@@ -45,6 +47,17 @@ function avatar() { craft.navigation.setOptions({tabItem:{id:'/m/me',image:'http
     expect(browser.document.querySelector('header button[aria-label="Store"]')).not.toBeNull()
     expect(browser.document.querySelector('header button[aria-label="Calendar"]')).not.toBeNull()
     expect([...browser.document.querySelector('header')!.children].map(child => child.textContent)).toEqual(['Calendar', 'Health', 'Store'])
+    await click('accessory')
+    const accessory = browser.document.querySelector('[data-tab-accessory]')!
+    expect(accessory.getAttribute('aria-label')).toBe('Messages, 3')
+    expect(accessory.parentElement?.tagName).toBe('NAV')
+    expect(health.parentElement).not.toBe(accessory.parentElement)
+    expect(browser.document.querySelectorAll('nav a').length).toBe(2)
+    ;(accessory as any).onclick()
+    expect(scope.lastNavigation).toBe('/m/messages')
+    expect(health.getAttribute('aria-current')).toBe('page')
+    await click('hideAccessory')
+    expect(browser.document.querySelector('[data-tab-accessory]')).toBeNull()
     await click('avatar')
     expect(browser.document.querySelector('nav a[href="/m/me"] img')!.getAttribute('src')).toBe('https://fixture.invalid/avatar.png')
     await click('clear')

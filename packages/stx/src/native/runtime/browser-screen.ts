@@ -46,6 +46,8 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
   const nav = document.createElement('header')
   const content = document.createElement('div')
   const tabs = document.createElement('nav')
+  const tabPill = document.createElement('div')
+  let accessoryRenderer: BrowserScreenRenderer | null = null
   const shell = document.createElement('div')
   shell.setAttribute('data-stx-screen-shell', '')
   shell.style.cssText = 'display:flex;flex-direction:column;height:100dvh;max-width:512px;margin:auto;color:#1c1c1e;background:#f2f2f7;font:17px system-ui,-apple-system,sans-serif;overflow:hidden'
@@ -57,6 +59,8 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
   nav.style.cssText = 'display:flex;align-items:center;gap:12px;min-height:52px;padding:env(safe-area-inset-top) 16px 0;flex-shrink:0'
   tabs.style.cssText = 'display:flex;justify-content:space-around;gap:4px;padding:8px 8px max(8px,env(safe-area-inset-bottom));flex-shrink:0;border-top:1px solid #8884'
   tabs.setAttribute('aria-label', 'Main navigation')
+  tabPill.style.cssText = 'display:flex;flex:1;align-items:center;min-width:0;border-radius:32px;padding:4px;background:#8882'
+  tabs.append(tabPill)
   const theme = (): void => {
     const dark = document.documentElement.classList.contains('dark')
     shell.style.background = dark ? '#000000' : '#f2f2f7'
@@ -69,6 +73,31 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
   const navigation = (patch: Record<string, unknown>): void => {
     currentNavigation = { ...currentNavigation, ...patch }
     const settings = currentNavigation
+    if ('tabAccessory' in patch) {
+      accessoryRenderer?.dispose()
+      accessoryRenderer = null
+      tabs.querySelector('[data-tab-accessory]')?.remove()
+      const item = patch.tabAccessory as { path: string, title: string, symbol: string, badge?: string | null, accessibilityLabel?: string } | null
+      if (item && item.path.startsWith('/') && !item.path.startsWith('//')) {
+        const button = document.createElement('button')
+        button.type = 'button'
+        button.setAttribute('data-tab-accessory', '')
+        button.setAttribute('aria-label', `${item.accessibilityLabel || item.title}${item.badge ? `, ${item.badge}` : ''}`)
+        button.style.cssText = 'position:relative;display:flex;align-items:center;justify-content:center;width:56px;height:56px;flex-shrink:0;border:0;border-radius:50%;background:#8882;color:inherit'
+        const holder = document.createElement('span')
+        button.append(holder)
+        accessoryRenderer = new BrowserScreenRenderer(holder, { icons: options.icons, event() {} })
+        accessoryRenderer.render({ id: 'tab_accessory', type: 'Icon', props: { symbol: item.symbol }, style: { width: 24, height: 24 }, events: {}, children: [] })
+        if (item.badge) {
+          const badge = document.createElement('span')
+          badge.textContent = item.badge.slice(0, 8)
+          badge.style.cssText = 'position:absolute;top:0;right:0;background:#ff3b30;color:white;border-radius:10px;padding:1px 4px;font-size:11px'
+          button.append(badge)
+        }
+        button.onclick = () => platform.navigate(item.path)
+        tabs.append(button)
+      }
+    }
     const item = patch.tabItem as { id?: string, iconText?: string | null, image?: string | null, accessibilityLabel?: string | null } | undefined
     const tab = item?.id ? tabIcons.get(item.id) : null
     if (tab && item) {
@@ -141,7 +170,7 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
     tabIcons.set(tab.id, { root: iconRoot, fallback: iconRoot.innerHTML, link })
     const label = document.createElement('span'); label.textContent = tab.title; link.append(label)
     if (location.pathname.replace(/\/$/, '') === tab.id || (tab.id !== rootPath && location.pathname.startsWith(`${tab.id}/`))) { link.setAttribute('aria-current', 'page'); link.style.color = '#007aff' }
-    tabs.append(link)
+    tabPill.append(link)
   }
   tabs.hidden = !options.tabs?.length
   const navigateScreen = (screen: unknown, params: unknown, replace = false): void => {
@@ -200,6 +229,7 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
       document.removeEventListener('visibilitychange', visibility)
       stopEvents?.()
       renderer.dispose()
+      accessoryRenderer?.dispose()
       for (const icon of chromeRenderers) icon.dispose()
       platform.dispose()
       shell.before(container)

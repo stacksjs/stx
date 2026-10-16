@@ -36,6 +36,8 @@ export interface NativeNavigationOptions {
   leftButtons?: NativeNavigationButton[]
   rightButtons?: NativeNavigationButton[]
   /** Patch a tab's icon without replacing tabs, stacks or the selected tab. Null restores its configured icon. */
+  /** A destination in its own box beside the tab pill. Null removes it. */
+  tabAccessory?: { path: string, title: string, symbol: string, badge?: string | null, accessibilityLabel?: string } | null
   tabItem?: { id: string, iconText?: string | null, image?: string | null, badge?: string | null, accessibilityLabel?: string | null }
 }
 
