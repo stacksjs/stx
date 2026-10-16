@@ -38,7 +38,8 @@ import { createSafeFunction, getExpressionSafetyRule, safeEvaluate } from './saf
 import { createDetailedErrorMessage } from './utils'
 import { createPlaceholder } from './placeholder'
 import { neutralizeTemplateSyntax } from './template-syntax-escape'
-import { sanitizeSubstitutedUrl, schemeWindow } from './url-safety'
+import { classifyHtmlInterpolation, UnsafeInterpolationContextError } from './interpolation-context'
+import { isDangerousUrl, sanitizeSubstitutedUrl, schemeWindow, UNSAFE_URL_PREFIX, urlAttributeKind } from './url-safety'
 import { maskAtElementPosition, matchScriptElement, matchStyleElement, restoreStashedScripts, stashScriptElements, type TokenMatcher } from './html-masking'
 import { importsSignalDeclarations } from './imported-signals'
 import { inheritedClientLoopNames, loopBoundNames, readsAnyName } from './loop-binding'
@@ -580,6 +581,80 @@ export function escapeHtmlValue(unsafe: string): string {
   return neutralizeTemplateSyntax(escapeHtml(unsafe))
 }
 
+function escapeUnquotedAttributeValue(escaped: string): string {
+  return escaped
+    .replace(/ /g, '&#32;')
+    .replace(/\t/g, '&#9;')
+    .replace(/\n/g, '&#10;')
+    .replace(/\r/g, '&#13;')
+    .replace(/\f/g, '&#12;')
+    .replace(/=/g, '&#61;')
+    .replace(/`/g, '&#96;')
+}
+
+function normalizedCss(value: string): string {
+  return value
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\\([\dA-Fa-f]{1,6})\s?/g, (_match, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16)))
+    .replace(/\\([^\r\n])/g, '$1')
+    .replace(/[\u0000-\u0020]+/g, '')
+    .toLowerCase()
+}
+
+/** Escape a value according to the HTML context it will occupy. */
+function escapeInterpolatedHtmlValue(
+  source: string,
+  offset: number,
+  raw: string,
+  attributeFragment: boolean = false,
+): string {
+  const context = classifyHtmlInterpolation(source, offset, attributeFragment)
+  let escaped = escapeHtmlValue(raw)
+
+  if (!context)
+    return escaped
+
+  if (context.kind === 'tag') {
+    throw new UnsafeInterpolationContextError(
+      'tag structure',
+      'values may only be interpolated into attribute values, not attribute names',
+    )
+  }
+
+  const attribute = context.name.toLowerCase()
+  if (/^on[a-z]/.test(attribute)) {
+    throw new UnsafeInterpolationContextError(
+      context.name,
+      'native event-handler attributes execute JavaScript; use an @event binding instead',
+    )
+  }
+
+  if (attribute === 'srcdoc') {
+    // The outer document decodes entities before parsing the iframe document.
+    // Encode twice so the inner parser still receives inert text.
+    escaped = escapeHtmlValue(escaped)
+  }
+
+  if (attribute === 'style') {
+    const css = normalizedCss(raw)
+    if (/(?:url|image-set|cross-fade)\(|@import|expression\(|behavior:|-moz-binding/.test(css)) {
+      throw new UnsafeInterpolationContextError(
+        context.name,
+        'network-capable or executable CSS is not allowed in an escaped interpolation',
+      )
+    }
+  }
+
+  if (context.quote === null)
+    escaped = escapeUnquotedAttributeValue(escaped)
+
+  const urlKind = urlAttributeKind(attribute)
+  if (urlKind && context.valuePrefix.trim() === '' && isDangerousUrl(raw, urlKind))
+    return UNSAFE_URL_PREFIX + escaped
+
+  return sanitizeSubstitutedUrl(schemeWindow(source, offset), raw, escaped)
+}
+
 /**
  * A zero-width, non-breaking character, written as a reference.
  *
@@ -969,13 +1044,12 @@ export function interpolateScriptAttributes(
       const value = evaluateExpression(expr, context)
       if (value === undefined) return match
       if (value === null) return ''
-      // escapeHtmlValue escapes both quote characters, and neutralises the
-      // template syntax this attribute would otherwise hand to a later pass;
-      // sanitizeSubstitutedUrl covers the one thing escaping cannot, a scheme.
       const raw = String(value)
-      return sanitizeSubstitutedUrl(schemeWindow(output, offset), raw, escapeHtmlValue(raw))
+      return escapeInterpolatedHtmlValue(output, offset, raw, true)
     }
-    catch {
+    catch (error) {
+      if (error instanceof UnsafeInterpolationContextError)
+        throw error
       return match
     }
   })
@@ -1295,12 +1369,11 @@ export function processExpressions(template: string, context: Record<string, any
       if (value === undefined || value === null)
         return ''
       const raw = String(value)
-      // A value in the scheme position of a URL attribute cannot introduce a
-      // scheme the page did not ask for -- escaping leaves `javascript:`
-      // untouched, since it holds no character escaping cares about.
-      return sanitizeSubstitutedUrl(schemeWindow(output, offset), raw, escapeHtmlValue(raw))
+      return escapeInterpolatedHtmlValue(output, offset, raw)
     }
     catch (error: unknown) {
+      if (error instanceof UnsafeInterpolationContextError)
+        throw error
       if (firstVarIsClientSignal)
         return match
 
