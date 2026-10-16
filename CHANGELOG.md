@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.542...v0.2.543)
+
+## 🐛 Bug Fixes
+
+- **native**: declare the public Live Activity controller contract ([dfbccca](https://github.com/stacksjs/stx/commit/dfbccca)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.543 ([dd75a7e](https://github.com/stacksjs/stx/commit/dd75a7e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.541...v0.2.542)
 
 ## 🐛 Bug Fixes
