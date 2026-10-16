@@ -9,7 +9,11 @@ export interface TagInterpolationContext {
   kind: 'tag'
 }
 
-export type HtmlInterpolationContext = AttributeInterpolationContext | TagInterpolationContext | null
+export interface TagNameInterpolationContext {
+  kind: 'tag-name'
+}
+
+export type HtmlInterpolationContext = AttributeInterpolationContext | TagInterpolationContext | TagNameInterpolationContext | null
 
 /**
  * Classify the HTML position occupied by an interpolation.
@@ -37,7 +41,10 @@ export function classifyHtmlInterpolation(
 
   const tail = openTag >= 0 ? before.slice(openTag + 1) : before
   if (openTag >= 0 && /^\s*[!/?]/.test(tail))
-    return null
+    return /^\s*\/?\s*$/.test(tail) ? { kind: 'tag-name' } : null
+
+  if (openTag >= 0 && /^\s*$/.test(tail))
+    return { kind: 'tag-name' }
 
   const doubleQuoted = /(?:^|\s)([^\s"'<>/=]+)\s*=\s*"([^"]*)$/.exec(tail)
   if (doubleQuoted) {

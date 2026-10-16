@@ -71,6 +71,12 @@ describe('context-aware escaped interpolation (#2079)', () => {
       'page.stx',
     )).toContain('style="width: 42px"')
 
+    expect(processExpressions(
+      '<div style="{{ style }}"></div>',
+      { style: 'background:url("/preview.png")' },
+      'page.stx',
+    )).toContain('background:url(&quot;/preview.png&quot;)')
+
     expect(() => processExpressions(
       '<div style="{{ style }}"></div>',
       { style: 'background:url(https://attacker.example/collect)' },
@@ -84,6 +90,34 @@ describe('context-aware escaped interpolation (#2079)', () => {
       { attributes: 'id=x onmouseover=alert(1)' },
       'page.stx',
     )).toThrow('Unsafe interpolation in tag structure')
+
+    expect(() => processExpressions(
+      '<div {{ attribute }}="x">x</div>',
+      { attribute: 'onclick' },
+      'page.stx',
+    )).toThrow('Unsafe interpolation in tag structure')
+  })
+
+  it('preserves conditional boolean attributes without allowing assignments', () => {
+    expect(processExpressions(
+      '<option {{ selected ? "selected" : "" }}>x</option>',
+      { selected: true },
+      'page.stx',
+    )).toBe('<option selected>x</option>')
+  })
+
+  it('preserves validated dynamic tag names used by polymorphic components', () => {
+    expect(processExpressions(
+      '<{{ tag }}>x</{{ tag }}>',
+      { tag: 'a' },
+      'page.stx',
+    )).toBe('<a>x</a>')
+
+    expect(() => processExpressions(
+      '<{{ tag }}>x</{{ tag }}>',
+      { tag: 'div onmouseover=alert(1)' },
+      'page.stx',
+    )).toThrow('Unsafe interpolation in tag name')
   })
 
   it('leaves text and quoted attribute interpolation semantics intact', () => {

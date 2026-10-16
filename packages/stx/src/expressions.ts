@@ -601,12 +601,40 @@ function normalizedCss(value: string): string {
     .toLowerCase()
 }
 
+function assertSafeCssInterpolation(value: string, attribute: string): void {
+  const css = normalizedCss(value)
+  if (/@import|expression\(|behavior:|-moz-binding|(?:image-set|cross-fade)\(/.test(css)) {
+    throw new UnsafeInterpolationContextError(
+      attribute,
+      'network-capable or executable CSS is not allowed in an escaped interpolation',
+    )
+  }
+
+  const urlRe = /url\(([^)]*)\)/g
+  let match: RegExpExecArray | null
+  while ((match = urlRe.exec(css)) !== null) {
+    const url = match[1].replace(/^["']|["']$/g, '')
+    const isLocal = (url.startsWith('/') && !url.startsWith('//'))
+      || url.startsWith('./')
+      || url.startsWith('../')
+      || url.startsWith('#')
+    const isRasterData = /^data:image\/(?:avif|bmp|gif|jpeg|jpg|png|webp);base64,[a-z\d+/=]+$/i.test(url)
+    if (!isLocal && !isRasterData) {
+      throw new UnsafeInterpolationContextError(
+        attribute,
+        'CSS URLs must be local paths or base64 raster images',
+      )
+    }
+  }
+}
+
 /** Escape a value according to the HTML context it will occupy. */
 function escapeInterpolatedHtmlValue(
   source: string,
   offset: number,
   raw: string,
   attributeFragment: boolean = false,
+  interpolationLength: number = 0,
 ): string {
   const context = classifyHtmlInterpolation(source, offset, attributeFragment)
   let escaped = escapeHtmlValue(raw)
@@ -614,10 +642,26 @@ function escapeInterpolatedHtmlValue(
   if (!context)
     return escaped
 
+  if (context.kind === 'tag-name') {
+    if (!/^[A-Za-z][A-Za-z0-9:-]*$/.test(raw)) {
+      throw new UnsafeInterpolationContextError(
+        'tag name',
+        'dynamic tag names may contain only letters, digits, colons, and hyphens',
+      )
+    }
+    return raw
+  }
+
   if (context.kind === 'tag') {
+    const suffix = source.slice(offset + interpolationLength).trimStart()
+    const booleanAttributes = raw.trim()
+    if (!suffix.startsWith('=')
+      && (booleanAttributes === '' || /^(?!on)[A-Za-z_:][\w:.-]*(?:\s+(?!on)[A-Za-z_:][\w:.-]*)*$/.test(booleanAttributes))) {
+      return booleanAttributes
+    }
     throw new UnsafeInterpolationContextError(
       'tag structure',
-      'values may only be interpolated into attribute values, not attribute names',
+      'only standalone boolean attributes may be interpolated into tag structure',
     )
   }
 
@@ -636,13 +680,7 @@ function escapeInterpolatedHtmlValue(
   }
 
   if (attribute === 'style') {
-    const css = normalizedCss(raw)
-    if (/(?:url|image-set|cross-fade)\(|@import|expression\(|behavior:|-moz-binding/.test(css)) {
-      throw new UnsafeInterpolationContextError(
-        context.name,
-        'network-capable or executable CSS is not allowed in an escaped interpolation',
-      )
-    }
+    assertSafeCssInterpolation(raw, context.name)
   }
 
   if (context.quote === null)
@@ -1045,7 +1083,7 @@ export function interpolateScriptAttributes(
       if (value === undefined) return match
       if (value === null) return ''
       const raw = String(value)
-      return escapeInterpolatedHtmlValue(output, offset, raw, true)
+      return escapeInterpolatedHtmlValue(output, offset, raw, true, match.length)
     }
     catch (error) {
       if (error instanceof UnsafeInterpolationContextError)
@@ -1369,7 +1407,7 @@ export function processExpressions(template: string, context: Record<string, any
       if (value === undefined || value === null)
         return ''
       const raw = String(value)
-      return escapeInterpolatedHtmlValue(output, offset, raw)
+      return escapeInterpolatedHtmlValue(output, offset, raw, false, match.length)
     }
     catch (error: unknown) {
       if (error instanceof UnsafeInterpolationContextError)
