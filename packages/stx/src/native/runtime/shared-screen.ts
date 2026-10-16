@@ -3,6 +3,7 @@ import type { NativeBridgeInterface } from '../bridge/protocol'
 import type { STXDocument } from '../compiler/ir'
 import { STXBridge } from '../bridge/protocol'
 import { materializeNativeBindingTree } from './binding-tree'
+import type { NativeBindingNode } from './binding-tree'
 import { installCraftBridge, type CraftBridgeOptions } from './craft-bridge'
 import { createNativeHost, type NativeHost } from './native-host'
 
@@ -12,6 +13,8 @@ interface SharedSignalsRuntime {
 
 export interface SharedNativeScreen {
   host: NativeHost
+  /** Resolve the native node that owns a generated component setup. */
+  scopeRoot: (scopeId: string) => NativeBindingNode | null
   mount: (runtime: SharedSignalsRuntime, setup: (() => Record<string, unknown>) | null) => void
   unmount: () => void
 }
@@ -83,6 +86,9 @@ export function prepareSharedNativeScreen(
 
   return {
     host,
+    scopeRoot(scopeId) {
+      return tree.scopes.get(scopeId) ?? null
+    },
     mount(runtime, setup) {
       dispose?.()
       // Native hosts reconcile the root node. The compiler envelope also

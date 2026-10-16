@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
+import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 import vm from 'node:vm'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
@@ -681,5 +682,49 @@ const title = state(label(kind))
     const operations = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
     expect(operations).toContainEqual(expect.objectContaining({ patch: { children: ['SAVED'] } }))
     expect(scope.craft.storage.getSync('kind')).toBe('saved')
+  })
+
+  it('runs an expanded component own client scope for every native instance', async () => {
+    const root = createTempDir('stx-native-component-scope-')
+    mkdirSync(path.join(root, 'components'), { recursive: true })
+    await Bun.write(path.join(root, 'stx.config.ts'), 'export default {}')
+    await Bun.write(path.join(root, 'components', 'CounterBadge.stx'), `<script client>
+const count = state(0)
+const label = derived(() => 'Local ' + count())
+function increment() { count.set(count() + 1) }
+</script>
+<View><Text :text="label" /><Button @click="increment()">Add</Button></View>`)
+    const file = path.join(root, 'Screen.stx')
+    await Bun.write(file, '<View><CounterBadge /><CounterBadge /></View>')
+
+    const { code } = await compileSharedScreenBundle(file, { root })
+    const sent: any[] = []
+    let receive: (message: string) => void = () => {}
+    const scope: Record<string, any> = {
+      console,
+      Promise,
+      Date,
+      Map,
+      Set,
+      WeakMap,
+      WeakSet,
+      __stxNativeBridge: {
+        postMessage: (raw: string) => sent.push(JSON.parse(raw)),
+        onMessage: (callback: typeof receive) => { receive = callback },
+      },
+    }
+    vm.runInNewContext(code, scope)
+    await Bun.sleep(0)
+
+    const initial = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
+    expect(initial.filter(operation => operation.patch?.children?.[0] === 'Local 0')).toHaveLength(2)
+    const presses = initial.filter(operation => operation.patch?.events?.onPress)
+    expect(presses).toHaveLength(2)
+
+    sent.length = 0
+    receive(JSON.stringify({ type: 'EVENT', payload: { handlerId: presses[0].patch.events.onPress, nativeEvent: {} } }))
+    scope.__stx_host.flush()
+    const updates = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
+    expect(updates.filter(operation => operation.patch?.children?.[0] === 'Local 1')).toHaveLength(1)
   })
 })

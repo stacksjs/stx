@@ -28,6 +28,7 @@ export interface NativeBindingNode extends NativeNode {
 export interface NativeBindingTree {
   root: NativeBindingNode
   nodes: Map<number, NativeBindingNode>
+  scopes: Map<string, NativeBindingNode>
 }
 
 /** Match the browser's decoded getAttribute() value without pulling compiler code into the runtime bundle. */
@@ -130,6 +131,7 @@ export function materializeNativeBindingTree(
 ): NativeBindingTree {
   const entries = new Map(manifest.entries.map(entry => [entry.id, entry]))
   const nodes = new Map<number, NativeBindingNode>()
+  const scopes = new Map<string, NativeBindingNode>()
   let sequence = 0
 
   function visit(source: STXNode, parent: NativeBindingNode | null): NativeBindingNode {
@@ -147,6 +149,17 @@ export function materializeNativeBindingTree(
     node.parentNode = parent
     node.parentElement = parent
     host.adopt(node, source.type, parent, source)
+    const scopeId = source.props['data-stx-scope']
+    if (typeof scopeId === 'string') {
+      node.setAttribute('data-stx-scope', scopeId)
+      scopes.set(scopeId, node)
+      const serializedProps = source.props['data-stx-props']
+      if (serializedProps !== undefined) {
+        node.setAttribute('data-stx-props', typeof serializedProps === 'string'
+          ? serializedProps
+          : JSON.stringify(serializedProps))
+      }
+    }
     if (source.bindingId !== undefined) {
       node.setAttribute('data-stx-b', source.bindingId)
       nodes.set(source.bindingId, node)
@@ -160,5 +173,5 @@ export function materializeNativeBindingTree(
     return node
   }
 
-  return { root: visit(document.root, null), nodes }
+  return { root: visit(document.root, null), nodes, scopes }
 }

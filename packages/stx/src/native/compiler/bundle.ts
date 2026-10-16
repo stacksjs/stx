@@ -147,7 +147,14 @@ if (!isApp && routeNames.indexOf(routeName) === -1) throw new Error(['Unknown na
   manifest = ${JSON.stringify(compiled.manifest)};
 }`).join('\n')
   const setups = compiledScreens.map(({ name, compiled }, index) => `${index === 0 ? 'if' : 'else if'} (routeName === ${JSON.stringify(routed ? name : 'main')}) {
-${compiled.setup?.code ?? 'g.__stx_latestSetup = null;'}
+  g.__stx_latestSetup = null;
+${compiled.scripts.map(script => script.owner
+    ? `  g.__STX_SETUP_ROOT__ = screen && screen.scopeRoot(${JSON.stringify(script.owner)});
+  try {
+${script.code}
+  }
+  finally { g.__STX_SETUP_ROOT__ = null; }`
+    : script.code).join('\n')}
 }`).join('\n')
   const browserRuntime = browser ? nativeRuntimeModule('browser-screen') : null
   const platformModule = browser ? Bun.resolveSync(browser.platformModule, root) : null
