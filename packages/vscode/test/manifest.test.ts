@@ -120,6 +120,17 @@ describe('VSCODE: marketplace identity', () => {
     for (const { command } of manifest.contributes.commands)
       expect(source).toContain(`registerCommand('${command}'`)
   })
+
+  test('exposes the component diagnostics and snippet controls used by providers', async () => {
+    const settings = manifest.contributes.configuration.properties
+    expect(settings['stx.diagnostics.validateComponentProps'].default).toBe(true)
+    expect(settings['stx.completion.showSnippets'].default).toBe(true)
+
+    const diagnostics = await Bun.file(path.join(PACKAGE_ROOT, 'src/providers/diagnosticsProvider.ts')).text()
+    const completion = await Bun.file(path.join(PACKAGE_ROOT, 'src/providers/completionProvider.ts')).text()
+    expect(diagnostics).toContain("get<boolean>('validateComponentProps', true)")
+    expect(completion).toContain("get<boolean>('showSnippets', true)")
+  })
 })
 
 describe('VSCODE: installability', () => {

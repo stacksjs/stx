@@ -19,6 +19,7 @@ export function createCompletionProvider(): vscode.CompletionItemProvider {
       // Check configuration
       const config = vscode.workspace.getConfiguration('stx.completion')
       const completionEnabled = config.get<boolean>('enable', true)
+      const showSnippets = config.get<boolean>('showSnippets', true)
 
       if (!completionEnabled) {
         return undefined
@@ -47,13 +48,14 @@ export function createCompletionProvider(): vscode.CompletionItemProvider {
         return getAttributeDirectiveCompletions(
           attributeContext.prefix,
           position,
+          showSnippets,
         )
       }
 
       // When triggered by @ character, show all statement directives
       if (context?.triggerCharacter === '@') {
         console.log(`stx Completion - Triggered by @ character, showing all directives`)
-        return getAllDirectiveCompletions()
+        return getAllDirectiveCompletions(showSnippets)
       }
 
       // Check for partial directive name (like @tra)
@@ -62,13 +64,13 @@ export function createCompletionProvider(): vscode.CompletionItemProvider {
       if (directiveMatch) {
         const prefix = directiveMatch[1].toLowerCase()
         console.log(`stx Completion - Found directive prefix: "${prefix}"`)
-        return getFilteredDirectiveCompletions(prefix)
+        return getFilteredDirectiveCompletions(prefix, showSnippets)
       }
 
       // If we're at a position with @ character (no trigger, but @ is there)
       if (linePrefix.endsWith('@')) {
         console.log(`stx Completion - Line ends with @, showing all directives`)
-        return getAllDirectiveCompletions()
+        return getAllDirectiveCompletions(showSnippets)
       }
 
       // Check for parameters in directives
@@ -123,6 +125,7 @@ export function createCompletionProvider(): vscode.CompletionItemProvider {
 function getAttributeDirectiveCompletions(
   prefix: string,
   position: vscode.Position,
+  showSnippets: boolean,
 ): vscode.CompletionItem[] {
   const normalizedPrefix = prefix.toLowerCase()
   const directives = STX_ATTRIBUTE_DIRECTIVES.filter(directive =>
@@ -131,17 +134,20 @@ function getAttributeDirectiveCompletions(
   const start = position.translate(0, -prefix.length)
   const range = new vscode.Range(start, position)
 
-  return directives.map(directive => createAttributeDirectiveItem(directive, range))
+  return directives.map(directive => createAttributeDirectiveItem(directive, range, showSnippets))
 }
 
 function createAttributeDirectiveItem(
   directive: StxAttributeDirectiveDefinition,
   range: vscode.Range,
+  showSnippets: boolean,
 ): vscode.CompletionItem {
   const item = new vscode.CompletionItem(directive.name, vscode.CompletionItemKind.Property)
   item.detail = `stx ${directive.name} attribute`
   item.documentation = new vscode.MarkdownString(directive.description)
-  item.insertText = new vscode.SnippetString(directive.snippet)
+  item.insertText = showSnippets
+    ? new vscode.SnippetString(directive.snippet)
+    : directive.name
   item.range = range
   item.sortText = directive.name.startsWith(':') ? `0${directive.name}` : `1${directive.name}`
   return item
@@ -150,26 +156,26 @@ function createAttributeDirectiveItem(
 /**
  * Get all stx directives without filtering
  */
-function getAllDirectiveCompletions(): vscode.CompletionItem[] {
-  return createDirectiveItems(STX_DIRECTIVES)
+function getAllDirectiveCompletions(showSnippets: boolean): vscode.CompletionItem[] {
+  return createDirectiveItems(STX_DIRECTIVES, showSnippets)
 }
 
 /**
  * Get stx directives filtered by prefix
  */
-function getFilteredDirectiveCompletions(prefix: string): vscode.CompletionItem[] {
+function getFilteredDirectiveCompletions(prefix: string, showSnippets: boolean): vscode.CompletionItem[] {
   const filteredDirectives = STX_DIRECTIVES.filter(d =>
     d.name.toLowerCase().includes(prefix.toLowerCase()),
   )
 
   console.log(`stx Completion - Filtered directives: ${filteredDirectives.map(d => d.name).join(', ')}`)
-  return createDirectiveItems(filteredDirectives)
+  return createDirectiveItems(filteredDirectives, showSnippets)
 }
 
 /**
  * Create completion items from directive definitions
  */
-function createDirectiveItems(directives: readonly StxDirectiveDefinition[]): vscode.CompletionItem[] {
+function createDirectiveItems(directives: readonly StxDirectiveDefinition[], showSnippets: boolean): vscode.CompletionItem[] {
   return directives.map((directive) => {
     const item = new vscode.CompletionItem(
       `@${directive.name}`,
@@ -375,6 +381,9 @@ function createDirectiveItems(directives: readonly StxDirectiveDefinition[]): vs
         item.insertText = new vscode.SnippetString(directive.snippet ?? `@${directive.name}`)
         break
     }
+
+    if (!showSnippets)
+      item.insertText = `@${directive.name}`
 
     // Prioritize transition and commonly used directives
     if (['transition', 'motion', 'translate', 'component', 'if', 'foreach'].includes(directive.name)) {

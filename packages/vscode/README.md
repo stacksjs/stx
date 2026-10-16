@@ -240,7 +240,12 @@ Customize the extension to fit your workflow. Press `Cmd+,` (Mac) or `Ctrl+,` (W
   // Diagnostics
   "stx.diagnostics.enable": true,
   "stx.diagnostics.validateUnclosedDirectives": true,
+  "stx.diagnostics.validateMismatchedDirectives": true,
   "stx.diagnostics.validateTemplatePaths": true,
+  "stx.diagnostics.validateComponentProps": true,
+
+  "stx.completion.enable": true,
+  "stx.completion.showSnippets": true,
 
   // Utility Classes
   "stx.utilityClasses.enable": true,

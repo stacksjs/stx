@@ -143,6 +143,11 @@
           "default": true,
           "description": "Validate that template paths in @include and @component directives exist"
         },
+        "stx.diagnostics.validateComponentProps": {
+          "type": "boolean",
+          "default": true,
+          "description": "Validate required and unknown props passed through @component directives"
+        },
         "stx.completion.enable": {
           "type": "boolean",
           "default": true,
