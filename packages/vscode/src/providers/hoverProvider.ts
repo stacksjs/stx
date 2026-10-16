@@ -2,6 +2,7 @@
 import type { VirtualTsDocumentProvider } from './virtualTsDocumentProvider'
 import * as vscode from 'vscode'
 import { TransitionDirection, TransitionEase, TransitionType } from '../interfaces/animation-types'
+import { getStxDirectiveAtOffset, STX_DIRECTIVE_BY_NAME } from '../language-features'
 import { ComponentRegistry } from '../services/ComponentRegistry'
 import { findCssStylesForClass, isInScriptTag, isInStyleTag } from '../utils/cssUtils'
 import { formatJSDoc } from '../utils/jsdocUtils'
@@ -833,143 +834,20 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
       // Handle stx directives with detailed tooltips
 
       // First check if this could be a directive - either with @ prefix or after @
-      const atPosition = line.indexOf('@')
-      const wordAfterAt = atPosition >= 0 && position.character > atPosition
-      const directiveMatch = line.match(/@(\w+)/)
-      const possibleDirective = directiveMatch ? directiveMatch[1] : null
-      const isAtOrDirective = word.startsWith('@') || word === possibleDirective || wordAfterAt
+      const directiveContext = getStxDirectiveAtOffset(line, position.character)
+      const isAtOrDirective = directiveContext !== undefined
 
       if (isAtOrDirective) {
         // Extract the directive name without the @ if needed
-        let directiveName = word
-
-        if (word.startsWith('@')) {
-          directiveName = word.substring(1)
-        }
-        else if (wordAfterAt && possibleDirective === word) {
-          directiveName = word
-        }
+        const directiveName = directiveContext.name
 
         // Skip if this is just a single "@" character or not a valid directive
         if (directiveName.length === 0 || directiveName === '@') {
           return null
         }
 
-        // List of valid stx directives
-        const validDirectives = [
-          // Conditional directives
-          'if',
-          'else',
-          'elseif',
-          'elif',
-          'endif',
-          'unless',
-          'endunless',
-          // Loop directives
-          'for',
-          'endfor',
-          'foreach',
-          'endforeach',
-          'forelse',
-          'endforelse',
-          'while',
-          'endwhile',
-          // Switch directives
-          'switch',
-          'case',
-          'default',
-          'endswitch',
-          'break',
-          'continue',
-          // Component directives
-          'component',
-          'endcomponent',
-          'slot',
-          'endslot',
-          'webcomponent',
-          'endwebcomponent',
-          // Code block directives
-          'ts',
-          'endts',
-          'js',
-          'endjs',
-          'script',
-          'endscript',
-          'css',
-          'endcss',
-          // Content directives
-          'json',
-          'markdown',
-          'endmarkdown',
-          'raw',
-          'endraw',
-          'verbatim',
-          'endverbatim',
-          // Translation directives
-          't',
-          'translate',
-          // Layout directives
-          'extends',
-          'section',
-          'endsection',
-          'yield',
-          'parent',
-          // Stack directives
-          'stack',
-          'push',
-          'endpush',
-          'pushif',
-          'endpushif',
-          'pushonce',
-          'endpushonce',
-          'prepend',
-          'endprepend',
-          'prependonce',
-          'endprependonce',
-          // Include directives
-          'include',
-          'includeif',
-          'includewhen',
-          'includeunless',
-          'includefirst',
-          // Auth directives
-          'auth',
-          'endauth',
-          'guest',
-          'endguest',
-          'can',
-          'endcan',
-          'cannot',
-          'endcannot',
-          'elsecan',
-          // Utility directives
-          'env',
-          'endenv',
-          'isset',
-          'endisset',
-          'empty',
-          'endempty',
-          'error',
-          'enderror',
-          'hassection',
-          'once',
-          'endonce',
-          'use',
-          'csrf',
-          'method',
-          'locale',
-          // Animation directives
-          'transition',
-          'endtransition',
-          'motion',
-          'endmotion',
-          'animationgroup',
-          'scrollanimate',
-          'endscrollanimate',
-        ]
-
-        // Skip if not a valid directive
-        if (!validDirectives.includes(directiveName.toLowerCase())) {
+        const directiveDefinition = STX_DIRECTIVE_BY_NAME.get(directiveName.toLowerCase())
+        if (!directiveDefinition) {
           return null
         }
 
@@ -2285,9 +2163,11 @@ errors.notFound: "Page not found"`, 'yaml')
 
             return createHoverWithDiagnostics(hover, document, position)
           default:
-            description = `stx directive: @${directiveName}`
+            description = directiveDefinition.description
 
             hover.appendMarkdown(description)
+            hover.appendMarkdown('\n\n**Syntax**\n')
+            hover.appendCodeblock(directiveDefinition.snippet ?? `@${directiveDefinition.name}`, 'stx')
             return createHoverWithDiagnostics(hover, document, position)
         }
       }
@@ -2566,6 +2446,7 @@ errors.notFound: "Page not found"`, 'yaml')
           }
         }
         catch (tsError) {
+          // eslint-disable-next-line no-console
           console.log('Error querying TypeScript language service:', tsError)
         }
 
@@ -2586,7 +2467,6 @@ errors.notFound: "Page not found"`, 'yaml')
         // Check if this might be an HTML tag rather than a variable
         // eslint-disable-next-line pickier/no-unused-vars
         const htmlTagMatch = line.match(new RegExp(`<(/)?${word}(\\s|/?>|$)`))
-        const commonHtmlTags = ['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'em', 'a', 'img', 'button', 'input', 'form', 'label', 'ul', 'ol', 'li', 'table', 'tr', 'td', 'th', 'pre', 'code', 'body', 'html', 'head', 'header', 'footer', 'main', 'section', 'article', 'aside']
 
         // Only treat as HTML tag if it's actually used as a tag (with < bracket before it)
         const isActuallyHtmlTag = htmlTagMatch !== null

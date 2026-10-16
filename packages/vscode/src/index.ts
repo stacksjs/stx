@@ -24,6 +24,13 @@
 
 export { createHoverProvider } from './providers/hoverProvider'
 export { createCompletionProvider } from './providers/completionProvider'
+export {
+  getStxAttributeCompletionContext,
+  getStxDirectiveAtOffset,
+  STX_ATTRIBUTE_DIRECTIVES,
+  STX_DIRECTIVES,
+  STX_DIRECTIVE_PAIRS,
+} from './language-features'
 export { createDefinitionProvider } from './providers/definitionProvider'
 export { createDiagnosticsProvider } from './providers/diagnosticsProvider'
 export { createDocumentLinkProvider } from './providers/documentLinkProvider'

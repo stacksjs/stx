@@ -59,6 +59,8 @@ export const STX_DIRECTIVES: readonly StxDirectiveDefinition[] = [
   { name: 'guest', description: 'Content visible only to guests' },
   { name: 'can', description: 'Check if user has permission' },
   { name: 'cannot', description: 'Check if user lacks permission' },
+  { name: 'elsecan', description: 'Try another permission when the preceding authorization check fails' },
+  { name: 'elsecannot', description: 'Try another denied permission when the preceding authorization check fails' },
   { name: 'env', description: 'Check environment condition' },
   { name: 'isset', description: 'Check if a variable is set' },
   { name: 'empty', description: 'Check if a variable is empty' },
@@ -213,6 +215,31 @@ export const STX_DIRECTIVE_PAIRS: Readonly<Record<string, string>> = {
 export const STX_OPENING_DIRECTIVE_BY_CLOSE = new Map(
   Object.entries(STX_DIRECTIVE_PAIRS).map(([opening, closing]) => [closing, opening]),
 )
+
+export const STX_DIRECTIVE_BY_NAME = new Map(
+  STX_DIRECTIVES.map(directive => [directive.name.toLowerCase(), directive]),
+)
+
+export interface StxDirectiveContext {
+  name: string
+  start: number
+  end: number
+}
+
+/** Find the statement directive under a zero-based character offset. */
+export function getStxDirectiveAtOffset(line: string, offset: number): StxDirectiveContext | undefined {
+  const directivePattern = /@([A-Za-z][\w:]*)/g
+  let match: RegExpExecArray | null
+
+  while ((match = directivePattern.exec(line)) !== null) {
+    const start = match.index
+    const end = start + match[0].length
+    if (offset >= start && offset <= end)
+      return { name: match[1], start, end }
+  }
+
+  return undefined
+}
 
 /** Reactive attributes supported by the browser runtime. */
 export const STX_ATTRIBUTE_DIRECTIVES: readonly StxAttributeDirectiveDefinition[] = [

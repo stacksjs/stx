@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import {
   getStxAttributeCompletionContext,
+  getStxDirectiveAtOffset,
   STX_ATTRIBUTE_DIRECTIVES,
   STX_DIRECTIVES,
   STX_DIRECTIVE_PAIRS,
@@ -46,6 +47,13 @@ describe('shared stx language catalog', () => {
       'csp',
     ])
       expect(names.has(name)).toBe(true)
+  })
+
+  test('finds the directive under the cursor, including colon strategies', () => {
+    expect(getStxDirectiveAtOffset('@if(user)', 2)?.name).toBe('if')
+    expect(getStxDirectiveAtOffset('  @client:visible', 12)?.name).toBe('client:visible')
+    expect(getStxDirectiveAtOffset('@if(user) text @endif', 12)).toBeUndefined()
+    expect(getStxDirectiveAtOffset('@if(user) text @endif', 19)?.name).toBe('endif')
   })
 
   test('keeps reactive attribute names unique', () => {
