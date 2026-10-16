@@ -119,6 +119,81 @@ const NEW_OPERATOR_PATTERN = /\bnew\s+/
 /** The parameter that carries SAFE_CONSTRUCTORS into a compiled expression. */
 const SAFE_CTOR_PARAM = '__stx_safe_ctors'
 
+/**
+ * Host capabilities that a template expression must never inherit from the
+ * process running stx.
+ *
+ * Checking the source is the first line of defence; binding these names to
+ * `undefined` in every generated function is the second. The latter matters
+ * because `new Function` otherwise resolves free names against Bun's global
+ * object, where `Bun.spawn`, `fetch`, `Buffer`, and similar APIs are available.
+ */
+const BLOCKED_GLOBAL_NAMES = [
+  'Bun',
+  'Deno',
+  'Buffer',
+  'fetch',
+  'atob',
+  'btoa',
+  'console',
+  'Response',
+  'Request',
+  'Headers',
+  'WebAssembly',
+  'structuredClone',
+  'queueMicrotask',
+  'crypto',
+  'performance',
+  'navigator',
+  'Worker',
+  'WebSocket',
+  'BroadcastChannel',
+  'EventSource',
+  'XMLHttpRequest',
+  'localStorage',
+  'sessionStorage',
+] as const
+
+const SHADOWED_GLOBAL_NAMES = [
+  ...BLOCKED_GLOBAL_NAMES,
+  'Function',
+  'setTimeout',
+  'setInterval',
+  'setImmediate',
+  'process',
+  'require',
+  'exports',
+  'module',
+  'window',
+  'document',
+  'global',
+  'globalThis',
+  'Reflect',
+  'Proxy',
+  'Symbol',
+  'WeakMap',
+  'WeakSet',
+  'WeakRef',
+  'FinalizationRegistry',
+] as const
+
+const SHADOWED_GLOBAL_VALUES: undefined[] = SHADOWED_GLOBAL_NAMES.map(() => undefined)
+
+/**
+ * The useful, data-only part of Object. Reflection methods are intentionally
+ * absent: getPrototypeOf/getOwnPropertyDescriptor can recover Function from an
+ * otherwise harmless value without ever spelling `.constructor`.
+ */
+const SAFE_OBJECT = Object.freeze(Object.assign(Object.create(null), {
+  keys: Object.keys,
+  values: Object.values,
+  entries: Object.entries,
+  fromEntries: Object.fromEntries,
+  assign: Object.assign,
+  hasOwn: Object.hasOwn,
+  is: Object.is,
+}))
+
 const DANGEROUS_PATTERNS = [
   // Code execution
   /\b(eval|Function|setTimeout|setInterval|setImmediate)\b/,
@@ -147,9 +222,13 @@ const DANGEROUS_PATTERNS = [
   /\bdelete\s+/,
   // this keyword (can access execution context)
   /\bthis\b/,
+  // Escaped identifiers can hide every token above (`B\u0075n`,
+  // `c\u006Fnstructor`) from a text-level policy.
+  /\\u(?:\{[\dA-Fa-f]+\}|[\dA-Fa-f]{4})/,
 ]
 
 const DANGEROUS_IDENTIFIERS = new Set([
+  ...BLOCKED_GLOBAL_NAMES,
   'eval',
   'Function',
   'setTimeout',
@@ -187,13 +266,6 @@ const DANGEROUS_BRACKET_KEYS = new Set([
   'constructor',
   'prototype',
 ])
-
-/**
- * Pattern for bracket notation property access with strings - checked separately based on config.
- * Only matches bracket notation when preceded by a word char, ), or ] (property access context).
- * Does NOT match array literals like ['a', 'b'] which are preceded by [, :, =, (, or start of expression.
- */
-const BRACKET_NOTATION_PATTERN = /[\w)\]]\s*\[\s*['"]/
 
 /**
  * Strip string literals from an expression for safe pattern checking.
@@ -402,22 +474,39 @@ function assertNoUnsafeIdentifierTokens(strippedExpression: string, originalExpr
   }
 }
 
-function assertSafeBracketLiteralKeys(expression: string): void {
-  const bracketLiteralRe = /\[\s*(['"])(.*?)\1\s*\]/g
+function assertSafeBracketAccess(expression: string): void {
+  // A property access can start after an identifier, a closing delimiter, or
+  // a dot (including optional chaining). Array literals are deliberately not
+  // matched. Nested brackets are rejected conservatively as dynamic access.
+  const bracketAccessRe = /(?:[$\w)\].]|\?\.)\s*\[([^\]]*)\]/g
   let match: RegExpExecArray | null
 
-  while ((match = bracketLiteralRe.exec(expression)) !== null) {
-    const key = match[2]
-    if (!DANGEROUS_BRACKET_KEYS.has(key))
+  while ((match = bracketAccessRe.exec(expression)) !== null) {
+    const keySource = match[1].trim()
+    const singleQuoted = /^'(?:[^'\\]|\\.)*'$/.test(keySource)
+    const doubleQuoted = /^"(?:[^"\\]|\\.)*"$/.test(keySource)
+    const numeric = /^\d+$/.test(keySource)
+
+    if (numeric)
       continue
 
-    const previousNonSpace = expression.slice(0, match.index).match(/\S(?=\s*$)/)?.[0]
-    const nextNonSpace = expression.slice(match.index + match[0].length).match(/^\s*(\S)/)?.[1]
-    const isComputedObjectKey = (previousNonSpace === '{' || previousNonSpace === ',') && nextNonSpace === ':'
-
-    if (!isComputedObjectKey) {
-      throw new UnsafeExpressionError(`bracket key ${match[2]}`, expression)
+    if (singleQuoted || doubleQuoted) {
+      const key = keySource.slice(1, -1)
+      if (DANGEROUS_BRACKET_KEYS.has(key))
+        throw new UnsafeExpressionError(`bracket key ${key}`, expression)
+      if (!currentConfig.allowBracketNotation) {
+        throw new UnsafeExpressionError(
+          'bracket notation with a string key; enable with configureSafeEvaluator({ allowBracketNotation: true })',
+          expression,
+          `Bracket notation with strings not allowed: ${expression}. Enable with configureSafeEvaluator({ allowBracketNotation: true })`,
+        )
+      }
+      continue
     }
+
+    // A runtime-computed key can become `constructor`, `prototype`, or
+    // `__proto__`, so it cannot be made safe by inspecting the source alone.
+    throw new UnsafeExpressionError('dynamic bracket notation is not allowed', expression)
   }
 }
 
@@ -434,7 +523,7 @@ function prepareExpression(expression: string): { source: string, usesSafeConstr
   // e.g., "__proto__" as a string value should be allowed
   const stripped = stripStringLiterals(trimmed)
   assertNoUnsafeIdentifierTokens(stripped, trimmed)
-  assertSafeBracketLiteralKeys(trimmed)
+  assertSafeBracketAccess(trimmed)
 
   // Check for dangerous patterns on the stripped expression. Including the
   // matched pattern in the error message makes it straightforward for devs
@@ -447,15 +536,6 @@ function prepareExpression(expression: string): { source: string, usesSafeConstr
     if (pattern.test(stripped)) {
       throw new UnsafeExpressionError(`matched /${pattern.source}/`, trimmed)
     }
-  }
-
-  // Check bracket notation based on configuration
-  if (!currentConfig.allowBracketNotation && BRACKET_NOTATION_PATTERN.test(trimmed)) {
-    throw new UnsafeExpressionError(
-      'bracket notation with a string key; enable with configureSafeEvaluator({ allowBracketNotation: true })',
-      trimmed,
-      `Bracket notation with strings not allowed: ${trimmed}. Enable with configureSafeEvaluator({ allowBracketNotation: true })`,
-    )
   }
 
   return rewriteSafeConstructors(trimmed)
@@ -483,6 +563,7 @@ export function createSafeContext(context: Record<string, unknown>): Record<stri
   safeContext.Number = Number
   safeContext.Boolean = Boolean
   safeContext.Array = Array
+  safeContext.Object = SAFE_OBJECT
   safeContext.parseInt = Number.parseInt
   safeContext.parseFloat = Number.parseFloat
   safeContext.isNaN = Number.isNaN
@@ -631,8 +712,20 @@ export function getExpressionSafetyReason(expression: string): string | null {
  */
 export function safeEvaluateCondition(expression: string, context: Record<string, unknown>): boolean {
   try {
-    const result = safeEvaluate<unknown>(expression, context)
-    return Boolean(result)
+    const safeContext = createSafeContext(context)
+    const keys = Object.keys(safeContext)
+    const values = Object.values(safeContext)
+    let readMissingIdentifier = false
+    const func = createSafeFunction(expression, keys, () => {
+      readMissingIdentifier = true
+    })
+    const result = func(...values)
+
+    // A missing positive guard already evaluates false, but a negated one used
+    // to retry with the name bound to undefined and turn `!missing` into true.
+    // Conditions are authorization/display gates, so any name the engine had
+    // to invent must make the whole condition fail closed.
+    return !readMissingIdentifier && Boolean(result)
   }
   catch {
     return false
@@ -824,7 +917,11 @@ export function isUsableParamName(name: string): boolean {
   return VALID_PARAM_IDENT.test(name) && !RESERVED_PARAM_NAMES.has(name)
 }
 
-export function createSafeFunction(expression: string, contextKeys: string[]): (...args: unknown[]) => unknown {
+export function createSafeFunction(
+  expression: string,
+  contextKeys: string[],
+  onMissingIdentifier?: (name: string) => void,
+): (...args: unknown[]) => unknown {
   // Validate the expression first
   const { source: sanitizedExpr, usesSafeConstructors } = prepareExpression(expression)
 
@@ -851,7 +948,7 @@ export function createSafeFunction(expression: string, contextKeys: string[]): (
   for (let i = 0; i < contextKeys.length; i++) {
     if (!isUsableParamName(contextKeys[i])) continue
     // Only the evaluator binds this name; a context key must not shadow it.
-    if (contextKeys[i] === SAFE_CTOR_PARAM) continue
+    if (contextKeys[i] === SAFE_CTOR_PARAM || contextKeys[i] === 'Object' || DANGEROUS_IDENTIFIERS.has(contextKeys[i])) continue
     validEntries.push({ key: contextKeys[i], index: i })
   }
 
@@ -882,13 +979,15 @@ catch (e) {
   // context columns. The caller never supplies it; it is bound here.
   const buildFunc = usesSafeConstructors
     ? (extraParams: string[]): (...args: unknown[]) => unknown => {
-        const compiled = compileFunctionBody([SAFE_CTOR_PARAM, ...filteredKeys, ...extraParams], body)
-        return (...args: unknown[]) => compiled(SAFE_CONSTRUCTORS, ...args)
+        const compiled = compileFunctionBody([SAFE_CTOR_PARAM, 'Object', ...SHADOWED_GLOBAL_NAMES, ...filteredKeys, ...extraParams], body)
+        return (...args: unknown[]) => compiled(SAFE_CONSTRUCTORS, SAFE_OBJECT, ...SHADOWED_GLOBAL_VALUES, ...args)
       }
-    : (extraParams: string[]): (...args: unknown[]) => unknown =>
-        compileFunctionBody([...filteredKeys, ...extraParams], body)
+    : (extraParams: string[]): (...args: unknown[]) => unknown => {
+        const compiled = compileFunctionBody(['Object', ...SHADOWED_GLOBAL_NAMES, ...filteredKeys, ...extraParams], body)
+        return (...args: unknown[]) => compiled(SAFE_OBJECT, ...SHADOWED_GLOBAL_VALUES, ...args)
+      }
 
-  return bindProjection(buildFunc, filteredKeys, contextKeys, validEntries, validIndices)
+  return bindProjection(buildFunc, filteredKeys, contextKeys, validEntries, validIndices, onMissingIdentifier)
 }
 
 /**
@@ -901,6 +1000,7 @@ function bindProjection(
   contextKeys: string[],
   validEntries: Array<{ key: string, index: number }>,
   validIndices: number[],
+  onMissingIdentifier?: (name: string) => void,
 ): (...args: unknown[]) => unknown {
   // Create the function with strict mode
   let func = buildFunc([])
@@ -908,7 +1008,7 @@ function bindProjection(
   // Fast path when nothing was filtered: skip the value-projection pass.
   const alreadyCanonical = validEntries.every((entry, index) => entry.index === index)
   if (filteredKeys.length === contextKeys.length && alreadyCanonical) {
-    return wrapWithMissingIdentifierRetry(func, filteredKeys, buildFunc)
+    return wrapWithMissingIdentifierRetry(func, filteredKeys, buildFunc, undefined, onMissingIdentifier)
   }
 
   // Project the caller's values down to the columns that survived the
@@ -922,7 +1022,7 @@ function bindProjection(
 
   return wrapWithMissingIdentifierRetry(projectedFunc, filteredKeys, buildFunc, (extra) => {
     func = buildFunc(extra)
-  })
+  }, onMissingIdentifier)
 }
 
 /**
@@ -957,6 +1057,7 @@ function wrapWithMissingIdentifierRetry(
   filteredKeys: string[],
   buildFunc: (extraParams: string[]) => (...args: unknown[]) => unknown,
   onRebuild?: (extraParams: string[]) => void,
+  onMissingIdentifier?: (name: string) => void,
 ): (...args: unknown[]) => unknown {
   const MAX_RETRIES = 8
   const missingRe = /^(\w+) is not defined$/
@@ -978,11 +1079,12 @@ function wrapWithMissingIdentifierRetry(
           return undefined
         }
         const missingName = match[1]
-        if (knownNames.has(missingName) || RESERVED_PARAM_NAMES.has(missingName)) {
+        if (knownNames.has(missingName) || RESERVED_PARAM_NAMES.has(missingName) || DANGEROUS_IDENTIFIERS.has(missingName)) {
           // Already tried adding this name (or it's not a valid param name)
           // and it's STILL missing — avoid looping forever.
           return undefined
         }
+        onMissingIdentifier?.(missingName)
         knownNames.add(missingName)
         extraParams.push(missingName)
         if (onRebuild)
@@ -1022,9 +1124,13 @@ export function safeEvaluateCode(code: string, context: Record<string, unknown>)
       throw new Error(`safeEvaluateCode: input exceeds ${MAX_SAFE_EVAL_CODE_LENGTH} chars`)
     }
 
+    const stripped = stripStringLiterals(code)
+    assertNoUnsafeIdentifierTokens(stripped, code)
+    assertSafeBracketAccess(code)
+
     // Check for dangerous patterns in the full code
     for (const pattern of DANGEROUS_PATTERNS) {
-      if (pattern.test(code)) {
+      if (pattern.test(stripped)) {
         throw new Error(`Potentially unsafe code detected`)
       }
     }
@@ -1033,16 +1139,16 @@ export function safeEvaluateCode(code: string, context: Record<string, unknown>)
     // Filtered for the same reason as createSafeFunction: one key JS rejects as
     // a parameter name throws while BUILDING the function, so the whole block
     // fails rather than the one binding nobody could reference anyway.
-    const keys = Object.keys(safeContext).filter(isUsableParamName)
+    const keys = Object.keys(safeContext).filter(key => key !== 'Object' && isUsableParamName(key) && !DANGEROUS_IDENTIFIERS.has(key))
     const values = keys.map(key => safeContext[key])
 
     // eslint-disable-next-line no-new-func
-    const func = new Function(...keys, `
+    const func = new Function('Object', ...SHADOWED_GLOBAL_NAMES, ...keys, `
       'use strict';
       ${code}
     `)
 
-    return func(...values)
+    return func(SAFE_OBJECT, ...SHADOWED_GLOBAL_VALUES, ...values)
   }
   catch {
     return undefined
@@ -1059,33 +1165,22 @@ export function safeEvaluateCode(code: string, context: Record<string, unknown>)
 export function isForExpressionSafe(expression: string): boolean {
   const trimmed = expression.trim()
 
-  // Check for dangerous patterns
-  const forDangerousPatterns = [
-    /\beval\s*\(/i,
-    /\bFunction\s*\(/i,
-    /\bimport\s*\(/i,
-    /\brequire\s*\(/i,
-    /\bprocess\b/i,
-    /\b__proto__\b/i,
-    /\bconstructor\s*[.(]/i,
-    /\bglobalThis\b/i,
-    /\bwindow\b/i,
-    /\bdocument\b/i,
-    /\bfetch\s*\(/i,
-    /\bBun\b/i,
-    /\bDeno\b/i,
-    /\bconsole\b/i,
-    /\bthis\b/i,
-    /\bReflect\b/i,
-    /\bProxy\b/i,
-    /\bprototype\b/i,
-    /\.(bind|call|apply)\s*\(/i,
-  ]
-
-  for (const pattern of forDangerousPatterns) {
-    if (pattern.test(trimmed)) {
+  try {
+    const stripped = stripStringLiterals(trimmed)
+    // Keep the loop policy case-insensitive. JavaScript identifiers themselves
+    // are case-sensitive, but this also catches code assembled or normalised by
+    // a later transform before it reaches new Function.
+    if (/\b(?:eval|function|import|require|process|globalthis|window|document|fetch|bun|deno|buffer|console|reflect|proxy|prototype|constructor|this)\b/i.test(stripped))
       return false
+    assertNoUnsafeIdentifierTokens(stripped, trimmed)
+    assertSafeBracketAccess(trimmed)
+    for (const pattern of DANGEROUS_PATTERNS) {
+      if (pattern.test(stripped))
+        return false
     }
+  }
+  catch {
+    return false
   }
 
   return true
@@ -1113,14 +1208,42 @@ export function createSafeLoopFunction(
     throw new Error(`Unsafe expression in @${loopType}: ${expression}`)
   }
 
+  if (!Number.isSafeInteger(maxIterations) || maxIterations <= 0)
+    throw new RangeError('maxIterations must be a positive safe integer')
+
   // Process the body to escape template literals and prevent injection via ${} sequences
   const processedBody = body.replace(/`/g, '\\`').replace(/\$\{/g, '\\${').replace(/\{\{([^}]+)\}\}/g, (_match: string, expr: string) => {
-    return `\${${expr}}`
+    const { source } = prepareExpression(expr)
+    return `\${${source}}`
   })
+
+  const validEntries: Array<{ key: string, index: number }> = []
+  const seen = new Set<string>()
+  for (let i = 0; i < contextKeys.length; i++) {
+    const key = contextKeys[i]
+    if (!isUsableParamName(key)
+      || DANGEROUS_IDENTIFIERS.has(key)
+      || key === SAFE_CTOR_PARAM
+      || key === 'Object'
+      || key === '__stx_warn'
+      || seen.has(key)) {
+      continue
+    }
+    seen.add(key)
+    validEntries.push({ key, index: i })
+  }
+  const filteredKeys = validEntries.map(entry => entry.key)
+  const projectAndBind = (compiled: (...args: unknown[]) => string): ((...args: unknown[]) => string) => {
+    return (...args: unknown[]) => {
+      const projected = validEntries.map(entry => args[entry.index])
+      const warn = (...message: unknown[]): void => console.warn(...message)
+      return compiled(SAFE_CONSTRUCTORS, SAFE_OBJECT, ...SHADOWED_GLOBAL_VALUES, warn, ...projected)
+    }
+  }
 
   if (loopType === 'for') {
     // eslint-disable-next-line no-new-func
-    return new Function(...contextKeys, `
+    const compiled = new Function(SAFE_CTOR_PARAM, 'Object', ...SHADOWED_GLOBAL_NAMES, '__stx_warn', ...filteredKeys, `
       'use strict';
       let result = '';
       for (${expression}) {
@@ -1129,11 +1252,12 @@ export function createSafeLoopFunction(
       return result;
     // eslint-disable-next-line pickier/no-unused-vars
     `) as (...args: unknown[]) => string
+    return projectAndBind(compiled)
   }
   else {
     // while loop with safety limit
     // eslint-disable-next-line no-new-func
-    return new Function(...contextKeys, `
+    const compiled = new Function(SAFE_CTOR_PARAM, 'Object', ...SHADOWED_GLOBAL_NAMES, '__stx_warn', ...filteredKeys, `
       'use strict';
       let result = '';
       let __safeCounter = 0;
@@ -1147,12 +1271,11 @@ export function createSafeLoopFunction(
       // made pages render half a list with no breadcrumb.
       if (__safeCounter >= __maxIterations) {
         result += '<!-- [Loop Error]: Maximum iterations exceeded -->';
-        if (typeof console !== 'undefined' && typeof console.warn === 'function') {
-          console.warn('[stx] @while loop hit max iterations (' + __maxIterations + '); template output was truncated. Raise via createSafeForLoop(..., maxIterations) if intentional.');
-        }
+        __stx_warn('[stx] @while loop hit max iterations (' + __maxIterations + '); template output was truncated. Raise via createSafeForLoop(..., maxIterations) if intentional.');
       }
       return result;
     // eslint-disable-next-line pickier/no-unused-vars
     `) as (...args: unknown[]) => string
+    return projectAndBind(compiled)
   }
 }

@@ -1092,10 +1092,9 @@ describe('sanitizeExpression Bracket Notation Configuration', () => {
     expect(() => sanitizeExpression('obj.__proto__')).toThrow('Potentially unsafe')
   })
 
-  it('should allow numeric bracket notation regardless of config', () => {
-    // obj[0] does not match the bracket notation pattern (no quotes)
+  it('allows fixed numeric indexes but rejects runtime-computed property keys', () => {
     expect(() => sanitizeExpression('obj[0]')).not.toThrow()
-    expect(() => sanitizeExpression('arr[i]')).not.toThrow()
+    expect(() => sanitizeExpression('arr[i]')).toThrow('dynamic bracket notation')
   })
 })
 

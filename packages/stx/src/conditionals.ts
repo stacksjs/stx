@@ -27,7 +27,7 @@
 import { evaluateAuthExpression } from './auth'
 import { ErrorCodes, inlineError } from './error-handling'
 import { extractParenthesizedExpression, findIfBlocks, findMatchingEndTag, parseSwitchBlock } from './parser'
-import { createSafeFunction, isExpressionSafe, safeEvaluate } from './safe-evaluator'
+import { createSafeFunction, isExpressionSafe, safeEvaluate, safeEvaluateCondition } from './safe-evaluator'
 
 // =============================================================================
 // Pre-compiled Regex Patterns (performance optimization)
@@ -356,15 +356,9 @@ function processConditionalsIn(template: string, context: Record<string, any>, f
           else {
             // @if or @elseif - evaluate condition using safe evaluation
             try {
-              let conditionResult: unknown
-              if (branch.condition && isExpressionSafe(branch.condition)) {
-                const conditionFn = createSafeFunction(branch.condition, Object.keys(context))
-                conditionResult = conditionFn(...Object.values(context))
-              }
-              else if (branch.condition) {
-                // Fall back to safe evaluator for potentially unsafe expressions
-                conditionResult = safeEvaluate(branch.condition, context)
-              }
+              const conditionResult = branch.condition
+                ? safeEvaluateCondition(branch.condition, context)
+                : false
 
               if (conditionResult) {
                 result = branch.content
