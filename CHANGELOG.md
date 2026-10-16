@@ -1,5 +1,63 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.544...v0.2.545)
+
+## 🐛 Bug Fixes
+
+- **security**: preserve safe structural interpolation (#2079) ([80d5791](https://github.com/stacksjs/stx/commit/80d5791)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2079](https://github.com/stacksjs/stx/issues/2079), [#2079](https://github.com/stacksjs/stx/issues/2079))
+- **security**: guard computed keys without breaking loops (#2078) ([5415c87](https://github.com/stacksjs/stx/commit/5415c87)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2078](https://github.com/stacksjs/stx/issues/2078), [#2078](https://github.com/stacksjs/stx/issues/2078))
+- **native**: hydrate component-local client scopes (#2076) ([ac0806a](https://github.com/stacksjs/stx/commit/ac0806a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2076](https://github.com/stacksjs/stx/issues/2076), [#2076](https://github.com/stacksjs/stx/issues/2076))
+- **security**: escape interpolations by HTML context (#2079) ([3cb1a11](https://github.com/stacksjs/stx/commit/3cb1a11)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2079](https://github.com/stacksjs/stx/issues/2079), [#2079](https://github.com/stacksjs/stx/issues/2079))
+- **security**: close evaluator host escapes (#2078, #2080, #2081) ([6299e3f](https://github.com/stacksjs/stx/commit/6299e3f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2078](https://github.com/stacksjs/stx/issues/2078), [#2080](https://github.com/stacksjs/stx/issues/2080), [#2081](https://github.com/stacksjs/stx/issues/2081), [#2078](https://github.com/stacksjs/stx/issues/2078), [#2080](https://github.com/stacksjs/stx/issues/2080), [#2081](https://github.com/stacksjs/stx/issues/2081))
+
+## ♻️ Code Refactoring
+
+- **native**: retain generated component setups (#2076) ([fdc1b2e](https://github.com/stacksjs/stx/commit/fdc1b2e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2076](https://github.com/stacksjs/stx/issues/2076), [#2076](https://github.com/stacksjs/stx/issues/2076))
+
+## 🔧 Chores
+
+- **release**: bump version to v0.2.545 ([a2674af](https://github.com/stacksjs/stx/commit/a2674af)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.544...HEAD)
+
+## 🔧 Bug Fixes
+
+- **security**: preserve safe structural interpolation (#2079) ([80d5791](https://github.com/stacksjs/stx/commit/80d5791)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2079](https://github.com/stacksjs/stx/issues/2079), [#2079](https://github.com/stacksjs/stx/issues/2079))
+- **security**: guard computed keys without breaking loops (#2078) ([5415c87](https://github.com/stacksjs/stx/commit/5415c87)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2078](https://github.com/stacksjs/stx/issues/2078), [#2078](https://github.com/stacksjs/stx/issues/2078))
+- **native**: hydrate component-local client scopes (#2076) ([ac0806a](https://github.com/stacksjs/stx/commit/ac0806a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2076](https://github.com/stacksjs/stx/issues/2076), [#2076](https://github.com/stacksjs/stx/issues/2076))
+- **security**: escape interpolations by HTML context (#2079) ([3cb1a11](https://github.com/stacksjs/stx/commit/3cb1a11)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2079](https://github.com/stacksjs/stx/issues/2079), [#2079](https://github.com/stacksjs/stx/issues/2079))
+- **security**: close evaluator host escapes (#2078, #2080, #2081) ([6299e3f](https://github.com/stacksjs/stx/commit/6299e3f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2078](https://github.com/stacksjs/stx/issues/2078), [#2080](https://github.com/stacksjs/stx/issues/2080), [#2081](https://github.com/stacksjs/stx/issues/2081), [#2078](https://github.com/stacksjs/stx/issues/2078), [#2080](https://github.com/stacksjs/stx/issues/2080), [#2081](https://github.com/stacksjs/stx/issues/2081))
+
+## 🔄 Code Refactoring
+
+- **native**: retain generated component setups (#2076) ([fdc1b2e](https://github.com/stacksjs/stx/commit/fdc1b2e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2076](https://github.com/stacksjs/stx/issues/2076), [#2076](https://github.com/stacksjs/stx/issues/2076))
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.544...HEAD)
+
+## 🔧 Bug Fixes
+
+- **security**: preserve safe structural interpolation (#2079) ([80d5791](https://github.com/stacksjs/stx/commit/80d5791)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2079](https://github.com/stacksjs/stx/issues/2079), [#2079](https://github.com/stacksjs/stx/issues/2079))
+- **security**: guard computed keys without breaking loops (#2078) ([5415c87](https://github.com/stacksjs/stx/commit/5415c87)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2078](https://github.com/stacksjs/stx/issues/2078), [#2078](https://github.com/stacksjs/stx/issues/2078))
+- **native**: hydrate component-local client scopes (#2076) ([ac0806a](https://github.com/stacksjs/stx/commit/ac0806a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2076](https://github.com/stacksjs/stx/issues/2076), [#2076](https://github.com/stacksjs/stx/issues/2076))
+- **security**: escape interpolations by HTML context (#2079) ([3cb1a11](https://github.com/stacksjs/stx/commit/3cb1a11)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2079](https://github.com/stacksjs/stx/issues/2079), [#2079](https://github.com/stacksjs/stx/issues/2079))
+- **security**: close evaluator host escapes (#2078, #2080, #2081) ([6299e3f](https://github.com/stacksjs/stx/commit/6299e3f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2078](https://github.com/stacksjs/stx/issues/2078), [#2080](https://github.com/stacksjs/stx/issues/2080), [#2081](https://github.com/stacksjs/stx/issues/2081), [#2078](https://github.com/stacksjs/stx/issues/2078), [#2080](https://github.com/stacksjs/stx/issues/2080), [#2081](https://github.com/stacksjs/stx/issues/2081))
+
+## 🔄 Code Refactoring
+
+- **native**: retain generated component setups (#2076) ([fdc1b2e](https://github.com/stacksjs/stx/commit/fdc1b2e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2076](https://github.com/stacksjs/stx/issues/2076), [#2076](https://github.com/stacksjs/stx/issues/2076))
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.543...v0.2.544)
 
 ## 🐛 Bug Fixes
