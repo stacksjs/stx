@@ -474,14 +474,24 @@ function assertNoUnsafeIdentifierTokens(strippedExpression: string, originalExpr
   }
 }
 
-function assertSafeBracketAccess(expression: string): void {
+function assertSafeBracketAccess(expression: string, allowDynamicIdentifiers = true): string[] {
   // A property access can start after an identifier, a closing delimiter, or
   // a dot (including optional chaining). Array literals are deliberately not
   // matched. Nested brackets are rejected conservatively as dynamic access.
   const bracketAccessRe = /(?:[$\w)\].]|\?\.)\s*\[([^\]]*)\]/g
+  const dynamicKeys = new Set<string>()
   let match: RegExpExecArray | null
 
   while ((match = bracketAccessRe.exec(expression)) !== null) {
+    const bracketOffset = match.index + match[0].indexOf('[')
+    const beforeBracket = expression.slice(0, bracketOffset)
+
+    // `let [key, value] = pair` is a binding pattern, not property access.
+    // The leading `t` in `let` used to make the broad member-access regexp
+    // mistake it for `t[key, value]` and reject valid loop destructuring.
+    if (/(?:^|[^$\w])(?:let|const|var)\s*$/.test(beforeBracket))
+      continue
+
     const keySource = match[1].trim()
     const singleQuoted = /^'(?:[^'\\]|\\.)*'$/.test(keySource)
     const doubleQuoted = /^"(?:[^"\\]|\\.)*"$/.test(keySource)
@@ -504,10 +514,20 @@ function assertSafeBracketAccess(expression: string): void {
       continue
     }
 
-    // A runtime-computed key can become `constructor`, `prototype`, or
-    // `__proto__`, so it cannot be made safe by inspecting the source alone.
+    // Keep the useful `row[column]` form, but only when the key is a single
+    // context binding. createSafeFunction checks that binding's runtime value
+    // before executing, so it cannot become constructor/prototype/__proto__.
+    // Compound keys stay rejected because their result cannot be checked
+    // without evaluating attacker-controlled code first.
+    if (allowDynamicIdentifiers && /^[$A-Z_a-z][$\w]*$/.test(keySource)) {
+      dynamicKeys.add(keySource)
+      continue
+    }
+
     throw new UnsafeExpressionError('dynamic bracket notation is not allowed', expression)
   }
+
+  return [...dynamicKeys]
 }
 
 /**
@@ -516,14 +536,14 @@ function assertSafeBracketAccess(expression: string): void {
  * The source differs from the input only in that each allowlisted `new` is
  * bound to the evaluator's own constructor (see {@link SAFE_CONSTRUCTORS}).
  */
-function prepareExpression(expression: string): { source: string, usesSafeConstructors: boolean } {
+function prepareExpression(expression: string): { source: string, usesSafeConstructors: boolean, dynamicKeys: string[] } {
   const trimmed = expression.trim()
 
   // Strip string literals before checking patterns to avoid false positives
   // e.g., "__proto__" as a string value should be allowed
   const stripped = stripStringLiterals(trimmed)
   assertNoUnsafeIdentifierTokens(stripped, trimmed)
-  assertSafeBracketAccess(trimmed)
+  const dynamicKeys = assertSafeBracketAccess(trimmed)
 
   // Check for dangerous patterns on the stripped expression. Including the
   // matched pattern in the error message makes it straightforward for devs
@@ -538,7 +558,7 @@ function prepareExpression(expression: string): { source: string, usesSafeConstr
     }
   }
 
-  return rewriteSafeConstructors(trimmed)
+  return { ...rewriteSafeConstructors(trimmed), dynamicKeys }
 }
 
 /**
@@ -923,7 +943,7 @@ export function createSafeFunction(
   onMissingIdentifier?: (name: string) => void,
 ): (...args: unknown[]) => unknown {
   // Validate the expression first
-  const { source: sanitizedExpr, usesSafeConstructors } = prepareExpression(expression)
+  const { source: sanitizedExpr, usesSafeConstructors, dynamicKeys } = prepareExpression(expression)
 
   // Drop context keys that JS rejects as function-parameter names BEFORE
   // handing them to `new Function(...keys, body)`. Three classes of
@@ -987,7 +1007,32 @@ catch (e) {
         return (...args: unknown[]) => compiled(SAFE_OBJECT, ...SHADOWED_GLOBAL_VALUES, ...args)
       }
 
-  return bindProjection(buildFunc, filteredKeys, contextKeys, validEntries, validIndices, onMissingIdentifier)
+  return guardDynamicKeys(
+    bindProjection(buildFunc, filteredKeys, contextKeys, validEntries, validIndices, onMissingIdentifier),
+    contextKeys,
+    dynamicKeys,
+  )
+}
+
+function guardDynamicKeys(
+  evaluate: (...args: unknown[]) => unknown,
+  contextKeys: string[],
+  dynamicKeys: string[],
+): (...args: unknown[]) => unknown {
+  if (dynamicKeys.length === 0)
+    return evaluate
+
+  const keyIndices = dynamicKeys.map(key => contextKeys.indexOf(key))
+  return (...args: unknown[]): unknown => {
+    for (const index of keyIndices) {
+      if (index < 0)
+        continue
+      const key = args[index]
+      if (typeof key === 'string' && DANGEROUS_BRACKET_KEYS.has(key))
+        return undefined
+    }
+    return evaluate(...args)
+  }
 }
 
 /**
@@ -1126,7 +1171,7 @@ export function safeEvaluateCode(code: string, context: Record<string, unknown>)
 
     const stripped = stripStringLiterals(code)
     assertNoUnsafeIdentifierTokens(stripped, code)
-    assertSafeBracketAccess(code)
+    assertSafeBracketAccess(code, false)
 
     // Check for dangerous patterns in the full code
     for (const pattern of DANGEROUS_PATTERNS) {
@@ -1211,9 +1256,12 @@ export function createSafeLoopFunction(
   if (!Number.isSafeInteger(maxIterations) || maxIterations <= 0)
     throw new RangeError('maxIterations must be a positive safe integer')
 
+  const dynamicKeys = new Set(assertSafeBracketAccess(expression))
+
   // Process the body to escape template literals and prevent injection via ${} sequences
   const processedBody = body.replace(/`/g, '\\`').replace(/\$\{/g, '\\${').replace(/\{\{([^}]+)\}\}/g, (_match: string, expr: string) => {
-    const { source } = prepareExpression(expr)
+    const { source, dynamicKeys: bodyDynamicKeys } = prepareExpression(expr)
+    for (const key of bodyDynamicKeys) dynamicKeys.add(key)
     return `\${${source}}`
   })
 
@@ -1234,11 +1282,12 @@ export function createSafeLoopFunction(
   }
   const filteredKeys = validEntries.map(entry => entry.key)
   const projectAndBind = (compiled: (...args: unknown[]) => string): ((...args: unknown[]) => string) => {
-    return (...args: unknown[]) => {
+    const guarded = guardDynamicKeys((...args: unknown[]) => {
       const projected = validEntries.map(entry => args[entry.index])
       const warn = (...message: unknown[]): void => console.warn(...message)
       return compiled(SAFE_CONSTRUCTORS, SAFE_OBJECT, ...SHADOWED_GLOBAL_VALUES, warn, ...projected)
-    }
+    }, contextKeys, [...dynamicKeys])
+    return (...args: unknown[]) => String(guarded(...args) ?? '')
   }
 
   if (loopType === 'for') {

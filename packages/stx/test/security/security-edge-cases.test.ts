@@ -1092,9 +1092,11 @@ describe('sanitizeExpression Bracket Notation Configuration', () => {
     expect(() => sanitizeExpression('obj.__proto__')).toThrow('Potentially unsafe')
   })
 
-  it('allows fixed numeric indexes but rejects runtime-computed property keys', () => {
+  it('allows fixed indexes and guards runtime-computed property keys', () => {
     expect(() => sanitizeExpression('obj[0]')).not.toThrow()
-    expect(() => sanitizeExpression('arr[i]')).toThrow('dynamic bracket notation')
+    expect(() => sanitizeExpression('arr[i]')).not.toThrow()
+    expect(safeEvaluate('obj[key]', { obj: {}, key: 'constructor' })).toBeUndefined()
+    expect(() => sanitizeExpression('arr[i + offset]')).toThrow('dynamic bracket notation')
   })
 })
 

@@ -29,11 +29,13 @@ describe('safe evaluator host boundary (#2078)', () => {
     expect(safeEvaluate('fetch(url)', { fetch: () => 'called', url: '/secret' })).toBeUndefined()
   })
 
-  it('rejects dynamic bracket keys even when literal bracket notation is enabled', () => {
+  it('guards dynamic bracket keys at runtime while preserving data-table access', () => {
     configureSafeEvaluator({ allowBracketNotation: true })
     try {
       expect(() => sanitizeExpression('value["name"]')).not.toThrow()
-      expect(() => sanitizeExpression('value[key]')).toThrow('dynamic bracket notation')
+      expect(safeEvaluate('value[key]', { value: { name: 'Ada' }, key: 'name' })).toBe('Ada')
+      expect(safeEvaluate('value[key]', { value: {}, key: 'constructor' })).toBeUndefined()
+      expect(() => sanitizeExpression('value[key + suffix]')).toThrow('dynamic bracket notation')
       expect(() => sanitizeExpression('value["constructor"]')).toThrow('bracket key constructor')
     }
     finally {
@@ -67,12 +69,14 @@ describe('exported evaluator helpers share the policy (#2080)', () => {
       '{{ Bun.version }}',
       [],
     )).toThrow()
-    expect(() => createSafeLoopFunction(
+    const dynamic = createSafeLoopFunction(
       'for',
       'let i = 0; i < 1; i++',
       '{{ value[key] }}',
       ['value', 'key'],
-    )).toThrow('dynamic bracket notation')
+    )
+    expect(dynamic({ name: 'Ada' }, 'name')).toBe('Ada')
+    expect(dynamic({}, 'constructor')).toBe('')
   })
 
   it('filters hostile context keys from loop functions', () => {
