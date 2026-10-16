@@ -58,7 +58,7 @@ export function createCompletionProvider(): vscode.CompletionItemProvider {
 
       // Check for partial directive name (like @tra)
       // This handles the case when the user has already typed @ and some letters
-      const directiveMatch = linePrefix.match(/@([a-z]*)$/i)
+      const directiveMatch = linePrefix.match(/@([a-z:]*)$/i)
       if (directiveMatch) {
         const prefix = directiveMatch[1].toLowerCase()
         console.log(`stx Completion - Found directive prefix: "${prefix}"`)
@@ -372,7 +372,7 @@ function createDirectiveItems(directives: readonly StxDirectiveDefinition[]): vs
         break
 
       default:
-        item.insertText = new vscode.SnippetString(`@${directive.name}`)
+        item.insertText = new vscode.SnippetString(directive.snippet ?? `@${directive.name}`)
         break
     }
 

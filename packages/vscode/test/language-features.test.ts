@@ -24,6 +24,30 @@ describe('shared stx language catalog', () => {
       expect(STX_OPENING_DIRECTIVE_BY_CLOSE.get(closing)).toBe(opening)
   })
 
+  test('covers current async, rendering, and document directives', () => {
+    const names = new Set(STX_DIRECTIVES.map(directive => directive.name))
+    for (const name of [
+      'errorBoundary',
+      'suspense',
+      'async',
+      'defer',
+      'teleport',
+      'keepAlive',
+      'virtualList',
+      'virtualGrid',
+      'infiniteList',
+      'client:visible',
+      'static',
+      'stream',
+      'memo',
+      'head',
+      'seo',
+      'structuredData',
+      'csp',
+    ])
+      expect(names.has(name)).toBe(true)
+  })
+
   test('keeps reactive attribute names unique', () => {
     const names = STX_ATTRIBUTE_DIRECTIVES.map(directive => directive.name)
     expect(new Set(names).size).toBe(names.length)

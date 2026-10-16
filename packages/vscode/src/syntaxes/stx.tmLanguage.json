@@ -206,7 +206,7 @@
           ]
         },
         {
-          "begin": "(?x)(?<![A-Za-z0-9_@]) (@  (?i:\n    animationGroup\n    |auth\n    |break\n    |can\n    |canany\n    |cannot\n    |case\n    |checked\n    |choice\n    |component\n    |continue\n    |css\n    |csrf\n    |dd\n    |disabled\n    |dump\n    |each\n    |elsecan\n    |elsecanany\n    |elsecannot\n    |elseif\n    |empty\n    |env\n    |error\n    |extends\n    |for\n    |foreach\n    |forelse\n    |guest\n    |hassection\n    |if\n    |include\n    |includefirst\n    |includeif\n    |includeunless\n    |includewhen\n    |inject\n    |isset\n    |js\n    |json\n    |lang\n    |locale\n    |method\n    |motion\n    |once\n    |prepend\n    |prependOnce\n    |props\n    |push\n    |pushIf\n    |pushOnce\n    |readonly\n    |required\n    |scrollAnimate\n    |section\n    |sectionMissing\n    |selected\n    |slot\n    |stack\n    |style\n    |switch\n    |t\n    |translate\n    |transition\n    |unless\n    |unset\n    |use\n    |webcomponent\n    |while\n    |yield\n  )[\\t ]*\n)(\\() # Followed by opening parentheses\n",
+          "begin": "(?x)(?<![A-Za-z0-9_@]) (@  (?i:\n    animationGroup\n    |async\n    |auth\n    |break\n    |can\n    |canany\n    |cannot\n    |case\n    |checked\n    |choice\n    |client:(?:load|idle|visible|media|only|hover|event)\n    |component\n    |computed\n    |continue\n    |csp\n    |cspNonce\n    |css\n    |csrf\n    |dd\n    |defer\n    |disabled\n    |dump\n    |each\n    |elsecan\n    |elsecanany\n    |elsecannot\n    |elseif\n    |empty\n    |env\n    |error\n    |errorBoundary\n    |extends\n    |for\n    |foreach\n    |forelse\n    |guest\n    |hasErrors\n    |hassection\n    |head\n    |if\n    |include\n    |includefirst\n    |includeif\n    |includeunless\n    |includewhen\n    |infiniteList\n    |inject\n    |isset\n    |js\n    |json\n    |keepAlive\n    |lang\n    |locale\n    |memo\n    |meta\n    |metaTag\n    |method\n    |motion\n    |once\n    |prepend\n    |prependOnce\n    |props\n    |push\n    |pushIf\n    |pushOnce\n    |readonly\n    |required\n    |scrollAnimate\n    |section\n    |sectionMissing\n    |selected\n    |seo\n    |slot\n    |stack\n    |stream\n    |structuredData\n    |style\n    |suspense\n    |switch\n    |t\n    |teleport\n    |title\n    |translate\n    |transition\n    |unless\n    |unset\n    |use\n    |virtualGrid\n    |virtualList\n    |watch\n    |webcomponent\n    |while\n    |yield\n  )[\\t ]*\n)(\\() # Followed by opening parentheses\n",
           "beginCaptures": {
             "1": {
               "name": "keyword.stx"
@@ -234,6 +234,10 @@
           "name": "keyword.stx"
         },
         {
+          "match": "(?<![A-Za-z0-9_@])@(?i:client:(?:load|idle|visible|media|only|hover|event)|endclient)\\b",
+          "name": "keyword.control.directive.stx"
+        },
+        {
           "begin": "(?<![A-Za-z0-9_@])@(?i:ts)\\b",
           "beginCaptures": {
             "0": {
@@ -255,7 +259,7 @@
           "name": "meta.embedded.block.ts"
         },
         {
-          "match": "(?x)(?<![A-Za-z0-9_@]) @(end)? (?i:  auth\n  |can\n  |canany\n  |cannot\n  |component\n  |css\n  |empty\n  |env\n  |error\n  |for\n  |foreach\n  |forelse\n  |guest\n  |if\n  |isset\n  |js\n  |lang\n  |markdown\n  |motion\n  |once\n  |prepend\n  |prependOnce\n  |push\n  |pushIf\n  |pushOnce\n  |raw\n  |script\n  |scrollAnimate\n  |section\n  |session\n  |slot\n  |switch\n  |transition\n  |unless\n  |verbatim\n  |webcomponent\n  |while\n)\\b\n",
+          "match": "(?x)(?<![A-Za-z0-9_@]) @(end)? (?i:  async\n  |auth\n  |can\n  |canany\n  |cannot\n  |component\n  |css\n  |defer\n  |empty\n  |env\n  |error\n  |errorBoundary\n  |errors\n  |for\n  |foreach\n  |forelse\n  |guest\n  |hasErrors\n  |head\n  |if\n  |infiniteList\n  |isset\n  |js\n  |keepAlive\n  |lang\n  |markdown\n  |memo\n  |motion\n  |once\n  |prepend\n  |prependOnce\n  |push\n  |pushIf\n  |pushOnce\n  |raw\n  |script\n  |scrollAnimate\n  |section\n  |session\n  |slot\n  |static\n  |stream\n  |suspense\n  |switch\n  |teleport\n  |transition\n  |unless\n  |verbatim\n  |virtualGrid\n  |virtualList\n  |watch\n  |webcomponent\n  |while\n)\\b\n",
           "name": "keyword.stx"
         },
         {
