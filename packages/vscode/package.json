@@ -84,6 +84,11 @@
         "command": "stx.reloadUtilityClasses",
         "title": "Reload Utility Class Configuration",
         "category": "stx"
+      },
+      {
+        "command": "stx.extractToComponent",
+        "title": "Extract to Component",
+        "category": "stx"
       }
     ],
     "iconThemes": [

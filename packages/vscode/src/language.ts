@@ -15,6 +15,7 @@
 import * as path from 'node:path'
 import * as vscode from 'vscode'
 
+import { registerExtractToComponentCommand } from './commands/extractToComponent'
 import { createCodeActionsProvider } from './providers/codeActionsProvider'
 import { createCompletionProvider } from './providers/completionProvider'
 import { createDefinitionProvider } from './providers/definitionProvider'
@@ -136,6 +137,7 @@ export async function activateStxLanguage(context: StxExtensionContext, options:
       ],
     },
   )
+  const extractToComponentCommand = registerExtractToComponentCommand()
 
   // Register folding range provider
   const foldingRangeProvider = vscode.languages.registerFoldingRangeProvider(
@@ -216,6 +218,7 @@ export async function activateStxLanguage(context: StxExtensionContext, options:
     languageCompletionProvider,
     pathCompletionProvider,
     codeActionsProvider,
+    extractToComponentCommand,
     foldingRangeProvider,
     semanticTokensProvider,
   )
