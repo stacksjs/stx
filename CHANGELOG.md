@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.546...v0.2.547)
+
+## 🐛 Bug Fixes
+
+- scan repeated linked modules once for CSS generation ([99b1469](https://github.com/stacksjs/stx/commit/99b1469)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.547 ([fb334b9](https://github.com/stacksjs/stx/commit/fb334b9)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.545...v0.2.546)
 
 ## ✨ Features
