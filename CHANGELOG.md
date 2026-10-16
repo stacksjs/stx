@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.543...v0.2.544)
+
+## 🐛 Bug Fixes
+
+- **native**: deliver Live Activity updates queued during settlement ([d863835](https://github.com/stacksjs/stx/commit/d863835)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.544 ([7ed9945](https://github.com/stacksjs/stx/commit/7ed9945)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.542...v0.2.543)
 
 ## 🐛 Bug Fixes
