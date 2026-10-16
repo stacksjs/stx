@@ -3,6 +3,10 @@ export interface StxDirectiveDefinition {
   description: string
 }
 
+export interface StxAttributeDirectiveDefinition extends StxDirectiveDefinition {
+  snippet: string
+}
+
 /** Shared statement-directive inventory for editor features. */
 export const STX_DIRECTIVES: readonly StxDirectiveDefinition[] = [
   { name: 'transition', description: 'Applies transition animations to an element' },
@@ -142,3 +146,86 @@ export const STX_DIRECTIVE_PAIRS: Readonly<Record<string, string>> = {
 export const STX_OPENING_DIRECTIVE_BY_CLOSE = new Map(
   Object.entries(STX_DIRECTIVE_PAIRS).map(([opening, closing]) => [closing, opening]),
 )
+
+/** Reactive attributes supported by the browser runtime. */
+export const STX_ATTRIBUTE_DIRECTIVES: readonly StxAttributeDirectiveDefinition[] = [
+  { name: ':if', description: 'Conditionally render this element', snippet: ':if="${1:condition}"' },
+  { name: ':else-if', description: 'Render when the preceding condition is false and this condition is true', snippet: ':else-if="${1:condition}"' },
+  { name: ':else', description: 'Render when the preceding conditions are false', snippet: ':else' },
+  { name: ':for', description: 'Render this element for every item in a reactive collection', snippet: ':for="${1:item} in ${2:items}"' },
+  { name: ':show', description: 'Toggle this element without removing it from the DOM', snippet: ':show="${1:condition}"' },
+  { name: ':key', description: 'Provide a stable identity for a rendered item', snippet: ':key="${1:item.id}"' },
+  { name: 'v-if', description: 'Vue-compatible alias for :if', snippet: 'v-if="${1:condition}"' },
+  { name: 'v-else-if', description: 'Vue-compatible alias for :else-if', snippet: 'v-else-if="${1:condition}"' },
+  { name: 'v-else', description: 'Vue-compatible alias for :else', snippet: 'v-else' },
+  { name: 'v-memo', description: 'Skip subtree updates while dependencies are unchanged', snippet: 'v-memo="[${1:dependencies}]"' },
+  { name: 'x-if', description: 'Alpine-compatible alias for :if', snippet: 'x-if="${1:condition}"' },
+  { name: 'x-else-if', description: 'Alpine-compatible alias for :else-if', snippet: 'x-else-if="${1:condition}"' },
+  { name: 'x-else', description: 'Alpine-compatible alias for :else', snippet: 'x-else' },
+  { name: 'x-for', description: 'Alpine-compatible alias for :for', snippet: 'x-for="${1:item} in ${2:items}"' },
+  { name: 'x-show', description: 'Alpine-compatible alias for :show', snippet: 'x-show="${1:condition}"' },
+  { name: 'x-text', description: 'Set text content from a reactive expression', snippet: 'x-text="${1:expression}"' },
+  { name: 'x-html', description: 'Set HTML content from a reactive expression', snippet: 'x-html="${1:expression}"' },
+  { name: 'x-model', description: 'Two-way bind a form control to reactive state', snippet: 'x-model="${1:value}"' },
+  { name: 'x-class', description: 'Bind classes from a reactive expression', snippet: 'x-class="${1:classes}"' },
+  { name: 'x-style', description: 'Bind inline styles from a reactive expression', snippet: 'x-style="${1:styles}"' },
+  { name: 'x-href', description: 'Bind an anchor destination', snippet: 'x-href="${1:url}"' },
+  { name: 'x-src', description: 'Bind an image or media source', snippet: 'x-src="${1:url}"' },
+  { name: 'x-bind:', description: 'Bind any HTML attribute', snippet: 'x-bind:${1:attribute}="${2:expression}"' },
+  { name: 'x-ref', description: 'Register a named element reference', snippet: 'x-ref="${1:name}"' },
+  { name: 'x-cloak', description: 'Hide an element until its reactive scope is ready', snippet: 'x-cloak' },
+  { name: '@click', description: 'Run an expression when the element is clicked', snippet: '@click="${1:handler}"' },
+  { name: '@submit', description: 'Run an expression when the form is submitted', snippet: '@submit.prevent="${1:handler}"' },
+  { name: '@input', description: 'Run an expression when input is received', snippet: '@input="${1:handler}"' },
+  { name: '@change', description: 'Run an expression when the value changes', snippet: '@change="${1:handler}"' },
+  { name: '@keydown', description: 'Run an expression on keydown', snippet: '@keydown="${1:handler}"' },
+  { name: '@keyup', description: 'Run an expression on keyup', snippet: '@keyup="${1:handler}"' },
+  { name: '@focus', description: 'Run an expression when the element receives focus', snippet: '@focus="${1:handler}"' },
+  { name: '@blur', description: 'Run an expression when the element loses focus', snippet: '@blur="${1:handler}"' },
+  { name: '@mouseenter', description: 'Run an expression when the pointer enters the element', snippet: '@mouseenter="${1:handler}"' },
+  { name: '@mouseleave', description: 'Run an expression when the pointer leaves the element', snippet: '@mouseleave="${1:handler}"' },
+  { name: 'stx-hydrate', description: 'Defer reactive hydration until a trigger fires', snippet: 'stx-hydrate="${1:visible}"' },
+]
+
+export interface StxAttributeCompletionContext {
+  prefix: string
+}
+
+/** Return the attribute token before the cursor when it is inside an opening tag. */
+export function getStxAttributeCompletionContext(sourceBeforeCursor: string): StxAttributeCompletionContext | undefined {
+  let tagStart = -1
+  let quote: '"' | '\'' | undefined
+
+  for (let index = 0; index < sourceBeforeCursor.length; index++) {
+    const character = sourceBeforeCursor[index]
+
+    if (quote) {
+      if (character === quote && sourceBeforeCursor[index - 1] !== '\\')
+        quote = undefined
+      continue
+    }
+
+    if ((character === '"' || character === '\'') && tagStart >= 0) {
+      quote = character
+      continue
+    }
+
+    if (character === '<') {
+      const next = sourceBeforeCursor[index + 1]
+      tagStart = next && /[A-Za-z]/.test(next) ? index : -1
+    }
+    else if (character === '>') {
+      tagStart = -1
+    }
+  }
+
+  if (tagStart < 0 || quote)
+    return undefined
+
+  const tag = sourceBeforeCursor.slice(tagStart + 1)
+  const match = tag.match(/\s([:@\w.-]*)$/)
+  if (!match)
+    return undefined
+
+  return { prefix: match[1] }
+}

@@ -1,7 +1,13 @@
 /* eslint-disable no-template-curly-in-string */
 import * as vscode from 'vscode'
 import { TransitionDirection, TransitionEase, TransitionType } from '../interfaces/animation-types'
-import { STX_DIRECTIVES, type StxDirectiveDefinition } from '../language-features'
+import {
+  getStxAttributeCompletionContext,
+  STX_ATTRIBUTE_DIRECTIVES,
+  STX_DIRECTIVES,
+  type StxAttributeDirectiveDefinition,
+  type StxDirectiveDefinition,
+} from '../language-features'
 import { ComponentRegistry } from '../services/ComponentRegistry'
 
 /**
@@ -29,11 +35,22 @@ export function createCompletionProvider(): vscode.CompletionItemProvider {
 
       const line = document.lineAt(position.line).text
       const linePrefix = line.substring(0, position.character)
+      const sourceBeforeCursor = document.getText().slice(0, document.offsetAt(position))
+      const attributeContext = getStxAttributeCompletionContext(sourceBeforeCursor)
 
       console.log(`stx Completion - Processing line prefix: "${linePrefix}"`)
       console.log(`stx Completion - Trigger character: "${context?.triggerCharacter || 'none'}"`)
 
-      // When triggered by @ character, show all directives
+      // Attribute @events and statement @directives share a prefix, so tag
+      // context must win before statement-directive completion.
+      if (attributeContext) {
+        return getAttributeDirectiveCompletions(
+          attributeContext.prefix,
+          position,
+        )
+      }
+
+      // When triggered by @ character, show all statement directives
       if (context?.triggerCharacter === '@') {
         console.log(`stx Completion - Triggered by @ character, showing all directives`)
         return getAllDirectiveCompletions()
@@ -101,6 +118,33 @@ export function createCompletionProvider(): vscode.CompletionItemProvider {
       return undefined
     },
   }
+}
+
+function getAttributeDirectiveCompletions(
+  prefix: string,
+  position: vscode.Position,
+): vscode.CompletionItem[] {
+  const normalizedPrefix = prefix.toLowerCase()
+  const directives = STX_ATTRIBUTE_DIRECTIVES.filter(directive =>
+    directive.name.toLowerCase().startsWith(normalizedPrefix),
+  )
+  const start = position.translate(0, -prefix.length)
+  const range = new vscode.Range(start, position)
+
+  return directives.map(directive => createAttributeDirectiveItem(directive, range))
+}
+
+function createAttributeDirectiveItem(
+  directive: StxAttributeDirectiveDefinition,
+  range: vscode.Range,
+): vscode.CompletionItem {
+  const item = new vscode.CompletionItem(directive.name, vscode.CompletionItemKind.Property)
+  item.detail = `stx ${directive.name} attribute`
+  item.documentation = new vscode.MarkdownString(directive.description)
+  item.insertText = new vscode.SnippetString(directive.snippet)
+  item.range = range
+  item.sortText = directive.name.startsWith(':') ? `0${directive.name}` : `1${directive.name}`
+  return item
 }
 
 /**

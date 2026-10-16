@@ -93,17 +93,13 @@ export async function activateStxLanguage(context: StxExtensionContext, options:
   // Create a CompletionItemProvider that works for all directives
   const completionProvider = createCompletionProvider()
 
-  // Register for basic trigger, when user types "@"
-  const atTriggerCompletionProvider = vscode.languages.registerCompletionItemProvider(
+  // Register statement directives, reactive attributes and expression helpers.
+  const languageCompletionProvider = vscode.languages.registerCompletionItemProvider(
     'stx', // Use simple string identifier
     completionProvider,
-    '@', // Trigger on @ symbol
-  )
-
-  // Register for additional triggers for parameter completions
-  const parameterCompletionProvider = vscode.languages.registerCompletionItemProvider(
-    'stx', // Use simple string identifier
-    completionProvider,
+    '@', // Statement directives and event attributes
+    ':', // Structural attributes
+    '-', // x-* and stx-hydrate attributes
     '\'', // Trigger on quote
     '"', // Trigger on double-quote
     '`', // Trigger on backtick
@@ -217,8 +213,7 @@ export async function activateStxLanguage(context: StxExtensionContext, options:
     hoverProvider,
     definitionProvider,
     documentLinkProvider,
-    atTriggerCompletionProvider,
-    parameterCompletionProvider,
+    languageCompletionProvider,
     pathCompletionProvider,
     codeActionsProvider,
     foldingRangeProvider,
