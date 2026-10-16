@@ -3,6 +3,7 @@ import * as path from 'node:path'
 import * as vscode from 'vscode'
 import { STX_DIRECTIVE_PAIRS, STX_OPENING_DIRECTIVE_BY_CLOSE } from '../language-features'
 import { ComponentRegistry } from '../services/ComponentRegistry'
+import { COMPONENT_SEARCH_DIRECTORIES, TEMPLATE_SEARCH_DIRECTORIES } from '../utils/template-paths'
 
 /**
  * Creates a diagnostic collection for stx files
@@ -186,7 +187,7 @@ function updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: 
  * Validates template paths in @include and @component directives
  */
 function validateTemplatePaths(document: vscode.TextDocument, diagnostics: vscode.Diagnostic[]): void {
-  const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+  const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri)
   if (!workspaceFolder) {
     return
   }
@@ -194,19 +195,10 @@ function validateTemplatePaths(document: vscode.TextDocument, diagnostics: vscod
   const workspacePath = workspaceFolder.uri.fsPath
 
   // Common template directories
-  const templateDirs = [
-    'views',
-    'templates',
-    'resources/views',
-    'src/views',
-    'src/templates',
-    'app/views',
-    'partials',
-    'components',
-    'layouts',
-    'src/components',
-    'app/components',
-  ]
+  const templateDirs = [...new Set([
+    ...TEMPLATE_SEARCH_DIRECTORIES,
+    ...COMPONENT_SEARCH_DIRECTORIES,
+  ])]
 
   // Regular expression to match @include and @component with paths
   const pathDirectiveRegex = /@(include(?:If|When|Unless|First)?|component|webcomponent)\s*\(\s*['"`]([^'"`]+)['"`]/g

@@ -1,6 +1,11 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
+import {
+  COMPONENT_SEARCH_DIRECTORIES,
+  getTemplatePathCompletionContext,
+  TEMPLATE_SEARCH_DIRECTORIES,
+} from '../utils/template-paths'
 
 /**
  * Creates a completion provider for file paths in @include and @component directives
@@ -11,19 +16,16 @@ export function createPathCompletionProvider(): vscode.CompletionItemProvider {
       const line = document.lineAt(position.line).text
       const linePrefix = line.substring(0, position.character)
 
-      // Check if we're inside an @include or @component directive
-      const includeMatch = linePrefix.match(/@include(?:If|When|Unless|First)?\s*\(\s*['"`]([^'"`]*)$/)
-      const componentMatch = linePrefix.match(/@(?:component|webcomponent)\s*\(\s*['"`]([^'"`]*)$/)
-
-      if (!includeMatch && !componentMatch) {
+      const pathContext = getTemplatePathCompletionContext(linePrefix)
+      if (!pathContext) {
         return undefined
       }
 
-      const currentPath = includeMatch ? includeMatch[1] : componentMatch![1]
-      const isInclude = !!includeMatch
+      const currentPath = pathContext.path
+      const isInclude = pathContext.kind === 'include'
 
       // Get workspace folder
-      const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+      const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri)
       if (!workspaceFolder) {
         return undefined
       }
@@ -31,22 +33,10 @@ export function createPathCompletionProvider(): vscode.CompletionItemProvider {
       const workspacePath = workspaceFolder.uri.fsPath
 
       // Common template directories
-      const templateDirs = [
-        'views',
-        'templates',
-        'resources/views',
-        'src/views',
-        'src/templates',
-        'app/views',
-        'partials',
-        'components',
-        'layouts',
-      ]
-
-      // If component, also check components directories
-      if (!isInclude) {
-        templateDirs.push('src/components', 'app/components', 'ui', 'src/ui')
-      }
+      const templateDirs = [...new Set([
+        ...TEMPLATE_SEARCH_DIRECTORIES.filter(Boolean),
+        ...(!isInclude ? COMPONENT_SEARCH_DIRECTORIES : []),
+      ])]
 
       const completions: vscode.CompletionItem[] = []
 

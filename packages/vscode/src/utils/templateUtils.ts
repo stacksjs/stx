@@ -1,6 +1,7 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
+import { COMPONENT_SEARCH_DIRECTORIES, TEMPLATE_SEARCH_DIRECTORIES } from './template-paths'
 
 /**
  * Extracts a template path from an include or component directive.
@@ -64,19 +65,12 @@ export function resolveTemplatePath(documentUri: vscode.Uri, templatePath: strin
   }
 
   // Common directories to search for templates
-  const searchDirs = [
-    '', // workspace root
-    'views',
-    'templates',
-    'partials',
-    'components',
-    'resources/views',
-    'resources/templates',
-    'examples/partials',
-    'examples/components',
-  ]
+  const searchDirectories = [...new Set([
+    ...TEMPLATE_SEARCH_DIRECTORIES,
+    ...COMPONENT_SEARCH_DIRECTORIES,
+  ])]
 
-  for (const dir of searchDirs) {
+  for (const dir of searchDirectories) {
     const fullPath = path.join(workspaceFolder.uri.fsPath, dir, normalizedPath)
     if (fs.existsSync(fullPath)) {
       return vscode.Uri.file(fullPath)
