@@ -32,12 +32,17 @@ export interface NativeLiveActivities {
   end: (id: string, state?: NativeLiveActivityState) => Promise<unknown>
 }
 
+export interface NativeLiveActivityController {
+  update: (next: NativeLiveActivityOptions | null) => Promise<void>
+  end: () => Promise<void>
+}
+
 /**
  * One declarative activity. Updates serialize and coalesce while native work is
  * pending. A stop or replacement during start waits for its id, then ends that
  * exact activity. Disposing a screen need not end a session running off-screen.
  */
-export function createLiveActivity(bridge: NativeLiveActivities | null | undefined, onError?: (error: unknown) => void) {
+export function createLiveActivity(bridge: NativeLiveActivities | null | undefined, onError?: (error: unknown) => void): NativeLiveActivityController {
   let desired: NativeLiveActivityOptions | null = null
   let desiredJSON = 'null'
   let revision = 0
