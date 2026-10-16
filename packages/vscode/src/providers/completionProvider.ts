@@ -1,6 +1,7 @@
 /* eslint-disable no-template-curly-in-string */
 import * as vscode from 'vscode'
 import { TransitionDirection, TransitionEase, TransitionType } from '../interfaces/animation-types'
+import { STX_DIRECTIVES, type StxDirectiveDefinition } from '../language-features'
 import { ComponentRegistry } from '../services/ComponentRegistry'
 
 /**
@@ -106,15 +107,14 @@ export function createCompletionProvider(): vscode.CompletionItemProvider {
  * Get all stx directives without filtering
  */
 function getAllDirectiveCompletions(): vscode.CompletionItem[] {
-  return createDirectiveItems(getAllDirectives())
+  return createDirectiveItems(STX_DIRECTIVES)
 }
 
 /**
  * Get stx directives filtered by prefix
  */
 function getFilteredDirectiveCompletions(prefix: string): vscode.CompletionItem[] {
-  const allDirectives = getAllDirectives()
-  const filteredDirectives = allDirectives.filter(d =>
+  const filteredDirectives = STX_DIRECTIVES.filter(d =>
     d.name.toLowerCase().includes(prefix.toLowerCase()),
   )
 
@@ -123,137 +123,9 @@ function getFilteredDirectiveCompletions(prefix: string): vscode.CompletionItem[
 }
 
 /**
- * Get all available stx directives
- */
-function getAllDirectives(): Array<{ name: string, description: string }> {
-  return [
-    // Animation directives
-    { name: 'transition', description: 'Applies transition animations to an element' },
-    { name: 'motion', description: 'Controls animation display based on user preferences' },
-    { name: 'animationGroup', description: 'Groups elements for coordinated animations' },
-    { name: 'scrollAnimate', description: 'Triggers animation when element scrolls into view' },
-
-    // Translation directives
-    { name: 'translate', description: 'Translate a string using the i18n system' },
-    { name: 't', description: 'Short alias for translate directive' },
-
-    // Conditional directives
-    { name: 'if', description: 'Conditional rendering' },
-    { name: 'else', description: 'Alternative rendering for conditionals' },
-    { name: 'elseif', description: 'Alternative condition for if statement' },
-    { name: 'unless', description: 'Inverse conditional rendering' },
-
-    // Loop directives
-    { name: 'foreach', description: 'Iterates over an array or collection' },
-    { name: 'for', description: 'Standard for loop' },
-    { name: 'while', description: 'While loop' },
-    { name: 'forelse', description: 'Loop with fallback when collection is empty' },
-
-    // Switch directives
-    { name: 'switch', description: 'Switch statement for multiple conditions' },
-    { name: 'case', description: 'Case option in switch statement' },
-    { name: 'default', description: 'Default case in switch statement' },
-    { name: 'break', description: 'Break from loop or switch' },
-    { name: 'continue', description: 'Continue to next iteration' },
-
-    // Component directives
-    { name: 'component', description: 'Renders a component' },
-    { name: 'slot', description: 'Define a named slot in a component' },
-    { name: 'webcomponent', description: 'Include a web component' },
-
-    // Code block directives
-    { name: 'ts', description: 'TypeScript code block' },
-    { name: 'js', description: 'JavaScript code block' },
-    { name: 'script', description: 'Script code block (alternative to @ts)' },
-    { name: 'css', description: 'CSS code block' },
-
-    // Content directives
-    { name: 'json', description: 'Output variable as JSON' },
-    { name: 'markdown', description: 'Markdown content block' },
-    { name: 'raw', description: 'Display content without processing expressions' },
-    { name: 'verbatim', description: 'Display content without processing directives' },
-
-    // Layout directives
-    { name: 'extends', description: 'Extend a base layout' },
-    { name: 'section', description: 'Define a content section' },
-    { name: 'yield', description: 'Output the contents of a section' },
-    { name: 'parent', description: 'Include parent section content' },
-
-    // Stack directives
-    { name: 'stack', description: 'Define a stack for pushing content' },
-    { name: 'push', description: 'Push content to a stack' },
-    { name: 'pushIf', description: 'Conditionally push content to a stack' },
-    { name: 'pushOnce', description: 'Push content to a stack only once' },
-    { name: 'prepend', description: 'Prepend content to a stack' },
-    { name: 'prependOnce', description: 'Prepend content to a stack only once' },
-
-    // Include directives
-    { name: 'include', description: 'Include another template file' },
-    { name: 'includeIf', description: 'Conditionally include a template' },
-    { name: 'includeWhen', description: 'Include template when condition is true' },
-    { name: 'includeUnless', description: 'Include template unless condition is true' },
-    { name: 'includeFirst', description: 'Include the first existing template from a list' },
-
-    // Auth directives
-    { name: 'auth', description: 'Content visible only to authenticated users' },
-    { name: 'guest', description: 'Content visible only to guests' },
-    { name: 'can', description: 'Check if user has permission' },
-    { name: 'cannot', description: 'Check if user lacks permission' },
-
-    // Utility directives
-    { name: 'env', description: 'Check environment condition' },
-    { name: 'isset', description: 'Check if a variable is set' },
-    { name: 'empty', description: 'Check if a variable is empty' },
-    { name: 'error', description: 'Display validation error for a field' },
-    { name: 'hasSection', description: 'Check if a section exists' },
-    { name: 'once', description: 'Include content only once per rendering cycle' },
-    { name: 'use', description: 'Import a class or namespace' },
-    { name: 'csrf', description: 'Include CSRF protection token' },
-    { name: 'method', description: 'Specify form submission method' },
-    { name: 'locale', description: 'Set locale for content' },
-
-    // End directives
-    { name: 'endtransition', description: 'Ends a transition block' },
-    { name: 'endmotion', description: 'Ends a motion block' },
-    { name: 'endif', description: 'Ends an if block' },
-    { name: 'endunless', description: 'Ends an unless block' },
-    { name: 'endfor', description: 'Ends a for loop block' },
-    { name: 'endforeach', description: 'Ends a foreach loop block' },
-    { name: 'endforelse', description: 'Ends a forelse loop block' },
-    { name: 'endwhile', description: 'Ends a while loop block' },
-    { name: 'endswitch', description: 'Ends a switch block' },
-    { name: 'endts', description: 'Ends a TypeScript code block' },
-    { name: 'endjs', description: 'Ends a JavaScript code block' },
-    { name: 'endscript', description: 'Ends a script code block' },
-    { name: 'endcss', description: 'Ends a CSS code block' },
-    { name: 'endmarkdown', description: 'Ends a markdown block' },
-    { name: 'endraw', description: 'Ends a raw content block' },
-    { name: 'endverbatim', description: 'Ends a verbatim block' },
-    { name: 'endcomponent', description: 'Ends a component block' },
-    { name: 'endslot', description: 'Ends a slot block' },
-    { name: 'endsection', description: 'Ends a section block' },
-    { name: 'endpush', description: 'Ends a push block' },
-    { name: 'endpushIf', description: 'Ends a pushIf block' },
-    { name: 'endpushOnce', description: 'Ends a pushOnce block' },
-    { name: 'endprepend', description: 'Ends a prepend block' },
-    { name: 'endprependOnce', description: 'Ends a prependOnce block' },
-    { name: 'endauth', description: 'Ends an auth block' },
-    { name: 'endguest', description: 'Ends a guest block' },
-    { name: 'endcan', description: 'Ends a can block' },
-    { name: 'endcannot', description: 'Ends a cannot block' },
-    { name: 'endempty', description: 'Ends an empty block' },
-    { name: 'endenv', description: 'Ends an env block' },
-    { name: 'endisset', description: 'Ends an isset block' },
-    { name: 'enderror', description: 'Ends an error block' },
-    { name: 'endonce', description: 'Ends a once block' },
-    { name: 'endwebcomponent', description: 'Ends a webcomponent block' },
-  ]
-}
-
-/**
  * Create completion items from directive definitions
  */
-function createDirectiveItems(directives: Array<{ name: string, description: string }>): vscode.CompletionItem[] {
+function createDirectiveItems(directives: readonly StxDirectiveDefinition[]): vscode.CompletionItem[] {
   return directives.map((directive) => {
     const item = new vscode.CompletionItem(
       `@${directive.name}`,

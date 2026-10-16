@@ -1,6 +1,7 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
+import { STX_DIRECTIVE_PAIRS, STX_OPENING_DIRECTIVE_BY_CLOSE } from '../language-features'
 import { ComponentRegistry } from '../services/ComponentRegistry'
 
 /**
@@ -43,47 +44,6 @@ export function createDiagnosticsProvider(context: vscode.ExtensionContext): vsc
   )
 
   return diagnosticCollection
-}
-
-/**
- * Directive pairs that need to be matched
- */
-const directivePairs: Record<string, string> = {
-  if: 'endif',
-  unless: 'endunless',
-  for: 'endfor',
-  foreach: 'endforeach',
-  forelse: 'endforelse',
-  while: 'endwhile',
-  switch: 'endswitch',
-  ts: 'endts',
-  js: 'endjs',
-  script: 'endscript',
-  css: 'endcss',
-  markdown: 'endmarkdown',
-  raw: 'endraw',
-  verbatim: 'endverbatim',
-  component: 'endcomponent',
-  slot: 'endslot',
-  webcomponent: 'endwebcomponent',
-  section: 'endsection',
-  push: 'endpush',
-  pushIf: 'endpushIf',
-  pushOnce: 'endpushOnce',
-  prepend: 'endprepend',
-  prependOnce: 'endprependOnce',
-  auth: 'endauth',
-  guest: 'endguest',
-  can: 'endcan',
-  cannot: 'endcannot',
-  env: 'endenv',
-  isset: 'endisset',
-  empty: 'endempty',
-  error: 'enderror',
-  once: 'endonce',
-  transition: 'endtransition',
-  motion: 'endmotion',
-  scrollAnimate: 'endscrollAnimate',
 }
 
 /**
@@ -131,7 +91,7 @@ function updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: 
       const position = match.index + 1 // +1 to skip the @
 
       // Check if it's an opening directive
-      if (directivePairs[directiveName]) {
+      if (STX_DIRECTIVE_PAIRS[directiveName]) {
         stack.push({
           name: directiveName,
           line: lineNum,
@@ -144,9 +104,7 @@ function updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: 
         const isEndDirective = directiveName.startsWith('end')
         if (isEndDirective) {
           // Find the corresponding opening directive
-          const openingName = Object.keys(directivePairs).find(
-            key => directivePairs[key] === directiveName,
-          )
+          const openingName = STX_OPENING_DIRECTIVE_BY_CLOSE.get(directiveName)
 
           if (openingName && validateMismatched) {
             // Pop from stack if it matches
@@ -162,7 +120,7 @@ function updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: 
                     new vscode.Position(lineNum, position),
                     new vscode.Position(lineNum, position + directiveName.length),
                   ),
-                  `Mismatched directive. Expected @${directivePairs[lastOpening.name]} but found @${directiveName}`,
+                  `Mismatched directive. Expected @${STX_DIRECTIVE_PAIRS[lastOpening.name]} but found @${directiveName}`,
                   vscode.DiagnosticSeverity.Error,
                 )
                 diagnostic.source = 'stx'
@@ -203,7 +161,7 @@ function updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: 
           new vscode.Position(unclosed.line, unclosed.character),
           new vscode.Position(unclosed.line, unclosed.character + unclosed.name.length),
         ),
-        `Unclosed @${unclosed.name} directive. Expected @${directivePairs[unclosed.name]}`,
+        `Unclosed @${unclosed.name} directive. Expected @${STX_DIRECTIVE_PAIRS[unclosed.name]}`,
         vscode.DiagnosticSeverity.Warning,
       )
       diagnostic.source = 'stx'

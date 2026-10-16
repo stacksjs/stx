@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { STX_DIRECTIVE_PAIRS, STX_OPENING_DIRECTIVE_BY_CLOSE } from '../language-features'
 
 /**
  * Creates a folding range provider for stx directive blocks
@@ -15,45 +16,6 @@ export function createFoldingRangeProvider(): vscode.FoldingRangeProvider {
       }
 
       const foldingRanges: vscode.FoldingRange[] = []
-
-      // Directive pairs that can be folded
-      const directivePairs: Record<string, string> = {
-        if: 'endif',
-        unless: 'endunless',
-        for: 'endfor',
-        foreach: 'endforeach',
-        forelse: 'endforelse',
-        while: 'endwhile',
-        switch: 'endswitch',
-        ts: 'endts',
-        js: 'endjs',
-        script: 'endscript',
-        css: 'endcss',
-        markdown: 'endmarkdown',
-        raw: 'endraw',
-        verbatim: 'endverbatim',
-        component: 'endcomponent',
-        slot: 'endslot',
-        webcomponent: 'endwebcomponent',
-        section: 'endsection',
-        push: 'endpush',
-        pushIf: 'endpushIf',
-        pushOnce: 'endpushOnce',
-        prepend: 'endprepend',
-        prependOnce: 'endprependOnce',
-        auth: 'endauth',
-        guest: 'endguest',
-        can: 'endcan',
-        cannot: 'endcannot',
-        env: 'endenv',
-        isset: 'endisset',
-        empty: 'endempty',
-        error: 'enderror',
-        once: 'endonce',
-        transition: 'endtransition',
-        motion: 'endmotion',
-        scrollAnimate: 'endscrollAnimate',
-      }
 
       // Stack to track open directives
       interface DirectiveInfo {
@@ -93,7 +55,7 @@ export function createFoldingRangeProvider(): vscode.FoldingRangeProvider {
           const directiveName = match[1]
 
           // Check if it's an opening directive
-          if (directivePairs[directiveName]) {
+          if (STX_DIRECTIVE_PAIRS[directiveName]) {
             stack.push({
               name: directiveName,
               line: lineNum,
@@ -105,9 +67,7 @@ export function createFoldingRangeProvider(): vscode.FoldingRangeProvider {
             const isEndDirective = directiveName.startsWith('end')
             if (isEndDirective) {
               // Find the corresponding opening directive
-              const openingName = Object.keys(directivePairs).find(
-                key => directivePairs[key] === directiveName,
-              )
+              const openingName = STX_OPENING_DIRECTIVE_BY_CLOSE.get(directiveName)
 
               if (openingName && stack.length > 0) {
                 const lastOpening = stack[stack.length - 1]
