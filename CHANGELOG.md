@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.540...v0.2.541)
+
+## ✨ Features
+
+- **native**: expose scoped ActivityKit session presentations ([c66f9f4](https://github.com/stacksjs/stx/commit/c66f9f4)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.541 ([f4fcb64](https://github.com/stacksjs/stx/commit/f4fcb64)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.539...v0.2.540)
 
 ## 🐛 Bug Fixes
