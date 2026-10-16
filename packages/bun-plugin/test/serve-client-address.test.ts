@@ -18,6 +18,7 @@ import { createTempDir } from '../../stx/src/temp-dir'
 
 setDefaultTimeout(60_000)
 
+// Reserve both listeners together; PORT + 1 may already belong to another test.
 const [PLAIN_PORT, RESOLVED_PORT] = freePorts(2)
 const PLAIN = `http://127.0.0.1:${PLAIN_PORT}`
 const RESOLVED = `http://127.0.0.1:${RESOLVED_PORT}`

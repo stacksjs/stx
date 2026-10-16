@@ -30,7 +30,10 @@ export function freePort(): number {
 
 /** Reserve several distinct kernel-assigned ports before releasing any of them. */
 export function freePorts(count: number): number[] {
-  const servers: ReturnType<typeof Bun.listen>[] = []
+  if (!Number.isInteger(count) || count < 1)
+    throw new RangeError('freePorts count must be a positive integer')
+
+  const servers: Array<{ readonly port: number, stop: (closeActiveConnections?: boolean) => void }> = []
 
   try {
     for (let index = 0; index < count; index++) {

@@ -13,4 +13,9 @@ describe('test ports', () => {
   test('keeps the single-port helper compatible', () => {
     expect(freePort()).toBeGreaterThan(0)
   })
+
+  test('rejects invalid reservation counts', () => {
+    expect(() => freePorts(0)).toThrow('positive integer')
+    expect(() => freePorts(1.5)).toThrow('positive integer')
+  })
 })
