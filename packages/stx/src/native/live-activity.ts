@@ -7,7 +7,7 @@ export interface NativeLiveActivityState {
   showsDistance?: boolean
   heartRate?: number | null
   durationSeconds?: number
-  remainingSeconds?: number
+  remainingSeconds?: number | null
   progress?: number
   timerStartedAt?: number | null
   timerEndsAt?: number | null

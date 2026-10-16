@@ -20,10 +20,11 @@ describe('declarative native Live Activity', () => {
     const live = createLiveActivity(bridge)
     await live.update(first)
     await live.update(first)
-    await live.update({ ...first, paused: true, durationSeconds: 12 })
+    await live.update({ ...first, paused: true, durationSeconds: 12, remainingSeconds: null })
     await live.end()
     expect(calls.map(call => call[0])).toEqual(['start', 'update', 'end'])
     expect(calls[1]?.[1]).toBe('session-1-native')
+    expect((calls[1]?.[2] as NativeLiveActivityOptions).remainingSeconds).toBeNull()
     expect(calls[2]).toEqual(['end', 'session-1-native'])
   })
 
