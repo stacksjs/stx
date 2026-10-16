@@ -55,6 +55,19 @@ describe('css class extraction', () => {
 })
 
 describe('classes assigned by served module bundles', () => {
+  it('scans each linked module once when a page repeats its URL', async () => {
+    const { registerServeModuleBundle } = await import('../../src/caching')
+    const { withLinkedModuleBundles } = await import('../../src/dev-server/ts-css')
+    const first = `export const first = 'text-emerald-600'; // ${'x'.repeat(4096)}`
+    const second = "export const second = 'i-lucide-footprints'"
+    const firstUrl = registerServeModuleBundle(first)
+    const secondUrl = registerServeModuleBundle(second)
+    const page = `<html>${`<script src="${firstUrl}"></script>`.repeat(128)}<script src="${secondUrl}"></script><script src="${firstUrl}"></script></html>`
+    const scanned = withLinkedModuleBundles(page)
+    expect(scanned.length).toBe(page.length + first.length + second.length + 2)
+    expect(scanned.slice(page.length)).toBe(`\n${first}\n${second}`)
+  })
+
   it('reads the bundles a page links, as it read them when they were inline', async () => {
     const { registerServeModuleBundle } = await import('../../src/caching')
     const { withLinkedModuleBundles } = await import('../../src/dev-server/ts-css')

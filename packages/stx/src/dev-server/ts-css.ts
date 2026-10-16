@@ -741,8 +741,14 @@ export async function generateCss(htmlContent: string, appDir?: string): Promise
  */
 export function withLinkedModuleBundles(htmlContent: string): string {
   const bundles: string[] = []
+  const seen = new Set<string>()
   for (const match of htmlContent.matchAll(/\/_stx\/modules\.([0-9a-f]{16})\.js/g)) {
-    const code = getServeModuleBundle(match[1])
+    // Repeated components and their script strings can reference one bundle
+    // many times. Appending it for every reference can exceed the string limit.
+    const hash = match[1]
+    if (seen.has(hash)) continue
+    seen.add(hash)
+    const code = getServeModuleBundle(hash)
     if (code) bundles.push(code)
   }
   return bundles.length ? `${htmlContent}\n${bundles.join('\n')}` : htmlContent
