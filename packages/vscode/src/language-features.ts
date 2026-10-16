@@ -281,8 +281,18 @@ export const STX_ATTRIBUTE_DIRECTIVES: readonly StxAttributeDirectiveDefinition[
   { name: 'stx-hydrate', description: 'Defer reactive hydration until a trigger fires', snippet: 'stx-hydrate="${1:visible}"' },
 ]
 
+export const STX_ATTRIBUTE_DIRECTIVE_BY_NAME = new Map(
+  STX_ATTRIBUTE_DIRECTIVES.map(directive => [directive.name.toLowerCase(), directive]),
+)
+
 export interface StxAttributeCompletionContext {
   prefix: string
+}
+
+export interface StxAttributeContext {
+  name: string
+  start: number
+  end: number
 }
 
 /** Return the attribute token before the cursor when it is inside an opening tag. */
@@ -322,4 +332,49 @@ export function getStxAttributeCompletionContext(sourceBeforeCursor: string): St
     return undefined
 
   return { prefix: match[1] }
+}
+
+/** Find a reactive attribute under an absolute source offset. */
+export function getStxAttributeAtOffset(source: string, offset: number): StxAttributeContext | undefined {
+  const attributePattern = /(?:^|\s)([:@][A-Za-z][\w:.-]*|(?:x|v|stx)-[A-Za-z][\w:.-]*)/g
+  let match: RegExpExecArray | null
+
+  while ((match = attributePattern.exec(source)) !== null) {
+    const name = match[1]
+    const start = match.index + match[0].length - name.length
+    const end = start + name.length
+    if (offset < start || offset > end)
+      continue
+
+    const completionContext = getStxAttributeCompletionContext(source.slice(0, end))
+    if (completionContext?.prefix === name)
+      return { name, start, end }
+  }
+
+  return undefined
+}
+
+/** Resolve event modifiers and dynamic x-bind names to their catalog entry. */
+export function getStxAttributeDefinition(name: string): StxAttributeDirectiveDefinition | undefined {
+  const normalized = name.toLowerCase()
+  const exact = STX_ATTRIBUTE_DIRECTIVE_BY_NAME.get(normalized)
+  if (exact)
+    return exact
+
+  if (normalized.startsWith('@'))
+    return STX_ATTRIBUTE_DIRECTIVE_BY_NAME.get(normalized.split('.')[0])
+
+  if (normalized.startsWith('x-bind:'))
+    return STX_ATTRIBUTE_DIRECTIVE_BY_NAME.get('x-bind:')
+
+  return undefined
+}
+
+/** Convert a VS Code snippet into readable hover documentation. */
+export function stxSnippetPreview(snippet: string): string {
+  return snippet
+    .replace(/\$\{\d+\|([^|]+)\|\}/g, (_match, choices: string) => choices.split(',')[0].replace(/\\,/g, ','))
+    .replace(/\$\{\d+:([^}]*)\}/g, '$1')
+    .replace(/\$\{\d+\}/g, '')
+    .replace(/\$\d+/g, '')
 }

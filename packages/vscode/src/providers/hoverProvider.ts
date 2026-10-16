@@ -2,7 +2,13 @@
 import type { VirtualTsDocumentProvider } from './virtualTsDocumentProvider'
 import * as vscode from 'vscode'
 import { TransitionDirection, TransitionEase, TransitionType } from '../interfaces/animation-types'
-import { getStxDirectiveAtOffset, STX_DIRECTIVE_BY_NAME } from '../language-features'
+import {
+  getStxAttributeAtOffset,
+  getStxAttributeDefinition,
+  getStxDirectiveAtOffset,
+  STX_DIRECTIVE_BY_NAME,
+  stxSnippetPreview,
+} from '../language-features'
 import { ComponentRegistry } from '../services/ComponentRegistry'
 import { findCssStylesForClass, isInScriptTag, isInStyleTag } from '../utils/cssUtils'
 import { formatJSDoc } from '../utils/jsdocUtils'
@@ -94,6 +100,24 @@ export function createHoverProvider(virtualTsDocumentProvider: VirtualTsDocument
 
       // Get the word at the current position
       const word = document.getText(wordRange)
+
+      const source = document.getText()
+      const sourceOffset = document.offsetAt(position)
+      const attributeContext = getStxAttributeAtOffset(source, sourceOffset)
+      if (attributeContext) {
+        const definition = getStxAttributeDefinition(attributeContext.name)
+        if (definition) {
+          const hover = new vscode.MarkdownString()
+          hover.appendMarkdown(definition.description)
+          hover.appendMarkdown('\n\n**Syntax**\n')
+          hover.appendCodeblock(stxSnippetPreview(definition.snippet), 'stx')
+          const range = new vscode.Range(
+            document.positionAt(attributeContext.start),
+            document.positionAt(attributeContext.end),
+          )
+          return createHoverWithDiagnostics(hover, document, position, range)
+        }
+      }
 
       // Get the entire line for context analysis
       const line = document.lineAt(position.line).text
@@ -2167,7 +2191,7 @@ errors.notFound: "Page not found"`, 'yaml')
 
             hover.appendMarkdown(description)
             hover.appendMarkdown('\n\n**Syntax**\n')
-            hover.appendCodeblock(directiveDefinition.snippet ?? `@${directiveDefinition.name}`, 'stx')
+            hover.appendCodeblock(stxSnippetPreview(directiveDefinition.snippet ?? `@${directiveDefinition.name}`), 'stx')
             return createHoverWithDiagnostics(hover, document, position)
         }
       }

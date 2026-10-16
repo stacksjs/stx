@@ -26,10 +26,13 @@ export { createHoverProvider } from './providers/hoverProvider'
 export { createCompletionProvider } from './providers/completionProvider'
 export {
   getStxAttributeCompletionContext,
+  getStxAttributeAtOffset,
+  getStxAttributeDefinition,
   getStxDirectiveAtOffset,
   STX_ATTRIBUTE_DIRECTIVES,
   STX_DIRECTIVES,
   STX_DIRECTIVE_PAIRS,
+  stxSnippetPreview,
 } from './language-features'
 export { createDefinitionProvider } from './providers/definitionProvider'
 export { createDiagnosticsProvider } from './providers/diagnosticsProvider'

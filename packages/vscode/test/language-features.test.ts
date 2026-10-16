@@ -1,11 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 import {
   getStxAttributeCompletionContext,
+  getStxAttributeAtOffset,
+  getStxAttributeDefinition,
   getStxDirectiveAtOffset,
   STX_ATTRIBUTE_DIRECTIVES,
   STX_DIRECTIVES,
   STX_DIRECTIVE_PAIRS,
   STX_OPENING_DIRECTIVE_BY_CLOSE,
+  stxSnippetPreview,
 } from '../src/language-features'
 
 describe('shared stx language catalog', () => {
@@ -84,5 +87,20 @@ describe('shared stx language catalog', () => {
     expect(getStxAttributeCompletionContext('<div> @cl')).toBeUndefined()
     expect(getStxAttributeCompletionContext('</div @cl')).toBeUndefined()
     expect(getStxAttributeCompletionContext('if (left < right) @cl')).toBeUndefined()
+  })
+
+  test('finds reactive attributes and resolves modifiers', () => {
+    const source = '<button\n  :if="ready"\n  @click.prevent="save()">Save</button>'
+    expect(getStxAttributeAtOffset(source, source.indexOf(':if') + 2)?.name).toBe(':if')
+    expect(getStxAttributeAtOffset(source, source.indexOf('@click') + 4)?.name).toBe('@click.prevent')
+    expect(getStxAttributeDefinition('@click.prevent')?.name).toBe('@click')
+    expect(getStxAttributeDefinition('x-bind:aria-label')?.name).toBe('x-bind:')
+    expect(getStxAttributeAtOffset('<p>@click</p>', 5)).toBeUndefined()
+  })
+
+  test('renders snippets as readable documentation', () => {
+    expect(stxSnippetPreview(':if="${1:condition}"')).toBe(':if="condition"')
+    expect(stxSnippetPreview('@if(${1:condition})\n\t${2}\n@endif')).toBe('@if(condition)\n\t\n@endif')
+    expect(stxSnippetPreview('${1|visible,idle|}')).toBe('visible')
   })
 })
