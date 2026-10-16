@@ -660,3 +660,34 @@ describe('generic Bluetooth channel', () => {
     }
   })
 })
+
+describe('ActivityKit on native screens', () => {
+  it('advertises only a real capability and addresses update/end by id', async () => {
+    const unsupported = await runtime([])
+    expect(unsupported.scope.craft.liveActivity).toBeUndefined()
+    expect(unsupported.scope.craft.capabilities.liveActivities).toBe(false)
+    const host = await runtime(['liveActivities'])
+    const service = host.scope.craft.liveActivity
+    expect(host.scope.craft.capabilities.liveActivities).toBe(true)
+    const options = { activityId: 'workout-42', title: 'Ride', timerStartedAt: 1000, deepLink: 'hqtraining://m/go/42' }
+    const start = service.start(options)
+    const startRequest = host.requests().at(-1)!
+    expect(startRequest.payload).toMatchObject({ module: 'LiveActivities', method: 'start', args: [options] })
+    host.answer(startRequest, { id: 'native-42' })
+    expect(await start).toEqual({ id: 'native-42' })
+    const update = service.update('native-42', { paused: true, timerStartedAt: null, durationSeconds: 45 })
+    const updateRequest = host.requests().at(-1)!
+    expect(updateRequest.payload.args).toEqual(['native-42', { paused: true, timerStartedAt: null, durationSeconds: 45 }])
+    host.answer(updateRequest, { updated: true })
+    await update
+    const end = service.end('native-42')
+    const endRequest = host.requests().at(-1)!
+    expect(endRequest.payload).toMatchObject({ module: 'LiveActivities', method: 'end', args: ['native-42', {}] })
+    host.answer(endRequest, { ended: true })
+    await end
+    const listed = service.list()
+    const listRequest = host.requests().at(-1)!
+    host.answer(listRequest, [{ id: 'other', activityId: 'relax' }])
+    expect(await listed).toEqual([{ id: 'other', activityId: 'relax' }])
+  })
+})

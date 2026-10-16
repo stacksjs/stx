@@ -30,6 +30,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     heartRate: capabilities.has('heartRate'),
     bluetooth: capabilities.has('bluetooth'),
     scheduledWorkouts: capabilities.has('scheduledWorkouts'),
+    liveActivities: capabilities.has('liveActivities'),
     clipboard: capabilities.has('clipboard'),
     contacts: false,
     calendar: false,
@@ -381,6 +382,18 @@ export function installCraftBridge(
     target.addEventListener?.('craftLocationUpdate', (event: AnyRecord) => {
       watchers.forEach(callback => callback(event?.detail))
     })
+  }
+
+  // Real ActivityKit services, advertised only by supported native hosts.
+  // Keep the page SDK's singular craft.liveActivity shape on native screens.
+  if (capabilities.has('liveActivities')) {
+    craft.liveActivity = {
+      isAvailable: () => request('LiveActivities', 'isAvailable', []).then(Boolean),
+      list: () => request('LiveActivities', 'list', []),
+      start: (options: AnyRecord) => request('LiveActivities', 'start', [options]),
+      update: (idOrState: string | AnyRecord, state: AnyRecord = {}) => request('LiveActivities', 'update', typeof idOrState === 'string' ? [idOrState, state] : [null, idOrState]),
+      end: (id?: string, state: AnyRecord = {}) => request('LiveActivities', 'end', [id ?? null, state]),
+    }
   }
 
   // The Music app's song and transport, in the page's names: `craft.music`

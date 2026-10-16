@@ -1,3 +1,4 @@
+import type { NativeLiveActivities } from '../live-activity'
 /**
  * The `craft` object a native screen's script sees, typed.
  *
@@ -147,6 +148,8 @@ export interface NativeSnapshots {
 }
 
 export interface NativeCraft {
+  /** ActivityKit Lock Screen and Dynamic Island presentations (iOS). */
+  liveActivity?: NativeLiveActivities
   /** AppKit window and menu operations (`capabilities.desktop`). */
   desktop?: NativeDesktop
   platform: string
