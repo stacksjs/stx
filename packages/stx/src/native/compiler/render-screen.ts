@@ -35,7 +35,7 @@ import { processDirectives } from '../../process'
 import { processScriptSetup } from '../../signal-processing'
 import { translateHtmlToDocument } from './html-to-ir'
 import { extractClientScript } from './client-script'
-import { extractGeneratedSetupScript, type GeneratedSetupScript } from './setup-script'
+import { extractGeneratedSetupScript, extractNativeClientScripts, type GeneratedSetupScript, type NativeClientScript } from './setup-script'
 
 /**
  * Where the native primitive components live, for an app's stx config.
@@ -75,6 +75,8 @@ export interface CompiledScreen {
   manifest: BindingManifest
   /** Client setup transformed by stx, ready to run against the shared runtime. */
   setup: GeneratedSetupScript | null
+  /** Page setup and component scope factories in document order. */
+  scripts: NativeClientScript[]
   diagnostics: TranslationDiagnostic[]
   /** The rendered HTML the IR was translated from, for debugging a bad tree. */
   html: string
@@ -122,12 +124,16 @@ export async function compileScreenSource(
   })
 
   let setup = extractGeneratedSetupScript(html)
+  const scripts = extractNativeClientScripts(html)
   if (extractClientScript(source).code.trim()) {
     const forced = await processScriptSetup(source, filePath, options.context, { forceClientSetup: true })
-    setup = extractGeneratedSetupScript(forced.setupCode ?? '') ?? setup
+    const forcedSetup = extractGeneratedSetupScript(forced.setupCode ?? '')
+    setup = forcedSetup ?? setup
+    if (forcedSetup && !scripts.some(script => script.code === forcedSetup.code))
+      scripts.push({ code: forcedSetup.code })
   }
 
-  return { document, manifest, setup, diagnostics, html, dependencies: [...dependencies] }
+  return { document, manifest, setup, scripts, diagnostics, html, dependencies: [...dependencies] }
 }
 
 /** The same, reading the screen off disk. */
