@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.541...v0.2.542)
+
+## 🐛 Bug Fixes
+
+- **native**: allow clearing a paused countdown value ([7fc1c6f](https://github.com/stacksjs/stx/commit/7fc1c6f)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.542 ([c3ecdcc](https://github.com/stacksjs/stx/commit/c3ecdcc)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.540...v0.2.541)
 
 ## ✨ Features
