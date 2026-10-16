@@ -25,12 +25,26 @@
 
 /** Bind port 0, take the port the kernel assigned, and release it. */
 export function freePort(): number {
-  const server = Bun.listen({
-    hostname: '127.0.0.1',
-    port: 0,
-    socket: { data() {}, open() {}, close() {}, error() {} },
-  })
-  const { port } = server
-  server.stop(true)
-  return port
+  return freePorts(1)[0]
+}
+
+/** Reserve several distinct kernel-assigned ports before releasing any of them. */
+export function freePorts(count: number): number[] {
+  const servers: ReturnType<typeof Bun.listen>[] = []
+
+  try {
+    for (let index = 0; index < count; index++) {
+      servers.push(Bun.listen({
+        hostname: '127.0.0.1',
+        port: 0,
+        socket: { data() {}, open() {}, close() {}, error() {} },
+      }))
+    }
+
+    return servers.map(server => server.port)
+  }
+  finally {
+    for (const server of servers)
+      server.stop(true)
+  }
 }

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
 import { rm } from 'node:fs/promises'
 import path from 'node:path'
-import { freePort } from '../../stx/test-utils/test-port'
+import { freePorts } from '../../stx/test-utils/test-port'
 import { createTempDir } from '../../stx/src/temp-dir'
 
 /**
@@ -18,9 +18,9 @@ import { createTempDir } from '../../stx/src/temp-dir'
 
 setDefaultTimeout(60_000)
 
-const PORT = freePort()
-const PLAIN = `http://127.0.0.1:${PORT}`
-const RESOLVED = `http://127.0.0.1:${PORT + 1}`
+const [PLAIN_PORT, RESOLVED_PORT] = freePorts(2)
+const PLAIN = `http://127.0.0.1:${PLAIN_PORT}`
+const RESOLVED = `http://127.0.0.1:${RESOLVED_PORT}`
 const SERVE_SRC = path.join(import.meta.dir, '..', 'src', 'serve.ts')
 
 let dir: string
@@ -45,11 +45,11 @@ const marker = crypto.randomUUID()
 `)
   await Bun.write(path.join(dir, 'driver.ts'), `import { serve } from ${JSON.stringify(SERVE_SRC)}
 
-serve({ patterns: ['views'], port: ${PORT}, quiet: true })
+serve({ patterns: ['views'], port: ${PLAIN_PORT}, quiet: true })
 
 serve({
   patterns: ['views'],
-  port: ${PORT + 1},
+  port: ${RESOLVED_PORT},
   quiet: true,
   renderCache: true,
   renderCacheVary: 'request',
