@@ -91,7 +91,12 @@ export function createLiveActivity(bridge: NativeLiveActivities | null | undefin
       revision++
     }
     if (!pending && applied !== revision)
-      pending = drain().finally(() => { pending = null })
+      pending = drain().finally(() => {
+        pending = null
+        // A native callback can queue a new state after drain's last loop,
+        // before this finalizer runs. Deliver it before resolving callers.
+        if (applied !== revision) return update(desired)
+      })
     return pending ?? Promise.resolve()
   }
 

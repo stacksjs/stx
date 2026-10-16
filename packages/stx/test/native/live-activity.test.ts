@@ -66,6 +66,17 @@ describe('declarative native Live Activity', () => {
     expect(calls).toEqual([])
   })
 
+  it('delivers a state change queued as a native start settles', async () => {
+    const { bridge, calls } = fake()
+    const live = createLiveActivity(bridge)
+    bridge.start = async () => {
+      queueMicrotask(() => queueMicrotask(() => { void live.update({ ...first, paused: true }) }))
+      return { id: 'settled-id' }
+    }
+    await live.update(first)
+    expect(calls).toEqual([['update', 'settled-id', { ...first, paused: true }]])
+  })
+
   it('reports native failures without interrupting the session', async () => {
     const { bridge } = fake()
     const errors: unknown[] = []
