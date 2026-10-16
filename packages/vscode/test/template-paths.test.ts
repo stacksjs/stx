@@ -16,13 +16,16 @@ describe('template path completion context', () => {
   test('recognizes conditional and first-existing includes', () => {
     expect(getTemplatePathCompletionContext("@includeIf('optional/nav")).toEqual({ kind: 'include', path: 'optional/nav' })
     expect(getTemplatePathCompletionContext("@includeWhen(user, 'admin/nav")).toEqual({ kind: 'include', path: 'admin/nav' })
+    expect(getTemplatePathCompletionContext("@includeWhen(can('admin', user), 'admin/nav")).toEqual({ kind: 'include', path: 'admin/nav' })
     expect(getTemplatePathCompletionContext("@includeUnless(hidden, \"menu")).toEqual({ kind: 'include', path: 'menu' })
     expect(getTemplatePathCompletionContext("@includeFirst(['mobile/nav")).toEqual({ kind: 'include', path: 'mobile/nav' })
+    expect(getTemplatePathCompletionContext("@includeFirst(['mobile/nav', 'desktop/nav")).toEqual({ kind: 'include', path: 'desktop/nav' })
   })
 
   test('finds paths for navigation without confusing include argument order', () => {
     expect(findTemplatePathReferences("@includeIf('optional/nav')").map(reference => reference.path)).toEqual(['optional/nav'])
     expect(findTemplatePathReferences("@includeWhen(user.isAdmin, 'admin/nav')").map(reference => reference.path)).toEqual(['admin/nav'])
+    expect(findTemplatePathReferences("@includeWhen(can('admin', user), 'admin/nav')").map(reference => reference.path)).toEqual(['admin/nav'])
     expect(findTemplatePathReferences("@webcomponent('ui/menu')").map(reference => reference.path)).toEqual(['ui/menu'])
   })
 

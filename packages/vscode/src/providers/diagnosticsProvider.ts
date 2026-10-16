@@ -3,7 +3,11 @@ import * as path from 'node:path'
 import * as vscode from 'vscode'
 import { STX_DIRECTIVE_PAIRS, STX_OPENING_DIRECTIVE_BY_CLOSE } from '../language-features'
 import { ComponentRegistry } from '../services/ComponentRegistry'
-import { COMPONENT_SEARCH_DIRECTORIES, TEMPLATE_SEARCH_DIRECTORIES } from '../utils/template-paths'
+import {
+  COMPONENT_SEARCH_DIRECTORIES,
+  findTemplatePathReferences,
+  TEMPLATE_SEARCH_DIRECTORIES,
+} from '../utils/template-paths'
 
 /**
  * Creates a diagnostic collection for stx files
@@ -200,26 +204,16 @@ function validateTemplatePaths(document: vscode.TextDocument, diagnostics: vscod
     ...COMPONENT_SEARCH_DIRECTORIES,
   ])]
 
-  // Regular expression to match @include and @component with paths
-  const pathDirectiveRegex = /@(include(?:If|When|Unless|First)?|component|webcomponent)\s*\(\s*['"`]([^'"`]+)['"`]/g
-
   for (let lineNum = 0; lineNum < document.lineCount; lineNum++) {
     const line = document.lineAt(lineNum)
     const text = line.text
 
-    let match: RegExpExecArray | null
-    pathDirectiveRegex.lastIndex = 0
-    match = pathDirectiveRegex.exec(text)
+    // Individual includeFirst candidates are allowed to be absent.
+    if (/@includeFirst\s*\(/.test(text))
+      continue
 
-    while (match !== null) {
-      const directiveName = match[1]
-      const templatePath = match[2]
-      const pathStart = match.index + match[0].indexOf(templatePath)
-
-      // Skip validation for @includeFirst (it's expected that some might not exist)
-      if (directiveName === 'includeFirst') {
-        continue
-      }
+    for (const reference of findTemplatePathReferences(text)) {
+      const templatePath = reference.path
 
       // Try to find the template file
       let found = false
@@ -251,8 +245,8 @@ function validateTemplatePaths(document: vscode.TextDocument, diagnostics: vscod
       if (!found) {
         const diagnostic = new vscode.Diagnostic(
           new vscode.Range(
-            new vscode.Position(lineNum, pathStart),
-            new vscode.Position(lineNum, pathStart + templatePath.length),
+            new vscode.Position(lineNum, reference.start),
+            new vscode.Position(lineNum, reference.end),
           ),
           `Template file '${templatePath}' not found in any template directory`,
           vscode.DiagnosticSeverity.Warning,
@@ -261,7 +255,6 @@ function validateTemplatePaths(document: vscode.TextDocument, diagnostics: vscod
         diagnostic.source = 'stx'
         diagnostics.push(diagnostic)
       }
-      match = pathDirectiveRegex.exec(text)
     }
   }
 }

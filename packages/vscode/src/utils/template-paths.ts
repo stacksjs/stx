@@ -33,59 +33,119 @@ export interface TemplatePathReference extends TemplatePathCompletionContext {
   end: number
 }
 
-export function getTemplatePathCompletionContext(linePrefix: string): TemplatePathCompletionContext | undefined {
-  const component = linePrefix.match(/@(?:component|webcomponent)\s*\(\s*['"`]([^'"`]*)$/)
-  if (component)
-    return { kind: 'component', path: component[1] }
+type TemplateDirectiveName = 'include' | 'includeIf' | 'includeWhen' | 'includeUnless' | 'includeFirst' | 'component' | 'webcomponent'
 
-  const regularInclude = linePrefix.match(/@include(?:If)?\s*\(\s*['"`]([^'"`]*)$/)
-  if (regularInclude)
-    return { kind: 'include', path: regularInclude[1] }
+const TEMPLATE_DIRECTIVE_PATTERN = /@(includeFirst|includeUnless|includeWhen|includeIf|include|webcomponent|component)\s*\(/g
 
-  const conditionalInclude = linePrefix.match(/@include(?:When|Unless)\s*\([^,]+,\s*['"`]([^'"`]*)$/)
-  if (conditionalInclude)
-    return { kind: 'include', path: conditionalInclude[1] }
+function argumentStart(source: string, openParen: number, targetArgument: number): number | undefined {
+  if (targetArgument === 0)
+    return openParen + 1
 
-  const firstInclude = linePrefix.match(/@includeFirst\s*\(\s*\[\s*['"`]([^'"`]*)$/)
-  if (firstInclude)
-    return { kind: 'include', path: firstInclude[1] }
+  let argument = 0
+  let depth = 0
+  let quote = ''
+
+  for (let index = openParen + 1; index < source.length; index++) {
+    const character = source[index]
+
+    if (quote) {
+      if (character === '\\')
+        index++
+      else if (character === quote)
+        quote = ''
+      continue
+    }
+
+    if (character === '\'' || character === '"' || character === '`') {
+      quote = character
+    }
+    else if (character === '(' || character === '[' || character === '{') {
+      depth++
+    }
+    else if (character === ')' || character === ']' || character === '}') {
+      if (character === ')' && depth === 0)
+        return undefined
+      depth--
+    }
+    else if (character === ',' && depth === 0) {
+      argument++
+      if (argument === targetArgument)
+        return index + 1
+    }
+  }
 
   return undefined
 }
 
-function referenceFromMatch(
-  match: RegExpExecArray,
-  pathGroup: number,
-  kind: TemplatePathReference['kind'],
-): TemplatePathReference {
-  const path = match[pathGroup]
-  const start = match.index + match[0].lastIndexOf(path)
-  return { kind, path, start, end: start + path.length }
+function quotedReferences(source: string, start: number, end = source.length): Array<Pick<TemplatePathReference, 'path' | 'start' | 'end'>> {
+  const references: Array<Pick<TemplatePathReference, 'path' | 'start' | 'end'>> = []
+
+  for (let index = start; index < end; index++) {
+    const quote = source[index]
+    if (quote !== '\'' && quote !== '"' && quote !== '`')
+      continue
+
+    const pathStart = index + 1
+    let pathEnd = pathStart
+    while (pathEnd < end && source[pathEnd] !== quote) {
+      if (source[pathEnd] === '\\')
+        pathEnd++
+      pathEnd++
+    }
+
+    if (pathEnd < end) {
+      references.push({ path: source.slice(pathStart, pathEnd), start: pathStart, end: pathEnd })
+      index = pathEnd
+    }
+  }
+
+  return references
+}
+
+export function getTemplatePathCompletionContext(linePrefix: string): TemplatePathCompletionContext | undefined {
+  TEMPLATE_DIRECTIVE_PATTERN.lastIndex = 0
+  const directives = [...linePrefix.matchAll(TEMPLATE_DIRECTIVE_PATTERN)]
+  const directive = directives.at(-1)
+  if (!directive)
+    return undefined
+
+  const name = directive[1] as TemplateDirectiveName
+  const openParen = directive.index + directive[0].lastIndexOf('(')
+  const targetArgument = name === 'includeWhen' || name === 'includeUnless' ? 1 : 0
+  const start = argumentStart(linePrefix, openParen, targetArgument)
+  if (start === undefined)
+    return undefined
+
+  const argument = linePrefix.slice(start)
+  const pathMatch = name === 'includeFirst'
+    ? argument.match(/\[[\s\S]*['"`]([^'"`]*)$/)
+    : argument.match(/^\s*['"`]([^'"`]*)$/)
+
+  return pathMatch
+    ? { kind: name === 'component' || name === 'webcomponent' ? 'component' : 'include', path: pathMatch[1] }
+    : undefined
 }
 
 /** Find every navigable template path on a line, including includeFirst arrays. */
 export function findTemplatePathReferences(line: string): TemplatePathReference[] {
   const references: TemplatePathReference[] = []
-  const direct = /@(include|includeIf|component|webcomponent)\s*\(\s*(['"`])([^'"`]+)\2/g
-  const conditional = /@include(?:When|Unless)\s*\([^,]+,\s*(['"`])([^'"`]+)\1/g
-  const includeFirst = /@includeFirst\s*\(\s*\[([^\]]*)\]/g
+  TEMPLATE_DIRECTIVE_PATTERN.lastIndex = 0
 
-  for (const match of line.matchAll(direct))
-    references.push(referenceFromMatch(match, 3, match[1] === 'component' || match[1] === 'webcomponent' ? 'component' : 'include'))
+  for (const directive of line.matchAll(TEMPLATE_DIRECTIVE_PATTERN)) {
+    const name = directive[1] as TemplateDirectiveName
+    const openParen = directive.index + directive[0].lastIndexOf('(')
+    const targetArgument = name === 'includeWhen' || name === 'includeUnless' ? 1 : 0
+    const start = argumentStart(line, openParen, targetArgument)
+    if (start === undefined)
+      continue
 
-  for (const match of line.matchAll(conditional))
-    references.push(referenceFromMatch(match, 2, 'include'))
+    const kind = name === 'component' || name === 'webcomponent' ? 'component' : 'include'
+    const candidates = name === 'includeFirst'
+      ? quotedReferences(line, line.indexOf('[', start) + 1, line.indexOf(']', start))
+      : quotedReferences(line, start).slice(0, 1)
 
-  for (const arrayMatch of line.matchAll(includeFirst)) {
-    const contents = arrayMatch[1]
-    const contentsStart = arrayMatch.index + arrayMatch[0].indexOf(contents)
-    const quotedPath = /(['"`])([^'"`]+)\1/g
-
-    for (const pathMatch of contents.matchAll(quotedPath)) {
-      const path = pathMatch[2]
-      const start = contentsStart + pathMatch.index + pathMatch[0].indexOf(path)
-      references.push({ kind: 'include', path, start, end: start + path.length })
-    }
+    for (const candidate of candidates)
+      references.push({ kind, ...candidate })
   }
 
   return references.sort((a, b) => a.start - b.start)
