@@ -1,6 +1,7 @@
 /* eslint-disable unused-imports/no-unused-vars, regexp/no-unused-capturing-group */
 import * as vscode from 'vscode'
-import { extractTemplatePath, getTemplatePathRange, resolveTemplatePath } from '../utils/templateUtils'
+import { findTemplatePathReferences } from '../utils/template-paths'
+import { resolveTemplatePath } from '../utils/templateUtils'
 
 export function createDocumentLinkProvider(): vscode.DocumentLinkProvider {
   return {
@@ -11,26 +12,14 @@ export function createDocumentLinkProvider(): vscode.DocumentLinkProvider {
       for (let lineIndex = 0; lineIndex < document.lineCount; lineIndex++) {
         const line = document.lineAt(lineIndex).text
 
-        // Check for both regular and conditional template directives
-        const isRegularDirective = /@(include|component)\s*\(/.test(line)
-        const isConditionalDirective = /@(includeIf|includeWhen|includeUnless|includeFirst)\s*\([^,]*,/.test(line)
+        for (const reference of findTemplatePathReferences(line)) {
+          const resolvedUri = resolveTemplatePath(document.uri, reference.path)
 
-        if (isRegularDirective || isConditionalDirective) {
-          const templatePath = extractTemplatePath(line)
-          if (templatePath) {
-            const range = getTemplatePathRange(document, lineIndex)
-
-            if (range) {
-              const resolvedUri = resolveTemplatePath(document.uri, templatePath)
-
-              if (resolvedUri) {
-                // Create a document link
-                const documentLink = new vscode.DocumentLink(range, resolvedUri)
-                // Add tooltip
-                documentLink.tooltip = `Open ${templatePath}`
-                links.push(documentLink)
-              }
-            }
+          if (resolvedUri) {
+            const range = new vscode.Range(lineIndex, reference.start, lineIndex, reference.end)
+            const documentLink = new vscode.DocumentLink(range, resolvedUri)
+            documentLink.tooltip = `Open ${reference.path}`
+            links.push(documentLink)
           }
         }
       }

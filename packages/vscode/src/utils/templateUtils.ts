@@ -1,30 +1,18 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
-import { COMPONENT_SEARCH_DIRECTORIES, TEMPLATE_SEARCH_DIRECTORIES } from './template-paths'
+import {
+  COMPONENT_SEARCH_DIRECTORIES,
+  findTemplatePathReferences,
+  TEMPLATE_SEARCH_DIRECTORIES,
+} from './template-paths'
 
 /**
  * Extracts a template path from an include or component directive.
  * Handles different formats: 'path/to/file', "path/to/file", etc.
  */
 export function extractTemplatePath(line: string): string | null {
-  // Regular includes/components with path as first parameter
-  // @include('path/to/file'), @component("path/to/file")
-  const regularMatch = line.match(/@(?:include|component)\s*\(\s*['"]([^'"]+)['"]/)
-
-  if (regularMatch && regularMatch[1]) {
-    return regularMatch[1]
-  }
-
-  // Conditional includes with path as second parameter
-  // @includeIf(condition, 'path/to/file'), @includeWhen(user.isAdmin, "path/to/file")
-  const conditionalMatch = line.match(/@(?:includeIf|includeWhen|includeUnless|includeFirst)\s*\([^,]*,\s*['"]([^'"]+)['"]/)
-
-  if (conditionalMatch && conditionalMatch[1]) {
-    return conditionalMatch[1]
-  }
-
-  return null
+  return findTemplatePathReferences(line)[0]?.path ?? null
 }
 
 /**
@@ -85,32 +73,8 @@ export function resolveTemplatePath(documentUri: vscode.Uri, templatePath: strin
  */
 export function getTemplatePathRange(document: vscode.TextDocument, line: number): vscode.Range | null {
   const lineText = document.lineAt(line).text
-
-  // Regular includes/components with path as first parameter
-  const regularMatch = lineText.match(/@(?:include|component)\s*\(\s*(['"])([^'"]+)\1/)
-
-  if (regularMatch) {
-    const startPos = lineText.indexOf(regularMatch[2], regularMatch.index!)
-    const endPos = startPos + regularMatch[2].length
-
-    return new vscode.Range(
-      new vscode.Position(line, startPos),
-      new vscode.Position(line, endPos),
-    )
-  }
-
-  // Conditional includes with path as second parameter
-  const conditionalMatch = lineText.match(/@(?:includeIf|includeWhen|includeUnless|includeFirst)\s*\([^,]*,\s*(['"])([^'"]+)\1/)
-
-  if (conditionalMatch) {
-    const startPos = lineText.indexOf(conditionalMatch[2], conditionalMatch.index!)
-    const endPos = startPos + conditionalMatch[2].length
-
-    return new vscode.Range(
-      new vscode.Position(line, startPos),
-      new vscode.Position(line, endPos),
-    )
-  }
-
-  return null
+  const reference = findTemplatePathReferences(lineText)[0]
+  return reference
+    ? new vscode.Range(line, reference.start, line, reference.end)
+    : null
 }
