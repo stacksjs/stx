@@ -1,5 +1,40 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.545...v0.2.546)
+
+## ✨ Features
+
+- **native**: render a destination beside the tab pill ([ae35bc5](https://github.com/stacksjs/stx/commit/ae35bc5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **vscode**: implement extract to component ([eeb6ef7](https://github.com/stacksjs/stx/commit/eeb6ef7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **vscode**: document reactive attributes on hover ([5e199bd](https://github.com/stacksjs/stx/commit/5e199bd)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **vscode**: cover current stx directives ([455a815](https://github.com/stacksjs/stx/commit/455a815)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **vscode**: complete reactive stx attributes ([46740bc](https://github.com/stacksjs/stx/commit/46740bc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **test**: type kernel port reservations precisely ([3591d35](https://github.com/stacksjs/stx/commit/3591d35)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **test**: reserve paired serve ports together ([ad4536b](https://github.com/stacksjs/stx/commit/ad4536b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **vscode**: stay within the ES2021 runtime floor ([d78099a](https://github.com/stacksjs/stx/commit/d78099a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **vscode**: keep directive quick fixes targeted ([c39e368](https://github.com/stacksjs/stx/commit/c39e368)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **vscode**: validate conditional template paths ([9c6b495](https://github.com/stacksjs/stx/commit/9c6b495)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **vscode**: navigate every template reference ([f77c44c](https://github.com/stacksjs/stx/commit/f77c44c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **vscode**: resolve templates in the active workspace ([4a80bfd](https://github.com/stacksjs/stx/commit/4a80bfd)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **vscode**: honor and expose language settings ([444a12e](https://github.com/stacksjs/stx/commit/444a12e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ♻️ Code Refactoring
+
+- **vscode**: extract shared hover documentation ([ce1f412](https://github.com/stacksjs/stx/commit/ce1f412)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **vscode**: drive directive hovers from catalog ([404316e](https://github.com/stacksjs/stx/commit/404316e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **vscode**: share the stx directive catalog ([4789aa1](https://github.com/stacksjs/stx/commit/4789aa1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.546 ([b3e3cf4](https://github.com/stacksjs/stx/commit/b3e3cf4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.544...v0.2.545)
 
 ## 🐛 Bug Fixes
