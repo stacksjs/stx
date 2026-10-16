@@ -19,7 +19,7 @@ export function normalizeComponentName(input: string): string | undefined {
 export function extractedComponentContent(selection: string): string {
   const lines = selection.replace(/\r\n/g, '\n').split('\n')
   while (lines[0]?.trim() === '') lines.shift()
-  while (lines.at(-1)?.trim() === '') lines.pop()
+  while (lines[lines.length - 1]?.trim() === '') lines.pop()
 
   const indents = lines
     .filter(line => line.trim())

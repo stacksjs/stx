@@ -20,6 +20,7 @@ describe('extract to component', () => {
         <h2>Title</h2>
       </article>
     `)).toBe('<article>\n  <h2>Title</h2>\n</article>\n')
+    expect(extractedComponentContent('\n\n')).toBe('\n')
   })
 
   test('uses the component convention matching the document layout', () => {

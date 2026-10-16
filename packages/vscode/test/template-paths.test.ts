@@ -11,6 +11,7 @@ describe('template path completion context', () => {
     expect(getTemplatePathCompletionContext("@include('partials/hea")).toEqual({ kind: 'include', path: 'partials/hea' })
     expect(getTemplatePathCompletionContext("@component('User")).toEqual({ kind: 'component', path: 'User' })
     expect(getTemplatePathCompletionContext("@webcomponent('ui/car")).toEqual({ kind: 'component', path: 'ui/car' })
+    expect(getTemplatePathCompletionContext('<div>plain markup</div>')).toBeUndefined()
   })
 
   test('recognizes conditional and first-existing includes', () => {

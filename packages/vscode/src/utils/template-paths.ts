@@ -105,7 +105,7 @@ function quotedReferences(source: string, start: number, end = source.length): A
 export function getTemplatePathCompletionContext(linePrefix: string): TemplatePathCompletionContext | undefined {
   TEMPLATE_DIRECTIVE_PATTERN.lastIndex = 0
   const directives = [...linePrefix.matchAll(TEMPLATE_DIRECTIVE_PATTERN)]
-  const directive = directives.at(-1)
+  const directive = directives[directives.length - 1]
   if (!directive)
     return undefined
 
