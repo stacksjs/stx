@@ -28,6 +28,21 @@ export interface NativeNavigationButton {
   onPress?: (event: { id: string }) => unknown
 }
 
+/** Update one tab without replacing its stack, symbol or selection. */
+export interface NativeTabItemOptions {
+  id: string
+  /** Null restores the configured caption. */
+  title?: string | null
+  iconText?: string | null
+  /** Icon-only color; null restores the normal selected/unselected tint. */
+  iconTint?: string | null
+  /** A subtle pulse, suppressed while inactive or when reduced motion is enabled. */
+  iconPulse?: boolean
+  image?: string | null
+  badge?: string | null
+  accessibilityLabel?: string | null
+}
+
 export interface NativeNavigationOptions {
   title?: string
   largeTitle?: boolean
@@ -35,10 +50,9 @@ export interface NativeNavigationOptions {
   backTitle?: string
   leftButtons?: NativeNavigationButton[]
   rightButtons?: NativeNavigationButton[]
-  /** Patch a tab's icon without replacing tabs, stacks or the selected tab. Null restores its configured icon. */
   /** A destination in its own box beside the tab pill. Null removes it. */
   tabAccessory?: { path: string, title: string, symbol: string, badge?: string | null, accessibilityLabel?: string } | null
-  tabItem?: { id: string, iconText?: string | null, image?: string | null, badge?: string | null, accessibilityLabel?: string | null }
+  tabItem?: NativeTabItemOptions
 }
 
 export interface NativeNavigation {

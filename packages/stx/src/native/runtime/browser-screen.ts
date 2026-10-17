@@ -1,5 +1,6 @@
 import type { NativeBridgeInterface, NativeMutationPayload } from '../bridge/protocol'
 import type { STXNode } from '../compiler/ir'
+import type { NativeTabItemOptions } from './craft'
 import { BrowserScreenRenderer, type BrowserRendererOptions } from './browser-renderer'
 
 export interface BrowserPlatform {
@@ -69,7 +70,17 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
     send('APPEARANCE', { colorScheme: bridge.colorScheme })
   }
   let currentNavigation: Record<string, unknown> = {}
-  const tabIcons = new Map<string, { root: HTMLElement, fallback: string, link: HTMLAnchorElement }>()
+  const tabIcons = new Map<string, { root: HTMLElement, fallback: string, link: HTMLAnchorElement, label: HTMLElement, title: string, text: string | null, tint: string | null, pulse: boolean, animation: Animation | null }>()
+  const motion = matchMedia('(prefers-reduced-motion: reduce)')
+  const syncTabPulses = (): void => {
+    for (const tab of tabIcons.values()) {
+      const active = tab.pulse && !tab.text && !tab.root.querySelector('img') && !motion.matches && !document.hidden
+      if (!active) { tab.animation?.cancel(); tab.animation = null }
+      else if (!tab.animation && typeof tab.root.animate === 'function') {
+        tab.animation = tab.root.animate([{ opacity: 1 }, { opacity: 0.55 }], { duration: 700, iterations: Infinity, direction: 'alternate' })
+      }
+    }
+  }
   const navigation = (patch: Record<string, unknown>): void => {
     currentNavigation = { ...currentNavigation, ...patch }
     const settings = currentNavigation
@@ -98,9 +109,13 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
         tabs.append(button)
       }
     }
-    const item = patch.tabItem as { id?: string, iconText?: string | null, image?: string | null, accessibilityLabel?: string | null } | undefined
+    const item = patch.tabItem as NativeTabItemOptions | undefined
     const tab = item?.id ? tabIcons.get(item.id) : null
     if (tab && item) {
+      if ('title' in item) tab.label.textContent = item.title?.slice(0, 40) || tab.title
+      if ('iconText' in item) tab.text = item.iconText || null
+      if ('iconTint' in item) tab.tint = item.iconTint || null
+      if ('iconPulse' in item) tab.pulse = item.iconPulse === true
       if ('image' in item && item.image && /^https:\/\//.test(item.image)) {
         const image = document.createElement('img')
         image.src = item.image; image.alt = ''; image.style.cssText = 'width:27px;height:27px;border-radius:50%;object-fit:cover'
@@ -111,6 +126,9 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
         if (item.iconText) { tab.root.textContent = item.iconText.slice(0, 8); tab.root.style.cssText = 'font-size:23px;font-weight:650;font-variant-numeric:tabular-nums;color:#ff2d55;line-height:27px' }
         else { tab.root.innerHTML = tab.fallback; tab.root.style.cssText = '' }
       }
+      tab.root.style.color = ''
+      tab.root.style.color = tab.tint || (tab.text ? '#ff2d55' : '')
+      syncTabPulses()
       if ('accessibilityLabel' in item) {
         if (item.accessibilityLabel) tab.link.setAttribute('aria-label', item.accessibilityLabel)
         else tab.link.removeAttribute('aria-label')
@@ -167,8 +185,11 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
       chromeRenderers.push(icon)
       icon.render({ id: `tab_${tab.id}`, type: 'Icon', props: { symbol: tab.symbol }, style: { width: 23, height: 23 }, events: {}, children: [] })
     }
-    tabIcons.set(tab.id, { root: iconRoot, fallback: iconRoot.innerHTML, link })
-    const label = document.createElement('span'); label.textContent = tab.title; link.append(label)
+    const label = document.createElement('span'); label.textContent = tab.title; label.style.fontVariantNumeric = 'tabular-nums'; link.append(label)
+    link.setAttribute('data-testid', `craft-tab-${tab.id}`)
+    iconRoot.setAttribute('data-tab-icon', '')
+    label.setAttribute('data-tab-title', '')
+    tabIcons.set(tab.id, { root: iconRoot, fallback: iconRoot.innerHTML, link, label, title: tab.title, text: null, tint: null, pulse: false, animation: null })
     if (location.pathname.replace(/\/$/, '') === tab.id || (tab.id !== rootPath && location.pathname.startsWith(`${tab.id}/`))) { link.setAttribute('aria-current', 'page'); link.style.color = '#007aff' }
     tabPill.append(link)
   }
@@ -230,6 +251,8 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
       pending.clear()
       observer.disconnect()
       media.removeEventListener('change', theme)
+      motion.removeEventListener('change', syncTabPulses)
+      for (const tab of tabIcons.values()) tab.animation?.cancel()
       document.removeEventListener('visibilitychange', visibility)
       stopEvents?.()
       renderer.dispose()
@@ -241,10 +264,11 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
       listener = null
     },
   }
-  const visibility = (): void => send('APP_STATE', { state: document.hidden ? 'background' : 'active' })
+  const visibility = (): void => { syncTabPulses(); send('APP_STATE', { state: document.hidden ? 'background' : 'active' }) }
   document.addEventListener('visibilitychange', visibility)
   const media = matchMedia('(prefers-color-scheme: dark)')
   media.addEventListener('change', theme)
+  motion.addEventListener('change', syncTabPulses)
   const observer = new MutationObserver(theme)
   observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
   const stopEvents = platform.emit?.(send)
