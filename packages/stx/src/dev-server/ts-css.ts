@@ -739,8 +739,8 @@ export async function generateCss(htmlContent: string, appDir?: string): Promise
  * phone's sport icons drew as empty boxes. The URL carries the bundle's hash,
  * so the page text still decides what is cached.
  */
-export function withLinkedModuleBundles(htmlContent: string): string {
-  const bundles: string[] = []
+function* cssSources(htmlContent: string): Generator<string> {
+  yield htmlContent
   const seen = new Set<string>()
   for (const match of htmlContent.matchAll(/\/_stx\/modules\.([0-9a-f]{16})\.js/g)) {
     // Repeated components and their script strings can reference one bundle
@@ -749,9 +749,13 @@ export function withLinkedModuleBundles(htmlContent: string): string {
     if (seen.has(hash)) continue
     seen.add(hash)
     const code = getServeModuleBundle(hash)
-    if (code) bundles.push(code)
+    if (code) yield code
   }
-  return bundles.length ? `${htmlContent}\n${bundles.join('\n')}` : htmlContent
+}
+
+/** Compatibility helper for callers that need the combined source text. */
+export function withLinkedModuleBundles(htmlContent: string): string {
+  return [...cssSources(htmlContent)].join('\n')
 }
 
 async function generateCssUncached(htmlContent: string, appDir?: string): Promise<string> {
@@ -764,10 +768,16 @@ async function generateCssUncached(htmlContent: string, appDir?: string): Promis
 
     // Css's extractor when the installed version exports it, ours only
     // as a fallback. See `extractClassNames` for why the difference matters.
-    const scanned = withLinkedModuleBundles(htmlContent)
-    const classes = typeof hw.extractClasses === 'function'
-      ? hw.extractClasses(scanned)
-      : extractClassNames(scanned)
+    // Scan one source at a time. Joining every linked bundle first duplicates
+    // all of their code in one allocation, which can exhaust the string heap
+    // even when each source individually fits. Only class names need a union.
+    const classes = new Set<string>()
+    for (const source of cssSources(htmlContent)) {
+      const extracted = typeof hw.extractClasses === 'function'
+        ? hw.extractClasses(source)
+        : extractClassNames(source)
+      for (const className of extracted) classes.add(className)
+    }
 
     if (classes.size === 0) {
       return ''

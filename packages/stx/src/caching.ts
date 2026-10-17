@@ -216,10 +216,14 @@ export async function getServeClientAsset(kind: ServeClientAssetKind, debug = fa
  * it: a phone re-downloaded and re-parsed up to ~250KB on each navigation and
  * could cache none of it. As a file named by its content, it is fetched once
  * and cached for good; a page reached again, or one sharing its modules, costs
- * nothing. Bounded, oldest first: a long dev session with HMR mints new hashes.
+ * nothing. Bounded by count and UTF-16 bytes, oldest first: a long dev session
+ * with HMR mints new hashes. One oversized newest bundle may exceed the byte
+ * budget to preserve its in-memory fallback when the state directory is read-only.
  */
 const MODULE_BUNDLE_LIMIT = 500
+const MODULE_BUNDLE_BYTES = 32 * 1024 * 1024
 const _moduleBundles = new Map<string, string>()
+let _moduleBundleBytes = 0
 
 /** Where module bundles are also written, so every server process can answer. */
 function moduleBundleFile(hash: string): string {
@@ -229,12 +233,23 @@ function moduleBundleFile(hash: string): string {
 /** Registers a module bundle and returns the URL a page links it under. */
 export function registerServeModuleBundle(code: string): string {
   const hash = Bun.hash(code).toString(16).padStart(16, '0').slice(0, 16)
-  const known = _moduleBundles.has(hash)
-  if (known)
+  const previous = _moduleBundles.get(hash)
+  const known = previous !== undefined
+  if (known) {
     _moduleBundles.delete(hash)
+    _moduleBundleBytes -= previous.length * 2
+  }
   _moduleBundles.set(hash, code)
-  while (_moduleBundles.size > MODULE_BUNDLE_LIMIT)
-    _moduleBundles.delete(_moduleBundles.keys().next().value as string)
+  // Budget UTF-16 bytes conservatively: 500 large bundles are not a bounded
+  // footprint. Evicted immutable bundles remain available from the disk store.
+  // Retain one oversized newest bundle so read-only state directories still
+  // have the same in-memory fallback for the page that was just rendered.
+  _moduleBundleBytes += code.length * 2
+  while (_moduleBundles.size > 1 && (_moduleBundles.size > MODULE_BUNDLE_LIMIT || _moduleBundleBytes > MODULE_BUNDLE_BYTES)) {
+    const oldest = _moduleBundles.keys().next().value as string
+    _moduleBundleBytes -= _moduleBundles.get(oldest)!.length * 2
+    _moduleBundles.delete(oldest)
+  }
   // On disk too: behind a load balancer the page can be rendered by one
   // process and its bundle requested from another. Best effort; memory still
   // answers for this process when the disk cannot be written.
