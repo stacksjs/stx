@@ -21,5 +21,8 @@ describe('native structured picker props',()=>{
     const source='<div title="data-native" :data-items="values"></div>'
     expect(processServerBindings(source,{values:[{value:'Hike',label:'Hike'}]})).toBe('<div title="data-native" data-items="[object Object]"></div>')
   })
-
+  it('does not treat an attribute suffix as a native host marker', () => {
+    const source = '<div x-data-native="Picker" :data-items="values"></div>'
+    expect(processServerBindings(source, { values: [{ value: 'Hike' }] })).toBe('<div x-data-native="Picker" data-items="[object Object]"></div>')
+  })
 })
