@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.562...v0.2.563)
+
+## 🐛 Bug Fixes
+
+- require an exact native host attribute marker ([f169ad7](https://github.com/stacksjs/stx/commit/f169ad7)) _(by Chris Breuer <chris@stacksjs.com>)_
+- preserve structured native host attributes during server binding ([6d421ee](https://github.com/stacksjs/stx/commit/6d421ee)) _(by Chris Breuer <chris@stacksjs.com>)_
+- render native picker items and button titles in browsers ([30c118a](https://github.com/stacksjs/stx/commit/30c118a)) _(by Chris Breuer <chris@stacksjs.com>)_
+- preserve native map layout classes through its primitive ([30f30bf](https://github.com/stacksjs/stx/commit/30f30bf)) _(by Chris Breuer <chris@stacksjs.com>)_
+- preserve setup scope around returned regex literals ([f807ee7](https://github.com/stacksjs/stx/commit/f807ee7)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.563 ([050b238](https://github.com/stacksjs/stx/commit/050b238)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.561...v0.2.562)
 
 ## 🐛 Bug Fixes
