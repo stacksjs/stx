@@ -163,6 +163,13 @@ export interface NativeSnapshots {
   set: (name: string, value: unknown) => Promise<unknown>
 }
 
+export interface NativeFile {
+  path: string
+  name: string
+  type: string
+  size: number
+}
+
 export interface NativeCraft {
   /** ActivityKit Lock Screen and Dynamic Island presentations (iOS). */
   liveActivity?: NativeLiveActivities
@@ -203,6 +210,14 @@ export interface NativeCraft {
   }
   /** Sign in with Apple (`capabilities.appleSignIn`). */
   signInWithApple?: (options?: { nonce?: string }) => Promise<{ userId: string, email?: string, name?: string, identityToken?: string, authorizationCode?: string }>
+  /** Native file descriptors for pickers, downloads and the share sheet (`capabilities.files`). */
+  files?: {
+    pickImage: (options?: { source?: 'camera' | 'library', maxPixels?: number, quality?: number }) => Promise<NativeFile | null>
+    pickVideo: (options?: { source?: 'files' | 'library', maxBytes?: number }) => Promise<NativeFile | null>
+    download: (url: string, options?: { headers?: Record<string, string>, name?: string }) => Promise<NativeFile>
+    write: (name: string, data: string, options?: { encoding?: 'base64' | 'utf8', type?: string }) => Promise<NativeFile>
+    remove: (file: string | NativeFile) => Promise<boolean>
+  }
   /** The system's alert, confirmation and action sheet (`capabilities.dialogs`). */
   dialog?: {
     alert: (options?: { title?: string, message?: string, okLabel?: string }) => Promise<void>

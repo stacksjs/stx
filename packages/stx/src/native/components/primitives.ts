@@ -468,6 +468,15 @@ export interface MapProps extends BaseProps {
   zoomEnabled?: boolean
   rotateEnabled?: boolean
   mapType?: 'standard' | 'satellite' | 'hybrid' | 'terrain'
+  showsCompass?: boolean
+  showsScale?: boolean
+  /** Camera tilt in degrees, 0 through 60. */
+  cameraPitch?: number
+  /** Clockwise camera heading from north. */
+  cameraHeading?: number
+  onPress?: (event: { nativeEvent: { latitude: number, longitude: number } }) => void
+  /** Completed user camera gestures; programmatic camera changes do not echo. */
+  onRegionChangeComplete?: (event: { nativeEvent: MapRegion & { heading: number, pitch: number } }) => void
   onMarkerPress?: (event: { nativeEvent: { id: string } }) => void
 }
 
@@ -483,6 +492,8 @@ export interface MapMarkerProps extends BaseProps {
   geometry: number[]
   id: string
   title?: string
+  /** Route-direction arrow, clockwise from north; absent uses a place marker. */
+  bearing?: number
   onPress?: (event: { nativeEvent: { id: string } }) => void
   onMarkerPress?: (event: { nativeEvent: { id: string } }) => void
 }

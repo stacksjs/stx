@@ -328,6 +328,7 @@ export type STXEventType =
   // Slider events
   | 'onValueChange'
   | 'onSlidingComplete'
+  | 'onRegionChangeComplete'
 
 export interface STXEvent {
   type: STXEventType

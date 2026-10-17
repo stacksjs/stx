@@ -525,3 +525,14 @@ function* walk(node: STXNode): Generator<STXNode> {
     if (typeof child !== 'string')
       yield * walk(child)
 }
+
+describe('native map exploration contract', () => {
+  it('keeps map camera, compass, scale, direction arrows and tap events in the host protocol', async () => {
+    const { root, diagnostics } = await translateHtmlToIR('<Map camera-pitch="45" camera-heading="90" shows-compass shows-scale @click="addPoint($event)" @region-change-complete="rememberCamera($event)"><MapMarker id="direction" geometry="[37,-119]" bearing="45" /></Map>')
+    expect(diagnostics).toEqual([])
+    expect(root.type).toBe('Map')
+    expect(root.props).toMatchObject({ cameraPitch: 45, cameraHeading: 90, showsCompass: true, showsScale: true })
+    expect(root.events).toEqual({ onPress: 'addPoint($event)', onRegionChangeComplete: 'rememberCamera($event)' })
+    expect((root.children[0] as STXNode).props.bearing).toBe(45)
+  })
+})

@@ -98,6 +98,8 @@ const BOX_ONLY = new Set<string>()
  * The names below are the ones the renderers actually dispatch on.
  */
 const EVENT_NAMES: Record<string, string> = {
+  'region-change-complete': 'onRegionChangeComplete',
+  regionchangecomplete: 'onRegionChangeComplete',
   click: 'onPress',
   press: 'onPress',
   'press-in': 'onPressIn',
@@ -191,6 +193,7 @@ export const NATIVE_EVENTS = new Set([
   'onPressOut',
   'onProgress',
   'onRequestClose',
+  'onRegionChangeComplete',
   'onRefresh',
   'onScroll',
   'onScrollBeginDrag',
