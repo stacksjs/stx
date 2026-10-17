@@ -73,6 +73,8 @@ export interface OfflineAppConfig {
    * Default 1500. A kept copy is answered at once and does not wait at all.
    */
   networkTimeoutMs?: number
+  /** Deadline for each background precache request and response body, ms. Default 10000. Does not abort foreground reads. */
+  precacheTimeoutMs?: number
   /**
    * Paths (prefixes) answered network first rather than from the kept copy:
    * the kept copy is used only when the network does not answer in
@@ -320,12 +322,14 @@ export const OFFLINE_REGISTER_SCRIPT = `<script data-stx-offline>${registerScrip
 
 /** The worker itself, for one build. */
 export function generateOfflineWorker(config: OfflineAppConfig, buildId: string): string {
+  const precacheTimeout = Number(config.precacheTimeoutMs)
   const settings = {
     build: String(buildId || 'dev'),
     pages: Array.from(new Set((config.pages || []).filter(page => typeof page === 'string' && page.startsWith('/')))),
     staticPages: (config.staticPages || []).filter(page => typeof page === 'string' && ((config.pages || []).includes(page) || (config.routes || []).includes(page))),
     api: config.apiPrefix || '/api/',
     timeout: Math.max(500, Number(config.networkTimeoutMs) || 1500),
+    precacheTimeout: Number.isFinite(precacheTimeout) && precacheTimeout > 0 ? Math.min(2147483647, Math.max(1, Math.floor(precacheTimeout))) : 10000,
     networkFirst: (config.networkFirst || []).filter(path => typeof path === 'string' && path.startsWith('/')),
     updateOnColdStart: config.updateOnColdStart === true,
     fallback: config.fallback || (config.pages && config.pages[0]) || null,
@@ -552,6 +556,39 @@ function withParams(response, params) {
 // The stylesheets and scripts a kept page links to. Each page has its own
 // generated CSS, fetched only when the page is shown: a screen kept at
 // install but never opened online came up offline without its styles.
+// Background installation must leave connections available for the page the
+// person opens. Bound the whole response body, not just its response headers.
+var backgroundQueue = [];
+var backgroundActive = 0;
+function startBackground(job) {
+  var controller = new AbortController();
+  var timer = setTimeout(function () { controller.abort(); }, S.precacheTimeout);
+  function finish() {
+    clearTimeout(timer);
+    backgroundActive--;
+    drainBackground();
+  }
+  Promise.resolve().then(function () { return job.work(controller.signal); }).then(function (value) {
+    finish();
+    job.resolve(value);
+  }, function (error) {
+    finish();
+    job.reject(error);
+  });
+}
+function drainBackground() {
+  while (backgroundActive < 2 && backgroundQueue.length) {
+    backgroundActive++;
+    startBackground(backgroundQueue.shift());
+  }
+}
+function background(work) {
+  return new Promise(function (resolve, reject) {
+    backgroundQueue.push({ work: work, resolve: resolve, reject: reject });
+    drainBackground();
+  });
+}
+
 var keepingAssets = {};
 var ASSET_REF = /<(?:link|script)\\b[^>]*?\\s(?:href|src)="(\\/[^"]+\\.(?:css|js))"/g;
 function assetRefs(html) {
@@ -568,23 +605,24 @@ function keepAsset(cache, request, response) {
   return response.blob().then(function (body) { return cache.put(request, stamped(response, body, null)); });
 }
 
-function keepAssetsOf(response) {
-  return response.text().then(function (html) {
-    var urls = assetRefs(html);
-    return caches.open(ASSETS).then(function (cache) {
-      return Promise.all(urls.map(function (url) {
+function keepAssets(html) {
+  var urls = assetRefs(html);
+  return caches.open(ASSETS).then(function (cache) {
+    return Promise.all(urls.map(function (url) {
         // A page and its fragment link the same files: one fetch each.
         if (!keepingAssets[url]) {
           keepingAssets[url] = cache.match(url).then(function (hit) {
             if (hit) return;
-            return fetch(url, { credentials: 'same-origin' }).then(function (asset) {
-              if (asset.status === 200) return keepAsset(cache, url, asset);
+            return background(function (signal) {
+              return fetch(url, { credentials: 'same-origin', signal: signal, priority: 'low' }).then(function (asset) {
+                if (asset.status === 200) return keepAsset(cache, url, asset);
+                delete keepingAssets[url];
+              });
             });
-          }).catch(function () {});
+          }).catch(function () { delete keepingAssets[url]; });
         }
         return keepingAssets[url];
-      }));
-    });
+    }));
   }).catch(function () {});
 }
 
@@ -595,10 +633,16 @@ function precache() {
     return Promise.all(wanted.map(function (page) {
       return Promise.all([false, true].map(function (fragment) {
         var headers = fragment ? { 'X-STX-Router': 'true', 'Accept': 'text/html' } : { 'Accept': 'text/html' };
-        return fetch(page.url, { headers: headers, credentials: 'same-origin' }).then(function (response) {
-          if (response.status !== 200 || response.redirected) return;
-          var copy = response.clone();
-          return Promise.all([store(cache, [page.key(fragment)], response), keepAssetsOf(copy)]);
+        return background(function (signal) {
+          return fetch(page.url, { headers: headers, credentials: 'same-origin', signal: signal, priority: 'low' }).then(function (response) {
+            if (response.status !== 200 || response.redirected) return null;
+            var copy = response.clone();
+            return Promise.all([store(cache, [page.key(fragment)], response), copy.text()]).then(function (parts) { return parts[1]; });
+          });
+        }).then(function (html) {
+          // Queue linked assets after releasing the page's slot. Waiting for
+          // child jobs inside a bounded parent job would deadlock installation.
+          if (html !== null) return keepAssets(html);
         }).catch(function () {});
       }));
     }));

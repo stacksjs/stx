@@ -387,32 +387,44 @@ benchmark('component mounting', async () => {
 
 ### Service Workers
 
-```typescript
-// Service worker for caching
-self.addEventListener('fetch', (event) => {
-  if (event.request.url.includes('/api/')) {
-    event.respondWith(
-      caches.open('api-cache').then(cache => {
-        return cache.match(event.request).then(response => {
-          if (response) {
-            // Serve from cache
-            fetch(event.request).then(fetchResponse => {
-              cache.put(event.request, fetchResponse.clone())
-            })
-            return response
-          }
+For a server-rendered STX app, configure the app offline worker rather than
+adding a second worker that caches API answers without accounting for the
+signed-in user:
 
-          // Fetch and cache
-          return fetch(event.request).then(fetchResponse => {
-            cache.put(event.request, fetchResponse.clone())
-            return fetchResponse
-          })
-        })
-      })
-    )
-  }
-})
+```typescript
+import type { StxOptions } from '@stacksjs/stx'
+
+export default {
+  offline: {
+    enabled: true,
+    pages: ['/m', '/m/calendar'],
+    apiPrefix: '/api/',
+    networkTimeoutMs: 1500,
+    precacheTimeoutMs: 10000,
+    fallback: '/m',
+  },
+} satisfies StxOptions
 ```
+
+The server integration must serve `generateOfflineWorker(config.offline,
+buildId)` at `OFFLINE_WORKER_PATH` (`/_stx/sw.js`) with scope `/`; rendered
+pages register it automatically when `offline.enabled` is true. Use the same
+offline configuration and build identifier when rendering pages and serving
+the worker.
+
+Installation fetches each listed page and its router fragment, then the linked
+stylesheets and scripts. At most two background downloads run at once, leaving
+connection capacity for navigation. Each background request has a
+`precacheTimeoutMs` budget covering its response body as well as its headers;
+a stalled download is aborted and does not prevent the remaining files from
+being attempted. Failed files can still be requested normally by the page.
+This budget does not cancel foreground navigation or API reads.
+
+`networkTimeoutMs` controls when a foreground read falls back to an available
+cached copy. Pages are kept per build, and API answers per bearer token.
+Requests and API responses marked `no-store` are not retained. Only declare
+`staticPages` for account-independent HTML shells. On sign-out, call the
+offline composable's `clearOfflineData()` to remove retained account data.
 
 ### Edge Computing
 

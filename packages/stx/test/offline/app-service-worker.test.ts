@@ -31,6 +31,15 @@ describe('the offline worker', () => {
     expect(settings.exclude).toContain('/_stx/hmr')
   })
 
+  it.each([
+    [undefined, 10000], [0, 10000], [-1, 10000], [Number.NaN, 10000],
+    [Number.POSITIVE_INFINITY, 10000], [0.5, 1], [1500.9, 1500], [2 ** 32, 2147483647],
+  ])('normalizes the background request budget %s to %s', (configured, expected) => {
+    const generated = generateOfflineWorker({ enabled: true, precacheTimeoutMs: configured }, 'budget')
+    const settings = JSON.parse(generated.match(/var S = (\{.*\});/)![1]!)
+    expect(settings.precacheTimeout).toBe(expected)
+  })
+
   it('keeps each build\'s screens apart and API answers per signed-in token', () => {
     expect(worker).toContain('\'stx-shell-\' + S.build')
     expect(worker).toContain('__stx_who')
@@ -95,10 +104,13 @@ function runWorker(config: Parameters<typeof generateOfflineWorker>[0], network:
   }
   const caches = { open, delete: async (name: string) => stores.delete(name), keys: async () => [...stores.keys()] }
   const fetched: string[] = []
-  const fetch = async (input: string | Request) => {
+  const fetch = async (input: string | Request, options?: RequestInit) => {
     const url = typeof input === 'string' ? input : input.url
     fetched.push(url)
-    const answer = await network(url, typeof input === 'string' ? undefined : input)
+    const request = typeof input === 'string'
+      ? new Request(new URL(input, self.location.origin), options)
+      : options ? new Request(input, options) : input
+    const answer = await network(url, request)
     if (!answer) throw new TypeError('offline')
     if (answer.type === 'default') Object.defineProperty(answer, 'type', { value: 'basic' })
     return answer
@@ -151,6 +163,153 @@ function runWorker(config: Parameters<typeof generateOfflineWorker>[0], network:
     },
   }
 }
+
+describe('background precaching', () => {
+  it('leaves connection capacity for a foreground navigation during install', async () => {
+    // Model an HTTP/1.1 origin's six connections. Held background responses
+    // expose submitted work without depending on real network timings.
+    let active = 0
+    let outstanding = 0
+    let peak = 0
+    let released = false
+    let foregroundStarted = false
+    const waiting: Array<() => void> = []
+    const held: Array<() => void> = []
+    const sw = runWorker({ enabled: true, pages: Array.from({ length: 25 }, (_, i) => `/screen-${i}`) }, url => new Promise<Response>((resolve) => {
+      const foreground = url.endsWith('/foreground')
+      if (!foreground) peak = Math.max(peak, ++outstanding)
+      const start = () => {
+        active++
+        const finish = () => {
+          if (!foreground) outstanding--
+          resolve(new Response('<html><main>ready</main></html>', { headers: { 'Content-Type': 'text/html' } }))
+          active--
+          waiting.shift()?.()
+        }
+        if (foreground) { foregroundStarted = true; finish() }
+        else if (released) finish()
+        else held.push(finish)
+      }
+      if (active < 6) start()
+      else waiting.push(start)
+    }))
+    const installing = sw.install()
+    await Bun.sleep(0)
+    const foreground = sw.request('http://app.test/foreground', {}, { mode: 'navigate' })
+    await Bun.sleep(0)
+    try {
+      expect(peak).toBeLessThanOrEqual(2)
+      expect(foregroundStarted).toBe(true)
+    }
+    finally {
+      released = true
+      held.splice(0).forEach(finish => finish())
+      await installing
+      await foreground
+      await sw.settle()
+    }
+  })
+
+  it('bounds linked-asset work without holding the parent page slots', async () => {
+    let active = 0
+    let peak = 0
+    let released = false
+    const held: Array<() => void> = []
+    let started!: () => void
+    const startedBoth = new Promise<void>((resolve) => { started = resolve })
+    const styles = Array.from({ length: 20 }, (_, i) => `<link href="/asset-${i}.css">`).join('')
+    const sw = runWorker({ enabled: true, pages: ['/m'] }, url => {
+      if (!url.endsWith('.css')) return new Response(`<html>${styles}</html>`)
+      peak = Math.max(peak, ++active)
+      if (active === 2) started()
+      return new Promise<Response>((resolve) => {
+        const finish = () => { active--; resolve(new Response('body {}')) }
+        if (released) finish()
+        else held.push(finish)
+      })
+    })
+    const installing = sw.install()
+    try {
+      expect(await Promise.race([startedBoth.then(() => true), Bun.sleep(250).then(() => false)])).toBe(true)
+      expect(active).toBe(2)
+      expect(peak).toBeLessThanOrEqual(2)
+    }
+    finally {
+      released = true
+      held.splice(0).forEach(finish => finish())
+      await installing
+    }
+    expect(sw.fetched.filter(url => url.endsWith('.css'))).toHaveLength(20)
+    expect(sw.stores.get('stx-assets')?.size).toBe(20)
+  })
+
+  it('does not apply the background deadline to a foreground read', async () => {
+    let aborted = false
+    const sw = runWorker({ enabled: true, precacheTimeoutMs: 10 }, async (_url, request) => {
+      request!.signal.addEventListener('abort', () => { aborted = true })
+      await Bun.sleep(25)
+      return new Response('foreground answer')
+    })
+    expect(await (await sw.request('http://app.test/m/open', {}, { mode: 'navigate' }))!.text()).toBe('foreground answer')
+    await sw.settle()
+    expect(aborted).toBe(false)
+  })
+
+  it('aborts stalled response bodies, attempts queued pages and never stores partial HTML', async () => {
+    let aborted = 0
+    const close: Array<() => void> = []
+    const sw = runWorker({ enabled: true, pages: ['/m', '/next'], precacheTimeoutMs: 15 }, (url, request) => url === '/next'
+      ? new Response('<html>next page</html>')
+      : new Response(new ReadableStream({
+      start(controller) {
+        const signal = request!.signal
+        signal.addEventListener('abort', () => { aborted++; controller.error(new DOMException('Aborted', 'AbortError')) }, { once: true })
+        close.push(() => { if (!signal.aborted) controller.close() })
+      },
+    }), { headers: { 'Content-Type': 'text/html' } }))
+    const installing = sw.install()
+    try {
+      const completed = await Promise.race([installing.then(() => true), Bun.sleep(250).then(() => false)])
+      expect(completed).toBe(true)
+      expect(aborted).toBe(2)
+      expect(sw.stores.get('stx-shell-b1')?.size).toBe(2)
+      expect(sw.stores.get('stx-shell-b1')?.has('http://app.test/m')).toBe(false)
+      expect(await sw.stores.get('stx-shell-b1')?.get('http://app.test/next')?.text()).toBe('<html>next page</html>')
+    }
+    finally {
+      close.forEach(finish => finish())
+      await installing
+    }
+  })
+
+  it('lets a foreground asset request retry after its background download timed out', async () => {
+    let attempts = 0
+    let release: (() => void) | undefined
+    const sw = runWorker({ enabled: true, pages: ['/m'], precacheTimeoutMs: 15 }, (url, request) => {
+      if (!url.endsWith('.css')) return new Response('<html><link href="/retry.css"></html>')
+      if (++attempts > 1) return new Response('body { color: green }')
+      return new Promise<Response>((resolve, reject) => {
+        request!.signal.addEventListener('abort', () => { reject(new DOMException('Aborted', 'AbortError')) }, { once: true })
+        release = () => { resolve(new Response('body {}')) }
+      })
+    })
+    const installing = sw.install()
+    try {
+      const completed = await Promise.race([installing.then(() => true), Bun.sleep(250).then(() => false)])
+      expect(completed).toBe(true)
+      expect(attempts).toBe(1)
+      const response = await sw.request('http://app.test/retry.css')
+      expect(await response!.text()).toBe('body { color: green }')
+      await sw.settle()
+      expect(attempts).toBe(2)
+      expect(await sw.stores.get('stx-assets')?.get('http://app.test/retry.css')?.text()).toBe('body { color: green }')
+    }
+    finally {
+      release?.()
+      await installing
+    }
+  })
+})
 
 describe('media kept for offline', () => {
   const video = new Uint8Array(1000).map((_, i) => i % 256)
@@ -278,7 +437,7 @@ describe('a screen not kept whole', () => {
 
 describe('a dynamic screen never opened', () => {
   const paramsScript = (json: string) => `<script data-stx-route-params>(function(){var p=${json};window.__stx_rp=p;if(window.stx){window.stx._rp=p;if(window.stx.setRouteParams)window.stx.setRouteParams(p)}})()</script>`
-  const sessionPage = (id: string) => `<html><head>${paramsScript(`{"id":"${id}"}`)}</head><body>Session</body></html>`
+  const sessionPage = (id: string) => `<html><head>${paramsScript(`{'id':'${id}'}`)}</head><body>Session</body></html>`
 
   it('matches `:param` and `[param]` routes, and leaves static ones out', () => {
     expect(offlineRoute('/m/workout/:id')).toEqual({ path: '/m/workout/:id', re: '^/m/workout/([^/]+)/?$', names: ['id'], sample: '/m/workout/0' })
@@ -350,9 +509,9 @@ describe('a dynamic screen never opened', () => {
 })
 
 const html = (body: string, headers: Record<string, string> = {}) =>
-  new Response(`<html><head></head><body>${body}</body></html>`, { status: 200, headers: { 'Content-Type': 'text/html', ...headers } })
+new Response(`<html><head></head><body>${body}</body></html>`, { status: 200, headers: { 'Content-Type': 'text/html', ...headers } })
 const json = (value: unknown, headers: Record<string, string> = {}) =>
-  new Response(JSON.stringify(value), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
+new Response(JSON.stringify(value), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
 const never = () => new Promise<Response | null>(() => {})
 const later = (ms: number, response: () => Response | null) => new Promise<Response | null>(resolve => setTimeout(() => resolve(response()), ms))
 
@@ -586,7 +745,7 @@ describe('a screen never kept', () => {
 
 describe('API reads', () => {
   const read = (sw: ReturnType<typeof runWorker>, token = 'a', options: RequestOptions = {}) =>
-    sw.request('http://app.test/api/calendar', { Authorization: `Bearer ${token}` }, options)
+  sw.request('http://app.test/api/calendar', { Authorization: `Bearer ${token}` }, options)
 
   it('tells open pages when the server cannot be reached, and when it can again', async () => {
     let online = true
