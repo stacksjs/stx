@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.560...v0.2.561)
+
+## 🐛 Bug Fixes
+
+- **native**: retain content basis in browser scroll views ([40151e2](https://github.com/stacksjs/stx/commit/40151e2)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.561 ([062bced](https://github.com/stacksjs/stx/commit/062bced)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.559...v0.2.560)
 
 ## 🐛 Bug Fixes
