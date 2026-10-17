@@ -527,6 +527,10 @@ function* walk(node: STXNode): Generator<STXNode> {
 }
 
 describe('native map exploration contract', () => {
+  it('preserves a native topographic provider and its attribution', async () => {
+    const {root}=await translateHtmlToIR('<Map tile-overlay="{&quot;urlTemplate&quot;:&quot;https://example.org/{z}/{y}/{x}.png&quot;,&quot;attribution&quot;:&quot;Test map data&quot;}"></Map>')
+    expect(root.props.tileOverlay).toEqual({urlTemplate:'https://example.org/{z}/{y}/{x}.png',attribution:'Test map data'})
+  })
   it('keeps map camera, compass, scale, direction arrows and tap events in the host protocol', async () => {
     const { root, diagnostics } = await translateHtmlToIR('<Map camera-pitch="45" camera-heading="90" initial-region="{&quot;center&quot;:{&quot;latitude&quot;:37,&quot;longitude&quot;:-119},&quot;span&quot;:{&quot;latitudeDelta&quot;:0.1,&quot;longitudeDelta&quot;:0.1}}" edge-padding="{&quot;bottom&quot;:180,&quot;top&quot;:32}" shows-compass shows-scale @click="addPoint($event)" @region-change-complete="rememberCamera($event)"><MapMarker id="direction" geometry="[37,-119]" bearing="45" /></Map>')
     expect(diagnostics).toEqual([])

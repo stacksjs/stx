@@ -462,6 +462,8 @@ export interface MapProps extends BaseProps {
   region?: MapRegion
   /** Initial region for maps without recorded overlay geometry. */
   initialRegion?: MapRegion
+  /** A native raster basemap; credit remains visible on the map. */
+  tileOverlay?: { urlTemplate: string, attribution: string }
   /** Logical points reserved for floating controls when fitting overlays. */
   edgePadding?: { top?: number, right?: number, bottom?: number, left?: number }
   /** Fit the camera to all marker and polyline overlay geometry. */
