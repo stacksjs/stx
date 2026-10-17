@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.563...v0.2.564)
+
+## 🐛 Bug Fixes
+
+- preserve page script dependencies across SPA navigation ([79cdd57](https://github.com/stacksjs/stx/commit/79cdd57)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.564 ([5783978](https://github.com/stacksjs/stx/commit/5783978)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.562...v0.2.563)
 
 ## 🐛 Bug Fixes
