@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.553...v0.2.554)
+
+## 🐛 Bug Fixes
+
+- share concurrent dynamic source shell renders ([1f6d703](https://github.com/stacksjs/stx/commit/1f6d703)) _(by Chris Breuer <chris@stacksjs.com>)_
+- bound offline precaching without delaying navigation ([708edf4](https://github.com/stacksjs/stx/commit/708edf4)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.554 ([5c5efda](https://github.com/stacksjs/stx/commit/5c5efda)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.552...v0.2.553)
 
 ## 🐛 Bug Fixes
