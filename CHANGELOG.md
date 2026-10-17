@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.557...v0.2.558)
+
+## ✨ Features
+
+- **native**: support floating card styles and map edge padding ([b2d40d5](https://github.com/stacksjs/stx/commit/b2d40d5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.558 ([3b1369c](https://github.com/stacksjs/stx/commit/3b1369c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.556...v0.2.557)
 
 ## 🐛 Bug Fixes
