@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { Window } from 'very-happy-dom'
 import { BrowserScreenRenderer } from '../../src/native/runtime/browser-renderer'
 import type { STXNode } from '../../src/native/compiler/ir'
+import { compileHeadwindToStyle } from '../../src/native/compiler/headwind-to-style'
 
 function fixture() {
   const window = new Window()
@@ -14,6 +15,21 @@ function fixture() {
 }
 
 describe('the browser peer of the native screen renderer', () => {
+  it('retains an auto basis when compiled flex-none overrides a scroller default', () => {
+    const { renderer, container, node } = fixture()
+    const choice = node('choice', 'View', ['Athletes'])
+    choice.style = compileHeadwindToStyle('min-h-[44px] px-3')
+    const tabs = node('tabs', 'ScrollView', [choice], { horizontal: true })
+    tabs.style = compileHeadwindToStyle('flex-none flex-row')
+    renderer.render(node('screen', 'View', [tabs]))
+    const scroller = container.querySelector<HTMLElement>('[data-stx-node="tabs"]')!
+    expect(scroller.style.getPropertyValue('flex')).toBe('1 1 auto')
+    expect(scroller.style.getPropertyValue('flex-grow')).toBe('0')
+    expect(scroller.style.getPropertyValue('flex-shrink')).toBe('0')
+    renderer.mutate({ version: 1, batchId: 'fill', baseRevision: 0, revision: 1, operations: [{ op: 'updateNode', id: 'tabs', patch: { style: compileHeadwindToStyle('flex-1') } }] })
+    expect(scroller.style.getPropertyValue('flex-basis')).toBe('0px')
+  })
+
   it('keeps zero-flex horizontal scrollers at their intrinsic content size', () => {
     const { renderer, container, node } = fixture()
     const tabs = node('tabs', 'ScrollView', [node('choice', 'View', ['Athletes'], {}, { onPress: 'pick' })], { horizontal: true })
