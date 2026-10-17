@@ -1,6 +1,30 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
+/**
+ * Convert PascalCase to kebab-case with proper handling of consecutive uppercase letters.
+ *
+ * Examples:
+ * - `UserCard` → `user-card`
+ * - `XMLParser` → `xml-parser` (not `x-m-l-parser`)
+ * - `HTMLElement` → `html-element`
+ * - `MyURLParser` → `my-url-parser`
+ * - `IOStream` → `io-stream`
+ *
+ * The algorithm:
+ * 1. Insert hyphen before uppercase letters that follow lowercase letters
+ * 2. Insert hyphen before the last uppercase in a sequence of uppercase letters (before lowercase)
+ * 3. Convert to lowercase
+ */
+export function pascalToKebab(str: string): string {
+  return str
+    // Insert hyphen between lowercase and uppercase: userCard → user-Card
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    // Insert hyphen between consecutive uppercase and lowercase: XMLParser → XML-Parser
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
+    .toLowerCase()
+}
+
 const pkgStxIndexCache = new Map<string, Map<string, string>>()
 
 /** Shared package component index; editor checks bypass the renderer's cache. */
@@ -32,7 +56,7 @@ export function buildStxIndex(pkgDir: string, cache = true): Map<string, string>
         if (!index.has(base)) index.set(base, full)
         const lower = base.toLowerCase()
         if (!index.has(lower)) index.set(lower, full)
-        const kebab = base.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+        const kebab = pascalToKebab(base)
         if (!index.has(kebab)) index.set(kebab, full)
       }
     }
@@ -94,7 +118,7 @@ export function componentImportCandidates(componentPath: string, filePath: strin
 function variants(name: string): string[] {
   const base = name.endsWith('.stx') ? name.slice(0, -4) : name
   const pascal = base.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('')
-  const kebab = base.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+  const kebab = pascalToKebab(base)
   return [base, pascal, kebab]
 }
 

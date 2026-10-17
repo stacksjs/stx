@@ -12,29 +12,8 @@ import path from 'node:path'
 import { createSafeFunction, isExpressionSafe, safeEvaluateObject } from './safe-evaluator'
 import { renderComponentWithSlot, userComponentFileExists } from './utils'
 
-/**
- * Convert PascalCase to kebab-case with proper handling of consecutive uppercase letters.
- *
- * Examples:
- * - `UserCard` → `user-card`
- * - `XMLParser` → `xml-parser` (not `x-m-l-parser`)
- * - `HTMLElement` → `html-element`
- * - `MyURLParser` → `my-url-parser`
- * - `IOStream` → `io-stream`
- *
- * The algorithm:
- * 1. Insert hyphen before uppercase letters that follow lowercase letters
- * 2. Insert hyphen before the last uppercase in a sequence of uppercase letters (before lowercase)
- * 3. Convert to lowercase
- */
-export function pascalToKebab(str: string): string {
-  return str
-    // Insert hyphen between lowercase and uppercase: userCard → user-Card
-    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-    // Insert hyphen between consecutive uppercase and lowercase: XMLParser → XML-Parser
-    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
-    .toLowerCase()
-}
+import { pascalToKebab } from './component-resolution'
+export { pascalToKebab } from './component-resolution'
 
 // Element-position-aware script stashing lives in the leaf html-masking module
 // (no stx imports) so process.ts / expressions.ts can share it without a cycle.
@@ -1062,10 +1041,7 @@ export async function processCustomElements(
     for (let i = tags.length - 1; i >= 0; i--) {
       const tag = tags[i]
 
-      // Convert the tag name to a component path
-      const componentPath = isPascalCase
-        ? pascalToKebab(tag.tagName)
-        : tag.tagName
+      const componentPath = isPascalCase ? pascalToKebab(tag.tagName) : tag.tagName
 
       // A hyphenated tag with no matching STX component is a native Custom
       // Element. Preserve it for the browser instead of replacing it with a
@@ -1200,6 +1176,9 @@ export async function processCustomElements(
         options,
         processedComponents,
         dependencies,
+        undefined,
+        undefined,
+        tag.tagName,
       )
 
       // Replace the tag with processed content

@@ -1053,10 +1053,7 @@ async function processCustomElementTags(
     for (let i = tags.length - 1; i >= 0; i--) {
       const tag = tags[i]
 
-      // Convert the tag name to a component path
-      const componentPath = isPascalCase
-        ? pascalToKebab(tag.tagName)
-        : tag.tagName
+      const componentPath = isPascalCase ? pascalToKebab(tag.tagName) : tag.tagName
 
       // Parse ALL attributes (including @ and : prefixed ones). Inline
       // conditional groups are resolved first — attribute parsing would split
@@ -1086,7 +1083,7 @@ async function processCustomElementTags(
       // shadowing the built-in Lucide `Icon`).
       const builtinDef = registry.getBuiltin(tag.tagName)
       const overriddenByUser = builtinDef
-        ? await userComponentFileExists(componentPath, componentsDir, context, filePath, options)
+        ? await userComponentFileExists(tag.tagName, componentsDir, context, filePath, options)
         : false
 
       if (builtinDef && !overriddenByUser) {
@@ -1158,6 +1155,7 @@ async function processCustomElementTags(
         dependencies,
         [...loopNames],
         renderMetadata,
+        tag.tagName,
       )
 
       let finalContent = processedContent

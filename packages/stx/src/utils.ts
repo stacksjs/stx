@@ -12,6 +12,7 @@
  */
 
 import type { StxOptions } from './types'
+import { pascalToKebab } from './component-resolution'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -755,9 +756,6 @@ export async function userComponentFileExists(
     .split('-')
     .map(part => part.charAt(0).toUpperCase() + part.slice(1))
     .join('')
-  const pascalToKebab = (str: string) => str
-    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-    .toLowerCase()
 
   // Explicit @import always wins and is unambiguously user-authored.
   const importedComponents = parentContext.__importedComponents as Map<string, string> | undefined
@@ -1060,6 +1058,8 @@ export async function renderComponentWithSlot(
    */
   clientLoopNames: readonly string[] = inheritedClientLoopNames(parentContext),
   renderMetadata?: { declaredProps: Set<string> },
+  /** Original tag spelling for case-sensitive file lookup; identity stays canonical. */
+  lookupName: string = componentPath,
 ): Promise<string> {
   // Import locally to avoid circular dependency at module load time
   const { extractVariables } = await importOnce('stx/variable-extractor', () => import('./variable-extractor'))
@@ -1097,15 +1097,10 @@ export async function renderComponentWithSlot(
       .map(part => part.charAt(0).toUpperCase() + part.slice(1))
       .join('')
 
-    // Helper: convert PascalCase to kebab-case
-    const pascalToKebab = (str: string) => str
-      .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-      .toLowerCase()
-
     // Get base name without extension
-    const baseName = componentPath.endsWith('.stx')
-      ? componentPath.slice(0, -4)
-      : componentPath
+    const baseName = lookupName.endsWith('.stx')
+      ? lookupName.slice(0, -4)
+      : lookupName
 
     // Find the component file
     let componentFilePath: string | null = null
@@ -1637,7 +1632,8 @@ export async function renderComponentWithSlot(
     // Key last, so the id keeps the `stx_<name>_<n>_<suffix>` shape the random
     // one had. Nothing that matched the old ids has to change, and the name
     // stays at the front where it is readable in a DOM inspector.
-    const componentUid = `stx_${baseName.replace(/[^a-zA-Z0-9]/g, '_')}_${++scopeSeq.n}_${scopeSeq.key}`
+    const identity = componentPath.endsWith('.stx') ? componentPath.slice(0, -4) : componentPath
+    const componentUid = `stx_${identity.replace(/[^a-zA-Z0-9]/g, '_')}_${++scopeSeq.n}_${scopeSeq.key}`
 
     const componentContext: Record<string, unknown> = {
       ...filteredParentContext,
