@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.551...v0.2.552)
+
+## 🐛 Bug Fixes
+
+- retain page template refs after queued layout mounts ([2bb79f0](https://github.com/stacksjs/stx/commit/2bb79f0)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.552 ([55b7158](https://github.com/stacksjs/stx/commit/55b7158)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.550...v0.2.551)
 
 ## ✨ Features
