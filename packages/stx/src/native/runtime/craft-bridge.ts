@@ -609,9 +609,12 @@ export function installCraftBridge(
   craft.getPendingNotifications = craft.notifications.pending
 
   const navigate = (type: 'NAVIGATE' | 'NAVIGATE_REPLACE', screen: string, params?: Record<string, unknown>): string => {
-    if (!routeNames.includes(screen)) throw new Error(`Unknown native screen: ${screen}`)
+    const pathReplacement = type === 'NAVIGATE_REPLACE' && typeof screen === 'string' && screen.startsWith('/') && !screen.startsWith('//')
+    if (!pathReplacement && !routeNames.includes(screen)) throw new Error(`Unknown native screen: ${screen}`)
     if (params !== undefined && (params === null || typeof params !== 'object' || Array.isArray(params)))
       throw new TypeError('Navigation params must be an object')
+    if (pathReplacement && params && Object.keys(params).length)
+      throw new TypeError('Replacement paths carry parameters in their query string')
     return protocol.send(type, { screen, params: params || {} })
   }
   const hostSetOptions = craft.navigation && typeof craft.navigation.setOptions === 'function'

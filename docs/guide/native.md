@@ -152,6 +152,8 @@ To bundle multiple screens, name them in `native.config.json` (paths relative to
 
 Run `stx native compile --format bundle --output ./native-screen.js` without an input file. The single-file command above remains unchanged for projects without `screens`. Each screen's `<script>` gets its own JavaScriptCore context when opened by a navigation-capable Craft host. Use `craft.navigation.push('details', { id: 7 })`, `craft.navigation.replace('home')`, or `craft.navigation.back()` in a screen script, and `craft.navigation.open('/m/workout/42')` to open a path of a hybrid app (the host shows its native screen, or the web view at that path); the destination reads `craft.route.name` and `craft.route.params`. Unknown screen names and non-object parameters fail before a navigation message is sent.
 
+With Craft 0.0.225 or newer, `craft.navigation.replace('/m/claim?kind=club&slug=rappid')` finishes a flow and opens its canonical destination in one native operation. The host closes the current screen and reuses an existing destination when available. Put URL parameters in the query string; the second parameter object belongs to screen-name navigation. This avoids sending a second navigation message from a screen that has already closed.
+
 The maintained-host navigation gate is in Craft, not in the reference renderers:
 
 ```bash

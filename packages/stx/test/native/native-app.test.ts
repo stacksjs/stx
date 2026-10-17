@@ -90,6 +90,16 @@ describe('the app script', () => {
     expect(scope.__appModuleLoaded).toBe(1)
     expect(sent.some(message => message.type === 'RENDER')).toBe(true)
   })
+  it('replaces a canonical path in one host operation while keeping screen-name validation', async () => {
+    const { scope, sent } = await run('Home')
+    const target = '/m/claim?kind=club&slug=rappid'
+    scope.craft.navigation.replace(target)
+    expect(sent.at(-1)).toMatchObject({ type: 'NAVIGATE_REPLACE', payload: { screen: target, params: {} } })
+    expect(() => scope.craft.navigation.push(target)).toThrow(/Unknown native screen/)
+    expect(() => scope.craft.navigation.replace('Missing')).toThrow(/Unknown native screen/)
+    expect(() => scope.craft.navigation.replace(target, [])).toThrow(/params must be an object/)
+    expect(() => scope.craft.navigation.replace(target, { other: true })).toThrow(/query string/)
+  })
 
   it('has no background without the capability, and no app route without an app script', async () => {
     const { scope } = await run(NATIVE_APP_ROUTE, [])
