@@ -43,6 +43,10 @@ async function fetchFragment(pathname: string) {
 beforeAll(async () => {
   dir = createTempDir('stx-frag-runtime-')
 
+  await Bun.write(path.join(dir, 'views', 'widget.stx'), `<!DOCTYPE html>
+<html><head><script src="/activity-chart.js" defer></script></head>
+<body><main><h1>Profile</h1><activity-chart></activity-chart></main></body></html>`)
+
   // The reproducing shape: reactive bindings, no client script anywhere. The
   // server ships this page the runtime; the fragment carries no marker at all.
   await Bun.write(path.join(dir, 'views', 'login.stx'), `<script server>
@@ -112,6 +116,12 @@ afterAll(async () => {
 })
 
 describe('X-STX-Runtime on fragment responses', () => {
+  it('carries the destination head dependency needed to initialize a page widget', async () => {
+    const fragment = await fetchFragment('/widget')
+    expect(fragment.isFragment).toBe('true')
+    expect(fragment.body).toContain('<script src="/activity-chart.js" defer></script>')
+    expect(fragment.body).toContain('<activity-chart>')
+  })
   it('declares true for a scriptless page whose reactivity is : and x- bindings', async () => {
     const { isFragment, runtime, body } = await fetchFragment('/login')
 

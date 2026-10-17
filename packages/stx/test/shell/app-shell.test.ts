@@ -268,6 +268,23 @@ describe('App Shell', () => {
   })
 
   describe('extractContainerContent', () => {
+    it('carries external page dependencies from the head without copying shared runtimes or quoted tags', () => {
+      const doc = `<html><head>
+<script src="/activity-chart.js" defer></script>
+<script type="module" src="/module-chart.js" crossorigin="anonymous"></script>
+<script data-stx-runtime src="/_stx/runtime.0123456789abcdef.js"></script>
+<script src="/_stx/router.0123456789abcdef.js"></script>
+<!-- <script src="/commented.js"></script> -->
+<script>const example = '<script src="/quoted.js"><\\/script>'</script>
+<script type="application/json" src="/data.json"></script>
+</head><body><main><h1>Profile</h1></main></body></html>`
+      const fragment = extractContainerContent(doc)
+      expect(fragment).toContain('<script src="/activity-chart.js" defer></script>')
+      expect(fragment).toContain('<script type="module" src="/module-chart.js" crossorigin="anonymous"></script>')
+      for (const omitted of ['/_stx/runtime.', '/_stx/router.', '/commented.js', '/quoted.js', '/data.json'])
+        expect(fragment).not.toContain(omitted)
+    })
+
     it('uses the shared HTML-aware locator when comments name the container tag', () => {
       const doc = `<!DOCTYPE html>
 <html>

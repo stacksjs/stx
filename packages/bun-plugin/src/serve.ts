@@ -21,7 +21,7 @@ import nodeFs from 'node:fs/promises'
 import nodePath from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
-import { BUILD_ID_HEADER, decodeTitleEntities, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, mergeCssConfig, readResponseHeaders, readResponseStatus, renderFontCSS, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
+import { BUILD_ID_HEADER, decodeTitleEntities, externalScriptsOutsideContainer, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, mergeCssConfig, readResponseHeaders, readResponseStatus, renderFontCSS, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
 import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { extractLayoutMetadata } from 'stx-router/layout-metadata'
@@ -4530,6 +4530,7 @@ function __stxOverlay(errs){
                     // Includes: setup functions (__stx_setup_), partial scope IIFEs,
                     // the dynamic route params, and the reactive bridge (initScope calls).
                     // Excludes: signals runtime IIFE, x-element runtime, router script.
+                    const externalPageScripts = containerRegion ? externalScriptsOutsideContainer(content, containerRegion) : []
                     const pageSetupScripts: string[] = []
                     const pageSetupScriptOffsets = new Set<number>()
                     const appendOutsideMainScript = (match: RegExpExecArray): void => {
@@ -4581,13 +4582,14 @@ function __stxOverlay(errs){
 
                     // Clear stale _latestSetup from previous page, then append new page scripts
                     const clearStale = '<script data-stx-page>if(window.stx)window.stx._latestSetup=null;</script>'
-                    const componentFactoryScripts = pageSetupScripts.filter(script => script.includes('data-stx-component-factories'))
-                    const trailingPageScripts = pageSetupScripts.filter(script => !script.includes('data-stx-component-factories'))
+                    const inlinePageScripts = pageSetupScripts.filter(script => !externalPageScripts.includes(script))
+                    const componentFactoryScripts = inlinePageScripts.filter(script => script.includes('data-stx-component-factories'))
+                    const trailingPageScripts = inlinePageScripts.filter(script => !script.includes('data-stx-component-factories'))
                     // Component instance calls can live inside <main>, while their
                     // request-scoped factory prelude is normally emitted in the
                     // document head. Keep the prelude ahead of fragment content so
                     // calls never run before the shared factory is registered.
-                    fragment = `${headStyles.join('\n')}\n${componentFactoryScripts.join('\n')}\n${fragment}\n${clearStale}\n${trailingPageScripts.join('\n')}`
+                    fragment = `${headStyles.join('\n')}\n${externalPageScripts.join('\n')}\n${componentFactoryScripts.join('\n')}\n${fragment}\n${clearStale}\n${trailingPageScripts.join('\n')}`
 
                     // Carry the page <title> (from the full page, before it was
                     // reduced to the <main> fragment) so the SPA router can keep

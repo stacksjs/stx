@@ -1098,12 +1098,23 @@ function routerSource(): string {
   // links it again (recoverUnbound) asks for it again rather than finding it
   // "loaded" and running without it until the next reload.
   var pendingExternalScripts={};
-  function loadExternalScript(src,base){
+  function externalScriptAttributes(source){
+    var el=source;
+    if(typeof source==='string')el=new DOMParser().parseFromString('<scr'+'ipt '+source+'></scr'+'ipt>','text/html').querySelector('script');
+    var attrs={};
+    if(el)['src','type','integrity','crossorigin','referrerpolicy','nonce','nomodule','defer','fetchpriority','blocking'].forEach(function(name){
+      if(el.hasAttribute(name))attrs[name]=name==='nonce'?(el.nonce||el.getAttribute(name)||''):(el.getAttribute(name)||'');
+    });
+    return attrs;
+  }
+  function loadExternalScript(src,base,attrs){
     var key=externalScriptKey(src,base);
     if(!key||loadedExternalScripts[key])return null;
+    if(attrs&&Object.prototype.hasOwnProperty.call(attrs,'nomodule')&&'noModule' in ce('script'))return null;
     if(pendingExternalScripts[key])return pendingExternalScripts[key];
     return pendingExternalScripts[key]=new Promise(function(resolve){
       var el=ce('script');
+      Object.keys(attrs||{}).forEach(function(name){if(name!=='src')el.setAttribute(name,attrs[name])});
       el.src=key;
       // Deliberately NOT data-stx-page: both swap paths clear those on every
       // navigation, which would sweep this away and — since it is never loaded
@@ -1802,15 +1813,14 @@ else {
           // structured data wherever it sits, and the browser will not execute
           // a non-JS type anyway. Mirrors prepareRoutedBodyScripts' notion of
           // executable, which this path never had.
-          var typeMatch=attrs.match(/\\btype\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))/i);
-          var scriptType=((typeMatch&&(typeMatch[1]||typeMatch[2]||typeMatch[3]))||'').trim().toLowerCase();
+          var externalAttrs=externalScriptAttributes(attrs);
+          var scriptType=(externalAttrs.type||'').trim().toLowerCase();
           if(scriptType&&scriptType!=='text/javascript'&&scriptType!=='application/javascript'&&scriptType!=='module')return m;
           // An external script has no body, so every check below reads it as
           // nothing to run and the fragment loses it. Queue it instead; the
           // file is where the page's factory usually lives.
-          var srcMatch=attrs.match(/\\bsrc\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))/i);
-          var fragSrc=srcMatch&&(srcMatch[1]||srcMatch[2]||srcMatch[3]);
-          if(fragSrc){if(!isSharedClientScriptAttrs(attrs))fragExternalScripts.push(fragSrc);return ''}
+          var fragSrc=externalAttrs.src;
+          if(fragSrc){if(!isSharedClientScriptAttrs(attrs))fragExternalScripts.push({src:fragSrc,attrs:externalAttrs});return ''}
           if(code&&code.trim()&&!isSignalsRuntimeScript({hasAttribute:function(name){return name==='data-stx-runtime'&&attrs.indexOf('data-stx-runtime')!==-1}},code)){
             var slot='fragment-'+(++fragScriptId);
             var scoped=/(?:^|\\s)data-stx-scoped(?:\\s|=|$)/i.test(attrs);
@@ -1985,9 +1995,9 @@ else {
         // scripts in the same synchronous turn and nothing about its timing
         // moves.
         var fragPending=[];
-        fragExternalScripts.forEach(function(src){
-          var pending=loadExternalScript(src,url);
-          if(pending)fragPending.push({src:src,promise:pending});
+        fragExternalScripts.forEach(function(script){
+          var pending=loadExternalScript(script.src,url,script.attrs);
+          if(pending)fragPending.push({src:script.src,promise:pending});
         });
         afterExternalScripts(fragPending,runFragScripts,url+(hash||''),ctx);
       }
@@ -2188,7 +2198,7 @@ else {
           // Not discarded: queued against docBase, so a relative src resolves
           // against the page being navigated to rather than the current URL.
           // The runtime and router are dropped, not queued: see isSharedClientScript.
-          if(s.hasAttribute('src')){if(!isSharedClientScript(s))routedExternalScripts.push(s.getAttribute('src'));s.remove();return}
+          if(s.hasAttribute('src')){if(!isSharedClientScript(s))routedExternalScripts.push({src:s.getAttribute('src'),attrs:externalScriptAttributes(s)});s.remove();return}
           var type=(s.getAttribute('type')||'').trim().toLowerCase();
           var executable=!type||type==='text/javascript'||type==='application/javascript'||type==='module';
           if(!executable||!text.trim())return;
@@ -2252,33 +2262,22 @@ else {
       hydrateServerData(html);
 
       // ── Load new external <head> scripts ──
-      var loadedSrcs={};
-      qsa('head script[src]').forEach(function(s){loadedSrcs[s.src]=1});
       var extPromises=[];
       doc.querySelectorAll('head script[src]').forEach(function(s){
         if(isSharedClientScript(s))return;
         // Fetched-document script: resolve against the page being navigated to
         // (docBase), not the origin root — same rationale as the <link> reconcile (#1777).
         var src=new URL(s.getAttribute('src'),docBase).href;
-        if(loadedSrcs[src])return;
-        loadedSrcs[src]=1;
-        extPromises.push({src:src,promise:new Promise(function(resolve){
-          var ns=ce('script');
-          ns.src=src;
-          ns.onload=function(){resolve(true)};
-          // Settled either way, as before (a rejection ran the scripts at
-          // once); afterExternalScripts tells a failed module bundle apart.
-          ns.onerror=function(){if(ns.parentNode)ns.parentNode.removeChild(ns);resolve(false)};
-          dhead().appendChild(ns);
-        })});
+        var pending=loadExternalScript(src,docBase,externalScriptAttributes(s));
+        if(pending)extPromises.push({src:src,promise:pending});
       });
 
       // Before the inline scripts, and through the same barrier: an inline
       // script's whole reason for existing is often to call into one of these,
       // so running it first would fail exactly the way this bug did.
-      routedExternalScripts.forEach(function(src){
-        var pending=loadExternalScript(src,docBase);
-        if(pending)extPromises.push({src:src,promise:pending});
+      routedExternalScripts.forEach(function(script){
+        var pending=loadExternalScript(script.src,docBase,script.attrs);
+        if(pending)extPromises.push({src:script.src,promise:pending});
       });
 
       // ── Script re-execution ──
@@ -3644,7 +3643,8 @@ else {
       var src=srcMatch&&(srcMatch[1]||srcMatch[2]||srcMatch[3]);
       if(!src)return m;
       if(!/(?:^|\\s)data-stx-modules(?:[\\s=]|$)/i.test(attrs)&&!isModuleBundle(src))return m;
-      var pending=loadExternalScript(src,base);
+      var assetAttrs=externalScriptAttributes(attrs);
+      var pending=loadExternalScript(assetAttrs.src||src,base,assetAttrs);
       if(pending)waits.push(pending);
       return m;
     });

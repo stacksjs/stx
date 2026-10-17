@@ -16,6 +16,8 @@ import path from 'node:path'
 import { classifyAllScripts } from './script-classifier'
 import { startsDocument } from './document-shell'
 import { findContainerRegion } from './fragment-container'
+import type { ContainerRegion } from './fragment-container'
+import { matchScriptElement, scanAtElementPosition } from './html-masking'
 import { isDevelopment } from './env'
 import { isSpaNavRequest } from './spa-nav'
 export { extractLayoutMetadata } from 'stx-router/layout-metadata'
@@ -395,6 +397,32 @@ export function isSpaNavigation(request: Request): boolean {
   return isSpaNavRequest(request)
 }
 
+/** Page dependencies outside the swap container still belong to its fragment. */
+export function externalScriptsOutsideContainer(html: string, container: ContainerRegion): string[] {
+  const scripts: string[] = []
+  const seen = new Set<string>()
+  for (const element of scanAtElementPosition(html, matchScriptElement)) {
+    if (element.start >= container.start && element.start < container.end)
+      continue
+    const opening = element.token.match(/^<script\b((?:"[^"]*"|'[^']*'|[^'">])*)>/i)?.[1] ?? ''
+    const attrs = new Map<string, string>()
+    for (const attr of opening.matchAll(/([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g))
+      attrs.set(attr[1].toLowerCase(), attr[2] ?? attr[3] ?? attr[4] ?? '')
+    const src = attrs.get('src')?.trim()
+    const type = attrs.get('type')?.trim().toLowerCase()
+    if (!src || attrs.has('server') || (type && !['module', 'text/javascript', 'application/javascript'].includes(type)))
+      continue
+    if (attrs.has('data-stx-runtime') || attrs.has('data-stx-router')
+      || /^\/_stx\/(?:runtime|router)(?:\.[a-f0-9]{16})?\.js(?:[?#]|$)/i.test(src))
+      continue
+    if (isChromeInstanceScript(html, element.token, container.start, container.end) || seen.has(element.token))
+      continue
+    seen.add(element.token)
+    scripts.push(element.token)
+  }
+  return scripts
+}
+
 /**
  * Extract the inner content of the router container element from a full HTML
  * document, preserving page styles and route state found in `<head>`.
@@ -441,6 +469,8 @@ export function extractContainerContent(html: string, containerSelector: string 
     // Container not found — fall back to full body extraction
     return stripDocumentWrapper(html)
   }
+  const externalScripts = externalScriptsOutsideContainer(trimmed, containerRegion)
+  const externalSet = new Set(externalScripts)
 
   const tag = containerRegion.tagName
   const openEnd = containerRegion.start
@@ -487,8 +517,9 @@ export function extractContainerContent(html: string, containerSelector: string 
 
   const parts: string[] = []
   if (headStyles.length > 0) parts.push(headStyles.join('\n'))
-  if (headScripts.length > 0) parts.push(headScripts.join('\n'))
-  if (bodyScripts.length > 0) parts.push(bodyScripts.join('\n'))
+  if (externalScripts.length > 0) parts.push(externalScripts.join('\n'))
+  if (headScripts.length > 0) parts.push(headScripts.filter(script => !externalSet.has(script)).join('\n'))
+  if (bodyScripts.length > 0) parts.push(bodyScripts.filter(script => !externalSet.has(script)).join('\n'))
   parts.push(innerContent)
   return parts.join('\n')
 }

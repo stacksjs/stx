@@ -48,7 +48,7 @@ const PAGE = `
 `
 
 /** Same layout group on both sides, so navigation takes the fragment path. */
-function installRouter(fragmentHtml: string, page: string = PAGE) {
+function installRouter(fragmentHtml: string, page: string = PAGE, fragment = true) {
   const window = new Window({ url: 'http://localhost/' })
   window.document.write(page)
   ;(window as any).stx = {}
@@ -71,7 +71,7 @@ function installRouter(fragmentHtml: string, page: string = PAGE) {
       status: 200,
       headers: {
         'Content-Type': 'text/html',
-        'X-STX-Fragment': 'true',
+        'X-STX-Fragment': fragment ? 'true' : 'false',
         'X-STX-Layout': 'layouts/app.stx',
         'X-STX-Layout-Group': 'app',
       },
@@ -94,6 +94,33 @@ function injectedSrcs(window: any): string[] {
 }
 
 describe('router — external scripts inside the routed container', () => {
+  it('preserves head module attributes on full-document navigation too', async () => {
+    const page = PAGE.replace('<head>', '<head><script type="module" src="/js/head-chart.js" integrity="sha384-example" crossorigin="anonymous"></script>')
+    const window = installRouter(page, PAGE, false)
+    await navigate(window, '/profile')
+    const script = window.document.querySelector('script[src="http://localhost/js/head-chart.js"]')
+    expect(script?.getAttribute('type')).toBe('module')
+    expect(script?.getAttribute('integrity')).toBe('sha384-example')
+    expect(script?.getAttribute('crossorigin')).toBe('anonymous')
+  })
+
+  it('reads real attributes and decodes escaped query parameters', async () => {
+    const window = installRouter('<script data-note="src=\'/fake.js\'" src="/js/chart.js?year=2026&amp;theme=light"></script><h1>Profile</h1>')
+    await navigate(window, '/profile')
+    expect(injectedSrcs(window)).toContain('http://localhost/js/chart.js?year=2026&theme=light')
+    expect(injectedSrcs(window).some(src => src.includes('/fake.js'))).toBe(false)
+  })
+
+  it('preserves module type and security attributes while loading a page dependency', async () => {
+    const window = installRouter('<script type="module" src="/js/chart.js" integrity="sha384-example" crossorigin="anonymous" referrerpolicy="no-referrer"></script><h1>Profile</h1>')
+    await navigate(window, '/profile')
+    const script = window.document.querySelector('script[src="http://localhost/js/chart.js"]')
+    expect(script?.getAttribute('type')).toBe('module')
+    expect(script?.getAttribute('integrity')).toBe('sha384-example')
+    expect(script?.getAttribute('crossorigin')).toBe('anonymous')
+    expect(script?.getAttribute('referrerpolicy')).toBe('no-referrer')
+  })
+
   it('loads the file the incoming container asks for', async () => {
     const window = installRouter(
       `<section><script src="/js/dashboard-xdata.js"><\/script><div data-stx-xdata="dashboardXData()"></div></section>`,
