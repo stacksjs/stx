@@ -460,6 +460,10 @@ export interface MapRegion {
 export interface MapProps extends BaseProps {
   /** Explicit camera region; omit it to let fitToBounds choose the camera. */
   region?: MapRegion
+  /** Initial region for maps without recorded overlay geometry. */
+  initialRegion?: MapRegion
+  /** Logical points reserved for floating controls when fitting overlays. */
+  edgePadding?: { top?: number, right?: number, bottom?: number, left?: number }
   /** Fit the camera to all marker and polyline overlay geometry. */
   fitToBounds?: boolean
   /** Show the user dot only when the app already has location permission. */

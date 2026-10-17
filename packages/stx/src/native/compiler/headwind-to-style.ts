@@ -585,6 +585,14 @@ function parsePadding(className: string, style: STXStyle): boolean {
 }
 
 function parseMargin(className: string, style: STXStyle): boolean {
+  if (/^-(?:m|mx|my|mt|mr|mb|ml)-/.test(className)) {
+    const positive: STXStyle = {}
+    if (!parseMargin(className.slice(1), positive)) return false
+    const entries = Object.entries(positive)
+    if (entries.some(([, value]) => typeof value !== 'number')) return false
+    for (const [key, value] of entries) (style as Record<string, unknown>)[key] = -(value as number)
+    return true
+  }
   // m-{size}
   if (className.startsWith('m-')) {
     const size = resolveSpacing(className.slice(2))
@@ -923,6 +931,25 @@ function parseGap(className: string, style: STXStyle): boolean {
   return false
 }
 
+/** One platform shadow per card; both maintained hosts render these style fields. */
+function parseShadow(className: string, style: STXStyle): boolean {
+  const presets: Record<string, [number, number, number, number]> = {
+    'shadow-none': [0, 0, 0, 0],
+    'shadow-xs': [1, 1, 0.05, 1],
+    'shadow-sm': [2, 1, 0.1, 2],
+    shadow: [3, 2, 0.12, 3],
+    'shadow-md': [6, 4, 0.15, 4],
+    'shadow-lg': [10, 6, 0.18, 8],
+    'shadow-xl': [16, 10, 0.2, 12],
+    'shadow-2xl': [24, 16, 0.25, 18],
+  }
+  const preset = presets[className]
+  if (!preset) return false
+  const [radius, offset, opacity, elevation] = preset
+  Object.assign(style, { shadowColor: '#000000', shadowOpacity: opacity, shadowRadius: radius, shadowOffset: { width: 0, height: offset }, elevation })
+  return true
+}
+
 // ============================================================================
 // Main Compiler Function
 // ============================================================================
@@ -992,6 +1019,7 @@ export function compileHeadwindToStyle(classes: string, unknown?: string[]): STX
     }
 
     // Try pattern-based parsers
+    if (parseShadow(className, style)) continue
     if (parseGradient(className, style)) continue
     if (parseBackgroundColor(className, style)) continue
     if (parseVectorPaint(className, style)) continue

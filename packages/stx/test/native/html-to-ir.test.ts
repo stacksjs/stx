@@ -528,10 +528,10 @@ function* walk(node: STXNode): Generator<STXNode> {
 
 describe('native map exploration contract', () => {
   it('keeps map camera, compass, scale, direction arrows and tap events in the host protocol', async () => {
-    const { root, diagnostics } = await translateHtmlToIR('<Map camera-pitch="45" camera-heading="90" shows-compass shows-scale @click="addPoint($event)" @region-change-complete="rememberCamera($event)"><MapMarker id="direction" geometry="[37,-119]" bearing="45" /></Map>')
+    const { root, diagnostics } = await translateHtmlToIR('<Map camera-pitch="45" camera-heading="90" initial-region="{&quot;center&quot;:{&quot;latitude&quot;:37,&quot;longitude&quot;:-119},&quot;span&quot;:{&quot;latitudeDelta&quot;:0.1,&quot;longitudeDelta&quot;:0.1}}" edge-padding="{&quot;bottom&quot;:180,&quot;top&quot;:32}" shows-compass shows-scale @click="addPoint($event)" @region-change-complete="rememberCamera($event)"><MapMarker id="direction" geometry="[37,-119]" bearing="45" /></Map>')
     expect(diagnostics).toEqual([])
     expect(root.type).toBe('Map')
-    expect(root.props).toMatchObject({ cameraPitch: 45, cameraHeading: 90, showsCompass: true, showsScale: true })
+    expect(root.props).toMatchObject({ cameraPitch: 45, cameraHeading: 90, showsCompass: true, showsScale: true, edgePadding: {bottom:180,top:32}, initialRegion:{center:{latitude:37,longitude:-119},span:{latitudeDelta:0.1,longitudeDelta:0.1}} })
     expect(root.events).toEqual({ onPress: 'addPoint($event)', onRegionChangeComplete: 'rememberCamera($event)' })
     expect((root.children[0] as STXNode).props.bearing).toBe(45)
   })
