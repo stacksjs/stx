@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.556...v0.2.557)
+
+## 🐛 Bug Fixes
+
+- **native**: share event aliases between compiler and runtime ([a2102fa](https://github.com/stacksjs/stx/commit/a2102fa)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.557 ([cbe0927](https://github.com/stacksjs/stx/commit/cbe0927)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.555...v0.2.556)
 
 ## ✨ Features
