@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.559...v0.2.560)
+
+## 🐛 Bug Fixes
+
+- **native**: preserve intrinsic browser flex sizes ([2cb4609](https://github.com/stacksjs/stx/commit/2cb4609)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.560 ([341157e](https://github.com/stacksjs/stx/commit/341157e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.558...v0.2.559)
 
 ## ✨ Features
