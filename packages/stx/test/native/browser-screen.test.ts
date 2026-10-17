@@ -12,6 +12,28 @@ const folders: string[] = []
 afterEach(() => { for (const folder of folders.splice(0)) rmSync(folder, { recursive: true, force: true }) })
 
 describe('portable browser screens', () => {
+  it('replaces a canonical destination through the browser host with its query intact', async () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'stx-browser-replace-'))
+    folders.push(root)
+    writeFileSync(path.join(root, 'Screen.stx'), `<script client>
+const craft = globalThis.craft
+onMount(() => craft.navigation.replace('/m/claim?kind=club&slug=rappid'))
+</script><View><Text>Signed in</Text></View>`)
+    writeFileSync(path.join(root, 'platform.ts'), 'export async function createBrowserPlatform() { return {craft:{},capabilities:[],call:async()=>null,navigate(path,replace){globalThis.lastNavigation={path,replace}},dispose(){}} }')
+    const compiled = await compileBrowserScreen({ root, source: 'Screen.stx', screen: 'Screen', browser: { screen: 'Screen', container: '#screen', appURL: '/m', routes: { '/m/login': 'Screen', '/m/claim': 'Claim' }, platformModule: path.join(root, 'platform.ts') } })
+    const browser = new Window({ url: 'https://fixture.invalid/m/login' })
+    const container = browser.document.createElement('div')
+    container.id = 'screen'
+    browser.document.body.append(container)
+    const scope: Record<string, any> = { document: browser.document, navigator: browser.navigator, location: browser.location, history: browser.history, MutationObserver: browser.MutationObserver, matchMedia: browser.matchMedia.bind(browser), addEventListener: browser.addEventListener.bind(browser), removeEventListener: browser.removeEventListener.bind(browser), dispatchEvent: browser.dispatchEvent.bind(browser), console, setTimeout, clearTimeout, setInterval, clearInterval, queueMicrotask, URL, URLSearchParams, AbortController }
+    scope.window = scope
+    try {
+      vm.runInNewContext(compiled.code, scope)
+      await new Promise(resolve => setTimeout(resolve, 20))
+      expect(scope.lastNavigation).toEqual({ path: '/m/claim?kind=club&slug=rappid', replace: true })
+    }
+    finally { scope.__stxNativeUnmount?.(); browser.close() }
+  })
   it('updates tab icons and avatars without changing navigation, labels or selection, and restores icons', async () => {
     const root = mkdtempSync(path.join(tmpdir(), 'stx-tab-icons-'))
     folders.push(root)

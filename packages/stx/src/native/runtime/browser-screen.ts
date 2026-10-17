@@ -174,6 +174,10 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
   }
   tabs.hidden = !options.tabs?.length
   const navigateScreen = (screen: unknown, params: unknown, replace = false): void => {
+    if (replace && typeof screen === 'string' && screen.startsWith('/') && !screen.startsWith('//')) {
+      platform.navigate(screen, true)
+      return
+    }
     const route = Object.entries(options.routes).find(([, name]) => name === screen)?.[0]
     if (!route) throw new Error(`No browser route for screen ${screen}`)
     const values = params && typeof params === 'object' ? { ...params } as Record<string, unknown> : {}
