@@ -20,6 +20,7 @@ import { injectSignalsRuntime } from './runtime-injection'
 import { evictOldest, matchScriptElement, scanAtElementPosition } from './html-masking'
 import { importOnce } from './lazy-module'
 import { findBodyOpenTag } from './find-body-tag'
+import { stripCommentsAndLiterals } from './strip-literals'
 
 // Counter for unique signal setup function names (avoids Date.now() collisions)
 let signalSetupCounter = 0
@@ -1690,129 +1691,16 @@ if(window.stx)window.stx._latestSetup=${setupFnName};
  * Only extracts TOP-LEVEL declarations, not variables inside nested functions.
  */
 export function extractExports(setupContent: string): string {
-  const code = setupContent
+  // Share the lexer used by bundle binding discovery. In particular, a regex
+  // after `return` is an expression, not division: counting its braces can
+  // expose private bundle helpers and put undefined names in the setup return.
+  // Positions remain intact for declaration and destructuring recognition.
+  const code = stripCommentsAndLiterals(setupContent)
   const names: string[] = []
   const seen = new Set<string>()
-
-  // Track brace depth to only capture top-level declarations
   let depth = 0
   let i = 0
   const len = code.length
-
-  // Last significant (non-whitespace, non-comment) char. Used to decide
-  // whether a `/` is the start of a regex literal or a division operator.
-  // After tokens that can end an expression (identifier, number, `)`, `]`,
-  // string, template, regex) `/` is division; otherwise it's a regex.
-  let lastSig = ''
-
-  // Skip a regex literal `/.../flags`, respecting character classes (so
-  // `/` inside `[]` doesn't close the regex) and escapes. See #1668 bug 7 —
-  // before this skipper, a top-level `const re = /can't/g` confused the
-  // string-skipper (the `'` looked like an open quote and ran to EOF) and
-  // `const re = /\{[^}]+\}/g` confused the brace-depth tracker (`{`/`}`
-  // inside the regex were counted toward scope depth).
-  const skipRegex = (): void => {
-    i++ // skip opening /
-    let inClass = false
-    while (i < len) {
-      const c = code[i]
-      if (c === '\\') {
-        i += 2
-        continue
-      }
-      if (c === '[' && !inClass) {
-        inClass = true
-        i++
-        continue
-      }
-      if (c === ']' && inClass) {
-        inClass = false
-        i++
-        continue
-      }
-      if (c === '/' && !inClass) {
-        i++ // skip closing /
-        // Skip regex flags (g, i, m, s, u, y, d)
-        while (i < len && /[gimsuyd]/.test(code[i])) i++
-        return
-      }
-      if (c === '\n')
-        return // regex literals can't span lines — bail to avoid runaway
-      i++
-    }
-  }
-
-  // True when a `/` at the current position would parse as a regex literal,
-  // not division. Conservative: any non-postfix expression-end token means
-  // division position; anything else (operators, brackets, start of source)
-  // means regex position.
-  const isRegexStart = (): boolean => {
-    if (!lastSig) return true
-    // Tokens that END an expression (next `/` is division): identifier
-    // chars, digits, `)`, `]`, `}` (closing brace of a block; not perfect
-    // but matches the common case for setup scripts).
-    if (/[\w)\]]/.test(lastSig)) return false
-    return true
-  }
-
-  // Skip string literals
-  const skipString = (quote: string): void => {
-    i++ // Skip opening quote
-    while (i < len) {
-      if (code[i] === '\\') {
-        i += 2 // Skip escaped character
-        continue
-      }
-      if (code[i] === quote) {
-        i++ // Skip closing quote
-        return
-      }
-      i++
-    }
-  }
-
-  // Skip template literals with nested expressions
-  const skipTemplateLiteral = (): void => {
-    i++ // Skip opening backtick
-    while (i < len) {
-      if (code[i] === '\\') {
-        i += 2
-        continue
-      }
-      if (code[i] === '`') {
-        i++
-        return
-      }
-      if (code[i] === '$' && code[i + 1] === '{') {
-        i += 2
-        let templateDepth = 1
-        while (i < len && templateDepth > 0) {
-          if (code[i] === '{') { templateDepth++; i++ }
-          else if (code[i] === '}') { templateDepth--; i++ }
-          else if (code[i] === '\'' || code[i] === '"') skipString(code[i])
-          else if (code[i] === '`') skipTemplateLiteral()
-          else i++
-        }
-        continue
-      }
-      i++
-    }
-  }
-
-  // Skip comments
-  const skipComment = (): boolean => {
-    if (code[i] === '/' && code[i + 1] === '/') {
-      while (i < len && code[i] !== '\n') i++
-      return true
-    }
-    if (code[i] === '/' && code[i + 1] === '*') {
-      i += 2
-      while (i < len - 1 && !(code[i] === '*' && code[i + 1] === '/')) i++
-      i += 2
-      return true
-    }
-    return false
-  }
 
   // Check for variable/function declaration at current position (only at depth 0)
   const checkDeclaration = (): void => {
@@ -1909,41 +1797,14 @@ export function extractExports(setupContent: string): string {
   }
 
   while (i < len) {
-    // Skip comments
-    if (skipComment()) continue
-
-    // Skip string literals
-    if (code[i] === '\'' || code[i] === '"') {
-      skipString(code[i])
-      lastSig = code[i - 1] // closing quote
-      continue
-    }
-
-    // Skip template literals
-    if (code[i] === '`') {
-      skipTemplateLiteral()
-      lastSig = '`'
-      continue
-    }
-
-    // Skip regex literals when `/` is in expression position. Otherwise
-    // treat `/` as division (just advance + update lastSig).
-    if (code[i] === '/' && code[i + 1] !== '/' && code[i + 1] !== '*' && isRegexStart()) {
-      skipRegex()
-      lastSig = '/'
-      continue
-    }
-
     // Track brace depth
     if (code[i] === '{') {
       depth++
-      lastSig = '{'
       i++
       continue
     }
     if (code[i] === '}') {
       depth--
-      lastSig = '}'
       i++
       continue
     }
@@ -1953,7 +1814,6 @@ export function extractExports(setupContent: string): string {
       checkDeclaration()
     }
 
-    if (!/\s/.test(code[i])) lastSig = code[i]
     i++
   }
 
