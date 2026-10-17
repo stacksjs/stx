@@ -59,6 +59,34 @@ describe('template ref ownership', () => {
     expect(pageRef?.current).toBe(document.querySelector('button'))
   })
 
+  it('retains page refs when a queued layout mount creates its own ref map', () => {
+    document.body.innerHTML = '<main data-stx="__stx_setup_projected_ref"><div data-stx-ref="control">Map</div></main><footer><span>Language</span><script id="layout-script"></script></footer>'
+    window.__STX_CURRENT_ELEMENT__ = null
+    let pageRef: { current: HTMLElement | null } | undefined
+    let atMount: HTMLElement | null = null
+    window.__stx_setup_projected_ref = () => {
+      pageRef = window.stx.useRef('control')
+      window.stx.onMount(() => { atMount = pageRef!.current })
+      return { pageRef }
+    }
+    const ready = Object.getOwnPropertyDescriptor(document, 'readyState')
+    const current = Object.getOwnPropertyDescriptor(document, 'currentScript')
+    try {
+      Object.defineProperty(document, 'readyState', { value: 'loading', configurable: true })
+      Object.defineProperty(document, 'currentScript', { value: document.getElementById('layout-script'), configurable: true })
+      window.stx.mount(() => ({ language: window.stx.state('en') }))
+      window.__stxDomReadyHandler()
+      expect(pageRef?.current).toBe(document.querySelector('[data-stx-ref="control"]'))
+      expect(atMount).toBe(pageRef?.current)
+    }
+    finally {
+      if (ready) Object.defineProperty(document, 'readyState', ready)
+      else delete (document as any).readyState
+      if (current) Object.defineProperty(document, 'currentScript', current)
+      else delete (document as any).currentScript
+    }
+  })
+
   it('keeps each useRef bound to the component scope that created it', () => {
     const firstRoot = document.createElement('div')
     const secondRoot = document.createElement('div')

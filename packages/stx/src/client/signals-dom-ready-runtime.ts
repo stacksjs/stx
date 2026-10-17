@@ -107,6 +107,12 @@ export const SIGNALS_DOM_READY_RUNTIME = `  // =================================
     mountQueue.forEach(function(fn) { fn(); });
     mountQueue = [];
 
+    // A queued layout mount owns a separate $refs map and merges it into the
+    // compatibility scope. Page useRef accessors already captured the page's
+    // map during setup; bind its DOM back into that same map before onMount.
+    // Keep the layout's other exposed names available for legacy bindings.
+    componentScope.$refs = pageScopeSnapshot.$refs;
+
     // Bind page roots after child components have registered their local scope.
     document.querySelectorAll('[data-stx]').forEach(el => {
       console.log('[DOMContentLoaded] processElement on:', el.tagName, 'scope keys:', Object.keys(componentScope).slice(0, 10));
