@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.558...v0.2.559)
+
+## ✨ Features
+
+- **native**: support attributed topographic map tiles ([ed80c89](https://github.com/stacksjs/stx/commit/ed80c89)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.559 ([c4bed74](https://github.com/stacksjs/stx/commit/c4bed74)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.557...v0.2.558)
 
 ## ✨ Features
