@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.554...v0.2.555)
+
+## 🐛 Bug Fixes
+
+- invalidate cached photos after image encoder updates ([b8bea71](https://github.com/stacksjs/stx/commit/b8bea71)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.555 ([e9d3c2d](https://github.com/stacksjs/stx/commit/e9d3c2d)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.553...v0.2.554)
 
 ## 🐛 Bug Fixes
