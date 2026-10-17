@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.561...v0.2.562)
+
+## 🐛 Bug Fixes
+
+- bound linked module CSS memory usage ([742a114](https://github.com/stacksjs/stx/commit/742a114)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.562 ([0f23f62](https://github.com/stacksjs/stx/commit/0f23f62)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.560...v0.2.561)
 
 ## 🐛 Bug Fixes
