@@ -1,7 +1,7 @@
 {
   "name": "@stx/deploy",
   "type": "module",
-  "version": "0.2.562",
+  "version": "0.2.561",
   "private": true,
   "description": "Deployment adapters for STX applications. Bun server default, static export, and community adapter interface.",
   "author": "Chris Breuer <chris@stacksjs.org>",
@@ -39,7 +39,7 @@
     "dist"
   ],
   "dependencies": {
-    "@stacksjs/ts-cloud": "^0.16.15"
+    "@stacksjs/ts-cloud": "^0.16.58"
   },
   "scripts": {
     "build": "bun --bun build.ts",
