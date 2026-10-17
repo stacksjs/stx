@@ -352,6 +352,8 @@ export class BrowserScreenRenderer {
       if (key.endsWith('Horizontal')) { const base = key.slice(0, -10); set(`${base}Left`, value); set(`${base}Right`, value) }
       else if (key.endsWith('Vertical')) { const base = key.slice(0, -8); set(`${base}Top`, value); set(`${base}Bottom`, value) }
       else if (key === 'gridColumns') css.gridTemplateColumns = value ? `repeat(${value}, minmax(0, 1fr))` : ''
+      // Native zero flex retains intrinsic size; CSS numeric zero instead sets a zero basis.
+      else if (key === 'flex' && value === 0) set(key, '0 0 auto')
       else if (key === 'transform' && Array.isArray(value)) css.transform = value.flatMap(step => Object.entries(step as Record<string, unknown>).map(([name, amount]) => `${name}(${amount}${typeof amount === 'number' && (name.startsWith('translate') || name === 'perspective') ? 'px' : ''})`)).join(' ')
       else if (key.startsWith('shadow') || key === 'elevation' || key.startsWith('gradient') || key === 'resizeMode' || key === 'tintColor') continue
       else set(key, value)

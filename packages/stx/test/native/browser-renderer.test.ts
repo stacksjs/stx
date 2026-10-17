@@ -14,6 +14,20 @@ function fixture() {
 }
 
 describe('the browser peer of the native screen renderer', () => {
+  it('keeps zero-flex horizontal scrollers at their intrinsic content size', () => {
+    const { renderer, container, node } = fixture()
+    const tabs = node('tabs', 'ScrollView', [node('choice', 'View', ['Athletes'], {}, { onPress: 'pick' })], { horizontal: true })
+    tabs.style = { flex: 0, flexDirection: 'row' }
+    tabs.children[0] = { ...tabs.children[0] as STXNode, style: { minHeight: 44 } }
+    renderer.render(node('screen', 'View', [tabs]))
+    const scroller = container.querySelector<HTMLElement>('[data-stx-node="tabs"]')!
+    expect(scroller.style.getPropertyValue('flex')).toBe('0 0 auto')
+    renderer.mutate({ version: 1, batchId: 'expand', baseRevision: 0, revision: 1, operations: [{ op: 'updateNode', id: 'tabs', patch: { style: { flex: 1 } } }] })
+    expect(scroller.style.getPropertyValue('flex')).toBe('1')
+    renderer.mutate({ version: 1, batchId: 'intrinsic', baseRevision: 1, revision: 2, operations: [{ op: 'updateNode', id: 'tabs', patch: { style: { flex: 0 } } }] })
+    expect(scroller.style.getPropertyValue('flex')).toBe('0 0 auto')
+  })
+
   it('uses real form controls, normalized edits and accessible labels', () => {
     const { renderer, container, node, events } = fixture()
     renderer.render(node('root', 'View', [node('input', 'TextInput', [], { value: 'Seed', accessibilityLabel: 'Name' }, { onChangeText: 'edit' }), node('toggle', 'Switch', [], { value: true }, { onValueChange: 'toggle' }), node('picker', 'Picker', [], { value: 'b', options: [{ value: 'a', label: 'One' }, { value: 'b', label: 'Two' }] }, { onValueChange: 'pick' })]))
