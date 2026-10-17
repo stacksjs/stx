@@ -182,6 +182,9 @@ export function processServerBindings(
     const fullTag = match[0]
     const attrs = match[2]
     if (!attrs || !attrs.includes(':')) continue
+    // Native host props are JSON data, including computed option arrays and
+    // geometry objects. DOM attributes retain their ordinary string contract.
+    const nativeHost = /\bdata-native(?:\s|=)/i.test(attrs.replace(/"[^"]*"|'[^']*'/g, ''))
 
     // Find all :attr="expr" in this tag's attributes
     const bindingRegex = /\s:([a-zA-Z_][\w-]*)\s*=\s*"([^"]*)"/g
@@ -290,7 +293,8 @@ export function processServerBindings(
           newAttrs = newAttrs.replace(attrMatch[0], '')
         }
         else {
-          const escaped = String(value)
+          const serialized = nativeHost && typeof value === 'object' ? JSON.stringify(value) : String(value)
+          const escaped = serialized
             .replace(/&/g, '&amp;')
             .replace(/"/g, '&quot;')
             .replace(/</g, '&lt;')
