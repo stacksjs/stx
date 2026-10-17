@@ -362,6 +362,46 @@ describe('listeners and scope, without the DOM', () => {
     }
   })
 
+  it('delivers video playback callbacks through the canonical native event names', () => {
+    const { host, node, ops } = harness()
+    const seen: Array<[string, number]> = []
+    const cases = [
+      ['play', 'onPlay'],
+      ['playing', 'onPlay'],
+      ['pause', 'onPause'],
+      ['ended', 'onEnd'],
+      ['end', 'onEnd'],
+      ['timeupdate', 'onProgress'],
+      ['progress', 'onProgress'],
+      ['loadedmetadata', 'onLoad'],
+      ['enterpictureinpicture', 'onPictureInPictureStart'],
+      ['leavepictureinpicture', 'onPictureInPictureStop'],
+    ] as const
+    for (const [event, canonical] of cases) {
+      host.listen(node(event, 'Video'), event, payload => seen.push([event, (payload as { currentTime: number }).currentTime]))
+      host.flush()
+      const operation = ops().find(candidate => candidate.op === 'updateNode' && candidate.id === event)
+      const handlerId = (operation as { patch: { events: Record<string, string> } }).patch.events[canonical]!
+      expect(operation).toMatchObject({ patch: { events: { [canonical]: expect.any(String) } } })
+      host.dispatch(handlerId, { currentTime: 8, duration: 8 })
+    }
+    expect(seen).toEqual(cases.map(([event]) => [event, 8]))
+  })
+
+  it('delivers map camera callbacks using the compiler’s canonical event names', () => {
+    const { host, node, ops } = harness()
+    const seen: number[] = []
+    for (const event of ['region-change-complete', 'regionchangecomplete']) {
+      host.listen(node(event, 'Map'), event, payload => seen.push((payload as { pitch: number }).pitch))
+      host.flush()
+      const operation = ops().find(candidate => candidate.op === 'updateNode' && candidate.id === event)
+      const handlerId = (operation as { patch: { events: Record<string, string> } }).patch.events.onRegionChangeComplete!
+      expect(operation).toMatchObject({ patch: { events: { onRegionChangeComplete: expect.any(String) } } })
+      host.dispatch(handlerId, { pitch: 45 })
+    }
+    expect(seen).toEqual([45, 45])
+  })
+
   it('finds a scope by ownership rather than by selector', () => {
     const { host, node } = harness()
     const scope = node('s1')

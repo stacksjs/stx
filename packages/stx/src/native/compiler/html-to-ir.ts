@@ -26,6 +26,7 @@
  * plausible tree that renders as the wrong screen.
  */
 import type { STXDocument, STXNode, STXStyle } from './ir'
+import { NATIVE_EVENT_NAMES as EVENT_NAMES } from '../event-names'
 import { NATIVE_BOOLEAN_PROPS, nativePropName } from '../prop-names'
 import { mapToNativeComponent } from './component-mapping'
 import { resolveIconName } from './icons'
@@ -89,78 +90,6 @@ const UNWRAP = new Set(['template', 'body', 'html', 'main', 'fragment'])
 
 /** Nothing is mapped to a bare box any more; kept for the shape of `open`. */
 const BOX_ONLY = new Set<string>()
-
-/**
- * Web event name to the native name, as the renderers spell it.
- *
- * `parseAttributes` in `parser.ts` turns `@click` into `onClick`, and no
- * renderer reads `onClick` -- a tapped button does nothing on either platform.
- * The names below are the ones the renderers actually dispatch on.
- */
-const EVENT_NAMES: Record<string, string> = {
-  'region-change-complete': 'onRegionChangeComplete',
-  regionchangecomplete: 'onRegionChangeComplete',
-  click: 'onPress',
-  press: 'onPress',
-  'press-in': 'onPressIn',
-  pressin: 'onPressIn',
-  'press-out': 'onPressOut',
-  pressout: 'onPressOut',
-  longpress: 'onLongPress',
-  contextmenu: 'onLongPress',
-  input: 'onChangeText',
-  change: 'onValueChange',
-  'value-change': 'onValueChange',
-  valuechange: 'onValueChange',
-  focus: 'onFocus',
-  focusin: 'onFocus',
-  blur: 'onBlur',
-  focusout: 'onBlur',
-  submit: 'onSubmitEditing',
-  'submit-editing': 'onSubmitEditing',
-  submitediting: 'onSubmitEditing',
-  'end-editing': 'onEndEditing',
-  endediting: 'onEndEditing',
-  scroll: 'onScroll',
-  // A drag starting and ending, and the deceleration after it: a pager reads
-  // where a swipe came to rest from 'momentum-scroll-end', once per swipe.
-  'scroll-begin-drag': 'onScrollBeginDrag',
-  scrollbegindrag: 'onScrollBeginDrag',
-  'scroll-end-drag': 'onScrollEndDrag',
-  scrollenddrag: 'onScrollEndDrag',
-  'momentum-scroll-begin': 'onMomentumScrollBegin',
-  momentumscrollbegin: 'onMomentumScrollBegin',
-  'momentum-scroll-end': 'onMomentumScrollEnd',
-  momentumscrollend: 'onMomentumScrollEnd',
-  refresh: 'onRefresh',
-  layout: 'onLayout',
-  'end-reached': 'onEndReached',
-  endreached: 'onEndReached',
-  close: 'onRequestClose',
-  'request-close': 'onRequestClose',
-  requestclose: 'onRequestClose',
-  show: 'onShow',
-  dismiss: 'onDismiss',
-  'sliding-complete': 'onSlidingComplete',
-  slidingcomplete: 'onSlidingComplete',
-  'load-start': 'onLoadStart',
-  loadstart: 'onLoadStart',
-  load: 'onLoad',
-  'load-end': 'onLoadEnd',
-  loadend: 'onLoadEnd',
-  error: 'onError',
-  // A video's playback, in the web's names.
-  play: 'onPlay',
-  playing: 'onPlay',
-  pause: 'onPause',
-  ended: 'onEnd',
-  end: 'onEnd',
-  timeupdate: 'onProgress',
-  progress: 'onProgress',
-  loadedmetadata: 'onLoad',
-  enterpictureinpicture: 'onPictureInPictureStart',
-  leavepictureinpicture: 'onPictureInPictureStop',
-}
 
 /**
  * Every event name at least one renderer dispatches on.

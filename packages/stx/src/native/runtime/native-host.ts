@@ -35,6 +35,7 @@ import type { STXNode, STXStyle } from '../compiler/ir'
 import { compileClassStyles } from '../compiler/headwind-to-style'
 import { resolveIconName } from '../compiler/icons'
 import { affectsGeometry, parseSvgMarkup, parseViewBox, SVG_NODE_TYPES, svgGeometry } from '../compiler/svg'
+import { NATIVE_EVENT_NAMES } from '../event-names'
 import { nativePropName } from '../prop-names'
 import { cloneNativeBindingNode, type NativeBindingNode } from './binding-tree'
 
@@ -161,58 +162,6 @@ export const HOST_METHODS: readonly string[] = [
   'descendants',
   'scopesIn',
 ]
-
-const NATIVE_EVENT_NAMES: Record<string, string> = {
-  click: 'onPress',
-  press: 'onPress',
-  'press-in': 'onPressIn',
-  pressin: 'onPressIn',
-  'press-out': 'onPressOut',
-  pressout: 'onPressOut',
-  longpress: 'onLongPress',
-  contextmenu: 'onLongPress',
-  input: 'onChangeText',
-  change: 'onValueChange',
-  'value-change': 'onValueChange',
-  valuechange: 'onValueChange',
-  focus: 'onFocus',
-  focusin: 'onFocus',
-  blur: 'onBlur',
-  focusout: 'onBlur',
-  submit: 'onSubmitEditing',
-  'submit-editing': 'onSubmitEditing',
-  submitediting: 'onSubmitEditing',
-  'end-editing': 'onEndEditing',
-  endediting: 'onEndEditing',
-  scroll: 'onScroll',
-  // A drag starting and ending, and the deceleration after it: a pager reads
-  // where a swipe came to rest from 'momentum-scroll-end', once per swipe.
-  'scroll-begin-drag': 'onScrollBeginDrag',
-  scrollbegindrag: 'onScrollBeginDrag',
-  'scroll-end-drag': 'onScrollEndDrag',
-  scrollenddrag: 'onScrollEndDrag',
-  'momentum-scroll-begin': 'onMomentumScrollBegin',
-  momentumscrollbegin: 'onMomentumScrollBegin',
-  'momentum-scroll-end': 'onMomentumScrollEnd',
-  momentumscrollend: 'onMomentumScrollEnd',
-  refresh: 'onRefresh',
-  layout: 'onLayout',
-  'end-reached': 'onEndReached',
-  endreached: 'onEndReached',
-  close: 'onRequestClose',
-  'request-close': 'onRequestClose',
-  requestclose: 'onRequestClose',
-  show: 'onShow',
-  dismiss: 'onDismiss',
-  'sliding-complete': 'onSlidingComplete',
-  slidingcomplete: 'onSlidingComplete',
-  'load-start': 'onLoadStart',
-  loadstart: 'onLoadStart',
-  load: 'onLoad',
-  'load-end': 'onLoadEnd',
-  loadend: 'onLoadEnd',
-  error: 'onError',
-}
 
 export function createNativeHost(options: NativeHostOptions): NativeHost {
   const records = new Map<string, NodeRecord>()
