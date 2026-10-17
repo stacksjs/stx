@@ -1,2 +1,5 @@
 {{-- Map: a native map host with overlay children. --}}
-<div data-native="Map"><slot /></div>
+<script server>
+const classes = $props.class ?? $props.className ?? ''
+</script>
+<div data-native="Map" class="{{ classes }}"><slot /></div>
