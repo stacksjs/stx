@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.552...v0.2.553)
+
+## 🐛 Bug Fixes
+
+- preserve acronym component filenames during resolution ([2913202](https://github.com/stacksjs/stx/commit/2913202)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.553 ([5bc5e0c](https://github.com/stacksjs/stx/commit/5bc5e0c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.551...v0.2.552)
 
 ## 🐛 Bug Fixes
