@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.547...v0.2.548)
+
+## ✨ Features
+
+- **native**: expose video cache clearing for account changes ([772d379](https://github.com/stacksjs/stx/commit/772d379)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.548 ([bef2ae3](https://github.com/stacksjs/stx/commit/bef2ae3)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.546...v0.2.547)
 
 ## 🐛 Bug Fixes
