@@ -274,8 +274,46 @@ describe('variants written by an older encoder', () => {
     }
   })
 
+  it('invalidates opaque photo variants after an encoder upgrade and keeps warm caches', async () => {
+    const directory = createTempDir('stx-photo-encoder-')
+    const publicDir = join(directory, 'public')
+    const sharedCache = join(directory, 'shared-cache')
+    await mkdir(publicDir, { recursive: true })
+    const width = 32
+    const height = 32
+    const pixels = new Uint8Array(width * height * 4)
+    for (let i = 0; i < pixels.length; i += 4) {
+      pixels.set([230, 160, 110, 255], i)
+    }
+    try {
+      await writeFile(join(publicDir, 'photo.jpg'), await encode({ data: pixels, width, height, channels: 4 }, 'jpeg'))
+      setImageEncoderIdentity('ts-webp@0.1.5+ts-avif@0.1.4+ts-images@0.2.30')
+      await prepareImageDelivery(publicDir, sharedCache)
+      const oldUrls = getImageDelivery('/photo.jpg')!.variants.map(variant => variant.url)
+      expect(oldUrls.length).toBeGreaterThan(0)
+
+      setImageEncoderIdentity('ts-webp@0.1.6+ts-avif@0.1.4+ts-images@0.2.31')
+      clearImageDeliveryCatalog()
+      await prepareImageDelivery(publicDir, sharedCache)
+      const fresh = getImageDelivery('/photo.jpg')!.variants
+      expect(fresh.every(variant => !oldUrls.includes(variant.url))).toBe(true)
+      const timestamps = await Promise.all(fresh.map(async variant => (await stat(variant.path)).mtimeMs))
+
+      clearImageDeliveryCatalog()
+      await prepareImageDelivery(publicDir, sharedCache)
+      const warm = getImageDelivery('/photo.jpg')!.variants
+      expect(warm.map(variant => variant.url)).toEqual(fresh.map(variant => variant.url))
+      expect(await Promise.all(warm.map(async variant => (await stat(variant.path)).mtimeMs))).toEqual(timestamps)
+    }
+    finally {
+      setImageEncoderIdentity()
+      clearImageDeliveryCatalog()
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
   it('names the encoders it resolves', () => {
     setImageEncoderIdentity()
-    expect(imageEncoderIdentity()).toMatch(/^ts-webp@\d+\.\d+\.\d+\+ts-avif@\d+\.\d+\.\d+$/)
+    expect(imageEncoderIdentity()).toMatch(/^ts-webp@\d+\.\d+\.\d+\+ts-avif@\d+\.\d+\.\d+\+ts-images@\d+\.\d+\.\d+$/)
   })
 })

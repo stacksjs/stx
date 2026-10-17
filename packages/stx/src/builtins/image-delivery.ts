@@ -30,15 +30,18 @@ const DELIVERY_URL = '/_stx/images'
  * and an encoder upgrade moves these variants to URLs that nothing, on disk or
  * in any HTTP cache, has seen written by an older encoder.
  *
- * Only for alpha-capable sources. They are the ones an encoder's alpha
- * handling decides the correctness of, and they are few (logos, icons,
- * cut-outs). Keying every photo by encoder version would re-encode a whole
- * site on each encoder patch release: the cold-cache boot that failed deploys.
+ * Opaque sources need the same protection: the VP8 chroma-stride fix
+ * corrected horizontal color bands in photos, but their old cached variants
+ * otherwise lived forever. Both namespaces now identify the actual pipeline.
+ * Warm boots with the same pipeline still reuse every variant.
  */
 const ALPHA_NAMESPACE = `stx:${DELIVERY_URL}:alpha-1`
+const OPAQUE_NAMESPACE = `stx:${DELIVERY_URL}:opaque-1`
 
 /** The packages that write delivery variants, as ts-images resolves them. */
-const ENCODER_PACKAGES = ['@stacksjs/ts-webp', '@stacksjs/ts-avif'] as const
+// ts-images can bundle its codecs, so its own version is part of the identity
+// even when a consumer cannot resolve individual codec packages.
+const ENCODER_PACKAGES = ['@stacksjs/ts-webp', '@stacksjs/ts-avif', 'ts-images'] as const
 
 let encoderIdentity: string | undefined
 
@@ -572,7 +575,7 @@ export async function prepareImageDelivery(
   const alphaStorage = deliveryStorage(path.join(outputDir, '_stx', 'images'), `${ALPHA_NAMESPACE}:${imageEncoderIdentity()}`)
   const catalogOptions = {
     outDir: path.join(outputDir, '_stx', 'images'),
-    storage: deliveryStorage(path.join(outputDir, '_stx', 'images')),
+    storage: deliveryStorage(path.join(outputDir, '_stx', 'images'), `${OPAQUE_NAMESPACE}:${imageEncoderIdentity()}`),
     baseUrl: DELIVERY_URL,
     widths: DEFAULT_WIDTHS,
     formats: ['avif', 'webp'] as const,
