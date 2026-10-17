@@ -19,6 +19,7 @@ interface RecordNode {
   children: string[]
   parent: string | null
   dispose: Array<() => void>
+  text?: string
 }
 
 export interface BrowserRendererOptions {
@@ -52,12 +53,16 @@ export class BrowserScreenRenderer {
       const record = this.create(node.id, node.type, node.props, { ...node.style }, node.events)
       record.parent = parent
       for (const child of node.children) {
-        if (typeof child === 'string') record.element.append(this.container.ownerDocument.createTextNode(child))
+        if (typeof child === 'string') {
+          record.text = (record.text ?? '') + child
+          record.element.append(this.container.ownerDocument.createTextNode(child))
+        }
         else {
           record.element.append(create(child, node.id))
           record.children.push(child.id!)
         }
       }
+      this.buttonLabel(record)
       return record.element
     }
     this.container.replaceChildren(create(tree, null))
@@ -72,14 +77,21 @@ export class BrowserScreenRenderer {
     for (const operation of batch.operations) {
       if (operation.op === 'createNode') {
         const record = this.create(operation.id, operation.node.type, operation.node.props ?? {}, operation.node.style ?? {}, operation.node.events ?? {})
-        if (operation.node.children) record.element.textContent = operation.node.children.join('')
+        if (operation.node.children) {
+          record.text = operation.node.children.join('')
+          record.element.textContent = record.text
+          this.buttonLabel(record)
+        }
       }
       else if (operation.op === 'updateNode') {
         const record = this.nodes.get(operation.id)!
         Object.assign(record.props, operation.patch.props)
         Object.assign(record.style, operation.patch.style)
         Object.assign(record.events, operation.patch.events)
-        if (operation.patch.children) record.element.textContent = operation.patch.children.join('')
+        if (operation.patch.children) {
+          record.text = operation.patch.children.join('')
+          record.element.textContent = record.text
+        }
         this.update(record)
       }
       else if (operation.op === 'removeNode') this.remove(operation.id)
@@ -238,6 +250,12 @@ export class BrowserScreenRenderer {
     }
   }
 
+  private buttonLabel(record: RecordNode): void {
+    if (record.type !== 'Button' || record.children.length !== 0) return
+    const title = typeof record.props.title === 'string' ? record.props.title : record.text ?? ''
+    if (record.element.textContent !== title) record.element.textContent = title
+  }
+
   private update(record: RecordNode): void {
     const { element, props, type, style } = record
     const css = element.style
@@ -293,12 +311,13 @@ export class BrowserScreenRenderer {
       if (props.maxLength != null) input.maxLength = Number(props.maxLength)
       if (props.autoComplete) input.autocomplete = String(props.autoComplete) as AutoFill
     }
+    this.buttonLabel(record)
     if (type === 'Picker') {
       const select = element as HTMLSelectElement
-      const options = Array.isArray(props.options) ? props.options as Array<{ value: unknown, label?: unknown }> : []
+      const options = (Array.isArray(props.items) ? props.items : Array.isArray(props.options) ? props.options : []) as Array<{ value: unknown, label?: unknown }>
       const signature = JSON.stringify(options)
       if (select.dataset.options !== signature) { select.replaceChildren(...options.map(option => { const node = element.ownerDocument.createElement('option'); node.value = String(option.value); node.textContent = String(option.label ?? option.value); return node })); select.dataset.options = signature }
-      select.value = String(props.value ?? '')
+      select.value = String(props.selectedValue ?? props.value ?? '')
     }
     if (type === 'Image' || type === 'Video' || type === 'ImageBackground') {
       const source = props.source ?? props.src

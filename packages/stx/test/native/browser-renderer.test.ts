@@ -15,6 +15,56 @@ function fixture() {
 }
 
 describe('the browser peer of the native screen renderer', () => {
+  it('renders native button titles, reconciles them and keeps disabled actions inert', () => {
+    const { renderer, container, node, window, events } = fixture()
+    renderer.render(node('root', 'View', [node('save', 'Button', ['Fallback'], { title: 'Save' }, { onPress: 'save' })]))
+    const button = container.querySelector<HTMLButtonElement>('button')!
+    expect(button.textContent).toBe('Save')
+    button.click()
+    expect(events.map(event => event.id)).toEqual(['save'])
+    renderer.mutate({ version: 1, batchId: 'busy', baseRevision: 0, revision: 1, operations: [{ op: 'updateNode', id: 'save', patch: { props: { title: 'Saving…', disabled: true } } }] })
+    expect(button.textContent).toBe('Saving…')
+    expect(button.disabled).toBe(true)
+    button.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
+    expect(events).toHaveLength(1)
+    renderer.mutate({ version: 1, batchId: 'fallback', baseRevision: 1, revision: 2, operations: [{ op: 'updateNode', id: 'save', patch: { props: { title: null, disabled: false }, children: ['Try again'] } }] })
+    expect(button.textContent).toBe('Try again')
+  })
+
+  it('renders canonical native picker items and selection through bridge mutations', () => {
+    const { renderer, container, node, window, events } = fixture()
+    renderer.render(node('root', 'View'))
+    renderer.mutate({ version: 1, batchId: 'picker', baseRevision: 0, revision: 1, operations: [
+      { op: 'createNode', id: 'pick', node: { type: 'Picker', props: { items: [{ value: '', label: 'Choose' }, { value: 'rx', label: 'Rx' }], value: '', disabled: true }, events: { onValueChange: 'pick' } } },
+      { op: 'insertChild', parentId: 'root', childId: 'pick', index: 0 },
+    ] })
+    const picker = container.querySelector<HTMLSelectElement>('select')!
+    expect([...picker.options].map(option => [option.value, option.textContent])).toEqual([['', 'Choose'], ['rx', 'Rx']])
+    expect(picker.value).toBe('')
+    picker.value = 'rx'
+    picker.dispatchEvent(new window.Event('change'))
+    expect(events).toEqual([])
+    renderer.mutate({ version: 1, batchId: 'enable', baseRevision: 1, revision: 2, operations: [{ op: 'updateNode', id: 'pick', patch: { props: { selectedValue: 'rx', disabled: false } } }] })
+    expect(picker.value).toBe('rx')
+    picker.dispatchEvent(new window.Event('change'))
+    expect(events).toEqual([{ id: 'pick', payload: { value: 'rx', text: 'rx' } }])
+    renderer.mutate({ version: 1, batchId: 'empty', baseRevision: 2, revision: 3, operations: [{ op: 'updateNode', id: 'pick', patch: { props: { items: [], selectedValue: '' } } }] })
+    expect(picker.options).toHaveLength(0)
+  })
+
+  it('gives titles precedence over bridge text children, including an intentionally empty title', () => {
+    const { renderer, container, node } = fixture()
+    renderer.render(node('root', 'View'))
+    renderer.mutate({ version: 1, batchId: 'button', baseRevision: 0, revision: 1, operations: [
+      { op: 'createNode', id: 'save', node: { type: 'Button', props: { title: 'Save' }, children: ['Fallback'] } },
+      { op: 'insertChild', parentId: 'root', childId: 'save', index: 0 },
+    ] })
+    const button = container.querySelector('button')!
+    expect(button.textContent).toBe('Save')
+    renderer.mutate({ version: 1, batchId: 'clear', baseRevision: 1, revision: 2, operations: [{ op: 'updateNode', id: 'save', patch: { props: { title: '' } } }] })
+    expect(button.textContent).toBe('')
+  })
+
   it('retains an auto basis when compiled flex-none overrides a scroller default', () => {
     const { renderer, container, node } = fixture()
     const choice = node('choice', 'View', ['Athletes'])
