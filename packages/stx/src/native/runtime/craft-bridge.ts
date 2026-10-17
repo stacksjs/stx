@@ -492,6 +492,7 @@ export function installCraftBridge(
         ? request('Media', 'path', [url]).then((path: unknown) => (typeof path === 'string' ? path : null))
         : Promise.resolve(null),
       prune: (urls: string[] = []) => request('Media', 'prune', [(Array.isArray(urls) ? urls : []).filter(url => typeof url === 'string')]),
+      clear: () => request('Media', 'clear', []),
       usage: () => request('Media', 'usage', []),
     }
   }

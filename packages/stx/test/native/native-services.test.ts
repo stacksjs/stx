@@ -437,6 +437,10 @@ describe('media kept on the phone for offline', () => {
     expect(requests().at(-1)!.payload).toMatchObject({ module: 'Media', method: 'prune', args: [[url]] })
     answer(requests().at(-1)!, 3)
     expect(await pruned).toBe(3)
+    const cleared = scope.craft.media.clear()
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'Media', method: 'clear', args: [] })
+    answer(requests().at(-1)!, 1)
+    expect(await cleared).toBe(1)
     await expect(scope.craft.media.keep('')).rejects.toThrow('media.keep needs a URL')
   })
 
