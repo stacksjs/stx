@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.550...v0.2.551)
+
+## ✨ Features
+
+- **native**: support live tab captions and motion-aware icon pulses ([e6dc293](https://github.com/stacksjs/stx/commit/e6dc293)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.551 ([9060a9c](https://github.com/stacksjs/stx/commit/9060a9c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.547...v0.2.548)
 
 ## ✨ Features
