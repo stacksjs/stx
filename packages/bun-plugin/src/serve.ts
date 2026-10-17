@@ -1689,6 +1689,10 @@ export async function serve(options: ServeOptions): Promise<void> {
     headers?: Record<string, string>
   }
   const htmlCache = boundedCache<HtmlCacheEntry>(options.renderCacheLimit ?? 512)
+  // Only active source-shell renders live here, keyed by source file rather
+  // than URL. Concurrent misses must share a completed render, not race to
+  // replace the cache with independently evaluated server scripts.
+  const pendingShellRenders = new Map<string, Promise<void>>()
   // Opt-in because generic server scripts may read external state that no
   // filesystem watcher can observe. For applications whose static views are
   // source-derived, the signature and watcher invalidation below provide a
@@ -3332,125 +3336,144 @@ function __stxOverlay(errs){
       }
     }
 
-    // Build context with dynamic params
-    const context: Record<string, any> = {
-      __filename: filePath,
-      __dirname: nodePath.dirname(filePath),
-      __route: routePath,
-      __stx_runtime_head: {},
-    }
-
-    // Add each param to context as a bare identifier (`[id].stx` → `id`)...
-    for (const name of paramNames) {
-      context[name] = paramsObj[name]
-    }
-    // ...and as the documented `params` object — @stacksjs/stx's
-    // variable-extractor plumbs `context.params` into every server script,
-    // but the serve path never set it, so `params.id` was always `{}`
-    // (stacksjs/stacks#1967).
-    context.params = paramsObj
-
-    const { processDirectives, extractVariables, defaultConfig, injectRouterScript: injectRouter } = await stxModule
-    injectServeLocaleContext(context)
-    // Dynamic ([param].stx-style) routes need the same query/host/cookies/
-    // IP ambient context as static routes — this was missed when `host`
-    // was first added (only the static-route path called
-    // injectServeRequestContext), so every dynamic route silently never
-    // saw `host`/`cookies`/`ip`/`__stxServeSearch` until this fix.
-    injectServeRequestContext(context, reqCtx)
-    context.__stx_options = stxConfig
-    for (const scriptBody of dynServerScripts) {
-      await extractVariables(scriptBody, context, filePath)
-    }
-    context.__stx_head_preset = true
-
-    const config = {
-      ...defaultConfig,
-      // See the static-route config above: without `root` the component
-      // convention fallbacks are skipped and `<MyComponent />` leaks as a raw
-      // tag. Dynamic ([param].stx) routes render app components too, so they
-      // need the same project root.
-      root: process.cwd(),
-      ...(componentsDir && { componentsDir }),
-      ...(layoutsDir && { layoutsDir }),
-      ...(fallbackLayoutsDir && { fallbackLayoutsDir }),
-      ...(fallbackComponentsDir && { fallbackComponentsDir }),
-      ...(partialsDir && { partialsDir }),
-      autoShell: true,
-      buildMode: 'serve' as const,
-      ssr: stxConfig.ssr ?? defaultStxConfig.ssr ?? true,
-      app: stxConfig.app || {},
-      runtimeConfig: stxConfig.runtimeConfig,
-      ...('strict' in stxConfig && { strict: stxConfig.strict }),
-      ...('router' in stxConfig && { router: stxConfig.router }),
-      ...('debug' in stxConfig && { debug: stxConfig.debug }),
-      ...('skipDefaultSeoTags' in stxConfig && { skipDefaultSeoTags: stxConfig.skipDefaultSeoTags }),
-      ...('defaultTitle' in stxConfig && { defaultTitle: stxConfig.defaultTitle }),
-      ...('defaultDescription' in stxConfig && { defaultDescription: stxConfig.defaultDescription }),
-      ...('defaultImage' in stxConfig && { defaultImage: stxConfig.defaultImage }),
-      ...('seo' in stxConfig && { seo: stxConfig.seo }),
-      // Forward analytics so injectAnalytics runs on this serve path too —
-      // both native providers (fathom/GA/…) and plugin-injected trackers (the
-      // plugin-mutated analytics is merged onto stxConfig above).
-      ...('analytics' in stxConfig && { analytics: stxConfig.analytics }),
-      // The offline worker's registration rides on every document.
-      ...('offline' in stxConfig && { offline: (stxConfig as { offline?: unknown }).offline }),
-      // Mirror the static-route config: forward plugin-registered component
-      // dirs so dynamic routes also resolve `<Notification>` etc.
-      ...('_pluginComponentDirs' in stxConfig && { _pluginComponentDirs: stxConfig._pluginComponentDirs }),
-      ...('_pluginPageDirs' in stxConfig && { _pluginPageDirs: stxConfig._pluginPageDirs }),
-    }
-
-    let output = templateContent
-    const dependencies = new Set<string>()
-    output = await processDirectives(output, context, filePath, config, dependencies)
-    applyRecordedResponse(context, reqCtx)
-
-    // Inject route params for client-side useRoute().params — the same
-    // decoded paramsObj the server script saw, so both sides agree.
-    if (paramNames.length > 0) {
-      // A cached shell keeps the placeholder and each request fills it.
-      const serializedParams = cacheShell ? ROUTE_PARAMS_PLACEHOLDER : serializeRouteParams(paramsObj)
-      const paramsScript = `<script data-stx-route-params>(function(){var p=${serializedParams};window.__stx_rp=p;if(window.stx){window.stx._rp=p;if(window.stx.setRouteParams)window.stx.setRouteParams(p)}})()</script>`
-      if (output.includes('</head>')) {
-        output = output.replace('</head>', `${paramsScript}\n</head>`)
+    let releaseShell: (() => void) | undefined
+    if (cacheShell) {
+      const pending = pendingShellRenders.get(filePath)
+      if (pending) {
+        await pending
+        // Re-read source and cache eligibility after waiting: a source edit
+        // or a response that could not be cached requires a fresh render.
+        return processTemplateDynamic(filePath, paramNames, paramValues, routePath, reqCtx)
       }
-      else {
-        output = `${paramsScript}\n${output}`
+      pendingShellRenders.set(filePath, new Promise<void>((resolve) => { releaseShell = resolve }))
+    }
+    try {
+      // Build context with dynamic params
+      const context: Record<string, any> = {
+        __filename: filePath,
+        __dirname: nodePath.dirname(filePath),
+        __route: routePath,
+        __stx_runtime_head: {},
+      }
+
+      // Add each param to context as a bare identifier (`[id].stx` → `id`)...
+      for (const name of paramNames) {
+        context[name] = paramsObj[name]
+      }
+      // ...and as the documented `params` object — @stacksjs/stx's
+      // variable-extractor plumbs `context.params` into every server script,
+      // but the serve path never set it, so `params.id` was always `{}`
+      // (stacksjs/stacks#1967).
+      context.params = paramsObj
+
+      const { processDirectives, extractVariables, defaultConfig, injectRouterScript: injectRouter } = await stxModule
+      injectServeLocaleContext(context)
+      // Dynamic ([param].stx-style) routes need the same query/host/cookies/
+      // IP ambient context as static routes — this was missed when `host`
+      // was first added (only the static-route path called
+      // injectServeRequestContext), so every dynamic route silently never
+      // saw `host`/`cookies`/`ip`/`__stxServeSearch` until this fix.
+      injectServeRequestContext(context, reqCtx)
+      context.__stx_options = stxConfig
+      for (const scriptBody of dynServerScripts) {
+        await extractVariables(scriptBody, context, filePath)
+      }
+      context.__stx_head_preset = true
+
+      const config = {
+        ...defaultConfig,
+        // See the static-route config above: without `root` the component
+        // convention fallbacks are skipped and `<MyComponent />` leaks as a raw
+        // tag. Dynamic ([param].stx) routes render app components too, so they
+        // need the same project root.
+        root: process.cwd(),
+        ...(componentsDir && { componentsDir }),
+        ...(layoutsDir && { layoutsDir }),
+        ...(fallbackLayoutsDir && { fallbackLayoutsDir }),
+        ...(fallbackComponentsDir && { fallbackComponentsDir }),
+        ...(partialsDir && { partialsDir }),
+        autoShell: true,
+        buildMode: 'serve' as const,
+        ssr: stxConfig.ssr ?? defaultStxConfig.ssr ?? true,
+        app: stxConfig.app || {},
+        runtimeConfig: stxConfig.runtimeConfig,
+        ...('strict' in stxConfig && { strict: stxConfig.strict }),
+        ...('router' in stxConfig && { router: stxConfig.router }),
+        ...('debug' in stxConfig && { debug: stxConfig.debug }),
+        ...('skipDefaultSeoTags' in stxConfig && { skipDefaultSeoTags: stxConfig.skipDefaultSeoTags }),
+        ...('defaultTitle' in stxConfig && { defaultTitle: stxConfig.defaultTitle }),
+        ...('defaultDescription' in stxConfig && { defaultDescription: stxConfig.defaultDescription }),
+        ...('defaultImage' in stxConfig && { defaultImage: stxConfig.defaultImage }),
+        ...('seo' in stxConfig && { seo: stxConfig.seo }),
+        // Forward analytics so injectAnalytics runs on this serve path too —
+        // both native providers (fathom/GA/…) and plugin-injected trackers (the
+        // plugin-mutated analytics is merged onto stxConfig above).
+        ...('analytics' in stxConfig && { analytics: stxConfig.analytics }),
+        // The offline worker's registration rides on every document.
+        ...('offline' in stxConfig && { offline: (stxConfig as { offline?: unknown }).offline }),
+        // Mirror the static-route config: forward plugin-registered component
+        // dirs so dynamic routes also resolve `<Notification>` etc.
+        ...('_pluginComponentDirs' in stxConfig && { _pluginComponentDirs: stxConfig._pluginComponentDirs }),
+        ...('_pluginPageDirs' in stxConfig && { _pluginPageDirs: stxConfig._pluginPageDirs }),
+      }
+
+      let output = templateContent
+      const dependencies = new Set<string>()
+      output = await processDirectives(output, context, filePath, config, dependencies)
+      applyRecordedResponse(context, reqCtx)
+
+      // Inject route params for client-side useRoute().params — the same
+      // decoded paramsObj the server script saw, so both sides agree.
+      if (paramNames.length > 0) {
+        // A cached shell keeps the placeholder and each request fills it.
+        const serializedParams = cacheShell ? ROUTE_PARAMS_PLACEHOLDER : serializeRouteParams(paramsObj)
+        const paramsScript = `<script data-stx-route-params>(function(){var p=${serializedParams};window.__stx_rp=p;if(window.stx){window.stx._rp=p;if(window.stx.setRouteParams)window.stx.setRouteParams(p)}})()</script>`
+        if (output.includes('</head>')) {
+          output = output.replace('</head>', `${paramsScript}\n</head>`)
+        }
+        else {
+          output = `${paramsScript}\n${output}`
+        }
+      }
+
+      // Inject the SPA router
+      output = await injectRouter(output, getRouterInjectOptions())
+
+      // Strip SFC <template> wrappers but preserve client-side directive templates
+      const directiveTemplateRe2 = REACTIVE_TEMPLATE_DIRECTIVE_RE
+      output = output.replace(/<template(?:\s[^>]*)?>|<\/template>/gi, (match) => {
+        if (directiveTemplateRe2.test(match)) return match
+        if (match === '</template>') return match
+        return ''
+      })
+
+      // Client scripts are already handled by processDirectives (transformed into data-stx-scoped)
+      // Css CSS is already injected by processDirectives() — no duplicate injection needed.
+
+      if (!cacheShell)
+        return output
+
+      // The same conditions the static path stores under, plus one of its own:
+      // a render that recorded a response (a redirect, a notFound()) is about
+      // this record, so it is served and not kept.
+      const recordedResponse = readResponseStatus(context) !== undefined || !!readResponseHeaders(context)
+      if (
+        !context.__stx_skip_cache
+          && !recordedResponse
+          && isRenderableCacheCandidate(output)
+          && placeholdersAreReady
+      ) {
+        const signature = await buildTemplateSignature(filePath, dependencies)
+        htmlCache.remember(filePath, { html: output, signature, status: reqCtx?.responseStatus ?? 200, headers: reqCtx?.responseHeaders })
+      }
+      return fillRouteParams(output, paramsObj)
+    }
+    finally {
+      if (releaseShell) {
+        pendingShellRenders.delete(filePath)
+        releaseShell()
       }
     }
-
-    // Inject the SPA router
-    output = await injectRouter(output, getRouterInjectOptions())
-
-    // Strip SFC <template> wrappers but preserve client-side directive templates
-    const directiveTemplateRe2 = REACTIVE_TEMPLATE_DIRECTIVE_RE
-    output = output.replace(/<template(?:\s[^>]*)?>|<\/template>/gi, (match) => {
-      if (directiveTemplateRe2.test(match)) return match
-      if (match === '</template>') return match
-      return ''
-    })
-
-    // Client scripts are already handled by processDirectives (transformed into data-stx-scoped)
-    // Css CSS is already injected by processDirectives() — no duplicate injection needed.
-
-    if (!cacheShell)
-      return output
-
-    // The same conditions the static path stores under, plus one of its own:
-    // a render that recorded a response (a redirect, a notFound()) is about
-    // this record, so it is served and not kept.
-    const recordedResponse = readResponseStatus(context) !== undefined || !!readResponseHeaders(context)
-    if (
-      !context.__stx_skip_cache
-        && !recordedResponse
-        && isRenderableCacheCandidate(output)
-        && placeholdersAreReady
-    ) {
-      const signature = await buildTemplateSignature(filePath, dependencies)
-      htmlCache.remember(filePath, { html: output, signature, status: reqCtx?.responseStatus ?? 200, headers: reqCtx?.responseHeaders })
-    }
-    return fillRouteParams(output, paramsObj)
   }
 
   // Start server immediately - processing happens on-demand

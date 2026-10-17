@@ -47,10 +47,20 @@ const marker = crypto.randomUUID()
   // A source-derived shell: one render serves every record. Padded to the
   // size of a real page so a per-request copy is measurable in the heap.
   await Bun.write(path.join(fixtureDir, 'views', 'trail', '[id].stx'), `<script server>
+await Bun.sleep(20)
 const marker = crypto.randomUUID()
 </script>
 <main>shell-marker:{{ marker }}</main>
 <p hidden>${'x'.repeat(200_000)}</p>
+`)
+  // Runtime cache opt-outs must release queued requests even though no shell
+  // was retained for them to reuse.
+  await Bun.write(path.join(fixtureDir, 'views', 'transient', '[id].stx'), `<script server>
+await Bun.sleep(20)
+const __stx_skip_cache = Boolean('skip')
+const marker = crypto.randomUUID()
+</script>
+<main>transient-marker:{{ marker }}</main>
 `)
   // A page that renders its record server-side must not share a render.
   await Bun.write(path.join(fixtureDir, 'views', 'post', '[slug].stx'), `<script server>
@@ -199,12 +209,25 @@ const manifest = await Bun.file('data/manifest.json').text()
 
     // One render: the server script ran once for both records.
     expect(markerOf(one)).toBeDefined()
+    expect(markerOf(two)).toBe(markerOf(one))
     expect(markerOf(again)).toBe(markerOf(two))
     // ...and each response still carries its own params.
     expect(one).toContain('var p={"id":"1"}')
     expect(two).toContain('var p={"id":"2"}')
     expect(again).toContain('var p={"id":"2"}')
     expect(two).not.toContain(ROUTE_PARAMS_PLACEHOLDER)
+  })
+
+  test('releases queued requests when the source shell opts out of caching at runtime', async () => {
+    const responses = await Promise.all(['1', '2', '3'].map(async (id) => {
+      const response = await fetch(`${BASE}/transient/${id}`)
+      expect(response.status).toBe(200)
+      const html = await response.text()
+      expect(html).toContain(`var p={"id":"${id}"}`)
+      return /transient-marker:([\w-]+)/.exec(html)?.[1]
+    }))
+    expect(responses.every(Boolean)).toBe(true)
+    expect(new Set(responses).size).toBe(3)
   })
 
   test('renders a page whose server script reads its params per record', async () => {
