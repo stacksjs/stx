@@ -22,9 +22,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@edda9c23439a37a35e0f828315e2380889cc75e9 # v0.11.92
+        uses: pantry-pm/pantry/packages/action@da17bb9317e8f8c247618fb176fe97269f15bfe4 # v0.11.94
         with:
-          version: '0.11.92'
+          version: '0.11.94'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
       - run: bun install --frozen-lockfile
@@ -47,9 +47,9 @@ jobs:
           fetch-depth: 0
 
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@edda9c23439a37a35e0f828315e2380889cc75e9 # v0.11.92
+        uses: pantry-pm/pantry/packages/action@da17bb9317e8f8c247618fb176fe97269f15bfe4 # v0.11.94
         with:
-          version: '0.11.92'
+          version: '0.11.94'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
 
@@ -107,9 +107,9 @@ jobs:
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: pantry-pm/pantry/packages/action@edda9c23439a37a35e0f828315e2380889cc75e9 # v0.11.92
+        uses: pantry-pm/pantry/packages/action@da17bb9317e8f8c247618fb176fe97269f15bfe4 # v0.11.94
         with:
-          version: '0.11.92'
+          version: '0.11.94'
           install: 'false'
           release: true
           release-changelog: CHANGELOG.md
@@ -145,9 +145,9 @@ jobs:
           fetch-depth: 0
 
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@edda9c23439a37a35e0f828315e2380889cc75e9 # v0.11.92
+        uses: pantry-pm/pantry/packages/action@da17bb9317e8f8c247618fb176fe97269f15bfe4 # v0.11.94
         with:
-          version: '0.11.92'
+          version: '0.11.94'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
 
