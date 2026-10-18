@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.571...v0.2.572)
+
+## 🐛 Bug Fixes
+
+- **native**: mount a browser screen once, not again when the page finishes loading ([7d5d903](https://github.com/stacksjs/stx/commit/7d5d903)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.572 ([7b889e0](https://github.com/stacksjs/stx/commit/7b889e0)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.570...v0.2.571)
 
 ## ⚡ Performance Improvements
