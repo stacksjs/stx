@@ -6,18 +6,31 @@ function setup(owned: boolean) {
   const sent: any[] = []
   let receive: (raw: string) => void = () => {}
   const native = {
-    capabilities: ['geolocation', 'heartRate', ...(owned ? ['locationRecordingOwnership', 'heartRateRecordingOwnership'] : [])],
+    capabilities: ['storage', 'geolocation', 'heartRate', ...(owned ? ['storageCompareAndSet', 'locationRecordingOwnership', 'heartRateRecordingOwnership'] : [])],
     postMessage(raw: string) { sent.push(JSON.parse(raw)) },
     onMessage(callback: (raw: string) => void) { receive = callback },
   }
   const protocol = new STXBridge()
   protocol.initialize(native)
   const craft = installCraftBridge(protocol, native, {})
-  return { craft, sent, resolve() {
+  return { craft, sent, resolve(data: unknown = []) {
     const request = sent.at(-1)
-    receive(JSON.stringify({ type: 'API_RESPONSE', correlationId: request.id, payload: { version: 1, requestId: request.id, data: [] } }))
+    receive(JSON.stringify({ type: 'API_RESPONSE', correlationId: request.id, payload: { version: 1, requestId: request.id, data } }))
   } }
 }
+
+test('conditional storage checkpoints require a capable host and preserve false conflicts', async () => {
+  const old = setup(false)
+  expect(old.craft.capabilities.storageCompareAndSet).toBe(false)
+  await expect(old.craft.storage.compareAndSet('draft', { id: 'A' }, { id: 'B' })).rejects.toMatchObject({ code: 'STORAGE_COMPARE_AND_SET_UNSUPPORTED' })
+  expect(old.sent).toEqual([])
+  const host = setup(true)
+  expect(host.craft.capabilities.storageCompareAndSet).toBe(true)
+  const answer = host.craft.storage.compareAndSet('draft', { id: 'A' }, { id: 'B' })
+  expect(host.sent.at(-1).payload).toMatchObject({ module: 'Storage', method: 'compareAndSet', args: ['draft', { id: 'A' }, { id: 'B' }] })
+  host.resolve(false)
+  expect(await answer).toBe(false)
+})
 
 for (const [namespace, module] of [['location', 'Location'], ['heartRate', 'HeartRate']] as const) {
   test(`${namespace} preserves native ownership capability and each operation's identity`, async () => {

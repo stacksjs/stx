@@ -142,6 +142,8 @@ export interface NativeStorage {
   remove: (key: string) => Promise<unknown>
   clear: () => Promise<unknown>
   keys: () => Promise<string[]>
+  /** Atomically replace an existing matching value; never create a missing key. */
+  compareAndSet: (key: string, expectedValue: unknown, nextValue: unknown) => Promise<boolean>
   /** What `get` would resolve to, synchronously (`null` when the host has none). */
   getSync: <T = unknown>(key: string) => T | null
   setSync: (key: string, value: unknown) => void

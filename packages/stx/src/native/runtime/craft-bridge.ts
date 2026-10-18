@@ -23,6 +23,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     pushNotifications: capabilities.has('push'),
     secureStorage: capabilities.has('secureStorage'),
     storage: capabilities.has('storage'),
+    storageCompareAndSet: capabilities.has('storageCompareAndSet'),
     localDatabase: capabilities.has('database'),
     lifecycle: capabilities.has('lifecycle'),
     geolocation: capabilities.has('geolocation'),
@@ -159,6 +160,11 @@ export function installCraftBridge(
     remove: (key: string) => request('Storage', 'remove', [key]),
     clear: () => request('Storage', 'clear', []),
     keys: () => request('Storage', 'keys', []),
+    compareAndSet: (key: string, expectedValue: unknown, nextValue: unknown) => {
+      if (!capabilities.has('storageCompareAndSet'))
+        return Promise.reject(Object.assign(new Error('This host cannot atomically checkpoint existing storage'), { code: 'STORAGE_COMPARE_AND_SET_UNSUPPORTED' }))
+      return request('Storage', 'compareAndSet', [key, expectedValue, nextValue])
+    },
   })
   craft.secureStorage = Object.assign({ getSync: () => null }, craft.secureStorage || {}, {
     get: (key: string) => request('SecureStorage', 'get', [key]),
