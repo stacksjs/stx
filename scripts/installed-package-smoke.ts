@@ -93,6 +93,17 @@ if (!plugin) throw new Error('missing bun-plugin serve export')
 // The STX checker intentionally reports only its own generated buffers. An
 // ordinary tsc consumer must also reject errors inside shipped .ts sources.
 writeFileSync(join(smokeRoot, 'mouse-consumer.ts'), `import '@stacksjs/stx'
+declare const possibleSignal: unknown
+if (isSignal(possibleSignal)) {
+  const value: unknown = possibleSignal()
+  possibleSignal.set(value)
+}
+declare const possibleDerived: unknown
+if (isDerived(possibleDerived)) {
+  const value: unknown = possibleDerived()
+  // @ts-expect-error derived signals are read-only
+  possibleDerived.set(value)
+}
 const mouse = useMouse({ touch: false, resetOnLeave: true })
 mouse.subscribe(({ clientX, clientY, isInside }) => {
   const x: number = clientX
