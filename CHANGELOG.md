@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.568...v0.2.569)
+
+## 🐛 Bug Fixes
+
+- **config**: load the defaults for a project with no stx config ([21f88ac](https://github.com/stacksjs/stx/commit/21f88ac)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.569 ([7f4110a](https://github.com/stacksjs/stx/commit/7f4110a)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.567...v0.2.568)
 
 ## 🐛 Bug Fixes
