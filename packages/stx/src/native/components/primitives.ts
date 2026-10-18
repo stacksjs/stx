@@ -452,8 +452,27 @@ export interface ImageBackgroundProps extends ImageProps {
 // Map Components
 // ============================================================================
 
+export interface MapCoordinate {
+  latitude: number
+  longitude: number
+}
+
+export interface MapTileOverlay {
+  /** HTTPS raster template containing {z}, {x}, and {y}. */
+  urlTemplate: string
+  /** Provider credit kept visible by the native host. */
+  attribution: string
+}
+
+export interface MapEdgePadding {
+  top?: number
+  right?: number
+  bottom?: number
+  left?: number
+}
+
 export interface MapRegion {
-  center: { latitude: number; longitude: number }
+  center: MapCoordinate
   span: { latitudeDelta: number; longitudeDelta: number }
 }
 
@@ -463,9 +482,9 @@ export interface MapProps extends BaseProps {
   /** Initial region for maps without recorded overlay geometry. */
   initialRegion?: MapRegion
   /** A native raster basemap; credit remains visible on the map. */
-  tileOverlay?: { urlTemplate: string, attribution: string }
+  tileOverlay?: MapTileOverlay
   /** Logical points reserved for floating controls when fitting overlays. */
-  edgePadding?: { top?: number, right?: number, bottom?: number, left?: number }
+  edgePadding?: MapEdgePadding
   /** Fit the camera to all marker and polyline overlay geometry. */
   fitToBounds?: boolean
   /** Show the user dot only when the app already has location permission. */
@@ -473,6 +492,8 @@ export interface MapProps extends BaseProps {
   scrollEnabled?: boolean
   zoomEnabled?: boolean
   rotateEnabled?: boolean
+  /** Enable native two-finger tilt gestures. Programmatic cameraPitch is independent. */
+  pitchEnabled?: boolean
   mapType?: 'standard' | 'satellite' | 'hybrid' | 'terrain'
   showsCompass?: boolean
   showsScale?: boolean
@@ -480,7 +501,7 @@ export interface MapProps extends BaseProps {
   cameraPitch?: number
   /** Clockwise camera heading from north. */
   cameraHeading?: number
-  onPress?: (event: { nativeEvent: { latitude: number, longitude: number } }) => void
+  onPress?: (event: { nativeEvent: MapCoordinate }) => void
   /** Completed user camera gestures; programmatic camera changes do not echo. */
   onRegionChangeComplete?: (event: { nativeEvent: MapRegion & { heading: number, pitch: number } }) => void
   onMarkerPress?: (event: { nativeEvent: { id: string } }) => void
@@ -498,6 +519,8 @@ export interface MapMarkerProps extends BaseProps {
   geometry: number[]
   id: string
   title?: string
+  /** CSS color for a place pin or the position selected on an elevation profile. */
+  pinColor?: string
   /** Route-direction arrow, clockwise from north; absent uses a place marker. */
   bearing?: number
   onPress?: (event: { nativeEvent: { id: string } }) => void

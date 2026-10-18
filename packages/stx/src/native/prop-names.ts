@@ -19,7 +19,7 @@ const NATIVE_PROP_NAMES = [
   'showsHorizontalScrollIndicator', 'showsVerticalScrollIndicator', 'statusBarTranslucent',
   'stickyHeaderIndices', 'testID', 'textContentType', 'thumbColor', 'thumbTintColor', 'titleColor', 'trackColor',
   'underlayColor', 'windowSize',
-  'initialRegion', 'tileOverlay', 'edgePadding', 'fitToBounds', 'showsUserLocation', 'zoomEnabled', 'rotateEnabled', 'mapType', 'strokeColor',
+  'initialRegion', 'tileOverlay', 'edgePadding', 'fitToBounds', 'showsUserLocation', 'zoomEnabled', 'rotateEnabled', 'pitchEnabled', 'mapType', 'strokeColor', 'pinColor',
   'showsCompass', 'showsScale', 'cameraPitch', 'cameraHeading',
   'autoScrollBottom', 'scrollKey',
   // A video floating in Picture in Picture, and one element across an
@@ -37,7 +37,7 @@ export const NATIVE_BOOLEAN_PROPS = new Set([
   'editable', 'hidesWhenStopped', 'horizontal', 'loop', 'multiline', 'muted', 'pagingEnabled', 'paused',
   'refreshing', 'scrollEnabled', 'secureTextEntry', 'selectTextOnFocus', 'showsHorizontalScrollIndicator',
   'showsVerticalScrollIndicator', 'transparent', 'visible',
-  'fitToBounds', 'showsUserLocation', 'zoomEnabled', 'rotateEnabled', 'showsCompass', 'showsScale',
+  'fitToBounds', 'showsUserLocation', 'zoomEnabled', 'rotateEnabled', 'pitchEnabled', 'showsCompass', 'showsScale',
   'pictureInPicture',
 ])
 

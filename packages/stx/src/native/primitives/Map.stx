@@ -1,4 +1,5 @@
-{{-- Map: a native map host with overlay children. --}}
+{{-- Map: native MapKit on iOS or the configured Craft native Android provider.
+     The compiler preserves typed geometry, camera props and overlay children. --}}
 <script server>
 const classes = $props.class ?? $props.className ?? ''
 </script>
