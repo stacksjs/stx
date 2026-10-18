@@ -58,4 +58,42 @@ describe('SSR head injection', () => {
     // No head meta to inject → no spurious <head> is created.
     expect(result).not.toContain('<title>')
   })
+  for (const caption of ['Scan for hq.training/app', 'Scanne für hq.training/app']) {
+    it(`preserves the SVG title when creating a document head: ${caption}`, async () => {
+      const svg = `<svg role="img"><title>${caption}</title><path d="M0 0h1"/></svg>`
+      const result = await processTemplate(`<html><body>${svg}</body></html>`, {
+        __stx_runtime_head: { title: 'Training headquarters' },
+      })
+      expect(result).toContain(svg)
+      expect(result.match(/<head>[\s\S]*?<\/head>/)?.[0]).toContain('<title>Training headquarters</title>')
+    })
+
+    it(`adds a missing page title without replacing the SVG title: ${caption}`, async () => {
+      const svg = `<svg role="img"><title>${caption}</title></svg>`
+      const result = await processTemplate(`<html><head><meta charset="utf-8"></head><body>${svg}</body></html>`, {
+        __stx_runtime_head: { title: 'Training headquarters' },
+      })
+      expect(result).toContain(svg)
+      expect(result.match(/<head>[\s\S]*?<\/head>/)?.[0]).toContain('<title>Training headquarters</title>')
+    })
+  }
+
+  it('replaces the layout head title and preserves identical body artwork titles', async () => {
+    const svg = '<svg><title>Layout default</title></svg>'
+    const result = await processTemplate(`<html><head><title>Layout default</title></head><body>${svg}</body></html>`, {
+      __stx_runtime_head: { title: 'Page title' },
+    })
+    expect(result).toContain(svg)
+    expect(result.match(/<head>[\s\S]*?<\/head>/)?.[0]).toContain('<title>Page title</title>')
+  })
+
+  it('leaves artwork titles in an unwrapped layout fragment unchanged', async () => {
+    const svg = '<svg><title>Scan the app QR</title></svg>'
+    const result = await processTemplate(`<main>${svg}</main>`, {
+      __stx_runtime_head: { title: 'Page title' },
+    })
+    expect(result).toContain(svg)
+    expect(result).not.toContain('<title>Page title</title>')
+  })
+
 })

@@ -2148,10 +2148,15 @@ async function processOtherDirectives(
     // Replace the layout fallback and remove the incoming title from the
     // remaining snippet so every document still has exactly one.
     const incomingTitle = snippet.match(/<title\b[^>]*>[\s\S]*?<\/title>/i)
-    const existingTitle = html.match(/<title\b[^>]*>[\s\S]*?<\/title>/i)
-    if (incomingTitle && existingTitle) {
-      if (replaceExistingTitle)
-        html = html.replace(existingTitle[0], incomingTitle[0])
+    // SVG titles belong to body artwork. A layout fragment may contain one
+    // before a document head exists, so search only the actual head region.
+    const existingHead = /<head\b[^>]*>[\s\S]*?(?:<\/head\s*>|<body\b|$)/i.exec(html)
+    const existingTitle = existingHead ? /<title\b[^>]*>[\s\S]*?<\/title>/i.exec(existingHead[0]) : null
+    if (incomingTitle && existingHead && existingTitle) {
+      if (replaceExistingTitle) {
+        const start = existingHead.index + existingTitle.index
+        html = html.slice(0, start) + incomingTitle[0] + html.slice(start + existingTitle[0].length)
+      }
       snippet = snippet.replace(incomingTitle[0], '').trim()
       if (!snippet)
         return html
