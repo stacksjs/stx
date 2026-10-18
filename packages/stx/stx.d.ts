@@ -73,8 +73,8 @@ declare function effect(_fn: () => void | StxCleanup): StxCleanup
 declare function batch(_fn: () => void): void
 declare function untrack<T>(_value: T | StxSignal<T> | StxDerivedSignal<T>): T
 declare function peek<T>(_fn: () => T): T
-declare function isSignal(_value: unknown): value is StxSignal<unknown>
-declare function isDerived(_value: unknown): value is StxDerivedSignal<unknown>
+declare function isSignal(value: unknown): value is StxSignal<unknown>
+declare function isDerived(value: unknown): value is StxDerivedSignal<unknown>
 
 // ============================================================================
 // Lifecycle
