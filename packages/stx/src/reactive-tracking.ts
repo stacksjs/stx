@@ -109,6 +109,51 @@ export function enqueueEffect(effect: () => void): void {
 }
 
 /**
+ * What a derived value hands {@link notifySubscribers} instead of re-running:
+ * marks itself stale and adds the effects that read it to `into`.
+ */
+const collectors = new WeakMap<() => void, (into: Set<() => void>) => void>()
+
+/**
+ * Register `subscriber` (a derived value's mark-dirty function) as one that
+ * forwards a change rather than reacting to it.
+ */
+export function markAsForwarder(subscriber: () => void, collect: (into: Set<() => void>) => void): void {
+  collectors.set(subscriber, collect)
+}
+
+/** Gather the effects a change reaches, walking through derived values. */
+export function collectSubscribers(subscribers: Iterable<() => void>, into: Set<() => void>): void {
+  for (const subscriber of subscribers) {
+    const collect = collectors.get(subscriber)
+    if (collect)
+      collect(into)
+    else
+      into.add(subscriber)
+  }
+}
+
+/**
+ * Tell everything that read a value that it changed.
+ *
+ * Two phases: first every derived value on the way is marked stale and the
+ * effects it reaches are gathered, then each effect runs once. Running them
+ * as they were found ran an effect that reads a signal both directly and
+ * through a `derived` twice for one change, the first time against the
+ * derived's old value (a page loaded its data twice).
+ */
+export function notifySubscribers(subscribers: Iterable<() => void>): void {
+  if (batchDepth > 0) {
+    collectSubscribers(subscribers, pendingEffects)
+    return
+  }
+  const reached = new Set<() => void>()
+  collectSubscribers(subscribers, reached)
+  for (const effect of reached)
+    effect()
+}
+
+/**
  * Collect updates rather than applying them, and run each affected effect once
  * when the outermost batch ends.
  *

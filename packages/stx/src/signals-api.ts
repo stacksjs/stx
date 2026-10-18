@@ -138,9 +138,10 @@ export type LifecycleCallback = () => void | CleanupFn | Promise<void>
 // =============================================================================
 
 import {
-  enqueueEffect,
+  collectSubscribers,
   getActiveSubscriber,
-  isBatching,
+  markAsForwarder,
+  notifySubscribers,
   restoreActiveSubscriber,
   runBatched,
   setActiveSubscriber,
@@ -245,13 +246,8 @@ export function state<T>(initialValue: T): Signal<T> {
         }
       })
 
-      // Trigger effects
-      if (isBatching()) {
-        effects.forEach(effect => enqueueEffect(effect))
-      }
-else {
-        effects.forEach(effect => effect())
-      }
+      // Trigger effects, each once (see notifySubscribers)
+      notifySubscribers(effects)
     }
   }
 
@@ -323,19 +319,21 @@ export function derived<T>(compute: () => T): DerivedSignal<T> {
   let isDirty = true
   const effects = new Set<() => void>()
 
-  // Mark as dirty when dependencies change
+  // Mark as dirty when dependencies change, and pass the change on to what
+  // read this value. A signal's notification collects through it instead of
+  // calling it, so an effect reached both ways still runs once.
   const markDirty = () => {
     if (!isDirty) {
       isDirty = true
-      // Propagate to dependent effects
-      if (isBatching()) {
-        effects.forEach(effect => enqueueEffect(effect))
-      }
-else {
-        effects.forEach(effect => effect())
-      }
+      notifySubscribers(effects)
     }
   }
+  markAsForwarder(markDirty, (into) => {
+    if (!isDirty) {
+      isDirty = true
+      collectSubscribers(effects, into)
+    }
+  })
 
   const signal = (() => {
     // Track this derived signal as a dependency

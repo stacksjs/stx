@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { SIGNALS_HELPERS_RUNTIME } from '../../src/client/signals-helpers-runtime'
+import { SIGNALS_NOTIFY_RUNTIME } from '../../src/client/signals-notify-runtime'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 
 function loadHelpers(): Record<string, any> {
@@ -8,6 +9,7 @@ function loadHelpers(): Record<string, any> {
     const targetMap = new WeakMap();
     let isBatching = false;
     const pendingEffects = new Set();
+    ${SIGNALS_NOTIFY_RUNTIME}
   `
   return new Function(`${prelude}\n${SIGNALS_HELPERS_RUNTIME}\nreturn { globalHelpers, track, trigger, setEffect: value => activeEffect = value }`)() as any
 }

@@ -267,5 +267,46 @@ for (const name of ['signals-api', 'runtime'] as const) {
       // No tracked dep → effect should not re-fire.
       expect(calls).toBe(before)
     })
+
+    // ── one change, one run ──
+    it('an effect reading a signal directly and through a derived runs once per change', () => {
+      const user = impl.state({ id: 1 })
+      const signedIn = impl.derived(() => user().id > 0)
+      const seen: string[] = []
+      impl.effect(() => {
+        seen.push(`${user().id}:${signedIn()}`)
+      })
+      seen.length = 0
+      user.set({ id: 0 })
+      // Once, and never against the derived's old value ("0:true").
+      expect(seen).toEqual(['0:false'])
+    })
+
+    it('an effect reached through two deriveds of one signal runs once per change', () => {
+      const n = impl.state(1)
+      const double = impl.derived(() => n() * 2)
+      const triple = impl.derived(() => n() * 3)
+      const seen: number[] = []
+      impl.effect(() => {
+        seen.push(double() + triple())
+      })
+      seen.length = 0
+      n.set(2)
+      expect(seen).toEqual([10])
+    })
+
+    it('a derived read inside batch() is current', () => {
+      const n = impl.state(1)
+      const double = impl.derived(() => n() * 2)
+      impl.effect(() => {
+        double()
+      })
+      let inside = 0
+      impl.batch(() => {
+        n.set(5)
+        inside = double()
+      })
+      expect(inside).toBe(10)
+    })
   })
 }
