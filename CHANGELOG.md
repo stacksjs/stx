@@ -1,5 +1,28 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.565...v0.2.566)
+
+## ✨ Features
+
+- expose atomic existing-record checkpoints through the native bridge ([c055add](https://github.com/stacksjs/stx/commit/c055add)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- ship the canonical mouse types referenced by ambient declarations ([13cee4c](https://github.com/stacksjs/stx/commit/13cee4c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- resolve unchanged package archives as an isolated workspace ([7392c08](https://github.com/stacksjs/stx/commit/7392c08)) _(by Chris Breuer <chris@stacksjs.com>)_
+- validate published mouse types through actual package archives ([95dc63e](https://github.com/stacksjs/stx/commit/95dc63e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.566 ([9bc14e5](https://github.com/stacksjs/stx/commit/9bc14e5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.564...v0.2.565)
 
 ## ✨ Features
