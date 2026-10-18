@@ -1,0 +1,42 @@
+name: Native authored key contract
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - codex/native-stx-authored-key-integration
+permissions:
+  contents: read
+jobs:
+  native-authored-keys:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Provision the normal managed runtime
+        uses: pantry-pm/pantry/packages/action@v0.11.93
+        with:
+          version: 0.11.93
+          install: 'false'
+          packages: bun.com@1.4.2
+      - name: Install the normal frozen workspace
+        run: bun install --frozen-lockfile
+      - name: Record the exact regression source
+        run: |
+          mkdir -p artifacts/native-authored-keys
+          git rev-parse HEAD > artifacts/native-authored-keys/source-commit.txt
+          bun --version > artifacts/native-authored-keys/bun-version.txt
+          sha256sum bun.lock > artifacts/native-authored-keys/lock-before.sha256
+      - name: Run every compiled native authored key regression
+        run: |
+          set -o pipefail
+          bun test packages/stx/test/native/native-authored-keys.test.ts 2>&1 | tee artifacts/native-authored-keys/test.log
+      - name: Verify the frozen lock remains unchanged
+        if: always()
+        run: sha256sum --check artifacts/native-authored-keys/lock-before.sha256
+      - name: Retain actual compiled native observations
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-authored-keys
+          path: artifacts/native-authored-keys
+          if-no-files-found: error
