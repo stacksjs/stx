@@ -144,6 +144,8 @@ export interface NativeStorage {
   keys: () => Promise<string[]>
   /** Atomically replace an existing matching value; never create a missing key. */
   compareAndSet: (key: string, expectedValue: unknown, nextValue: unknown) => Promise<boolean>
+  /** Atomically create a missing key. Existing JSON null is still a value. */
+  setIfAbsent: (key: string, value: unknown) => Promise<boolean>
   /** What `get` would resolve to, synchronously (`null` when the host has none). */
   getSync: <T = unknown>(key: string) => T | null
   setSync: (key: string, value: unknown) => void
@@ -181,6 +183,7 @@ export interface NativeCraft {
   capabilityProtocolVersion: number
   route: NativeRoute
   capabilities: Record<string, boolean>
+  crypto?: { randomUUID: () => Promise<string> }
   navigation: NativeNavigation
   storage: NativeStorage
   secureStorage: NativeSecureStorage
@@ -290,7 +293,7 @@ export interface NativeCraft {
     getCurrentPosition: (options?: { enableHighAccuracy?: boolean, timeout?: number, maximumAge?: number }) => Promise<NativeLocation>
     watchPosition: (callback: (location: NativeLocation) => unknown, options?: Record<string, unknown>) => number
     clearWatch: (id?: number) => void
-    startRecording: (options?: Record<string, unknown>) => Promise<NativeLocationRecordingState>
+    startRecording: (options?: Record<string, unknown> & { recordingId?: string }) => Promise<NativeLocationRecordingState>
     pauseRecording: (options?: { expectedId: string }) => Promise<NativeLocationRecordingState>
     resumeRecording: (options?: { expectedId: string }) => Promise<NativeLocationRecordingState>
     stopRecording: (options?: { expectedId: string }) => Promise<NativeLocationRecordingState & { locations: NativeLocation[] }>

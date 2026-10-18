@@ -23,14 +23,18 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     pushNotifications: capabilities.has('push'),
     secureStorage: capabilities.has('secureStorage'),
     storage: capabilities.has('storage'),
+    crypto: capabilities.has('crypto'),
     storageCompareAndSet: capabilities.has('storageCompareAndSet'),
+    storageSetIfAbsent: capabilities.has('storageSetIfAbsent'),
     localDatabase: capabilities.has('database'),
     lifecycle: capabilities.has('lifecycle'),
     geolocation: capabilities.has('geolocation'),
     locationRecordingOwnership: capabilities.has('locationRecordingOwnership'),
+    locationRecordingIntentIdentity: capabilities.has('locationRecordingIntentIdentity'),
     music: capabilities.has('music'),
     heartRate: capabilities.has('heartRate'),
     heartRateRecordingOwnership: capabilities.has('heartRateRecordingOwnership'),
+    heartRateRecordingIntentIdentity: capabilities.has('heartRateRecordingIntentIdentity'),
     bluetooth: capabilities.has('bluetooth'),
     scheduledWorkouts: capabilities.has('scheduledWorkouts'),
     liveActivities: capabilities.has('liveActivities'),
@@ -94,6 +98,21 @@ export function installCraftBridge(
     }
     return request(module, method, options === undefined ? [] : [options])
   }
+  const recordingStart = async (module: 'Location' | 'HeartRate', options: AnyRecord = {}): Promise<any> => {
+    if (Object.prototype.hasOwnProperty.call(options, 'recordingId')) {
+      if (typeof options.recordingId !== 'string' || !options.recordingId.trim())
+        throw Object.assign(new Error('recordingId must be a nonempty recording ID'), { code: 'INVALID_ARGUMENT' })
+      const prefix = module === 'Location' ? 'location' : 'heartRate'
+      if (!capabilities.has(`${prefix}RecordingIntentIdentity`) || !capabilities.has(`${prefix}RecordingOwnership`))
+        throw Object.assign(new Error('This app build cannot start the persisted recording intent'), { code: 'RECORDING_INTENT_IDENTITY_UNSUPPORTED' })
+    }
+    const result = await ask(module, 'startRecording', [options])
+    if (options.recordingId !== undefined && result?.id !== options.recordingId)
+      throw Object.assign(new Error('The native recording does not match the persisted intent'), { code: 'RECORDING_CONFLICT' })
+    return result
+  }
+  if (capabilities.has('crypto'))
+    craft.crypto = { randomUUID: () => request('Crypto', 'randomUUID', []) }
   let appState = nativeBridge.initialAppState || 'active'
   let initialDeepLinkClaimed = false
   const appStateHandlers = new Set<(state: string) => unknown>()
@@ -160,6 +179,11 @@ export function installCraftBridge(
     remove: (key: string) => request('Storage', 'remove', [key]),
     clear: () => request('Storage', 'clear', []),
     keys: () => request('Storage', 'keys', []),
+    setIfAbsent: (key: string, value: unknown) => {
+      if (!capabilities.has('storageSetIfAbsent'))
+        return Promise.reject(Object.assign(new Error('This host cannot atomically register an intent'), { code: 'STORAGE_SET_IF_ABSENT_UNSUPPORTED' }))
+      return request('Storage', 'setIfAbsent', [key, value])
+    },
     compareAndSet: (key: string, expectedValue: unknown, nextValue: unknown) => {
       if (!capabilities.has('storageCompareAndSet'))
         return Promise.reject(Object.assign(new Error('This host cannot atomically checkpoint existing storage'), { code: 'STORAGE_COMPARE_AND_SET_UNSUPPORTED' }))
@@ -390,7 +414,7 @@ export function installCraftBridge(
         else if (!watchers.delete(id)) return
         unwatched()
       },
-      startRecording: (options: AnyRecord = {}) => ask('Location', 'startRecording', [options]),
+      startRecording: (options: AnyRecord = {}) => recordingStart('Location', options),
       pauseRecording: (options?: AnyRecord) => recordingRequest('Location', 'pauseRecording', options),
       resumeRecording: (options?: AnyRecord) => recordingRequest('Location', 'resumeRecording', options),
       stopRecording: (options?: AnyRecord) => recordingRequest('Location', 'stopRecording', options),
@@ -462,7 +486,7 @@ export function installCraftBridge(
       connect: (id: string | AnyRecord) => ask('HeartRate', 'connect', [{ id: typeof id === 'string' ? id : id?.id }]),
       reconnect: () => strap('reconnect'),
       disconnect: (options: AnyRecord = {}) => strap('disconnect', { forget: !!options.forget }),
-      startRecording: () => strap('startRecording'),
+      startRecording: (options: AnyRecord = {}) => recordingStart('HeartRate', options),
       pauseRecording: (options?: AnyRecord) => recordingRequest('HeartRate', 'pauseRecording', options),
       resumeRecording: (options?: AnyRecord) => recordingRequest('HeartRate', 'resumeRecording', options),
       stopRecording: (options?: AnyRecord) => recordingRequest('HeartRate', 'stopRecording', options),
