@@ -292,7 +292,8 @@ export interface NativeCraft {
     pauseRecording: (options?: { expectedId: string }) => Promise<NativeLocationRecordingState>
     resumeRecording: (options?: { expectedId: string }) => Promise<NativeLocationRecordingState>
     stopRecording: (options?: { expectedId: string }) => Promise<NativeLocationRecordingState & { locations: NativeLocation[] }>
-    getRecordingState: () => Promise<NativeLocationRecordingState & { sampleCount: number }>
+    acknowledgeRecording: (options: { expectedId: string }) => Promise<boolean>
+    getRecordingState: (options?: { expectedId: string }) => Promise<NativeLocationRecordingState & { sampleCount: number }>
     readRecording: (options?: { expectedId: string }) => Promise<NativeLocation[]>
   }
   /** Keeps the screen from locking (`capabilities.keepAwake`), the page's name. */

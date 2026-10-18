@@ -23,7 +23,7 @@ for (const [namespace, module] of [['location', 'Location'], ['heartRate', 'Hear
   test(`${namespace} preserves native ownership capability and each operation's identity`, async () => {
     const host = setup(true)
     expect(host.craft.capabilities[`${namespace}RecordingOwnership`]).toBe(true)
-    for (const method of ['pauseRecording', 'resumeRecording', 'stopRecording', 'readRecording']) {
+    for (const method of ['pauseRecording', 'resumeRecording', 'stopRecording', 'readRecording', 'getRecordingState', 'acknowledgeRecording']) {
       const options = method === 'readRecording' && namespace === 'heartRate' ? { expectedId: 'recording-B', since: 125 } : { expectedId: 'recording-B' }
       const answer = host.craft[namespace][method](options)
       expect(host.sent.at(-1).payload).toMatchObject({ module, method, args: [options] })
@@ -35,7 +35,7 @@ for (const [namespace, module] of [['location', 'Location'], ['heartRate', 'Hear
   test(`${namespace} rejects guarded operations on older hosts without issuing native calls`, async () => {
     const host = setup(false)
     expect(host.craft.capabilities[`${namespace}RecordingOwnership`]).toBe(false)
-    for (const method of ['pauseRecording', 'resumeRecording', 'stopRecording', 'readRecording'])
+    for (const method of ['pauseRecording', 'resumeRecording', 'stopRecording', 'readRecording', 'getRecordingState', 'acknowledgeRecording'])
       await expect(host.craft[namespace][method]({ expectedId: 'recording-B' })).rejects.toMatchObject({ code: 'RECORDING_OWNERSHIP_UNSUPPORTED' })
     expect(host.sent).toEqual([])
   })

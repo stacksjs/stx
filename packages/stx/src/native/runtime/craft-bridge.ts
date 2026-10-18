@@ -388,7 +388,8 @@ export function installCraftBridge(
       pauseRecording: (options?: AnyRecord) => recordingRequest('Location', 'pauseRecording', options),
       resumeRecording: (options?: AnyRecord) => recordingRequest('Location', 'resumeRecording', options),
       stopRecording: (options?: AnyRecord) => recordingRequest('Location', 'stopRecording', options),
-      getRecordingState: () => request('Location', 'getRecordingState', []),
+      getRecordingState: (options?: AnyRecord) => recordingRequest('Location', 'getRecordingState', options),
+      acknowledgeRecording: (options: AnyRecord) => recordingRequest('Location', 'acknowledgeRecording', options),
       readRecording: (options?: AnyRecord) => recordingRequest('Location', 'readRecording', options),
     }
     target.addEventListener?.('craftLocationUpdate', (event: AnyRecord) => {
@@ -459,7 +460,8 @@ export function installCraftBridge(
       pauseRecording: (options?: AnyRecord) => recordingRequest('HeartRate', 'pauseRecording', options),
       resumeRecording: (options?: AnyRecord) => recordingRequest('HeartRate', 'resumeRecording', options),
       stopRecording: (options?: AnyRecord) => recordingRequest('HeartRate', 'stopRecording', options),
-      getRecordingState: () => strap('getRecordingState'),
+      getRecordingState: (options?: AnyRecord) => recordingRequest('HeartRate', 'getRecordingState', options),
+      acknowledgeRecording: (options: AnyRecord) => recordingRequest('HeartRate', 'acknowledgeRecording', options),
       readRecording: (options: AnyRecord = {}) => recordingRequest('HeartRate', 'readRecording', options),
     }
   }

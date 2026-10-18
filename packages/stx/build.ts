@@ -341,7 +341,10 @@ cpSync(resolve('./src/native/primitives'), resolve('./dist/native/primitives'), 
 // dist/ and prepend a triple-slash reference to dist/index.d.ts so consumers
 // pick the globals up automatically when they install @stacksjs/stx — no
 // per-app stx.d.ts workaround required.
-copyFileSync(resolve('./stx.d.ts'), resolve('./dist/stx.d.ts'))
+// Keep one canonical declaration graph. Copying this file into dist changes
+// relative type-import resolution and can shadow the correctly typed root with
+// an unresolved import that skipLibCheck silently degrades to any.
+await Bun.write(resolve('./dist/stx.d.ts'), '/// <reference path="../stx.d.ts" />\n')
 // The virtual `stx` module a `.stx` block imports from. Deliberately NOT
 // referenced from any entrypoint: the specifier is virtual only inside a `.stx`
 // block, so `stx typecheck` and the editor plugin add it themselves.
