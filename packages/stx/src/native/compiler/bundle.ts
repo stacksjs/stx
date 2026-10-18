@@ -218,9 +218,19 @@ else {
   g.__stxNativeUnmount = function() { screen.unmount(); };
 }
 ${generateSignalsRuntime()}
+var pageSetup = g.__stx_latestSetup;
+var pageRuntimeSetup = g.stx && g.stx._latestSetup;
 ${setups}
+// The screen's setup is the native host's to run. A screen script publishes
+// it where a page's document runtime adopts its own, and in a browser that
+// runtime's DOMContentLoaded and stx:load ran it a second time: another copy
+// of the screen, mounted beside this one. Take it, and hand the page back
+// whatever setup it had.
+var screenSetup = g.__stx_latestSetup || null;
+g.__stx_latestSetup = pageSetup;
+if (g.stx) g.stx._latestSetup = pageRuntimeSetup || null;
 if (isApp) app.start(nativeAppModule);
-else screen.mount(g.stx, g.__stx_latestSetup || null);
+else screen.mount(g.stx, screenSetup);
 ${browser ? `var stopApp = nativeAppModule && typeof nativeAppModule.default === 'function' ? nativeAppModule.default(g.craft) : null;
 var unmount = g.__stxNativeUnmount;
 var ended = false;
