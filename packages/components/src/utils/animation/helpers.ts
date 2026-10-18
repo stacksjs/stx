@@ -208,11 +208,11 @@ export function createKeyframes(name: string, frames: Record<string, Record<stri
     @keyframes ${name} {
       ${Object.entries(frames)
     .map(([percentage, styles]) => {
-    const styleString = Object.entries(styles)
-      .map(([prop, value]) => `${prop}: ${value};`)
-      .join(' ')
-    return `${percentage} { ${styleString} }`
-  })
+      const styleString = Object.entries(styles)
+        .map(([prop, value]) => `${prop}: ${value};`)
+        .join(' ')
+      return `${percentage} { ${styleString} }`
+    })
     .join('\n')}
     }
   `
