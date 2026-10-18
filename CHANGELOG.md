@@ -1,5 +1,34 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.571...v0.2.572)
+
+## 🐛 Bug Fixes
+
+- **native**: mount a browser screen once, not again when the page finishes loading ([7d5d903](https://github.com/stacksjs/stx/commit/7d5d903)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.572 ([7b889e0](https://github.com/stacksjs/stx/commit/7b889e0)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.570...v0.2.571)
+
+## ⚡ Performance Improvements
+
+- minify client code in every production render ([86a3830](https://github.com/stacksjs/stx/commit/86a3830)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: compile one bundle per route ([959f3d4](https://github.com/stacksjs/stx/commit/959f3d4)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.571 ([8f3b3e9](https://github.com/stacksjs/stx/commit/8f3b3e9)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.569...v0.2.570)
 
 ## ✅ Tests

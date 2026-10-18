@@ -161,6 +161,44 @@ function reveal() { rows.set([{id:2,label:'Second',shown:true}, {id:1,label:'Fir
     browser.close()
   })
 
+  it('sets the screen up once when the page finishes loading after it, and leaves the page its own setup', async () => {
+    // The browser runs the bundle while it parses the page, so the page's
+    // DOMContentLoaded (and a later stx:load) comes after the screen mounted.
+    // The document runtime used to find the screen's setup as the page's own
+    // and run it again: a second copy of the screen that loaded everything twice.
+    const root = mkdtempSync(path.join(tmpdir(), 'stx-browser-once-'))
+    folders.push(root)
+    writeFileSync(path.join(root, 'Screen.stx'), `<script client>
+globalThis.setups = (globalThis.setups || 0) + 1
+onMount(() => { globalThis.mounts = (globalThis.mounts || 0) + 1 })
+</script><View><Text>Once</Text></View>`)
+    writeFileSync(path.join(root, 'platform.ts'), 'export async function createBrowserPlatform() { return {craft:{},capabilities:[],call:async()=>null,navigate(){},dispose(){}} }')
+    const compiled = await compileBrowserScreen({ root, source: 'Screen.stx', screen: 'Screen', browser: { screen: 'Screen', container: '#screen', appURL: '/', routes: { '/': 'Screen' }, platformModule: path.join(root, 'platform.ts') } })
+    const browser = new Window({ url: 'https://fixture.invalid/' })
+    const container = browser.document.createElement('div'); container.id = 'screen'; browser.document.body.append(container)
+    const errors: unknown[] = []
+    const scope: Record<string, any> = { document: browser.document, navigator: browser.navigator, location: browser.location, history: browser.history, MutationObserver: browser.MutationObserver, matchMedia: browser.matchMedia.bind(browser), addEventListener: browser.addEventListener.bind(browser), removeEventListener: browser.removeEventListener.bind(browser), dispatchEvent: browser.dispatchEvent.bind(browser), console: { ...console, error: (...args: unknown[]) => errors.push(args) }, setTimeout, clearTimeout, setInterval, clearInterval, queueMicrotask, URL, URLSearchParams, AbortController }
+    scope.window = scope
+    const pageSetup = () => ({})
+    scope.__stx_latestSetup = pageSetup
+    try {
+      vm.runInNewContext(compiled.code, scope)
+      await new Promise(resolve => setTimeout(resolve, 20))
+      expect(container.textContent).toContain('Once')
+      expect({ setups: scope.setups, mounts: scope.mounts }).toEqual({ setups: 1, mounts: 1 })
+      expect(scope.__stx_latestSetup).toBe(pageSetup)
+      expect(scope.stx._latestSetup).toBe(pageSetup)
+      scope.__stx_latestSetup = null
+      scope.stx._latestSetup = null
+      browser.document.dispatchEvent(new browser.Event('DOMContentLoaded'))
+      scope.dispatchEvent(new browser.Event('stx:load'))
+      await new Promise(resolve => setTimeout(resolve, 80))
+      expect({ setups: scope.setups, mounts: scope.mounts }).toEqual({ setups: 1, mounts: 1 })
+      expect(errors).toEqual([])
+    }
+    finally { scope.__stxNativeUnmount?.(); browser.close() }
+  })
+
   it('tracks imported sources and embeds an opaque bundle rather than reprocessing it as a template', async () => {
     const root = mkdtempSync(path.join(tmpdir(), 'stx-portable-browser-'))
     folders.push(root)
