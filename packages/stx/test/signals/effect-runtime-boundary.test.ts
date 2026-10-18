@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { SIGNALS_EFFECT_RUNTIME } from '../../src/client/signals-effect-runtime'
+import { SIGNALS_NOTIFY_RUNTIME } from '../../src/client/signals-notify-runtime'
 import { SIGNALS_STATE_RUNTIME } from '../../src/client/signals-state-runtime'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 
@@ -16,6 +17,7 @@ function loadReactivity(): Record<string, any> {
     let __stxSignalId = 0;
     let __stxEffectId = 0;
     function __stxShort(value) { return String(value); }
+    ${SIGNALS_NOTIFY_RUNTIME}
   `
   const runtime = `${prelude}\n${SIGNALS_STATE_RUNTIME}\n${SIGNALS_EFFECT_RUNTIME}\nreturn { state, derived, effect, batch }`
   return new Function(runtime)() as Record<string, any>

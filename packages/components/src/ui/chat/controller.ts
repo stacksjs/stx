@@ -117,7 +117,28 @@ export function createChat(options: ChatOptions): ChatController {
       if (token === version && id === threadId()) conversations.update(list => list.map(c => c.id === id ? { ...c, unread: 0 } : c))
     }
   }
-  async function load() {
+  /*
+   * The conversation list request in flight. Every component showing the chat
+   * (a launcher, an inbox, a badge) loads it on mount; they now share one
+   * request instead of each sending its own.
+   */
+  let listLoad: { promise: Promise<void>, version: number } | null = null
+  function load(): Promise<void> {
+    checkScope()
+    if (listLoad && listLoad.version === version) return listLoad.promise
+    const promise: Promise<void> = loadList().finally(() => {
+      if (listLoad?.promise === promise) listLoad = null
+      flushInvalidation()
+    })
+    listLoad = { promise, version }
+    return promise
+  }
+  /** A list read after now: waits out one already in flight, which may predate the change. */
+  async function loadFresh() {
+    if (listLoad) await listLoad.promise
+    await load()
+  }
+  async function loadList() {
     const token = checkScope()
     loading.set(true); error.set('')
     try {
@@ -174,7 +195,7 @@ export function createChat(options: ChatOptions): ChatController {
       if (draft().trim() === body) draft.set('')
       drafts.delete(selected()!.id); retry = null
       await refreshThread(token, id)
-      await load()
+      await loadFresh()
     }
     catch (cause) { if (token === version) failure(cause) }
     finally { if (token === version) sending.set(false); flushInvalidation() }
@@ -203,7 +224,8 @@ export function createChat(options: ChatOptions): ChatController {
   }
   let invalidated = false
   async function reconcile() {
-    if (refreshing || sending() || threadLoading()) { invalidated = true; return }
+    // A list load in flight may have been read before this change: reload once it lands.
+    if (refreshing || listLoad || sending() || threadLoading()) { invalidated = true; return }
     await refresh([...observers].some(active => active()))
   }
   function connect() {

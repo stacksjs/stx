@@ -30,12 +30,7 @@ export const SIGNALS_STATE_RUNTIME = `  // =====================================
           try { cb(value, prev); }
           catch (e) { console.error('[stx] subscriber error:', e); }
         });
-        if (isBatching) {
-          effects.forEach(effect => pendingEffects.add(effect));
-        }
-else {
-          effects.forEach(effect => effect());
-        }
+        notifySubscribers(effects);
       }
     };
 
@@ -47,12 +42,7 @@ else {
         try { cb(value, value); }
         catch (e) { console.error('[stx] subscriber error:', e); }
       });
-      if (isBatching) {
-        effects.forEach(effect => pendingEffects.add(effect));
-      }
-else {
-        effects.forEach(effect => effect());
-      }
+      notifySubscribers(effects);
     };
     signal.subscribe = (cb) => {
       subscribers.add(cb);
@@ -82,15 +72,19 @@ else {
     let isDirty = true;
     const effects = new Set();
 
+    // Passes a change on to what read this value. A signal's notification
+    // collects through it (_stxCollect) instead of calling it, so an effect
+    // reached both directly and through here still runs once.
     const markDirty = () => {
       if (!isDirty) {
         isDirty = true;
-        if (isBatching) {
-          effects.forEach(e => pendingEffects.add(e));
-        }
-else {
-          effects.forEach(e => e());
-        }
+        notifySubscribers(effects);
+      }
+    };
+    markDirty._stxCollect = (into) => {
+      if (!isDirty) {
+        isDirty = true;
+        collectSubscribers(effects, into);
       }
     };
 

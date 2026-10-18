@@ -141,7 +141,7 @@ export interface ReactiveScope {
 // Current Instance Tracking
 // =============================================================================
 
-import { enqueueEffect, getActiveSubscriber, isBatching, restoreActiveSubscriber, setActiveSubscriber } from './reactive-tracking'
+import { getActiveSubscriber, notifySubscribers, restoreActiveSubscriber, setActiveSubscriber } from './reactive-tracking'
 
 let currentInstance: ComponentInstance | null = null
 
@@ -302,12 +302,7 @@ export function ref<T>(initialValue: T): Ref<T> {
          * systems, one entry point" seam as the tracking variable, just on the
          * write side (stacksjs/stx#1885).
          */
-        for (const effect of effectSubscribers) {
-          if (isBatching())
-            enqueueEffect(effect)
-          else
-            effect()
-        }
+        notifySubscribers(effectSubscribers)
       }
     },
     subscribe(callback: (value: T, oldValue: T) => void) {
@@ -352,12 +347,7 @@ export function reactive<T extends object>(target: T): T {
       return
 
     // Batched for the same reason a ref's subscribers are; see the note there.
-    for (const callback of [...subs]) {
-      if (isBatching())
-        enqueueEffect(callback)
-      else
-        callback()
-    }
+    notifySubscribers([...subs])
   }
 
   const subscribe = (key: string | symbol, callback: () => void) => {

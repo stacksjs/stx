@@ -651,6 +651,30 @@ const _layerSnapshots = new Map<string, { graph: ApplicationLayerGraph, signatur
 let _configPromise: Promise<StxConfig> | null = null
 
 /**
+ * A project's stx config, or the defaults when it has none.
+ *
+ * bunfig's result API rejects with ConfigNotFoundError when no file exists
+ * (its documented contract). Until 0.15.21 its published build never matched
+ * that error by name, so the rejection never fired and every project without
+ * an stx.config fell back to defaults by accident; with the fix, loading such
+ * a project threw. Absence is the normal case here. Matched by name: a
+ * bundled copy of bunfig has its own error classes.
+ */
+export async function discoverConfig<T>(
+  options: Parameters<typeof loadConfigWithResult<T>>[0],
+  load: (options: Parameters<typeof loadConfigWithResult<T>>[0]) => Promise<{ config: T }> = loadConfigWithResult<T>,
+): Promise<{ config: T }> {
+  try {
+    return await load(options)
+  }
+  catch (error) {
+    if (error instanceof Error && error.name === 'ConfigNotFoundError')
+      return { config: options.defaultConfig }
+    throw error
+  }
+}
+
+/**
  * Load the stx config for a project.
  *
  * `cwd` lets the caller specify which directory to search in — critical for
@@ -710,14 +734,14 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
       // the latter owns plugins or other keys the root file does not repeat.
       // Use the UI config as the base and load the root file over it: this is
       // the shallow, root-wins merge promised by Partial<StxConfig> (#2056).
-      const uiResult = await loadConfigWithResult({
+      const uiResult = await discoverConfig({
         name: 'ui',
         cwd: path.join(effectiveCwd, 'config'),
         defaultConfig,
         errorPolicy: 'throw',
         verbose: false,
       })
-      const rootResult = await loadConfigWithResult({
+      const rootResult = await discoverConfig({
         name: 'stx',
         alias: 'ui',
         cwd: effectiveCwd, // Load config from the requested directory, not the stx package
@@ -728,7 +752,7 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
       loaded = rootResult.config
     }
     else {
-      const configResult = await loadConfigWithResult({
+      const configResult = await discoverConfig({
         name: 'stx',
         alias: 'ui',
         cwd: effectiveCwd, // Load config from the requested directory, not the stx package

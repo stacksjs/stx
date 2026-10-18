@@ -126,13 +126,6 @@ catch (e) {
     const depsMap = targetMap.get(target);
     if (!depsMap) return;
     const deps = depsMap.get(key);
-    if (deps) {
-      if (isBatching) {
-        deps.forEach(effect => pendingEffects.add(effect));
-      }
-else {
-        deps.forEach(effect => effect());
-      }
-    }
+    if (deps) notifySubscribers(deps);
   }
 `

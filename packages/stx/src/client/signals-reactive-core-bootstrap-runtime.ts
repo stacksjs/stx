@@ -1,3 +1,5 @@
+import { SIGNALS_NOTIFY_RUNTIME } from './signals-notify-runtime'
+
 export function signalsReactiveCoreBootstrapRuntime(
   cloakRuntime: string,
   expressionCompilerRuntime: string,
@@ -12,6 +14,7 @@ ${expressionCompilerRuntime}
   const effectStack = [];
   const pendingEffects = new Set();
   let isBatching = false;
+${SIGNALS_NOTIFY_RUNTIME}
 
   // DevTools Phase 2 (#1747): dev-mode reactivity instrumentation. OFF by
   // default — even in the dev runtime — so set()/effect-run stay zero-overhead
