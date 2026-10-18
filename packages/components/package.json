@@ -83,9 +83,6 @@
     "ts-video-player": "^0.1.9"
   },
   "devDependencies": {
-    "@types/bun": "^1.4.2",
-    "bun-plugin-dtsx": "^0.21.17",
-    "pickier": "^0.1.65",
-    "typescript": "^7.0.2"
+    "better-dx": "^0.2.38"
   }
 }
