@@ -1,5 +1,22 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.567...v0.2.568)
+
+## 🐛 Bug Fixes
+
+- **serve**: warn about a missing SPA swap container once per page ([aabf655](https://github.com/stacksjs/stx/commit/aabf655)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **chat**: share one conversation list request between components ([992db3c](https://github.com/stacksjs/stx/commit/992db3c)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **handlers**: read a derived in an inline handler as its value ([da4d14e](https://github.com/stacksjs/stx/commit/da4d14e)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **signals**: run each effect once per change, through deriveds ([fd2e05f](https://github.com/stacksjs/stx/commit/fd2e05f)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.568 ([8dee8b8](https://github.com/stacksjs/stx/commit/8dee8b8)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.566...v0.2.567)
 
 ## ✨ Features
