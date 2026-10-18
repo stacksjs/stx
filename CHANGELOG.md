@@ -1,5 +1,46 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.572...v0.2.573)
+
+## 🐛 Bug Fixes
+
+- **native**: retain authored keys when materializing mutation nodes ([53ec34a](https://github.com/stacksjs/stx/commit/53ec34a)) _(by Chris Breuer <chris@stacksjs.com>)_
+- build component distributions before packing release consumers ([614af9e](https://github.com/stacksjs/stx/commit/614af9e)) _(by Chris Breuer <chris@stacksjs.com>)_
+- preserve source declaration paths across runtime bundles ([7c547bb](https://github.com/stacksjs/stx/commit/7c547bb)) _(by Chris Breuer <chris@stacksjs.com>)_
+- load optional STX configuration with explicit failure policy ([5b888b6](https://github.com/stacksjs/stx/commit/5b888b6)) _(by Chris Breuer <chris@stacksjs.com>)_
+- bind signal guard predicates and align the managed Bun runtime ([c65b417](https://github.com/stacksjs/stx/commit/c65b417)) _(by Chris Breuer <chris@stacksjs.com>)_
+- use current shared tooling and corrected Bunfig config identity ([4a4f12d](https://github.com/stacksjs/stx/commit/4a4f12d)) _(by Chris Breuer <chris@stacksjs.com>)_
+- preserve artwork titles during head injection ([1b48e1c](https://github.com/stacksjs/stx/commit/1b48e1c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 📝 Documentation
+
+- describe the actual Pantry CI and publication gates ([7284623](https://github.com/stacksjs/stx/commit/7284623)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 💄 Styles
+
+- format animation helper signatures with the current shared tooling ([977924e](https://github.com/stacksjs/stx/commit/977924e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- **native**: reproduce authored key loss in created nodes ([485b126](https://github.com/stacksjs/stx/commit/485b126)) _(by Chris Breuer <chris@stacksjs.com>)_
+- verify installed signal guards narrow unknown values ([a643a2a](https://github.com/stacksjs/stx/commit/a643a2a)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 💚 Continuous Integration
+
+- use verified Pantry tooling for STX publication ([dca57a9](https://github.com/stacksjs/stx/commit/dca57a9)) _(by Chris Breuer <chris@stacksjs.com>)_
+- retain compiled native authored key regression evidence ([b86ab09](https://github.com/stacksjs/stx/commit/b86ab09)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.573 ([2c4b4b8](https://github.com/stacksjs/stx/commit/2c4b4b8)) _(by Chris Breuer <chris@stacksjs.com>)_
+- integrate current STX route bundle and mount lifecycle changes ([787231f](https://github.com/stacksjs/stx/commit/787231f)) _(by Chris Breuer <chris@stacksjs.com>)_
+- integrate current STX release source ([e4b0a9f](https://github.com/stacksjs/stx/commit/e4b0a9f)) _(by Chris Breuer <chris@stacksjs.com>)_
+- install the verified shared tooling and Bunfig releases ([24402be](https://github.com/stacksjs/stx/commit/24402be)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.571...v0.2.572)
 
 ## 🐛 Bug Fixes
