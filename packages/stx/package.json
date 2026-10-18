@@ -88,6 +88,7 @@
     "LICENSE.md",
     "README.md",
     "dist",
+    "src/composables/use-mouse.ts",
     "stx.d.ts",
     "browser-auto-imports.d.ts",
     "stx-module.d.ts"
