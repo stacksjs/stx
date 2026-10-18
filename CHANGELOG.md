@@ -1,5 +1,30 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.566...v0.2.567)
+
+## ✨ Features
+
+- forward atomic registration and secure recording intents ([93c4955](https://github.com/stacksjs/stx/commit/93c4955)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- guard absent touch points in shared mouse composables ([c1f981e](https://github.com/stacksjs/stx/commit/c1f981e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- verify first-install policy after registration completes ([9897aa3](https://github.com/stacksjs/stx/commit/9897aa3)) _(by Chris Breuer <chris@stacksjs.com>)_
+- typecheck shipped sources with a normal strict browser consumer ([7a77523](https://github.com/stacksjs/stx/commit/7a77523)) _(by Chris Breuer <chris@stacksjs.com>)_
+- await worker registration instead of racing timer delays ([3319960](https://github.com/stacksjs/stx/commit/3319960)) _(by Chris Breuer <chris@stacksjs.com>)_
+- check packed mouse sources with strict indexed access ([9b67e8d](https://github.com/stacksjs/stx/commit/9b67e8d)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.567 ([6b1df26](https://github.com/stacksjs/stx/commit/6b1df26)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.565...v0.2.566)
 
 ## ✨ Features
