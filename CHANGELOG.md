@@ -1,5 +1,22 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.573...v0.2.574)
+
+## 🐛 Bug Fixes
+
+- bridge only lexically free server values ([a375f39](https://github.com/stacksjs/stx/commit/a375f39)) _(by Chris Breuer <chris@stacksjs.com>)_
+- bridge server data into signal components ([3a381f4](https://github.com/stacksjs/stx/commit/3a381f4)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.574 ([8d6f9b5](https://github.com/stacksjs/stx/commit/8d6f9b5)) _(by Chris Breuer <chris@stacksjs.com>)_
+- record the Pantry-managed release runtime ([cecd6ea](https://github.com/stacksjs/stx/commit/cecd6ea)) _(by Chris Breuer <chris@stacksjs.com>)_
+- integrate the published STX mobile fixes into component data bridging ([d7e2b7c](https://github.com/stacksjs/stx/commit/d7e2b7c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.572...v0.2.573)
 
 ## 🐛 Bug Fixes
