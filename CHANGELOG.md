@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.569...v0.2.570)
+
+## ✅ Tests
+
+- inject the config loader instead of mocking bunfig for the whole run ([33b256f](https://github.com/stacksjs/stx/commit/33b256f)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.570 ([9b5f83f](https://github.com/stacksjs/stx/commit/9b5f83f)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.568...v0.2.569)
 
 ## 🐛 Bug Fixes
