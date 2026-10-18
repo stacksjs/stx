@@ -27,6 +27,27 @@ describe('native chat components and controller', () => {
     expect(chat.draft()).toBe('Question about tomorrow')
   })
 
+  it('shares one list request between components loading at once, and reloads after a send', async () => {
+    let lists = 0
+    const chat = createChat({ selfId: () => 1, scopeKey: () => 'one', request: async (url) => {
+      if (url === '/messages') { lists++; return Response.json({ contacts: [contact], conversations: [], max_length: 4000 }) }
+      if (url.endsWith('/conversations')) return Response.json({ id: 'thread' })
+      if (url.endsWith('/read')) return Response.json({ read: true })
+      if (url.endsWith('/messages')) return Response.json({ id: 9 })
+      return Response.json({ messages: [message], has_more: false })
+    } })
+    // A launcher, an inbox and its first refresh, all on mount.
+    await Promise.all([chat.load(), chat.load(), chat.refresh()])
+    expect(lists).toBe(1)
+    await chat.open(contact)
+    chat.draft.set('Tomorrow?')
+    const pending = chat.load()
+    await chat.send()
+    await pending
+    // The send waited out the earlier load and read the list again.
+    expect(lists).toBe(3)
+  })
+
   it('initializes auth watchers at mount and clears threads when a contact is revoked', async () => {
     let mounted = false, allowed = true
     const chat = createChat({
