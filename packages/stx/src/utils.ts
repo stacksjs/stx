@@ -17,7 +17,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 // Import from expressions
-import { extractAndStripCssImports, extractBridgeData, injectBrowserCoreAutoImports, processClientScript, renderVendorStyleTags } from './client-script'
+import { extractAndStripCssImports, extractBridgeData, generateServerDataBridge, injectBrowserCoreAutoImports, processClientScript, renderVendorStyleTags } from './client-script'
 import {
   COMPONENT_CLIENT_FACTORIES_CONTEXT_KEY,
   componentClientFactoriesRegisteredSince,
@@ -2142,11 +2142,19 @@ export async function renderComponentWithSlot(
         if (!scriptMatch) return script
 
         const [, attrs, rawContent] = scriptMatch
-        const { vendorStyleTags, factoryBody } = await buildComponentIsland(
+        const island = await buildComponentIsland(
           rawContent,
           componentFilePath,
           options.buildMode === 'compile',
         )
+        // The compiled island is shared by script source, never by server
+        // values. Bridge after that memo lookup, inside EACH invocation, so
+        // different instances/requests keep their own values and JSON objects.
+        const bridge = generateServerDataBridge(island.clientCode, extractBridgeData(componentContext))
+        const { vendorStyleTags } = island
+        const factoryBody = bridge
+          ? `function(__scopeId) {\n${bridge}\nreturn (${island.factoryBody})(__scopeId);\n}`
+          : island.factoryBody
         const factoryId = hydrateTrigger
           ? null
           : registerComponentClientFactory(parentContext, factoryBody)
@@ -2821,6 +2829,8 @@ interface ComponentIsland {
   vendorStyleTags: string
   /** `function(__scopeId) { … }` — the scope id is applied at the call site. */
   factoryBody: string
+  /** Compiled bindings used to select referenced, non-shadowed server values. */
+  clientCode: string
   /** Files the artifact was built from; re-stat'ed before a memo hit is served. */
   deps: DepSnapshot[]
 }
@@ -2957,6 +2967,7 @@ finally {
   const island: ComponentIsland = {
     vendorStyleTags,
     factoryBody,
+    clientCode: content,
     deps: snapshotDeps([...bundleInputs, ...cssExtraction.styles.map(style => style.resolvedPath)]),
   }
   // Remember only a build that succeeded. Both failure modes produce a result
