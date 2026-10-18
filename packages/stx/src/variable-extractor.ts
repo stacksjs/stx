@@ -1493,7 +1493,8 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
     }
 
     // Convert ES import statements to require() with resolved paths
-    if (line.startsWith('import ') || line === 'import' || line.startsWith('import{')) {
+    // Bun compacts bare imports to import"./setup" even without minification.
+    if (line.startsWith('import ') || line === 'import' || line.startsWith('import{') || /^import['"]/.test(line)) {
       /*
        * An import may span several lines, which is how anybody writes one with
        * more than three names:
@@ -1521,7 +1522,7 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
 
       const defaultImportMatch = statement.match(/^import\s+(\w+)\s+from\s+['"](.+?)['"]/)
       const namedImportMatch = statement.match(/^import\s+\{([^}]*)\}\s+from\s+['"](.+?)['"]/)
-      const sideEffectMatch = statement.match(/^import\s+['"](.+?)['"]/)
+      const sideEffectMatch = statement.match(/^import\s*['"](.+?)['"]/)
       const line_ = statement
 
       // Resolve relative paths against the template's directory

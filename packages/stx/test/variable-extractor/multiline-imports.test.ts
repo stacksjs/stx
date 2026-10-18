@@ -62,6 +62,21 @@ describe('isCompleteImport', () => {
 const SIDEBAR_FIXTURE = relative(process.cwd(), resolve(import.meta.dir, '../fixtures/server-imports/sidebar'))
 
 describe('convertToCommonJS with multi-line imports', () => {
+  it('runs a side-effect import compacted by Bun before reading its registered value', async () => {
+    const context: Record<string, unknown> = {}
+    const filePath = resolve(import.meta.dir, '../fixtures/server-imports/theme.stx')
+
+    await extractVariables(
+      `import { labels } from './side-effect-state'
+import './side-effect-register'
+const label = labels.get('appearance')`,
+      context,
+      filePath,
+    )
+
+    expect(context.label).toBe('Appearance')
+  })
+
   it('resolves project-root tilde imports in server scripts', async () => {
     const context: Record<string, unknown> = {}
 
