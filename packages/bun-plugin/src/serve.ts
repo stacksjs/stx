@@ -143,6 +143,9 @@ const defaultStxModule = import('@stacksjs/stx')
 // below can't drift (the drift is what caused #1784).
 const REACTIVE_TEMPLATE_DIRECTIVE_RE = /@for|:for|@if|:if|@else|:else|x-for|x-if|x-else/
 
+/** Pages already warned about having no SPA swap container (one warning per path). */
+const warnedMissingContainer = new Set<string>()
+
 /**
  * Extract real top-level `<script server>` elements without matching tag-like
  * text inside HTML comments or another script body. A regex over the whole
@@ -4475,14 +4478,18 @@ function __stxOverlay(errs){
                     // somewhere else, duplicating the page chrome. See #1853.
                     const containerSelector = (stxConfig as any)?.router?.container || 'main'
                     const containerRegion = findContainerRegion(fragment, containerSelector)
-                    if (!containerRegion) {
+                    const containerPath = new URL(req.url).pathname
+                    if (!containerRegion && !warnedMissingContainer.has(containerPath)) {
                       // Previously this fell through silently and the WHOLE body
                       // shipped as the "fragment", which the client could not swap
                       // — so every link on the page did a full document load, at
                       // HTTP 200, with nothing said. The rule was structural and
                       // unenforced, so apps encoded it as prose in their layouts.
+                      // Once per page: prefetches and every visit repeated it, and
+                      // a log full of the same line hides the next new one.
+                      warnedMissingContainer.add(containerPath)
                       console.warn(
-                        `[stx] No SPA swap container matching "${containerSelector}" in ${new URL(req.url).pathname}. `
+                        `[stx] No SPA swap container matching "${containerSelector}" in ${containerPath}. `
                         + `SPA navigation is disabled for links on this page; the full document will load instead. `
                         + `Add a matching element, or point router.container at one this page has.`,
                       )
