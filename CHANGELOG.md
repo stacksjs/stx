@@ -1,5 +1,40 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.564...v0.2.565)
+
+## ✨ Features
+
+- **native**: share map tilt and colored pin component props ([28dfdb4](https://github.com/stacksjs/stx/commit/28dfdb4)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- preserve canonical ambient types and recording acknowledgement forwarding ([7441cba](https://github.com/stacksjs/stx/commit/7441cba)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **stx**: evaluate compact side-effect server imports ([315e531](https://github.com/stacksjs/stx/commit/315e531)) _(by Chris Breuer <chris@stacksjs.com>)_
+- type demand-bundled mouse tracking from its implementation ([e7f9222](https://github.com/stacksjs/stx/commit/e7f9222)) _(by Chris Breuer <chris@stacksjs.com>)_
+- preserve recording ownership across native STX calls ([d8fa5c0](https://github.com/stacksjs/stx/commit/d8fa5c0)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **docs**: publish the BunPress output on Netlify ([ea439e6](https://github.com/stacksjs/stx/commit/ea439e6)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- reproduce recording identity loss in native bridge forwarding ([f8cd94c](https://github.com/stacksjs/stx/commit/f8cd94c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 💚 Continuous Integration
+
+- provision STX through Pantry and gate exact release sources ([f84b43f](https://github.com/stacksjs/stx/commit/f84b43f)) _(by Chris Breuer <chris@stacksjs.com>)_
+- allow normal gates on an exact source candidate ([ad69755](https://github.com/stacksjs/stx/commit/ad69755)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.565 ([325a3dc](https://github.com/stacksjs/stx/commit/325a3dc)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' into codex/recording-ownership ([d3e633c](https://github.com/stacksjs/stx/commit/d3e633c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.563...v0.2.564)
 
 ## 🐛 Bug Fixes
