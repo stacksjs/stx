@@ -611,8 +611,12 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
             var shorthandFn = parseEventShorthand(value, eventCapturedScope);
             if (shorthandFn) { shorthandFn(handlerEvent); return; }
             // Check if any scope values are signals (x-data pattern)
+            // A derived value reads like a signal in a handler, as it does in a
+            // binding: \`pick(selectedPackage)\` passes the package. Leaving it
+            // out handed the handler the derived's getter function, so
+            // \`selectedPackage.trainer_id\` was undefined with nothing said.
             var hasSignals = Object.values(eventCapturedScope).some(function(v) {
-              return v && typeof v === 'function' && v._isSignal;
+              return v && typeof v === 'function' && (v._isSignal || v._isDerived);
             });
             // Only use signal read/write proxy for DIRECT assignment expressions
             // like "count = count + 1" or "open = !open". Function calls like
@@ -621,7 +625,7 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
             var isDirectAssignment = hasSignals && /^[a-zA-Z_$]\\w*\\s*=/.test(value.trim()) && !value.trim().startsWith('==');
             if (isDirectAssignment) {
               var getVars = Object.keys(eventCapturedScope).map(function(k) {
-                return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && __s["' + k + '"]._isSignal ? __s["' + k + '"]() : __s["' + k + '"]';
+                return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && (__s["' + k + '"]._isSignal || __s["' + k + '"]._isDerived) ? __s["' + k + '"]() : __s["' + k + '"]';
               }).join(';');
               var setVars = Object.keys(eventCapturedScope).filter(function(k) {
                 var v = eventCapturedScope[k];
@@ -647,11 +651,11 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
                 // handler like \`pick(option.value)\` receives the whole item.
                 // It is not an error, so it lands silently: the wrong value is
                 // stored and only surfaces much later.
-                if (v && typeof v === 'function' && v._isSignal && !v._isStxLoopItem
+                if (v && typeof v === 'function' && ((v._isSignal && !v._isStxLoopItem) || v._isDerived)
                   && (expressionCallsSignal(value, k) || expressionUsesSignalApi(value, k))) {
                   return 'var ' + k + ' = __s["' + k + '"]';
                 }
-                return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && __s["' + k + '"]._isSignal ? __s["' + k + '"]() : __s["' + k + '"]';
+                return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && (__s["' + k + '"]._isSignal || __s["' + k + '"]._isDerived) ? __s["' + k + '"]() : __s["' + k + '"]';
               }).join(';');
               var fn3 = __stxCompile(['__s', '$event'], unwrapVars + ';' + value);
               fn3(eventCapturedScope, handlerEvent);
