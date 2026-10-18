@@ -39,7 +39,7 @@ import type { ParsedEvent, EventModifiers } from './events'
 import { asInvocableStatement, listensPassively } from './events'
 import { transformStoreImports } from './store-imports'
 import { declaresClientIdentifier } from './client-declarations'
-import { declaredNames, parameterAnalysis } from './client-parameter-bindings'
+import { declaredNames, parameterAnalysis, unboundNames } from './client-parameter-bindings'
 import { findInterpolationEnd, stripCommentsAndLiterals } from './strip-literals'
 // Re-exported from its old home. It moved to `strip-literals.ts` so the
 // editor-facing extractor could share it without pulling the bundler in behind
@@ -953,25 +953,6 @@ export function extractBridgeData(context: Record<string, unknown>): Record<stri
 }
 
 /**
- * Does the client script use `name` as a free identifier?
- *
- * Anything reached through a `.` is somebody else's property, not this binding:
- * `session.token()` names a method on a store, and treating it as a reference
- * published the server's unrelated `token` into the page. `#` covers private
- * fields for the same reason.
- *
- * An object-literal KEY (`{ token: 1 }`) still counts, since it is
- * indistinguishable here from the shorthand `{ token }` — that errs toward
- * publishing, which is the pre-existing behaviour rather than a new leak.
- *
- * `name` is validated as an identifier by the caller, so it carries no regex
- * metacharacters.
- */
-function referencesIdentifier(searchable: string, name: string): boolean {
-  return new RegExp(`(?<![.#\\w$])${name}(?![\\w$])`).test(searchable)
-}
-
-/**
  * Names that read like a credential. Bridging one is usually a mistake — the
  * value lands in the response body, where HAR exports, disk cache, "save page
  * as", session-replay tools and a screenshot of view-source all capture it,
@@ -1022,10 +1003,13 @@ export function generateServerDataBridge(code: string, serverData?: Record<strin
   // published — a word in a comment, a segment of a URL — and the value went
   // into the response body whether or not any client code could use it
   // (stacksjs/stx#1831).
-  const searchable = stripCommentsAndLiterals(code)
+  const referenced = unboundNames(code, new Set(Object.keys(serverData)))
   const declaredPayload = serverData.__stxDeclaredPayload === true
   const lines: string[] = []
-  for (const [name, value] of Object.entries(serverData)) {
+  // Props supplied explicitly and their equal defaults can arrive in a
+  // different insertion order. Equal data must produce the same factory.
+  const entries = Object.entries(serverData).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
+  for (const [name, value] of entries) {
     if (!/^[A-Za-z_$][\w$]*$/.test(name))
       continue
     // The documented opt-out, re-checked here. extractBridgeData already drops
@@ -1034,15 +1018,14 @@ export function generateServerDataBridge(code: string, serverData?: Record<strin
     // from whichever path assembles the bridge (#1831).
     if (name.startsWith('__') || name.startsWith('$'))
       continue
-    // Only bridge identifiers the client actually references as a NAME.
-    // A word boundary alone also matched a property, so reading an unrelated
-    // `session.token()` published the server's `token` binding beside it.
+    // Only free identifiers cross. A same-named local in a callback, a
+    // parameter, a property or an object key does not read the server value.
     //
     // Skipped when the page DECLARED its payload: the declaration is the
     // contract, so a declared name is published whether or not the client
     // mentions it. Requiring both would reintroduce exactly the uncertainty
     // the declaration exists to remove (#1868).
-    if (!declaredPayload && !referencesIdentifier(searchable, name))
+    if (!declaredPayload && !referenced.has(name))
       continue
     // …and does not itself declare it at the top level (never clobber a
     // client-owned name). A nested declaration only shadows, so it no longer

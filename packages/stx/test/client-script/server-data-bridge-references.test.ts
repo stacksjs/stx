@@ -35,6 +35,7 @@ import { describe, expect, it, spyOn } from 'bun:test'
 import { extractBridgeData, generateServerDataBridge, stripCommentsAndLiterals } from '../../src/client-script'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
+import { scrapedBridgeNames } from '../../src/stx-virtual-ts'
 
 /** Is `value` published into the page for this client script? */
 function bridges(code: string, data: Record<string, unknown> = { value: 'SECRET' }): boolean {
@@ -114,6 +115,54 @@ describe('a mention is not a reference', () => {
 
   it('ignores a name that appears nowhere', () => {
     expect(bridges('const n = state(0)')).toBe(false)
+  })
+})
+
+describe('lexical ownership and deterministic component factories', () => {
+  it('does not publish values owned only by a function or its parameters', () => {
+    expect(bridges('function render() { const value = 1; return value }')).toBe(false)
+    expect(bridges('function render(value) { return value }')).toBe(false)
+    expect(bridges('items.map(({ value }) => value)')).toBe(false)
+  })
+
+  it('keeps var declarations local to their function across nested blocks', () => {
+    expect(bridges('function render() { if (ready) { var value = 1 } return value }')).toBe(false)
+  })
+
+  it('still publishes a free use outside a different function that shadows it', () => {
+    const code = 'function render() { const value = 1; return value }\nconst initial = state(value)'
+    expect(bridges(code)).toBe(true)
+  })
+
+  it('keeps a loop-head binding inside its own loop', () => {
+    expect(bridges('for (const value of rows) { show(value) }')).toBe(false)
+    expect(bridges('for (const value of rows) { show(value) }\nconst initial = state(value)')).toBe(true)
+    expect(bridges('for (const value of rows) show(value);\nconst initial = state(value)')).toBe(true)
+  })
+
+  it('distinguishes object keys from shorthand references', () => {
+    expect(bridges('const initial = state({ value: 1 })')).toBe(false)
+    expect(bridges('const initial = state({ value })')).toBe(true)
+  })
+
+  it('emits identical bridge bytes for equal data in a different insertion order', () => {
+    const code = 'read(disabled, value, options)'
+    const supplied = generateServerDataBridge(code, { disabled: false, value: '', options: [] })
+    const defaults = generateServerDataBridge(code, { value: '', options: [], disabled: false })
+    expect(supplied).toBe(defaults)
+  })
+
+  it('keeps the editor warning aligned with values actually bridged at runtime', () => {
+    const server = 'const value = 42'
+    const local = 'function render() { const value = 1; return value }'
+    expect(scrapedBridgeNames(server, local)).toEqual([])
+    expect(bridges(local)).toBe(false)
+    const outside = `${local}\nconst initial = state(value)`
+    expect(scrapedBridgeNames(server, outside)).toEqual(['value'])
+    expect(bridges(outside)).toBe(true)
+    const loop = 'for (const value of rows) { show(value) }\nconst initial = state(value)'
+    expect(scrapedBridgeNames(server, loop)).toEqual(['value'])
+    expect(bridges(loop)).toBe(true)
   })
 })
 

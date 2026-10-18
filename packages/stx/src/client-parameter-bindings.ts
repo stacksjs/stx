@@ -2,9 +2,10 @@
 import { stripCommentsAndLiterals } from './strip-literals'
 
 interface Token { text: string, start: number, end: number }
-interface Scope { start: number, end: number, names: Set<string> }
-interface Site { name: string, token: number, file?: boolean }
-interface Analysis { code: string, scopes: Scope[], declarations: Set<string>, sites: Site[], tokens: Token[], pairs: Map<number, number> }
+interface Scope { start: number, end: number, bodyStart: number, functionBody: boolean, names: Set<string> }
+interface Site { name: string, token: number, file?: boolean, functionScoped?: boolean }
+interface LoopScope { headStart: number, headEnd: number, start: number, end: number }
+interface Analysis { code: string, scopes: Scope[], loops: LoopScope[], declarations: Set<string>, sites: Site[], tokens: Token[], pairs: Map<number, number> }
 let cachedSource = ''
 let cached: Analysis | undefined
 
@@ -57,13 +58,13 @@ function analyze(source: string): Analysis {
   }
   // Where each declared name is declared, for unboundNames.
   const sites: Site[] = []
-  function pattern(start: number, end: number, names: Set<string>): void {
+  function pattern(start: number, end: number, names: Set<string>, functionScoped = false): void {
     if (tokens[start]?.text === '...') start++
     if (start >= end) return
     const first = tokens[start].text
     if (identifier.test(first)) {
       names.add(first)
-      if (names === declarations) sites.push({ name: first, token: start })
+      if (names === declarations) sites.push({ name: first, token: start, functionScoped })
       return
     }
     if (first !== '{' && first !== '[') return
@@ -78,7 +79,7 @@ function analyze(source: string): Analysis {
           if (['(', '[', '{'].includes(tokens[index].text) && pairs.has(index)) index = pairs.get(index)!
         }
       }
-      pattern(binding, finish, names)
+      pattern(binding, finish, names, functionScoped)
     }
   }
   function parameterNames(start: number, end: number): Set<string> {
@@ -111,7 +112,7 @@ function analyze(source: string): Analysis {
       else continue
       const body = index + 1
       const end = tokens[body]?.text === '{' && pairs.has(body) ? tokens[pairs.get(body)!].end : expressionEnd(body)
-      scopes.push({ start: tokens[begin].start, end, names })
+      scopes.push({ start: tokens[begin].start, end, bodyStart: tokens[body]?.start ?? end, functionBody: true, names })
     }
     else if (tokens[index].text === '(' && pairs.has(index)) {
       const previous = tokens[index - 1]?.text
@@ -124,7 +125,7 @@ function analyze(source: string): Analysis {
         while (body < tokens.length && !['{', '=>', ';', '='].includes(tokens[body].text)) body++
       }
       if (tokens[body]?.text !== '{' || !pairs.has(body)) continue
-      scopes.push({ start: tokens[index].start, end: tokens[pairs.get(body)!].end, names: parameterNames(index + 1, close) })
+      scopes.push({ start: tokens[index].start, end: tokens[pairs.get(body)!].end, bodyStart: tokens[body].start, functionBody: previous !== 'catch', names: parameterNames(index + 1, close) })
     }
   }
   // Every name the script declares, wherever it is declared.
@@ -154,6 +155,23 @@ function analyze(source: string): Analysis {
     }
     return index
   }
+  // A let/const in a for head belongs to the loop, not the surrounding
+  // function/file. Keeping that range separate preserves a free use after it.
+  const loops: LoopScope[] = []
+  for (let index = 0; index < tokens.length; index++) {
+    if (tokens[index].text !== 'for') continue
+    const head = tokens[index + 1]?.text === 'await' ? index + 2 : index + 1
+    if (tokens[head]?.text !== '(' || !pairs.has(head)) continue
+    const close = pairs.get(head)!
+    const body = close + 1
+    const finish = tokens[body]?.text === '{' && pairs.has(body)
+      ? pairs.get(body)!
+      : declarationEnd(body)
+    const end = tokens[finish]?.text === ';' || tokens[finish]?.text === '}'
+      ? tokens[finish].end
+      : tokens[Math.max(body, finish - 1)]?.end ?? code.length
+    loops.push({ headStart: head, headEnd: close, start: tokens[head].start, end })
+  }
   for (let index = 0; index < tokens.length; index++) {
     const token = tokens[index].text
     // `obj.var`, `{ let: 1 }` - a property name, not a keyword.
@@ -178,7 +196,7 @@ function analyze(source: string): Analysis {
         else if (at < end && inType && text === '<') angles++
         else if (at < end && inType && text === '>' && angles > 0) angles--
         else if (at === end || (text === ',' && angles === 0)) {
-          pattern(begin, at, declarations)
+          pattern(begin, at, declarations, token === 'var')
           begin = at + 1
           inType = false
           initialised = false
@@ -218,7 +236,7 @@ function analyze(source: string): Analysis {
   }
 
   cachedSource = source
-  cached = { code, scopes, declarations, sites, tokens, pairs }
+  cached = { code, scopes, loops, declarations, sites, tokens, pairs }
   return cached
 }
 
@@ -239,18 +257,16 @@ export function declaredNames(source: string): Set<string> {
 /**
  * Which of `candidates` the source uses without binding them itself: a
  * mention that no declaration of the same name encloses, and no parameter
- * shadows. A declaration binds the innermost braces it is in (or the file),
- * which is exact for `let`, `const` and `class` and narrower than the truth
- * for `var` and `function`, so a mention can only ever be kept wrongly, never
- * dropped. A property (`x.name`), a key (`{ name: … }`) and a declaration
- * itself are not uses.
+ * shadows. Block declarations bind their block, loop-head declarations their
+ * loop, and var declarations their enclosing function (or the file). A
+ * property (`x.name`), a key (`{ name: … }`) and a declaration itself are not uses.
  *
  * What it is for: a bundle that inlined a module refers to that module's
  * functions by name, and those mentions must not pull in a second, global
  * copy of the same functions (composable-loader's reachability scan).
  */
 export function unboundNames(source: string, candidates: ReadonlySet<string>): Set<string> {
-  const { scopes, sites, tokens, pairs } = analyze(source)
+  const { scopes, loops, sites, tokens, pairs } = analyze(source)
   // The innermost '{' enclosing each token, or -1 for the file.
   const enclosing = Array.from({ length: tokens.length }, () => -1)
   const open: number[] = []
@@ -266,7 +282,18 @@ export function unboundNames(source: string, candidates: ReadonlySet<string>): S
     if (!candidates.has(site.name)) continue
     declaredAt.add(site.token)
     const brace = site.file ? -1 : enclosing[site.token]!
-    const range: [number, number] = brace === -1 ? [0, Number.POSITIVE_INFINITY] : [tokens[brace].start, tokens[pairs.get(brace)!].end]
+    let range: [number, number] = brace === -1 ? [0, Number.POSITIVE_INFINITY] : [tokens[brace].start, tokens[pairs.get(brace)!].end]
+    if (site.functionScoped) {
+      const at = tokens[site.token].start
+      const owner = scopes.filter(scope => scope.functionBody && at >= scope.bodyStart && at < scope.end)
+        .sort((a, b) => (a.end - a.bodyStart) - (b.end - b.bodyStart))[0]
+      range = owner ? [owner.bodyStart, owner.end] : [0, Number.POSITIVE_INFINITY]
+    }
+    else if (!site.file) {
+      const owner = loops.filter(loop => site.token > loop.headStart && site.token < loop.headEnd)
+        .sort((a, b) => (a.headEnd - a.headStart) - (b.headEnd - b.headStart))[0]
+      if (owner) range = [owner.start, owner.end]
+    }
     const list = ranges.get(site.name)
     if (list) list.push(range)
     else ranges.set(site.name, [range])
@@ -289,7 +316,7 @@ export function unboundNames(source: string, candidates: ReadonlySet<string>): S
     const name = tokens[index].text
     if (!candidates.has(name) || found.has(name) || declaredAt.has(index) || inImport.has(index)) continue
     const previous = tokens[index - 1]?.text
-    if (previous === '.' && tokens[index - 2]?.text !== '..') continue
+    if (previous === '#' || previous === '.' && tokens[index - 2]?.text !== '..') continue
     if (tokens[index + 1]?.text === ':' && (previous === '{' || previous === ',')) continue
     const at = tokens[index].start
     if (ranges.get(name)?.some(([from, to]) => at >= from && at < to)) continue

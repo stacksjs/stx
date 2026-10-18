@@ -46,6 +46,7 @@
 import { BROWSER_CORE_IMPORTS } from './browser-core-imports'
 import path from 'node:path'
 import { declaresClientIdentifier } from './client-declarations'
+import { unboundNames } from './client-parameter-bindings'
 import { parseLoopBinding } from './loop-binding'
 import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
@@ -1245,7 +1246,8 @@ export function scrapedBridgeNames(serverCode: string, clientCode: string): stri
   if (extractClientPayloadNames(serverCode) !== null)
     return []
 
-  const searchable = stripCommentsAndLiterals(clientCode)
+  const serverNames = collectTopLevelDeclarations(serverCode)
+  const referenced = unboundNames(clientCode, new Set(serverNames))
   // The runtime destructures these from `window.stx` into every client block,
   // so the client already has them and the bridge never publishes one. Naming
   // `state` as a value that "reaches this block" was both wrong and actively
@@ -1253,15 +1255,14 @@ export function scrapedBridgeNames(serverCode: string, clientCode: string): stri
   // own (#1908).
   const provided = new Set<string>(STX_RUNTIME_GLOBALS)
 
-  return collectTopLevelDeclarations(serverCode).filter((name) => {
+  return serverNames.filter((name) => {
     if (provided.has(name))
       return false
     // A name the client block declares for itself is not carried in either.
-    if (collectBlockDeclarations(clientCode).includes(name))
+    if (declaresClientIdentifier(clientCode, name))
       return false
-    // The bridge's own rule: a free identifier, not a property access.
-    const free = new RegExp(`(?<![.#\\w$])${name}(?![\\w$])`)
-    return free.test(searchable)
+    // The runtime uses the same lexical rule, including local shadowing.
+    return referenced.has(name)
   })
 }
 
