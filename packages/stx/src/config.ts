@@ -714,6 +714,7 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
         name: 'ui',
         cwd: path.join(effectiveCwd, 'config'),
         defaultConfig,
+        errorPolicy: 'throw',
         verbose: false,
       })
       const rootResult = await loadConfigWithResult({
@@ -721,6 +722,7 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
         alias: 'ui',
         cwd: effectiveCwd, // Load config from the requested directory, not the stx package
         defaultConfig: uiResult.config,
+        errorPolicy: 'throw',
         verbose: false,
       })
       loaded = rootResult.config
@@ -731,6 +733,9 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
         alias: 'ui',
         cwd: effectiveCwd, // Load config from the requested directory, not the stx package
         defaultConfig,
+        // Missing optional config uses defaults; an existing broken file must
+        // fail instead of silently compiling the app with different settings.
+        errorPolicy: 'throw',
         verbose: false,
       })
       loaded = configResult.config

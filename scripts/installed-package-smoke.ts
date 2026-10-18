@@ -30,7 +30,7 @@ for (const directory of ['desktop', 'sanitizer', 'router', 'bun-plugin', 'stx', 
   const packageDir = join(root, 'packages', directory)
   const manifest = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8'))
   const archive = join(archives, `${directory}.tgz`)
-  run(['bun', 'pm', 'pack', '--ignore-scripts', '--filename', archive], packageDir)
+  run([process.execPath, 'pm', 'pack', '--ignore-scripts', '--filename', archive], packageDir)
   // Keep each archive's bytes unchanged. Normal Bun workspaces resolve this
   // unpublished cohort together, without reaching for its not-yet-public
   // transitive versions or linking any file from the original checkout.
@@ -49,8 +49,8 @@ writeFileSync(join(smokeRoot, 'package.json'), JSON.stringify({
 writeFileSync(join(smokeRoot, 'bunfig.toml'), '[install]\nlinker = "hoisted"\n')
 // Install the actual publishable archives. Checkout symlinks accidentally make
 // unshipped source files visible and cannot prove a published consumer works.
-run(['bun', 'install'])
-run(['bun', 'install', '--frozen-lockfile'])
+run([process.execPath, 'install'])
+run([process.execPath, 'install', '--frozen-lockfile'])
 
 writeFileSync(join(smokeRoot, 'pages', 'index.stx'), `<script server>
 export const products = [
@@ -77,7 +77,7 @@ export const products = [
 </html>`)
 
 
-run(['bun', '-e', `
+run([process.execPath, '-e', `
 const stx = await import('@stacksjs/stx')
 const expressions = await import('@stacksjs/stx/expressions')
 const tokenizer = await import('@stacksjs/stx/parser/tokenizer')
@@ -119,7 +119,7 @@ writeFileSync(join(smokeRoot, 'mouse-tsconfig.json'), JSON.stringify({
   },
   files: ['mouse-consumer.ts'],
 }, null, 2))
-run(['bun', '--bun', join(smokeRoot, 'node_modules/typescript/bin/tsc'), '--project', 'mouse-tsconfig.json'])
+run([process.execPath, '--bun', join(smokeRoot, 'node_modules/typescript/bin/tsc'), '--project', 'mouse-tsconfig.json'])
 
 writeFileSync(join(smokeRoot, 'mouse-good.stx'), `<script client>
 const mouse = useMouse({ touch: false, resetOnLeave: true })
@@ -134,7 +134,7 @@ writeFileSync(join(smokeRoot, 'mouse-bad.stx'), `<script client>
 useMouse({ touch: 'yes' })
 useMouse().subscribe(point => console.log(point.clientX.toUpperCase(), point.nonexistent))
 </script>`)
-run(['bun', '-e', `
+run([process.execPath, '-e', `
 const { typecheckStxFiles } = await import('@stacksjs/stx/typecheck')
 const { resolve } = await import('node:path')
 const good = resolve('mouse-good.stx')
@@ -148,8 +148,8 @@ if (!invalid.some(d => d.code === 2322) || invalid.filter(d => d.code === 2339).
   throw new Error('Published mouse types failed to reject invalid options/properties: ' + JSON.stringify(invalid))
 `])
 
-run(['bun', 'node_modules/@stacksjs/stx/dist/cli.js', 'build', '--pages', 'pages', '--out', 'dist', '--no-minify'])
-run(['bun', '-e', `
+run([process.execPath, 'node_modules/@stacksjs/stx/dist/cli.js', 'build', '--pages', 'pages', '--out', 'dist', '--no-minify'])
+run([process.execPath, '-e', `
 const html = await Bun.file('dist/index.html').text()
 if (!html.includes('Lumen & Lather')) throw new Error('missing page title')
 if (!html.includes('Cedar Wick Candle')) throw new Error('missing rendered product')
