@@ -111,9 +111,8 @@ export function useMouse(options: MouseOptions = {}): MouseRef {
 
   const handleMouseMove = (e: MouseEvent) => handleMove(e)
   const handleTouchMove = (e: TouchEvent) => {
-    const touch = e.touches[0]
-    if (touch) {
-      handleMove(touch, true)
+    if (e.touches.length > 0) {
+      handleMove(e.touches[0], true)
     }
   }
 
@@ -282,9 +281,8 @@ export function useMouseInElement(
 
   const handleMouseMove = (e: MouseEvent) => handleMove(e)
   const handleTouchMove = (e: TouchEvent) => {
-    const touch = e.touches[0]
-    if (touch) {
-      handleMove(touch, true)
+    if (e.touches.length > 0) {
+      handleMove(e.touches[0], true)
     }
   }
 
