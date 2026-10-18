@@ -7,16 +7,27 @@ import { OFFLINE_REGISTER_SCRIPT, registerOfflineWorker } from '../../src/offlin
 import { applyOfflineUpdate, onOfflineUpdateReady } from '../../src/composables/use-offline'
 
 const g = globalThis as any
-const saved = { navigator: globalThis.navigator, raf: g.requestAnimationFrame }
+const saved = { navigator: globalThis.navigator, raf: g.requestAnimationFrame, readyState: Object.getOwnPropertyDescriptor(document, 'readyState') }
 afterEach(() => {
   Object.defineProperty(globalThis, 'navigator', { value: saved.navigator, configurable: true, writable: true })
   g.requestAnimationFrame = saved.raf
+  if (saved.readyState) Object.defineProperty(document, 'readyState', saved.readyState)
+  else delete (document as any).readyState
   delete g.window.stxOffline
 })
 
 class Target {
   listeners: Record<string, Array<(event: any) => void>> = {}
-  addEventListener(type: string, fn: (event: any) => void) { (this.listeners[type] ||= []).push(fn) }
+  listening: Record<string, Array<() => void>> = {}
+  addEventListener(type: string, fn: (event: any) => void) {
+    (this.listeners[type] ||= []).push(fn)
+    for (const ready of this.listening[type] || []) ready()
+    delete this.listening[type]
+  }
+  whenListening(type: string): Promise<void> {
+    if (this.listeners[type]?.length) return Promise.resolve()
+    return new Promise(resolve => { (this.listening[type] ||= []).push(resolve) })
+  }
   emit(type: string, event: any = {}) { for (const fn of this.listeners[type] || []) fn(event) }
 }
 
@@ -40,11 +51,13 @@ function setUp(options: { controller: boolean, waiting?: boolean }) {
     return registration
   }
   Object.defineProperty(globalThis, 'navigator', { configurable: true, writable: true, value: { serviceWorker: container } })
-  g.requestAnimationFrame = (fn: () => void) => setTimeout(fn, 0)
-  return { container, registration }
+  Object.defineProperty(document, 'readyState', { configurable: true, get: () => 'complete' })
+  const frames: Array<() => void> = []
+  g.requestAnimationFrame = (fn: () => void) => { frames.push(fn); return frames.length }
+  const paint = () => { for (const frame of frames.splice(0)) frame() }
+  const registered = async () => { paint(); await registration.whenListening('updatefound') }
+  return { container, registration, paint, registered }
 }
-
-const settle = () => new Promise(resolve => setTimeout(resolve, 10))
 
 describe('the register tag', () => {
   it('ships the registration as a script that calls it with the worker\'s path', () => {
@@ -55,10 +68,12 @@ describe('the register tag', () => {
   })
 
   it('registers after the first frame on a return visit, never in front of it', async () => {
-    const { container } = setUp({ controller: true })
+    const { container, paint, registered } = setUp({ controller: true })
     registerOfflineWorker('/_stx/sw.js')
     expect(container.registered).toEqual([])
-    await settle()
+    paint()
+    expect(container.registered).toEqual([])
+    await registered()
     expect(container.registered).toEqual(['/_stx/sw.js'])
   })
 
@@ -74,11 +89,11 @@ describe('the register tag', () => {
   })
 
   it('says a new build is ready, and lets it take over when the page loads or hides', async () => {
-    const { registration } = setUp({ controller: true, waiting: true })
+    const { registration, registered } = setUp({ controller: true, waiting: true })
     registerOfflineWorker('/_stx/sw.js')
     let told = 0
     onOfflineUpdateReady(() => told++)
-    await settle()
+    await registered()
     expect(g.window.stxOffline.updateReady).toBe(true)
     expect(told).toBe(1)
     expect(registration.waiting.messages).toEqual([{ type: 'stx:activate-update', reason: 'load' }])
@@ -95,9 +110,9 @@ describe('the register tag', () => {
   })
 
   it('hears of a build found while the page is open', async () => {
-    const { registration } = setUp({ controller: true })
+    const { registration, registered } = setUp({ controller: true })
     registerOfflineWorker('/_stx/sw.js')
-    await settle()
+    await registered()
     expect(g.window.stxOffline.updateReady).toBe(false)
     const installing = fakeWorker('installing')
     registration.installing = installing
@@ -115,10 +130,10 @@ describe('the register tag', () => {
   })
 
   it('applies an update on request', async () => {
-    const { registration } = setUp({ controller: true, waiting: true })
+    const { registration, registered } = setUp({ controller: true, waiting: true })
     registerOfflineWorker('/_stx/sw.js')
     expect(applyOfflineUpdate()).toBe(false)
-    await settle()
+    await registered()
     expect(applyOfflineUpdate()).toBe(true)
     expect(registration.waiting.messages.at(-1)).toEqual({ type: 'stx:activate-update', force: true })
   })
