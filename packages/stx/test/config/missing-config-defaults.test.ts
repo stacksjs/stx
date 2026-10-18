@@ -7,34 +7,35 @@
  * fixed the name and loading any project without a config threw (it stopped
  * the 0.2.568 release in its installed-package smoke). The rejection here is
  * the one a bundled bunfig throws: its own class, recognised only by name.
+ *
+ * The loader is passed in rather than mocked: mock.module('bunfig') lasts for
+ * the whole test process and emptied every later test's stx.config.
  */
-import { afterAll, describe, expect, it, mock } from 'bun:test'
-import fs from 'node:fs'
-import { createTempDir } from '../../src/temp-dir'
+import { describe, expect, it } from 'bun:test'
+import { discoverConfig } from '../../src/config'
 
 class ConfigNotFoundError extends Error {
   override readonly name = 'ConfigNotFoundError'
 }
 
-const bunfig = await import('bunfig')
-mock.module('bunfig', () => ({
-  ...bunfig,
-  loadConfigWithResult: async () => {
-    throw new ConfigNotFoundError('Configuration "stx" or alias "ui" not found')
-  },
-}))
-
-const dir = createTempDir('stx-missing-config-')
-
-afterAll(() => {
-  fs.rmSync(dir, { recursive: true, force: true })
-})
+const options = { name: 'stx', alias: 'ui', cwd: '/nowhere', defaultConfig: { componentsDir: 'components' } }
 
 describe('a project without an stx config', () => {
   it('loads the defaults instead of throwing', async () => {
-    const { loadStxConfig } = await import('../../src/config')
-    const config = await loadStxConfig(dir)
-    expect(config).toBeTruthy()
-    expect(typeof config.componentsDir).toBe('string')
+    const result = await discoverConfig(options, async () => {
+      throw new ConfigNotFoundError('Configuration "stx" or alias "ui" not found')
+    })
+    expect(result.config).toEqual({ componentsDir: 'components' })
+  })
+
+  it('still reports a config that exists but cannot load', async () => {
+    const broken = new Error('Unexpected token')
+    broken.name = 'ConfigLoadError'
+    await expect(discoverConfig(options, async () => { throw broken })).rejects.toBe(broken)
+  })
+
+  it('returns a config that loads', async () => {
+    const result = await discoverConfig(options, async () => ({ config: { componentsDir: 'src/components' } }))
+    expect(result.config).toEqual({ componentsDir: 'src/components' })
   })
 })

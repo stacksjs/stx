@@ -660,9 +660,12 @@ let _configPromise: Promise<StxConfig> | null = null
  * a project threw. Absence is the normal case here. Matched by name: a
  * bundled copy of bunfig has its own error classes.
  */
-async function discoverConfig<T>(options: Parameters<typeof loadConfigWithResult<T>>[0]): Promise<{ config: T }> {
+export async function discoverConfig<T>(
+  options: Parameters<typeof loadConfigWithResult<T>>[0],
+  load: (options: Parameters<typeof loadConfigWithResult<T>>[0]) => Promise<{ config: T }> = loadConfigWithResult<T>,
+): Promise<{ config: T }> {
   try {
-    return await loadConfigWithResult<T>(options)
+    return await load(options)
   }
   catch (error) {
     if (error instanceof Error && error.name === 'ConfigNotFoundError')
