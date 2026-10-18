@@ -52,6 +52,7 @@ export interface NativeNode {
 
 interface NodeRecord {
   type: string
+  key?: string
   props: Record<string, unknown>
   style: Record<string, unknown>
   baseStyle: Record<string, unknown>
@@ -131,7 +132,7 @@ export interface NativeHost {
   descendants: (node: NativeNode) => NativeNode[]
   scopesIn: (node: NativeNode) => string[]
   /** Register a node the native side already created, so the host can track it. */
-  adopt: (node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle'>) => NativeNode
+  adopt: (node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'key' | 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle'>) => NativeNode
   /** Send whatever is pending now, rather than waiting for the scheduled flush. */
   flush: () => void
   /** Dispatch an event the native side reported, by the id handed to it. */
@@ -291,6 +292,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       id: node.__stxId,
       node: {
         type: record.type,
+        ...(record.key === undefined ? {} : { key: record.key }),
         props: { ...record.props },
         style: { ...record.style },
         ...(Object.keys(record.events).length ? { events: { ...record.events } } : {}),
@@ -408,7 +410,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     }
   }
 
-  function adopt(node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle'>): NativeNode {
+  function adopt(node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'key' | 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle'>): NativeNode {
     const suffix = /(?:^|\D)(\d+)$/.exec(node.__stxId)?.[1]
     if (suffix)
       counter = Math.max(counter, Number(suffix))
@@ -417,6 +419,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const baseStyle = descriptor?._inlineStyle ? { ...descriptor._inlineStyle } : Object.fromEntries(Object.entries(descriptor?.style ?? {}).filter(([key, value]) => classStyle[key] !== value))
     const record: NodeRecord = {
       type,
+      key: descriptor?.key,
       props: { ...(descriptor?.props ?? {}) },
       style: { ...(descriptor?.style ?? {}) },
       baseStyle,
@@ -660,6 +663,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       }
       records.set(copy.__stxId, {
         type: descriptor.type,
+        key: descriptor.key,
         props: { ...descriptor.props, __stxId: copy.__stxId },
         style: { ...descriptor.style },
         baseStyle: { ...descriptor.baseStyle },

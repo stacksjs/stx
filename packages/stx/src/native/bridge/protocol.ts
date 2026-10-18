@@ -112,6 +112,8 @@ export interface RenderPayload {
 
 export interface NativeMutationNode {
   type: string
+  /** Authored reconciliation identity, retained across native mutations. */
+  key?: string
   props?: Record<string, unknown>
   style?: Partial<import('../compiler/ir').STXStyle>
   events?: Record<string, string>
@@ -121,7 +123,7 @@ export interface NativeMutationNode {
 
 export type NativeMutationOperation
   = | { op: 'createNode', id: string, node: NativeMutationNode, root?: boolean }
-    | { op: 'updateNode', id: string, patch: Omit<NativeMutationNode, 'type'> }
+    | { op: 'updateNode', id: string, patch: Omit<NativeMutationNode, 'type' | 'key'> }
     | { op: 'insertChild', parentId: string, childId: string, index: number }
     | { op: 'moveChild', parentId: string, childId: string, index: number }
     | { op: 'removeNode', id: string }
