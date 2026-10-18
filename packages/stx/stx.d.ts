@@ -638,6 +638,8 @@ declare function useDark(_options?: StxColorModeOptions): StxSignal<boolean> & {
   readonly isDark: boolean
   toggle: () => void
 }
+/** Demand-bundled from the actual pointer composable; keep its options and subscription state in one source. */
+declare const useMouse: typeof import('./src/composables/use-mouse').useMouse
 declare function useMediaQuery(query: string): StxSignal<boolean> & {
   readonly matches: boolean
   readonly value: boolean
