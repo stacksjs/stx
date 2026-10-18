@@ -1904,6 +1904,11 @@
         "@stacksjs/dtsx": "^0.9.8"
       }
     },
+    "bun.com@1.4.2": {
+      "name": "bun.com",
+      "version": "1.4.2",
+      "source": "pantry"
+    },
     "bun.sh@1.3.14": {
       "name": "bun.sh",
       "version": "1.3.14",
@@ -2050,9 +2055,7 @@
       "peerDependencies": {
         "canvas": "^3.2.3"
       },
-      "optionalPeers": [
-        "canvas"
-      ]
+      "optionalPeers": ["canvas"]
     },
     "liquidjs@10.29.0": {
       "name": "liquidjs",
@@ -2133,9 +2136,7 @@
       "bin": {
         "nunjucks-precompile": "./bin/precompile"
       },
-      "optionalPeers": [
-        "chokidar"
-      ]
+      "optionalPeers": ["chokidar"]
     },
     "pickier@0.1.65": {
       "name": "pickier",
@@ -2307,10 +2308,7 @@
         "bufferutil": "^4.0.1",
         "utf-8-validate": ">=5.0.2"
       },
-      "optionalPeers": [
-        "bufferutil",
-        "utf-8-validate"
-      ]
+      "optionalPeers": ["bufferutil", "utf-8-validate"]
     },
     "xss@1.0.15": {
       "name": "xss",
