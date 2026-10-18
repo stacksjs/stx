@@ -31,13 +31,18 @@ for (const directory of ['desktop', 'sanitizer', 'router', 'bun-plugin', 'stx', 
   const manifest = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8'))
   const archive = join(archives, `${directory}.tgz`)
   run(['bun', 'pm', 'pack', '--ignore-scripts', '--filename', archive], packageDir)
-  dependencies[manifest.name] = `file:${archive}`
+  // Keep each archive's bytes unchanged. Normal Bun workspaces resolve this
+  // unpublished cohort together, without reaching for its not-yet-public
+  // transitive versions or linking any file from the original checkout.
+  await new Bun.Archive(await Bun.file(archive).bytes()).extract(join(smokeRoot, 'packages', directory))
+  dependencies[manifest.name] = 'workspace:*'
 }
 const workspace = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
 writeFileSync(join(smokeRoot, 'package.json'), JSON.stringify({
   name: 'stx-installed-smoke',
   type: 'module',
   private: true,
+  workspaces: ['packages/*/package'],
   dependencies,
   devDependencies: { 'better-dx': workspace.devDependencies['better-dx'] },
 }, null, 2))
