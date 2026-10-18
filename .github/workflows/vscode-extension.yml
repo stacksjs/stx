@@ -34,8 +34,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Provision managed tools through Pantry
+        uses: pantry-pm/pantry/packages/action@edda9c23439a37a35e0f828315e2380889cc75e9 # v0.11.92
+        with:
+          version: '0.11.92'
+          install: 'false'
+          packages: bun.com@1.4.2 git-scm.org@2.53.0
 
       # The TypeScript plugin bundles sources from packages/stx, which resolve
       # their imports from the root workspace.

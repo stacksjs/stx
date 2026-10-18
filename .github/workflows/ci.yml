@@ -21,8 +21,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
 
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2.2.0
+      - name: Provision managed tools through Pantry
+        uses: pantry-pm/pantry/packages/action@edda9c23439a37a35e0f828315e2380889cc75e9 # v0.11.92
+        with:
+          version: '0.11.92'
+          install: 'false'
+          packages: bun.com@1.4.2 git-scm.org@2.53.0
 
       - name: Use cached node_modules
         uses: actions/cache@v6.1.0
@@ -33,7 +37,7 @@ jobs:
             node-modules-
 
       - name: Install Dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Lint
         run: bun run lint
@@ -47,8 +51,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
 
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2.2.0
+      - name: Provision managed tools through Pantry
+        uses: pantry-pm/pantry/packages/action@edda9c23439a37a35e0f828315e2380889cc75e9 # v0.11.92
+        with:
+          version: '0.11.92'
+          install: 'false'
+          packages: bun.com@1.4.2 git-scm.org@2.53.0
 
       - name: Use cached node_modules
         uses: actions/cache@v6.1.0
@@ -59,7 +67,7 @@ jobs:
             node-modules-
 
       - name: Install Dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Typecheck
         run: bun --bun run typecheck
@@ -70,8 +78,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
 
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2.2.0
+      - name: Provision managed tools through Pantry
+        uses: pantry-pm/pantry/packages/action@edda9c23439a37a35e0f828315e2380889cc75e9 # v0.11.92
+        with:
+          version: '0.11.92'
+          install: 'false'
+          packages: bun.com@1.4.2 git-scm.org@2.53.0
 
       - name: Use cached node_modules
         uses: actions/cache@v6.1.0
@@ -82,7 +94,7 @@ jobs:
             node-modules-
 
       - name: Install Dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Build
         run: bun run build
@@ -107,21 +119,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2.2.0
+      - name: Provision managed tools through Pantry
+        uses: pantry-pm/pantry/packages/action@edda9c23439a37a35e0f828315e2380889cc75e9 # v0.11.92
+        with:
+          version: '0.11.92'
+          install: 'false'
+          packages: bun.com@1.4.2 git-scm.org@2.53.0
 
       - name: Install Dependencies
         run: bun install --frozen-lockfile --force --no-cache
 
       - name: Build
         run: bun run build
-
-      # After the install, not before: the action unpacks its tools into
-      # ./pantry inside the checkout, and `bun install` then walks into it
-      # (the workspace globs' `dist/**` negations make Bun scan the whole
-      # tree) and fails on a package.json there with no name.
-      - name: Setup Pantry
-        uses: home-lang/pantry/packages/action@main
 
       - name: Publish Commit
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

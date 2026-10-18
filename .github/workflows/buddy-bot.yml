@@ -157,8 +157,12 @@ jobs:
           fetch-depth: 0 # Fetch full history for rebasing
           persist-credentials: true
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Provision managed tools through Pantry
+        uses: pantry-pm/pantry/packages/action@edda9c23439a37a35e0f828315e2380889cc75e9 # v0.11.92
+        with:
+          version: '0.11.92'
+          install: 'false'
+          packages: bun.com@1.4.2 git-scm.org@2.53.0
 
       - name: Setup PHP and Composer (if needed)
         if: ${{ hashFiles('composer.json') != '' }}
@@ -195,8 +199,12 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Provision managed tools through Pantry
+        uses: pantry-pm/pantry/packages/action@edda9c23439a37a35e0f828315e2380889cc75e9 # v0.11.92
+        with:
+          version: '0.11.92'
+          install: 'false'
+          packages: bun.com@1.4.2 git-scm.org@2.53.0
 
       - name: Install dependencies
         run: bun install
@@ -277,8 +285,12 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Provision managed tools through Pantry
+        uses: pantry-pm/pantry/packages/action@edda9c23439a37a35e0f828315e2380889cc75e9 # v0.11.92
+        with:
+          version: '0.11.92'
+          install: 'false'
+          packages: bun.com@1.4.2 git-scm.org@2.53.0
 
       - name: Setup PHP and Composer (if needed)
         if: ${{ hashFiles('composer.json') != '' }}
@@ -385,8 +397,12 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Provision managed tools through Pantry
+        uses: pantry-pm/pantry/packages/action@edda9c23439a37a35e0f828315e2380889cc75e9 # v0.11.92
+        with:
+          version: '0.11.92'
+          install: 'false'
+          packages: bun.com@1.4.2 git-scm.org@2.53.0
 
       - name: Install dependencies
         run: bun install
