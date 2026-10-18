@@ -1,4 +1,4 @@
-import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createTempDir, removeTempDir } from '../packages/stx/src/temp-dir'
 
@@ -20,26 +20,31 @@ function run(cmd: string[], cwd = smokeRoot): void {
   }
 }
 
-function linkPackage(name: string, packageDir: string): void {
-  const parts = name.split('/')
-  const targetDir = join(smokeRoot, 'node_modules', ...parts.slice(0, -1))
-  mkdirSync(targetDir, { recursive: true })
-  symlinkSync(join(root, packageDir), join(smokeRoot, 'node_modules', ...parts), 'dir')
-}
-
 mkdirSync(join(smokeRoot, 'pages'), { recursive: true })
 mkdirSync(join(smokeRoot, 'node_modules'), { recursive: true })
 
+const dependencies: Record<string, string> = {}
+const archives = join(smokeRoot, 'archives')
+mkdirSync(archives)
+for (const directory of ['desktop', 'sanitizer', 'router', 'bun-plugin', 'stx', 'components']) {
+  const packageDir = join(root, 'packages', directory)
+  const manifest = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8'))
+  const archive = join(archives, `${directory}.tgz`)
+  run(['bun', 'pm', 'pack', '--ignore-scripts', '--filename', archive], packageDir)
+  dependencies[manifest.name] = `file:${archive}`
+}
+const workspace = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
 writeFileSync(join(smokeRoot, 'package.json'), JSON.stringify({
   name: 'stx-installed-smoke',
   type: 'module',
   private: true,
-  dependencies: {
-    '@stacksjs/stx': '0.0.0-smoke',
-    'stx-router': '0.0.0-smoke',
-    'bun-plugin-stx': '0.0.0-smoke',
-  },
+  dependencies,
+  devDependencies: { 'better-dx': workspace.devDependencies['better-dx'] },
 }, null, 2))
+// Install the actual publishable archives. Checkout symlinks accidentally make
+// unshipped source files visible and cannot prove a published consumer works.
+run(['bun', 'install'])
+run(['bun', 'install', '--frozen-lockfile'])
 
 writeFileSync(join(smokeRoot, 'pages', 'index.stx'), `<script server>
 export const products = [
@@ -65,9 +70,6 @@ export const products = [
 </body>
 </html>`)
 
-linkPackage('@stacksjs/stx', 'packages/stx')
-linkPackage('stx-router', 'packages/router')
-linkPackage('bun-plugin-stx', 'packages/bun-plugin')
 
 run(['bun', '-e', `
 const stx = await import('@stacksjs/stx')
@@ -80,6 +82,33 @@ if (typeof expressions.processExpressions !== 'function') throw new Error('missi
 if (typeof tokenizer.findMatchingDelimiter !== 'function') throw new Error('missing tokenizer')
 if (router.deriveLayoutGroup('layouts/shop/product.stx') !== 'shop') throw new Error('bad layout group')
 if (!plugin) throw new Error('missing bun-plugin serve export')
+`])
+
+writeFileSync(join(smokeRoot, 'mouse-good.stx'), `<script client>
+const mouse = useMouse({ touch: false, resetOnLeave: true })
+mouse.subscribe(({ clientX, clientY, isInside }) => {
+  const x: number = clientX
+  const y: number = clientY
+  const inside: boolean = isInside
+  console.log(x, y, inside)
+})
+</script>`)
+writeFileSync(join(smokeRoot, 'mouse-bad.stx'), `<script client>
+useMouse({ touch: 'yes' })
+useMouse().subscribe(point => console.log(point.clientX.toUpperCase(), point.nonexistent))
+</script>`)
+run(['bun', '-e', `
+const { typecheckStxFiles } = await import('@stacksjs/stx/typecheck')
+const { resolve } = await import('node:path')
+const good = resolve('mouse-good.stx')
+const bad = resolve('mouse-bad.stx')
+const result = await typecheckStxFiles([good, bad], { templates: false })
+if (result.failure) throw new Error(result.failure)
+const goodErrors = result.diagnostics.filter(d => d.file === good && d.category === 'error')
+if (goodErrors.length) throw new Error('Published mouse types rejected the real card subscription: ' + JSON.stringify(goodErrors))
+const invalid = result.diagnostics.filter(d => d.file === bad && d.category === 'error')
+if (!invalid.some(d => d.code === 2322) || invalid.filter(d => d.code === 2339).length !== 2)
+  throw new Error('Published mouse types failed to reject invalid options/properties: ' + JSON.stringify(invalid))
 `])
 
 run(['bun', 'node_modules/@stacksjs/stx/dist/cli.js', 'build', '--pages', 'pages', '--out', 'dist', '--no-minify'])

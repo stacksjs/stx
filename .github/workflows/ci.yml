@@ -99,6 +99,9 @@ jobs:
       - name: Build
         run: bun run build
 
+      - name: Verify an installed consumer of the actual package archives
+        run: bun run smoke:install
+
       - name: Unit Test
         run: bun test packages examples --max-concurrency=1
 
