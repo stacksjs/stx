@@ -156,11 +156,13 @@ describe('Package Installation', () => {
       expect(packageJson.devDependencies['@iconify-json/f7']).toBeUndefined()
     })
 
-    it('should have dev dependencies', async () => {
+    it('uses the shared dev tooling without duplicating its peers', async () => {
       const packageJson = await Bun.file(join(PACKAGE_ROOT, 'package.json')).json()
 
       expect(packageJson.devDependencies).toBeDefined()
-      expect(packageJson.devDependencies.typescript).toBeDefined()
+      expect(packageJson.devDependencies['better-dx']).toBeDefined()
+      for (const peer of ['typescript', 'pickier', 'bun-plugin-dtsx'])
+        expect(packageJson.devDependencies[peer]).toBeUndefined()
     })
 
     it('should have workspace dependencies', async () => {

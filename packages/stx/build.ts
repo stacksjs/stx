@@ -286,7 +286,9 @@ assertBuild(await Bun.build({
   splitting: true,
   outdir: './dist',
   naming: '[name].js',
-  plugins: [dts()],
+  // Every public source declaration was emitted above. These are alternate
+  // runtime bundles; deriving a second declaration root would change their
+  // paths and overwrite the package's own index.d.ts.
   target: 'bun',
   minify: true,
   packages: 'external',
@@ -307,7 +309,6 @@ assertBuild(await Bun.build({
   splitting: false,
   outdir: './dist',
   naming: 'bundle-analyzer.js',
-  plugins: [dts()],
   target: 'bun',
   minify: true,
   packages: 'external',

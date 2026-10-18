@@ -1,6 +1,7 @@
 import path, { join } from 'node:path'
 import process from 'node:process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { Glob } from 'bun'
 import { dts } from 'bun-plugin-dtsx'
 import { createTempDir, removeTempDir } from '../stx/src/temp-dir'
 
@@ -25,6 +26,9 @@ if (!existsSync('./dist')) {
 // rendering. See stacksjs/stx#1690.
 const srcDir = path.resolve('./src')
 const srcIndex = readFileSync(join(srcDir, 'index.ts'), 'utf8')
+const declarationEntrypoints = [...new Glob('**/*.ts').scanSync({ cwd: srcDir })]
+  .filter(file => !file.endsWith('.d.ts'))
+  .sort()
 
 // Removed in the finally below, and on exit or interrupt before it is reached.
 const tmpRoot = createTempDir('components-build')
@@ -61,7 +65,8 @@ try {
   result = await Bun.build({
     entrypoints: [tmpEntry],
     outdir: './dist',
-    plugins: [dts()],
+    // Declarations describe the real source, not the temporary JS stubs.
+    plugins: [dts({ root: './src', entrypoints: declarationEntrypoints, outdir: './dist' })],
     target: 'bun',
     // Minification miscompiles the re-exports — turning `default` aliases
     // into renamed `defaultN` / `Ig`-style bindings that aren't declared
@@ -94,7 +99,6 @@ if (!result.success) {
 const chatResult = await Bun.build({
   entrypoints: ['./src/ui/chat/controller.ts'],
   outdir: './dist/chat',
-  plugins: [dts()],
   target: 'browser',
   minify: false,
   external: ['@stacksjs/stx'],
@@ -147,7 +151,6 @@ const utilResult = await Bun.build({
     './src/composables/index.ts',
   ],
   outdir: './dist',
-  plugins: [dts()],
   target: 'bun',
   minify: true,
   splitting: false,

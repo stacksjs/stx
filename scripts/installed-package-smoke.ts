@@ -93,6 +93,22 @@ if (!plugin) throw new Error('missing bun-plugin serve export')
 // The STX checker intentionally reports only its own generated buffers. An
 // ordinary tsc consumer must also reject errors inside shipped .ts sources.
 writeFileSync(join(smokeRoot, 'mouse-consumer.ts'), `import '@stacksjs/stx'
+import { $path, definePageMeta, type CheckHref } from '@stacksjs/stx'
+import { createChat } from '@stacksjs/components/chat'
+import { closeOverlay, openOverlay, openOverlays } from '@stacksjs/components/overlays'
+const href: CheckHref<'/calendar'> = '/calendar'
+$path('/athletes/:id', { id: '42' })
+definePageMeta({ layout: false })
+const chat = createChat({ selfId: () => 1, scopeKey: () => 'athlete', request: async () => Response.json({}) })
+const unread: number = chat.unread()
+openOverlay('profile', { panel: '#profile' })
+const overlays: string[] = openOverlays()
+closeOverlay('profile')
+// @ts-expect-error an overlay panel cannot be a number
+openOverlay('profile', { panel: 42 })
+// @ts-expect-error the signed-in chat identity must be a function
+createChat({ selfId: 1, scopeKey: () => 'athlete', request: async () => Response.json({}) })
+console.log(href, unread, overlays)
 declare const possibleSignal: unknown
 if (isSignal(possibleSignal)) {
   const value: unknown = possibleSignal()
