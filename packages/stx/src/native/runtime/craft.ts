@@ -289,11 +289,11 @@ export interface NativeCraft {
     watchPosition: (callback: (location: NativeLocation) => unknown, options?: Record<string, unknown>) => number
     clearWatch: (id?: number) => void
     startRecording: (options?: Record<string, unknown>) => Promise<NativeLocationRecordingState>
-    pauseRecording: () => Promise<NativeLocationRecordingState>
-    resumeRecording: () => Promise<NativeLocationRecordingState>
-    stopRecording: () => Promise<NativeLocationRecordingState & { locations: NativeLocation[] }>
+    pauseRecording: (options?: { expectedId: string }) => Promise<NativeLocationRecordingState>
+    resumeRecording: (options?: { expectedId: string }) => Promise<NativeLocationRecordingState>
+    stopRecording: (options?: { expectedId: string }) => Promise<NativeLocationRecordingState & { locations: NativeLocation[] }>
     getRecordingState: () => Promise<NativeLocationRecordingState & { sampleCount: number }>
-    readRecording: () => Promise<NativeLocation[]>
+    readRecording: (options?: { expectedId: string }) => Promise<NativeLocation[]>
   }
   /** Keeps the screen from locking (`capabilities.keepAwake`), the page's name. */
   setKeepAwake?: (enabled: boolean) => Promise<boolean>

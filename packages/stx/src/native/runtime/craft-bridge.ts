@@ -26,8 +26,10 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     localDatabase: capabilities.has('database'),
     lifecycle: capabilities.has('lifecycle'),
     geolocation: capabilities.has('geolocation'),
+    locationRecordingOwnership: capabilities.has('locationRecordingOwnership'),
     music: capabilities.has('music'),
     heartRate: capabilities.has('heartRate'),
+    heartRateRecordingOwnership: capabilities.has('heartRateRecordingOwnership'),
     bluetooth: capabilities.has('bluetooth'),
     scheduledWorkouts: capabilities.has('scheduledWorkouts'),
     liveActivities: capabilities.has('liveActivities'),
@@ -81,6 +83,16 @@ export function installCraftBridge(
     protocol.callNativeAPI(module, method, ...args)
   const ask = (module: string, method: string, args: unknown[]): Promise<any> =>
     protocol.callPersonFacingAPI(module, method, ...args)
+  const recordingRequest = (module: 'Location' | 'HeartRate', method: string, options?: AnyRecord): Promise<any> => {
+    if (options && Object.prototype.hasOwnProperty.call(options, 'expectedId')) {
+      if (typeof options.expectedId !== 'string' || !options.expectedId.trim())
+        return Promise.reject(Object.assign(new Error('expectedId must be a nonempty recording ID'), { code: 'INVALID_ARGUMENT' }))
+      const flag = module === 'Location' ? 'locationRecordingOwnership' : 'heartRateRecordingOwnership'
+      if (!capabilities.has(flag))
+        return Promise.reject(Object.assign(new Error('This app build cannot enforce recording ownership'), { code: 'RECORDING_OWNERSHIP_UNSUPPORTED' }))
+    }
+    return request(module, method, options === undefined ? [] : [options])
+  }
   let appState = nativeBridge.initialAppState || 'active'
   let initialDeepLinkClaimed = false
   const appStateHandlers = new Set<(state: string) => unknown>()
@@ -373,11 +385,11 @@ export function installCraftBridge(
         unwatched()
       },
       startRecording: (options: AnyRecord = {}) => ask('Location', 'startRecording', [options]),
-      pauseRecording: () => request('Location', 'pauseRecording', []),
-      resumeRecording: () => request('Location', 'resumeRecording', []),
-      stopRecording: () => request('Location', 'stopRecording', []),
+      pauseRecording: (options?: AnyRecord) => recordingRequest('Location', 'pauseRecording', options),
+      resumeRecording: (options?: AnyRecord) => recordingRequest('Location', 'resumeRecording', options),
+      stopRecording: (options?: AnyRecord) => recordingRequest('Location', 'stopRecording', options),
       getRecordingState: () => request('Location', 'getRecordingState', []),
-      readRecording: () => request('Location', 'readRecording', []),
+      readRecording: (options?: AnyRecord) => recordingRequest('Location', 'readRecording', options),
     }
     target.addEventListener?.('craftLocationUpdate', (event: AnyRecord) => {
       watchers.forEach(callback => callback(event?.detail))
@@ -444,11 +456,11 @@ export function installCraftBridge(
       reconnect: () => strap('reconnect'),
       disconnect: (options: AnyRecord = {}) => strap('disconnect', { forget: !!options.forget }),
       startRecording: () => strap('startRecording'),
-      pauseRecording: () => strap('pauseRecording'),
-      resumeRecording: () => strap('resumeRecording'),
-      stopRecording: () => strap('stopRecording'),
+      pauseRecording: (options?: AnyRecord) => recordingRequest('HeartRate', 'pauseRecording', options),
+      resumeRecording: (options?: AnyRecord) => recordingRequest('HeartRate', 'resumeRecording', options),
+      stopRecording: (options?: AnyRecord) => recordingRequest('HeartRate', 'stopRecording', options),
       getRecordingState: () => strap('getRecordingState'),
-      readRecording: (options: AnyRecord = {}) => strap('readRecording', { since: typeof options.since === 'number' ? options.since : null }),
+      readRecording: (options: AnyRecord = {}) => recordingRequest('HeartRate', 'readRecording', options),
     }
   }
 
