@@ -837,7 +837,9 @@ export async function bundleClientScript(
   // release with a resolution bug kept being served after the fix shipped,
   // because nothing it recorded had moved.
   const hasher = new Bun.CryptoHasher('md5')
-  hasher.update(`${BUNDLE_CACHE_VERSION}\0${cacheEngineFingerprint()}\0${JSON.stringify(serverApi ?? false)}\0${externalizeUserModules ? 'registry' : 'inline'}\0${expose ? expose.join(',') : '*'}\0${code}\0${filePath}`)
+  // Minified or not is part of what was built: a readable bundle cached by a
+  // development render was served to production renders asking for minified.
+  hasher.update(`${BUNDLE_CACHE_VERSION}\0${cacheEngineFingerprint()}\0${JSON.stringify(serverApi ?? false)}\0${externalizeUserModules ? 'registry' : 'inline'}\0${expose ? expose.join(',') : '*'}\0${minify ? 'minified' : 'readable'}\0${code}\0${filePath}`)
   const hash = hasher.digest('hex').slice(0, 12)
 
   // Check cache. A cache hit requires both the bundled JS to exist AND

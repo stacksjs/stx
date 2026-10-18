@@ -12,6 +12,7 @@
 import path from 'node:path'
 import { bundleClientScript, clientBundleDependencies, hasUserImports } from './client-script-bundler'
 import { loadStxConfig } from './config'
+import { isProduction, minifyClassicScript } from './env'
 import { getPublicEnvDefine } from './public-env'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 import { stripStxRuntimeImports } from './signal-processing'
@@ -165,11 +166,15 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
       // runtime ReferenceErrors. STX runtime imports remain external and are
       // resolved from window.stx by the existing transform below.
       if (hasUserImports(code))
-        // Inlined, not served by the page module registry (#1957). The store
-        // bundle is already one per page, and it is also fetched on its own
-        // for store HMR (/_stx/stores.js) -- where a store edited to add an
-        // import would read a module the running page never registered.
-        code = await bundleClientScript(code, file, { projectRoot: process.cwd(), externalizeUserModules: false })
+        // In development, inlined rather than served by the page module
+        // registry (#1957): the store bundle is also fetched on its own for
+        // store HMR (/_stx/stores.js), where a store edited to add an import
+        // would read a module the running page never registered. Production
+        // has no store HMR, and inlining gave every store its own copy of
+        // every helper it imports: hq.training's thirty stores came to 2.9 MB
+        // on every page, i18n and request helpers repeated in each. There the
+        // page registry, which already reads the store code, holds one copy.
+        code = await bundleClientScript(code, file, { projectRoot: process.cwd(), externalizeUserModules: isProduction() })
 
       // A bundled dependency may import the same STX runtime names as the
       // store entry. Bun keeps that external import and renames the dependency
@@ -231,7 +236,9 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
     .map(name => `var ${name} = __stx[${JSON.stringify(name)}];`)
     .join('\n')
 
-  const code = `;(function(){\nvar __stx = window.stx || {};\n${runtimeBindings}\n${joinedChunks}\n})();`
+  const assembled = `;(function(){\nvar __stx = window.stx || {};\n${runtimeBindings}\n${joinedChunks}\n})();`
+  // Production ships it minified, as one script: it is every page's.
+  const code = isProduction() ? minifyClassicScript(assembled) : assembled
   // The first cold bundle discovers its transitive inputs. Sign the cached
   // aggregate with that complete graph so editing an imported helper
   // invalidates the store script on the next read.

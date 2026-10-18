@@ -39,3 +39,31 @@ export function isTest(): boolean {
   const { NODE_ENV } = process.env
   return NODE_ENV === 'test'
 }
+
+/**
+ * Whether the client code a render produces ships minified: a static build
+ * (`compile`), and every production render. A Stacks app renders production
+ * pages in `serve` mode under NODE_ENV=production, and gating minification
+ * on `compile` alone sent production its stores, composables and module
+ * registry readable (hq.training's home page: a 2.9 MB store bundle of
+ * 61,843 lines, comments included).
+ */
+export function minifiesClientCode(buildMode?: string): boolean {
+  return buildMode === 'compile' || isProduction()
+}
+
+/**
+ * A classic script minified by Bun: whitespace and comments gone. Its
+ * top-level names can be the page's globals, so identifiers keep their
+ * names (Bun renames bundled modules' locals already). Readable code is
+ * still correct, so a script Bun cannot parse ships as it is.
+ */
+export function minifyClassicScript(code: string): string {
+  if (!code) return code
+  try {
+    return new Bun.Transpiler({ loader: 'js', minifyWhitespace: true }).transformSync(code).trim()
+  }
+  catch {
+    return code
+  }
+}

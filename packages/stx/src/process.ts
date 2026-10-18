@@ -75,7 +75,7 @@ import { processInlineAssets } from './inline-assets'
 import { addCloakToConditionalDirectives, addCloakToUnresolvedExpressions, processJsonDirective, processMemoDirective, processOnceDirective, processRefAttributes } from './misc-directives'
 import { validateClientScript } from './script-validation'
 import { safeEvaluate } from './safe-evaluator'
-import { isProduction, isTest } from './env'
+import { isProduction, isTest, minifiesClientCode } from './env'
 import { warnUnbalancedTags } from './template-tag-balance'
 import { deriveLayoutGroup } from 'stx-router/layout-metadata'
 import { initializeComponentClientFactories, injectComponentClientFactories } from './component-client-factories'
@@ -353,7 +353,7 @@ async function buildModulesTag(
     // package left the build cache serving the page with the old copy inlined.
     const inputs: string[] = []
     const code = await buildModuleRegistryScript(registeredModuleIdsIn(...sources), {
-      minify: options.buildMode === 'compile',
+      minify: minifiesClientCode(options.buildMode),
       collectInputs: inputs,
     })
     for (const input of inputs)
@@ -2350,7 +2350,7 @@ else {
 
     // Use callback form of replace to avoid $ pattern interpretation in replacement string
     // Note: processClientScript handles transpilation internally based on attrs
-    const scriptResult = await processClientScript(content, { eventBindings, attrs, hasColonDirectives, templateContent: template, filePath, projectRoot: process.cwd(), production: options.buildMode === 'compile', serverData })
+    const scriptResult = await processClientScript(content, { eventBindings, attrs, hasColonDirectives, templateContent: template, filePath, projectRoot: process.cwd(), production: minifiesClientCode(options.buildMode), serverData })
     output = output.replace(match, () => scriptResult)
   }
   // Only clear event bindings if scripts were found and transformed.

@@ -27,6 +27,7 @@ import path from 'node:path'
 import { unboundNames } from './client-parameter-bindings'
 import { bundleClientScript, clientBundleDependencies, hasUserImports } from './client-script-bundler'
 import { loadStxConfig } from './config'
+import { isProduction, minifyClassicScript } from './env'
 import { getPublicEnvDefine } from './public-env'
 import { contentKey, renderMemo } from './render-memo'
 import { clearSourceSignatures, readSigned, type SignedCacheEntry, sourceSignature, writeSigned } from './source-signature'
@@ -519,7 +520,7 @@ export async function getComposableScript(
   // published is skipped without the "already defines" warning, which is about
   // someone else's property, not our own from a previous page.
   const bundleKey = JSON.stringify(new Bun.CryptoHasher('md5').update(`${globalNames}\0${joinedChunks}`).digest('hex').slice(0, 12))
-  const code = `;(function(){
+  const assembled = `;(function(){
 var __bundles = window.__stxComposableBundles || (window.__stxComposableBundles = {});
 if (__bundles[${bundleKey}]) return;
 __bundles[${bundleKey}] = true;
@@ -546,6 +547,8 @@ ${assignments}
   }
 })();`
 
+  // Production ships it minified, as one script.
+  const code = isProduction() ? minifyClassicScript(assembled) : assembled
   // Bundling has now recorded what each composable pulled in.
   signature = sourceSignature(composableInputs())
   writeSigned(_cachedComposableScripts, cacheKey, signature, code)
