@@ -46,6 +46,7 @@ writeFileSync(join(smokeRoot, 'package.json'), JSON.stringify({
   dependencies,
   devDependencies: { 'better-dx': workspace.devDependencies['better-dx'] },
 }, null, 2))
+writeFileSync(join(smokeRoot, 'bunfig.toml'), '[install]\nlinker = "hoisted"\n')
 // Install the actual publishable archives. Checkout symlinks accidentally make
 // unshipped source files visible and cannot prove a published consumer works.
 run(['bun', 'install'])
@@ -88,6 +89,26 @@ if (typeof tokenizer.findMatchingDelimiter !== 'function') throw new Error('miss
 if (router.deriveLayoutGroup('layouts/shop/product.stx') !== 'shop') throw new Error('bad layout group')
 if (!plugin) throw new Error('missing bun-plugin serve export')
 `])
+
+// The STX checker intentionally reports only its own generated buffers. An
+// ordinary tsc consumer must also reject errors inside shipped .ts sources.
+writeFileSync(join(smokeRoot, 'mouse-consumer.ts'), `import '@stacksjs/stx'
+const mouse = useMouse({ touch: false, resetOnLeave: true })
+mouse.subscribe(({ clientX, clientY, isInside }) => {
+  const x: number = clientX
+  const y: number = clientY
+  const inside: boolean = isInside
+  console.log(x, y, inside)
+})`)
+writeFileSync(join(smokeRoot, 'mouse-tsconfig.json'), JSON.stringify({
+  compilerOptions: {
+    target: 'ESNext', module: 'ESNext', moduleResolution: 'bundler',
+    lib: ['ESNext', 'DOM', 'DOM.Iterable'], types: [],
+    strict: true, noUncheckedIndexedAccess: true, skipLibCheck: true, noEmit: true,
+  },
+  files: ['mouse-consumer.ts'],
+}, null, 2))
+run(['bun', '--bun', join(smokeRoot, 'node_modules/typescript/bin/tsc'), '--project', 'mouse-tsconfig.json'])
 
 writeFileSync(join(smokeRoot, 'mouse-good.stx'), `<script client>
 const mouse = useMouse({ touch: false, resetOnLeave: true })
