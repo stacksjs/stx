@@ -124,8 +124,9 @@ describe('the register tag', () => {
   })
 
   it('has nothing to update on the first install', async () => {
-    setUp({ controller: false, waiting: true })
+    const { registered } = setUp({ controller: false, waiting: true })
     registerOfflineWorker('/_stx/sw.js')
+    await registered()
     expect(g.window.stxOffline.updateReady).toBe(false)
   })
 
