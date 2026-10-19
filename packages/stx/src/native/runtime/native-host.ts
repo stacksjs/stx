@@ -34,6 +34,7 @@ import type { NativeMutationOperation } from '../bridge/protocol'
 import type { STXNode, STXStyle } from '../compiler/ir'
 import { compileClassStyles } from '../compiler/headwind-to-style'
 import { resolveIconName } from '../compiler/icons'
+import { parseNativeStyle } from '../compiler/inline-style'
 import { affectsGeometry, parseSvgMarkup, parseViewBox, SVG_NODE_TYPES, svgGeometry } from '../compiler/svg'
 import { NATIVE_EVENT_NAMES } from '../event-names'
 import { nativePropName } from '../prop-names'
@@ -757,15 +758,18 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
     setStyle(node, value, replaceBinding = false) {
       const record = recordOf(node)
-      if (replaceBinding && (value == null || value === false)) value = {}
-      if (typeof value !== 'object' || value === null || Array.isArray(value))
-        return
-      const style = value as Record<string, unknown>
       if (replaceBinding) {
-        record.boundStyle = Object.fromEntries(Object.entries(style).filter(([, value]) => value != null && value !== ''))
+        record.boundStyle = parseNativeStyle(value, diagnostic => {
+          console.warn(`[STX Native] ${diagnostic.kind}: ${node.__stxId}: ${diagnostic.name}`)
+        }) as Record<string, unknown>
         applyClasses(node.__stxId, record)
         return
       }
+      // Internal imperative patches may contain null to clear a host field.
+      // Reactive bindings instead own a normalized, replaceable style layer.
+      if (typeof value !== 'object' || value === null || Array.isArray(value))
+        return
+      const style = value as Record<string, unknown>
       Object.assign(record.baseStyle, style)
       Object.assign(record.style, style)
       if (record.materialized)

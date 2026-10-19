@@ -36,8 +36,16 @@ directional corners), `px-control-x`/`py-control-y`, the cell spacing roles, and
 `text-control`/`text-cell`/`text-cell-head` with their line heights. Token lengths
 use the default 16px root, expressed as native logical points. Computed classes
 use this same translation when they change, and explicit supported inline
-styles retain priority. Reactive style objects replace their previous binding
-values; removing a key restores the underlying authored style or class value.
+styles retain priority. Reactive style objects and CSS strings replace their
+previous binding values; removing a key restores the underlying authored style
+or class value. Static and reactive styles share normalization: lengths accept unitless numbers,
+`px`, and `em`/`rem` at a fixed 16-point root; dimensions also accept percentages.
+Object shadow offsets and transform arrays retain their native structured form.
+CSS variables/functions in numeric fields, malformed/non-finite numbers, and
+unknown properties are dropped with diagnostics (compile warnings for static
+styles, runtime warnings naming the node and property for reactive styles).
+This is a native style subset, not a browser CSS engine: CSS transform strings,
+CSS-variable resolution, and arbitrary browser declarations are not supported.
 Unknown directional radius names produce diagnostics
 instead of silently falling back to a different radius.
 
