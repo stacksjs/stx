@@ -47,6 +47,10 @@ export interface NativeNavigationOptions {
   title?: string
   largeTitle?: boolean
   hidden?: boolean
+  /** Hide the app's tab bar while this screen is visible. */
+  tabBarHidden?: boolean
+  /** Allow the iOS interactive back gesture. Defaults to true. */
+  swipeBack?: boolean
   backTitle?: string
   leftButtons?: NativeNavigationButton[]
   rightButtons?: NativeNavigationButton[]
