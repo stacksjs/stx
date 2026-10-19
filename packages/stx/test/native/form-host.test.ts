@@ -75,4 +75,20 @@ describe('native form host semantics (#2088)', () => {
     host.remove(input)
     expect(new NativeFormData(form).has('name')).toBe(false)
   })
+
+  it('notifies model resets only after an uncanceled reset and unsubscribes cleanly', () => {
+    const { host, form, input, fire } = fixture()
+    const restored: unknown[] = []
+    const stop = host.onFormReset(input, () => restored.push(new NativeFormData(form).get('name')))
+    fire(input, 'onChangeText', { text: 'Grace' })
+    host.listen(form, 'reset', (event: any) => event.preventDefault(), { once: true })
+    ;(form as any).reset()
+    expect(new NativeFormData(form).get('name')).toBe('Grace')
+    expect(restored).toEqual([])
+    ;(form as any).reset()
+    expect(restored).toEqual(['Ada'])
+    stop()
+    ;(form as any).reset()
+    expect(restored).toEqual(['Ada'])
+  })
 })

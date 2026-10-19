@@ -130,6 +130,7 @@ export interface NativeHost {
   setStyle: (node: NativeNode, value: unknown) => void
   listen: (node: NativeNode, event: string, handler: (payload?: unknown) => void, options?: unknown) => void
   emitComponentEvent: (node: NativeNode, event: Event) => boolean
+  onFormReset: (node: NativeNode, callback: () => void) => (() => void)
   scopeOf: (node: NativeNode, from?: boolean) => NativeNode | null
   setVisible: (node: NativeNode, visible: boolean) => boolean
   anchor: (label: string) => NativeNode
@@ -165,6 +166,7 @@ export const HOST_METHODS: readonly string[] = [
   'setStyle',
   'listen',
   'emitComponentEvent',
+  'onFormReset',
   'scopeOf',
   'setVisible',
   'anchor',
@@ -182,6 +184,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   const eventRegistrations = new WeakMap<NativeNode, Map<string, string>>()
   const componentListeners = new WeakMap<NativeNode, Array<{ event: string, handler: (payload?: unknown) => void, once: boolean, capture: boolean }>>()
   const formControls = new WeakSet<NativeNode>()
+  const formResetCallbacks = new WeakMap<NativeNode, Set<() => void>>()
   let queue: NativeMutationOperation[] = []
   let scheduled = false
   let counter = 0
@@ -361,6 +364,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const control = node as NativeNode & { value: unknown, checked: unknown }
       if (record.type === 'Checkbox') control.checked = record.controlDefaults.checked
       else control.value = record.controlDefaults.value
+    }
+    for (const node of collectDescendants(form)) {
+      if (formOwner(node) !== form) continue
+      for (const callback of formResetCallbacks.get(node) ?? []) callback()
     }
   }
 
@@ -729,6 +736,13 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         return !event.defaultPrevented
       }
       finally { Object.defineProperty(event, 'currentTarget', { configurable: true, value: null }) }
+    },
+
+    onFormReset(node, callback) {
+      const callbacks = formResetCallbacks.get(node) ?? new Set<() => void>()
+      formResetCallbacks.set(node, callbacks)
+      callbacks.add(callback)
+      return () => { callbacks.delete(callback) }
     },
 
     listen(node, event, handler, options) {
