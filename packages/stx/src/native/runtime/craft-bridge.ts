@@ -162,15 +162,50 @@ export function installCraftBridge(
     write: (value: string) => request('Clipboard', 'write', [value]),
     read: () => request('Clipboard', 'read', []),
   }
-  craft.haptic = (style?: string) => request('Haptics', 'impact', [style || 'medium'])
-  const feedback = (answer: Promise<any>): Promise<void> => answer.then(() => {}, (error) => {
-    if (error?.code === 'CAPABILITY_DISABLED') return
-    throw error
-  })
+  /*
+   * Haptics are feedback, never an outcome: every call resolves, whatever the
+   * host says (UNSUPPORTED, CAPABILITY_DISABLED, an unknown action, a missing
+   * bridge), so a screen never writes `?.catch?.(() => {})` after a tap.
+   *
+   * notification() and selection() play the host's own notification and
+   * selection haptics (Craft iOS: UINotificationFeedbackGenerator and
+   * UISelectionFeedbackGenerator). They used to be played as impacts of a
+   * guessed weight. A host that does not know them (UNKNOWN_ACTION) gets that
+   * impact instead, and is not asked again.
+   */
+  const settle = (send: () => Promise<any>): Promise<void> => {
+    try {
+      return Promise.resolve(send()).then(() => {}, () => {})
+    }
+    catch {
+      return Promise.resolve()
+    }
+  }
+  const unknownHaptics = new Set<string>()
+  const hapticOr = (method: string, args: unknown[], impact: string): Promise<void> => {
+    if (unknownHaptics.has(method))
+      return settle(() => request('Haptics', 'impact', [impact]))
+    return settle(() => request('Haptics', method, args).catch((error: any) => {
+      if (error?.code !== 'UNKNOWN_ACTION') throw error
+      unknownHaptics.add(method)
+      return request('Haptics', 'impact', [impact])
+    }))
+  }
+  craft.haptic = (style?: string) => settle(() => request('Haptics', 'impact', [style || 'medium']))
   craft.haptics = {
-    impact: (style?: string) => feedback(craft.haptic(style)),
-    notification: (type?: string) => feedback(craft.haptic(type === 'error' ? 'heavy' : type === 'warning' ? 'medium' : 'light')),
-    selection: () => feedback(craft.haptic('soft')),
+    impact: (style?: string) => craft.haptic(style),
+    notification: (type?: string) => {
+      const kind = type === 'error' || type === 'warning' ? type : 'success'
+      return hapticOr('notification', [kind], kind === 'error' ? 'heavy' : kind === 'warning' ? 'medium' : 'light')
+    },
+    selection: () => hapticOr('selection', [], 'soft'),
+    // Warm the engine so the next haptic plays without its wake-up delay.
+    prepare: (kind?: string) => {
+      if (unknownHaptics.has('prepare')) return Promise.resolve()
+      return settle(() => request('Haptics', 'prepare', kind === undefined ? [] : [kind]).catch((error: any) => {
+        if (error?.code === 'UNKNOWN_ACTION') unknownHaptics.add('prepare')
+      }))
+    },
   }
 
   craft.storage = Object.assign({ getSync: () => null, setSync: () => undefined }, craft.storage || {}, {
