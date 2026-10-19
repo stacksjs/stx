@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.593...v0.2.594)
+
+## 🐛 Bug Fixes
+
+- **native**: a plain Button speaks in the app's accent ([ab791df](https://github.com/stacksjs/stx/commit/ab791df)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.594 ([a847fd5](https://github.com/stacksjs/stx/commit/a847fd5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.592...v0.2.593)
 
 ## 🐛 Bug Fixes
