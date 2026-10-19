@@ -140,6 +140,8 @@ export interface NativeHost {
   /** Dispatch an event the native side reported, by the id handed to it. */
   dispatch: (handlerId: string, payload?: unknown) => void
   pending: () => number
+  /** Release a screen's callbacks and retained descriptors permanently. */
+  dispose: () => void
   /**
    * The tree as this host holds it now, from `root`, in the shape a RENDER
    * takes: every node with its id, so later mutations name the same nodes.
@@ -177,6 +179,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   let scheduled = false
   let counter = 0
   let colorScheme = options.colorScheme ?? 'light'
+  let disposed = false
 
   const schedule = options.schedule ?? ((flush: () => void) => queueMicrotask(flush))
 
@@ -198,6 +201,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   }
 
   function emit(operation: NativeMutationOperation): void {
+    if (disposed) return
     queue.push(operation)
     if (!scheduled) {
       scheduled = true
@@ -466,6 +470,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     },
     pending: () => queue.length,
     flush,
+    dispose() {
+      disposed = true
+      queue = []
+      handlers.clear()
+      records.clear()
+    },
 
     snapshot(root) {
       queue = []
@@ -588,7 +598,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         pending = true
         queueMicrotask(() => {
           pending = false
-          if (active) callback()
+          if (active && !disposed) callback()
         })
       } }
       observers.add(observer)
@@ -606,7 +616,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     },
 
     emitComponentEvent(node, event) {
-      if (!descriptorOf(node)?.materialized) return true
+      if (disposed || !descriptorOf(node)?.materialized) return true
       const ancestors: NativeNode[] = []
       for (let current: NativeNode | null | undefined = node; current; current = current.__stxOwner)
         ancestors.push(current)
