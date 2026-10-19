@@ -1,4 +1,5 @@
 /* eslint-disable style/max-statements-per-line */
+import type { NativeStylesheetTheme } from './stylesheet-theme'
 /**
  * STX Native Intermediate Representation (IR)
  *
@@ -114,6 +115,9 @@ export interface STXNode {
 
   /** Authored declarations for runtime variable inheritance and reactive overrides. */
   _styleSource?: string
+
+  /** Document-level stylesheet variables, resolved for the native appearance. */
+  _stylesheetTheme?: NativeStylesheetTheme
 
   /** Original Headwind classes, retained for native class and appearance updates. */
   _classes?: string
