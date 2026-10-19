@@ -115,8 +115,23 @@ Shared `Dialog` and `Drawer` present native Modal roots through the overlay
 adapter. The DOM-free tests cover controlled visibility, top-layer dismissal,
 reopening, and removal while open. Distinct backdrop/back policies require the
 host's dismissal reason; older hosts without it reject ambiguous requests and
-warn. Programmatic focus/restoration and anchored popup measurement still need
-the Craft capabilities tracked in [craft#373](https://github.com/craft-native/craft/issues/373).
+warn. Native refs expose asynchronous `focus({ mode: 'keyboard' | 'accessibility' })`
+and `measure()` operations when the host advertises `viewFocus` and `viewMeasure`.
+Measurement returns screen-viewport bounds and viewport dimensions in logical
+`points` (iOS) or `dp` (Android), not browser pixels. Removed views and unavailable
+capabilities reject explicitly. Newly opened top-level Dialog/Drawer layers
+focus their initial target, autofocus control, or first enabled control;
+revealing an existing underlying layer leaves opener restoration to Craft.
+The host contracts are implemented on Craft main under
+[craft#373](https://github.com/craft-native/craft/issues/373), but no released
+Craft version floor has been verified for this integration.
+
+Tooltip placement now accepts asynchronous native measurements as well as DOM
+bounds, sharing the existing flip/clamp math and discarding stale replies.
+This measurement adapter alone does **not** enable native Tooltip/Popover:
+non-modal presentation, touch dismissal, and repositioning subscriptions remain
+unfinished. Native popup calls still report unsupported presentation rather than
+claiming that browser-only behavior works on-device.
 These runtime tests do not establish native visual or accessibility parity;
 those remain part of [#2089](https://github.com/stacksjs/stx/issues/2089).
 

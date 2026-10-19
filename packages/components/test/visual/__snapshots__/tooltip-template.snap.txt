@@ -60,7 +60,7 @@ export const tooltipClasses = `absolute z-50 px-3 py-2 text-sm font-medium text-
 export const arrowClass = `absolute w-0 h-0 border-4 border-transparent ${arrowClasses[position] || arrowClasses.top}`.trim()
 </script>
 <script client>
-  import { tooltipPosition } from '../../utils/tooltip-position'
+  import { measureTooltipPosition } from '../../utils/tooltip-position'
 import { portalElement } from '../../utils/element-portal'
 const delay = {{ delay }}
 // A live prop: a tooltip is commonly suppressed by state the page only learns
@@ -79,21 +79,26 @@ const isDisabled = useReactiveProp('disabled', {{ disabled }})
 // Reactive prop binding — parent can drive `show` via signals. See #1704.
 const isVisible = useReactiveProp('show', {{ show }})
 let timeoutId = null
+let positionGeneration = 0
+let destroyed = false
 
 // Use the actual offset parent, so a tooltip inside a modal or a transformed
 // container still gets viewport bounds rather than assuming document origin.
-function positionTooltip() {
-  if (!isVisible()) return
+async function positionTooltip() {
+  const generation = ++positionGeneration
+  if (destroyed || !isVisible() || isDisabled()) return
   const trigger = triggerRef.value
   const panel = panelRef.value
   if (!trigger || !panel) return
-  const rect = panel.getBoundingClientRect()
-  if (!rect.width || !rect.height) return
-  const origin = panel.offsetParent ? panel.offsetParent.getBoundingClientRect() : { left: 0, top: 0 }
-  const viewport = trigger.ownerDocument.defaultView
-  if (!viewport) return
-  const point = tooltipPosition(trigger.getBoundingClientRect(), rect, { width: viewport.innerWidth, height: viewport.innerHeight }, preferredSide)
-  panelStyle.set(panelLimits + 'left:' + (point.left - origin.left) + 'px;top:' + (point.top - origin.top) + 'px;right:auto;bottom:auto;transform:none;translate:none;')
+  let point
+  try { point = await measureTooltipPosition(trigger, panel, preferredSide) }
+  catch (error) {
+    if (!destroyed && generation === positionGeneration && isVisible() && !isDisabled())
+      console.warn('[stx:tooltip] Could not measure popup: ' + ((error && error.message) || String(error)))
+    return
+  }
+  if (!point || destroyed || generation !== positionGeneration || !isVisible() || isDisabled()) return
+  panelStyle.set(panelLimits + 'left:' + point.left + 'px;top:' + point.top + 'px;right:auto;bottom:auto;transform:none;translate:none;')
   const color = 'var(--color-inverse, #0f172a)'
   const arrows = {
     top: 'top:auto;bottom:-8px;left:' + (point.arrowX - 4) + 'px;right:auto;border-top-color:' + color,
@@ -106,7 +111,10 @@ function positionTooltip() {
 
 // Measurement follows rendering. Reposition on scroll, including scrolling
 // ancestors, and resize; the composable removes these listeners on teardown.
-effect(() => { if (isVisible()) nextTick(positionTooltip) })
+effect(() => {
+  ++positionGeneration
+  if (isVisible() && !isDisabled()) nextTick(positionTooltip)
+})
 useEventListener('resize', positionTooltip)
 useEventListener('scroll', positionTooltip, { capture: true, passive: true })
 
@@ -121,6 +129,7 @@ function showTooltip() {
 }
 
 function hideTooltip() {
+  ++positionGeneration
   if (timeoutId) {
     clearTimeout(timeoutId)
     timeoutId = null
@@ -150,6 +159,9 @@ effect(() => {
 })
 
 onDestroy(() => {
+  destroyed = true
+  ++positionGeneration
+  if (timeoutId) clearTimeout(timeoutId)
   window.stx.overlays.close(tooltipId)
 })
 
