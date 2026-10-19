@@ -1227,7 +1227,14 @@ catch (error: unknown) {
       // Extract <script> content (look in original content)
       // Handle server-side, client-side, and signal scripts
       const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
-      const scriptMatches = [...partialContent.matchAll(scriptRegex)]
+      // Complete the per-include server context before preparing any client
+      // setup, regardless of the physical order of the SFC script blocks.
+      // Stable sorting preserves the relative order within both groups.
+      const scriptMatches = [...partialContent.matchAll(scriptRegex)].sort((a, b) => {
+        const aServer = (a[1] || '').includes('server')
+        const bServer = (b[1] || '').includes('server')
+        return Number(bServer) - Number(aServer)
+      })
       let preservedScript = ''
       let signalScopeId: string | null = null
       // Whether any script here actually uses the signal API. A plain script
@@ -1362,6 +1369,17 @@ catch (error: unknown) {
         }
 
         const isSignalScript = hasSignalApis(scriptContent)
+
+        if (!isServerScript) {
+          // A partial's client script is already scoped when it reaches the
+          // parent pass, so that pass cannot supply its server-data bridge.
+          // Reuse the same referenced-value and client-binding rules as pages
+          // and components, inside this include's own setup closure.
+          const { extractBridgeData, generateServerDataBridge } = await import('./client-script')
+          const bridge = generateServerDataBridge(scriptContent, extractBridgeData(includeContext))
+          if (bridge)
+            scriptContent = `${bridge}\n${scriptContent}`
+        }
 
         // Handle signal scripts - transform them for client-side reactivity
         if (isSignalScript && !isServerScript) {
