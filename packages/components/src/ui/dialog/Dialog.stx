@@ -168,6 +168,7 @@ defineExpose({
   data-native="Modal"
   x-ref="rootRef"
   :show="isOpen()"
+  :data-state="isOpen() ? 'open' : 'closed'"
   class="{{ dialogClasses }}"
   data-stx-dialog="{{ dialogInstanceId }}"
   role="dialog"
