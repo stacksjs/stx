@@ -39,6 +39,7 @@ import { createStyleVariables, type NativeStyleVariables } from '../compiler/sty
 import type { NativeStylesheetTheme } from '../compiler/stylesheet-theme'
 import { affectsGeometry, parseSvgMarkup, parseViewBox, SVG_NODE_TYPES, svgGeometry } from '../compiler/svg'
 import { NATIVE_EVENT_NAMES } from '../event-names'
+import { accessibilityPatch, isAccessibilityAttribute } from '../accessibility'
 import { nativePropName } from '../prop-names'
 import { cloneNativeBindingNode, type NativeBindingNode } from './binding-tree'
 import { NATIVE_FORM_ENTRIES } from './jsc-globals'
@@ -845,6 +846,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         this.setAttribute(node, 'symbol', icon.symbol)
       }
       const patch: Record<string, unknown> = { [prop]: value }
+      // A bound `aria-pressed` is what tells VoiceOver a segment is chosen;
+      // the host reads it as `accessibilityState` (accessibility.ts).
+      if (isAccessibilityAttribute(name))
+        Object.assign(patch, Object.assign(record.props, accessibilityPatch(name, value, record.props)))
       // A drawing's bound attribute: the renderers read the outline as
       // commands (svg.ts), so a new `d` or `x1` is a new `geometry`.
       if (SVG_NODE_TYPES.has(record.type)) {
@@ -874,6 +879,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       // Null rather than omitted: a patch is merged on the native side, so an
       // absent key means "unchanged" and would leave the attribute in place.
       const patch: Record<string, unknown> = { [prop]: null }
+      if (isAccessibilityAttribute(name))
+        Object.assign(patch, Object.assign(record.props, accessibilityPatch(name, undefined, record.props)))
       if (affectsGeometry(record.type, prop))
         patch.geometry = record.props.geometry = svgGeometry(record.type, record.props)
       if (record.materialized)

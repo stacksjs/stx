@@ -27,6 +27,7 @@
  */
 import type { STXDocument, STXNode, STXStyle } from './ir'
 import { NATIVE_EVENT_NAMES as EVENT_NAMES } from '../event-names'
+import { applyStaticAccessibility } from '../accessibility'
 import { NATIVE_BOOLEAN_PROPS, nativePropName } from '../prop-names'
 import { mapToNativeComponent } from './component-mapping'
 import { resolveIconName } from './icons'
@@ -542,6 +543,8 @@ export async function translateHtmlToIR(
           diagnostics.push({ kind: 'unsupported-list-prop', tag: type, name: publicName })
       }
     }
+    // `role` and `aria-*` in the host's spelling (accessibility.ts).
+    applyStaticAccessibility(props)
     const node = createNode(type, props, style, events)
     node._inlineStyle = inline
     node._styleSource = decodeEntities(attributes.find(([name]) => name === 'style')?.[1] ?? '')
