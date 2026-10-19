@@ -25,6 +25,7 @@ describe('STX Signals - DOM Binding Behavior', () => {
       children: [],
       parentNode: null,
       parentElement: null,
+      get ownerDocument() { return mockDocument },
       style: { display: '' },
       className: '',
       value: '',

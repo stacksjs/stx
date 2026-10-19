@@ -15,6 +15,11 @@ describe('signals event shorthand runtime boundary', () => {
     expect(SIGNALS_EVENT_SHORTHAND_RUNTIME).toContain('function parseEventShorthand(expr, scope)')
     expect(SIGNALS_EVENT_SHORTHAND_RUNTIME).toContain('signal.set(!signal())')
     expect(SIGNALS_EVENT_SHORTHAND_RUNTIME).toContain('signal.update(n => n + 1)')
-    expect(SIGNALS_EVENT_SHORTHAND_RUNTIME).toContain('return ($event) => fn($event)')
+    const parse = new Function(`${SIGNALS_EVENT_SHORTHAND_RUNTIME}; return parseEventShorthand`)()
+    const calls: unknown[][] = []
+    parse('save', { save: (...args: unknown[]) => calls.push(args) })('value', { reset() {} })
+    expect(calls).toHaveLength(1)
+    expect(calls[0][0]).toBe('value')
+    expect(typeof (calls[0][1] as { reset: () => void }).reset).toBe('function')
   })
 })

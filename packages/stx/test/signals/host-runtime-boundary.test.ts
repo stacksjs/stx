@@ -33,6 +33,7 @@ describe('signals host runtime boundary', () => {
       'insert',
       'listen',
       'observeAttributes',
+      'onFormReset',
       'remove',
       'removeAttribute',
       'scopeOf',
