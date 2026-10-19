@@ -38,6 +38,43 @@ async function boot(source: string, components: Record<string, string>) {
 }
 
 describe('shared component reactive props on a DOM-free host (#2086)', () => {
+  it('remounts shared prop/model subscriptions and disposes them with the screen', async () => {
+    const app = await boot(`<script client>
+const visible = state(true)
+const count = state(1)
+window.probe = { visible, count }
+window.mounts = 0
+window.destroys = 0
+</script><div><div :if="visible"><Child v-model:count="count" /></div></div>`, {
+      Child: `<script client>
+const count = useModel('count', { default: 0 })
+window.child = count
+onMount(() => { window.mounts++ })
+onDestroy(() => { window.destroys++ })
+</script><p :text="count" />`,
+    })
+    try {
+      expect(app.scope.mounts).toBe(1)
+      expect(app.scope.child()).toBe(1)
+      app.scope.probe.visible.set(false)
+      await app.settle()
+      expect(app.scope.destroys).toBe(1)
+      app.scope.probe.count.set(4)
+      app.scope.probe.visible.set(true)
+      await app.settle()
+      expect(app.scope.mounts).toBe(2)
+      expect(app.scope.child()).toBe(4)
+      app.scope.child.set(7)
+      await app.settle()
+      expect(app.scope.probe.count()).toBe(7)
+      app.stop()
+      expect(app.scope.destroys).toBe(2)
+      app.scope.child.set(99)
+      expect(app.scope.probe.count()).toBe(7)
+      expect(app.errors).toEqual([])
+    }
+    finally { app.stop() }
+  })
   it('delivers child payloads to the parent and supports two-way models', async () => {
     const app = await boot(`<script client>
 const count = state(2)

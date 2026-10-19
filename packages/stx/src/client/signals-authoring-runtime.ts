@@ -33,7 +33,7 @@ export function signalsAuthoringRuntime(createModelSignalSource: string): string
     var modifiers = useReactiveProp(modifierName, {});
     var emit = window.stx.defineEmits(['update:' + name]);
     return createModelSignal(source, function() { return modifiers() || {}; },
-      function(value) { emit('update:' + name, value); }, options, onDestroy);
+      function(value) { emit('update:' + name, value); }, options, onDestroy, onMount);
   }
 
   // Reactive prop binding. Bridges the gap between a parent's clientReactive

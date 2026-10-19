@@ -1,6 +1,6 @@
 import type { Signal } from './signals-api'
 import { defineEmits, getCurrentInstance } from './composition-api'
-import { effect, isDerived, isSignal, onDestroy, state } from './signals-api'
+import { effect, isDerived, isSignal, onDestroy, onMount, state } from './signals-api'
 
 export type ModelModifiers = Readonly<Record<string, boolean>>
 
@@ -30,6 +30,7 @@ export function createModelSignal<T>(
   emit: (value: T) => void,
   options: ModelOptions<T>,
   cleanup: (fn: () => void) => void,
+  mount?: (fn: () => void) => void,
 ): ModelSignal<T> {
   let active = true
   const subscriptions = new Set<() => void>()
@@ -70,6 +71,7 @@ export function createModelSignal<T>(
     subscriptions.forEach(unsubscribe => unsubscribe())
     subscriptions.clear()
   })
+  mount?.(() => { active = true })
   return model
 }
 
@@ -91,5 +93,5 @@ export function useModel<T = unknown>(nameOrOptions: string | ModelOptions<T> = 
   })
   onDestroy(stop)
   return createModelSignal(source, () => (readProp(modifierName) || {}) as ModelModifiers,
-    value => emit(`update:${name}`, value), opts as ModelOptions<T | undefined>, onDestroy)
+    value => emit(`update:${name}`, value), opts as ModelOptions<T | undefined>, onDestroy, onMount)
 }

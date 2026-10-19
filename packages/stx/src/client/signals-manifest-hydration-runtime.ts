@@ -78,6 +78,8 @@ export const SIGNALS_MANIFEST_HYDRATION_RUNTIME = `  /**
       if (!mounted) return;
       mounted = false;
       disposeEffects();
+      disposeSubtreeEffects(root);
+      disposeSubtreeScopes(root);
       var hooks = localDestroyHooks.splice(0, localDestroyHooks.length);
       for (var i = 0; i < hooks.length; i++) {
         try { hooks[i](); }
