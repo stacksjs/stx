@@ -201,6 +201,29 @@ const ownStyle = derived(() => ({ paddingLeft: variant() === 'base' ? 2 : 4 }))
   phone.unmount()
 }, 30_000)
 
+it.each(['.', 'resources'])('honors the configured component directory on both targets (root=%s)', async (configRoot) => {
+  const source = '<Button>Configured</Button>'
+  const { root, file } = await fixture(source, false)
+  await Bun.write(join(root, 'stx.config.ts'), `export default { root: ${JSON.stringify(configRoot)}, componentsDir: 'shared-ui', componentPackages: [] }`)
+  const configured = join(root, configRoot, 'shared-ui/Button.stx')
+  await Bun.write(configured, '<button data-origin="configured"><slot /></button>')
+  const native = await compileScreenSource(source, file, { root })
+  expect(native.dependencies).toContain(configured)
+  expect(native.html).toContain('data-origin="configured"')
+  const loaded = await loadStxConfig(root)
+  const dependencies = new Set<string>()
+  const web = await processDirectives(source, {}, file, { ...defaultConfig, ...loaded, cache: false }, dependencies)
+  expect(dependencies.has(configured)).toBe(true)
+  expect(web).toContain('data-origin="configured"')
+
+  const override = join(root, 'explicit/Button.stx')
+  await Bun.write(override, '<button data-origin="explicit"><slot /></button>')
+  const overridden = await compileScreenSource(source, file, { root, componentsDir: join(root, 'explicit') })
+  expect(overridden.dependencies).toContain(override)
+  expect(overridden.dependencies).not.toContain(configured)
+  expect(overridden.html).toContain('data-origin="explicit"')
+})
+
 it('keeps primitive fallbacks and screen-local, explicit and conventional overrides', async () => {
   const fallback = await fixture('<Button testID="fallback">Save</Button>', false)
   expect((await compileScreenSource('<Button testID="fallback">Save</Button>', fallback.file, fallback)).dependencies).toContain(join(nativePrimitivesDir(), 'Button.stx'))

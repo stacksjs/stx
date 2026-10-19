@@ -59,7 +59,7 @@ export function nativePrimitivesDir(): string {
 }
 
 export interface CompileScreenOptions {
-  /** The project's own components, searched before the primitives. */
+  /** Override the app's configured component directory, before primitives. */
   componentsDir?: string
   /** Base directory for relative resolution. Defaults to the file's directory. */
   root?: string
@@ -94,7 +94,7 @@ export async function compileScreenSource(
   const loaded = await loadStxConfig(root)
   const config = {
     root,
-    componentsDir: options.componentsDir ?? path.join(root, 'components'),
+    componentsDir: options.componentsDir ?? loaded.componentsDir ?? path.join(root, 'components'),
     buildMode: 'serve',
     cache: false,
     // After screen-owned components; verified shared names move to fallback.

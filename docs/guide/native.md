@@ -24,8 +24,10 @@ stx or native host gaps in Craft.
 
 Explicit `@import` selections and screen-owned components remain overrides on
 both targets. Native compilation searches the original page's `components/`,
-the explicitly supplied `componentsDir`, and sibling component directories
-before target defaults. `componentsDir` here is the native compiler option.
+the app's configured `componentsDir`, and sibling component directories before
+target defaults. The native compiler's `componentsDir` option overrides the
+config value. Config-relative paths (including `root: 'resources'`) resolve
+the same way on web and native, independently of the shell's current directory.
 
 Verified shared names are migrated individually. **Button** now searches app
 convention directories (`resources/views/components`, `resources/components`,
