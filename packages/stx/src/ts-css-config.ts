@@ -28,7 +28,8 @@
  * @module ts-css-config
  */
 
-import { densityFontSizes, densitySpacing, densityTokenCSS, semanticColors, semanticTokenCSS, shapeRadii, shapeTokenCSS } from './theme-tokens'
+import type { ThemeRoleOverrides } from './theme-tokens'
+import { densityFontSizes, densitySpacing, densityTokenCSS, semanticColors, semanticTokenCSS, shapeRadii, shapeTokenCSS, unknownRoleNames } from './theme-tokens'
 
 type Dict = Record<string, any>
 
@@ -76,6 +77,11 @@ export interface MergedCssConfig {
    * to the light colour.
    */
   tokenCSS: string
+  /**
+   * Names under `roles`, `shapes` or `density` that stx has no token for,
+   * as `roles.brand`. Callers warn about these.
+   */
+  unknownRoles: string[]
   /**
    * The project's `fonts` (Google families, self-hosted `@font-face` rules),
    * kept out of `config`: render them once with {@link renderFontCSS} and put
@@ -180,7 +186,14 @@ export function mergeCssConfig(base: Dict = {}, user: Dict = {}): MergedCssConfi
   ]
 
   const { fonts: baseFonts, ...baseRest } = base
-  const { fonts: userFonts, ...userRest } = user
+  /*
+   * `roles`, `shapes` and `density` are the app's answers for the role
+   * tokens. They are stx's to read, not the engine's, so they stay out of
+   * `config`, and colour answers resolve against the MERGED palette: an app
+   * can answer `accent` with a family it defines itself.
+   */
+  const { fonts: userFonts, roles, shapes, density, ...userRest } = user
+  const overrides: ThemeRoleOverrides = { roles, shapes, density }
   const fonts = (userFonts ?? baseFonts) as Dict | undefined
 
   const config: Dict = {
@@ -206,7 +219,8 @@ export function mergeCssConfig(base: Dict = {}, user: Dict = {}): MergedCssConfi
      * change with the colour scheme - so they are appended rather than
      * interleaved.
      */
-    tokenCSS: semanticTokenCSS(basePalette) + shapeTokenCSS() + densityTokenCSS(),
+    tokenCSS: semanticTokenCSS({ ...basePalette, ...(theme.colors as Dict) }, roles) + shapeTokenCSS(shapes) + densityTokenCSS(density),
+    unknownRoles: unknownRoleNames(overrides),
     ...(fonts ? { fonts } : {}),
   }
 }

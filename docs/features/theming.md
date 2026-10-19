@@ -33,6 +33,33 @@ config file and no rebuild:
 }
 ```
 
+### Answer the roles in your css config — web and native
+
+A stylesheet override reaches the web only: a native screen compiles without
+the page stylesheet, so a component drew your colours in the browser and the
+stock greys on a phone. Answer the roles in your css config instead, beside
+`theme`, and stx writes them into the generated stylesheet's token block and
+hands the same answers to every native screen it compiles:
+
+```ts
+// config/css.ts
+export default {
+  roles: {
+    accent: { light: 'emerald-600', dark: 'emerald-400' },
+    page: { light: 'slate-50', dark: 'slate-950' },
+    fg: 'slate-900', // one value for both modes
+    line: { light: 'slate-200' }, // dark keeps the stock value
+  },
+  shapes: { control: '9999px' },
+  density: { 'control-py': '0.375rem' },
+}
+```
+
+Each colour is a palette reference, including a family your `theme.colors`
+defines, or a literal colour. On a phone it resolves against the native
+palette, so `emerald-600` arrives as the hex a host reads. A name stx has no
+role for is reported once by the dev server rather than ignored.
+
 ### The roles
 
 | Token | Utility examples | Light | Dark |

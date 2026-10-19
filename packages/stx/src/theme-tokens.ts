@@ -472,6 +472,58 @@ function resolveShade(palette: Palette, reference: string): string | undefined {
 }
 
 /**
+ * An app's answer for a colour role, in each mode.
+ *
+ * Each value is a palette reference (`emerald-600`) or a literal colour
+ * (`#24724b`, `oklch(...)`, `white`). A bare string is the same value in both
+ * modes; a `{ light }` with no `dark` keeps the role's stock dark value.
+ */
+export type RoleColor = string | { light?: string, dark?: string }
+
+/**
+ * Role values an app declares in its css config, beside `theme`.
+ *
+ *   export default {
+ *     roles: { accent: { light: 'emerald-600', dark: 'emerald-400' }, page: { light: 'slate-50', dark: 'slate-950' } },
+ *     shapes: { control: '9999px' },
+ *   }
+ *
+ * The alternative every app had was a literal `:root` / `.dark` block in its
+ * own stylesheet - one app wrote one for every role, plus a test to keep it
+ * from drifting from its palette. That block never reached a native screen,
+ * which compiles without the page stylesheet, so a shared component drew
+ * stx's stock greys there while the web showed the app's palette.
+ */
+export interface ThemeRoleOverrides {
+  roles?: Record<string, RoleColor>
+  shapes?: Record<string, string>
+  density?: Record<string, string>
+}
+
+const LITERAL_COLOR = /^(?:#[\da-f]{3,8}|(?:rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch|color|color-mix|var)\(.*\)|white|black|transparent|currentcolor)$/i
+
+/** A palette reference or a literal colour, as CSS; undefined when it is neither. */
+function resolveColor(palette: Palette, reference: string): string | undefined {
+  const value = reference.trim()
+  return resolveShade(palette, value) ?? (LITERAL_COLOR.test(value) ? value : undefined)
+}
+
+/**
+ * Names in an app's overrides that stx has no role for.
+ *
+ * Returned rather than thrown: a renamed role should not take a site down,
+ * but it must not be silent either - an unanswered role is a component
+ * quietly drawing the stock colour, which reads as a design decision.
+ */
+export function unknownRoleNames(overrides: ThemeRoleOverrides = {}): string[] {
+  return [
+    ...Object.keys(overrides.roles ?? {}).filter(name => !SEMANTIC_TOKENS[name]).map(name => `roles.${name}`),
+    ...Object.keys(overrides.shapes ?? {}).filter(name => !SHAPE_TOKENS[name]).map(name => `shapes.${name}`),
+    ...Object.keys(overrides.density ?? {}).filter(name => !DENSITY_TOKENS[name]).map(name => `density.${name}`),
+  ]
+}
+
+/**
  * The palette entries to merge into `theme.colors`.
  *
  * Every entry is `var(--stx-<name>, <light value>)`, so the name works as an
@@ -501,13 +553,16 @@ export function semanticColors(palette: Palette): Record<string, string> {
  * compile to `.dark .dark\:x`), so a token and a `dark:` utility on the same
  * page agree about what dark mode is.
  */
-export function semanticTokenCSS(palette: Palette): string {
+export function semanticTokenCSS(palette: Palette, roles: Record<string, RoleColor> = {}): string {
   const light: string[] = []
   const dark: string[] = []
 
   for (const [name, token] of Object.entries(SEMANTIC_TOKENS)) {
-    const lightValue = resolveShade(palette, token.light)
-    const darkValue = resolveShade(palette, token.dark)
+    const answer = roles[name]
+    const lightAnswer = typeof answer === 'string' ? answer : answer?.light
+    const darkAnswer = typeof answer === 'string' ? answer : answer?.dark
+    const lightValue = (lightAnswer && resolveColor(palette, lightAnswer)) || resolveShade(palette, token.light)
+    const darkValue = (darkAnswer && resolveColor(palette, darkAnswer)) || resolveShade(palette, token.dark)
     if (lightValue === undefined)
       continue
     light.push(`  ${tokenVariable(name)}: ${lightValue};`)
@@ -585,11 +640,11 @@ export function shapeRadii(): Record<string, string> {
  * No `.dark` counterpart: a radius does not change with the colour scheme, and
  * emitting an empty dark block would invite someone to fill it in.
  */
-export function shapeTokenCSS(): string {
+export function shapeTokenCSS(shapes: Record<string, string> = {}): string {
   return [
     '/* stx shape tokens — a radius by what the thing is. */',
     ':root {',
-    ...Object.entries(SHAPE_TOKENS).map(([name, token]) => `  ${shapeVariable(name)}: ${token.value};`),
+    ...Object.entries(SHAPE_TOKENS).map(([name, token]) => `  ${shapeVariable(name)}: ${shapes[name] ?? token.value};`),
     '}',
     '',
   ].join('\n')
@@ -720,11 +775,11 @@ export function densityFontSizes(): Record<string, [string, { lineHeight: string
  * No `.dark` counterpart, for the reason the shape roles have none: room does
  * not change with the colour scheme.
  */
-export function densityTokenCSS(): string {
+export function densityTokenCSS(density: Record<string, string> = {}): string {
   return [
     '/* stx density tokens — how much room a control or a table cell takes. */',
     ':root {',
-    ...Object.entries(DENSITY_TOKENS).map(([name, token]) => `  ${densityVariable(name)}: ${token.value};`),
+    ...Object.entries(DENSITY_TOKENS).map(([name, token]) => `  ${densityVariable(name)}: ${density[name] ?? token.value};`),
     '}',
     '',
   ].join('\n')

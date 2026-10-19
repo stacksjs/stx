@@ -255,6 +255,15 @@ function resolveColor(colorClass: string): string | undefined {
   return undefined
 }
 
+/**
+ * A palette reference (`emerald-600`, `white`) or a bracketed colour as the
+ * hex a native host reads, or undefined. The web palette is oklch, which
+ * neither host parses, so an app's role answers resolve here for a phone.
+ */
+export function nativePaletteColor(reference: string): string | undefined {
+  return resolveColor(reference.trim())
+}
+
 /** `#rgb`/`#rrggbb` (or a palette name already resolved to one) with an alpha. */
 function withAlpha(color: string, alpha: number): string | undefined {
   if (color === 'transparent') return color

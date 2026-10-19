@@ -105,6 +105,8 @@ let configFingerprint: string | null = null
  * shortcuts and theme, and its cache keys too.
  */
 const configByRoot = new Map<string, { config: CssConfig | null, fingerprint: string }>()
+/** Roots already warned about role names stx does not know, so each says so once. */
+const warnedRoleRoots = new Set<string>()
 
 /**
  * Compute a stable short hash of a string. Used as the cache file
@@ -836,6 +838,10 @@ async function generateCssUncached(htmlContent: string, appDir?: string): Promis
     // still honoured rather than ignored twice over.
     const merged = mergeCssConfig(baseConfig as Record<string, any>, userConfig as Record<string, any>)
     const { safelist, includePreflight, minify, tokenCSS } = merged
+    if (merged.unknownRoles.length > 0 && !warnedRoleRoots.has(resolveRoot)) {
+      warnedRoleRoots.add(resolveRoot)
+      console.warn(`${colors.yellow}[ts-css]${colors.reset} No stx role for ${merged.unknownRoles.join(', ')} - these keep the stock value. Role names: semanticTokenNames() in @stacksjs/stx/theme-tokens.`)
+    }
     const cssConfig = merged.config as CssConfig
 
     // Generate CSS using Css's CSSGenerator

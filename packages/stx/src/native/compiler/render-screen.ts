@@ -33,6 +33,7 @@ import { loadStxConfig } from '../../config'
 import { extractBindingManifest, type BindingManifest } from '../../binding-manifest'
 import { processDirectives } from '../../process'
 import { processScriptSetup } from '../../signal-processing'
+import { appThemeCSS } from './app-theme'
 import { translateHtmlToDocument } from './html-to-ir'
 import { extractClientScript } from './client-script'
 import { extractGeneratedSetupScript, extractNativeClientScripts, type GeneratedSetupScript, type NativeClientScript } from './setup-script'
@@ -120,7 +121,10 @@ export async function compileScreenSource(
   )
   const { html, manifest } = extractBindingManifest(renderedHtml)
 
-  const { document, diagnostics } = await translateHtmlToDocument(html, {
+  // The app's answers for the role tokens, which the web gets from the page
+  // stylesheet and a native screen otherwise never sees (app-theme.ts).
+  const theme = await appThemeCSS(root)
+  const { document, diagnostics } = await translateHtmlToDocument(theme ? `<style>${theme}</style>${html}` : html, {
     source: filePath,
     // Read from the source, not from the rendered page: the rendered page also
     // carries the signals runtime and the router, which are not the screen's.
