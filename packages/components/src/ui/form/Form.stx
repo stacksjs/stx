@@ -67,17 +67,22 @@ function validateOne(name, value) {
 // Delegated on the <form> rather than bound per input: the children arrive
 // through <slot />, so the component never sees them individually. `input` and
 // `focusout` both bubble (`blur` does not, which is why focusout is used).
+function fieldValue(target) {
+  return (target.type === 'checkbox' || target.type === 'radio') && !target.checked ? undefined : target.value
+}
+
 function onFieldInput(event) {
   const name = event.target?.name
   if (!name) return
-  values.set({ ...values(), [name]: event.target.value })
-  if (validateOnChange) validateOne(name, event.target.value)
+  const value = fieldValue(event.target)
+  values.set({ ...values(), [name]: value })
+  if (validateOnChange) validateOne(name, value)
 }
 
 function onFieldBlur(event) {
   const name = event.target?.name
   if (!name) return
-  if (validateOnBlur) validateOne(name, event.target.value)
+  if (validateOnBlur) validateOne(name, fieldValue(event.target))
 }
 
 function validateForm(values) {

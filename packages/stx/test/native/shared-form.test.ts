@@ -11,7 +11,7 @@ async function formBundle() {
   const root = createTempDir('stx-shared-form-')
   mkdirSync(path.join(root, 'components'))
   await Bun.write(path.join(root, 'stx.config.ts'), 'export default {}')
-  for (const [name, source] of Object.entries({ SharedForm: 'form/Form', SharedInput: 'input/TextInput', SharedButton: 'button/Button' })) {
+  for (const [name, source] of Object.entries({ SharedForm: 'form/Form', SharedInput: 'input/TextInput', SharedButton: 'button/Button', SharedCheckbox: 'checkbox/Checkbox' })) {
     await Bun.write(path.join(root, 'components', `${name}.stx`), Bun.file(path.join(import.meta.dir, '../../../components/src/ui', `${source}.stx`)))
   }
   const source = `<script client>
@@ -24,6 +24,7 @@ function captureSubmission(values, helpers) { window.submissions.push(values); w
 </script>
 <div x-ref="profile"><SharedForm :initialValues="{ source: 'profile' }" :validationSchema="schema" validateOnChange validateOnBlur @submit="captureSubmission" @error="window.failures.push($event)">
   <SharedInput name="name" value="Ada" showCount maxLength="40" />
+  <SharedCheckbox name="agree" value="yes" />
   <input type="hidden" name="token" value="saved-token" />
   <SharedButton type="submit" testID="save">Save</SharedButton>
   <SharedButton type="reset">Reset</SharedButton>
@@ -47,6 +48,26 @@ function formApi(phone: NativeScreen) {
 }
 
 describe('shared Form on a native host (#2088)', () => {
+  it('tracks checked values and omits an unchecked shared checkbox', async () => {
+    const phone = await formScreen()
+    await phone.settle()
+    const { api } = formApi(phone)
+    const checkbox = phone.ofType('Checkbox').find(node => node.props.name === 'agree')!
+    expect(checkbox).toBeTruthy()
+    phone.press(checkbox, 'onValueChange', { value: true })
+    await phone.settle()
+    expect(api.values().agree).toBe('yes')
+    phone.press(phone.ofType('Button').find(node => node.props.type === 'submit')!)
+    await phone.settle()
+    expect(phone.context.submissions[0].agree).toBe('yes')
+    phone.press(checkbox, 'onValueChange', { value: false })
+    await phone.settle()
+    expect(api.values().agree).toBeUndefined()
+    phone.press(phone.ofType('Button').find(node => node.props.type === 'submit')!)
+    await phone.settle()
+    expect(phone.context.submissions[1].agree).toBeUndefined()
+  }, 30_000)
+
   it('submits current shared-control values from a real submit-button press', async () => {
     const phone = await formScreen()
     await phone.settle()

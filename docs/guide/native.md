@@ -30,8 +30,24 @@ Shared component props and emitted events go through the signals host:
 `useReactiveProp` observes native prop updates without a browser
 `MutationObserver`, and `defineEmits` delivers payloads through the native
 ownership tree. Named models, independent instances, and conditional remounts
-are covered by the native runtime tests. This does not make DOM-dependent
-overlay or form behavior portable by itself.
+are covered by the native runtime tests. DOM-dependent overlay behavior still
+needs its own host adapter.
+
+Shared `Form` uses host-owned control collection on native, not DOM FormData.
+Named text/picker values, checked checkbox values, and hidden fields are collected;
+disabled and unchecked fields are omitted. A submit button triggers validation
+and emits `submit(values, helpers)` or `error(errors)`. Use a bare handler such as
+`@submit="save"` to receive both arguments; inline `$event` remains the first
+payload. Required/custom rules and change/blur validation use the same component
+on web and native. `helpers.resetForm()` or a reset button restores form state
+and bound control models; callers can cancel the reset event.
+
+Local native `FormData` collection does not require the files capability.
+Multipart uploads still do. Native form support currently covers nested controls,
+not external `form="id"` association, disabled fieldsets, file inputs, or implicit
+keyboard submission. Tests exercise the actual shared Form, TextInput, Checkbox,
+and Button files in a browser and the maintained DOM-free native testing kit;
+they are not simulator or pixel-parity certification.
 
 Labels retain their interactive children. HTML checkbox inputs translate to
 native Checkbox nodes, with checked state separate from their form value;

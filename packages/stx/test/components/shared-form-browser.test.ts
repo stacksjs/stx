@@ -9,7 +9,7 @@ it('submits, validates and resets the actual shared Form and controls in a brows
   const dir = createTempDir('stx-shared-form-browser-')
   const view = new WebView({ headless: true })
   try {
-    for (const [name, source] of Object.entries({ SharedForm: 'form/Form', SharedInput: 'input/TextInput', SharedButton: 'button/Button' })) {
+    for (const [name, source] of Object.entries({ SharedForm: 'form/Form', SharedInput: 'input/TextInput', SharedButton: 'button/Button', SharedCheckbox: 'checkbox/Checkbox' })) {
       await Bun.write(join(dir, `${name}.stx`), Bun.file(resolve(import.meta.dir, '../../../components/src/ui', `${source}.stx`)))
     }
     const html = await processDirectives(`<!doctype html><html><head></head><body>
@@ -25,6 +25,7 @@ function captureSubmission(values, helpers) { window.submissions.push(values); w
 </script>
 <SharedForm :initialValues="{ source: 'profile' }" :validationSchema="schema" validateOnChange validateOnBlur @submit="captureSubmission" @error="window.failures.push($event)">
   <SharedInput name="name" value="Ada" showCount maxLength="40" />
+  <SharedCheckbox name="agree" value="yes" />
   <input type="hidden" name="token" value="saved-token" />
   <SharedButton type="submit">Save</SharedButton>
   <SharedButton type="reset">Reset</SharedButton>
@@ -39,6 +40,10 @@ function captureSubmission(values, helpers) { window.submissions.push(values); w
     expect(await view.evaluate(`document.querySelector('input[name="name"]').value`)).toBe('Ada')
     await view.evaluate(`window.formApi = document.querySelector('form').closest('[data-stx-scope]').__stx_exposed`)
     expect(await view.evaluate(`typeof window.formApi.validateForm`)).toBe('function')
+    await view.evaluate(`document.querySelector('input[name="agree"]').click()`)
+    expect(await view.evaluate(`formApi.values().agree`)).toBe('yes')
+    await view.evaluate(`document.querySelector('input[name="agree"]').click()`)
+    expect(await view.evaluate(`formApi.values().agree ?? null`)).toBeNull()
     const edit = async (value: string) => {
       await view.evaluate(`(() => { const input = document.querySelector('input[name="name"]'); input.value = ${JSON.stringify(value)}; input.dispatchEvent(new Event('input', { bubbles: true })); })()`)
       await Bun.sleep(10)
