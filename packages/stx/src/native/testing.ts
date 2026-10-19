@@ -37,6 +37,7 @@ import path from 'node:path'
 import vm from 'node:vm'
 import { compileSharedScreenBundle } from './compiler/bundle'
 import { NativeFormData } from './runtime/jsc-globals'
+import { type TestMutationError, validateTestMutations } from './testing-mutations'
 import { createTempDir } from '../temp-dir'
 
 export interface NativeNode {
@@ -204,6 +205,8 @@ export interface NativeScreen {
   nodes: Map<string, NativeNode>
   /** Every message the screen sent the host (RENDER, MUTATE, API_REQUEST, ...), parsed. */
   messages: NativeMessage[]
+  /** Rejected topology batches; settle() fails even if runtime recovery redraws the screen. */
+  mutationErrors: TestMutationError[]
   /** Every request, as `requestLabel` writes it (`GET /today`). */
   requests: string[]
   /** The headers each request was sent with, in order. */
@@ -327,6 +330,7 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
   const nodes = new Map<string, NativeNode>()
   /** Every message the screen sent the host (RENDER, MUTATE, API_REQUEST, ...), parsed. */
   const messages: NativeMessage[] = []
+  const mutationErrors: TestMutationError[] = []
   /** Every request, as `requestLabel` writes it. */
   const requests: string[] = []
   /** The headers each request was sent with, in order. */
@@ -538,6 +542,16 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
         const message: NativeMessage = JSON.parse(raw)
         // Its own copy: the tree below is the one the host keeps changing.
         messages.push(JSON.parse(raw))
+        if (message.type === 'MUTATE') {
+          const error = validateTestMutations(nodes, message.payload.operations || [])
+          if (error) {
+            mutationErrors.push(error)
+            queueMicrotask(() => {
+              if (!ended) receive(JSON.stringify({ type: 'MUTATION_ERROR', payload: { ...error, version: 1, batchId: message.payload.batchId } }))
+            })
+            return
+          }
+        }
         if (message.payload.document) visit(message.payload.document)
         for (const operation of message.payload.operations || []) {
           if (operation.op === 'removeNode') {
@@ -641,7 +655,7 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
   }
   const appState = (state: 'active' | 'background' | 'inactive') => send('APP_STATE', { state })
   return {
-    nodes, messages, requests, headers, opened, replaced, moves, stored, secureStorage, bars, snapshots, natives, streams, animations, alerts, picks, removed,
+    nodes, messages, mutationErrors, requests, headers, opened, replaced, moves, stored, secureStorage, bars, snapshots, natives, streams, animations, alerts, picks, removed,
     /** The vm the screen runs in, for a global the test reads or sets. */
     context,
     all,
@@ -713,6 +727,10 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
       await Bun.sleep(ms)
       while (performance.now() - started < 5000 && (fetching > 0 || performance.now() - answeredAt < ms))
         await Bun.sleep(5)
+      if (mutationErrors.length) {
+        const error = mutationErrors[0]
+        throw new Error(`Native mutation rejected (${error.code}, operation ${error.operationIndex}): ${error.message}`)
+      }
     },
     /** Every operation of the MUTATE batches sent so far, in order. */
     operations: (): NativeOperation[] => messages.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations || []),
