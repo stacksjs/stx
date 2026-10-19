@@ -50,3 +50,10 @@ test('keeps what the host installed for itself', () => {
   expect(craft.session.key).toBe('host.key')
   expect(craft.session.token()).toBe('host-token')
 })
+
+test('advertises change events only when the native host declares their token key', () => {
+  // An old host can still subscribe, but has never promised to emit an event.
+  expect(host().craft.session.supportsEvents).toBe(false)
+  expect(host({ key: '' }).craft.session.supportsEvents).toBe(false)
+  expect(host({ key: 'auth.token' }).craft.session.supportsEvents).toBe(true)
+})

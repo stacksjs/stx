@@ -241,6 +241,10 @@ export function installCraftBridge(
    * host installed itself (a `key`, its own `token`) is kept.
    */
   const sessionKey = String(craft.session?.key || nativeBridge.sessionTokenKey || 'auth.token')
+  // Older native hosts can load this runtime and subscribe, but never emit
+  // SESSION_CHANGED. A callable listener alone does not advertise support.
+  const supportsSessionEvents = craft.session?.supportsEvents === true
+    || (typeof nativeBridge.sessionTokenKey === 'string' && nativeBridge.sessionTokenKey.length > 0)
   craft.session = Object.assign({
     token: () => {
       const value = craft.secureStorage.getSync(sessionKey)
@@ -248,6 +252,7 @@ export function installCraftBridge(
     },
   }, craft.session || {}, {
     key: sessionKey,
+    supportsEvents: supportsSessionEvents,
     onChange: (callback: (token: string | null, previous: string | null) => void) =>
       protocol.on<{ key?: string, token?: string | null, previous?: string | null }>('SESSION_CHANGED', ({ payload }) => {
         if (payload?.key && payload.key !== sessionKey) return

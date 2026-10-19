@@ -533,7 +533,7 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
       appURL: options.appURL ?? 'https://fixture.invalid/m',
       appVersion: options.appVersion ?? '1.0.0',
       appBuild: options.appBuild ?? '1',
-      sessionTokenKey,
+      ...(options.sessionEvents === false ? {} : { sessionTokenKey }),
       postMessage: (raw: string) => {
         const message: NativeMessage = JSON.parse(raw)
         // Its own copy: the tree below is the one the host keeps changing.

@@ -176,6 +176,16 @@ async function signOut() { await craft.secureStorage.remove('auth.token') }
 </View>`
 
 describe('the signed-in account', () => {
+  it('advertises session events only on the host that can deliver them', async () => {
+    const { code } = await compileNativeScreen(SESSION_SCREEN, { name: 'Session' })
+    const current = mountNativeScreen(code, 'Session')
+    const old = mountNativeScreen(code, 'Session', { sessionEvents: false })
+    expect(current.context.craft.session.supportsEvents).toBe(true)
+    expect(old.context.craft.session.supportsEvents).toBe(false)
+    current.unmount()
+    old.unmount()
+  })
+
   it('reports token changes as craft.session events, from the host or from a write on the screen', async () => {
     const { code } = await compileNativeScreen(SESSION_SCREEN, { name: 'Session' })
     const phone = mountNativeScreen(code, 'Session', { secureStorage: { 'auth.token': 'a' } })
