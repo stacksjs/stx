@@ -57,12 +57,18 @@ jobs:
         run: bun install --frozen-lockfile --force --no-cache
 
 
+      # Every publish goes through scripts/publish-npm.sh: npm can take longer
+      # to make an accepted upload readable than pantry waits, and pantry then
+      # exits 1 with the version pending, which skipped every later stage
+      # (v0.2.575, v0.2.576). The script waits for the pending tarball and
+      # runs the same publish again; pantry skips what is already out.
+      #
       # Stage 1: publish every same-version package that @stacksjs/stx names in
       # its public manifest. npm validates those exact dependencies when the
       # stx package is uploaded, so publishing stx alongside them is a race:
       # the first registry edge to see stx may not see its dependencies yet.
       - name: Publish stx runtime dependencies
-        run: pantry publish --npm --access public packages/router packages/sanitizer packages/desktop packages/bun-plugin
+        run: bash scripts/publish-npm.sh --npm --access public packages/router packages/sanitizer packages/desktop packages/bun-plugin
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -70,7 +76,7 @@ jobs:
       # registered. The retry-safe dispatch path can then finish a partially
       # propagated release without creating another version.
       - name: Publish stx
-        run: pantry publish --npm --access public packages/stx
+        run: bash scripts/publish-npm.sh --npm --access public packages/stx
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -90,7 +96,7 @@ jobs:
       # (v0.2.235, v0.2.236) before it was diagnosed, because the first one
       # happened to survive it.
       - name: Publish remaining core packages
-        run: pantry publish --npm --access public --skip collections,stx,bun-plugin,router,sanitizer,desktop
+        run: bash scripts/publish-npm.sh --npm --access public --skip collections,stx,bun-plugin,router,sanitizer,desktop
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -166,6 +172,6 @@ jobs:
             || echo "::warning::Some icon pre-builds failed; pantry will retry via prepublishOnly"
 
       - name: Publish icon collections
-        run: pantry publish --npm --access public --skip bun-plugin,components,config,create-stx,desktop,iconify-core,iconify-generator,markdown,router,sanitizer,stx
+        run: bash scripts/publish-npm.sh --npm --access public --skip bun-plugin,components,config,create-stx,desktop,iconify-core,iconify-generator,markdown,router,sanitizer,stx
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
