@@ -92,6 +92,15 @@ CSS-variable resolution, and arbitrary browser declarations are not supported.
 Unknown directional radius names produce diagnostics
 instead of silently falling back to a different radius.
 
+Numeric `translate-x-*` and `translate-y-*` utilities use the host's transform
+array, including negative spacing values and arbitrary `px`/`rem`/`em` lengths
+(a fixed 16-point root for relative units). Both axes compose; a dark-appearance
+override changes only its axis. Reactive class replacement removes obsolete
+translations, and an explicit inline transform takes priority. Percentages,
+fractions such as `translate-x-1/2`, and CSS functions remain diagnosed rather
+than being treated as point values. Translation support does not imply CSS
+transition animation support.
+
 This default-token support does not transport app CSS-variable overrides to
 native, nor implement ring utilities. Full theme customization and maintained
 host visual validation remain tracked in [#2090](https://github.com/stacksjs/stx/issues/2090).

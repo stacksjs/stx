@@ -868,6 +868,26 @@ function parsePosition(className: string, style: STXStyle): boolean {
   return true
 }
 
+/** Host translations are logical points, never percentages of an unknown box. */
+function parseTranslation(className: string, style: STXStyle): boolean {
+  const match = /^(-?)translate-(x|y)-(.+)$/.exec(className)
+  if (!match) return false
+  const token = match[3]
+  let value: number | undefined
+  if (token.startsWith('[')) {
+    const length = /^\[([+-]?(?:\d+\.?\d*|\.\d+))(px|rem|em)?\]$/.exec(token)
+    if (!length) return false
+    value = Number(length[1]) * (length[2]?.endsWith('em') ? 16 : 1)
+  }
+  else value = resolveSpacing(token)
+  if (value === undefined || !Number.isFinite(value)) return false
+  if (match[1]) value = -value
+  const key = match[2] === 'x' ? 'translateX' : 'translateY'
+  const step = key === 'translateX' ? { translateX: value } : { translateY: value }
+  style.transform = [...(style.transform ?? []).filter(previous => !(key in previous)), step]
+  return true
+}
+
 /** `space-y-3` lays children out the way `gap` does on a native stack. */
 function parseSpace(className: string, style: STXStyle): boolean {
   const match = /^space-(x|y)-(.+)$/.exec(className)
@@ -973,6 +993,11 @@ export function compileClassStyles(classes: string): ClassStyles {
   const style = compileHeadwindToStyle(plain.join(' '), unknown)
   const result: ClassStyles = { style, unknown }
   if (dark.length || semanticDark.length) result.dark = compileHeadwindToStyle([...semanticDark, ...dark].join(' '), unknown)
+  // A dark x translation replaces x, not the entire light transform array.
+  if (style.transform && result.dark?.transform) {
+    const overridden = new Set(result.dark.transform.flatMap(step => Object.keys(step)))
+    result.dark.transform = [...style.transform.filter(step => !Object.keys(step).some(key => overridden.has(key))), ...result.dark.transform]
+  }
   for (const name of plain) {
     if (name === 'truncate') result.numberOfLines = 1
     const clamp = /^line-clamp-(\d+)$/.exec(name)
@@ -1019,6 +1044,7 @@ export function compileHeadwindToStyle(classes: string, unknown?: string[]): STX
     if (parseMinMax(className, style)) continue
     if (parseGridColumns(className, style)) continue
     if (parsePosition(className, style)) continue
+    if (parseTranslation(className, style)) continue
     if (parseSpace(className, style)) continue
 
     unknown?.push(className)

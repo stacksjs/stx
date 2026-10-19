@@ -33,8 +33,10 @@ describe.each([false, true])('shared Switch disabled state (minify=%s)', (minify
     try {
       await phone.settle()
       const control = () => phone.ofType('Pressable')[0]
+      const thumb = () => phone.all().find(node => node.props['aria-hidden'] === true)!
       const probe = phone.context.probe
       expect(probe.values().alerts).toBe('false')
+      expect(thumb().style.transform).toEqual([{ translateX: 0 }])
       probe.disabled.set(true)
       await phone.settle()
       expect(control().props.disabled).toBe(true)
@@ -49,10 +51,12 @@ describe.each([false, true])('shared Switch disabled state (minify=%s)', (minify
       await phone.settle()
       expect(control().props.disabled).toBe(false)
       expect(probe.values().alerts).toBe('true')
+      expect(thumb().style.transform).toEqual([{ translateX: 36 }])
       phone.press(control())
       await phone.settle()
       expect(probe.checked()).toBe(false)
       expect(probe.changes()).toBe(1)
+      expect(thumb().style.transform).toEqual([{ translateX: 0 }])
 
       probe.shown.set(false)
       await phone.settle()
@@ -63,6 +67,7 @@ describe.each([false, true])('shared Switch disabled state (minify=%s)', (minify
       await phone.settle()
       expect(control().props.disabled).toBe(true)
       expect(control().props['aria-checked']).toBe('true')
+      expect(thumb().style.transform).toEqual([{ translateX: 36 }])
       expect(probe.values().alerts).toBeUndefined()
       phone.unmount()
       const count = phone.messages.length
