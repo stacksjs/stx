@@ -30,6 +30,21 @@ dark appearance. Supported styles still compile, so a successful build with that
 warning is not proof of visual parity. Runtime-computed class strings require
 interaction tests too; a static diagnostic cannot inspect every future value.
 
+Native shape and density utilities read their defaults from the same token
+definitions as web: `rounded-control`/`rounded-panel`/`rounded-pill` (including
+directional corners), `px-control-x`/`py-control-y`, the cell spacing roles, and
+`text-control`/`text-cell`/`text-cell-head` with their line heights. Token lengths
+use the default 16px root, expressed as native logical points. Computed classes
+use this same translation when they change, and explicit supported inline
+styles retain priority. Reactive style objects replace their previous binding
+values; removing a key restores the underlying authored style or class value.
+Unknown directional radius names produce diagnostics
+instead of silently falling back to a different radius.
+
+This default-token support does not transport app CSS-variable overrides to
+native, nor implement ring utilities. Full theme customization and maintained
+host visual validation remain tracked in [#2090](https://github.com/stacksjs/stx/issues/2090).
+
 Shared component props and emitted events go through the signals host:
 `useReactiveProp` observes native prop updates without a browser
 `MutationObserver`, and `defineEmits` delivers payloads through the native

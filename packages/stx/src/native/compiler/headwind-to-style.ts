@@ -7,6 +7,7 @@
  */
 
 import { SEMANTIC_TOKENS } from '../../theme-tokens'
+import { nativeDensitySpacing, nativeDensityType, nativeShapeRadius } from './design-tokens'
 import type { STXStyle } from './ir'
 
 // ============================================================================
@@ -291,7 +292,7 @@ function resolveSpacing(value: string): number | undefined {
     return Number.isFinite(length) ? length : undefined
   }
 
-  return spacing[value]
+  return spacing[value] ?? nativeDensitySpacing(value)
 }
 
 /**
@@ -441,6 +442,12 @@ function parseBackgroundColor(className: string, style: STXStyle): boolean {
 function parseTextColor(className: string, style: STXStyle): boolean {
   if (!className.startsWith('text-')) return false
   const value = className.slice(5)
+
+  const density = nativeDensityType(value)
+  if (density) {
+    Object.assign(style, density)
+    return true
+  }
 
   // Check if it's a font size
   if (fontSizes[value]) {
@@ -713,65 +720,30 @@ function parseHeight(className: string, style: STXStyle): boolean {
 }
 
 function parseBorderRadius(className: string, style: STXStyle): boolean {
-  if (!className.startsWith('rounded')) return false
-
   if (className === 'rounded') {
     style.borderRadius = borderRadius.DEFAULT
     return true
   }
-
+  if (!className.startsWith('rounded-')) return false
   const value = className.slice(8) // Remove 'rounded-'
   if (value === '') return false
-
-  // `rounded-[10px]`, and the corner forms `rounded-t-[2px]`.
-  const corner = /^(?:(t|b|l|r)-)?(\[[^\]]+\])$/.exec(value)
-  if (corner) {
-    const r = arbitraryLength(corner[2])
-    if (r === undefined) return false
-    const corners: Record<string, Array<keyof STXStyle>> = {
-      t: ['borderTopLeftRadius', 'borderTopRightRadius'],
-      b: ['borderBottomLeftRadius', 'borderBottomRightRadius'],
-      l: ['borderTopLeftRadius', 'borderBottomLeftRadius'],
-      r: ['borderTopRightRadius', 'borderBottomRightRadius'],
-    }
-    for (const key of corner[1] ? corners[corner[1]] : ['borderRadius' as keyof STXStyle])
-      (style as Record<string, unknown>)[key] = r
-    return true
+  const corner = /^(?:(tl|tr|bl|br|t|b|l|r)-)?(.+)$/.exec(value)!
+  const radius = borderRadius[corner[2]] ?? nativeShapeRadius(corner[2]) ?? arbitraryLength(corner[2])
+  // An unrecognized directional token must not silently become rounded (4px).
+  if (radius === undefined) return false
+  const corners: Record<string, Array<keyof STXStyle>> = {
+    t: ['borderTopLeftRadius', 'borderTopRightRadius'],
+    b: ['borderBottomLeftRadius', 'borderBottomRightRadius'],
+    l: ['borderTopLeftRadius', 'borderBottomLeftRadius'],
+    r: ['borderTopRightRadius', 'borderBottomRightRadius'],
+    tl: ['borderTopLeftRadius'],
+    tr: ['borderTopRightRadius'],
+    bl: ['borderBottomLeftRadius'],
+    br: ['borderBottomRightRadius'],
   }
-
-  // Handle corner-specific
-  if (value.startsWith('t-')) {
-    const r = borderRadius[value.slice(2)] ?? borderRadius.DEFAULT
-    style.borderTopLeftRadius = r
-    style.borderTopRightRadius = r
-    return true
-  }
-  if (value.startsWith('b-')) {
-    const r = borderRadius[value.slice(2)] ?? borderRadius.DEFAULT
-    style.borderBottomLeftRadius = r
-    style.borderBottomRightRadius = r
-    return true
-  }
-  if (value.startsWith('l-')) {
-    const r = borderRadius[value.slice(2)] ?? borderRadius.DEFAULT
-    style.borderTopLeftRadius = r
-    style.borderBottomLeftRadius = r
-    return true
-  }
-  if (value.startsWith('r-')) {
-    const r = borderRadius[value.slice(2)] ?? borderRadius.DEFAULT
-    style.borderTopRightRadius = r
-    style.borderBottomRightRadius = r
-    return true
-  }
-
-  const radius = borderRadius[value]
-  if (radius !== undefined) {
-    style.borderRadius = radius
-    return true
-  }
-
-  return false
+  for (const key of corner[1] ? corners[corner[1]] : ['borderRadius' as keyof STXStyle])
+    (style as Record<string, unknown>)[key] = radius
+  return true
 }
 
 function parseBorderWidth(className: string, style: STXStyle): boolean {
