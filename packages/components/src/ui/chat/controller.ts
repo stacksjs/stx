@@ -46,6 +46,9 @@ export interface ChatController {
   connected: Signal<boolean>
 }
 
+/** How long a mount's list read waits for the stream to start listening before reading anyway. */
+const CHAT_LISTEN_WAIT_MS = 1500
+
 /** Transport-injected messaging state shared by any STX app. */
 export function createChat(options: ChatOptions): ChatController {
   const endpoint = options.endpoint ?? '/messages'
@@ -123,10 +126,34 @@ export function createChat(options: ChatOptions): ChatController {
    * share one request instead of each sending its own.
    */
   const list = sharedRequest<number, void>()
+  /*
+   * Reads waiting for the stream to listen. A list read after that misses
+   * nothing, so the stream's first connect need not read it again: the mount
+   * used to read the list, and the connect read it a second time to catch up.
+   * A refused stream, a dropped one or CHAT_LISTEN_WAIT_MS lets them go.
+   */
+  const listening = new Set<() => void>()
+  function whenListening(): Promise<void> {
+    // With a stream to have, wait for it whoever opens it: the components that
+    // show the chat observe on mount, and an inbox asks during its setup,
+    // before any of them has.
+    if (!options.broadcastEndpoint || !options.selfId() || connected()) return Promise.resolve()
+    return new Promise<void>((resolve) => {
+      const done = () => { clearTimeout(timer); listening.delete(done); resolve() }
+      const timer = setTimeout(done, CHAT_LISTEN_WAIT_MS)
+      listening.add(done)
+    })
+  }
+  /** Let the waiting reads go; whether there were any. */
+  function release(): boolean {
+    if (!listening.size) return false
+    for (const done of [...listening]) done()
+    return true
+  }
   function load(): Promise<void> {
     checkScope()
     // flushInvalidation runs once the request is off the list (list.busy false).
-    return list.run(version, () => loadList()).finally(flushInvalidation)
+    return list.run(version, () => whenListening().then(loadList)).finally(flushInvalidation)
   }
   /** A list read after now: waits out one already in flight, which may predate the change. */
   async function loadFresh() {
@@ -228,8 +255,9 @@ export function createChat(options: ChatOptions): ChatController {
     const accountScope = scope
     stream = useBroadcastStream({
       endpoint: options.broadcastEndpoint, request: options.request,
-      onStatus: value => connected.set(value),
-      onConnected: () => { if (accountScope === options.scopeKey()) void reconcile() },
+      onStatus: (value) => { connected.set(value); if (!value) release() },
+      // A read waiting for this connect is the catch-up; with none, read again.
+      onConnected: () => { if (!release() && accountScope === options.scopeKey()) void reconcile() },
       onMessage: frame => { if (accountScope === options.scopeKey() && frame.event.startsWith('messaging.')) void reconcile() },
     })
   }

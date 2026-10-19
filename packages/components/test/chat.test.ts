@@ -105,6 +105,75 @@ describe('native chat components and controller', () => {
     expect(chat.connected()).toBe(false)
   })
 
+  it('reads the list once at mount, after the stream is listening, and again on a reconnect', async () => {
+    // Each component loads on mount and then observes. The list read went out
+    // at once, and the stream's first connect read it again to catch up.
+    let lists = 0, streams = 0, listAfterStream = false
+    const outputs: Array<ReadableStreamDefaultController<Uint8Array>> = []
+    const chat = createChat({
+      selfId: () => 1, scopeKey: () => 'coach', broadcastEndpoint: '/messages/events',
+      request: async (url) => {
+        if (url.endsWith('/events')) {
+          streams++
+          return new Response(new ReadableStream<Uint8Array>({ start(controller) { outputs.push(controller) } }), { headers: { 'Content-Type': 'text/event-stream' } })
+        }
+        lists++
+        listAfterStream = chat.connected()
+        return Response.json({ contacts: [contact], conversations: [], max_length: 4000 })
+      },
+    })
+    const loading = chat.load()
+    const stop = chat.observe()
+    await loading
+    for (let i = 0; i < 40; i++) await Bun.sleep(1)
+    expect({ lists, streams, listAfterStream }).toEqual({ lists: 1, streams: 1, listAfterStream: true })
+    // Dropped and back: whatever happened meanwhile is read again.
+    outputs[0]!.close()
+    for (let i = 0; i < 2000 && streams < 2; i++) await Bun.sleep(1)
+    for (let i = 0; i < 200 && lists < 2; i++) await Bun.sleep(1)
+    expect(lists).toBe(2)
+    stop()
+  })
+
+  it('waits for a stream opened after the read was asked for, as an inbox asks during its setup', async () => {
+    let lists = 0, listAfterStream = false
+    const chat = createChat({
+      selfId: () => 1, scopeKey: () => 'coach', broadcastEndpoint: '/messages/events',
+      request: async (url) => {
+        if (url.endsWith('/events')) return new Response(new ReadableStream<Uint8Array>({ start() {} }), { headers: { 'Content-Type': 'text/event-stream' } })
+        lists++
+        listAfterStream = chat.connected()
+        return Response.json({ contacts: [], conversations: [], max_length: 4000 })
+      },
+    })
+    const loading = chat.refresh(true)
+    await Bun.sleep(20)
+    const stop = chat.observe()
+    await loading
+    for (let i = 0; i < 40; i++) await Bun.sleep(1)
+    expect({ lists, listAfterStream }).toEqual({ lists: 1, listAfterStream: true })
+    stop()
+  })
+
+  it('reads the list at once when the stream is refused', async () => {
+    let lists = 0
+    const chat = createChat({
+      selfId: () => 1, scopeKey: () => 'coach', broadcastEndpoint: '/messages/events',
+      request: async (url) => {
+        if (url.endsWith('/events')) return new Response('{}', { status: 503, headers: { 'Content-Type': 'application/json' } })
+        lists++
+        return Response.json({ contacts: [], conversations: [], max_length: 4000 })
+      },
+    })
+    const started = performance.now()
+    const loading = chat.load()
+    const stop = chat.observe()
+    await loading
+    expect(performance.now() - started).toBeLessThan(500)
+    expect(lists).toBe(1)
+    stop()
+  })
+
   it('bundles the published browser entry with native signals', async () => {
     const build = Bun.spawnSync(['bun', 'run', 'build.ts'], { cwd: root, stdout: 'pipe', stderr: 'pipe' })
     expect(build.exitCode).toBe(0)
