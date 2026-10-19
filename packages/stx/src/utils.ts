@@ -1061,7 +1061,7 @@ export async function renderComponentWithSlot(
    * caller's context already carries.
    */
   clientLoopNames: readonly string[] = inheritedClientLoopNames(parentContext),
-  renderMetadata?: { declaredProps: Set<string>, consumedProps?: Set<string> },
+  renderMetadata?: { declaredProps: Set<string>, consumedProps?: Set<string>, reactiveProps?: string[] },
   /** Original tag spelling for case-sensitive file lookup; identity stays canonical. */
   lookupName: string = componentPath,
 ): Promise<string> {
@@ -1369,14 +1369,15 @@ export async function renderComponentWithSlot(
     // component's API. This lets unknown DOM/data/ARIA attrs fall through
     // without leaking props such as `variant` onto the root element.
     if (renderMetadata) {
-      for (const propName of Object.keys(props)) {
+      for (const propName of new Set([...Object.keys(props), ...renderMetadata.reactiveProps ?? []])) {
         const normalized = propName.toLowerCase()
         if (normalized.startsWith('aria-') || normalized.startsWith('data-'))
           continue
         const escaped = propName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
         if (new RegExp(`\\b${escaped}\\b`).test(componentContent))
           renderMetadata.declaredProps.add(propName)
-        if (new RegExp(`\\$props\\s*(?:\\.\\s*${escaped}\\b|\\[\\s*['"]${escaped}['"]\\s*\\])`).test(componentContent))
+        if (new RegExp(`\\$props\\s*(?:\\.\\s*${escaped}\\b|\\[\\s*['"]${escaped}['"]\\s*\\])`).test(componentContent)
+          || new RegExp(`\\buseReactiveProp\\s*\\(\\s*['"]${escaped}['"]`).test(componentContent))
           renderMetadata.consumedProps?.add(propName)
       }
     }

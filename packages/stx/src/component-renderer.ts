@@ -1137,7 +1137,11 @@ async function processCustomElementTags(
       }
 
       // Render the file component
-      const renderMetadata = { declaredProps: new Set<string>(), consumedProps: new Set<string>() }
+      const renderMetadata = {
+        declaredProps: new Set<string>(),
+        consumedProps: new Set<string>(),
+        reactiveProps: Object.keys(resolvedProps.clientReactive),
+      }
       const processedContent = await renderComponentWithSlot(
         componentPath,
         mergedProps,
@@ -1165,6 +1169,23 @@ async function processCustomElementTags(
       // accessibilityLabel. Individual primitive templates should only need
       // to declare props they consume; forward every other resolved prop once.
       finalContent = forwardHostAttrs(finalContent, resolvedProps, renderMetadata.declaredProps, renderMetadata.consumedProps, options._nativeHostAttrs)
+
+      if (options._nativeHostAttrs) {
+        const names = renderMetadata.reactiveProps
+          .filter(name => !renderMetadata.consumedProps.has(name) && !['if', 'for', 'show', 'key', 'ref'].includes(name))
+          .map(pascalToKebab)
+        const hostRoot = findRenderedComponentHostRoot(finalContent)
+        if (names.length && hostRoot) {
+          // Parent expressions still evaluate on the scope wrapper. Mark the
+          // concrete control so the native host can deliver unconsumed attrs
+          // there without evaluating caller expressions in the child scope.
+          finalContent = finalContent.slice(0, hostRoot.insertPos)
+            + ' data-stx-native-host-root="true"' + finalContent.slice(hostRoot.insertPos)
+          const scopeRoot = findRenderedComponentRoot(finalContent)!
+          finalContent = finalContent.slice(0, scopeRoot.insertPos)
+            + ` data-stx-native-forward="${names.join(' ')}"` + finalContent.slice(scopeRoot.insertPos)
+        }
+      }
 
       // Forward @event attributes from parent to component's root element.
       // This connects parent handlers to child defineEmits() — the child emits

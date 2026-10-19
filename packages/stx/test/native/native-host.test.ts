@@ -70,6 +70,28 @@ describe('the native host satisfies the same contract as the DOM one', () => {
 })
 
 describe('host calls become bridge operations', () => {
+  it('reflects forwarded attributes on both the component scope and the physical control', async () => {
+    const { host } = harness()
+    const control = createNode('Pressable', { 'data-stx-native-host-root': true })
+    const root = createNode('View', { 'data-stx-native-forward': 'test-id', 'data-stx-component-wrapper': true }, {}, {}, [control])
+    const tree = materializeNativeBindingTree(createDocument(root, { exports: {}, functions: [], code: '' }), { entries: [] }, host)
+    const target = host.descendants(tree.root)[0]
+    const observed: Array<string | null> = []
+    host.observeAttributes(target, ['test-id'], () => observed.push(host.getAttribute(target, 'test-id')))
+    host.setAttribute(tree.root, 'test-id', 'physical')
+    await Promise.resolve()
+    expect(host.getAttribute(tree.root, 'test-id')).toBe('physical')
+    expect(host.getAttribute(target, 'test-id')).toBe('physical')
+    const snapshot = host.snapshot(tree.root)
+    expect(snapshot.props.testID).toBeUndefined()
+    expect((snapshot.children[0] as typeof control).props.testID).toBe('physical')
+    host.removeAttribute(tree.root, 'test-id')
+    await Promise.resolve()
+    expect(host.getAttribute(tree.root, 'test-id')).toBeNull()
+    expect(host.getAttribute(target, 'test-id')).toBeNull()
+    expect(observed).toEqual(['physical', null])
+  })
+
   it('retains component caller metadata and static attributes on binding handles', () => {
     const { host } = harness()
     const tree = materializeNativeBindingTree(createDocument(createNode('View', {

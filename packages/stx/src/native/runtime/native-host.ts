@@ -62,6 +62,9 @@ interface NodeRecord {
   /** Reactive :style replaces this layer without destroying authored inline styles. */
   boundStyle?: Record<string, unknown>
   classes: string
+  /** Caller classes override, but never replace, the component's own classes. */
+  forwardedClasses?: string
+  forwardedStyle?: Record<string, unknown>
   events: Record<string, string>
   text?: string
   children: NativeNode[]
@@ -442,8 +445,58 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   }
 
   function resolveStyle(record: NodeRecord): Record<string, unknown> {
-    const classes = compileClassStyles(record.classes)
-    return { ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}), ...record.baseStyle, ...record.boundStyle, ...(record.visible ? {} : { display: 'none' }) }
+    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`)
+    return { ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}), ...record.baseStyle, ...record.boundStyle, ...record.forwardedStyle, ...(record.visible ? {} : { display: 'none' }) }
+  }
+
+  function forwardedHostRoot(node: NativeNode, name: string): NativeNode | undefined {
+    if (!isBindingNode(node) || !(node.getAttribute('data-stx-native-forward') ?? '').split(/\s+/).includes(name))
+      return
+    const find = (candidate: NativeNode): NativeNode | undefined => {
+      if (isBindingNode(candidate) && candidate.hasAttribute('data-stx-native-host-root'))
+        return candidate
+      for (const child of recordOf(candidate).children) {
+        // Another component owns its own forwarding policy.
+        if (isBindingNode(child) && child.hasAttribute('data-stx-component-wrapper'))
+          continue
+        const match = find(child)
+        if (match) return match
+      }
+    }
+    return find(node)
+  }
+
+  function applyForwardedStyle(node: NativeNode, name: string, value: unknown): boolean {
+    const record = recordOf(node)
+    if (name === 'class' || name === 'class-name' || name === 'className') {
+      record.forwardedClasses = Array.isArray(value)
+        ? value.filter(Boolean).join(' ')
+        : value && typeof value === 'object'
+          ? Object.entries(value).filter(([, enabled]) => enabled).map(([classes]) => classes).join(' ')
+          : String(value ?? '')
+    }
+    else if (name === 'style')
+      record.forwardedStyle = parseNativeStyle(value, diagnostic => {
+        console.warn(`[STX Native] ${diagnostic.kind}: ${node.__stxId}: ${diagnostic.name}`)
+      }) as Record<string, unknown>
+    else
+      return false
+    applyClasses(node.__stxId, record)
+    return true
+  }
+
+  function reflectAttribute(node: NativeNode, name: string, value: unknown, remove = false): void {
+    if (!isBindingNode(node) || name === 'class' || name === 'className') return
+    if (remove) {
+      if (!node.hasAttribute(name)) return
+      node.removeAttribute(name)
+    }
+    else {
+      const serialized = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value)
+      if (node.getAttribute(name) === serialized) return
+      node.setAttribute(name, serialized)
+    }
+    notifyAttributes(node, name)
   }
 
   function applyClasses(id: string, record: NodeRecord): void {
@@ -451,7 +504,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const patch = Object.fromEntries(Object.keys(record.style).filter(key => !(key in style)).map(key => [key, null]))
     record.style = style
     if (record.materialized) emit({ op: 'updateNode', id, patch: { style: { ...patch, ...style } } })
-    const classes = compileClassStyles(record.classes)
+    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`)
     if (record.type === 'Icon' && classes.icon) {
       const icon = resolveIconName(classes.icon)
       record.props.symbol = icon.symbol
@@ -683,14 +736,14 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     },
 
     setAttribute(node, name, value) {
+      const forwarded = forwardedHostRoot(node, name)
       // Binding metadata is the shared runtime's read side. Keep it in step
       // with the typed renderer prop, as DOM getAttribute follows a write.
-      if (isBindingNode(node) && name !== 'class' && name !== 'className') {
-        const serialized = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value)
-        if (node.getAttribute(name) !== serialized) {
-          node.setAttribute(name, serialized)
-          notifyAttributes(node, name)
-        }
+      reflectAttribute(node, name, value)
+      if (forwarded) {
+        reflectAttribute(forwarded, name, value)
+        if (applyForwardedStyle(forwarded, name, value)) return
+        node = forwarded
       }
       if (name === 'class' || name === 'className') {
         const record = recordOf(node)
@@ -722,9 +775,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     },
 
     removeAttribute(node, name) {
-      if (isBindingNode(node) && name !== 'class' && name !== 'className' && node.hasAttribute(name)) {
-        node.removeAttribute(name)
-        notifyAttributes(node, name)
+      const forwarded = forwardedHostRoot(node, name)
+      reflectAttribute(node, name, undefined, true)
+      if (forwarded) {
+        reflectAttribute(forwarded, name, undefined, true)
+        if (applyForwardedStyle(forwarded, name, undefined)) return
+        node = forwarded
       }
       if (name === 'class' || name === 'className') { this.setAttribute(node, name, ''); return }
       const prop = nativePropName(name)
@@ -987,6 +1043,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         baseStyle: { ...descriptor.baseStyle },
         boundStyle: descriptor.boundStyle ? { ...descriptor.boundStyle } : undefined,
         classes: descriptor.classes,
+        forwardedClasses: descriptor.forwardedClasses,
+        forwardedStyle: descriptor.forwardedStyle ? { ...descriptor.forwardedStyle } : undefined,
         events: { ...descriptor.events },
         text: descriptor.text,
         children: [],
