@@ -1,5 +1,52 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.582...v0.2.583)
+
+## ✨ Features
+
+- **runtime**: expose cancellable form-reset hooks through hosts (#2088) ([3a2322d](https://github.com/stacksjs/stx/commit/3a2322d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2088](https://github.com/stacksjs/stx/issues/2088), [#2088](https://github.com/stacksjs/stx/issues/2088))
+- **native**: wire shared form controls and submit actions (#2088) ([269721f](https://github.com/stacksjs/stx/commit/269721f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2088](https://github.com/stacksjs/stx/issues/2088), [#2088](https://github.com/stacksjs/stx/issues/2088))
+- **native**: collect form data without a DOM or file capability (#2088) ([d3c764b](https://github.com/stacksjs/stx/commit/d3c764b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2088](https://github.com/stacksjs/stx/issues/2088), [#2088](https://github.com/stacksjs/stx/issues/2088))
+
+## 🐛 Bug Fixes
+
+- **native**: build the same route files from the same sources ([40fed51](https://github.com/stacksjs/stx/commit/40fed51)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **runtime**: keep explicit mount scopes distinct from page callers (#2088) ([5d6070f](https://github.com/stacksjs/stx/commit/5d6070f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2088](https://github.com/stacksjs/stx/issues/2088), [#2088](https://github.com/stacksjs/stx/issues/2088))
+- **components**: preserve checkbox values in portable forms (#2088) ([9834c03](https://github.com/stacksjs/stx/commit/9834c03)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2088](https://github.com/stacksjs/stx/issues/2088), [#2088](https://github.com/stacksjs/stx/issues/2088))
+- **components**: validate and reset shared forms on both targets (#2088) ([9ae3580](https://github.com/stacksjs/stx/commit/9ae3580)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2088](https://github.com/stacksjs/stx/issues/2088), [#2088](https://github.com/stacksjs/stx/issues/2088))
+- **runtime**: preserve component scopes and reset bound control models (#2088) ([890cdc0](https://github.com/stacksjs/stx/commit/890cdc0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2088](https://github.com/stacksjs/stx/issues/2088), [#2088](https://github.com/stacksjs/stx/issues/2088))
+- **components**: retain typed props before child setup (#2088) ([d6126d6](https://github.com/stacksjs/stx/commit/d6126d6)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2088](https://github.com/stacksjs/stx/issues/2088), [#2088](https://github.com/stacksjs/stx/issues/2088))
+- **components**: deliver all emitted arguments to parent handlers (#2088) ([c29da6b](https://github.com/stacksjs/stx/commit/c29da6b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2088](https://github.com/stacksjs/stx/issues/2088), [#2088](https://github.com/stacksjs/stx/issues/2088))
+- **native**: multiplex shared component event listeners (#2086) ([c41a2fe](https://github.com/stacksjs/stx/commit/c41a2fe)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2086](https://github.com/stacksjs/stx/issues/2086), [#2086](https://github.com/stacksjs/stx/issues/2086))
+- **native**: preserve shared controls and checkbox state (#2087) ([eaa734e](https://github.com/stacksjs/stx/commit/eaa734e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2087](https://github.com/stacksjs/stx/issues/2087), [#2087](https://github.com/stacksjs/stx/issues/2087))
+- **native**: release component event handlers on screen teardown (#2086) ([f82d175](https://github.com/stacksjs/stx/commit/f82d175)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2086](https://github.com/stacksjs/stx/issues/2086), [#2086](https://github.com/stacksjs/stx/issues/2086))
+- **native**: restore component models across conditional lifecycles (#2086) ([7a2eca5](https://github.com/stacksjs/stx/commit/7a2eca5)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2086](https://github.com/stacksjs/stx/issues/2086), [#2086](https://github.com/stacksjs/stx/issues/2086))
+- **native**: deliver shared component emits and model updates (#2086) ([79ec7bc](https://github.com/stacksjs/stx/commit/79ec7bc)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2086](https://github.com/stacksjs/stx/issues/2086), [#2086](https://github.com/stacksjs/stx/issues/2086))
+- **native**: preserve component caller metadata and event state (#2086) ([7fb6668](https://github.com/stacksjs/stx/commit/7fb6668)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2086](https://github.com/stacksjs/stx/issues/2086), [#2086](https://github.com/stacksjs/stx/issues/2086))
+- **native**: observe shared component props through the host (#2086) ([dd9d16b](https://github.com/stacksjs/stx/commit/dd9d16b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2086](https://github.com/stacksjs/stx/issues/2086), [#2086](https://github.com/stacksjs/stx/issues/2086))
+- **native**: integrate truthful session event capabilities ([4945cf9](https://github.com/stacksjs/stx/commit/4945cf9)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: advertise actual session event support ([8734a9e](https://github.com/stacksjs/stx/commit/8734a9e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- align legacy handler guards with variadic component events (#2088) ([293fdf6](https://github.com/stacksjs/stx/commit/293fdf6)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2088](https://github.com/stacksjs/stx/issues/2088), [#2088](https://github.com/stacksjs/stx/issues/2088))
+- exercise variadic handlers and updated form host boundaries (#2088) ([08bf8dd](https://github.com/stacksjs/stx/commit/08bf8dd)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2088](https://github.com/stacksjs/stx/issues/2088), [#2088](https://github.com/stacksjs/stx/issues/2088))
+- harden browser script fixtures and package build deadline ([36a98d2](https://github.com/stacksjs/stx/commit/36a98d2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: pin shared prop and event host boundaries (#2086) ([07835f3](https://github.com/stacksjs/stx/commit/07835f3)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2086](https://github.com/stacksjs/stx/issues/2086), [#2086](https://github.com/stacksjs/stx/issues/2086))
+
+## 🔧 Chores
+
+- release v0.2.583 ([3237ed5](https://github.com/stacksjs/stx/commit/3237ed5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' into codex/hq-include-server-data ([f8b2138](https://github.com/stacksjs/stx/commit/f8b2138)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.581...v0.2.582)
 
 ## 🐛 Bug Fixes
