@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.578...v0.2.579)
+
+## ✨ Features
+
+- **native**: craft.session on native screens ([d524368](https://github.com/stacksjs/stx/commit/d524368)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.579 ([caaa249](https://github.com/stacksjs/stx/commit/caaa249)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.577...v0.2.578)
 
 ## ✨ Features
