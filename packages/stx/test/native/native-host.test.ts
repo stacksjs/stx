@@ -70,6 +70,17 @@ describe('the native host satisfies the same contract as the DOM one', () => {
 })
 
 describe('host calls become bridge operations', () => {
+  it('retains component caller metadata and static attributes on binding handles', () => {
+    const { host } = harness()
+    const tree = materializeNativeBindingTree(createDocument(createNode('View', {
+      'data-stx-parent-events': 'saved update:modelValue',
+      'data-stx-parent-bindings': 'modelValue',
+      name: 'email',
+    }), { exports: {}, functions: [], code: '' }), { entries: [] }, host)
+    expect(tree.root.getAttribute('data-stx-parent-events')).toBe('saved update:modelValue')
+    expect(tree.root.getAttribute('data-stx-parent-bindings')).toBe('modelValue')
+    expect(tree.root.getAttribute('name')).toBe('email')
+  })
   it('observes prop writes in batches and cancels pending callbacks on disposal', async () => {
     const { host } = harness()
     const tree = materializeNativeBindingTree(createDocument(createNode('View'), { exports: {}, functions: [], code: '' }, { source: 'test' }), { entries: [] }, host)

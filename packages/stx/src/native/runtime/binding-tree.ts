@@ -144,6 +144,12 @@ export function materializeNativeBindingTree(
       }
     }
     const node = createBindingNode(id, source.type, runtimeBindings, true, source._classes, value => host.setAttribute(node, 'class', value))
+    // Static component metadata owns parent prop/event scopes too. The
+    // manifest only records dynamic bindings, not these companion attributes.
+    for (const [name, value] of Object.entries(source.props)) {
+      if (value === undefined || value === null || name === '__stxId') continue
+      node.setAttribute(name, typeof value === 'object' ? JSON.stringify(value) : String(value))
+    }
     source.id = id
     source.props.__stxId = id
     node.parentNode = parent

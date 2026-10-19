@@ -4,19 +4,26 @@ class NativeEvent {
   type: string
   detail: unknown
   target: unknown = null
+  currentTarget: unknown = null
+  bubbles: boolean
+  cancelable: boolean
+  defaultPrevented = false
+  cancelBubble = false
   key = ''
   ctrlKey = false
   altKey = false
   shiftKey = false
   metaKey = false
 
-  constructor(type: string, options: { detail?: unknown } = {}) {
+  constructor(type: string, options: { detail?: unknown, bubbles?: boolean, cancelable?: boolean } = {}) {
     this.type = type
     this.detail = options.detail
+    this.bubbles = options.bubbles ?? false
+    this.cancelable = options.cancelable ?? false
   }
 
-  preventDefault(): void {}
-  stopPropagation(): void {}
+  preventDefault(): void { if (this.cancelable) this.defaultPrevented = true }
+  stopPropagation(): void { this.cancelBubble = true }
 }
 
 /**
