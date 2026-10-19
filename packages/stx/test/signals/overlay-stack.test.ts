@@ -13,6 +13,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import { setupStxTestDom } from '../../src/testing'
+import { closeTestOverlays } from '../../test-utils/overlay-cleanup'
 
 // eslint-disable-next-line ts/no-explicit-any
 declare const window: any
@@ -59,10 +60,7 @@ function open(id: string, el: any, extra: Record<string, unknown> = {}): void {
  * stack still holds an overlay keeps its document listener. Left open, a test's
  * overlay would answer the next test's Escape first.
  */
-afterEach(() => {
-  for (const id of overlays().list().reverse())
-    overlays().close(id)
-})
+afterEach(() => closeTestOverlays(window))
 
 beforeEach(() => {
   bootRuntime()
@@ -73,6 +71,21 @@ beforeEach(() => {
 })
 
 describe('the overlay stack', () => {
+  it('retires old runtime listeners before another runtime uses the shared document', () => {
+    for (let i = 0; i < 5; i++) {
+      window.stxAlert('Theme-only test leaves this open')
+      closeTestOverlays(window)
+      expect(overlays().list()).toEqual([])
+      expect(document.body.style.overflow).toBe('')
+      document.body.innerHTML = '<main></main>'
+      bootRuntime()
+    }
+    open('current', panel('current'))
+    key('Escape')
+    expect(closed).toEqual(['current'])
+    expect(overlays().list()).toEqual([])
+  })
+
   it('answers one Escape with the topmost overlay only', () => {
     open('outer', panel('outer'))
     open('inner', panel('inner'))

@@ -6,9 +6,10 @@
  * inside its own Escape branch, so any dialog dismissed with a button left a
  * permanent document-level keydown listener holding the whole closure alive.
  */
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import { setupStxTestDom } from '../../src/testing'
+import { closeTestOverlays } from '../../test-utils/overlay-cleanup'
 
 // eslint-disable-next-line ts/no-explicit-any
 declare const window: any
@@ -37,6 +38,8 @@ function buttons(): any[] {
 }
 
 describe('stxConfirm/stxAlert accessibility (#1875)', () => {
+  afterEach(() => closeTestOverlays(window))
+
   beforeEach(() => {
     bootRuntime()
     document.body.innerHTML = ''
@@ -44,7 +47,7 @@ describe('stxConfirm/stxAlert accessibility (#1875)', () => {
     document.documentElement.removeAttribute('data-theme')
   })
 
-  it('removes the keydown listener when closed by a button, not only by Escape', () => {
+  it('removes the keydown listener when closed by a button, not only by Escape', async () => {
     let added = 0
     let removed = 0
     const origAdd = document.addEventListener.bind(document)
@@ -58,16 +61,18 @@ describe('stxConfirm/stxAlert accessibility (#1875)', () => {
       return origRemove(t, ...rest)
     }
 
-    const p = window.stxConfirm('Delete this?')
-    expect(added).toBe(1)
-    // Close via the OK button — the path that used to leak.
-    buttons()[1].onclick()
-
-    return p.then(() => {
+    try {
+      const p = window.stxConfirm('Delete this?')
+      expect(added).toBe(1)
+      // Close via the OK button — the path that used to leak.
+      buttons()[1].onclick()
+      await p
       expect(removed).toBe(1)
+    }
+    finally {
       document.addEventListener = origAdd
       document.removeEventListener = origRemove
-    })
+    }
   })
 
   it('restores focus to whatever had it before the dialog opened', () => {

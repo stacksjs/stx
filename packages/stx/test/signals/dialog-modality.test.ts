@@ -23,9 +23,10 @@
  * Driven against the real generated runtime, which is the only place this
  * behaviour exists.
  */
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import { setupStxTestDom } from '../../src/testing'
+import { closeTestOverlays } from '../../test-utils/overlay-cleanup'
 
 // eslint-disable-next-line ts/no-explicit-any
 declare const window: any
@@ -67,6 +68,8 @@ const settle = (ms = 0) => new Promise(r => setTimeout(r, ms))
 function escape(): void {
   document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
 }
+
+afterEach(() => closeTestOverlays(window))
 
 beforeEach(() => {
   bootRuntime()
