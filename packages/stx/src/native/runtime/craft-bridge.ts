@@ -126,7 +126,12 @@ export function installCraftBridge(
   }
   const appearHandlers = new Set<() => unknown>()
   const disappearHandlers = new Set<() => unknown>()
-  let focused = true
+  // A screen the host prepared out of sight - an adjacent tab, made ahead of
+  // a swipe - starts unfocused, and the host says so before the script runs
+  // (`__stxNativeFocused`). Defaulting to true let such a screen act as if it
+  // were in front: a prepared Record tab's sign-in guard pushed Login over the
+  // Feed at launch. Every later change still arrives as SCREEN_FOCUS.
+  let focused = target.__stxNativeFocused !== false
   const routeName = options.routeName || 'main'
   const routeNames = options.routeNames || [routeName]
 
