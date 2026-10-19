@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.592...v0.2.593)
+
+## 🐛 Bug Fixes
+
+- **components**: a segmented control or chip row named from a binding ([b7fdf87](https://github.com/stacksjs/stx/commit/b7fdf87)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.593 ([9581df7](https://github.com/stacksjs/stx/commit/9581df7)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.591...v0.2.592)
 
 ## 🐛 Bug Fixes
