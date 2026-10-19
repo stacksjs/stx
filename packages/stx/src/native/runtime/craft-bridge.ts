@@ -232,6 +232,30 @@ export function installCraftBridge(
     delete: (key: string) => request('SecureStorage', 'remove', [key]),
     clear: () => request('SecureStorage', 'clear', []),
   })
+  /*
+   * The signed-in account (Craft's `craft.session`, docs/api/mobile/session.md):
+   * the host sends SESSION_CHANGED { key, token, previous } once per change of
+   * the token in secure storage, written by any screen, the page or a native
+   * sign-in, after storage holds it. A screen that keeps per-account state
+   * resets on it instead of comparing snapshots on every change. What the
+   * host installed itself (a `key`, its own `token`) is kept.
+   */
+  const sessionKey = String(craft.session?.key || nativeBridge.sessionTokenKey || 'auth.token')
+  craft.session = Object.assign({
+    token: () => {
+      const value = craft.secureStorage.getSync(sessionKey)
+      return typeof value === 'string' && value ? value : null
+    },
+  }, craft.session || {}, {
+    key: sessionKey,
+    onChange: (callback: (token: string | null, previous: string | null) => void) =>
+      protocol.on<{ key?: string, token?: string | null, previous?: string | null }>('SESSION_CHANGED', ({ payload }) => {
+        if (payload?.key && payload.key !== sessionKey) return
+        const token = typeof payload?.token === 'string' && payload.token ? payload.token : null
+        const previous = typeof payload?.previous === 'string' && payload.previous ? payload.previous : null
+        if (token !== previous) callback(token, previous)
+      }),
+  })
   craft.snapshots = Object.assign({ get: () => null, set: () => Promise.resolve(false) }, craft.snapshots || {}, {
     onChange: (callback: (name: string) => void) => protocol.on<{ name: string }>('SNAPSHOT_CHANGED', (message) => {
       if (typeof message.payload?.name === 'string') callback(message.payload.name)

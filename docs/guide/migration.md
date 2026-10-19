@@ -378,6 +378,10 @@ interface Props {
 - **Native haptics never reject.** Drop `?.catch?.(() => {})` after
   `craft.haptics.*` and `craft.haptic`. `notification()` and `selection()` now
   play the host's notification and selection haptics instead of impacts.
+- **`craft.session`** (with Craft 0.0.245) reports sign-in, sign-out and an
+  account switch to every native screen: `onChange((token, previous) => …)`.
+  Screens that compared the header snapshot's user on every snapshot change
+  can reset on it instead. See [Native Screens](./native.md).
 - **`@stacksjs/stx/native/testing`** publishes the vm phone apps wrote by hand:
   `mountNativeScreen(code, screen, options)`. See
   [Native Screens: Testing screens](./native.md#testing-screens).

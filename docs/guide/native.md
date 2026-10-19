@@ -186,6 +186,22 @@ async function done() {
 </script>
 ```
 
+`craft.session` is the signed-in account, as Craft keeps it in secure storage (Craft's `docs/api/mobile/session.md`). `token()` reads it now, `key` names the secure-storage key (the host's `sessionTokenKey`, `auth.token` unless the app says otherwise), and `onChange((token, previous) => …)` runs once per change, whichever screen, the page or a native sign-in wrote it, after storage already holds the new token. It returns the unsubscribe. A screen that keeps one account's data resets on it rather than comparing snapshots on every change:
+
+```html
+<script>
+let account = craft.session.token()
+onMount(() => craft.session.onChange((token) => {
+  if (token === account) return
+  account = token
+  rows.set([])
+  if (token) load()
+}))
+</script>
+```
+
+A host older than Craft 0.0.245 never sends the change, so `onChange` stays silent there; `token()` still reads secure storage.
+
 When the host advertises the `fetch` capability (Craft's iOS host does), the bundle installs a global `fetch` with the common subset: `method`, `headers`, a string `body`, and a response with `ok`, `status`, `statusText`, `url`, `headers.get()`, `text()` and `json()`. The host performs the request under the same request deadline as the other capabilities; transport failures reject with a `TypeError` carrying a `code`. Set a signal from a promise continuation to update native bindings, exactly as on the web.
 
 ### Reactive templates
