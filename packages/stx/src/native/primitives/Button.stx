@@ -3,4 +3,7 @@
 const classes = $props.class ?? $props.className ?? ''
 const testID = $props.testID
 </script>
-<button data-native="Button" class="{{ classes }}" type="button" @if(testID) testID="{{ testID }}" @endif><slot /></button>
+{{-- Its words are the app's accent unless the caller colours them: a host
+     otherwise draws its own system blue, whatever the app's palette is. A
+     caller's text colour comes later in the list and wins. --}}
+<button data-native="Button" class="text-accent {{ classes }}" type="button" @if(testID) testID="{{ testID }}" @endif><slot /></button>
