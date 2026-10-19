@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.584...v0.2.585)
+
+## ✨ Features
+
+- **components**: a shared segmented control for web and native ([cf9fc8e](https://github.com/stacksjs/stx/commit/cf9fc8e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: carry HTML accessibility attributes to the host ([76ade77](https://github.com/stacksjs/stx/commit/76ade77)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.585 ([2b7cfb7](https://github.com/stacksjs/stx/commit/2b7cfb7)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.583...v0.2.584)
 
 ## ✨ Features
