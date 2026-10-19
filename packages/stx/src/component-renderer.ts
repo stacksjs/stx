@@ -1164,7 +1164,7 @@ async function processCustomElementTags(
       // host root must retain caller-owned props such as testID, source and
       // accessibilityLabel. Individual primitive templates should only need
       // to declare props they consume; forward every other resolved prop once.
-      finalContent = forwardHostAttrs(finalContent, resolvedProps, renderMetadata.declaredProps, renderMetadata.consumedProps)
+      finalContent = forwardHostAttrs(finalContent, resolvedProps, renderMetadata.declaredProps, renderMetadata.consumedProps, options._nativeHostAttrs)
 
       // Forward @event attributes from parent to component's root element.
       // This connects parent handlers to child defineEmits() — the child emits
@@ -1273,13 +1273,25 @@ function emitClientReactiveAttrs(html: string, clientReactive: Record<string, st
  * component API props such as `variant` remain private unless the component
  * explicitly renders them.
  */
-function forwardHostAttrs(html: string, props: ResolvedProps, declaredProps = new Set<string>(), consumedProps = new Set<string>()): string {
+function forwardHostAttrs(html: string, props: ResolvedProps, declaredProps = new Set<string>(), consumedProps = new Set<string>(), nativeTarget = false): string {
   const root = findRenderedComponentHostRoot(html)
   if (!root)
     return html
 
-  const openingTag = html.slice(root.insertPos, root.tagEnd)
-  const isNativeHost = /\bdata-native(?:\s|=)/i.test(openingTag)
+  let openingTag = html.slice(root.insertPos, root.tagEnd)
+  // A native caller's utility classes must survive switching from a primitive
+  // that explicitly reads $props.class to an ordinary shared host root.
+  const callerClass = props.serverDynamic.class ?? props.static.class
+  if (nativeTarget && typeof callerClass === 'string' && callerClass && !consumedProps.has('class')) {
+    const classAttr = /(^|\s)class\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i
+    const next = classAttr.test(openingTag)
+      ? openingTag.replace(classAttr, (_, space: string, double: string, single: string, bare: string) => `${space}class="${escapeAttr(`${decodeAttributeEntities(double ?? single ?? bare)} ${callerClass}`)}"`)
+      : ` class="${escapeAttr(callerClass)}"${openingTag}`
+    html = html.slice(0, root.insertPos) + next + html.slice(root.tagEnd)
+    root.tagEnd += next.length - openingTag.length
+    openingTag = next
+  }
+  const isNativeHost = nativeTarget || /\bdata-native(?:\s|=)/i.test(openingTag)
   // Native primitives may mention host props in documentation without reading
   // them. Only explicit prop reads opt out of their unrestricted forwarding.
   const privateProps = isNativeHost ? consumedProps : declaredProps

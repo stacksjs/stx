@@ -755,9 +755,14 @@ export interface StxConfig {
    * primitives (`View`, `Button`, ...). Searched after the directories a
    * caller names (`componentsDir`, a template's own `components/`) and before
    * the convention directories (`resources/components`, ...) and plugins, so a
-   * web app's component of the same name never stands in for one.
+   * web app's component of the same name never stands in for one, except
+   * verified shared names explicitly listed in _targetComponentFallbackNames.
    */
   _targetComponentDirs?: string[]
+  /** @internal Verified shared names whose target primitives are fallbacks, not overrides. */
+  _targetComponentFallbackNames?: string[]
+  /** @internal Native translation preserves unconsumed host props on ordinary shared roots too. */
+  _nativeHostAttrs?: boolean
   /** Path to layouts directory, defaults to 'layouts' in the project root */
   layoutsDir?: string
   /**
