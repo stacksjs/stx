@@ -54,31 +54,24 @@ export const form = $props.form || ''
 </script>
 
 <script client>
-const emit = defineEmits()
+const emit = defineEmits(['change'])
 // Validity is live, for the same reason `disabled` is: a form posted with
 // fetch learns it after the submit, and nothing re-renders (#2047).
 const isError = useReactiveProp('error', {{ error }})
-const isDisabled = {{ disabled }}
-const isIndeterminate = {{ indeterminate }}
+const isDisabled = useReactiveProp('disabled', {{ disabled }})
+const isIndeterminate = useReactiveProp('indeterminate', {{ indeterminate }})
 // Reactive prop binding so the parent can drive `checked` via signals.
 // See stacksjs/stx#1704.
 const isChecked = useReactiveProp('checked', {{ checked }})
 
 function onInputChange(event) {
-  if (isDisabled) {
+  if (isDisabled()) {
     event.target.checked = isChecked()
     return
   }
   isChecked.set(event.target.checked)
   emit('change', isChecked())
 }
-
-onMount(() => {
-  if (isIndeterminate) {
-    const el = document.getElementById({{ inputId }})
-    if (el) el.indeterminate = true
-  }
-})
 
 defineExpose({ isChecked })
 </script>
@@ -100,12 +93,14 @@ defineExpose({ isChecked })
       @if(checked)checked@endif
       :checked="isChecked()"
       @if(disabled)disabled@endif
+      :disabled="isDisabled()"
+      :indeterminate="isIndeterminate()"
       @if(required)required@endif
       class="{{ checkboxClasses }}"
       @change="onInputChange($event)"
       aria-invalid="{{ error ? 'true' : 'false' }}"
       :aria-invalid="isError() ? 'true' : 'false'"
-      :class="{ '{{ stateInvalidClasses }}': isError() }"
+      :class="{ '{{ stateInvalidClasses }}': isError(), 'opacity-50 cursor-not-allowed': isDisabled(), 'cursor-pointer': !isDisabled() }"
       @if(description)aria-describedby="{{ descriptionId }}"@endif
     />
   </div>
@@ -113,7 +108,7 @@ defineExpose({ isChecked })
   @if(label || description)
     <div class="ml-3 text-sm leading-6">
       @if(label)
-        <label for="{{ inputId }}" class="{{ labelClasses }}">
+        <label for="{{ inputId }}" class="{{ labelClasses }}" :class="{ 'opacity-50 cursor-not-allowed': isDisabled(), 'cursor-pointer': !isDisabled() }">
           {{ label }}
           @if(required)
             <span class="text-danger ml-1">*</span>

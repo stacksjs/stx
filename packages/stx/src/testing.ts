@@ -85,6 +85,10 @@ export function shimAttributes(root: any): void {
     const map: Map<string, string> = el.attributes
     if (!(map instanceof Map))
       continue
+    // very-happy-dom omits this live input property. Unlike checked, it
+    // never reflects an HTML attribute; initialize it only on shimmed inputs.
+    if (el.tagName === 'INPUT' && !('indeterminate' in el))
+      el.indeterminate = false
     el.__attrMap = map
     Object.defineProperty(el, 'attributes', {
       configurable: true,
