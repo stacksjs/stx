@@ -46,7 +46,50 @@ export const SIGNALS_HOST_RUNTIME = `  // ── Host ──
       observer.observe(node, { attributes: true, attributeFilter: names });
       return function() { observer.disconnect(); };
     },
-    setStyle: function(node, value) {
+    setStyle: function(node, value, replaceBinding) {
+      // A binding owns its current keys, not the element's entire inline style.
+      // Keep the original value and priority so removing a key restores them.
+      if (replaceBinding) {
+        var next = Object.create(null);
+        var priorities = Object.create(null);
+        if (typeof value === 'string') {
+          var parsed = document.createElement('div').style;
+          parsed.cssText = value;
+          for (var i = 0; i < parsed.length; i++) {
+            var property = parsed.item(i);
+            next[property] = parsed.getPropertyValue(property);
+            priorities[property] = parsed.getPropertyPriority(property);
+          }
+        }
+        else if (value && typeof value === 'object' && !Array.isArray(value)) {
+          Object.keys(value).forEach(function(key) {
+            if (value[key] == null || value[key] === '') return;
+            var name = key.indexOf('--') === 0 ? key : key.replace(/[A-Z]/g, function(c) { return '-' + c.toLowerCase(); });
+            next[name] = value[key];
+          });
+        }
+        var baseline = node.__stx_bound_style_baseline || (node.__stx_bound_style_baseline = Object.create(null));
+        Object.keys(baseline).forEach(function(name) {
+          if (Object.prototype.hasOwnProperty.call(next, name)) return;
+          var prior = baseline[name];
+          if (prior.value) node.style.setProperty(name, prior.value, prior.priority);
+          else node.style.removeProperty(name);
+          if (name === 'display') node.__stx_display = prior.value;
+          delete baseline[name];
+        });
+        Object.keys(next).forEach(function(name) {
+          if (!Object.prototype.hasOwnProperty.call(baseline, name)) {
+            baseline[name] = {
+              value: name === 'display' && node.__stx_visible === false ? node.__stx_display || '' : node.style.getPropertyValue(name),
+              priority: node.style.getPropertyPriority(name)
+            };
+          }
+          node.style.setProperty(name, next[name], priorities[name] || '');
+          if (name === 'display') node.__stx_display = next[name];
+        });
+        if (node.__stx_visible === false) node.style.display = 'none';
+        return;
+      }
       if (typeof value === 'object' && value !== null) {
         Object.assign(node.style, value);
         if (Object.prototype.hasOwnProperty.call(value, 'display')) node.__stx_display = value.display || '';

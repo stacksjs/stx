@@ -146,6 +146,30 @@ describe('host calls become bridge operations', () => {
     }])
   })
 
+  it('replaces bound styles without losing authored styles or revealing a hidden node', () => {
+    const host = createNativeHost({ send() {} })
+    const node = host.adopt({ __stxId: 'field' }, 'View', null, {
+      props: {}, events: {}, children: [], _classes: 'p-4 bg-white dark:bg-slate-950',
+      style: { padding: 16, paddingLeft: 9, width: 18 }, _inlineStyle: { paddingLeft: 9, width: 18 },
+    })
+    host.setStyle(node, { paddingLeft: 7, paddingBottom: 5 }, true)
+    expect(host.snapshot(node).style).toMatchObject({ padding: 16, paddingLeft: 7, paddingBottom: 5, width: 18 })
+    const clone = host.clone(node)
+    host.setStyle(clone, {}, true)
+    expect(host.snapshot(clone).style.paddingLeft).toBe(9)
+    expect(host.snapshot(node).style.paddingLeft).toBe(7)
+    host.setVisible(node, false)
+    host.setStyle(node, { display: 'flex' }, true)
+    host.setColorScheme('dark')
+    expect(host.snapshot(node).style).toMatchObject({ display: 'none', paddingLeft: 9, width: 18, backgroundColor: '#020617' })
+    expect(host.snapshot(node).style.paddingBottom).toBeUndefined()
+    host.setStyle(node, null, true)
+    host.setVisible(node, true)
+    expect(host.snapshot(node).style.display).not.toBe('none')
+    expect(host.snapshot(node).style.paddingLeft).toBe(9)
+    host.dispose()
+  })
+
   it('changes appearance without revealing hidden native nodes or losing inline styles', () => {
     const { host, ops } = harness()
     const node = host.adopt({ __stxId: 'themed' }, 'View', null, {

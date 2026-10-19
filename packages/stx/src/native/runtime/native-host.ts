@@ -58,6 +58,8 @@ interface NodeRecord {
   props: Record<string, unknown>
   style: Record<string, unknown>
   baseStyle: Record<string, unknown>
+  /** Reactive :style replaces this layer without destroying authored inline styles. */
+  boundStyle?: Record<string, unknown>
   classes: string
   events: Record<string, string>
   text?: string
@@ -132,7 +134,8 @@ export interface NativeHost {
   setAttribute: (node: NativeNode, name: string, value: unknown) => void
   removeAttribute: (node: NativeNode, name: string) => void
   observeAttributes: (node: NativeNode, names: string[], callback: () => void) => (() => void)
-  setStyle: (node: NativeNode, value: unknown) => void
+  /** Imperative calls patch styles; :style replaces its own layer and preserves authored defaults. */
+  setStyle: (node: NativeNode, value: unknown, replaceBinding?: boolean) => void
   listen: (node: NativeNode, event: string, handler: (payload?: unknown) => void, options?: unknown) => void
   emitComponentEvent: (node: NativeNode, event: Event) => boolean
   onFormReset: (node: NativeNode, callback: () => void) => (() => void)
@@ -439,7 +442,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
   function resolveStyle(record: NodeRecord): Record<string, unknown> {
     const classes = compileClassStyles(record.classes)
-    return { ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}), ...record.baseStyle }
+    return { ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}), ...record.baseStyle, ...record.boundStyle, ...(record.visible ? {} : { display: 'none' }) }
   }
 
   function applyClasses(id: string, record: NodeRecord): void {
@@ -752,13 +755,20 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       return () => { active = false; observers.delete(observer) }
     },
 
-    setStyle(node, value) {
+    setStyle(node, value, replaceBinding = false) {
+      const record = recordOf(node)
+      if (replaceBinding && (value == null || value === false)) value = {}
       if (typeof value !== 'object' || value === null || Array.isArray(value))
         return
       const style = value as Record<string, unknown>
-      Object.assign(recordOf(node).baseStyle, style)
-      Object.assign(recordOf(node).style, style)
-      if (recordOf(node).materialized)
+      if (replaceBinding) {
+        record.boundStyle = Object.fromEntries(Object.entries(style).filter(([, value]) => value != null && value !== ''))
+        applyClasses(node.__stxId, record)
+        return
+      }
+      Object.assign(record.baseStyle, style)
+      Object.assign(record.style, style)
+      if (record.materialized)
         emit({ op: 'updateNode', id: node.__stxId, patch: { style } })
     },
 
@@ -929,7 +939,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       }
       // `display` is how the IR spells it, so the renderers already understand
       // it; the host does not invent a second vocabulary for the same thing.
-      const display = visible ? irDisplay(resolveStyle(record).display) : 'none'
+      record.style = resolveStyle(record)
+      const display = visible ? irDisplay(record.style.display) : 'none'
       if (record.materialized)
         emit({ op: 'updateNode', id: node.__stxId, patch: { style: { display } } })
       return was
@@ -970,6 +981,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         props: { ...descriptor.props, __stxId: copy.__stxId },
         style: { ...descriptor.style },
         baseStyle: { ...descriptor.baseStyle },
+        boundStyle: descriptor.boundStyle ? { ...descriptor.boundStyle } : undefined,
         classes: descriptor.classes,
         events: { ...descriptor.events },
         text: descriptor.text,
