@@ -116,6 +116,9 @@ export interface STXNode {
   /** Authored declarations for runtime variable inheritance and reactive overrides. */
   _styleSource?: string
 
+  /** Variable scopes of transparent HTML ancestors, outermost first. */
+  _styleAncestors?: string[]
+
   /** Document-level stylesheet variables, resolved for the native appearance. */
   _stylesheetTheme?: NativeStylesheetTheme
 

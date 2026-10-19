@@ -50,6 +50,19 @@ it('uses stylesheet values in compiled IR and exposes unsupported theme selector
 })
 
 describe.each([false, true])('stylesheet themes on native (minify=%s)', (minify) => {
+  it('retains computed variables through document wrappers that do not become native views', async () => {
+    const { code } = await compileNativeScreen(`<html style="--gap:5px;--stx-field:red"><head><style>:root {--alias:var(--gap);--stx-field:#123456!important}.dark {--stx-field:#abcdef!important}</style></head><body style="--gap:7px"><main style="--stx-radius-control:9px"><div testID="wrapped" class="bg-field rounded-control" style="padding:var(--gap);margin:var(--alias)">Content</div></main></body></html>`, { minify })
+    const phone = mountNativeScreen(code)
+    try {
+      await phone.settle()
+      expect(phone.byTestID('wrapped')!.style).toMatchObject({ padding: 7, margin: 5, borderRadius: 9, backgroundColor: '#123456' })
+      phone.appearance('dark')
+      await phone.settle()
+      expect(phone.byTestID('wrapped')!.style).toMatchObject({ padding: 7, margin: 5, borderRadius: 9, backgroundColor: '#abcdef' })
+    }
+    finally { phone.unmount() }
+  }, 30_000)
+
   it('updates variables before descendants on appearance changes and preserves local overrides', async () => {
     const { code } = await compileNativeScreen(`<script client>
 const show = state(true)

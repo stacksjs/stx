@@ -432,6 +432,12 @@ export async function translateHtmlToIR(
 
   /** A wrapper's children take its place. */
   function hoist(frame: Frame): void {
+    const preserveVariables = (node: STXNode): void => {
+      // HTML's declarations already participate in the document cascade,
+      // including stylesheet !important and aliases resolved on that element.
+      if (frame.tag !== 'html' && frame.node._styleSource)
+        node._styleAncestors = [frame.node._styleSource, ...node._styleAncestors ?? []]
+    }
     if (frame.node.bindings && Object.keys(frame.node.bindings).length > 0) {
       const children = frame.node.children
       const elements = children.filter((child): child is STXNode => typeof child !== 'string')
@@ -441,6 +447,7 @@ export async function translateHtmlToIR(
       target.bindings = { ...frame.node.bindings, ...target.bindings }
       if (target.bindingId === undefined && frame.node.bindingId !== undefined)
         target.bindingId = frame.node.bindingId
+      preserveVariables(target)
       attach(target)
       return
     }
@@ -452,6 +459,7 @@ export async function translateHtmlToIR(
           parent.node.children.push(child)
         continue
       }
+      preserveVariables(child)
       if (!parent)
         roots.push(child)
       else if (!parent.dropped)
@@ -469,6 +477,7 @@ export async function translateHtmlToIR(
     const { props, style, events, bindings, classes, inline } = dropped || inheritedDrop
       ? { props: {}, style: {}, events: {}, bindings: {}, classes: '', inline: {} }
       : readAttributes(tag, attributes, diagnostics, { inheritedVariables: variables, onVariables: value => { variables = value } })
+    if (tag === 'html') variables = stylesheetVariables
 
     // A primitive component names its own native type, since the HTML tag it
     // emits cannot carry the distinction.

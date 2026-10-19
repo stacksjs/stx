@@ -13,6 +13,14 @@ export async function extractStylesheetTheme(html: string, report: (name: string
   type Scheme = keyof typeof schemes
   const reported = new Set<string>()
   const warn = (name: string): void => { if (!reported.has(name)) { reported.add(name); report(name) } }
+  const add = (name: string, candidate: Candidate, active: Scheme[]): void => {
+    for (const scheme of active) {
+      const previous = schemes[scheme].get(name)
+      if (!previous || Number(candidate.important) > Number(previous.important)
+        || (candidate.important === previous.important && candidate.specificity >= previous.specificity))
+        schemes[scheme].set(name, candidate)
+    }
+  }
   const hasVariables = (node: CssNode): boolean => {
     if (node.type === 'Declaration') return node.property.startsWith('--')
     if (node.type === 'Rule' || node.type === 'Atrule') return !!node.block && [...node.block.children].some(hasVariables)
@@ -46,20 +54,28 @@ export async function extractStylesheetTheme(html: string, report: (name: string
           if (declaration.type !== 'Declaration') { if (hasVariables(declaration)) warn(`nested rule in ${selector}`); continue }
           if (!declaration.property.startsWith('--')) continue
           const candidate = { value: generate(declaration.value), important: !!declaration.important, specificity }
-          for (const scheme of active) {
-            if (match[2] && match[2] !== scheme) continue
-            const previous = schemes[scheme].get(declaration.property)
-            if (!previous || Number(candidate.important) > Number(previous.important)
-              || (candidate.important === previous.important && candidate.specificity >= previous.specificity))
-              schemes[scheme].set(declaration.property, candidate)
-          }
+          add(declaration.property, candidate, active.filter(scheme => !match[2] || match[2] === scheme))
         }
       }
     }
   }
   let css = ''
   let active: Scheme[] | undefined
-  await new HTMLRewriter().on('style', {
+  await new HTMLRewriter().on('html', {
+    element(element) {
+      const inline = element.getAttribute('style')
+      if (!inline) return
+      try {
+        const declarations = parse(inline, { context: 'declarationList' })
+        if (declarations.type !== 'DeclarationList') return
+        for (const declaration of declarations.children) {
+          if (declaration.type === 'Declaration' && declaration.property.startsWith('--'))
+            add(declaration.property, { value: generate(declaration.value), important: !!declaration.important, specificity: 1000 }, ['light', 'dark'])
+        }
+      }
+      catch { warn('invalid document inline theme') }
+    },
+  }).on('style', {
     element(element) {
       css = ''
       const type = element.getAttribute('type')
