@@ -33,6 +33,11 @@ export const SIGNALS_HOST_RUNTIME = `  // ── Host ──
       node.setAttribute(name, next);
     },
     removeAttribute: function(node, name) { node.removeAttribute(name); },
+    observeAttributes: function(node, names, callback) {
+      var observer = new MutationObserver(callback);
+      observer.observe(node, { attributes: true, attributeFilter: names });
+      return function() { observer.disconnect(); };
+    },
     setStyle: function(node, value) {
       if (typeof value === 'object' && value !== null) {
         Object.assign(node.style, value);

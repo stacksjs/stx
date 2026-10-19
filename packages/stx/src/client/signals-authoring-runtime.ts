@@ -152,9 +152,8 @@ export function signalsAuthoringRuntime(createModelSignalSource: string): string
       }
       if (next !== s()) s.set(next);
     }
-    var observer = new MutationObserver(sync);
     var connected = true;
-    observer.observe(root, { attributes: true, attributeFilter: attributeNames });
+    var stopObserving = stxHost.observeAttributes(root, attributeNames, sync);
     // An :if hides a component and shows it again with the same setup, so
     // the link to the parent is dropped on unmount and made again on mount.
     // Disconnected for good, a component re-shown in an :if kept the prop it
@@ -163,12 +162,12 @@ export function signalsAuthoringRuntime(createModelSignalSource: string): string
       if (connected) return;
       connected = true;
       register();
-      observer.observe(root, { attributes: true, attributeFilter: attributeNames });
+      stopObserving = stxHost.observeAttributes(root, attributeNames, sync);
       sync();
     });
     onDestroy(function() {
       connected = false;
-      observer.disconnect();
+      stopObserving();
       attributeNames.forEach(function(attributeName) {
         if (propSignals[attributeName] === s) delete propSignals[attributeName];
       });

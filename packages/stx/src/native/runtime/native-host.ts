@@ -121,6 +121,7 @@ export interface NativeHost {
   setMarkup: (node: NativeNode, value: unknown) => void
   setAttribute: (node: NativeNode, name: string, value: unknown) => void
   removeAttribute: (node: NativeNode, name: string) => void
+  observeAttributes: (node: NativeNode, names: string[], callback: () => void) => (() => void)
   setStyle: (node: NativeNode, value: unknown) => void
   listen: (node: NativeNode, event: string, handler: (payload?: unknown) => void, options?: unknown) => void
   scopeOf: (node: NativeNode, from?: boolean) => NativeNode | null
@@ -152,6 +153,7 @@ export const HOST_METHODS: readonly string[] = [
   'setMarkup',
   'setAttribute',
   'removeAttribute',
+  'observeAttributes',
   'setStyle',
   'listen',
   'scopeOf',
@@ -166,6 +168,7 @@ export const HOST_METHODS: readonly string[] = [
 
 export function createNativeHost(options: NativeHostOptions): NativeHost {
   const records = new Map<string, NodeRecord>()
+  const attributeObservers = new WeakMap<NativeNode, Set<{ names: string[], notify: () => void }>>()
   const handlers = new Map<string, (payload?: unknown) => void>()
   let queue: NativeMutationOperation[] = []
   let scheduled = false
@@ -175,6 +178,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   const schedule = options.schedule ?? ((flush: () => void) => queueMicrotask(flush))
 
   const nextId = (prefix: string): string => `${prefix}${++counter}`
+
+  function notifyAttributes(node: NativeNode, name: string): void {
+    for (const observer of attributeObservers.get(node) ?? []) {
+      if (observer.names.includes(name)) observer.notify()
+    }
+  }
 
   function flush(): void {
     scheduled = false
@@ -510,6 +519,15 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     },
 
     setAttribute(node, name, value) {
+      // Binding metadata is the shared runtime's read side. Keep it in step
+      // with the typed renderer prop, as DOM getAttribute follows a write.
+      if (isBindingNode(node) && name !== 'class' && name !== 'className') {
+        const serialized = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value)
+        if (node.getAttribute(name) !== serialized) {
+          node.setAttribute(name, serialized)
+          notifyAttributes(node, name)
+        }
+      }
       if (name === 'class' || name === 'className') {
         const record = recordOf(node)
         record.classes = String(value ?? '')
@@ -540,6 +558,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     },
 
     removeAttribute(node, name) {
+      if (isBindingNode(node) && name !== 'class' && name !== 'className' && node.hasAttribute(name)) {
+        node.removeAttribute(name)
+        notifyAttributes(node, name)
+      }
       if (name === 'class' || name === 'className') { this.setAttribute(node, name, ''); return }
       const prop = nativePropName(name)
       const record = recordOf(node)
@@ -551,6 +573,23 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         patch.geometry = record.props.geometry = svgGeometry(record.type, record.props)
       if (record.materialized)
         emit({ op: 'updateNode', id: node.__stxId, patch: { props: patch } })
+    },
+
+    observeAttributes(node, names, callback) {
+      const observers = attributeObservers.get(node) ?? new Set()
+      attributeObservers.set(node, observers)
+      let active = true
+      let pending = false
+      const observer = { names, notify() {
+        if (pending || !active) return
+        pending = true
+        queueMicrotask(() => {
+          pending = false
+          if (active) callback()
+        })
+      } }
+      observers.add(observer)
+      return () => { active = false; observers.delete(observer) }
     },
 
     setStyle(node, value) {

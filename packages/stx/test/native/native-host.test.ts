@@ -70,6 +70,24 @@ describe('the native host satisfies the same contract as the DOM one', () => {
 })
 
 describe('host calls become bridge operations', () => {
+  it('observes prop writes in batches and cancels pending callbacks on disposal', async () => {
+    const { host } = harness()
+    const tree = materializeNativeBindingTree(createDocument(createNode('View'), { exports: {}, functions: [], code: '' }, { source: 'test' }), { entries: [] }, host)
+    const values: Array<string | null> = []
+    const stop = host.observeAttributes(tree.root, ['value'], () => values.push(tree.root.getAttribute('value')))
+    host.setAttribute(tree.root, 'other', 'ignored')
+    host.setAttribute(tree.root, 'value', 'first')
+    host.setAttribute(tree.root, 'value', 'last')
+    await Promise.resolve()
+    expect(values).toEqual(['last'])
+    host.removeAttribute(tree.root, 'value')
+    await Promise.resolve()
+    expect(values).toEqual(['last', null])
+    host.setAttribute(tree.root, 'value', 'cancelled')
+    stop()
+    await Promise.resolve()
+    expect(values).toEqual(['last', null])
+  })
   it('removes a subtree once when nested bindings dispose after their parent', () => {
     const { host, node, batches, ops } = harness()
     const parent = node('parent')
