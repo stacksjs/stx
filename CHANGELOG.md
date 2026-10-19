@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.594...v0.2.595)
+
+## ✨ Features
+
+- **theme**: role shortcuts for an app's own buttons, fields and badges ([2f6165f](https://github.com/stacksjs/stx/commit/2f6165f)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.595 ([60cc786](https://github.com/stacksjs/stx/commit/60cc786)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.593...v0.2.594)
 
 ## 🐛 Bug Fixes
