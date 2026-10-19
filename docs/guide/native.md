@@ -125,6 +125,9 @@ Document-level variables in rendered `<style>` blocks are also transported:
 `.dark`/`.light`). Native appearance selects the variant. Source order,
 specificity, `!important`, and simple `prefers-color-scheme` media conditions
 are respected; aliases compute at the document scope before inheritance.
+Inline variables on `<html>` participate in that document cascade; variables
+on transparent `<body>`/`<main>` wrappers retain their separate inherited scope
+without introducing extra native layout views.
 Scoped selectors, cascade layers, and other media conditions are not yet
 implemented and produce `unsupported-theme-rule` diagnostics when they contain
 custom properties. External stylesheets are not loaded by this translator.
