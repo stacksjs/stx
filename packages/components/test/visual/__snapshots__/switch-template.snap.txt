@@ -42,12 +42,12 @@ const sizeConfig = {
 export const config = sizeConfig[size] || sizeConfig.md
 
 export const trackBaseClasses = 'relative inline-flex shrink-0 cursor-pointer border-2 border-transparent rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel'
-export const trackDisabledClasses = disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
+export const trackDisabledClasses = 'opacity-50 cursor-not-allowed pointer-events-none'
 export const thumbBaseClasses = 'pointer-events-none inline-block transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out'
   </script>
   <script client>
-    const emit = defineEmits()
-const isDisabled = {{ disabled }}
+    const emit = defineEmits(['change'])
+const isDisabled = useReactiveProp('disabled', {{ disabled }})
 const config = {{ config }}
 const trackBase = {{ trackBaseClasses }}
 const trackDisabled = {{ trackDisabledClasses }}
@@ -57,7 +57,7 @@ const extraClass = {{ className }}
 const isChecked = useModel('checked', { default: {{ checked }} })
 
 function toggle() {
-  if (isDisabled) return
+  if (isDisabled()) return
   isChecked.set(!isChecked())
   emit('change', isChecked())
 }
@@ -66,7 +66,7 @@ function trackClasses() {
   const stateClass = isChecked()
     ? 'bg-accent-solid'
     : 'bg-neutral-400 dark:bg-neutral-600'
-  return `${trackBase} ${stateClass} ${trackDisabled} ${config.track} ${extraClass}`.trim()
+  return `${trackBase} ${stateClass} ${isDisabled() ? trackDisabled : ''} ${config.track} ${extraClass}`.trim()
 }
 
 function thumbClasses() {
@@ -91,6 +91,8 @@ defineExpose({ isChecked, toggle })
     <input
       type="hidden"
       name="{{ name }}"
+      @if(disabled)disabled@endif
+      :disabled="isDisabled()"
       @if(form)form="{{ form }}"@endif
       value="{{ checked ? checkedValue : uncheckedValue }}"
       :value="isChecked() ? '{{ checkedValue }}' : '{{ uncheckedValue }}'"
@@ -102,6 +104,8 @@ defineExpose({ isChecked, toggle })
     :aria-checked="isChecked() ? 'true' : 'false'"
     :class="trackClasses()"
     @if(disabled)disabled aria-disabled="true"@endif
+    :disabled="isDisabled()"
+    :aria-disabled="isDisabled() ? 'true' : 'false'"
     @click="toggle()"
   >
       <span class="sr-only">
@@ -120,9 +124,9 @@ border-2
 border-transparent
 change
 checked
-cursor-not-allowed
 cursor-pointer
 dark:bg-neutral-600
+disabled
 duration-200
 ease-in-out
 focus-visible:ring-2
@@ -139,7 +143,6 @@ h-5
 inline-block
 inline-flex
 items-center
-opacity-50
 pointer-events-none
 relative
 ring-0
