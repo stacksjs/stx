@@ -92,6 +92,20 @@ describe('the browser peer of the native screen renderer', () => {
     expect(scroller.style.getPropertyValue('flex-basis')).toBe('0px')
   })
 
+  it('scrolls a sideways row on one axis and hides the indicator the host hides', () => {
+    const { renderer, container, node } = fixture()
+    const chips = node('chips', 'ScrollView', [node('chip', 'View', ['All'])], { horizontal: true, showsHorizontalScrollIndicator: false })
+    const list = node('list', 'ScrollView', [chips])
+    renderer.render(node('screen', 'View', [list]))
+    const row = container.querySelector<HTMLElement>('[data-stx-node="chips"]')!
+    expect(row.style.getPropertyValue('overflow-x')).toBe('auto')
+    expect(row.style.getPropertyValue('overflow-y')).toBe('hidden')
+    expect(row.style.getPropertyValue('scrollbar-width')).toBe('none')
+    const page = container.querySelector<HTMLElement>('[data-stx-node="list"]')!
+    expect(page.style.getPropertyValue('overflow-y')).toBe('auto')
+    expect(page.style.getPropertyValue('scrollbar-width')).toBe('')
+  })
+
   it('keeps zero-flex horizontal scrollers at their intrinsic content size', () => {
     const { renderer, container, node } = fixture()
     const tabs = node('tabs', 'ScrollView', [node('choice', 'View', ['Athletes'], {}, { onPress: 'pick' })], { horizontal: true })

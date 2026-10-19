@@ -266,7 +266,17 @@ export class BrowserScreenRenderer {
     if (CONTAINERS.has(type)) { css.display = 'flex'; css.flexDirection = 'column'; css.minWidth = '0'; css.flexShrink = '0' }
     if (type === 'Text') { css.display = 'block'; css.whiteSpace = 'pre-wrap'; css.flexShrink = '1'; css.minWidth = '0'; css.overflowWrap = 'anywhere' }
     if (['Button', 'TouchableOpacity', 'TouchableHighlight', 'Pressable'].includes(type)) { css.display = 'flex'; css.flexDirection = 'column'; css.alignItems = 'stretch'; css.font = 'inherit'; css.color = 'inherit'; css.background = 'transparent'; css.border = '0'; css.padding = '0'; css.textAlign = 'inherit'; css.cursor = 'pointer' }
-    if (type === 'ScrollView') { css.overflowY = 'auto'; css.overscrollBehaviorY = 'contain'; css.flex = '1 1 auto'; css.minHeight = '0'; css.flexDirection = props.horizontal ? 'row' : 'column'; if (props.horizontal) css.overflowX = 'auto' }
+    if (type === 'ScrollView') {
+      css.flex = '1 1 auto'; css.minHeight = '0'; css.flexDirection = props.horizontal ? 'row' : 'column'
+      // One axis, as a native scroller has: a sideways row of chips must not
+      // also scroll up and down inside the page.
+      if (props.horizontal) { css.overflowX = 'auto'; css.overflowY = 'hidden'; css.overscrollBehaviorX = 'contain' }
+      else { css.overflowY = 'auto'; css.overscrollBehaviorY = 'contain' }
+      // The indicator props a host honours. Without this a chip row drew a
+      // scrollbar under itself that the phone never shows.
+      const hidden = props.horizontal ? props.showsHorizontalScrollIndicator === false : props.showsVerticalScrollIndicator === false
+      if (hidden) css.setProperty('scrollbar-width', 'none')
+    }
     if (type === 'Image') { css.objectFit = String(props.resizeMode ?? 'cover'); css.display = 'block' }
     if (type === 'TextInput') { css.font = 'inherit'; css.color = 'inherit'; css.background = 'transparent'; css.border = '0'; css.minWidth = '0'; css.minHeight = '32px'; css.outlineOffset = '2px' }
     if (type === 'Icon') { css.display = 'inline-block'; css.width = '20px'; css.height = '20px'; css.flexShrink = '0' }
