@@ -114,6 +114,20 @@ export interface DerivedSignal<T> {
 }
 
 /**
+ * Options for {@link derived}.
+ */
+export interface DerivedOptions<T> {
+  /**
+   * Pass a change on only when the value is a different one: when given, a
+   * change upstream recomputes the value at once (while anything reads it)
+   * and the effects and deriveds reading it run only when
+   * `equals(previous, next)` is false. Without it the value is lazy and every
+   * upstream change reaches its readers.
+   */
+  equals?: (previous: T, next: T) => boolean
+}
+
+/**
  * Options for creating effects.
  */
 export interface EffectOptions {
@@ -314,25 +328,66 @@ export function state<T>(initialValue: T): Signal<T> {
  * })
  * ```
  */
-export function derived<T>(compute: () => T): DerivedSignal<T> {
+export function derived<T>(compute: () => T, options: DerivedOptions<T> = {}): DerivedSignal<T> {
   let cachedValue: T
   let isDirty = true
+  let hasValue = false
   const effects = new Set<() => void>()
+  const equals = typeof options.equals === 'function' ? options.equals : null
+
+  const recompute = (): void => {
+    const prevEffect = setActiveSubscriber(markDirty)
+    try {
+      cachedValue = compute()
+      hasValue = true
+    }
+    finally {
+      restoreActiveSubscriber(prevEffect)
+    }
+    isDirty = false
+  }
+
+  // Recompute now and say whether the value changed. A compute that throws
+  // counts as a change: the reader recomputes and sees the error.
+  const changedNow = (): boolean => {
+    const before = cachedValue
+    const had = hasValue
+    try {
+      recompute()
+    }
+    catch {
+      isDirty = true
+      return true
+    }
+    return !had || !equals!(before, cachedValue)
+  }
 
   // Mark as dirty when dependencies change, and pass the change on to what
   // read this value. A signal's notification collects through it instead of
-  // calling it, so an effect reached both ways still runs once.
-  const markDirty = () => {
-    if (!isDirty) {
-      isDirty = true
-      notifySubscribers(effects)
+  // calling it, so an effect reached both ways still runs once. With `equals`
+  // and something reading it, the value is recomputed at once instead and the
+  // change is passed on only when it is a different value.
+  const markDirty = (): void => {
+    if (isDirty)
+      return
+    if (equals && effects.size) {
+      if (changedNow())
+        notifySubscribers(effects)
+      return
     }
+    isDirty = true
+    notifySubscribers(effects)
   }
   markAsForwarder(markDirty, (into) => {
-    if (!isDirty) {
-      isDirty = true
-      collectSubscribers(effects, into)
+    if (isDirty)
+      return
+    if (equals && effects.size) {
+      if (changedNow())
+        collectSubscribers(effects, into)
+      return
     }
+    isDirty = true
+    collectSubscribers(effects, into)
   })
 
   const signal = (() => {
@@ -343,18 +398,8 @@ export function derived<T>(compute: () => T): DerivedSignal<T> {
     }
 
     // Recompute if dirty
-    if (isDirty) {
-      const prevEffect = setActiveSubscriber(markDirty)
-
-      try {
-        cachedValue = compute()
-      }
-finally {
-        restoreActiveSubscriber(prevEffect)
-      }
-
-      isDirty = false
-    }
+    if (isDirty)
+      recompute()
 
     return cachedValue
   }) as DerivedSignal<T>
@@ -366,6 +411,23 @@ finally {
   })
 
   return signal
+}
+
+/**
+ * A derived value that reaches its readers only when it changes: `Object.is`,
+ * or the `equals` given. Short for `derived(compute, { equals })`.
+ *
+ * @example
+ * ```typescript
+ * const user = state({ id: 1, name: 'Ada' })
+ * const userId = memo(() => user().id)
+ *
+ * effect(() => load(userId()))   // runs once
+ * user.set({ id: 1, name: 'Ada L.' }) // same id: the effect does not run again
+ * ```
+ */
+export function memo<T>(compute: () => T, equals: (previous: T, next: T) => boolean = Object.is): DerivedSignal<T> {
+  return derived(compute, { equals })
 }
 
 /**
@@ -643,24 +705,29 @@ export function isDerived(value: unknown): value is DerivedSignal<unknown> {
 }
 
 /**
- * Unwraps a signal to get its raw value.
- * If the value is not a signal, returns it as-is.
+ * Reads a signal's value without tracking it: an effect that calls
+ * `untrack(count)` does not run again when `count` changes. Anything that is
+ * not a signal is returned as it is. For several reads, use {@link peek}.
  *
- * @param value - A signal or plain value
- * @returns The unwrapped value
+ * It used to read the signal tracked, so an effect calling it still re-ran on
+ * every change; it now matches its name in both implementations.
+ *
+ * @param value - A signal, derived signal or plain value
+ * @returns The value, read without subscribing
  *
  * @example
  * ```typescript
  * const count = state(5)
- * untrack(count)  // 5
+ * effect(() => {
+ *   console.log(untrack(count))  // logs once; count.set(6) does not run this again
+ * })
  * untrack(10)     // 10
  * ```
  */
 export function untrack<T>(value: T | Signal<T> | DerivedSignal<T>): T {
-  if (isSignal(value) || isDerived(value)) {
-    return value()
-  }
-  return value
+  if (isSignal(value) || isDerived(value))
+    return withoutTracking(() => (value as Signal<T>)())
+  return value as T
 }
 
 /**

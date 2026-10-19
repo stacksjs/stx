@@ -45,7 +45,7 @@ import { importsSignalDeclarations } from './imported-signals'
 export const STX_RUNTIME_GLOBALS: readonly string[] = [
   'batch', 'cachedQuery', 'clearServerData', 'computed', 'configureFetch', 'defineEmits', 'defineExpose', 'definePageMeta', 'defineProps',
   'defineSlots', 'defineStore', 'derived', 'effect', 'flushKeptState', 'forgetKeptState', 'goBack', 'goForward', 'inject',
-  'invalidateRoute', 'isDerived', 'isSignal', 'keptState', 'navigate',
+  'invalidateRoute', 'isDerived', 'isSignal', 'keptState', 'memo', 'navigate',
   'nextTick', 'onBeforeMount', 'onBeforeUnmount', 'onDestroy', 'onMount', 'onMounted', 'onUnmounted',
   'peek', 'provide', 'reactive',
   'ref', 'refDebounced', 'refresh', 'registerStoresClient', 'setKeptScope', 'setRouteParams', 'state', 'untrack', 'useAsync', 'useClickOutside', 'useColorMode',

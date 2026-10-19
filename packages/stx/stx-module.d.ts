@@ -113,6 +113,7 @@ declare module 'stx' {
   export const useServerRuntimeConfig: () => Readonly<{ public: Record<string, any>, private: Record<string, any> }> // <script server> only
   export const useSessionStorage: typeof globalThis.useSessionStorage
   export const keptState: typeof globalThis.keptState
+  export const memo: typeof globalThis.memo
   export const forgetKeptState: typeof globalThis.forgetKeptState
   export const setKeptScope: typeof globalThis.setKeptScope
   export const flushKeptState: typeof globalThis.flushKeptState

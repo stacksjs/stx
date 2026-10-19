@@ -141,8 +141,19 @@ catch (e) { console.warn('[stx] dispose error:', e); } });
     return typeof v === 'function' && v._isDerived === true;
   }
 
+  // Read a signal (or derived) without subscribing the effect running now: an
+  // effect that calls untrack(count) does not run again when count changes.
+  // Anything else is returned as it is.
   function untrack(v) {
-    return isSignal(v) || (typeof v === 'function' && v._isDerived) ? v() : v;
+    if (!(isSignal(v) || (typeof v === 'function' && v._isDerived))) return v;
+    const prev = activeEffect;
+    activeEffect = null;
+    try {
+      return v();
+    }
+finally {
+      activeEffect = prev;
+    }
   }
 
   function peek(fn) {

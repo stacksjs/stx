@@ -23,6 +23,7 @@
  */
 import { beforeAll, describe, expect, it } from 'bun:test'
 import * as api from '../../src/signals-api'
+import { watch as reactivityWatch } from '../../src/reactivity'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 
 interface ReactiveImpl {
@@ -307,6 +308,234 @@ for (const name of ['signals-api', 'runtime'] as const) {
         inside = double()
       })
       expect(inside).toBe(10)
+    })
+  })
+}
+
+// ── watch / memo / untrack ──────────────────────────────────────────────
+// The module watch is reactivity.ts's (what `import { watch } from
+// '@stacksjs/stx'` gives); the runtime's is window.stx.watch. Both used to
+// differ: the runtime aliased $watch, which called a getter source's callback
+// once with the getter itself, and a signal source's at once and on every
+// write with no previous value.
+
+interface WatchImpl {
+  state: ReactiveImpl['state']
+  derived: <T>(fn: () => T, options?: { equals?: (a: T, b: T) => boolean }) => { (): T }
+  memo: <T>(fn: () => T, equals?: (a: T, b: T) => boolean) => { (): T }
+  effect: ReactiveImpl['effect']
+  batch: ReactiveImpl['batch']
+  untrack: ReactiveImpl['untrack']
+  watch: (source: unknown, cb: (next: any, prev: any) => void, options?: { immediate?: boolean, deep?: boolean, flush?: 'sync' | 'pre' | 'post', once?: boolean }) => () => void
+}
+
+const tick = (ms = 40): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
+
+function getWatchImpls(): Record<string, WatchImpl> {
+  // eslint-disable-next-line ts/no-explicit-any
+  const runtimeStx = (globalThis as any).window?.stx as WatchImpl
+  return {
+    'signals-api': { ...(api as unknown as WatchImpl), watch: reactivityWatch as unknown as WatchImpl['watch'] },
+    'runtime': runtimeStx,
+  }
+}
+
+for (const name of ['signals-api', 'runtime'] as const) {
+  describe(`watch / memo / untrack parity (${name})`, () => {
+    let impl: WatchImpl
+    beforeAll(() => {
+      impl = getWatchImpls()[name]
+    })
+
+    it('watch(signal) does not call back at creation, then passes the new and old value', () => {
+      const count = impl.state(1)
+      const seen: unknown[] = []
+      impl.watch(count, (next, prev) => seen.push([next, prev]), { flush: 'sync' })
+      expect(seen).toEqual([])
+      count.set(2)
+      count.set(3)
+      expect(seen).toEqual([[2, 1], [3, 2]])
+    })
+
+    it('watch(getter) calls back with values, only when the value changes', () => {
+      const user = impl.state({ id: 1, name: 'Ada' })
+      const seen: unknown[] = []
+      const stop = impl.watch(() => user().id, (next, prev) => seen.push([next, prev]), { flush: 'sync' })
+      expect(typeof stop).toBe('function')
+      user.set({ id: 1, name: 'Ada L.' })
+      expect(seen).toEqual([])
+      user.set({ id: 2, name: 'Grace' })
+      expect(seen).toEqual([[2, 1]])
+    })
+
+    it('watch(derived) follows the derived value', () => {
+      const n = impl.state(2)
+      const double = impl.derived(() => n() * 2)
+      const seen: number[] = []
+      impl.watch(double, next => seen.push(next), { flush: 'sync' })
+      n.set(5)
+      expect(seen).toEqual([10])
+    })
+
+    it('immediate calls back at once with no previous value', () => {
+      const count = impl.state(7)
+      const seen: unknown[] = []
+      impl.watch(count, (next, prev) => seen.push([next, prev]), { immediate: true, flush: 'sync' })
+      expect(seen).toEqual([[7, undefined]])
+      count.set(8)
+      expect(seen).toEqual([[7, undefined], [8, 7]])
+    })
+
+    it('an immediate watch is still called back only on a change afterwards', () => {
+      const user = impl.state({ id: 1 })
+      let calls = 0
+      impl.watch(() => user().id, () => { calls++ }, { immediate: true, flush: 'sync' })
+      user.set({ id: 1 })
+      user.set({ id: 1 })
+      expect(calls).toBe(1)
+    })
+
+    it('an array of sources passes arrays of values', () => {
+      const a = impl.state(1)
+      const b = impl.state('x')
+      const seen: unknown[] = []
+      impl.watch([a, () => b()], (next, prev) => seen.push([next, prev]), { flush: 'sync' })
+      a.set(2)
+      b.set('y')
+      expect(seen).toEqual([[[2, 'x'], [1, 'x']], [[2, 'y'], [2, 'x']]])
+    })
+
+    it('once stops after the first call', () => {
+      const count = impl.state(0)
+      const seen: number[] = []
+      impl.watch(count, next => seen.push(next), { flush: 'sync', once: true })
+      count.set(1)
+      count.set(2)
+      expect(seen).toEqual([1])
+    })
+
+    it('the stop function stops it', () => {
+      const count = impl.state(0)
+      let calls = 0
+      const stop = impl.watch(count, () => { calls++ }, { flush: 'sync' })
+      count.set(1)
+      stop()
+      count.set(2)
+      expect(calls).toBe(1)
+    })
+
+    it('what the callback reads is not followed', () => {
+      const count = impl.state(0)
+      const other = impl.state(0)
+      let calls = 0
+      impl.watch(count, () => { other(); calls++ }, { flush: 'sync' })
+      count.set(1)
+      other.set(1)
+      expect(calls).toBe(1)
+    })
+
+    it('by default calls back after the change, once for several, with the latest value', async () => {
+      const count = impl.state(0)
+      const seen: unknown[] = []
+      impl.watch(count, (next, prev) => seen.push([next, prev]))
+      count.set(1)
+      count.set(2)
+      expect(seen).toEqual([])
+      await tick()
+      expect(seen).toEqual([[2, 0]])
+    })
+
+    it('deep compares structurally: an equal copy is not a change', () => {
+      const list = impl.state([{ id: 1 }])
+      const seen: unknown[] = []
+      impl.watch(() => list(), next => seen.push(next), { deep: true, flush: 'sync' })
+      list.set([{ id: 1 }])
+      expect(seen).toEqual([])
+      list.set([{ id: 1 }, { id: 2 }])
+      expect(seen).toEqual([[{ id: 1 }, { id: 2 }]])
+    })
+
+    it('memo: an effect over memo(() => user().id) runs once for two same-id writes', () => {
+      const user = impl.state({ id: 1, name: 'Ada' })
+      const id = impl.memo(() => user().id)
+      let runs = 0
+      impl.effect(() => { id(); runs++ })
+      user.set({ id: 1, name: 'Ada L.' })
+      user.set({ id: 1, name: 'Ada Lovelace' })
+      expect(runs).toBe(1)
+      user.set({ id: 2, name: 'Grace' })
+      expect(runs).toBe(2)
+      expect(id()).toBe(2)
+    })
+
+    it('derived(fn, { equals }) passes a change on only when equals says it differs', () => {
+      const list = impl.state([1, 2])
+      const sameLength = (a: number[], b: number[]) => a.length === b.length
+      const kept = impl.derived(() => list().slice(), { equals: sameLength })
+      let runs = 0
+      impl.effect(() => { kept(); runs++ })
+      list.set([3, 4])
+      expect(runs).toBe(1)
+      list.set([3, 4, 5])
+      expect(runs).toBe(2)
+    })
+
+    it('memo: an effect reading the source directly and through a memo runs once per change', () => {
+      const user = impl.state({ id: 1 })
+      const id = impl.memo(() => user().id)
+      const seen: string[] = []
+      impl.effect(() => { seen.push(`${user().id}:${id()}`) })
+      seen.length = 0
+      user.set({ id: 2 })
+      expect(seen).toEqual(['2:2'])
+      user.set({ id: 2 })
+      expect(seen).toEqual(['2:2', '2:2'])
+    })
+
+    it('memo feeds deriveds and stops a change that leaves it equal', () => {
+      const n = impl.state(1)
+      const parity = impl.memo(() => n() % 2)
+      const label = impl.derived(() => (parity() ? 'odd' : 'even'))
+      const seen: string[] = []
+      impl.effect(() => { seen.push(label()) })
+      n.set(3)
+      n.set(4)
+      expect(seen).toEqual(['odd', 'even'])
+    })
+
+    it('memo inside batch() runs its readers once, against the final value', () => {
+      const a = impl.state(1)
+      const b = impl.state(1)
+      const sum = impl.memo(() => a() + b())
+      const seen: number[] = []
+      impl.effect(() => { seen.push(sum()) })
+      impl.batch(() => {
+        a.set(2)
+        b.set(3)
+      })
+      expect(seen).toEqual([2, 5])
+    })
+
+    it('memo with nothing reading it stays lazy', () => {
+      const n = impl.state(1)
+      let computes = 0
+      const m = impl.memo(() => { computes++; return n() })
+      expect(m()).toBe(1)
+      n.set(2)
+      n.set(3)
+      expect(computes).toBe(1)
+      expect(m()).toBe(3)
+      expect(computes).toBe(2)
+    })
+
+    it('untrack(signal) inside an effect does not subscribe it', () => {
+      const s = impl.state(0)
+      let runs = 0
+      impl.effect(() => { impl.untrack(s); runs++ })
+      s.set(1)
+      s.set(2)
+      expect(runs).toBe(1)
+      expect(impl.untrack<number>(s)).toBe(2)
     })
   })
 }
