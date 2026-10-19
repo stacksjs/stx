@@ -1,0 +1,124 @@
+<script server>
+/*
+ * A segmented control: a few mutually exclusive choices in one track, the
+ * chosen one raised. The control iOS draws as UISegmentedControl and a phone
+ * app reaches for whenever a list has two to five ways to be shown.
+ *
+ * It is what applications kept drawing for themselves. One app copied the
+ * same track-and-segment markup into ten native screens and a stylesheet; the
+ * other drew seven by hand on the web, each with its own roles, and on native
+ * had none at all - a "Change the filter" button that cycled through the
+ * choices one tap at a time, so nobody could see what the others were.
+ *
+ * The same source renders on both targets. Each segment is a button with
+ * `aria-pressed`, inside a labelled group, which is what a toggle set is
+ * (a radio group would promise arrow-key roving the segments do not need,
+ * and tabs would promise panels). On a phone the host announces the chosen
+ * segment as selected, from the same attribute.
+ *
+ *   <SegmentedControl v-model:value="period" label="Period" stretch
+ *     :options="[{ value: 'week', label: 'This week' }, { value: 'all', label: 'All time' }]" />
+ *
+ * `options` takes strings or `{ value, label, disabled? }`; it is reactive,
+ * so a label carrying a count can change in place. The selection is a
+ * `v-model:value`, or `:value` with `@change`, which receives the new value.
+ * `testID` names the group, and each segment is `<testID>-<value>`.
+ *
+ * Colour and shape come from roles, so an app restyles it without touching
+ * it: the track is `surface-sunken`, the chosen segment `panel` (one step
+ * lighter than the track in dark mode, as iOS draws it), the words `fg` and
+ * `fg-muted`, and both corners `rounded-control` - a pill-shaped app gets a
+ * pill track by setting that one role.
+ */
+export const value = $props.value ?? ''
+export const options = $props.options || []
+export const label = $props.label || ''
+export const stretch = $bool($props.stretch)
+export const disabled = $bool($props.disabled)
+export const size = $props.size === 'sm' ? 'sm' : 'md'
+export const testID = $props.testID || ''
+export const className = $props.className || ''
+
+const sizeClasses = {
+  sm: { segment: 'min-h-[28px] px-2.5 py-1', text: 'text-[13px]' },
+  md: { segment: 'min-h-[32px] px-3 py-1.5', text: 'text-[13px]' },
+}
+export const sizing = sizeClasses[size]
+
+export const trackClasses = `${stretch ? 'flex w-full' : 'inline-flex'} flex-row gap-0.5 p-0.5 rounded-control bg-surface-sunken ${className}`.replace(/\s+/g, ' ').trim()
+export const segmentBase = `${stretch ? 'flex-1' : ''} items-center justify-center rounded-control transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${sizing.segment}`.replace(/\s+/g, ' ').trim()
+</script>
+
+<script client>
+const emit = defineEmits(['change'])
+const selected = useModel('value', { default: {{ value }}, parse: v => v == null ? '' : String(v) })
+const choices = useReactiveProp('options', {{ options }})
+const isDisabled = useReactiveProp('disabled', {{ disabled }})
+const segmentBase = {{ segmentBase }}
+const textSize = {{ sizing.text }}
+const groupID = {{ testID }}
+
+/** A choice as `{ value, label, disabled }`, whichever way it was written. */
+function normalise(choice) {
+  if (choice !== null && typeof choice === 'object') {
+    const value = choice.value == null ? '' : String(choice.value)
+    return { value, label: choice.label == null ? value : String(choice.label), disabled: choice.disabled === true }
+  }
+  const value = choice == null ? '' : String(choice)
+  return { value, label: value, disabled: false }
+}
+
+function segments() {
+  const list = choices()
+  return Array.isArray(list) ? list.map(normalise) : []
+}
+
+function isOn(segment) {
+  return segment.value === selected()
+}
+
+function isOff(segment) {
+  return isDisabled() || segment.disabled
+}
+
+function choose(segment) {
+  if (isOff(segment) || isOn(segment)) return
+  selected.set(segment.value)
+  emit('change', segment.value)
+}
+
+function segmentClasses(segment) {
+  const state = isOn(segment) ? 'bg-panel dark:bg-neutral-600 shadow-sm' : 'bg-transparent'
+  return `${segmentBase} ${state} ${isOff(segment) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`
+}
+
+function labelClasses(segment) {
+  return `${textSize} ${isOn(segment) ? 'font-semibold text-fg' : 'font-medium text-fg-muted'}`
+}
+
+function segmentID(segment) {
+  return groupID ? `${groupID}-${segment.value}` : ''
+}
+
+defineExpose({ selected })
+</script>
+
+<div
+  role="group"
+  @if(label)aria-label="{{ label }}"@endif
+  @if(testID)testID="{{ testID }}"@endif
+  class="{{ trackClasses }}"
+  data-stx-segmented-control
+>
+  <button
+    :for="segment in segments()"
+    :key="segment.value"
+    type="button"
+    :testID="segmentID(segment)"
+    :aria-pressed="isOn(segment) ? 'true' : 'false'"
+    :aria-disabled="isOff(segment) ? 'true' : 'false'"
+    :disabled="isOff(segment)"
+    :class="segmentClasses(segment)"
+    @click="choose(segment)"
+  ><span :class="labelClasses(segment)" :text="segment.label"></span></button>
+</div>
