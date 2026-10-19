@@ -124,6 +124,7 @@ export interface NativeHost {
   observeAttributes: (node: NativeNode, names: string[], callback: () => void) => (() => void)
   setStyle: (node: NativeNode, value: unknown) => void
   listen: (node: NativeNode, event: string, handler: (payload?: unknown) => void, options?: unknown) => void
+  emitComponentEvent: (node: NativeNode, event: Event) => boolean
   scopeOf: (node: NativeNode, from?: boolean) => NativeNode | null
   setVisible: (node: NativeNode, visible: boolean) => boolean
   anchor: (label: string) => NativeNode
@@ -156,6 +157,7 @@ export const HOST_METHODS: readonly string[] = [
   'observeAttributes',
   'setStyle',
   'listen',
+  'emitComponentEvent',
   'scopeOf',
   'setVisible',
   'anchor',
@@ -170,6 +172,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   const records = new Map<string, NodeRecord>()
   const attributeObservers = new WeakMap<NativeNode, Set<{ names: string[], notify: () => void }>>()
   const handlers = new Map<string, (payload?: unknown) => void>()
+  const componentListeners = new WeakMap<NativeNode, Array<{ event: string, handler: (payload?: unknown) => void, once: boolean, capture: boolean }>>()
   let queue: NativeMutationOperation[] = []
   let scheduled = false
   let counter = 0
@@ -602,7 +605,41 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         emit({ op: 'updateNode', id: node.__stxId, patch: { style } })
     },
 
-    listen(node, event, handler) {
+    emitComponentEvent(node, event) {
+      if (!descriptorOf(node)?.materialized) return true
+      const ancestors: NativeNode[] = []
+      for (let current: NativeNode | null | undefined = node; current; current = current.__stxOwner)
+        ancestors.push(current)
+      Object.defineProperty(event, 'target', { configurable: true, value: node })
+      const invoke = (current: NativeNode, capture: boolean): void => {
+        Object.defineProperty(event, 'currentTarget', { configurable: true, value: current })
+        const listeners = componentListeners.get(current) ?? []
+        for (const listener of [...listeners]) {
+          if (listener.event !== event.type || listener.capture !== capture) continue
+          if (listener.once) listeners.splice(listeners.indexOf(listener), 1)
+          listener.handler(event)
+        }
+      }
+      try {
+        for (const current of [...ancestors].reverse()) {
+          invoke(current, true)
+          if (event.cancelBubble) return !event.defaultPrevented
+        }
+        for (const current of ancestors) {
+          invoke(current, false)
+          if (!event.bubbles || event.cancelBubble) break
+        }
+        return !event.defaultPrevented
+      }
+      finally { Object.defineProperty(event, 'currentTarget', { configurable: true, value: null }) }
+    },
+
+    listen(node, event, handler, options) {
+      const listenerOptions = options as { once?: boolean, capture?: boolean } | undefined
+      const listeners = componentListeners.get(node) ?? []
+      const listener = { event, handler, once: !!listenerOptions?.once, capture: !!listenerOptions?.capture }
+      listeners.push(listener)
+      componentListeners.set(node, listeners)
       // The handler stays here and the native side is given an id to report
       // back. Sending a function over a bridge is not possible, and the
       // binding layer never needs to know that -- it hands over a closure
@@ -622,6 +659,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
             if (record.materialized) emit({ op: 'updateNode', id: node.__stxId, patch: { props: { value } } })
           }
         }
+        if (!listeners.includes(listener)) return
+        if (listener.once) listeners.splice(listeners.indexOf(listener), 1)
         handler(eventAt(payload, node))
       })
       const record = recordOf(node)

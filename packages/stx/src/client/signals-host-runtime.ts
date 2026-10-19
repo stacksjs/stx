@@ -70,6 +70,7 @@ export const SIGNALS_HOST_RUNTIME = `  // ── Host ──
     // parameter silently makes every touch listener blocking again, so it stays
     // in the signature and each host decides what to do with it.
     listen: function(node, event, handler, options) { node.addEventListener(event, handler, options); },
+    emitComponentEvent: function(node, event) { return node.dispatchEvent(event); },
 
     // Returns the PREVIOUS visibility. bindShow needs to know whether it just
     // revealed something, and asking the node afterwards is the one read-back

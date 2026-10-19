@@ -16,21 +16,53 @@ async function boot(source: string, components: Record<string, string>) {
   const { code } = await compileSharedScreenBundle(file, { root })
   const messages: any[] = []
   const errors: string[] = []
+  let receive: (message: string) => void = () => {}
   const scope: any = {
     console: { error: (...args: unknown[]) => errors.push(args.map(String).join(' ')), warn() {}, log() {} },
     setTimeout, clearTimeout,
     __stxNativeBridge: {
       postMessage: (raw: string) => messages.push(JSON.parse(raw)),
-      onMessage() {},
+      onMessage(callback: typeof receive) { receive = callback },
     },
   }
   vm.runInNewContext(code, scope)
   const settle = async () => { await Bun.sleep(5); scope.__stx_host.flush() }
   await settle()
-  return { scope, errors, messages, settle, stop: () => scope.__stxNativeUnmount() }
+  const press = async () => {
+    const operation = messages.filter(m => m.type === 'MUTATE').flatMap(m => m.payload.operations).find(op => op.patch?.events?.onPress)
+    expect(operation).toBeTruthy()
+    receive(JSON.stringify({ type: 'EVENT', payload: { handlerId: operation.patch.events.onPress, nativeEvent: {} } }))
+    await settle()
+  }
+  return { scope, errors, messages, settle, press, stop: () => scope.__stxNativeUnmount() }
 }
 
 describe('shared component reactive props on a DOM-free host (#2086)', () => {
+  it('delivers child payloads to the parent and supports two-way models', async () => {
+    const app = await boot(`<script client>
+const count = state(2)
+const received = []
+window.probe = { count, received }
+</script><div><Counter v-model:count="count" @saved="received.push($event)" /><p :text="count" /></div>`, {
+      Counter: `<script client>
+const count = useModel('count', { default: 0 })
+const emit = defineEmits(['saved'])
+function increment() { count.set(count() + 1); emit('saved', { count: count() }) }
+</script><button @click="increment()" :text="count" />`,
+    })
+    try {
+      await app.press()
+      expect(app.errors).toEqual([])
+      expect(app.scope.probe.count()).toBe(3)
+      expect(JSON.parse(JSON.stringify(app.scope.probe.received))).toEqual([{ count: 3 }])
+      app.scope.probe.count.set(8)
+      await app.settle()
+      await app.press()
+      expect(app.scope.probe.count()).toBe(9)
+      expect(app.errors).toEqual([])
+    }
+    finally { app.stop() }
+  })
   it('initializes real shared controls without a browser observer', async () => {
     const components: Record<string, string> = {}
     for (const [name, file] of Object.entries({ SharedButton: 'button/Button', SharedInput: 'input/TextInput', SharedSelect: 'select/Select' }))
@@ -66,4 +98,5 @@ const item = useReactiveProp('item', { label: 'Default' })
     }
     finally { app.stop() }
   })
+
 })
