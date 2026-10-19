@@ -101,8 +101,11 @@ fractions such as `translate-x-1/2`, and CSS functions remain diagnosed rather
 than being treated as point values. Translation support does not imply CSS
 transition animation support.
 
-Default semantic-token utilities do not yet read app CSS-variable overrides,
-and ring utilities remain unsupported. Full theme customization and maintained
+Semantic color, shape, and density utilities read inherited inline CSS-variable
+overrides (for example `--stx-field`, `--stx-radius-control`, and `--stx-control-px`).
+Reactive overrides update shared controls; removing them restores the stock
+appearance-dependent defaults. Explicit `dark:` utilities and ordinary inline
+styles retain precedence. Ring utilities remain unsupported. Stylesheet theme transport and maintained
 host visual validation remain tracked in [#2090](https://github.com/stacksjs/stx/issues/2090).
 
 Inline `style` and reactive `:style` can resolve variables declared in that
@@ -117,7 +120,7 @@ retain their already-computed parent value. `initial` blocks inheritance;
 descendants, including newly created loop rows and reinserted conditional
 branches. Authored, reactive, and forwarded style layers share the same local
 variable environment; removing an override restores the underlying declaration.
-This does not yet transport stylesheet declarations or semantic-class overrides. Calls to
+This does not yet transport stylesheet declarations. Calls to
 the standalone style parser without an inheritance context still diagnose
 unconsumed declarations. Variable substitution is bounded to 64 dependency
 levels and 64 KiB per expanded value; escaped variable names are not supported.

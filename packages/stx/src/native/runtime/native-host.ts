@@ -458,11 +458,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   }
 
   function resolveStyle(record: NodeRecord, id: string): Record<string, unknown> {
-    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`)
     const resolved = parseNativeStyleLayers([record.styleSource, record.boundStyle, record.forwardedStyle], record.inheritedVariables, diagnostic => {
       console.warn(`[STX Native] ${diagnostic.kind}: ${id}: ${diagnostic.name}`)
     })
     record.variables = resolved.variables
+    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables)
     return { ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}), ...resolved.styles[0], ...record.baseStyle, ...resolved.styles[1], ...resolved.styles[2], ...(record.visible ? {} : { display: 'none' }) }
   }
 
@@ -531,7 +531,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const changed = !onlyIfChanged || JSON.stringify(record.style) !== JSON.stringify(style)
     record.style = style
     if (record.materialized && changed) emit({ op: 'updateNode', id, patch: { style: { ...patch, ...style } } })
-    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`)
+    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables)
     const unsupported = new Set(classes.unknown)
     for (const name of unsupported) {
       if (!record.reportedClasses?.has(name))

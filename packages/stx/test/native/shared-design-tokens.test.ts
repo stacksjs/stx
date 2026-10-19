@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
 import { mountNativeScreen } from '../../src/native/testing'
 import { createTempDir } from '../../src/temp-dir'
+import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 
 describe.each([false, true])('shared component token styles (minify=%s)', (minify) => {
   it('keeps shared controls sized and shaped across appearance and computed-class updates', async () => {
@@ -17,14 +18,16 @@ describe.each([false, true])('shared component token styles (minify=%s)', (minif
 const compact = state(false)
 const clear = state(false)
 const override = state(false)
-window.probe = { compact, clear, override }
-</script><div>
+const theme = state(null)
+window.probe = { compact, clear, override, theme }
+</script><div :style="theme">
   <SharedButton id="button">Save</SharedButton>
   <SharedCard id="card">Details</SharedCard>
   <SharedTextInput label="Name" />
   <SharedSelect label="Choice"><option value="one">One</option></SharedSelect>
   <div testID="density" :class="clear ? '' : compact ? 'rounded-panel px-cell-x py-cell-head-y text-cell-head bg-panel' : 'rounded-control px-control-x py-control-y text-control bg-field'" :style="override ? { paddingLeft: 7 } : {}">Density</div>
   <div class="rounded-t-unsupported">Unsupported style is reported</div>
+  <div style="--stx-radius-control:3px" class="rounded-control" testID="local-theme">Local</div>
 </div>`)
     const result = await compileSharedScreenBundle(file, { root, minify })
     expect(result.diagnostics).toContainEqual({ level: 'warning', message: 'unknown-class: div: rounded-t-unsupported' })
@@ -65,6 +68,29 @@ window.probe = { compact, clear, override }
     await phone.settle()
     for (const key of ['borderRadius', 'paddingHorizontal', 'paddingVertical', 'fontSize', 'lineHeight', 'paddingLeft'])
       expect(density().style[key]).toBeNull()
+    phone.context.probe.theme.set({ '--stx-field': '#123456', '--stx-radius-control': '12px', '--stx-radius-panel': '20px', '--stx-control-px': '10px', '--stx-control-py': '4px', '--stx-control-text': '14px', '--stx-control-leading': '18px' })
+    await phone.settle()
+    const themed = { backgroundColor: '#123456', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, fontSize: 14, lineHeight: 18 }
+    expect(field().style).toMatchObject(themed)
+    expect(select().style).toMatchObject(themed)
+    expect(card().style.borderRadius).toBe(20)
+    expect(phone.byTestID('local-theme')!.style.borderRadius).toBe(3)
+    phone.appearance('dark')
+    await phone.settle()
+    expect(field().style).toMatchObject(themed)
+    phone.context.probe.theme.set(null)
+    await phone.settle()
+    expect(field().style).toMatchObject(control)
+    expect(field().style.backgroundColor).not.toBe(lightBackground)
+    expect(card().style.borderRadius).toBe(8)
+    expect(phone.mutationErrors).toEqual([])
     expect(errors).toEqual([])
   }, 30_000)
+})
+
+it('applies inherited token values at compilation regardless of attribute ordering', async () => {
+  const { root } = await translateHtmlToIR('<div style="--stx-field:#123456;--stx-radius-control:12px"><input class="bg-field rounded-control"/><input class="bg-field rounded-control" style="--stx-radius-control:4px"/></div>')
+  const controls = root.children.filter(child => typeof child !== 'string')
+  expect(controls[0].style).toMatchObject({ backgroundColor: '#123456', borderRadius: 12 })
+  expect(controls[1].style).toMatchObject({ backgroundColor: '#123456', borderRadius: 4 })
 })

@@ -239,6 +239,7 @@ function readAttributes(
   diagnostics: TranslationDiagnostic[],
   styleContext: NativeStyleContext = {},
 ): Attributes {
+  let variables = styleContext.inheritedVariables
   const props: Record<string, unknown> = {}
   const events: Record<string, string> = {}
   const bindings: Record<string, string> = {}
@@ -254,7 +255,10 @@ function readAttributes(
     }
 
     if (name === 'style') {
-      inline = { ...inline, ...inlineStyle(tag, value, diagnostics, styleContext) }
+      inline = { ...inline, ...inlineStyle(tag, value, diagnostics, { ...styleContext, onVariables(value) {
+        variables = value
+        styleContext.onVariables?.(value)
+      } }) }
       continue
     }
 
@@ -299,7 +303,7 @@ function readAttributes(
     }
   }
 
-  const compiledClasses = classes ? compileClassStyles(classes) : undefined
+  const compiledClasses = classes ? compileClassStyles(classes, variables) : undefined
   for (const name of new Set(compiledClasses?.unknown ?? []))
     diagnostics.push({ kind: 'unknown-class', tag, name })
   const style = { ...compiledClasses?.style, ...inline }
