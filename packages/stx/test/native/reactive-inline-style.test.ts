@@ -2,6 +2,27 @@ import { describe, expect, it } from 'bun:test'
 import { compileNativeScreen, mountNativeScreen } from '../../src/native/testing'
 
 describe.each([false, true])('reactive native inline styles (minify=%s)', (minify) => {
+  it('delivers explicit grid rows through the compiled native bundle and clears changed tracks', async () => {
+    const { code } = await compileNativeScreen(`<script client>
+const tracks = state({ gridTemplateRows: 'repeat(2, 1fr)' })
+</script><View testID="grid" style="display:grid;height:84px" :style="tracks">
+  <View testID="static-grid" style={{"display":"grid","gridTemplateRows":"repeat(2, 1fr)","height":84}} />
+  <Button testID="change" @click="tracks.set({gridTemplateRows:3})">Change rows</Button>
+  <Button testID="clear" @click="tracks.set({})">Clear rows</Button>
+</View>`, { minify })
+    const phone = mountNativeScreen(code, 'Screen')
+    await phone.settle()
+    expect(phone.byTestID('static-grid')!.style).toMatchObject({ display: 'grid', height: 84, gridTemplateRows: 'repeat(2, 1fr)' })
+    expect(phone.byTestID('grid')!.style).toMatchObject({ display: 'grid', height: 84, gridTemplateRows: 'repeat(2, 1fr)' })
+    phone.press(phone.byTestID('change')!)
+    await phone.settle()
+    expect(phone.byTestID('grid')!.style.gridTemplateRows).toBe(3)
+    phone.press(phone.byTestID('clear')!)
+    await phone.settle()
+    expect(phone.byTestID('grid')!.style.gridTemplateRows).toBeNull()
+    phone.unmount()
+  }, 30_000)
+
   it('normalizes CSS and objects, clears previous values, and protects hidden nodes', async () => {
     const { code } = await compileNativeScreen(`<script client>
 const styles = state('padding-left:12px;font-size:1.5rem;width:50%;font-weight:700')

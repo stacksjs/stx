@@ -16,6 +16,21 @@ describe('shared native inline-style normalization', () => {
     expect(parseNativeStyle({ fontWeight: 700 })).toEqual({ fontWeight: '700' })
   })
 
+  it('preserves explicit grid row tracks in object, serialized and CSS styles', async () => {
+    for (const rows of ['repeat(2, 1fr)', '1fr 1fr', 2]) {
+      const expected = { display: 'grid', gridTemplateRows: rows }
+      for (const input of [expected, JSON.stringify(expected)]) {
+        const diagnostics: NativeStyleDiagnostic[] = []
+        expect(parseNativeStyle(input, d => diagnostics.push(d))).toEqual(expected)
+        expect(diagnostics).toEqual([])
+      }
+    }
+    const css = 'display:grid;grid-template-rows:repeat(2, 1fr)'
+    expect(parseNativeStyle(css)).toEqual({ display: 'grid', gridTemplateRows: 'repeat(2, 1fr)' })
+    expect((await translateHtmlToIR(`<div style="${css}"><span>row</span></div>`)).root.style)
+      .toEqual({ display: 'grid', gridTemplateRows: 'repeat(2, 1fr)' })
+  })
+
   it('does not corrupt quoted font names or semicolons in CSS function values', () => {
     const image = 'url("data:image/svg+xml;base64,abc")'
     expect(parseNativeStyle(`background-image:${image};font-family:"A;B";padding:8px`))

@@ -2,7 +2,7 @@ import type { STXStyle } from './ir'
 
 /** Every property `STXStyle` declares, for inline `style=""` translation. */
 const STYLE_KEYS = new Set([
-  'display', 'gridColumns', 'gridTemplateColumns', 'gridAutoRows',
+  'display', 'gridColumns', 'gridTemplateColumns', 'gridTemplateRows', 'gridAutoRows',
   'flex', 'flexGrow', 'flexShrink', 'flexBasis', 'flexDirection', 'flexWrap',
   'justifyContent', 'alignItems', 'alignSelf', 'alignContent', 'position', 'top', 'right',
   'bottom', 'left', 'zIndex', 'width', 'height', 'minWidth', 'maxWidth', 'minHeight',
@@ -161,7 +161,7 @@ export function parseNativeStyle(input: unknown, report: (diagnostic: NativeStyl
         translated = undefined
     }
     else if (property === 'shadowOffset' || property === 'transform') translated = structuredStyle(property, value)
-    else if (property === 'gridTemplateColumns') translated = finite(value) || typeof value === 'string' ? value : undefined
+    else if (property === 'gridTemplateColumns' || property === 'gridTemplateRows') translated = finite(value) || typeof value === 'string' ? value : undefined
     // Font weights are strings in the IR, even when authored as object numbers.
     else if (property === 'fontWeight' && finite(value)) translated = String(value)
     else if (typeof value === 'string') translated = value
