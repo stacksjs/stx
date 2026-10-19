@@ -73,7 +73,10 @@ it('rejects a stale measurement after removal and reinsertion of the same view i
   const { code } = await compileNativeScreen(source)
   let reply: (value: unknown) => void = () => { throw new Error('No measurement request') }
   let requested = false
-  const phone = mountNativeScreen(code, 'Screen', { capabilities: ['viewMeasure'], native() {
+  // The measurement is held open across a removal and a reinsertion on
+  // purpose, longer than the kit's 100ms default allows a request on a slow
+  // runner; what is under test is the stale reply, not the deadline.
+  const phone = mountNativeScreen(code, 'Screen', { capabilities: ['viewMeasure'], capabilityTimeoutMs: 10_000, native() {
     requested = true
     return new Promise(resolve => { reply = resolve })
   } })
