@@ -29,8 +29,10 @@ describe('signals host runtime boundary', () => {
       'anchor',
       'clone',
       'descendants',
+      'emitComponentEvent',
       'insert',
       'listen',
+      'observeAttributes',
       'remove',
       'removeAttribute',
       'scopeOf',
@@ -41,5 +43,29 @@ describe('signals host runtime boundary', () => {
       'setText',
       'setVisible',
     ])
+  })
+
+  it('observes only the requested DOM attributes and disconnects on cleanup', () => {
+    const calls: unknown[] = []
+    const callback = () => {}
+    class Observer {
+      constructor(fn: () => void) { expect(fn).toBe(callback) }
+      observe(node: unknown, options: unknown) { calls.push([node, options]) }
+      disconnect() { calls.push('disconnect') }
+    }
+    const host = new Function('window', 'MutationObserver', `${SIGNALS_HOST_RUNTIME}\nreturn stxHost`)({}, Observer)
+    const node = {}
+    const stop = host.observeAttributes(node, ['open', 'model-value'], callback)
+    expect(calls).toEqual([[node, { attributes: true, attributeFilter: ['open', 'model-value'] }]])
+    stop()
+    expect(calls[1]).toBe('disconnect')
+  })
+
+  it('preserves the DOM event and its cancellation result', () => {
+    const host = evaluateHost({})
+    const event = new Event('saved', { cancelable: true })
+    const node = { dispatchEvent(received: Event) { expect(received).toBe(event); return false } }
+    const emit = host.emitComponentEvent as (node: unknown, event: Event) => boolean
+    expect(emit(node, event)).toBe(false)
   })
 })

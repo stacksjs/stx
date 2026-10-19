@@ -584,11 +584,10 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
     expect(runtime).toContain('staticValue = parsedProps[camelName]')
   })
 
-  it('sets up a MutationObserver to catch parent-driven attribute changes', () => {
-    expect(runtime).toContain('new MutationObserver(')
-    expect(runtime).toMatch(/attributeFilter:\s*attributeNames/)
+  it('subscribes through the host to catch parent-driven attribute changes', () => {
+    expect(runtime).toContain('stxHost.observeAttributes(root, attributeNames, sync)')
     // Cleanup on component teardown
-    expect(runtime).toMatch(/onDestroy\(function\s*\(\)\s*\{\s*connected = false;\s*observer\.disconnect/)
+    expect(runtime).toMatch(/onDestroy\(function\s*\(\)\s*\{\s*connected = false;\s*stopObserving\(\)/)
     // ...and reconnected when an :if shows the component again.
     expect(runtime).toMatch(/onMount\(function\s*\(\)\s*\{\s*if \(connected\) return;/)
   })

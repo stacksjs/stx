@@ -26,6 +26,19 @@ dark appearance. Supported styles still compile, so a successful build with that
 warning is not proof of visual parity. Runtime-computed class strings require
 interaction tests too; a static diagnostic cannot inspect every future value.
 
+Shared component props and emitted events go through the signals host:
+`useReactiveProp` observes native prop updates without a browser
+`MutationObserver`, and `defineEmits` delivers payloads through the native
+ownership tree. Named models, independent instances, and conditional remounts
+are covered by the native runtime tests. This does not make DOM-dependent
+overlay or form behavior portable by itself.
+
+Labels retain their interactive children. HTML checkbox inputs translate to
+native Checkbox nodes, with checked state separate from their form value;
+hidden inputs retain their metadata without becoming visible text fields.
+Radio inputs currently report `unsupported-control` instead of pretending to
+be text inputs. Radio grouping and selection still need a native adapter.
+
 A browser preview verifies HTML and browser behavior. Check the compiled native
 bundle's bindings and events, then validate the same route, data and interactions
 with the maintained Craft hosts. Native screens and their imported client code
