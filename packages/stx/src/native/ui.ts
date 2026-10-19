@@ -65,6 +65,12 @@ export const nativeUi = {
   warning: 'text-warning',
   /** A form field. */
   input: 'min-h-[44px] px-3 rounded-control bg-surface-sunken text-[17px] text-fg',
+  /**
+   * A field of several lines. Panel corners, not the control's: an app whose
+   * controls are pills would otherwise round a paragraph into a capsule and
+   * clip its first and last letters at the ends.
+   */
+  textarea: 'min-h-[96px] px-3 py-2.5 rounded-panel bg-surface-sunken text-[17px] text-fg',
   /** The search field at the top of a list. */
   search: 'flex-row items-center gap-2 mx-4 px-2.5 h-9 rounded-control bg-surface-sunken',
   /** The filled button at the end of a flow, and its words. */
