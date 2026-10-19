@@ -40,13 +40,16 @@ const FILES = {
   <TabPanel label="Overview">TAB-ONE-BODY</TabPanel>
   <TabPanel label="History">TAB-TWO-BODY</TabPanel>
 </Tabs>`),
+  'pages/prop-tabs.stx': page('app', `<script server>
+const legacyTabs = [{ label: 'One', content: 'First body' }, { label: 'Two', content: 'Second body' }]
+</script><Tabs :tabs="legacyTabs" /><Tabs :tabs="legacyTabs" />`),
   'pages/accordion.stx': page('app', `<Accordion :defaultOpen="[0]">
   <AccordionItem title="First">ITEM-ONE-BODY</AccordionItem>
   <AccordionItem title="Second">ITEM-TWO-BODY</AccordionItem>
 </Accordion>`),
 }
 
-const ROUTES = { '/tabs': 'pages/tabs.stx', '/accordion': 'pages/accordion.stx' }
+const ROUTES = { '/tabs': 'pages/tabs.stx', '/prop-tabs': 'pages/prop-tabs.stx', '/accordion': 'pages/accordion.stx' }
 
 afterEach(() => {
   closeBrowser()
@@ -155,6 +158,76 @@ describe('Tabs in slot mode renders a tab per panel (#1979)', () => {
 
       expect(html).toContain('@click="selectTab(idx)"')
       expect(html).toContain('@keydown="onTabKey($event, idx)"')
+    }
+    finally {
+      await app.dispose()
+    }
+  })
+
+  it('retains selection, tab identity and edited panel state when panels move or disappear', async () => {
+    const app = await renderApp(FILES, ROUTES)
+    try {
+      const browser = await boot(app, '/tabs')
+      await settle()
+      const root = browser.document.querySelector('[data-stx-tabs]')!
+      const scopeId = browser.document.querySelector('[data-stx-scope]')!.getAttribute('data-stx-scope')
+      const scope = browser.window.stx._scopes[scopeId]
+      const [first, second] = [...root.querySelectorAll('[data-stx-tab-panel]')]
+      const input = browser.document.createElement('input')
+      input.value = 'Keep my draft'
+      second.appendChild(input)
+      scope.selectTab(1)
+      await settle()
+      const selected = root.querySelector('[role="tab"][aria-selected="true"]')
+      expect(selected?.getAttribute('aria-controls')).toBe(second.id)
+
+      root.appendChild(first)
+      await settle()
+      expect(root.querySelector('[role="tab"][aria-selected="true"]')).toBe(selected)
+      expect(scope.activeTab()).toBe(0)
+      expect(second.hasAttribute('hidden')).toBe(false)
+      expect(input.value).toBe('Keep my draft')
+      expect(input.parentElement).toBe(second)
+
+      second.remove()
+      await settle()
+      expect(root.querySelectorAll('[role="tab"]')).toHaveLength(1)
+      expect(first.hasAttribute('hidden')).toBe(false)
+      first.remove()
+      await settle()
+      expect(root.querySelectorAll('[role="tab"]')).toHaveLength(0)
+      root.appendChild(second)
+      await settle()
+      expect(root.querySelectorAll('[role="tab"]')).toHaveLength(1)
+      expect(second.hasAttribute('hidden')).toBe(false)
+      expect(input.value).toBe('Keep my draft')
+    }
+    finally {
+      await app.dispose()
+    }
+  })
+
+  it('keeps legacy tab IDs and keyboard focus local to each instance', async () => {
+    const app = await renderApp(FILES, ROUTES)
+    try {
+      const browser = await boot(app, '/prop-tabs')
+      await settle()
+      const roots = [...browser.document.querySelectorAll('[data-stx-tabs]')]
+      expect(roots).toHaveLength(2)
+      const tabs = [...browser.document.querySelectorAll('[role="tab"]')]
+      expect(tabs).toHaveLength(4)
+      expect(new Set(tabs.map(tab => tab.id)).size).toBe(4)
+      for (const tab of tabs) {
+        const panel = browser.document.getElementById(tab.getAttribute('aria-controls')!)
+        expect(panel).not.toBeNull()
+        expect(panel!.getAttribute('aria-labelledby')).toBe(tab.id)
+      }
+      const scopeId = roots[1].closest('[data-stx-scope]')!.getAttribute('data-stx-scope')
+      browser.window.stx._scopes[scopeId].onTabKey({ key: 'ArrowRight', preventDefault() {} }, 0)
+      await settle()
+      expect(browser.document.activeElement).toBe(tabs[3])
+      expect(tabs[0].getAttribute('aria-selected')).toBe('true')
+      expect(tabs[3].getAttribute('aria-selected')).toBe('true')
     }
     finally {
       await app.dispose()

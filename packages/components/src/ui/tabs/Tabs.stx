@@ -39,7 +39,7 @@ export const containerClasses = `flex ${orientationClasses[orientation] || orien
 export const tabListClasses = `flex ${tabListOrientationClasses[orientation] || tabListOrientationClasses.horizontal} ${variantClasses[variant] || variantClasses.line}`.trim()
 export const tabPanelClasses = `p-4 focus:outline-none`.trim()
 // True when the parent passes a non-empty `tabs` array — switches to the
-// legacy render path so existing snapshots stay byte-identical.
+// legacy render path, preserving the existing prop-array API.
 export const hasPropTabs = Array.isArray(tabs) && tabs.length > 0
 </script>
 
@@ -56,6 +56,10 @@ const hasPropTabs = {{ hasPropTabs }}
 // the list stayed empty, and the component rendered nothing.
 // stacksjs/stx#1979
 const containerRef = useRef('containerRef')
+const tree = window.stx._host
+const panelKeys = new WeakMap()
+let nextPanelKey = 0
+let stopObserving = null
 // In slot mode, `discoveredTabs` is populated from child <TabPanel> data
 // attributes on mount. In prop mode, it mirrors the `tabs` prop so the
 // rendering loop works the same in both modes.
@@ -75,41 +79,64 @@ const activeTab = state({{ defaultTab }})
 const mounted = state(false)
 
 
-// Walk only direct descendants of THIS container (not nested Tabs').
+function owner(node) {
+  for (let current = node; current; current = tree.parent(current)) {
+    if (tree.getAttribute(current, 'data-stx-tabs') != null) return current
+  }
+  return null
+}
+
+// Walk [data-stx-tab-panel] descendants of THIS container, not nested Tabs'.
 function findOwnPanels() {
   const root = containerRef.value
   if (!root) return []
-  // Closest ancestor with data-stx-tabs must be this container's root —
-  // protects against nested <Tabs> contamination.
-  return Array.from(root.querySelectorAll('[data-stx-tab-panel]'))
-    .filter(p => p.closest('[data-stx-tabs]') === root)
+  return tree.descendants(root).filter(panel =>
+    tree.getAttribute(panel, 'data-stx-tab-panel') != null && owner(panel) === root)
 }
 
-onMount(() => {
-  if (hasPropTabs) return  // legacy mode: prop array already in discoveredTabs
+function syncPanels() {
   const panels = findOwnPanels()
-  /*
-   * Give each panel an id and hand it to its tab, so the tab can point at it.
-   *
-   * Prop mode numbers both sides itself (`tab-N` / `tab-panel-N`), but in slot
-   * mode the panels are the consumer's own markup and may carry no id at all --
-   * so the tab button rendered with role="tab" and no aria-controls, and a
-   * screen reader had no way to get from the tab to the panel it controls
-   * (WCAG 4.1.2). Only assigned when the panel has no id of its own.
-   */
-  const list = panels.map((p, i) => {
-    if (!p.id) p.id = `${tabsInstanceId}-panel-${i}`
-    const tabId = `${tabsInstanceId}-tab-${i}`
-    p.setAttribute('aria-labelledby', tabId)
+  const previous = discoveredTabs()
+  const selectedId = previous[activeTab()]?.panelId
+  const list = panels.map(panel => {
+    // Keys belong to panel identity, not its current index. Inserting a panel
+    // before the selected one must not recreate its tab or change selection.
+    if (!panelKeys.has(panel)) panelKeys.set(panel, nextPanelKey++)
+    const key = panelKeys.get(panel)
+    const panelId = tree.getAttribute(panel, 'id') || `${tabsInstanceId}-panel-${key}`
+    const tabId = `${tabsInstanceId}-tab-${key}`
+    if (tree.getAttribute(panel, 'id') !== panelId) tree.setAttribute(panel, 'id', panelId)
+    if (tree.getAttribute(panel, 'aria-labelledby') !== tabId) tree.setAttribute(panel, 'aria-labelledby', tabId)
     return {
-      label: p.dataset.label || '',
-      icon: p.dataset.icon || '',
-      panelId: p.id,
+      label: tree.getAttribute(panel, 'data-label') || '',
+      icon: tree.getAttribute(panel, 'data-icon') || '',
+      panelId,
       tabId,
     }
   })
-  discoveredTabs.set(list)
+  // Our own tab loop also changes the child tree. Do not feed those changes
+  // back into another render when the discovered panels are unchanged.
+  if (list.length === previous.length && list.every((tab, i) =>
+    tab.panelId === previous[i].panelId && tab.tabId === previous[i].tabId
+    && tab.label === previous[i].label && tab.icon === previous[i].icon)) return
+  const retained = list.findIndex(tab => tab.panelId === selectedId)
+  batch(() => {
+    activeTab.set(retained >= 0 ? retained : Math.max(0, Math.min(activeTab(), list.length - 1)))
+    discoveredTabs.set(list)
+  })
+}
+
+onMount(() => {
+  if (hasPropTabs) return
+  syncPanels()
   mounted.set(true)
+  if (containerRef.value) stopObserving = tree.observeChildren(containerRef.value, syncPanels)
+})
+
+onDestroy(() => {
+  if (stopObserving) stopObserving()
+  stopObserving = null
+  mounted.set(false)
 })
 
 // In slot mode, toggle each panel's `hidden` attribute as activeTab changes.
@@ -117,11 +144,13 @@ onMount(() => {
 effect(() => {
   if (hasPropTabs) return
   if (!mounted()) return
+  discoveredTabs()
   const panels = findOwnPanels()
   const idx = activeTab()
   panels.forEach((p, i) => {
-    if (i === idx) p.removeAttribute('hidden')
-    else p.setAttribute('hidden', '')
+    if (i === idx) tree.removeAttribute(p, 'hidden')
+    else tree.setAttribute(p, 'hidden', '')
+    tree.setVisible(p, i === idx)
   })
 })
 
@@ -154,6 +183,7 @@ function getTabClasses(index) {
 
 function onTabKey(event, index) {
   const tabCount = discoveredTabs().length
+  if (!tabCount) return
   let next = index
   if (orientation === 'horizontal') {
     if (event.key === 'ArrowRight') { event.preventDefault(); next = (index + 1) % tabCount }
@@ -167,10 +197,12 @@ function onTabKey(event, index) {
   else if (event.key === 'End') { event.preventDefault(); next = tabCount - 1 }
   if (next !== index) {
     selectTab(next)
-    // Slot mode numbers its tabs per instance; `tab-N` is the prop mode's id,
-    // so arrowing in slot mode moved the selection and left focus behind.
-    const id = hasPropTabs ? `tab-${next}` : discoveredTabs()[next]?.tabId
-    if (id) document.getElementById(id)?.focus()
+    // Both modes number tabs per instance. Search only this component's tree
+    // so another tab set cannot receive the focus intended for this one.
+    const id = hasPropTabs ? `${tabsInstanceId}-tab-${next}` : discoveredTabs()[next]?.tabId
+    const tab = tree.descendants(containerRef.value).find(node => tree.getAttribute(node, 'id') === id)
+    if (tab && typeof tab.focus === 'function') tab.focus()
+    else if (tab) console.warn('[stx:Tabs] This host cannot move keyboard focus; touch selection is supported. Native focus requires craft-native/craft#373.')
   }
 }
 
@@ -185,16 +217,15 @@ defineExpose({ activeTab, selectTab })
   >
     @if(hasPropTabs)
       {{-- Legacy mode: server-side iterate the prop tabs array. Buttons --}}
-      {{-- get static class names so existing visual snapshots stay      --}}
-      {{-- byte-identical.                                                 --}}
+      {{-- retain their original prop-driven classes and content.        --}}
       @foreach(tab in tabs)
         <button
           type="button"
           :class="getTabClasses({{ $loop.index }})"
           role="tab"
           :aria-selected="isActive({{ $loop.index }}) ? 'true' : 'false'"
-          aria-controls="tab-panel-{{ $loop.index }}"
-          id="tab-{{ $loop.index }}"
+          aria-controls="{{ tabsInstanceId }}-panel-{{ $loop.index }}"
+          id="{{ tabsInstanceId }}-tab-{{ $loop.index }}"
           :tabindex="isActive({{ $loop.index }}) ? '0' : '-1'"
           @click="selectTab({{ $loop.index }})"
           @keydown="onTabKey($event, {{ $loop.index }})"
@@ -214,7 +245,7 @@ defineExpose({ activeTab, selectTab })
       {{-- discoveredTabs() which is populated in onMount. --}}
       <button
         :for="(tab, idx) in discoveredTabs()"
-        :key="idx"
+        :key="tab.tabId"
         type="button"
         x-class="getTabClasses(idx)"
         role="tab"
@@ -235,10 +266,10 @@ defineExpose({ activeTab, selectTab })
     @foreach(tab in tabs)
       <div
         :show="isActive({{ $loop.index }})"
-        id="tab-panel-{{ $loop.index }}"
+        id="{{ tabsInstanceId }}-panel-{{ $loop.index }}"
         class="{{ tabPanelClasses }}"
         role="tabpanel"
-        aria-labelledby="tab-{{ $loop.index }}"
+        aria-labelledby="{{ tabsInstanceId }}-tab-{{ $loop.index }}"
         tabindex="0"
       >
         {!! tab.content !!}

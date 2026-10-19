@@ -50,10 +50,12 @@ describe('#1703 — Tabs slot API', () => {
     expect(TABS_SRC).toMatch(/@if\(hasPropTabs\)[\s\S]*?@else[\s\S]*?<slot \/>[\s\S]*?@endif/)
   })
 
-  it('Tabs nested scoping: closest() guards filter own panels only', () => {
+  it('Tabs nested scoping uses the host ownership tree', () => {
     // Without this, a <Tabs> with a <Tabs> inside one of its panels would
     // claim the nested Tabs' panels as its own.
-    expect(TABS_SRC).toContain("p.closest('[data-stx-tabs]') === root")
+    expect(TABS_SRC).toContain('owner(panel) === root')
+    expect(TABS_SRC).toContain('tree.parent(current)')
+    expect(TABS_SRC).not.toContain('querySelectorAll(')
   })
 })
 
