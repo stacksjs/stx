@@ -26,8 +26,12 @@ export function signalsProcessElementRuntime(
       return;
     }
 
-    if (el.nodeType === Node.ELEMENT_NODE && el.tagName === 'BUTTON' && el.hasAttribute && el.hasAttribute('@click')) {
-
+    if (el.nodeType === Node.ELEMENT_NODE && el.hasAttribute
+      && el.hasAttribute('data-stx-scope') && !hasPendingLoopBoundary(el)) {
+      // A page walk can reach a component before the dedicated scope pass.
+      // Resolve its caller before props/events bind and their guards latch.
+      el.__stx_parent_scope = el.__stx_parent_scope || resolveComponentCallerScope(el, scope);
+      bindParentComponentProps(el, el.__stx_parent_scope);
     }
     if (el.nodeType === Node.ELEMENT_NODE && el.hasAttribute) {
       // x-data elements: the reactive bridge has registered their scope into window.stx._scopes.
@@ -354,6 +358,13 @@ catch (e2) {
         var bindingScope = el.__stx_parent_scope && parentBindingNames.includes(attrName)
           ? el.__stx_parent_scope
           : attrCapturedScope;
+        if ((attrName === 'value' || attrName === 'checked') && attrName in el) {
+          var modelName = value.trim().match(/^([a-zA-Z_$][\\w$]*)(?:\\(\\))?$/);
+          var resetModel = modelName && bindingScope[modelName[1]];
+          if (resetModel && resetModel._isSignal && typeof resetModel.set === 'function') {
+            bindFormControlReset(el, attrName, resetModel, function(initial) { resetModel.set(initial); });
+          }
+        }
         effect(() => {
           if (!attributesVisible()) return;
           const v = evalAttrExpr(value, bindingScope);
@@ -507,6 +518,9 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
           if (refOwnerScope.$refs) refOwnerScope.$refs[value] = el;
         }
         else {
+          // Manifest hydration receives the page scope for each node. A
+          // component-local ref still belongs to the node's owning scope.
+          if (refOwnerScope && refOwnerScope.$refs) refOwnerScope.$refs[value] = el;
           if (scope.$refs) scope.$refs[value] = el;
           if (componentScope.$refs) componentScope.$refs[value] = el;
         }
@@ -516,7 +530,7 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
         // it silently returned undefined.
         var refTarget = refCaller && refOwnerScope
           ? refOwnerScope[value]
-          : (scope && scope[value]) || componentScope[value];
+          : (refOwnerScope && refOwnerScope[value]) || (scope && scope[value]) || componentScope[value];
         if (refTarget && typeof refTarget === 'function' && refTarget._isSignal && typeof refTarget.set === 'function') {
           refTarget.set(el);
         }

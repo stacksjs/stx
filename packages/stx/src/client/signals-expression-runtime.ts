@@ -7,15 +7,16 @@ export const SIGNALS_EXPRESSION_RUNTIME = `  let componentScope = { $refs: {} };
   function findElementScope(el) {
     let current = el;
     while (current && current !== document) {
-      // Check element-local scope first (from stx.mount())
-      if (current.__stx_scope) {
-        return current.__stx_scope;
-      }
+      // A page's first component can also be its mount root. Its page mount
+      // scope must not shadow the explicitly registered component scope.
       if (current.hasAttribute && current.hasAttribute('data-stx-scope')) {
         const scopeId = current.getAttribute('data-stx-scope');
         if (window.stx._scopes && window.stx._scopes[scopeId]) {
           return window.stx._scopes[scopeId];
         }
+      }
+      if (current.__stx_scope) {
+        return current.__stx_scope;
       }
       current = current.parentElement || current.parentNode;
     }

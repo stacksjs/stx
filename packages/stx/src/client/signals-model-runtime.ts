@@ -59,6 +59,8 @@ catch (e) {
       }
     };
 
+    bindFormControlReset(el, 'model', getValue, setValue);
+
     if (tag === 'input' && type === 'checkbox') {
       var syncCheckbox = () => {
         var current = getValue();
