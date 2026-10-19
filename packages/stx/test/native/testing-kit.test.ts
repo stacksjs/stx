@@ -48,6 +48,47 @@ const text = (phone: NativeScreen, id: string) =>
   (phone.byTestID(id)?.children.filter(child => typeof child === 'string') ?? []).join('')
 
 describe('mountNativeScreen', () => {
+  it('native host contract: keeps navigation buttons across partial option updates', () => {
+    const phone = mountNativeScreen('', 'Navigation')
+    const navigation = phone.context.craft.navigation
+    navigation.setOptions({ rightButtons: [{ id: 'done', title: 'Done' }] })
+    navigation.setOptions({ title: 'Workout' })
+    expect(phone.barButtons()).toEqual(['done'])
+    expect(() => phone.tapBar('done')).not.toThrow()
+    navigation.setOptions({ rightButtons: [] })
+    expect(phone.barButtons()).toEqual([])
+    expect(() => phone.tapBar('done')).toThrow('no bar button done')
+  })
+
+  it('native host contract: observes synchronous reads without changing their values', () => {
+    const reads: Array<[string, string]> = []
+    const phone = mountNativeScreen('', 'HostReads', {
+      secureStorage: { token: 'signed-in' }, storage: { setting: 'metric' }, snapshots: { profile: { name: 'Athlete' } },
+      onHostRead: (namespace, key) => reads.push([namespace, key]),
+    })
+    const host = phone.context.craft
+    expect(host.secureStorage.getSync('token')).toBe('signed-in')
+    expect(host.storage.getSync('setting')).toBe('metric')
+    expect(host.snapshots.get('profile')).toEqual({ name: 'Athlete' })
+    expect(reads).toEqual([['secureStorage', 'token'], ['storage', 'setting'], ['snapshots', 'profile']])
+  })
+
+  it('native host contract: ignores a native write finishing after unmount', async () => {
+    const entered = Promise.withResolvers<void>()
+    const finish = Promise.withResolvers<boolean>()
+    const phone = mountNativeScreen('', 'DelayedWrite', {
+      native: () => { entered.resolve(); return finish.promise },
+    })
+    phone.context.__stxNativeBridge.postMessage(JSON.stringify({
+      id: 'late-write', type: 'API_REQUEST', payload: { module: 'SecureStorage', method: 'set', args: ['note', 'late result'] },
+    }))
+    await entered.promise
+    phone.unmount()
+    finish.resolve(true)
+    await Bun.sleep(10)
+    expect(phone.secureStorage.note).toBeUndefined()
+  })
+
   it('answers the API by path below apiBase and records each request', async () => {
     const phone = mountNativeScreen((await screen()).code, 'Kit', {
       apiBase: 'https://fixture.invalid/api',

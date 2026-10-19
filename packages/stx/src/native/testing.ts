@@ -148,6 +148,8 @@ export interface NativeScreenOptions {
   keychain?: Record<string, string>
   /** What Craft's app storage (`craft.storage`) holds already, by key. */
   storage?: Record<string, unknown>
+  /** Observe synchronous host reads, for checks that rendering avoids unnecessary bridge work. */
+  onHostRead?: (namespace: 'secureStorage' | 'storage' | 'snapshots', key: string) => void
   /** Airplane mode while it answers true: every request fails as Craft's fetch does with no network. See also `setOnline`. */
   offline?: () => boolean
   /** The answer to a request for a server-sent event stream when it is not the stream (a refusal); undefined opens it. */
@@ -436,17 +438,28 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
       }
     },
     craft: {
-      secureStorage: { getSync: (key: string) => secureStorage[key] ?? null },
+      secureStorage: {
+        getSync: (key: string) => {
+          options.onHostRead?.('secureStorage', key)
+          return secureStorage[key] ?? null
+        },
+      },
       // Craft's app storage: values kept as JSON, read back parsed.
       storage: {
-        getSync: (key: string) => key in stored ? copy(stored[key]) : null,
+        getSync: (key: string) => {
+          options.onHostRead?.('storage', key)
+          return key in stored ? copy(stored[key]) : null
+        },
         setSync: (key: string, value: unknown) => {
           if (value === null || value === undefined) delete stored[key]
           else stored[key] = copy(value)
         },
       },
       snapshots: {
-        get: (name: string) => snapshots[name] ?? null,
+        get: (name: string) => {
+          options.onHostRead?.('snapshots', name)
+          return snapshots[name] ?? null
+        },
         // As Craft's files: null deletes one.
         set: async (name: string, value: unknown) => {
           await options.snapshotWrite?.(name, value)
@@ -548,6 +561,7 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
           natives.push(`${request.module}.${request.method}`)
           Promise.resolve().then(async () => {
             const answer = await options.native?.(request.module, request.method, request.args)
+            if (ended) return null
             if (request.module === 'SecureStorage' && ['set', 'remove'].includes(request.method)) {
               if (answer === false) return false
               const key = String(request.args[0])
@@ -621,10 +635,10 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
     /** Type into a text input: its `onChangeText` with the whole new text. */
     type: (node: NativeNode, text: string) => press(node, 'onChangeText', { text }),
     /** The ids the navigation bar is currently offering on the right. */
-    barButtons: (): string[] => ((bars.at(-1)?.rightButtons || []) as { id: string }[]).map(button => button.id),
+    barButtons: (): string[] => ((bars.findLast(bar => bar.rightButtons !== undefined)?.rightButtons || []) as { id: string }[]).map(button => button.id),
     /** Tap a button in the navigation bar, by id, as the host does. */
     tapBar: (id: string) => {
-      if (!(bars.at(-1)?.rightButtons || []).some((button: { id: string }) => button.id === id)) throw new Error(`no bar button ${id}`)
+      if (!(bars.findLast(bar => bar.rightButtons !== undefined)?.rightButtons || []).some((button: { id: string }) => button.id === id)) throw new Error(`no bar button ${id}`)
       send('NAV_BUTTON', { id })
     },
     /** The app going to the background (`background`) or coming back (`active`), as the host says. */
