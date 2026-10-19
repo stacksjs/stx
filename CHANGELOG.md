@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.591...v0.2.592)
+
+## 🐛 Bug Fixes
+
+- **components**: a stretched segmented control fits beside a margin ([4d2a16b](https://github.com/stacksjs/stx/commit/4d2a16b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.592 ([7234175](https://github.com/stacksjs/stx/commit/7234175)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.590...v0.2.591)
 
 ## 🐛 Bug Fixes
