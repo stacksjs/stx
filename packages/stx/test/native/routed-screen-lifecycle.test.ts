@@ -33,7 +33,7 @@ function nodeIdFor(session: NativeSession, testID: string): string {
   return id
 }
 
-async function start(bundle: string, route?: string, params?: Record<string, unknown>): Promise<NativeSession> {
+async function start(bundle: string, route?: string, params?: Record<string, unknown>, focused?: boolean): Promise<NativeSession> {
   const sent: any[] = []
   let callback: (raw: string) => void = () => {}
   const scope: Record<string, any> = {
@@ -48,6 +48,7 @@ async function start(bundle: string, route?: string, params?: Record<string, unk
     WeakSet,
     ...(route === undefined ? {} : { __stxNativeRoute: route }),
     __stxNativeParams: params,
+    ...(focused === undefined ? {} : { __stxNativeFocused: focused }),
     __stxNativeBridge: {
       platform: 'ios',
       capabilityProtocolVersion: 1,
@@ -155,5 +156,43 @@ const from = Number(craft.route.params.from)
     const freshDetails = await start(bundle, 'details', { id: 42 })
     expect(operations(freshDetails)).toContainEqual(expect.objectContaining({ patch: { children: ['Details 42'] } }))
     expect(operations(freshDetails)).toContainEqual(expect.objectContaining({ patch: { children: ['Details count 0'] } }))
+  })
+})
+
+
+describe.each([false, true])('initial native focus (minify=%s)', (minify) => {
+  it('keeps a compiled mount guard inactive while prepared hidden, then runs it on showing', async () => {
+    const root = createTempDir('stx-native-initial-focus-')
+    await Bun.write(path.join(root, 'Guarded.stx'), `<script client>
+function guard() {
+  if (craft.navigation.isFocused()) craft.navigation.push('login')
+}
+onMount(() => {
+  globalThis.__mountedFocused = craft.navigation.isFocused()
+  guard()
+})
+craft.navigation.onAppear(guard)
+</script><View><Text>Guarded</Text></View>`)
+    await Bun.write(path.join(root, 'Login.stx'), '<View><Text>Login</Text></View>')
+    const bundle = (await compileNativeBundle({ root, screens: { guarded: 'Guarded.stx', login: 'Login.stx' }, initialScreen: 'guarded', minify })).code
+    const navigations = (session: NativeSession) => session.sent.filter(message => message.type === 'NAVIGATE')
+    const hidden = await start(bundle, 'guarded', {}, false)
+    expect(hidden.scope.__mountedFocused).toBe(false)
+    expect(hidden.scope.craft.navigation.isFocused()).toBe(false)
+    expect(navigations(hidden)).toHaveLength(0)
+    hidden.receive({ type: 'SCREEN_FOCUS', payload: { focused: true } })
+    await Bun.sleep(0)
+    expect(navigations(hidden)).toHaveLength(1)
+    expect(navigations(hidden)[0]).toMatchObject({ payload: { screen: 'login' } })
+    hidden.receive({ type: 'SCREEN_FOCUS', payload: { focused: false } })
+    expect(hidden.scope.craft.navigation.isFocused()).toBe(false)
+    expect(navigations(hidden)).toHaveLength(1)
+    for (const initial of [undefined, true]) {
+      const visible = await start(bundle, 'guarded', {}, initial)
+      expect(visible.scope.__mountedFocused).toBe(true)
+      expect(navigations(visible)).toHaveLength(1)
+      visible.scope.__stxNativeUnmount()
+    }
+    hidden.scope.__stxNativeUnmount()
   })
 })
