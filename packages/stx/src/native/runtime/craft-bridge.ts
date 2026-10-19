@@ -65,6 +65,8 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     background: capabilities.has('background'),
     crashReporter: capabilities.has('crashReporter'),
     animation: capabilities.has('animation'),
+    viewFocus: capabilities.has('viewFocus'),
+    viewMeasure: capabilities.has('viewMeasure'),
   }
 }
 

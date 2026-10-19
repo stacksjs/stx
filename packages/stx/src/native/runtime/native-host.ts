@@ -41,6 +41,7 @@ import { nativePropName } from '../prop-names'
 import { cloneNativeBindingNode, type NativeBindingNode } from './binding-tree'
 import { NATIVE_FORM_ENTRIES } from './jsc-globals'
 import { createNativeOverlayPresenter, type NativeOverlayEntry } from './overlay-presenter'
+import { nativeViewError, type NativeFocusOptions, type NativeViewBounds, type NativeViewOperations } from './view-operations'
 
 /** A handle on a node in the native tree. Not an element; just an identity. */
 export interface NativeNode {
@@ -67,6 +68,8 @@ interface NodeRecord {
   forwardedStyle?: Record<string, unknown>
   /** Current unsupported classes, bounded by this node's current class list. */
   reportedClasses?: Set<string>
+  /** Reject results requested before a node was removed, even if it is reinserted. */
+  viewEpoch?: number
   events: Record<string, string>
   text?: string
   children: NativeNode[]
@@ -115,6 +118,7 @@ function eventAt(payload: unknown, node: NativeNode, type = ''): unknown {
 }
 
 export interface NativeHostOptions {
+  views?: NativeViewOperations
   /** Initial native appearance; later changes arrive through APPEARANCE. */
   colorScheme?: 'light' | 'dark'
   /** Called with each batch. One call per flush, never per operation. */
@@ -130,6 +134,8 @@ export interface NativeHostOptions {
 export interface NativeHost {
   /** Native mutations and binding registration must reach one bridge batch. */
   readonly isNative: true
+  focus: (node: NativeNode, options?: NativeFocusOptions) => Promise<true>
+  measure: (node: NativeNode) => Promise<NativeViewBounds>
   syncOverlays: (entries: NativeOverlayEntry[]) => void
   parent: (node: NativeNode) => NativeNode | null
   getAttribute: (node: NativeNode, name: string) => string | null
@@ -279,6 +285,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const record = descriptorOf(node)
     if (!record)
       return
+    record.viewEpoch = (record.viewEpoch ?? 0) + 1
     for (const handlerId of Object.values(record.events)) {
       const handler = handlers.get(handlerId)
       if (!handler)
@@ -551,6 +558,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     if (target.__stxPositionDecorated)
       return
     Object.defineProperties(target, {
+      focus: { configurable: true, value: (focusOptions?: NativeFocusOptions) => host.focus(node, focusOptions) },
+      measure: { configurable: true, value: () => host.measure(node) },
       nextSibling: {
         configurable: true,
         get() {
@@ -572,6 +581,24 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       },
     })
     target.__stxPositionDecorated = true
+  }
+
+  async function withMountedView<T>(node: NativeNode, request: (views: NativeViewOperations) => Promise<T>): Promise<T> {
+    // onMount runs during hydration, before the initial RENDER. A microtask
+    // lets mount finish and any immediately queued structural updates run.
+    await Promise.resolve()
+    if (disposed) throw nativeViewError('SCREEN_CLOSED', 'The native screen has closed')
+    const record = records.get(node.__stxId)
+    if (!record?.materialized || node.__stxAnchor !== undefined || (isBindingNode(node) && !node.isConnected))
+      throw nativeViewError('VIEW_NOT_MOUNTED', `Native view ${node.__stxId} is not mounted`)
+    if (!options.views) throw nativeViewError('UNSUPPORTED', 'Native view operations are unavailable')
+    const epoch = record.viewEpoch ?? 0
+    flush()
+    const result = await request(options.views)
+    if (disposed) throw nativeViewError('SCREEN_CLOSED', 'The native screen has closed')
+    if (records.get(node.__stxId) !== record || (record.viewEpoch ?? 0) !== epoch)
+      throw nativeViewError('VIEW_NOT_MOUNTED', `Native view ${node.__stxId} changed while the operation was pending`)
+    return result
   }
 
   function setConnected(node: NativeNode, connected: boolean): void {
@@ -649,6 +676,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
   const host: NativeHost = {
     isNative: true as const,
+    focus: (node, focusOptions) => withMountedView(node, views => views.focus(node.__stxId, focusOptions)),
+    measure: node => withMountedView(node, views => views.measure(node.__stxId)),
     syncOverlays: entries => overlayPresenter.sync(entries),
     parent(node) { return node?.__stxOwner ?? null },
     getAttribute(node, name) {

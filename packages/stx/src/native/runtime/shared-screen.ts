@@ -7,6 +7,7 @@ import { materializeNativeBindingTree } from './binding-tree'
 import type { NativeBindingNode } from './binding-tree'
 import { installCraftBridge, type CraftBridgeOptions } from './craft-bridge'
 import { createNativeHost, type NativeHost } from './native-host'
+import { createNativeViewOperations, nativeViewError } from './view-operations'
 
 interface SharedSignalsRuntime {
   hydrateHost: (root: unknown, setup: (() => Record<string, unknown>) | Record<string, unknown> | null, manifest: BindingManifest, nodes: Map<number, unknown>) => (() => void)
@@ -31,11 +32,15 @@ export function prepareSharedNativeScreen(
   // Bumped by every full render: a batch named for an older generation was
   // sent before that render, so its rejection says nothing about the tree now.
   let generation = 0
+  let rendered = false
   const protocol = new STXBridge()
   protocol.initialize(bridge)
   installCraftBridge(protocol, bridge, globalThis as Record<string, any>, options)
 
   const host = createNativeHost({
+    views: createNativeViewOperations(protocol, bridge.capabilities ?? [], () => {
+      if (!rendered) throw nativeViewError('VIEW_NOT_MOUNTED', 'The native screen has not rendered')
+    }),
     colorScheme: bridge.colorScheme === 'dark' ? 'dark' : 'light',
     send(operations) {
       const baseRevision = revision
@@ -110,9 +115,11 @@ export function prepareSharedNativeScreen(
       // the shared runtime. Keep the initial render as the first bridge
       // message, then flush the hydrated values and handler ids immediately.
       protocol.render(document.root)
+      rendered = true
       host.flush()
     },
     unmount() {
+      rendered = false
       dispose?.()
       dispose = null
       host.dispose()
