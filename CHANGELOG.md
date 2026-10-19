@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.576...v0.2.577)
+
+## 🐛 Bug Fixes
+
+- **chat**: read the list once at mount, not again when the stream connects ([6673362](https://github.com/stacksjs/stx/commit/6673362)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.577 ([8e8e546](https://github.com/stacksjs/stx/commit/8e8e546)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.575...v0.2.576)
 
 ## 🐛 Bug Fixes
