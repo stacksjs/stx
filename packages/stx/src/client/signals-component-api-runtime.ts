@@ -40,7 +40,9 @@ export const SIGNALS_COMPONENT_API_RUNTIME = `    // Component composition API (
           el.__stx_component_emits = el.__stx_component_emits || Object.create(null);
           el.__stx_component_emits[event] = true;
         }
-        target.dispatchEvent(new CustomEvent(event, { detail: payload, bubbles: true, cancelable: true }));
+        var emitted = new CustomEvent(event, { detail: payload, bubbles: true, cancelable: true });
+        emitted.__stx_emit_args = Array.prototype.slice.call(arguments, 1);
+        stxHost.emitComponentEvent(target, emitted);
       };
     },
     defineExpose: function(exposed) {

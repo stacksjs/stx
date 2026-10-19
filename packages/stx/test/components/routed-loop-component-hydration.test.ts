@@ -55,9 +55,13 @@ async function page(name: string, group: string, body: string): Promise<void> {
 <body><nav>${group} nav</nav><main>${body}</main></body></html>`, {}, join(dir, `${name}.stx`), { componentsDir: dir, cache: false, debug: false } as any, new Set())
   // Added after rendering: the router's own source names data-stx-runtime,
   // which would read as the page already shipping the signals runtime.
+  // Use a splice: replace() interprets dollar sequences inside router code,
+  // and the first closing body tag may be part of a script string.
+  const bodyEnd = html.lastIndexOf('</body>')
+  expect(bodyEnd).toBeGreaterThan(-1)
   pages[name] = {
     group,
-    html: html.replace('</body>', `<script>window.__stxRouterConfig={container:'main',viewTransitions:false,progress:false,prefetch:false}</script><script>${getRouterScript()}</script></body>`),
+    html: `${html.slice(0, bodyEnd)}<script>window.__stxRouterConfig={container:'main',viewTransitions:false,progress:false,prefetch:false}</script><script>${getRouterScript()}</script>${html.slice(bodyEnd)}`,
   }
 }
 

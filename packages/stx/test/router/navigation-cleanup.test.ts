@@ -1,4 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from 'bun:test'
+import { SIGNALS_EXPRESSION_RUNTIME } from '../../src/client/signals-expression-runtime'
 
 // The signals runtime expects window.addEventListener for 'stx:load' and
 // document.addEventListener for 'DOMContentLoaded'. Stub them if not present.
@@ -123,11 +124,16 @@ describe('Scope Isolation', () => {
   })
 
   it('findElementScope should prefer __stx_scope over data-stx-scope', () => {
-    // Verify __stx_scope property works on elements
+    const registered = { count: () => 1 }
+    const lookup = new Function('window', 'document', `${SIGNALS_EXPRESSION_RUNTIME}; return findElementScope`)(
+      { stx: { _scopes: { example: registered } } }, document,
+    )
     const el = document.createElement('div')
+    el.setAttribute('data-stx-scope', 'example')
     const localScope = { count: () => 42 }
     ;(el as any).__stx_scope = localScope
-
-    expect((el as any).__stx_scope).toBe(localScope)
+    expect(lookup(el)).toBe(localScope)
+    delete (el as any).__stx_scope
+    expect(lookup(el)).toBe(registered)
   })
 })

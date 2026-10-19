@@ -371,7 +371,7 @@ describe('#1695 — bare function ref in event handler shorthand', () => {
 
   it('runtime contains the bare-id match path', () => {
     expect(runtime).toContain('bareIdMatch')
-    expect(runtime).toContain('fn($event)')
+    expect(runtime).toContain('return (...args) => fn(...args)')
   })
 
   it('the shorthand logic dispatches $event to a bare function ref', () => {
@@ -584,11 +584,10 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
     expect(runtime).toContain('staticValue = parsedProps[camelName]')
   })
 
-  it('sets up a MutationObserver to catch parent-driven attribute changes', () => {
-    expect(runtime).toContain('new MutationObserver(')
-    expect(runtime).toMatch(/attributeFilter:\s*attributeNames/)
+  it('subscribes through the host to catch parent-driven attribute changes', () => {
+    expect(runtime).toContain('stxHost.observeAttributes(root, attributeNames, sync)')
     // Cleanup on component teardown
-    expect(runtime).toMatch(/onDestroy\(function\s*\(\)\s*\{\s*connected = false;\s*observer\.disconnect/)
+    expect(runtime).toMatch(/onDestroy\(function\s*\(\)\s*\{\s*connected = false;\s*stopObserving\(\)/)
     // ...and reconnected when an :if shows the component again.
     expect(runtime).toMatch(/onMount\(function\s*\(\)\s*\{\s*if \(connected\) return;/)
   })
@@ -640,7 +639,7 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
     expect(runtime).toContain('var componentEmits = el.__stx_component_emits')
     expect(runtime).toContain('componentEmits && componentEmits[eventName]')
     expect(runtime).toContain('event instanceof CustomEvent')
-    expect(runtime).toContain('shorthandFn(handlerEvent)')
+    expect(runtime).toContain('shorthandFn.apply(null, emittedArgs || [handlerEvent])')
     expect(runtime).toContain('expressionCallsSignal(expression, prop)')
   })
 

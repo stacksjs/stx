@@ -14,8 +14,9 @@ export const errorClasses = `mt-1 text-sm text-danger`.trim()
 </script>
 
 <script client>
-const emit = defineEmits()
-const validationSchema = {{ validationSchema }}
+const emit = defineEmits(['submit', 'error'])
+const validationSchema = useReactiveProp('validationSchema', {{ validationSchema }})
+const formRoot = useRef('formRoot')
 const initialValues = {{ initialValues }}
 const validateOnChange = {{ validateOnChange }}
 const validateOnBlur = {{ validateOnBlur }}
@@ -28,7 +29,7 @@ const submitCount = state(0)
 const values = state({ ...initialValues })
 
 function validateField(name, value, allValues) {
-  const schema = validationSchema[name]
+  const schema = validationSchema()[name]
   if (!schema) return null
   if (schema.required && !value) {
     return schema.requiredMessage || `${name} is required`
@@ -55,7 +56,7 @@ function validateField(name, value, allValues) {
 // Single field, used by the change/blur paths so one bad field does not wipe the
 // errors of the others the way a full validateForm() would.
 function validateOne(name, value) {
-  if (!validationSchema[name]) return
+  if (!validationSchema()[name]) return
   const err = validateField(name, value, values())
   const next = { ...errors() }
   if (err) next[name] = err
@@ -66,23 +67,28 @@ function validateOne(name, value) {
 // Delegated on the <form> rather than bound per input: the children arrive
 // through <slot />, so the component never sees them individually. `input` and
 // `focusout` both bubble (`blur` does not, which is why focusout is used).
+function fieldValue(target) {
+  return (target.type === 'checkbox' || target.type === 'radio') && !target.checked ? undefined : target.value
+}
+
 function onFieldInput(event) {
   const name = event.target?.name
   if (!name) return
-  values.set({ ...values(), [name]: event.target.value })
-  if (validateOnChange) validateOne(name, event.target.value)
+  const value = fieldValue(event.target)
+  values.set({ ...values(), [name]: value })
+  if (validateOnChange) validateOne(name, value)
 }
 
 function onFieldBlur(event) {
   const name = event.target?.name
   if (!name) return
-  if (validateOnBlur) validateOne(name, event.target.value)
+  if (validateOnBlur) validateOne(name, fieldValue(event.target))
 }
 
 function validateForm(values) {
   const next = {}
   let valid = true
-  for (const name of Object.keys(validationSchema)) {
+  for (const name of Object.keys(validationSchema())) {
     const err = validateField(name, values[name], values)
     if (err) {
       next[name] = err
@@ -129,12 +135,23 @@ function setValues(next) {
   values.set({ ...values(), ...next })
 }
 
-function reset(form) {
+function resetState() {
   errors.set({})
   isSubmitting.set(false)
   submitCount.set(0)
   values.set({ ...initialValues })
-  if (form?.reset) form.reset()
+}
+
+function onReset(event) {
+  // A caller can cancel reset after this listener runs. Match the host's
+  // decision before discarding validation and submission state.
+  queueMicrotask(() => { if (!event.defaultPrevented) resetState() })
+}
+
+function reset(form) {
+  const target = form || formRoot()
+  if (target?.reset) target.reset()
+  else resetState()
 }
 
 // FormHelpers named setValues/resetForm; the component exposed setErrors/reset
@@ -151,12 +168,14 @@ defineExpose({ errors, values, isSubmitting, submitCount, setErrors, setValues, 
 </script>
 
 <form
+  x-ref="formRoot"
   class="{{ formClasses }}"
   @if(action)action="{{ action }}"@endif
   method="{{ method }}"
   @submit="onSubmit($event)"
   @input="onFieldInput($event)"
   @focusout="onFieldBlur($event)"
+  @reset="onReset($event)"
   novalidate
 >
   <slot />

@@ -95,6 +95,17 @@ export const SIGNALS_BINDING_UTILS_RUNTIME = `  // Minimal attribute-only pass f
     return false;
   }
 
+  function bindFormControlReset(el, key, read, write) {
+    if (!stxHost.onFormReset) return;
+    var bindings = el.__stx_form_resets || (el.__stx_form_resets = {});
+    if (bindings[key]) return;
+    var initial = peek(read);
+    bindings[key] = true;
+    var stop = stxHost.onFormReset(el, function() { write(initial); });
+    el.__stx_destroy = el.__stx_destroy || [];
+    el.__stx_destroy.push(function() { stop(); delete bindings[key]; });
+  }
+
   function syncComponentPropSignal(el, name, value) {
     if (!el || !el.getAttribute || value === undefined) return;
     var scopeId = el.getAttribute('data-stx-scope');
@@ -111,7 +122,6 @@ export const SIGNALS_BINDING_UTILS_RUNTIME = `  // Minimal attribute-only pass f
     var propSignal = propSignals && (propSignals[name] || propSignals[camelName]);
     if (!propSignal && scopeVars)
       propSignal = scopeVars[name] || scopeVars[camelName];
-    if (!propSignal || !propSignal._isSignal || typeof propSignal.set !== 'function') return;
     var directValues = el.__stx_direct_prop_values || (el.__stx_direct_prop_values = {});
     var directValue = {
       raw: el.hasAttribute(name) ? el.getAttribute(name) : null,
@@ -119,6 +129,9 @@ export const SIGNALS_BINDING_UTILS_RUNTIME = `  // Minimal attribute-only pass f
     };
     directValues[name] = directValue;
     directValues[camelName] = directValue;
+    // The parent binding can run before child setup. Keep the typed value
+    // even then: JSON attributes cannot retain validators or other callbacks.
+    if (!propSignal || !propSignal._isSignal || typeof propSignal.set !== 'function') return;
     // This runs inside the parent binding effect. Reading the child prop
     // signal normally would subscribe that effect to its own output. Parent
     // expressions that return a fresh array or object would then recurse:

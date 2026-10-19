@@ -15,6 +15,35 @@ describe('conditional component props', () => {
     globalThis.MutationObserver = window.MutationObserver
   })
 
+  it('retains typed props when parent bindings run before child prop setup (#2088)', async () => {
+    const schema = { validate: (value: string) => value === 'Ada' ? null : 'Invalid name' }
+    window.__stx_setup_late_props = () => ({ schema, enabled: false })
+    window.stx._scopes.late_props = { __mountCallbacks: [], __destroyCallbacks: [] }
+    document.body.innerHTML = `<main data-stx="__stx_setup_late_props"><div
+      data-stx-scope="late_props" data-stx-parent-bindings="schema enabled"
+      :schema="schema" :enabled="enabled"></div></main>`
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    const root = document.querySelector('[data-stx-scope="late_props"]')
+    expect(root.getAttribute('schema')).toBe('{}')
+    expect(root.hasAttribute('enabled')).toBe(false)
+    const previous = window.__STX_CURRENT_ELEMENT__
+    window.__STX_CURRENT_ELEMENT__ = root
+    try {
+      const schemaProp = window.stx.useReactiveProp('schema', {})
+      const enabledProp = window.stx.useReactiveProp('enabled', true)
+      expect(schemaProp()).toBe(schema)
+      expect(schemaProp().validate('Grace')).toBe('Invalid name')
+      expect(enabledProp()).toBe(false)
+      await new Promise(resolve => setTimeout(resolve, 10))
+      expect(schemaProp()).toBe(schema)
+    }
+    finally {
+      window.__STX_CURRENT_ELEMENT__ = previous
+      window.stx._cleanupContainer(root)
+    }
+  })
+
   it('preserves a nested component caller scope before an initially false branch detaches', async () => {
     const show = window.stx.state(false)
     const selected = window.stx.state('')

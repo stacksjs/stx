@@ -52,6 +52,7 @@ function createBindingNode(id: string, type: string, bindings: ManifestEntry['bi
   if (classes && !attributes.some(attribute => attribute.name === 'class')) attributes.push({ name: 'class', value: classes })
   const node = {
     __stxId: id,
+    __stxScope: undefined as string | undefined,
     nodeType: 1 as const,
     get className() { return node.getAttribute('class') ?? '' },
     set className(value: string) { node.setAttribute('class', value) },
@@ -76,12 +77,14 @@ function createBindingNode(id: string, type: string, bindings: ManifestEntry['bi
       return attributes.find(attribute => attribute.name === name)?.value ?? null
     },
     setAttribute(name: string, value: unknown) {
+      if (name === 'data-stx-scope') node.__stxScope = String(value)
       const existing = attributes.find(attribute => attribute.name === name)
       if (existing) existing.value = String(value)
       else attributes.push({ name, value: String(value) })
       if (name === 'class') onClassChange?.(String(value))
     },
     removeAttribute(name: string) {
+      if (name === 'data-stx-scope') node.__stxScope = undefined
       const index = attributes.findIndex(attribute => attribute.name === name)
       if (index !== -1) attributes.splice(index, 1)
       if (name === 'class') onClassChange?.('')
@@ -144,6 +147,13 @@ export function materializeNativeBindingTree(
       }
     }
     const node = createBindingNode(id, source.type, runtimeBindings, true, source._classes, value => host.setAttribute(node, 'class', value))
+    if (source.type === 'Checkbox' && source.props.type === 'checkbox') node.tagName = 'INPUT'
+    // Static component metadata owns parent prop/event scopes too. The
+    // manifest only records dynamic bindings, not these companion attributes.
+    for (const [name, value] of Object.entries(source.props)) {
+      if (value === undefined || value === null || name === '__stxId') continue
+      node.setAttribute(name, typeof value === 'object' ? JSON.stringify(value) : String(value))
+    }
     source.id = id
     source.props.__stxId = id
     node.parentNode = parent

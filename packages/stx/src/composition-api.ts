@@ -232,11 +232,12 @@ export function defineEmits<T extends Record<string, any[]> = Record<string, any
     if (element) {
       const emittedEvents = element.__stx_component_emits ||= Object.create(null) as Record<string, boolean>
       emittedEvents[event] = true
-      element.dispatchEvent(new CustomEvent(event, {
+      const emitted = Object.assign(new CustomEvent(event, {
         detail: args.length === 1 ? args[0] : args,
         bubbles: true,
         cancelable: true,
-      }))
+      }), { __stx_emit_args: args })
+      element.dispatchEvent(emitted)
     }
   }
 

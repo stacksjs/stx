@@ -33,7 +33,7 @@ export function signalsAuthoringRuntime(createModelSignalSource: string): string
     var modifiers = useReactiveProp(modifierName, {});
     var emit = window.stx.defineEmits(['update:' + name]);
     return createModelSignal(source, function() { return modifiers() || {}; },
-      function(value) { emit('update:' + name, value); }, options, onDestroy);
+      function(value) { emit('update:' + name, value); }, options, onDestroy, onMount);
   }
 
   // Reactive prop binding. Bridges the gap between a parent's clientReactive
@@ -108,7 +108,15 @@ export function signalsAuthoringRuntime(createModelSignalSource: string): string
     var initial;
     var lastRaw = null;
     var initialAttribute = readAttribute();
-    if (initialAttribute.has) {
+    var initialDirectValues = root && root.__stx_direct_prop_values;
+    var initialDirect = initialDirectValues && (initialDirectValues[name] || initialDirectValues[kebabName] || initialDirectValues[lowerName]);
+    if (initialDirect && initialDirect.raw === initialAttribute.raw) {
+      lastRaw = initialAttribute.raw;
+      initial = initialDirect.value;
+      Object.keys(initialDirectValues).forEach(function(key) {
+        if (initialDirectValues[key] === initialDirect) delete initialDirectValues[key];
+      });
+    } else if (initialAttribute.has) {
       lastRaw = initialAttribute.raw;
       initial = parse(lastRaw);
     } else if (typeof staticValue === 'string' && (opts.parse || typeof defaultValue !== 'string')) {
@@ -152,9 +160,8 @@ export function signalsAuthoringRuntime(createModelSignalSource: string): string
       }
       if (next !== s()) s.set(next);
     }
-    var observer = new MutationObserver(sync);
     var connected = true;
-    observer.observe(root, { attributes: true, attributeFilter: attributeNames });
+    var stopObserving = stxHost.observeAttributes(root, attributeNames, sync);
     // An :if hides a component and shows it again with the same setup, so
     // the link to the parent is dropped on unmount and made again on mount.
     // Disconnected for good, a component re-shown in an :if kept the prop it
@@ -163,12 +170,12 @@ export function signalsAuthoringRuntime(createModelSignalSource: string): string
       if (connected) return;
       connected = true;
       register();
-      observer.observe(root, { attributes: true, attributeFilter: attributeNames });
+      stopObserving = stxHost.observeAttributes(root, attributeNames, sync);
       sync();
     });
     onDestroy(function() {
       connected = false;
-      observer.disconnect();
+      stopObserving();
       attributeNames.forEach(function(attributeName) {
         if (propSignals[attributeName] === s) delete propSignals[attributeName];
       });

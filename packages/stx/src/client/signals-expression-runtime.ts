@@ -7,7 +7,7 @@ export const SIGNALS_EXPRESSION_RUNTIME = `  let componentScope = { $refs: {} };
   function findElementScope(el) {
     let current = el;
     while (current && current !== document) {
-      // Check element-local scope first (from stx.mount())
+      // Explicit element-local mounts own their scope, ahead of a registry.
       if (current.__stx_scope) {
         return current.__stx_scope;
       }

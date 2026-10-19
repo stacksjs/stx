@@ -44,6 +44,11 @@ export const SIGNALS_MANIFEST_HYDRATION_RUNTIME = `  /**
       // that no longer exists in the host tree. Browser hydration keeps its
       // existing behaviour because it does not pass resolvedNodes here.
       if (resolvedNodes && node.__stxId !== undefined && node.isConnected === false) continue;
+      if (resolvedNodes && node.hasAttribute && node.hasAttribute('data-stx-scope')
+        && !hasPendingLoopBoundary(node)) {
+        node.__stx_parent_scope = resolveComponentCallerScope(node, scope);
+        bindParentComponentProps(node, node.__stx_parent_scope);
+      }
       processElement(node, scope, true);
     }
     return true;
@@ -73,6 +78,8 @@ export const SIGNALS_MANIFEST_HYDRATION_RUNTIME = `  /**
       if (!mounted) return;
       mounted = false;
       disposeEffects();
+      disposeSubtreeEffects(root);
+      disposeSubtreeScopes(root);
       var hooks = localDestroyHooks.splice(0, localDestroyHooks.length);
       for (var i = 0; i < hooks.length; i++) {
         try { hooks[i](); }

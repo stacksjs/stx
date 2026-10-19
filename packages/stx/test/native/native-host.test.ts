@@ -70,6 +70,35 @@ describe('the native host satisfies the same contract as the DOM one', () => {
 })
 
 describe('host calls become bridge operations', () => {
+  it('retains component caller metadata and static attributes on binding handles', () => {
+    const { host } = harness()
+    const tree = materializeNativeBindingTree(createDocument(createNode('View', {
+      'data-stx-parent-events': 'saved update:modelValue',
+      'data-stx-parent-bindings': 'modelValue',
+      name: 'email',
+    }), { exports: {}, functions: [], code: '' }), { entries: [] }, host)
+    expect(tree.root.getAttribute('data-stx-parent-events')).toBe('saved update:modelValue')
+    expect(tree.root.getAttribute('data-stx-parent-bindings')).toBe('modelValue')
+    expect(tree.root.getAttribute('name')).toBe('email')
+  })
+  it('observes prop writes in batches and cancels pending callbacks on disposal', async () => {
+    const { host } = harness()
+    const tree = materializeNativeBindingTree(createDocument(createNode('View'), { exports: {}, functions: [], code: '' }, { source: 'test' }), { entries: [] }, host)
+    const values: Array<string | null> = []
+    const stop = host.observeAttributes(tree.root, ['value'], () => values.push(tree.root.getAttribute('value')))
+    host.setAttribute(tree.root, 'other', 'ignored')
+    host.setAttribute(tree.root, 'value', 'first')
+    host.setAttribute(tree.root, 'value', 'last')
+    await Promise.resolve()
+    expect(values).toEqual(['last'])
+    host.removeAttribute(tree.root, 'value')
+    await Promise.resolve()
+    expect(values).toEqual(['last', null])
+    host.setAttribute(tree.root, 'value', 'cancelled')
+    stop()
+    await Promise.resolve()
+    expect(values).toEqual(['last', null])
+  })
   it('removes a subtree once when nested bindings dispose after their parent', () => {
     const { host, node, batches, ops } = harness()
     const parent = node('parent')
@@ -322,7 +351,16 @@ describe('listeners and scope, without the DOM', () => {
     host.dispatch(handlerId, { x: 1 })
     host.dispatch(handlerId)
     host.dispatch(handlerId, 0.5)
-    expect(seen).toEqual([{ x: 1, target: pressed, currentTarget: pressed }, { target: pressed, currentTarget: pressed }, 0.5])
+    expect(seen).toEqual([
+      expect.objectContaining({ x: 1, type: 'press', target: pressed, currentTarget: pressed }),
+      expect.objectContaining({ type: 'press', target: pressed, currentTarget: pressed }),
+      0.5,
+    ])
+    const event = seen[0] as Event
+    event.preventDefault()
+    event.stopPropagation()
+    expect(event.defaultPrevented).toBe(true)
+    expect(event.cancelBubble).toBe(true)
   })
 
   it('maps web events to the names native renderers dispatch', () => {

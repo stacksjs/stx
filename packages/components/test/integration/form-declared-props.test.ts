@@ -45,7 +45,11 @@ describe('form: declared props are actually implemented (#1874)', () => {
 
   it('seeds values from initialValues and restores them on reset', () => {
     expect(FORM).toContain('state({ ...initialValues })')
-    expect(FORM).toMatch(/function reset\([\s\S]*?values\.set\(\{ \.\.\.initialValues \}\)/)
+    expect(FORM).toMatch(/function resetState\([\s\S]*?values\.set\(\{ \.\.\.initialValues \}\)/)
+    expect(FORM).toContain('@reset="onReset($event)"')
+    expect(FORM).toContain('if (!event.defaultPrevented) resetState()')
+    expect(FORM).toContain("const formRoot = useRef('formRoot')")
+    expect(FORM).toContain('const target = form || formRoot()')
   })
 
   it('passes FormHelpers as the second argument of the submit event', () => {

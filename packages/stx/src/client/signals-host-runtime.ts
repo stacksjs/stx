@@ -33,6 +33,11 @@ export const SIGNALS_HOST_RUNTIME = `  // ── Host ──
       node.setAttribute(name, next);
     },
     removeAttribute: function(node, name) { node.removeAttribute(name); },
+    observeAttributes: function(node, names, callback) {
+      var observer = new MutationObserver(callback);
+      observer.observe(node, { attributes: true, attributeFilter: names });
+      return function() { observer.disconnect(); };
+    },
     setStyle: function(node, value) {
       if (typeof value === 'object' && value !== null) {
         Object.assign(node.style, value);
@@ -65,6 +70,21 @@ export const SIGNALS_HOST_RUNTIME = `  // ── Host ──
     // parameter silently makes every touch listener blocking again, so it stays
     // in the signature and each host decides what to do with it.
     listen: function(node, event, handler, options) { node.addEventListener(event, handler, options); },
+    emitComponentEvent: function(node, event) { return node.dispatchEvent(event); },
+    onFormReset: function(node, callback) {
+      var active = true;
+      var document = node.ownerDocument;
+      var listener = function(event) {
+        if (event.target !== node.form) return;
+        // The reset event precedes the browser default action and may be
+        // canceled by a later listener. Synchronize models only afterward.
+        queueMicrotask(function() {
+          if (active && !event.defaultPrevented) callback();
+        });
+      };
+      document.addEventListener('reset', listener, true);
+      return function() { active = false; document.removeEventListener('reset', listener, true); };
+    },
 
     // Returns the PREVIOUS visibility. bindShow needs to know whether it just
     // revealed something, and asking the node afterwards is the one read-back

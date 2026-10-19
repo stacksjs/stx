@@ -38,6 +38,7 @@ import { affectsGeometry, parseSvgMarkup, parseViewBox, SVG_NODE_TYPES, svgGeome
 import { NATIVE_EVENT_NAMES } from '../event-names'
 import { nativePropName } from '../prop-names'
 import { cloneNativeBindingNode, type NativeBindingNode } from './binding-tree'
+import { NATIVE_FORM_ENTRIES } from './jsc-globals'
 
 /** A handle on a node in the native tree. Not an element; just an identity. */
 export interface NativeNode {
@@ -68,6 +69,7 @@ interface NodeRecord {
   parkedHandlers?: Map<string, (payload?: unknown) => void>
   /** Last runtime markup assigned through a native `:html` binding. */
   markup?: string
+  controlDefaults?: { value: unknown, checked: unknown }
 }
 
 interface RetainedNativeNode extends NativeNode {
@@ -91,13 +93,16 @@ function irDisplay(value: unknown): NonNullable<STXStyle['display']> {
   return value === 'none' || value === 'grid' || value === 'flex' ? value : 'flex'
 }
 
-function eventAt(payload: unknown, node: NativeNode): unknown {
-  if (payload === undefined || payload === null)
-    return { target: node, currentTarget: node }
-  if (typeof payload !== 'object' || Array.isArray(payload))
+function eventAt(payload: unknown, node: NativeNode, type = ''): unknown {
+  if (payload != null && (typeof payload !== 'object' || Array.isArray(payload)))
     return payload
-  const event = payload as Record<string, unknown>
-  return { ...event, target: event.target ?? node, currentTarget: event.currentTarget ?? node }
+  return {
+    ...(payload as Record<string, unknown> | null),
+    type, target: node, currentTarget: node, bubbles: true,
+    cancelBubble: false, defaultPrevented: false,
+    preventDefault(this: { defaultPrevented: boolean }) { this.defaultPrevented = true },
+    stopPropagation(this: { cancelBubble: boolean }) { this.cancelBubble = true },
+  }
 }
 
 export interface NativeHostOptions {
@@ -121,8 +126,11 @@ export interface NativeHost {
   setMarkup: (node: NativeNode, value: unknown) => void
   setAttribute: (node: NativeNode, name: string, value: unknown) => void
   removeAttribute: (node: NativeNode, name: string) => void
+  observeAttributes: (node: NativeNode, names: string[], callback: () => void) => (() => void)
   setStyle: (node: NativeNode, value: unknown) => void
   listen: (node: NativeNode, event: string, handler: (payload?: unknown) => void, options?: unknown) => void
+  emitComponentEvent: (node: NativeNode, event: Event) => boolean
+  onFormReset: (node: NativeNode, callback: () => void) => (() => void)
   scopeOf: (node: NativeNode, from?: boolean) => NativeNode | null
   setVisible: (node: NativeNode, visible: boolean) => boolean
   anchor: (label: string) => NativeNode
@@ -138,6 +146,8 @@ export interface NativeHost {
   /** Dispatch an event the native side reported, by the id handed to it. */
   dispatch: (handlerId: string, payload?: unknown) => void
   pending: () => number
+  /** Release a screen's callbacks and retained descriptors permanently. */
+  dispose: () => void
   /**
    * The tree as this host holds it now, from `root`, in the shape a RENDER
    * takes: every node with its id, so later mutations name the same nodes.
@@ -152,8 +162,11 @@ export const HOST_METHODS: readonly string[] = [
   'setMarkup',
   'setAttribute',
   'removeAttribute',
+  'observeAttributes',
   'setStyle',
   'listen',
+  'emitComponentEvent',
+  'onFormReset',
   'scopeOf',
   'setVisible',
   'anchor',
@@ -166,15 +179,27 @@ export const HOST_METHODS: readonly string[] = [
 
 export function createNativeHost(options: NativeHostOptions): NativeHost {
   const records = new Map<string, NodeRecord>()
+  const attributeObservers = new WeakMap<NativeNode, Set<{ names: string[], notify: () => void }>>()
   const handlers = new Map<string, (payload?: unknown) => void>()
+  const eventRegistrations = new WeakMap<NativeNode, Map<string, string>>()
+  const componentListeners = new WeakMap<NativeNode, Array<{ event: string, handler: (payload?: unknown) => void, once: boolean, capture: boolean }>>()
+  const formControls = new WeakSet<NativeNode>()
+  const formResetCallbacks = new WeakMap<NativeNode, Set<() => void>>()
   let queue: NativeMutationOperation[] = []
   let scheduled = false
   let counter = 0
   let colorScheme = options.colorScheme ?? 'light'
+  let disposed = false
 
   const schedule = options.schedule ?? ((flush: () => void) => queueMicrotask(flush))
 
   const nextId = (prefix: string): string => `${prefix}${++counter}`
+
+  function notifyAttributes(node: NativeNode, name: string): void {
+    for (const observer of attributeObservers.get(node) ?? []) {
+      if (observer.names.includes(name)) observer.notify()
+    }
+  }
 
   function flush(): void {
     scheduled = false
@@ -186,6 +211,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   }
 
   function emit(operation: NativeMutationOperation): void {
+    if (disposed) return
     queue.push(operation)
     if (!scheduled) {
       scheduled = true
@@ -262,29 +288,107 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   }
 
   function decorateControl(node: NativeNode, type: string): void {
-    if (type === 'TextInput' || type === 'Picker') {
+    const htmlCheckbox = type === 'Checkbox' && descriptorOf(node)?.props.type === 'checkbox'
+    const hidden = descriptorOf(node)?.props.type === 'hidden'
+    if (type === 'TextInput' || type === 'Picker' || htmlCheckbox || hidden) {
       // The shared x-model binder reads/writes a control's live value. A
       // native handle needs that property too, and writes must cross the
       // mutation bridge (including resets coming from application state).
       Object.defineProperty(node, 'value', {
         configurable: true,
         enumerable: true,
-        get: () => descriptorOf(node)?.props.value ?? '',
+        get: () => descriptorOf(node)?.props[type === 'Checkbox' ? 'formValue' : 'value'] ?? '',
         set: (value: unknown) => {
           const record = recordOf(node)
-          if (Object.is(record.props.value, value)) return
-          record.props.value = value
-          if (record.materialized) emit({ op: 'updateNode', id: node.__stxId, patch: { props: { value } } })
+          const prop = type === 'Checkbox' ? 'formValue' : 'value'
+          if (Object.is(record.props[prop], value)) return
+          record.props[prop] = value
+          if (record.materialized) emit({ op: 'updateNode', id: node.__stxId, patch: { props: { [prop]: value } } })
         },
       })
       Object.defineProperty(node, 'type', { configurable: true, get: () => descriptorOf(node)?.props.type ?? 'text' })
+      Object.defineProperty(node, 'name', { configurable: true, get: () => descriptorOf(node)?.props.name ?? '' })
     }
+    if (type === 'Checkbox') {
+      Object.defineProperty(node, 'checked', {
+        configurable: true,
+        get: () => Boolean(descriptorOf(node)?.props.checked ?? descriptorOf(node)?.props.value),
+        set: (value: unknown) => {
+          const record = recordOf(node)
+          const checked = Boolean(value)
+          if (record.props.checked === checked && record.props.value === checked) return
+          record.props.checked = checked
+          record.props.value = checked
+          if (record.materialized) emit({ op: 'updateNode', id: node.__stxId, patch: { props: { checked, value: checked } } })
+        },
+      })
+    }
+    if (descriptorOf(node)?.props['data-stx-form']) {
+      Object.defineProperty(node, NATIVE_FORM_ENTRIES, { configurable: true, value: () => formEntries(node) })
+      Object.defineProperty(node, 'reset', { configurable: true, value: () => resetForm(node) })
+    }
+  }
+
+  function formOwner(node: NativeNode): NativeNode | null {
+    for (let current = node.__stxOwner; current; current = current.__stxOwner) {
+      if (descriptorOf(current)?.props['data-stx-form']) return current
+    }
+    return null
+  }
+
+  function disabled(record: NodeRecord): boolean {
+    return record.props.disabled === true || record.props.disabled === '' || record.props.disabled === 'true'
+  }
+
+  function formEntries(form: NativeNode): Array<[string, unknown]> {
+    const values: Array<[string, unknown]> = []
+    for (const node of collectDescendants(form)) {
+      const record = descriptorOf(node)
+      if (!record?.materialized) continue
+      const name = record.props.name
+      if (!name || disabled(record) || formOwner(node) !== form) continue
+      if (!['TextInput', 'Picker', 'Checkbox'].includes(record.type) && record.props.type !== 'hidden') continue
+      if (['submit', 'reset', 'button', 'file'].includes(String(record.props.type))) continue
+      if (record.type === 'Checkbox' && !(node as NativeNode & { checked: boolean }).checked) continue
+      const value = record.type === 'Checkbox' ? record.props.formValue ?? 'on' : record.props.value ?? ''
+      for (const item of Array.isArray(value) ? value : [value]) values.push([String(name), item])
+    }
+    return values
+  }
+
+  function resetForm(form: NativeNode): void {
+    if (!host.emitComponentEvent(form, eventAt(null, form, 'reset') as Event)) return
+    for (const node of collectDescendants(form)) {
+      const record = descriptorOf(node)
+      if (!record?.materialized || !record.controlDefaults || formOwner(node) !== form || (!('value' in node) && record.type !== 'Checkbox')) continue
+      const control = node as NativeNode & { value: unknown, checked: unknown }
+      if (record.type === 'Checkbox') control.checked = record.controlDefaults.checked
+      else control.value = record.controlDefaults.value
+    }
+    for (const node of collectDescendants(form)) {
+      if (formOwner(node) !== form) continue
+      for (const callback of formResetCallbacks.get(node) ?? []) callback()
+    }
+  }
+
+  function installFormListeners(node: NativeNode): void {
+    const record = descriptorOf(node)
+    if (!record || formControls.has(node) || !formOwner(node)) return
+    formControls.add(node)
+    // Even an unbound field must report edits to the form's delegated
+    // listeners. A bare submit button likewise needs a platform handler id.
+    if (record.type === 'TextInput' || record.type === 'Picker' || record.type === 'Checkbox') {
+      host.listen(node, record.type === 'TextInput' ? 'input' : 'change', () => {})
+      host.listen(node, 'focusout', () => {})
+    }
+    if (record.type === 'Button') host.listen(node, 'click', () => {})
   }
 
   function materialize(node: NativeNode): void {
     const record = recordOf(node)
     if (record.materialized || node.__stxAnchor !== undefined)
       return
+    installFormListeners(node)
     record.style = resolveStyle(record)
     record.materialized = true
     emit({
@@ -429,6 +533,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       children: [],
       visible: true,
       materialized: true,
+      controlDefaults: { value: descriptor?.props.value ?? '', checked: descriptor?.props.checked ?? descriptor?.props.value ?? false },
     }
     record.style = resolveStyle(record)
     if (descriptor) descriptor.style = { ...record.style } as STXNode['style']
@@ -441,10 +546,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       if (!children.some(child => child.__stxId === node.__stxId))
         children.push(node)
     }
+    installFormListeners(node)
     return node
   }
 
-  return {
+  const host: NativeHost = {
     isNative: true as const,
     adopt,
     setColorScheme(scheme) {
@@ -454,6 +560,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     },
     pending: () => queue.length,
     flush,
+    dispose() {
+      disposed = true
+      queue = []
+      handlers.clear()
+      records.clear()
+    },
 
     snapshot(root) {
       queue = []
@@ -510,6 +622,15 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     },
 
     setAttribute(node, name, value) {
+      // Binding metadata is the shared runtime's read side. Keep it in step
+      // with the typed renderer prop, as DOM getAttribute follows a write.
+      if (isBindingNode(node) && name !== 'class' && name !== 'className') {
+        const serialized = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value)
+        if (node.getAttribute(name) !== serialized) {
+          node.setAttribute(name, serialized)
+          notifyAttributes(node, name)
+        }
+      }
       if (name === 'class' || name === 'className') {
         const record = recordOf(node)
         record.classes = String(value ?? '')
@@ -540,6 +661,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     },
 
     removeAttribute(node, name) {
+      if (isBindingNode(node) && name !== 'class' && name !== 'className' && node.hasAttribute(name)) {
+        node.removeAttribute(name)
+        notifyAttributes(node, name)
+      }
       if (name === 'class' || name === 'className') { this.setAttribute(node, name, ''); return }
       const prop = nativePropName(name)
       const record = recordOf(node)
@@ -553,6 +678,23 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         emit({ op: 'updateNode', id: node.__stxId, patch: { props: patch } })
     },
 
+    observeAttributes(node, names, callback) {
+      const observers = attributeObservers.get(node) ?? new Set()
+      attributeObservers.set(node, observers)
+      let active = true
+      let pending = false
+      const observer = { names, notify() {
+        if (pending || !active) return
+        pending = true
+        queueMicrotask(() => {
+          pending = false
+          if (active && !disposed) callback()
+        })
+      } }
+      observers.add(observer)
+      return () => { active = false; observers.delete(observer) }
+    },
+
     setStyle(node, value) {
       if (typeof value !== 'object' || value === null || Array.isArray(value))
         return
@@ -563,18 +705,74 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         emit({ op: 'updateNode', id: node.__stxId, patch: { style } })
     },
 
-    listen(node, event, handler) {
+    emitComponentEvent(node, event) {
+      if (disposed || !descriptorOf(node)?.materialized) return true
+      const ancestors: NativeNode[] = []
+      for (let current: NativeNode | null | undefined = node; current; current = current.__stxOwner)
+        ancestors.push(current)
+      Object.defineProperty(event, 'target', { configurable: true, value: node })
+      const invoke = (current: NativeNode, capture: boolean): void => {
+        Object.defineProperty(event, 'currentTarget', { configurable: true, value: current })
+        const listeners = componentListeners.get(current) ?? []
+        for (const listener of [...listeners]) {
+          if (listener.event !== event.type || listener.capture !== capture) continue
+          if (listener.once) listeners.splice(listeners.indexOf(listener), 1)
+          listener.handler(event)
+        }
+      }
+      try {
+        for (const current of ancestors.slice(1).reverse()) {
+          invoke(current, true)
+          if (event.cancelBubble) return !event.defaultPrevented
+        }
+        // Stopping propagation does not stop other listeners on the target.
+        invoke(node, true)
+        invoke(node, false)
+        if (!event.bubbles || event.cancelBubble) return !event.defaultPrevented
+        for (const current of ancestors.slice(1)) {
+          invoke(current, false)
+          if (event.cancelBubble) break
+        }
+        return !event.defaultPrevented
+      }
+      finally { Object.defineProperty(event, 'currentTarget', { configurable: true, value: null }) }
+    },
+
+    onFormReset(node, callback) {
+      const callbacks = formResetCallbacks.get(node) ?? new Set<() => void>()
+      formResetCallbacks.set(node, callbacks)
+      callbacks.add(callback)
+      return () => { callbacks.delete(callback) }
+    },
+
+    listen(node, event, handler, options) {
+      const listenerOptions = options as { once?: boolean, capture?: boolean } | undefined
+      const listeners = componentListeners.get(node) ?? []
+      const listener = { event, handler, once: !!listenerOptions?.once, capture: !!listenerOptions?.capture }
+      listeners.push(listener)
+      componentListeners.set(node, listeners)
       // The handler stays here and the native side is given an id to report
       // back. Sending a function over a bridge is not possible, and the
       // binding layer never needs to know that -- it hands over a closure
       // either way.
-      const id = nextId('h')
       const nativeEvent = NATIVE_EVENT_NAMES[event.toLowerCase()] ?? event
+      const record = recordOf(node)
+      // A renderer holds one handler id per event. Multiplex all listeners
+      // behind that id, rather than replacing the previous registration.
+      const registrations = eventRegistrations.get(node) ?? new Map<string, string>()
+      eventRegistrations.set(node, registrations)
+      const existing = registrations.get(nativeEvent)
+      if (existing && handlers.has(existing)) return
+      const id = nextId('h')
+      registrations.set(nativeEvent, id)
       handlers.set(id, (payload) => {
+        if (disabled(record)) return
         if (nativeEvent === 'onChangeText' || nativeEvent === 'onValueChange') {
           const data = payload && typeof payload === 'object' ? payload as Record<string, any> : {}
           const value = data.text ?? data.value ?? data.nativeEvent?.text ?? data.nativeEvent?.value
           const record = recordOf(node)
+          if (record.type === 'Checkbox' && value !== undefined)
+            (node as NativeNode & { checked: boolean }).checked = Boolean(value)
           if (value !== undefined && !Object.is(record.props.value, value) && (record.type === 'TextInput' || record.type === 'Picker')) {
             record.props.value = value
             // The platform already displays the edit, but its retained tree
@@ -583,9 +781,49 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
             if (record.materialized) emit({ op: 'updateNode', id: node.__stxId, patch: { props: { value } } })
           }
         }
-        handler(eventAt(payload, node))
+        const delivered = eventAt(payload, node, event)
+        const physical = delivered && typeof delivered === 'object' ? delivered as Event : null
+        const ancestors: NativeNode[] = [node]
+        if (physical && ['onPress', 'onChangeText', 'onValueChange', 'onBlur', 'onFocus'].includes(nativeEvent)) {
+          for (let owner = node.__stxOwner; owner; owner = owner.__stxOwner) ancestors.push(owner)
+        }
+        const invoke = (target: NativeNode, capture: boolean): void => {
+          if (physical) Object.defineProperty(physical, 'currentTarget', { configurable: true, value: target })
+          const group = componentListeners.get(target) ?? []
+          for (const current of [...group]) {
+            if ((NATIVE_EVENT_NAMES[current.event.toLowerCase()] ?? current.event) !== nativeEvent || current.capture !== capture) continue
+            if (target !== node && (current.event === 'blur' || current.event === 'focus')) continue
+            if (!group.includes(current)) continue
+            if (current.once) group.splice(group.indexOf(current), 1)
+            current.handler(delivered)
+          }
+        }
+        let reachedTarget = true
+        for (const target of ancestors.slice(1).reverse()) {
+          invoke(target, true)
+          if (physical?.cancelBubble) { reachedTarget = false; break }
+        }
+        if (reachedTarget) {
+          invoke(node, true)
+          invoke(node, false)
+        }
+        if (!physical?.cancelBubble) {
+          for (const target of ancestors.slice(1)) {
+            invoke(target, false)
+            if (physical?.cancelBubble) break
+          }
+        }
+        if (physical) Object.defineProperty(physical, 'currentTarget', { configurable: true, value: node })
+        // A native picker/checkbox reports a value change once. Browsers
+        // also send input, which shared forms use for change validation.
+        if (nativeEvent === 'onValueChange' && (record.type === 'Picker' || record.type === 'Checkbox'))
+          host.emitComponentEvent(node, eventAt(payload, node, 'input') as Event)
+        const form = formOwner(node)
+        if (form && nativeEvent === 'onPress' && !physical?.defaultPrevented && !disabled(record)) {
+          if (record.props.type === 'submit') host.emitComponentEvent(form, eventAt({ submitter: node }, form, 'submit') as Event)
+          if (record.props.type === 'reset') resetForm(form)
+        }
       })
-      const record = recordOf(node)
       record.events[nativeEvent] = id
       if (record.materialized)
         emit({ op: 'updateNode', id: node.__stxId, patch: { events: { [nativeEvent]: id } } })
@@ -673,6 +911,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         children: [],
         visible: descriptor.visible,
         materialized: false,
+        controlDefaults: descriptor.controlDefaults,
       })
       decorateControl(copy, descriptor.type)
       setConnected(copy, false)
@@ -800,4 +1039,5 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       emit({ op: 'removeNode', id: node.__stxId })
     },
   }
+  return host
 }
