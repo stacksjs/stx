@@ -133,12 +133,11 @@ function declarations(css: string): Array<[string, string]> {
  * Pure JS: callers decode HTML entities only at the HTML boundary.
  * Unsupported values are reported and omitted, never sent to numeric host fields.
  */
-export function parseNativeStyle(input: unknown, report: (diagnostic: NativeStyleDiagnostic) => void = () => {}, context: NativeStyleContext = {}): STXStyle {
-  const style: Record<string, unknown> = {}
+function styleEntries(input: unknown, report: (diagnostic: NativeStyleDiagnostic) => void): Array<[string, unknown]> {
   let entries: Array<[string, unknown]>
   if (typeof input === 'string') {
     input = input.trim()
-    if (!input) return style
+    if (!input) return []
     try { input = JSON.parse(input as string) }
     catch { /* CSS text, not a serialized style object. */ }
   }
@@ -146,11 +145,28 @@ export function parseNativeStyle(input: unknown, report: (diagnostic: NativeStyl
   else if (input && typeof input === 'object' && !Array.isArray(input)) entries = Object.entries(input)
   else {
     if (input != null && input !== false) report({ kind: 'non-numeric-style', name: 'style' })
-    return style
+    return []
   }
+  return entries
+}
 
+export function parseNativeStyle(input: unknown, report: (diagnostic: NativeStyleDiagnostic) => void = () => {}, context: NativeStyleContext = {}): STXStyle {
+  const entries = styleEntries(input, report)
   const variables = createStyleVariables(entries, context.inheritedVariables)
   context.onVariables?.(variables.computed())
+  return parseEntries(entries, variables, report)
+}
+
+/** Resolve all same-element variable declarations before evaluating any style layer. */
+export function parseNativeStyleLayers(inputs: unknown[], inheritedVariables: NativeStyleVariables | undefined, report: (diagnostic: NativeStyleDiagnostic) => void) {
+  const layers = inputs.map(input => styleEntries(input, report))
+  const variables = createStyleVariables(layers.flat(), inheritedVariables)
+  const computed = variables.computed()
+  return { variables: computed, styles: layers.map(entries => parseEntries(entries, variables, report)) }
+}
+
+function parseEntries(entries: Array<[string, unknown]>, variables: ReturnType<typeof createStyleVariables>, report: (diagnostic: NativeStyleDiagnostic) => void): STXStyle {
+  const style: Record<string, unknown> = {}
   const declarationNames: string[] = []
   for (const [rawProperty, raw] of entries) {
     if (rawProperty.trim().startsWith('--')) { declarationNames.push(rawProperty.trim()); continue }

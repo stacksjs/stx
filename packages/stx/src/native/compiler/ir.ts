@@ -112,6 +112,9 @@ export interface STXNode {
   /** Inline styles retain precedence over class styles in every appearance. */
   _inlineStyle?: STXStyle
 
+  /** Authored declarations for runtime variable inheritance and reactive overrides. */
+  _styleSource?: string
+
   /** Original Headwind classes, retained for native class and appearance updates. */
   _classes?: string
 

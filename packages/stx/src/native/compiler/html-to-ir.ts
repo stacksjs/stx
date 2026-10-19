@@ -526,6 +526,7 @@ export async function translateHtmlToIR(
     }
     const node = createNode(type, props, style, events)
     node._inlineStyle = inline
+    node._styleSource = decodeEntities(attributes.find(([name]) => name === 'style')?.[1] ?? '')
     const bindingId = props['data-stx-b']
     if (typeof bindingId === 'number' && Number.isInteger(bindingId))
       node.bindingId = bindingId
@@ -591,6 +592,7 @@ export async function translateHtmlToIR(
     if (geometry) props.geometry = geometry
     const node = createNode(type, props, style, events)
     node._inlineStyle = inline
+    node._styleSource = decodeEntities(attributes.find(([name]) => name === 'style')?.[1] ?? '')
     const bindingId = props['data-stx-b']
     if (typeof bindingId === 'number' && Number.isInteger(bindingId))
       node.bindingId = bindingId
