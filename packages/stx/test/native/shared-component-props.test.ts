@@ -50,6 +50,26 @@ async function boot(source: string, components: Record<string, string>) {
 }
 
 describe('shared component reactive props on a DOM-free host (#2086)', () => {
+  it('delivers function-valued props and false booleans to the shared child (#2088)', async () => {
+    const app = await boot(`<script client>
+const schema = { validate: value => value === 'Ada' ? null : 'Invalid name' }
+const enabled = state(false)
+</script><div><Child :schema="schema" :enabled="enabled" /></div>`, {
+      Child: `<script client>
+const schema = useReactiveProp('schema', {})
+const enabled = useReactiveProp('enabled', true)
+window.childSchema = schema
+window.childEnabled = enabled
+</script><p :text="enabled ? 'Enabled' : 'Disabled'">Validation</p>`,
+    })
+    try {
+      expect(app.errors).toEqual([])
+      expect(app.scope.childSchema().validate('Grace')).toBe('Invalid name')
+      expect(app.scope.childEnabled()).toBe(false)
+    }
+    finally { app.stop() }
+  })
+
   it('operates the actual shared Switch and Checkbox and accepts parent resets (#2087)', async () => {
     const ui = path.join(import.meta.dir, '../../../components/src/ui')
     const app = await boot(`<script client>

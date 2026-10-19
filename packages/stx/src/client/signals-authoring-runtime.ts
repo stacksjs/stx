@@ -108,7 +108,15 @@ export function signalsAuthoringRuntime(createModelSignalSource: string): string
     var initial;
     var lastRaw = null;
     var initialAttribute = readAttribute();
-    if (initialAttribute.has) {
+    var initialDirectValues = root && root.__stx_direct_prop_values;
+    var initialDirect = initialDirectValues && (initialDirectValues[name] || initialDirectValues[kebabName] || initialDirectValues[lowerName]);
+    if (initialDirect && initialDirect.raw === initialAttribute.raw) {
+      lastRaw = initialAttribute.raw;
+      initial = initialDirect.value;
+      Object.keys(initialDirectValues).forEach(function(key) {
+        if (initialDirectValues[key] === initialDirect) delete initialDirectValues[key];
+      });
+    } else if (initialAttribute.has) {
       lastRaw = initialAttribute.raw;
       initial = parse(lastRaw);
     } else if (typeof staticValue === 'string' && (opts.parse || typeof defaultValue !== 'string')) {
