@@ -105,7 +105,7 @@ Semantic color, shape, and density utilities read inherited inline CSS-variable
 overrides (for example `--stx-field`, `--stx-radius-control`, and `--stx-control-px`).
 Reactive overrides update shared controls; removing them restores the stock
 appearance-dependent defaults. Explicit `dark:` utilities and ordinary inline
-styles retain precedence. Ring utilities remain unsupported. Stylesheet theme transport and maintained
+styles retain precedence. Ring utilities remain unsupported. Broader CSS cascade support and maintained
 host visual validation remain tracked in [#2090](https://github.com/stacksjs/stx/issues/2090).
 
 Inline `style` and reactive `:style` can resolve variables declared in that
@@ -120,7 +120,15 @@ retain their already-computed parent value. `initial` blocks inheritance;
 descendants, including newly created loop rows and reinserted conditional
 branches. Authored, reactive, and forwarded style layers share the same local
 variable environment; removing an override restores the underlying declaration.
-This does not yet transport stylesheet declarations. Calls to
+Document-level variables in rendered `<style>` blocks are also transported:
+`:root`, `html`, and their `.dark`/`.light` appearance variants (including bare
+`.dark`/`.light`). Native appearance selects the variant. Source order,
+specificity, `!important`, and simple `prefers-color-scheme` media conditions
+are respected; aliases compute at the document scope before inheritance.
+Scoped selectors, cascade layers, and other media conditions are not yet
+implemented and produce `unsupported-theme-rule` diagnostics when they contain
+custom properties. External stylesheets are not loaded by this translator.
+Calls to
 the standalone style parser without an inheritance context still diagnose
 unconsumed declarations. Variable substitution is bounded to 64 dependency
 levels and 64 KiB per expanded value; escaped variable names are not supported.

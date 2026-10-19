@@ -1,6 +1,8 @@
-import { expect, it } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import { extractStylesheetTheme } from '../../src/native/compiler/stylesheet-theme'
 import { createStyleVariables } from '../../src/native/compiler/style-variables'
+import { compileNativeScreen, mountNativeScreen } from '../../src/native/testing'
+import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 
 it('preserves document theme specificity, source order, importance and appearance', async () => {
   const warnings: string[] = []
@@ -38,4 +40,52 @@ it('does not turn scoped variables or unsupported conditions into a global theme
   expect(warnings.some(name => name.startsWith('@media'))).toBe(true)
   expect(warnings).toContain('@layer theme')
   expect(warnings).toContain('style type/media')
+})
+
+it('uses stylesheet values in compiled IR and exposes unsupported theme selectors', async () => {
+  const { root, diagnostics } = await translateHtmlToIR('<style>:root { --stx-radius-control:12px; --gap:8px } .card { --gap:40px }</style><div class="rounded-control" style="padding:var(--gap)">Content</div>')
+  expect(root.style).toMatchObject({ borderRadius: 12, padding: 8 })
+  expect(root._stylesheetTheme?.light).toContainEqual(['--gap', '8px'])
+  expect(diagnostics).toContainEqual({ kind: 'unsupported-theme-rule', tag: 'style', name: '.card' })
+})
+
+describe.each([false, true])('stylesheet themes on native (minify=%s)', (minify) => {
+  it('updates variables before descendants on appearance changes and preserves local overrides', async () => {
+    const { code } = await compileNativeScreen(`<script client>
+const show = state(true)
+const rows = state([1])
+const local = state(null)
+window.probe = { show, rows, local }
+</script><style>
+:root { --stx-field:#ffffff; --gap:8px; --alias:var(--gap); --stx-radius-control:4px }
+.dark { --stx-field:#123456; --gap:12px; --stx-radius-control:10px }
+</style><div>
+<div :if="show" testID="conditional" class="bg-field rounded-control" style="padding:var(--alias)">Conditional</div>
+<div :style="local" style="--gap:3px"><div testID="local" style="padding:var(--gap);margin:var(--alias)" class="bg-field">Local</div></div>
+<div :for="row in rows" :testID="'row-' + row" style="padding:var(--gap)" class="bg-field">Row</div>
+</div>`, { minify })
+    const phone = mountNativeScreen(code, 'Screen', { colorScheme: 'dark' })
+    try {
+      await phone.settle()
+      expect(phone.byTestID('conditional')!.style).toMatchObject({ backgroundColor: '#123456', borderRadius: 10, padding: 12 })
+      expect(phone.byTestID('local')!.style).toMatchObject({ padding: 3, margin: 12, backgroundColor: '#123456' })
+      phone.context.probe.show.set(false)
+      await phone.settle()
+      phone.appearance('light')
+      phone.context.probe.rows.set([1, 2])
+      phone.context.probe.local.set({ '--gap': '6px', '--stx-field': '#abcdef' })
+      await phone.settle()
+      expect(phone.byTestID('row-2')!.style).toMatchObject({ padding: 8, backgroundColor: '#ffffff' })
+      expect(phone.byTestID('local')!.style).toMatchObject({ padding: 6, margin: 8, backgroundColor: '#abcdef' })
+      phone.context.probe.show.set(true)
+      await phone.settle()
+      expect(phone.byTestID('conditional')!.style).toMatchObject({ padding: 8, borderRadius: 4, backgroundColor: '#ffffff' })
+      phone.appearance('dark')
+      await phone.settle()
+      expect(phone.byTestID('row-2')!.style.padding).toBe(12)
+      expect(phone.byTestID('local')!.style).toMatchObject({ padding: 6, margin: 12, backgroundColor: '#abcdef' })
+      expect(phone.mutationErrors).toEqual([])
+    }
+    finally { phone.unmount() }
+  }, 30_000)
 })

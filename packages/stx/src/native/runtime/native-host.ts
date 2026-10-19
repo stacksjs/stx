@@ -35,7 +35,8 @@ import type { STXNode, STXStyle } from '../compiler/ir'
 import { compileClassStyles } from '../compiler/headwind-to-style'
 import { resolveIconName } from '../compiler/icons'
 import { parseNativeStyleLayers } from '../compiler/inline-style'
-import type { NativeStyleVariables } from '../compiler/style-variables'
+import { createStyleVariables, type NativeStyleVariables } from '../compiler/style-variables'
+import type { NativeStylesheetTheme } from '../compiler/stylesheet-theme'
 import { affectsGeometry, parseSvgMarkup, parseViewBox, SVG_NODE_TYPES, svgGeometry } from '../compiler/svg'
 import { NATIVE_EVENT_NAMES } from '../event-names'
 import { nativePropName } from '../prop-names'
@@ -125,6 +126,7 @@ export interface NativeHostOptions {
   views?: NativeViewOperations
   /** Initial native appearance; later changes arrive through APPEARANCE. */
   colorScheme?: 'light' | 'dark'
+  stylesheetTheme?: NativeStylesheetTheme
   /** Called with each batch. One call per flush, never per operation. */
   send: (operations: NativeMutationOperation[]) => void
   /**
@@ -217,6 +219,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   let scheduled = false
   let counter = 0
   let colorScheme = options.colorScheme ?? 'light'
+  let stylesheetVariables = createStyleVariables(options.stylesheetTheme?.[colorScheme] ?? []).computed()
   let disposed = false
 
   const schedule = options.schedule ?? ((flush: () => void) => queueMicrotask(flush))
@@ -466,15 +469,15 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     return { ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}), ...resolved.styles[0], ...record.baseStyle, ...resolved.styles[1], ...resolved.styles[2], ...(record.visible ? {} : { display: 'none' }) }
   }
 
-  function refreshStyleTree(node: NativeNode, inherited = node.__stxOwner ? descriptorOf(node.__stxOwner)?.variables : undefined): void {
+  function refreshStyleTree(node: NativeNode, inherited = node.__stxOwner ? descriptorOf(node.__stxOwner)?.variables : stylesheetVariables, appearanceChanged = false): void {
     if (node.__stxAnchor !== undefined) return
     const record = recordOf(node)
     const before = record.variables
     record.inheritedVariables = inherited
     applyClasses(node.__stxId, record, true)
     const after = record.variables!
-    if (before?.size === after.size && [...after].every(([name, value]) => before.has(name) && before.get(name) === value)) return
-    for (const child of record.children) refreshStyleTree(child, after)
+    if (!appearanceChanged && before?.size === after.size && [...after].every(([name, value]) => before.has(name) && before.get(name) === value)) return
+    for (const child of record.children) refreshStyleTree(child, after, appearanceChanged)
   }
 
   function forwardedHostRoot(node: NativeNode, name: string): NativeNode | undefined {
@@ -663,7 +666,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       style: { ...(descriptor?.style ?? {}) },
       baseStyle,
       styleSource: descriptor?._styleSource,
-      inheritedVariables: owner ? descriptorOf(owner)?.variables : undefined,
+      inheritedVariables: owner ? descriptorOf(owner)?.variables : stylesheetVariables,
       classes,
       events: { ...(descriptor?.events ?? {}) },
       text: descriptor?.children?.find(child => typeof child === 'string') as string | undefined,
@@ -742,7 +745,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     setColorScheme(scheme) {
       if (scheme === colorScheme) return
       colorScheme = scheme
-      for (const [id, record] of records) applyClasses(id, record)
+      stylesheetVariables = createStyleVariables(options.stylesheetTheme?.[scheme] ?? []).computed()
+      // Traverse parent-first: cloned/reinserted nodes need not occur in map
+      // insertion order. Each descendant inherits the new computed parent map.
+      const children = new Set([...records.values()].flatMap(record => record.children.map(child => child.__stxId)))
+      for (const id of records.keys()) if (!children.has(id)) refreshStyleTree({ __stxId: id }, stylesheetVariables, true)
     },
     pending: () => queue.length,
     flush,

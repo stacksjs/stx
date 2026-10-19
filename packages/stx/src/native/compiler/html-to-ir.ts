@@ -31,7 +31,8 @@ import { NATIVE_BOOLEAN_PROPS, nativePropName } from '../prop-names'
 import { mapToNativeComponent } from './component-mapping'
 import { resolveIconName } from './icons'
 import { type NativeStyleContext, parseNativeStyle } from './inline-style'
-import type { NativeStyleVariables } from './style-variables'
+import { createStyleVariables, type NativeStyleVariables } from './style-variables'
+import { extractStylesheetTheme } from './stylesheet-theme'
 import { parseViewBox, SVG_DROPPED, SVG_NODE_TYPES, SVG_TYPES, svgGeometry } from './svg'
 import { compileClassStyles } from './headwind-to-style'
 import { createDocument, createNode } from './ir'
@@ -55,6 +56,8 @@ export type TranslationDiagnosticKind =
   | 'unsupported-list-prop'
   /** A control with no supported native interaction contract. */
   | 'unsupported-control'
+  /** A theme declaration cannot be evaluated faithfully on the native target. */
+  | 'unsupported-theme-rule'
 
 export interface TranslationDiagnostic {
   kind: TranslationDiagnosticKind
@@ -413,6 +416,8 @@ export async function translateHtmlToIR(
   options: TranslateOptions = {},
 ): Promise<TranslationResult> {
   const diagnostics: TranslationDiagnostic[] = []
+  const stylesheetTheme = await extractStylesheetTheme(html, name => diagnostics.push({ kind: 'unsupported-theme-rule', tag: 'style', name }))
+  const stylesheetVariables = createStyleVariables(stylesheetTheme.light).computed()
   const roots: STXNode[] = []
   const stack: Frame[] = []
   const seenUnmapped = new Set<string>()
@@ -460,7 +465,7 @@ export async function translateHtmlToIR(
       return openSvg(tag, attributes, parentFrame)
     const dropped = DROP_SUBTREE.has(tag) && !BOX_ONLY.has(tag)
     const inheritedDrop = stack[stack.length - 1]?.dropped ?? false
-    let variables = parentFrame?.variables
+    let variables = parentFrame?.variables ?? stylesheetVariables
     const { props, style, events, bindings, classes, inline } = dropped || inheritedDrop
       ? { props: {}, style: {}, events: {}, bindings: {}, classes: '', inline: {} }
       : readAttributes(tag, attributes, diagnostics, { inheritedVariables: variables, onVariables: value => { variables = value } })
@@ -575,7 +580,7 @@ export async function translateHtmlToIR(
       }
       return { tag, node: createNode('G', {}, {}, {}), svg: true, dropped: true, discard: true, unwrap: false }
     }
-    let variables = parent?.variables
+    let variables = parent?.variables ?? stylesheetVariables
     const { props, style, events, bindings, classes, inline } = readAttributes(tag, attributes, diagnostics, { inheritedVariables: variables, onVariables: value => { variables = value } })
     if (type === 'Svg') {
       const viewBox = parseViewBox(props.viewBox)
@@ -657,6 +662,8 @@ export async function translateHtmlToIR(
   const root = roots.length === 1
     ? roots[0]
     : createNode('View', {}, {}, {}, roots)
+
+  if (stylesheetTheme.light.length || stylesheetTheme.dark.length) root._stylesheetTheme = stylesheetTheme
 
   return { root, diagnostics }
 }
