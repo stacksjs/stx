@@ -393,7 +393,11 @@ function settle(frame: Frame, diagnostics: TranslationDiagnostic[]): STXNode {
   if (node.type === 'Text' && elements.length > 0) {
     // A label/span can wrap a real control or drawing. Flattening such a
     // subtree removes its handlers and geometry, not merely text emphasis.
-    if (elements.some(child => child.type !== 'Text')) {
+    // A span styled as a flex or grid box is a layout too: a title over a
+    // subtitle inside a button is a column of two labels, and flattening it
+    // read "TitleSubtitle" on one line (inline content cannot hold a <div>).
+    const boxed = /(?:^|\s)(?:inline-)?(?:flex|grid)(?:\s|$)/.test(node._classes ?? '')
+    if (boxed || elements.some(child => child.type !== 'Text')) {
       node.type = 'View'
       node.children = node.children.map(child => typeof child === 'string'
         ? createNode('Text', {}, {}, {}, [child])
@@ -525,6 +529,17 @@ export async function translateHtmlToIR(
     if ((dropped || BOX_ONLY.has(tag)) && !seenUnmapped.has(`drop:${tag}`)) {
       seenUnmapped.add(`drop:${tag}`)
       diagnostics.push({ kind: 'dropped-subtree', tag })
+    }
+
+    // A box that scrolls sideways on the web (a row of chips wider than the
+    // phone) is a horizontal ScrollView natively: a View clips it instead.
+    if (type === 'View' && /(?:^|\s)overflow-x-(?:auto|scroll)(?:\s|$)/.test(classes)) {
+      type = 'ScrollView'
+      props.horizontal = true
+      props.showsHorizontalScrollIndicator ??= false
+    }
+    else if (type === 'View' && /(?:^|\s)overflow-y-(?:auto|scroll)(?:\s|$)/.test(classes)) {
+      type = 'ScrollView'
     }
 
     // Forms are views, but their ownership must survive translation so the

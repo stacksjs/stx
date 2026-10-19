@@ -358,10 +358,14 @@ if (isApp ? ${!withApp} : ${JSON.stringify(bundled.map(({ name }) => name))}.ind
     const setups = bundled.map(({ name, compiled }, index) => `${index === 0 ? 'if' : 'else if'} (routeName === ${JSON.stringify(routed ? name : 'main')}) {
   g.__stx_latestSetup = null;
 ${compiled.scripts.map(script => script.owner
-    ? `  g.__STX_SETUP_ROOT__ = screen && screen.scopeRoot(${JSON.stringify(script.owner)});
-  try {
+    ? `  g.__stx_componentSetups = g.__stx_componentSetups || {};
+  // Kept by id as well as run once: a :for or :if clone of this component
+  // has no script to copy, and is set up from this (component hydration).
+  g.__stx_componentSetups[${JSON.stringify(script.owner)}] = function() {
 ${script.code}
-  }
+  };
+  g.__STX_SETUP_ROOT__ = screen && screen.scopeRoot(${JSON.stringify(script.owner)});
+  try { g.__stx_componentSetups[${JSON.stringify(script.owner)}](); }
   finally { g.__STX_SETUP_ROOT__ = null; }`
     : script.code).join('\n')}
 }`).join('\n')

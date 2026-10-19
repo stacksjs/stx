@@ -400,6 +400,12 @@ const classParsers: Record<string, ClassParser> = {
   'overflow-visible': (_, style) => { style.overflow = 'visible'; return true },
   'overflow-hidden': (_, style) => { style.overflow = 'hidden'; return true },
   'overflow-scroll': (_, style) => { style.overflow = 'scroll'; return true },
+  // The axis is the node type's: html-to-ir makes a sideways scroller a
+  // horizontal ScrollView, and a ScrollView already scrolls vertically.
+  'overflow-x-auto': () => true,
+  'overflow-x-scroll': () => true,
+  'overflow-y-auto': () => true,
+  'overflow-y-scroll': () => true,
 
   // Font weight
   'font-thin': (_, style) => { style.fontWeight = '100'; return true },

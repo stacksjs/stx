@@ -1,5 +1,39 @@
 /** Component-scope hydration helpers for the generated client runtime. */
-export const SIGNALS_COMPONENT_HYDRATION_RUNTIME = `  function hydrateComponentScopes(nodes, callerScope) {
+export const SIGNALS_COMPONENT_HYDRATION_RUNTIME = `  /*
+   * Run a component setup for one clone. The compiled setup finds its root by
+   * the template's scope id, so the clone answers to that id while it runs,
+   * and the scope it registers is moved to the clone's own id afterwards.
+   */
+  function runClonedComponentSetup(setup, root) {
+    var scopeId = root.getAttribute('data-stx-scope');
+    var originalScopeId = root.getAttribute('data-stx-template-scope') || scopeId;
+    if (!scopeId || !originalScopeId) return;
+
+    root.setAttribute('data-stx-scope', originalScopeId);
+    // The setup finds its root by id, which a detached clone cannot answer
+    // to: rows a :for builds inside a component's closed :if are set up
+    // before the :if puts them in the document, and found nothing, so they
+    // never read a prop. Hand the root over (utils.ts reads it).
+    var previousSetupRoot = window.__STX_SETUP_ROOT__;
+    window.__STX_SETUP_ROOT__ = root;
+    try {
+      setup();
+      var registeredScope = window.stx._scopes && (window.stx._scopes[originalScopeId] || window.stx._scopes[scopeId]);
+      if (registeredScope && originalScopeId !== scopeId) {
+        delete window.stx._scopes[originalScopeId];
+        window.stx._scopes[scopeId] = registeredScope;
+      }
+    }
+    catch (e) {
+      console.error('[stx] cloned component setup error:', e);
+    }
+    finally {
+      window.__STX_SETUP_ROOT__ = previousSetupRoot;
+      root.setAttribute('data-stx-scope', scopeId);
+    }
+  }
+
+  function hydrateComponentScopes(nodes, callerScope) {
     var roots = [];
     var scripts = [];
     forEachGroupElement(nodes, function(node, insideTemplateContent) {
@@ -63,34 +97,7 @@ export const SIGNALS_COMPONENT_HYDRATION_RUNTIME = `  function hydrateComponentS
         }
       }
 
-      pendingRoots.forEach(function(root) {
-        var scopeId = root.getAttribute('data-stx-scope');
-        var originalScopeId = root.getAttribute('data-stx-template-scope') || scopeId;
-        if (!scopeId || !originalScopeId) return;
-
-        root.setAttribute('data-stx-scope', originalScopeId);
-        // The setup finds its root by id, which a detached clone cannot answer
-        // to: rows a :for builds inside a component's closed :if are set up
-        // before the :if puts them in the document, and found nothing, so they
-        // never read a prop. Hand the root over (utils.ts reads it).
-        var previousSetupRoot = window.__STX_SETUP_ROOT__;
-        window.__STX_SETUP_ROOT__ = root;
-        try {
-          setup();
-          var registeredScope = window.stx._scopes && (window.stx._scopes[originalScopeId] || window.stx._scopes[scopeId]);
-          if (registeredScope && originalScopeId !== scopeId) {
-            delete window.stx._scopes[originalScopeId];
-            window.stx._scopes[scopeId] = registeredScope;
-          }
-        }
-        catch (e) {
-          console.error('[stx] cloned component setup error:', e);
-        }
-        finally {
-          window.__STX_SETUP_ROOT__ = previousSetupRoot;
-          root.setAttribute('data-stx-scope', scopeId);
-        }
-      });
+      pendingRoots.forEach(function(root) { runClonedComponentSetup(setup, root); });
 
       // A component that is itself a structural source still needs its setup
       // sibling when bindFor/bindIf turns that source into a clone template.
@@ -105,6 +112,27 @@ export const SIGNALS_COMPONENT_HYDRATION_RUNTIME = `  function hydrateComponentS
       });
       if (!isStructuralSource && old.parentNode) old.parentNode.removeChild(old);
     });
+
+    /*
+     * A host with no script elements. A native screen's setup scripts are
+     * compiled out of the tree, so a clone a :for or :if builds carries none
+     * to copy, and every row after the template rendered with no scope at
+     * all: no props, no state, no handlers. The native bundle registers each
+     * component's setup by its compiled scope id instead, and a clone is set
+     * up from that the same way a cloned script would set it up here.
+     */
+    var registeredSetups = window.__stx_componentSetups;
+    if (registeredSetups) {
+      roots.forEach(function(root) {
+        // A :for clone carries a remapped id beside the template's; an :if
+        // clone keeps the template's id, whose scope the source reclaimed.
+        var scopeId = root.getAttribute('data-stx-scope');
+        var originalScopeId = root.getAttribute('data-stx-template-scope') || scopeId;
+        if (!scopeId || hasPendingStructuralAncestor(root) || (window.stx._scopes && window.stx._scopes[scopeId])) return;
+        var setup = registeredSetups[originalScopeId];
+        if (typeof setup === 'function') runClonedComponentSetup(setup, root);
+      });
+    }
 
     roots.forEach(function(root) {
       // Still inside a conditional or loop this walk has not bound: the
