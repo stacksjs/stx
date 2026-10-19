@@ -1,4 +1,7 @@
 import type { NativeNode } from './native-host'
+import type { NativeFocusOptions } from './view-operations'
+
+type FocusTarget = NativeNode | (() => NativeNode | null) | null
 
 /** Overlay policy stays in the shared runtime; this adapter presents native Modal nodes. */
 export interface NativeOverlayEntry {
@@ -6,10 +9,17 @@ export interface NativeOverlayEntry {
   root: NativeNode | null
   modal: boolean
   zIndex?: number | null
+  panel?: FocusTarget
+  initialFocus?: FocusTarget
   onRequestClose?: ((event?: unknown) => void) | null
 }
 
 interface OverlayHost {
+  canFocus: boolean
+  focus: (node: NativeNode, options: NativeFocusOptions) => Promise<true>
+  descendants: (node: NativeNode) => NativeNode[]
+  hasAutofocus: (node: NativeNode) => boolean
+  isAvailable: (node: NativeNode) => boolean
   type: (node: NativeNode) => string | undefined
   setAttribute: (node: NativeNode, name: string, value: unknown) => void
   setStyle: (node: NativeNode, style: Record<string, unknown>) => void
@@ -24,6 +34,41 @@ export interface NativeOverlayPresenter {
 export function createNativeOverlayPresenter(host: OverlayHost): NativeOverlayPresenter {
   let current: NativeOverlayEntry[] = []
   const listening = new WeakSet<NativeNode>()
+  let focusing: AbortController | null = null
+
+  function focusInitial(entry: NativeOverlayEntry): void {
+    if (!host.canFocus) {
+      if (entry.initialFocus)
+        console.warn(`[stx:overlays] Native initialFocus for "${entry.id}" requires viewFocus support; focus was not moved.`)
+      return
+    }
+    const controller = focusing = new AbortController()
+    // Let all overlay effects for this turn settle: if two open together,
+    // only the top layer may take focus. The host adapter checks cancellation
+    // again before dispatching its asynchronous request.
+    queueMicrotask(async () => {
+      if (controller.signal.aborted || current.at(-1)?.root !== entry.root) return
+      try {
+        const resolve = (value: FocusTarget | undefined): NativeNode | null => typeof value === 'function' ? value() : value ?? null
+        const panel = resolve(entry.panel) ?? entry.root!
+        const explicit = resolve(entry.initialFocus)
+        const candidates = [panel, ...host.descendants(panel)].filter(node => host.isAvailable(node))
+        const target = explicit ?? candidates.find(node => host.hasAutofocus(node))
+          ?? candidates.find(node => ['TextInput', 'Button', 'Pressable', 'Checkbox', 'Switch', 'Picker', 'Slider', 'Link'].includes(host.type(node) ?? ''))
+          ?? (host.isAvailable(panel) ? panel : null)
+        if (!target || !host.isAvailable(target)) {
+          if (explicit)
+            console.warn(`[stx:overlays] Native initialFocus for "${entry.id}" must reference a mounted, visible, enabled view; focus was not moved.`)
+          return
+        }
+        await host.focus(target, { mode: host.type(target) === 'TextInput' ? 'keyboard' : 'accessibility', signal: controller.signal })
+      }
+      catch (error) {
+        if (!controller.signal.aborted)
+          console.warn(`[stx:overlays] Native focus failed for "${entry.id}": ${error instanceof Error ? error.message : String(error)}`)
+      }
+    })
+  }
 
   function sync(entries: NativeOverlayEntry[]): void {
     // Validate the complete change before touching any displayed overlay.
@@ -56,7 +101,15 @@ export function createNativeOverlayPresenter(host: OverlayHost): NativeOverlayPr
       host.setAttribute(root, 'visible', true)
       host.setStyle(root, { zIndex: (entry.zIndex ?? 1000) + index })
     }
+    const top = current.at(-1)
+    if (top?.root !== previous.at(-1)?.root) {
+      focusing?.abort()
+      focusing = null
+      // Revealing an already-open layer must retain the user's last focus;
+      // Craft restores the opener when the covering Modal is dismissed.
+      if (top && !previous.some(entry => entry.root === top.root)) focusInitial(top)
+    }
   }
 
-  return { sync, dispose() { current = [] } }
+  return { sync, dispose() { focusing?.abort(); focusing = null; current = [] } }
 }

@@ -668,6 +668,22 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   }
 
   const overlayPresenter = createNativeOverlayPresenter({
+    canFocus: options.views?.capabilities.focus === true,
+    focus: (node, focusOptions) => host.focus(node, focusOptions),
+    descendants: collectDescendants,
+    hasAutofocus: node => {
+      const value = descriptorOf(node)?.props.autoFocus
+      return value === true || value === '' || value === 'true'
+    },
+    isAvailable: node => {
+      if (!records.has(node.__stxId) || disabled(recordOf(node))) return false
+      for (let current: NativeNode | null = node; current; current = current.__stxOwner ?? null) {
+        const record = records.get(current.__stxId)
+        if (!record?.materialized || !record.visible || record.style.display === 'none' || (record.type === 'Modal' && (record.props.visible === false || record.props.visible === 'false')))
+          return false
+      }
+      return true
+    },
     type: node => descriptorOf(node)?.type,
     setAttribute: (node, name, value) => host.setAttribute(node, name, value),
     setStyle: (node, value) => host.setStyle(node, value),

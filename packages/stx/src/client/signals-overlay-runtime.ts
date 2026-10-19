@@ -309,7 +309,6 @@ export const SIGNALS_OVERLAY_RUNTIME = `  // ── Overlay stack ────�
       // opening sees it; then retried for a panel that is not displayed yet.
       // A popup keeps focus where its own keyboard handling puts it.
       if (!stxHost.isNative && (isModal || opts.initialFocus)) _overlayFocusIn(entry, 10);
-      if (stxHost.isNative && opts.initialFocus) console.warn('[stx:overlays] Native initialFocus requires the host focus capability tracked in craft-native/craft#373; focus was not moved.');
     },
     /** Take an overlay off the stack, wherever it is in it. */
     close: function(id) {

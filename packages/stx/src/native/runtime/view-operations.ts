@@ -1,6 +1,6 @@
 import type { STXBridge } from '../bridge/protocol'
 
-export interface NativeFocusOptions { mode?: 'keyboard' | 'accessibility' }
+export interface NativeFocusOptions { mode?: 'keyboard' | 'accessibility', signal?: AbortSignal }
 export interface NativeViewBounds {
   x: number
   y: number
@@ -12,6 +12,7 @@ export interface NativeViewBounds {
   coordinateSpace: 'screenViewport'
 }
 export interface NativeViewOperations {
+  readonly capabilities: { focus: boolean, measure: boolean }
   focus: (nodeId: string, options?: NativeFocusOptions) => Promise<true>
   measure: (nodeId: string) => Promise<NativeViewBounds>
 }
@@ -33,12 +34,15 @@ export function createNativeViewOperations(
     beforeRequest()
   }
   return {
+    capabilities: { focus: supported.has('viewFocus'), measure: supported.has('viewMeasure') },
     async focus(nodeId, options = {}) {
+      if (options.signal?.aborted) throw nativeViewError('CANCELLED', 'Native focus was cancelled')
       const mode = options.mode ?? 'keyboard'
       if (mode !== 'keyboard' && mode !== 'accessibility')
         throw nativeViewError('INVALID_ARGUMENT', 'View.focus mode must be keyboard or accessibility')
       prepare('viewFocus')
       const result = await protocol.callNativeAPI('View', 'focus', { nodeId, mode })
+      if (options.signal?.aborted) throw nativeViewError('CANCELLED', 'Native focus was cancelled')
       if (result !== true) throw nativeViewError('INVALID_RESPONSE', 'View.focus did not confirm focus')
       return true
     },
