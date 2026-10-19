@@ -27,7 +27,9 @@ async function page(name: string, group: string, body: string): Promise<void> {
 <body><nav>${group} nav</nav><main>${body}</main></body></html>`, {}, join(dir, `${name}.stx`), { cache: false, debug: false } as any, new Set())
   // Added after rendering: the router's own source names data-stx-runtime,
   // which would read as the page already shipping the signals runtime.
-  pages[name] = html.replace('</body>', `<script>window.__stxRouterConfig={container:'main',viewTransitions:false,progress:false,prefetch:false}</script><script>${getRouterScript()}</script></body>`)
+  const bodyEnd = html.lastIndexOf('</body>')
+  expect(bodyEnd).toBeGreaterThan(-1)
+  pages[name] = `${html.slice(0, bodyEnd)}<script>window.__stxRouterConfig={container:'main',viewTransitions:false,progress:false,prefetch:false}</script><script>${getRouterScript()}</script>${html.slice(bodyEnd)}`
 }
 
 beforeAll(async () => {

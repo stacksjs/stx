@@ -57,7 +57,7 @@ describe('the published browser entries', () => {
 
   it('bundles for a page, with nothing of the highlighter in it', async () => {
     const build = Bun.spawnSync(['bun', 'run', 'build.ts'], { cwd: root, stdout: 'pipe', stderr: 'pipe' })
-    expect(build.exitCode).toBe(0)
+    expect(build.exitCode, build.stderr.toString()).toBe(0)
 
     const entry = (await Bun.file(path.join(root, 'package.json')).json()).exports['./overlays']
     for (const file of [entry.types, entry.bun, entry.import])
@@ -75,5 +75,7 @@ describe('the published browser entries', () => {
     // Minified, so the export is what names it.
     expect(rootBundle).toContain('openOverlay: () =>')
     expect(rootBundle).not.toContain('stream/promises')
-  })
+  // This builds the entire package, including declarations; the default
+  // five-second unit-test deadline can kill its subprocess under suite load.
+  }, 30_000)
 })
