@@ -48,6 +48,7 @@ export type BridgeMessageType =
   | 'APP_STATE'           // App foreground/background
   | 'DEEP_LINK'           // App opened or resumed through a URL
   | 'SNAPSHOT_CHANGED'    // An app snapshot was saved or removed
+  | 'SESSION_CHANGED'     // The signed-in token in secure storage changed (craft.session)
   | 'APPEARANCE'          // Native color scheme changed
   | 'SCREEN_FOCUS'        // Screen gained/lost focus (shown again, or covered)
   | 'ROUTE_PARAMS'        // The screen was opened again with other params
@@ -744,6 +745,9 @@ export interface NativeBridgeInterface {
 
   /** Color scheme captured before the generated bundle starts executing. */
   colorScheme?: 'light' | 'dark'
+
+  /** The secure-storage key the host keeps the signed-in token under (Craft, `auth.token` by default). */
+  sessionTokenKey?: string
 
   /**
    * The app's site (Craft's `devServerURL`): where its web pages and API
