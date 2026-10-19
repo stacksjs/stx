@@ -8,13 +8,14 @@
 # @stacksjs/stx (or @stacksjs/components) accepted but unread, and needed
 # `gh run rerun --failed` by hand once npm caught up.
 #
-# This waits for each pending package's tarball to be readable and runs the
+# This verifies each pending package's metadata and original archive, then runs the
 # same publish again, which skips everything already published. It never
 # re-uploads a pending version early: that is npm's
 # `409 Cannot publish over previously staged version`.
 #
 # Usage: scripts/publish-npm.sh <pantry publish arguments...>
 set -uo pipefail
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
 attempts=${PUBLISH_ATTEMPTS:-4}
 wait_seconds=${PUBLISH_VISIBLE_WAIT_SECONDS:-1200}
@@ -28,39 +29,19 @@ for attempt in $(seq 1 "$attempts"); do
     exit 0
   fi
 
-  # The packages pantry reported as accepted but pending: the "Publishing
-  # name@version..." line before each such error.
-  pending=$(awk '
-    /^Publishing .+@[0-9][^ ]*\.\.\.$/ { current = $2; sub(/\.\.\.$/, "", current) }
-    /publication is pending public metadata/ { if (current != "") print current }
-  ' "$log" | sort -u)
-  rm -f "$log"
-
-  if [ -z "$pending" ]; then
-    echo "::error::pantry publish failed (attempt $attempt) for a reason other than npm propagation"
-    exit "$status"
-  fi
   if [ "$attempt" -eq "$attempts" ]; then
+    rm -f "$log"
     break
   fi
 
-  for spec in $pending; do
-    name=${spec%@*}
-    version=${spec##*@}
-    base=${name##*/}
-    url="https://registry.npmjs.org/${name}/-/${base}-${version}.tgz"
-    echo "Waiting for ${spec} to be readable on npm (${url})..."
-    waited=0
-    until [ "$(curl -s -o /dev/null -w '%{http_code}' "$url")" = 200 ]; do
-      if [ "$waited" -ge "$wait_seconds" ]; then
-        echo "::error::${spec} was accepted but is still not readable after ${wait_seconds}s"
-        exit 1
-      fi
-      sleep 15
-      waited=$((waited + 15))
-    done
-    echo "${spec} is readable after ${waited}s"
-  done
+  # Public metadata and complete bytes must match the ORIGINAL accepted SRI.
+  # A tarball-only 200 cannot establish the version exists before a safe retry.
+  if ! (cd "$script_dir" && bun npm-publication.ts "$log" "$wait_seconds"); then
+    rm -f "$log"
+    echo "::error::Original accepted publication is not verified; no publish resumed"
+    exit "$status"
+  fi
+  rm -f "$log"
   echo "Publishing again: what is already out is skipped (attempt $((attempt + 1)) of ${attempts})"
 done
 
