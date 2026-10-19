@@ -30,6 +30,7 @@ import { NATIVE_EVENT_NAMES as EVENT_NAMES } from '../event-names'
 import { NATIVE_BOOLEAN_PROPS, nativePropName } from '../prop-names'
 import { mapToNativeComponent } from './component-mapping'
 import { resolveIconName } from './icons'
+import { parseNativeStyle } from './inline-style'
 import { parseViewBox, SVG_DROPPED, SVG_NODE_TYPES, SVG_TYPES, svgGeometry } from './svg'
 import { compileClassStyles } from './headwind-to-style'
 import { createDocument, createNode } from './ir'
@@ -135,59 +136,6 @@ export const NATIVE_EVENTS = new Set([
   'onValueChange',
 ])
 
-/** Every property `STXStyle` declares, for inline `style=""` translation. */
-const STYLE_KEYS = new Set([
-  'display', 'gridColumns', 'gridTemplateColumns', 'gridAutoRows',
-  'flex', 'flexGrow', 'flexShrink', 'flexBasis', 'flexDirection', 'flexWrap',
-  'justifyContent', 'alignItems', 'alignSelf', 'alignContent', 'position', 'top', 'right',
-  'bottom', 'left', 'zIndex', 'width', 'height', 'minWidth', 'maxWidth', 'minHeight',
-  'maxHeight', 'aspectRatio', 'margin', 'marginTop', 'marginRight', 'marginBottom',
-  'marginLeft', 'marginHorizontal', 'marginVertical', 'padding', 'paddingTop',
-  'paddingRight', 'paddingBottom', 'paddingLeft', 'paddingHorizontal', 'paddingVertical',
-  'gap', 'rowGap', 'columnGap', 'borderWidth', 'borderTopWidth', 'borderRightWidth',
-  'borderBottomWidth', 'borderLeftWidth', 'borderColor', 'borderTopColor',
-  'borderRightColor', 'borderBottomColor', 'borderLeftColor', 'borderRadius',
-  'borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomLeftRadius',
-  'borderBottomRightRadius', 'borderStyle', 'backgroundColor', 'backgroundImage',
-  'opacity', 'shadowColor', 'shadowOffset', 'shadowOpacity', 'shadowRadius', 'elevation',
-  'color', 'fontSize', 'fontWeight', 'fontStyle', 'fontFamily', 'lineHeight',
-  'letterSpacing', 'textAlign', 'textDecorationLine', 'textDecorationColor',
-  'textTransform', 'resizeMode', 'tintColor', 'transform', 'overflow',
-  'fill', 'stroke', 'strokeWidth',
-  'gradientDirection', 'gradientFrom', 'gradientVia', 'gradientTo',
-])
-
-/**
- * Style properties the IR declares as a bare number.
- *
- * Emitting a string into one of these is not a dropped property, it is a
- * dropped screen: iOS reads them as `CGFloat?`, and Swift's synthesised
- * decoder fails the WHOLE document on a type mismatch. Verified against the
- * renderer's own structs -- `{"style":{"bottom":"max(env(...), 12px)"}}`
- * returns typeMismatch and nothing renders. `null` is harmless by comparison.
- */
-const NUMERIC_STYLE_KEYS = new Set([
-  'gridColumns', 'gridAutoRows', 'flex', 'flexGrow', 'flexShrink', 'zIndex', 'aspectRatio',
-  'gap', 'rowGap', 'columnGap',
-  'borderWidth', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
-  'borderRadius', 'borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomLeftRadius',
-  'borderBottomRightRadius', 'opacity', 'shadowOpacity', 'shadowRadius', 'elevation',
-  'fontSize', 'lineHeight', 'letterSpacing', 'strokeWidth',
-])
-
-/**
- * Properties the IR declares as `number | string`, where the string form is a
- * percentage and nothing else. A CSS function like `max(env(...), 12px)` is
- * not a dimension any renderer can read, so it is reported and dropped.
- */
-const DIMENSION_STYLE_KEYS = new Set([
-  'top', 'right', 'bottom', 'left', 'width', 'height', 'minWidth', 'maxWidth',
-  'minHeight', 'maxHeight', 'flexBasis',
-  'margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
-  'marginHorizontal', 'marginVertical',
-  'padding', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
-  'paddingHorizontal', 'paddingVertical',
-])
 
 /**
  * Every component type the IR declares, for `data-native` to name.
@@ -258,22 +206,6 @@ function decodeEntities(text: string): string {
   })
 }
 
-function camelCase(property: string): string {
-  return property.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())
-}
-
-/** `12px` to 12, `1.5rem` to 24, `1.5` to 1.5, anything else left as a string. */
-function styleValue(raw: string): string | number {
-  const pixels = /^(-?[\d.]+)px$/.exec(raw)
-  if (pixels)
-    return Number.parseFloat(pixels[1])
-  const relative = /^(-?[\d.]+)r?em$/.exec(raw)
-  if (relative)
-    return Number.parseFloat(relative[1]) * 16
-  if (/^-?[\d.]+$/.test(raw))
-    return Number.parseFloat(raw)
-  return raw
-}
 
 interface Frame {
   tag: string
@@ -369,98 +301,8 @@ function readAttributes(
   return { props, style, events, bindings, classes, inline }
 }
 
-/**
- * The style properties whose value is a structure, as the IR declares them:
- * an offset is `{ width, height }` and a transform a list of one-key steps.
- * Kept whole from a `style={{...}}` object; every other property is a number
- * or a string.
- */
-function structuredStyle(property: string, value: unknown): unknown {
-  if (property === 'shadowOffset') {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
-    const { width, height } = value as Record<string, unknown>
-    return typeof width === 'number' && typeof height === 'number' ? { width, height } : undefined
-  }
-  if (property === 'transform') {
-    if (!Array.isArray(value)) return undefined
-    const steps = value.filter((step): step is Record<string, unknown> => Boolean(step) && typeof step === 'object' && !Array.isArray(step) && Object.keys(step).length === 1)
-      .filter(step => ['number', 'string'].includes(typeof Object.values(step)[0]))
-    return steps.length ? steps : undefined
-  }
-  return undefined
-}
-
-/** Whether this property's field can hold this string at all. */
-function holdsString(property: string, value: string): boolean {
-  if (NUMERIC_STYLE_KEYS.has(property))
-    return false
-  if (DIMENSION_STYLE_KEYS.has(property))
-    return /^-?[\d.]+%$/.test(value)
-  return true
-}
-
 function inlineStyle(tag: string, css: string, diagnostics: TranslationDiagnostic[]): STXStyle {
-  const style: Record<string, unknown> = {}
-  const decoded = decodeEntities(css)
-  try {
-    const object = JSON.parse(decoded)
-    if (object && typeof object === 'object' && !Array.isArray(object)) {
-      for (const [rawProperty, rawValue] of Object.entries(object)) {
-        const property = STYLE_KEYS.has(rawProperty)
-          ? rawProperty
-          : camelCase(rawProperty.trim().toLowerCase())
-        if (!STYLE_KEYS.has(property)) {
-          diagnostics.push({ kind: 'unknown-style', tag, name: property })
-          continue
-        }
-        if (rawValue === null || rawValue === undefined)
-          continue
-        const translated = typeof rawValue === 'string' ? styleValue(rawValue) : rawValue
-        if (typeof translated === 'object') {
-          // A shadow's offset and a transform: kept as the structure the
-          // hosts read, which used to be dropped here with every other object.
-          const kept = structuredStyle(property, translated)
-          if (kept === undefined)
-            diagnostics.push({ kind: 'non-numeric-style', tag, name: property })
-          else style[property] = kept
-          continue
-        }
-        if (typeof translated !== 'string' && typeof translated !== 'number')
-          continue
-        if (typeof translated === 'string' && !holdsString(property, translated)) {
-          diagnostics.push({ kind: 'non-numeric-style', tag, name: property })
-          continue
-        }
-        style[property] = translated
-      }
-      return style as STXStyle
-    }
-  }
-  catch {
-    // CSS declarations are handled below.
-  }
-
-  for (const declaration of decoded.split(';')) {
-    const colon = declaration.indexOf(':')
-    if (colon === -1)
-      continue
-    const property = camelCase(declaration.slice(0, colon).trim().toLowerCase())
-    const value = declaration.slice(colon + 1).trim()
-    if (!property || !value)
-      continue
-    if (!STYLE_KEYS.has(property)) {
-      diagnostics.push({ kind: 'unknown-style', tag, name: property })
-      continue
-    }
-
-    const translated = styleValue(value)
-    if (typeof translated === 'string' && !holdsString(property, translated)) {
-      diagnostics.push({ kind: 'non-numeric-style', tag, name: property })
-      continue
-    }
-    style[property] = translated
-  }
-  return style as STXStyle
+  return parseNativeStyle(decodeEntities(css), diagnostic => diagnostics.push({ ...diagnostic, tag }))
 }
 
 /** Every word in a subtree, in order, with the markup between them gone. */
