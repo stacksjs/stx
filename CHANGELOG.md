@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.579...v0.2.580)
+
+## 🐛 Bug Fixes
+
+- **native**: type craft.session's host key and message ([b1cebad](https://github.com/stacksjs/stx/commit/b1cebad)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.580 ([0377e31](https://github.com/stacksjs/stx/commit/0377e31)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.578...v0.2.579)
 
 ## ✨ Features
