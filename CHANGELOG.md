@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.597...v0.2.598)
+
+## ✨ Features
+
+- **components**: a dialog says whether it is open ([9acbc98](https://github.com/stacksjs/stx/commit/9acbc98)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **components**: a dialog presented as a sheet on a phone ([0e7e322](https://github.com/stacksjs/stx/commit/0e7e322)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.598 ([1223efe](https://github.com/stacksjs/stx/commit/1223efe)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.596...v0.2.597)
 
 ## ✨ Features
