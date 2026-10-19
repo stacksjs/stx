@@ -55,4 +55,32 @@ describe('native component event transport', () => {
     expect(calls).toEqual(['child'])
     expect(host.pending()).toBe(0)
   })
+
+  it('delivers one platform event to every listener, including aliases and once listeners', () => {
+    const { host, child, batches } = setup()
+    const calls: string[] = []
+    host.listen(child, 'click', () => calls.push('first'))
+    host.listen(child, 'press', () => calls.push('once'), { once: true })
+    host.listen(child, 'click', () => calls.push('last'))
+    host.flush()
+    const registrations = batches.filter(op => op.patch?.events?.onPress)
+    const handlerId = registrations[registrations.length - 1].patch.events.onPress
+    host.dispatch(handlerId, {})
+    host.dispatch(handlerId, {})
+    expect(calls).toEqual(['first', 'once', 'last', 'first', 'last'])
+    expect(registrations).toHaveLength(1)
+  })
+
+  it('does not treat stopPropagation on the target as stopImmediatePropagation', () => {
+    const { host, root, child, event } = setup()
+    const calls: string[] = []
+    host.listen(child, 'saved', value => {
+      (value as Event).stopPropagation()
+      calls.push('target-capture')
+    }, { capture: true })
+    host.listen(child, 'saved', () => calls.push('target-bubble'))
+    host.listen(root, 'saved', () => calls.push('parent'))
+    host.emitComponentEvent(child, event())
+    expect(calls).toEqual(['target-capture', 'target-bubble'])
+  })
 })

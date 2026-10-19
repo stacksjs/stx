@@ -647,13 +647,17 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         }
       }
       try {
-        for (const current of [...ancestors].reverse()) {
+        for (const current of ancestors.slice(1).reverse()) {
           invoke(current, true)
           if (event.cancelBubble) return !event.defaultPrevented
         }
-        for (const current of ancestors) {
+        // Stopping propagation does not stop other listeners on the target.
+        invoke(node, true)
+        invoke(node, false)
+        if (!event.bubbles || event.cancelBubble) return !event.defaultPrevented
+        for (const current of ancestors.slice(1)) {
           invoke(current, false)
-          if (!event.bubbles || event.cancelBubble) break
+          if (event.cancelBubble) break
         }
         return !event.defaultPrevented
       }
@@ -670,8 +674,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       // back. Sending a function over a bridge is not possible, and the
       // binding layer never needs to know that -- it hands over a closure
       // either way.
-      const id = nextId('h')
       const nativeEvent = NATIVE_EVENT_NAMES[event.toLowerCase()] ?? event
+      const record = recordOf(node)
+      // A renderer holds one handler id per event. Multiplex all listeners
+      // behind that id, rather than replacing the previous registration.
+      if (record.events[nativeEvent] && handlers.has(record.events[nativeEvent])) return
+      const id = nextId('h')
       handlers.set(id, (payload) => {
         if (nativeEvent === 'onChangeText' || nativeEvent === 'onValueChange') {
           const data = payload && typeof payload === 'object' ? payload as Record<string, any> : {}
@@ -687,11 +695,14 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
             if (record.materialized) emit({ op: 'updateNode', id: node.__stxId, patch: { props: { value } } })
           }
         }
-        if (!listeners.includes(listener)) return
-        if (listener.once) listeners.splice(listeners.indexOf(listener), 1)
-        handler(eventAt(payload, node))
+        const delivered = eventAt(payload, node)
+        for (const current of [...listeners]) {
+          if ((NATIVE_EVENT_NAMES[current.event.toLowerCase()] ?? current.event) !== nativeEvent) continue
+          if (!listeners.includes(current)) continue
+          if (current.once) listeners.splice(listeners.indexOf(current), 1)
+          current.handler(delivered)
+        }
       })
-      const record = recordOf(node)
       record.events[nativeEvent] = id
       if (record.materialized)
         emit({ op: 'updateNode', id: node.__stxId, patch: { events: { [nativeEvent]: id } } })

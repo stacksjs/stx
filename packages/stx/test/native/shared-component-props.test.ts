@@ -138,9 +138,9 @@ function increment() { count.set(count() + 1); emit('saved', { count: count() })
   })
   it('initializes real shared controls without a browser observer', async () => {
     const components: Record<string, string> = {}
-    for (const [name, file] of Object.entries({ SharedButton: 'button/Button', SharedInput: 'input/TextInput', SharedSelect: 'select/Select' }))
+    for (const [name, file] of Object.entries({ SharedButton: 'button/Button', SharedInput: 'input/TextInput', SharedSelect: 'select/Select', SharedDialog: 'dialog/Dialog' }))
       components[name] = await Bun.file(path.join(import.meta.dir, '../../../components/src/ui', `${file}.stx`)).text()
-    const app = await boot('<div><SharedButton>Save</SharedButton><SharedInput value="Ada" /><SharedSelect /></div>', components)
+    const app = await boot('<div><SharedButton>Save</SharedButton><SharedInput value="Ada" /><SharedSelect /><SharedDialog title="Example" /></div>', components)
     try {
       expect(app.errors).toEqual([])
       expect(app.messages.some(m => m.type === 'RENDER')).toBe(true)
