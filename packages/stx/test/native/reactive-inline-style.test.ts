@@ -2,6 +2,33 @@ import { describe, expect, it } from 'bun:test'
 import { compileNativeScreen, mountNativeScreen } from '../../src/native/testing'
 
 describe.each([false, true])('reactive native inline styles (minify=%s)', (minify) => {
+  it('keeps hidden form inputs out of native layout through style, appearance and lifecycle updates', async () => {
+    const { code } = await compileNativeScreen(`<script client>
+const styles = state({ display: 'flex' })
+const shown = state(true)
+const value = state('first')
+window.probe = { styles, shown, value }
+</script><div><input :if="shown" type="hidden" testID="hidden" :value="value" :style="styles" /></div>`, { minify })
+    const phone = mountNativeScreen(code)
+    try {
+      await phone.settle()
+      expect(phone.byTestID('hidden')!.style.display).toBe('none')
+      phone.context.probe.styles.set('display:grid;padding:12px')
+      phone.context.probe.value.set('second')
+      phone.appearance('dark')
+      await phone.settle()
+      expect(phone.byTestID('hidden')!.style.display).toBe('none')
+      expect(phone.byTestID('hidden')!.props.value).toBe('second')
+      phone.context.probe.shown.set(false)
+      await phone.settle()
+      phone.context.probe.styles.set(null)
+      phone.context.probe.shown.set(true)
+      await phone.settle()
+      expect(phone.byTestID('hidden')!.style.display).toBe('none')
+    }
+    finally { phone.unmount() }
+  }, 30_000)
+
   it('delivers explicit grid rows through the compiled native bundle and clears changed tracks', async () => {
     const { code } = await compileNativeScreen(`<script client>
 const tracks = state({ gridTemplateRows: 'repeat(2, 1fr)' })

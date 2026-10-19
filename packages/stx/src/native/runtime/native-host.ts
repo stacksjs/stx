@@ -95,6 +95,10 @@ interface RetainedNativeNode extends NativeNode {
   __stxDetachedRecord?: NodeRecord
 }
 
+function isHiddenInput(record: NodeRecord): boolean {
+  return record.type === 'View' && record.props.type === 'hidden'
+}
+
 /**
  * A native event says what happened (a value, a position) but not where:
  * the node listening is where, as `target` and `currentTarget` are in a
@@ -471,7 +475,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const resolved = parseNativeStyleLayers([record.styleSource, record.boundStyle, record.forwardedStyle], inherited, report)
     record.variables = resolved.variables
     const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables)
-    return { ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}), ...resolved.styles[0], ...record.baseStyle, ...resolved.styles[1], ...resolved.styles[2], ...(record.visible ? {} : { display: 'none' }) }
+    return { ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}), ...resolved.styles[0], ...record.baseStyle, ...resolved.styles[1], ...resolved.styles[2], ...(record.visible && !isHiddenInput(record) ? {} : { display: 'none' }) }
   }
 
   function refreshStyleTree(node: NativeNode, inherited = node.__stxOwner ? descriptorOf(node.__stxOwner)?.variables : stylesheetVariables, appearanceChanged = false): void {
@@ -915,7 +919,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       // Reactive bindings instead own a normalized, replaceable style layer.
       if (typeof value !== 'object' || value === null || Array.isArray(value))
         return
-      const style = value as Record<string, unknown>
+      const style = { ...value as Record<string, unknown>, ...(isHiddenInput(record) ? { display: 'none' as const } : {}) }
       Object.assign(record.baseStyle, style)
       Object.assign(record.style, style)
       if (record.materialized)
