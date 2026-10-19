@@ -14,6 +14,27 @@ import { compileNativeScreen, mountNativeScreen, unmountAllNativeScreens } from 
 
 afterEach(unmountAllNativeScreens)
 
+it.each([false, true])('leaves touchable role inference to the host while preserving authored roles (minify=%s)', async (minify) => {
+  const controls = ['Pressable', 'TouchableOpacity', 'TouchableHighlight']
+  const { code } = await compileNativeScreen(`<script client>
+const destination = state('/details')
+</script><View>${controls.map(type => `<${type} testID="${type}" :href="destination"><Text>Open</Text></${type}><${type} testID="${type}-authored" href="/details" accessibilityRole="button"><Text>Authored button</Text></${type}>`).join('')}<Button testID="clear" @click="destination.set(null)">Clear destination</Button></View>`, { minify })
+  const phone = mountNativeScreen(code, 'Screen')
+  await phone.settle()
+  for (const type of controls) {
+    expect(phone.byTestID(type)!.props.href).toBe('/details')
+    expect(phone.byTestID(type)!.props.role).toBeUndefined()
+    expect(phone.byTestID(type)!.props.accessibilityRole).toBeUndefined()
+    expect(phone.byTestID(`${type}-authored`)!.props.accessibilityRole).toBe('button')
+  }
+  phone.press(phone.byTestID('clear')!)
+  await phone.settle()
+  for (const type of controls) {
+    expect(phone.byTestID(type)!.props.href).toBeNull()
+    expect(phone.byTestID(type)!.props.accessibilityRole).toBeUndefined()
+  }
+})
+
 describe('static ARIA in the compiled tree', () => {
   it('labels, roles and states a composed button', async () => {
     const { root } = await translateHtmlToIR('<div role="group" aria-label="Filter"><button type="button" role="tab" aria-selected="true" aria-label="All clubs"><span>All</span></button></div>')

@@ -15,6 +15,18 @@ function fixture() {
 }
 
 describe('the browser peer of the native screen renderer', () => {
+  it.each(['Pressable', 'TouchableOpacity', 'TouchableHighlight'])('infers link roles for %s and preserves an authored role across destination changes', (type) => {
+    const { renderer, container, node } = fixture()
+    renderer.render(node('root', 'View', [node('control', type, ['Open'], { href: '/details' })]))
+    const control = container.querySelector('[data-stx-node="control"]')!
+    expect(control.getAttribute('role')).toBe('link')
+    renderer.mutate({ version: 1, batchId: 'clear', baseRevision: 0, revision: 1, operations: [{ op: 'updateNode', id: 'control', patch: { props: { href: null } } }] })
+    expect(control.getAttribute('role')).toBeNull()
+    expect(control.tagName).toBe('BUTTON')
+    renderer.mutate({ version: 1, batchId: 'authored', baseRevision: 1, revision: 2, operations: [{ op: 'updateNode', id: 'control', patch: { props: { to: '/details', accessibilityRole: 'button' } } }] })
+    expect(control.getAttribute('role')).toBe('button')
+  })
+
   it('renders native button titles, reconciles them and keeps disabled actions inert', () => {
     const { renderer, container, node, window, events } = fixture()
     renderer.render(node('root', 'View', [node('save', 'Button', ['Fallback'], { title: 'Save' }, { onPress: 'save' })]))

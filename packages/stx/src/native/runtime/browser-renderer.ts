@@ -283,7 +283,9 @@ export class BrowserScreenRenderer {
       if (value == null) element.removeAttribute(`aria-${key}`)
       else element.setAttribute(`aria-${key}`, String(value))
     }
-    const role = props.accessibilityRole
+    const linked = ['Link', 'TouchableOpacity', 'TouchableHighlight', 'Pressable'].includes(type)
+      && ['href', 'to'].some(name => typeof props[name] === 'string' && props[name].trim() !== '')
+    const role = props.accessibilityRole ?? (linked ? 'link' : undefined)
     if (role && role !== 'none') element.setAttribute('role', String(role === 'header' ? 'heading' : role))
     else element.removeAttribute('role')
     if (record.events.onPress || ['Button', 'TouchableOpacity', 'TouchableHighlight', 'Pressable'].includes(type)) {
