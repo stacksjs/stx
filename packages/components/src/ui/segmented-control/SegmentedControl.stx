@@ -53,6 +53,8 @@ export const segmentBase = `${stretch ? 'flex-1' : ''} items-center justify-cent
 
 <script client>
 const emit = defineEmits(['change'])
+// Reactive, so a translated or counted name (`:label="t('range')"`) still names the group.
+const groupLabel = useReactiveProp('label', {{ label }})
 const selected = useModel('value', { default: {{ value }}, parse: v => v == null ? '' : String(v) })
 const choices = useReactiveProp('options', {{ options }})
 const isDisabled = useReactiveProp('disabled', {{ disabled }})
@@ -108,6 +110,7 @@ defineExpose({ selected })
 <div
   role="group"
   @if(label)aria-label="{{ label }}"@endif
+  :aria-label="groupLabel() || null"
   @if(testID)testID="{{ testID }}"@endif
   class="{{ trackClasses }}"
   data-stx-segmented-control

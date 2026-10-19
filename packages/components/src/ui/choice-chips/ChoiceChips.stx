@@ -28,6 +28,8 @@ export const className = $props.className || ''
 
 <script client>
 const emit = defineEmits(['change'])
+// Reactive, so a translated or counted name (`:label="t('range')"`) still names the group.
+const groupLabel = useReactiveProp('label', {{ label }})
 const selected = useModel('value', { default: {{ value }}, parse: v => v == null ? '' : String(v) })
 const choices = useReactiveProp('options', {{ options }})
 const groupID = {{ testID }}
@@ -80,6 +82,7 @@ defineExpose({ selected })
 <div
   role="group"
   @if(label)aria-label="{{ label }}"@endif
+  :aria-label="groupLabel() || null"
   @if(testID)testID="{{ testID }}"@endif
   class="w-full overflow-x-auto {{ className }}"
   data-stx-choice-chips

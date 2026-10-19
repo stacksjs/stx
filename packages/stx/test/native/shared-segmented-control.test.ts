@@ -86,6 +86,25 @@ describe('SegmentedControl on a native host', () => {
   }, 30_000)
 })
 
+describe('SegmentedControl named from a binding', () => {
+  it('names the group from a reactive label, as a translated one is', async () => {
+    const root = createTempDir('stx-segmented-label-')
+    const file = join(root, 'Screen.stx')
+    await Bun.write(join(root, 'stx.config.ts'), `export default { root: '.', plugins: ${JSON.stringify([plugin])} }`)
+    await Bun.write(file, `<script client>
+const name = state('Range')
+window.probe = { name }
+</script><div><SegmentedControl testID="range" :label="name()" value="a" :options="['a', 'b']" /></div>`)
+    const { code } = await compileSharedScreenBundle(file, { root })
+    const phone = mountNativeScreen(code, 'Screen')
+    await phone.settle()
+    expect(phone.byTestID('range')!.props.accessibilityLabel).toBe('Range')
+    phone.context.probe.name.set('Zeitraum')
+    await phone.settle()
+    expect(phone.byTestID('range')!.props.accessibilityLabel).toBe('Zeitraum')
+  }, 30_000)
+})
+
 describe('SegmentedControl in a browser', () => {
   it('renders the same source as pressed buttons in a labelled group', async () => {
     const { root, file } = await fixture()
