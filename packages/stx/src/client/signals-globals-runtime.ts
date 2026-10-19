@@ -2,6 +2,7 @@
 export const SIGNALS_GLOBALS_RUNTIME = `  // Also expose globally for convenience
   window.state = state;
   window.derived = derived;
+  window.memo = memo;
   window.effect = effect;
   window.batch = batch;
   window.onMount = onMount;
@@ -42,6 +43,7 @@ export const SIGNALS_GLOBALS_RUNTIME = `  // Also expose globally for convenienc
   window.setKeptScope = setKeptScope;
   window.flushKeptState = flushKeptState;
   window.cachedQuery = cachedQuery;
+  window.sharedRequest = sharedRequest;
   window.useEventListener = useEventListener;
   window.useWebSocket = useWebSocket;
   window.useColorMode = useColorMode;
@@ -58,7 +60,7 @@ export const SIGNALS_GLOBALS_RUNTIME = `  // Also expose globally for convenienc
   window.ref = state;
   window.reactive = reactive;
   window.computed = derived;
-  window.watch = $watch;
+  window.watch = watch;
   window.watchEffect = function(fn) { return effect(fn); };
 
   // Note: SPA Router and View Transitions CSS are provided by the canonical

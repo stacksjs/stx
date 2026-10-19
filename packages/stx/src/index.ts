@@ -55,6 +55,8 @@ export {
   type KeptScope,
   setKeptScope,
 } from './composables/use-cached-query'
+// One request for every caller: the module twin of window.stx.sharedRequest.
+export { sharedRequest, type SharedRequest, type SharedRequestOptions } from './shared-request'
 // View composers were unreachable: `runComposers` is wired into the render
 // pipeline (process.ts:1206) and runs on every render, but the two functions that
 // PUT anything in the registry were never exported, so the registry was always

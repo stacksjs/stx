@@ -109,6 +109,8 @@ export interface WatchOptions {
   deep?: boolean
   /** Flush timing: 'pre' | 'post' | 'sync' */
   flush?: 'pre' | 'post' | 'sync'
+  /** Stop after the first call */
+  once?: boolean
 }
 
 /** Lifecycle hook callback */
@@ -484,21 +486,6 @@ export function computed<T>(getter: () => T): Ref<T> {
 // =============================================================================
 
 /**
- * Watch a reactive source and run a callback on changes.
- *
- * @example
- * ```typescript
- * const count = ref(0)
- *
- * watch(count, (newVal, oldVal) => {
- *   console.log(`Changed from ${oldVal} to ${newVal}`)
- * })
- *
- * // With options
- * watch(count, callback, { immediate: true, deep: true })
- * ```
- */
-/**
  * Run `fn` after the next render.
  *
  * In a browser that means a double `requestAnimationFrame` — the first frame
@@ -526,16 +513,85 @@ function afterRender(fn: () => void): void {
   setTimeout(fn, 0)
 }
 
+/** What `watch` can follow: a ref, a signal or derived, a getter, or an array of those. */
+export type WatchSource<T> = Ref<T> | (() => T)
+
+type WatchSourceValues<S extends readonly unknown[]> = {
+  [K in keyof S]: S[K] extends Ref<infer V> ? V : S[K] extends () => infer V ? V : S[K]
+}
+
+/**
+ * Watch a reactive source and run a callback when its value changes.
+ *
+ * The source is a ref, a signal or derived (`state()`/`derived()`), a getter
+ * (`() => user().id`), or an array of those. The callback gets the new value
+ * and the previous one, and runs only when the value changed (`Object.is`, or
+ * structurally with `deep`) - not when the watch is created, unless
+ * `immediate`. It runs at `flush` timing: `'post'` (the default, after the
+ * next render), `'pre'` (a microtask) or `'sync'`. Returns a stop function.
+ *
+ * The client runtime's `watch` (`window.stx.watch`, a bare `watch` in a
+ * `<script client>`) has the same contract.
+ *
+ * @example
+ * ```typescript
+ * const count = ref(0)
+ *
+ * watch(count, (newVal, oldVal) => {
+ *   console.log(`Changed from ${oldVal} to ${newVal}`)
+ * })
+ *
+ * // A getter, called back only when the id changes
+ * watch(() => user().id, id => load(id), { immediate: true })
+ *
+ * // Several sources
+ * watch([from, to], ([a, b], [oldA, oldB]) => reload(a, b))
+ * ```
+ */
+export function watch<const S extends readonly WatchSource<unknown>[]>(
+  source: S,
+  callback: WatchCallback<WatchSourceValues<S>>,
+  options?: WatchOptions,
+): () => void
 export function watch<T>(
-  source: Ref<T> | (() => T),
+  source: WatchSource<T>,
+  callback: WatchCallback<T>,
+  options?: WatchOptions,
+): () => void
+export function watch<T>(
+  source: WatchSource<T> | readonly WatchSource<unknown>[],
   callback: WatchCallback<T>,
   options: WatchOptions = {},
 ): () => void {
   const { immediate = false, deep = false, flush = 'post' } = options
+  const multi = Array.isArray(source)
 
   let oldValue: T | undefined
   let cleanup: (() => void) | undefined
   let stopped = false
+  // `immediate` calls back once whatever the value; after that, only a change does.
+  let forceNext = immediate
+
+  const read = (item: unknown): unknown => {
+    if (typeof item === 'function')
+      return (item as () => unknown)()
+    if (item && typeof item === 'object' && 'value' in item)
+      return (item as Ref<unknown>).value
+    return item
+  }
+
+  const changed = (next: T, prev: T | undefined): boolean => {
+    if (deep)
+      return !structuralEqual(next, prev)
+    if (multi) {
+      const a = next as unknown as unknown[]
+      const b = prev as unknown as unknown[] | undefined
+      if (!b || a.length !== b.length)
+        return true
+      return a.some((value, i) => !Object.is(value, b[i]))
+    }
+    return !Object.is(next, prev)
+  }
 
   const job = () => {
     if (stopped) return
@@ -545,12 +601,14 @@ export function watch<T>(
     // Deep mode uses a structural comparator that walks objects/arrays/Map/Set
     // and handles cyclic refs — JSON.stringify-based equality silently misses
     // these cases (drops undefined, loses functions, blows up on cycles).
-    const hasChanged = deep
-      ? !structuralEqual(newValue, oldValue)
-      : !Object.is(newValue, oldValue)
-
-    if (hasChanged || immediate) {
-      callback(newValue, oldValue)
+    //
+    // `immediate` forces the FIRST call only. It used to be ORed into every
+    // run, so an immediate watcher called back on every notification, equal
+    // value or not.
+    const force = forceNext
+    forceNext = false
+    if (force || changed(newValue, oldValue)) {
+      const previous = force && immediate ? undefined : oldValue
       // `structuredClone` (native) handles Date / RegExp / Map / Set / typed
       // arrays / circular refs — JSON-based clone silently mishandled all of
       // those. Fall back to identity when value can't be cloned (e.g. a
@@ -566,6 +624,9 @@ export function watch<T>(
       else {
         oldValue = newValue
       }
+      callback(newValue, previous)
+      if (options.once)
+        cleanup?.()
     }
   }
 
@@ -599,22 +660,24 @@ export function watch<T>(
   }
 
   const getValueTracking = (): T => {
-    if (typeof source === 'function') {
+    if (typeof source === 'function' || multi) {
       const prevEffect = setActiveSubscriber(onChange)
       try {
-        return source()
+        return multi
+          ? (source as readonly unknown[]).map(read) as unknown as T
+          : (source as () => T)()
       }
       finally {
         restoreActiveSubscriber(prevEffect)
       }
     }
-    return source.value
+    return (source as Ref<T>).value
   }
 
   // Subscribe to source changes
-  if (typeof source !== 'function') {
+  if (typeof source !== 'function' && !multi) {
     // For refs, the existing subscribe path is reactive without polling.
-    const unsubscribe = source.subscribe(() => {
+    const unsubscribe = (source as Ref<T>).subscribe(() => {
       scheduler(job)
     })
     cleanup = () => {
@@ -623,14 +686,21 @@ export function watch<T>(
     }
   }
   else {
-    // Function sources re-subscribe automatically inside getValueTracking().
-    // The `stopped` flag is the only teardown — existing subscribers on refs
-    // read by source() still fire onChange but bail because stopped is true.
+    // Function and array sources re-subscribe automatically inside
+    // getValueTracking(). The `stopped` flag is the only teardown — existing
+    // subscribers on refs read by the source still fire onChange but bail
+    // because stopped is true.
     cleanup = () => { stopped = true }
   }
 
   // Get initial value (also performs initial subscription for function sources)
   oldValue = getValueTracking()
+  if (deep && oldValue !== null && typeof oldValue === 'object') {
+    try {
+      oldValue = structuredClone(oldValue) as T
+    }
+    catch {}
+  }
 
   // Run immediately if requested
   if (immediate) {

@@ -3,6 +3,7 @@ import { signalsKeptRuntime } from '../../src/client/signals-kept-runtime'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import { createKeptStore, indexedDbBackend } from '../../src/offline/kept-store'
 import { createQueryCache, queryTargetMatches } from '../../src/offline/query-cache'
+import { sharedRequest } from '../../src/shared-request'
 
 function keptRuntime(): string {
   return signalsKeptRuntime(
@@ -10,6 +11,7 @@ function keptRuntime(): string {
     indexedDbBackend.toString(),
     createQueryCache.toString(),
     queryTargetMatches.toString(),
+    sharedRequest.toString(),
   )
 }
 

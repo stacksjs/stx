@@ -28,6 +28,14 @@ stx provides test utilities for component testing:
 import { mount, shallowMount } from '@stacksjs/stx/test-utils'
 ```
 
+## Testing native screens
+
+A native screen (`@stacksjs/stx/native`) is tested on a fake phone:
+`mountNativeScreen(code, screen, options)` from `@stacksjs/stx/native/testing`
+runs the compiled bundle in a vm against a fake `craft` and host, and returns
+the tree it draws plus `press`, `type`, `settle`, `requests` and the rest. See
+[Native Screens: Testing screens](./native.md#testing-screens).
+
 ## Testing reactive directives (DOM runtime shim)
 
 The client signals runtime — the engine behind `:if` / `:else` / `:for` /

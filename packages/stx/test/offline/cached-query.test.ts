@@ -10,6 +10,7 @@ import { createKeptStore } from '../../src/offline/kept-store'
 import { createQueryCache, queryTargetMatches } from '../../src/offline/query-cache'
 import { useOutbox } from '../../src/composables/use-outbox'
 import { state } from '../../src/signals-api'
+import { sharedRequest } from '../../src/shared-request'
 
 class MemoryStorage {
   data = new Map<string, string>()
@@ -37,7 +38,7 @@ interface Server { calls: Array<{ url: string, init: RequestInit }>, answer: (ur
 
 function setUp(storage = new MemoryStorage(), backend = memoryBackend()) {
   const kept = createKeptStore({ storage, backend, defer: fn => fn() })
-  const cache = createQueryCache({ state: state as any, kept, matches: queryTargetMatches })
+  const cache = createQueryCache({ state: state as any, kept, matches: queryTargetMatches, sharedRequest })
   const server: Server = { calls: [], answer: () => ({}), delay: 0, fail: false }
   const fetch = async (url: string, init: RequestInit): Promise<Response> => {
     server.calls.push({ url, init })
@@ -91,8 +92,65 @@ describe('cachedQuery', () => {
     const a = cache.cachedQuery('shared', { url: '/api/shared', fetch, scope: 1 })
     const b = cache.cachedQuery('shared', { url: '/api/shared', fetch, scope: 1 })
     expect(a).toBe(b)
-    await Promise.all([a.load(), b.load(), a.load(true)])
+    await Promise.all([a.load(), b.load(), a.load()])
     expect(server.calls.length).toBe(1)
+  })
+
+  it('does not answer a refresh with a request that was already out: it asks once more after it', async () => {
+    const { cache, server } = setUp()
+    let version = 1
+    // Read when the request reaches the server, answered a moment later.
+    const send = async (url: string, init: RequestInit): Promise<Response> => {
+      server.calls.push({ url, init })
+      const read = { version }
+      await new Promise(resolve => setTimeout(resolve, 20))
+      return new Response(JSON.stringify(read), { status: 200 })
+    }
+    const q = cache.cachedQuery('fresh', { url: '/api/fresh', fetch: send, scope: 1 })
+    const ordinary = q.load()
+    // The change the refresh has to show lands after the first request was read.
+    await new Promise(resolve => setTimeout(resolve, 5))
+    version = 2
+    const pulled = q.refresh()
+    const again = q.refresh()
+    expect(await ordinary).toEqual({ version: 1 })
+    expect(await pulled).toEqual({ version: 2 })
+    expect(await again).toEqual({ version: 2 })
+    // One rerun for both refreshes, sent after the first answer.
+    expect(server.calls.length).toBe(2)
+    expect(server.calls[1]!.init.cache).toBe('no-cache')
+    expect(q.isFetching()).toBe(false)
+  })
+
+  it('never answers a changed url() with the old URL\'s data', async () => {
+    const { cache, server, fetch } = setUp()
+    server.delay = 20
+    server.answer = url => ({ url })
+    const month = { value: '/api/month?m=1' }
+    const q = cache.cachedQuery('month', { url: () => month.value, fetch, scope: 1 })
+    const first = q.load()
+    month.value = '/api/month?m=2'
+    const second = q.load()
+    await Promise.all([first, second])
+    expect(server.calls.map(call => call.url)).toEqual(['/api/month?m=1', '/api/month?m=2'])
+    expect(q.data()).toEqual({ url: '/api/month?m=2' })
+  })
+
+  it('keeps the answer for the URL it reads when an older one lands last', async () => {
+    const { cache, server, fetch } = setUp()
+    const slow: Record<string, number> = { '/api/day?d=1': 40, '/api/day?d=2': 5 }
+    const send = async (url: string, init: RequestInit): Promise<Response> => {
+      server.calls.push({ url, init })
+      await new Promise(resolve => setTimeout(resolve, slow[url]))
+      return new Response(JSON.stringify({ url }), { status: 200 })
+    }
+    const day = { value: '/api/day?d=1' }
+    const q = cache.cachedQuery('day', { url: () => day.value, fetch: send, scope: 1 })
+    const first = q.load()
+    day.value = '/api/day?d=2'
+    await q.load()
+    await first
+    expect(q.data()).toEqual({ url: '/api/day?d=2' })
   })
 
   it('goes past every cache for a refresh', async () => {

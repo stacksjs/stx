@@ -21,11 +21,12 @@
  *
  * Closure-free: the browser runtime embeds `createQueryCache` and
  * `queryTargetMatches` by source (signals.ts), so neither may use anything
- * from this module's scope. The signal implementation and the kept store are
- * passed in.
+ * from this module's scope. The signal implementation, the kept store and
+ * `sharedRequest` (shared-request.ts) are passed in.
  */
 
 import type { KeptStore } from './kept-store'
+import type { SharedRequest, SharedRequestOptions } from '../shared-request'
 
 /** The part of a signal this needs. */
 export interface QuerySignal<T> {
@@ -92,6 +93,8 @@ export interface CachedQuery<T> {
 export interface QueryCacheEnv {
   state: <T>(value: T) => QuerySignal<T>
   kept: KeptStore
+  /** `sharedRequest` (shared-request.ts): how one request answers every caller. */
+  sharedRequest: <K, T>(options?: SharedRequestOptions<K>) => SharedRequest<K, T>
   /** Where kept values live, as `keptState` names them. Default 'stx:kept:'. */
   prefix?: string
   /** Listen for `stx:updated` and `stx:outbox` on window. Default true. */
@@ -234,7 +237,11 @@ export function createQueryCache(env: QueryCacheEnv): QueryCache {
       let scope = scopeNow()
       let base: T = initial
       let fetchedAt = 0
-      let inflight: Promise<T> | null = null
+      // Keyed by the scope generation and the URL: a request for another URL,
+      // or one sent before signing in as someone else, is never joined.
+      const requests = env.sharedRequest<string, T>()
+      // Requests out in this generation, for isFetching / loading.
+      let out = 0
       const seeded = cache.seed(key, scope)
       if (seeded)
         base = seeded.data as T
@@ -268,7 +275,9 @@ export function createQueryCache(env: QueryCacheEnv): QueryCache {
           return
         scope = now
         generation++
-        inflight = null
+        out = 0
+        isFetching.set(false)
+        loading.set(false)
         fetchedAt = 0
         const found = cache.seed(key, scope)
         base = found ? found.data as T : initial
@@ -278,8 +287,7 @@ export function createQueryCache(env: QueryCacheEnv): QueryCache {
           restoreFrom(scope)
       }
 
-      const request = (force: boolean): Promise<T> => {
-        const url = urlNow()
+      const request = (force: boolean, url: string | null): Promise<T> => {
         const timeout = opts.timeoutMs || 15000
         const controller = typeof AbortController !== 'undefined' ? new AbortController() : null
         let timer: ReturnType<typeof setTimeout> | null = null
@@ -326,39 +334,58 @@ export function createQueryCache(env: QueryCacheEnv): QueryCache {
         })
       }
 
+      /*
+       * One request for every caller, through sharedRequest. An ordinary load
+       * joins one already out for the same URL; a forced one (a pull to
+       * refresh, an outbox write reaching the server) never joins: it waits
+       * out a request that may predate the change and asks once more. Both
+       * used to join whatever was in flight, so a refresh answered with the
+       * copy from before, and a load for a changed url() was answered with the
+       * old URL's data.
+       */
       const run = (force: boolean): Promise<T> => {
-        if (inflight)
-          return inflight
         const asked = generation
-        isFetching.set(true)
-        if (fetchedAt === 0 && !updatedAt())
-          loading.set(true)
-        const done = (): void => {
+        const url = urlNow()
+        const start = (): Promise<T> => {
           if (asked !== generation)
-            return
-          inflight = null
-          isFetching.set(false)
-          loading.set(false)
-        }
-        const promise = request(force).then((value) => {
-          if (asked !== generation)
+            return Promise.resolve(data())
+          out++
+          isFetching.set(true)
+          if (fetchedAt === 0 && !updatedAt())
+            loading.set(true)
+          const done = (): void => {
+            if (asked !== generation)
+              return
+            out = Math.max(0, out - 1)
+            if (!out) {
+              isFetching.set(false)
+              loading.set(false)
+            }
+          }
+          return request(force, url).then((value) => {
+            // Another account's data by now, or an answer for a URL the query
+            // no longer reads: not what to show.
+            if (asked !== generation || url !== urlNow()) {
+              done()
+              return data()
+            }
+            base = value
+            fetchedAt = Date.now()
+            updatedAt.set(fetchedAt)
+            error.set(null)
+            cache.persist(key, value, scope)
+            show()
+            done()
             return data()
-          base = value
-          fetchedAt = Date.now()
-          updatedAt.set(fetchedAt)
-          error.set(null)
-          cache.persist(key, value, scope)
-          show()
-          done()
-          return data()
-        }, (cause) => {
-          if (asked === generation)
-            error.set(cause && cause.message ? cause.message : 'Could not load.')
-          done()
-          return data()
-        })
-        inflight = promise
-        return promise
+          }, (cause) => {
+            if (asked === generation && url === urlNow())
+              error.set(cause && cause.message ? cause.message : 'Could not load.')
+            done()
+            return data()
+          })
+        }
+        const at = `${asked} ${url || ''}`
+        return force ? requests.fresh(at, start) : requests.run(at, start)
       }
 
       const query: CachedQuery<T> & { __options: (o: CachedQueryOptions<T>) => void } = {

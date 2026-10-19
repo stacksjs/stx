@@ -1,5 +1,5 @@
 import type { DerivedSignal, Signal } from '@stacksjs/stx'
-import { derived, effect, state } from '@stacksjs/stx'
+import { derived, effect, sharedRequest, state } from '@stacksjs/stx'
 import { useBroadcastStream } from '@stacksjs/stx/composables/use-broadcast-stream'
 
 export interface ChatContact { id: number, name: string, role: string, avatar?: string | null, href?: string | null }
@@ -118,25 +118,20 @@ export function createChat(options: ChatOptions): ChatController {
     }
   }
   /*
-   * The conversation list request in flight. Every component showing the chat
-   * (a launcher, an inbox, a badge) loads it on mount; they now share one
-   * request instead of each sending its own.
+   * The conversation list request in flight, keyed by version. Every component
+   * showing the chat (a launcher, an inbox, a badge) loads it on mount; they
+   * share one request instead of each sending its own.
    */
-  let listLoad: { promise: Promise<void>, version: number } | null = null
+  const list = sharedRequest<number, void>()
   function load(): Promise<void> {
     checkScope()
-    if (listLoad && listLoad.version === version) return listLoad.promise
-    const promise: Promise<void> = loadList().finally(() => {
-      if (listLoad?.promise === promise) listLoad = null
-      flushInvalidation()
-    })
-    listLoad = { promise, version }
-    return promise
+    // flushInvalidation runs once the request is off the list (list.busy false).
+    return list.run(version, () => loadList()).finally(flushInvalidation)
   }
   /** A list read after now: waits out one already in flight, which may predate the change. */
   async function loadFresh() {
-    if (listLoad) await listLoad.promise
-    await load()
+    checkScope()
+    await list.fresh(version, () => loadList()).finally(flushInvalidation)
   }
   async function loadList() {
     const token = checkScope()
@@ -225,7 +220,7 @@ export function createChat(options: ChatOptions): ChatController {
   let invalidated = false
   async function reconcile() {
     // A list load in flight may have been read before this change: reload once it lands.
-    if (refreshing || listLoad || sending() || threadLoading()) { invalidated = true; return }
+    if (refreshing || list.busy || sending() || threadLoading()) { invalidated = true; return }
     await refresh([...observers].some(active => active()))
   }
   function connect() {

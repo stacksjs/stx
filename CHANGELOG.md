@@ -1,5 +1,29 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.574...v0.2.575)
+
+## ✨ Features
+
+- **native**: publish @stacksjs/stx/native/testing ([65114dd](https://github.com/stacksjs/stx/commit/65114dd)) _(by Chris Breuer <chris@stacksjs.com>)_
+- add sharedRequest; cachedQuery no longer joins stale requests ([43e3b2a](https://github.com/stacksjs/stx/commit/43e3b2a)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: real notification/selection haptics that never reject ([d858d69](https://github.com/stacksjs/stx/commit/d858d69)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **signals**: client watch matches the module, add memo, fix untrack ([c2d62cf](https://github.com/stacksjs/stx/commit/c2d62cf)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 📝 Documentation
+
+- watch, memo, untrack, cachedQuery, sharedRequest, native testing ([8daa6a8](https://github.com/stacksjs/stx/commit/8daa6a8)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.575 ([0b327be](https://github.com/stacksjs/stx/commit/0b327be)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.573...v0.2.574)
 
 ## 🐛 Bug Fixes

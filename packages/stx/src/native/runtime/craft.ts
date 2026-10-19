@@ -189,12 +189,18 @@ export interface NativeCraft {
   secureStorage: NativeSecureStorage
   snapshots: NativeSnapshots
   appearance: { colorScheme: () => 'light' | 'dark' }
+  /** Feedback only: every call resolves, on every host (none of them rejects). */
   haptics: {
-    impact: (style?: string) => Promise<void>
+    impact: (style?: 'light' | 'medium' | 'heavy' | 'soft' | 'rigid' | (string & {})) => Promise<void>
+    /** The host's notification haptic; an impact on a host without one. */
     notification: (type?: 'success' | 'warning' | 'error') => Promise<void>
+    /** The host's selection haptic; a soft impact on a host without one. */
     selection: () => Promise<void>
+    /** Warm the engine so the next haptic plays at once: `impact`, `notification`, `selection`, a weight, or all. */
+    prepare: (kind?: string) => Promise<void>
   }
-  haptic: (style?: string) => Promise<unknown>
+  /** An impact (`haptics.impact`). Resolves whatever the host says. */
+  haptic: (style?: string) => Promise<void>
   clipboard: { write: (text: string) => Promise<unknown>, read: () => Promise<string> }
   device: { getInfo: () => Promise<Record<string, unknown>> }
   biometrics: {

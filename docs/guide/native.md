@@ -173,7 +173,18 @@ bootable simulator. The Android command requires the Android SDK, Gradle and a
 bootable emulator. A host build failure is not evidence that STX fell back to a
 WebView; inspect the generated host error instead.
 
-Inside a native screen's `<script>`, the JavaScriptCore bridge exposes `craft.device.getInfo()`, `craft.clipboard.write(text)`, `craft.clipboard.read()`, `craft.haptic(style)`, and high-level `craft.haptics.impact(style)`, `.notification(type)`, and `.selection()`. Calls return promises. Rejections retain a `code` such as `CAPABILITY_DISABLED` or `INVALID_ARGUMENT`; the high-level haptics helpers intentionally treat `CAPABILITY_DISABLED` as a no-op, matching Craft's web bridge. The generated app must enable haptics and clipboard in its Craft config before those capabilities perform work.
+Inside a native screen's `<script>`, the JavaScriptCore bridge exposes `craft.device.getInfo()`, `craft.clipboard.write(text)`, `craft.clipboard.read()`, `craft.haptic(style)`, and high-level `craft.haptics.impact(style)`, `.notification(type)`, `.selection()` and `.prepare(kind)`. Calls return promises. Rejections retain a `code` such as `CAPABILITY_DISABLED` or `INVALID_ARGUMENT`. The generated app must enable haptics and clipboard in its Craft config before those capabilities perform work.
+
+Haptics are feedback, never an outcome, so every haptics call resolves: none of `craft.haptic`, `craft.haptics.impact`, `.notification`, `.selection` or `.prepare` rejects, whatever the host answers (`UNSUPPORTED`, `CAPABILITY_DISABLED`, an unknown action, a timeout). A screen calls them without `?.catch?.(() => {})`. `notification('success' | 'warning' | 'error')` and `selection()` play the host's own notification and selection haptics (`UINotificationFeedbackGenerator` and `UISelectionFeedbackGenerator` on Craft iOS); a host that answers `UNKNOWN_ACTION` gets the impact they used to be (light, medium or heavy for a notification, soft for a selection) and is not asked again. `prepare(kind)` warms the engine before a haptic that has to land at once (a timer's last second).
+
+```html
+<script>
+async function done() {
+  await save()
+  craft.haptics.notification('success') // no catch needed
+}
+</script>
+```
 
 When the host advertises the `fetch` capability (Craft's iOS host does), the bundle installs a global `fetch` with the common subset: `method`, `headers`, a string `body`, and a response with `ok`, `status`, `statusText`, `url`, `headers.get()`, `text()` and `json()`. The host performs the request under the same request deadline as the other capabilities; transport failures reject with a `TypeError` carrying a `code`. Set a signal from a promise continuation to update native bindings, exactly as on the web.
 
@@ -259,6 +270,65 @@ containing `ScrollView`, so the host can preserve focus, caret and scroll
 position while the row's event scope continues to identify the same item.
 `scrollTarget` is the portable explicit scroll command; automatic virtualization
 remains host-specific.
+
+### Testing screens
+
+`@stacksjs/stx/native/testing` runs a compiled screen on a fake phone in a vm:
+a fake `craft`, and a host that applies the mutation protocol the way Craft's
+Swift host does. A test reads the tree the phone would draw, presses what a
+person would press, and sees what the screen asked of the network and the host.
+
+```ts
+import { expect, it } from 'bun:test'
+import { compileNativeBundle } from '@stacksjs/stx/native'
+import { mountNativeScreen, status } from '@stacksjs/stx/native/testing'
+
+it('shows today\'s sessions', async () => {
+  const { code } = await compileNativeBundle({ root, screens: { Today: 'screens/Today.stx' }, minify: true })
+  const phone = mountNativeScreen(code, 'Today', {
+    apiBase: 'https://fixture.invalid/api',
+    api: path => path === '/today' ? { sessions: [{ title: 'Easy run' }] } : status(404),
+    secureStorage: { 'auth.token': 'fixture-token' },
+    snapshots: { header: { name: 'Ada' } },
+    capabilities: ['haptics'],
+  })
+  await phone.settle()
+  expect(phone.texts()).toContain('Easy run')
+  expect(phone.requests).toEqual(['GET /today'])
+  phone.press(phone.byTestID('refresh')!)
+  await phone.waitFor(() => phone.requests.length === 2, 'the refresh')
+})
+```
+
+For a screen written inline, `compileNativeScreen(source)` compiles it.
+
+| Option | What it is |
+|--------|-----------|
+| `api(path, init)` | The API's answer for a path below `apiBase` (or the whole URL): data, `status(code, body)`, `undefined` for a 404, or a promise for an answer still on its way |
+| `apiBase`, `requestLabel` | Where the API is; how `requests` records each one (default `GET /path`, ` (guest)` without an `Authorization` header) |
+| `snapshots`, `snapshotWrite` | What `craft.snapshots` holds; a write that fails |
+| `secureStorage` (or `keychain`), `storage` | The keychain and Craft's app storage |
+| `capabilities`, `native(module, method, args)` | What the host says it can do, and its answer to each capability request (throw `{ code }` for an error) |
+| `offline()`, `stream(path)` | Airplane mode; the answer to an event-stream request that is refused |
+| `platform`, `colorScheme`, `params`, `initialAppState`, `appURL`, `files`, `dialog`, `globals`, `craft` | The phone, the screen's params, the photo picker, sheets, extra globals, and `craft` members to add |
+
+What it returns:
+
+| Member | What it does |
+|--------|-------------|
+| `all()`, `find(fn)`, `byTestID(id)`, `ofType(type)`, `texts()` | Read the tree |
+| `press(node, event?, nativeEvent?)`, `type(node, text)`, `tapBar(id)`, `barButtons()` | Act as the person does |
+| `settle(ms?)`, `waitFor(check, description)` | Let the screen catch up: until no request is out and none was answered in the last `ms` |
+| `appState(state)`, `background()`, `resume()`, `appear()`, `disappear()`, `newParams(params)`, `appearance(scheme)`, `keepSnapshot(name, value)`, `craftEvent(event, detail)`, `send(type, payload)` | What the host tells the screen |
+| `setOnline(online)` | Airplane mode on and off |
+| `requests`, `headers`, `natives`, `messages`, `operations()`, `opened`, `replaced`, `moves`, `bars`, `alerts`, `animations`, `streams`, `snapshots`, `secureStorage`, `stored`, `context` | What the screen did, and the vm it runs in |
+| `unmount()`, `ended` | End the screen |
+
+A screen ends when its test does (an `afterEach` the module registers under
+`bun test`), or at `unmount()`, as it does on a phone: its own unmount runs,
+then no timer fires, every request fails as with no network, every stream closes
+and no message reaches it. An app keeps its own seeding (header or app
+snapshots, a signed-in token) in a small wrapper that passes them as options.
 
 ### Simulator validation
 

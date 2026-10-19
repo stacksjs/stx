@@ -325,8 +325,11 @@ stx includes a built-in signals system for client-side reactivity. Define reacti
 
 - `state(initialValue)` — creates a reactive signal. Read with `signal()`, write with `signal.set(value)`
 - `derived(fn)` — creates a computed value that auto-tracks dependencies
+- `memo(fn, equals?)` / `derived(fn, { equals })` — a computed value that reaches its readers only when it changes
 - `effect(fn)` — runs a side effect whenever its tracked signals change
+- `watch(source, (next, prev) => …, { immediate?, deep?, flush? })` — calls back when a signal, getter or array of them changes
 - `batch(fn)` — batches multiple signal updates into a single re-render
+- `sharedRequest()` — one request for every caller (`run`), a load after a change (`fresh`), only the newest answer (`latest`)
 
 #### Dynamic Class Binding (`:class`)
 

@@ -64,5 +64,4 @@ export const SIGNALS_REACTIVE_RUNTIME = `  // Vue-compat aliases
     return proxy;
   }
   var computed = derived;
-  var watch = $watch;
   var watchEffect = function(fn) { return effect(fn); };`

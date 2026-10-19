@@ -52,7 +52,7 @@ Signals use `Object.is()` for equality — setting the same value does not trigg
 ### derived
 
 ```typescript
-derived<T>(compute: () => T): DerivedSignal<T>
+derived<T>(compute: () => T, options?: { equals?: (previous: T, next: T) => boolean }): DerivedSignal<T>
 ```
 
 Creates a read-only computed signal that recomputes when its dependencies change.
@@ -79,6 +79,39 @@ const evenItems = derived(() => items().filter(n => n % 2 === 0))
 | `signal._isDerived` | `true` (readonly) | Internal marker |
 
 Derived signals are lazy — they only recompute when read after a dependency changes.
+
+Without `equals`, every change upstream reaches what reads the derived, even
+when it computes the same value again. With `equals`, a change upstream
+recomputes it at once (while anything reads it) and its readers run only when
+`equals(previous, next)` is false:
+
+```html
+<script>
+const items = state([1, 2])
+// Re-renders only when the count changes, not on every new array.
+const count = derived(() => items().length, { equals: Object.is })
+</script>
+```
+
+### memo
+
+```typescript
+memo<T>(compute: () => T, equals?: (previous: T, next: T) => boolean): DerivedSignal<T>
+```
+
+A derived value that reaches its readers only when it changes: `Object.is`, or
+the `equals` given. Short for `derived(compute, { equals })`.
+
+```html
+<script>
+const user = state({ id: 1, name: 'Ada' })
+const userId = memo(() => user().id)
+
+effect(() => loadProfile(userId())) // runs once
+user.set({ id: 1, name: 'Ada L.' })  // same id: the effect does not run again
+user.set({ id: 2, name: 'Grace' })   // runs again
+</script>
+```
 
 ### effect
 
@@ -161,7 +194,24 @@ Type guard to check if a value is a derived signal.
 untrack<T>(value: T | Signal<T> | DerivedSignal<T>): T
 ```
 
-Unwraps a signal to get its raw value. If not a signal, returns as-is.
+Reads a signal (or derived) without subscribing the running effect to it.
+Anything that is not a signal is returned as it is. For several reads at once,
+use `peek`.
+
+```html
+<script>
+const count = state(0)
+const step = state(1)
+
+effect(() => {
+  // Re-runs when count changes; a new step is used next time, without re-running.
+  console.log(count() + untrack(step))
+})
+</script>
+```
+
+Before 0.2.575 `untrack` read the signal *tracked*, so an effect calling it
+still re-ran on every change.
 
 ### peek
 
@@ -182,6 +232,57 @@ effect(() => {
 })
 </script>
 ```
+
+### watch
+
+```typescript
+watch<T>(
+  source: Signal<T> | DerivedSignal<T> | (() => T) | object | Array<Signal<unknown> | (() => unknown)>,
+  callback: (next: T, previous: T | undefined, onCleanup: (fn: () => void) => void) => void,
+  options?: { immediate?: boolean, deep?: boolean, flush?: 'post' | 'pre' | 'sync', once?: boolean },
+): () => void
+```
+
+Calls back with the new and the previous value when the source's value
+changes. The source is a signal, a derived, a getter, a reactive object, or an
+array of those (the callback then gets arrays). Returns a stop function. The
+same contract in a `<script client>` block and from `import { watch } from
+'@stacksjs/stx'`.
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `immediate` | `false` | Also call back once at creation, with `previous` undefined |
+| `deep` | `false` (`true` for a reactive object) | Compare structurally instead of with `Object.is`, so an equal copy is not a change |
+| `flush` | `'post'` | `'post'` calls back after the next render, `'pre'` on a microtask, `'sync'` inside the change. Changes before a deferred call land as one call with the latest value |
+| `once` | `false` | Stop after the first call |
+
+```html
+<script>
+const user = state({ id: 1, name: 'Ada' })
+
+// Only when the id changes, not for every new user object.
+watch(() => user().id, (id, previous) => loadProfile(id))
+
+// Also at once, for the value it starts with.
+watch(trainerId, id => loadAvailability(id), { immediate: true })
+
+// Several sources.
+watch([from, to], ([start, end]) => reload(start, end))
+</script>
+```
+
+The callback is untracked: what it reads does not become something the watch
+follows. A callback that throws is reported and the watch keeps going.
+
+::: warning Changed in 0.2.575
+The client `watch` used to be an alias of `$watch`. With a getter it called back
+once with the getter itself and never again; with a signal it called back at
+creation, with no previous value, and again on every write, equal or not. It
+now matches the module `watch` (and Vue): no call at creation unless
+`immediate`, `(next, previous)`, only on a change. A caller that relied on the
+call at creation passes `{ immediate: true }`. `$watch(deps, fn)` keeps its old
+behaviour.
+:::
 
 ## Lifecycle
 
@@ -567,6 +668,95 @@ function createUser() {
 | `error` | `Signal<string \| null>` | Error message |
 | `mutate` | `(body: any) => Promise<T>` | Execute the mutation |
 | `reset` | `() => void` | Reset data, error, and loading state |
+
+### cachedQuery
+
+```typescript
+cachedQuery<T>(key: string, options?: CachedQueryOptions<T>): CachedQuery<T>
+```
+
+Data a screen shows at once from last time, refreshed behind, kept per signed-in
+account (`setKeptScope`). Calling it again with the same key returns the same
+query.
+
+```html
+<script>
+const calendar = cachedQuery('calendar', {
+  url: () => '/api/calendar?month=' + month(),
+  scope: () => auth.user()?.id,
+  staleTime: 2 * 60_000,
+  initial: {},
+})
+calendar.data()          // last time's calendar, at once
+await calendar.load()    // fetched again when older than staleTime
+await calendar.refresh() // a pull to refresh: past every cache
+</script>
+```
+
+| Member | Description |
+|--------|-------------|
+| `data` / `loading` / `isFetching` / `error` / `updatedAt` | Signals |
+| `load(force?)` | Fetch when stale. Callers share one request for the same URL |
+| `refresh()` | Fetch now. Never joins a request already out: it waits for it and asks once more |
+| `set(value)` / `invalidate()` | A local edit, kept like an answer / count the data as stale |
+
+A request for another `url()` is never answered by one for the URL before, and
+an answer for a URL the query no longer reads is not shown. Writes waiting in
+the outbox with `affects: [key or url]` stay applied on top of `data()` until
+they reach the server.
+
+### sharedRequest
+
+```typescript
+sharedRequest<K = string, T = unknown>(options?: { covers?: (running: K, wanted: K) => boolean }): {
+  run: (key: K, start: () => Promise<T>) => Promise<T>
+  fresh: (key: K, start: () => Promise<T>) => Promise<T>
+  latest: () => () => boolean
+  readonly busy: boolean
+}
+```
+
+One request for every caller that wants the same answer: the in-flight
+bookkeeping a store otherwise writes by hand. `cachedQuery` and the
+`@stacksjs/components` chat are built on it.
+
+| Member | Description |
+|--------|-------------|
+| `run(key, start)` | Join a request in flight whose key covers `key` (or a `fresh` rerun waiting to start), or start one |
+| `fresh(key, start)` | Never joins. If a request for `key` is out, waits for it to settle (it may predate a change just made) and starts once more; calls made meanwhile share that one rerun |
+| `latest()` | A checker that stays true until `latest()` is called again: replaces `const mine = ++request` counters |
+| `busy` | True while a request is out or a rerun is waiting |
+| `covers` | Whether a running key answers a wanted one (default `Object.is`), e.g. a month's request answering for one of its days |
+
+```html
+<script>
+const list = sharedRequest()
+
+function load() {
+  // Every component that mounts at once shares one request.
+  return list.run(url(), () => fetch(url()).then(r => r.json()))
+}
+async function save(row) {
+  await fetch('/api/rows', { method: 'POST', body: JSON.stringify(row) })
+  // A load already out was read before the save: wait for it, then ask again.
+  rows.set(await list.fresh(url(), () => fetch(url()).then(r => r.json())))
+}
+async function search(q) {
+  const isLatest = list.latest()
+  const found = await list.run('/api/search?q=' + q, () => fetch('/api/search?q=' + q).then(r => r.json()))
+  if (isLatest()) results.set(found) // an older search that lands last is dropped
+}
+</script>
+```
+
+Replacing hand-written in-flight code:
+
+| Before | After |
+|--------|-------|
+| `if (inflight) return inflight; inflight = start().finally(() => inflight = null)` | `shared.run(key, start)` |
+| `if (inflight) await inflight; return load()` | `shared.fresh(key, start)` |
+| `const mine = ++request; …; if (mine !== request) return` | `const isLatest = shared.latest(); …; if (!isLatest()) return` |
+| `if (inflight) { pending = true; return }` | `if (shared.busy) { pending = true; return }` |
 
 ### useAsync
 
@@ -1278,4 +1468,4 @@ const theme = window.theme
 ## Cross-References
 
 - **defineStore / useStore** — See [Stores Reference](./stores.md) for full store documentation
-- **Vue compatibility aliases**: `ref` = `state`, `reactive` = `state`, `computed` = `derived`, `watchEffect` = `effect`
+- **Vue compatibility aliases**: `ref` = `state`, `computed` = `derived`, `watchEffect` = `effect`; `reactive` is a per-property proxy and `watch` is described above

@@ -68,9 +68,18 @@ type StxCleanup = () => void
 // ============================================================================
 
 declare function state<T>(_initial: T): StxSignal<T>
-declare function derived<T>(_compute: () => T): StxDerivedSignal<T>
+/**
+ * A computed value. With `equals`, a change upstream recomputes it at once
+ * (while anything reads it) and reaches its readers only when
+ * `equals(previous, next)` is false; without it, it is lazy and every upstream
+ * change reaches them.
+ */
+declare function derived<T>(_compute: () => T, _options?: { equals?: (_previous: T, _next: T) => boolean }): StxDerivedSignal<T>
+/** A derived value that reaches its readers only when it changes (`Object.is`, or `equals`). */
+declare function memo<T>(_compute: () => T, _equals?: (_previous: T, _next: T) => boolean): StxDerivedSignal<T>
 declare function effect(_fn: () => void | StxCleanup): StxCleanup
 declare function batch(_fn: () => void): void
+/** Read a signal without subscribing the running effect to it; anything else is returned as it is. */
 declare function untrack<T>(_value: T | StxSignal<T> | StxDerivedSignal<T>): T
 declare function peek<T>(_fn: () => T): T
 declare function isSignal(value: unknown): value is StxSignal<unknown>
@@ -536,6 +545,19 @@ interface StxCachedQuery<T> {
 /** Data kept per account, shown at once from last time and refreshed behind. Same key, same query. */
 declare function cachedQuery<T = any>(_key: string, _options?: StxCachedQueryOptions<T>): StxCachedQuery<T>
 
+/** One request for every caller that wants the same answer: see shared-request.ts. */
+interface StxSharedRequest<K, T> {
+  /** Join a request in flight whose key covers `key` (or a waiting fresh rerun), or start one. */
+  run: (_key: K, _start: () => Promise<T>) => Promise<T>
+  /** Never joins: waits out a request in flight for `key`, then starts once more (one rerun for every caller meanwhile). */
+  fresh: (_key: K, _start: () => Promise<T>) => Promise<T>
+  /** A checker that stays true until latest() is called again. */
+  latest: () => () => boolean
+  /** True while a request is out or a fresh rerun is waiting. */
+  readonly busy: boolean
+}
+declare function sharedRequest<K = string, T = any>(_options?: { covers?: (_running: K, _wanted: K) => boolean }): StxSharedRequest<K, T>
+
 /**
  * Options accepted by the auto-imported `useCookie` global.
  *
@@ -698,10 +720,36 @@ declare function definePageMeta(_meta: Record<string, unknown>): void
 declare function ref<T>(_value: T): StxRef<T>
 declare function reactive<T extends object>(_target: T): T
 declare function computed<T>(_getter: () => T): StxRef<T>
+type StxWatchSource<T> = (() => T) | StxRef<T> | StxSignal<T> | StxDerivedSignal<T>
+interface StxWatchOptions {
+  /** Call back at once with the current value (and no previous one). */
+  immediate?: boolean
+  /** Compare structurally rather than with Object.is (a reactive object source is deep by default). */
+  deep?: boolean
+  /** When to call back: after the next render ('post', the default), on a microtask ('pre') or inside the change ('sync'). */
+  flush?: 'post' | 'pre' | 'sync'
+  /** Stop after the first call. */
+  once?: boolean
+}
+/**
+ * Call back with (next, previous) when the source's value changes - not at
+ * creation unless `immediate`. The source is a signal, derived, getter,
+ * reactive object, or an array of those. Returns a stop function.
+ */
+declare function watch<const S extends readonly StxWatchSource<unknown>[]>(
+  _source: S,
+  _callback: (_value: { [K in keyof S]: S[K] extends StxWatchSource<infer V> ? V : never }, _oldValue: { [K in keyof S]: S[K] extends StxWatchSource<infer V> ? V : never } | undefined, _onCleanup: (_fn: () => void) => void) => void,
+  _options?: StxWatchOptions,
+): StxCleanup
 declare function watch<T>(
-  _source: (() => T) | StxRef<T> | StxSignal<T>,
-  _callback: (value: T, oldValue: T) => void,
-  _options?: { immediate?: boolean, deep?: boolean },
+  _source: StxWatchSource<T>,
+  _callback: (_value: T, _oldValue: T | undefined, _onCleanup: (_fn: () => void) => void) => void,
+  _options?: StxWatchOptions,
+): StxCleanup
+declare function watch<T extends object>(
+  _source: T,
+  _callback: (_value: T, _oldValue: T | undefined, _onCleanup: (_fn: () => void) => void) => void,
+  _options?: StxWatchOptions,
 ): StxCleanup
 declare function watchEffect(_fn: () => void): StxCleanup
 declare function watchMultiple(
@@ -909,6 +957,7 @@ interface StxRuntimeRegistry {
   // Signals
   state: typeof state
   derived: typeof derived
+  memo: typeof memo
   effect: typeof effect
   batch: typeof batch
   untrack: typeof untrack
@@ -980,6 +1029,7 @@ interface StxRuntimeRegistry {
   setKeptScope: typeof setKeptScope
   flushKeptState: typeof flushKeptState
   cachedQuery: typeof cachedQuery
+  sharedRequest: typeof sharedRequest
   useEventListener: typeof useEventListener
   useScrollLock: typeof useScrollLock
   useWebSocket: typeof useWebSocket

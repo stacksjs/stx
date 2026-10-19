@@ -97,6 +97,8 @@ export {
   type CachedQueryOptions,
   type KeptScope,
 } from './use-cached-query'
+// One request for every caller that wants the same answer
+export { sharedRequest, type SharedRequest, type SharedRequestOptions } from '../shared-request'
 export {
   useOutbox,
   type Outbox,

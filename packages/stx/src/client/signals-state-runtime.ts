@@ -67,42 +67,69 @@ export const SIGNALS_STATE_RUNTIME = `  // =====================================
   // Derived Signal
   // ==========================================================================
 
-  function derived(compute) {
+  // derived(compute, { equals }): with equals, a change upstream recomputes
+  // the value at once (when anything reads it) and passes the change on only
+  // when equals(previous, next) is false, so an effect over
+  // derived(() => user().id) does not run again for a new user object with the
+  // same id. Without it the value is lazy and every upstream change is passed
+  // on, as before. memo(compute, equals) is the short form.
+  function derived(compute, options) {
     let cached;
     let isDirty = true;
+    let hasValue = false;
     const effects = new Set();
+    const equals = options && typeof options.equals === 'function' ? options.equals : null;
+
+    function recompute() {
+      const prev = activeEffect;
+      activeEffect = markDirty;
+      effectStack.push(markDirty);
+      try {
+        cached = compute();
+        hasValue = true;
+      }
+finally {
+        effectStack.pop();
+        activeEffect = prev;
+      }
+      isDirty = false;
+    }
+
+    // Recompute now and say whether the value changed. A compute that throws
+    // counts as a change: the reader recomputes and sees the error.
+    function changedNow() {
+      const before = cached;
+      const had = hasValue;
+      try { recompute(); }
+      catch (e) { isDirty = true; return true; }
+      return !had || !equals(before, cached);
+    }
 
     // Passes a change on to what read this value. A signal's notification
     // collects through it (_stxCollect) instead of calling it, so an effect
     // reached both directly and through here still runs once.
     const markDirty = () => {
-      if (!isDirty) {
-        isDirty = true;
-        notifySubscribers(effects);
+      if (isDirty) return;
+      if (equals && effects.size) {
+        if (changedNow()) notifySubscribers(effects);
+        return;
       }
+      isDirty = true;
+      notifySubscribers(effects);
     };
     markDirty._stxCollect = (into) => {
-      if (!isDirty) {
-        isDirty = true;
-        collectSubscribers(effects, into);
+      if (isDirty) return;
+      if (equals && effects.size) {
+        if (changedNow()) collectSubscribers(effects, into);
+        return;
       }
+      isDirty = true;
+      collectSubscribers(effects, into);
     };
 
     const signal = () => {
       if (activeEffect) effects.add(activeEffect);
-      if (isDirty) {
-        const prev = activeEffect;
-        activeEffect = markDirty;
-        effectStack.push(markDirty);
-        try {
-          cached = compute();
-        }
-finally {
-          effectStack.pop();
-          activeEffect = prev;
-        }
-        isDirty = false;
-      }
+      if (isDirty) recompute();
       return cached;
     };
 
@@ -116,5 +143,11 @@ finally {
     });
 
     return signal;
+  }
+
+  // A derived value that passes a change on only when it is a different value
+  // (Object.is, or the equals given).
+  function memo(compute, equals) {
+    return derived(compute, { equals: typeof equals === 'function' ? equals : Object.is });
   }
 `
