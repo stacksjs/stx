@@ -16,7 +16,12 @@ interface OverlayHost {
   listen: (node: NativeNode, event: string, callback: (event?: unknown) => void) => void
 }
 
-export function createNativeOverlayPresenter(host: OverlayHost) {
+export interface NativeOverlayPresenter {
+  sync: (entries: NativeOverlayEntry[]) => void
+  dispose: () => void
+}
+
+export function createNativeOverlayPresenter(host: OverlayHost): NativeOverlayPresenter {
   let current: NativeOverlayEntry[] = []
   const listening = new WeakSet<NativeNode>()
 
