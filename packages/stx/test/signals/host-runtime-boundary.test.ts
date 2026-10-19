@@ -30,10 +30,13 @@ describe('signals host runtime boundary', () => {
       'clone',
       'descendants',
       'emitComponentEvent',
+      'getAttribute',
       'insert',
       'listen',
       'observeAttributes',
+      'observeChildren',
       'onFormReset',
+      'parent',
       'remove',
       'removeAttribute',
       'scopeOf',
@@ -68,5 +71,30 @@ describe('signals host runtime boundary', () => {
     const node = { dispatchEvent(received: Event) { expect(received).toBe(event); return false } }
     const emit = host.emitComponentEvent as (node: unknown, event: Event) => boolean
     expect(emit(node, event)).toBe(false)
+  })
+
+  it('observes child-list changes and cancels queued delivery when unsubscribed', () => {
+    let deliver = () => {}
+    let calls = 0
+    let disconnected = false
+    const node = { parentElement: {}, getAttribute: (name: string) => name === 'role' ? 'tab' : null }
+    class Observer {
+      constructor(callback: () => void) { deliver = callback }
+      observe(target: unknown, options: unknown) {
+        expect(target).toBe(node)
+        expect(options).toEqual({ childList: true, subtree: true })
+      }
+      disconnect() { disconnected = true }
+    }
+    const host = new Function('window', 'MutationObserver', `${SIGNALS_HOST_RUNTIME}\nreturn stxHost`)({}, Observer)
+    expect(host.parent(node)).toBe(node.parentElement)
+    expect(host.getAttribute(node, 'role')).toBe('tab')
+    const stop = host.observeChildren(node, () => calls++)
+    deliver()
+    expect(calls).toBe(1)
+    stop()
+    deliver()
+    expect(calls).toBe(1)
+    expect(disconnected).toBe(true)
   })
 })

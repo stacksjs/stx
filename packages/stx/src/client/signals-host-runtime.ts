@@ -20,6 +20,14 @@ export const SIGNALS_HOST_RUNTIME = `  // ── Host ──
   // branch swap, and nowhere near the line that caused it, which keeps the web path
   // exactly as it was: same calls, one property lookup earlier.
   var stxHost = window.__stx_host || {
+    parent: function(node) { return node ? node.parentElement : null; },
+    getAttribute: function(node, name) { return node && node.getAttribute ? node.getAttribute(name) : null; },
+    observeChildren: function(node, callback) {
+      var active = true;
+      var observer = new MutationObserver(function() { if (active) callback(); });
+      observer.observe(node, { childList: true, subtree: true });
+      return function() { active = false; observer.disconnect(); };
+    },
     setText: function(node, value) { node.textContent = value; },
     setMarkup: function(node, value) { node.innerHTML = value == null ? '' : value; },
     setAttribute: function(node, name, value) {

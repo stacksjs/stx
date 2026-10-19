@@ -121,6 +121,9 @@ export interface NativeHostOptions {
 export interface NativeHost {
   /** Native mutations and binding registration must reach one bridge batch. */
   readonly isNative: true
+  parent: (node: NativeNode) => NativeNode | null
+  getAttribute: (node: NativeNode, name: string) => string | null
+  observeChildren: (node: NativeNode, callback: () => void) => (() => void)
   setColorScheme: (scheme: 'light' | 'dark') => void
   setText: (node: NativeNode, value: unknown) => void
   setMarkup: (node: NativeNode, value: unknown) => void
@@ -158,6 +161,9 @@ export interface NativeHost {
 
 /** Every method the DOM host in `signals.ts` defines. The contract, in one place. */
 export const HOST_METHODS: readonly string[] = [
+  'parent',
+  'getAttribute',
+  'observeChildren',
   'setText',
   'setMarkup',
   'setAttribute',
@@ -180,6 +186,7 @@ export const HOST_METHODS: readonly string[] = [
 export function createNativeHost(options: NativeHostOptions): NativeHost {
   const records = new Map<string, NodeRecord>()
   const attributeObservers = new WeakMap<NativeNode, Set<{ names: string[], notify: () => void }>>()
+  const childObservers = new WeakMap<NativeNode, Set<() => void>>()
   const handlers = new Map<string, (payload?: unknown) => void>()
   const eventRegistrations = new WeakMap<NativeNode, Map<string, string>>()
   const componentListeners = new WeakMap<NativeNode, Array<{ event: string, handler: (payload?: unknown) => void, once: boolean, capture: boolean }>>()
@@ -198,6 +205,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   function notifyAttributes(node: NativeNode, name: string): void {
     for (const observer of attributeObservers.get(node) ?? []) {
       if (observer.names.includes(name)) observer.notify()
+    }
+  }
+
+  function notifyChildren(node: NativeNode | null | undefined): void {
+    for (let current = node; current; current = current.__stxOwner) {
+      for (const notify of childObservers.get(current) ?? []) notify()
     }
   }
 
@@ -552,6 +565,29 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
   const host: NativeHost = {
     isNative: true as const,
+    parent(node) { return node?.__stxOwner ?? null },
+    getAttribute(node, name) {
+      if (!node) return null
+      if (isBindingNode(node)) return node.getAttribute(name)
+      const value = descriptorOf(node)?.props[nativePropName(name)]
+      return value == null || value === false ? null : value === true ? '' : String(value)
+    },
+    observeChildren(node, callback) {
+      const observers = childObservers.get(node) ?? new Set()
+      childObservers.set(node, observers)
+      let active = true
+      let pending = false
+      const notify = (): void => {
+        if (!active || pending || disposed) return
+        pending = true
+        queueMicrotask(() => {
+          pending = false
+          if (active && !disposed) callback()
+        })
+      }
+      observers.add(notify)
+      return () => { active = false; observers.delete(notify) }
+    },
     adopt,
     setColorScheme(scheme) {
       if (scheme === colorScheme) return
@@ -955,6 +991,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       node.__stxOwner = parent
       insertIntoBindingParent(parent, node, index)
       setConnected(node, record.materialized)
+      if (oldOwner && oldOwner !== parent) notifyChildren(oldOwner)
+      notifyChildren(parent)
 
       // An anchor holds a place in the ordering and nothing else, so moving one
       // is bookkeeping rather than a native operation.
@@ -1034,6 +1072,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       setConnected(node, false)
       releaseHandlers(node)
       retainDetachedDescriptors(node)
+      notifyChildren(owner)
       if (node.__stxAnchor !== undefined || !wasMaterialized)
         return
       emit({ op: 'removeNode', id: node.__stxId })
