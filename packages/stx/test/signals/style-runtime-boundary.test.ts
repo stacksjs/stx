@@ -15,6 +15,6 @@ describe('signals style runtime boundary', () => {
     expect(SIGNALS_STYLE_RUNTIME).toContain('function bindStyle(el, expr')
     expect(SIGNALS_STYLE_RUNTIME).toContain('createExpressionAutoUnwrapProxy(capturedScope, expr)')
     expect(SIGNALS_STYLE_RUNTIME).toContain('__stxArgs(fn2, capturedScope)')
-    expect(SIGNALS_STYLE_RUNTIME).toContain('stxHost.setStyle(el, value)')
+    expect(SIGNALS_STYLE_RUNTIME).toContain('stxHost.setStyle(el, value, true)')
   })
 })

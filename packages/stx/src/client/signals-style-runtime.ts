@@ -30,7 +30,7 @@ catch (e2) {
     effect(() => {
       if (isVisible && !isVisible()) return;
       const value = evalExpr();
-      stxHost.setStyle(el, value);
+      stxHost.setStyle(el, value, true);
     });
   }
 `
