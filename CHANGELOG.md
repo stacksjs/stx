@@ -1,5 +1,76 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.583...v0.2.584)
+
+## ✨ Features
+
+- **native**: transport document themes across appearance changes (#2090) ([812d0ce](https://github.com/stacksjs/stx/commit/812d0ce)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **native**: extract document stylesheet theme declarations (#2090) ([6945ddb](https://github.com/stacksjs/stx/commit/6945ddb)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **native**: apply inherited theme overrides to shared controls (#2090) ([03c7c3f](https://github.com/stacksjs/stx/commit/03c7c3f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **native**: resolve shared token classes from theme variables (#2090) ([6a3c188](https://github.com/stacksjs/stx/commit/6a3c188)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **native**: propagate reactive inline theme variables (#2090) ([b1cdab7](https://github.com/stacksjs/stx/commit/b1cdab7)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **native**: retain theme declarations for runtime resolution (#2090) ([0eedb04](https://github.com/stacksjs/stx/commit/0eedb04)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **native**: inherit compiled inline theme variables (#2090) ([d1664f1](https://github.com/stacksjs/stx/commit/d1664f1)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **native**: resolve local inline style variables (#2090) ([6c08c21](https://github.com/stacksjs/stx/commit/6c08c21)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **native**: focus newly opened shared modal layers (#2089) ([bfd3075](https://github.com/stacksjs/stx/commit/bfd3075)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2089](https://github.com/stacksjs/stx/issues/2089), [#2089](https://github.com/stacksjs/stx/issues/2089))
+- **native**: connect mounted-view focus and measurement to Craft (#2089) ([ca40f9c](https://github.com/stacksjs/stx/commit/ca40f9c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2089](https://github.com/stacksjs/stx/issues/2089), [#2089](https://github.com/stacksjs/stx/issues/2089))
+- **components**: preserve native Button text aliases in shared labels (#2091) ([97e86bb](https://github.com/stacksjs/stx/commit/97e86bb)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **native**: translate shared shape and density token defaults (#2090) ([ce9b402](https://github.com/stacksjs/stx/commit/ce9b402)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **components**: share Tabs selection and panel lifecycle across hosts (#2089) ([076a4fd](https://github.com/stacksjs/stx/commit/076a4fd)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2089](https://github.com/stacksjs/stx/issues/2089), [#2089](https://github.com/stacksjs/stx/issues/2089))
+- **components**: share Dialog behavior across browser and native hosts (#2089) ([fdf076f](https://github.com/stacksjs/stx/commit/fdf076f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2089](https://github.com/stacksjs/stx/issues/2089), [#2089](https://github.com/stacksjs/stx/issues/2089))
+- **native**: present shared modal overlays through the host (#2089) ([fa218f5](https://github.com/stacksjs/stx/commit/fa218f5)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2089](https://github.com/stacksjs/stx/issues/2089), [#2089](https://github.com/stacksjs/stx/issues/2089))
+- **components**: support shared TabList selection on native hosts (#2089) ([ace5eb2](https://github.com/stacksjs/stx/commit/ace5eb2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2089](https://github.com/stacksjs/stx/issues/2089), [#2089](https://github.com/stacksjs/stx/issues/2089))
+- **runtime**: expose host-backed component tree observation (#2089) ([99e2555](https://github.com/stacksjs/stx/commit/99e2555)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2089](https://github.com/stacksjs/stx/issues/2089), [#2089](https://github.com/stacksjs/stx/issues/2089))
+
+## 🐛 Bug Fixes
+
+- **types**: declare native style helper return values ([e77b07a](https://github.com/stacksjs/stx/commit/e77b07a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: declare theme resolver return contracts (#2090) ([f92746f](https://github.com/stacksjs/stx/commit/f92746f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **native**: retain variable scopes across document wrappers (#2090) ([56e78d9](https://github.com/stacksjs/stx/commit/56e78d9)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **native**: preserve explicit grid row tracks ([3f7a01b](https://github.com/stacksjs/stx/commit/3f7a01b)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: translate shared control offsets into host transforms (#2090) ([224069c](https://github.com/stacksjs/stx/commit/224069c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **native**: report unsupported computed styles and variants (#2090) ([a40627a](https://github.com/stacksjs/stx/commit/a40627a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **components**: make Switch disabling reactive and exclude disabled form values (#2091) ([ead5ba2](https://github.com/stacksjs/stx/commit/ead5ba2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **components**: keep Checkbox disabled and mixed state reactive on both hosts (#2091) ([54e1ba0](https://github.com/stacksjs/stx/commit/54e1ba0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **native**: honor configured shared component directories (#2091) ([febbec7](https://github.com/stacksjs/stx/commit/febbec7)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **native**: forward reactive host attributes to shared component controls (#2091) ([cd51970](https://github.com/stacksjs/stx/commit/cd51970)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **native**: render composed buttons as child-capable pressables (#2091) ([ee481cb](https://github.com/stacksjs/stx/commit/ee481cb)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **native**: retain host props and caller classes on shared component roots (#2091) ([f7a95e1](https://github.com/stacksjs/stx/commit/f7a95e1)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **native**: annotate overlay presenter return type for CI (#2089) ([d4f3062](https://github.com/stacksjs/stx/commit/d4f3062)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2089](https://github.com/stacksjs/stx/issues/2089), [#2089](https://github.com/stacksjs/stx/issues/2089))
+- **native**: normalize reactive CSS strings and style objects (#2090) ([2e40d08](https://github.com/stacksjs/stx/commit/2e40d08)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **signals**: clear removed reactive style properties on both hosts (#2090) ([4e395bc](https://github.com/stacksjs/stx/commit/4e395bc)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **runtime**: preserve authored styles beneath reactive host styles (#2090) ([6a381ac](https://github.com/stacksjs/stx/commit/6a381ac)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **native**: honor structural screen roots and consumed component props (#2089) ([57c0bea](https://github.com/stacksjs/stx/commit/57c0bea)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2089](https://github.com/stacksjs/stx/issues/2089), [#2089](https://github.com/stacksjs/stx/issues/2089))
+- **runtime**: mount static native components and pair per-mount cleanup (#2089) ([9de4ed5](https://github.com/stacksjs/stx/commit/9de4ed5)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2089](https://github.com/stacksjs/stx/issues/2089), [#2089](https://github.com/stacksjs/stx/issues/2089))
+
+## ♻️ Code Refactoring
+
+- **tooltip**: share asynchronous host measurements (#2089) ([89cb527](https://github.com/stacksjs/stx/commit/89cb527)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2089](https://github.com/stacksjs/stx/issues/2089), [#2089](https://github.com/stacksjs/stx/issues/2089))
+- **native**: prefer verified shared Button sources before primitive fallbacks (#2091) ([0cb0be2](https://github.com/stacksjs/stx/commit/0cb0be2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **native**: share validated inline style normalization (#2090) ([90deaba](https://github.com/stacksjs/stx/commit/90deaba)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **components**: mount Drawer overlays through instance refs (#2089) ([f096e63](https://github.com/stacksjs/stx/commit/f096e63)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2089](https://github.com/stacksjs/stx/issues/2089), [#2089](https://github.com/stacksjs/stx/issues/2089))
+
+## ✅ Tests
+
+- **native**: reject unsupported topology mutations atomically (#2089) ([fc48bfd](https://github.com/stacksjs/stx/commit/fc48bfd)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2089](https://github.com/stacksjs/stx/issues/2089), [#2089](https://github.com/stacksjs/stx/issues/2089))
+- **overlays**: retire dialog listeners between shared-DOM runtimes ([aad48bb](https://github.com/stacksjs/stx/commit/aad48bb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: verify shared pressables against strict host lifecycle rules (#2091) ([9bbb4b0](https://github.com/stacksjs/stx/commit/9bbb4b0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+
+## 🔧 Chores
+
+- release v0.2.584 ([fc007a3](https://github.com/stacksjs/stx/commit/fc007a3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- integrate upstream native style declaration fixes ([04c506a](https://github.com/stacksjs/stx/commit/04c506a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge pull request #2092 from stacksjs/codex/native-explicit-grid-rows ([4937102](https://github.com/stacksjs/stx/commit/4937102)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2092](https://github.com/stacksjs/stx/issues/2092), [#2092](https://github.com/stacksjs/stx/issues/2092))
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.582...v0.2.583)
 
 ## ✨ Features
