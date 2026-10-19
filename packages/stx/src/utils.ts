@@ -2944,8 +2944,14 @@ async function buildComponentIsland(rawContent: string, componentFilePath: strin
   __scopeVars.__destroyCallbacks = __scopeVars.__destroyCallbacks || [];
   __scopeVars.__mountHooks = __scopeVars.__mountHooks || [];
   __scopeVars.__destroyHooks = __scopeVars.__destroyHooks || [];
+  let __registeringSetupHooks = true;
   const onMount = (fn) => { __scopeVars.__mountCallbacks.push(fn); __scopeVars.__mountHooks.push(fn); };
-  const onDestroy = (fn) => { __scopeVars.__destroyCallbacks.push(fn); __scopeVars.__destroyHooks.push(fn); };
+  const onDestroy = (fn) => {
+    __scopeVars.__destroyCallbacks.push(fn);
+    // A teardown registered inside onMount belongs to this mount alone.
+    // Replaying it AND registering the next mount's teardown doubles cleanup.
+    if (__registeringSetupHooks) __scopeVars.__destroyHooks.push(fn);
+  };
 
 try {
 ${content}
@@ -2959,6 +2965,7 @@ catch (e) {}
   Object.assign(__scopeVars, __localVars);
 }
 finally {
+  __registeringSetupHooks = false;
   window.__STX_CURRENT_ELEMENT__ = __previousCurrentElement;
   window.__STX_CURRENT_PROPS__ = __previousCurrentProps;
 }

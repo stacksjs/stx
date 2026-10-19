@@ -60,12 +60,14 @@ const schema = useReactiveProp('schema', {})
 const enabled = useReactiveProp('enabled', true)
 window.childSchema = schema
 window.childEnabled = enabled
+onMount(() => { window.mountedValidation = schema().validate('Grace') })
 </script><p :text="enabled ? 'Enabled' : 'Disabled'">Validation</p>`,
     })
     try {
       expect(app.errors).toEqual([])
       expect(app.scope.childSchema().validate('Grace')).toBe('Invalid name')
       expect(app.scope.childEnabled()).toBe(false)
+      expect(app.scope.mountedValidation).toBe('Invalid name')
     }
     finally { app.stop() }
   })

@@ -44,7 +44,10 @@ afterAll(closeBrowser)
 /** A component whose client script is nothing but lifecycle hooks. */
 function lifecycleChild(name: string): string {
   return `<script client>
-onMount(() => { (window.MOUNTS = window.MOUNTS || []).push('${name}') })
+onMount(() => {
+  (window.MOUNTS = window.MOUNTS || []).push('${name}')
+  onDestroy(() => { (window.MOUNT_CLEANUPS = window.MOUNT_CLEANUPS || []).push('${name}') })
+})
 onDestroy(() => { (window.DESTROYS = window.DESTROYS || []).push('${name}') })
 </script>
 <div class="gate-child gate-${name}">${name}</div>
@@ -151,6 +154,7 @@ describe('a component gated by :if in the view', () => {
 
     expect(browser.window.MOUNTS).toEqual(['ungated', 'gated', 'gated', 'gated'])
     expect(browser.window.DESTROYS).toEqual(['gated', 'gated'])
+    expect(browser.window.MOUNT_CLEANUPS).toEqual(['gated', 'gated'])
     expect(observed(browser).rendered).toBe(2)
     expect(browser.errors).toEqual([])
 

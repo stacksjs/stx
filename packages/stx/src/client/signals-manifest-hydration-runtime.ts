@@ -72,6 +72,19 @@ export const SIGNALS_MANIFEST_HYDRATION_RUNTIME = `  /**
     var disposeEffects = trackEffects(function() {
       processFromManifest(root, scope, manifest, resolvedNodes);
     });
+    // The manifest visits bindings, not every component. Static component
+    // roots still own lifecycle hooks, and those hooks must see fully bound
+    // props/refs. Detached conditional and loop sources must not mount.
+    [root].concat(stxHost.descendants(root)).forEach(function(node) {
+      if (!node || node.isConnected === false || !node.getAttribute || hasPendingLoopBoundary(node)) return;
+      var scopeId = node.getAttribute('data-stx-scope');
+      var local = scopeId && window.stx._scopes && window.stx._scopes[scopeId];
+      if (!local || local.__mounted || local.__suspended) return;
+      if (node.hasAttribute('stx-hydrate') && !node.__stx_hydrated) return;
+      local.__el = node;
+      local.__mounted = true;
+      runMountCallbacks(local.__mountCallbacks || [], scopeDestroySink(local));
+    });
     runMountCallbacks(localMountHooks, localDestroyHooks);
     var mounted = true;
     return function disposeHost() {
