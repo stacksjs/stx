@@ -71,6 +71,7 @@ declare module 'stx' {
   export const setResponseHeader: (name: string, value: string) => void // <script server> only
   export const setResponseStatus: (status: number) => void // <script server> only
   export const setRouteParams: typeof globalThis.setRouteParams
+  export const sharedRequest: typeof globalThis.sharedRequest
   export const state: typeof globalThis.state
   export const untrack: typeof globalThis.untrack
   export const useAsync: typeof globalThis.useAsync

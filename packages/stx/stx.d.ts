@@ -545,6 +545,19 @@ interface StxCachedQuery<T> {
 /** Data kept per account, shown at once from last time and refreshed behind. Same key, same query. */
 declare function cachedQuery<T = any>(_key: string, _options?: StxCachedQueryOptions<T>): StxCachedQuery<T>
 
+/** One request for every caller that wants the same answer: see shared-request.ts. */
+interface StxSharedRequest<K, T> {
+  /** Join a request in flight whose key covers `key` (or a waiting fresh rerun), or start one. */
+  run: (_key: K, _start: () => Promise<T>) => Promise<T>
+  /** Never joins: waits out a request in flight for `key`, then starts once more (one rerun for every caller meanwhile). */
+  fresh: (_key: K, _start: () => Promise<T>) => Promise<T>
+  /** A checker that stays true until latest() is called again. */
+  latest: () => () => boolean
+  /** True while a request is out or a fresh rerun is waiting. */
+  readonly busy: boolean
+}
+declare function sharedRequest<K = string, T = any>(_options?: { covers?: (_running: K, _wanted: K) => boolean }): StxSharedRequest<K, T>
+
 /**
  * Options accepted by the auto-imported `useCookie` global.
  *
@@ -1016,6 +1029,7 @@ interface StxRuntimeRegistry {
   setKeptScope: typeof setKeptScope
   flushKeptState: typeof flushKeptState
   cachedQuery: typeof cachedQuery
+  sharedRequest: typeof sharedRequest
   useEventListener: typeof useEventListener
   useScrollLock: typeof useScrollLock
   useWebSocket: typeof useWebSocket

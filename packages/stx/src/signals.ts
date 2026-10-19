@@ -14,6 +14,7 @@ import { createModelSignal } from './component-model'
 import { readHydratedData, clearServerData } from './composables/use-fetch'
 import { createKeptStore, indexedDbBackend } from './offline/kept-store'
 import { createQueryCache, queryTargetMatches } from './offline/query-cache'
+import { sharedRequest } from './shared-request'
 import { SIGNALS_APPEARANCE_RUNTIME } from './client/signals-appearance-runtime'
 import { signalsAuthoringRuntime } from './client/signals-authoring-runtime'
 import { SIGNALS_BINDING_UTILS_RUNTIME } from './client/signals-binding-utils-runtime'
@@ -230,7 +231,7 @@ ${SIGNALS_REACTIVE_RUNTIME}
 
 ${SIGNALS_STORAGE_RUNTIME}
 
-${signalsKeptRuntime(createKeptStore.toString(), indexedDbBackend.toString(), createQueryCache.toString(), queryTargetMatches.toString())}
+${signalsKeptRuntime(createKeptStore.toString(), indexedDbBackend.toString(), createQueryCache.toString(), queryTargetMatches.toString(), sharedRequest.toString())}
 ${SIGNALS_COOKIE_RUNTIME}
 ${signalsAuthoringRuntime(createModelSignal.toString())}
 ${SIGNALS_HEAD_RUNTIME}

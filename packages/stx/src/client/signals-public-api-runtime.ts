@@ -74,6 +74,7 @@ export function signalsPublicApiRuntime(componentApiRuntime: string): string {
     setKeptScope,
     flushKeptState,
     cachedQuery,
+    sharedRequest,
     useCookie,
     useId,
     useReactiveProp,

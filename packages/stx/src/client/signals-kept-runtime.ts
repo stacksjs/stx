@@ -4,8 +4,14 @@ export function signalsKeptRuntime(
   indexedDbBackendSource: string,
   createQueryCacheSource: string,
   queryTargetMatchesSource: string,
+  sharedRequestSource: string,
 ): string {
-  return `  // A value kept between visits, for a phone app between launches: the tab a
+  return `  // One request for every caller that wants the same answer: run joins one
+  // in flight, fresh waits one out and asks again, latest replaces a request
+  // counter. See shared-request.ts; cached queries are built on it.
+  var sharedRequest = (${sharedRequestSource});
+
+  // A value kept between visits, for a phone app between launches: the tab a
   // user opens right after starting the app draws last time's data at once
   // and the fresh answer replaces it. Kept under stx:kept:, in a scope such as
   // the signed-in account, so one person's data is never shown to another. A
@@ -20,7 +26,7 @@ export function signalsKeptRuntime(
   // are read where they are.
   var STX_KEPT_PREFIX = 'stx:kept:';
   var __stxKept = (${createKeptStoreSource})(undefined, ${indexedDbBackendSource});
-  var __stxQueries = (${createQueryCacheSource})({ state: state, kept: __stxKept, prefix: STX_KEPT_PREFIX, matches: ${queryTargetMatchesSource} });
+  var __stxQueries = (${createQueryCacheSource})({ state: state, kept: __stxKept, prefix: STX_KEPT_PREFIX, matches: ${queryTargetMatchesSource}, sharedRequest: sharedRequest });
   function stxKeptPrefix(scope) {
     return STX_KEPT_PREFIX + (scope === undefined || scope === null || scope === '' ? '' : String(scope) + ':');
   }

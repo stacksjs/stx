@@ -43,6 +43,7 @@ export const SIGNALS_GLOBALS_RUNTIME = `  // Also expose globally for convenienc
   window.setKeptScope = setKeptScope;
   window.flushKeptState = flushKeptState;
   window.cachedQuery = cachedQuery;
+  window.sharedRequest = sharedRequest;
   window.useEventListener = useEventListener;
   window.useWebSocket = useWebSocket;
   window.useColorMode = useColorMode;

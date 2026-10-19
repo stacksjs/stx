@@ -28,6 +28,7 @@ import type { CachedQuery, CachedQueryOptions, KeptScope, QueryCache } from '../
 import type { KeptStore } from '../offline/kept-store'
 import { createKeptStore, indexedDbBackend } from '../offline/kept-store'
 import { createQueryCache, queryTargetMatches } from '../offline/query-cache'
+import { sharedRequest } from '../shared-request'
 import { state } from '../signals-api'
 
 export type { CachedQuery, CachedQueryOptions, KeptScope } from '../offline/query-cache'
@@ -45,7 +46,7 @@ export function keptStore(): KeptStore {
 /** The page's query layer. */
 export function queryCache(): QueryCache {
   if (!queries)
-    queries = createQueryCache({ state: state as any, kept: keptStore(), matches: queryTargetMatches })
+    queries = createQueryCache({ state: state as any, kept: keptStore(), matches: queryTargetMatches, sharedRequest })
   return queries
 }
 
