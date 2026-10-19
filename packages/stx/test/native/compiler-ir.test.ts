@@ -407,7 +407,7 @@ describe('style vocabulary coverage', () => {
 
   /**
    * Emitted by the compiler and absent from the iOS mirror, so dropped in
-   * silence. This list must only shrink.
+   * silence. Non-grid gaps must only shrink; grid features target Craft.
    */
   const IOS_DROPS = [
     'alignContent', 'aspectRatio', 'backgroundImage', 'borderBottomColor',
@@ -416,7 +416,7 @@ describe('style vocabulary coverage', () => {
     'columnGap', 'elevation', 'flexBasis', 'rowGap', 'transform',
     // Craft's native host lays out `display: grid` with `gridColumns`; this
     // older renderer has no grid (added with grid-cols-N, 2026-10).
-    'gridAutoRows', 'gridColumns', 'gridTemplateColumns',
+    'gridAutoRows', 'gridColumns', 'gridTemplateColumns', 'gridTemplateRows',
   ]
 
   it('iOS drops exactly the properties on the known list, and no more', () => {

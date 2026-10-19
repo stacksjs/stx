@@ -152,6 +152,8 @@ export interface STXStyle {
   gridColumns?: number
   /** CSS-shaped grid tracks understood by the maintained Craft hosts. */
   gridTemplateColumns?: string | number
+  /** Explicit equal rows within a definite native grid height. */
+  gridTemplateRows?: string | number
   /** Fixed native row height for grid layouts. */
   gridAutoRows?: number
   flex?: number
