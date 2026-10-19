@@ -20,6 +20,10 @@ unsupported controls do not acquire native equivalents merely by compiling.
 Keep platform access behind typed adapters and fix reusable translation gaps in
 stx or native host gaps in Craft.
 
+A screen may put `:if` or `:for` on its root element. Native mounting adds a
+stable container for that structural root, so hiding or repeating it does not
+remove the renderer's root. Screens with ordinary roots are unchanged.
+
 Review native compilation diagnostics. In particular, `unknown-class` reports a
 static utility class with no native style translation, including classes in the
 dark appearance. Supported styles still compile, so a successful build with that
@@ -30,8 +34,16 @@ Shared component props and emitted events go through the signals host:
 `useReactiveProp` observes native prop updates without a browser
 `MutationObserver`, and `defineEmits` delivers payloads through the native
 ownership tree. Named models, independent instances, and conditional remounts
-are covered by the native runtime tests. DOM-dependent overlay behavior still
-needs its own host adapter.
+are covered by the native runtime tests.
+
+Shared `Dialog` and `Drawer` present native Modal roots through the overlay
+adapter. The DOM-free tests cover controlled visibility, top-layer dismissal,
+reopening, and removal while open. Distinct backdrop/back policies require the
+host's dismissal reason; older hosts without it reject ambiguous requests and
+warn. Programmatic focus/restoration and anchored popup measurement still need
+the Craft capabilities tracked in [craft#373](https://github.com/craft-native/craft/issues/373).
+These runtime tests do not establish native visual or accessibility parity;
+those remain part of [#2089](https://github.com/stacksjs/stx/issues/2089).
 
 Shared `Form` uses host-owned control collection on native, not DOM FormData.
 Named text/picker values, checked checkbox values, and hidden fields are collected;

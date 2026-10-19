@@ -39,6 +39,7 @@ import { NATIVE_EVENT_NAMES } from '../event-names'
 import { nativePropName } from '../prop-names'
 import { cloneNativeBindingNode, type NativeBindingNode } from './binding-tree'
 import { NATIVE_FORM_ENTRIES } from './jsc-globals'
+import { createNativeOverlayPresenter, type NativeOverlayEntry } from './overlay-presenter'
 
 /** A handle on a node in the native tree. Not an element; just an identity. */
 export interface NativeNode {
@@ -121,6 +122,7 @@ export interface NativeHostOptions {
 export interface NativeHost {
   /** Native mutations and binding registration must reach one bridge batch. */
   readonly isNative: true
+  syncOverlays: (entries: NativeOverlayEntry[]) => void
   parent: (node: NativeNode) => NativeNode | null
   getAttribute: (node: NativeNode, name: string) => string | null
   observeChildren: (node: NativeNode, callback: () => void) => (() => void)
@@ -573,8 +575,16 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     return node
   }
 
+  const overlayPresenter = createNativeOverlayPresenter({
+    type: node => descriptorOf(node)?.type,
+    setAttribute: (node, name, value) => host.setAttribute(node, name, value),
+    setStyle: (node, value) => host.setStyle(node, value),
+    listen: (node, event, callback) => host.listen(node, event, callback),
+  })
+
   const host: NativeHost = {
     isNative: true as const,
+    syncOverlays: entries => overlayPresenter.sync(entries),
     parent(node) { return node?.__stxOwner ?? null },
     getAttribute(node, name) {
       if (!node) return null
@@ -607,6 +617,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     pending: () => queue.length,
     flush,
     dispose() {
+      overlayPresenter.dispose()
       disposed = true
       queue = []
       handlers.clear()

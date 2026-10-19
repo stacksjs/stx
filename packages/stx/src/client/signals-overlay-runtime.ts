@@ -112,6 +112,19 @@ export const SIGNALS_OVERLAY_RUNTIME = `  // ── Overlay stack ────�
 
   // Lock, listen and inert to match the stack after any change.
   function _overlaySync() {
+    if (stxHost.isNative) {
+      stxHost.syncOverlays(_overlays.map(function(entry) {
+        return Object.assign({}, entry, { onRequestClose: function(event) {
+          if (entry.onRequestClose) { entry.onRequestClose(event); return; }
+          var reason = event && (event.reason || (event.nativeEvent && event.nativeEvent.reason));
+          if (reason === 'backdrop') { if (entry.onBackdrop) entry.onBackdrop(); }
+          else if (reason === 'back' || reason === 'escape') { if (entry.onEscape) entry.onEscape(); }
+          else if (!!entry.onBackdrop === !!entry.onEscape) { if (entry.onEscape) entry.onEscape(); }
+          else console.warn('[stx:overlays] Native dismissal was denied: this host must report reason=backdrop or reason=back to honor different closeOnBackdrop/closeOnEscape policies.');
+        } });
+      }));
+      return;
+    }
     for (var i = 0; i < _overlayInerted.length; i++) {
       try { _overlayInerted[i].inert = false; }
       catch (_e) { /* element may be gone */ }
@@ -260,10 +273,15 @@ export const SIGNALS_OVERLAY_RUNTIME = `  // ── Overlay stack ────�
       var at = _overlayIndex(id);
       if (at !== -1) {
         var existing = _overlays[at];
+        var updated = Object.assign({}, existing);
         for (var key in opts) {
-          if (Object.prototype.hasOwnProperty.call(opts, key)) existing[key] = opts[key];
+          if (Object.prototype.hasOwnProperty.call(opts, key)) updated[key] = opts[key];
         }
-        _overlaySync();
+        // A native presenter holds callbacks for the last accepted entry.
+        // Do not mutate it until the replacement has passed host validation.
+        _overlays[at] = updated;
+        try { _overlaySync(); }
+        catch (e) { _overlays[at] = existing; throw e; }
         return;
       }
       var isModal = opts.modal !== false;
@@ -274,18 +292,24 @@ export const SIGNALS_OVERLAY_RUNTIME = `  // ── Overlay stack ────�
         root: opts.root || null,
         zIndex: typeof opts.zIndex === 'number' ? opts.zIndex : null,
         onEscape: opts.onEscape || null,
+        onBackdrop: opts.onBackdrop || null,
         initialFocus: opts.initialFocus || null,
         // A popup hands focus back itself, to its own trigger, and only when
         // focus was inside it; a modal layer always does.
         restoreFocus: opts.restoreFocus !== undefined ? opts.restoreFocus !== false : isModal,
-        opener: opts.opener !== undefined ? opts.opener : document.activeElement
+        opener: opts.opener !== undefined ? opts.opener : (stxHost.isNative ? null : document.activeElement),
+        // Native Modal reports backdrop/back dismissal through the same host
+        // event. Shared components supply the applicable dismissal policy.
+        onRequestClose: opts.onRequestClose || null
       };
       _overlays.push(entry);
-      _overlaySync();
+      try { _overlaySync(); }
+      catch (e) { _overlays.splice(_overlays.indexOf(entry), 1); throw e; }
       // Synchronously first, so a caller that asserts focus straight after
       // opening sees it; then retried for a panel that is not displayed yet.
       // A popup keeps focus where its own keyboard handling puts it.
-      if (isModal || opts.initialFocus) _overlayFocusIn(entry, 10);
+      if (!stxHost.isNative && (isModal || opts.initialFocus)) _overlayFocusIn(entry, 10);
+      if (stxHost.isNative && opts.initialFocus) console.warn('[stx:overlays] Native initialFocus requires the host focus capability tracked in craft-native/craft#373; focus was not moved.');
     },
     /** Take an overlay off the stack, wherever it is in it. */
     close: function(id) {
@@ -297,7 +321,7 @@ export const SIGNALS_OVERLAY_RUNTIME = `  // ── Overlay stack ────�
       // Only the overlay that had the keyboard gives it back. Closing one
       // underneath (its owner went away) must not pull focus out of the top.
       var opener = entry.opener;
-      if (wasTop && entry.restoreFocus && opener && opener.isConnected !== false && typeof opener.focus === 'function') {
+      if (!stxHost.isNative && wasTop && entry.restoreFocus && opener && opener.isConnected !== false && typeof opener.focus === 'function') {
         try { opener.focus(); }
         catch (_e) { /* gone; nothing to give focus back to */ }
       }
