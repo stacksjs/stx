@@ -1,4 +1,5 @@
 import type { STXStyle } from './ir'
+import { createStyleVariables } from './style-variables'
 
 /** Every property `STXStyle` declares, for inline `style=""` translation. */
 const STYLE_KEYS = new Set([
@@ -143,7 +144,10 @@ export function parseNativeStyle(input: unknown, report: (diagnostic: NativeStyl
     return style
   }
 
+  const variables = createStyleVariables(entries)
+  const declarationNames: string[] = []
   for (const [rawProperty, raw] of entries) {
+    if (rawProperty.trim().startsWith('--')) { declarationNames.push(rawProperty.trim()); continue }
     const property = STYLE_KEYS.has(rawProperty) || rawProperty.trim().startsWith('--')
       ? rawProperty
       : rawProperty.trim().toLowerCase().replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())
@@ -152,7 +156,8 @@ export function parseNativeStyle(input: unknown, report: (diagnostic: NativeStyl
       continue
     }
     if (raw == null || raw === '') continue
-    const value = typeof raw === 'string' ? raw.trim() : raw
+    const value = typeof raw === 'string' ? variables.resolve(raw.trim()) : raw
+    if (value === undefined) { report({ kind: 'non-numeric-style', name: property }); continue }
     if (value === '') continue
     let translated: unknown
     if (NUMERIC_STYLE_KEYS.has(property) || DIMENSION_STYLE_KEYS.has(property)) {
@@ -169,5 +174,9 @@ export function parseNativeStyle(input: unknown, report: (diagnostic: NativeStyl
     if (translated === undefined) report({ kind: 'non-numeric-style', name: property })
     else style[property] = translated
   }
+  // An unconsumed declaration may be an attempted inherited theme override.
+  // Keep it visible until native ancestor/stylesheet variable transport exists.
+  for (const name of declarationNames)
+    if (!variables.used.has(name)) report({ kind: 'unknown-style', name })
   return style as STXStyle
 }
