@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { NativeCapabilityError, STXBridge } from '../../src/native/bridge/protocol'
+import { installCraftBridge } from '../../src/native/runtime/craft-bridge'
+import type { NativeNavigationOptions } from '../../src/native/runtime/craft'
 
 function host() {
   const sent: Array<Record<string, any>> = []
@@ -15,6 +17,23 @@ function host() {
 }
 
 describe('typed native capability bridge', () => {
+  it.each(['ios', 'android'])('preserves screen chrome options and explicit navigation on %s', (platform) => {
+    const native = host()
+    const protocol = new STXBridge()
+    protocol.initialize(native.bridge)
+    const craft = installCraftBridge(protocol, { ...native.bridge, platform }, {})
+    const options: NativeNavigationOptions = { hidden: true, tabBarHidden: true, swipeBack: false }
+    craft.navigation.setOptions(options)
+    craft.navigation.open('/feed')
+    craft.navigation.setOptions({ hidden: false, tabBarHidden: false, swipeBack: true })
+    expect(native.sent.map(({ type, payload }) => ({ type, payload }))).toEqual([
+      { type: 'NAVIGATION_SET_OPTIONS', payload: options },
+      { type: 'NAVIGATE_OPEN', payload: { path: '/feed' } },
+      { type: 'NAVIGATION_SET_OPTIONS', payload: { hidden: false, tabBarHidden: false, swipeBack: true } },
+    ])
+    protocol.dispose()
+  })
+
   it('sends protocol v1 and resolves a correlated response', async () => {
     const native = host()
     const bridge = new STXBridge()
