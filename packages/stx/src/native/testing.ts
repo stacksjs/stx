@@ -144,6 +144,15 @@ export interface NativeScreenOptions {
   files?: { pickImage: { path: string, name: string, type: string, size: number } | null }
   /** The keychain (`craft.secureStorage`), by key: a sign-in token, a page's shared values. */
   secureStorage?: Record<string, string>
+  /**
+   * The keychain key the signed-in token lives under (Craft's
+   * `sessionTokenKey`, `auth.token` by default). Changing it through
+   * `SecureStorage.set/remove` or `setSessionToken` sends `SESSION_CHANGED`
+   * (`craft.session.onChange`), as Craft 0.0.245 does.
+   */
+  sessionTokenKey?: string
+  /** False for a host older than Craft 0.0.245, which never sends `SESSION_CHANGED`. */
+  sessionEvents?: boolean
   /** Same as `secureStorage`. */
   keychain?: Record<string, string>
   /** What Craft's app storage (`craft.storage`) holds already, by key. */
@@ -257,6 +266,8 @@ export interface NativeScreen {
   /** An event the page's side sends every screen (`craftLocationUpdate`, `craftPushToken`, ...). */
   craftEvent: (event: string, detail?: unknown) => void
   /** Another context keeping a snapshot (`null` removes it; nothing just says it changed), reaching the screen. */
+  /** Another context signing in, out (null) or as someone else: the keychain's token changes and the screen hears `SESSION_CHANGED`. */
+  setSessionToken: (token: string | null) => void
   keepSnapshot: (name: string, value?: unknown) => void
   /** Airplane mode off (true) or on (false): while off, every request fails as with no network. */
   setOnline: (online: boolean) => void
@@ -335,6 +346,13 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
   const streams: OpenStream[] = []
   /** The keychain, by key. */
   const secureStorage: Record<string, string> = { ...options.keychain, ...options.secureStorage }
+  const sessionTokenKey = options.sessionTokenKey ?? 'auth.token'
+  /** After a keychain write: the account change Craft reports, once per change of the token. */
+  const sessionWritten = (key: string, previous: string | undefined) => {
+    if (key !== sessionTokenKey || options.sessionEvents === false) return
+    const token = secureStorage[key] || null
+    if (token !== (previous || null)) send('SESSION_CHANGED', { key, token, previous: previous || null })
+  }
   /** Every navigation-bar setting (`navigation.setOptions`), in order. */
   const bars: any[] = []
   /** Every explanation raised in the phone's own alert (`craft.dialog.alert`). */
@@ -515,6 +533,7 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
       appURL: options.appURL ?? 'https://fixture.invalid/m',
       appVersion: options.appVersion ?? '1.0.0',
       appBuild: options.appBuild ?? '1',
+      sessionTokenKey,
       postMessage: (raw: string) => {
         const message: NativeMessage = JSON.parse(raw)
         // Its own copy: the tree below is the one the host keeps changing.
@@ -565,8 +584,10 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
             if (request.module === 'SecureStorage' && ['set', 'remove'].includes(request.method)) {
               if (answer === false) return false
               const key = String(request.args[0])
+              const previous = secureStorage[key]
               if (request.method === 'set') secureStorage[key] = String(request.args[1])
               else delete secureStorage[key]
+              sessionWritten(key, previous)
               return true
             }
             if (request.module === 'Storage' && request.method === 'set') {
@@ -656,6 +677,17 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
     newParams: (params: Record<string, unknown>) => send('ROUTE_PARAMS', { params }),
     /** An event the page's side sends every screen (`craftLocationUpdate`, `craftPushToken`, ...). */
     craftEvent: (event: string, detail?: unknown) => send('CRAFT_EVENT', { event, detail }),
+    /**
+     * Another context signing in, out or as someone else (the page, a native
+     * sign-in): the keychain's token changes and, on a host that reports it,
+     * the screen hears `SESSION_CHANGED`. Null signs out.
+     */
+    setSessionToken: (token: string | null) => {
+      const previous = secureStorage[sessionTokenKey]
+      if (token) secureStorage[sessionTokenKey] = token
+      else delete secureStorage[sessionTokenKey]
+      sessionWritten(sessionTokenKey, previous)
+    },
     /** Another context keeping a snapshot (or just word that it changed), reaching the screen. */
     keepSnapshot: (name: string, value?: unknown) => {
       if (value === null) delete snapshots[name]

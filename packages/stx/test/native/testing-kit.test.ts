@@ -164,3 +164,38 @@ describe('mountNativeScreen', () => {
     expect(phone.snapshots.header).toBeUndefined()
   })
 })
+
+const SESSION_SCREEN = `<script client>
+const heard = state([])
+onMount(() => craft.session.onChange((token, previous) => heard.set([...heard(), (token || '-') + '<' + (previous || '-')])))
+async function signOut() { await craft.secureStorage.remove('auth.token') }
+</script>
+<View>
+  <Text testID="heard" :text="heard().join(' ')" />
+  <View testID="out" @click="signOut()" />
+</View>`
+
+describe('the signed-in account', () => {
+  it('reports token changes as craft.session events, from the host or from a write on the screen', async () => {
+    const { code } = await compileNativeScreen(SESSION_SCREEN, { name: 'Session' })
+    const phone = mountNativeScreen(code, 'Session', { secureStorage: { 'auth.token': 'a' } })
+    await phone.settle()
+    phone.setSessionToken('b')
+    phone.setSessionToken('b')
+    phone.press(phone.byTestID('out')!)
+    await phone.waitFor(() => text(phone, 'heard') === 'b<a -<b', 'both changes heard')
+    expect(phone.secureStorage['auth.token']).toBeUndefined()
+    phone.unmount()
+  })
+
+  it('is silent on a host older than Craft 0.0.245', async () => {
+    const { code } = await compileNativeScreen(SESSION_SCREEN, { name: 'Session' })
+    const phone = mountNativeScreen(code, 'Session', { secureStorage: { 'auth.token': 'a' }, sessionEvents: false })
+    await phone.settle()
+    phone.setSessionToken('b')
+    await phone.settle()
+    expect(text(phone, 'heard')).toBe('')
+    expect(phone.secureStorage['auth.token']).toBe('b')
+    phone.unmount()
+  })
+})
