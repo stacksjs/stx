@@ -147,7 +147,11 @@ export const spinnerClasses = `animate-spin ${iconClasses}`.trim()
  *
  * See stacksjs/stx#1997.
  */
-const labelText = useReactiveProp('label', {{ label }}, { parse: value => value == null ? '' : String(value) })
+const labelProp = useReactiveProp('label', {{ label }}, { parse: value => value == null ? '' : String(value) })
+// Preserve native Button's text prop when the same shared file is selected.
+// Read it as a prop, not a root text binding that would erase icons/spinners.
+const textProp = useReactiveProp('text', '', { parse: value => value == null ? '' : String(value) })
+const labelText = derived(() => labelProp() || textProp())
 const isLoading = useReactiveProp('loading', {{ loading }})
 const disabledProp = useReactiveProp('disabled', {{ disabled }})
 
@@ -353,6 +357,7 @@ spinner
 spinnerClasses
 stay
 still
+text
 text-accent
 text-accent-ink
 text-base

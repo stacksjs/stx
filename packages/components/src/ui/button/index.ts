@@ -11,6 +11,9 @@ export interface ButtonProps {
   loading?: boolean
   type?: 'button' | 'submit' | 'reset'
   fullWidth?: boolean
+  label?: string
+  /** Compatibility alias for native Button text; a nonempty label takes precedence. */
+  text?: string
   leftIcon?: string
   rightIcon?: string
   className?: string
@@ -27,6 +30,8 @@ export const buttonPropSchema: PropSchema = {
   loading: PropTypes.boolean,
   type: PropTypes.oneOf(['button', 'submit', 'reset']),
   fullWidth: PropTypes.boolean,
+  label: PropTypes.string,
+  text: PropTypes.string,
   leftIcon: PropTypes.string,
   rightIcon: PropTypes.string,
   className: PropTypes.string,
