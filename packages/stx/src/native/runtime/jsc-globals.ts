@@ -536,19 +536,25 @@ export function isNativeFile(value: unknown): value is NativeFile {
 
 type FormValue = string | NativeFile
 
+/** The native host supplies successful controls, not a browser DOM tree. */
+export const NATIVE_FORM_ENTRIES = Symbol.for('stx.native.form.entries')
+
 /**
  * `FormData`, which JavaScriptCore does not have: the web's shape, holding
  * text and the files `craft.files` made (a `File` on the page). `fetch` on a
  * native screen sends it as multipart/form-data, built by the host, so code
  * shared with the page posts a photo the same way on both
- * (`form.append('photo', file)`). Installed where the host can send one (the
- * `files` capability).
+ * (`form.append('photo', file)`). Collection is available without device
+ * services; sending multipart bodies remains gated by the files capability.
  */
 export class NativeFormData {
   private list: Array<[string, FormValue]> = []
 
   constructor(form?: unknown) {
-    if (form !== undefined) throw new TypeError('FormData on a native screen is built with append(); there is no <form> to read')
+    if (form === undefined) return
+    const read = form && (form as { [NATIVE_FORM_ENTRIES]?: () => Iterable<[string, unknown]> })[NATIVE_FORM_ENTRIES]
+    if (typeof read !== 'function') throw new TypeError('FormData requires a native form handle, or no argument when built with append()')
+    for (const [name, value] of read.call(form)) this.append(name, value)
   }
 
   append(name: string, value: unknown, filename?: string): void {
@@ -732,6 +738,7 @@ export function installJSCGlobals(target: AnyRecord = globalThis as AnyRecord): 
   target.Node ??= { ELEMENT_NODE: 1, TEXT_NODE: 3, COMMENT_NODE: 8 }
   target.Event ??= NativeEvent
   target.CustomEvent ??= NativeEvent
+  target.FormData ??= NativeFormData
   target.addEventListener ??= addEventListener
   target.removeEventListener ??= removeEventListener
   target.dispatchEvent ??= dispatchEvent

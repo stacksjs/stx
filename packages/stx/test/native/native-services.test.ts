@@ -538,11 +538,15 @@ describe('files: a picked photo, a download, a form', () => {
     await expect(scope.fetch('https://hq.training/api/x', { method: 'GET', body: form })).rejects.toThrow('A GET or HEAD request cannot have a body')
   })
 
-  it('has no files, no FormData and no form bodies where the host offers none', async () => {
-    const { scope } = await runtime()
+  it('collects form values without files but keeps multipart uploads capability-gated', async () => {
+    const { scope, requests } = await runtime()
     expect(scope.craft.files).toBeUndefined()
     expect(scope.craft.capabilities.files).toBe(false)
-    expect(scope.FormData).toBeUndefined()
+    const form = new scope.FormData()
+    form.append('name', 'Ada')
+    expect(form.get('name')).toBe('Ada')
+    await expect(scope.fetch('/profile', { method: 'POST', body: form })).rejects.toThrow('cannot send a form')
+    expect(requests()).toHaveLength(0)
   })
 
   it('says a person-facing request is untimed, and a plain one is not', async () => {
