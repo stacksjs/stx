@@ -4,6 +4,8 @@ export { default as SegmentedControl } from './SegmentedControl.stx'
 export interface SegmentedControlOption {
   value: string
   label?: string
+  /** What a reader hears when the label alone is not enough ("3" -> "3 days"). */
+  accessibilityLabel?: string
   disabled?: boolean
 }
 

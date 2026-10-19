@@ -19,7 +19,8 @@
  *   <SegmentedControl v-model:value="period" label="Period" stretch
  *     :options="[{ value: 'week', label: 'This week' }, { value: 'all', label: 'All time' }]" />
  *
- * `options` takes strings or `{ value, label, disabled? }`; it is reactive,
+ * `options` takes strings or `{ value, label, accessibilityLabel?, disabled? }`;
+ * it is reactive,
  * so a label carrying a count can change in place. The selection is a
  * `v-model:value`, or `:value` with `@change`, which receives the new value.
  * `testID` names the group, and each segment is `<testID>-<value>`.
@@ -66,10 +67,14 @@ const groupID = {{ testID }}
 function normalise(choice) {
   if (choice !== null && typeof choice === 'object') {
     const value = choice.value == null ? '' : String(choice.value)
-    return { value, label: choice.label == null ? value : String(choice.label), disabled: choice.disabled === true }
+    const label = choice.label == null ? value : String(choice.label)
+    // What a reader hears, when the words on the segment are not enough:
+    // "3" on a segment of day counts is "3 days" aloud.
+    const spoken = choice.accessibilityLabel == null ? label : String(choice.accessibilityLabel)
+    return { value, label, spoken, disabled: choice.disabled === true }
   }
   const value = choice == null ? '' : String(choice)
-  return { value, label: value, disabled: false }
+  return { value, label: value, spoken: value, disabled: false }
 }
 
 function segments() {
@@ -120,6 +125,7 @@ defineExpose({ selected })
     :key="segment.value"
     type="button"
     :testID="segmentID(segment)"
+    :aria-label="segment.spoken"
     :aria-pressed="isOn(segment) ? 'true' : 'false'"
     :aria-disabled="isOff(segment) ? 'true' : 'false'"
     :disabled="isOff(segment)"

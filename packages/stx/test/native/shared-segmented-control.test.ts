@@ -60,6 +60,7 @@ describe('SegmentedControl on a native host', () => {
     expect(segment('week').props.accessibilityState).toMatchObject({ selected: true })
     expect(segment('month').props.accessibilityState).toMatchObject({ selected: false })
     expect(segment('all').props.accessibilityState).toMatchObject({ selected: false, disabled: true })
+    expect(segment('month').props.accessibilityLabel).toBe('This month')
 
     phone.press(segment('month'))
     await phone.settle()
