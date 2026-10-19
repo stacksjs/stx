@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.590...v0.2.591)
+
+## 🐛 Bug Fixes
+
+- **native**: a browser screen scrolls on one axis and hides what the host hides ([eb42311](https://github.com/stacksjs/stx/commit/eb42311)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- **native**: compile hidden mount navigation guards ([6178264](https://github.com/stacksjs/stx/commit/6178264)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.591 ([9e2c776](https://github.com/stacksjs/stx/commit/9e2c776)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.589...v0.2.590)
 
 ## 🐛 Bug Fixes
