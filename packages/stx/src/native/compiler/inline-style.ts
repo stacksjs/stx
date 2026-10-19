@@ -158,10 +158,7 @@ export function parseNativeStyle(input: unknown, report: (diagnostic: NativeStyl
 }
 
 /** Resolve all same-element variable declarations before evaluating any style layer. */
-export function parseNativeStyleLayers(inputs: unknown[], inheritedVariables: NativeStyleVariables | undefined, report: (diagnostic: NativeStyleDiagnostic) => void): {
-  variables: NativeStyleVariables
-  styles: STXStyle[]
-} {
+export function parseNativeStyleLayers(inputs: unknown[], inheritedVariables: NativeStyleVariables | undefined, report: (diagnostic: NativeStyleDiagnostic) => void): { variables: NativeStyleVariables, styles: STXStyle[] } {
   const layers = inputs.map(input => styleEntries(input, report))
   const variables = createStyleVariables(layers.flat(), inheritedVariables)
   const computed = variables.computed()

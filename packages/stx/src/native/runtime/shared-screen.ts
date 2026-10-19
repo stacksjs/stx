@@ -42,6 +42,7 @@ export function prepareSharedNativeScreen(
       if (!rendered) throw nativeViewError('VIEW_NOT_MOUNTED', 'The native screen has not rendered')
     }),
     colorScheme: bridge.colorScheme === 'dark' ? 'dark' : 'light',
+    stylesheetTheme: document.root._stylesheetTheme,
     send(operations) {
       const baseRevision = revision
       revision++

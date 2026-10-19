@@ -6,7 +6,8 @@
  * that can be consumed by iOS (UIKit), Android, and web renderers.
  */
 
-import { SEMANTIC_TOKENS } from '../../theme-tokens'
+import { DENSITY_FONT_SIZES, DENSITY_SPACING, SEMANTIC_TOKENS, SHAPE_TOKENS, tokenVariable } from '../../theme-tokens'
+import type { NativeStyleVariables } from './style-variables'
 import { nativeDensitySpacing, nativeDensityType, nativeShapeRadius } from './design-tokens'
 import type { STXStyle } from './ir'
 
@@ -965,16 +966,35 @@ export interface ClassStyles {
  * Only `dark:` is currently implemented by the native style resolver. Other
  * variants are reported, not applied unconditionally or silently discarded.
  */
-export function compileClassStyles(classes: string): ClassStyles {
+export function compileClassStyles(classes: string, variables?: NativeStyleVariables): ClassStyles {
   const plain: string[] = []
   const dark: string[] = []
   const semanticDark: string[] = []
   const unsupported: string[] = []
   const originals = new Map<string, Set<string>>()
-  function roleClass(name: string, scheme: 'light' | 'dark'): string {
+  function roleClasses(name: string, scheme: 'light' | 'dark'): string[] | undefined {
     const match = /^(text|bg|border|ring)-([a-z-]+)(\/[^\s]+)?$/.exec(name)
     const role = match && SEMANTIC_TOKENS[match[2]]
-    return role ? `${match![1]}-${role[scheme]}${match![3] || ''}` : name
+    if (role) {
+      const override = variables?.get(tokenVariable(match![2]))
+      return [`${match![1]}-${override === undefined ? role[scheme] : `[${override}]`}${match![3] || ''}`]
+    }
+    const shape = /^rounded-(?:(tl|tr|bl|br|t|b|l|r)-)?(.+)$/.exec(name)
+    if (shape && SHAPE_TOKENS[shape[2]]) {
+      const radius = nativeShapeRadius(shape[2], variables)
+      return radius === undefined ? undefined : [`rounded-${shape[1] ? `${shape[1]}-` : ''}[${radius}px]`]
+    }
+    const type = name.startsWith('text-') ? name.slice(5) : ''
+    if (DENSITY_FONT_SIZES[type]) {
+      const density = nativeDensityType(type, variables)
+      return density && [`text-[${density.fontSize}px]`, `leading-[${density.lineHeight}px]`]
+    }
+    for (const token of Object.keys(DENSITY_SPACING)) {
+      if (!name.endsWith(`-${token}`)) continue
+      const length = nativeDensitySpacing(token, variables)
+      return length === undefined ? undefined : [`${name.slice(0, -token.length)}[${length}px]`]
+    }
+    return [name]
   }
   function remember(translated: string, original: string): string {
     if (!originals.has(translated)) originals.set(translated, new Set())
@@ -982,17 +1002,24 @@ export function compileClassStyles(classes: string): ClassStyles {
     return translated
   }
   for (const name of classes.split(/\s+/).filter(Boolean)) {
-    if (name.startsWith('dark:')) dark.push(remember(roleClass(name.slice(5), 'dark'), name))
+    if (name.startsWith('dark:')) {
+      const translated = roleClasses(name.slice(5), 'dark')
+      if (!translated) unsupported.push(name)
+      else dark.push(...translated.map(value => remember(value, name)))
+    }
     else if (!name.includes(':') || name.startsWith('[')) {
-      plain.push(remember(roleClass(name, 'light'), name))
-      if (roleClass(name, 'dark') !== name) semanticDark.push(remember(roleClass(name, 'dark'), name))
+      const lightClasses = roleClasses(name, 'light')
+      const darkClasses = roleClasses(name, 'dark')
+      if (!lightClasses || !darkClasses) { unsupported.push(name); continue }
+      plain.push(...lightClasses.map(value => remember(value, name)))
+      if (darkClasses.join(' ') !== lightClasses.join(' ')) semanticDark.push(...darkClasses.map(value => remember(value, name)))
     }
     else unsupported.push(name)
   }
   const unknown: string[] = []
-  const style = compileHeadwindToStyle(plain.join(' '), unknown)
+  const style = compileHeadwindToStyle(plain, unknown)
   const result: ClassStyles = { style, unknown }
-  if (dark.length || semanticDark.length) result.dark = compileHeadwindToStyle([...semanticDark, ...dark].join(' '), unknown)
+  if (dark.length || semanticDark.length) result.dark = compileHeadwindToStyle([...semanticDark, ...dark], unknown)
   // A dark x translation replaces x, not the entire light transform array.
   if (style.transform && result.dark?.transform) {
     const overridden = new Set(result.dark.transform.flatMap(step => Object.keys(step)))
@@ -1009,9 +1036,9 @@ export function compileClassStyles(classes: string): ClassStyles {
   return result
 }
 
-export function compileHeadwindToStyle(classes: string, unknown?: string[]): STXStyle {
+export function compileHeadwindToStyle(classes: string | string[], unknown?: string[]): STXStyle {
   const style: STXStyle = {}
-  const classNames = classes.split(/\s+/).filter(Boolean)
+  const classNames = Array.isArray(classes) ? classes : classes.split(/\s+/).filter(Boolean)
 
   for (const className of classNames) {
     // An Iconify class names the glyph of an <Icon>, not a style.

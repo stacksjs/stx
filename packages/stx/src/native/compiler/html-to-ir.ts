@@ -31,7 +31,8 @@ import { NATIVE_BOOLEAN_PROPS, nativePropName } from '../prop-names'
 import { mapToNativeComponent } from './component-mapping'
 import { resolveIconName } from './icons'
 import { type NativeStyleContext, parseNativeStyle } from './inline-style'
-import type { NativeStyleVariables } from './style-variables'
+import { createStyleVariables, type NativeStyleVariables } from './style-variables'
+import { extractStylesheetTheme } from './stylesheet-theme'
 import { parseViewBox, SVG_DROPPED, SVG_NODE_TYPES, SVG_TYPES, svgGeometry } from './svg'
 import { compileClassStyles } from './headwind-to-style'
 import { createDocument, createNode } from './ir'
@@ -55,6 +56,8 @@ export type TranslationDiagnosticKind =
   | 'unsupported-list-prop'
   /** A control with no supported native interaction contract. */
   | 'unsupported-control'
+  /** A theme declaration cannot be evaluated faithfully on the native target. */
+  | 'unsupported-theme-rule'
 
 export interface TranslationDiagnostic {
   kind: TranslationDiagnosticKind
@@ -239,6 +242,7 @@ function readAttributes(
   diagnostics: TranslationDiagnostic[],
   styleContext: NativeStyleContext = {},
 ): Attributes {
+  let variables = styleContext.inheritedVariables
   const props: Record<string, unknown> = {}
   const events: Record<string, string> = {}
   const bindings: Record<string, string> = {}
@@ -254,7 +258,10 @@ function readAttributes(
     }
 
     if (name === 'style') {
-      inline = { ...inline, ...inlineStyle(tag, value, diagnostics, styleContext) }
+      inline = { ...inline, ...inlineStyle(tag, value, diagnostics, { ...styleContext, onVariables(value) {
+        variables = value
+        styleContext.onVariables?.(value)
+      } }) }
       continue
     }
 
@@ -299,7 +306,7 @@ function readAttributes(
     }
   }
 
-  const compiledClasses = classes ? compileClassStyles(classes) : undefined
+  const compiledClasses = classes ? compileClassStyles(classes, variables) : undefined
   for (const name of new Set(compiledClasses?.unknown ?? []))
     diagnostics.push({ kind: 'unknown-class', tag, name })
   const style = { ...compiledClasses?.style, ...inline }
@@ -409,6 +416,8 @@ export async function translateHtmlToIR(
   options: TranslateOptions = {},
 ): Promise<TranslationResult> {
   const diagnostics: TranslationDiagnostic[] = []
+  const stylesheetTheme = await extractStylesheetTheme(html, name => diagnostics.push({ kind: 'unsupported-theme-rule', tag: 'style', name }))
+  const stylesheetVariables = createStyleVariables(stylesheetTheme.light).computed()
   const roots: STXNode[] = []
   const stack: Frame[] = []
   const seenUnmapped = new Set<string>()
@@ -423,6 +432,12 @@ export async function translateHtmlToIR(
 
   /** A wrapper's children take its place. */
   function hoist(frame: Frame): void {
+    const preserveVariables = (node: STXNode): void => {
+      // HTML's declarations already participate in the document cascade,
+      // including stylesheet !important and aliases resolved on that element.
+      if (frame.tag !== 'html' && frame.node._styleSource)
+        node._styleAncestors = [frame.node._styleSource, ...node._styleAncestors ?? []]
+    }
     if (frame.node.bindings && Object.keys(frame.node.bindings).length > 0) {
       const children = frame.node.children
       const elements = children.filter((child): child is STXNode => typeof child !== 'string')
@@ -432,6 +447,7 @@ export async function translateHtmlToIR(
       target.bindings = { ...frame.node.bindings, ...target.bindings }
       if (target.bindingId === undefined && frame.node.bindingId !== undefined)
         target.bindingId = frame.node.bindingId
+      preserveVariables(target)
       attach(target)
       return
     }
@@ -443,6 +459,7 @@ export async function translateHtmlToIR(
           parent.node.children.push(child)
         continue
       }
+      preserveVariables(child)
       if (!parent)
         roots.push(child)
       else if (!parent.dropped)
@@ -456,10 +473,11 @@ export async function translateHtmlToIR(
       return openSvg(tag, attributes, parentFrame)
     const dropped = DROP_SUBTREE.has(tag) && !BOX_ONLY.has(tag)
     const inheritedDrop = stack[stack.length - 1]?.dropped ?? false
-    let variables = parentFrame?.variables
+    let variables = parentFrame?.variables ?? stylesheetVariables
     const { props, style, events, bindings, classes, inline } = dropped || inheritedDrop
       ? { props: {}, style: {}, events: {}, bindings: {}, classes: '', inline: {} }
       : readAttributes(tag, attributes, diagnostics, { inheritedVariables: variables, onVariables: value => { variables = value } })
+    if (tag === 'html') variables = stylesheetVariables
 
     // A primitive component names its own native type, since the HTML tag it
     // emits cannot carry the distinction.
@@ -571,7 +589,7 @@ export async function translateHtmlToIR(
       }
       return { tag, node: createNode('G', {}, {}, {}), svg: true, dropped: true, discard: true, unwrap: false }
     }
-    let variables = parent?.variables
+    let variables = parent?.variables ?? stylesheetVariables
     const { props, style, events, bindings, classes, inline } = readAttributes(tag, attributes, diagnostics, { inheritedVariables: variables, onVariables: value => { variables = value } })
     if (type === 'Svg') {
       const viewBox = parseViewBox(props.viewBox)
@@ -653,6 +671,8 @@ export async function translateHtmlToIR(
   const root = roots.length === 1
     ? roots[0]
     : createNode('View', {}, {}, {}, roots)
+
+  if (stylesheetTheme.light.length || stylesheetTheme.dark.length) root._stylesheetTheme = stylesheetTheme
 
   return { root, diagnostics }
 }

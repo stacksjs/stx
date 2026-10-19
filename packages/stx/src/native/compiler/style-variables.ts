@@ -44,12 +44,14 @@ function substitute(input: string, lookup: (name: string, fallback?: string) => 
 
 export type NativeStyleVariables = ReadonlyMap<string, string | undefined>
 
-/** Inherited values are already computed at their declaring element. */
-export function createStyleVariables(entries: Array<[string, unknown]>, inherited?: NativeStyleVariables): {
-  resolve: (text: string, depth?: number) => string | undefined
+export interface NativeStyleVariableResolver {
+  resolve: (text: string) => string | undefined
   used: Set<string>
   computed: () => NativeStyleVariables
-} {
+}
+
+/** Inherited values are already computed at their declaring element. */
+export function createStyleVariables(entries: Array<[string, unknown]>, inherited?: NativeStyleVariables): NativeStyleVariableResolver {
   const values = new Map<string, string>()
   const used = new Set<string>()
   for (const [rawName, value] of entries) {
