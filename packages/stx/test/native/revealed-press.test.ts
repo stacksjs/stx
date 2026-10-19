@@ -5,54 +5,20 @@
  * real press through at once (native-host.ts `eventAt`).
  */
 import { describe, expect, it } from 'bun:test'
-import path from 'node:path'
-import vm from 'node:vm'
-import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
-import { createTempDir } from '../../src/temp-dir'
+import { compileNativeScreen, mountNativeScreen } from '../../src/native/testing'
 
 async function pressedAt(template: string): Promise<boolean> {
-  const root = createTempDir('stx-repro-')
-  const file = path.join(root, 'Repro.stx')
-  await Bun.write(file, `<script client>
+  const { code } = await compileNativeScreen(`<script client>
 const items = state([])
 function mark() { globalThis.__hits = (globalThis.__hits || 0) + 1 }
 onMount(() => { setTimeout(() => items.set([1, 2]), 0) })
-</script>${template}`)
-  const code = (await compileSharedScreenBundle(file)).code
-  const nodes = new Map<string, any>()
-  let receive: (raw: string) => void = () => {}
-  const visit = (node: any): void => {
-    nodes.set(node.id, node)
-    for (const child of node.children || []) if (typeof child !== 'string') visit(child)
-  }
-  const scope: any = {
-    setTimeout, clearTimeout, console,
-    __stxNativeBridge: {
-      platform: 'ios', capabilities: [],
-      onMessage: (callback: typeof receive) => {
-        receive = callback
-      },
-      postMessage: (raw: string) => {
-        const message = JSON.parse(raw)
-        if (message.payload?.document) visit(message.payload.document)
-        for (const op of message.payload?.operations || []) {
-          if (op.node) visit({ ...op.node, id: op.id })
-          const node = nodes.get(op.id)
-          if (node && op.patch) {
-            node.events = { ...node.events, ...op.patch.events }
-            node.props = { ...node.props, ...op.patch.props }
-          }
-        }
-      },
-    },
-  }
-  vm.runInNewContext(code, scope)
+</script>${template}`, { name: 'Repro' })
+  const phone = mountNativeScreen(code, 'main')
   // Pressed at once: inside the 50ms an opener's click is kept from what it opened.
   await Bun.sleep(20)
-  const after = [...nodes.values()].find(n => n.props?.testID === 'after')
-  receive(JSON.stringify({ type: 'EVENT', payload: { handlerId: after.events.onPress, nativeEvent: {} } }))
+  phone.press(phone.byTestID('after')!)
   await Bun.sleep(10)
-  return scope.__hits === 1
+  return phone.context.__hits === 1
 }
 
 describe('a press on what an :if has just shown', () => {
