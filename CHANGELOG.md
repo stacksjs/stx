@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.595...v0.2.596)
+
+## ✨ Features
+
+- **components**: a segment says what it is, aloud too ([4e61de7](https://github.com/stacksjs/stx/commit/4e61de7)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- **native**: hold the stale measurement past the kit's request deadline ([fd6d1f6](https://github.com/stacksjs/stx/commit/fd6d1f6)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.596 ([e562c1c](https://github.com/stacksjs/stx/commit/e562c1c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.594...v0.2.595)
 
 ## ✨ Features
