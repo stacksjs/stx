@@ -371,7 +371,7 @@ describe('#1695 — bare function ref in event handler shorthand', () => {
 
   it('runtime contains the bare-id match path', () => {
     expect(runtime).toContain('bareIdMatch')
-    expect(runtime).toContain('fn($event)')
+    expect(runtime).toContain('return (...args) => fn(...args)')
   })
 
   it('the shorthand logic dispatches $event to a bare function ref', () => {
@@ -639,7 +639,7 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
     expect(runtime).toContain('var componentEmits = el.__stx_component_emits')
     expect(runtime).toContain('componentEmits && componentEmits[eventName]')
     expect(runtime).toContain('event instanceof CustomEvent')
-    expect(runtime).toContain('shorthandFn(handlerEvent)')
+    expect(runtime).toContain('shorthandFn.apply(null, emittedArgs || [handlerEvent])')
     expect(runtime).toContain('expressionCallsSignal(expression, prop)')
   })
 
