@@ -10,7 +10,7 @@
  */
 
 import path from 'node:path'
-import { bundleClientScript, clientBundleDependencies, hasUserImports } from './client-script-bundler'
+import { bundleClientScript, clientBundleDependencies, hasUserImports, moduleSubstitutionKey } from './client-script-bundler'
 import { loadStxConfig } from './config'
 import { isProduction, minifyClassicScript } from './env'
 import { getPublicEnvDefine } from './public-env'
@@ -90,6 +90,9 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
   // nothing outside tests ever called `clearStoreCache()`, a dev server held
   // the first result — usually `null`, from before any store existed — for the
   // life of the process (#1877).
+  // Stores bundled under module substitutes (the native compiler's) are
+  // another build of the same files.
+  const cacheKey = `${resolvedDir}\u0000${moduleSubstitutionKey()}`
   const glob = new Bun.Glob('*.ts')
   const storeFiles: string[] = []
 
@@ -104,7 +107,7 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
   }
   catch {
     // storesDir doesn't exist — no stores to load
-    writeSigned(_cachedStoreScripts, resolvedDir, '', '')
+    writeSigned(_cachedStoreScripts, cacheKey, '', '')
     return null
   }
 
@@ -115,11 +118,11 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
     ...storeFiles.flatMap(file => clientBundleDependencies(file)),
   ])]
   let signature = sourceSignature(storeInputs())
-  const cached = readSigned(_cachedStoreScripts, resolvedDir, signature)
+  const cached = readSigned(_cachedStoreScripts, cacheKey, signature)
   if (cached !== undefined) return cached || null
 
   if (storeFiles.length === 0) {
-    writeSigned(_cachedStoreScripts, resolvedDir, signature, '')
+    writeSigned(_cachedStoreScripts, cacheKey, signature, '')
     return null
   }
 
@@ -210,7 +213,7 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
   }
 
   if (chunks.length === 0) {
-    writeSigned(_cachedStoreScripts, resolvedDir, signature, '')
+    writeSigned(_cachedStoreScripts, cacheKey, signature, '')
     return null
   }
 
@@ -243,7 +246,7 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
   // aggregate with that complete graph so editing an imported helper
   // invalidates the store script on the next read.
   signature = sourceSignature(storeInputs())
-  writeSigned(_cachedStoreScripts, resolvedDir, signature, code)
+  writeSigned(_cachedStoreScripts, cacheKey, signature, code)
   return code
 }
 

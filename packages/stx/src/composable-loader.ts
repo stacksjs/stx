@@ -25,7 +25,7 @@
 
 import path from 'node:path'
 import { unboundNames } from './client-parameter-bindings'
-import { bundleClientScript, clientBundleDependencies, hasUserImports } from './client-script-bundler'
+import { bundleClientScript, clientBundleDependencies, hasUserImports, moduleSubstitutionKey } from './client-script-bundler'
 import { loadStxConfig } from './config'
 import { isProduction, minifyClassicScript } from './env'
 import { getPublicEnvDefine } from './public-env'
@@ -406,7 +406,7 @@ export async function getComposableScript(
     return null
 
   const includedFiles = composableFiles.filter(file => selected.has(file))
-  const cacheKey = `${resolvedDir}\u0000${includedFiles.join('\u0000')}`
+  const cacheKey = `${resolvedDir}\u0000${includedFiles.join('\u0000')}\u0000${moduleSubstitutionKey()}`
   const cached = readSigned(_cachedComposableScripts, cacheKey, signature)
   if (cached !== undefined) return cached || null
 

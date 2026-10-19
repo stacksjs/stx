@@ -11,6 +11,7 @@
 
 import path from 'node:path'
 import fs from 'node:fs' // kept for mkdir/rmSync (no Bun equivalent for dir ops)
+import { AsyncLocalStorage } from 'node:async_hooks'
 import type { BunPlugin } from 'bun'
 import type { BuildFailureDetail } from './build-message'
 import { getPublicEnvDefine } from './public-env'
@@ -475,6 +476,33 @@ function probeModuleFile(basePath: string): string | undefined {
   return undefined
 }
 
+interface ModuleSubstitutes {
+  modules: ReadonlyMap<string, string>
+  key: string
+}
+const moduleSubstitutes = new AsyncLocalStorage<ModuleSubstitutes>()
+
+/**
+ * Bundle the client scripts `run` builds with some modules standing in for
+ * others: `modules` maps a module's absolute path to the JavaScript bundled
+ * in its place. The native compiler uses it to leave each language's
+ * messages out of route files (`compileNativeBundle`'s `messages`), for the
+ * screens', components' and composables' scripts alike. Scoped to `run`'s
+ * own async work, so a build beside it bundles the real modules, and part of
+ * every cache key below, so neither build is ever served the other's code.
+ */
+export function withModuleSubstitutes<T>(modules: ReadonlyMap<string, string>, run: () => Promise<T>): Promise<T> {
+  const hasher = new Bun.CryptoHasher('md5')
+  for (const [file, contents] of [...modules].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+    hasher.update(`${file}\0${contents}\0`)
+  return moduleSubstitutes.run({ modules, key: hasher.digest('hex').slice(0, 12) }, run)
+}
+
+/** The substitutes in force (`withModuleSubstitutes`), as part of a cache key: empty with none. */
+export function moduleSubstitutionKey(): string {
+  return moduleSubstitutes.getStore()?.key ?? ''
+}
+
 /**
  * Create the Bun.build plugin that marks stx/stores as external,
  * resolves @/ paths to the project root, and — critically — rebases
@@ -494,6 +522,7 @@ function createBundlePlugin(
   externalizeUserModules: boolean,
   registrySpecifiers: Map<string, string> = new Map(),
   serverApi?: boolean | ServerApiOptions,
+  substitutes?: ReadonlyMap<string, string>,
 ): BunPlugin {
   // A direct import of the script being bundled goes to the page registry
   // instead of being inlined (#1957). Only the ENTRY's imports: the modules
@@ -692,6 +721,9 @@ function createBundlePlugin(
         // Track only durable source inputs.
         if (args.path !== tmpEntry)
           inputFiles.add(args.path)
+        const substitute = substitutes?.get(args.path)
+        if (substitute !== undefined)
+          return { contents: substitute, loader: 'js' }
         return {
           contents: fs.readFileSync(args.path, 'utf8'),
           loader,
@@ -821,6 +853,8 @@ export async function bundleClientScript(
   const externalizeUserModules = options.externalizeUserModules ?? true
   const expose = options.expose?.length ? [...new Set(options.expose)].sort() : undefined
   const cacheDir = options.cacheDir || stateDir(projectRoot, 'bundle-cache')
+  // Read now: the build itself may run later, from the queue.
+  const substituted = moduleSubstitutes.getStore()
 
   // Content-hash for caching and temp file naming. The hash covers only
   // the script source + host file path — transitive imports (e.g.
@@ -839,7 +873,7 @@ export async function bundleClientScript(
   const hasher = new Bun.CryptoHasher('md5')
   // Minified or not is part of what was built: a readable bundle cached by a
   // development render was served to production renders asking for minified.
-  hasher.update(`${BUNDLE_CACHE_VERSION}\0${cacheEngineFingerprint()}\0${JSON.stringify(serverApi ?? false)}\0${externalizeUserModules ? 'registry' : 'inline'}\0${expose ? expose.join(',') : '*'}\0${minify ? 'minified' : 'readable'}\0${code}\0${filePath}`)
+  hasher.update(`${BUNDLE_CACHE_VERSION}\0${cacheEngineFingerprint()}\0${JSON.stringify(serverApi ?? false)}\0${externalizeUserModules ? 'registry' : 'inline'}\0${expose ? expose.join(',') : '*'}\0${minify ? 'minified' : 'readable'}\0${substituted?.key ?? ''}\0${code}\0${filePath}`)
   const hash = hasher.digest('hex').slice(0, 12)
 
   // Check cache. A cache hit requires both the bundled JS to exist AND
@@ -928,7 +962,7 @@ export async function bundleClientScript(
   }
 
   const build = queueClientBundleBuild(() =>
-    buildBundle(code, filePath, { projectRoot, minify, cacheDir, hash, cachePath, depsPath, collectInputs: options.collectInputs, externalizeUserModules, serverApi, expose, throwOnFailure: options.throwOnFailure }),
+    buildBundle(code, filePath, { projectRoot, minify, cacheDir, hash, cachePath, depsPath, collectInputs: options.collectInputs, externalizeUserModules, serverApi, expose, throwOnFailure: options.throwOnFailure, substitutes: substituted?.modules }),
   )
   inFlightBundles.set(hash, build)
   try {
@@ -965,6 +999,7 @@ async function buildBundle(
     serverApi?: boolean | ServerApiOptions
     expose?: readonly string[]
     throwOnFailure?: boolean
+    substitutes?: ReadonlyMap<string, string>
   },
 ): Promise<string> {
   const { projectRoot, minify, cacheDir, hash, cachePath, depsPath, externalizeUserModules } = options
@@ -1104,7 +1139,7 @@ async function buildBundle(
       // matched, the export capture found nothing, and the script shipped
       // unbundled with raw imports in a classic <script>.
       minify: minify ? { whitespace: false, identifiers: true, syntax: true } : false,
-      plugins: [createBundlePlugin(projectRoot, templateDir, tmpEntry, inputFiles, externalizeUserModules, registrySpecifiers, options.serverApi)],
+      plugins: [createBundlePlugin(projectRoot, templateDir, tmpEntry, inputFiles, externalizeUserModules, registrySpecifiers, options.serverApi, options.substitutes)],
       define: {
         'process.env.NODE_ENV': minify ? '"production"' : '"development"',
         ...getPublicEnvDefine(),

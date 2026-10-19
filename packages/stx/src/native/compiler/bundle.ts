@@ -8,7 +8,7 @@
  *   3. the selected screen's rendered IR, manifest and generated setup.
  *
  * With `routesDir`, each route also gets a file of its own holding only that
- * route's screen (or the app script) and the runtime. Every native screen is
+ * route's screen (or the app script), beside one runtime file they share. Every native screen is
  * a JavaScriptCore context of its own, and the host evaluates the whole file
  * it is given: one file of every screen made each mount parse every screen's
  * code (HQ's 17 MB took ~170 ms of main thread per tab and push, before the
@@ -20,12 +20,13 @@
  * where the screen lives, exactly as it would on the web.
  */
 import type { BunPlugin } from 'bun'
-import { existsSync, mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, realpathSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import { compileScreenFile } from './render-screen'
 import type { STXDocument } from './ir'
 import { NATIVE_APP_ROUTE } from '../runtime/shared-screen'
 import { generateSignalsRuntime } from '../../signals'
+import { withModuleSubstitutes } from '../../client-script-bundler'
 import type { BrowserScreenOptions } from '../runtime/browser-screen'
 
 export interface CompileNativeBundleOptions {
@@ -55,14 +56,65 @@ export interface CompileNativeBundleOptions {
   /** Compile the same component for the browser host instead of a device host. */
   browser?: BrowserScreenOptions & { platformModule: string, platformOptions?: Record<string, unknown> }
   /**
-   * A directory (relative to `root`) to write one self-contained bundle per
-   * route into: `<Screen>.js` for each screen and `__app.js` for the app
-   * script. A host that finds `<route>.js` there evaluates only that file
-   * (Craft's `dist/native-screens/`). With `routesDir` and no `outFile`, the
-   * one-file bundle is not built at all, and `code` is empty.
+   * A directory (relative to `root`) to write one bundle per route into:
+   * `<Screen>.js` for each screen and `__app.js` for the app script. A host
+   * evaluates the route's own file in the route's context (Craft's
+   * `dist/native-screens/`), and no other screen's code. With `routesDir`
+   * and no `outFile`, the one-file bundle is not built at all, and `code`
+   * is empty.
    */
   routesDir?: string
+  /**
+   * With `routesDir`: the runtime every route needs (the JSC globals, the
+   * screen host, the signals runtime) is a file of its own, `__runtime.js`,
+   * instead of a copy in each route's file, and a host evaluates it in the
+   * route's context before the route's own file. It was 247 KB of every
+   * route file; a host whose screens share one JavaScriptCore VM parses it
+   * once. Only for a host that does this (Craft's `nativeRouteRuntime`): a
+   * route file built so refuses to run without it.
+   */
+  sharedRuntime?: boolean
+  /**
+   * Message catalogs to ship a language at a time, with `routesDir` and
+   * `sharedRuntime` (whose runtime reads them), for a host that answers
+   * `__stxNativeReadMessages` or evaluates them first (Craft's
+   * `nativeMessages`). Each
+   * language's messages live in files of their own under `dir`:
+   * `<dir>/<language>/<area>.ts`, whose default export is plain data (what
+   * JSON can hold) and which export nothing else. Route files carry none of
+   * them: each such module is, in a route file, the messages its language
+   * and area name, which the runtime reads from
+   * `<routesDir>/__messages/<language>/<area>.json` the first time a screen
+   * looks inside them, through the host's
+   * `__stxNativeReadMessages(language, area)` (JSON text, or null). A screen
+   * shown in one language parses that language alone, and only the areas
+   * it uses; another language is read when it is asked for, so a language
+   * changed while the app runs needs no reload. A host that cannot read a
+   * file synchronously evaluates the route's messages first instead
+   * (`__messages/routes.json` names each route's areas), setting
+   * `globalThis.__stxNativeMessages[language][area]`.
+   */
+  messages?: NativeMessagesOptions
 }
+
+export interface NativeMessagesOptions {
+  /** The directory (relative to `root`) holding a directory per language. */
+  dir: string
+  /** The languages, each a directory of `dir`. */
+  languages: string[]
+}
+
+/**
+ * The runtime prelude's name in a `routesDir`: `__runtime.js`, which a host
+ * evaluates in each screen's context before that screen's own route file.
+ */
+export const NATIVE_RUNTIME_ROUTE = '__runtime'
+
+/**
+ * Where a `routesDir` keeps the messages: `__messages/<language>/<area>.json`,
+ * and `__messages/routes.json`, each route's areas.
+ */
+export const NATIVE_MESSAGES_DIR = '__messages'
 
 /** Something the compiler could not translate exactly: an unknown icon or class. */
 export interface NativeDiagnostic {
@@ -79,6 +131,16 @@ export interface NativeBundleResult {
   outFile?: string
   /** Each route's own bundle, by route name, when `routesDir` was given. */
   routes?: Record<string, string>
+  /** The runtime prelude every route file needs first, when `routesDir` was given. */
+  runtime?: string
+  /** The messages written beside the routes, when `messages` was given. */
+  messages?: {
+    /** The absolute `__messages` directory. */
+    dir: string
+    languages: string[]
+    /** Each route's areas, by route name. */
+    routes: Record<string, string[]>
+  }
   diagnostics: NativeDiagnostic[]
 }
 
@@ -98,9 +160,18 @@ function nativeRuntimeModule(name: 'jsc-globals' | 'shared-screen' | 'browser-sc
   return resolved
 }
 
-async function build(entry: string, plugins: BunPlugin[], minify: boolean, dependencies: Set<string>): Promise<string> {
+/**
+ * Bun takes the first `onLoad` that matches a file, so the inputs are
+ * tracked, and a module's stand-in (`substitutes`, by absolute path) handed
+ * in, by one hook.
+ */
+async function build(entry: string, plugins: BunPlugin[], minify: boolean, dependencies: Set<string>, substitutes?: ReadonlyMap<string, string>): Promise<string> {
   const track: BunPlugin = { name: 'stx-screen-inputs', setup(builder) {
-    builder.onLoad({ filter: /.*/, namespace: 'file' }, ({ path: file }) => { dependencies.add(file); return undefined })
+    builder.onLoad({ filter: /.*/, namespace: 'file' }, ({ path: file }) => {
+      dependencies.add(file)
+      const contents = substitutes?.get(file)
+      return contents === undefined ? undefined : { contents, loader: 'js' }
+    })
   } }
   const result = await Bun.build({
     entrypoints: [entry],
@@ -115,6 +186,82 @@ async function build(entry: string, plugins: BunPlugin[], minify: boolean, depen
     throw new Error(`Could not bundle ${entry}:\n${messages}`)
   }
   return (await result.outputs[0].text()).trim()
+}
+
+const MESSAGE_AREA = /^[\w-]+(?:\/[\w-]+)*$/
+const MESSAGE_LANGUAGE = /^[\w-]+$/
+
+interface CollectedMessages {
+  /** Each message module, by absolute path: its language and area. */
+  files: Map<string, { language: string, area: string }>
+  /** Each language's messages, as JSON text, by area. */
+  data: Map<string, Map<string, string>>
+}
+
+/** Read every language's message modules, at build time. */
+async function collectMessages(root: string, options: NativeMessagesOptions): Promise<CollectedMessages> {
+  const dir = path.resolve(root, options.dir)
+  if (!options.languages?.length) throw new Error('messages.languages must name at least one language')
+  const files: CollectedMessages['files'] = new Map()
+  const data: CollectedMessages['data'] = new Map()
+  for (const language of options.languages) {
+    if (!MESSAGE_LANGUAGE.test(language)) throw new Error(`messages: "${language}" is not a language directory name`)
+    const base = path.join(dir, language)
+    if (!existsSync(base)) throw new Error(`messages: ${path.relative(root, base)} does not exist`)
+    const areas = new Map<string, string>()
+    for (const relative of [...new Bun.Glob('**/*.{ts,js,mjs,json}').scanSync({ cwd: base })].sort()) {
+      if (/\.(?:test|spec|d)\.[^.]+$/.test(relative)) continue
+      const area = relative.replace(/\.[^./]+$/, '').split(path.sep).join('/')
+      if (!MESSAGE_AREA.test(area)) throw new Error(`messages: ${language}/${relative} is not an area name`)
+      if (areas.has(area)) throw new Error(`messages: ${language}/${area} is defined twice`)
+      const file = path.join(base, relative)
+      const module = await import(file) as Record<string, unknown>
+      const others = Object.keys(module).filter(name => name !== 'default')
+      // The route files see the default export alone.
+      if (others.length) throw new Error(`messages: ${language}/${relative} exports ${others.join(', ')}; a message module exports its messages as default, and nothing else`)
+      const value = module.default
+      const json = value !== null && typeof value === 'object' && !Array.isArray(value) ? JSON.stringify(value) : undefined
+      if (json === undefined || !Bun.deepEquals(JSON.parse(json), value, true))
+        throw new Error(`messages: ${language}/${relative} must export plain data (an object JSON can hold) as default`)
+      areas.set(area, json)
+      files.set(file, { language, area })
+    }
+    data.set(language, areas)
+  }
+  return { files, data }
+}
+
+/**
+ * In a route file, a message module is its messages, read when a screen
+ * first looks inside them (the runtime's `messages`).
+ */
+function messagesStub(language: string, area: string): string {
+  return `export default globalThis.__stxNativeRuntime.messages(${JSON.stringify(language)}, ${JSON.stringify(area)});`
+}
+
+/**
+ * The stand-in for every message module, by absolute path: as the project
+ * names it and as Bun resolves it (macOS's /var is /private/var).
+ */
+function messageStubs(messages: CollectedMessages): Map<string, string> {
+  const stubs = new Map<string, string>()
+  for (const [file, { language, area }] of messages.files) {
+    const stub = messagesStub(language, area)
+    stubs.set(file, stub)
+    stubs.set(realpathSync(file), stub)
+  }
+  return stubs
+}
+
+/**
+ * The areas a route file reads. Found in the file itself: a screen's script
+ * may come from the client bundle cache, which loads no module at all.
+ */
+function areasRead(code: string): string[] {
+  const areas = new Set<string>()
+  for (const match of code.matchAll(/__stxNativeRuntime\.messages\(\s*"[\w-]+"\s*,\s*"([\w/-]+)"\s*\)/g))
+    areas.add(match[1]!)
+  return [...areas].sort()
 }
 
 /**
@@ -151,12 +298,24 @@ export async function compileNativeBundle(options: CompileNativeBundleOptions): 
   const initialScreen = options.initialScreen ?? names[0]
   if (!options.screens[initialScreen]) throw new Error(`Initial screen ${initialScreen} is not in screens`)
   const root = path.resolve(options.root ?? process.cwd())
+  if (options.messages && !options.routesDir) throw new Error('messages ship a language at a time beside route files: they need routesDir')
+  if (options.sharedRuntime && !options.routesDir) throw new Error('sharedRuntime is the route files\' runtime: it needs routesDir')
+  if (options.messages && !options.sharedRuntime) throw new Error('messages are read by the shared runtime: they need sharedRuntime')
+  if (options.messages && options.outFile) throw new Error('messages leave the languages out of the screens\' code, which the one-file bundle cannot read: build it without messages')
+  const messages = options.messages ? await collectMessages(root, options.messages) : null
+  const stubs = messages ? messageStubs(messages) : null
   const compiledScreens: Array<{ name: string, file: string, compiled: Awaited<ReturnType<typeof compileScreenFile>> }> = []
-  for (const name of names) {
-    const file = path.resolve(root, options.screens[name])
-    if (!file.endsWith('.stx')) throw new Error(`Screen ${name} must name a .stx file`)
-    compiledScreens.push({ name, file, compiled: await compileScreenFile(file, { root }) })
+  const compileScreens = async (): Promise<void> => {
+    for (const name of names) {
+      const file = path.resolve(root, options.screens[name])
+      if (!file.endsWith('.stx')) throw new Error(`Screen ${name} must name a .stx file`)
+      compiledScreens.push({ name, file, compiled: await compileScreenFile(file, { root }) })
+    }
   }
+  // A screen's script, its components' and its composables' are bundled as
+  // the screen compiles: each message module goes in as its stand-in there.
+  if (stubs) await withModuleSubstitutes(stubs, compileScreens)
+  else await compileScreens()
 
   const runtimeGlobals = nativeRuntimeModule('jsc-globals')
   const sharedScreen = nativeRuntimeModule('shared-screen')
@@ -165,8 +324,17 @@ export async function compileNativeBundle(options: CompileNativeBundleOptions): 
   if (appFile && !routed) throw new Error('An app script needs a routed bundle')
   if (appFile && options.screens[NATIVE_APP_ROUTE]) throw new Error(`${NATIVE_APP_ROUTE} is the app script's route, not a screen name`)
   const browser = options.browser
+  if (options.screens[NATIVE_RUNTIME_ROUTE]) throw new Error(`${NATIVE_RUNTIME_ROUTE} is the runtime prelude's file, not a screen name`)
+  const signalsRuntime = generateSignalsRuntime()
   if (browser && options.routesDir) throw new Error('A browser screen is one route; routesDir is for device hosts')
-  const entry = (bundled: typeof compiledScreens, withApp: boolean): string => {
+  /**
+   * `runtimeVersion`: the route file leans on the runtime prelude
+   * (`__runtime.js`) for the JSC globals, the screen host and the signals
+   * runtime instead of carrying a copy of them. They were 247 KB of every
+   * route file; evaluated as a file of their own, a host's shared
+   * JavaScriptCore VM parses them once for every screen.
+   */
+  const entry = (bundled: typeof compiledScreens, withApp: boolean, runtimeVersion?: string): string => {
     const route = routed
       ? `var routeName = g.__stxNativeRoute || ${JSON.stringify(initialScreen)};
 var isApp = ${appFile ? `routeName === ${JSON.stringify(NATIVE_APP_ROUTE)}` : 'false'};
@@ -190,9 +358,16 @@ ${script.code}
     const app = withApp && appFile
     const browserRuntime = browser ? nativeRuntimeModule('browser-screen') : null
     const platformModule = browser ? Bun.resolveSync(browser.platformModule, root) : null
+    const runtimeImports = runtimeVersion
+      ? `var runtime = globalThis.__stxNativeRuntime;
+if (!runtime || runtime.version !== ${JSON.stringify(runtimeVersion)}) throw new Error('This screen needs the stx native runtime it was built with: evaluate ${NATIVE_RUNTIME_ROUTE}.js from the same build first');
+var installJSCGlobals = runtime.installJSCGlobals;
+var prepareNativeApp = runtime.prepareNativeApp;
+var prepareSharedNativeScreen = runtime.prepareSharedNativeScreen;`
+      : `import { installJSCGlobals } from ${JSON.stringify(runtimeGlobals)};
+import { prepareNativeApp, prepareSharedNativeScreen } from ${JSON.stringify(sharedScreen)};`
     const contents = `
-import { installJSCGlobals } from ${JSON.stringify(runtimeGlobals)};
-import { prepareNativeApp, prepareSharedNativeScreen } from ${JSON.stringify(sharedScreen)};
+${runtimeImports}
 ${browser ? `import { createBrowserScreenBridge } from ${JSON.stringify(browserRuntime)};\nimport { createBrowserPlatform } from ${JSON.stringify(platformModule)};` : ''}
 ${app ? `import * as nativeAppModule from ${JSON.stringify(appFile)};` : 'var nativeAppModule = null;'}
 ${browser ? '(async function() {' : ''}
@@ -217,7 +392,7 @@ else {
   g.__stx_host = screen.host;
   g.__stxNativeUnmount = function() { screen.unmount(); };
 }
-${generateSignalsRuntime()}
+${runtimeVersion ? 'runtime.startSignals();' : signalsRuntime}
 var pageSetup = g.__stx_latestSetup;
 var pageRuntimeSetup = g.stx && g.stx._latestSetup;
 ${setups}
@@ -254,9 +429,74 @@ g.addEventListener('pagehide', function(event) { if (!event.persisted) g.__stxNa
   }))
   const minify = options.minify ?? false
   let routes: Record<string, string> | undefined
+  let runtime: string | undefined
+  let written: NativeBundleResult['messages']
   if (options.routesDir) {
     const dir = path.resolve(root, options.routesDir)
     mkdirSync(dir, { recursive: true })
+    // The runtime every route file leans on, once. Its version is its own
+    // content's hash, so the same build always writes the same bytes and a
+    // route file refuses a prelude from another build.
+    const prelude = `
+import { installJSCGlobals } from ${JSON.stringify(runtimeGlobals)};
+import { prepareNativeApp, prepareSharedNativeScreen } from ${JSON.stringify(sharedScreen)};
+globalThis.__stxNativeRuntime = {
+  version: '__STX_NATIVE_RUNTIME_VERSION__',
+  installJSCGlobals: installJSCGlobals,
+  prepareNativeApp: prepareNativeApp,
+  prepareSharedNativeScreen: prepareSharedNativeScreen,
+  // Each screen starts its own signals runtime, after its host is in place.
+  startSignals: function() {
+${signalsRuntime}
+  },
+  // A language's messages for an area (the compile's \`messages\`), read the
+  // first time they are looked into: a screen never parses a language it
+  // is not shown in, nor an area it does not use.
+  messages: function(language, area) {
+    var g = globalThis;
+    var loaded = g.__stxNativeMessages || (g.__stxNativeMessages = {});
+    function table() {
+      var forLanguage = loaded[language] || (loaded[language] = {});
+      if (Object.prototype.hasOwnProperty.call(forLanguage, area)) return forLanguage[area];
+      var value = null;
+      if (typeof g.__stxNativeReadMessages === 'function') {
+        try {
+          var text = g.__stxNativeReadMessages(language, area);
+          if (typeof text === 'string') value = JSON.parse(text);
+        }
+        catch (error) { console.error('[stx native] could not read the ' + language + ' messages for ' + area, error); }
+      }
+      forLanguage[area] = value;
+      return value;
+    }
+    var own = Object.prototype.hasOwnProperty;
+    return new Proxy({}, {
+      get: function(target, name) { var messages = table(); return messages && own.call(messages, name) ? messages[name] : undefined; },
+      has: function(target, name) { var messages = table(); return !!messages && own.call(messages, name); },
+      ownKeys: function() { var messages = table(); return messages ? Object.keys(messages) : []; },
+      getOwnPropertyDescriptor: function(target, name) {
+        var messages = table();
+        return messages && own.call(messages, name) ? { value: messages[name], writable: false, enumerable: true, configurable: true } : undefined;
+      },
+    });
+  },
+};
+`
+    let runtimeVersion: string | undefined
+    const runtimeFile = path.join(dir, `${NATIVE_RUNTIME_ROUTE}.js`)
+    if (options.sharedRuntime) {
+      const preludeCode = await build('stx:native-shared-screens', [plugin(prelude)], minify, dependencies)
+      runtimeVersion = Bun.hash(preludeCode).toString(36)
+      runtime = runtimeFile
+      await Bun.write(runtime, preludeCode.replace('__STX_NATIVE_RUNTIME_VERSION__', runtimeVersion))
+    }
+    // Each route file carries its runtime itself: a prelude left from a
+    // build that shared it must not be evaluated in front of them.
+    else rmSync(runtimeFile, { force: true })
+    const messagesDir = path.join(dir, NATIVE_MESSAGES_DIR)
+    // Only this build's messages: a language or area since removed is gone.
+    rmSync(messagesDir, { recursive: true, force: true })
+    const routeAreas: Record<string, string[]> = {}
     const targets = [
       ...compiledScreens.map(screen => ({ name: screen.name, screens: [screen], app: false })),
       ...(appFile ? [{ name: NATIVE_APP_ROUTE, screens: [], app: true }] : []),
@@ -267,18 +507,31 @@ g.addEventListener('pagehide', function(event) { if (!event.persisted) g.__stxNa
     for (let next = 0; next < targets.length; next += 6) {
       await Promise.all(targets.slice(next, next + 6).map(async (target) => {
         const file = path.join(dir, `${target.name}.js`)
-        await Bun.write(file, await build('stx:native-shared-screens', [plugin(entry(target.screens, target.app))], minify, dependencies))
+        // The app script's imports are bundled here, not as a screen's are.
+        const code = await build('stx:native-shared-screens', [plugin(entry(target.screens, target.app, runtimeVersion))], minify, dependencies, stubs ?? undefined)
+        await Bun.write(file, code)
         routes![target.name] = file
+        if (messages) routeAreas[target.name] = areasRead(code)
       }))
     }
-    if (!options.outFile) return { code: '', routes, diagnostics, dependencies: [...dependencies] }
+    if (messages) {
+      for (const [language, areas] of messages.data) {
+        for (const [area, json] of areas)
+          await Bun.write(path.join(messagesDir, language, `${area}.json`), json)
+      }
+      const sorted = Object.fromEntries(Object.keys(routeAreas).sort().map(name => [name, routeAreas[name]!]))
+      await Bun.write(path.join(messagesDir, 'routes.json'), JSON.stringify(sorted))
+      for (const file of messages.files.keys()) dependencies.add(file)
+      written = { dir: messagesDir, languages: [...messages.data.keys()], routes: sorted }
+    }
+    if (!options.outFile) return { code: '', routes, runtime, ...(written ? { messages: written } : {}), diagnostics, dependencies: [...dependencies] }
   }
   const code = await build('stx:native-shared-screens', [plugin(entry(compiledScreens, true))], minify, dependencies)
   if (!options.outFile) return { code, diagnostics, dependencies: [...dependencies] }
   const outFile = path.resolve(root, options.outFile)
   mkdirSync(path.dirname(outFile), { recursive: true })
   await Bun.write(outFile, code)
-  return { code, outFile, ...(routes ? { routes } : {}), diagnostics, dependencies: [...dependencies] }
+  return { code, outFile, ...(routes ? { routes, runtime } : {}), ...(written ? { messages: written } : {}), diagnostics, dependencies: [...dependencies] }
 }
 
 /** Compile one screen against stx's shared signals runtime, without the legacy parser/runtime. */
