@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.596...v0.2.597)
+
+## ✨ Features
+
+- **native**: a textarea in the grouped vocabulary ([7bcd420](https://github.com/stacksjs/stx/commit/7bcd420)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.597 ([2642802](https://github.com/stacksjs/stx/commit/2642802)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.595...v0.2.596)
 
 ## ✨ Features
