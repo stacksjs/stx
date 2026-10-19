@@ -1,5 +1,10 @@
 import type { STXStyle } from './ir'
-import { createStyleVariables } from './style-variables'
+import { createStyleVariables, type NativeStyleVariables } from './style-variables'
+
+export interface NativeStyleContext {
+  inheritedVariables?: NativeStyleVariables
+  onVariables?: (variables: NativeStyleVariables) => void
+}
 
 /** Every property `STXStyle` declares, for inline `style=""` translation. */
 const STYLE_KEYS = new Set([
@@ -128,7 +133,7 @@ function declarations(css: string): Array<[string, string]> {
  * Pure JS: callers decode HTML entities only at the HTML boundary.
  * Unsupported values are reported and omitted, never sent to numeric host fields.
  */
-export function parseNativeStyle(input: unknown, report: (diagnostic: NativeStyleDiagnostic) => void = () => {}): STXStyle {
+export function parseNativeStyle(input: unknown, report: (diagnostic: NativeStyleDiagnostic) => void = () => {}, context: NativeStyleContext = {}): STXStyle {
   const style: Record<string, unknown> = {}
   let entries: Array<[string, unknown]>
   if (typeof input === 'string') {
@@ -144,7 +149,8 @@ export function parseNativeStyle(input: unknown, report: (diagnostic: NativeStyl
     return style
   }
 
-  const variables = createStyleVariables(entries)
+  const variables = createStyleVariables(entries, context.inheritedVariables)
+  context.onVariables?.(variables.computed())
   const declarationNames: string[] = []
   for (const [rawProperty, raw] of entries) {
     if (rawProperty.trim().startsWith('--')) { declarationNames.push(rawProperty.trim()); continue }

@@ -30,7 +30,8 @@ import { NATIVE_EVENT_NAMES as EVENT_NAMES } from '../event-names'
 import { NATIVE_BOOLEAN_PROPS, nativePropName } from '../prop-names'
 import { mapToNativeComponent } from './component-mapping'
 import { resolveIconName } from './icons'
-import { parseNativeStyle } from './inline-style'
+import { type NativeStyleContext, parseNativeStyle } from './inline-style'
+import type { NativeStyleVariables } from './style-variables'
 import { parseViewBox, SVG_DROPPED, SVG_NODE_TYPES, SVG_TYPES, svgGeometry } from './svg'
 import { compileClassStyles } from './headwind-to-style'
 import { createDocument, createNode } from './ir'
@@ -210,6 +211,7 @@ function decodeEntities(text: string): string {
 interface Frame {
   tag: string
   node: STXNode
+  variables?: NativeStyleVariables
   /** Explicit low-level primitives keep their requested native representation. */
   declaredNative?: boolean
   /** Inside an `<svg>`: tags are shapes, and text belongs to `SvgText`. */
@@ -235,6 +237,7 @@ function readAttributes(
   tag: string,
   attributes: Array<[string, string]>,
   diagnostics: TranslationDiagnostic[],
+  styleContext: NativeStyleContext = {},
 ): Attributes {
   const props: Record<string, unknown> = {}
   const events: Record<string, string> = {}
@@ -251,7 +254,7 @@ function readAttributes(
     }
 
     if (name === 'style') {
-      inline = { ...inline, ...inlineStyle(tag, value, diagnostics) }
+      inline = { ...inline, ...inlineStyle(tag, value, diagnostics, styleContext) }
       continue
     }
 
@@ -303,8 +306,8 @@ function readAttributes(
   return { props, style, events, bindings, classes, inline }
 }
 
-function inlineStyle(tag: string, css: string, diagnostics: TranslationDiagnostic[]): STXStyle {
-  return parseNativeStyle(decodeEntities(css), diagnostic => diagnostics.push({ ...diagnostic, tag }))
+function inlineStyle(tag: string, css: string, diagnostics: TranslationDiagnostic[], context: NativeStyleContext): STXStyle {
+  return parseNativeStyle(decodeEntities(css), diagnostic => diagnostics.push({ ...diagnostic, tag }), context)
 }
 
 /** Every word in a subtree, in order, with the markup between them gone. */
@@ -453,9 +456,10 @@ export async function translateHtmlToIR(
       return openSvg(tag, attributes, parentFrame)
     const dropped = DROP_SUBTREE.has(tag) && !BOX_ONLY.has(tag)
     const inheritedDrop = stack[stack.length - 1]?.dropped ?? false
+    let variables = parentFrame?.variables
     const { props, style, events, bindings, classes, inline } = dropped || inheritedDrop
       ? { props: {}, style: {}, events: {}, bindings: {}, classes: '', inline: {} }
-      : readAttributes(tag, attributes, diagnostics)
+      : readAttributes(tag, attributes, diagnostics, { inheritedVariables: variables, onVariables: value => { variables = value } })
 
     // A primitive component names its own native type, since the HTML tag it
     // emits cannot carry the distinction.
@@ -543,6 +547,7 @@ export async function translateHtmlToIR(
     return {
       tag,
       node,
+      variables,
       declaredNative: typeof declared === 'string' && NATIVE_TYPES.has(declared),
       dropped: dropped || inheritedDrop || BOX_ONLY.has(tag),
       discard: dropped || inheritedDrop,
@@ -565,7 +570,8 @@ export async function translateHtmlToIR(
       }
       return { tag, node: createNode('G', {}, {}, {}), svg: true, dropped: true, discard: true, unwrap: false }
     }
-    const { props, style, events, bindings, classes, inline } = readAttributes(tag, attributes, diagnostics)
+    let variables = parent?.variables
+    const { props, style, events, bindings, classes, inline } = readAttributes(tag, attributes, diagnostics, { inheritedVariables: variables, onVariables: value => { variables = value } })
     if (type === 'Svg') {
       const viewBox = parseViewBox(props.viewBox)
       if (viewBox) props.viewBox = viewBox
@@ -597,7 +603,7 @@ export async function translateHtmlToIR(
       node.key = props.key
       delete props.key
     }
-    return { tag, node, svg: true, dropped: false, discard: false, unwrap: false }
+    return { tag, node, variables, svg: true, dropped: false, discard: false, unwrap: false }
   }
 
   await new HTMLRewriter()

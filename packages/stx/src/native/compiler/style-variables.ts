@@ -42,8 +42,10 @@ function substitute(input: string, lookup: (name: string, fallback?: string) => 
   return replaced && output.length > LIMIT ? undefined : output
 }
 
-/** Local declarations only; inherited variables need an explicit host cascade. */
-export function createStyleVariables(entries: Array<[string, unknown]>) {
+export type NativeStyleVariables = ReadonlyMap<string, string | undefined>
+
+/** Inherited values are already computed at their declaring element. */
+export function createStyleVariables(entries: Array<[string, unknown]>, inherited?: NativeStyleVariables) {
   const values = new Map<string, string>()
   const used = new Set<string>()
   for (const [rawName, value] of entries) {
@@ -96,17 +98,26 @@ export function createStyleVariables(entries: Array<[string, unknown]>) {
   for (const name of values.keys()) if (!indices.has(name)) visit(name)
 
   const cache = new Map<string, string | undefined>()
+  function lookup(name: string, depth: number): string | undefined {
+    used.add(name)
+    if (cache.has(name)) return cache.get(name)
+    const value = values.get(name)
+    const result = value === undefined || /^(?:inherit|unset)$/i.test(value)
+      ? inherited?.get(name)
+      : invalid.has(name) || /^(?:initial|revert|revert-layer)$/i.test(value)
+        ? undefined : resolve(value, depth + 1)
+    cache.set(name, result)
+    return result
+  }
   function resolve(text: string, depth = 0): string | undefined {
     if (depth > 64) return undefined
     return substitute(text, (name, fallback) => {
-      used.add(name)
-      if (!cache.has(name)) {
-        const value = values.get(name)
-        cache.set(name, value === undefined || invalid.has(name) || /^(?:initial|inherit|unset|revert|revert-layer)$/i.test(value)
-          ? undefined : resolve(value, depth + 1))
-      }
-      return cache.get(name) ?? (fallback === undefined ? undefined : resolve(fallback, depth + 1))
+      return lookup(name, depth) ?? (fallback === undefined ? undefined : resolve(fallback, depth + 1))
     })
   }
-  return { resolve, used }
+  return { resolve, used, computed(): NativeStyleVariables {
+    const result = new Map(inherited)
+    for (const name of values.keys()) result.set(name, lookup(name, 0))
+    return result
+  } }
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { parseNativeStyle } from '../../src/native/compiler/inline-style'
 import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import { compileNativeScreen, mountNativeScreen } from '../../src/native/testing'
+import type { STXNode } from '../../src/native/compiler/ir'
 
 it('resolves local declarations, nested fallbacks and aliases independent of declaration order', async () => {
   const input = 'padding:var(--space);border-radius:var(--missing,var(--radius,8px));color:var(--ink);--space:var(--base);--base:1.5rem;--radius:6px;--ink:#123456'
@@ -41,6 +42,29 @@ it('keeps quoted text literal and names case-sensitive; bounds expansion and rej
   const values: Record<string, string> = { '--v0': 'a' }
   for (let i = 1; i < 25; i++) values[`--v${i}`] = `var(--v${i - 1})var(--v${i - 1})`
   expect(parseNativeStyle({ ...values, color: 'var(--v24,red)' }).color).toBe('red')
+})
+
+it('inherits compiled inline variables without leaking between siblings or re-evaluating parent aliases', async () => {
+  const { root, diagnostics } = await translateHtmlToIR(`<div style="--space:12px;--alias:var(--space);--ink:#123456">
+    <div id="overridden" style="--space:24px;padding:var(--space);margin:var(--alias)"><div id="nested" style="padding:var(--space);color:var(--ink)"></div></div>
+    <div id="sibling" style="padding:var(--space)"></div>
+    <div id="invalid" style="--space:initial"><div id="fallback" style="padding:var(--space,3px)"></div></div>
+    <div id="inherited" style="--space:inherit;padding:var(--space)"></div>
+    <svg><g style="--ink:#abcdef"><path id="paint" style="fill:var(--ink)" d="M0 0L1 1" /></g></svg>
+  </div>`)
+  const byId = new Map<string, STXNode>()
+  const visit = (node: STXNode): void => {
+    if (node.props.id) byId.set(String(node.props.id), node)
+    for (const child of node.children) if (typeof child !== 'string') visit(child)
+  }
+  visit(root)
+  expect(byId.get('overridden')!.style).toMatchObject({ padding: 24, margin: 12 })
+  expect(byId.get('nested')!.style).toMatchObject({ padding: 24, color: '#123456' })
+  expect(byId.get('sibling')!.style.padding).toBe(12)
+  expect(byId.get('fallback')!.style.padding).toBe(3)
+  expect(byId.get('inherited')!.style.padding).toBe(12)
+  expect(byId.get('paint')!.style.fill).toBe('#abcdef')
+  expect(diagnostics.filter(d => d.kind === 'unknown-style' || d.kind === 'non-numeric-style')).toEqual([])
 })
 
 describe.each([false, true])('reactive local native variables (minify=%s)', (minify) => {

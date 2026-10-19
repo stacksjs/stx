@@ -101,8 +101,8 @@ fractions such as `translate-x-1/2`, and CSS functions remain diagnosed rather
 than being treated as point values. Translation support does not imply CSS
 transition animation support.
 
-This default-token support does not transport app CSS-variable overrides to
-native, nor implement ring utilities. Full theme customization and maintained
+Default semantic-token utilities do not yet read app CSS-variable overrides,
+and ring utilities remain unsupported. Full theme customization and maintained
 host visual validation remain tracked in [#2090](https://github.com/stacksjs/stx/issues/2090).
 
 Inline `style` and reactive `:style` can resolve variables declared in that
@@ -110,11 +110,14 @@ same style value, for example `--gap:12px;padding:var(--gap,8px)`. Local aliases
 and nested fallbacks work; cyclic or missing values use the consuming fallback
 or produce a diagnostic. Resolved lengths still pass through native numeric
 validation, and custom properties are never sent as host style fields.
-This is not a CSS cascade: ancestor/stylesheet declarations and overriding
-semantic classes through variables are not transported yet. Unused local
-declarations remain diagnosed so an attempted inherited theme is not silently
-accepted. Variable substitution is bounded to 64 dependency levels and 64 KiB
-per expanded value; escaped variable names are not supported.
+Compiled inline variables inherit through the HTML/SVG ancestor tree. Local
+declarations shadow ancestors, siblings remain isolated, and inherited aliases
+retain their already-computed parent value. `initial` blocks inheritance;
+`inherit`/`unset` retain the parent value. This does not yet transport reactive
+parent changes, stylesheet declarations, or semantic-class overrides. Calls to
+the standalone style parser without an inheritance context still diagnose
+unconsumed declarations. Variable substitution is bounded to 64 dependency
+levels and 64 KiB per expanded value; escaped variable names are not supported.
 
 Shared component props and emitted events go through the signals host:
 `useReactiveProp` observes native prop updates without a browser
