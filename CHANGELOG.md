@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.575...v0.2.576)
+
+## 🐛 Bug Fixes
+
+- bridge server data into scoped include scripts ([75f5a68](https://github.com/stacksjs/stx/commit/75f5a68)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.576 ([b84d5b0](https://github.com/stacksjs/stx/commit/b84d5b0)) _(by Chris Breuer <chris@stacksjs.com>)_
+- integrate the current native runtime release ([c8500e8](https://github.com/stacksjs/stx/commit/c8500e8)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.574...v0.2.575)
 
 ## ✨ Features
