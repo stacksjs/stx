@@ -269,9 +269,19 @@ function areasRead(code: string): string[] {
  * source, kept for the IR output and hot reload; the bundle runs that code as
  * the compiled setup, so a copy of the source text (comments and all, as a
  * string the minifier cannot touch) only made every screen bigger to parse.
+ *
+ * Its source is named from the project root, and the build's time is left
+ * out (`compiledAt` 0): the same sources build the same bytes, so a rebuild
+ * touches only the screens that changed, and an app never ships the path of
+ * the machine that built it.
  */
-function runtimeDocument(document: STXDocument): STXDocument {
-  return { ...document, script: { exports: document.script.exports, functions: [], code: '' } }
+function runtimeDocument(document: STXDocument, root: string): STXDocument {
+  const source = path.isAbsolute(document.meta.source) ? path.relative(root, document.meta.source).split(path.sep).join('/') : document.meta.source
+  return {
+    ...document,
+    script: { exports: document.script.exports, functions: [], code: '' },
+    meta: { ...document.meta, source, compiledAt: 0 },
+  }
 }
 
 /**
@@ -342,7 +352,7 @@ if (!isApp && routeNames.indexOf(routeName) === -1) throw new Error(['Unknown na
 if (isApp ? ${!withApp} : ${JSON.stringify(bundled.map(({ name }) => name))}.indexOf(routeName) === -1) throw new Error(['This bundle does not hold the native screen', routeName].join(' '));`
       : "var routeName = 'main';\nvar isApp = false;"
     const selections = bundled.map(({ name, compiled }, index) => `${index === 0 ? 'if' : 'else if'} (routeName === ${JSON.stringify(routed ? name : 'main')}) {
-  nativeDocument = ${JSON.stringify(runtimeDocument(compiled.document))};
+  nativeDocument = ${JSON.stringify(runtimeDocument(compiled.document, root))};
   manifest = ${JSON.stringify(compiled.manifest)};
 }`).join('\n')
     const setups = bundled.map(({ name, compiled }, index) => `${index === 0 ? 'if' : 'else if'} (routeName === ${JSON.stringify(routed ? name : 'main')}) {

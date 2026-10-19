@@ -5,7 +5,7 @@
  * shared runtime prelude (`__runtime.js`), which the host evaluates first.
  */
 import { describe, expect, it } from 'bun:test'
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import vm from 'node:vm'
 import { compileNativeBundle, NATIVE_RUNTIME_ROUTE } from '../../src/native/compiler/bundle'
@@ -42,6 +42,20 @@ function run(code: string, route: string, runtime: string | null = result.runtim
 }
 
 describe('route bundles', () => {
+  it('builds the same bytes from the same sources, naming no path outside the project', async () => {
+    // A production build: minified, so Bun's per-module path comments go too.
+    const build = (dir: string) => compileNativeBundle({ root, screens: { Home: 'Home.stx', Details: 'Details.stx' }, app: 'app.ts', routesDir: dir, sharedRuntime: true, minify: true })
+    const first = await build('routes-first')
+    const again = await build('routes-again')
+    for (const name of ['Home', 'Details', NATIVE_APP_ROUTE]) {
+      const code = readFileSync(first.routes![name]!, 'utf8')
+      expect(readFileSync(again.routes![name]!, 'utf8')).toBe(code)
+      expect(code).not.toContain(root)
+      expect(code).not.toContain(realpathSync(root))
+    }
+    expect(readFileSync(first.routes!.Home!, 'utf8')).toContain('source:"Home.stx",compiledAt:0')
+  })
+
   it('carries the runtime in each route file for a host that evaluates only the route\'s file', async () => {
     const own = await compileNativeBundle({ root, screens: { Home: 'Home.stx', Details: 'Details.stx' }, routesDir: 'self-contained' })
     expect(own.runtime).toBeUndefined()
