@@ -1137,7 +1137,7 @@ async function processCustomElementTags(
       }
 
       // Render the file component
-      const renderMetadata = { declaredProps: new Set<string>() }
+      const renderMetadata = { declaredProps: new Set<string>(), consumedProps: new Set<string>() }
       const processedContent = await renderComponentWithSlot(
         componentPath,
         mergedProps,
@@ -1164,7 +1164,7 @@ async function processCustomElementTags(
       // host root must retain caller-owned props such as testID, source and
       // accessibilityLabel. Individual primitive templates should only need
       // to declare props they consume; forward every other resolved prop once.
-      finalContent = forwardHostAttrs(finalContent, resolvedProps, renderMetadata.declaredProps)
+      finalContent = forwardHostAttrs(finalContent, resolvedProps, renderMetadata.declaredProps, renderMetadata.consumedProps)
 
       // Forward @event attributes from parent to component's root element.
       // This connects parent handlers to child defineEmits() — the child emits
@@ -1267,29 +1267,33 @@ function emitClientReactiveAttrs(html: string, clientReactive: Record<string, st
 /**
  * Forward DOM attributes onto a file component's concrete root.
  *
- * Native primitives accept their full prop surface, so they keep the old
- * behaviour. Ordinary file components only receive DOM fallthrough attrs;
+ * Native primitives accept unknown host props, but a shared component's
+ * consumed API props stay private even when its root targets a native type.
+ * Ordinary file components only receive DOM fallthrough attrs;
  * component API props such as `variant` remain private unless the component
  * explicitly renders them.
  */
-function forwardHostAttrs(html: string, props: ResolvedProps, declaredProps = new Set<string>()): string {
+function forwardHostAttrs(html: string, props: ResolvedProps, declaredProps = new Set<string>(), consumedProps = new Set<string>()): string {
   const root = findRenderedComponentHostRoot(html)
   if (!root)
     return html
 
   const openingTag = html.slice(root.insertPos, root.tagEnd)
   const isNativeHost = /\bdata-native(?:\s|=)/i.test(openingTag)
+  // Native primitives may mention host props in documentation without reading
+  // them. Only explicit prop reads opt out of their unrestricted forwarding.
+  const privateProps = isNativeHost ? consumedProps : declaredProps
 
   const existing = new Set(Object.keys(parseAllAttributes(openingTag)))
   const consumed = new Set<string>(['class', 'className'])
   for (const key of Object.keys(props.static)) {
     const name = props.staticNames[key] ?? key
-    if (existing.has(name) || (!isNativeHost && (declaredProps.has(key) || !isFallthroughAttribute(name))))
+    if (existing.has(name) || privateProps.has(key) || (!isNativeHost && !isFallthroughAttribute(name)))
       consumed.add(key)
   }
   for (const key of Object.keys(props.serverDynamic)) {
     const name = props.serverDynamicNames?.[key] ?? key
-    if (existing.has(name) || (!isNativeHost && (declaredProps.has(key) || !isFallthroughAttribute(name))))
+    if (existing.has(name) || privateProps.has(key) || (!isNativeHost && !isFallthroughAttribute(name)))
       consumed.add(key)
   }
 

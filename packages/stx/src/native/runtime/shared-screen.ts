@@ -1,6 +1,7 @@
 import type { BindingManifest } from '../../binding-manifest'
 import type { NativeBridgeInterface } from '../bridge/protocol'
 import type { STXDocument } from '../compiler/ir'
+import { createNode } from '../compiler/ir'
 import { STXBridge } from '../bridge/protocol'
 import { materializeNativeBindingTree } from './binding-tree'
 import type { NativeBindingNode } from './binding-tree'
@@ -56,6 +57,14 @@ export function prepareSharedNativeScreen(
     }
   })
 
+  // Structural bindings remove/insert their own node. The renderer's root
+  // cannot itself be removed, and bindIf/bindFor require an owned position.
+  // Only structural roots gain a stable container; ordinary roots keep their
+  // existing layout and ids. Keep the authored node's manifest id untouched.
+  const rootBinding = manifest.entries.find(entry => entry.id === document.root.bindingId)
+  if (rootBinding?.bindings.some(binding => binding.kind === 'if' || binding.kind === 'for')) {
+    document = { ...document, root: createNode('View', {}, { flex: 1 }, {}, [document.root]) }
+  }
   const tree = materializeNativeBindingTree(document, manifest, host)
   let dispose: (() => void) | null = null
 

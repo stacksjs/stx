@@ -1057,7 +1057,7 @@ export async function renderComponentWithSlot(
    * caller's context already carries.
    */
   clientLoopNames: readonly string[] = inheritedClientLoopNames(parentContext),
-  renderMetadata?: { declaredProps: Set<string> },
+  renderMetadata?: { declaredProps: Set<string>, consumedProps?: Set<string> },
   /** Original tag spelling for case-sensitive file lookup; identity stays canonical. */
   lookupName: string = componentPath,
 ): Promise<string> {
@@ -1363,6 +1363,8 @@ export async function renderComponentWithSlot(
         const escaped = propName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
         if (new RegExp(`\\b${escaped}\\b`).test(componentContent))
           renderMetadata.declaredProps.add(propName)
+        if (new RegExp(`\\$props\\s*(?:\\.\\s*${escaped}\\b|\\[\\s*['"]${escaped}['"]\\s*\\])`).test(componentContent))
+          renderMetadata.consumedProps?.add(propName)
       }
     }
 

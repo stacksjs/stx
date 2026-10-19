@@ -195,6 +195,42 @@ async function mountBundle(source: string) {
 }
 
 describe('native :if branches on a strict native side', () => {
+  it('inserts, reorders, and empties a repeated screen root', async () => {
+    const { native, settle, scope } = await mountBundle(`<script client>
+const rows = state([])
+window.rows = rows
+</script><p :for="row in rows" :key="row" :text="row"></p>`)
+    expect(native.text()).toEqual([])
+    ;(scope.rows as any).set(['one', 'two'])
+    await settle()
+    expect(native.text()).toEqual(['one', 'two'])
+    ;(scope.rows as any).set(['two', 'one'])
+    await settle()
+    expect(native.text()).toEqual(['two', 'one'])
+    ;(scope.rows as any).set([])
+    await settle()
+    expect(native.text()).toEqual([])
+    expect(native.errors).toEqual([])
+  })
+
+  it('toggles a conditional screen root without removing the renderer root', async () => {
+    const { native, settle, scope } = await mountBundle(`<script client>
+const visible = state(false)
+window.visible = visible
+</script><p :if="visible">Root content</p>`)
+    expect(native.text()).toEqual([])
+    ;(scope.visible as any).set(true)
+    await settle()
+    expect(native.text()).toEqual(['Root content'])
+    ;(scope.visible as any).set(false)
+    await settle()
+    expect(native.text()).toEqual([])
+    ;(scope.visible as any).set(true)
+    await settle()
+    expect(native.text()).toEqual(['Root content'])
+    expect(native.errors).toEqual([])
+  })
+
   afterEach(() => {
     delete window.__stx_host
     delete (globalThis as any).__toggle

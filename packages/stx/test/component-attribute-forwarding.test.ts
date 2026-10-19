@@ -9,6 +9,31 @@ import { processDirectives } from '../src/process'
 import { createTempDir } from '../src/temp-dir'
 
 describe('#2063 — component attributes fall through to the concrete root', () => {
+  it('keeps consumed shared-component props private on native roots while forwarding host props', async () => {
+    const dir = createTempDir('stx-native-component-attrs-')
+    const components = path.join(dir, 'components')
+    mkdirSync(components)
+    writeFileSync(path.join(components, 'Overlay.stx'), `<script server>
+const open = $bool($props.open)
+const closeOnBackdrop = $bool($props.closeOnBackdrop, true)
+</script><div data-native="Modal" data-open="{{ open }}" data-backdrop="{{ closeOnBackdrop }}"><slot /></div>`)
+    const html = await processDirectives(
+      '<Overlay open="false" :closeOnBackdrop="policy" :visible="visible" :transparent="transparent" testID="overlay" />',
+      { policy: false, visible: true, transparent: false },
+      path.join(dir, 'page.stx'),
+      { componentsDir: components, root: dir, buildMode: 'serve', cache: false } as any,
+      new Set<string>(),
+    )
+    const root = html.match(/<div\b[^>]*data-native="Modal"[^>]*>/)?.[0] ?? ''
+    expect(root).toContain('data-open="false"')
+    expect(root).toContain('data-backdrop="false"')
+    expect(root).not.toMatch(/\sopen=/)
+    expect(root).not.toContain('closeOnBackdrop=')
+    expect(root).toContain('visible="true"')
+    expect(root).toContain('transparent="false"')
+    expect(root).toContain('testID="overlay"')
+  })
+
   it('forwards static and server-bound DOM, data and ARIA attributes', async () => {
     const dir = createTempDir('stx-component-attrs-')
     const components = path.join(dir, 'components')
