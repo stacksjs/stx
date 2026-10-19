@@ -147,6 +147,7 @@ export function materializeNativeBindingTree(
       }
     }
     const node = createBindingNode(id, source.type, runtimeBindings, true, source._classes, value => host.setAttribute(node, 'class', value))
+    if (source.type === 'Checkbox' && source.props.type === 'checkbox') node.tagName = 'INPUT'
     // Static component metadata owns parent prop/event scopes too. The
     // manifest only records dynamic bindings, not these companion attributes.
     for (const [name, value] of Object.entries(source.props)) {

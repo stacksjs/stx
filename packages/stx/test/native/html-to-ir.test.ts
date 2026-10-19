@@ -22,6 +22,30 @@ import type { STXNode } from '../../src/native/compiler/ir'
 
 const COMPONENTS = path.join(import.meta.dir, '..', '..', '..', 'components')
 
+describe('shared form-control semantics (#2087)', () => {
+  it('preserves the control and label text instead of flattening the control away', async () => {
+    const { root, diagnostics } = await translateHtmlToIR('<label>Agree<input type="checkbox" checked value="yes"></label>')
+    expect(root.type).toBe('View')
+    expect(root.children[0]).toMatchObject({ type: 'Text', children: ['Agree'] })
+    expect(root.children[1]).toMatchObject({ type: 'Checkbox', props: { checked: true, value: true, formValue: 'yes' } })
+    expect(diagnostics).toEqual([])
+  })
+
+  it('keeps hidden values invisible and diagnoses unsupported radio controls', async () => {
+    const hidden = await translateHtmlToIR('<input type="hidden" name="token" value="abc">')
+    expect(hidden.root).toMatchObject({ type: 'View', style: { display: 'none' }, props: { name: 'token', value: 'abc' } })
+    const radio = await translateHtmlToIR('<input type="radio" name="size" value="small">')
+    expect(radio.root.type).not.toBe('TextInput')
+    expect(radio.diagnostics).toContainEqual({ kind: 'unsupported-control', tag: 'input', name: 'input:radio' })
+  })
+
+  it('keeps real shared Switch and Checkbox controls in the translated tree', async () => {
+    const { root } = await translateHtmlToIR(await render('<div><Switch label="Enabled" /><Checkbox label="Agree" /></div>'))
+    expect(types(root)).toContain('Button')
+    expect(types(root)).toContain('Checkbox')
+  })
+})
+
 /** Render a template against the real component library, as a browser gets it. */
 async function render(template: string): Promise<string> {
   return processDirectives(

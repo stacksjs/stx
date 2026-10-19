@@ -278,22 +278,38 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   }
 
   function decorateControl(node: NativeNode, type: string): void {
-    if (type === 'TextInput' || type === 'Picker') {
+    const htmlCheckbox = type === 'Checkbox' && descriptorOf(node)?.props.type === 'checkbox'
+    if (type === 'TextInput' || type === 'Picker' || htmlCheckbox) {
       // The shared x-model binder reads/writes a control's live value. A
       // native handle needs that property too, and writes must cross the
       // mutation bridge (including resets coming from application state).
       Object.defineProperty(node, 'value', {
         configurable: true,
         enumerable: true,
-        get: () => descriptorOf(node)?.props.value ?? '',
+        get: () => descriptorOf(node)?.props[type === 'Checkbox' ? 'formValue' : 'value'] ?? '',
         set: (value: unknown) => {
           const record = recordOf(node)
-          if (Object.is(record.props.value, value)) return
-          record.props.value = value
-          if (record.materialized) emit({ op: 'updateNode', id: node.__stxId, patch: { props: { value } } })
+          const prop = type === 'Checkbox' ? 'formValue' : 'value'
+          if (Object.is(record.props[prop], value)) return
+          record.props[prop] = value
+          if (record.materialized) emit({ op: 'updateNode', id: node.__stxId, patch: { props: { [prop]: value } } })
         },
       })
       Object.defineProperty(node, 'type', { configurable: true, get: () => descriptorOf(node)?.props.type ?? 'text' })
+    }
+    if (type === 'Checkbox') {
+      Object.defineProperty(node, 'checked', {
+        configurable: true,
+        get: () => Boolean(descriptorOf(node)?.props.checked ?? descriptorOf(node)?.props.value),
+        set: (value: unknown) => {
+          const record = recordOf(node)
+          const checked = Boolean(value)
+          if (record.props.checked === checked && record.props.value === checked) return
+          record.props.checked = checked
+          record.props.value = checked
+          if (record.materialized) emit({ op: 'updateNode', id: node.__stxId, patch: { props: { checked, value: checked } } })
+        },
+      })
     }
   }
 
@@ -661,6 +677,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
           const data = payload && typeof payload === 'object' ? payload as Record<string, any> : {}
           const value = data.text ?? data.value ?? data.nativeEvent?.text ?? data.nativeEvent?.value
           const record = recordOf(node)
+          if (record.type === 'Checkbox' && value !== undefined)
+            (node as NativeNode & { checked: boolean }).checked = Boolean(value)
           if (value !== undefined && !Object.is(record.props.value, value) && (record.type === 'TextInput' || record.type === 'Picker')) {
             record.props.value = value
             // The platform already displays the edit, but its retained tree

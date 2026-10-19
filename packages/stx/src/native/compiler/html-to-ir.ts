@@ -51,6 +51,8 @@ export type TranslationDiagnosticKind =
   | 'non-numeric-style'
   /** A legacy virtual-list prop has no meaning in the shared-runtime tree. */
   | 'unsupported-list-prop'
+  /** A control with no supported native interaction contract. */
+  | 'unsupported-control'
 
 export interface TranslationDiagnostic {
   kind: TranslationDiagnosticKind
@@ -515,6 +517,15 @@ function settle(frame: Frame, diagnostics: TranslationDiagnostic[]): STXNode {
   }
 
   if (node.type === 'Text' && elements.length > 0) {
+    // A label/span can wrap a real control or drawing. Flattening such a
+    // subtree removes its handlers and geometry, not merely text emphasis.
+    if (elements.some(child => child.type !== 'Text')) {
+      node.type = 'View'
+      node.children = node.children.map(child => typeof child === 'string'
+        ? createNode('Text', {}, {}, {}, [child])
+        : child)
+      return node
+    }
     const flattened = flattenText(node)
     diagnostics.push({ kind: 'flattened-text', tag: frame.tag })
     node.children = flattened ? [flattened] : []
@@ -600,6 +611,25 @@ export async function translateHtmlToIR(
     }
     else {
       type = BOX_ONLY.has(tag) ? 'View' : mapToNativeComponent(tag)
+      if (tag === 'input') {
+        const inputType = String(props.type ?? 'text').toLowerCase()
+        if (inputType === 'checkbox') {
+          type = 'Checkbox'
+          props.formValue = props.value ?? 'on'
+          props.checked = props.checked === '' || props.checked === true || props.checked === 'true'
+          props.value = props.checked
+        }
+        else if (inputType === 'hidden') {
+          type = 'View'
+          style.display = 'none'
+          inline.display = 'none'
+        }
+        else if (inputType === 'radio') {
+          type = 'View'
+          props.accessibilityRole = 'radio'
+          diagnostics.push({ kind: 'unsupported-control', tag, name: 'input:radio' })
+        }
+      }
     }
 
     if (type === tag && !NATIVE_TYPES.has(type) && !DROP_SUBTREE.has(tag) && !UNWRAP.has(tag) && !seenUnmapped.has(tag)) {
