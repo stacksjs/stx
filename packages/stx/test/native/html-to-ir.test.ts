@@ -41,7 +41,7 @@ describe('shared form-control semantics (#2087)', () => {
 
   it('keeps real shared Switch and Checkbox controls in the translated tree', async () => {
     const { root } = await translateHtmlToIR(await render('<div><Switch label="Enabled" /><Checkbox label="Agree" /></div>'))
-    expect(types(root)).toContain('Button')
+    expect(types(root)).toContain('Pressable')
     expect(types(root)).toContain('Checkbox')
   })
 })
@@ -326,6 +326,18 @@ describe('what is deliberately dropped', () => {
     expect(diagnostics).toContainEqual({ kind: 'non-numeric-style', tag: 'div', name: 'bottom' })
   })
 
+  it('uses a child container for composed HTML buttons while preserving explicit primitives', async () => {
+    const { root } = await translateHtmlToIR('<button type="submit"><span :if="shown">Save</span><svg><path d="M0 0L1 1" /></svg></button>')
+    expect(root.type).toBe('Pressable')
+    expect(root.props).toMatchObject({ accessibilityRole: 'button', type: 'submit' })
+    expect(root.children).toHaveLength(2)
+    expect(root.children[0]).toMatchObject({ type: 'Text', bindings: { if: 'shown' } })
+    expect(root.children[1]).toMatchObject({ type: 'Svg' })
+    expect((await translateHtmlToIR('<button role="tab"><span>Tab</span></button>')).root.props.accessibilityRole).toBe('tab')
+    expect((await translateHtmlToIR('<button>Save</button>')).root.type).toBe('Button')
+    expect((await translateHtmlToIR('<button data-native="Button"><span>Save</span></button>')).root.type).toBe('Button')
+  })
+
   it('keeps a percentage, which the IR does declare for a dimension', async () => {
     const { root } = await translateHtmlToIR('<div style="width:50%;font-size:1.5rem"><span>a</span></div>')
     expect(root.style).toEqual({ width: '50%', fontSize: 24 })
@@ -420,10 +432,10 @@ describe('real components from @stacksjs/components', () => {
       { source: 'Button.stx' },
     )
     const all = types(root)
-    expect(all).toContain('Button')
+    expect(all).toContain('Pressable')
     expect(texts(root)).toContain('Save')
 
-    const button = find(root, node => node.type === 'Button')
+    const button = find(root, node => node.type === 'Pressable')
     expect(button).toBeTruthy()
     expect(button!.events).toEqual({ onPress: 'onClick($event)' })
     // The spinner's visibility is a binding, not a server decision.

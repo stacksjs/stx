@@ -210,6 +210,8 @@ function decodeEntities(text: string): string {
 interface Frame {
   tag: string
   node: STXNode
+  /** Explicit low-level primitives keep their requested native representation. */
+  declaredNative?: boolean
   /** Inside an `<svg>`: tags are shapes, and text belongs to `SvgText`. */
   svg?: boolean
   /** Inside a dropped subtree: children and text are discarded. */
@@ -334,6 +336,18 @@ function settle(frame: Frame, diagnostics: TranslationDiagnostic[]): STXNode {
   const node = frame.node
   const elements = node.children.filter((child): child is STXNode => typeof child !== 'string')
   const text = node.children.filter(child => typeof child === 'string').join('').trim()
+
+  // A composed HTML button needs a real child container: native Button is a
+  // leaf control, so inserting a conditional label/icon under it is invalid.
+  // Pressable owns the same press interaction while retaining native children.
+  if (frame.tag === 'button' && node.type === 'Button' && !frame.declaredNative && elements.length > 0) {
+    node.type = 'Pressable'
+    node.props.accessibilityRole ??= node.props.role ?? 'button'
+    node.children = node.children.flatMap(child => typeof child === 'string'
+      ? (child.trim() ? [createNode('Text', {}, {}, {}, [child.trim()])] : [])
+      : [child])
+    return node
+  }
 
   // A drawing holds shapes; the whitespace between them is not a label.
   if (node.type === 'Svg' || node.type === 'G') {
@@ -529,6 +543,7 @@ export async function translateHtmlToIR(
     return {
       tag,
       node,
+      declaredNative: typeof declared === 'string' && NATIVE_TYPES.has(declared),
       dropped: dropped || inheritedDrop || BOX_ONLY.has(tag),
       discard: dropped || inheritedDrop,
       unwrap: UNWRAP.has(tag),

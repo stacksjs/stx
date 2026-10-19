@@ -57,13 +57,13 @@ describe('shared Form on a native host (#2088)', () => {
     phone.press(checkbox, 'onValueChange', { value: true })
     await phone.settle()
     expect(api.values().agree).toBe('yes')
-    phone.press(phone.ofType('Button').find(node => node.props.type === 'submit')!)
+    phone.press(phone.ofType('Pressable').find(node => node.props.type === 'submit')!)
     await phone.settle()
     expect(phone.context.submissions[0].agree).toBe('yes')
     phone.press(checkbox, 'onValueChange', { value: false })
     await phone.settle()
     expect(api.values().agree).toBeUndefined()
-    phone.press(phone.ofType('Button').find(node => node.props.type === 'submit')!)
+    phone.press(phone.ofType('Pressable').find(node => node.props.type === 'submit')!)
     await phone.settle()
     expect(phone.context.submissions[1].agree).toBeUndefined()
   }, 30_000)
@@ -77,7 +77,7 @@ describe('shared Form on a native host (#2088)', () => {
     await phone.settle()
     const { api } = formApi(phone)
     expect(api.values().name).toBe('Grace')
-    const submit = phone.ofType('Button').find(node => node.props.type === 'submit')!
+    const submit = phone.ofType('Pressable').find(node => node.props.type === 'submit')!
     expect(submit).toBeTruthy()
     expect(submit.events.onPress).toBeTruthy()
     phone.press(submit)
@@ -94,7 +94,7 @@ describe('shared Form on a native host (#2088)', () => {
     phone.type(input, '')
     await phone.settle()
     expect(api.errors().name).toBe('name is required')
-    phone.press(phone.ofType('Button').find(node => node.props.type === 'submit')!)
+    phone.press(phone.ofType('Pressable').find(node => node.props.type === 'submit')!)
     await phone.settle()
     expect(phone.context.submissions).toHaveLength(0)
     expect(phone.context.failures[0].name).toBe('name is required')
@@ -122,7 +122,7 @@ describe('shared Form on a native host (#2088)', () => {
     const input = phone.ofType('TextInput').find(node => node.props.name === 'name')!
     phone.type(input, 'Grace')
     await phone.settle()
-    phone.press(phone.ofType('Button').find(node => node.props.type === 'submit')!)
+    phone.press(phone.ofType('Pressable').find(node => node.props.type === 'submit')!)
     await phone.settle()
     expect(submitting).toEqual([true])
     expect(api.isSubmitting()).toBe(false)
@@ -148,7 +148,7 @@ describe('shared Form on a native host (#2088)', () => {
     phone.type(phone.ofType('TextInput').find(node => node.props.name === 'name')!, 'Grace')
     await phone.settle()
     host.listen(form, 'reset', (event: any) => event.preventDefault(), { once: true })
-    const button = phone.ofType('Button').find(node => node.props.type === 'reset')!
+    const button = phone.ofType('Pressable').find(node => node.props.type === 'reset')!
     phone.press(button)
     await phone.settle()
     expect(api.values().name).toBe('Grace')

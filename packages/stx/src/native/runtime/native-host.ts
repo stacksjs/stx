@@ -394,7 +394,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const record = descriptorOf(node)
     if (!record || controlsWithDefaultListeners.has(node)) return
     let delegatedPress = false
-    if (record.type === 'Button') {
+    if (record.type === 'Button' || record.type === 'Pressable') {
       for (let owner = node.__stxOwner; owner; owner = owner.__stxOwner) {
         if (componentListeners.get(owner)?.some(listener => (NATIVE_EVENT_NAMES[listener.event.toLowerCase()] ?? listener.event) === 'onPress')) {
           delegatedPress = true
@@ -410,7 +410,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       host.listen(node, record.type === 'TextInput' ? 'input' : 'change', () => {})
       host.listen(node, 'focusout', () => {})
     }
-    if (record.type === 'Button') host.listen(node, 'click', () => {})
+    if (record.type === 'Button' || record.type === 'Pressable') host.listen(node, 'click', () => {})
   }
 
   function materialize(node: NativeNode): void {
@@ -903,7 +903,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       // same path when materialized, so runtime tab lists remain interactive.
       if (nativeEvent === 'onPress') {
         for (const child of collectDescendants(node)) {
-          if (descriptorOf(child)?.type === 'Button') installControlListeners(child)
+          if (['Button', 'Pressable'].includes(descriptorOf(child)?.type ?? '')) installControlListeners(child)
         }
       }
     },
