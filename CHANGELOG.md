@@ -1,5 +1,29 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.588...v0.2.589)
+
+## ✨ Features
+
+- **components**: grouped lists, error and chip states for web and native ([aed486b](https://github.com/stacksjs/stx/commit/aed486b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **theme**: answer the role tokens in the css config, for web and native ([909b699](https://github.com/stacksjs/stx/commit/909b699)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: set up loop and conditional clones of a scripted component ([3f7c1f2](https://github.com/stacksjs/stx/commit/3f7c1f2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 💚 Continuous Integration
+
+- use the qualified Pantry provisioning release ([8e28659](https://github.com/stacksjs/stx/commit/8e28659)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.589 ([ea98b1e](https://github.com/stacksjs/stx/commit/ea98b1e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.587...v0.2.588)
 
 ## 🐛 Bug Fixes
