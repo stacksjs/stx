@@ -190,7 +190,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   const handlers = new Map<string, (payload?: unknown) => void>()
   const eventRegistrations = new WeakMap<NativeNode, Map<string, string>>()
   const componentListeners = new WeakMap<NativeNode, Array<{ event: string, handler: (payload?: unknown) => void, once: boolean, capture: boolean }>>()
-  const formControls = new WeakSet<NativeNode>()
+  const controlsWithDefaultListeners = new WeakSet<NativeNode>()
   const formResetCallbacks = new WeakMap<NativeNode, Set<() => void>>()
   let queue: NativeMutationOperation[] = []
   let scheduled = false
@@ -384,10 +384,20 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     }
   }
 
-  function installFormListeners(node: NativeNode): void {
+  function installControlListeners(node: NativeNode): void {
     const record = descriptorOf(node)
-    if (!record || formControls.has(node) || !formOwner(node)) return
-    formControls.add(node)
+    if (!record || controlsWithDefaultListeners.has(node)) return
+    let delegatedPress = false
+    if (record.type === 'Button') {
+      for (let owner = node.__stxOwner; owner; owner = owner.__stxOwner) {
+        if (componentListeners.get(owner)?.some(listener => (NATIVE_EVENT_NAMES[listener.event.toLowerCase()] ?? listener.event) === 'onPress')) {
+          delegatedPress = true
+          break
+        }
+      }
+    }
+    if (!formOwner(node) && !delegatedPress) return
+    controlsWithDefaultListeners.add(node)
     // Even an unbound field must report edits to the form's delegated
     // listeners. A bare submit button likewise needs a platform handler id.
     if (record.type === 'TextInput' || record.type === 'Picker' || record.type === 'Checkbox') {
@@ -401,7 +411,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const record = recordOf(node)
     if (record.materialized || node.__stxAnchor !== undefined)
       return
-    installFormListeners(node)
+    installControlListeners(node)
     record.style = resolveStyle(record)
     record.materialized = true
     emit({
@@ -559,7 +569,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       if (!children.some(child => child.__stxId === node.__stxId))
         children.push(node)
     }
-    installFormListeners(node)
+    installControlListeners(node)
     return node
   }
 
@@ -863,6 +873,14 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       record.events[nativeEvent] = id
       if (record.materialized)
         emit({ op: 'updateNode', id: node.__stxId, patch: { events: { [nativeEvent]: id } } })
+      // A delegated listener needs the pressed control's identity, not a
+      // gesture attached only to the ancestor. New/cloned controls take the
+      // same path when materialized, so runtime tab lists remain interactive.
+      if (nativeEvent === 'onPress') {
+        for (const child of collectDescendants(node)) {
+          if (descriptorOf(child)?.type === 'Button') installControlListeners(child)
+        }
+      }
     },
 
     dispatch(handlerId, payload) {

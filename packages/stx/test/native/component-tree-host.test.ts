@@ -1,5 +1,34 @@
 import { expect, it } from 'bun:test'
 import { createNativeHost } from '../../src/native/runtime/native-host'
+import type { NativeMutationOperation } from '../../src/native/bridge/protocol'
+
+it('routes presses from existing and inserted buttons to the nearest listening ancestors', () => {
+  const operations: NativeMutationOperation[] = []
+  const host = createNativeHost({ send: batch => operations.push(...batch) })
+  const root = host.adopt({ __stxId: 'root' }, 'View')
+  const button = host.adopt({ __stxId: 'button' }, 'Button')
+  host.insert(root, button)
+  const targets: unknown[] = []
+  host.listen(root, 'click', (event: any) => targets.push(event.target))
+  host.flush()
+  const press = (id: string) => {
+    const handlers = operations.flatMap(op => op.op === 'updateNode' && op.id === id
+      ? [op.patch.events?.onPress]
+      : op.op === 'createNode' && op.id === id ? [op.node.events?.onPress] : []).filter(Boolean)
+    expect(handlers.length).toBeGreaterThan(0)
+    host.dispatch(handlers.at(-1)!, {})
+  }
+  press('button')
+  const next = host.clone(button)
+  host.insert(root, next)
+  host.flush()
+  press(next.__stxId)
+  expect(targets).toEqual([button, next])
+  host.remove(next)
+  press(next.__stxId)
+  expect(targets).toHaveLength(2)
+  host.dispose()
+})
 
 it('reports owned child changes without a DOM, batching and canceling callbacks (#2089)', async () => {
   const host = createNativeHost({ send() {} })

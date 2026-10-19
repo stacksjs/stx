@@ -109,6 +109,8 @@ export function signalsPublicApiRuntime(componentApiRuntime: string): string {
 ${componentApiRuntime}
 
     _mountCallbacks: mountCallbacks,
+    // Internal adapter for the shared component library, not a DOM facade.
+    _host: stxHost,
     _destroyCallbacks: destroyCallbacks,
     _cleanupContainer: cleanupContainer,
     _flushLoad: flushStxLoad,

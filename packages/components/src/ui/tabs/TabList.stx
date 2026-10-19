@@ -42,20 +42,29 @@ const emit = defineEmits()
 const orientation = {{ orientation }}
 const selected = useModel('value', { default: {{ value }}, parse: v => v == null ? '' : String(v) })
 const listRef = useRef('listRef')
+const tree = window.stx._host
 const mounted = state(false)
-let observer = null
+let stopObserving = null
+
+function closestRole(node, role) {
+  for (let current = node; current; current = tree.parent(current)) {
+    if (tree.getAttribute(current, 'role') === role) return current
+  }
+  return null
+}
 
 /** This list's own tabs: not a nested list's, and not a disabled one. */
 function ownTabs(includeDisabled) {
   const root = listRef.value
   if (!root) return []
-  return Array.from(root.querySelectorAll('[role="tab"]')).filter(tab =>
-    tab.closest('[role="tablist"]') === root
-    && (includeDisabled || (!tab.hasAttribute('disabled') && tab.getAttribute('aria-disabled') !== 'true')))
+  return tree.descendants(root).filter(tab =>
+    tree.getAttribute(tab, 'role') === 'tab'
+    && closestRole(tab, 'tablist') === root
+    && (includeDisabled || (tree.getAttribute(tab, 'disabled') == null && tree.getAttribute(tab, 'aria-disabled') !== 'true')))
 }
 
 function valueOf(tab, index) {
-  const value = tab.getAttribute('data-value')
+  const value = tree.getAttribute(tab, 'data-value')
   return value == null ? String(index) : value
 }
 
@@ -72,12 +81,12 @@ function sync() {
   tabs.forEach((tab, index) => {
     const on = valueOf(tab, index) === current
     if (on) any = true
-    tab.setAttribute('aria-selected', on ? 'true' : 'false')
-    tab.setAttribute('tabindex', on ? '0' : '-1')
+    tree.setAttribute(tab, 'aria-selected', on ? 'true' : 'false')
+    tree.setAttribute(tab, 'tabindex', on ? '0' : '-1')
   })
   if (!any) {
     const first = ownTabs(false)[0]
-    if (first) first.setAttribute('tabindex', '0')
+    if (first) tree.setAttribute(first, 'tabindex', '0')
   }
 }
 
@@ -90,7 +99,7 @@ function select(tab) {
 }
 
 function onClick(event) {
-  const tab = event.target && event.target.closest ? event.target.closest('[role="tab"]') : null
+  const tab = closestRole(event.target, 'tab')
   if (!tab || !ownTabs(false).includes(tab)) return
   select(tab)
 }
@@ -101,7 +110,7 @@ function onClick(event) {
  */
 function onKey(event) {
   const tabs = ownTabs(false)
-  const from = event.target && event.target.closest ? event.target.closest('[role="tab"]') : null
+  const from = closestRole(event.target, 'tab')
   const index = tabs.indexOf(from)
   if (index === -1) return
   const forward = orientation === 'vertical' ? 'ArrowDown' : 'ArrowRight'
@@ -113,7 +122,10 @@ function onKey(event) {
   else if (event.key === 'End') next = tabs.length - 1
   if (next === -1) return
   event.preventDefault()
-  tabs[next].focus()
+  // Native touch selection does not need keyboard focus. Until the native
+  // host provides that capability, do not silently pretend it moved focus.
+  if (typeof tabs[next].focus === 'function') tabs[next].focus()
+  else console.warn('[stx:TabList] This host cannot move keyboard focus; touch selection is supported.')
   select(tabs[next])
 }
 
@@ -126,15 +138,12 @@ onMount(() => {
   mounted.set(true)
   sync()
   const root = listRef.value
-  if (root && typeof MutationObserver !== 'undefined') {
-    observer = new MutationObserver(() => sync())
-    observer.observe(root, { childList: true, subtree: true })
-  }
+  if (root) stopObserving = tree.observeChildren(root, sync)
 })
 
 onDestroy(() => {
-  if (observer) observer.disconnect()
-  observer = null
+  if (stopObserving) stopObserving()
+  stopObserving = null
 })
 
 defineExpose({ selected })
