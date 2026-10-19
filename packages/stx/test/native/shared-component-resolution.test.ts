@@ -1,0 +1,141 @@
+import { afterEach, describe, expect, it } from 'bun:test'
+import { join } from 'node:path'
+import { compileScreenSource, nativePrimitivesDir } from '../../src/native/compiler/render-screen'
+import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
+import { mountNativeScreen } from '../../src/native/testing'
+import { defaultConfig, loadStxConfig } from '../../src/config'
+import { processDirectives } from '../../src/process'
+import { createTempDir } from '../../src/temp-dir'
+import { boot, closeBrowser, find, settle } from '../router/spa-harness'
+
+const plugin = join(import.meta.dir, '../../../components/stx-plugin.ts')
+const sharedButton = join(import.meta.dir, '../../../components/src/ui/button/Button.stx')
+
+async function fixture(source: string, withPlugin = true) {
+  const root = createTempDir('stx-shared-resolution-')
+  const file = join(root, 'Screen.stx')
+  await Bun.write(join(root, 'stx.config.ts'), `export default { root: '.', plugins: ${JSON.stringify(withPlugin ? [plugin] : [])} }`)
+  await Bun.write(file, source)
+  return { root, file }
+}
+
+afterEach(closeBrowser)
+
+describe.each([false, true])('shared Button resolution (minify=%s)', (minify) => {
+  it('selects the same shipped file and retains reactive behavior and lifecycle on both targets', async () => {
+    const source = `<script client>
+const shown = state(true)
+const disabled = state(false)
+const loading = state(false)
+const label = state('Save')
+const clicks = state(0)
+window.probe = { shown, disabled, loading, label, clicks }
+</script><div><section :if="shown"><Button testID="save" id="save" :label="label" :disabled="disabled" :loading="loading" @click="clicks.set(clicks() + 1)" /></section></div>`
+    const { root, file } = await fixture(source)
+    const native = await compileScreenSource(source, file, { root })
+    expect(native.dependencies).toContain(sharedButton)
+    expect(native.dependencies).not.toContain(join(nativePrimitivesDir(), 'Button.stx'))
+    const loaded = await loadStxConfig(root)
+    const dependencies = new Set<string>()
+    const html = await processDirectives(`<!DOCTYPE html><html><head><title>Shared</title></head><body>${source}</body></html>`, {}, file, { ...defaultConfig, ...loaded, root, cache: false, autoShell: true, buildMode: undefined, debug: !minify }, dependencies)
+    expect(dependencies.has(sharedButton)).toBe(true)
+    const browser = await boot({ documents: new Map([['/', html]]), dispose: async () => {} }, '/')
+    await settle()
+    expect(browser.errors).toEqual([])
+    expect(browser.window.probe).toBeTruthy()
+    const button = () => find(browser, '#save')
+    expect(button().textContent).toContain('Save')
+    browser.window.probe.label.set('Changed')
+    browser.window.probe.loading.set(true)
+    await settle()
+    expect(button().textContent).toContain('Changed')
+    expect(button().disabled).toBe(true)
+    browser.window.probe.loading.set(false)
+    await settle()
+    button().click()
+    await settle()
+    expect(browser.window.probe.clicks()).toBe(1)
+    browser.window.probe.shown.set(false)
+    await settle()
+    expect(button()).toBeNull()
+    browser.window.probe.label.set('Remounted')
+    browser.window.probe.shown.set(true)
+    await settle()
+    expect(button().textContent).toContain('Remounted')
+    expect(browser.errors).toEqual([])
+    closeBrowser()
+
+    const { code } = await compileSharedScreenBundle(file, { root, minify })
+    const errors: unknown[][] = []
+    const phone = mountNativeScreen(code, 'Screen', { globals: { console: { ...console, error: (...args: unknown[]) => errors.push(args) } } })
+    await phone.settle()
+    const nativeButton = () => phone.byTestID('save')!
+    expect(phone.texts()).toContain('Save')
+    phone.press(nativeButton())
+    await phone.settle()
+    expect(phone.context.probe.clicks()).toBe(1)
+    phone.context.probe.label.set('Changed')
+    phone.context.probe.loading.set(true)
+    await phone.settle()
+    expect(phone.texts()).toContain('Changed')
+    expect(nativeButton().props.disabled).toBe(true)
+    phone.press(nativeButton())
+    await phone.settle()
+    expect(phone.context.probe.clicks()).toBe(1)
+    phone.context.probe.loading.set(false)
+    phone.context.probe.shown.set(false)
+    const old = nativeButton()
+    await phone.settle()
+    expect(phone.byTestID('save')).toBeUndefined()
+    phone.press(old)
+    await phone.settle()
+    expect(phone.context.probe.clicks()).toBe(1)
+    phone.context.probe.label.set('Remounted')
+    phone.context.probe.shown.set(true)
+    await phone.settle()
+    expect(phone.texts()).toContain('Remounted')
+    phone.press(nativeButton())
+    await phone.settle()
+    expect(phone.context.probe.clicks()).toBe(2)
+    phone.unmount()
+    phone.context.probe.label.set('After unmount')
+    expect(errors).toEqual([])
+  }, 30_000)
+})
+
+it('preserves native Button text/press spellings when the shared plugin is installed', async () => {
+  const { root, file } = await fixture(`<script client>
+const label = state('Native label')
+window.presses = 0
+window.label = label
+</script><View><Button testID="legacy" text="Static text" accessibilityLabel="Legacy" @press="window.presses++" /><Button testID="bound" :text="label" @click="window.presses++" /></View>`)
+  const { code } = await compileSharedScreenBundle(file, { root })
+  const phone = mountNativeScreen(code, 'Screen')
+  await phone.settle()
+  expect(phone.byTestID('legacy')!.props).toMatchObject({ text: 'Static text', accessibilityLabel: 'Legacy' })
+  phone.press(phone.byTestID('legacy')!)
+  phone.press(phone.byTestID('bound')!)
+  await phone.settle()
+  expect(phone.context.presses).toBe(2)
+  phone.context.label.set('Updated')
+  await phone.settle()
+  expect(phone.texts()).toContain('Updated')
+  phone.unmount()
+}, 30_000)
+
+it('keeps primitive fallbacks and screen-local, explicit and conventional overrides', async () => {
+  const fallback = await fixture('<Button testID="fallback">Save</Button>', false)
+  expect((await compileScreenSource('<Button testID="fallback">Save</Button>', fallback.file, fallback)).dependencies).toContain(join(nativePrimitivesDir(), 'Button.stx'))
+  for (const directory of ['components', 'resources/components', 'resources/views/components', 'src/components', 'custom']) {
+    const { root, file } = await fixture('<Button>Save</Button><Checkbox />')
+    const override = join(root, directory, 'Button.stx')
+    await Bun.write(override, '<button data-class="marker" class=bg-red-500 data-source="override"><slot /></button>')
+    const result = await compileScreenSource('<Button class="text-[15px]">Save</Button><Checkbox />', file, { root, ...(directory === 'custom' ? { componentsDir: join(root, directory) } : {}) })
+    expect(result.dependencies).toContain(override)
+    expect(result.dependencies).not.toContain(sharedButton)
+    expect(result.html).toContain('data-class="marker"')
+    expect(result.html).toContain('class="bg-red-500 text-[15px]"')
+    // Unmigrated overlaps retain their existing primitive contract.
+    expect(result.dependencies).toContain(join(nativePrimitivesDir(), 'Checkbox.stx'))
+  }
+}, 30_000)

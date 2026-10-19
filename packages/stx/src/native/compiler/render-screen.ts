@@ -12,10 +12,10 @@
  * closest HTML tag and naming its own native type with `data-native`. They
  * are searched after the screen's own components (`componentsDir`, and a
  * `components/` beside the screen), so a screen that defines its own `View`
- * still wins, and before the app's web components (`resources/components`
- * and the other convention directories) and plugins, which are written for
- * the browser: a Stacks app's web `Button.stx` used to render in place of
- * the native one, dropping every static prop the screen gave it.
+ * still wins. Unmigrated primitive names precede convention directories and
+ * plugins. Verified shared names (currently Button) instead use the same
+ * app/plugin implementation as web, retaining a primitive fallback when none
+ * is installed. Native host attributes also fall through ordinary shared roots.
  *
  * Events and bindings survive the trip without anything special: stx forwards
  * `@click` and `:text` written on a component tag onto the component's root
@@ -97,8 +97,12 @@ export async function compileScreenSource(
     componentsDir: options.componentsDir ?? path.join(root, 'components'),
     buildMode: 'serve',
     cache: false,
-    // After the screen's own components, before the app's web ones.
+    // After screen-owned components; verified shared names move to fallback.
     _targetComponentDirs: [nativePrimitivesDir()],
+    // Verified shared implementations beat the primitive fallback on both
+    // targets. Do not broaden this list without same-source runtime coverage.
+    _targetComponentFallbackNames: ['Button'],
+    _nativeHostAttrs: true,
     _pluginComponentDirs: (loaded as any)._pluginComponentDirs ?? [],
   }
 

@@ -20,6 +20,47 @@ unsupported controls do not acquire native equivalents merely by compiling.
 Keep platform access behind typed adapters and fix reusable translation gaps in
 stx or native host gaps in Craft.
 
+### Component resolution and compatibility
+
+Explicit `@import` selections and screen-owned components remain overrides on
+both targets. Native compilation searches the original page's `components/`,
+the explicitly supplied `componentsDir`, and sibling component directories
+before target defaults. `componentsDir` here is the native compiler option.
+
+Verified shared names are migrated individually. **Button** now searches app
+convention directories (`resources/views/components`, `resources/components`,
+`src/components`, `components`) and registered/auto-discovered component plugins
+before falling back to the native primitive. With `@stacksjs/components`
+installed, web and native therefore select the same `ui/button/Button.stx`
+unless the app supplies an override. Without a shared Button, the primitive
+continues to work. Other overlapping names retain their existing primitive
+precedence until their compatibility tests support migration; this is not a
+global precedence change.
+
+The shared Button accepts legacy `text`/`:text` as a reactive label alias;
+a nonempty `label` wins. Native `testID`, accessibility props, caller classes,
+and `@press` continue to work. Unconsumed host props pass through ordinary
+native component roots without requiring every component to add `data-native`.
+Consumed component API props stay private.
+
+Composed HTML buttons (with element children such as conditional labels or
+icons) translate to `Pressable`, a native container with button accessibility
+semantics. This lets the shared runtime insert/remove those children legally;
+native `Button` itself is a leaf control. A plain text-only button or an
+explicit `data-native="Button"` retains the leaf representation. Low-level
+code that deliberately needs a primitive may explicitly import its `.stx`
+file from the directory returned by `nativePrimitivesDir()` in
+`@stacksjs/stx/native/compiler/render-screen`; explicit imports beat discovery.
+
+Resolution and same-source behavior are covered in
+`test/native/shared-component-resolution.test.ts`, with strict native mutation
+coverage in `test/native/native-conditional-toggle.test.ts`. These are runtime
+contract tests, not a claim of device-level visual parity. Further overlapping
+names and host verification remain tracked in
+[#2091](https://github.com/stacksjs/stx/issues/2091).
+
+### Reactive structure and styles
+
 A screen may put `:if` or `:for` on its root element. Native mounting adds a
 stable container for that structural root, so hiding or repeating it does not
 remove the renderer's root. Screens with ordinary roots are unchanged.

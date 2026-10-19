@@ -789,7 +789,9 @@ export async function userComponentFileExists(
   push(options.componentsDir)
   // The render target's own components (the native primitives) rank above
   // the convention directories, as in `renderComponentWithSlot`.
-  for (const dir of options._targetComponentDirs ?? []) push(dir)
+  const targetIsFallback = options._targetComponentFallbackNames?.some(name => name.toLowerCase() === baseName.toLowerCase())
+  if (!targetIsFallback)
+    for (const dir of options._targetComponentDirs ?? []) push(dir)
   // Convention fallbacks — only within a configured project root, and never stx's
   // own `import.meta.dir/components` (where built-ins live).
   //
@@ -813,6 +815,8 @@ export async function userComponentFileExists(
   // Framework defaults, searched last: the app overrides by name, and anything
   // it does not define falls back here. Mirrors `fallbackLayoutsDir`.
   push(options.fallbackComponentsDir)
+  if (targetIsFallback)
+    for (const dir of options._targetComponentDirs ?? []) push(dir)
 
   // Relative path components (./Foo, ../Foo) are always user-authored.
   if (baseName.startsWith('./') || baseName.startsWith('../')) {
@@ -1170,7 +1174,8 @@ export async function renderComponentWithSlot(
       // that web button: its markup, its classes, and none of the static
       // props the screen wrote (a bound `:testID` survived only because
       // bindings are forwarded onto whatever root a component renders).
-      for (const dir of options._targetComponentDirs ?? []) {
+      const targetIsFallback = options._targetComponentFallbackNames?.some(name => name.toLowerCase() === baseName.toLowerCase())
+      for (const dir of targetIsFallback ? [] : options._targetComponentDirs ?? []) {
         if (dir && !searchDirs.includes(dir))
           searchDirs.push(dir)
       }
@@ -1228,6 +1233,14 @@ export async function renderComponentWithSlot(
       // `fallbackLayoutsDir`.
       if (options.fallbackComponentsDir && !searchDirs.includes(options.fallbackComponentsDir))
         searchDirs.push(options.fallbackComponentsDir)
+
+      // Shared implementations graduate one name at a time. Retain the target
+      // primitive when no app/plugin/default component provides that name.
+      if (targetIsFallback) {
+        for (const dir of options._targetComponentDirs ?? []) {
+          if (dir && !searchDirs.includes(dir)) searchDirs.push(dir)
+        }
+      }
 
       const normalizedSearchDirs = [...new Set(searchDirs.map((dir) => {
         if (!dir)
