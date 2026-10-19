@@ -574,9 +574,10 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
           // Vue-style component handlers receive the emitted payload directly.
           // Native root events still receive the Event object so server-only
           // components can forward clicks and other browser events.
-          var handlerEvent = isForwardedComponentEvent && event instanceof CustomEvent
-            ? event.detail
-            : event;
+          var emittedArgs = isForwardedComponentEvent && event instanceof CustomEvent
+            && Array.isArray(event.__stx_emit_args) ? event.__stx_emit_args : null;
+          var handlerEvent = emittedArgs ? emittedArgs[0]
+            : isForwardedComponentEvent && event instanceof CustomEvent ? event.detail : event;
 
           // Skip an opener click that reaches UI which just became visible in
           // this frame. A click whose target is inside the revealed subtree is
@@ -609,7 +610,7 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
           try {
             if (!value || /^__[A-Z_]+__$/.test(value.trim())) return;
             var shorthandFn = parseEventShorthand(value, eventCapturedScope);
-            if (shorthandFn) { shorthandFn(handlerEvent); return; }
+            if (shorthandFn) { shorthandFn.apply(null, emittedArgs || [handlerEvent]); return; }
             // Check if any scope values are signals (x-data pattern)
             // A derived value reads like a signal in a handler, as it does in a
             // binding: \`pick(selectedPackage)\` passes the package. Leaving it

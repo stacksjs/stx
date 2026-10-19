@@ -80,7 +80,7 @@ export const SIGNALS_EVENT_SHORTHAND_RUNTIME = `  // ===========================
     if (bareIdMatch) {
       const fn = scope[bareIdMatch[1]];
       if (typeof fn === 'function' && !fn._isSignal) {
-        return ($event) => fn($event);
+        return (...args) => fn(...args);
       }
     }
 
