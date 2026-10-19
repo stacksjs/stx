@@ -13,9 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
       - name: Provision the normal managed runtime
-        uses: pantry-pm/pantry/packages/action@da17bb9317e8f8c247618fb176fe97269f15bfe4 # v0.11.94
+        uses: pantry-pm/pantry/packages/action@3436eff9cc46cad165a564f30d458963e148294c # v0.11.99
         with:
-          version: 0.11.94
+          version: 0.11.99
           install: 'false'
           packages: bun.com@1.4.2
       - name: Install the normal frozen workspace
