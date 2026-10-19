@@ -128,7 +128,7 @@ describe('native class and icon compatibility', () => {
     expect(compiled.dark).toEqual({ color: '#ffffff' })
     expect(compiled.numberOfLines).toBe(1)
     expect(compiled.icon).toBe('i-lucide-sun')
-    expect(compiled.unknown).toEqual(['wobble'])
+    expect(compiled.unknown).toEqual(['wobble', 'hover:bg-red-500', 'sm:p-4'])
   })
 
   it('maps the app icon vocabulary to SF Symbols', () => {

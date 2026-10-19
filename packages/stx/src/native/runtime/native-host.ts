@@ -65,6 +65,8 @@ interface NodeRecord {
   /** Caller classes override, but never replace, the component's own classes. */
   forwardedClasses?: string
   forwardedStyle?: Record<string, unknown>
+  /** Current unsupported classes, bounded by this node's current class list. */
+  reportedClasses?: Set<string>
   events: Record<string, string>
   text?: string
   children: NativeNode[]
@@ -505,6 +507,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     record.style = style
     if (record.materialized) emit({ op: 'updateNode', id, patch: { style: { ...patch, ...style } } })
     const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`)
+    const unsupported = new Set(classes.unknown)
+    for (const name of unsupported) {
+      if (!record.reportedClasses?.has(name))
+        console.warn(`[STX Native] unknown-class: ${id}: ${name}`)
+    }
+    record.reportedClasses = unsupported
     if (record.type === 'Icon' && classes.icon) {
       const icon = resolveIconName(classes.icon)
       record.props.symbol = icon.symbol

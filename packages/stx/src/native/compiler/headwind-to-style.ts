@@ -942,24 +942,32 @@ export interface ClassStyles {
 /**
  * The class list as styles, with `dark:` variants kept apart.
  *
- * A native view has no hover, focus or breakpoints, so every other variant is
- * dropped. `dark:` matters, because the host knows the appearance.
+ * Only `dark:` is currently implemented by the native style resolver. Other
+ * variants are reported, not applied unconditionally or silently discarded.
  */
 export function compileClassStyles(classes: string): ClassStyles {
   const plain: string[] = []
   const dark: string[] = []
   const semanticDark: string[] = []
+  const unsupported: string[] = []
+  const originals = new Map<string, Set<string>>()
   function roleClass(name: string, scheme: 'light' | 'dark'): string {
     const match = /^(text|bg|border|ring)-([a-z-]+)(\/[^\s]+)?$/.exec(name)
     const role = match && SEMANTIC_TOKENS[match[2]]
     return role ? `${match![1]}-${role[scheme]}${match![3] || ''}` : name
   }
+  function remember(translated: string, original: string): string {
+    if (!originals.has(translated)) originals.set(translated, new Set())
+    originals.get(translated)!.add(original)
+    return translated
+  }
   for (const name of classes.split(/\s+/).filter(Boolean)) {
-    if (name.startsWith('dark:')) dark.push(roleClass(name.slice(5), 'dark'))
+    if (name.startsWith('dark:')) dark.push(remember(roleClass(name.slice(5), 'dark'), name))
     else if (!name.includes(':') || name.startsWith('[')) {
-      plain.push(roleClass(name, 'light'))
-      if (roleClass(name, 'dark') !== name) semanticDark.push(roleClass(name, 'dark'))
+      plain.push(remember(roleClass(name, 'light'), name))
+      if (roleClass(name, 'dark') !== name) semanticDark.push(remember(roleClass(name, 'dark'), name))
     }
+    else unsupported.push(name)
   }
   const unknown: string[] = []
   const style = compileHeadwindToStyle(plain.join(' '), unknown)
@@ -971,7 +979,8 @@ export function compileClassStyles(classes: string): ClassStyles {
     if (clamp) result.numberOfLines = Number(clamp[1])
     if (!result.icon && /^i-[a-z0-9]+-[a-z0-9-]+$/.test(name)) result.icon = name
   }
-  result.unknown = unknown.filter(name => !/^line-clamp-\d+$/.test(name))
+  const authoredUnknown = unknown.flatMap(name => [...originals.get(name) ?? [name]])
+  result.unknown = [...new Set([...authoredUnknown.filter(name => !/^line-clamp-\d+$/.test(name)), ...unsupported])]
   return result
 }
 

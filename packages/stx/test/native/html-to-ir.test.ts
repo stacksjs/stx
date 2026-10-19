@@ -89,7 +89,7 @@ describe('native utility diagnostics', () => {
     expect(texts(root)).toEqual(['Content'])
     expect(diagnostics).toEqual([
       { kind: 'unknown-class', tag: 'div', name: 'made-up-layout' },
-      { kind: 'unknown-class', tag: 'div', name: 'made-up-dark' },
+      { kind: 'unknown-class', tag: 'div', name: 'dark:made-up-dark' },
     ])
   })
 
