@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.577...v0.2.578)
+
+## ✨ Features
+
+- **native**: share the runtime and ship messages a language at a time ([6b15b87](https://github.com/stacksjs/stx/commit/6b15b87)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 💚 Continuous Integration
+
+- finish a publish npm accepted but has not shown yet ([54572fd](https://github.com/stacksjs/stx/commit/54572fd)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.578 ([3e3fbcb](https://github.com/stacksjs/stx/commit/3e3fbcb)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.576...v0.2.577)
 
 ## 🐛 Bug Fixes
