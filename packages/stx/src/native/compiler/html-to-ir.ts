@@ -641,6 +641,11 @@ export async function translateHtmlToIR(
       diagnostics.push({ kind: 'dropped-subtree', tag })
     }
 
+    // Forms are views, but their ownership must survive translation so the
+    // host can collect controls and implement submit/reset default actions.
+    if (tag === 'form') props['data-stx-form'] = true
+    if (tag === 'button' && props.type === undefined) props.type = 'submit'
+
     // `<video src>` as the web writes it: the host reads `source`.
     if (type === 'Video' && props.source === undefined && props.src !== undefined) {
       props.source = props.src

@@ -38,6 +38,7 @@ import { affectsGeometry, parseSvgMarkup, parseViewBox, SVG_NODE_TYPES, svgGeome
 import { NATIVE_EVENT_NAMES } from '../event-names'
 import { nativePropName } from '../prop-names'
 import { cloneNativeBindingNode, type NativeBindingNode } from './binding-tree'
+import { NATIVE_FORM_ENTRIES } from './jsc-globals'
 
 /** A handle on a node in the native tree. Not an element; just an identity. */
 export interface NativeNode {
@@ -68,6 +69,7 @@ interface NodeRecord {
   parkedHandlers?: Map<string, (payload?: unknown) => void>
   /** Last runtime markup assigned through a native `:html` binding. */
   markup?: string
+  controlDefaults?: { value: unknown, checked: unknown }
 }
 
 interface RetainedNativeNode extends NativeNode {
@@ -91,13 +93,16 @@ function irDisplay(value: unknown): NonNullable<STXStyle['display']> {
   return value === 'none' || value === 'grid' || value === 'flex' ? value : 'flex'
 }
 
-function eventAt(payload: unknown, node: NativeNode): unknown {
-  if (payload === undefined || payload === null)
-    return { target: node, currentTarget: node }
-  if (typeof payload !== 'object' || Array.isArray(payload))
+function eventAt(payload: unknown, node: NativeNode, type = ''): unknown {
+  if (payload != null && (typeof payload !== 'object' || Array.isArray(payload)))
     return payload
-  const event = payload as Record<string, unknown>
-  return { ...event, target: event.target ?? node, currentTarget: event.currentTarget ?? node }
+  return {
+    ...(payload as Record<string, unknown> | null),
+    type, target: node, currentTarget: node, bubbles: true,
+    cancelBubble: false, defaultPrevented: false,
+    preventDefault(this: { defaultPrevented: boolean }) { this.defaultPrevented = true },
+    stopPropagation(this: { cancelBubble: boolean }) { this.cancelBubble = true },
+  }
 }
 
 export interface NativeHostOptions {
@@ -174,7 +179,9 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   const records = new Map<string, NodeRecord>()
   const attributeObservers = new WeakMap<NativeNode, Set<{ names: string[], notify: () => void }>>()
   const handlers = new Map<string, (payload?: unknown) => void>()
+  const eventRegistrations = new WeakMap<NativeNode, Map<string, string>>()
   const componentListeners = new WeakMap<NativeNode, Array<{ event: string, handler: (payload?: unknown) => void, once: boolean, capture: boolean }>>()
+  const formControls = new WeakSet<NativeNode>()
   let queue: NativeMutationOperation[] = []
   let scheduled = false
   let counter = 0
@@ -279,7 +286,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
   function decorateControl(node: NativeNode, type: string): void {
     const htmlCheckbox = type === 'Checkbox' && descriptorOf(node)?.props.type === 'checkbox'
-    if (type === 'TextInput' || type === 'Picker' || htmlCheckbox) {
+    const hidden = descriptorOf(node)?.props.type === 'hidden'
+    if (type === 'TextInput' || type === 'Picker' || htmlCheckbox || hidden) {
       // The shared x-model binder reads/writes a control's live value. A
       // native handle needs that property too, and writes must cross the
       // mutation bridge (including resets coming from application state).
@@ -296,6 +304,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         },
       })
       Object.defineProperty(node, 'type', { configurable: true, get: () => descriptorOf(node)?.props.type ?? 'text' })
+      Object.defineProperty(node, 'name', { configurable: true, get: () => descriptorOf(node)?.props.name ?? '' })
     }
     if (type === 'Checkbox') {
       Object.defineProperty(node, 'checked', {
@@ -311,12 +320,68 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         },
       })
     }
+    if (descriptorOf(node)?.props['data-stx-form']) {
+      Object.defineProperty(node, NATIVE_FORM_ENTRIES, { configurable: true, value: () => formEntries(node) })
+      Object.defineProperty(node, 'reset', { configurable: true, value: () => resetForm(node) })
+    }
+  }
+
+  function formOwner(node: NativeNode): NativeNode | null {
+    for (let current = node.__stxOwner; current; current = current.__stxOwner) {
+      if (descriptorOf(current)?.props['data-stx-form']) return current
+    }
+    return null
+  }
+
+  function disabled(record: NodeRecord): boolean {
+    return record.props.disabled === true || record.props.disabled === '' || record.props.disabled === 'true'
+  }
+
+  function formEntries(form: NativeNode): Array<[string, unknown]> {
+    const values: Array<[string, unknown]> = []
+    for (const node of collectDescendants(form)) {
+      const record = descriptorOf(node)
+      if (!record?.materialized) continue
+      const name = record.props.name
+      if (!name || disabled(record) || formOwner(node) !== form) continue
+      if (!['TextInput', 'Picker', 'Checkbox'].includes(record.type) && record.props.type !== 'hidden') continue
+      if (['submit', 'reset', 'button', 'file'].includes(String(record.props.type))) continue
+      if (record.type === 'Checkbox' && !(node as NativeNode & { checked: boolean }).checked) continue
+      const value = record.type === 'Checkbox' ? record.props.formValue ?? 'on' : record.props.value ?? ''
+      for (const item of Array.isArray(value) ? value : [value]) values.push([String(name), item])
+    }
+    return values
+  }
+
+  function resetForm(form: NativeNode): void {
+    if (!host.emitComponentEvent(form, eventAt(null, form, 'reset') as Event)) return
+    for (const node of collectDescendants(form)) {
+      const record = descriptorOf(node)
+      if (!record?.materialized || !record.controlDefaults || formOwner(node) !== form || (!('value' in node) && record.type !== 'Checkbox')) continue
+      const control = node as NativeNode & { value: unknown, checked: unknown }
+      if (record.type === 'Checkbox') control.checked = record.controlDefaults.checked
+      else control.value = record.controlDefaults.value
+    }
+  }
+
+  function installFormListeners(node: NativeNode): void {
+    const record = descriptorOf(node)
+    if (!record || formControls.has(node) || !formOwner(node)) return
+    formControls.add(node)
+    // Even an unbound field must report edits to the form's delegated
+    // listeners. A bare submit button likewise needs a platform handler id.
+    if (record.type === 'TextInput' || record.type === 'Picker' || record.type === 'Checkbox') {
+      host.listen(node, record.type === 'TextInput' ? 'input' : 'change', () => {})
+      host.listen(node, 'focusout', () => {})
+    }
+    if (record.type === 'Button') host.listen(node, 'click', () => {})
   }
 
   function materialize(node: NativeNode): void {
     const record = recordOf(node)
     if (record.materialized || node.__stxAnchor !== undefined)
       return
+    installFormListeners(node)
     record.style = resolveStyle(record)
     record.materialized = true
     emit({
@@ -461,6 +526,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       children: [],
       visible: true,
       materialized: true,
+      controlDefaults: { value: descriptor?.props.value ?? '', checked: descriptor?.props.checked ?? descriptor?.props.value ?? false },
     }
     record.style = resolveStyle(record)
     if (descriptor) descriptor.style = { ...record.style } as STXNode['style']
@@ -473,10 +539,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       if (!children.some(child => child.__stxId === node.__stxId))
         children.push(node)
     }
+    installFormListeners(node)
     return node
   }
 
-  return {
+  const host: NativeHost = {
     isNative: true as const,
     adopt,
     setColorScheme(scheme) {
@@ -678,9 +745,14 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const record = recordOf(node)
       // A renderer holds one handler id per event. Multiplex all listeners
       // behind that id, rather than replacing the previous registration.
-      if (record.events[nativeEvent] && handlers.has(record.events[nativeEvent])) return
+      const registrations = eventRegistrations.get(node) ?? new Map<string, string>()
+      eventRegistrations.set(node, registrations)
+      const existing = registrations.get(nativeEvent)
+      if (existing && handlers.has(existing)) return
       const id = nextId('h')
+      registrations.set(nativeEvent, id)
       handlers.set(id, (payload) => {
+        if (disabled(record)) return
         if (nativeEvent === 'onChangeText' || nativeEvent === 'onValueChange') {
           const data = payload && typeof payload === 'object' ? payload as Record<string, any> : {}
           const value = data.text ?? data.value ?? data.nativeEvent?.text ?? data.nativeEvent?.value
@@ -695,12 +767,47 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
             if (record.materialized) emit({ op: 'updateNode', id: node.__stxId, patch: { props: { value } } })
           }
         }
-        const delivered = eventAt(payload, node)
-        for (const current of [...listeners]) {
-          if ((NATIVE_EVENT_NAMES[current.event.toLowerCase()] ?? current.event) !== nativeEvent) continue
-          if (!listeners.includes(current)) continue
-          if (current.once) listeners.splice(listeners.indexOf(current), 1)
-          current.handler(delivered)
+        const delivered = eventAt(payload, node, event)
+        const physical = delivered && typeof delivered === 'object' ? delivered as Event : null
+        const ancestors: NativeNode[] = [node]
+        if (physical && ['onPress', 'onChangeText', 'onValueChange', 'onBlur', 'onFocus'].includes(nativeEvent)) {
+          for (let owner = node.__stxOwner; owner; owner = owner.__stxOwner) ancestors.push(owner)
+        }
+        const invoke = (target: NativeNode, capture: boolean): void => {
+          if (physical) Object.defineProperty(physical, 'currentTarget', { configurable: true, value: target })
+          const group = componentListeners.get(target) ?? []
+          for (const current of [...group]) {
+            if ((NATIVE_EVENT_NAMES[current.event.toLowerCase()] ?? current.event) !== nativeEvent || current.capture !== capture) continue
+            if (target !== node && (current.event === 'blur' || current.event === 'focus')) continue
+            if (!group.includes(current)) continue
+            if (current.once) group.splice(group.indexOf(current), 1)
+            current.handler(delivered)
+          }
+        }
+        let reachedTarget = true
+        for (const target of ancestors.slice(1).reverse()) {
+          invoke(target, true)
+          if (physical?.cancelBubble) { reachedTarget = false; break }
+        }
+        if (reachedTarget) {
+          invoke(node, true)
+          invoke(node, false)
+        }
+        if (!physical?.cancelBubble) {
+          for (const target of ancestors.slice(1)) {
+            invoke(target, false)
+            if (physical?.cancelBubble) break
+          }
+        }
+        if (physical) Object.defineProperty(physical, 'currentTarget', { configurable: true, value: node })
+        // A native picker/checkbox reports a value change once. Browsers
+        // also send input, which shared forms use for change validation.
+        if (nativeEvent === 'onValueChange' && (record.type === 'Picker' || record.type === 'Checkbox'))
+          host.emitComponentEvent(node, eventAt(payload, node, 'input') as Event)
+        const form = formOwner(node)
+        if (form && nativeEvent === 'onPress' && !physical?.defaultPrevented && !disabled(record)) {
+          if (record.props.type === 'submit') host.emitComponentEvent(form, eventAt({ submitter: node }, form, 'submit') as Event)
+          if (record.props.type === 'reset') resetForm(form)
         }
       })
       record.events[nativeEvent] = id
@@ -790,6 +897,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         children: [],
         visible: descriptor.visible,
         materialized: false,
+        controlDefaults: descriptor.controlDefaults,
       })
       decorateControl(copy, descriptor.type)
       setConnected(copy, false)
@@ -917,4 +1025,5 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       emit({ op: 'removeNode', id: node.__stxId })
     },
   }
+  return host
 }

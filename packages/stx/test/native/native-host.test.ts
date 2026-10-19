@@ -351,7 +351,16 @@ describe('listeners and scope, without the DOM', () => {
     host.dispatch(handlerId, { x: 1 })
     host.dispatch(handlerId)
     host.dispatch(handlerId, 0.5)
-    expect(seen).toEqual([{ x: 1, target: pressed, currentTarget: pressed }, { target: pressed, currentTarget: pressed }, 0.5])
+    expect(seen).toEqual([
+      expect.objectContaining({ x: 1, type: 'press', target: pressed, currentTarget: pressed }),
+      expect.objectContaining({ type: 'press', target: pressed, currentTarget: pressed }),
+      0.5,
+    ])
+    const event = seen[0] as Event
+    event.preventDefault()
+    event.stopPropagation()
+    expect(event.defaultPrevented).toBe(true)
+    expect(event.cancelBubble).toBe(true)
   })
 
   it('maps web events to the names native renderers dispatch', () => {
