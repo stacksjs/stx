@@ -130,9 +130,12 @@ describe('Drawer theming', () => {
  * so the retry spent its ten frames failing and focus never moved.
  */
 describe('Drawer instance scoping', () => {
-  test('each drawer looks up its own panel', () => {
+  test('each drawer resolves its own panel ref without a document selector', () => {
     expect(source).toContain('drawerInstanceId')
-    expect(source).toContain('[data-stx-drawer-panel="${drawerInstanceId}"]')
+    expect(source).toContain("const panelRef = useRef('panelRef')")
+    expect(source).toContain('return panelRef.value')
+    expect(source).toContain('x-ref="panelRef"')
+    expect(source).not.toContain('document.querySelector')
   })
 
   test('the id it queries for is the id it renders', () => {

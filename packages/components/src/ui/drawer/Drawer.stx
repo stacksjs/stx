@@ -125,6 +125,10 @@ const drawerInstanceId = {{ drawerInstanceId }}
 // (`:open="drawerOpen()"`) instead of the prop being captured once.
 // See stacksjs/stx#1704.
 const isOpen = useReactiveProp('open', {{ open }})
+const rootRef = useRef('rootRef')
+const panelRef = useRef('panelRef')
+const mounted = state(false)
+onMount(() => mounted.set(true))
 
 const closeOnEscape = {{ closeOnEscape }}
 const closeOnBackdrop = {{ closeOnBackdrop }}
@@ -139,7 +143,7 @@ function onBackdropClick() {
 }
 
 function panelEl() {
-  return document.querySelector(`[data-stx-drawer-panel="${drawerInstanceId}"]`)
+  return panelRef.value
 }
 
 /*
@@ -152,10 +156,13 @@ function panelEl() {
  * dialog over it together (stacksjs/stx#2057).
  */
 effect(() => {
+  if (!mounted()) return
   if (isOpen()) {
     window.stx.overlays.open(drawerInstanceId, {
       panel: panelEl,
+      root: rootRef.value,
       onEscape: closeOnEscape ? close : null,
+      onBackdrop: closeOnBackdrop ? close : null,
     })
   }
   else {
@@ -174,7 +181,7 @@ defineExpose({
 })
 </script>
 
-<div :show="isOpen()">
+<div x-ref="rootRef" data-native="Modal" data-stx-drawer="{{ drawerInstanceId }}" :show="isOpen()">
   <div
     class="fixed inset-0 z-50 {{ backdropClass }} transition-opacity duration-500"
     style="animation: fadeIn 0.5s ease-in-out"
@@ -189,6 +196,7 @@ defineExpose({
           class="{{ panelClasses }}"
           style="animation: {{ slideAnimation }} 0.5s ease-in-out"
           data-stx-drawer-panel="{{ drawerInstanceId }}"
+          x-ref="panelRef"
           role="dialog"
           aria-modal="true"
           aria-label="{{ title }}"
