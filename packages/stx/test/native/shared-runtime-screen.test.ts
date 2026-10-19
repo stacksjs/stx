@@ -3,7 +3,7 @@ import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 import vm from 'node:vm'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
-import { compileScreenSource } from '../../src/native/compiler/render-screen'
+import { compileScreenSource, nativePrimitivesDir } from '../../src/native/compiler/render-screen'
 import { prepareSharedNativeScreen } from '../../src/native/runtime/shared-screen'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import { installNodeConstants } from '../../test-utils/dom-runtime-shim'
@@ -246,7 +246,10 @@ function select(id) { selected.set(id) }
   <Text testID="selected" :text="'Selected ' + selected()" />
   <Button testID="reorder" @click="reorder()">Reorder</Button>
 </View>`
-    const compiled = await compileScreenSource(source, path.join(import.meta.dir, 'NativeFor.stx'))
+    // Exact operation counts below describe low-level primitive rows. Shared
+    // component factories/lifecycle are exercised by compiled bundle tests.
+    const primitive = path.join(nativePrimitivesDir(), 'Button.stx')
+    const compiled = await compileScreenSource(`@import('Button', '${primitive}')\n${source}`, path.join(import.meta.dir, 'NativeFor.stx'))
     const scroll = compiled.document.root.children[0] as any
     expect(scroll.children[0]).toMatchObject({
       bindings: { for: 'item in items', key: 'item.id' },

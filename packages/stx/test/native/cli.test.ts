@@ -213,9 +213,19 @@ function goBack() { globalThis.craft.navigation.back() }
       }
       vm.runInNewContext(bundle, scope)
       await Bun.sleep(0)
-      const handlers = sent.filter(message => message.type === 'MUTATE')
+      const operations = sent.filter(message => message.type === 'MUTATE')
         .flatMap(message => message.payload.operations)
-        .flatMap(operation => Object.values(operation.patch?.events || {})) as string[]
+      // Select physical controls, not registration order: a shared component
+      // also registers delegated listeners on its scope wrapper.
+      const controls: string[] = []
+      const collect = (node: any): void => {
+        if (typeof node === 'string') return
+        if (node.type === 'Button' || node.type === 'Pressable') controls.push(node.id)
+        node.children.forEach(collect)
+      }
+      collect(sent.find(message => message.type === 'RENDER')!.payload.document)
+      const handlers = controls.map(id => operations.findLast(operation => operation.id === id && operation.patch?.events?.onPress)?.patch.events.onPress)
+      expect(handlers.every(id => typeof id === 'string')).toBe(true)
       return {
         scope,
         sent,

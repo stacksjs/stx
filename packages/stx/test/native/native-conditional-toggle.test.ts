@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import path from 'node:path'
 import vm from 'node:vm'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
-import { compileScreenSource } from '../../src/native/compiler/render-screen'
+import { compileScreenSource, nativePrimitivesDir } from '../../src/native/compiler/render-screen'
 import { prepareSharedNativeScreen } from '../../src/native/runtime/shared-screen'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import { installNodeConstants } from '../../test-utils/dom-runtime-shim'
@@ -143,7 +143,10 @@ function strictNativeSide(reply: (message: unknown) => void) {
 }
 
 async function mountScreen(source: string) {
-  const compiled = await compileScreenSource(source, path.join(import.meta.dir, 'ConditionalToggle.stx'))
+  // This low-level harness deliberately executes only the page setup. Pin its
+  // primitive; shared component factories are covered by mountBundle below.
+  const primitive = path.join(nativePrimitivesDir(), 'Button.stx')
+  const compiled = await compileScreenSource(`@import('Button', '${primitive}')\n${source}`, path.join(import.meta.dir, 'ConditionalToggle.stx'))
   let receive: (raw: string) => void = () => {}
   const native = strictNativeSide(message => receive(JSON.stringify(message)))
   const screen = prepareSharedNativeScreen(compiled.document, compiled.manifest, {
@@ -191,7 +194,7 @@ async function mountBundle(source: string) {
     for (let i = 0; i < 5; i++) await new Promise(resolve => setTimeout(resolve, 0))
   }
   await settle()
-  return { native, settle, scope }
+  return { native, settle, scope, press: (label: string) => receive(JSON.stringify({ type: 'EVENT', payload: { handlerId: native.handlerFor(label), nativeEvent: {} } })) }
 }
 
 describe('native :if branches on a strict native side', () => {
@@ -468,6 +471,48 @@ function cards(day) { return byDay()[day] || [] }
     await settle()
     expect(native.errors).toEqual([])
     expect(native.tree()).toBe('View[View[Text(mon) View[View[View[View[View View]] Text(chevron)]]] View[Text(tue) View[View[View Text(chevron)]]]]')
+  })
+
+  it('inserts shared Button labels and icons only into native containers', async () => {
+    const shared = path.join(import.meta.dir, '../../../components/src/ui/button/Button.stx')
+    const { native, settle, scope, press } = await mountBundle(`@import('Button', '${shared}')
+<script client>
+const shown = state(false)
+const label = state('Ready')
+const loading = state(false)
+globalThis.probe = { shown, label, loading }
+globalThis.presses = 0
+</script><View><View :if="shown"><Button :label="label" :loading="loading" @click="globalThis.presses++" /></View></View>`)
+    const probe = (scope as any).probe
+    probe.shown.set(true)
+    await settle()
+    expect(native.text()).toContain('Ready')
+    expect(native.tree()).toContain('Pressable[')
+    press('Ready')
+    await settle()
+    expect((scope as any).presses).toBe(1)
+    probe.loading.set(true)
+    probe.label.set('Working')
+    await settle()
+    expect(native.text()).toContain('Working')
+    press('Working')
+    await settle()
+    expect((scope as any).presses).toBe(1)
+    probe.shown.set(false)
+    await settle()
+    expect(native.text()).not.toContain('Working')
+    probe.loading.set(false)
+    probe.label.set('Again')
+    probe.shown.set(true)
+    await settle()
+    expect(native.text()).toContain('Again')
+    press('Again')
+    await settle()
+    expect((scope as any).presses).toBe(2)
+    ;(scope as any).__stxNativeUnmount()
+    probe.label.set('Unmounted')
+    await settle()
+    expect(native.errors).toEqual([])
   })
 
   it('reveals a drawing after the first paint with its shapes inside it, and text only in its Text', async () => {

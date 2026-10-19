@@ -71,11 +71,12 @@ window.probe = { first, extra, present, note }
       return node!
     }
     const tab = (label: string) => {
-      const node = phone.ofType('Button').find(node => node.props['aria-controls'] === panel(label).props.id)
+      const node = phone.ofType('Pressable').find(node => node.props['aria-controls'] === panel(label).props.id)
       expect(node, `tab ${label}`).toBeTruthy()
       return node!
     }
-    expect(phone.ofType('Button').filter(node => node.props.role === 'tab')).toHaveLength(4)
+    expect(phone.ofType('Pressable').filter(node => node.props.role === 'tab')).toHaveLength(4)
+    expect(tab('One').props.accessibilityRole).toBe('tab')
     expect(tab('One').props['aria-selected']).toBe('true')
     expect(panel('One').style.display).not.toBe('none')
     expect(panel('Two').style.display).toBe('none')
@@ -110,7 +111,7 @@ window.probe = { first, extra, present, note }
     expect(phone.context.probe.note()).toBe('Saved draft')
     phone.context.probe.present.set(false)
     await phone.settle()
-    expect(phone.ofType('Button').filter(node => node.props.role === 'tab')).toHaveLength(0)
+    expect(phone.ofType('Pressable').filter(node => node.props.role === 'tab')).toHaveLength(0)
     phone.context.probe.present.set(true)
     await phone.settle()
     expect(tab('Two').props['aria-selected']).toBe('true')
