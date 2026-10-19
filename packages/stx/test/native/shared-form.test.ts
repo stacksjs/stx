@@ -2,10 +2,12 @@ import { describe, expect, it } from 'bun:test'
 import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
-import { mountNativeScreen } from '../../src/native/testing'
+import { mountNativeScreen, type NativeScreen } from '../../src/native/testing'
 import { createTempDir } from '../../src/temp-dir'
 
-async function formScreen() {
+let compiled: Promise<string> | undefined
+
+async function formBundle() {
   const root = createTempDir('stx-shared-form-')
   mkdirSync(path.join(root, 'components'))
   await Bun.write(path.join(root, 'stx.config.ts'), 'export default {}')
@@ -17,16 +19,31 @@ const formRef = useRef('profile')
 window.formRef = formRef
 window.submissions = []
 window.failures = []
+const schema = { name: { required: true, validate: value => value === 'blocked' ? 'Reserved name' : null } }
+function captureSubmission(values, helpers) { window.submissions.push(values); window.helpers = helpers }
 </script>
-<div x-ref="profile"><SharedForm :initialValues="{ source: 'profile' }" :validationSchema="{ name: { required: true } }" validateOnChange validateOnBlur @submit="window.submissions.push($event)" @error="window.failures.push($event)">
-  <SharedInput name="name" value="Ada" />
+<div x-ref="profile"><SharedForm :initialValues="{ source: 'profile' }" :validationSchema="schema" validateOnChange validateOnBlur @submit="captureSubmission" @error="window.failures.push($event)">
+  <SharedInput name="name" value="Ada" showCount maxLength="40" />
   <input type="hidden" name="token" value="saved-token" />
   <SharedButton type="submit" testID="save">Save</SharedButton>
+  <SharedButton type="reset">Reset</SharedButton>
 </SharedForm></div>`
   const file = path.join(root, 'Profile.stx')
   await Bun.write(file, source)
   const { code } = await compileSharedScreenBundle(file, { root })
-  return mountNativeScreen(code, 'Profile')
+  return code
+}
+
+async function formScreen() {
+  return mountNativeScreen(await (compiled ??= formBundle()), 'Profile')
+}
+
+function formApi(phone: NativeScreen) {
+  const root = phone.context.formRef()
+  expect(root).toBeTruthy()
+  const owner = phone.context.__stx_host.descendants(root).find((node: any) => node.__stx_exposed?.validateForm)
+  expect(owner).toBeTruthy()
+  return { api: owner.__stx_exposed, owner }
 }
 
 describe('shared Form on a native host (#2088)', () => {
@@ -37,11 +54,7 @@ describe('shared Form on a native host (#2088)', () => {
     expect(input).toBeTruthy()
     phone.type(input, 'Grace')
     await phone.settle()
-    const root = phone.context.formRef()
-    expect(root).toBeTruthy()
-    const owner = phone.context.__stx_host.descendants(root).find((node: any) => node.__stx_exposed?.validateForm)
-    const api = owner?.__stx_exposed
-    expect(api).toBeTruthy()
+    const { api } = formApi(phone)
     expect(api.values().name).toBe('Grace')
     const submit = phone.ofType('Button').find(node => node.props.type === 'submit')!
     expect(submit).toBeTruthy()
@@ -50,5 +63,78 @@ describe('shared Form on a native host (#2088)', () => {
     await phone.settle()
     expect(JSON.parse(JSON.stringify(phone.context.submissions))).toEqual([{ name: 'Grace', token: 'saved-token', source: 'profile' }])
     expect(phone.context.failures).toHaveLength(0)
+  }, 30_000)
+
+  it('runs required and custom rules on edits, blur, and submit', async () => {
+    const phone = await formScreen()
+    await phone.settle()
+    const { api } = formApi(phone)
+    const input = phone.ofType('TextInput').find(node => node.props.name === 'name')!
+    phone.type(input, '')
+    await phone.settle()
+    expect(api.errors().name).toBe('name is required')
+    phone.press(phone.ofType('Button').find(node => node.props.type === 'submit')!)
+    await phone.settle()
+    expect(phone.context.submissions).toHaveLength(0)
+    expect(phone.context.failures[0].name).toBe('name is required')
+    expect(api.isSubmitting()).toBe(false)
+    phone.type(input, 'blocked')
+    await phone.settle()
+    expect(api.errors().name).toBe('Reserved name')
+    api.errors.set({})
+    phone.press(input, 'onBlur')
+    await phone.settle()
+    expect(api.errors().name).toBe('Reserved name')
+    phone.type(input, 'Grace')
+    await phone.settle()
+    expect(api.errors().name).toBeUndefined()
+  }, 30_000)
+
+  it('delivers submit helpers and resets state and visible controls without a DOM argument', async () => {
+    const phone = await formScreen()
+    await phone.settle()
+    const { api, owner } = formApi(phone)
+    const submitting: boolean[] = []
+    phone.context.__stx_host.listen(owner, 'submit', (event: any) => {
+      if (event.target === owner) submitting.push(api.isSubmitting())
+    })
+    const input = phone.ofType('TextInput').find(node => node.props.name === 'name')!
+    phone.type(input, 'Grace')
+    await phone.settle()
+    phone.press(phone.ofType('Button').find(node => node.props.type === 'submit')!)
+    await phone.settle()
+    expect(submitting).toEqual([true])
+    expect(api.isSubmitting()).toBe(false)
+    expect(api.submitCount()).toBe(1)
+    expect(typeof phone.context.helpers?.resetForm).toBe('function')
+    phone.context.helpers.resetForm()
+    await phone.settle()
+    expect(phone.ofType('TextInput').find(node => node.props.name === 'name')!.props.value).toBe('Ada')
+    const inputOwner = phone.context.__stx_host.descendants(owner).find((node: any) => node.__stx_exposed?.clear)
+    expect(inputOwner.__stx_exposed.value()).toBe('Ada')
+    expect(api.values().source).toBe('profile')
+    expect(api.submitCount()).toBe(0)
+    expect(Object.keys(api.errors())).toHaveLength(0)
+  }, 30_000)
+
+  it('honors cancellation and resets through a real shared reset button', async () => {
+    const phone = await formScreen()
+    await phone.settle()
+    const { api, owner } = formApi(phone)
+    const host = phone.context.__stx_host
+    const form = host.descendants(owner).find((node: any) => typeof node.reset === 'function')
+    expect(form).toBeTruthy()
+    phone.type(phone.ofType('TextInput').find(node => node.props.name === 'name')!, 'Grace')
+    await phone.settle()
+    host.listen(form, 'reset', (event: any) => event.preventDefault(), { once: true })
+    const button = phone.ofType('Button').find(node => node.props.type === 'reset')!
+    phone.press(button)
+    await phone.settle()
+    expect(api.values().name).toBe('Grace')
+    expect(phone.ofType('TextInput').find(node => node.props.name === 'name')!.props.value).toBe('Grace')
+    phone.press(button)
+    await phone.settle()
+    expect(api.values().name).toBeUndefined()
+    expect(phone.ofType('TextInput').find(node => node.props.name === 'name')!.props.value).toBe('Ada')
   }, 30_000)
 })
