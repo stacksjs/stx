@@ -360,6 +360,13 @@ function settle(frame: Frame, diagnostics: TranslationDiagnostic[]): STXNode {
     return node
   }
 
+  // Template indentation is not part of a native control's visible or
+  // accessible label. Composed buttons retain their child tree above.
+  if (node.type === 'Button' && elements.length === 0) {
+    node.children = text ? [text] : []
+    return node
+  }
+
   // A drawing holds shapes; the whitespace between them is not a label.
   if (node.type === 'Svg' || node.type === 'G') {
     node.children = elements
