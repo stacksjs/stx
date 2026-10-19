@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.580...v0.2.581)
+
+## ✨ Features
+
+- **native**: the testing kit reports account changes like Craft ([d310a52](https://github.com/stacksjs/stx/commit/d310a52)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: preserve host state and teardown in the testing kit ([07ad762](https://github.com/stacksjs/stx/commit/07ad762)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.581 ([6d0183d](https://github.com/stacksjs/stx/commit/6d0183d)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.579...v0.2.580)
 
 ## 🐛 Bug Fixes

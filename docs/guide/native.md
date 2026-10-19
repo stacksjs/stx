@@ -324,6 +324,7 @@ For a screen written inline, `compileNativeScreen(source)` compiles it.
 | `apiBase`, `requestLabel` | Where the API is; how `requests` records each one (default `GET /path`, ` (guest)` without an `Authorization` header) |
 | `snapshots`, `snapshotWrite` | What `craft.snapshots` holds; a write that fails |
 | `secureStorage` (or `keychain`), `storage` | The keychain and Craft's app storage |
+| `sessionTokenKey`, `sessionEvents` | The keychain key of the signed-in token (default `auth.token`); `false` for a host older than Craft 0.0.245, which sends no `SESSION_CHANGED` |
 | `capabilities`, `native(module, method, args)` | What the host says it can do, and its answer to each capability request (throw `{ code }` for an error) |
 | `offline()`, `stream(path)` | Airplane mode; the answer to an event-stream request that is refused |
 | `platform`, `colorScheme`, `params`, `initialAppState`, `appURL`, `files`, `dialog`, `globals`, `craft` | The phone, the screen's params, the photo picker, sheets, extra globals, and `craft` members to add |
@@ -337,6 +338,7 @@ What it returns:
 | `settle(ms?)`, `waitFor(check, description)` | Let the screen catch up: until no request is out and none was answered in the last `ms` |
 | `appState(state)`, `background()`, `resume()`, `appear()`, `disappear()`, `newParams(params)`, `appearance(scheme)`, `keepSnapshot(name, value)`, `craftEvent(event, detail)`, `send(type, payload)` | What the host tells the screen |
 | `setOnline(online)` | Airplane mode on and off |
+| `setSessionToken(token \| null)` | Another context signing in, out or as someone else: the token changes and `craft.session.onChange` hears it. A screen's own `SecureStorage.set/remove` of the token reports it the same way |
 | `requests`, `headers`, `natives`, `messages`, `operations()`, `opened`, `replaced`, `moves`, `bars`, `alerts`, `animations`, `streams`, `snapshots`, `secureStorage`, `stored`, `context` | What the screen did, and the vm it runs in |
 | `unmount()`, `ended` | End the screen |
 
