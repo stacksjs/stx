@@ -45,7 +45,9 @@ const sizeClasses = {
 }
 export const sizing = sizeClasses[size]
 
-export const trackClasses = `${stretch ? 'flex w-full' : 'inline-flex'} flex-row gap-0.5 p-0.5 rounded-control bg-surface-sunken ${className}`.replace(/\s+/g, ' ').trim()
+// A block flex box already fills its column, so `stretch` needs no `w-full` -
+// which beside a margin (`mx-4`) ran the track off the screen's edge.
+export const trackClasses = `${stretch ? 'flex' : 'inline-flex'} flex-row gap-0.5 p-0.5 rounded-control bg-surface-sunken ${className}`.replace(/\s+/g, ' ').trim()
 export const segmentBase = `${stretch ? 'flex-1' : ''} items-center justify-center rounded-control transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${sizing.segment}`.replace(/\s+/g, ' ').trim()
 </script>
 
