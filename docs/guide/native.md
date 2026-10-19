@@ -39,6 +39,21 @@ continues to work. Other overlapping names retain their existing primitive
 precedence until their compatibility tests support migration; this is not a
 global precedence change.
 
+Checkbox/Switch migration must preserve two existing contracts, covered by
+`test/native/control-compatibility.test.ts`:
+
+| Implementation | Checked state | Change payload | Form value |
+|---|---|---|---|
+| Native Checkbox/Switch primitive | `value` | `@value-change`: `$event.value` | Not the shared form API |
+| Shared Checkbox | `checked` | `@change`: boolean `$event` | Separate string `value` |
+| Shared Switch | `checked` / `v-model:checked` | `@change`: boolean `$event` | `checkedValue` / `uncheckedValue` |
+
+Primitive controls retain their latest reported native value for subsequent
+reconciliation even when a listener only observes the event. This does not
+write back to an application signal automatically: controlled callers still
+update their signal explicitly. Explicit imports can select the shared files
+today; automatic Checkbox/Switch resolution has not migrated yet.
+
 The shared Button accepts legacy `text`/`:text` as a reactive label alias;
 a nonempty `label` wins. Native `testID`, accessibility props, caller classes,
 and `@press` continue to work. Unconsumed host props pass through ordinary
