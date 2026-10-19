@@ -22,6 +22,7 @@ export const as = $props.as || 'div'
 export const variant = $props.variant === 'bare' ? 'bare' : 'panel'
 export const align = $props.align === 'left' ? 'left' : 'center'
 export const className = $props.className || ''
+export const testID = $props.testID || ''
 
 const panel = variant === 'panel' ? 'bg-panel rounded-panel ring-1 ring-line' : ''
 const alignment = align === 'left' ? 'items-start text-left' : 'items-center text-center'
@@ -33,7 +34,18 @@ export const actionClasses = 'mt-2 flex flex-wrap items-center gap-2'
 export const hasIcon = icon !== ''
 </script>
 
-<component :is="{{ as }}" class="{{ rootClasses }}">
+<script client>
+/*
+ * The words follow their props after the first paint. They were fixed when the
+ * server rendered them, so an app whose empty state names a filter or a count,
+ * or speaks the viewer's language, drew the shape itself instead
+ * (stacksjs/stx#1981 follow-up).
+ */
+const heading = useReactiveProp('title', {{ title }})
+const explanation = useReactiveProp('description', {{ description }})
+</script>
+
+<component :is="{{ as }}" class="{{ rootClasses }}" @if(testID)testID="{{ testID }}"@endif data-stx-empty-state>
   {{-- Only when there is one: an empty state without an icon would otherwise
        carry a floating grey disc. A named slot is not offered because stx
        cannot tell an empty slot from an absent one at render time, so the
@@ -43,13 +55,10 @@ export const hasIcon = icon !== ''
     <div class="{{ iconWrapClasses }}">{!! icon !!}</div>
   @endif
 
-  @if(title)
-    <h3 class="{{ titleClasses }}">{{ title }}</h3>
-  @endif
-
-  @if(description)
-    <p class="{{ descriptionClasses }}">{{ description }}</p>
-  @endif
+  {{-- Always present and shown by value, so a title that arrives later has a
+       node to land in; the server text is the first paint. --}}
+  <h3 :show="heading()" :text="heading()" class="{{ titleClasses }}">{{ title }}</h3>
+  <p :show="explanation()" :text="explanation()" class="{{ descriptionClasses }}">{{ description }}</p>
 
   <div class="{{ actionClasses }}">
     <slot />

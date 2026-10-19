@@ -172,9 +172,11 @@ async function mountScreen(source: string) {
 }
 
 /** The screen as the device runs it: the JavaScriptCore bundle, with no DOM. */
-async function mountBundle(source: string) {
+async function mountBundle(source: string, options: { sharedComponents?: boolean } = {}) {
   const root = createTempDir('stx-native-rows-')
   const file = path.join(root, 'Screen.stx')
+  if (options.sharedComponents)
+    await Bun.write(path.join(root, 'stx.config.ts'), `export default { root: '.', plugins: ${JSON.stringify([path.join(import.meta.dir, '../../../components/stx-plugin.ts')])} }`)
   await Bun.write(file, source)
   const { code } = await compileSharedScreenBundle(file)
   let receive: (raw: string) => void = () => {}
@@ -262,8 +264,13 @@ globalThis.__toggle = () => data.set(data() ? null : { rows: [[{ key: 'score', v
     expect(native.text()).toEqual(['65'])
   })
 
+  /*
+   * EmptyState carries a client script (its words follow their props), so it
+   * runs through the device bundle, which executes component setups; the
+   * page-setup-only harness above cannot.
+   */
   it('shows the other branch, nested in another :if, and shows the first again', async () => {
-    const { native, settle } = await mountScreen(`<script client>
+    const { native, settle, scope } = await mountBundle(`<script client>
 const data = state(null)
 const waiting = state(true)
 globalThis.__toggle = () => waiting.set(!waiting())
@@ -274,15 +281,15 @@ globalThis.__toggle = () => waiting.set(!waiting())
     <EmptyState :if="waiting" variant="bare" title="Loading your day" description="One moment." />
     <EmptyState :if="!waiting" variant="bare" title="Not available" description="Try again." />
   </View>
-</View>`)
+</View>`, { sharedComponents: true })
     expect(native.text()).toEqual(['Today', 'Loading your day', 'One moment.'])
 
-    ;(globalThis as any).__toggle()
+    ;(scope as any).__toggle()
     await settle()
     expect(native.errors).toEqual([])
     expect(native.text()).toEqual(['Today', 'Not available', 'Try again.'])
 
-    ;(globalThis as any).__toggle()
+    ;(scope as any).__toggle()
     await settle()
     expect(native.errors).toEqual([])
     expect(native.text()).toEqual(['Today', 'Loading your day', 'One moment.'])

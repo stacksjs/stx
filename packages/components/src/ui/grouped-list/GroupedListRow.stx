@@ -1,0 +1,76 @@
+<script server>
+/*
+ * One row of a `<GroupedList>`: an optional icon tile, a title over an
+ * optional subtitle, a value at the end, an optional control in the slot and
+ * a disclosure chevron. At least 44pt tall, as a touch target has to be.
+ *
+ * `separator` draws the hairline above the row, inset to where the text
+ * starts (past the tile when there is one). The group cannot draw it on a
+ * phone, so the row does; pass it for every row but the first, which in a
+ * `:for` is `:separator="index > 0"`.
+ *
+ * A row is pressable when it has a `chevron` or is `pressable`, and then it
+ * emits `select`. Otherwise it is static, for a row that only carries a
+ * control in its slot (a Switch) or a value to read.
+ *
+ * `icon` is inline SVG, drawn white on a tile of the `tint` role (`accent`,
+ * `success`, `danger`, `warning`, `info`, `secondary`) - the coloured square
+ * a Settings row leads with. `destructive` paints the title `danger`.
+ */
+export const title = $props.title || ''
+export const subtitle = $props.subtitle || ''
+export const value = $props.value || ''
+export const icon = $props.icon || ''
+export const tint = ['accent', 'success', 'danger', 'warning', 'info', 'secondary'].includes($props.tint) ? $props.tint : 'accent'
+export const chevron = $bool($props.chevron)
+export const pressable = $bool($props.pressable) || chevron
+export const destructive = $bool($props.destructive)
+export const separator = $bool($props.separator)
+export const testID = $props.testID || ''
+export const className = $props.className || ''
+
+const tintFills = {
+  accent: 'bg-accent-solid',
+  success: 'bg-success-solid',
+  danger: 'bg-danger-solid',
+  warning: 'bg-warning-solid',
+  info: 'bg-info-solid',
+  secondary: 'bg-secondary-solid',
+}
+export const hasIcon = icon !== ''
+export const tag = pressable ? 'button' : 'div'
+export const tileClasses = `flex shrink-0 items-center justify-center h-[29px] w-[29px] rounded-[7px] text-white ${tintFills[tint]}`
+export const rowClasses = `flex flex-row items-center gap-3 w-full min-h-[44px] px-4 py-2.5 text-left ${pressable ? 'cursor-pointer active:bg-surface-hover focus:outline-none focus-visible:bg-surface-hover' : ''} ${className}`.replace(/\s+/g, ' ').trim()
+export const ruleClasses = `h-[0.5px] bg-line ${hasIcon ? 'ml-[57px]' : 'ml-4'}`
+export const titleClasses = `text-[17px] ${destructive ? 'text-danger' : 'text-fg'}`
+</script>
+
+<script client>
+const emit = defineEmits(['select'])
+const heading = useReactiveProp('title', {{ title }})
+const detail = useReactiveProp('subtitle', {{ subtitle }})
+const trailing = useReactiveProp('value', {{ value }})
+const ruled = useReactiveProp('separator', {{ separator }})
+
+function select() {
+  emit('select')
+}
+</script>
+
+<div class="flex flex-col" data-stx-grouped-list-row>
+  <div :show="ruled()" class="{{ ruleClasses }}" aria-hidden="true"></div>
+  <{{ tag }} @if(pressable)type="button" @click="select()"@endif class="{{ rowClasses }}" @if(testID)testID="{{ testID }}"@endif>
+    @if(hasIcon)
+      <span class="{{ tileClasses }}" aria-hidden="true">{!! icon !!}</span>
+    @endif
+    <span class="flex flex-1 min-w-0 flex-col">
+      <span :text="heading()" class="{{ titleClasses }}">{{ title }}</span>
+      <span :show="detail()" :text="detail()" class="text-[15px] text-fg-soft">{{ subtitle }}</span>
+    </span>
+    <span :show="trailing()" :text="trailing()" class="shrink-0 text-[17px] text-fg-soft">{{ value }}</span>
+    <slot />
+    @if(chevron)
+      <svg class="h-3.5 w-3.5 shrink-0 text-fg-soft" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+    @endif
+  </{{ tag }}>
+</div>

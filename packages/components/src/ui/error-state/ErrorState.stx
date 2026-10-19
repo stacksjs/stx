@@ -1,0 +1,56 @@
+<script server>
+/*
+ * Something did not load, said where the content would have been, with a way
+ * to try again.
+ *
+ * Apps wrote this as a line of red text, often with "pull down to retry"
+ * inside the message, and rarely offered the button. It is `role="alert"`, so
+ * a screen reader announces it when it appears rather than leaving it to be
+ * found, on the web and - through the translated role - on a phone.
+ *
+ *   <ErrorState :show="failed()" title="Couldn't load your clubs" :message="problem()"
+ *     :busy="loading()" @retry="load()" />
+ *
+ * `title`, `message` and `busy` are reactive. While `busy`, the button is
+ * disabled and says `busyLabel`, so a second tap cannot queue a second load.
+ * Leave `retryLabel` empty for an error nothing can retry.
+ */
+export const title = $props.title || ''
+export const message = $props.message || ''
+export const retryLabel = $props.retryLabel ?? 'Try again'
+export const busyLabel = $props.busyLabel || 'Trying again…'
+export const busy = $bool($props.busy)
+export const testID = $props.testID || ''
+export const className = $props.className || ''
+
+export const rootClasses = `flex flex-col items-center gap-2 px-6 py-8 text-center ${className}`.trim()
+</script>
+
+<script client>
+const emit = defineEmits(['retry'])
+const heading = useReactiveProp('title', {{ title }})
+const detail = useReactiveProp('message', {{ message }})
+const retryText = useReactiveProp('retryLabel', {{ retryLabel }})
+const isBusy = useReactiveProp('busy', {{ busy }})
+const busyText = {{ busyLabel }}
+
+function retry() {
+  if (isBusy()) return
+  emit('retry')
+}
+</script>
+
+<div role="alert" class="{{ rootClasses }}" @if(testID)testID="{{ testID }}"@endif data-stx-error-state>
+  <svg class="h-7 w-7 text-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 8v4" /><path d="M12 16h.01" /></svg>
+  <p :show="heading()" :text="heading()" class="text-base font-semibold text-fg">{{ title }}</p>
+  <p :show="detail()" :text="detail()" class="max-w-sm text-sm text-fg-muted">{{ message }}</p>
+  <button
+    type="button"
+    :show="retryText()"
+    @if(testID):testID="'{{ testID }}-retry'"@endif
+    :disabled="isBusy()"
+    :aria-busy="isBusy() ? 'true' : 'false'"
+    class="mt-2 min-h-[44px] items-center justify-center rounded-control bg-accent-solid px-5 text-[15px] font-semibold text-accent-ink disabled:opacity-60"
+    @click="retry()"
+  ><span :text="isBusy() ? busyText : retryText()">{{ retryLabel }}</span></button>
+</div>

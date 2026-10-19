@@ -1,0 +1,100 @@
+<script server>
+/*
+ * One choice from a row of pills that scrolls sideways: the filter row under
+ * a list title when there are more choices than a segmented control can hold
+ * ("All", "Unread", "Conquests", "Kudos", "Challenges").
+ *
+ * A segmented control fits two to four short words across a phone. Past that
+ * the words truncate, so apps fell back to a button that cycled through the
+ * choices one tap at a time. This scrolls instead: on the web through
+ * `overflow-x-auto`, on a phone as a horizontal ScrollView, from the same
+ * source.
+ *
+ *   <ChoiceChips v-model:value="filter" label="Show" testID="filter"
+ *     :options="[{ value: 'all', label: 'All' }, { value: 'unread', label: 'Unread', count: 3 }]" />
+ *
+ * `options` takes strings or `{ value, label, count?, disabled? }`, and is
+ * reactive. Each chip is a button with `aria-pressed`, which the native host
+ * announces as selected. `testID` names the row, each chip `<testID>-<value>`.
+ * The chosen chip is `accent-solid` with `accent-ink`; the rest
+ * `surface-sunken`; the shape `rounded-pill`.
+ */
+export const value = $props.value ?? ''
+export const options = $props.options || []
+export const label = $props.label || ''
+export const testID = $props.testID || ''
+export const className = $props.className || ''
+</script>
+
+<script client>
+const emit = defineEmits(['change'])
+const selected = useModel('value', { default: {{ value }}, parse: v => v == null ? '' : String(v) })
+const choices = useReactiveProp('options', {{ options }})
+const groupID = {{ testID }}
+
+function normalise(choice) {
+  if (choice !== null && typeof choice === 'object') {
+    const value = choice.value == null ? '' : String(choice.value)
+    const count = Number(choice.count)
+    return { value, label: choice.label == null ? value : String(choice.label), count: Number.isFinite(count) && count > 0 ? count : 0, disabled: choice.disabled === true }
+  }
+  const value = choice == null ? '' : String(choice)
+  return { value, label: value, count: 0, disabled: false }
+}
+
+function chips() {
+  const list = choices()
+  return Array.isArray(list) ? list.map(normalise) : []
+}
+
+function isOn(chip) {
+  return chip.value === selected()
+}
+
+function choose(chip) {
+  if (chip.disabled || isOn(chip)) return
+  selected.set(chip.value)
+  emit('change', chip.value)
+}
+
+function chipClasses(chip) {
+  const state = isOn(chip) ? 'bg-accent-solid' : 'bg-surface-sunken'
+  return `flex flex-row shrink-0 items-center gap-1.5 min-h-[36px] px-4 rounded-pill ${state} ${chip.disabled ? 'opacity-50' : ''}`
+}
+
+function textClasses(chip) {
+  return `text-[15px] font-medium ${isOn(chip) ? 'text-accent-ink' : 'text-fg'}`
+}
+
+function chipLabel(chip) {
+  return chip.count ? `${chip.label} ${chip.count}` : chip.label
+}
+
+function chipID(chip) {
+  return groupID ? `${groupID}-${chip.value}` : ''
+}
+
+defineExpose({ selected })
+</script>
+
+<div
+  role="group"
+  @if(label)aria-label="{{ label }}"@endif
+  @if(testID)testID="{{ testID }}"@endif
+  class="w-full overflow-x-auto {{ className }}"
+  data-stx-choice-chips
+>
+  <div class="flex flex-row gap-2 px-4">
+    <button
+      :for="chip in chips()"
+      :key="chip.value"
+      type="button"
+      :testID="chipID(chip)"
+      :aria-pressed="isOn(chip) ? 'true' : 'false'"
+      :aria-disabled="chip.disabled ? 'true' : 'false'"
+      :disabled="chip.disabled"
+      :class="chipClasses(chip)"
+      @click="choose(chip)"
+    ><span :class="textClasses(chip)" :text="chipLabel(chip)"></span></button>
+  </div>
+</div>

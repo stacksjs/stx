@@ -1,0 +1,44 @@
+<script server>
+/*
+ * An inset grouped section: a heading above a rounded group of rows and an
+ * optional note below it. The Settings-app list, which a phone app reaches for
+ * whenever a screen is a list of things to open or toggle.
+ *
+ * One app drew it from a token file and markup copied into some thirty native
+ * screens; another drew one card per row with no separators at all. Here the
+ * group is the card and the rows are `<GroupedListRow>`s inside it, each
+ * drawing its own inset hairline when it is not the first (`separator`), so
+ * the same source works on a phone, where there is no `divide-y`.
+ *
+ *   <GroupedList title="Account" footer="Signed in as ada@example.com">
+ *     <GroupedListRow title="Profile" chevron @select="openProfile()" />
+ *     <GroupedListRow title="Notifications" separator chevron @select="openAlerts()" />
+ *   </GroupedList>
+ *
+ * `title` and `footer` are reactive, so a count or a translated label can
+ * change in place. Colours are roles: the group is `panel` on the page, the
+ * heading and note `fg-soft`, the corners `rounded-panel`.
+ */
+export const title = $props.title || ''
+export const footer = $props.footer || ''
+/** Flush to the screen edges rather than inset by the gutter. */
+export const flush = $bool($props.flush)
+export const testID = $props.testID || ''
+export const className = $props.className || ''
+
+export const groupClasses = `overflow-hidden bg-panel ${flush ? '' : 'mx-4 rounded-panel'}`.replace(/\s+/g, ' ').trim()
+export const noteInset = flush ? 'mx-4' : 'mx-8'
+</script>
+
+<script client>
+const heading = useReactiveProp('title', {{ title }})
+const note = useReactiveProp('footer', {{ footer }})
+</script>
+
+<section class="flex flex-col {{ className }}" @if(testID)testID="{{ testID }}"@endif data-stx-grouped-list>
+  <h2 :show="heading()" :text="heading()" class="mb-1.5 {{ noteInset }} text-[13px] uppercase text-fg-soft">{{ title }}</h2>
+  <div class="{{ groupClasses }}">
+    <slot />
+  </div>
+  <p :show="note()" :text="note()" class="mt-1.5 {{ noteInset }} text-[13px] text-fg-soft">{{ footer }}</p>
+</section>
