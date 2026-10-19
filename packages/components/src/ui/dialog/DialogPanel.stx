@@ -1,10 +1,25 @@
 <script server>
 export const className = $props.className || ''
 export const as = $props.as || 'div'
+/*
+ * `sheet` is the phone's presentation: anchored to the bottom edge at full
+ * width with a grabber and the home indicator's inset, and the ordinary
+ * centred card from `sm` up. Apps drew this by hand for every confirmation
+ * and form - and without the focus trap, Escape and scroll lock a Dialog
+ * brings, which is what a hand-drawn one quietly lost.
+ */
+export const variant = $props.variant === 'sheet' ? 'sheet' : 'center'
+export const isSheet = variant === 'sheet'
 
 const baseClasses = 'fixed inset-0 overflow-y-auto'
-const panelWrapperClasses = 'flex min-h-full items-center justify-center p-4 text-center'
-const panelClasses = `transform overflow-hidden rounded-panel bg-panel p-6 text-left align-middle shadow-xl transition-all ${className}`.trim()
+const panelWrapperClasses = isSheet
+  ? 'flex min-h-full items-end justify-center text-center sm:items-center sm:p-4'
+  : 'flex min-h-full items-center justify-center p-4 text-center'
+const shape = isSheet
+  ? 'w-full rounded-t-panel rounded-b-none p-5 sm:rounded-panel sm:p-6'
+  : 'rounded-panel p-6'
+const panelClasses = `transform overflow-hidden ${shape} bg-panel text-left align-middle shadow-xl transition-all ${className}`.trim()
+const panelStyle = isSheet ? 'padding-bottom: max(1.25rem, env(safe-area-inset-bottom));' : ''
 </script>
 
 <component :is="{{ as }}" class="{{ baseClasses }}">
@@ -12,7 +27,10 @@ const panelClasses = `transform overflow-hidden rounded-panel bg-panel p-6 text-
     <!-- data-stx-dialog-panel is what Dialog scopes its focus trap and its
          initial focus to; tabindex=-1 lets the panel itself take focus when
          it contains nothing focusable, so Tab cannot leave a modal dialog. -->
-    <div class="{{ panelClasses }}" data-stx-dialog-panel tabindex="-1">
+    <div class="{{ panelClasses }}" @if(isSheet)style="{{ panelStyle }}"@endif data-stx-dialog-panel tabindex="-1">
+      @if(isSheet)
+        <div aria-hidden="true" class="mx-auto -mt-2 mb-4 h-1.5 w-10 rounded-pill bg-line sm:hidden"></div>
+      @endif
       <slot />
     </div>
   </div>

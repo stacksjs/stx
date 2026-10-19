@@ -19,6 +19,8 @@ export interface DialogBackdropProps {
 export interface DialogPanelProps {
   className?: string
   as?: string
+  /** `sheet`: a bottom sheet on a phone with a grabber, a centred card from `sm` up. */
+  variant?: 'center' | 'sheet'
 }
 
 export interface DialogTitleProps {
