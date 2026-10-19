@@ -42,6 +42,20 @@ const dialogInstanceId = {{ dialogInstanceId }}
 // and isOpen flips. See stacksjs/stx#1704.
 const isOpen = useReactiveProp('open', {{ open }})
 const rootRef = useRef('rootRef')
+const tree = window.stx._host
+
+function closestMarker(node, marker) {
+  for (let current = node; current; current = tree.parent(current)) {
+    if (tree.getAttribute(current, marker) != null) return current
+  }
+  return null
+}
+
+function ownPart(marker) {
+  const root = rootRef.value
+  if (!root) return null
+  return tree.descendants(root).find(node => tree.getAttribute(node, marker) != null && closestMarker(node, 'data-stx-dialog') === root) || null
+}
 
 /*
  * Whether hydration has run.
@@ -71,11 +85,12 @@ onMount(() => {
 function labelFromTitle() {
   const root = rootRef.value
   if (!root) return
-  if (root.getAttribute('aria-label') || root.getAttribute('aria-labelledby')) return
-  const heading = root.querySelector('[data-stx-dialog-title]')
+  if (tree.getAttribute(root, 'aria-label') || tree.getAttribute(root, 'aria-labelledby')) return
+  const heading = ownPart('data-stx-dialog-title')
   if (!heading) return
-  if (!heading.id) heading.id = `${dialogInstanceId}-title`
-  root.setAttribute('aria-labelledby', heading.id)
+  const headingId = tree.getAttribute(heading, 'id') || `${dialogInstanceId}-title`
+  tree.setAttribute(heading, 'id', headingId)
+  tree.setAttribute(root, 'aria-labelledby', headingId)
 }
 
 const closeOnEscape = {{ closeOnEscape }}
@@ -90,7 +105,7 @@ function close() {
 function panelEl() {
   const root = rootRef.value
   if (!root) return null
-  return root.querySelector('[data-stx-dialog-panel]') || root
+  return ownPart('data-stx-dialog-panel') || root
 }
 
 /*
@@ -106,7 +121,7 @@ function panelEl() {
 function onRootClick(event) {
   if (!closeOnBackdrop || !window.stx.overlays.isTop(dialogInstanceId)) return
   const target = event.target
-  if (target && target.closest && target.closest('[data-stx-dialog-backdrop]')) close()
+  if (closestMarker(target, 'data-stx-dialog-backdrop') && closestMarker(target, 'data-stx-dialog') === rootRef.value) close()
 }
 
 /*
@@ -128,6 +143,7 @@ effect(() => {
       panel: panelEl,
       root: rootRef.value,
       onEscape: closeOnEscape ? close : null,
+      onBackdrop: closeOnBackdrop ? close : null,
     })
   }
   else {
@@ -149,6 +165,7 @@ defineExpose({
 </script>
 
 <div
+  data-native="Modal"
   x-ref="rootRef"
   :show="isOpen()"
   class="{{ dialogClasses }}"
