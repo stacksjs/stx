@@ -34,7 +34,8 @@ import type { NativeMutationOperation } from '../bridge/protocol'
 import type { STXNode, STXStyle } from '../compiler/ir'
 import { compileClassStyles } from '../compiler/headwind-to-style'
 import { resolveIconName } from '../compiler/icons'
-import { parseNativeStyle } from '../compiler/inline-style'
+import { parseNativeStyleLayers } from '../compiler/inline-style'
+import type { NativeStyleVariables } from '../compiler/style-variables'
 import { affectsGeometry, parseSvgMarkup, parseViewBox, SVG_NODE_TYPES, svgGeometry } from '../compiler/svg'
 import { NATIVE_EVENT_NAMES } from '../event-names'
 import { nativePropName } from '../prop-names'
@@ -60,12 +61,15 @@ interface NodeRecord {
   props: Record<string, unknown>
   style: Record<string, unknown>
   baseStyle: Record<string, unknown>
+  styleSource?: string
+  inheritedVariables?: NativeStyleVariables
+  variables?: NativeStyleVariables
   /** Reactive :style replaces this layer without destroying authored inline styles. */
-  boundStyle?: Record<string, unknown>
+  boundStyle?: unknown
   classes: string
   /** Caller classes override, but never replace, the component's own classes. */
   forwardedClasses?: string
-  forwardedStyle?: Record<string, unknown>
+  forwardedStyle?: unknown
   /** Current unsupported classes, bounded by this node's current class list. */
   reportedClasses?: Set<string>
   /** Reject results requested before a node was removed, even if it is reinserted. */
@@ -160,7 +164,7 @@ export interface NativeHost {
   descendants: (node: NativeNode) => NativeNode[]
   scopesIn: (node: NativeNode) => string[]
   /** Register a node the native side already created, so the host can track it. */
-  adopt: (node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'key' | 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle'>) => NativeNode
+  adopt: (node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'key' | 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle' | '_styleSource'>) => NativeNode
   /** Send whatever is pending now, rather than waiting for the scheduled flush. */
   flush: () => void
   /** Dispatch an event the native side reported, by the id handed to it. */
@@ -430,7 +434,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     if (record.materialized || node.__stxAnchor !== undefined)
       return
     installControlListeners(node)
-    record.style = resolveStyle(record)
+    record.style = resolveStyle(record, node.__stxId)
     record.materialized = true
     emit({
       op: 'createNode',
@@ -453,9 +457,24 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     }
   }
 
-  function resolveStyle(record: NodeRecord): Record<string, unknown> {
+  function resolveStyle(record: NodeRecord, id: string): Record<string, unknown> {
     const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`)
-    return { ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}), ...record.baseStyle, ...record.boundStyle, ...record.forwardedStyle, ...(record.visible ? {} : { display: 'none' }) }
+    const resolved = parseNativeStyleLayers([record.styleSource, record.boundStyle, record.forwardedStyle], record.inheritedVariables, diagnostic => {
+      console.warn(`[STX Native] ${diagnostic.kind}: ${id}: ${diagnostic.name}`)
+    })
+    record.variables = resolved.variables
+    return { ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}), ...resolved.styles[0], ...record.baseStyle, ...resolved.styles[1], ...resolved.styles[2], ...(record.visible ? {} : { display: 'none' }) }
+  }
+
+  function refreshStyleTree(node: NativeNode, inherited = node.__stxOwner ? descriptorOf(node.__stxOwner)?.variables : undefined): void {
+    if (node.__stxAnchor !== undefined) return
+    const record = recordOf(node)
+    const before = record.variables
+    record.inheritedVariables = inherited
+    applyClasses(node.__stxId, record, true)
+    const after = record.variables!
+    if (before?.size === after.size && [...after].every(([name, value]) => before.has(name) && before.get(name) === value)) return
+    for (const child of record.children) refreshStyleTree(child, after)
   }
 
   function forwardedHostRoot(node: NativeNode, name: string): NativeNode | undefined {
@@ -485,12 +504,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
           : String(value ?? '')
     }
     else if (name === 'style')
-      record.forwardedStyle = parseNativeStyle(value, diagnostic => {
-        console.warn(`[STX Native] ${diagnostic.kind}: ${node.__stxId}: ${diagnostic.name}`)
-      }) as Record<string, unknown>
+      record.forwardedStyle = value
     else
       return false
-    applyClasses(node.__stxId, record)
+    refreshStyleTree(node)
     return true
   }
 
@@ -508,11 +525,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     notifyAttributes(node, name)
   }
 
-  function applyClasses(id: string, record: NodeRecord): void {
-    const style = resolveStyle(record)
+  function applyClasses(id: string, record: NodeRecord, onlyIfChanged = false): void {
+    const style = resolveStyle(record, id)
     const patch = Object.fromEntries(Object.keys(record.style).filter(key => !(key in style)).map(key => [key, null]))
+    const changed = !onlyIfChanged || JSON.stringify(record.style) !== JSON.stringify(style)
     record.style = style
-    if (record.materialized) emit({ op: 'updateNode', id, patch: { style: { ...patch, ...style } } })
+    if (record.materialized && changed) emit({ op: 'updateNode', id, patch: { style: { ...patch, ...style } } })
     const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`)
     const unsupported = new Set(classes.unknown)
     for (const name of unsupported) {
@@ -631,19 +649,21 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     }
   }
 
-  function adopt(node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'key' | 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle'>): NativeNode {
+  function adopt(node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'key' | 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle' | '_styleSource'>): NativeNode {
     const suffix = /(?:^|\D)(\d+)$/.exec(node.__stxId)?.[1]
     if (suffix)
       counter = Math.max(counter, Number(suffix))
     const classes = descriptor?._classes ?? ''
     const classStyle = compileClassStyles(classes).style as Record<string, unknown>
-    const baseStyle = descriptor?._inlineStyle ? { ...descriptor._inlineStyle } : Object.fromEntries(Object.entries(descriptor?.style ?? {}).filter(([key, value]) => classStyle[key] !== value))
+    const baseStyle = descriptor?._styleSource !== undefined ? {} : descriptor?._inlineStyle ? { ...descriptor._inlineStyle } : Object.fromEntries(Object.entries(descriptor?.style ?? {}).filter(([key, value]) => classStyle[key] !== value))
     const record: NodeRecord = {
       type,
       key: descriptor?.key,
       props: { ...(descriptor?.props ?? {}) },
       style: { ...(descriptor?.style ?? {}) },
       baseStyle,
+      styleSource: descriptor?._styleSource,
+      inheritedVariables: owner ? descriptorOf(owner)?.variables : undefined,
       classes,
       events: { ...(descriptor?.events ?? {}) },
       text: descriptor?.children?.find(child => typeof child === 'string') as string | undefined,
@@ -652,7 +672,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       materialized: true,
       controlDefaults: { value: descriptor?.props.value ?? '', checked: descriptor?.props.checked ?? descriptor?.props.value ?? false },
     }
-    record.style = resolveStyle(record)
+    record.style = resolveStyle(record, node.__stxId)
     if (descriptor) descriptor.style = { ...record.style } as STXNode['style']
     records.set(node.__stxId, record)
     decorateControl(node, type)
@@ -739,7 +759,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const describe = (node: NativeNode): STXNode => {
         const record = recordOf(node)
         if (!record.materialized)
-          record.style = resolveStyle(record)
+          record.style = resolveStyle(record, node.__stxId)
         record.materialized = true
         const children = record.children
           .filter(child => child.__stxAnchor === undefined)
@@ -868,10 +888,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     setStyle(node, value, replaceBinding = false) {
       const record = recordOf(node)
       if (replaceBinding) {
-        record.boundStyle = parseNativeStyle(value, diagnostic => {
-          console.warn(`[STX Native] ${diagnostic.kind}: ${node.__stxId}: ${diagnostic.name}`)
-        }) as Record<string, unknown>
-        applyClasses(node.__stxId, record)
+        record.boundStyle = value
+        refreshStyleTree(node)
         return
       }
       // Internal imperative patches may contain null to clear a host field.
@@ -1052,7 +1070,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       }
       // `display` is how the IR spells it, so the renderers already understand
       // it; the host does not invent a second vocabulary for the same thing.
-      record.style = resolveStyle(record)
+      record.style = resolveStyle(record, node.__stxId)
       const display = visible ? irDisplay(record.style.display) : 'none'
       if (record.materialized)
         emit({ op: 'updateNode', id: node.__stxId, patch: { style: { display } } })
@@ -1094,10 +1112,13 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         props: { ...descriptor.props, __stxId: copy.__stxId },
         style: { ...descriptor.style },
         baseStyle: { ...descriptor.baseStyle },
-        boundStyle: descriptor.boundStyle ? { ...descriptor.boundStyle } : undefined,
+        styleSource: descriptor.styleSource,
+        inheritedVariables: descriptor.inheritedVariables,
+        variables: descriptor.variables,
+        boundStyle: descriptor.boundStyle,
         classes: descriptor.classes,
         forwardedClasses: descriptor.forwardedClasses,
-        forwardedStyle: descriptor.forwardedStyle ? { ...descriptor.forwardedStyle } : undefined,
+        forwardedStyle: descriptor.forwardedStyle,
         events: { ...descriptor.events },
         text: descriptor.text,
         children: [],
@@ -1145,6 +1166,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
       record.children.splice(index, 0, node)
       node.__stxOwner = parent
+      refreshStyleTree(node, record.variables)
       insertIntoBindingParent(parent, node, index)
       setConnected(node, record.materialized)
       if (oldOwner && oldOwner !== parent) notifyChildren(oldOwner)

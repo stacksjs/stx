@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { parseNativeStyle } from '../../src/native/compiler/inline-style'
+import { parseNativeStyle, parseNativeStyleLayers } from '../../src/native/compiler/inline-style'
 import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import { compileNativeScreen, mountNativeScreen } from '../../src/native/testing'
 import type { STXNode } from '../../src/native/compiler/ir'
@@ -27,6 +27,19 @@ it('invalidates cycles, including fallback-only dependencies, and uses consuming
   expect(parseNativeStyle({ '--n': 'initial', width: 'var(--n,12px)' })).toEqual({ width: 12 })
   expect(parseNativeStyle({ '--a': 'var(--a)', '--outside': 'var(--a,green)', color: 'var(--outside,blue)' }).color).toBe('green')
   expect(parseNativeStyle({ '--a': 'var(--b) var(--c)', '--b': 'var(--a)', '--c': 'var(--b,green)', color: 'var(--c,blue)' }).color).toBe('blue')
+})
+
+it('resolves authored, bound and forwarded layers against one local variable environment', () => {
+  const diagnostics: unknown[] = []
+  const resolved = parseNativeStyleLayers([
+    '--space:4px;--alias:var(--space);padding:var(--alias)',
+    { '--space': '8px', margin: 'var(--space)' },
+    { '--space': '16px', borderRadius: 'var(--alias)' },
+  ], undefined, d => diagnostics.push(d))
+  expect(resolved.styles).toEqual([{ padding: 16 }, { margin: 16 }, { borderRadius: 16 }])
+  expect(resolved.variables.get('--alias')).toBe('16px')
+  expect(diagnostics).toEqual([])
+  expect(parseNativeStyleLayers(['--a:var(--b);color:var(--a,blue)', { '--b': 'var(--a)' }], undefined, () => {}).styles[0]).toEqual({ color: 'blue' })
 })
 
 it('keeps quoted text literal and names case-sensitive; bounds expansion and rejects unresolved values', () => {
@@ -68,6 +81,56 @@ it('inherits compiled inline variables without leaking between siblings or re-ev
 })
 
 describe.each([false, true])('reactive local native variables (minify=%s)', (minify) => {
+  it('propagates parent themes through aliases, shadows, hidden branches and new loop rows', async () => {
+    const { code } = await compileNativeScreen(`<script client>
+const theme = state({ '--gap': '12px', '--ink': '#123456' })
+const local = state({ '--gap': '24px' })
+const show = state(true)
+const rows = state([1])
+window.theme = theme; window.local = local; window.show = show; window.rows = rows
+</script>
+<div :style="theme" style="--gap:4px;--ink:blue;--alias:var(--gap)">
+  <div testID="child" style="padding:var(--gap);color:var(--ink)"></div>
+  <div :style="local" style="--own:var(--gap);margin:var(--alias);padding:var(--own)" testID="shadow">
+    <div testID="nested" style="padding:var(--gap);color:var(--ink)"></div>
+  </div>
+  <div :if="show" testID="conditional" style="padding:var(--gap)"></div>
+  <div :show="show" testID="hidden" style="padding:var(--gap);display:flex"></div>
+  <div :for="row in rows" :testID="'row-' + row" style="padding:var(--gap)"></div>
+</div>
+<div testID="outside" style="padding:var(--gap,2px)"></div>`, { minify })
+    const phone = mountNativeScreen(code)
+    try {
+      await phone.settle()
+      expect(phone.byTestID('child')!.style).toMatchObject({ padding: 12, color: '#123456' })
+      expect(phone.byTestID('shadow')!.style).toMatchObject({ padding: 24, margin: 12 })
+      expect(phone.byTestID('nested')!.style).toMatchObject({ padding: 24, color: '#123456' })
+      phone.context.show.set(false)
+      await phone.settle()
+      phone.context.theme.set({ '--gap': '18px', '--ink': '#abcdef' })
+      phone.context.rows.set([1, 2])
+      await phone.settle()
+      expect(phone.byTestID('child')!.style).toMatchObject({ padding: 18, color: '#abcdef' })
+      expect(phone.byTestID('shadow')!.style).toMatchObject({ padding: 24, margin: 18 })
+      expect(phone.byTestID('nested')!.style).toMatchObject({ padding: 24, color: '#abcdef' })
+      expect(phone.byTestID('hidden')!.style).toMatchObject({ padding: 18, display: 'none' })
+      expect(phone.byTestID('row-2')!.style.padding).toBe(18)
+      expect(phone.byTestID('outside')!.style.padding).toBe(2)
+      phone.context.show.set(true)
+      phone.context.local.set(null)
+      await phone.settle()
+      expect(phone.byTestID('conditional')!.style.padding).toBe(18)
+      expect(phone.byTestID('hidden')!.style).toMatchObject({ padding: 18, display: 'flex' })
+      expect(phone.byTestID('shadow')!.style).toMatchObject({ padding: 18, margin: 18 })
+      phone.context.theme.set(null)
+      await phone.settle()
+      expect(phone.byTestID('child')!.style).toMatchObject({ padding: 4, color: 'blue' })
+      expect(phone.byTestID('row-2')!.style.padding).toBe(4)
+      expect(phone.mutationErrors).toEqual([])
+    }
+    finally { phone.unmount() }
+  }, 30_000)
+
   it('updates resolved styles, removes old values, and does not leak custom properties to the host', async () => {
     const { code } = await compileNativeScreen(`<script client>
 const styles = state({ '--radius': '1rem', borderRadius: 'var(--radius)', color: 'var(--ink,#123456)' })

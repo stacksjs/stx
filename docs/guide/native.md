@@ -110,11 +110,14 @@ same style value, for example `--gap:12px;padding:var(--gap,8px)`. Local aliases
 and nested fallbacks work; cyclic or missing values use the consuming fallback
 or produce a diagnostic. Resolved lengths still pass through native numeric
 validation, and custom properties are never sent as host style fields.
-Compiled inline variables inherit through the HTML/SVG ancestor tree. Local
+Inline variables inherit through the HTML/SVG ancestor tree. Local
 declarations shadow ancestors, siblings remain isolated, and inherited aliases
 retain their already-computed parent value. `initial` blocks inheritance;
-`inherit`/`unset` retain the parent value. This does not yet transport reactive
-parent changes, stylesheet declarations, or semantic-class overrides. Calls to
+`inherit`/`unset` retain the parent value. Reactive parent changes update
+descendants, including newly created loop rows and reinserted conditional
+branches. Authored, reactive, and forwarded style layers share the same local
+variable environment; removing an override restores the underlying declaration.
+This does not yet transport stylesheet declarations or semantic-class overrides. Calls to
 the standalone style parser without an inheritance context still diagnose
 unconsumed declarations. Variable substitution is bounded to 64 dependency
 levels and 64 KiB per expanded value; escaped variable names are not supported.
