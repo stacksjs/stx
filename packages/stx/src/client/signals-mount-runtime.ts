@@ -197,7 +197,11 @@ else {
         if (typeof scope === 'object' && scope !== null) {
           scope.$el = root;
           scope.$refs = scope.$refs || {};
-          root.__stx_scope = scope;  // Store isolated scope on element
+          // An auto-mounted page can start with a shared component. That
+          // wrapper already owns a component scope: the page supplies its
+          // caller, not a replacement for its handlers/refs/prop signals.
+          if (root.hasAttribute('data-stx-component-wrapper')) root.__stx_parent_scope = scope;
+          else root.__stx_scope = scope;
           Object.assign(componentScope, scope);  // Keep for backwards compat
         }
 
