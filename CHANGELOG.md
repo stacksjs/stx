@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.587...v0.2.588)
+
+## 🐛 Bug Fixes
+
+- **native**: preserve inferred link roles on touchable primitives ([e6091ec](https://github.com/stacksjs/stx/commit/e6091ec)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.588 ([258a88c](https://github.com/stacksjs/stx/commit/258a88c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.585...v0.2.586)
 
 ## 🐛 Bug Fixes
