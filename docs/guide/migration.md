@@ -343,6 +343,45 @@ interface Props {
 
 ## Version Migration
 
+### stx 0.2.575: watch, memo, sharedRequest, haptics, native testing
+
+- **`watch` in a client script now matches the module `watch` (and Vue).** It
+  was `$watch`: with a getter (`watch(() => user().id, cb)`) it called back once
+  with the getter itself and never again; with a signal it called back at
+  creation with no previous value, and on every write. Now `cb(next, previous)`
+  runs only when the value changes, after the next render (`flush: 'post'`),
+  and not at creation. A caller that needs the first call passes
+  `{ immediate: true }`:
+
+  ```js
+  // Before: ran at once for the trainer already picked.
+  watch(trainerId, id => loadAvailability(id))
+  // After:
+  watch(trainerId, id => loadAvailability(id), { immediate: true })
+  ```
+
+  A watch that only reacts to later changes (`watch(visibility, refreshIfStale)`)
+  needs nothing. `$watch` is unchanged.
+- **`memo(fn)` / `derived(fn, { equals })`** pass a change on only when the
+  value differs. `effect(() => load(userId()))` over
+  `const userId = memo(() => user().id)` no longer reloads for a new user object
+  with the same id. `derived(fn)` without options behaves as before.
+- **`untrack(signal)` no longer subscribes** the running effect. Code that
+  relied on it re-running reads the signal directly.
+- **`sharedRequest()`** replaces hand-written in-flight code: `run` for
+  `if (inflight) return inflight`, `fresh` for "wait for the one out, then load
+  again", `latest()` for `const mine = ++request` counters, `busy` for "is one
+  out". See the [Composables Reference](../api/composables-ref.md#sharedrequest).
+- **`cachedQuery`**: `refresh()` (and an outbox write reaching the server) no
+  longer joins a request already in flight, and a load for a changed `url()` is
+  no longer answered with the old URL's data.
+- **Native haptics never reject.** Drop `?.catch?.(() => {})` after
+  `craft.haptics.*` and `craft.haptic`. `notification()` and `selection()` now
+  play the host's notification and selection haptics instead of impacts.
+- **`@stacksjs/stx/native/testing`** publishes the vm phone apps wrote by hand:
+  `mountNativeScreen(code, screen, options)`. See
+  [Native Screens: Testing screens](./native.md#testing-screens).
+
 ### Upgrading to stx 2.0
 
 #### Breaking Changes

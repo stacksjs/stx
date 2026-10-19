@@ -4491,13 +4491,18 @@ watch(count, (newValue) => {
   flush: 'post'     // Timing: 'pre' | 'post' | 'sync'
 })
 
+// A getter, or several sources at once
+watch(() => user().id, id => loadProfile(id))
+watch([from, to], ([start, end], [oldStart, oldEnd]) => reload(start, end))
+
 // Stop watching
 stop()
-
-// Pause/resume
-stop.pause()
-stop.resume()
 ```
+
+The callback runs only when the value changes (`Object.is`, or structurally
+with `deep`), not at creation unless `immediate`. The client runtime's `watch`
+(a bare `watch` in `<script client>`) has the same contract. See the
+[Composables Reference](./api/composables-ref.md#watch).
 
 ### watchEffect()
 
