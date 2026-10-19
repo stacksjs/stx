@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.589...v0.2.590)
+
+## 🐛 Bug Fixes
+
+- **native**: a screen prepared out of sight starts unfocused ([53a112d](https://github.com/stacksjs/stx/commit/53a112d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.590 ([bd47b0b](https://github.com/stacksjs/stx/commit/bd47b0b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.588...v0.2.589)
 
 ## ✨ Features
