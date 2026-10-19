@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.581...v0.2.582)
+
+## 🐛 Bug Fixes
+
+- **ci**: verify original accepted archives before resuming stx publication ([b9c404b](https://github.com/stacksjs/stx/commit/b9c404b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.582 ([63a7df5](https://github.com/stacksjs/stx/commit/63a7df5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' into codex/hq-include-server-data ([fcb67bd](https://github.com/stacksjs/stx/commit/fcb67bd)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.580...v0.2.581)
 
 ## ✨ Features
