@@ -763,35 +763,29 @@ function parseBorderRadius(className: string, style: STXStyle): boolean {
 }
 
 function parseBorderWidth(className: string, style: STXStyle): boolean {
-  if (!className.startsWith('border')) return false
-
-  if (className === 'border') {
-    style.borderWidth = 1
-    return true
+  const match = /^border(?:-([trblxy]))?(?:-(\d+|\[[^\]]+\]))?$/.exec(className)
+  if (!match) return false
+  const [, side = '', value] = match
+  let width = value === undefined ? 1 : Number(value)
+  if (value?.startsWith('[')) {
+    // Validate the entire length: parseFloat would accept malformed "2junkpx".
+    // Percentages/variables and font-relative em widths need further context.
+    const length = /^\[(\d+(?:\.\d+)?|\.\d+)(px|rem)?\]$/.exec(value)
+    if (!length) return false
+    width = Number(length[1]) * (length[2] === 'rem' ? 16 : 1)
   }
-
-  // border-{n}
-  const match = className.match(/^border-(\d+)$/)
-  if (match) {
-    style.borderWidth = Number.parseInt(match[1])
-    return true
+  if (!Number.isFinite(width) || width < 0) return false
+  const keys: Record<string, Array<keyof STXStyle>> = {
+    '': ['borderWidth'],
+    t: ['borderTopWidth'],
+    r: ['borderRightWidth'],
+    b: ['borderBottomWidth'],
+    l: ['borderLeftWidth'],
+    x: ['borderLeftWidth', 'borderRightWidth'],
+    y: ['borderTopWidth', 'borderBottomWidth'],
   }
-
-  // border-{side}-{n}
-  const sideMatch = className.match(/^border-(t|r|b|l)-?(\d*)$/)
-  if (sideMatch) {
-    const [, side, width] = sideMatch
-    const w = width ? Number.parseInt(width) : 1
-    switch (side) {
-      case 't': style.borderTopWidth = w; break
-      case 'r': style.borderRightWidth = w; break
-      case 'b': style.borderBottomWidth = w; break
-      case 'l': style.borderLeftWidth = w; break
-    }
-    return true
-  }
-
-  return false
+  for (const key of keys[side]) (style as Record<string, unknown>)[key] = width
+  return true
 }
 
 function parseBorderColor(className: string, style: STXStyle): boolean {

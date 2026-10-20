@@ -12,7 +12,7 @@ describe.each([false, true])('shared control native attribute targets (minify=%s
 const suffix = state('one')
 const label = state('Native name')
 const styles = state({ paddingLeft: 3 })
-const classes = state('w-12 opacity-30')
+const classes = state('w-12 opacity-30 border-[3px]')
 const checked = state(false)
 const shown = state(true)
 window.probe = { suffix, label, styles, classes, checked, shown }
@@ -31,7 +31,7 @@ window.probe = { suffix, label, styles, classes, checked, shown }
         const control = phone.byTestID(`${prefix}-one`)!
         expect(control.type).toBe(type)
         expect(control.props.accessibilityLabel).toBe('Native name')
-        expect(control.style).toMatchObject({ paddingLeft: 3, opacity: 0.3, width: 48 })
+        expect(control.style).toMatchObject({ paddingLeft: 3, opacity: 0.3, width: 48, borderWidth: 3 })
         expect(phone.byTestID(`static-${prefix}`)!.type).toBe(type)
       }
       phone.press(phone.byTestID('checkbox-one')!, 'onValueChange', { value: true })
@@ -41,12 +41,12 @@ window.probe = { suffix, label, styles, classes, checked, shown }
       phone.context.probe.suffix.set('two')
       phone.context.probe.label.set('Updated name')
       phone.context.probe.styles.set({ paddingLeft: 7 })
-      phone.context.probe.classes.set('w-16 opacity-70')
+      phone.context.probe.classes.set('w-16 opacity-70 border-[4px]')
       await phone.settle()
       for (const prefix of ['checkbox', 'switch']) {
         expect(phone.byTestID(`${prefix}-one`)).toBeUndefined()
         expect(phone.byTestID(`${prefix}-two`)!.props.accessibilityLabel).toBe('Updated name')
-        expect(phone.byTestID(`${prefix}-two`)!.style).toMatchObject({ paddingLeft: 7, opacity: 0.7, width: 64 })
+        expect(phone.byTestID(`${prefix}-two`)!.style).toMatchObject({ paddingLeft: 7, opacity: 0.7, width: 64, borderWidth: 4 })
       }
       phone.press(phone.byTestID('switch-two')!)
       await phone.settle()
@@ -65,6 +65,7 @@ window.probe = { suffix, label, styles, classes, checked, shown }
         expect(control.style.paddingLeft ?? null).toBeNull()
         expect(control.style.opacity ?? null).toBeNull()
         expect(control.style.width).toBe(prefix === 'checkbox' ? 20 : 74)
+        expect(control.style.borderWidth ?? null).toBe(phone.byTestID(`static-${prefix}`)!.style.borderWidth ?? null)
       }
       expect(phone.mutationErrors).toEqual([])
       phone.unmount()
