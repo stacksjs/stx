@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.603...v0.2.604)
+
+## 🐛 Bug Fixes
+
+- **image**: integrate fitting and guarded releases ([aaa7dcc](https://github.com/stacksjs/stx/commit/aaa7dcc)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **image**: apply builtin image fitting props ([aa8eee7](https://github.com/stacksjs/stx/commit/aa8eee7)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.604 ([1373d16](https://github.com/stacksjs/stx/commit/1373d16)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **deps**: use the guarded release helper ([3fd0406](https://github.com/stacksjs/stx/commit/3fd0406)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.602...v0.2.603)
 
 ## ✨ Features
