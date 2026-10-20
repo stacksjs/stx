@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.609...v0.2.610)
+
+## ✅ Tests
+
+- **native**: account for the MapPolygon primitive ([db758d2](https://github.com/stacksjs/stx/commit/db758d2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 💚 Continuous Integration
+
+- **release**: publish with Pantry 0.11.108 ([a55b07b](https://github.com/stacksjs/stx/commit/a55b07b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.610 ([35765bf](https://github.com/stacksjs/stx/commit/35765bf)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.608...v0.2.609)
 
 ## ✨ Features
