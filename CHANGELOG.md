@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.598...v0.2.599)
+
+## ✅ Tests
+
+- **components**: the dialog template snapshot carries its open state ([d51c6af](https://github.com/stacksjs/stx/commit/d51c6af)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.599 ([6ccde70](https://github.com/stacksjs/stx/commit/6ccde70)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.597...v0.2.598)
 
 ## ✨ Features
