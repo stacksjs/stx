@@ -270,6 +270,10 @@ export class BrowserScreenRenderer {
     css.boxSizing = 'border-box'
     css.borderStyle = 'solid'
     css.borderWidth = '0'
+    // Every native node is the box its absolutely placed children measure
+    // from (Yoga's default). A plain div is not: a tour page's pen ring
+    // measured from the pager instead and landed on another page.
+    css.position = 'relative'
     if (CONTAINERS.has(type)) { css.display = 'flex'; css.flexDirection = 'column'; css.minWidth = '0'; css.flexShrink = '0' }
     if (type === 'Text') { css.display = 'block'; css.whiteSpace = 'pre-wrap'; css.flexShrink = '1'; css.minWidth = '0'; css.overflowWrap = 'anywhere' }
     if (['Button', 'Link', 'TouchableOpacity', 'TouchableHighlight', 'Pressable'].includes(type)) { css.display = 'flex'; css.flexDirection = 'column'; css.alignItems = 'stretch'; css.font = 'inherit'; css.color = 'inherit'; css.background = 'transparent'; css.border = '0'; css.padding = '0'; css.textAlign = 'inherit'; css.cursor = 'pointer' }

@@ -250,6 +250,15 @@ describe('the browser peer of the native screen renderer', () => {
     expect(next.style.visibility).toBe('')
   })
 
+  it('places an absolute child against its own parent, as native layout does', () => {
+    const { renderer, container, node } = fixture()
+    renderer.render(node('root', 'View', [node('phone', 'View', [{ ...node('ring', 'View'), style: { position: 'absolute', left: 10, top: 20 } }])]))
+    const phone = container.querySelector('[data-stx-node="phone"]') as unknown as HTMLElement
+    const ring = container.querySelector('[data-stx-node="ring"]') as unknown as HTMLElement
+    expect(phone.style.position).toBe('relative')
+    expect(ring.style.position).toBe('absolute')
+  })
+
   it('does not activate a disabled view button from the keyboard', () => {
     const { renderer, container, node, events, window } = fixture()
     renderer.render(node('root', 'View', [node('button', 'View', ['Disabled'], { disabled: true }, { onPress: 'press' })]))
