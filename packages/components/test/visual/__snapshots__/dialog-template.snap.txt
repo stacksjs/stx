@@ -90,12 +90,31 @@ onMount(() => {
  * without the `title` prop reaches the browser announced as bare "dialog".
  * This associates the two once the slot content exists. Skipped when a name is
  * already present, so the prop always wins.
+ *
+ * Without a DialogTitle, the dialog's own first heading names it. Apps write
+ * their sheet's title as a plain
+      <h2>
+        styled their way - DialogTitle's type
+ * classes would tie with theirs - and every such dialog was announced as
+ * bare "dialog" with its name in plain sight.
  */
+function isHeading(node) {
+  if (tree.getAttribute(node, 'role') === 'heading') return true
+  // The host API names attributes, not tags; a native host's nodes carry no
+  // tagName, so this is only ever true for an element.
+  return typeof node.tagName === 'string' && /^H[1-6]$/.test(node.tagName)
+}
+
+function ownHeading() {
+  const root = rootRef.value
+  return tree.descendants(root).find(node => isHeading(node) && closestMarker(node, 'data-stx-dialog') === root) || null
+}
+
 function labelFromTitle() {
   const root = rootRef.value
   if (!root) return
   if (tree.getAttribute(root, 'aria-label') || tree.getAttribute(root, 'aria-labelledby')) return
-  const heading = ownPart('data-stx-dialog-title')
+  const heading = ownPart('data-stx-dialog-title') || ownHeading()
   if (!heading) return
   const headingId = tree.getAttribute(heading, 'id') || `${dialogInstanceId}-title`
   tree.setAttribute(heading, 'id', headingId)
@@ -171,8 +190,8 @@ defineExpose({
   close,
   isOpen,
 })
-    </script>
-    <div
+      </script>
+      <div
   data-native="Modal"
   x-ref="rootRef"
   :show="isOpen()"
@@ -184,8 +203,8 @@ defineExpose({
   @if(title)aria-label="{{ title }}"@endif
   @click="onRootClick($event)"
 >
-      <slot />
-    </div>
+        <slot />
+      </div>
 
 === Extracted Classes ===
 aria-labelledby

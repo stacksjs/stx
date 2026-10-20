@@ -49,7 +49,7 @@ function openModal() {
 | `onClose` | `(value: boolean) => void` | - | Close handler |
 | `className` | `string` | `''` | Additional CSS classes |
 | `as` | `string` | `'div'` | HTML element to render |
-| `title` | `string` | `''` | Accessible name, when there is no `DialogTitle` |
+| `title` | `string` | `''` | Accessible name. Without it the dialog is named after its `DialogTitle`, or failing that its own first heading |
 | `closeOnEscape` | `boolean` | `true` | `false` for a dialog that must be answered rather than dismissed |
 | `closeOnBackdrop` | `boolean` | `true` | `false` to keep it open on a backdrop click |
 
