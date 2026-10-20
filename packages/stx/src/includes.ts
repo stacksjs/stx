@@ -67,6 +67,8 @@
  */
 
 import type { StxOptions } from './types'
+import { StxValidationError } from './errors/types'
+import { validateClientScript } from './script-validation'
 import { findSfcTemplateBlock } from './sfc-template'
 import path from 'node:path'
 import { existsSync } from 'node:fs'
@@ -1256,6 +1258,8 @@ catch (error: unknown) {
 
         const isServerScript = scriptAttrs.includes('server')
         const shouldTranspile = shouldTranspileTypeScript(scriptAttrs)
+        if (!isServerScript && !/\bsrc\s*=/i.test(scriptAttrs))
+          validateClientScript(scriptContent, includeFilePath, options.strict)
 
         // Interpolate `{{ expr }}` / `{!! expr !!}` against the include's
         // context before anything tries to parse this as JavaScript.
@@ -1599,6 +1603,8 @@ catch (e) {
       return processedContent
     }
     catch (error: unknown) {
+      if (error instanceof StxValidationError)
+        throw error
       const errorMessage = error instanceof Error ? error.message : String(error)
       return includeFailure(
         includePath,

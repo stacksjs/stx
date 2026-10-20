@@ -7,6 +7,7 @@
  */
 import { contentKey, renderMemo } from './render-memo'
 import { stripCommentsAndLiterals } from './strip-literals'
+import { StxValidationError } from './errors/types'
 import type { StrictModeConfig } from './types'
 
 /**
@@ -356,7 +357,7 @@ export function validateClientScript(
   const remembered = verdicts.get(memoKey)
   if (remembered !== undefined) {
     if (remembered && strictConfig.failOnViolation)
-      throw new Error(remembered)
+      throw new StxValidationError(remembered, originFilePath ?? filePath)
     return
   }
 
@@ -480,10 +481,7 @@ export function validateClientScript(
   const baseMessage = `[STX] DOM API violation in ${where}:\n${errors.join('\n')}\n  Tip: prefer useRef(), navigate(), and composables for component code`
   verdicts.set(memoKey, baseMessage)
 
-  if (strictConfig.failOnViolation) {
-    throw new Error(baseMessage)
-  }
-  else {
-    console.warn(baseMessage)
-  }
+  console.warn(baseMessage)
+  if (strictConfig.failOnViolation)
+    throw new StxValidationError(baseMessage, originFilePath ?? filePath)
 }

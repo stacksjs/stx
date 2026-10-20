@@ -42,6 +42,8 @@ import { markProjectedRefs } from './misc-directives'
 import { collectBlockDeclarations } from './stx-virtual-ts'
 import { CLIENT_LOOP_NAMES_KEY, inheritedClientLoopNames } from './loop-binding'
 import { isFallthroughAttribute } from './builtins/attrs'
+import { StxValidationError } from './errors/types'
+import { validateClientScript } from './script-validation'
 
 // Re-export from extracted modules for backward compatibility
 export {
@@ -1715,6 +1717,12 @@ export async function renderComponentWithSlot(
     // Look in original content since template section won't have scripts
     const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi
     const scriptMatches = [...componentContent.matchAll(scriptRegex)]
+    // Check authored code before scope wrapping or a rendered-fragment cache
+    // hit hides it from the page-level validator.
+    for (const [, attrs, content] of scriptMatches) {
+      if (!/\bserver\b|\bsrc\s*=|\btype\s*=\s*["'](?!(?:text\/javascript|application\/javascript|module)["'])[^"']*["']/i.test(attrs))
+        validateClientScript(content, componentFilePath, options.strict)
+    }
     const clientScripts: string[] = []
     /** Set when this component's own `<script server>` failed to extract. */
     let serverScriptFailure: string | null = null
@@ -2298,6 +2306,8 @@ else {
       : output
   }
   catch (error: unknown) {
+    if (error instanceof StxValidationError)
+      throw error
     const message = error instanceof Error ? error.message : String(error)
     return `[Error processing component: ${message}]`
   }

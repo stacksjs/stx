@@ -1526,8 +1526,14 @@ async function processDirectivesInternal(
       return unmaskHtmlComments(output)
     }
     catch (error) {
-      errorLogger.log(error instanceof Error ? error : new Error(String(error)), { layoutPath, filePath }, 'error')
-      return `[Error processing layout: ${error instanceof Error ? error.message : String(error)}]`
+      if (error instanceof StxValidationError)
+        throw error
+      // Let the outer render boundary log and format the failure. Returning
+      // arbitrary text here bypasses its failure marker and leaks paths at 200.
+      throw new StxRuntimeError(
+        `Error processing layout ${layoutPath}: ${error instanceof Error ? error.message : String(error)}`,
+        filePath,
+      )
     }
   }
 
