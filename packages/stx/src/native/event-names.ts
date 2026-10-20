@@ -13,6 +13,7 @@ export const NATIVE_EVENT_NAMES: Readonly<Record<string, string>> = {
   longpress: 'onLongPress',
   contextmenu: 'onLongPress',
   input: 'onChangeText',
+  onchange: 'onChange',
   change: 'onValueChange',
   'value-change': 'onValueChange',
   valuechange: 'onValueChange',

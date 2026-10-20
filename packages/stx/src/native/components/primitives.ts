@@ -304,6 +304,8 @@ export interface SwitchProps extends BaseProps {
   value?: boolean
   /** Value change handler */
   onValueChange?: (value: boolean) => void
+  /** DOM-compatible change alias accepted by native hosts. */
+  onChange?: (value: boolean) => void
   /** Disabled state */
   disabled?: boolean
   /** Track color when on */
@@ -325,6 +327,8 @@ export interface CheckboxProps extends BaseProps {
   label?: string
   /** Value change handler */
   onValueChange?: (value: boolean) => void
+  /** DOM-compatible change alias accepted by native hosts. */
+  onChange?: (value: boolean) => void
   /** Disabled state */
   disabled?: boolean
   /** The box's tint */
@@ -342,6 +346,8 @@ export interface SliderProps extends BaseProps {
   step?: number
   /** Value change handler */
   onValueChange?: (value: number) => void
+  /** DOM-compatible change alias accepted by native hosts. */
+  onChange?: (value: number) => void
   /** Sliding complete handler */
   onSlidingComplete?: (value: number) => void
   /** Disabled state */
@@ -368,6 +374,8 @@ export interface PickerProps extends BaseProps {
   selectedValue?: string | number
   /** Selection change handler */
   onValueChange?: (value: string | number, index: number) => void
+  /** DOM-compatible change alias accepted by native hosts. */
+  onChange?: (value: string | number, index: number) => void
   /** Disable user interaction */
   disabled?: boolean
 }
@@ -397,6 +405,8 @@ export interface DatePickerProps extends BaseProps {
   display?: 'compact' | 'inline' | 'wheels'
   /** A change, as `@change` hears it. */
   onValueChange?: (event: DatePickerChange) => void
+  /** DOM-compatible change alias accepted by native hosts. */
+  onChange?: (event: DatePickerChange) => void
   disabled?: boolean
 }
 

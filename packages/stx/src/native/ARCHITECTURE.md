@@ -199,6 +199,9 @@ and the shared primitive types expose `listRole` for its
 header/item/separator/empty/footer slots plus controlled `onRefresh`/
 `refreshing` pull-to-refresh. Text inputs also retain the shared
 `onChange`/`onEndEditing` aliases and multiline `numberOfLines` contract;
+value controls also accept the explicit `onChange` alias used by Craft's
+maintained iOS and Android hosts, while `@change` remains the shared
+`onValueChange` spelling;
 native images retain `alt` as their accessibility-label fallback.
 `data`, `renderItem`, `keyExtractor`, and grouped `SectionList` data are
 rejected until a versioned list-data protocol is introduced. This keeps the

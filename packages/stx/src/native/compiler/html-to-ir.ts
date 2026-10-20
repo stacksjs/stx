@@ -107,6 +107,7 @@ const BOX_ONLY = new Set<string>()
  */
 export const NATIVE_EVENTS = new Set([
   'onBlur',
+  'onChange',
   'onChangeText',
   'onDismiss',
   'onEnd',

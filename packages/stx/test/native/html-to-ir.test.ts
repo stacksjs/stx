@@ -445,6 +445,12 @@ describe('shared-runtime list boundaries', () => {
     expect(view.accessibilityState).toEqual({ selected: true, checked: true })
   })
 
+  it('accepts the explicit onChange alias used by maintained native hosts', async () => {
+    const { root, diagnostics } = await translateHtmlToIR('<div data-native="TextInput" @onChange="changed"></div>')
+    expect(root.events).toEqual({ onChange: 'changed' })
+    expect(diagnostics).toEqual([])
+  })
+
   it('warns when legacy FlatList expansion props would otherwise be silently ignored', async () => {
     const { root, diagnostics } = await translateHtmlToIR(
       '<div data-native="FlatList" :data="rows" :renderItem="renderRow" keyExtractor="rowKey" listRole="item"><Text>Rows</Text></div>',
