@@ -80,6 +80,7 @@ defineExpose({ isChecked })
 <div class="relative flex items-start {{ className }}">
   <div class="flex h-6 items-center">
     <input
+      data-stx-native-host-root
       id="{{ inputId }}"
       type="checkbox"
       name="{{ name }}"

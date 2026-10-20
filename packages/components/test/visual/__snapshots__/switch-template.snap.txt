@@ -97,6 +97,7 @@ defineExpose({ isChecked, toggle })
     />
     @endif
     <button
+    data-stx-native-host-root
     type="button"
     role="switch"
     aria-label="{{ label || 'Toggle switch' }}"
