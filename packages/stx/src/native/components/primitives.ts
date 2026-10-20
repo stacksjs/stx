@@ -448,6 +448,8 @@ export interface VideoProps extends BaseProps {
   src?: string
   /** The system's playback controls. */
   controls?: boolean
+  /** React-style alias for `autoplay`, accepted by both native hosts. */
+  autoPlay?: boolean
   autoplay?: boolean
   loop?: boolean
   muted?: boolean

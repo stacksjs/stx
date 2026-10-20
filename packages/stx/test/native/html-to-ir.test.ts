@@ -19,7 +19,7 @@ import path from 'node:path'
 import { processDirectives } from '../../src/process'
 import { NATIVE_EVENTS, translateHtmlToDocument, translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import type { STXNode } from '../../src/native/compiler/ir'
-import type { AccessibilityRole, FlatListProps, ImageProps, ModalProps, PressableProps, TextInputProps } from '../../src/native/components/primitives'
+import type { AccessibilityRole, FlatListProps, ImageProps, ModalProps, PressableProps, TextInputProps, VideoProps } from '../../src/native/components/primitives'
 
 const COMPONENTS = path.join(import.meta.dir, '..', '..', '..', 'components')
 
@@ -457,6 +457,12 @@ describe('shared-runtime list boundaries', () => {
       onError: event => event.nativeEvent.error.message,
     }
     expect(image.onError).toBeFunction()
+  })
+
+  it('types both native video autoplay spellings accepted by the hosts', () => {
+    const video: VideoProps = { src: 'https://example.com/trail.mp4', autoplay: true, autoPlay: true }
+    expect(video.autoplay).toBe(true)
+    expect(video.autoPlay).toBe(true)
   })
 
   it('keeps the native role and pressable vocabulary host-supported', () => {

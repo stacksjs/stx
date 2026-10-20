@@ -205,6 +205,8 @@ maintained iOS and Android hosts, while `@change` remains the shared
 native images retain `alt` as their accessibility-label fallback.
 Image failures use the shared `{ nativeEvent: { error: { message } } }`
 envelope, matching Craft's maintained iOS and Android hosts.
+Native video accepts both `autoplay` and the React-style `autoPlay` alias;
+the hosts normalize them to the same playback behavior.
 `data`, `renderItem`, `keyExtractor`, and grouped `SectionList` data are
 rejected until a versioned list-data protocol is introduced. This keeps the
 public types honest while preserving recycling for the child trees that the
