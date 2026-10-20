@@ -597,6 +597,7 @@ function routerSource(): string {
   // rather than a Map to keep the diff localized and the runtime
   // hand-minified shape consistent.
   var cacheOrder=[];
+  function isFragment(html){return !html.indexOf('<!--stx-fragment')}
   function setCache(key,html,layout,group,title,cattrs){
     if(!(key in cache))cacheOrder.push(key);
     cache[key]=html;
@@ -1398,7 +1399,7 @@ function routerSource(): string {
       // change (prefetchLink), or kept from an earlier full-page answer. Only a
       // fragment from another layout still needs its document fetched; asking
       // again was a second round trip on every tap into another layout.
-      var isDoc=cached.indexOf('<!--stx-fragment')!==0;
+      var isDoc=!isFragment(cached);
       if(!isDoc&&checkLayoutChange(layoutCache[targetPath],url,layoutGroupCache[targetPath])){
         // Layout changed — fetch full page and do full document swap
         log('[router] cache hit but layout changed — fetching full page');
@@ -1424,10 +1425,8 @@ function routerSource(): string {
         if(swapped===false)return false;
         applyTitle(titleCache[targetPath]);
         // Shown from the cache at once; asked again behind it, so a page that
-        // changed since says so (stx:updated) instead of staying stale. Not a
-        // whole document: it would be compared with a fragment and always
-        // read as changed.
-        if(!isDoc)revalidate(targetPath,url);
+        // changed since says so (stx:updated) instead of staying stale.
+        revalidate(targetPath,url);
         return true;
       }).finally(done);
     }
@@ -3210,8 +3209,8 @@ else {
   function revalidate(key,url){
     if(!o.revalidate||!o.cache||!key||prefetching[key])return;
     if(Date.now()-(cacheAt[key]||0)<o.revalidateAfter)return;
-    var wantsFragment=shouldUseFragmentResponse();
-    var before=cache[key];
+    // Compare like with like, including documents prefetched across layouts.
+    var before=cache[key],wantsFragment=before?isFragment(before):shouldUseFragmentResponse();
     prefetching[key]=fetch(url,{headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
       var incoming=r.headers.get('X-STX-Build')||'';
       if(isBuildSkew(incoming)){reloadForSkew(url,incoming,true);return null}
@@ -3604,7 +3603,7 @@ else {
       // would read this answer, see the layout change, and fetch the whole
       // document then (navigate). Fetch it now instead, while the person is
       // still reaching for the link, so the tap is a swap like any other.
-      if(!result||result.html.indexOf('<!--stx-fragment')||!checkLayoutChange(result.layout,href,result.layoutGroup))return result;
+      if(!result||!isFragment(result.html)||!checkLayoutChange(result.layout,href,result.layoutGroup))return result;
       // Same guards as any prefetch; the layout is the one the fragment declared.
       return fetch(href,{headers:{'Accept':'text/html'}}).then(function(full){
         return full.ok?readPrefetchResponse(full,false).then(function(doc){return doc&&(doc.layout=result.layout,doc.layoutGroup=result.layoutGroup,doc)}):null;

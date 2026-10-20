@@ -35,7 +35,7 @@ const APP_METAS = '<meta name="stx-layout" content="layouts/app"><meta name="stx
 const PUBLIC_HEADERS = { 'X-STX-Layout': 'layouts/public', 'X-STX-Layout-Group': 'public' }
 const APP_HEADERS = { 'X-STX-Layout': 'layouts/app', 'X-STX-Layout-Group': 'app' }
 
-function install(headers: Record<string, string>, extraBody = '') {
+function install(headers: Record<string, string>, extraBody = '', options: { revalidate?: boolean, revalidateAfter?: number, text?: () => string } = {}) {
   const requests: Array<'fragment' | 'document'> = []
   const window = new Window({ url: 'http://localhost/home' })
   window.document.write(`<html><head>${APP_METAS}</head><body>`
@@ -50,7 +50,9 @@ function install(headers: Record<string, string>, extraBody = '') {
     progress: false,
     viewTransitions: false,
     revalidate: false,
+    keepOpening: false,
     cssLoadTimeout: 20,
+    ...options,
   }
 
   Object.assign(globalThis, {
@@ -71,7 +73,7 @@ function install(headers: Record<string, string>, extraBody = '') {
       }
       return new Response(
         '<!DOCTYPE html><html><head><meta name="stx-layout" content="layouts/public"><meta name="stx-layout-group" content="public"></head>'
-        + '<body><nav id="public-nav">p</nav><main data-stx-content>Explore</main></body></html>',
+        + `<body><nav id="public-nav">p</nav><main data-stx-content>${options.text?.() ?? 'Explore'}</main></body></html>`,
         { headers: { 'Content-Type': 'text/html' } },
       )
     },
@@ -113,6 +115,34 @@ describe('a prefetch into another layout', () => {
     expect(window.document.querySelector('#app-nav')).not.toBeNull()
     expect(window.document.querySelector('main')?.textContent?.trim()).toBe('Explore')
   })
+
+  it.each([false, true])('revalidates a cached document as a document (changed: %s)', async (changed) => {
+    let text = 'Explore v1'
+    const { window, requests } = install(PUBLIC_HEADERS, '', { revalidate: true, revalidateAfter: 0, text: () => text })
+    const updated: unknown[] = []
+    window.addEventListener('stx:updated', (event: any) => updated.push(event.detail))
+    window.document.getElementById('go')!.dispatchEvent(new window.Event('mouseover', { bubbles: true }))
+    await settle()
+    text = changed ? 'Explore v2' : text
+
+    await window.stxRouter.navigate('/explore')
+    await settle()
+
+    expect(window.document.querySelector('main')?.textContent?.trim()).toBe('Explore v1')
+    expect(requests).toEqual(['fragment', 'document', 'document'])
+    expect(updated).toEqual(changed ? [{ url: '/explore', kind: 'page' }] : [])
+    expect(window.stxRouter.cache['/explore']).toStartWith('<!DOCTYPE html>')
+    expect(window.stxRouter.cache['/explore']).toContain(text)
+  })
+
+  it('keeps a freshly prefetched document within the revalidation interval', async () => {
+    const { window, requests } = install(PUBLIC_HEADERS, '', { revalidate: true, revalidateAfter: 60_000 })
+    window.document.getElementById('go')!.dispatchEvent(new window.Event('mouseover', { bubbles: true }))
+    await settle()
+    await window.stxRouter.navigate('/explore')
+    await settle()
+    expect(requests).toEqual(['fragment', 'document'])
+  })
 })
 
 describe('a page\'s stylesheet', () => {
@@ -145,14 +175,18 @@ describe('a page\'s stylesheet', () => {
     }
     new Function(getRouterScript())()
 
-    // The bundle never finishes loading in the test DOM (the swap waits up to
-    // 4s for it); the sheet must already be on its way while it waits.
-    void (window as any).stxRouter.navigate('/b')
+    // Hold the bundle until the sheet is already on its way.
+    const navigation = (window as any).stxRouter.navigate('/b')
     await settle(30)
     const bundle = created.find(el => el.tagName === 'SCRIPT' && String(el.getAttribute('src')).includes('modules.bbbb'))
     const sheet = created.find(el => el.tagName === 'LINK' && String(el.getAttribute('href')).includes('css.bbbb'))
     expect(bundle).toBeDefined()
     expect(sheet).toBeDefined()
     expect(window.document.querySelector('main')?.textContent?.trim()).toBe('A')
+    // Finish this navigation before restoring the globals for another test.
+    ;(bundle as any).onload()
+    ;(sheet as any).onload?.()
+    await navigation
+    expect(window.document.querySelector('main')?.textContent?.trim()).toBe('B')
   })
 })
