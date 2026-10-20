@@ -13,8 +13,8 @@
  * One mapping serves both halves of a screen's life. The compiler applies it
  * to the static attributes (an authored `accessibility*` prop wins there,
  * since writing both on one node means the native spelling was deliberate),
- * and the runtime applies it to every bound attribute write, where the latest
- * write wins, as it does for any attribute. The ARIA attributes themselves
+ * and the runtime recomputes it from authored props on each bound attribute
+ * write, preserving the same native override precedence. The ARIA attributes themselves
  * stay on the node: a shared component may read its own `aria-selected` back
  * through the host.
  *
@@ -151,4 +151,36 @@ export function applyStaticAccessibility(props: Record<string, unknown>): void {
   const state = derived.accessibilityState as Record<string, unknown> | null | undefined
   if (state)
     props.accessibilityState = { ...state, ...authoredState }
+}
+
+/** Fields derived from web semantics at the native transport boundary. */
+export const ACCESSIBILITY_FIELDS = ['accessibilityLabel', 'accessibilityRole', 'accessibilityState', 'accessibilityValue'] as const
+
+/**
+ * Keep authored props separate from this projection: an ARIA attribute may
+ * disappear later, and explicit native props must still take precedence.
+ * Reuse the compiler's role/state vocabulary rather than a second mapping.
+ */
+export function projectAccessibility(props: Record<string, unknown>): Record<string, unknown> {
+  const projected = { ...props }
+  applyStaticAccessibility(projected)
+  return Object.fromEntries(ACCESSIBILITY_FIELDS.filter(name => name in projected).map(name => [name, projected[name]]))
+}
+
+/** Patch derived fields including removals; native prop patches merge by key. */
+export function accessibilityChanges(props: Record<string, unknown>, before: Record<string, unknown>, changedField: string): Record<string, unknown> {
+  const projected = projectAccessibility(props)
+  return Object.fromEntries(ACCESSIBILITY_FIELDS
+    .filter(name => name === changedField || JSON.stringify(before[name]) !== JSON.stringify(projected[name]))
+    .map(name => [name, projected[name] ?? null]))
+}
+
+/** Recover authored native fields from compiler IR before reactive updates. */
+export function authoredAccessibilityProps(props: Record<string, unknown>, source?: Record<string, unknown>): Record<string, unknown> {
+  const result = { ...props }
+  if (source) {
+    for (const name of ACCESSIBILITY_FIELDS) delete result[name]
+    Object.assign(result, source)
+  }
+  return result
 }

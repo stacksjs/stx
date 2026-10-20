@@ -79,6 +79,9 @@ export interface STXNode {
   /** Component properties */
   props: Record<string, unknown>
 
+  /** Authored native accessibility overrides, before ARIA projection. */
+  _accessibilitySource?: Record<string, unknown>
+
   /** Compiled style object */
   style: STXStyle
 
