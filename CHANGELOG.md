@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.616...v0.2.617)
+
+## ✨ Features
+
+- **serve**: warm pages before a production server binds ([435eb70](https://github.com/stacksjs/stx/commit/435eb70)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.617 ([db5b725](https://github.com/stacksjs/stx/commit/db5b725)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.615...v0.2.616)
 
 ## 🐛 Bug Fixes
