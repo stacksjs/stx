@@ -36,6 +36,7 @@ export type STXComponentType =
   | 'Video'
   | 'Map'
   | 'MapPolyline'
+  | 'MapPolygon'
   | 'MapMarker'
   // Lists
   | 'FlatList'
