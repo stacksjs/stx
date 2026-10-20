@@ -196,6 +196,11 @@ describe('the stx HTML translator produces the documented IR', () => {
     const node = await translate('<View><Text>x</Text></View>')
     expect(node.style).toEqual({})
   })
+
+  it('keeps align-content space-evenly in the shared layout IR', async () => {
+    const node = await translate('<View style="align-content: space-evenly"><Text>a</Text></View>')
+    expect(node.style.alignContent).toBe('space-evenly')
+  })
 })
 
 describe('mapToNativeComponent', () => {

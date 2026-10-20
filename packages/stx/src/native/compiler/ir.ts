@@ -176,7 +176,7 @@ export interface STXStyle {
   justifyContent?: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around' | 'space-evenly'
   alignItems?: 'flex-start' | 'center' | 'flex-end' | 'stretch' | 'baseline'
   alignSelf?: 'auto' | 'flex-start' | 'center' | 'flex-end' | 'stretch' | 'baseline'
-  alignContent?: 'flex-start' | 'center' | 'flex-end' | 'stretch' | 'space-between' | 'space-around'
+  alignContent?: 'flex-start' | 'center' | 'flex-end' | 'stretch' | 'space-between' | 'space-around' | 'space-evenly'
 
   // Positioning
   position?: 'relative' | 'absolute'
