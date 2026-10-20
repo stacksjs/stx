@@ -24,6 +24,7 @@ import { boot, closeBrowser, layout, page, renderApp, settle } from '../../stx/t
 const UI = path.join(import.meta.dir, '..', 'src', 'ui')
 
 const read = (rel: string) => readFileSync(path.join(UI, rel), 'utf-8')
+  .replace('../../utils/tooltip-position', path.join(UI, '../utils/tooltip-position'))
 
 /** Source with comments removed: a comment naming an attribute is not a use of it. */
 const code = (rel: string) => read(rel)
@@ -131,6 +132,24 @@ afterEach(() => {
 })
 
 describe('a disclosure trigger reports its own state', () => {
+  it('Popover keeps browser trigger clicks, inside clicks and outside dismissal working', async () => {
+    const m = await mount(WIDGETS[2])
+    try {
+      m.trigger.click()
+      await settle()
+      expect(m.scope.isOpen()).toBe(true)
+      expect(m.trigger.getAttribute('aria-expanded')).toBe('true')
+      m.panel.click()
+      await settle()
+      expect(m.scope.isOpen()).toBe(true)
+      m.doc.body.click()
+      await settle()
+      expect(m.scope.isOpen()).toBe(false)
+      expect(m.trigger.getAttribute('aria-expanded')).toBe('false')
+    }
+    finally { await m.dispose() }
+  })
+
   for (const w of WIDGETS) {
     it(`${w.name} starts closed, and says so before any script runs`, async () => {
       /*

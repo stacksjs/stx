@@ -8,11 +8,28 @@ export const popoverInstanceId = $uid
 </script>
 
 <script client>
+import { trackNativePopup } from '../../utils/tooltip-position'
 const emit = defineEmits()
 const popoverInstanceId = {{ popoverInstanceId }}
 const isOpen = state(false)
+const mounted = state(false)
+const rootRef = useRef('rootRef')
+const tree = window.stx._host
+const nativePopup = !!tree.isNative
 let rootEl = null
 let outsideHandler = null
+let stopPositioning = null
+
+function ownPart(marker) {
+  if (!rootEl) return null
+  return tree.descendants(rootEl).find(node => {
+    if (tree.getAttribute(node, marker) == null) return false
+    for (let parent = tree.parent(node); parent; parent = tree.parent(parent)) {
+      if (tree.getAttribute(parent, 'data-stx-popover') != null) return parent === rootEl
+    }
+    return false
+  }) || null
+}
 
 /*
  * The trigger carries the open state for assistive tech. `isOpen` already
@@ -22,13 +39,14 @@ let outsideHandler = null
  */
 function syncExpanded() {
   if (!rootEl) return
-  const trigger = rootEl.querySelector('[data-stx-popover-button]')
+  const trigger = ownPart('data-stx-popover-button')
   if (!trigger) return
   trigger.setAttribute('aria-expanded', isOpen() ? 'true' : 'false')
-  const panel = rootEl.querySelector('[data-stx-popover-panel]')
+  const panel = ownPart('data-stx-popover-panel')
   if (!panel) return
-  if (!panel.id) panel.id = 'stx-popover-panel-' + popoverInstanceId
-  trigger.setAttribute('aria-controls', panel.id)
+  const panelId = tree.getAttribute(panel, 'id') || 'stx-popover-panel-' + popoverInstanceId
+  tree.setAttribute(panel, 'id', panelId)
+  tree.setAttribute(trigger, 'aria-controls', panelId)
 }
 
 function open() { if (!isOpen()) { isOpen.set(true); emit('change', true); syncExpanded() } }
@@ -61,10 +79,12 @@ function onEscape() {
 }
 
 onMount(() => {
-  rootEl = document.querySelector(`[data-popover-id="${popoverInstanceId}"]`)
+  rootEl = rootRef.value
   syncExpanded()
+  mounted.set(true)
+  if (nativePopup) return
   outsideHandler = (event) => {
-    if (!isOpen()) return
+    if (!isOpen() || !window.stx.overlays.isTop(popoverInstanceId)) return
     if (rootEl && !rootEl.contains(event.target)) close()
   }
   document.addEventListener('click', outsideHandler, true)
@@ -79,11 +99,31 @@ onMount(() => {
  * trap Tab or move focus.
  */
 effect(() => {
-  if (isOpen()) window.stx.overlays.open(popoverInstanceId, { modal: false, panel: () => rootEl, onEscape })
+  if (!mounted()) return
+  if (stopPositioning) { stopPositioning(); stopPositioning = null }
+  if (isOpen()) {
+    const panel = ownPart('data-stx-popover-panel')
+    try {
+      if (nativePopup && !window.craft?.capabilities?.viewMeasure)
+        throw new Error('Native Popover requires viewMeasure support')
+      window.stx.overlays.open(popoverInstanceId, { modal: false, root: nativePopup ? panel : null, panel: () => rootEl, onEscape, onBackdrop: close })
+      if (nativePopup) {
+        const trigger = ownPart('data-stx-popover-button')
+        if (!trigger) throw new Error('Native Popover requires a PopoverButton anchor')
+        stopPositioning = trackNativePopup(trigger, panel, tree.getAttribute(panel, 'data-stx-popover-position') || 'bottom', style => tree.setStyle(panel, style))
+      }
+    }
+    catch (error) {
+      window.stx.overlays.close(popoverInstanceId)
+      console.warn('[stx:popover] ' + ((error && error.message) || String(error)))
+      close()
+    }
+  }
   else window.stx.overlays.close(popoverInstanceId)
 })
 
 onDestroy(() => {
+  if (stopPositioning) stopPositioning()
   window.stx.overlays.close(popoverInstanceId)
   if (outsideHandler) document.removeEventListener('click', outsideHandler, true)
 })
@@ -95,6 +135,7 @@ defineExpose({ isOpen, toggle, open, close })
 
 <component
   :is="{{ as }}"
+  x-ref="rootRef"
   class="{{ popoverClasses }}"
   data-stx-popover
   data-popover-id="{{ popoverInstanceId }}"

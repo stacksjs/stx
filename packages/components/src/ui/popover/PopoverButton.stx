@@ -9,12 +9,12 @@ export const buttonClasses = `${baseClasses} ${className}`.trim()
 
 <script client>
 const emit = defineEmits()
-const isDisabled = {{ disabled }}
+const isDisabled = useReactiveProp('disabled', {{ disabled }})
 
 function onClick(event) {
-  if (isDisabled) return
+  if (isDisabled()) return
   emit('click', event)
-  event.currentTarget.dispatchEvent(new CustomEvent('stx:popover-toggle', { bubbles: true }))
+  window.stx._host.emitComponentEvent(event.currentTarget, new CustomEvent('stx:popover-toggle', { bubbles: true }))
 }
 </script>
 
@@ -23,7 +23,8 @@ function onClick(event) {
   class="{{ buttonClasses }}"
   data-stx-popover-button
   aria-expanded="false"
-  @if(disabled)disabled aria-disabled="true"@endif
+  :disabled="isDisabled()"
+  :aria-disabled="isDisabled() ? 'true' : 'false'"
   @click="onClick($event)"
 >
   <slot />
