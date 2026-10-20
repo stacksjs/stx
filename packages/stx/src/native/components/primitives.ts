@@ -621,8 +621,6 @@ export interface ModalProps extends BaseProps {
   onShow?: () => void
   /** Dismiss handler */
   onDismiss?: () => void
-  /** Status bar translucent (Android) */
-  statusBarTranslucent?: boolean
 }
 
 export interface ActivityIndicatorProps extends BaseProps {

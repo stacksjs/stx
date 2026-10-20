@@ -234,6 +234,16 @@ describe('events', () => {
     expect(root.props.iosBackgroundColor).toBeUndefined()
   })
 
+  it('does not restore props that neither maintained host consumes', async () => {
+    const { root } = await translateHtmlToIR('<div data-native="Image" blurRadius="4" fadeDuration="120" statusBarTranslucent></div>')
+    expect(root.props.blurRadius).toBeUndefined()
+    expect(root.props.fadeDuration).toBeUndefined()
+    expect(root.props.statusBarTranslucent).toBeUndefined()
+    expect(root.props.blurradius).toBe(4)
+    expect(root.props.fadeduration).toBe(120)
+    expect(root.props.statusbartranslucent).toBe('')
+  })
+
   it.each(['nonModal dismissOnOutsideTap', 'non-modal dismiss-on-outside-tap'])('preserves native popup boolean protocol names: %s', async (attributes) => {
     const { root } = await translateHtmlToIR(`<div data-native="Modal" ${attributes}></div>`)
     expect(root.props).toMatchObject({ nonModal: true, dismissOnOutsideTap: true })
