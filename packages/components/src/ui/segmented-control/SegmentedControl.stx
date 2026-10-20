@@ -44,12 +44,17 @@ const sizeClasses = {
   sm: { segment: 'min-h-[28px] px-2.5 py-1', text: 'text-[13px]' },
   md: { segment: 'min-h-[32px] px-3 py-1.5', text: 'text-[13px]' },
 }
+// Stretched segments share the track evenly, so their side padding comes out
+// of each label's width: iOS keeps it small, or "Breakfast" in four quarters
+// of a phone broke in two ("Breakfa / st").
+const stretchedPadding = { sm: 'px-1', md: 'px-1.5' }
 export const sizing = sizeClasses[size]
 
 // A block flex box already fills its column, so `stretch` needs no `w-full` -
 // which beside a margin (`mx-4`) ran the track off the screen's edge.
 export const trackClasses = `${stretch ? 'flex' : 'inline-flex'} flex-row gap-0.5 p-0.5 rounded-control bg-surface-sunken ${className}`.replace(/\s+/g, ' ').trim()
-export const segmentBase = `${stretch ? 'flex-1' : ''} items-center justify-center rounded-control transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${sizing.segment}`.replace(/\s+/g, ' ').trim()
+const segmentSizing = stretch ? sizing.segment.replace(/\bpx-\S+/, stretchedPadding[size]) : sizing.segment
+export const segmentBase = `${stretch ? 'flex-1 min-w-0' : ''} items-center justify-center rounded-control transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${segmentSizing}`.replace(/\s+/g, ' ').trim()
 </script>
 
 <script client>
@@ -131,5 +136,5 @@ defineExpose({ selected })
     :disabled="isOff(segment)"
     :class="segmentClasses(segment)"
     @click="choose(segment)"
-  ><span :class="labelClasses(segment)" :text="segment.label"></span></button>
+  ><span class="truncate" :class="labelClasses(segment)" :text="segment.label"></span></button>
 </div>

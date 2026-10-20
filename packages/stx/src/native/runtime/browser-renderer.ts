@@ -353,6 +353,17 @@ export class BrowserScreenRenderer {
       if (type === 'ImageBackground') css.backgroundImage = `url(${JSON.stringify(url)})`
       if (url !== element.getAttribute('data-source')) {
         element.setAttribute('data-source', url)
+        // A picture that cannot load draws nothing, as a native Image does,
+        // rather than the browser's broken-image mark and its alt text over
+        // whatever sits under it (an avatar's initials).
+        if (type === 'Image') {
+          element.style.visibility = ''
+          if (!element.hasAttribute('data-stx-image-load')) {
+            element.setAttribute('data-stx-image-load', '')
+            element.addEventListener('error', () => { element.style.visibility = 'hidden' })
+            element.addEventListener('load', () => { element.style.visibility = '' })
+          }
+        }
         const apply = (resolved: string): void => { if (!this.nodes.has(element.getAttribute('data-stx-node') ?? '') || element.getAttribute('data-source') !== url) return; if (type === 'ImageBackground') css.backgroundImage = `url(${JSON.stringify(resolved)})`; else (element as HTMLImageElement).src = resolved }
         apply(url)
         if (url && this.options.resolveMedia) void this.options.resolveMedia(url).then(apply).catch(() => {})

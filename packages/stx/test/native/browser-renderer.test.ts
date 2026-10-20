@@ -234,6 +234,22 @@ describe('the browser peer of the native screen renderer', () => {
     expect(() => renderer.render({ id: 'root', type: 'View', props: {}, style: {}, events: {}, children: [{ id: 'gone', type: 'Icon', props: { symbol: 'missing.fill' }, style: {}, events: {}, children: [] }] })).toThrow('No browser icon registered')
   })
 
+  it('draws nothing for a picture that cannot load, and shows the next one that does', () => {
+    const { renderer, container, node, window } = fixture()
+    renderer.render(node('root', 'View', [node('avatar', 'Image', [], { source: { uri: 'https://fixture.invalid/missing.png' }, accessibilityLabel: 'Pawel' })]))
+    const image = container.querySelector('img') as unknown as HTMLImageElement
+    image.dispatchEvent(new window.Event('error'))
+    // The browser's broken-image mark and its alt text over the initials under it.
+    expect(image.style.visibility).toBe('hidden')
+    renderer.render(node('root', 'View', [node('avatar', 'Image', [], { source: { uri: 'https://fixture.invalid/found.png' }, accessibilityLabel: 'Pawel' })]))
+    const next = container.querySelector('img') as unknown as HTMLImageElement
+    expect(next.getAttribute('data-source')).toBe('https://fixture.invalid/found.png')
+    expect(next.style.visibility).toBe('')
+    next.dispatchEvent(new window.Event('error'))
+    next.dispatchEvent(new window.Event('load'))
+    expect(next.style.visibility).toBe('')
+  })
+
   it('does not activate a disabled view button from the keyboard', () => {
     const { renderer, container, node, events, window } = fixture()
     renderer.render(node('root', 'View', [node('button', 'View', ['Disabled'], { disabled: true }, { onPress: 'press' })]))

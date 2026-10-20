@@ -61,6 +61,11 @@ describe('SegmentedControl on a native host', () => {
     expect(segment('month').props.accessibilityState).toMatchObject({ selected: false })
     expect(segment('all').props.accessibilityState).toMatchObject({ selected: false, disabled: true })
     expect(segment('month').props.accessibilityLabel).toBe('This month')
+    // Stretched, each segment keeps its side padding small and its label on
+    // one line: a long word in a quarter of a phone used to break in two.
+    expect(segment('week').style.paddingLeft ?? segment('week').style.paddingHorizontal).toBe(6)
+    const label = phone.all().find(node => node.children.includes('This week'))!
+    expect(label.props.numberOfLines).toBe(1)
 
     phone.press(segment('month'))
     await phone.settle()

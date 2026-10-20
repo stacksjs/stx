@@ -190,7 +190,8 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
     nav.style.display = nav.hidden ? 'none' : 'flex'
     const heading = document.createElement('h1')
     heading.textContent = title
-    heading.style.cssText = `font-size:${settings.largeTitle ? 28 : 20}px;font-weight:700;flex:1;margin:8px 0`
+    // One line, as a native bar keeps it: a long title ("Meditate & unwind") ends in an ellipsis rather than pushing the bar to three lines.
+    heading.style.cssText = `font-size:${settings.largeTitle ? 28 : 20}px;font-weight:700;flex:1;min-width:0;margin:8px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis`
     for (const icon of chromeRenderers.splice(0)) icon.dispose()
     nav.replaceChildren()
     if (location.pathname.replace(/\/$/, '') !== rootPath && !(options.tabs ?? []).some(tab => tab.id === location.pathname.replace(/\/$/, ''))) {
