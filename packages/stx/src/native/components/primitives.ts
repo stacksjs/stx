@@ -424,6 +424,8 @@ export interface VideoProps extends BaseProps {
   autoplay?: boolean
   loop?: boolean
   muted?: boolean
+  /** Controlled playback position in seconds. */
+  currentTime?: number
   /** Paused while true, playing (when `autoplay` is set) once false again. */
   paused?: boolean
   resizeMode?: 'contain' | 'cover' | 'stretch'

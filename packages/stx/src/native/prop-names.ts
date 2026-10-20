@@ -7,7 +7,7 @@ const NATIVE_PROP_NAMES = [
   ...SVG_PROP_NAMES,
   'accessibilityHint', 'accessibilityLabel', 'accessibilityRole', 'accessibilityState', 'accessibilityValue',
   'activeOpacity', 'alwaysBounceHorizontal', 'alwaysBounceVertical', 'animationType', 'autoCapitalize',
-  'autoComplete', 'autoCorrect', 'autoFocus', 'blurRadius', 'contentContainerStyle', 'defaultSource', 'defaultValue',
+  'autoComplete', 'autoCorrect', 'autoFocus', 'blurRadius', 'contentContainerStyle', 'currentTime', 'defaultSource', 'defaultValue',
   'ellipsizeMode', 'fadeDuration', 'hidesWhenStopped', 'hitSlop', 'imageStyle', 'initialNumToRender',
   'iosBackgroundColor', 'keyboardDismissMode', 'keyboardShouldPersistTaps', 'keyboardType',
   'keyboardVerticalOffset', 'keyExtractor', 'listRole', 'maxLength', 'maximumDate', 'maximumTrackTintColor', 'maximumValue',

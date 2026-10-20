@@ -215,14 +215,14 @@ describe('the primitives themselves', () => {
   })
 
   it('keeps true-valued props true on native primitive roots, bound or bare', async () => {
-    const source = '<View><TextInput :multiline="true" :secureTextEntry="true" :autoCorrect="false" /><TextInput multiline secureTextEntry /><Video src="https://example.com/a.mp4" controls :autoplay="true" :muted="true" /></View>'
+    const source = '<View><TextInput :multiline="true" :secureTextEntry="true" :autoCorrect="false" /><TextInput multiline secureTextEntry /><Video src="https://example.com/a.mp4" controls :autoplay="true" :muted="true" :currentTime="12.5" /></View>'
     const { document } = await compileScreenSource(source, screen('TrueNativeProps.stx', source))
     const children = document.root.children.filter((child): child is STXNode => typeof child !== 'string')
 
     expect(children[0].props).toMatchObject({ multiline: true, secureTextEntry: true, autoCorrect: false })
     expect(children[1].props).toMatchObject({ multiline: true, secureTextEntry: true })
     expect(children[2].type).toBe('Video')
-    expect(children[2].props).toMatchObject({ source: 'https://example.com/a.mp4', controls: true, autoplay: true, muted: true })
+    expect(children[2].props).toMatchObject({ source: 'https://example.com/a.mp4', controls: true, autoplay: true, muted: true, currentTime: 12.5 })
   })
 
   it('reads a bare boolean attribute on a plain tag as true', async () => {
