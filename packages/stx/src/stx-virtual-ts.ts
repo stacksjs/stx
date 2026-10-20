@@ -51,6 +51,7 @@ import { parseLoopBinding } from './loop-binding'
 import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 import { componentContractChecks } from './component-contract-checks'
+import { collectSlotScopes } from './slot-scopes'
 
 export type ScriptKind = 'server' | 'client' | 'plain'
 
@@ -1874,6 +1875,7 @@ export function buildVirtualTypeScript(
       // reference the parameter it is annotating, which TypeScript reads as a
       // circular initialiser.
       const maskedSource = maskNonTemplateRegions(source)
+      const slotScopes = collectSlotScopes(maskedSource)
       const conditionAliases = collectConditionAliases(blocks.map(block => block.code))
       const declared = [...new Set(blocks.flatMap(block => collectBlockDeclarations(block.code)))]
       const shadowed = declared.filter(name => /^[A-Z_$][\w$]*$/i.test(name))
@@ -1889,6 +1891,14 @@ export function buildVirtualTypeScript(
 
       for (const { expression, statement } of statements) {
         const pad = '  '.repeat(indent)
+        // Unlike file-wide loop declarations, slot parameters are lexical:
+        // sibling slots may shadow each other and names must not escape.
+        // Keep the authored binding pattern so aliases/destructuring work.
+        const enclosingSlots = expression.offset === undefined
+          ? []
+          : slotScopes.filter(scope => expression.offset! >= scope.start && expression.offset! < scope.end)
+        const slotPrefix = enclosingSlots.map(scope => `;((${scope.binding.replace(/[\r\n]/g, ' ')}: any) => { `).join('')
+        const slotSuffix = ' });'.repeat(enclosingSlots.length)
         /*
          * Wrapped in the `@if` / `@unless` blocks that enclose it, so a guard
          * the markup already applies narrows the expression the same way it
@@ -1907,12 +1917,12 @@ export function buildVirtualTypeScript(
           : ''
         const guardSuffix = guards.length > 0 ? ' }' : ''
 
-        append(pad + guardPrefix + statement.text + guardSuffix, {
+        append(pad + slotPrefix + guardPrefix + statement.text + guardSuffix + slotSuffix, {
           line: expression.line,
           column: expression.column,
           expression,
-          prefixLength: statement.prefixLength + pad.length + guardPrefix.length,
-          guardPrefixLength: pad.length + guardPrefix.length,
+          prefixLength: statement.prefixLength + pad.length + slotPrefix.length + guardPrefix.length,
+          guardPrefixLength: pad.length + slotPrefix.length + guardPrefix.length,
         })
       }
 

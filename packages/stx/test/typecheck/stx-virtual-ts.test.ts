@@ -16,6 +16,7 @@
 import { describe, expect, it } from 'bun:test'
 import { BROWSER_CORE_IMPORTS } from '../../src/client-script'
 import { STX_RUNTIME_GLOBALS } from '../../src/runtime-globals'
+import { collectSlotScopes } from '../../src/slot-scopes'
 import {
   buildVirtualTypeScript,
   collectBlockDeclarations,
@@ -31,6 +32,24 @@ import {
   resolvePosition,
   stripFilterChain,
 } from '../../src/stx-virtual-ts'
+
+describe('slot scope source ranges', () => {
+  it('tracks nested templates and ignores quoted tags and raw regions', () => {
+    const source = `<!-- <template #fake="bad"> -->
+<script>const example = '<template #fake="bad">'</script>
+<style>.example::after { content: '<template #fake="bad">' }</style>
+<template title=" #fake='bad'" #outer="{ row }">
+  <template :if="row.active"><p>{{ row.name }}</p></template>
+  <Widget><template v-slot:inner='props'>{{ props.name }} {{ row.name }}</template></Widget>
+</template>
+<p>{{ row }}</p>`
+    const scopes = collectSlotScopes(source)
+    expect(scopes.map(scope => scope.binding)).toEqual(['{ row }', 'props'])
+    expect(source.slice(scopes[1].start, scopes[1].end)).toBe('{{ props.name }} {{ row.name }}')
+    expect(scopes[0].end).toBe(source.lastIndexOf('</template>'))
+    expect(scopes.every(scope => scope.end < source.lastIndexOf('{{ row }}'))).toBe(true)
+  })
+})
 
 describe('what counts as an expression', () => {
   it('skips {{-- template comments --}}', () => {
