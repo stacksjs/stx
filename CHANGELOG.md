@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.599...v0.2.600)
+
+## 🐛 Bug Fixes
+
+- **router**: take the transition name off once the transition is over ([687dfbc](https://github.com/stacksjs/stx/commit/687dfbc)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.600 ([040cc06](https://github.com/stacksjs/stx/commit/040cc06)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.598...v0.2.599)
 
 ## ✅ Tests
