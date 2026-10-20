@@ -199,6 +199,7 @@ and the shared primitive types expose `listRole` for its
 header/item/separator/empty/footer slots plus controlled `onRefresh`/
 `refreshing` pull-to-refresh. Text inputs also retain the shared
 `onChange`/`onEndEditing` aliases and multiline `numberOfLines` contract;
+native images retain `alt` as their accessibility-label fallback.
 `data`, `renderItem`, `keyExtractor`, and grouped `SectionList` data are
 rejected until a versioned list-data protocol is introduced. This keeps the
 public types honest while preserving recycling for the child trees that the

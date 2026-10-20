@@ -404,6 +404,8 @@ export interface IconProps extends BaseProps {
 export interface ImageProps extends BaseProps {
   /** Image source */
   source: ImageSource
+  /** Alternative text used as the native accessibility label fallback. */
+  alt?: string
   /** Resize mode */
   resizeMode?: 'cover' | 'contain' | 'stretch' | 'center' | 'repeat'
   /** Load handler */
