@@ -173,6 +173,8 @@ export interface STXStyle {
   flexBasis?: number | string
   flexDirection?: 'row' | 'column' | 'row-reverse' | 'column-reverse'
   flexWrap?: 'wrap' | 'nowrap' | 'wrap-reverse'
+  /** Stable flex/grid sibling order; lower values are laid out first. */
+  order?: number
   justifyContent?: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around' | 'space-evenly'
   alignItems?: 'flex-start' | 'center' | 'flex-end' | 'stretch' | 'baseline'
   alignSelf?: 'auto' | 'flex-start' | 'center' | 'flex-end' | 'stretch' | 'baseline'

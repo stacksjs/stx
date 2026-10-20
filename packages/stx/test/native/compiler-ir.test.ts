@@ -34,6 +34,7 @@ describe('compileHeadwindToStyle, by class family', () => {
     ['flex: column', 'flex-col', { flexDirection: 'column' }],
     ['flex: justify', 'justify-between', { justifyContent: 'space-between' }],
     ['flex: align', 'items-end', { alignItems: 'flex-end' }],
+    ['flex: order', 'order-[-2]', { order: -2 }],
     ['colour: background', 'bg-blue-500', { backgroundColor: '#3b82f6' }],
     ['colour: light shade', 'bg-red-100', { backgroundColor: '#fee2e2' }],
     ['colour: text', 'text-white', { color: '#ffffff' }],
@@ -424,7 +425,7 @@ describe('style vocabulary coverage', () => {
     'alignContent', 'aspectRatio', 'backgroundImage', 'borderBottomColor',
     'borderBottomWidth', 'borderLeftColor', 'borderLeftWidth', 'borderRightColor',
     'borderRightWidth', 'borderStyle', 'borderTopColor', 'borderTopWidth',
-    'columnGap', 'elevation', 'flexBasis', 'rowGap', 'transform',
+    'columnGap', 'elevation', 'flexBasis', 'order', 'rowGap', 'transform',
     // Craft's native host lays out `display: grid` with `gridColumns`; this
     // older renderer has no grid (added with grid-cols-N, 2026-10).
     'gridAutoRows', 'gridColumns', 'gridTemplateColumns', 'gridTemplateRows',

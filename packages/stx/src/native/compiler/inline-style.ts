@@ -22,7 +22,7 @@ export function applyNativeLayoutDefaults(style: STXStyle): STXStyle {
 const STYLE_KEYS = new Set([
   'display', 'gridColumns', 'gridTemplateColumns', 'gridTemplateRows', 'gridAutoRows',
   'flex', 'flexGrow', 'flexShrink', 'flexBasis', 'flexDirection', 'flexWrap',
-  'justifyContent', 'alignItems', 'alignSelf', 'alignContent', 'position', 'top', 'right',
+  'order', 'justifyContent', 'alignItems', 'alignSelf', 'alignContent', 'position', 'top', 'right',
   'bottom', 'left', 'zIndex', 'width', 'height', 'minWidth', 'maxWidth', 'minHeight',
   'maxHeight', 'aspectRatio', 'margin', 'marginTop', 'marginRight', 'marginBottom',
   'marginLeft', 'marginHorizontal', 'marginVertical', 'padding', 'paddingTop',
@@ -50,7 +50,7 @@ const STYLE_KEYS = new Set([
  * returns typeMismatch and nothing renders. `null` is harmless by comparison.
  */
 const NUMERIC_STYLE_KEYS = new Set([
-  'gridColumns', 'gridAutoRows', 'flex', 'flexGrow', 'flexShrink', 'zIndex', 'aspectRatio',
+  'gridColumns', 'gridAutoRows', 'flex', 'flexGrow', 'flexShrink', 'order', 'zIndex', 'aspectRatio',
   'gap', 'rowGap', 'columnGap',
   'borderWidth', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
   'borderRadius', 'borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomLeftRadius',

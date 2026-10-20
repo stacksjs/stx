@@ -354,6 +354,12 @@ const classParsers: Record<string, ClassParser> = {
   'shrink': (_, style) => { style.flexShrink = 1; return true },
   'shrink-0': (_, style) => { style.flexShrink = 0; return true },
 
+  // Flex/grid order. Keep the Tailwind-compatible sentinels and let the
+  // arbitrary parser below cover negative and project-specific integer ranks.
+  'order-first': (_, style) => { style.order = -9999; return true },
+  'order-last': (_, style) => { style.order = 9999; return true },
+  'order-none': (_, style) => { style.order = 0; return true },
+
   // Justify content
   'justify-start': (_, style) => { style.justifyContent = 'flex-start'; return true },
   'justify-center': (_, style) => { style.justifyContent = 'center'; return true },
@@ -1079,6 +1085,11 @@ export function compileHeadwindToStyle(classes: string | string[], unknown?: str
     if (parseSize(className, style)) continue
     if (parseMinMax(className, style)) continue
     if (parseGridColumns(className, style)) continue
+    const order = /^order-\[(-?\d+)\]$/.exec(className) ?? /^order-(-?\d+)$/.exec(className)
+    if (order) {
+      style.order = Number(order[1])
+      continue
+    }
     if (parsePosition(className, style)) continue
     if (parseTranslation(className, style)) continue
     if (parseSpace(className, style)) continue
