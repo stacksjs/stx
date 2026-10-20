@@ -6,6 +6,18 @@ export interface NativeStyleContext {
   onVariables?: (variables: NativeStyleVariables) => void
 }
 
+/**
+ * CSS flex containers default to row; native stacks default to column.
+ * Apply only after all authored style layers have been combined: adding a
+ * default to an inline display declaration would override a class direction.
+ * Views without an explicit flex display retain the native stack default.
+ */
+export function applyNativeLayoutDefaults(style: STXStyle): STXStyle {
+  if (style.display === 'flex' && style.flexDirection == null)
+    return { ...style, flexDirection: 'row' }
+  return style
+}
+
 /** Every property `STXStyle` declares, for inline `style=""` translation. */
 const STYLE_KEYS = new Set([
   'display', 'gridColumns', 'gridTemplateColumns', 'gridTemplateRows', 'gridAutoRows',
@@ -187,6 +199,7 @@ function parseEntries(entries: Array<[string, unknown]>, variables: ReturnType<t
       if (!finite(translated) && !(DIMENSION_STYLE_KEYS.has(property) && typeof translated === 'string' && translated.endsWith('%') && NUMBER.test(translated.slice(0, -1)) && Number.isFinite(Number(translated.slice(0, -1)))))
         translated = undefined
     }
+    else if (property === 'display' && value === 'inline-flex') translated = 'flex'
     else if (property === 'shadowOffset' || property === 'transform') translated = structuredStyle(property, value)
     else if (property === 'gridTemplateColumns' || property === 'gridTemplateRows') translated = finite(value) || typeof value === 'string' ? value : undefined
     // Font weights are strings in the IR, even when authored as object numbers.

@@ -35,7 +35,7 @@ import type { STXNode, STXStyle } from '../compiler/ir'
 import { accessibilityChanges, authoredAccessibilityProps, projectAccessibility } from '../accessibility'
 import { compileClassStyles } from '../compiler/headwind-to-style'
 import { resolveIconName } from '../compiler/icons'
-import { parseNativeStyleLayers } from '../compiler/inline-style'
+import { applyNativeLayoutDefaults, parseNativeStyleLayers } from '../compiler/inline-style'
 import { createStyleVariables, type NativeStyleVariables } from '../compiler/style-variables'
 import type { NativeStylesheetTheme } from '../compiler/stylesheet-theme'
 import { affectsGeometry, parseSvgMarkup, parseViewBox, SVG_NODE_TYPES, svgGeometry } from '../compiler/svg'
@@ -475,7 +475,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const resolved = parseNativeStyleLayers([record.styleSource, record.boundStyle, record.forwardedStyle], inherited, report)
     record.variables = resolved.variables
     const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables)
-    return { ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}), ...resolved.styles[0], ...record.baseStyle, ...resolved.styles[1], ...resolved.styles[2], ...(record.visible && !isHiddenInput(record) ? {} : { display: 'none' }) }
+    const style = applyNativeLayoutDefaults({ ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}), ...resolved.styles[0], ...record.baseStyle, ...resolved.styles[1], ...resolved.styles[2] } as STXStyle)
+    return { ...style, ...(record.visible && !isHiddenInput(record) ? {} : { display: 'none' }) }
   }
 
   function refreshStyleTree(node: NativeNode, inherited = node.__stxOwner ? descriptorOf(node.__stxOwner)?.variables : stylesheetVariables, appearanceChanged = false): void {

@@ -218,6 +218,13 @@ semantics still need additional support. ARIA disabled state describes a control
 use `disabled` to disable its interaction. Verify actual VoiceOver/TalkBack
 behavior on maintained hosts before treating a control as accessibility-complete.
 
+Explicit CSS flex containers (`flex`, `inline-flex`, or inline `display: flex`
+and `display: inline-flex`) use the CSS default row direction on native too.
+The default is resolved after class, inline, reactive, and appearance layers:
+an explicit direction such as `flex-col` still wins. Removing the flex display
+removes its inferred direction. Plain native views without an authored flex
+display retain the host stack default.
+
 A browser preview verifies HTML and browser behavior. Check the compiled native
 bundle's bindings and events, then validate the same route, data and interactions
 with the maintained Craft hosts. Native screens and their imported client code

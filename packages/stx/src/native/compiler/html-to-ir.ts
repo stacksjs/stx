@@ -31,7 +31,7 @@ import { NATIVE_EVENT_NAMES as EVENT_NAMES } from '../event-names'
 import { NATIVE_BOOLEAN_PROPS, nativePropName } from '../prop-names'
 import { mapToNativeComponent } from './component-mapping'
 import { resolveIconName } from './icons'
-import { type NativeStyleContext, parseNativeStyle } from './inline-style'
+import { applyNativeLayoutDefaults, type NativeStyleContext, parseNativeStyle } from './inline-style'
 import { createStyleVariables, type NativeStyleVariables } from './style-variables'
 import { extractStylesheetTheme } from './stylesheet-theme'
 import { parseViewBox, SVG_DROPPED, SVG_NODE_TYPES, SVG_TYPES, svgGeometry } from './svg'
@@ -310,7 +310,7 @@ function readAttributes(
   const compiledClasses = classes ? compileClassStyles(classes, variables) : undefined
   for (const name of new Set(compiledClasses?.unknown ?? []))
     diagnostics.push({ kind: 'unknown-class', tag, name })
-  const style = { ...compiledClasses?.style, ...inline }
+  const style = applyNativeLayoutDefaults({ ...compiledClasses?.style, ...inline })
   return { props, style, events, bindings, classes, inline }
 }
 
