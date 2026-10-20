@@ -96,6 +96,10 @@ export interface ScrollViewProps extends ViewProps {
   showsVerticalScrollIndicator?: boolean
   /** Bounce at edges (iOS) */
   bounces?: boolean
+  /** Keep the scroll view's horizontal edge bounce enabled. */
+  alwaysBounceHorizontal?: boolean
+  /** Keep the scroll view's vertical edge bounce enabled. */
+  alwaysBounceVertical?: boolean
   /** Scroll handler */
   onScroll?: (event: ScrollEvent) => void
   /** Scroll end handler */
@@ -106,6 +110,8 @@ export interface ScrollViewProps extends ViewProps {
   contentContainerStyle?: STXStyle
   /** Keyboard dismiss mode */
   keyboardDismissMode?: 'none' | 'on-drag' | 'interactive'
+  /** How taps interact with the keyboard while the scroll view is focused. */
+  keyboardShouldPersistTaps?: 'always' | 'handled' | 'never'
   /** Refresh control */
   refreshControl?: RefreshControlProps
   /** Content children (by index) that stay at the top once scrolled to, each pushed up by the next (Craft iOS) */

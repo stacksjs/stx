@@ -19,7 +19,7 @@ import path from 'node:path'
 import { processDirectives } from '../../src/process'
 import { NATIVE_EVENTS, translateHtmlToDocument, translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import type { STXNode } from '../../src/native/compiler/ir'
-import type { AccessibilityRole, FlatListProps, ImageProps, ModalProps, PressableProps, TextInputProps, VideoProps } from '../../src/native/components/primitives'
+import type { AccessibilityRole, FlatListProps, ImageProps, ModalProps, PressableProps, ScrollViewProps, TextInputProps, VideoProps } from '../../src/native/components/primitives'
 
 const COMPONENTS = path.join(import.meta.dir, '..', '..', '..', 'components')
 
@@ -463,6 +463,17 @@ describe('shared-runtime list boundaries', () => {
     const video: VideoProps = { src: 'https://example.com/trail.mp4', autoplay: true, autoPlay: true }
     expect(video.autoplay).toBe(true)
     expect(video.autoPlay).toBe(true)
+  })
+
+  it('types shared scroll bounce and keyboard-tap policies', () => {
+    const scroll: ScrollViewProps = {
+      alwaysBounceHorizontal: true,
+      alwaysBounceVertical: false,
+      keyboardShouldPersistTaps: 'handled',
+    }
+    expect(scroll.alwaysBounceHorizontal).toBe(true)
+    expect(scroll.alwaysBounceVertical).toBe(false)
+    expect(scroll.keyboardShouldPersistTaps).toBe('handled')
   })
 
   it('keeps the native role and pressable vocabulary host-supported', () => {

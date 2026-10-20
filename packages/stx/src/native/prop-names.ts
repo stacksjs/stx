@@ -33,7 +33,7 @@ const NATIVE_PROP_NAMES = [
  * `<video controls>` or a folded `:multiline="true"` reached the host as "".
  */
 export const NATIVE_BOOLEAN_PROPS = new Set([
-  'animating', 'autoCorrect', 'autoFocus', 'autoplay', 'autoPlay', 'bounces', 'controls', 'disabled',
+  'alwaysBounceHorizontal', 'alwaysBounceVertical', 'animating', 'autoCorrect', 'autoFocus', 'autoplay', 'autoPlay', 'bounces', 'controls', 'disabled',
   'editable', 'hidesWhenStopped', 'horizontal', 'loop', 'multiline', 'muted', 'pagingEnabled', 'paused',
   'refreshing', 'scrollEnabled', 'secureTextEntry', 'selectTextOnFocus', 'showsHorizontalScrollIndicator',
   'showsVerticalScrollIndicator', 'transparent', 'visible', 'nonModal', 'dismissOnOutsideTap',
