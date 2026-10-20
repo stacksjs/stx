@@ -35,7 +35,7 @@ import fs from 'node:fs'
 import { isDevelopment } from './env'
 import { stripCommentsAndLiterals } from './strip-literals'
 import { createSafeFunction, getExpressionSafetyRule, safeEvaluate } from './safe-evaluator'
-import { createDetailedErrorMessage } from './utils'
+import { componentClientSignalNames, createDetailedErrorMessage } from './utils'
 import { createPlaceholder } from './placeholder'
 import { neutralizeTemplateSyntax } from './template-syntax-escape'
 import { classifyHtmlInterpolation, UnsafeInterpolationContextError } from './interpolation-context'
@@ -717,15 +717,19 @@ function escapeInterpolatedHtmlValue(
  * recognised too. Without it the scan is text-only, which is what every caller
  * did before and is still correct for a script that declares its own signals.
  */
+/** Bodies of inline client scripts already found at genuine element positions. */
+function clientScriptBodies(scripts: string[]): string[] {
+  return scripts.flatMap((script) => {
+    const match = script.match(/^<script\b([^>]*)>([\s\S]*?)<\/script\s*>$/i)
+    return !match || /\bserver\b|\bsrc\s*=/.test(match[1]) ? [] : [match[2]]
+  })
+}
+
 export function usesSignalsInScript(template: string, filePath?: string): boolean {
   // Check genuine script elements only. Tag-like text inside comments,
   // attributes, or style bodies is not executable script.
   const { scripts } = stashScriptElements(template)
-  for (const script of scripts) {
-    const match = script.match(/^<script\b([^>]*)>([\s\S]*?)<\/script\s*>$/i)
-    if (!match || /\bserver\b|\bsrc\s*=/.test(match[1]))
-      continue
-    const content = match[2]
+  for (const content of clientScriptBodies(scripts)) {
     if (/\b(state|derived|effect|ref|reactive|computed|watch|watchEffect|useModel)\s*(?:<[^>]*>)?\s*\(/.test(content)) {
       return true
     }
@@ -1216,11 +1220,10 @@ export function processExpressions(template: string, context: Record<string, any
   // static prop shadows the signal. The Set stays.
   const hasSignals = context?.__stx_signals_gate === true
     || usesSignalsInScript(template)
-  const clientSignalNames = new Set<string>(
-    Array.isArray(context?.__stx_client_signal_names)
-      ? context.__stx_client_signal_names
-      : [],
-  )
+  const clientSignalNames = new Set<string>([
+    ...(Array.isArray(context?.__stx_client_signal_names) ? context.__stx_client_signal_names : []),
+    ...componentClientSignalNames(clientScriptBodies(scriptBlocks)),
+  ])
   const preservedClientExpressions = new Set<string>(
     Array.isArray(context?.__stx_preserved_client_expressions)
       ? context.__stx_preserved_client_expressions
@@ -1345,6 +1348,14 @@ export function processExpressions(template: string, context: Record<string, any
       return ''
     }
 
+    // An authored client signal owns its binding before evaluation. A server
+    // prop or auto-import can have the same name (e.g. the POST helper `post`);
+    // calling that helper first can submit a request even when its result is
+    // discarded. Component scripts have already been lifted out, so inherit
+    // their recorded names alongside declarations in this page's own scripts.
+    if (firstVarIsClientSignal)
+      return match
+
     // Try evaluation first - this allows user-defined helper functions to work
     // Only preserve for client-side if evaluation fails AND it looks like a signal
     let rejection: ExpressionRejection | undefined
@@ -1352,20 +1363,6 @@ export function processExpressions(template: string, context: Record<string, any
       const value = evaluateExpression(expr, context, false, (r) => {
         rejection = r
       })
-
-      // A component prop can have a static server value and then be shadowed
-      // by a client signal with the same name:
-      //
-      //   const title = useReactiveProp('title', '')
-      //   <h2>{{ title() }}</h2>
-      //
-      // The server context contains `title: "Hello"`, so context-only
-      // detection cannot distinguish this from a server helper and used to
-      // evaluate the expression away. The component renderer records locally
-      // declared client signals before stripping its script, allowing the
-      // interpolation to survive for the scoped runtime.
-      if (firstVarIsClientSignal)
-        return match
 
       // For signal-based templates: if the expression references variables NOT in the
       // server-side context (i.e. client-only signals), preserve it for client-side
@@ -1422,9 +1419,6 @@ export function processExpressions(template: string, context: Record<string, any
     catch (error: unknown) {
       if (error instanceof UnsafeInterpolationContextError)
         throw error
-      if (firstVarIsClientSignal)
-        return match
-
       // For signal-based templates, preserve expressions that reference runtime variables
       // This includes loop variables (page, event, etc.) and component-defined functions (fmt, etc.)
       if (hasSignals && !expressionUsesOnlyContextVars(trimmedExpr, context)) {
