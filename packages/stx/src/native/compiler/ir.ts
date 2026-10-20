@@ -278,7 +278,7 @@ export interface STXStyle {
   textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
 
   // Image
-  resizeMode?: 'cover' | 'contain' | 'stretch' | 'center' | 'repeat'
+  resizeMode?: 'cover' | 'contain' | 'stretch' | 'center'
   tintColor?: string
 
   // Transform

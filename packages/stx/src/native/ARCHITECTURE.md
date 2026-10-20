@@ -64,7 +64,7 @@ renderers in this package use YogaKit/YogaLayout; neither implementation is a
 fake layout used only to make IR tests pass.
 
 Both renderers apply text sizing, weight, family, line height, tracking,
-decoration and case transforms. Native images support `cover`, `contain`,
+decoration and case transforms. Native images support only `cover`, `contain`,
 `stretch` and `center` resize modes plus tint colors. Layer overflow and
 z-order are preserved on both platforms; iOS also applies shadow offsets.
 

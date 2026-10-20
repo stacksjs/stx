@@ -427,7 +427,7 @@ export interface ImageProps extends BaseProps {
   /** Alternative text used as the native accessibility label fallback. */
   alt?: string
   /** Resize mode */
-  resizeMode?: 'cover' | 'contain' | 'stretch' | 'center' | 'repeat'
+  resizeMode?: 'cover' | 'contain' | 'stretch' | 'center'
   /** Load handler */
   onLoad?: () => void
   /** Load start handler */
