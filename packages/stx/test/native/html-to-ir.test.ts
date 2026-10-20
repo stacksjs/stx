@@ -450,6 +450,11 @@ describe('shared-runtime list boundaries', () => {
     expect(sources).toHaveLength(2)
   })
 
+  it('keeps the native image contract focused on host-consumed props', () => {
+    const image: ImageProps = { source: 'https://example.com/trail.png', defaultSource: '/placeholder.png' }
+    expect(image.defaultSource).toBe('/placeholder.png')
+  })
+
   it('types native accessibility value and state fields', () => {
     const view: import('../../src/native/components/primitives').BaseProps = {
       accessibilityValue: '3 of 5',

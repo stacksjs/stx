@@ -431,10 +431,6 @@ export interface ImageProps extends BaseProps {
   onLoadEnd?: () => void
   /** Error handler; native failures carry the host message in nativeEvent.error. */
   onError?: (event: ImageErrorEvent) => void
-  /** Blur radius */
-  blurRadius?: number
-  /** Fade duration (Android) */
-  fadeDuration?: number
   /** Default source (placeholder) */
   defaultSource?: ImageSource
 }
