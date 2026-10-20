@@ -119,8 +119,8 @@ describe('Component Accessibility Tests', () => {
       expect(ariaAttributes(await html('switch'))).toContain('aria-checked')
     })
 
-    it('renders screen-reader text for the control', async () => {
-      expect(await html('switch')).toMatch(/class="sr-only"/)
+    it('names the physical switch before hydration', async () => {
+      expect(await html('switch')).toMatch(/<button\b[^>]*\baria-label="Wifi"/)
     })
 
     it('is keyboard reachable without a key handler', async () => {
@@ -368,8 +368,8 @@ describe('Component Accessibility Tests', () => {
       expect(issues.filter(i => i.severity === 'error')).toHaveLength(0)
     })
 
-    it('Switch renders screen-reader text', async () => {
-      expect(await html('switch')).toMatch(/sr-only/i)
+    it('Switch has a fallback accessible name when no label is provided', async () => {
+      expect(markup(await render('<Switch />'))).toMatch(/<button\b[^>]*\baria-label="Toggle switch"/)
     })
 
     it('Progress announces its value', async () => {

@@ -48,6 +48,7 @@ export const thumbBaseClasses = 'pointer-events-none inline-block transform roun
   <script client>
     const emit = defineEmits(['change'])
 const isDisabled = useReactiveProp('disabled', {{ disabled }})
+const currentLabel = useReactiveProp('label', {{ label }}, { parse: value => value ?? '' })
 const config = {{ config }}
 const trackBase = {{ trackBaseClasses }}
 const trackDisabled = {{ trackDisabledClasses }}
@@ -77,13 +78,10 @@ function thumbClasses() {
 defineExpose({ isChecked, toggle })
   </script>
   <label class="inline-flex items-center gap-3 cursor-pointer">
-    @if(label)
-    <span class="text-sm font-medium text-fg-strong">
+    <span :if="currentLabel()" :text="currentLabel()" class="text-sm font-medium text-fg-strong">
       {{ label }}
     </span>
-    @endif
-
-  @if(name)
+    @if(name)
     {{-- Always submitted, carrying one of two values, rather than a checkbox's
          present-or-absent convention: a reader then gets an explicit "false"
          instead of a missing key, which is the difference between "switched
@@ -101,6 +99,8 @@ defineExpose({ isChecked, toggle })
     <button
     type="button"
     role="switch"
+    aria-label="{{ label || 'Toggle switch' }}"
+    :aria-label="currentLabel() || 'Toggle switch'"
     :aria-checked="isChecked() ? 'true' : 'false'"
     :class="trackClasses()"
     @if(disabled)disabled aria-disabled="true"@endif
@@ -108,15 +108,13 @@ defineExpose({ isChecked, toggle })
     :aria-disabled="isDisabled() ? 'true' : 'false'"
     @click="toggle()"
   >
-      <span class="sr-only">
-        @if(label){{ label }}@else Toggle switch@endif
-      </span>
       <span aria-hidden="true" :class="thumbClasses()">
       </span>
     </button>
   </label>
 
 === Extracted Classes ===
+Toggle
 bg-accent-solid
 bg-neutral-400
 bg-white
@@ -143,13 +141,13 @@ h-5
 inline-block
 inline-flex
 items-center
+label
 pointer-events-none
 relative
 ring-0
 rounded-full
 shadow-lg
 shrink-0
-sr-only
 switch
 text-fg-strong
 text-sm

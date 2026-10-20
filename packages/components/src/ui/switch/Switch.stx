@@ -41,6 +41,7 @@ export const thumbBaseClasses = 'pointer-events-none inline-block transform roun
 <script client>
 const emit = defineEmits(['change'])
 const isDisabled = useReactiveProp('disabled', {{ disabled }})
+const currentLabel = useReactiveProp('label', {{ label }}, { parse: value => value ?? '' })
 const config = {{ config }}
 const trackBase = {{ trackBaseClasses }}
 const trackDisabled = {{ trackDisabledClasses }}
@@ -71,11 +72,9 @@ defineExpose({ isChecked, toggle })
 </script>
 
 <label class="inline-flex items-center gap-3 cursor-pointer">
-  @if(label)
-    <span class="text-sm font-medium text-fg-strong">
-      {{ label }}
-    </span>
-  @endif
+  <span :if="currentLabel()" :text="currentLabel()" class="text-sm font-medium text-fg-strong">
+    {{ label }}
+  </span>
 
   @if(name)
     {{-- Always submitted, carrying one of two values, rather than a checkbox's
@@ -96,6 +95,8 @@ defineExpose({ isChecked, toggle })
   <button
     type="button"
     role="switch"
+    aria-label="{{ label || 'Toggle switch' }}"
+    :aria-label="currentLabel() || 'Toggle switch'"
     :aria-checked="isChecked() ? 'true' : 'false'"
     :class="trackClasses()"
     @if(disabled)disabled aria-disabled="true"@endif
@@ -103,7 +104,6 @@ defineExpose({ isChecked, toggle })
     :aria-disabled="isDisabled() ? 'true' : 'false'"
     @click="toggle()"
   >
-    <span class="sr-only">@if(label){{ label }}@else Toggle switch@endif</span>
     <span aria-hidden="true" :class="thumbClasses()"></span>
   </button>
 </label>
