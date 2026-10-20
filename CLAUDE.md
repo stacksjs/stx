@@ -635,6 +635,7 @@ External links (`http://`, `https://`, `mailto:`, `tel:`) stay as `<a href>` —
 - `placeholder="blur"` (default) — inline SVG blur placeholder while loading; `placeholder="color"` + `placeholderColor="#…"` for a solid fill
 - `lazy={false}` — opt out of lazy loading for above-the-fold heroes
 - `preload` — emits a `<link rel="preload">` hint
+- `objectFit="contain"` / `objectPosition="left center"` — fit and align the image inside its box; `fit` / `position` are aliases shared with `<Image>`
 - `provider="cloudinary"` / `"imgix"` / `"bunny"` — CDN URL rewriting; `quality` and `densities="1x 2x 3x"` are also accepted
 
 For genuinely dynamic URLs with no transforms, `x-src` / `x-alt` on a plain `<img>` is acceptable. Otherwise prefer `<StxImage>`.

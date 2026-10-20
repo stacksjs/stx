@@ -240,6 +240,8 @@ export const StxImageBuiltin: BuiltinComponentDef = {
     const provider = resolveProp(props, 'provider')
     const className = resolveProp(props, 'class') || resolveProp(props, 'className') || ''
     const style = resolveProp(props, 'style') || ''
+    const objectFit = resolveProp(props, 'objectFit') || resolveProp(props, 'fit')
+    const objectPosition = resolveProp(props, 'objectPosition') || resolveProp(props, 'position')
     const quality = resolveProp(props, 'quality')
 
     const lazy = resolveBoolProp(props, 'lazy', true)
@@ -277,6 +279,8 @@ export const StxImageBuiltin: BuiltinComponentDef = {
     // ── Aspect ratio for CLS prevention ──────────────────────────
     const styles: string[] = []
     if (style) styles.push(style)
+    if (objectFit) styles.push(`object-fit:${objectFit}`)
+    if (objectPosition) styles.push(`object-position:${objectPosition}`)
 
     if (numWidth && numHeight) {
       styles.push(`aspect-ratio:${numWidth}/${numHeight}`)
@@ -365,6 +369,7 @@ export const StxImageBuiltin: BuiltinComponentDef = {
     const consumedStatic = new Set([
       'src', 'alt', 'width', 'height', 'lazy', 'sizes', 'srcset',
       'placeholder', 'placeholderColor', 'class', 'className', 'style',
+      'objectFit', 'objectPosition', 'fit', 'position',
       'format', 'provider', 'quality', 'densities', 'preload', 'priority', 'picture', 'loading', 'decoding',
     ])
 
