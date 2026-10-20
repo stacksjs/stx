@@ -535,6 +535,23 @@ export interface MapRegion {
   span: { latitudeDelta: number; longitudeDelta: number }
 }
 
+/** A keyed polyline overlay for large map collections. */
+export interface MapPolylineOverlay {
+  id: string
+  geometry: number[]
+  strokeColor?: string
+  strokeWidth?: number
+}
+
+/** A keyed marker overlay for large map collections. */
+export interface MapMarkerOverlay {
+  id: string
+  geometry: number[]
+  title?: string
+  pinColor?: string
+  bearing?: number
+}
+
 export interface MapProps extends BaseProps {
   /** Explicit camera region; omit it to let fitToBounds choose the camera. */
   region?: MapRegion
@@ -553,13 +570,16 @@ export interface MapProps extends BaseProps {
   rotateEnabled?: boolean
   /** Enable native two-finger tilt gestures. Programmatic cameraPitch is independent. */
   pitchEnabled?: boolean
-  mapType?: 'standard' | 'satellite' | 'hybrid' | 'terrain'
+  mapType?: 'standard' | 'satellite' | 'hybrid'
   showsCompass?: boolean
   showsScale?: boolean
   /** Camera tilt in degrees, 0 through 60. */
   cameraPitch?: number
   /** Clockwise camera heading from north. */
   cameraHeading?: number
+  /** Keyed overlays for large collections; child nodes remain supported. */
+  polylines?: MapPolylineOverlay[]
+  markers?: MapMarkerOverlay[]
   onPress?: (event: { nativeEvent: MapCoordinate }) => void
   /** Completed user camera gestures; programmatic camera changes do not echo. */
   onRegionChangeComplete?: (event: { nativeEvent: MapRegion & { heading: number, pitch: number } }) => void

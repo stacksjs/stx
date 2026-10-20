@@ -3,9 +3,20 @@ import path from 'node:path'
 import vm from 'node:vm'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
 import { compileScreenSource } from '../../src/native/compiler/render-screen'
+import type { MapProps } from '../../src/native/components/primitives'
 import { createTempDir } from '../../src/temp-dir'
 
 describe('portable native map components', () => {
+  it('types keyed overlays and only the map styles both hosts implement', () => {
+    const map: MapProps = {
+      mapType: 'satellite',
+      polylines: [{ id: 'route', geometry: [37, -119], strokeWidth: 4 }],
+      markers: [{ id: 'start', geometry: [37, -119], pinColor: '#24724b' }],
+    }
+    expect(map.polylines?.[0].id).toBe('route')
+    expect(map.markers?.[0].pinColor).toBe('#24724b')
+  })
+
   it('keeps native camera controls, provider credit, colored pins and direction signs through the component pipeline', async () => {
     const { document } = await compileScreenSource(`<Map class="h-[320px] w-full rounded-[20px]" pitch-enabled="false" rotate-enabled="true" shows-compass shows-scale camera-pitch="30" camera-heading="90"
       :tileOverlay="{urlTemplate:'https://example.org/{z}/{y}/{x}.png',attribution:'Test map data'}"

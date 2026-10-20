@@ -239,6 +239,9 @@ DOM-compatible alias for `onPress`; template `@click` events continue to lower
 to the same host-neutral `onPress` event.
 The iOS-specific `Switch` tint remains spelled `ios_backgroundColor`, matching
 the native host protocol after HTML attribute case restoration.
+Maps accept `standard`, `satellite`, or `hybrid` styles on both maintained
+hosts. Keyed `polylines` and `markers` arrays are also typed for large overlay
+collections; child `MapPolyline` and `MapMarker` nodes remain supported.
 
 ## STX IR Format
 
