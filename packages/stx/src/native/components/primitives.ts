@@ -641,14 +641,8 @@ export interface ActivityIndicatorProps extends BaseProps {
 export interface StatusBarProps {
   /** Bar style */
   barStyle?: 'default' | 'light-content' | 'dark-content'
-  /** Background color (Android) */
-  backgroundColor?: string
   /** Hidden state */
   hidden?: boolean
-  /** Animated changes */
-  animated?: boolean
-  /** Translucent (Android) */
-  translucent?: boolean
 }
 
 export interface RefreshControlProps {

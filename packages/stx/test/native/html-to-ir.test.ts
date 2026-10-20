@@ -244,6 +244,14 @@ describe('events', () => {
     expect(root.props.statusbartranslucent).toBe('')
   })
 
+  it('does not restore status-bar presentation props absent from both hosts', async () => {
+    const { root } = await translateHtmlToIR('<div data-native="StatusBar" backgroundColor="#000" animated translucent></div>')
+    expect(root.props.backgroundColor).toBeUndefined()
+    expect(root.props.backgroundcolor).toBe('#000')
+    expect(root.props.animated).toBe('')
+    expect(root.props.translucent).toBe('')
+  })
+
   it.each(['nonModal dismissOnOutsideTap', 'non-modal dismiss-on-outside-tap'])('preserves native popup boolean protocol names: %s', async (attributes) => {
     const { root } = await translateHtmlToIR(`<div data-native="Modal" ${attributes}></div>`)
     expect(root.props).toMatchObject({ nonModal: true, dismissOnOutsideTap: true })
