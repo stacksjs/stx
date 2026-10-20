@@ -299,13 +299,14 @@ const route = state([47, 11, 47.1, 11.2])
 
   it('ships one component per native type the IR declares', async () => {
     const files = [...new Bun.Glob('*.stx').scanSync(nativePrimitivesDir())].sort()
-    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(29)
+    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(30)
     expect(files).toContain('Fragment.stx')
     expect(files).toContain('Icon.stx')
     expect(files).toContain('TouchableOpacity.stx')
     expect(files).toContain('ActivityIndicator.stx')
     expect(files).toContain('Map.stx')
     expect(files).toContain('MapPolyline.stx')
+    expect(files).toContain('MapPolygon.stx')
     expect(files).toContain('MapMarker.stx')
   })
 
