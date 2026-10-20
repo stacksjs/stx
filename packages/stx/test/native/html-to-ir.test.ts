@@ -436,6 +436,15 @@ describe('shared-runtime list boundaries', () => {
     expect(image.alt).toBe('Trail map')
   })
 
+  it('types native accessibility value and state fields', () => {
+    const view: import('../../src/native/components/primitives').BaseProps = {
+      accessibilityValue: '3 of 5',
+      accessibilityState: { selected: true, checked: 'mixed', busy: false },
+    }
+    expect(view.accessibilityValue).toBe('3 of 5')
+    expect(view.accessibilityState).toEqual({ selected: true, checked: 'mixed', busy: false })
+  })
+
   it('warns when legacy FlatList expansion props would otherwise be silently ignored', async () => {
     const { root, diagnostics } = await translateHtmlToIR(
       '<div data-native="FlatList" :data="rows" :renderItem="renderRow" keyExtractor="rowKey" listRole="item"><Text>Rows</Text></div>',

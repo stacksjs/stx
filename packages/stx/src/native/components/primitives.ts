@@ -25,6 +25,10 @@ export interface BaseProps {
   accessibilityLabel?: string
   /** Accessibility hint */
   accessibilityHint?: string
+  /** Accessibility value announced by the native host. */
+  accessibilityValue?: string | number
+  /** Accessibility state exposed to assistive technologies. */
+  accessibilityState?: AccessibilityState
   /** Accessibility role */
   accessibilityRole?: AccessibilityRole
   /** Native list chrome slot for keyed FlatList/SectionList children. */
@@ -35,6 +39,14 @@ export interface BaseProps {
    * the old place to the new.
    */
   transitionID?: string
+}
+
+export interface AccessibilityState {
+  disabled?: boolean
+  selected?: boolean
+  checked?: boolean | 'mixed'
+  expanded?: boolean
+  busy?: boolean
 }
 
 export type AccessibilityRole =
