@@ -210,6 +210,9 @@ rejected until a versioned list-data protocol is introduced. This keeps the
 public types honest while preserving recycling for the child trees that the
 hosts can actually reconcile. Ordinary `:for` rows are not virtualized and
 should therefore be limited to small and moderate collections.
+Pointer-event routing and platform-only press-area options such as `hitSlop`,
+`pressRetentionOffset`, and Android ripple configuration are likewise outside
+the maintained host-neutral vocabulary.
 
 ## STX IR Format
 

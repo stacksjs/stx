@@ -66,6 +66,7 @@ export type AccessibilityRole =
   | 'progressbar'
   | 'radio'
   | 'radiogroup'
+  | 'list'
   | 'scrollbar'
   | 'spinbutton'
   | 'switch'
@@ -85,8 +86,6 @@ export interface ViewProps extends BaseProps {
   onLongPress?: () => void
   /** Layout change handler */
   onLayout?: (event: LayoutEvent) => void
-  /** Pointer events behavior */
-  pointerEvents?: 'auto' | 'none' | 'box-none' | 'box-only'
 }
 
 export interface ScrollViewProps extends ViewProps {
@@ -287,16 +286,6 @@ export interface PressableProps extends ViewProps {
   onPressIn?: () => void
   /** Press out handler */
   onPressOut?: () => void
-  /** Hit slop (extend touch area) */
-  hitSlop?: number | { top?: number; right?: number; bottom?: number; left?: number }
-  /** Press retention offset */
-  pressRetentionOffset?: number | { top?: number; right?: number; bottom?: number; left?: number }
-  /** Android ripple config */
-  android_ripple?: {
-    color?: string
-    borderless?: boolean
-    radius?: number
-  }
 }
 
 export interface SwitchProps extends BaseProps {

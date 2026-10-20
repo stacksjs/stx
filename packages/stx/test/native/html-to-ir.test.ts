@@ -19,7 +19,7 @@ import path from 'node:path'
 import { processDirectives } from '../../src/process'
 import { NATIVE_EVENTS, translateHtmlToDocument, translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import type { STXNode } from '../../src/native/compiler/ir'
-import type { FlatListProps, ImageProps, TextInputProps } from '../../src/native/components/primitives'
+import type { AccessibilityRole, FlatListProps, ImageProps, PressableProps, TextInputProps } from '../../src/native/components/primitives'
 
 const COMPONENTS = path.join(import.meta.dir, '..', '..', '..', 'components')
 
@@ -457,6 +457,13 @@ describe('shared-runtime list boundaries', () => {
       onError: event => event.nativeEvent.error.message,
     }
     expect(image.onError).toBeFunction()
+  })
+
+  it('keeps the native role and pressable vocabulary host-supported', () => {
+    const role: AccessibilityRole = 'list'
+    const pressable: PressableProps = { onPressIn: () => {} }
+    expect(role).toBe('list')
+    expect(pressable.onPressIn).toBeFunction()
   })
 
   it('warns when legacy FlatList expansion props would otherwise be silently ignored', async () => {
