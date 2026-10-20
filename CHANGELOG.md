@@ -1,5 +1,33 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.608...v0.2.609)
+
+## ✨ Features
+
+- **native**: expose map polygon primitive ([01bcd81](https://github.com/stacksjs/stx/commit/01bcd81)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: type keyed map overlays ([9773b46](https://github.com/stacksjs/stx/commit/9773b46)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: type press aliases ([c3d3b75](https://github.com/stacksjs/stx/commit/c3d3b75)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: include MapPolygon in component types ([d54246a](https://github.com/stacksjs/stx/commit/d54246a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **slots**: expose per-instance presence to reactive expressions (#2098) ([1f16771](https://github.com/stacksjs/stx/commit/1f16771)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2098](https://github.com/stacksjs/stx/issues/2098), [#2098](https://github.com/stacksjs/stx/issues/2098))
+- **serve**: return safe 500 responses for fatal validation (#2097) ([ecbc95f](https://github.com/stacksjs/stx/commit/ecbc95f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2097](https://github.com/stacksjs/stx/issues/2097), [#2097](https://github.com/stacksjs/stx/issues/2097))
+- **strict**: propagate fatal validation through nested renders (#2097) ([d452c62](https://github.com/stacksjs/stx/commit/d452c62)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2097](https://github.com/stacksjs/stx/issues/2097), [#2097](https://github.com/stacksjs/stx/issues/2097))
+
+## ⚡ Performance Improvements
+
+- **router**: fit the layout prefetch inside the script budget ([61663cc](https://github.com/stacksjs/stx/commit/61663cc)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.609 ([4e13f40](https://github.com/stacksjs/stx/commit/4e13f40)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.607...v0.2.608)
 
 ## ✨ Features
