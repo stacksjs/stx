@@ -21,6 +21,8 @@ export interface DialogPanelProps {
   as?: string
   /** `sheet`: a bottom sheet on a phone with a grabber, a centred card from `sm` up. */
   variant?: 'center' | 'sheet'
+  /** No panel padding: the panel is a column whose sections pad themselves, for a fixed header and footer around a scrolling body. */
+  flush?: boolean
 }
 
 export interface DialogTitleProps {

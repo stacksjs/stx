@@ -18,6 +18,16 @@ describe('DialogPanel variant="sheet"', () => {
     expect(html).toMatch(/aria-hidden="true"[^>]*sm:hidden/)
   })
 
+  it('leaves the padding to its sections when flush', async () => {
+    const html = await render('<DialogPanel variant="sheet" flush><header class="px-6">Plan</header></DialogPanel>')
+    const panel = html.match(/<div class="([^"]*)"[^>]*data-stx-dialog-panel/)![1]
+    expect(panel.split(' ')).toEqual(expect.arrayContaining(['flex', 'flex-col', 'rounded-t-panel']))
+    expect(panel).not.toMatch(/(^| )p-[56]( |$)/)
+    expect(panel).not.toContain('sm:p-6')
+    expect(html).toContain('padding-bottom: env(safe-area-inset-bottom);')
+    expect(html).toMatch(/aria-hidden="true" class="[^"]*mt-2\.5[^"]*"/)
+  })
+
   it('keeps the centred card by default', async () => {
     const html = await render('<DialogPanel><p>Confirm</p></DialogPanel>')
     expect(html).toContain('items-center justify-center p-4')

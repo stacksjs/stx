@@ -10,16 +10,27 @@ export const as = $props.as || 'div'
  */
 export const variant = $props.variant === 'sheet' ? 'sheet' : 'center'
 export const isSheet = variant === 'sheet'
+/*
+ * `flush` leaves the padding to the panel's own sections: a sheet with a
+ * header that stays put, a body that scrolls and a footer that stays put
+ * pads each of them, and a padded panel would inset the scroller and the
+ * footer's rule from its edges. `className` cannot take the padding away -
+ * a second padding utility ties with this one and the stylesheet's order
+ * decides. The panel becomes a column so a `flex-1 overflow-y-auto` body
+ * is the part that scrolls.
+ */
+export const flush = $bool($props.flush)
 
 const baseClasses = 'fixed inset-0 overflow-y-auto'
 const panelWrapperClasses = isSheet
   ? 'flex min-h-full items-end justify-center text-center sm:items-center sm:p-4'
   : 'flex min-h-full items-center justify-center p-4 text-center'
 const shape = isSheet
-  ? 'w-full rounded-t-panel rounded-b-none p-5 sm:rounded-panel sm:p-6'
-  : 'rounded-panel p-6'
-const panelClasses = `transform overflow-hidden ${shape} bg-panel text-left align-middle shadow-xl transition-all ${className}`.trim()
-const panelStyle = isSheet ? 'padding-bottom: max(1.25rem, env(safe-area-inset-bottom));' : ''
+  ? `w-full rounded-t-panel rounded-b-none sm:rounded-panel ${flush ? 'flex flex-col' : 'p-5 sm:p-6'}`
+  : `rounded-panel ${flush ? 'flex flex-col' : 'p-6'}`
+const panelClasses = `transform overflow-hidden ${shape} bg-panel text-left align-middle shadow-xl transition-all ${className}`.replace(/\s+/g, ' ').trim()
+const panelStyle = isSheet ? (flush ? 'padding-bottom: env(safe-area-inset-bottom);' : 'padding-bottom: max(1.25rem, env(safe-area-inset-bottom));') : ''
+const grabberClasses = `mx-auto h-1.5 w-10 shrink-0 rounded-pill bg-line sm:hidden ${flush ? 'mt-2.5' : '-mt-2 mb-4'}`
 </script>
 
 <component :is="{{ as }}" class="{{ baseClasses }}">
@@ -29,7 +40,7 @@ const panelStyle = isSheet ? 'padding-bottom: max(1.25rem, env(safe-area-inset-b
          it contains nothing focusable, so Tab cannot leave a modal dialog. -->
     <div class="{{ panelClasses }}" @if(isSheet)style="{{ panelStyle }}"@endif data-stx-dialog-panel tabindex="-1">
       @if(isSheet)
-        <div aria-hidden="true" class="mx-auto -mt-2 mb-4 h-1.5 w-10 rounded-pill bg-line sm:hidden"></div>
+        <div aria-hidden="true" class="{{ grabberClasses }}"></div>
       @endif
       <slot />
     </div>

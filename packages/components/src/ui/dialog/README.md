@@ -72,6 +72,8 @@ openOverlay('my-sheet', { panel: () => panelEl, root: sheetEl, zIndex: 70, onEsc
 |------|------|---------|-------------|
 | `className` | `string` | `''` | Additional CSS classes |
 | `as` | `string` | `'div'` | HTML element to render |
+| `variant` | `'center' \| 'sheet'` | `'center'` | `sheet` anchors to the bottom edge on a phone, with a grabber and the home indicator's inset, and is the centred card from `sm` up |
+| `flush` | `boolean` | `false` | No panel padding: the panel is a column whose sections pad themselves, for a header and footer that stay put around a `flex-1 overflow-y-auto` body |
 
 ### DialogTitle
 | Prop | Type | Default | Description |
