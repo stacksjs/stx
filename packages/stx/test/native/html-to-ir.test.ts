@@ -19,7 +19,7 @@ import path from 'node:path'
 import { processDirectives } from '../../src/process'
 import { NATIVE_EVENTS, translateHtmlToDocument, translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import type { STXNode } from '../../src/native/compiler/ir'
-import type { AccessibilityRole, FlatListProps, ImageProps, ModalProps, PressableProps, ScrollViewProps, TextInputProps, VideoProps } from '../../src/native/components/primitives'
+import type { AccessibilityRole, FlatListProps, ImageProps, ImageSource, ModalProps, PressableProps, ScrollViewProps, TextInputProps, VideoProps } from '../../src/native/components/primitives'
 
 const COMPONENTS = path.join(import.meta.dir, '..', '..', '..', 'components')
 
@@ -434,6 +434,14 @@ describe('shared-runtime list boundaries', () => {
   it('types image alt text for native accessibility', () => {
     const image: ImageProps = { source: 'https://example.com/trail.png', alt: 'Trail map' }
     expect(image.alt).toBe('Trail map')
+  })
+
+  it('types only image source forms consumed by the native hosts', () => {
+    const sources: ImageSource[] = [
+      'https://example.com/trail.png',
+      { uri: '/trail.png', headers: { Authorization: 'Bearer token' } },
+    ]
+    expect(sources).toHaveLength(2)
   })
 
   it('types native accessibility value and state fields', () => {

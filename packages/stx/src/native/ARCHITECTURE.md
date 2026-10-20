@@ -203,6 +203,9 @@ value controls also accept the explicit `onChange` alias used by Craft's
 maintained iOS and Android hosts, while `@change` remains the shared
 `onValueChange` spelling;
 native images retain `alt` as their accessibility-label fallback.
+Native image sources are URI strings or `{ uri, headers }` objects. Numeric
+`require()` asset ids are not part of the maintained Craft host protocol and
+are intentionally excluded from the shared type.
 Image failures use the shared `{ nativeEvent: { error: { message } } }`
 envelope, matching Craft's maintained iOS and Android hosts.
 Native video accepts both `autoplay` and the React-style `autoPlay` alias;

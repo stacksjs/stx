@@ -492,7 +492,7 @@ export interface VideoProps extends BaseProps {
 
 export type ImageSource =
   | { uri: string; width?: number; height?: number; headers?: Record<string, string> }
-  | number // require('./image.png')
+  | string
 
 export interface ImageBackgroundProps extends ImageProps {
   /** Image style */
