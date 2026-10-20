@@ -2,8 +2,71 @@ import { expect, it } from 'bun:test'
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
-import { mountNativeScreen } from '../../src/native/testing'
+import { compileNativeScreen, mountNativeScreen } from '../../src/native/testing'
 import { createTempDir } from '../../src/temp-dir'
+
+it.each([false, true])('presents capability-gated non-modal layers without stealing focus (minify=%s)', async (minify) => {
+  const { code } = await compileNativeScreen(`<script client>
+const outer = useRef('outer')
+const popup = useRef('popup')
+window.showOuter = () => stx.overlays.open('outer', { root: outer(), onEscape: () => stx.overlays.close('outer') })
+window.showPopup = () => stx.overlays.open('popup', {
+  root: popup(), modal: false,
+  onBackdrop: () => stx.overlays.close('popup'),
+  onEscape: () => stx.overlays.close('popup')
+})
+</script><div data-native="Modal" visible="false" x-ref="outer" testID="outer">
+<div data-native="Modal" visible="false" x-ref="popup" testID="popup"
+  style="position:absolute;left:20px;top:40px;width:160px;height:80px"><input autofocus /></div>
+</div>`, { minify })
+  for (const supported of [false, true]) {
+    const requests: unknown[] = []
+    const phone = mountNativeScreen(code, 'Screen', {
+      capabilities: ['viewFocus', 'viewReparent', ...(supported ? ['viewNonModalPresentation'] : [])],
+      native(...args) { requests.push(args); return true },
+    })
+    try {
+      await phone.settle()
+      phone.context.showOuter()
+      await phone.settle()
+      const before = requests.length
+      const popup = phone.byTestID('popup')!
+      if (!supported) {
+        expect(() => phone.context.showPopup()).toThrow('viewNonModalPresentation')
+        expect(phone.context.stx.overlays.list()).toEqual(['outer'])
+        expect(popup.props.visible).toBe(false)
+        expect(popup.props.nonModal).toBeUndefined()
+        continue
+      }
+      phone.context.showPopup()
+      await phone.settle()
+      expect(popup.props).toMatchObject({ visible: true, nonModal: true, dismissOnOutsideTap: true })
+      expect(popup.style).toMatchObject({ position: 'absolute', left: 20, top: 40, width: 160, height: 80 })
+      expect(requests).toHaveLength(before)
+      const outer = phone.byTestID('outer')!
+      phone.press(outer, 'onRequestClose', { reason: 'back' })
+      await phone.settle()
+      expect(phone.context.stx.overlays.list()).toEqual(['outer', 'popup'])
+      phone.press(popup, 'onRequestClose', { reason: 'backdrop' })
+      await phone.settle()
+      expect(phone.context.stx.overlays.list()).toEqual(['outer'])
+      expect(outer.props.visible).toBe(true)
+      expect(popup.props.visible).toBe(false)
+      phone.context.showPopup()
+      phone.context.stx.overlays.open('popup', { onBackdrop: null })
+      await phone.settle()
+      expect(popup.props.dismissOnOutsideTap).toBe(false)
+      phone.press(popup, 'onRequestClose', { reason: 'backdrop' })
+      await phone.settle()
+      expect(popup.props.visible).toBe(true)
+      phone.press(popup, 'onRequestClose', { reason: 'escape' })
+      await phone.settle()
+      expect(popup.props.visible).toBe(false)
+      expect(phone.mutationErrors).toEqual([])
+    }
+    finally { phone.unmount() }
+  }
+}, 30_000)
 
 it('opens, dismisses only the top shared overlay, reopens, and cleans up without a DOM (#2089)', async () => {
   const root = createTempDir('stx-shared-overlays-')

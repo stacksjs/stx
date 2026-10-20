@@ -705,6 +705,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
   const overlayPresenter = createNativeOverlayPresenter({
     canFocus: options.views?.capabilities.focus === true,
+    canPresentNonModal: options.views?.capabilities.nonModalPresentation === true,
     focus: (node, focusOptions) => host.focus(node, focusOptions),
     descendants: collectDescendants,
     hasAutofocus: node => {

@@ -11,11 +11,13 @@ export interface NativeOverlayEntry {
   zIndex?: number | null
   panel?: FocusTarget
   initialFocus?: FocusTarget
+  onBackdrop?: (() => void) | null
   onRequestClose?: ((event?: unknown) => void) | null
 }
 
 interface OverlayHost {
   canFocus: boolean
+  canPresentNonModal: boolean
   focus: (node: NativeNode, options: NativeFocusOptions) => Promise<true>
   descendants: (node: NativeNode) => NativeNode[]
   hasAutofocus: (node: NativeNode) => boolean
@@ -73,8 +75,10 @@ export function createNativeOverlayPresenter(host: OverlayHost): NativeOverlayPr
   function sync(entries: NativeOverlayEntry[]): void {
     // Validate the complete change before touching any displayed overlay.
     for (const entry of entries) {
-      if (!entry.root || host.type(entry.root) !== 'Modal' || !entry.modal)
-        throw new Error(`[stx:overlays] Native overlay "${entry.id}" requires a Modal root (data-native="Modal"). Anchored/non-modal popups require a host positioning capability.`)
+      if (!entry.modal && !host.canPresentNonModal)
+        throw new Error(`[stx:overlays] Native popup "${entry.id}" requires the viewNonModalPresentation host positioning capability.`)
+      if (!entry.root || host.type(entry.root) !== 'Modal')
+        throw new Error(`[stx:overlays] Native overlay "${entry.id}" requires a Modal root (data-native="Modal") for host-owned presentation.`)
     }
     const previous = current
     current = entries.slice()
@@ -98,16 +102,20 @@ export function createNativeOverlayPresenter(host: OverlayHost): NativeOverlayPr
           }
         })
       }
+      // Craft promotes the existing Modal to its viewport presentation surface.
+      // Logical ownership stays here: no detach/recreate or cross-parent mutation.
+      host.setAttribute(root, 'nonModal', !entry.modal)
+      host.setAttribute(root, 'dismissOnOutsideTap', !entry.modal && !!entry.onBackdrop)
       host.setAttribute(root, 'visible', true)
       host.setStyle(root, { zIndex: (entry.zIndex ?? 1000) + index })
     }
     const top = current.at(-1)
-    if (top?.root !== previous.at(-1)?.root) {
+    if (top?.root !== previous.at(-1)?.root || top?.modal !== previous.at(-1)?.modal) {
       focusing?.abort()
       focusing = null
       // Revealing an already-open layer must retain the user's last focus;
       // Craft restores the opener when the covering Modal is dismissed.
-      if (top && !previous.some(entry => entry.root === top.root)) focusInitial(top)
+      if (top?.modal && !previous.some(entry => entry.root === top.root && entry.modal)) focusInitial(top)
     }
   }
 

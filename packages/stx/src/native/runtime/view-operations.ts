@@ -12,7 +12,7 @@ export interface NativeViewBounds {
   coordinateSpace: 'screenViewport'
 }
 export interface NativeViewOperations {
-  readonly capabilities: { focus: boolean, measure: boolean }
+  readonly capabilities: { focus: boolean, measure: boolean, nonModalPresentation: boolean }
   focus: (nodeId: string, options?: NativeFocusOptions) => Promise<true>
   measure: (nodeId: string) => Promise<NativeViewBounds>
 }
@@ -34,7 +34,11 @@ export function createNativeViewOperations(
     beforeRequest()
   }
   return {
-    capabilities: { focus: supported.has('viewFocus'), measure: supported.has('viewMeasure') },
+    capabilities: {
+      focus: supported.has('viewFocus'),
+      measure: supported.has('viewMeasure'),
+      nonModalPresentation: supported.has('viewNonModalPresentation'),
+    },
     async focus(nodeId, options = {}) {
       if (options.signal?.aborted) throw nativeViewError('CANCELLED', 'Native focus was cancelled')
       const mode = options.mode ?? 'keyboard'

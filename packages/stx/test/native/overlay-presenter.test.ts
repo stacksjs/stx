@@ -1,6 +1,34 @@
 import { expect, it } from 'bun:test'
 import type { NativeOverlayEntry } from '../../src/native/runtime/overlay-presenter'
 import { createNativeHost } from '../../src/native/runtime/native-host'
+import { createNativeViewOperations } from '../../src/native/runtime/view-operations'
+
+it('clears popup policy when the same root is reused as a modal', () => {
+  const views = createNativeViewOperations({ callNativeAPI: async () => { throw new Error('Presentation must not request focus') } }, ['viewNonModalPresentation'], () => {})
+  const host = createNativeHost({ send() {}, views })
+  const root = host.adopt({ __stxId: 'popup' }, 'Modal')
+  host.syncOverlays([{ id: 'popup', root, modal: false, onBackdrop() {} }])
+  expect(host.snapshot(root).props).toMatchObject({ nonModal: true, dismissOnOutsideTap: true })
+  host.syncOverlays([])
+  host.syncOverlays([{ id: 'modal', root, modal: true }])
+  expect(host.snapshot(root).props).toMatchObject({ nonModal: false, dismissOnOutsideTap: false, visible: true })
+  host.dispose()
+})
+
+it('cancels queued modal focus when that same root becomes non-modal', async () => {
+  let calls = 0
+  const views = createNativeViewOperations({
+    callNativeAPI: async () => { calls++; throw new Error('Unexpected focus') },
+  }, ['viewFocus', 'viewNonModalPresentation'], () => {})
+  const host = createNativeHost({ send() {}, views })
+  const root = host.adopt({ __stxId: 'same' }, 'Modal')
+  host.syncOverlays([{ id: 'same', root, modal: true }])
+  host.syncOverlays([{ id: 'same', root, modal: false }])
+  await Promise.resolve()
+  expect(calls).toBe(0)
+  expect(host.snapshot(root).props.nonModal).toBe(true)
+  host.dispose()
+})
 
 it('presents only native Modal roots and routes dismissal to the top layer', () => {
   const host = createNativeHost({ send() {} })
