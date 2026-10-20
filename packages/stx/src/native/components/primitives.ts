@@ -44,9 +44,7 @@ export interface BaseProps {
 export interface AccessibilityState {
   disabled?: boolean
   selected?: boolean
-  checked?: boolean | 'mixed'
-  expanded?: boolean
-  busy?: boolean
+  checked?: boolean
 }
 
 export type AccessibilityRole =

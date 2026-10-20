@@ -439,10 +439,10 @@ describe('shared-runtime list boundaries', () => {
   it('types native accessibility value and state fields', () => {
     const view: import('../../src/native/components/primitives').BaseProps = {
       accessibilityValue: '3 of 5',
-      accessibilityState: { selected: true, checked: 'mixed', busy: false },
+      accessibilityState: { selected: true, checked: true },
     }
     expect(view.accessibilityValue).toBe('3 of 5')
-    expect(view.accessibilityState).toEqual({ selected: true, checked: 'mixed', busy: false })
+    expect(view.accessibilityState).toEqual({ selected: true, checked: true })
   })
 
   it('warns when legacy FlatList expansion props would otherwise be silently ignored', async () => {
