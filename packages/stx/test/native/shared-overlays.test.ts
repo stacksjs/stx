@@ -27,6 +27,7 @@ window.showPopup = () => stx.overlays.open('popup', {
     })
     try {
       await phone.settle()
+      expect(phone.context.craft.capabilities.viewNonModalPresentation).toBe(supported)
       phone.context.showOuter()
       await phone.settle()
       const before = requests.length

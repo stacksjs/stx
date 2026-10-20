@@ -181,10 +181,25 @@ Craft version floor has been verified for this integration.
 
 Tooltip placement now accepts asynchronous native measurements as well as DOM
 bounds, sharing the existing flip/clamp math and discarding stale replies.
-This measurement adapter alone does **not** enable native Tooltip/Popover:
-non-modal presentation, touch dismissal, and repositioning subscriptions remain
-unfinished. Native popup calls still report unsupported presentation rather than
-claiming that browser-only behavior works on-device.
+The overlay adapter also accepts `modal: false` for a native Modal root when
+`craft.capabilities.viewNonModalPresentation` is true (Craft
+[`42e58f26`](https://github.com/craft-native/craft/commit/42e58f26), unreleased at
+integration). `viewReparent`, `viewFocus` or `viewMeasure` alone are insufficient.
+Unsupported hosts reject the stack change before making any presentation changes;
+STX does not fall back to a blocking modal.
+
+For this low-level adapter, pass a mounted `data-native="Modal"` root to
+`stx.overlays.open(id, { root, modal: false, onBackdrop, onEscape })`.
+The host promotes that same native view outside clipping ancestors while STX
+retains logical ownership. Supply absolute viewport positioning and dimensions;
+the adapter does not calculate anchor placement. Non-modal layers do not move
+initial focus. An `onBackdrop` callback opts into outside-tap consumption and
+dismissal; without it, outside touches pass through. Only the top layer handles
+close requests, and denied requests reassert visibility.
+
+These adapters alone do **not** enable the shared native Tooltip/Popover yet:
+component presentation wiring, touch triggers and repositioning subscriptions
+remain unfinished. Browser DOM portals are not a native reparenting contract.
 These runtime tests do not establish native visual or accessibility parity;
 those remain part of [#2089](https://github.com/stacksjs/stx/issues/2089).
 
