@@ -2142,7 +2142,12 @@ export async function renderComponentWithSlot(
         }
       }
       const hydrateJson = hydrateTrigger ? ` stx-hydrate="${escapeAttr(hydrateTrigger)}"` : ''
-      const scopeAttrs = ` data-stx-scope="${scopeId}"${propsJson}${hydrateJson}`
+      // Only presence crosses the boundary, not caller-authored slot HTML.
+      // Keep it on the instance root so cached factories and loop clones do
+      // not accidentally share another instance's slot availability.
+      const slotPresence = Object.fromEntries(Object.entries($slots).map(([name, content]) => [name, Boolean(content)]))
+      const slotsJson = Object.keys(slotPresence).length > 0 ? ` data-stx-slots="${escapeAttr(JSON.stringify(slotPresence))}"` : ''
+      const scopeAttrs = ` data-stx-scope="${scopeId}"${propsJson}${slotsJson}${hydrateJson}`
       /*
        * The scope goes ON the component's root element when a wrapper would be
        * illegal there, and in a <div> around it otherwise.
@@ -2955,6 +2960,11 @@ async function buildComponentIsland(rawContent: string, componentFilePath: strin
   // runtime hands its root over in __STX_SETUP_ROOT__ (signals.ts).
   const __setupRoot = window.__STX_SETUP_ROOT__;
   const __componentElement = (__setupRoot && __setupRoot.getAttribute('data-stx-scope') === __scopeId && __setupRoot) || document.querySelector('[data-stx-scope="' + __scopeId + '"]');
+  __scopeVars.$slots = Object.create(null);
+  if (__componentElement) {
+    try { Object.assign(__scopeVars.$slots, JSON.parse(__componentElement.getAttribute('data-stx-slots') || '{}')); }
+    catch {}
+  }
   window.__STX_CURRENT_ELEMENT__ = __componentElement;
   let __componentProps = __componentElement && __componentElement.__stx_props;
   if (!__componentProps && __componentElement) {
