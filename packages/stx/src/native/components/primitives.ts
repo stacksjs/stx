@@ -82,6 +82,8 @@ export type AccessibilityRole =
 export interface ViewProps extends BaseProps {
   /** Press handler */
   onPress?: () => void
+  /** DOM-compatible press alias accepted by the maintained native hosts. */
+  onClick?: () => void
   /** Long press handler */
   onLongPress?: () => void
   /** Layout change handler */
@@ -157,6 +159,8 @@ export interface TextProps extends BaseProps {
   selectable?: boolean
   /** Press handler */
   onPress?: () => void
+  /** DOM-compatible press alias accepted by the maintained native hosts. */
+  onClick?: () => void
   /** Long press handler */
   onLongPress?: () => void
 }
@@ -253,6 +257,8 @@ export interface ButtonProps extends BaseProps {
   title?: string
   /** Press handler */
   onPress?: () => void
+  /** DOM-compatible press alias accepted by the maintained native hosts. */
+  onClick?: () => void
   /** Disabled state */
   disabled?: boolean
   /** Button color (iOS) */
@@ -265,6 +271,8 @@ export interface LinkProps extends BaseProps {
   to?: string
   title?: string
   onPress?: () => void
+  /** DOM-compatible press alias accepted by the maintained native hosts. */
+  onClick?: () => void
   disabled?: boolean
   color?: string
 }

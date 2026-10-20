@@ -19,7 +19,7 @@ import path from 'node:path'
 import { processDirectives } from '../../src/process'
 import { NATIVE_EVENTS, translateHtmlToDocument, translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import type { STXNode } from '../../src/native/compiler/ir'
-import type { AccessibilityRole, FlatListProps, ImageProps, ImageSource, ModalProps, PressableProps, ScrollViewProps, TextInputProps, VideoProps } from '../../src/native/components/primitives'
+import type { AccessibilityRole, ButtonProps, FlatListProps, ImageProps, ImageSource, LinkProps, ModalProps, PressableProps, ScrollViewProps, TextInputProps, TextProps, VideoProps, ViewProps } from '../../src/native/components/primitives'
 
 const COMPONENTS = path.join(import.meta.dir, '..', '..', '..', 'components')
 
@@ -453,6 +453,16 @@ describe('shared-runtime list boundaries', () => {
     expect(root.type).toBe('TextInput')
     expect(root.props.numberOfLines).toBe(3)
     expect(diagnostics).toEqual([])
+  })
+
+  it('types DOM-compatible press aliases on native controls', () => {
+    const typed: [ViewProps, TextProps, ButtonProps, LinkProps] = [
+      { onClick: () => {} },
+      { onClick: () => {} },
+      { onClick: () => {} },
+      { onClick: () => {} },
+    ]
+    expect(typed.every(props => typeof props.onClick === 'function')).toBe(true)
   })
 
   it('types image alt text for native accessibility', () => {

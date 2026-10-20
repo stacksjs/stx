@@ -234,6 +234,9 @@ back to the host's `never` policy.
 The drag and momentum lifecycle events (`onScrollBeginDrag`, `onScrollEndDrag`,
 `onMomentumScrollBegin`, and `onMomentumScrollEnd`) carry the same scroll
 payload as `onScroll` on both hosts.
+Native `View`, `Text`, `Button`, and `Link` props also accept `onClick` as a
+DOM-compatible alias for `onPress`; template `@click` events continue to lower
+to the same host-neutral `onPress` event.
 The iOS-specific `Switch` tint remains spelled `ios_backgroundColor`, matching
 the native host protocol after HTML attribute case restoration.
 
