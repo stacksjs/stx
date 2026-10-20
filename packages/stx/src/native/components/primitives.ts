@@ -601,6 +601,10 @@ export interface SectionListProps<T> extends ScrollViewProps {
 export interface ModalProps extends BaseProps {
   /** Modal visible state */
   visible?: boolean
+  /** Keep the popup interactive without blocking the screen behind it. */
+  nonModal?: boolean
+  /** When non-modal, consume an outside tap and call onRequestClose. */
+  dismissOnOutsideTap?: boolean
   /** Animation type */
   animationType?: 'none' | 'slide' | 'fade'
   /** Presentation style (iOS) */
