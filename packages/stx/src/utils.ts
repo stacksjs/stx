@@ -1061,7 +1061,7 @@ export async function renderComponentWithSlot(
    * caller's context already carries.
    */
   clientLoopNames: readonly string[] = inheritedClientLoopNames(parentContext),
-  renderMetadata?: { declaredProps: Set<string>, consumedProps?: Set<string>, reactiveProps?: string[] },
+  renderMetadata?: { declaredProps: Set<string>, consumedProps?: Set<string>, reactiveProps?: string[], events?: string[] },
   /** Original tag spelling for case-sensitive file lookup; identity stays canonical. */
   lookupName: string = componentPath,
 ): Promise<string> {
@@ -1174,7 +1174,16 @@ export async function renderComponentWithSlot(
       // that web button: its markup, its classes, and none of the static
       // props the screen wrote (a bound `:testID` survived only because
       // bindings are forwarded onto whatever root a component renders).
+      // Checkbox/Switch have two existing APIs. Select per invocation, never
+      // from evaluated values: false checked still means the shared API.
+      // Legacy value-change wins a mixed call; value alongside checked remains
+      // a shared Checkbox's form submission value, not its checked state.
+      const checkedControl = options._nativeHostAttrs && /^(?:checkbox|switch)$/i.test(baseName)
+      const eventNames = (renderMetadata?.events ?? []).map(name => name.replace(/^@/, '').split('.')[0].toLowerCase().replace(/-/g, ''))
+      const sharedCheckedUsage = !eventNames.includes('valuechange')
+        && (Object.hasOwn(props, 'checked') || renderMetadata?.reactiveProps?.includes('checked') || eventNames.includes('change'))
       const targetIsFallback = options._targetComponentFallbackNames?.some(name => name.toLowerCase() === baseName.toLowerCase())
+        && (!checkedControl || sharedCheckedUsage)
       for (const dir of targetIsFallback ? [] : options._targetComponentDirs ?? []) {
         if (dir && !searchDirs.includes(dir))
           searchDirs.push(dir)

@@ -42,7 +42,7 @@ convention directories (`resources/views/components`, `resources/components`,
 before falling back to the native primitive. With `@stacksjs/components`
 installed, web and native therefore select the same `ui/button/Button.stx`
 unless the app supplies an override. Without a shared Button, the primitive
-continues to work. Other overlapping names retain their existing primitive
+continues to work. Checkbox/Switch use the per-usage policy below. Other overlapping names retain their existing primitive
 precedence until their compatibility tests support migration; this is not a
 global precedence change.
 
@@ -59,7 +59,8 @@ Primitive controls retain their latest reported native value for subsequent
 reconciliation even when a listener only observes the event. This does not
 write back to an application signal automatically: controlled callers still
 update their signal explicitly. Explicit imports can select the shared files
-today; automatic Checkbox/Switch resolution has not migrated yet.
+regardless of prop spelling; automatic Checkbox/Switch resolution now selects
+shared or legacy sources by usage, as documented below.
 
 The shared Button accepts legacy `text`/`:text` as a reactive label alias;
 a nonempty `label` wins. Native `testID`, accessibility props, caller classes,
@@ -253,6 +254,29 @@ with the maintained Craft hosts. Native screens and their imported client code
 ship in the application bundle: changing them requires a new app build. API data
 can refresh independently. A native app is not automatically updated by deploying
 the website.
+
+### Checkbox and Switch compatibility
+
+Native Checkbox/Switch resolution is selected per usage, after explicit imports
+and screen-owned overrides:
+
+| Usage | Default source |
+| --- | --- |
+| `checked`, `:checked`, or `@change` | Shared component (when installed) |
+| `value` / `:value` alone, `@value-change`, or no API marker | Native primitive |
+| Both `checked` and `@value-change` | Native primitive; the legacy event takes precedence |
+
+The shared `@change` payload is a boolean. The primitive `@value-change` payload
+has a `.value` field. A shared Checkbox's `value="accepted"` is its form
+submission value when paired with `checked`; it never becomes checked state.
+False or empty checked values still select the shared API. Browser resolution
+is unchanged. Both APIs can coexist on one native screen without aliasing their
+state or changing each other's resolution.
+
+Explicit imports select exactly the requested source. Conventional app/plugin
+components precede the primitive fallback for shared usage; existing
+screen-local/configured overrides still win for either API. If no shared
+implementation is installed, the primitive remains the final fallback.
 
 ### Shared-control host validation screen
 

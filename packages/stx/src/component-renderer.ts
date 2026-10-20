@@ -1141,6 +1141,7 @@ async function processCustomElementTags(
         declaredProps: new Set<string>(),
         consumedProps: new Set<string>(),
         reactiveProps: Object.keys(resolvedProps.clientReactive),
+        events: Object.keys(resolvedProps.events),
       }
       const processedContent = await renderComponentWithSlot(
         componentPath,
