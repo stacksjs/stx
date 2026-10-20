@@ -153,12 +153,16 @@ export interface TextInputProps extends BaseProps {
   placeholderTextColor?: string
   /** Value change handler */
   onChangeText?: (text: string) => void
+  /** DOM-compatible change alias accepted by native hosts. */
+  onChange?: (text: string) => void
   /** Focus handler */
   onFocus?: () => void
   /** Blur handler */
   onBlur?: () => void
   /** Submit handler */
   onSubmitEditing?: () => void
+  /** End-editing handler */
+  onEndEditing?: () => void
   /** Keyboard type */
   keyboardType?: KeyboardType
   /** Return key type */
@@ -175,6 +179,8 @@ export interface TextInputProps extends BaseProps {
   maxLength?: number
   /** Multiline */
   multiline?: boolean
+  /** Number of visible lines for multiline inputs */
+  numberOfLines?: number
   /** Editable */
   editable?: boolean
   /** Selection color */

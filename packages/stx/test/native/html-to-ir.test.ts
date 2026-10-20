@@ -19,7 +19,7 @@ import path from 'node:path'
 import { processDirectives } from '../../src/process'
 import { NATIVE_EVENTS, translateHtmlToDocument, translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import type { STXNode } from '../../src/native/compiler/ir'
-import type { FlatListProps } from '../../src/native/components/primitives'
+import type { FlatListProps, TextInputProps } from '../../src/native/components/primitives'
 
 const COMPONENTS = path.join(import.meta.dir, '..', '..', '..', 'components')
 
@@ -414,6 +414,21 @@ describe('shared-runtime list boundaries', () => {
     }
     expect(typedListSlot.listRole).toBe('item')
     expect(typedListSlot.refreshing).toBe(false)
+  })
+
+  it('types the shared native text-input aliases', async () => {
+    const typedInput: TextInputProps = {
+      numberOfLines: 3,
+      onChange: () => {},
+      onEndEditing: () => {},
+    }
+    expect(typedInput.numberOfLines).toBe(3)
+    const { root, diagnostics } = await translateHtmlToIR(
+      '<input data-native="TextInput" numberOfLines="3" />',
+    )
+    expect(root.type).toBe('TextInput')
+    expect(root.props.numberOfLines).toBe(3)
+    expect(diagnostics).toEqual([])
   })
 
   it('warns when legacy FlatList expansion props would otherwise be silently ignored', async () => {
