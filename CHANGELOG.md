@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.613...v0.2.614)
+
+## 🐛 Bug Fixes
+
+- **native**: replace unavailable host URL constructors ([be1ad5f](https://github.com/stacksjs/stx/commit/be1ad5f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.614 ([5544cc7](https://github.com/stacksjs/stx/commit/5544cc7)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.612...v0.2.613)
 
 ## 🐛 Bug Fixes
