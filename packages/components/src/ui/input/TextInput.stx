@@ -193,6 +193,7 @@ defineExpose({ value: inputValue, clear: onClear })
     @endif
 
     <input
+      data-stx-native-host-root
       @if(name)name="{{ name }}"@endif
       @if(autocomplete)autocomplete="{{ autocomplete }}"@endif
       @if(form)form="{{ form }}"@endif
