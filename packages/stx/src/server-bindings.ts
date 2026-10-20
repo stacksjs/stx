@@ -148,7 +148,10 @@ export function processServerBindings(
     protectedRanges.push([match.index, match.index + match[0].length])
   }
   protectedRanges.push(...reactiveLoopRanges(template))
-  const enclosingLoopNames = new Set(inheritedClientLoopNames(context))
+  const clientOwnedNames = new Set([
+    ...inheritedClientLoopNames(context),
+    ...(Array.isArray(context.__stx_client_declared_names) ? context.__stx_client_declared_names as string[] : []),
+  ])
 
   function isProtected(pos: number): boolean {
     return protectedRanges.some(([start, end]) => pos >= start && pos < end)
@@ -212,12 +215,11 @@ export function processServerBindings(
       if (isRuntimeOwnedColonAttr(attrName))
         continue
 
-      // A variable of a client loop around this markup belongs to the browser,
-      // whatever the server context or a global holds under its name. The
-      // loop itself may be outside this template — a component's slot is
-      // rendered away from the `:for` on its tag — so its names arrive in the
-      // context rather than being found by the scan above.
-      if (readsAnyName(expression, enclosingLoopNames))
+      // Client declarations and enclosing loop variables belong to the caller,
+      // even when a server/global helper has the same name. Component props
+      // already retain that ownership; this later pass must not resolve them
+      // again and replace a typed value with a DOM attribute string.
+      if (readsAnyName(expression, clientOwnedNames))
         continue
 
       // Skip bindings that look like they're for client-side (signal calls, $store, etc.)
