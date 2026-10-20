@@ -55,8 +55,10 @@ export const arrowClass = `absolute w-0 h-0 border-4 border-transparent ${arrowC
 </script>
 
 <script client>
-import { measureTooltipPosition } from '../../utils/tooltip-position'
+import { measureTooltipPosition, trackNativePopup } from '../../utils/tooltip-position'
 import { portalElement } from '../../utils/element-portal'
+const nativePopup = !!window.stx._host.isNative
+const mounted = state(false)
 const delay = {{ delay }}
 // A live prop: a tooltip is commonly suppressed by state the page only learns
 // about later — while a field is being edited, or once a hint has been read —
@@ -68,7 +70,7 @@ const preferredSide = {{ position }}
 // The body portal uses viewport coordinates. Fixed positioning also prevents
 // a static body's margins from shifting the measured placement offscreen.
 const panelLimits = 'position:fixed;max-width:calc(100vw - 16px);margin:0;'
-const panelStyle = state(panelLimits)
+const panelStyle = state(nativePopup ? { position: 'absolute', margin: 0, transform: [] } : panelLimits)
 const arrowStyle = state('')
 const isDisabled = useReactiveProp('disabled', {{ disabled }})
 // Reactive prop binding — parent can drive `show` via signals. See #1704.
@@ -80,6 +82,7 @@ let destroyed = false
 // Use the actual offset parent, so a tooltip inside a modal or a transformed
 // container still gets viewport bounds rather than assuming document origin.
 async function positionTooltip() {
+  if (nativePopup) return
   const generation = ++positionGeneration
   if (destroyed || !isVisible() || isDisabled()) return
   const trigger = triggerRef.value
@@ -108,19 +111,24 @@ async function positionTooltip() {
 // ancestors, and resize; the composable removes these listeners on teardown.
 effect(() => {
   ++positionGeneration
-  if (isVisible() && !isDisabled()) nextTick(positionTooltip)
+  if (!nativePopup && isVisible() && !isDisabled()) nextTick(positionTooltip)
 })
 useEventListener('resize', positionTooltip)
 useEventListener('scroll', positionTooltip, { capture: true, passive: true })
 
 function showTooltip() {
   if (isDisabled()) return
+  if (timeoutId) clearTimeout(timeoutId)
   if (delay > 0) {
-    timeoutId = setTimeout(() => isVisible.set(true), delay)
+    timeoutId = setTimeout(() => { if (!destroyed && !isDisabled()) isVisible.set(true) }, delay)
   }
   else {
     isVisible.set(true)
   }
+}
+
+function toggleTouch() {
+  if (nativePopup) isVisible() ? hideTooltip() : showTooltip()
 }
 
 function hideTooltip() {
@@ -148,8 +156,22 @@ function hideTooltip() {
  * dialog stays (stacksjs/stx#2057). It listened on the document itself, where
  * the dialog's listener could take the same Escape.
  */
+let stopPositioning = null
 effect(() => {
-  if (isVisible()) window.stx.overlays.open(tooltipId, { modal: false, panel: null, onEscape: hideTooltip })
+  if (!mounted()) return
+  if (stopPositioning) { stopPositioning(); stopPositioning = null }
+  if (isVisible() && !isDisabled()) {
+    try {
+      if (nativePopup && !window.craft?.capabilities?.viewMeasure)
+        throw new Error('Native Tooltip requires viewMeasure support')
+      window.stx.overlays.open(tooltipId, { modal: false, root: nativePopup ? panelRef.value : null, panel: null, onEscape: hideTooltip, onBackdrop: hideTooltip })
+      if (nativePopup) stopPositioning = trackNativePopup(triggerRef.value, panelRef.value, preferredSide, style => panelStyle.set(style))
+    }
+    catch (error) {
+      console.warn('[stx:tooltip] ' + ((error && error.message) || String(error)))
+      hideTooltip()
+    }
+  }
   else window.stx.overlays.close(tooltipId)
 })
 
@@ -157,6 +179,7 @@ onDestroy(() => {
   destroyed = true
   ++positionGeneration
   if (timeoutId) clearTimeout(timeoutId)
+  if (stopPositioning) stopPositioning()
   window.stx.overlays.close(tooltipId)
 })
 
@@ -194,11 +217,12 @@ function describeTrigger() {
 let restorePanel = null
 onMount(() => {
   describeTrigger()
+  mounted.set(true)
   // The panel already belongs to this setup scope. Moving the same node keeps
   // its reactive bindings and refs, unlike passing them through another scope.
   nextTick(() => {
     const panel = panelRef.value
-    if (panel && panel.isConnected) restorePanel = portalElement(panel, panel.ownerDocument.body)
+    if (!nativePopup && !destroyed && panel && panel.isConnected) restorePanel = portalElement(panel, panel.ownerDocument.body)
   })
 })
 onDestroy(() => { if (restorePanel) restorePanel() })
@@ -210,7 +234,9 @@ onDestroy(() => { if (restorePanel) restorePanel() })
        bubble anywhere. `describeTrigger` below moves that onto the control
        itself (stacksjs/stx#2048). --}}
   <span
+    data-native="Pressable"
     x-ref="triggerRef"
+    @click="toggleTouch()"
     @mouseenter="showTooltip()"
     @mouseleave="hideTooltip()"
     @focusin="showTooltip()"
@@ -220,16 +246,18 @@ onDestroy(() => { if (restorePanel) restorePanel() })
   </span>
 
   <span
+    data-native="Modal"
+    visible="false"
     x-ref="panelRef"
     :style="panelStyle"
     id="{{ tooltipId }}"
-    :show="isVisible() && !{{ disabled }}"
+    :show="isVisible() && !isDisabled()"
     class="{{ tooltipClasses }}"
     role="tooltip"
     @mouseenter="showTooltip()"
     @mouseleave="hideTooltip()"
   >
     <span class="block" style="max-height:calc(100vh - 32px);overflow-y:auto;">{{ content }}</span>
-    <span class="{{ arrowClass }}" :style="arrowStyle"></span>
+    <span :show="!nativePopup" class="{{ arrowClass }}" :style="arrowStyle"></span>
   </span>
 </span>

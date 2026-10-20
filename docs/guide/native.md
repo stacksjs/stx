@@ -203,11 +203,27 @@ initial focus. An `onBackdrop` callback opts into outside-tap consumption and
 dismissal; without it, outside touches pass through. Only the top layer handles
 close requests, and denied requests reassert visibility.
 
-These adapters alone do **not** enable the shared native Tooltip/Popover yet:
-component presentation wiring, touch triggers and repositioning subscriptions
-remain unfinished. Browser DOM portals are not a native reparenting contract.
-These runtime tests do not establish native visual or accessibility parity;
-those remain part of [#2089](https://github.com/stacksjs/stx/issues/2089).
+Shared `Tooltip` and `Popover` now use this adapter when both `viewMeasure` and
+`viewNonModalPresentation` are advertised. Tooltip's trigger toggles on native
+press; PopoverButton toggles its own PopoverPanel. Back/escape or an outside tap
+dismisses only the top popup. Panel identity, child state and logical ownership
+are preserved across closing/reopening; no browser-body portal or native
+cross-parent move is used. Missing capabilities produce a warning and leave the
+popup closed, rather than silently substituting a blocking modal.
+
+Placement uses viewport measurements and shared flip/clamp math. Until a host
+layout-change subscription is available, STX samples serially every 250 ms while
+open (after each measurement completes), updating only changed coordinates.
+Closing, disabling Tooltip, or removing the component cancels the timer and
+invalidates pending replies. Native tooltip arrows are hidden; browser arrows,
+hover/focus behavior and portals are unchanged. This is not frame-synchronous
+tracking during scrolling. Maintained iOS/Android visual and accessibility
+validation, including clipping and touch routing, remains outstanding under
+[#2089](https://github.com/stacksjs/stx/issues/2089).
+
+Native bundles embed the shared component helper-module registry before setup.
+They do not rely on the browser's external script loader; helper modules shared
+by multiple component instances are evaluated once per screen context.
 
 Shared `Form` uses host-owned control collection on native, not DOM FormData.
 Named text/picker values, checked checkbox values, and hidden fields are collected;

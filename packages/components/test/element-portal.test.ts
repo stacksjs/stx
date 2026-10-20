@@ -13,13 +13,16 @@ function tooltipLifecycle() {
   const destroys: Array<() => void> = []
   const ticks: Array<() => void> = []
   const panelRef: { value: HTMLElement | null } = { value: null }
-  new Function('panelRef', 'describeTrigger', 'nextTick', 'portalElement', 'onMount', 'onDestroy', script.slice(start))(
+  new Function('panelRef', 'describeTrigger', 'nextTick', 'portalElement', 'onMount', 'onDestroy', 'mounted', 'nativePopup', 'destroyed', script.slice(start))(
     panelRef,
     () => {},
     (callback: () => void) => ticks.push(callback),
     portalElement,
     (callback: () => void) => mounts.push(callback),
     (callback: () => void) => destroys.push(callback),
+    { set() {} },
+    false,
+    false,
   )
   return { panelRef, mount: () => mounts.forEach(callback => callback()), destroy: () => destroys.forEach(callback => callback()), flush: () => ticks.splice(0).forEach(callback => callback()) }
 }
