@@ -13,7 +13,7 @@ const NATIVE_PROP_NAMES = [
   'keyboardVerticalOffset', 'keyExtractor', 'listRole', 'maxLength', 'maximumDate', 'maximumTrackTintColor', 'maximumValue',
   'maxToRenderPerBatch', 'minimumDate', 'minimumTrackTintColor', 'minimumValue', 'minuteInterval', 'numberOfLines',
   'numColumns', 'onEndReachedThreshold', 'pagingEnabled', 'passwordRules', 'placeholderTextColor', 'pointerEvents',
-  'presentationStyle',
+  'presentationStyle', 'nonModal', 'dismissOnOutsideTap',
   'pressRetentionOffset', 'progressBackgroundColor', 'progressViewOffset', 'refreshControl', 'resizeMode',
   'returnKeyType', 'scrollEnabled', 'scrollTarget', 'secureTextEntry', 'selectedValue', 'selectionColor',
   'showsHorizontalScrollIndicator', 'showsVerticalScrollIndicator', 'statusBarTranslucent',
@@ -36,7 +36,7 @@ export const NATIVE_BOOLEAN_PROPS = new Set([
   'animating', 'autoCorrect', 'autoFocus', 'autoplay', 'autoPlay', 'bounces', 'controls', 'disabled',
   'editable', 'hidesWhenStopped', 'horizontal', 'loop', 'multiline', 'muted', 'pagingEnabled', 'paused',
   'refreshing', 'scrollEnabled', 'secureTextEntry', 'selectTextOnFocus', 'showsHorizontalScrollIndicator',
-  'showsVerticalScrollIndicator', 'transparent', 'visible',
+  'showsVerticalScrollIndicator', 'transparent', 'visible', 'nonModal', 'dismissOnOutsideTap',
   'fitToBounds', 'showsUserLocation', 'zoomEnabled', 'rotateEnabled', 'pitchEnabled', 'showsCompass', 'showsScale',
   'pictureInPicture',
 ])

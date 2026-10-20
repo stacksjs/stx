@@ -228,6 +228,15 @@ describe('events', () => {
     })
   })
 
+  it.each(['nonModal dismissOnOutsideTap', 'non-modal dismiss-on-outside-tap'])('preserves native popup boolean protocol names: %s', async (attributes) => {
+    const { root } = await translateHtmlToIR(`<div data-native="Modal" ${attributes}></div>`)
+    expect(root.props).toMatchObject({ nonModal: true, dismissOnOutsideTap: true })
+    expect(root.props.nonmodal).toBeUndefined()
+    expect(root.props.dismissonoutsidetap).toBeUndefined()
+    const { root: blocking } = await translateHtmlToIR('<div data-native="Modal" nonModal="false" dismissOnOutsideTap="false"></div>')
+    expect(blocking.props).toMatchObject({ nonModal: false, dismissOnOutsideTap: false })
+  })
+
   it('decodes JSON object props forwarded by native components', async () => {
     const { root } = await translateHtmlToIR('<div data-native="ScrollView" contentContainerStyle="{&quot;paddingTop&quot;:12}"></div>')
 
