@@ -18,9 +18,10 @@ describe('the browser peer of the native screen renderer', () => {
   it('reports parent-relative layout frames and tears the observer down', () => {
     const { renderer, container, node, window, events } = fixture()
     let notify: (() => void) | undefined
+    const observed: Element[] = []
     class FakeResizeObserver {
       constructor(callback: () => void) { notify = callback }
-      observe() {}
+      observe(element: Element) { observed.push(element) }
       disconnect() { notify = undefined }
     }
     Object.defineProperty(window, 'ResizeObserver', { configurable: true, value: FakeResizeObserver })
@@ -29,6 +30,7 @@ describe('the browser peer of the native screen renderer', () => {
     const card = container.querySelector('[data-stx-node="card"]')!
     Object.defineProperty(root, 'getBoundingClientRect', { value: () => ({ left: 10, top: 20, width: 300, height: 400 }) })
     Object.defineProperty(card, 'getBoundingClientRect', { value: () => ({ left: 22, top: 35, width: 120, height: 48 }) })
+    expect(observed.slice(-2)).toEqual([card, root])
     notify?.()
     expect(events).toEqual([{ id: 'measure', payload: { layout: { x: 12, y: 15, width: 120, height: 48 } } }])
     renderer.mutate({ version: 1, batchId: 'remove-handler', baseRevision: 0, revision: 1, operations: [{ op: 'updateNode', id: 'card', patch: { events: { onLayout: null } } }] })

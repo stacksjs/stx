@@ -20,6 +20,7 @@ interface RecordNode {
   parent: string | null
   dispose: Array<() => void>
   layoutObserver?: ResizeObserver
+  layoutObservedParent?: Element
   text?: string
 }
 
@@ -53,6 +54,7 @@ export class BrowserScreenRenderer {
       if (!node.id) throw new Error('A portable screen node needs an id')
       const record = this.create(node.id, node.type, node.props, { ...node.style }, node.events)
       record.parent = parent
+      this.syncLayoutObserver(record)
       for (const child of node.children) {
         if (typeof child === 'string') {
           record.text = (record.text ?? '') + child
@@ -105,6 +107,7 @@ export class BrowserScreenRenderer {
         }
         parent.children.splice(operation.index, 0, operation.childId)
         child.parent = operation.parentId
+        this.syncLayoutObserver(child)
         const before = parent.children[operation.index + 1]
         parent.element.insertBefore(child.element, before ? this.nodes.get(before)!.element : null)
       }
@@ -381,9 +384,14 @@ export class BrowserScreenRenderer {
     if (!wantsLayout) {
       record.layoutObserver?.disconnect()
       record.layoutObserver = undefined
+      record.layoutObservedParent = undefined
       return
     }
-    if (record.layoutObserver) return
+    const parent = record.parent ? this.nodes.get(record.parent)?.element : this.container
+    if (record.layoutObserver && record.layoutObservedParent === parent) return
+    record.layoutObserver?.disconnect()
+    record.layoutObserver = undefined
+    record.layoutObservedParent = undefined
     const ResizeObserverConstructor = record.element.ownerDocument.defaultView?.ResizeObserver
     if (!ResizeObserverConstructor) return
     const observer = new ResizeObserverConstructor(() => {
@@ -400,7 +408,9 @@ export class BrowserScreenRenderer {
       })
     })
     observer.observe(record.element)
+    if (parent && parent !== record.element) observer.observe(parent)
     record.layoutObserver = observer
+    record.layoutObservedParent = parent
   }
 
   private icon(props: Record<string, unknown>): { body: string, width?: number, height?: number } {
