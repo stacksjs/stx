@@ -1,0 +1,33 @@
+<!-- Same source for browser and maintained Craft-host validation (#2090/#2091). -->
+@import('Button', '../packages/components/src/ui/button/Button.stx')
+@import('Card', '../packages/components/src/ui/card/Card.stx')
+@import('TextInput', '../packages/components/src/ui/input/TextInput.stx')
+@import('Checkbox', '../packages/components/src/ui/checkbox/Checkbox.stx')
+@import('Switch', '../packages/components/src/ui/switch/Switch.stx')
+
+<script client>
+const compact = state(false)
+const shown = state(true)
+const draft = state('Ada')
+const consent = state(false)
+const alerts = state(false)
+const theme = derived(() => compact()
+  ? { '--stx-radius-control': '12px', '--stx-radius-panel': '20px', '--stx-control-px': '10px', '--stx-control-py': '4px', '--stx-control-text': '14px', '--stx-control-leading': '18px' }
+  : {})
+</script>
+
+<main class="p-4 bg-surface text-fg" :style="theme">
+  <h1 class="text-xl font-semibold">Shared controls</h1>
+  <div class="flex flex-wrap gap-2 py-4">
+    <Button id="toggle-density" @click="compact.set(!compact())">Toggle density</Button>
+    <Button id="toggle-controls" @click="shown.set(!shown())">Hide / restore controls</Button>
+  </div>
+  <Card id="sample-card">
+    <section :if="shown" class="flex flex-col gap-4">
+      <TextInput id="sample-name" name="name" label="Name" :value="draft" @input="draft.set($event)" />
+      <Checkbox id="sample-consent" label="Consent" :checked="consent" @change="consent.set($event)" />
+      <Switch id="sample-alerts" name="alerts" label="Alerts" :checked="alerts" @change="alerts.set($event)" />
+    </section>
+  </Card>
+  <p id="sample-status" class="py-4" :text="draft + ' | consent=' + consent + ' | alerts=' + alerts"></p>
+</main>

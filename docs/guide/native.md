@@ -239,6 +239,34 @@ ship in the application bundle: changing them requires a new app build. API data
 can refresh independently. A native app is not automatically updated by deploying
 the website.
 
+### Shared-control host validation screen
+
+`examples/shared-controls.stx` explicitly imports the actual shared Button,
+Card, TextInput, Checkbox and Switch files. Use this unchanged source in the
+browser and in maintained Craft hosts; do not substitute native primitive
+templates. From the repository root, a native bundle can be produced with:
+
+```ts
+import { compileSharedScreenBundle } from './packages/stx/src/native/compiler/bundle'
+
+await compileSharedScreenBundle('examples/shared-controls.stx', {
+  root: process.cwd(),
+  outFile: '/tmp/stx-shared-controls.js',
+})
+```
+
+On each host: type a name, toggle Consent and Alerts, toggle density, hide and
+restore the controls, and switch system appearance in both directions. The
+status must retain all three values through remount. Check horizontal
+checkbox/switch alignment, field padding and rounded corners, card corners,
+labels and dark-mode contrast. Density changes must reverse without stale
+styles. Record host commit/version, device/OS, screenshots and observed failures.
+
+`test/native/shared-controls-example.test.ts` runs these actions against the
+native protocol harness and browser runtime, in normal and minified builds.
+Those tests validate interactions and style transport, **not device layout or
+visual parity**. Overlay presentation requires separate host validation.
+
 ### Compile the same screen for the browser
 
 `compileBrowserScreen` uses the same component pipeline, view descriptors,
