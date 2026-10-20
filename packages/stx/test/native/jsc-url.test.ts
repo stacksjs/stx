@@ -5,6 +5,7 @@
  * is checked against Bun's own URL, which follows the URL standard.
  */
 import { describe, expect, it } from 'bun:test'
+import { runInNewContext } from 'node:vm'
 import { installJSCGlobals, NativeURL } from '../../src/native/runtime/jsc-globals'
 
 const FIELDS = ['href', 'protocol', 'username', 'password', 'host', 'hostname', 'port', 'pathname', 'search', 'hash', 'origin'] as const
@@ -73,6 +74,26 @@ describe('URL in JSC', () => {
     for (const field of FIELDS) expect([field, ours[field]]).toEqual([field, theirs[field]])
     expect(String(ours)).toBe(theirs.href)
     expect(JSON.stringify({ ours })).toBe(JSON.stringify({ ours: theirs }))
+  })
+
+  it('replaces native-host diagnostic constructors with working URL and UTF-8 APIs', () => {
+    // Craft installs diagnostics before the shared runtime. These throw
+    // ReferenceError instead of leaving the web API absent, in another realm.
+    const unavailable = runInNewContext('(function () { throw new ReferenceError("Web API is not available on a native screen") })')
+    const target: Record<string, any> = { setTimeout, clearTimeout, URL: unavailable, URLSearchParams: unavailable, TextEncoder: unavailable }
+    installJSCGlobals(target)
+    expect(new target.URL('/api/exercise-videos/demo.mp4', 'https://hq.training/api').href).toBe('https://hq.training/api/exercise-videos/demo.mp4')
+    expect(new target.URLSearchParams({ exercise: 'side bends' }).toString()).toBe('exercise=side+bends')
+    expect(Array.from(new target.TextEncoder().encode('Grüße'))).toEqual(Array.from(new TextEncoder().encode('Grüße')))
+    expect(new target.TextDecoder().decode(new target.TextEncoder().encode('HQ ✓'))).toBe('HQ ✓')
+  })
+
+  it('preserves host constructors with their own validation errors', () => {
+    const existing = class { constructor() { throw new TypeError('host validation') } }
+    const target: Record<string, any> = { setTimeout, clearTimeout, URL: existing }
+    installJSCGlobals(target)
+    expect(target.URL).toBe(existing)
+    expect(() => new target.URL()).toThrow('host validation')
   })
 
   it('is installed for a native screen, and leaves one already there alone', () => {

@@ -715,6 +715,24 @@ export function nativeAnimationFrame(target: AnyRecord, callback: (time: number)
   return target.setTimeout(() => callback(now()), Math.max(1, Math.round(wait)))
 }
 
+/** Native hosts may expose diagnostic constructors before the web APIs load. */
+function installNativeConstructor(target: AnyRecord, name: string, fallback: unknown, args: unknown[] = []): void {
+  const existing = target[name]
+  if (existing == null) {
+    target[name] = fallback
+    return
+  }
+  if (typeof existing !== 'function') return
+  try {
+    Reflect.construct(existing, args)
+  }
+  catch (error) {
+    // A host's throwing placeholder is present but unavailable. Match the
+    // name across JS realms; keep host implementations and other errors.
+    if (error && typeof error === 'object' && 'name' in error && error.name === 'ReferenceError') target[name] = fallback
+  }
+}
+
 /** Install only the browser-shaped globals the shared runtime needs to boot in JSC. */
 export function installJSCGlobals(target: AnyRecord = globalThis as AnyRecord): void {
   const listeners = new Map<string, Set<(event: unknown) => void>>()
@@ -742,11 +760,11 @@ export function installJSCGlobals(target: AnyRecord = globalThis as AnyRecord): 
   target.addEventListener ??= addEventListener
   target.removeEventListener ??= removeEventListener
   target.dispatchEvent ??= dispatchEvent
-  target.URLSearchParams ??= NativeURLSearchParams
-  target.URL ??= NativeURL
+  installNativeConstructor(target, 'URLSearchParams', NativeURLSearchParams)
+  installNativeConstructor(target, 'URL', NativeURL, ['https://stx.invalid'])
   target.atob ??= nativeAtob
   target.btoa ??= nativeBtoa
-  target.TextEncoder ??= NativeTextEncoder
+  installNativeConstructor(target, 'TextEncoder', NativeTextEncoder)
   target.TextDecoder ??= NativeTextDecoder
   target.AbortController ??= NativeAbortController
   target.AbortSignal ??= NativeAbortSignal
