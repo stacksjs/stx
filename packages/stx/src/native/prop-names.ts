@@ -1,6 +1,6 @@
 import { SVG_PROP_NAMES } from './compiler/svg'
 
-/** Native prop names whose camel-case spelling is part of the host protocol. */
+/** Native prop names whose exact spelling is part of the host protocol. */
 const NATIVE_PROP_NAMES = [
   // A drawing's attributes: `viewbox` from the HTML parser, `stroke-width`
   // from a template, both read as one spelling by the renderers.
@@ -9,7 +9,7 @@ const NATIVE_PROP_NAMES = [
   'activeOpacity', 'alwaysBounceHorizontal', 'alwaysBounceVertical', 'animationType', 'autoCapitalize',
   'autoComplete', 'autoCorrect', 'autoFocus', 'blurRadius', 'contentContainerStyle', 'currentTime', 'defaultSource', 'defaultValue',
   'ellipsizeMode', 'fadeDuration', 'hidesWhenStopped', 'hitSlop', 'imageStyle', 'initialNumToRender',
-  'iosBackgroundColor', 'keyboardDismissMode', 'keyboardShouldPersistTaps', 'keyboardType',
+  'ios_backgroundColor', 'keyboardDismissMode', 'keyboardShouldPersistTaps', 'keyboardType',
   'keyboardVerticalOffset', 'keyExtractor', 'listRole', 'maxLength', 'maximumDate', 'maximumTrackTintColor', 'maximumValue',
   'maxToRenderPerBatch', 'minimumDate', 'minimumTrackTintColor', 'minimumValue', 'minuteInterval', 'numberOfLines',
   'numColumns', 'onEndReachedThreshold', 'pagingEnabled', 'passwordRules', 'placeholderTextColor', 'pointerEvents',

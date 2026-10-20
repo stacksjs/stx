@@ -228,6 +228,12 @@ describe('events', () => {
     })
   })
 
+  it('restores the underscore spelling consumed by the native Switch host', async () => {
+    const { root } = await translateHtmlToIR('<div data-native="Switch" ios_backgroundColor="#111827"></div>')
+    expect(root.props.ios_backgroundColor).toBe('#111827')
+    expect(root.props.iosBackgroundColor).toBeUndefined()
+  })
+
   it.each(['nonModal dismissOnOutsideTap', 'non-modal dismiss-on-outside-tap'])('preserves native popup boolean protocol names: %s', async (attributes) => {
     const { root } = await translateHtmlToIR(`<div data-native="Modal" ${attributes}></div>`)
     expect(root.props).toMatchObject({ nonModal: true, dismissOnOutsideTap: true })
