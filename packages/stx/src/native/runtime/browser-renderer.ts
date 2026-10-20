@@ -289,7 +289,10 @@ export class BrowserScreenRenderer {
     if (type === 'Icon') { css.display = 'inline-block'; css.width = '20px'; css.height = '20px'; css.flexShrink = '0' }
     this.style(css, style)
     if (props.contentContainerStyle && typeof props.contentContainerStyle === 'object') this.style(css, props.contentContainerStyle as Record<string, unknown>)
-    if (type === 'SafeAreaView') this.applySafeAreaPadding(css, props.edges)
+    if (type === 'SafeAreaView') {
+      const authored = { ...style, ...(props.contentContainerStyle && typeof props.contentContainerStyle === 'object' ? props.contentContainerStyle as Record<string, unknown> : {}) }
+      this.applySafeAreaPadding(css, props.edges, authored)
+    }
     if (props.testID != null) element.setAttribute('data-testid', String(props.testID))
     if (props.accessibilityLabel != null || (type === 'TextInput' && props.placeholder)) element.setAttribute('aria-label', String(props.accessibilityLabel ?? props.placeholder))
     else element.removeAttribute('aria-label')
@@ -414,13 +417,18 @@ export class BrowserScreenRenderer {
     record.layoutObservedParent = parent
   }
 
-  private applySafeAreaPadding(css: CSSStyleDeclaration, rawEdges: unknown): void {
+  private applySafeAreaPadding(css: CSSStyleDeclaration, rawEdges: unknown, authored: Record<string, unknown>): void {
     const valid = new Set(['top', 'right', 'bottom', 'left'])
     const edges = Array.isArray(rawEdges) ? new Set(rawEdges.filter(edge => typeof edge === 'string' && valid.has(edge))) : valid
+    const length = (value: unknown): string | undefined => value == null ? undefined : typeof value === 'number' ? `${value}px` : String(value)
+    const shorthand = length(authored.padding)?.trim().split(/\s+/).filter(Boolean) ?? []
+    const shorthandValues = shorthand.length === 1 ? [shorthand[0], shorthand[0], shorthand[0], shorthand[0]] : shorthand.length === 2 ? [shorthand[0], shorthand[1], shorthand[0], shorthand[1]] : shorthand.length === 3 ? [shorthand[0], shorthand[1], shorthand[2], shorthand[1]] : shorthand.length >= 4 ? shorthand.slice(0, 4) : []
+    const shorthandByEdge: Record<string, string | undefined> = { top: shorthandValues[0], right: shorthandValues[1], bottom: shorthandValues[2], left: shorthandValues[3] }
     for (const edge of valid) {
       const property = `padding${edge[0].toUpperCase()}${edge.slice(1)}` as 'paddingTop' | 'paddingRight' | 'paddingBottom' | 'paddingLeft'
-      const authored = css[property] || '0px'
-      css[property] = edges.has(edge) ? `calc(env(safe-area-inset-${edge}, 0px) + ${authored})` : authored
+      const axis = edge === 'top' || edge === 'bottom' ? authored.paddingVertical : authored.paddingHorizontal
+      const authoredValue = length(authored[property]) ?? length(axis) ?? shorthandByEdge[edge] ?? (css[property] || '0px')
+      css[property] = edges.has(edge) ? `calc(env(safe-area-inset-${edge}, 0px) + ${authoredValue})` : authoredValue
     }
   }
 

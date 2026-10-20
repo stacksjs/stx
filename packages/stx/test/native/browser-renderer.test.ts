@@ -18,7 +18,7 @@ describe('the browser peer of the native screen renderer', () => {
   it('adds safe-area env insets to authored padding and honors selected edges', () => {
     const { renderer, container, node } = fixture()
     const safeRoot = node('root', 'SafeAreaView', [node('content', 'View')], { edges: ['top', 'bottom'] })
-    safeRoot.style = { paddingTop: '8px', paddingBottom: '8px', paddingLeft: '10px', paddingRight: '10px' }
+    safeRoot.style = { padding: '8px 10px' }
     renderer.render(safeRoot)
     const root = container.querySelector<HTMLElement>('[data-stx-node="root"]')!
     renderer.mutate({ version: 1, batchId: 'safe-area', baseRevision: 0, revision: 1, operations: [{ op: 'updateNode', id: 'root', patch: { props: { edges: ['top', 'bottom'] } } }] })
