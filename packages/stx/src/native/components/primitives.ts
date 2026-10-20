@@ -548,45 +548,19 @@ export interface MapMarkerProps extends BaseProps {
 // ============================================================================
 
 export interface FlatListProps<T> extends ScrollViewProps {
-  /** Data array */
-  data: T[]
-  /** Render item function */
-  renderItem: (info: { item: T; index: number }) => unknown
-  /** Key extractor */
-  keyExtractor?: (item: T, index: number) => string
-  /** Item separator */
-  ItemSeparatorComponent?: () => unknown
-  /** List header */
-  ListHeaderComponent?: () => unknown
-  /** List footer */
-  ListFooterComponent?: () => unknown
-  /** Empty list component */
-  ListEmptyComponent?: () => unknown
-  /** Number of columns */
+  /** Data-driven rows are not part of the current keyed child protocol. */
+  /** Number of columns in the keyed child tree. */
   numColumns?: number
-  /** Initial number of items to render */
-  initialNumToRender?: number
-  /** Max items to render per batch */
-  maxToRenderPerBatch?: number
-  /** Window size (virtualization) */
-  windowSize?: number
-  /** End reached handler */
+  /** End reached handler for the mounted keyed rows. */
   onEndReached?: () => void
   /** End reached threshold */
   onEndReachedThreshold?: number
-  /** Inverted list */
+  /** Render rows in reverse order along the scroll axis. */
   inverted?: boolean
 }
 
 export interface SectionListProps<T> extends ScrollViewProps {
-  /** Sections array */
-  sections: Array<{ title?: string; data: T[] }>
-  /** Render item function */
-  renderItem: (info: { item: T; index: number; section: { title?: string; data: T[] } }) => unknown
-  /** Render section header */
-  renderSectionHeader?: (info: { section: { title?: string; data: T[] } }) => unknown
-  /** Key extractor */
-  keyExtractor?: (item: T, index: number) => string
+  /** Section data is deferred until the versioned list-data protocol exists. */
 }
 
 // ============================================================================

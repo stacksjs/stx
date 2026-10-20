@@ -410,6 +410,19 @@ describe('shared-runtime list boundaries', () => {
     ])
   })
 
+  it('rejects SectionList data props until the versioned list protocol exists', async () => {
+    const { root, diagnostics } = await translateHtmlToIR(
+      '<div data-native="SectionList" :sections="sections" :renderItem="renderRow" :renderSectionHeader="renderHeader"><Text>Rows</Text></div>',
+    )
+
+    expect(root.type).toBe('SectionList')
+    expect(diagnostics).toEqual([
+      { kind: 'unsupported-list-prop', tag: 'SectionList', name: 'sections' },
+      { kind: 'unsupported-list-prop', tag: 'SectionList', name: 'renderItem' },
+      { kind: 'unsupported-list-prop', tag: 'SectionList', name: 'renderSectionHeader' },
+    ])
+  })
+
   it('keeps ordinary keyed :for list props warning-free', async () => {
     const { diagnostics } = await translateHtmlToIR(
       '<div data-native="FlatList"><Text :for="row in rows" :key="row.id" :text="row.label" /></div>',
