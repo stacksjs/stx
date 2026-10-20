@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.615...v0.2.616)
+
+## 🐛 Bug Fixes
+
+- **native**: absolute children place against their parent in the preview ([06c2461](https://github.com/stacksjs/stx/commit/06c2461)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.616 ([816e971](https://github.com/stacksjs/stx/commit/816e971)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.614...v0.2.615)
 
 ## 🐛 Bug Fixes
