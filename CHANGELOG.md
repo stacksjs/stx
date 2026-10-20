@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.601...v0.2.602)
+
+## 🐛 Bug Fixes
+
+- **native**: keep plain-function handlers, draw live tab symbols ([cfa2216](https://github.com/stacksjs/stx/commit/cfa2216)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.602 ([bdc8460](https://github.com/stacksjs/stx/commit/bdc8460)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.600...v0.2.601)
 
 ## ✨ Features
