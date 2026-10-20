@@ -1316,7 +1316,10 @@ function routerSource(): string {
 
     if(t.origin!==location.origin){location.href=url;return Promise.resolve(false)}
 
-    if(t.pathname===location.pathname&&t.hash&&pushState!=='tab'){
+    // A popstate has already changed location to its destination, while the
+    // outgoing page is still on screen. It must load that page before any
+    // anchor can be used. A changed query also selects different page content.
+    if(pushState!==false&&t.pathname===location.pathname&&t.search===location.search&&t.hash&&pushState!=='tab'){
       if(pushState!==false)writeHistory(pushState,t.href);
       var el=findIn(t.hash);
       if(el)el.scrollIntoView({behavior:'smooth'});

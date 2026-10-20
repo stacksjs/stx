@@ -100,6 +100,30 @@ function goBackTo(window: any, href: string, state: unknown) {
 }
 
 describe('router scroll restoration', () => {
+  it('loads a trail entry with an anchor when Back leaves its route planner', async () => {
+    const window = installRouter({ keepOpening: false })
+    const trailEntry = await visit(window, '/trail/6146#reviews')
+    await visit(window, '/routes?trail=6146')
+    expect(window.document.querySelector('main')?.textContent).toContain('/routes?trail=6146')
+
+    goBackTo(window, '/trail/6146#reviews', trailEntry)
+    await settle()
+
+    expect(window.location.pathname).toBe('/trail/6146')
+    expect(window.location.hash).toBe('#reviews')
+    expect(window.document.querySelector('main')?.textContent).toContain('/trail/6146')
+    expect(window.document.querySelector('main')?.textContent).not.toContain('/routes?trail=6146')
+  })
+
+  it('loads a changed query before scrolling to its anchor', async () => {
+    const window = installRouter({ keepOpening: false }, 'http://localhost/trails?surface=natural')
+    await visit(window, '/trails?surface=paved#reviews')
+
+    expect(window.location.search).toBe('?surface=paved')
+    expect(window.location.hash).toBe('#reviews')
+    expect(window.document.querySelector('main')?.textContent).toContain('/trails?surface=paved')
+  })
+
   it('returns to the position the entry was left at', async () => {
     const window = installRouter()
     const listEntry = await visit(window, '/list')
