@@ -170,8 +170,8 @@ const NATIVE_TYPES = new Set([
  * Props from the retired native-only list expander. The shared runtime owns
  * rows through keyed `:for`, so forwarding these props would look successful
  * while leaving the host with no row template (or no reactive update path).
- * Host-specific layout props such as `numColumns` remain valid and are not in
- * this set.
+ * Host-owned slot metadata such as `listRole`, and host-specific layout props
+ * such as `numColumns`, remain valid and are not in this set.
  */
 const SHARED_RUNTIME_UNSUPPORTED_LIST_PROPS = new Map<string, string>([
   ['data', 'data'],
@@ -179,7 +179,6 @@ const SHARED_RUNTIME_UNSUPPORTED_LIST_PROPS = new Map<string, string>([
   ['renderitem', 'renderItem'],
   ['rendersectionheader', 'renderSectionHeader'],
   ['keyextractor', 'keyExtractor'],
-  ['listrole', 'listRole'],
 ])
 
 /** A container type: it lays children out and does not render text itself. */

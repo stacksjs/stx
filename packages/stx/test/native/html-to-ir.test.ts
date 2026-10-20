@@ -402,11 +402,11 @@ describe('shared-runtime list boundaries', () => {
     )
 
     expect(root.type).toBe('FlatList')
+    expect(root.props.listRole).toBe('item')
     expect(diagnostics).toEqual([
       { kind: 'unsupported-list-prop', tag: 'FlatList', name: 'data' },
       { kind: 'unsupported-list-prop', tag: 'FlatList', name: 'renderItem' },
       { kind: 'unsupported-list-prop', tag: 'FlatList', name: 'keyExtractor' },
-      { kind: 'unsupported-list-prop', tag: 'FlatList', name: 'listRole' },
     ])
   })
 

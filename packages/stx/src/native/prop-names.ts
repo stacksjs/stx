@@ -10,7 +10,7 @@ const NATIVE_PROP_NAMES = [
   'autoComplete', 'autoCorrect', 'autoFocus', 'blurRadius', 'contentContainerStyle', 'defaultSource', 'defaultValue',
   'ellipsizeMode', 'fadeDuration', 'hidesWhenStopped', 'hitSlop', 'imageStyle', 'initialNumToRender',
   'iosBackgroundColor', 'keyboardDismissMode', 'keyboardShouldPersistTaps', 'keyboardType',
-  'keyboardVerticalOffset', 'keyExtractor', 'maxLength', 'maximumDate', 'maximumTrackTintColor', 'maximumValue',
+  'keyboardVerticalOffset', 'keyExtractor', 'listRole', 'maxLength', 'maximumDate', 'maximumTrackTintColor', 'maximumValue',
   'maxToRenderPerBatch', 'minimumDate', 'minimumTrackTintColor', 'minimumValue', 'minuteInterval', 'numberOfLines',
   'numColumns', 'onEndReachedThreshold', 'pagingEnabled', 'passwordRules', 'placeholderTextColor', 'pointerEvents',
   'presentationStyle',
