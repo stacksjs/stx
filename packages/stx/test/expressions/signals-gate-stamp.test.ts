@@ -27,7 +27,7 @@
  * probed already preserved correctly. These tests therefore pin the stamp's own
  * contract, which is what the next steps will build on.
  */
-import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, it, mock } from 'bun:test'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -54,6 +54,10 @@ const label = derived(() => 'live')
   fs.writeFileSync(path.join(dir, 'partials', 'plain.stx'), '<span>{{ mystery }}</span>')
   fs.mkdirSync(path.join(dir, 'components'), { recursive: true })
   fs.writeFileSync(path.join(dir, 'components', 'Alert.stx'), '<div class="alert"><slot /></div>')
+  fs.writeFileSync(path.join(dir, 'components', 'PostEditor.stx'), `<script client>
+const post = useReactiveProp('post', null)
+</script>
+<button>{{ post() ? 'Save changes' : 'Create post' }}</button>`)
 })
 
 afterAll(() => {
@@ -136,6 +140,25 @@ const n = state(0)
  * "untested". These are those tests.
  */
 describe('cases the per-caller overrides used to carry', () => {
+  it.each([
+    `<script client>const post = state(null)</script><button>{{ post() ? 'Save changes' : 'Create post' }}</button>`,
+    '<PostEditor />',
+  ])('never invokes a server helper shadowed by an authored client signal', async (template) => {
+    // Stacks auto-imports its POST helper as `post`. Evaluating the client
+    // editor's signal before preserving it used to submit an undefined URL.
+    const post = mock(() => Promise.resolve({ server: true }))
+    const out = await processDirectives(template, { post }, path.join(dir, 'page.stx'), options(), new Set<string>())
+    expect(post).not.toHaveBeenCalled()
+    expect(out).toContain("{{ post() ? 'Save changes' : 'Create post' }}")
+  })
+
+  it('still evaluates a server helper when no client signal owns its name', async () => {
+    const title = mock(() => 'Server title')
+    const out = await processDirectives('<h1>{{ title() }}</h1>', { title }, path.join(dir, 'page.stx'), options(), new Set<string>())
+    expect(out).toContain('<h1>Server title</h1>')
+    expect(title).toHaveBeenCalledTimes(1)
+  })
+
   it('preserves slot content authored by the CALLER', async () => {
     // options.__stx_force_signals existed for this: `<Alert>{{ error }}</Alert>`
     // is written by the caller, so judging it by the COMPONENT's own script
