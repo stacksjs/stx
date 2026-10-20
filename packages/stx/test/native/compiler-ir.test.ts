@@ -300,13 +300,14 @@ describe('renderer coverage', () => {
 
   function iosTypes(): Set<string> {
     const source = readFileSync(path.join(RENDERERS, 'ios.swift'), 'utf8')
-    // Only the component switch: a capitalised case label.
-    return new Set([...source.matchAll(/case "([A-Z][A-Za-z]*)":/g)].map(m => m[1]))
+    // Only the component switch: capitalised case labels, including grouped
+    // aliases such as `case "Button", "Link":`.
+    return new Set([...source.matchAll(/case ((?:"[A-Z][A-Za-z]*"(?:,\s*)?)+):/g)].flatMap(m => [...m[1].matchAll(/"([A-Z][A-Za-z]*)"/g)].map(match => match[1])))
   }
 
   function androidTypes(): Set<string> {
     const source = readFileSync(path.join(RENDERERS, 'android.kt'), 'utf8')
-    return new Set([...source.matchAll(/"([A-Z][A-Za-z]*)" ->/g)].map(m => m[1]))
+    return new Set([...source.matchAll(/((?:"[A-Z][A-Za-z]*"(?:,\s*)?)+) ->/g)].flatMap(m => [...m[1].matchAll(/"([A-Z][A-Za-z]*)"/g)].map(match => match[1])))
   }
 
   /** Implemented on Android and not yet on iOS. This list must only shrink. */
@@ -347,6 +348,11 @@ describe('renderer coverage', () => {
       expect(iosTypes().has(type)).toBe(true)
       expect(androidTypes().has(type)).toBe(true)
     }
+  })
+
+  it('both reference renderers draw Link as a native action', () => {
+    expect(iosTypes().has('Link')).toBe(true)
+    expect(androidTypes().has('Link')).toBe(true)
   })
 
   it('iOS wires Slider values and renders Modal visibility', () => {

@@ -241,7 +241,7 @@ class STXRenderer {
             return renderView(node)
         case "Text":
             return renderText(node)
-        case "Button":
+        case "Button", "Link":
             return renderButton(node)
         case "TextInput":
             return renderTextInput(node)

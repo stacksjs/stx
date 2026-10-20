@@ -328,7 +328,7 @@ class STXRenderer(private val context: Context) {
         val view = when (node.type) {
             "View" -> renderView(node)
             "Text" -> renderText(node)
-            "Button" -> renderButton(node)
+            "Button", "Link" -> renderButton(node)
             "TextInput" -> renderTextInput(node)
             "Image" -> renderImage(node)
             "ScrollView" -> renderScrollView(node)
