@@ -394,27 +394,22 @@ function processUnconditionalLoopControl(content: string): string {
 }
 
 /**
- * Check if content contains a break marker and clean it up
+ * Cut a row at its first break or continue marker.
+ *
+ * Returns which one it was (null when the row has neither) and the content
+ * before it, which is still part of the row.
  */
-function checkAndCleanBreak(content: string): { hasBreak: boolean, content: string } {
-  const hasBreak = content.includes(BREAK_MARKER)
-  // Remove marker and everything after it
-  const cleanContent = hasBreak
-    ? content.substring(0, content.indexOf(BREAK_MARKER))
-    : content
-  return { hasBreak, content: cleanContent }
-}
+function cutAtLoopControl(content: string): { control: 'break' | 'continue' | null, content: string } {
+  const breakAt = content.indexOf(BREAK_MARKER)
+  const continueAt = content.indexOf(CONTINUE_MARKER)
+  if (breakAt === -1 && continueAt === -1)
+    return { control: null, content }
 
-/**
- * Check if content contains a continue marker and clean it up
- */
-function checkAndCleanContinue(content: string): { hasContinue: boolean, content: string } {
-  const hasContinue = content.includes(CONTINUE_MARKER)
-  // Remove marker and everything after it
-  const cleanContent = hasContinue
-    ? content.substring(0, content.indexOf(CONTINUE_MARKER))
-    : content
-  return { hasContinue, content: cleanContent }
+  const isBreak = continueAt === -1 || (breakAt !== -1 && breakAt < continueAt)
+  return {
+    control: isBreak ? 'break' : 'continue',
+    content: content.substring(0, isBreak ? breakAt : continueAt),
+  }
 }
 
 /**
@@ -1044,19 +1039,12 @@ export function processLoops(template: string, context: Record<string, any>, fil
           // These are evaluated immediately based on the condition expression
           let processedContent = processConditionalLoopControl(content, itemContext)
 
-          // Check for continue marker from conditional @continue(condition)
-          let continueCheck = checkAndCleanContinue(processedContent)
-          if (continueCheck.hasContinue) {
-            loopResult += continueCheck.content
-            continue
-          }
-
-          // Check for break marker from conditional @break(condition)
-          let breakCheck = checkAndCleanBreak(processedContent)
-          if (breakCheck.hasBreak) {
-            loopResult += breakCheck.content
-            break
-          }
+          // A @break or @continue ends the row where it stands. The content
+          // before it is still this row, so it goes through every step below
+          // with the row's context; appending it here left its {{ }} for the
+          // page pass, which no longer has the loop variable.
+          let stop = cutAtLoopControl(processedContent)
+          processedContent = stop.content
 
           // Step 2a: Process any nested @forelse blocks with the iteration context
           processedContent = processForelse(processedContent, itemContext)
@@ -1072,17 +1060,12 @@ export function processLoops(template: string, context: Record<string, any>, fil
           // Now that conditionals are processed, @break/@continue from @if blocks are visible
           processedContent = processUnconditionalLoopControl(processedContent)
 
-          // Check for break/continue markers
-          breakCheck = checkAndCleanBreak(processedContent)
-          if (breakCheck.hasBreak) {
-            loopResult += breakCheck.content
-            break
-          }
-          continueCheck = checkAndCleanContinue(processedContent)
-          if (continueCheck.hasContinue) {
-            loopResult += continueCheck.content
-            continue
-          }
+          // A marker revealed here sits before any found in step 1, since
+          // everything after that one was already cut away.
+          const revealed = cutAtLoopControl(processedContent)
+          if (revealed.control)
+            stop = revealed
+          processedContent = revealed.content
 
           // Step 5: Process expressions with the item context
           processedContent = processExpressions(processedContent, itemContext, filePath)
@@ -1106,6 +1089,8 @@ export function processLoops(template: string, context: Record<string, any>, fil
           processedContent = preEvaluateIncludeData(processedContent, itemContext)
 
           loopResult += processedContent
+          if (stop.control === 'break')
+            break
         }
 
         // Replace the @foreach block with the processed result

@@ -746,6 +746,67 @@ describe('Loops Comprehensive', () => {
   })
 
   // ===========================================================================
+  // Content before @break and @continue
+  // ===========================================================================
+  describe('content before @break and @continue', () => {
+    it('should render the row an unconditional @break stops', () => {
+      const result = run(
+        `@foreach(items as item)<li>{{ item }}</li>@if(item === 'b')@break@endif@endforeach`,
+        { items: ['a', 'b', 'c'] },
+      )
+      expect(result).toBe('<li>a</li><li>b</li>')
+    })
+
+    it('should render the row a conditional @break(condition) stops', () => {
+      const result = run(
+        '@foreach(items as item)<li>{{ item }}</li>@break(item === 2)<i>{{ item }}</i>@endforeach',
+        { items: [1, 2, 3] },
+      )
+      expect(result).toBe('<li>1</li><i>1</i><li>2</li>')
+    })
+
+    it('should process directives in the row a conditional @break(condition) stops', () => {
+      const result = run(
+        '@foreach(items as item)@if(item > 1)<b>{{ item }}</b>@endif@break(item === 2)@endforeach',
+        { items: [1, 2, 3] },
+      )
+      expect(result).toBe('<b>2</b>')
+    })
+
+    it('should render the row an unconditional @continue skips the rest of', () => {
+      const result = run(
+        `@foreach(items as item)<li>{{ item }}</li>@if(item === 'b')@continue@endif<i>{{ item }}</i>@endforeach`,
+        { items: ['a', 'b', 'c'] },
+      )
+      expect(result).toBe('<li>a</li><i>a</i><li>b</li><li>c</li><i>c</i>')
+    })
+
+    it('should render the row a conditional @continue(condition) skips the rest of', () => {
+      const result = run(
+        '@foreach(items as item)<li>{{ item }}</li>@continue(item === 2)<i>{{ item }}</i>@endforeach',
+        { items: [1, 2, 3] },
+      )
+      expect(result).toBe('<li>1</li><i>1</i><li>2</li><li>3</li><i>3</i>')
+    })
+
+    it('should stop at whichever of @break and @continue comes first in the row', () => {
+      const result = run(
+        '@foreach(items as item)<li>{{ item }}</li>@break(item === 2)<i>{{ item }}</i>@continue(item === 2)@endforeach',
+        { items: [1, 2, 3] },
+      )
+      expect(result).toBe('<li>1</li><i>1</i><li>2</li>')
+    })
+
+    it('should let a @continue inside @if win over a later @break(condition)', () => {
+      const result = run(
+        '@foreach(items as item)<li>{{ item }}</li>@if(item === 2)@continue@endif<i>{{ item }}</i>@break(item === 2)@endforeach',
+        { items: [1, 2, 3] },
+      )
+      expect(result).toBe('<li>1</li><i>1</i><li>2</li><li>3</li><i>3</i>')
+    })
+  })
+
+  // ===========================================================================
   // Prop Bindings in Loops
   // ===========================================================================
   describe('prop bindings', () => {
