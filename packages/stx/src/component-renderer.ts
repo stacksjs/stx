@@ -1174,16 +1174,30 @@ async function processCustomElementTags(
         const names = renderMetadata.reactiveProps
           .filter(name => !renderMetadata.consumedProps.has(name) && !['if', 'for', 'show', 'key', 'ref'].includes(name))
           .map(pascalToKebab)
-        const hostRoot = findRenderedComponentHostRoot(finalContent)
+        const hostRoot = findRenderedComponentHostRoot(finalContent, true)
         if (names.length && hostRoot) {
           // Parent expressions still evaluate on the scope wrapper. Mark the
           // concrete control so the native host can deliver unconsumed attrs
           // there without evaluating caller expressions in the child scope.
-          finalContent = finalContent.slice(0, hostRoot.insertPos)
-            + ' data-stx-native-host-root="true"' + finalContent.slice(hostRoot.insertPos)
+          if (!Object.hasOwn(parseAllAttributes(finalContent.slice(hostRoot.insertPos, hostRoot.tagEnd)), 'data-stx-native-host-root')) {
+            finalContent = finalContent.slice(0, hostRoot.insertPos)
+              + ' data-stx-native-host-root="true"' + finalContent.slice(hostRoot.insertPos)
+          }
           const scopeRoot = findRenderedComponentRoot(finalContent)!
           finalContent = finalContent.slice(0, scopeRoot.insertPos)
             + ` data-stx-native-forward="${names.join(' ')}"` + finalContent.slice(scopeRoot.insertPos)
+        }
+        // Stateless child components have no scope wrapper. Stamp a resolved
+        // target so an enclosing component cannot claim the child's marker.
+        const ownedRoot = findRenderedComponentHostRoot(finalContent, true)
+        if (ownedRoot) {
+          const attrs = parseAllAttributes(finalContent.slice(ownedRoot.insertPos, ownedRoot.tagEnd))
+          const componentRoot = findRenderedComponentRoot(finalContent)!
+          const rootAttrs = parseAllAttributes(finalContent.slice(componentRoot.insertPos, componentRoot.tagEnd))
+          if (Object.hasOwn(attrs, 'data-stx-native-host-root') && !Object.hasOwn(rootAttrs, 'data-stx-native-host-owner')) {
+            finalContent = finalContent.slice(0, componentRoot.insertPos)
+              + ' data-stx-native-host-owner' + finalContent.slice(componentRoot.insertPos)
+          }
         }
       }
 
@@ -1295,7 +1309,7 @@ function emitClientReactiveAttrs(html: string, clientReactive: Record<string, st
  * explicitly renders them.
  */
 function forwardHostAttrs(html: string, props: ResolvedProps, declaredProps = new Set<string>(), consumedProps = new Set<string>(), nativeTarget = false): string {
-  const root = findRenderedComponentHostRoot(html)
+  const root = findRenderedComponentHostRoot(html, nativeTarget)
   if (!root)
     return html
 
@@ -1412,16 +1426,69 @@ function findRenderedComponentRoot(html: string): { insertPos: number, tagEnd: n
  * wrapped in a generated scope container so setup can find its props. DOM
  * attributes belong on the wrapped element, not that implementation detail.
  */
-function findRenderedComponentHostRoot(html: string): { insertPos: number, tagEnd: number } | null {
+function findRenderedComponentHostRoot(html: string, nativeTarget = false): { insertPos: number, tagEnd: number } | null {
   const wrapper = findRenderedComponentRoot(html)
   if (!wrapper)
     return null
 
   const wrapperOpeningTag = html.slice(wrapper.insertPos, wrapper.tagEnd)
-  if (!/\bdata-stx-component-wrapper(?:\s|=|>|$)/i.test(wrapperOpeningTag))
-    return wrapper
+  const root = /\bdata-stx-component-wrapper(?:\s|=|>|$)/i.test(wrapperOpeningTag)
+    ? findFirstRenderedElement(html, wrapper.tagEnd + 1)
+    : wrapper
 
-  return findFirstRenderedElement(html, wrapper.tagEnd + 1)
+  return root && nativeTarget ? findOwnedNativeHostRoot(html, root) ?? root : root
+}
+
+/**
+ * A composite control can designate its physical native attribute target.
+ * Only search this component's tree: a nested component's target belongs to
+ * that component, never to its parent. Quotes, comments and raw scripts are
+ * not element boundaries.
+ */
+function findOwnedNativeHostRoot(html: string, root: { insertPos: number, tagEnd: number }): { insertPos: number, tagEnd: number } | null {
+  if (!html.includes('data-stx-native-host-root')) return null
+  const voidTags = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'])
+  let cursor = html.lastIndexOf('<', root.insertPos)
+  let depth = 0
+  let foreignDepth: number | undefined
+  while (cursor >= 0 && cursor < html.length) {
+    if (html.startsWith('<!--', cursor)) {
+      const end = html.indexOf('-->', cursor + 4)
+      if (end < 0) return null
+      cursor = html.indexOf('<', end + 3)
+      continue
+    }
+    const tag = /^<(\/?)([a-z][\w-]*)\b/i.exec(html.slice(cursor))
+    if (!tag) { cursor = html.indexOf('<', cursor + 1); continue }
+    const name = tag[2].toLowerCase()
+    const insertPos = cursor + tag[0].length
+    const tagEnd = findOpeningTagEnd(html, insertPos)
+    if (tag[1]) {
+      depth--
+      if (foreignDepth !== undefined && depth < foreignDepth) foreignDepth = undefined
+      if (depth <= 0) return null
+    }
+    else if (name === 'script' || name === 'style') {
+      const close = new RegExp(`</${name}\\s*>`, 'gi')
+      close.lastIndex = tagEnd + 1
+      if (!close.exec(html)) return null
+      cursor = html.indexOf('<', close.lastIndex)
+      continue
+    }
+    else {
+      const attributes = parseAllAttributes(html.slice(insertPos, tagEnd))
+      const foreign = depth > 0 && (Object.hasOwn(attributes, 'data-stx-component-wrapper') || Object.hasOwn(attributes, 'data-stx-native-host-owner'))
+      if (foreignDepth === undefined && !foreign && Object.hasOwn(attributes, 'data-stx-native-host-root'))
+        return { insertPos, tagEnd }
+      if (!voidTags.has(name) && html[tagEnd - 1] !== '/') {
+        depth++
+        if (foreignDepth === undefined && foreign) foreignDepth = depth
+      }
+      else if (depth === 0) return null
+    }
+    cursor = html.indexOf('<', tagEnd + 1)
+  }
+  return null
 }
 
 /** Find the first real element at or after an offset, skipping raw text. */

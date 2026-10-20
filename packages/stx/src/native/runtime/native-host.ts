@@ -494,6 +494,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     if (!isBindingNode(node) || !(node.getAttribute('data-stx-native-forward') ?? '').split(/\s+/).includes(name))
       return
     const find = (candidate: NativeNode): NativeNode | undefined => {
+      if (candidate !== node && isBindingNode(candidate) && candidate.hasAttribute('data-stx-native-host-owner'))
+        return
       if (isBindingNode(candidate) && candidate.hasAttribute('data-stx-native-host-root'))
         return candidate
       for (const child of recordOf(candidate).children) {

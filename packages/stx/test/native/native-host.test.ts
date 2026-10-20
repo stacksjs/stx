@@ -70,6 +70,20 @@ describe('the native host satisfies the same contract as the DOM one', () => {
 })
 
 describe('host calls become bridge operations', () => {
+  it('skips stateless child attribute targets when forwarding a parent update', () => {
+    const { host } = harness()
+    const nested = createNode('View', { 'data-stx-native-host-owner': true }, {}, {}, [
+      createNode('Button', { 'data-stx-native-host-root': true, accessibilityLabel: 'Child' }),
+    ])
+    const own = createNode('Button', { 'data-stx-native-host-root': true })
+    const root = createNode('View', { 'data-stx-native-forward': 'accessibility-label', 'data-stx-native-host-owner': true }, {}, {}, [nested, own])
+    const tree = materializeNativeBindingTree(createDocument(root, { exports: {}, functions: [], code: '' }), { entries: [] }, host)
+    host.setAttribute(tree.root, 'accessibility-label', 'Parent')
+    const snapshot = host.snapshot(tree.root)
+    expect((snapshot.children[1] as typeof own).props.accessibilityLabel).toBe('Parent')
+    expect(((snapshot.children[0] as typeof nested).children[0] as typeof own).props.accessibilityLabel).toBe('Child')
+  })
+
   it('reflects forwarded attributes on both the component scope and the physical control', async () => {
     const { host } = harness()
     const control = createNode('Pressable', { 'data-stx-native-host-root': true })

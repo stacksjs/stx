@@ -22,6 +22,13 @@ stx or native host gaps in Craft.
 
 ### Component resolution and compatibility
 
+A composite shared component can put `data-stx-native-host-root` on its physical
+control to receive unconsumed native caller attributes. Without this marker,
+attributes retain the existing concrete-root behavior. The marker does not
+change browser fallthrough, consumed component props, or event ownership.
+Targets owned by nested components are not eligible targets for the parent,
+including stateless children that have no signal scope wrapper.
+
 Explicit `@import` selections and screen-owned components remain overrides on
 both targets. Native compilation searches the original page's `components/`,
 the app's configured `componentsDir`, and sibling component directories before

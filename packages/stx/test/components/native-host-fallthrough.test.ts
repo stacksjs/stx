@@ -42,3 +42,48 @@ it('does not broaden ordinary browser attribute forwarding', async () => {
   expect(html).toContain('id="web"')
   expect(html).toContain('data-extra="yes"')
 })
+
+it('forwards native attributes to an explicitly designated physical control, not its layout wrapper', async () => {
+  const component = '<div data-layout="yes"><input type="hidden" /><button data-stx-native-host-root class="p-2">Save</button></div>'
+  const html = await render(component, '<Control testID="save" accessibilityLabel="Save changes" class="text-[15px]" />', true)
+  const { root } = await translateHtmlToIR(html)
+  expect(root.props.testID).toBeUndefined()
+  const control = root.children.find(child => typeof child !== 'string' && child.type === 'Button')
+  expect(control).toMatchObject({ props: { testID: 'save', accessibilityLabel: 'Save changes' }, style: { fontSize: 15, padding: 8 } })
+  const browser = await render(component, '<Control id="web" />', false)
+  expect(browser).toMatch(/<div[^>]*id="web"/)
+})
+
+it('does not select markers in comments, quoted attributes, raw scripts or nested component scopes', async () => {
+  const html = await render(`<div title="data-stx-native-host-root > not an attribute">
+<!-- <button data-stx-native-host-root>wrong</button> -->
+<script>const example = '<button data-stx-native-host-root>wrong</button>'</script>
+<div data-stx-component-wrapper><button data-stx-native-host-root>Nested</button></div>
+<button data-stx-native-host-root title="a > b">Owned</button>
+</div>`, '<Control testID="owned" />', true)
+  const { root } = await translateHtmlToIR(html)
+  expect(root.props.testID).toBeUndefined()
+  const nested = root.children.find(child => typeof child !== 'string' && child.type === 'View')
+  expect(nested).not.toBeUndefined()
+  const owned = root.children.find(child => typeof child !== 'string' && child.type === 'Button')
+  expect(owned).toMatchObject({ props: { testID: 'owned', title: 'a > b' } })
+  const onlyNested = await render('<div><div data-stx-component-wrapper><button data-stx-native-host-root>Nested</button></div></div>',
+    '<Control testID="outer" />', true)
+  expect((await translateHtmlToIR(onlyNested)).root.props.testID).toBe('outer')
+})
+
+it('does not let a stateless child target capture its parent attributes', async () => {
+  const root = createTempDir('stx-native-target-owner-')
+  await Bun.write(join(root, 'components/Child.stx'), '<div><button data-stx-native-host-root>Child</button></div>')
+  await Bun.write(join(root, 'components/Parent.stx'), '<section><Child testID="child" /></section>')
+  const html = await processDirectives('<Parent testID="parent" />', { __stx_inject_css: false }, join(root, 'Screen.stx'), {
+    ...defaultConfig, root, componentsDir: join(root, 'components'), cache: false, _nativeHostAttrs: true,
+  }, new Set())
+  const tree = (await translateHtmlToIR(html)).root
+  expect(tree.props.testID).toBe('parent')
+  const child = tree.children[0]
+  expect(typeof child).not.toBe('string')
+  if (typeof child === 'string') throw new Error('Expected child wrapper')
+  expect(child.props.testID).toBeUndefined()
+  expect(child.children[0]).toMatchObject({ props: { testID: 'child' } })
+})
