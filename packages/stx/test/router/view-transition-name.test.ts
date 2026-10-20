@@ -153,6 +153,31 @@ describe('view-transition-name on a routed navigation', () => {
     expect(result.outcomes).toEqual(['ready'])
   }, 30_000)
 
+  it('names nothing once the transition is over, so a page overlay is not trapped under the header', async () => {
+    await load('pawel')
+    const result = await navigate('coach', '#greet')
+    if (!result.supported)
+      return
+    expect(result.outcomes).toEqual(['ready'])
+    // A view-transition-name makes its element a stacking context: left on
+    // <main>, every fixed overlay inside it sat under a sticky header outside.
+    expect(await named()).toBe(0)
+    expect(await view.evaluate(`document.querySelectorAll('[data-stx-vt-content]').length`)).toBe(0)
+    const onTop = await view.evaluate(`(function() {
+      var header = document.createElement('header');
+      header.style.cssText = 'position:sticky;top:0;z-index:40;height:60px;background:#000';
+      document.body.insertBefore(header, document.body.firstChild);
+      var sheet = document.createElement('div');
+      sheet.id = 'sheet';
+      sheet.style.cssText = 'position:fixed;inset:0;z-index:50;background:#fff';
+      document.querySelector('main').appendChild(sheet);
+      var hit = document.elementFromPoint(10, 10);
+      header.remove(); sheet.remove();
+      return hit && hit.id;
+    })()`)
+    expect(onTop).toBe('sheet')
+  }, 30_000)
+
   it('arrives at a page with a nested <main> without a duplicate name', async () => {
     await load('pricing')
     const result = await navigate('pawel', '#profile-main')

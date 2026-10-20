@@ -415,14 +415,30 @@ function routerSource(): string {
     qsa('['+VT_NAME+']').forEach(function(el){if(el!==named)el.removeAttribute(VT_NAME)});
     if(named&&!named.hasAttribute(VT_NAME))named.setAttribute(VT_NAME,'');
   }
+  // And it comes off again when the transition is over. A view-transition-name
+  // makes its element a stacking context, so a container left named kept
+  // every page's own overlay - a sheet, a modal, a library Dialog - under the
+  // sticky header and the tab bar whatever its z-index, from the first
+  // navigation on. Apps answered it per overlay; the name is only needed
+  // while the browser is capturing the old and new pages.
+  var transitionsRunning=0;
+  function unnameTransitionContainer(){
+    if(--transitionsRunning>0)return;
+    transitionsRunning=0;
+    qsa('['+VT_NAME+']').forEach(function(el){el.removeAttribute(VT_NAME)});
+  }
   function namedTransition(callback){
     nameTransitionContainer();
-    return document.startViewTransition(function(){
+    transitionsRunning++;
+    var transition=document.startViewTransition(function(){
       var out=callback();
       nameTransitionContainer();
       if(out&&typeof out.then==='function')return out.then(function(v){nameTransitionContainer();return v});
       return out;
     });
+    if(transition&&transition.finished&&typeof transition.finished.then==='function')transition.finished.then(unnameTransitionContainer,unnameTransitionContainer);
+    else unnameTransitionContainer();
+    return transition;
   }
   function runViewTransition(callback){
     if(instantNav||!o.viewTransitions||!document.startViewTransition)return false;
