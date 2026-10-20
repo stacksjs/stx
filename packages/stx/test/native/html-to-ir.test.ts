@@ -451,6 +451,14 @@ describe('shared-runtime list boundaries', () => {
     expect(diagnostics).toEqual([])
   })
 
+  it('types image failures with the native error envelope', () => {
+    const image: ImageProps = {
+      source: 'https://example.com/trail.png',
+      onError: event => event.nativeEvent.error.message,
+    }
+    expect(image.onError).toBeFunction()
+  })
+
   it('warns when legacy FlatList expansion props would otherwise be silently ignored', async () => {
     const { root, diagnostics } = await translateHtmlToIR(
       '<div data-native="FlatList" :data="rows" :renderItem="renderRow" keyExtractor="rowKey" listRole="item"><Text>Rows</Text></div>',

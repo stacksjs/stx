@@ -203,6 +203,8 @@ value controls also accept the explicit `onChange` alias used by Craft's
 maintained iOS and Android hosts, while `@change` remains the shared
 `onValueChange` spelling;
 native images retain `alt` as their accessibility-label fallback.
+Image failures use the shared `{ nativeEvent: { error: { message } } }`
+envelope, matching Craft's maintained iOS and Android hosts.
 `data`, `renderItem`, `keyExtractor`, and grouped `SectionList` data are
 rejected until a versioned list-data protocol is introduced. This keeps the
 public types honest while preserving recycling for the child trees that the
