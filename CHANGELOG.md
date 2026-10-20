@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.600...v0.2.601)
+
+## ✨ Features
+
+- **components**: a flush dialog panel whose sections pad themselves ([d4b2be5](https://github.com/stacksjs/stx/commit/d4b2be5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.601 ([b2dde62](https://github.com/stacksjs/stx/commit/b2dde62)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.599...v0.2.600)
 
 ## 🐛 Bug Fixes
