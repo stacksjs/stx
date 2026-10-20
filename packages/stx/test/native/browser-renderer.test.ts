@@ -15,6 +15,21 @@ function fixture() {
 }
 
 describe('the browser peer of the native screen renderer', () => {
+  it('adds safe-area env insets to authored padding and honors selected edges', () => {
+    const { renderer, container, node } = fixture()
+    const safeRoot = node('root', 'SafeAreaView', [node('content', 'View')], { edges: ['top', 'bottom'] })
+    safeRoot.style = { paddingTop: '8px', paddingBottom: '8px', paddingLeft: '10px', paddingRight: '10px' }
+    renderer.render(safeRoot)
+    const root = container.querySelector<HTMLElement>('[data-stx-node="root"]')!
+    renderer.mutate({ version: 1, batchId: 'safe-area', baseRevision: 0, revision: 1, operations: [{ op: 'updateNode', id: 'root', patch: { props: { edges: ['top', 'bottom'] } } }] })
+    expect(root.style.paddingTop).toBe('calc(env(safe-area-inset-top, 0px) + 8px)')
+    expect(root.style.paddingBottom).toBe('calc(env(safe-area-inset-bottom, 0px) + 8px)')
+    expect(root.style.paddingLeft).toBe('10px')
+    expect(root.style.paddingRight).toBe('10px')
+    renderer.mutate({ version: 1, batchId: 'all-edges', baseRevision: 1, revision: 2, operations: [{ op: 'updateNode', id: 'root', patch: { props: { edges: null } } }] })
+    expect(root.style.paddingLeft).toBe('calc(env(safe-area-inset-left, 0px) + 10px)')
+  })
+
   it('reports parent-relative layout frames and tears the observer down', () => {
     const { renderer, container, node, window, events } = fixture()
     let notify: (() => void) | undefined

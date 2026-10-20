@@ -289,6 +289,7 @@ export class BrowserScreenRenderer {
     if (type === 'Icon') { css.display = 'inline-block'; css.width = '20px'; css.height = '20px'; css.flexShrink = '0' }
     this.style(css, style)
     if (props.contentContainerStyle && typeof props.contentContainerStyle === 'object') this.style(css, props.contentContainerStyle as Record<string, unknown>)
+    if (type === 'SafeAreaView') this.applySafeAreaPadding(css, props.edges)
     if (props.testID != null) element.setAttribute('data-testid', String(props.testID))
     if (props.accessibilityLabel != null || (type === 'TextInput' && props.placeholder)) element.setAttribute('aria-label', String(props.accessibilityLabel ?? props.placeholder))
     else element.removeAttribute('aria-label')
@@ -411,6 +412,16 @@ export class BrowserScreenRenderer {
     if (parent && parent !== record.element) observer.observe(parent)
     record.layoutObserver = observer
     record.layoutObservedParent = parent
+  }
+
+  private applySafeAreaPadding(css: CSSStyleDeclaration, rawEdges: unknown): void {
+    const valid = new Set(['top', 'right', 'bottom', 'left'])
+    const edges = Array.isArray(rawEdges) ? new Set(rawEdges.filter(edge => typeof edge === 'string' && valid.has(edge))) : valid
+    for (const edge of valid) {
+      const property = `padding${edge[0].toUpperCase()}${edge.slice(1)}` as 'paddingTop' | 'paddingRight' | 'paddingBottom' | 'paddingLeft'
+      const authored = css[property] || '0px'
+      css[property] = edges.has(edge) ? `calc(env(safe-area-inset-${edge}, 0px) + ${authored})` : authored
+    }
   }
 
   private icon(props: Record<string, unknown>): { body: string, width?: number, height?: number } {
