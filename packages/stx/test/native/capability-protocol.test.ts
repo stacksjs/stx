@@ -53,7 +53,22 @@ describe('shared-runtime native capability protocol', () => {
       deepLinks: true,
       localNotifications: true,
       camera: false,
+      badge: false,
     })
+  })
+
+  it('exposes the host-owned app badge module only when advertised', async () => {
+    const { scope, sent } = await runtime('', { capabilities: ['badge'], timers: false })
+    expect(scope.craft.capabilities.badge).toBe(true)
+    expect(typeof scope.craft.badge?.set).toBe('function')
+    expect(typeof scope.craft.badge?.clear).toBe('function')
+
+    scope.craft.badge.set(3)
+    scope.craft.badge.clear()
+    expect(sent.filter(message => message.type === 'API_REQUEST').map(message => message.payload)).toEqual([
+      { version: 1, module: 'Badge', method: 'set', args: [3] },
+      { version: 1, module: 'Badge', method: 'clear', args: [] },
+    ])
   })
 
   it('exposes the existing Craft API shapes over versioned requests', async () => {

@@ -56,7 +56,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     network: false,
     deviceInfo: capabilities.has('device'),
     fetch: capabilities.has('fetch'),
-    badge: false,
+    badge: capabilities.has('badge'),
     appReview: false,
     health: capabilities.has('health'),
     dialogs: capabilities.has('dialog'),
@@ -292,6 +292,16 @@ export function installCraftBridge(
     cancel: (id: string) => request('Notifications', 'cancel', [id]),
     cancelAll: () => request('Notifications', 'cancelAll', []),
     pending: () => request('Notifications', 'pending', []),
+  }
+  // Permission-free app-icon badge controls. Hosts advertise this only when
+  // they can apply it (currently the iOS native-screen host); keeping the
+  // object capability-gated avoids a misleading API on Android and WebView
+  // screens.
+  if (capabilities.has('badge')) {
+    craft.badge = {
+      set: (count: number) => request('Badge', 'set', [count]),
+      clear: () => request('Badge', 'clear', []),
+    }
   }
   // The system's alert, confirmation and action sheet, the page's
   // `craft.dialog` shape. A person answers them, so they are never timed out.

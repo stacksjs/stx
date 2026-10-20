@@ -372,6 +372,11 @@ export interface NativeCraft {
     cancelAll: () => Promise<unknown>
     pending: () => Promise<unknown[]>
   }
+  /** Permission-free app-icon badge controls (`capabilities.badge`). */
+  badge?: {
+    set: (count: number) => Promise<unknown>
+    clear: () => Promise<unknown>
+  }
   lifecycle: {
     getState: () => 'active' | 'inactive' | 'background'
     onStateChange: (callback: (state: string) => unknown) => () => void
