@@ -1,5 +1,67 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.605...v0.2.606)
+
+## ✨ Features
+
+- **native**: type video load lifecycle events ([fb61834](https://github.com/stacksjs/stx/commit/fb61834)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: expose controlled video seeking ([4a517f6](https://github.com/stacksjs/stx/commit/4a517f6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: type link component props ([9530c17](https://github.com/stacksjs/stx/commit/9530c17)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: add first-class link primitive ([8c11ab8](https://github.com/stacksjs/stx/commit/8c11ab8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: select shared checked controls by usage ([1a89af0](https://github.com/stacksjs/stx/commit/1a89af0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: gate non-modal overlay presentation on host capability (#2089) ([ba231a9](https://github.com/stacksjs/stx/commit/ba231a9)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2089](https://github.com/stacksjs/stx/issues/2089), [#2089](https://github.com/stacksjs/stx/issues/2089))
+- **native**: allow composite controls to select their host attribute target (#2091) ([4540517](https://github.com/stacksjs/stx/commit/4540517)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **native**: define reversible ARIA accessibility projection (#2091) ([74eb646](https://github.com/stacksjs/stx/commit/74eb646)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+
+## 🐛 Bug Fixes
+
+- **native**: type flat list refresh ([3d997cd](https://github.com/stacksjs/stx/commit/3d997cd)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: type list chrome slots ([78f2f04](https://github.com/stacksjs/stx/commit/78f2f04)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: preserve modal presentation protocol properties ([e8abed5](https://github.com/stacksjs/stx/commit/e8abed5)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **typecheck**: bind scoped slot parameters lexically (#2096) ([d41fefd](https://github.com/stacksjs/stx/commit/d41fefd)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2096](https://github.com/stacksjs/stx/issues/2096), [#2096](https://github.com/stacksjs/stx/issues/2096))
+- **slots**: preserve client interpolation during projection (#2095) ([370dbf2](https://github.com/stacksjs/stx/commit/370dbf2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2095](https://github.com/stacksjs/stx/issues/2095), [#2095](https://github.com/stacksjs/stx/issues/2095))
+- **native**: align list types with keyed protocol ([ccd4762](https://github.com/stacksjs/stx/commit/ccd4762)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: type align-content evenly ([6ff576f](https://github.com/stacksjs/stx/commit/6ff576f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: compose safe area shorthand padding ([19797f2](https://github.com/stacksjs/stx/commit/19797f2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: preserve browser safe area insets ([584c9f6](https://github.com/stacksjs/stx/commit/584c9f6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: observe browser layout parents ([4e95d61](https://github.com/stacksjs/stx/commit/4e95d61)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: report browser layout measurements ([27d647e](https://github.com/stacksjs/stx/commit/27d647e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: preserve links in browser fallback ([d940e23](https://github.com/stacksjs/stx/commit/d940e23)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: render links in reference hosts ([4172cdf](https://github.com/stacksjs/stx/commit/4172cdf)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: expose host-owned app badges ([dbe0a0f](https://github.com/stacksjs/stx/commit/dbe0a0f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: preserve list role metadata ([5a6a368](https://github.com/stacksjs/stx/commit/5a6a368)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: forward shared TextInput host attributes to its input (#2091) ([137fa73](https://github.com/stacksjs/stx/commit/137fa73)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **native**: translate bounded arbitrary and axis border widths (#2090) ([6171d72](https://github.com/stacksjs/stx/commit/6171d72)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **native**: deliver shared control caller attributes to physical controls (#2091) ([9b15650](https://github.com/stacksjs/stx/commit/9b15650)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **native**: resolve CSS flex defaults after authored styles (#2090) ([e7c673a](https://github.com/stacksjs/stx/commit/e7c673a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+- **components**: synchronize shared control labels across targets (#2091) ([839bc42](https://github.com/stacksjs/stx/commit/839bc42)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **components**: give shared Switch a reactive accessible name (#2091) ([629c6d7](https://github.com/stacksjs/stx/commit/629c6d7)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **native**: project ARIA state across render and mutation paths (#2091) ([33addea](https://github.com/stacksjs/stx/commit/33addea)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **native**: retain Switch changes and pin control compatibility (#2091) ([2d32247](https://github.com/stacksjs/stx/commit/2d32247)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **native**: keep hidden form controls outside layout (#2091) ([f54c91a](https://github.com/stacksjs/stx/commit/f54c91a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+
+## 📝 Documentation
+
+- **native**: expose and document non-modal presentation capability (#2089) ([fa8a407](https://github.com/stacksjs/stx/commit/fa8a407)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2089](https://github.com/stacksjs/stx/issues/2089), [#2089](https://github.com/stacksjs/stx/issues/2089))
+
+## ✅ Tests
+
+- **native**: add runnable shared-control host validation screen (#2090) ([2558b57](https://github.com/stacksjs/stx/commit/2558b57)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2090](https://github.com/stacksjs/stx/issues/2090), [#2090](https://github.com/stacksjs/stx/issues/2090))
+
+## 🔧 Chores
+
+- release v0.2.606 ([5ef3eb0](https://github.com/stacksjs/stx/commit/5ef3eb0)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge pull request #2099 from stacksjs/codex/native-modal-protocol-props ([dcfd77d](https://github.com/stacksjs/stx/commit/dcfd77d)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2099](https://github.com/stacksjs/stx/issues/2099), [#2099](https://github.com/stacksjs/stx/issues/2099))
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.604...v0.2.605)
 
 ## 🐛 Bug Fixes
