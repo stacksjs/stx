@@ -231,6 +231,9 @@ Scroll hosts also share `alwaysBounceHorizontal`, `alwaysBounceVertical`, and
 the `keyboardShouldPersistTaps` (`always`/`handled`/`never`) policy. These are
 typed because both maintained Craft hosts consume them; unknown values fall
 back to the host's `never` policy.
+The drag and momentum lifecycle events (`onScrollBeginDrag`, `onScrollEndDrag`,
+`onMomentumScrollBegin`, and `onMomentumScrollEnd`) carry the same scroll
+payload as `onScroll` on both hosts.
 The iOS-specific `Switch` tint remains spelled `ios_backgroundColor`, matching
 the native host protocol after HTML attribute case restoration.
 

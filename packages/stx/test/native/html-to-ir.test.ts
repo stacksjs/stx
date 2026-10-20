@@ -507,10 +507,18 @@ describe('shared-runtime list boundaries', () => {
       alwaysBounceHorizontal: true,
       alwaysBounceVertical: false,
       keyboardShouldPersistTaps: 'handled',
+      onScrollBeginDrag: event => event.nativeEvent.contentOffset.x,
+      onScrollEndDrag: event => event.nativeEvent.contentSize.height,
+      onMomentumScrollBegin: event => event.nativeEvent.layoutMeasurement.width,
+      onMomentumScrollEnd: event => event.nativeEvent.contentOffset.y,
     }
     expect(scroll.alwaysBounceHorizontal).toBe(true)
     expect(scroll.alwaysBounceVertical).toBe(false)
     expect(scroll.keyboardShouldPersistTaps).toBe('handled')
+    expect(scroll.onScrollBeginDrag).toBeFunction()
+    expect(scroll.onScrollEndDrag).toBeFunction()
+    expect(scroll.onMomentumScrollBegin).toBeFunction()
+    expect(scroll.onMomentumScrollEnd).toBeFunction()
   })
 
   it('keeps the native role and pressable vocabulary host-supported', () => {

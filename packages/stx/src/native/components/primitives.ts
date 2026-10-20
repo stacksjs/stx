@@ -102,10 +102,14 @@ export interface ScrollViewProps extends ViewProps {
   alwaysBounceVertical?: boolean
   /** Scroll handler */
   onScroll?: (event: ScrollEvent) => void
+  /** User began dragging the scroll host. */
+  onScrollBeginDrag?: (event: ScrollEvent) => void
   /** Scroll end handler */
-  onScrollEndDrag?: () => void
+  onScrollEndDrag?: (event: ScrollEvent) => void
+  /** Momentum scrolling began after a drag. */
+  onMomentumScrollBegin?: (event: ScrollEvent) => void
   /** Momentum scroll end handler */
-  onMomentumScrollEnd?: () => void
+  onMomentumScrollEnd?: (event: ScrollEvent) => void
   /** Content container style */
   contentContainerStyle?: STXStyle
   /** Keyboard dismiss mode */
