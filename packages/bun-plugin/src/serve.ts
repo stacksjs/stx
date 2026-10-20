@@ -3780,6 +3780,18 @@ function __stxOverlay(errs){
         // cut off an upload or an import the API was still working on, so it
         // is the API server's own 120.
         idleTimeout: production ? 120 : 0,
+        error(error) {
+          // Fatal render/validation failures must not fall back to Bun's
+          // development error response, which can expose paths and source.
+          console.error('[stx] Request failed:', error)
+          return new Response('<h1>Internal Server Error</h1><p>An error occurred while processing your request.</p>', {
+            status: 500,
+            headers: {
+              'Content-Type': 'text/html; charset=utf-8',
+              'Cache-Control': 'no-store',
+            },
+          })
+        },
         async fetch(req, server) {
           // See `awaitImageWarmup`: the port is already bound, and this is
           // where the wait belongs — before anything renders, not before

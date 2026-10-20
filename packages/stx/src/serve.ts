@@ -17,6 +17,7 @@ import { extractVariables } from './utils'
 import { compressResponse } from './compression'
 import { readResponseHeaders, readResponseStatus } from './page-response'
 import { createServerApi, isServerApiSource } from './server-api'
+import { validateClientScript } from './script-validation'
 
 export interface ServeOptions {
   /** Server port */
@@ -196,6 +197,8 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
         serverScripts.push(scriptContent)
       }
       else {
+        if (!/\bsrc\s*=|\btype\s*=\s*["'](?!(?:text\/javascript|application\/javascript|module)["'])[^"']*["']/i.test(attrs))
+          validateClientScript(scriptContent, filePath, stxOptions.strict)
         clientScripts.push(fullScript)
       }
     }
