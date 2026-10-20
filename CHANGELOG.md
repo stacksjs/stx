@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.611...v0.2.612)
+
+## ⚡ Performance Improvements
+
+- **stx**: copy the objects a loop's rows share once per loop ([3e8fb1d](https://github.com/stacksjs/stx/commit/3e8fb1d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **slots**: cover nested table projection and visible interpolation ([9d783de](https://github.com/stacksjs/stx/commit/9d783de)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.612 ([2e6e181](https://github.com/stacksjs/stx/commit/2e6e181)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.610...v0.2.611)
 
 ## 🐛 Bug Fixes
