@@ -572,8 +572,26 @@ export function sanitizeExpression(expression: string): string {
 /**
  * Create a safer context object that only exposes safe properties
  */
+/**
+ * Where a loop keeps the sanitized copies of the objects its iterations share.
+ *
+ * Every condition and expression builds a safe context, and building one deep-
+ * copies each object in scope. Inside `@foreach` that scope is the page's: an
+ * `@if` per row of a 2,287-file commit copied the commit - all 2,287 files of
+ * it - once per row, five million objects for one page and eight seconds of a
+ * server that does nothing else meanwhile (ReviewOS, 2026-10-20). The rows
+ * share those objects, so a loop keeps one copy of each for its duration.
+ *
+ * A symbol, so it rides along in `{ ...context }` to nested loops and stays out
+ * of `Object.entries`, which is what reaches templates. Scoped to the loop
+ * rather than the process, so an object changed between requests is never
+ * served from an old copy.
+ */
+export const SANITIZE_CACHE: unique symbol = Symbol('stx.sanitizeCache')
+
 export function createSafeContext(context: Record<string, unknown>): Record<string, unknown> {
   const safeContext: Record<string, unknown> = {}
+  const cache = (context as Record<symbol, unknown>)[SANITIZE_CACHE] as WeakMap<object, unknown> | undefined
 
   // Add allowed globals
   safeContext.Math = Math
@@ -601,7 +619,12 @@ export function createSafeContext(context: Record<string, unknown>): Record<stri
 
     // For objects, create a safe copy
     if (value && typeof value === 'object' && !Array.isArray(value)) {
-      safeContext[key] = sanitizeObject(value)
+      let sanitized = cache?.get(value)
+      if (sanitized === undefined) {
+        sanitized = sanitizeObject(value)
+        cache?.set(value, sanitized)
+      }
+      safeContext[key] = sanitized
     }
     else {
       safeContext[key] = value

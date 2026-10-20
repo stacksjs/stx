@@ -49,7 +49,7 @@ import { processConditionals } from './conditionals'
 import { ErrorCodes, inlineError } from './error-handling'
 import { processExpressions } from './expressions'
 import { findDirectiveBlocks, findMatchingDelimiter } from './parser'
-import { createSafeFunction, freeIdentifiers, isExpressionSafe, isForExpressionSafe, sanitizeExpression, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
+import { createSafeFunction, freeIdentifiers, isExpressionSafe, isForExpressionSafe, SANITIZE_CACHE, sanitizeExpression, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
 
 // Default loop configuration
 const DEFAULT_MAX_WHILE_ITERATIONS = 1000
@@ -963,6 +963,9 @@ export function processLoops(template: string, context: Record<string, any>, fil
 
         let loopResult = ''
         const items = array as any[]
+        // One set of sanitized copies for every iteration (see SANITIZE_CACHE);
+        // a nested loop inherits its parent's through the spread below.
+        const sanitizeCache = (ctx as Record<symbol, unknown>)[SANITIZE_CACHE] ?? new WeakMap<object, unknown>()
         for (let index = 0; index < items.length; index++) {
           const item = items[index]
 
@@ -981,6 +984,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
             ...ctx,
             loop: loopContext,
             $loop: loopContext, // Alternative name to avoid conflicts with user's 'loop' variable
+            [SANITIZE_CACHE]: sanitizeCache,
           }
 
           // Handle array destructuring syntax: @foreach(items as [key, val])
