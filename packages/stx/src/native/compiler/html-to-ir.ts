@@ -156,7 +156,7 @@ const NATIVE_TYPES = new Set([
   'Sidebar', 'SplitView',
   'View', 'ScrollView', 'SafeAreaView', 'KeyboardAvoidingView',
   'Text', 'TextInput',
-  'Button', 'TouchableOpacity', 'TouchableHighlight', 'Pressable',
+  'Button', 'Link', 'TouchableOpacity', 'TouchableHighlight', 'Pressable',
   'Icon', 'Image', 'ImageBackground', 'Video',
   'Map', 'MapPolyline', 'MapMarker',
   'FlatList', 'SectionList',

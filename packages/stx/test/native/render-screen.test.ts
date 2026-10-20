@@ -284,7 +284,7 @@ const route = state([47, 11, 47.1, 11.2])
 
   it('ships one component per native type the IR declares', async () => {
     const files = [...new Bun.Glob('*.stx').scanSync(nativePrimitivesDir())].sort()
-    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(28)
+    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(29)
     expect(files).toContain('Fragment.stx')
     expect(files).toContain('Icon.stx')
     expect(files).toContain('TouchableOpacity.stx')
@@ -311,6 +311,17 @@ const route = state([47, 11, 47.1, 11.2])
     const source = `<View class="p-1"><TouchableOpacity class="p-1"><Text>a</Text></TouchableOpacity><Pressable class="p-1"><Text>b</Text></Pressable></View>`
     const { document } = await compileScreenSource(source, screen('Touchables.stx', source))
     expect(types(document.root)).toEqual(['View', 'TouchableOpacity', 'Text', 'Pressable', 'Text'])
+  })
+
+  it('compiles Link to the host link primitive and preserves its destination', async () => {
+    const source = '<View><Link testID="details" href="/details">Open details</Link></View>'
+    const { document } = await compileScreenSource(source, screen('Link.stx', source))
+    const link = document.root.children.find((child): child is STXNode => typeof child !== 'string')!
+
+    expect(link.type).toBe('Link')
+    expect(link.props).toMatchObject({ testID: 'details', href: '/details' })
+    expect(texts(link)).toEqual(['Open details'])
+    expect(link.style).toMatchObject({ textDecorationLine: 'underline' })
   })
 
   it('keeps static host props on every native primitive root', async () => {

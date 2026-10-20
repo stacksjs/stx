@@ -1,0 +1,5 @@
+{{-- Link: an underlined native navigation action. --}}
+<script server>
+const classes = $props.class ?? $props.className ?? ''
+</script>
+<a data-native="Link" class="text-accent underline {{ classes }}"><slot /></a>

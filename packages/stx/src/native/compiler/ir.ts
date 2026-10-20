@@ -25,6 +25,7 @@ export type STXComponentType =
   | 'TextInput'
   // Interactive
   | 'Button'
+  | 'Link'
   | 'TouchableOpacity'
   | 'TouchableHighlight'
   | 'Pressable'
