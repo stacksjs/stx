@@ -114,6 +114,21 @@ describe('the reference screen', () => {
   })
 })
 
+describe('native media events', () => {
+  it('keeps video load lifecycle handlers in the native IR', async () => {
+    const source = '<View><Video source="https://cdn.example/video.mp4" @load-start="started()" @load="loaded($event)" @load-end="ended()" /></View>'
+    const { document } = await compileScreenSource(source, screen('VideoEvents.stx', source))
+    const video = document.root.children.find(
+      (child): child is STXNode => typeof child !== 'string' && child.type === 'Video',
+    )
+    expect(video?.events).toEqual({
+      onLoadStart: 'started()',
+      onLoad: 'loaded($event)',
+      onLoadEnd: 'ended()',
+    })
+  })
+})
+
 describe('what the second parser could not do', () => {
   it('runs a server script and renders its data', async () => {
     const source = `<script server>

@@ -431,6 +431,10 @@ export interface VideoProps extends BaseProps {
   resizeMode?: 'contain' | 'cover' | 'stretch'
   /** `@load`: the duration is known, in seconds. */
   onLoad?: (event: { duration: number }) => void
+  /** `@loadstart`: the source began loading. */
+  onLoadStart?: () => void
+  /** `@loadend`: the source became ready for playback. */
+  onLoadEnd?: () => void
   /** `@play` and `@pause`, from the controls as well as from props. */
   onPlay?: () => void
   onPause?: () => void
