@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.610...v0.2.611)
+
+## 🐛 Bug Fixes
+
+- **ssr**: respect client signal ownership before evaluation (#2100) ([9bc2d1f](https://github.com/stacksjs/stx/commit/9bc2d1f)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2100](https://github.com/stacksjs/stx/issues/2100), [#2100](https://github.com/stacksjs/stx/issues/2100))
+
+## 🔧 Chores
+
+- release v0.2.611 ([b90c396](https://github.com/stacksjs/stx/commit/b90c396)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.609...v0.2.610)
 
 ## ✅ Tests
