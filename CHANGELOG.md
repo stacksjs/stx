@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.614...v0.2.615)
+
+## 🐛 Bug Fixes
+
+- **components**: stretched segments fit their labels on a phone ([b81b9e6](https://github.com/stacksjs/stx/commit/b81b9e6)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.615 ([7dd80c5](https://github.com/stacksjs/stx/commit/7dd80c5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.613...v0.2.614)
 
 ## 🐛 Bug Fixes
