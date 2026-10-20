@@ -5,6 +5,36 @@ import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
 import { compileNativeScreen, mountNativeScreen } from '../../src/native/testing'
 import { createTempDir } from '../../src/temp-dir'
 
+it.each([false, true])('keeps authored native popup presentation and dismisses only the requested layer (minify=%s)', async (minify) => {
+  const { code } = await compileNativeScreen(`<script client>
+const shown = state(true)
+const closeReason = state('')
+window.popupProbe = { shown, closeReason }
+</script>
+<Modal testID="authored-parent" :visible="true" animationType="none">
+  <Modal testID="authored-popup" :visible="shown" nonModal dismissOnOutsideTap animationType="none"
+    @request-close="closeReason.set($event.reason);shown.set(false)">
+    <Text>Choose a layer</Text>
+  </Modal>
+</Modal>`, { minify })
+  const phone = mountNativeScreen(code)
+  try {
+    await phone.settle()
+    const popup = phone.byTestID('authored-popup')!
+    expect(popup.type).toBe('Modal')
+    expect(popup.props).toMatchObject({ visible: true, nonModal: true, dismissOnOutsideTap: true })
+    expect(popup.props.nonmodal).toBeUndefined()
+    expect(popup.props.dismissonoutsidetap).toBeUndefined()
+    phone.press(popup, 'onRequestClose', { reason: 'backdrop' })
+    await phone.settle()
+    expect(phone.context.popupProbe.closeReason()).toBe('backdrop')
+    expect(phone.byTestID('authored-popup')!.props.visible).toBe(false)
+    expect(phone.byTestID('authored-parent')!.props.visible).toBe(true)
+    expect(phone.mutationErrors).toEqual([])
+  }
+  finally { phone.unmount() }
+}, 30_000)
+
 it.each([false, true])('presents capability-gated non-modal layers without stealing focus (minify=%s)', async (minify) => {
   const { code } = await compileNativeScreen(`<script client>
 const outer = useRef('outer')
