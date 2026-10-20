@@ -15,6 +15,22 @@ function fixture() {
 }
 
 describe('the browser peer of the native screen renderer', () => {
+  it('renders Link as an anchor, preserves its destination, and prevents disabled navigation', () => {
+    const { renderer, container, node, window, events } = fixture()
+    renderer.render(node('root', 'View', [node('link', 'Link', ['Open'], { href: '/details', disabled: true }, { onPress: 'open' })]))
+    const link = container.querySelector<HTMLAnchorElement>('a')!
+    expect(link.getAttribute('href')).toBe('/details')
+    expect(link.getAttribute('role')).toBe('link')
+    const click = new window.MouseEvent('click', { bubbles: true, cancelable: true })
+    link.dispatchEvent(click)
+    expect(click.defaultPrevented).toBe(true)
+    expect(events).toEqual([])
+    renderer.mutate({ version: 1, batchId: 'enable', baseRevision: 0, revision: 1, operations: [{ op: 'updateNode', id: 'link', patch: { props: { href: '/summary', disabled: false } } }] })
+    expect(link.getAttribute('href')).toBe('/summary')
+    link.click()
+    expect(events).toEqual([{ id: 'open', payload: {} }])
+  })
+
   it.each(['Pressable', 'TouchableOpacity', 'TouchableHighlight'])('infers link roles for %s and preserves an authored role across destination changes', (type) => {
     const { renderer, container, node } = fixture()
     renderer.render(node('root', 'View', [node('control', type, ['Open'], { href: '/details' })]))

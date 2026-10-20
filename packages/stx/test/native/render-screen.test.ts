@@ -324,6 +324,16 @@ const route = state([47, 11, 47.1, 11.2])
     expect(link.style).toMatchObject({ textDecorationLine: 'underline' })
   })
 
+  it('carries a reactive Link destination into the native binding manifest', async () => {
+    const source = `<script client>const path = state('/details')</script><View><Link :href="path">Open details</Link></View>`
+    const { document, manifest } = await compileScreenSource(source, screen('ReactiveLink.stx', source))
+    const link = document.root.children.find((child): child is STXNode => typeof child !== 'string')!
+
+    expect(link.type).toBe('Link')
+    expect(link.bindings).toEqual({ href: 'path' })
+    expect(manifest.entries[0].bindings).toEqual([{ name: ':href', value: 'path', kind: 'attr' }])
+  })
+
   it('keeps static host props on every native primitive root', async () => {
     const source = `<View testID="page"><ScrollView testID="scroll"><Image testID="avatar" source="avatar.png" accessibilityLabel="Profile" /><Text testID="label">Name</Text><Button testID="save">Save</Button><TextInput testID="name-input" placeholder="Type your name" /></ScrollView></View>`
     const { document } = await compileScreenSource(source, screen('HostProps.stx', source))

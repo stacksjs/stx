@@ -5,7 +5,7 @@ import type { STXNode } from '../compiler/ir'
 const SYMBOL_TO_ICON = Object.fromEntries(Object.entries(LUCIDE_TO_SF).map(([name, symbol]) => [symbol, name]))
 const SVG_NS = 'http://www.w3.org/2000/svg'
 const SVG: Record<string, string> = { Svg: 'svg', G: 'g', Path: 'path', Line: 'line', Rect: 'rect', Circle: 'circle', Ellipse: 'ellipse', Polyline: 'polyline', Polygon: 'polygon', SvgText: 'text' }
-const TAGS: Record<string, string> = { View: 'div', SafeAreaView: 'div', ScrollView: 'div', KeyboardAvoidingView: 'div', Text: 'span', TextInput: 'input', Button: 'button', TouchableOpacity: 'button', TouchableHighlight: 'button', Pressable: 'button', Icon: 'span', Image: 'img', ImageBackground: 'div', Video: 'video', FlatList: 'div', SectionList: 'div', Switch: 'input', Checkbox: 'input', Slider: 'input', Picker: 'select', DatePicker: 'input', Modal: 'dialog', ActivityIndicator: 'progress', StatusBar: 'div', RefreshControl: 'progress', Sidebar: 'aside', SplitView: 'div' }
+const TAGS: Record<string, string> = { View: 'div', SafeAreaView: 'div', ScrollView: 'div', KeyboardAvoidingView: 'div', Text: 'span', TextInput: 'input', Button: 'button', Link: 'a', TouchableOpacity: 'button', TouchableHighlight: 'button', Pressable: 'button', Icon: 'span', Image: 'img', ImageBackground: 'div', Video: 'video', FlatList: 'div', SectionList: 'div', Switch: 'input', Checkbox: 'input', Slider: 'input', Picker: 'select', DatePicker: 'input', Modal: 'dialog', ActivityIndicator: 'progress', StatusBar: 'div', RefreshControl: 'progress', Sidebar: 'aside', SplitView: 'div' }
 const CONTAINERS = new Set(['View', 'SafeAreaView', 'ScrollView', 'KeyboardAvoidingView', 'FlatList', 'SectionList', 'Sidebar', 'SplitView', 'ImageBackground'])
 const UNITLESS = new Set(['opacity', 'flex', 'flexGrow', 'flexShrink', 'fontWeight', 'zIndex', 'aspectRatio', 'order'])
 const SVG_PROPS: Record<string, string> = { viewBox: 'viewBox', fillRule: 'fill-rule', clipRule: 'clip-rule', strokeWidth: 'stroke-width', strokeLinecap: 'stroke-linecap', strokeLinejoin: 'stroke-linejoin', strokeDasharray: 'stroke-dasharray', strokeDashoffset: 'stroke-dashoffset', fillOpacity: 'fill-opacity', strokeOpacity: 'stroke-opacity', textAnchor: 'text-anchor' }
@@ -199,7 +199,10 @@ export class BrowserScreenRenderer {
       record.dispose.push(() => element.removeEventListener(name, listener))
     }
     listen('click', (event) => {
-      if (this.disabled(record) || record.props.editable === false) return
+      if (this.disabled(record) || record.props.editable === false) {
+        if (this.disabled(record) && element.tagName.toLowerCase() === 'a') event.preventDefault()
+        return
+      }
       // Native events do not bubble through other pressable controls.
       if ((event.target as Element)?.closest('[data-stx-pressable]') !== element && element.hasAttribute('data-stx-pressable')) return
       this.fire(record, 'onPress')
@@ -265,7 +268,7 @@ export class BrowserScreenRenderer {
     css.borderWidth = '0'
     if (CONTAINERS.has(type)) { css.display = 'flex'; css.flexDirection = 'column'; css.minWidth = '0'; css.flexShrink = '0' }
     if (type === 'Text') { css.display = 'block'; css.whiteSpace = 'pre-wrap'; css.flexShrink = '1'; css.minWidth = '0'; css.overflowWrap = 'anywhere' }
-    if (['Button', 'TouchableOpacity', 'TouchableHighlight', 'Pressable'].includes(type)) { css.display = 'flex'; css.flexDirection = 'column'; css.alignItems = 'stretch'; css.font = 'inherit'; css.color = 'inherit'; css.background = 'transparent'; css.border = '0'; css.padding = '0'; css.textAlign = 'inherit'; css.cursor = 'pointer' }
+    if (['Button', 'Link', 'TouchableOpacity', 'TouchableHighlight', 'Pressable'].includes(type)) { css.display = 'flex'; css.flexDirection = 'column'; css.alignItems = 'stretch'; css.font = 'inherit'; css.color = 'inherit'; css.background = 'transparent'; css.border = '0'; css.padding = '0'; css.textAlign = 'inherit'; css.cursor = 'pointer' }
     if (type === 'ScrollView') {
       css.flex = '1 1 auto'; css.minHeight = '0'; css.flexDirection = props.horizontal ? 'row' : 'column'
       // One axis, as a native scroller has: a sideways row of chips must not
@@ -287,6 +290,11 @@ export class BrowserScreenRenderer {
     else element.removeAttribute('aria-label')
     if (props.accessibilityHint != null) element.setAttribute('aria-description', String(props.accessibilityHint))
     else element.removeAttribute('aria-description')
+    if (type === 'Link') {
+      const destination = ['href', 'to'].map(name => props[name]).find(value => typeof value === 'string' && value.trim() !== '')
+      if (destination) element.setAttribute('href', String(destination))
+      else element.removeAttribute('href')
+    }
     const accessibilityState = props.accessibilityState as Record<string, unknown> | undefined
     for (const key of ['selected', 'checked', 'disabled', 'busy', 'expanded']) {
       const value = key === 'disabled' && (props.disabled != null || accessibilityState?.disabled != null) ? this.disabled(record) : accessibilityState?.[key]
@@ -298,7 +306,7 @@ export class BrowserScreenRenderer {
     const role = props.accessibilityRole ?? (linked ? 'link' : undefined)
     if (role && role !== 'none') element.setAttribute('role', String(role === 'header' ? 'heading' : role))
     else element.removeAttribute('role')
-    if (record.events.onPress || ['Button', 'TouchableOpacity', 'TouchableHighlight', 'Pressable'].includes(type)) {
+    if (record.events.onPress || ['Button', 'Link', 'TouchableOpacity', 'TouchableHighlight', 'Pressable'].includes(type)) {
       element.setAttribute('data-stx-pressable', '')
       if (!['input', 'button', 'select', 'textarea', 'a'].includes(element.tagName.toLowerCase())) { element.setAttribute('role', String(role || 'button')); element.setAttribute('tabindex', this.disabled(record) ? '-1' : '0') }
     }
