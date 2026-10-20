@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.604...v0.2.605)
+
+## 🐛 Bug Fixes
+
+- **router**: restore anchored pages on history navigation ([045f985](https://github.com/stacksjs/stx/commit/045f985)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.605 ([44f743a](https://github.com/stacksjs/stx/commit/44f743a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.603...v0.2.604)
 
 ## 🐛 Bug Fixes
