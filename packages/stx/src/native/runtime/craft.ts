@@ -359,6 +359,12 @@ export interface NativeCraft {
     /** The store's own screen for this app's permissions, or its install page. */
     openSettings?: () => Promise<boolean>
   }
+  /** Apple Wallet or Google Wallet pass presentation, when the host advertises `wallet`. */
+  wallet?: {
+    isAvailable: () => Promise<boolean>
+    add: (source: { data?: string, url?: string }) => Promise<boolean>
+    has: (serialNumber: string) => Promise<boolean>
+  }
   /**
    * Structured workouts on the paired Apple Watch (`capabilities.scheduledWorkouts`,
    * WorkoutKit, iOS 17+). A plan is `{ id, date: 'YYYY-MM-DD', hour?, minute?, workout }`.

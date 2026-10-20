@@ -57,6 +57,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     deviceInfo: capabilities.has('device'),
     fetch: capabilities.has('fetch'),
     badge: capabilities.has('badge'),
+    wallet: capabilities.has('wallet'),
     appReview: false,
     health: capabilities.has('health'),
     dialogs: capabilities.has('dialog'),
@@ -740,6 +741,14 @@ export function installCraftBridge(
       craft.health.availability = () => request('Health', 'availability', [])
       craft.health.grantedTypes = () => request('Health', 'grantedTypes', []).then((types: unknown) => (Array.isArray(types) ? types.filter(type => typeof type === 'string') : []))
       craft.health.openSettings = () => ask('Health', 'openSettings', []).then(Boolean)
+    }
+  }
+
+  if (capabilities.has('wallet')) {
+    craft.wallet = {
+      isAvailable: () => request('Wallet', 'isAvailable', []).then(Boolean),
+      add: (source: { data?: string, url?: string }) => request('Wallet', 'add', [source]).then(Boolean),
+      has: (serialNumber: string) => request('Wallet', 'has', [serialNumber]).then(Boolean),
     }
   }
   craft.scheduleNotification = craft.notifications.schedule

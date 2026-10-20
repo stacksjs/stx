@@ -91,6 +91,23 @@ describe('shared-runtime native capability protocol', () => {
     ])
   })
 
+  it('exposes the host-owned Wallet pass API only when advertised', async () => {
+    const { scope, sent } = await runtime('', { capabilities: ['wallet'], timers: false })
+    expect(scope.craft.capabilities.wallet).toBe(true)
+    expect(typeof scope.craft.wallet?.isAvailable).toBe('function')
+    expect(typeof scope.craft.wallet?.add).toBe('function')
+    expect(typeof scope.craft.wallet?.has).toBe('function')
+
+    scope.craft.wallet.isAvailable()
+    scope.craft.wallet.add({ url: 'https://example.test/pass' })
+    scope.craft.wallet.has('membership-42')
+    expect(sent.filter(message => message.type === 'API_REQUEST').map(message => message.payload)).toEqual([
+      { version: 1, module: 'Wallet', method: 'isAvailable', args: [] },
+      { version: 1, module: 'Wallet', method: 'add', args: [{ url: 'https://example.test/pass' }] },
+      { version: 1, module: 'Wallet', method: 'has', args: ['membership-42'] },
+    ])
+  })
+
   it('exposes the existing Craft API shapes over versioned requests', async () => {
     const { scope, sent, receive } = await runtime()
     scope.craft.storage.get('theme')
