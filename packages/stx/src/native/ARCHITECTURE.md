@@ -208,6 +208,10 @@ Native image sources are URI strings or `{ uri, headers }` objects. Numeric
 are intentionally excluded from the shared type.
 The maintained image contract also excludes React Native-only `blurRadius` and
 `fadeDuration`; neither Craft host consumes those props.
+The native `StatusBar` node is intentionally limited to `barStyle` and
+`hidden`: the maintained hosts apply its foreground and visibility traits at
+screen scope, while screen/navigation options own the system-bar surface colour
+and opacity.
 Image failures use the shared `{ nativeEvent: { error: { message } } }`
 envelope, matching Craft's maintained iOS and Android hosts.
 Native video accepts both `autoplay` and the React-style `autoPlay` alias;
