@@ -194,7 +194,9 @@ Unsupported behavior must stay explicit: translating a primitive into IR does
 not prove that every host implements it. Shared-runtime `:for` performs keyed,
 incremental native mutations: retained rows keep their node identities, event
 scope and input state, while their ScrollView remains mounted. The maintained
-Craft iOS and Android hosts expose `FlatList` as a keyed child-tree protocol;
+Craft iOS and Android hosts expose `FlatList` as a keyed child-tree protocol,
+and the shared primitive types expose `listRole` for its
+header/item/separator/empty/footer slots;
 `data`, `renderItem`, `keyExtractor`, and grouped `SectionList` data are
 rejected until a versioned list-data protocol is introduced. This keeps the
 public types honest while preserving recycling for the child trees that the

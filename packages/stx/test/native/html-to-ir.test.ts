@@ -19,6 +19,7 @@ import path from 'node:path'
 import { processDirectives } from '../../src/process'
 import { NATIVE_EVENTS, translateHtmlToDocument, translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import type { STXNode } from '../../src/native/compiler/ir'
+import type { FlatListProps } from '../../src/native/components/primitives'
 
 const COMPONENTS = path.join(import.meta.dir, '..', '..', '..', 'components')
 
@@ -396,6 +397,11 @@ describe('what is deliberately dropped', () => {
 })
 
 describe('shared-runtime list boundaries', () => {
+  it('types list chrome slots on the shared primitive props', () => {
+    const typedListSlot: FlatListProps<string> = { listRole: 'item' }
+    expect(typedListSlot.listRole).toBe('item')
+  })
+
   it('warns when legacy FlatList expansion props would otherwise be silently ignored', async () => {
     const { root, diagnostics } = await translateHtmlToIR(
       '<div data-native="FlatList" :data="rows" :renderItem="renderRow" keyExtractor="rowKey" listRole="item"><Text>Rows</Text></div>',

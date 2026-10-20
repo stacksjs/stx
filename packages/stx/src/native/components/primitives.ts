@@ -27,6 +27,8 @@ export interface BaseProps {
   accessibilityHint?: string
   /** Accessibility role */
   accessibilityRole?: AccessibilityRole
+  /** Native list chrome slot for keyed FlatList/SectionList children. */
+  listRole?: 'header' | 'item' | 'separator' | 'empty' | 'footer'
   /**
    * One element across an animated change (`craft.animation.next`): a view
    * leaving and a view arriving with the same id move and scale as one, from
