@@ -14,6 +14,7 @@ const COMPONENT_MAPPING: Record<string, STXComponentType> = {
   video: 'Video',
   map: 'Map',
   mappolyline: 'MapPolyline',
+  mappolygon: 'MapPolygon',
   mapmarker: 'MapMarker',
   input: 'TextInput',
   textarea: 'TextInput',

@@ -593,6 +593,14 @@ export interface MapPolylineProps extends BaseProps {
   strokeWidth?: number
 }
 
+export interface MapPolygonProps extends BaseProps {
+  /** Flat [latitude, longitude, ...] coordinate pairs; the host closes the ring. */
+  geometry: number[]
+  fillColor?: string
+  strokeColor?: string
+  strokeWidth?: number
+}
+
 export interface MapMarkerProps extends BaseProps {
   /** Flat [latitude, longitude] coordinate pair. */
   geometry: number[]
@@ -752,6 +760,7 @@ export const ComponentRegistry = {
   Video: 'Video',
   Map: 'Map',
   MapPolyline: 'MapPolyline',
+  MapPolygon: 'MapPolygon',
   MapMarker: 'MapMarker',
 
   // Lists

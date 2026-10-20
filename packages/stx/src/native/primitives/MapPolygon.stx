@@ -1,0 +1,2 @@
+{{-- MapPolygon: a native map overlay carrying flat coordinate geometry. --}}
+<div data-native="MapPolygon"></div>

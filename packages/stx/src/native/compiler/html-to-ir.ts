@@ -159,7 +159,7 @@ const NATIVE_TYPES = new Set([
   'Text', 'TextInput',
   'Button', 'Link', 'TouchableOpacity', 'TouchableHighlight', 'Pressable',
   'Icon', 'Image', 'ImageBackground', 'Video',
-  'Map', 'MapPolyline', 'MapMarker',
+  'Map', 'MapPolyline', 'MapPolygon', 'MapMarker',
   'FlatList', 'SectionList',
   'Switch', 'Checkbox', 'Slider', 'Picker', 'DatePicker',
   'Modal', 'ActivityIndicator',

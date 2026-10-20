@@ -19,7 +19,7 @@ const NATIVE_PROP_NAMES = [
   'showsHorizontalScrollIndicator', 'showsVerticalScrollIndicator',
   'stickyHeaderIndices', 'testID', 'textContentType', 'thumbColor', 'thumbTintColor', 'titleColor', 'trackColor',
   'underlayColor', 'windowSize',
-  'initialRegion', 'tileOverlay', 'edgePadding', 'fitToBounds', 'showsUserLocation', 'zoomEnabled', 'rotateEnabled', 'pitchEnabled', 'mapType', 'strokeColor', 'pinColor',
+  'initialRegion', 'tileOverlay', 'edgePadding', 'fitToBounds', 'showsUserLocation', 'zoomEnabled', 'rotateEnabled', 'pitchEnabled', 'mapType', 'fillColor', 'strokeColor', 'pinColor',
   'showsCompass', 'showsScale', 'cameraPitch', 'cameraHeading',
   'autoScrollBottom', 'scrollKey',
   // A video floating in Picture in Picture, and one element across an
