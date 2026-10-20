@@ -66,6 +66,7 @@
 import type { StxOptions } from './types'
 import { escapeHtml } from './expressions'
 import { isExpressionSafe, createSafeFunction } from './safe-evaluator'
+import { readsAnyName } from './loop-binding'
 
 // =============================================================================
 // Types
@@ -530,6 +531,8 @@ export async function renderSlot(
 
     // Create a new context with the slot props
     const slotContext = { ...context }
+    const unresolved = new Set<string>()
+    const resolved = new Set<string>()
 
     if (binding.startsWith('{') && binding.endsWith('}')) {
       // Destructured binding: { item, index }
@@ -543,19 +546,27 @@ export async function renderSlot(
         // Handle renaming: { item: myItem }
         const [key, alias] = propName.split(':').map(s => s.trim())
         const actualKey = alias || key
+        slotContext[actualKey] = slotProps[key]
         if (slotProps[key] !== undefined) {
-          slotContext[actualKey] = slotProps[key]
+          resolved.add(actualKey)
+        }
+        else {
+          unresolved.add(actualKey)
         }
       }
     }
 else {
       // Single binding: slotProps or props
       slotContext[binding] = slotProps
+      if (Object.values(slotProps).some(value => value === undefined))
+        unresolved.add(binding)
+      else
+        resolved.add(binding)
     }
 
     // Process the content with the slot context
     // We need to replace {{ expressions }} with the slot props
-    content = processSlotExpressions(content, slotContext)
+    content = processSlotExpressions(content, slotContext, unresolved, resolved)
   }
 
   return content
@@ -567,15 +578,29 @@ else {
 function processSlotExpressions(
   content: string,
   context: Record<string, unknown>,
+  unresolved: Set<string>,
+  resolved: Set<string>,
 ): string {
   // Replace {{ expression }} with evaluated values
-  return content.replace(/\{\{\s*([^}]+)\s*\}\}/g, (_, expr: string) => {
+  return content.replace(/\{\{\s*([^}]+)\s*\}\}/g, (match, expr: string) => {
     try {
       // Simple property access and expressions
       const trimmedExpr = expr.trim()
+      if (readsAnyName(trimmedExpr, unresolved))
+        return match
+      // The caller already classified these as client expressions. Only a
+      // resolved slot-local binding can make this pass their rightful owner.
+      if (Array.isArray(context.__stx_preserved_client_expressions)
+        && context.__stx_preserved_client_expressions.includes(trimmedExpr)
+        && !readsAnyName(trimmedExpr, resolved))
+        return match
 
       // Handle simple property access (item.name, index + 1, etc.)
       const result = evaluateSimpleExpression(trimmedExpr, context)
+      // Client loop props and caller signals are unavailable during SSR.
+      // Keep their expression for hydration rather than silently erasing it.
+      if (result === undefined)
+        return match
       return escapeHtml(String(result ?? ''))
     }
 catch {

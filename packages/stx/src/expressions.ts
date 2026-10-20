@@ -43,6 +43,7 @@ import { isDangerousUrl, sanitizeSubstitutedUrl, schemeWindow, UNSAFE_URL_PREFIX
 import { maskAtElementPosition, matchScriptElement, matchStyleElement, restoreStashedScripts, stashScriptElements, type TokenMatcher } from './html-masking'
 import { importsSignalDeclarations } from './imported-signals'
 import { inheritedClientLoopNames, loopBoundNames, readsAnyName } from './loop-binding'
+import { collectSlotScopes } from './slot-scopes'
 
 /**
  * Add basic filter support to expressions
@@ -1287,12 +1288,21 @@ export function processExpressions(template: string, context: Record<string, any
 
   // Replace {{ expr }} with escaped expressions
   const loopScopes = hasSignals ? clientLoopScopes(output) : []
+  const slotScopes = collectSlotScopes(output).map(scope => ({
+    ...scope,
+    names: new Set(loopBoundNames(`${scope.binding} in __slot`)),
+  }))
   // The variables of a client loop this markup was cut out of (a component's
   // slot, rendered away from the `:for` on its tag). They shadow the server's
   // names exactly as a loop found in `output` does.
   const enclosingLoopNames = new Set(inheritedClientLoopNames(context))
   output = replaceInterpolations(output, (match, expr, offset) => {
     const trimmedExpr = expr.trim()
+
+    // Slot locals belong to the receiving component, even when the caller
+    // has no client script or has a server variable with the same name.
+    if (readsEnclosingLoopVariable(slotScopes, offset, trimmedExpr))
+      return match
 
     if (readsAnyName(trimmedExpr, enclosingLoopNames))
       return match
