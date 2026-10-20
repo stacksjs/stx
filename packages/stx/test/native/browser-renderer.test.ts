@@ -15,6 +15,27 @@ function fixture() {
 }
 
 describe('the browser peer of the native screen renderer', () => {
+  it('reports parent-relative layout frames and tears the observer down', () => {
+    const { renderer, container, node, window, events } = fixture()
+    let notify: (() => void) | undefined
+    class FakeResizeObserver {
+      constructor(callback: () => void) { notify = callback }
+      observe() {}
+      disconnect() { notify = undefined }
+    }
+    Object.defineProperty(window, 'ResizeObserver', { configurable: true, value: FakeResizeObserver })
+    renderer.render(node('root', 'View', [node('card', 'View', ['Measured'], {}, { onLayout: 'measure' })]))
+    const root = container.querySelector('[data-stx-node="root"]')!
+    const card = container.querySelector('[data-stx-node="card"]')!
+    Object.defineProperty(root, 'getBoundingClientRect', { value: () => ({ left: 10, top: 20, width: 300, height: 400 }) })
+    Object.defineProperty(card, 'getBoundingClientRect', { value: () => ({ left: 22, top: 35, width: 120, height: 48 }) })
+    notify?.()
+    expect(events).toEqual([{ id: 'measure', payload: { layout: { x: 12, y: 15, width: 120, height: 48 } } }])
+    renderer.mutate({ version: 1, batchId: 'remove-handler', baseRevision: 0, revision: 1, operations: [{ op: 'updateNode', id: 'card', patch: { events: { onLayout: null } } }] })
+    notify?.()
+    expect(events).toHaveLength(1)
+  })
+
   it('renders Link as an anchor, preserves its destination, and prevents disabled navigation', () => {
     const { renderer, container, node, window, events } = fixture()
     renderer.render(node('root', 'View', [node('link', 'Link', ['Open'], { href: '/details', disabled: true }, { onPress: 'open' })]))

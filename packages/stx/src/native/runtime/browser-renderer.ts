@@ -19,6 +19,7 @@ interface RecordNode {
   children: string[]
   parent: string | null
   dispose: Array<() => void>
+  layoutObserver?: ResizeObserver
   text?: string
 }
 
@@ -372,6 +373,34 @@ export class BrowserScreenRenderer {
     if (type === 'Text' && props.numberOfLines) { css.overflow = 'hidden'; css.display = '-webkit-box'; css.webkitBoxOrient = 'vertical'; css.webkitLineClamp = String(props.numberOfLines) }
     if (SVG[type]) for (const [key, value] of Object.entries(props)) { if (['geometry', 'testID', 'accessibilityLabel'].includes(key)) continue; const name = SVG_PROPS[key] ?? key; if (value == null) element.removeAttribute(name); else element.setAttribute(name, Array.isArray(value) ? value.join(' ') : String(value)) }
     if (props.scrollTarget && typeof props.scrollTarget === 'object') { const target = props.scrollTarget as { id?: string, key?: unknown, animated?: boolean }; const signature = JSON.stringify(target); if (element.getAttribute('data-scroll-target') !== signature) { element.setAttribute('data-scroll-target', signature); queueMicrotask(() => { for (const candidate of this.nodes.values()) if (candidate.props.testID === target.id) candidate.element.scrollIntoView?.({ behavior: target.animated === false ? 'instant' : 'smooth', block: 'start' }) }) } }
+    this.syncLayoutObserver(record)
+  }
+
+  private syncLayoutObserver(record: RecordNode): void {
+    const wantsLayout = Boolean(record.events.onLayout)
+    if (!wantsLayout) {
+      record.layoutObserver?.disconnect()
+      record.layoutObserver = undefined
+      return
+    }
+    if (record.layoutObserver) return
+    const ResizeObserverConstructor = record.element.ownerDocument.defaultView?.ResizeObserver
+    if (!ResizeObserverConstructor) return
+    const observer = new ResizeObserverConstructor(() => {
+      if (!this.nodes.has(record.element.getAttribute('data-stx-node') ?? '') || !record.events.onLayout) return
+      const rect = record.element.getBoundingClientRect()
+      const parentRect = (record.parent ? this.nodes.get(record.parent)?.element : this.container)?.getBoundingClientRect()
+      this.fire(record, 'onLayout', {
+        layout: {
+          x: rect.left - (parentRect?.left ?? 0),
+          y: rect.top - (parentRect?.top ?? 0),
+          width: rect.width,
+          height: rect.height,
+        },
+      })
+    })
+    observer.observe(record.element)
+    record.layoutObserver = observer
   }
 
   private icon(props: Record<string, unknown>): { body: string, width?: number, height?: number } {
