@@ -1,5 +1,33 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.606...v0.2.607)
+
+## 🐛 Bug Fixes
+
+- preserve client-owned component bindings during SSR ([f14752f](https://github.com/stacksjs/stx/commit/f14752f)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: preserve switch tint spelling ([fd3707a](https://github.com/stacksjs/stx/commit/fd3707a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: restrict image source types ([e65c764](https://github.com/stacksjs/stx/commit/e65c764)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: type scroll host controls ([7e580c2](https://github.com/stacksjs/stx/commit/7e580c2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: type video autoplay alias ([c4ad845](https://github.com/stacksjs/stx/commit/c4ad845)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: type modal presentation flags ([59dd93a](https://github.com/stacksjs/stx/commit/59dd93a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: align supported control vocabulary ([6cdc459](https://github.com/stacksjs/stx/commit/6cdc459)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: restrict image resize modes ([e37abb0](https://github.com/stacksjs/stx/commit/e37abb0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: type image error envelopes ([fa74051](https://github.com/stacksjs/stx/commit/fa74051)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: align control change aliases ([912250b](https://github.com/stacksjs/stx/commit/912250b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: align accessibility state types ([e2048de](https://github.com/stacksjs/stx/commit/e2048de)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: type accessibility state props ([0494bd6](https://github.com/stacksjs/stx/commit/0494bd6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: type image accessibility ([1bdb09a](https://github.com/stacksjs/stx/commit/1bdb09a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: align text input props ([0096bc9](https://github.com/stacksjs/stx/commit/0096bc9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.607 ([6ffdf50](https://github.com/stacksjs/stx/commit/6ffdf50)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.605...v0.2.606)
 
 ## ✨ Features
