@@ -63,6 +63,7 @@ const isIndeterminate = useReactiveProp('indeterminate', {{ indeterminate }})
 // Reactive prop binding so the parent can drive `checked` via signals.
 // See stacksjs/stx#1704.
 const isChecked = useReactiveProp('checked', {{ checked }})
+const currentLabel = useReactiveProp('label', {{ label }}, { parse: value => value ?? '' })
 
 function onInputChange(event) {
   if (isDisabled()) {
@@ -82,6 +83,8 @@ defineExpose({ isChecked })
       id="{{ inputId }}"
       type="checkbox"
       name="{{ name }}"
+      @if(label)aria-label="{{ label }}"@endif
+      :aria-label="currentLabel() || null"
       @if(autocomplete)autocomplete="{{ autocomplete }}"@endif
       @if(form)form="{{ form }}"@endif
       value="{{ value }}"
@@ -105,21 +108,17 @@ defineExpose({ isChecked })
     />
   </div>
 
-  @if(label || description)
-    <div class="ml-3 text-sm leading-6">
-      @if(label)
-        <label for="{{ inputId }}" class="{{ labelClasses }}" :class="{ 'opacity-50 cursor-not-allowed': isDisabled(), 'cursor-pointer': !isDisabled() }">
-          {{ label }}
-          @if(required)
-            <span class="text-danger ml-1">*</span>
-          @endif
-        </label>
+  <div :if="currentLabel() || {{ !!description }}" class="ml-3 text-sm leading-6">
+    <label :if="currentLabel()" for="{{ inputId }}" class="{{ labelClasses }} inline-flex flex-row items-center" :class="{ 'opacity-50 cursor-not-allowed': isDisabled(), 'cursor-pointer': !isDisabled() }">
+      <span :text="currentLabel()">{{ label }}</span>
+      @if(required)
+        <span class="text-danger ml-1">*</span>
       @endif
-      @if(description)
-        <p id="{{ descriptionId }}" class="{{ descriptionClasses }}">
-          {{ description }}
-        </p>
-      @endif
-    </div>
-  @endif
+    </label>
+    @if(description)
+      <p id="{{ descriptionId }}" class="{{ descriptionClasses }}">
+        {{ description }}
+      </p>
+    @endif
+  </div>
 </div>

@@ -71,6 +71,7 @@ const isIndeterminate = useReactiveProp('indeterminate', {{ indeterminate }})
 // Reactive prop binding so the parent can drive `checked` via signals.
 // See stacksjs/stx#1704.
 const isChecked = useReactiveProp('checked', {{ checked }})
+const currentLabel = useReactiveProp('label', {{ label }}, { parse: value => value ?? '' })
 
 function onInputChange(event) {
   if (isDisabled()) {
@@ -89,6 +90,8 @@ defineExpose({ isChecked })
       id="{{ inputId }}"
       type="checkbox"
       name="{{ name }}"
+      @if(label)aria-label="{{ label }}"@endif
+      :aria-label="currentLabel() || null"
       @if(autocomplete)autocomplete="{{ autocomplete }}"@endif
       @if(form)form="{{ form }}"@endif
       value="{{ value }}"
@@ -111,25 +114,23 @@ defineExpose({ isChecked })
       @if(description)aria-describedby="{{ descriptionId }}"@endif
     />
       </div>
-      @if(label || description)
-      <div class="ml-3 text-sm leading-6">
-        @if(label)
-        <label for="{{ inputId }}" class="{{ labelClasses }}" :class="{ 'opacity-50 cursor-not-allowed': isDisabled(), 'cursor-pointer': !isDisabled() }">
-          {{ label }}
+      <div :if="currentLabel() || {{ !!description }}" class="ml-3 text-sm leading-6">
+        <label :if="currentLabel()" for="{{ inputId }}" class="{{ labelClasses }} inline-flex flex-row items-center" :class="{ 'opacity-50 cursor-not-allowed': isDisabled(), 'cursor-pointer': !isDisabled() }">
+          <span :text="currentLabel()">
+            {{ label }}
+          </span>
           @if(required)
           <span class="text-danger ml-1">
             *
           </span>
           @endif
         </label>
-        @endif
-      @if(description)
+        @if(description)
         <p id="{{ descriptionId }}" class="{{ descriptionClasses }}">
           {{ description }}
         </p>
         @endif
       </div>
-      @endif
     </div>
 
 === Extracted Classes ===
@@ -151,6 +152,7 @@ disabled
 error
 false
 flex
+flex-row
 focus:ring-2
 focus:ring-accent
 focus:ring-danger-focus
@@ -161,10 +163,12 @@ h-4
 h-5
 h-6
 indeterminate
+inline-flex
 isDisabled(),
 isError(),
 items-center
 items-start
+label
 labelClasses
 leading-6
 ml-1
