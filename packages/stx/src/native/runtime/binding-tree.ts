@@ -1,5 +1,6 @@
 import type { BindingManifest, ManifestEntry } from '../../binding-manifest'
 import type { STXDocument, STXNode } from '../compiler/ir'
+import { authoredAccessibilityProps } from '../accessibility'
 import type { NativeHost, NativeNode } from './native-host'
 
 export interface NativeBindingNode extends NativeNode {
@@ -150,7 +151,7 @@ export function materializeNativeBindingTree(
     if (source.type === 'Checkbox' && source.props.type === 'checkbox') node.tagName = 'INPUT'
     // Static component metadata owns parent prop/event scopes too. The
     // manifest only records dynamic bindings, not these companion attributes.
-    for (const [name, value] of Object.entries(source.props)) {
+    for (const [name, value] of Object.entries(authoredAccessibilityProps(source.props, source._accessibilitySource))) {
       if (value === undefined || value === null || name === '__stxId') continue
       node.setAttribute(name, typeof value === 'object' ? JSON.stringify(value) : String(value))
     }

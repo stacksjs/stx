@@ -203,6 +203,21 @@ hidden inputs retain their metadata without becoming visible text fields.
 Radio inputs currently report `unsupported-control` instead of pretending to
 be text inputs. Radio grouping and selection still need a native adapter.
 
+Native accessibility transport maps `aria-label`, `role`, and `aria-valuetext`
+to `accessibilityLabel`, `accessibilityRole`, and `accessibilityValue`.
+Boolean `aria-checked`, `aria-disabled`, and `aria-selected` populate
+`accessibilityState`. Explicit native properties take precedence; state overrides
+merge per key. This applies to initial compilation, reactive attribute changes,
+removal, and dynamically created rows. Authored attributes remain separate from
+these generated transport fields, so removing an override restores its ARIA
+fallback rather than retaining stale native state.
+
+This is not full accessible-name computation: `label for`, `aria-labelledby`,
+screen-reader-only content, mixed checked state, and `aria-hidden` subtree
+semantics still need additional support. ARIA disabled state describes a control;
+use `disabled` to disable its interaction. Verify actual VoiceOver/TalkBack
+behavior on maintained hosts before treating a control as accessibility-complete.
+
 A browser preview verifies HTML and browser behavior. Check the compiled native
 bundle's bindings and events, then validate the same route, data and interactions
 with the maintained Craft hosts. Native screens and their imported client code

@@ -26,8 +26,8 @@
  * plausible tree that renders as the wrong screen.
  */
 import type { STXDocument, STXNode, STXStyle } from './ir'
+import { ACCESSIBILITY_FIELDS, projectAccessibility } from '../accessibility'
 import { NATIVE_EVENT_NAMES as EVENT_NAMES } from '../event-names'
-import { applyStaticAccessibility } from '../accessibility'
 import { NATIVE_BOOLEAN_PROPS, nativePropName } from '../prop-names'
 import { mapToNativeComponent } from './component-mapping'
 import { resolveIconName } from './icons'
@@ -353,7 +353,7 @@ function settle(frame: Frame, diagnostics: TranslationDiagnostic[]): STXNode {
   // Pressable owns the same press interaction while retaining native children.
   if (frame.tag === 'button' && node.type === 'Button' && !frame.declaredNative && elements.length > 0) {
     node.type = 'Pressable'
-    node.props.accessibilityRole ??= node.props.role ?? 'button'
+    node.props.role ??= 'button'
     node.children = node.children.flatMap(child => typeof child === 'string'
       ? (child.trim() ? [createNode('Text', {}, {}, {}, [child.trim()])] : [])
       : [child])
@@ -565,8 +565,6 @@ export async function translateHtmlToIR(
           diagnostics.push({ kind: 'unsupported-list-prop', tag: type, name: publicName })
       }
     }
-    // `role` and `aria-*` in the host's spelling (accessibility.ts).
-    applyStaticAccessibility(props)
     const node = createNode(type, props, style, events)
     node._inlineStyle = inline
     node._styleSource = decodeEntities(attributes.find(([name]) => name === 'style')?.[1] ?? '')
@@ -698,6 +696,18 @@ export async function translateHtmlToIR(
     : createNode('View', {}, {}, {}, roots)
 
   if (stylesheetTheme.light.length || stylesheetTheme.dark.length) root._stylesheetTheme = stylesheetTheme
+
+  const project = (node: STXNode): void => {
+    const projected = projectAccessibility(node.props)
+    if (Object.keys(projected).length) {
+      node._accessibilitySource = Object.fromEntries(ACCESSIBILITY_FIELDS.filter(name => name in node.props).map(name => [name, node.props[name]]))
+      Object.assign(node.props, projected)
+    }
+    for (const child of node.children) {
+      if (typeof child !== 'string') project(child)
+    }
+  }
+  project(root)
 
   return { root, diagnostics }
 }

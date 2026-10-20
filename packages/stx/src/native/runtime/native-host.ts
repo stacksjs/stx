@@ -32,6 +32,7 @@
 
 import type { NativeMutationOperation } from '../bridge/protocol'
 import type { STXNode, STXStyle } from '../compiler/ir'
+import { accessibilityChanges, authoredAccessibilityProps, projectAccessibility } from '../accessibility'
 import { compileClassStyles } from '../compiler/headwind-to-style'
 import { resolveIconName } from '../compiler/icons'
 import { parseNativeStyleLayers } from '../compiler/inline-style'
@@ -39,7 +40,6 @@ import { createStyleVariables, type NativeStyleVariables } from '../compiler/sty
 import type { NativeStylesheetTheme } from '../compiler/stylesheet-theme'
 import { affectsGeometry, parseSvgMarkup, parseViewBox, SVG_NODE_TYPES, svgGeometry } from '../compiler/svg'
 import { NATIVE_EVENT_NAMES } from '../event-names'
-import { accessibilityPatch, isAccessibilityAttribute } from '../accessibility'
 import { nativePropName } from '../prop-names'
 import { cloneNativeBindingNode, type NativeBindingNode } from './binding-tree'
 import { NATIVE_FORM_ENTRIES } from './jsc-globals'
@@ -451,7 +451,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       node: {
         type: record.type,
         ...(record.key === undefined ? {} : { key: record.key }),
-        props: { ...record.props },
+        props: { ...record.props, ...projectAccessibility(record.props) },
         style: { ...record.style },
         ...(Object.keys(record.events).length ? { events: { ...record.events } } : {}),
         ...(record.text === undefined ? {} : { children: [record.text] }),
@@ -661,7 +661,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     }
   }
 
-  function adopt(node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'key' | 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle' | '_styleSource' | '_styleAncestors'>): NativeNode {
+  function adopt(node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'key' | 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle' | '_styleSource' | '_styleAncestors' | '_accessibilitySource'>): NativeNode {
     const suffix = /(?:^|\D)(\d+)$/.exec(node.__stxId)?.[1]
     if (suffix)
       counter = Math.max(counter, Number(suffix))
@@ -671,7 +671,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const record: NodeRecord = {
       type,
       key: descriptor?.key,
-      props: { ...(descriptor?.props ?? {}) },
+      props: authoredAccessibilityProps(descriptor?.props ?? {}, descriptor?._accessibilitySource),
       style: { ...(descriptor?.style ?? {}) },
       baseStyle,
       styleSource: descriptor?._styleSource,
@@ -784,7 +784,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         return {
           id: node.__stxId,
           type: record.type,
-          props: { ...record.props },
+          props: { ...record.props, ...projectAccessibility(record.props) },
           style: { ...record.style } as STXNode['style'],
           events: { ...record.events },
           children: record.text === undefined ? children : [record.text],
@@ -843,6 +843,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       }
       const prop = nativePropName(name)
       const record = recordOf(node)
+      const accessibilityBefore = prop === 'role' || prop.startsWith('aria-') || prop.startsWith('accessibility') ? projectAccessibility(record.props) : undefined
       record.props[prop] = value
       if (record.type === 'Icon' && prop === 'name') {
         const icon = resolveIconName(String(value ?? ''))
@@ -850,10 +851,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         this.setAttribute(node, 'symbol', icon.symbol)
       }
       const patch: Record<string, unknown> = { [prop]: value }
-      // A bound `aria-pressed` is what tells VoiceOver a segment is chosen;
-      // the host reads it as `accessibilityState` (accessibility.ts).
-      if (isAccessibilityAttribute(name))
-        Object.assign(patch, Object.assign(record.props, accessibilityPatch(name, value, record.props)))
+      if (accessibilityBefore)
+        Object.assign(patch, accessibilityChanges(record.props, accessibilityBefore, prop))
       // A drawing's bound attribute: the renderers read the outline as
       // commands (svg.ts), so a new `d` or `x1` is a new `geometry`.
       if (SVG_NODE_TYPES.has(record.type)) {
@@ -879,12 +878,13 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       if (name === 'class' || name === 'className') { this.setAttribute(node, name, ''); return }
       const prop = nativePropName(name)
       const record = recordOf(node)
+      const accessibilityBefore = prop === 'role' || prop.startsWith('aria-') || prop.startsWith('accessibility') ? projectAccessibility(record.props) : undefined
       delete record.props[prop]
       // Null rather than omitted: a patch is merged on the native side, so an
       // absent key means "unchanged" and would leave the attribute in place.
       const patch: Record<string, unknown> = { [prop]: null }
-      if (isAccessibilityAttribute(name))
-        Object.assign(patch, Object.assign(record.props, accessibilityPatch(name, undefined, record.props)))
+      if (accessibilityBefore)
+        Object.assign(patch, accessibilityChanges(record.props, accessibilityBefore, prop))
       if (affectsGeometry(record.type, prop))
         patch.geometry = record.props.geometry = svgGeometry(record.type, record.props)
       if (record.materialized)
