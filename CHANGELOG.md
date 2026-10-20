@@ -1,5 +1,34 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.607...v0.2.608)
+
+## ✨ Features
+
+- **native**: add flex order style ([3daad2d](https://github.com/stacksjs/stx/commit/3daad2d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: expose wallet bridge ([6cb964c](https://github.com/stacksjs/stx/commit/6cb964c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: expose live workout health bridge ([4dd72ab](https://github.com/stacksjs/stx/commit/4dd72ab)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: type scroll lifecycle events ([834ea06](https://github.com/stacksjs/stx/commit/834ea06)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: narrow status bar contract ([8c0ecc2](https://github.com/stacksjs/stx/commit/8c0ecc2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: narrow status bar contract ([ad5e39d](https://github.com/stacksjs/stx/commit/ad5e39d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: drop unsupported host props ([2c7b5fa](https://github.com/stacksjs/stx/commit/2c7b5fa)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: remove unsupported image props ([a917b27](https://github.com/stacksjs/stx/commit/a917b27)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **router**: a tap into another layout is a swap, not two round trips ([2b1b4fc](https://github.com/stacksjs/stx/commit/2b1b4fc)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.608 ([aa2b5b0](https://github.com/stacksjs/stx/commit/aa2b5b0)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.606...v0.2.607)
 
 ## 🐛 Bug Fixes
