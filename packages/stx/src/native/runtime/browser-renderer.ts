@@ -368,7 +368,10 @@ export class BrowserScreenRenderer {
 
   private icon(props: Record<string, unknown>): { body: string, width?: number, height?: number } {
     const name = String(props.iconify ?? props.name ?? props.symbol ?? '')
-    const icon = this.options.icons?.[SYMBOL_TO_ICON[name]!] ?? this.options.icons?.[name] ?? this.options.icons?.[name.replace(/^i-lucide-/, '')] ?? this.options.icons?.[String(props.symbol)]
+    const find = (key: string) => this.options.icons?.[SYMBOL_TO_ICON[key]!] ?? this.options.icons?.[key] ?? this.options.icons?.[key.replace(/^i-lucide-/, '')]
+    // A platform symbol's filled variant ("heart.fill") draws its outline's
+    // glyph when the set has no filled one: Iconify's line sets do not.
+    const icon = find(name) ?? this.options.icons?.[String(props.symbol)] ?? (name.endsWith('.fill') ? find(name.slice(0, -'.fill'.length)) : undefined)
     if (!icon) throw new Error(`No browser icon registered for ${name}`)
     return icon
   }

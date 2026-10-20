@@ -126,6 +126,93 @@ function hideAccessory() { craft.navigation.setOptions({tabAccessory:null}) }
     browser.close()
   })
 
+  it('swaps a tab\'s symbol live, draws its selected symbol only while selected, and restores the configured one', async () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'stx-tab-symbols-'))
+    folders.push(root)
+    writeFileSync(path.join(root, 'Screen.stx'), `<script client>
+const craft = globalThis.craft
+function liveHeart() { craft.navigation.setOptions({tabItem:{id:'/m/health',symbol:'heart.fill',iconTint:'#ff3b30',accessibilityLabel:'Health, 142 bpm'}}) }
+function plainHeart() { craft.navigation.setOptions({tabItem:{id:'/m/health',symbol:null,iconTint:null,accessibilityLabel:null}}) }
+function meSelected() { craft.navigation.setOptions({tabItem:{id:'/m/me',selectedSymbol:'person.crop.circle.fill',selectedIconTint:'#ff9500'}}) }
+function healthSelected() { craft.navigation.setOptions({tabItem:{id:'/m/health',selectedSymbol:'waveform.path.ecg',selectedIconTint:'#34c759'}}) }
+function rateText() { craft.navigation.setOptions({tabItem:{id:'/m/health',iconText:'142'}}) }
+function clearText() { craft.navigation.setOptions({tabItem:{id:'/m/health',iconText:null}}) }
+</script><View><Button testID="heart" @click="liveHeart()">Heart</Button><Button testID="plain" @click="plainHeart()">Plain</Button><Button testID="me" @click="meSelected()">Me</Button><Button testID="health" @click="healthSelected()">Health</Button><Button testID="text" @click="rateText()">Text</Button><Button testID="untext" @click="clearText()">Untext</Button></View>`)
+    writeFileSync(path.join(root, 'platform.ts'), 'export async function createBrowserPlatform() { return {craft:{},capabilities:[],call:async()=>null,navigate(){},dispose(){}} }')
+    const glyph = (name: string) => ({ body: `<path data-glyph="${name}" d="M0 0h1"/>`, width: 24, height: 24 })
+    const icons = { 'heart': glyph('heart'), 'heart.fill': glyph('heart.fill'), 'person': glyph('person'), 'person.crop.circle.fill': glyph('person.crop.circle.fill'), 'waveform.path.ecg': glyph('waveform.path.ecg') }
+    const compiled = await compileBrowserScreen({ root, source: 'Screen.stx', screen: 'Screen', browser: { screen: 'Screen', container: '#screen', appURL: '/m', routes: { '/m/health': 'Screen' }, icons, tabs: [{ id: '/m/health', title: 'Health', symbol: 'heart' }, { id: '/m/me', title: 'Me', symbol: 'person' }], platformModule: path.join(root, 'platform.ts') } })
+    const browser = new Window({ url: 'https://fixture.invalid/m/health' })
+    Object.defineProperty(browser.document, 'hidden', { configurable: true, get: () => false })
+    const container = browser.document.createElement('div')
+    container.id = 'screen'
+    browser.document.body.append(container)
+    const scope: Record<string, any> = { document: browser.document, navigator: browser.navigator, location: browser.location, history: browser.history, MutationObserver: browser.MutationObserver, matchMedia: browser.matchMedia.bind(browser), addEventListener: browser.addEventListener.bind(browser), removeEventListener: browser.removeEventListener.bind(browser), dispatchEvent: browser.dispatchEvent.bind(browser), console, setTimeout, clearTimeout, setInterval, clearInterval, queueMicrotask, URL, URLSearchParams, AbortController }
+    scope.window = scope
+    try {
+      vm.runInNewContext(compiled.code, scope)
+      await new Promise(resolve => setTimeout(resolve, 20))
+      const click = async (id: string) => {
+        container.querySelector(`[data-testid="${id}"]`)!.dispatchEvent(new browser.Event('click'))
+        await new Promise(resolve => setTimeout(resolve, 0))
+      }
+      // An Icon draws its glyph as a mask: read which one from it.
+      const drawn = (tab: string) => [...browser.document.querySelectorAll(`nav a[href="${tab}"] [data-tab-icon] [data-stx-primitive="Icon"]`)].map(node => decodeURIComponent(node.getAttribute('style') || '').match(/data-glyph="([^"]+)"/)?.[1])
+      const icon = (tab: string) => browser.document.querySelector(`nav a[href="${tab}"] [data-tab-icon]`) as unknown as HTMLElement
+      expect(drawn('/m/health')).toEqual(['heart'])
+      expect(drawn('/m/me')).toEqual(['person'])
+      await click('heart')
+      expect(drawn('/m/health')).toEqual(['heart.fill'])
+      expect(icon('/m/health').style.color).toBe('#ff3b30')
+      expect(browser.document.querySelector('nav a[href="/m/health"]')!.getAttribute('aria-label')).toBe('Health, 142 bpm')
+      // A number in place of the icon wins, and the live symbol comes back after it.
+      await click('text')
+      expect(drawn('/m/health')).toEqual([])
+      expect(icon('/m/health').textContent).toBe('142')
+      await click('untext')
+      expect(drawn('/m/health')).toEqual(['heart.fill'])
+      await click('plain')
+      expect(drawn('/m/health')).toEqual(['heart'])
+      expect(icon('/m/health').style.color).toBe('')
+      // Me is not the selected tab: its selected symbol and tint wait.
+      await click('me')
+      expect(drawn('/m/me')).toEqual(['person'])
+      expect(icon('/m/me').style.color).toBe('')
+      // Health is: its selected symbol and tint show at once.
+      await click('health')
+      expect(drawn('/m/health')).toEqual(['waveform.path.ecg'])
+      expect(icon('/m/health').style.color).toBe('#34c759')
+      expect(browser.document.querySelectorAll('nav a [data-tab-icon] [data-stx-primitive="Icon"]').length).toBe(2)
+    }
+    finally { scope.__stxNativeUnmount?.(); browser.close() }
+  })
+
+  it('binds the handlers of a screen whose script is only functions, with no onMount and no signal', async () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'stx-plain-handlers-'))
+    folders.push(root)
+    // With no reactive context the web binds `@click` through an element id
+    // and a standalone script; a native compile has to keep it as a binding.
+    writeFileSync(path.join(root, 'Screen.stx'), `<script client>
+function tap() { globalThis.taps = (globalThis.taps || 0) + 1 }
+</script><View><View testID="row" @click="tap()"><Text>Row</Text></View></View>`)
+    writeFileSync(path.join(root, 'platform.ts'), 'export async function createBrowserPlatform() { return {craft:{},capabilities:[],call:async()=>null,navigate(){},dispose(){}} }')
+    const compiled = await compileBrowserScreen({ root, source: 'Screen.stx', screen: 'Screen', browser: { screen: 'Screen', container: '#screen', appURL: '/m', routes: { '/m': 'Screen' }, platformModule: path.join(root, 'platform.ts') } })
+    const browser = new Window({ url: 'https://fixture.invalid/m' })
+    const container = browser.document.createElement('div')
+    container.id = 'screen'
+    browser.document.body.append(container)
+    const scope: Record<string, any> = { document: browser.document, navigator: browser.navigator, location: browser.location, history: browser.history, MutationObserver: browser.MutationObserver, matchMedia: browser.matchMedia.bind(browser), addEventListener: browser.addEventListener.bind(browser), removeEventListener: browser.removeEventListener.bind(browser), dispatchEvent: browser.dispatchEvent.bind(browser), console, setTimeout, clearTimeout, setInterval, clearInterval, queueMicrotask, URL, URLSearchParams, AbortController }
+    scope.window = scope
+    try {
+      vm.runInNewContext(compiled.code, scope)
+      await new Promise(resolve => setTimeout(resolve, 20))
+      container.querySelector('[data-testid="row"]')!.dispatchEvent(new browser.Event('click'))
+      await new Promise(resolve => setTimeout(resolve, 0))
+      expect(scope.taps).toBe(1)
+    }
+    finally { scope.__stxNativeUnmount?.(); browser.close() }
+  })
+
   it('matches fixed paths before parameters, decodes params and rejects malformed paths', () => {
     const routes = { '/m/store/:slug': 'Product', '/m/store/return': 'Return', '/m/u/:username': 'Profile' }
     expect(matchBrowserRoute('/m/store/return', routes)?.screen).toBe('Return')

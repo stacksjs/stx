@@ -34,10 +34,18 @@ export interface NativeTabItemOptions {
   /** Null restores the configured caption. */
   title?: string | null
   iconText?: string | null
+  /** A platform symbol drawn in place of the configured one; null restores it. */
+  symbol?: string | null
+  /** The symbol while this tab is selected; null falls back to `symbol`, then the configured one. */
+  selectedSymbol?: string | null
   /** Icon-only color; null restores the normal selected/unselected tint. */
   iconTint?: string | null
+  /** The color while this tab is selected; null falls back to `iconTint`. */
+  selectedIconTint?: string | null
   /** A subtle pulse, suppressed while inactive or when reduced motion is enabled. */
   iconPulse?: boolean
+  /** The pulse while this tab is selected; null falls back to `iconPulse`. */
+  selectedIconPulse?: boolean | null
   image?: string | null
   badge?: string | null
   accessibilityLabel?: string | null

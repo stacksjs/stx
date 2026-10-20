@@ -22,7 +22,7 @@ export interface BrowserScreenOptions {
   params?: Record<string, unknown>
   appURL: string
   title?: string
-  tabs?: Array<{ id: string, title: string, symbol?: string }>
+  tabs?: Array<{ id: string, title: string, symbol?: string, selectedSymbol?: string }>
   icons?: BrowserRendererOptions['icons']
 }
 
@@ -70,11 +70,66 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
     send('APPEARANCE', { colorScheme: bridge.colorScheme })
   }
   let currentNavigation: Record<string, unknown> = {}
-  const tabIcons = new Map<string, { root: HTMLElement, fallback: string, link: HTMLAnchorElement, label: HTMLElement, title: string, text: string | null, tint: string | null, pulse: boolean, animation: Animation | null }>()
+  // Each tab's icon as Craft's tab bar decides it (CraftApp.swift
+  // Tab.iconAppearance): the selected tab draws `selectedSymbol`, then the
+  // live `symbol`, then the configured one; a tint and a pulse the same way.
+  interface TabIcon {
+    id: string
+    root: HTMLElement
+    link: HTMLAnchorElement
+    label: HTMLElement
+    title: string
+    selected: boolean
+    configured: string | null
+    symbol: string | null
+    selectedSymbol: string | null
+    text: string | null
+    image: string | null
+    tint: string | null
+    selectedTint: string | null
+    pulse: boolean
+    selectedPulse: boolean | null
+    drawn: string | null
+    icon: BrowserScreenRenderer | null
+    animation: Animation | null
+  }
+  const tabIcons = new Map<string, TabIcon>()
+  const tabSymbol = (tab: TabIcon): string | null => tab.selected ? tab.selectedSymbol ?? tab.symbol ?? tab.configured : tab.symbol ?? tab.configured
+  const tabTint = (tab: TabIcon): string | null => tab.selected ? tab.selectedTint ?? tab.tint : tab.tint
+  const tabPulse = (tab: TabIcon): boolean => tab.selected ? tab.selectedPulse ?? tab.pulse : tab.pulse
+  const symbolName = (value: unknown): string | null => typeof value === 'string' && value.trim() ? value.trim() : null
+  const drawTab = (tab: TabIcon): void => {
+    const drawn = tab.image ? `image:${tab.image}` : tab.text ? `text:${tab.text}` : `symbol:${tabSymbol(tab) ?? ''}`
+    if (drawn !== tab.drawn) {
+      tab.drawn = drawn
+      tab.icon?.dispose()
+      tab.icon = null
+      tab.root.replaceChildren()
+      tab.root.style.cssText = ''
+      if (tab.image) {
+        const image = document.createElement('img')
+        image.src = tab.image; image.alt = ''; image.style.cssText = 'width:27px;height:27px;border-radius:50%;object-fit:cover'
+        image.onerror = () => { tab.image = null; drawTab(tab) }
+        tab.root.append(image)
+      }
+      else if (tab.text) {
+        tab.root.textContent = tab.text
+        tab.root.style.cssText = 'font-size:23px;font-weight:650;font-variant-numeric:tabular-nums;color:#ff2d55;line-height:27px'
+      }
+      else {
+        const symbol = tabSymbol(tab)
+        if (symbol) {
+          tab.icon = new BrowserScreenRenderer(tab.root, { icons: options.icons, event() {} })
+          tab.icon.render({ id: `tab_${tab.id}`, type: 'Icon', props: { symbol }, style: { width: 23, height: 23 }, events: {}, children: [] })
+        }
+      }
+    }
+    tab.root.style.color = tabTint(tab) || (tab.text ? '#ff2d55' : '')
+  }
   const motion = matchMedia('(prefers-reduced-motion: reduce)')
   const syncTabPulses = (): void => {
     for (const tab of tabIcons.values()) {
-      const active = tab.pulse && !tab.text && !tab.root.querySelector('img') && !motion.matches && !document.hidden
+      const active = tabPulse(tab) && !tab.text && !tab.image && !motion.matches && !document.hidden
       if (!active) { tab.animation?.cancel(); tab.animation = null }
       else if (!tab.animation && typeof tab.root.animate === 'function') {
         tab.animation = tab.root.animate([{ opacity: 1 }, { opacity: 0.55 }], { duration: 700, iterations: Infinity, direction: 'alternate' })
@@ -113,21 +168,15 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
     const tab = item?.id ? tabIcons.get(item.id) : null
     if (tab && item) {
       if ('title' in item) tab.label.textContent = item.title?.slice(0, 40) || tab.title
-      if ('iconText' in item) tab.text = item.iconText || null
+      if ('iconText' in item) tab.text = item.iconText ? item.iconText.slice(0, 8) : null
+      if ('image' in item) tab.image = item.image && /^https:\/\//.test(item.image) ? item.image : null
+      if ('symbol' in item) tab.symbol = symbolName(item.symbol)
+      if ('selectedSymbol' in item) tab.selectedSymbol = symbolName(item.selectedSymbol)
       if ('iconTint' in item) tab.tint = item.iconTint || null
+      if ('selectedIconTint' in item) tab.selectedTint = item.selectedIconTint || null
       if ('iconPulse' in item) tab.pulse = item.iconPulse === true
-      if ('image' in item && item.image && /^https:\/\//.test(item.image)) {
-        const image = document.createElement('img')
-        image.src = item.image; image.alt = ''; image.style.cssText = 'width:27px;height:27px;border-radius:50%;object-fit:cover'
-        image.onerror = () => { tab.root.innerHTML = tab.fallback }
-        tab.root.replaceChildren(image)
-      }
-      else if ('iconText' in item || 'image' in item) {
-        if (item.iconText) { tab.root.textContent = item.iconText.slice(0, 8); tab.root.style.cssText = 'font-size:23px;font-weight:650;font-variant-numeric:tabular-nums;color:#ff2d55;line-height:27px' }
-        else { tab.root.innerHTML = tab.fallback; tab.root.style.cssText = '' }
-      }
-      tab.root.style.color = ''
-      tab.root.style.color = tab.tint || (tab.text ? '#ff2d55' : '')
+      if ('selectedIconPulse' in item) tab.selectedPulse = typeof item.selectedIconPulse === 'boolean' ? item.selectedIconPulse : null
+      drawTab(tab)
       syncTabPulses()
       if ('accessibilityLabel' in item) {
         if (item.accessibilityLabel) tab.link.setAttribute('aria-label', item.accessibilityLabel)
@@ -142,7 +191,7 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
     const heading = document.createElement('h1')
     heading.textContent = title
     heading.style.cssText = `font-size:${settings.largeTitle ? 28 : 20}px;font-weight:700;flex:1;margin:8px 0`
-    for (const icon of chromeRenderers.splice((options.tabs ?? []).filter(tab => tab.symbol).length)) icon.dispose()
+    for (const icon of chromeRenderers.splice(0)) icon.dispose()
     nav.replaceChildren()
     if (location.pathname.replace(/\/$/, '') !== rootPath && !(options.tabs ?? []).some(tab => tab.id === location.pathname.replace(/\/$/, ''))) {
       const back = document.createElement('button')
@@ -180,17 +229,15 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
     link.style.cssText = 'display:flex;flex:1;flex-direction:column;align-items:center;gap:3px;min-height:44px;text-decoration:none;color:inherit;font-size:11px'
     const iconRoot = document.createElement('span')
     link.append(iconRoot)
-    if (tab.symbol) {
-      const icon = new BrowserScreenRenderer(iconRoot, { icons: options.icons, event() {} })
-      chromeRenderers.push(icon)
-      icon.render({ id: `tab_${tab.id}`, type: 'Icon', props: { symbol: tab.symbol }, style: { width: 23, height: 23 }, events: {}, children: [] })
-    }
     const label = document.createElement('span'); label.textContent = tab.title; label.style.fontVariantNumeric = 'tabular-nums'; link.append(label)
     link.setAttribute('data-testid', `craft-tab-${tab.id}`)
     iconRoot.setAttribute('data-tab-icon', '')
     label.setAttribute('data-tab-title', '')
-    tabIcons.set(tab.id, { root: iconRoot, fallback: iconRoot.innerHTML, link, label, title: tab.title, text: null, tint: null, pulse: false, animation: null })
-    if (location.pathname.replace(/\/$/, '') === tab.id || (tab.id !== rootPath && location.pathname.startsWith(`${tab.id}/`))) { link.setAttribute('aria-current', 'page'); link.style.color = '#007aff' }
+    const selected = location.pathname.replace(/\/$/, '') === tab.id || (tab.id !== rootPath && location.pathname.startsWith(`${tab.id}/`))
+    if (selected) { link.setAttribute('aria-current', 'page'); link.style.color = '#007aff' }
+    const entry: TabIcon = { id: tab.id, root: iconRoot, link, label, title: tab.title, selected, configured: symbolName(tab.symbol), symbol: null, selectedSymbol: symbolName(tab.selectedSymbol), text: null, image: null, tint: null, selectedTint: null, pulse: false, selectedPulse: null, drawn: null, icon: null, animation: null }
+    tabIcons.set(tab.id, entry)
+    drawTab(entry)
     tabPill.append(link)
   }
   tabs.hidden = !options.tabs?.length
@@ -252,7 +299,7 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
       observer.disconnect()
       media.removeEventListener('change', theme)
       motion.removeEventListener('change', syncTabPulses)
-      for (const tab of tabIcons.values()) tab.animation?.cancel()
+      for (const tab of tabIcons.values()) { tab.animation?.cancel(); tab.icon?.dispose() }
       document.removeEventListener('visibilitychange', visibility)
       stopEvents?.()
       renderer.dispose()

@@ -163,6 +163,23 @@ describe('the browser peer of the native screen renderer', () => {
     expect(container.textContent).toBe('Original')
   })
 
+  it('draws a filled platform symbol with its outline\'s glyph when the set has no filled one', () => {
+    const window = new Window()
+    const container = window.document.createElement('div')
+    window.document.body.appendChild(container)
+    const icons = { heart: { body: '<path data-glyph="heart"/>', width: 24, height: 24 }, star: { body: '<path data-glyph="star"/>', width: 24, height: 24 }, 'star.fill': { body: '<path data-glyph="star.fill"/>', width: 24, height: 24 } }
+    const renderer = new BrowserScreenRenderer(container as unknown as HTMLElement, { icons, event() {} })
+    const glyph = (id: string) => decodeURIComponent(container.querySelector(`[data-stx-node="${id}"]`)!.getAttribute('style') || '').match(/data-glyph="([^"]+)"/)?.[1]
+    renderer.render({ id: 'root', type: 'View', props: {}, style: {}, events: {}, children: [
+      { id: 'heart', type: 'Icon', props: { symbol: 'heart.fill' }, style: {}, events: {}, children: [] },
+      { id: 'star', type: 'Icon', props: { symbol: 'star.fill' }, style: {}, events: {}, children: [] },
+    ] })
+    expect(glyph('heart')).toBe('heart')
+    // A filled glyph the set does have is the one drawn.
+    expect(glyph('star')).toBe('star.fill')
+    expect(() => renderer.render({ id: 'root', type: 'View', props: {}, style: {}, events: {}, children: [{ id: 'gone', type: 'Icon', props: { symbol: 'missing.fill' }, style: {}, events: {}, children: [] }] })).toThrow('No browser icon registered')
+  })
+
   it('does not activate a disabled view button from the keyboard', () => {
     const { renderer, container, node, events, window } = fixture()
     renderer.render(node('root', 'View', [node('button', 'View', ['Disabled'], { disabled: true }, { onPress: 'press' })]))

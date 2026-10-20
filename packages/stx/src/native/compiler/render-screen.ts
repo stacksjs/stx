@@ -104,6 +104,13 @@ export async function compileScreenSource(
     // targets. Do not broaden this list without same-source runtime coverage.
     _targetComponentFallbackNames: ['Button'],
     _nativeHostAttrs: true,
+    // A native screen's events are bindings in its manifest, read from the
+    // `@click` it keeps. The web's other path, an element id and a standalone
+    // script that binds it, is taken when the template has no reactive
+    // context (a client block of plain functions, with no onMount and no
+    // signal), and that script never runs natively: every handler on such a
+    // screen was dead.
+    skipEventDirectives: true,
     _pluginComponentDirs: (loaded as any)._pluginComponentDirs ?? [],
   }
 

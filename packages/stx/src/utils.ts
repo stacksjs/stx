@@ -2044,7 +2044,9 @@ export async function renderComponentWithSlot(
       // Signal components bind events through their scoped runtime. Components
       // with no client script must leave forwarded DOM events for the parent
       // page, since they have no local script in which to attach a handler.
-      skipEventDirectives: hasSignalScripts || clientScripts.length === 0,
+      // A native compile keeps every event for its binding manifest
+      // (native/compiler/render-screen.ts).
+      skipEventDirectives: options._nativeHostAttrs === true || hasSignalScripts || clientScripts.length === 0,
       // Components must never get auto-layout wrapping — they are fragments, not pages
       defaultLayout: undefined,
     }
