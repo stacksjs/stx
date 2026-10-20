@@ -718,6 +718,19 @@ export function installCraftBridge(
       // arrives as a `craftHealthHeartRate` event, like the strap's readings.
       startHeartRateUpdates: (options: AnyRecord = {}) => request('Health', 'startHeartRateUpdates', [{ since: typeof options.since === 'number' ? options.since : null }]),
       stopHeartRateUpdates: () => request('Health', 'stopHeartRateUpdates', [{}]),
+      startWorkout: (options: AnyRecord = {}) => request('Health', 'startWorkout', [{
+        type: typeof options.type === 'string' ? options.type : '',
+        ...(typeof options.location === 'string' ? { location: options.location } : {}),
+      }]),
+      pauseWorkout: () => request('Health', 'pauseWorkout', []),
+      resumeWorkout: () => request('Health', 'resumeWorkout', []),
+      endWorkout: () => request('Health', 'endWorkout', []),
+      onWorkout: (callback: (event: Record<string, unknown>) => unknown) => {
+        if (typeof callback !== 'function') throw new TypeError('health.onWorkout needs a function')
+        const handler = (event: AnyRecord) => callback((event as AnyRecord).detail || {})
+        target.addEventListener?.('craftHealthWorkout', handler)
+        return () => target.removeEventListener?.('craftHealthWorkout', handler)
+      },
     }
     // A store that may be missing or out of date, with grants managed in its
     // own screen (Health Connect on Android): whether it can be used, the

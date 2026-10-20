@@ -71,6 +71,26 @@ describe('shared-runtime native capability protocol', () => {
     ])
   })
 
+  it('exposes live workout lifecycle methods over the Health protocol', async () => {
+    const { scope, sent } = await runtime('', { capabilities: ['health'], timers: false })
+    expect(typeof scope.craft.health.startWorkout).toBe('function')
+    expect(typeof scope.craft.health.pauseWorkout).toBe('function')
+    expect(typeof scope.craft.health.resumeWorkout).toBe('function')
+    expect(typeof scope.craft.health.endWorkout).toBe('function')
+    expect(typeof scope.craft.health.onWorkout).toBe('function')
+
+    scope.craft.health.startWorkout({ type: 'running', location: 'outdoor' })
+    scope.craft.health.pauseWorkout()
+    scope.craft.health.resumeWorkout()
+    scope.craft.health.endWorkout()
+    expect(sent.filter(message => message.type === 'API_REQUEST').map(message => message.payload)).toEqual([
+      { version: 1, module: 'Health', method: 'startWorkout', args: [{ type: 'running', location: 'outdoor' }] },
+      { version: 1, module: 'Health', method: 'pauseWorkout', args: [] },
+      { version: 1, module: 'Health', method: 'resumeWorkout', args: [] },
+      { version: 1, module: 'Health', method: 'endWorkout', args: [] },
+    ])
+  })
+
   it('exposes the existing Craft API shapes over versioned requests', async () => {
     const { scope, sent, receive } = await runtime()
     scope.craft.storage.get('theme')

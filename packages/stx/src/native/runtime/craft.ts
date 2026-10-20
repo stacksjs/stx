@@ -341,6 +341,13 @@ export interface NativeCraft {
     /** Heart rate as Apple Health receives it, from `since` (epoch ms), as `craftHealthHeartRate` events (`{ samples }`); one stream at a time. */
     startHeartRateUpdates: (options?: { since?: number }) => Promise<boolean>
     stopHeartRateUpdates: () => Promise<boolean>
+    /** Start an OS-owned live workout session. Lifecycle and metrics arrive as `craftHealthWorkout` events. */
+    startWorkout: (options: { type: string, location?: 'indoor' | 'outdoor' | 'unknown' }) => Promise<{ id: string, type: string, startDate: number }>
+    pauseWorkout: () => Promise<boolean>
+    resumeWorkout: () => Promise<boolean>
+    endWorkout: () => Promise<{ id: string, workoutId: string, endDate: number, durationSeconds: number }>
+    /** Subscribe to live workout state, metrics, and error events from the native host. */
+    onWorkout: (callback: (event: Record<string, unknown>) => unknown) => () => void
     /**
      * Whether the store can be used (`capabilities.healthAvailability`,
      * Health Connect): `updateRequired` and `unavailable` want
