@@ -1,5 +1,27 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.612...v0.2.613)
+
+## 🐛 Bug Fixes
+
+- **router**: revalidate cached pages across layouts ([3a6964d](https://github.com/stacksjs/stx/commit/3a6964d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **popover**: wire shared panels to native non-modal presentation (#2089) ([e4bea8c](https://github.com/stacksjs/stx/commit/e4bea8c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2089](https://github.com/stacksjs/stx/issues/2089), [#2089](https://github.com/stacksjs/stx/issues/2089))
+- **tooltip**: present touch-triggered native popup layers (#2089) ([7f17ad6](https://github.com/stacksjs/stx/commit/7f17ad6)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2089](https://github.com/stacksjs/stx/issues/2089), [#2089](https://github.com/stacksjs/stx/issues/2089))
+- **native**: load shared popup helpers and track viewport placement (#2089) ([06e10be](https://github.com/stacksjs/stx/commit/06e10be)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2089](https://github.com/stacksjs/stx/issues/2089), [#2089](https://github.com/stacksjs/stx/issues/2089))
+
+## 💚 Continuous Integration
+
+- **release**: publish with Pantry 0.11.109 ([edce8ec](https://github.com/stacksjs/stx/commit/edce8ec)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.613 ([e4afd49](https://github.com/stacksjs/stx/commit/e4afd49)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.611...v0.2.612)
 
 ## ⚡ Performance Improvements
