@@ -232,6 +232,16 @@ export interface ButtonProps extends BaseProps {
   color?: string
 }
 
+/** An underlined navigation action. Craft resolves `href`/`to` in the host. */
+export interface LinkProps extends BaseProps {
+  href?: string
+  to?: string
+  title?: string
+  onPress?: () => void
+  disabled?: boolean
+  color?: string
+}
+
 export interface TouchableOpacityProps extends ViewProps {
   /** Active opacity when pressed */
   activeOpacity?: number
@@ -682,6 +692,7 @@ export const ComponentRegistry = {
 
   // Interactive
   Button: 'Button',
+  Link: 'Link',
   TouchableOpacity: 'TouchableOpacity',
   TouchableHighlight: 'TouchableHighlight',
   Pressable: 'Pressable',

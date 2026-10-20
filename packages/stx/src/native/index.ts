@@ -53,6 +53,7 @@ export type {
   ViewProps,
   TextProps,
   ButtonProps,
+  LinkProps,
   ImageProps,
   MapProps,
   MapPolylineProps,

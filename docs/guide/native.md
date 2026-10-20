@@ -66,6 +66,11 @@ The shared Button accepts legacy `text`/`:text` as a reactive label alias;
 a nonempty `label` wins. Native `testID`, accessibility props, caller classes,
 and `@press` continue to work. Unconsumed host props pass through ordinary
 native component roots without requiring every component to add `data-native`.
+
+Use `<Link href="/details">Details</Link>` (or `to`) for an underlined native
+navigation action. The compiler emits the host-neutral `Link` primitive and
+Craft's iOS and Android hosts resolve the destination through the same route
+protocol as authored links. The browser target keeps its ordinary anchor path.
 Consumed component API props stay private.
 
 Composed HTML buttons (with element children such as conditional labels or
