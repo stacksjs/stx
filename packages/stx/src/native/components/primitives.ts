@@ -553,6 +553,10 @@ export interface FlatListProps<T> extends ScrollViewProps {
   /** Data-driven rows are not part of the current keyed child protocol. */
   /** Number of columns in the keyed child tree. */
   numColumns?: number
+  /** Top-level pull-to-refresh handler for the mounted keyed rows. */
+  onRefresh?: () => void
+  /** Controlled pull-to-refresh state for the mounted keyed rows. */
+  refreshing?: boolean
   /** End reached handler for the mounted keyed rows. */
   onEndReached?: () => void
   /** End reached threshold */

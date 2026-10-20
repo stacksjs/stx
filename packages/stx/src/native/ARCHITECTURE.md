@@ -196,7 +196,8 @@ incremental native mutations: retained rows keep their node identities, event
 scope and input state, while their ScrollView remains mounted. The maintained
 Craft iOS and Android hosts expose `FlatList` as a keyed child-tree protocol,
 and the shared primitive types expose `listRole` for its
-header/item/separator/empty/footer slots;
+header/item/separator/empty/footer slots plus controlled `onRefresh`/
+`refreshing` pull-to-refresh;
 `data`, `renderItem`, `keyExtractor`, and grouped `SectionList` data are
 rejected until a versioned list-data protocol is introduced. This keeps the
 public types honest while preserving recycling for the child trees that the

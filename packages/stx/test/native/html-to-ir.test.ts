@@ -398,8 +398,13 @@ describe('what is deliberately dropped', () => {
 
 describe('shared-runtime list boundaries', () => {
   it('types list chrome slots on the shared primitive props', () => {
-    const typedListSlot: FlatListProps<string> = { listRole: 'item' }
+    const typedListSlot: FlatListProps<string> = {
+      listRole: 'item',
+      onRefresh: () => {},
+      refreshing: false,
+    }
     expect(typedListSlot.listRole).toBe('item')
+    expect(typedListSlot.refreshing).toBe(false)
   })
 
   it('warns when legacy FlatList expansion props would otherwise be silently ignored', async () => {
