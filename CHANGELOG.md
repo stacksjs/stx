@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.602...v0.2.603)
+
+## ✨ Features
+
+- **components**: a dialog without a title is named after its own heading ([b571b04](https://github.com/stacksjs/stx/commit/b571b04)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.603 ([130c75e](https://github.com/stacksjs/stx/commit/130c75e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.601...v0.2.602)
 
 ## 🐛 Bug Fixes

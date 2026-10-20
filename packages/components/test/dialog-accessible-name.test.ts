@@ -41,9 +41,18 @@ const FILES = {
   'pages/prop.stx': page('app', `<Dialog open title="Confirm deletion">
   <p>This cannot be undone.</p>
 </Dialog>`),
+  'pages/heading.stx': page('app', `<Dialog open>
+  <h2 class="text-2xl font-bold">Plan a spot</h2>
+  <p>Search a place.</p>
+  <Dialog><h3>Nested</h3></Dialog>
+</Dialog>`),
+  'pages/titled-first.stx': page('app', `<Dialog open>
+  <h4>Step 2 of 3</h4>
+  <DialogTitle>Delete this project</DialogTitle>
+</Dialog>`),
 }
 
-const ROUTES = { '/titled': 'pages/titled.stx', '/prop': 'pages/prop.stx' }
+const ROUTES = { '/titled': 'pages/titled.stx', '/prop': 'pages/prop.stx', '/heading': 'pages/heading.stx', '/titled-first': 'pages/titled-first.stx' }
 
 afterEach(() => {
   closeBrowser()
@@ -77,6 +86,36 @@ describe('Dialog accessible name', () => {
       const heading = browser.document.getElementById(labelledBy!)
       expect(heading).not.toBeNull()
       expect(heading!.textContent).toContain('Delete this project')
+    }
+    finally {
+      closeBrowser()
+    }
+  })
+
+  it('names itself from its own first heading when it has no DialogTitle', async () => {
+    const app = await renderApp(FILES, ROUTES)
+    try {
+      const browser = await boot(app, '/heading')
+      await settle()
+
+      const dialog = browser.document.querySelector('[role="dialog"]')
+      const labelledBy = dialog!.getAttribute('aria-labelledby')
+      expect(labelledBy).toBeTruthy()
+      expect(browser.document.getElementById(labelledBy!)!.textContent).toBe('Plan a spot')
+    }
+    finally {
+      closeBrowser()
+    }
+  })
+
+  it('prefers its DialogTitle over an earlier heading', async () => {
+    const app = await renderApp(FILES, ROUTES)
+    try {
+      const browser = await boot(app, '/titled-first')
+      await settle()
+
+      const dialog = browser.document.querySelector('[role="dialog"]')
+      expect(browser.document.getElementById(dialog!.getAttribute('aria-labelledby')!)!.textContent).toContain('Delete this project')
     }
     finally {
       closeBrowser()
