@@ -1393,23 +1393,13 @@ function routerSource(): string {
       // Cache hit → promote in LRU order so this entry survives eviction
       // longer than other entries that haven't been touched.
       touchCache(targetPath);
-      if(checkLayoutChange(layoutCache[targetPath],url,layoutGroupCache[targetPath])){
-        // The prefetch already brought the whole document for exactly this
-        // (prefetchLink): swap it in now. Asking again was a second round trip
-        // on every tap into another layout, from an app page to a public one,
-        // after the first had already been paid for on hover or on sight.
-        var cachedDoc=cache[targetPath];
-        if(cachedDoc&&cachedDoc.indexOf('<!--stx-fragment')!==0){
-          var docDecl={layout:layoutCache[targetPath]||'',group:layoutGroupCache[targetPath]||''};
-          var docLoading=beforeSwap(cachedDoc,url);
-          return (docLoading||Promise.resolve(true)).then(function(ok){
-            if(stale())return false;
-            if(!ok){recoverUnbound(url,ctx);return false}
-            pendingContainerAttrs='';
-            pendingLayoutDecl=docDecl;
-            return swapWith(cachedDoc,targetPath);
-          }).catch(failed).finally(done);
-        }
+      var cached=cache[targetPath];
+      // A whole document swaps in as it is: one prefetched across a layout
+      // change (prefetchLink), or kept from an earlier full-page answer. Only a
+      // fragment from another layout still needs its document fetched; asking
+      // again was a second round trip on every tap into another layout.
+      var isDoc=cached.indexOf('<!--stx-fragment')!==0;
+      if(!isDoc&&checkLayoutChange(layoutCache[targetPath],url,layoutGroupCache[targetPath])){
         // Layout changed — fetch full page and do full document swap
         log('[router] cache hit but layout changed — fetching full page');
         return routerFetch(url,{'Accept':'text/html'}).then(function(r){
@@ -1423,11 +1413,10 @@ function routerSource(): string {
           return swapWith(html,targetPath);
         }).catch(failed).finally(done);
       }
-      var cached=cache[targetPath];
       var swapCached=function(){
         if(stale())return false;
         pendingContainerAttrs=attrsCache[targetPath]||'';
-        pendingLayoutDecl=null;
+        pendingLayoutDecl=isDoc?{layout:layoutCache[targetPath]||'',group:layoutGroupCache[targetPath]||''}:null;
         return swapWith(cached,targetPath);
       };
       var loading=beforeSwap(cached,url);
@@ -1435,8 +1424,10 @@ function routerSource(): string {
         if(swapped===false)return false;
         applyTitle(titleCache[targetPath]);
         // Shown from the cache at once; asked again behind it, so a page that
-        // changed since says so (stx:updated) instead of staying stale.
-        revalidate(targetPath,url);
+        // changed since says so (stx:updated) instead of staying stale. Not a
+        // whole document: it would be compared with a fragment and always
+        // read as changed.
+        if(!isDoc)revalidate(targetPath,url);
         return true;
       }).finally(done);
     }
@@ -3613,10 +3604,10 @@ else {
       // would read this answer, see the layout change, and fetch the whole
       // document then (navigate). Fetch it now instead, while the person is
       // still reaching for the link, so the tap is a swap like any other.
-      if(!result||result.html.indexOf('<!--stx-fragment')!==0||!checkLayoutChange(result.layout,href,result.layoutGroup))return result;
+      if(!result||result.html.indexOf('<!--stx-fragment')||!checkLayoutChange(result.layout,href,result.layoutGroup))return result;
+      // Same guards as any prefetch; the layout is the one the fragment declared.
       return fetch(href,{headers:{'Accept':'text/html'}}).then(function(full){
-        if(!full.ok||full.redirected||full.headers.get('X-STX-Location'))return null;
-        return full.text().then(function(html){return{html:html,layout:result.layout,layoutGroup:result.layoutGroup,title:result.title,containerAttrs:''}});
+        return full.ok?readPrefetchResponse(full,false).then(function(doc){return doc&&(doc.layout=result.layout,doc.layoutGroup=result.layoutGroup,doc)}):null;
       });
     }).then(function(result){
       if(result&&o.cache){
@@ -3628,8 +3619,8 @@ else {
         // Its stylesheet too, so the tap never waits on cssLoadTimeout for a
         // sheet it could have had all along. Added unapplied (media=print),
         // as a navigation adds it; the swap makes it live.
-        // A full document's generated sheets are named the same way, in its head.
-        preloadGeneratedCss(fragmentCssHrefs(result.html),result.html.indexOf('<!--stx-fragment')===0?location.href:new URL(href,location.href).href);
+        // A whole document's generated sheets too, named the same way in its head.
+        preloadGeneratedCss(fragmentCssHrefs(result.html),location.href);
       }
     }).catch(function(){}).finally(function(){delete prefetching[key]});
   }
@@ -3712,10 +3703,8 @@ else {
     // waits for them anyway, and fetched one after the other a tap paid for
     // two round trips where one would do. The swap finds them here (pending
     // or loaded) rather than starting them; a failed sheet is the swap's to
-    // handle, so it does not hold this up.
-    var cssBase;
-    try{cssBase=html.indexOf('<!--stx-fragment')===0?location.href:new URL(base,location.href).href}catch(e){cssBase=location.href}
-    preloadGeneratedCss(fragmentCssHrefs(html),cssBase);
+    // handle, so it does not hold this up. Generated sheets are root paths.
+    preloadGeneratedCss(fragmentCssHrefs(html),location.href);
     var waits=loadModuleRegistries(html,base);
     if(!waits)return null;
     return Promise.race([
