@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { join } from 'node:path'
 import { boot, closeBrowser, find, layout, page, renderApp, settle } from '../../stx/test/router/spa-harness'
 
-import { measureTooltipPosition, tooltipPosition } from '../src/utils/tooltip-position'
+import { measureTooltipPosition, tooltipPosition, trackNativePopup } from '../src/utils/tooltip-position'
 
 describe('Tooltip asynchronous host measurements', () => {
   const phone = { width: 390, height: 844 }
@@ -28,6 +28,21 @@ describe('Tooltip asynchronous host measurements', () => {
     const trigger = { measure: async () => box }
     await expect(measureTooltipPosition(trigger, { measure: async () => { throw new Error('VIEW_NOT_MOUNTED') } })).rejects.toThrow('VIEW_NOT_MOUNTED')
     expect(await measureTooltipPosition(trigger, { measure: async () => ({ ...box, width: 0 }) })).toBeNull()
+  })
+  it('positions a presented native panel against the viewport, not its logical parent', async () => {
+    const trigger = { measure: async () => box }
+    const popup = { measure: async () => ({ ...box, ...panel }), parentElement: { measure: async () => { throw new Error('logical parent must not be measured') } } }
+    expect(await measureTooltipPosition(trigger, popup, 'top', true))
+      .toEqual(tooltipPosition({ left: 100, right: 128, top: 10, bottom: 38 }, panel, phone))
+  })
+  it('never applies a native placement reply after cleanup', async () => {
+    let resolve!: (value: typeof box) => void
+    const styles: unknown[] = []
+    const stop = trackNativePopup({ measure: () => new Promise(done => { resolve = done }) }, { measure: async () => ({ ...box, ...panel }) }, 'top', style => styles.push(style))
+    stop()
+    resolve(box)
+    await new Promise(done => setTimeout(done, 0))
+    expect(styles).toEqual([])
   })
 })
 

@@ -17,11 +17,11 @@ interface NativeTooltipView {
 }
 
 /** Read real host bounds, returning coordinates relative to the panel's positioning parent. */
-export async function measureTooltipPosition(trigger: HTMLElement | NativeTooltipView, panel: HTMLElement | NativeTooltipView, preferred: TooltipSide = 'top') {
+export async function measureTooltipPosition(trigger: HTMLElement | NativeTooltipView, panel: HTMLElement | NativeTooltipView, preferred: TooltipSide = 'top', viewportPresentation = false) {
   if ('measure' in trigger) {
     if (!('measure' in panel)) throw new Error('Tooltip panel requires native viewMeasure support')
     const [anchor, bounds, origin] = await Promise.all([
-      trigger.measure(), panel.measure(), panel.parentElement?.measure(),
+      trigger.measure(), panel.measure(), viewportPresentation ? undefined : panel.parentElement?.measure(),
     ])
     for (const box of [bounds, origin]) {
       if (box && (box.unit !== anchor.unit || box.coordinateSpace !== anchor.coordinateSpace
@@ -39,6 +39,44 @@ export async function measureTooltipPosition(trigger: HTMLElement | NativeToolti
   const origin = panel.offsetParent?.getBoundingClientRect()
   const point = tooltipPosition(trigger.getBoundingClientRect(), rect, { width: viewport.innerWidth, height: viewport.innerHeight }, preferred)
   return { ...point, left: point.left - (origin?.left ?? 0), top: point.top - (origin?.top ?? 0) }
+}
+
+/**
+ * Craft presents a non-modal Modal in viewport coordinates while retaining its
+ * logical parent. There is no host layout-change subscription yet: sample only
+ * while open, serially, and ignore replies after close/removal. Never reparent.
+ */
+export function trackNativePopup(
+  trigger: NativeTooltipView,
+  panel: NativeTooltipView,
+  preferred: TooltipSide,
+  apply: (style: Record<string, unknown>) => void,
+  warn: (message: string) => void = console.warn,
+): () => void {
+  let active = true
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let previous = ''
+  let reported = false
+  async function update(): Promise<void> {
+    try {
+      const point = await measureTooltipPosition(trigger, panel, preferred, true)
+      if (!active) return
+      if (point) {
+        const style = { position: 'absolute', left: point.left, top: point.top, right: 'auto', bottom: 'auto', margin: 0, marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0, transform: [] }
+        const signature = JSON.stringify(style)
+        if (signature !== previous) { apply(style); previous = signature }
+      }
+    }
+    catch (error) {
+      if (active && !reported) {
+        reported = true
+        warn('[stx:popup] Could not measure native popup: ' + (error instanceof Error ? error.message : String(error)))
+      }
+    }
+    if (active) timer = setTimeout(update, 250)
+  }
+  void update()
+  return () => { active = false; clearTimeout(timer) }
 }
 
 /** Position in viewport coordinates; flip when possible, then keep every edge readable. */

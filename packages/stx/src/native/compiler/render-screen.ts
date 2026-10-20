@@ -149,6 +149,15 @@ export async function compileScreenSource(
     if (forcedSetup && !scripts.some(script => script.code === forcedSetup.code))
       scripts.push({ code: forcedSetup.code })
   }
+  // Serve HTML externalizes the page's module registry. A native screen has
+  // no HTTP script loader: embed the same registry before component setups.
+  const { buildModuleRegistryScript, registeredModuleIdsIn } = await import('../../client-module-registry')
+  const moduleInputs: string[] = []
+  const modules = await buildModuleRegistryScript(registeredModuleIdsIn(...scripts.map(script => script.code)), {
+    collectInputs: moduleInputs,
+  })
+  for (const input of moduleInputs) dependencies.add(input)
+  if (modules) scripts.unshift({ code: modules })
 
   return { document, manifest, setup, scripts, diagnostics, html, dependencies: [...dependencies] }
 }
