@@ -78,6 +78,7 @@ ${callerScript ? '<em class="caller">B:{{ callerSignal() }}</em>' : ''}
         await settle()
         const text = (selector: string) => browser.document.querySelector(selector)?.textContent
         expect(text('.row')).toBe('A:alpha')
+        expect(browser.document.querySelector('.row')?.closest('[x-cloak]')).toBeNull()
         expect(text('.own')).toBe('alpha')
         expect(text('.attr')).toBe('alpha')
         if (callerScript)
@@ -87,6 +88,7 @@ ${callerScript ? '<em class="caller">B:{{ callerSignal() }}</em>' : ''}
           (browser.window as any).__slotCaller.set('updated')
         await settle()
         expect([...browser.document.querySelectorAll('.row')].map(el => el.textContent)).toEqual(['A:beta', 'A:gamma'])
+        expect(browser.document.querySelector('.row')?.closest('[x-cloak]')).toBeNull()
         if (callerScript)
           expect([...browser.document.querySelectorAll('.caller')].map(el => el.textContent)).toEqual(['B:updated', 'B:updated'])
       }
