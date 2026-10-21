@@ -15,8 +15,8 @@
 
 import { existsSync, mkdirSync, copyFileSync, chmodSync, rmSync } from 'node:fs'
 import { join, dirname, basename, resolve } from 'node:path'
-import { spawn, execSync } from 'node:child_process'
-import { homedir, platform as osPlatform } from 'node:os'
+import { spawn } from 'node:child_process'
+import { platform as osPlatform } from 'node:os'
 import { injectCraftBridge } from './craft-bridge'
 import { processCraftComponents, CRAFT_COMPONENT_STYLES } from './craft-components'
 import { renderTemplate } from './render'
@@ -242,7 +242,7 @@ export async function buildNative(config: NativeBuildConfig): Promise<NativeBuil
         success: false,
         target,
         format,
-        error: 'Craft binary not found. Please install Craft or specify craftPath.',
+        error: 'Craft native binary not found on PATH. Run pantry install craft, or specify craftPath for framework development.',
       }
     }
 
@@ -736,51 +736,16 @@ async function buildAndroid(
 }
 
 /**
- * Find Craft binary in common locations
+ * Use the Pantry runtime on PATH, with an explicit development override.
+ * A nearby source checkout must never silently replace an installed release.
  */
-async function findCraftBinary(): Promise<string | null> {
-  // CRAFT_BIN is Craft's documented override and what the rest of the
-  // workspace already resolves through, so it wins over any guess.
-  if (process.env.CRAFT_BIN && await Bun.file(process.env.CRAFT_BIN).exists()) {
-    return process.env.CRAFT_BIN
+export function findCraftBinary(): string | null {
+  const explicit = process.env.CRAFT_BIN
+  if (explicit) {
+    if (!existsSync(explicit)) throw new Error(`CRAFT_BIN points to a missing file: ${explicit}`)
+    return explicit
   }
-
-  const possiblePaths = [
-    // Local builds. The binary is `craft`; the previous list looked for
-    // `craft-minimal`, a name the build has never produced, so a checked-out
-    // Craft was never found and every build fell through to PATH.
-    join(process.cwd(), '../../craft/packages/zig/zig-out/bin/craft'),
-    join(process.cwd(), '../craft/packages/zig/zig-out/bin/craft'),
-    join(homedir(), 'Code/Tools/craft/packages/zig/zig-out/bin/craft'),
-    join(homedir(), 'Code/craft/packages/zig/zig-out/bin/craft'),
-    // Installed locations
-    '/usr/local/bin/craft',
-    '/usr/bin/craft',
-    join(homedir(), '.local/bin/craft'),
-    // Windows
-    join(process.env.LOCALAPPDATA || '', 'craft', 'craft.exe'),
-    join(process.env.PROGRAMFILES || '', 'craft', 'craft.exe'),
-  ]
-
-  for (const path of possiblePaths) {
-    if (await Bun.file(path).exists()) {
-      return path
-    }
-  }
-
-  // Try to find in PATH
-  try {
-    const result = execSync('which craft 2>/dev/null || where craft 2>nul', { encoding: 'utf-8' })
-    const craftPath = result.trim().split('\n')[0]
-    if (craftPath && await Bun.file(craftPath).exists()) {
-      return craftPath
-    }
-  }
-  catch {
-    // Not found in PATH
-  }
-
-  return null
+  return Bun.which('craft', { PATH: process.env.PATH ?? '', cwd: process.cwd() })
 }
 
 /**
