@@ -67,7 +67,41 @@ export interface NativeNavigationOptions {
   tabItem?: NativeTabItemOptions
 }
 
+/** A button every screen of the app carries, unless the screen is where it goes. */
+export interface NativeChromeButton extends NativeNavigationButton {
+  /**
+   * The path of the app this button opens (`/m/calendar`). It is pressed as
+   * `navigation.open(open)` unless it has an `onPress` of its own, and it is
+   * left off the screen already at that path.
+   */
+  open?: string
+  /** Screens (`craft.route.name`) it is left off as well. */
+  hideOn?: string[]
+}
+
+/**
+ * The app's chrome: the bar buttons and tab updates every screen shares.
+ *
+ * A screen's own `leftButtons`/`rightButtons` come first and the chrome's
+ * follow; a screen button with a chrome button's id gives way to it.
+ */
+export interface NativeNavigationChrome {
+  leftButtons?: NativeChromeButton[]
+  rightButtons?: NativeChromeButton[]
+  /** Screens (`craft.route.name`) that keep only their own buttons, such as a profile with its own actions. */
+  bare?: string[]
+  /** Tabs to update (an account's picture and unread count); only what changed is sent. */
+  tabItems?: NativeTabItemOptions[]
+  tabAccessory?: NativeNavigationOptions['tabAccessory']
+}
+
 export interface NativeNavigation {
+  /**
+   * Declare the app's chrome for this screen, or `null` to drop it. Call it
+   * again when what it shows changes (an avatar, a badge): the bar is sent
+   * again only when its buttons did.
+   */
+  setChrome: (chrome: NativeNavigationChrome | null) => void
   /** Push another native screen of this bundle, by name. */
   push: (screen: string, params?: Record<string, unknown>) => string
   replace: (screen: string, params?: Record<string, unknown>) => string

@@ -2,6 +2,8 @@ import type { AppStatePayload, DeepLinkPayload, NativeBridgeInterface } from '..
 import { STXBridge } from '../bridge/protocol'
 import { createEventSourceClass, createStreamingBody, type StreamSink } from './event-stream'
 import { abortError, NativeFormData, nativeFormParts } from './jsc-globals'
+import type { NativeNavigationButton, NativeNavigationChrome } from './craft'
+import { buttonsKey, changedTabItems, hostButton, mergeChromeButtons, type ButtonSide } from './navigation-chrome'
 
 type AnyRecord = Record<string, any>
 
@@ -768,6 +770,29 @@ export function installCraftBridge(
   const hostSetOptions = craft.navigation && typeof craft.navigation.setOptions === 'function'
     ? craft.navigation.setOptions.bind(craft.navigation)
     : null
+  // The screen's own bar buttons and the app's chrome, merged on every send
+  // (navigation-chrome.ts). The host only ever sees ids; presses stay here.
+  const ownButtons: Record<ButtonSide, AnyRecord[]> = { leftButtons: [], rightButtons: [] }
+  const sentButtons: Record<ButtonSide, string> = { leftButtons: '[]', rightButtons: '[]' }
+  const sentTabItems = new Map<string, string>()
+  let sentAccessory: string | undefined
+  let chrome: NativeNavigationChrome | null = null
+  const barButtons = (side: ButtonSide): NativeNavigationButton[] => {
+    const merged = mergeChromeButtons(ownButtons[side] as NativeNavigationButton[], chrome, side, { name: craft.route?.name ?? '', path: craft.route?.path })
+    const presses = navButtonPresses[side]
+    presses.clear()
+    for (const button of merged) {
+      const id = String(button.id)
+      if (typeof button.onPress === 'function') presses.set(id, button.onPress)
+      else if (button.open) {
+        const path = button.open
+        presses.set(id, () => craft.navigation.open(path))
+      }
+    }
+    sentButtons[side] = buttonsKey(merged)
+    return merged.map(hostButton)
+  }
+  const sendOptions = (payload: AnyRecord): unknown => hostSetOptions ? hostSetOptions(payload) : protocol.send('NAVIGATION_SET_OPTIONS', payload)
   craft.navigation = Object.assign(craft.navigation || {}, {
     push: (screen: string, params?: Record<string, unknown>) => navigate('NAVIGATE', screen, params),
     replace: (screen: string, params?: Record<string, unknown>) => navigate('NAVIGATE_REPLACE', screen, params),
@@ -783,17 +808,34 @@ export function installCraftBridge(
       const payload: AnyRecord = {}
       for (const key of Object.keys(navigationOptions)) {
         if ((key === 'leftButtons' || key === 'rightButtons') && Array.isArray(navigationOptions[key])) {
-          const presses = navButtonPresses[key]
-          presses.clear()
-          payload[key] = navigationOptions[key].map((button: AnyRecord) => {
-            const { onPress, ...rest } = button || {}
-            if (typeof onPress === 'function' && rest.id != null) presses.set(String(rest.id), onPress)
-            return rest
-          })
+          ownButtons[key] = navigationOptions[key].filter(Boolean)
+          // Asked for, so always sent: the screen may be restoring a bar the
+          // host changed underneath it.
+          payload[key] = barButtons(key)
         }
         else if (typeof navigationOptions[key] !== 'function') payload[key] = navigationOptions[key]
       }
-      return hostSetOptions ? hostSetOptions(payload) : protocol.send('NAVIGATION_SET_OPTIONS', payload)
+      return sendOptions(payload)
+    },
+    setChrome: (next: NativeNavigationChrome | null) => {
+      if (next !== null && (typeof next !== 'object' || Array.isArray(next))) throw new TypeError('navigation.setChrome needs an object, or null')
+      chrome = next
+      const payload: AnyRecord = {}
+      for (const side of ['leftButtons', 'rightButtons'] as const) {
+        const before = sentButtons[side]
+        const buttons = barButtons(side)
+        if (sentButtons[side] !== before) payload[side] = buttons
+      }
+      const items = changedTabItems(chrome, sentTabItems)
+      // One tab per send: the host's `tabItem` names one tab.
+      if (items.length) payload.tabItem = items[0]
+      const accessory = chrome && 'tabAccessory' in chrome ? JSON.stringify(chrome.tabAccessory ?? null) : undefined
+      if (accessory !== undefined && accessory !== sentAccessory) {
+        sentAccessory = accessory
+        payload.tabAccessory = chrome!.tabAccessory ?? null
+      }
+      if (Object.keys(payload).length) sendOptions(payload)
+      for (const item of items.slice(1)) sendOptions({ tabItem: item })
     },
     onButton: (callback: (event: { id: string }) => unknown) => {
       if (typeof callback !== 'function') throw new TypeError('navigation.onButton needs a function')
