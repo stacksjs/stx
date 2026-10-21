@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.618...v0.2.619)
+
+## 🐛 Bug Fixes
+
+- **serve**: hold the bind for page warm-up only while another release serves the port ([24ba60f](https://github.com/stacksjs/stx/commit/24ba60f)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.619 ([4005b63](https://github.com/stacksjs/stx/commit/4005b63)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.617...v0.2.618)
 
 ## ✨ Features
