@@ -41,7 +41,8 @@ function previousRelease(port: number): ReturnType<typeof Bun.serve> {
 /**
  * Boot serve() in a subprocess. Its `onRequest` hook records every request it
  * handles (path, warm-up header, the port it arrived on), and `slow` holds
- * one warm-up request (a page that is expensive to render the first time).
+ * the warm-up request for `slow.path` (`'*'`: every one) for `slow.ms`, a
+ * page that is expensive to render the first time.
  * serve() prints its banner right after the bind, so the banner is the
  * signal: a connection would prove nothing while the previous release holds
  * the port.
@@ -63,7 +64,7 @@ serve({
     const url = new URL(req.url)
     const warmup = req.headers.get(${JSON.stringify(PAGE_WARMUP_HEADER)}) === '1'
     appendFileSync('seen.jsonl', JSON.stringify({ path: url.pathname, warmup, port: url.port }) + '\\n')
-    if (slow && warmup && url.pathname === slow.path)
+    if (slow && warmup && (slow.path === '*' || url.pathname === slow.path))
       await Bun.sleep(slow.ms)
   },
   ...${JSON.stringify(extra)},
@@ -128,15 +129,16 @@ describe('page warm-up', () => {
     }
   })
 
-  // With nobody else on the port, holding the bind only turns a slow first
-  // answer into no answer: a first deploy, a lone restart, a test harness
-  // waiting for the server to come up.
-  it('binds at once and warms behind the bind when nobody else serves the port', async () => {
-    const booted = await boot(PRODUCTION, freePort(), { reusePort: true }, { path: '/', ms: 4000 })
-    expect(booted.elapsed).toBeLessThan(3500)
-    const warmed = await waitForWarmups(booted, 2)
+  // With nobody else on the port there is no one to warm for: holding the
+  // bind turns a slow first answer into no answer, and warming behind it
+  // spends a serving process on pages nobody asked for.
+  it('binds at once and warms nothing when nobody else serves the port', async () => {
+    const booted = await boot(PRODUCTION, freePort(), { reusePort: true })
+    await Bun.sleep(1000)
+    const seen = await booted.seen()
     booted.stop()
-    expect(warmed.map(v => v.path).sort()).toEqual(['/', '/about'])
+    expect(booted.elapsed).toBeLessThan(3500)
+    expect(seen.filter(v => v.warmup)).toEqual([])
   })
 
   it('waits for the warm-up with nobody else on the port when asked to', async () => {
@@ -145,16 +147,20 @@ describe('page warm-up', () => {
     expect(booted.seenAtBind.filter(v => v.warmup).map(v => v.path).sort()).toEqual(['/', '/about', '/users/ada'])
   })
 
-  // A deploy tool gives up on a release that never binds.
-  it('joins once the budget is spent and finishes warming behind the bind', async () => {
+  // A deploy tool gives up on a release that never binds; and once bound, the
+  // server has visitors to spend itself on.
+  it('joins once the budget is spent and stops taking new pages', async () => {
     const port = freePort()
     const previous = previousRelease(port)
     try {
-      const booted = await boot(PRODUCTION, port, { reusePort: true, pageWarmup: { budgetMs: 300, concurrency: 1 } }, { path: '/', ms: 4000 })
-      expect(booted.elapsed).toBeLessThan(3500)
-      const warmed = await waitForWarmups(booted, 2)
+      // Every page takes 3 s; one at a time against a 300 ms budget.
+      const booted = await boot(PRODUCTION, port, { reusePort: true, pageWarmup: { budgetMs: 300, concurrency: 1 } }, { path: '*', ms: 3000 })
+      expect(booted.elapsed).toBeLessThan(2900)
+      // The page in flight at the budget finishes; nothing after it starts.
+      await Bun.sleep(7000)
+      const warmed = (await booted.seen()).filter(v => v.warmup)
       booted.stop()
-      expect(warmed.map(v => v.path).sort()).toEqual(['/', '/about'])
+      expect(warmed).toHaveLength(1)
     }
     finally {
       previous.stop(true)

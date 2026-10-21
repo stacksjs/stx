@@ -1006,16 +1006,18 @@ export interface ServeOptions {
    * on the first visitor to every page after each deploy, while the previous
    * release, still bound to the same port, could have served them warm. So the
    * server renders each static route, plus `paths`, through a private loopback
-   * listener first. While another instance is serving the same port (the
-   * previous release, with `reusePort`), it joins the port only once warm;
-   * with nobody else there it binds at once and warms behind the bind
-   * (`holdBind: 'always'` waits either way).
+   * listener first, while another instance is serving the same port (the
+   * previous release, with `reusePort`), and joins the port once warm. Past
+   * `budgetMs` it binds and stops: the pages left render on their first visit,
+   * since a server with real visitors must not spend itself on pages nobody
+   * asked for. With nobody else on the port nothing is warmed, unless
+   * `holdBind: 'always'` asks for a warm server first.
    *
    * - `paths`: extra paths to warm. Dynamic routes (`[slug].stx`) have no URL
    *   of their own, so name one representative path per template you want warm.
    * - `budgetMs`: how long the bind may wait, 60000 by default. Past it the
-   *   server binds and keeps warming behind the bind. Keep the image and page
-   *   budgets together under your deploy tool's limit (ts-cloud waits 180s).
+   *   server binds and stops warming. Keep the image and page budgets
+   *   together under your deploy tool's limit (ts-cloud waits 180s).
    * - `concurrency`: pages in flight at once, 4 by default.
    * - `holdBind`: `'replacing'` (default) or `'always'`; see above.
    *
@@ -1475,10 +1477,10 @@ export interface PageWarmupOptions {
   /** Extra paths to warm, e.g. one per dynamic template. */
   paths?: string[]
   /**
-   * When the bind waits for the warm-up. `'replacing'` (the default) waits
-   * only while another instance serves the port, the previous release in a
-   * zero-downtime deploy. `'always'` waits regardless, for a caller that
-   * wants a warm server before anything reaches it: a test harness.
+   * When to warm. `'replacing'` (the default) warms, holding the bind, only
+   * while another instance serves the port: the previous release in a
+   * zero-downtime deploy. `'always'` warms and holds regardless, for a caller
+   * that wants a warm server before anything reaches it: a test harness.
    */
   holdBind?: 'replacing' | 'always'
   /** How long a production start holds its bind for the warm-up, in ms. */
@@ -5115,37 +5117,46 @@ function __stxOverlay(errs){
     })
   }
 
-  // Production renders its pages once on startup. A page's first render
-  // bundles its client scripts (one build at a time, process-wide), loads the
-  // CSS engine and fills the component caches, so a cold release answered its
-  // first visitor to each page in up to a second, and right after boot
-  // several. The warm-up runs on a private loopback listener.
+  // Production renders its pages once on startup, while the previous release
+  // is still serving them. A page's first render bundles its client scripts
+  // (one build at a time, process-wide), loads the CSS engine and fills the
+  // component caches, so a cold release answered its first visitor to each
+  // page in up to a second, and right after boot several. The warm-up runs on
+  // a private loopback listener, and this instance joins the shared port once
+  // it is done, so the kernel only starts sending it visitors then.
   //
-  // Whether it holds the bind depends on who else is there. In a zero-downtime
-  // deploy the previous release is still serving this port, so those visitors
-  // never needed to wait: this instance joins the port only once it is warm,
-  // and the kernel starts sending it visitors then (bounded like the image
-  // pass; past the budget it binds and keeps warming behind the bind). With
-  // nobody serving the port (a first deploy, a lone restart, a test run),
-  // holding the bind would only turn slow answers into no answers, so it binds
-  // at once and warms behind the bind - unless the caller asked for a warm
-  // server first (`holdBind: 'always'`, a test harness).
+  // Only while the bind is held. A zero-downtime deploy's previous release
+  // keeps every visitor until this instance joins, so the warm-up costs nobody
+  // anything. Past the budget the server binds and stops taking new pages:
+  // a process with real visitors must not spend its CPU and memory rendering
+  // pages nobody asked for. Warming on behind a production bind (four pages at
+  // a time, with a cold bundle cache) starved HQ's visitors for ten minutes
+  // and pushed it over its cgroup's memory limit; what is left renders on
+  // demand, as it always did. With nobody else on the port (a first deploy, a
+  // lone restart) there is no one to warm for, so nothing is warmed - unless
+  // the caller asked for a warm server first (`holdBind: 'always'`, a test
+  // harness).
   if (production && pageWarmup.enabled) {
-    const warmupStartedAt = performance.now()
-    const covered = pageWarmup.holdBind === 'always' || (options.reusePort === true && await portIsServed(port))
-    const warming = warmPages()
-    const done = !covered || await settleWithin(warming, pageWarmup.budgetMs)
-    if (!done) {
-      console.warn(`[stx] page warm-up still running after ${formatSeconds(pageWarmup.budgetMs)}; binding now and finishing it in the background.`)
+    const holding = pageWarmup.holdBind === 'always' || (options.reusePort === true && await portIsServed(port))
+    if (holding) {
+      const warmupStartedAt = performance.now()
+      const warmup = { stop: false }
+      const warming = warmPages(warmup)
+      if (!(await settleWithin(warming, pageWarmup.budgetMs))) {
+        warmup.stop = true
+        console.warn(`[stx] page warm-up stopped at its ${formatSeconds(pageWarmup.budgetMs)} budget; binding now, and the pages left render on their first visit.`)
+      }
+      void warming.then(({ warmed, pages, failed }) => {
+        console.log(`[stx] warmed ${warmed} of ${pages} pages in ${formatSeconds(performance.now() - warmupStartedAt)}${failed ? ` (${failed} answered 5xx or failed)` : ''}`)
+      })
     }
-    void warming.then(({ pages, failed }) => {
-      if (!options.quiet)
-        console.log(`[stx] warmed ${pages} pages in ${formatSeconds(performance.now() - warmupStartedAt)}${failed ? ` (${failed} answered 5xx or failed)` : ''}`)
-    })
   }
 
-  /** Render every known page, plus `pageWarmup.paths`, once through a private listener. */
-  async function warmPages(): Promise<{ pages: number, failed: number }> {
+  /**
+   * Render every known page, plus `pageWarmup.paths`, once through a private
+   * listener. Stops taking new pages once `control.stop` is set.
+   */
+  async function warmPages(control: { stop: boolean }): Promise<{ warmed: number, pages: number, failed: number }> {
     const files = await discoverFiles()
     const routes = [...new Set([
       ...files.map(stxViewFileToRoutePath).filter((routePath): routePath is string => routePath !== null),
@@ -5154,10 +5165,11 @@ function __stxOverlay(errs){
     ])]
     const warm = listen(0, false, '127.0.0.1')
     let next = 0
+    let warmed = 0
     let failed = 0
     try {
       await Promise.all(Array.from({ length: Math.min(pageWarmup.concurrency, routes.length) }, async () => {
-        while (next < routes.length) {
+        while (next < routes.length && !control.stop) {
           const routePath = routes[next++]
           try {
             const response = await fetch(`http://127.0.0.1:${warm.port}${routePath}`, {
@@ -5167,6 +5179,8 @@ function __stxOverlay(errs){
             await response.arrayBuffer()
             if (response.status >= 500)
               failed++
+            else
+              warmed++
           }
           catch {
             // A page that fails here renders on its first real request instead.
@@ -5178,7 +5192,7 @@ function __stxOverlay(errs){
     finally {
       warm.stop(true)
     }
-    return { pages: routes.length, failed }
+    return { warmed, pages: routes.length, failed }
   }
 
   // Allow callers to disable port auto-increment (Vite-style) — when the
