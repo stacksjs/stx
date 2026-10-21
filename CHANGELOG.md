@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.640...v0.2.641)
+
+## 🐛 Bug Fixes
+
+- **native**: sign assembled macOS apps with their own identity ([1de57d5](https://github.com/stacksjs/stx/commit/1de57d5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.641 ([51d4b05](https://github.com/stacksjs/stx/commit/51d4b05)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.637...v0.2.638)
 
 ## 🐛 Bug Fixes
