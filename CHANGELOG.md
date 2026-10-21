@@ -1,5 +1,26 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.635...v0.2.636)
+
+## 🐛 Bug Fixes
+
+- **render**: use the static compile mode for standalone module registries ([b4e5bc2](https://github.com/stacksjs/stx/commit/b4e5bc2)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **render**: register standalone page imports before client startup ([141990c](https://github.com/stacksjs/stx/commit/141990c)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: preserve Craft transport and package live tray popovers ([1dfa0b2](https://github.com/stacksjs/stx/commit/1dfa0b2)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **desktop**: await screen-sharing watcher teardown and clean up failed starts ([b2aa2ef](https://github.com/stacksjs/stx/commit/b2aa2ef)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.636 ([019ab03](https://github.com/stacksjs/stx/commit/019ab03)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' into codex/hush-native-lifecycle ([a2bde04](https://github.com/stacksjs/stx/commit/a2bde04)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.633...v0.2.634)
 
 ## 🐛 Bug Fixes
