@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
 import { rm } from 'node:fs/promises'
 import path from 'node:path'
-import { DEFAULT_PAGE_WARMUP_BUDGET_MS, PAGE_WARMUP_HEADER, resolvePageWarmup } from '../src/serve'
+import { DEFAULT_PAGE_WARMUP_BUDGET_MS, PAGE_WARMUP_HEADER, portIsServed, resolvePageWarmup } from '../src/serve'
 import { freePort } from '../../stx/test-utils/test-port'
 import { createTempDir } from '../../stx/src/temp-dir'
 
@@ -21,19 +21,30 @@ afterAll(async () => {
 interface Visit { path: string, warmup: boolean, port: string }
 
 interface Boot {
-  /** Requests the server had seen when its public port first accepted a connection. */
+  /** Requests the new instance had handled when it bound the public port. */
   seenAtBind: Visit[]
-  /** Every request seen so far. */
+  /** Every request it has handled so far. */
   seen: () => Promise<Visit[]>
+  /** How long it took to bind, in ms. */
   elapsed: number
   stop: () => void
 }
 
 /**
+ * The release being replaced: a server already on `port` with SO_REUSEPORT,
+ * the way the previous release holds it during a zero-downtime deploy.
+ */
+function previousRelease(port: number): ReturnType<typeof Bun.serve> {
+  return Bun.serve({ port, reusePort: true, fetch: () => new Response('previous release') })
+}
+
+/**
  * Boot serve() in a subprocess. Its `onRequest` hook records every request it
- * handles (path, warm-up header, the port it arrived on) to a file, and
- * `slowPath`, when given, holds a warm-up request for `slowMs` - a page that
- * is expensive to render the first time.
+ * handles (path, warm-up header, the port it arrived on), and `slow` holds
+ * one warm-up request (a page that is expensive to render the first time).
+ * serve() prints its banner right after the bind, so the banner is the
+ * signal: a connection would prove nothing while the previous release holds
+ * the port.
  */
 async function boot(env: Record<string, string>, port: number, extra: Record<string, unknown> = {}, slow?: { path: string, ms: number }): Promise<Boot> {
   const dir = createTempDir('stx-page-warmup-')
@@ -48,7 +59,6 @@ const slow = ${JSON.stringify(slow ?? null)}
 serve({
   patterns: ['views'],
   port: ${port},
-  quiet: true,
   async onRequest(req) {
     const url = new URL(req.url)
     const warmup = req.headers.get(${JSON.stringify(PAGE_WARMUP_HEADER)}) === '1'
@@ -60,72 +70,125 @@ serve({
 })
 `)
 
+  const started = Date.now()
   const proc = Bun.spawn(['bun', 'driver.ts'], { cwd: dir, env: { ...process.env, ...env }, stdout: 'pipe', stderr: 'pipe' })
   const seen = async (): Promise<Visit[]> => {
     const text = await Bun.file(path.join(dir, 'seen.jsonl')).text().catch(() => '')
     return text.trim() ? text.trim().split('\n').map(line => JSON.parse(line) as Visit) : []
   }
 
-  const started = Date.now()
+  const reader = proc.stdout.getReader()
+  const decoder = new TextDecoder()
+  let output = ''
   const deadline = started + 40_000
   while (Date.now() < deadline) {
-    try {
-      const socket = await Bun.connect({ hostname: 'localhost', port, socket: { data() {}, error() {} } })
+    const chunk = await Promise.race([reader.read(), Bun.sleep(deadline - Date.now()).then(() => null)])
+    if (!chunk || chunk.done)
+      break
+    output += decoder.decode(chunk.value)
+    if (output.includes('Local')) {
       const elapsed = Date.now() - started
       const seenAtBind = await seen()
-      socket.end()
+      reader.releaseLock()
       return { seenAtBind, seen, elapsed, stop: () => proc.kill() }
-    }
-    catch {
-      await Bun.sleep(50)
     }
   }
   proc.kill()
-  throw new Error('never bound')
+  throw new Error(`never bound: ${output.slice(-400)}`)
 }
 
-describe('page warm-up before the bind', () => {
-  // A zero-downtime deploy overlaps releases on one port. A cold release that
-  // binds at once gets real visitors to pages it has never rendered, while the
-  // previous release could serve them warm.
-  it('renders every static page and the configured paths before production binds', async () => {
-    const port = freePort()
-    const booted = await boot(PRODUCTION, port, { pageWarmup: { paths: ['/users/ada'] } })
-    booted.stop()
+async function waitForWarmups(booted: Boot, count: number): Promise<Visit[]> {
+  let visits: Visit[] = []
+  for (let i = 0; i < 200; i++) {
+    visits = (await booted.seen()).filter(v => v.warmup)
+    if (visits.length >= count)
+      break
+    await Bun.sleep(50)
+  }
+  return visits
+}
 
-    const warmed = booted.seenAtBind.filter(v => v.warmup).map(v => v.path).sort()
-    expect(warmed).toEqual(['/', '/about', '/users/ada'])
-    // Through a private listener, never the public port it had not bound yet.
-    expect(booted.seenAtBind.every(v => v.port !== String(port))).toBe(true)
+describe('page warm-up', () => {
+  // A zero-downtime deploy overlaps releases on one port. A cold release that
+  // joins at once gets real visitors to pages it has never rendered, while the
+  // release it replaces could serve them warm.
+  it('renders every static page and the configured paths before joining a port another release serves', async () => {
+    const port = freePort()
+    const previous = previousRelease(port)
+    try {
+      const booted = await boot(PRODUCTION, port, { reusePort: true, pageWarmup: { paths: ['/users/ada'] } })
+      booted.stop()
+      const warmed = booted.seenAtBind.filter(v => v.warmup).map(v => v.path).sort()
+      expect(warmed).toEqual(['/', '/about', '/users/ada'])
+      // Through a private listener, never the public port.
+      expect(booted.seenAtBind.every(v => v.port !== String(port))).toBe(true)
+    }
+    finally {
+      previous.stop(true)
+    }
   })
 
-  it('binds without warming when turned off', async () => {
-    const booted = await boot(PRODUCTION, freePort(), { pageWarmup: false })
+  // With nobody else on the port, holding the bind only turns a slow first
+  // answer into no answer: a first deploy, a lone restart, a test harness
+  // waiting for the server to come up.
+  it('binds at once and warms behind the bind when nobody else serves the port', async () => {
+    const booted = await boot(PRODUCTION, freePort(), { reusePort: true }, { path: '/', ms: 4000 })
+    expect(booted.elapsed).toBeLessThan(3500)
+    const warmed = await waitForWarmups(booted, 2)
     booted.stop()
-    expect(booted.seenAtBind).toEqual([])
+    expect(warmed.map(v => v.path).sort()).toEqual(['/', '/about'])
+  })
+
+  // A deploy tool gives up on a release that never binds.
+  it('joins once the budget is spent and finishes warming behind the bind', async () => {
+    const port = freePort()
+    const previous = previousRelease(port)
+    try {
+      const booted = await boot(PRODUCTION, port, { reusePort: true, pageWarmup: { budgetMs: 300, concurrency: 1 } }, { path: '/', ms: 4000 })
+      expect(booted.elapsed).toBeLessThan(3500)
+      const warmed = await waitForWarmups(booted, 2)
+      booted.stop()
+      expect(warmed.map(v => v.path).sort()).toEqual(['/', '/about'])
+    }
+    finally {
+      previous.stop(true)
+    }
+  })
+
+  it('does not warm when turned off', async () => {
+    const port = freePort()
+    const previous = previousRelease(port)
+    try {
+      const booted = await boot(PRODUCTION, port, { reusePort: true, pageWarmup: false })
+      await Bun.sleep(500)
+      const seen = await booted.seen()
+      booted.stop()
+      expect(seen.filter(v => v.warmup)).toEqual([])
+    }
+    finally {
+      previous.stop(true)
+    }
   })
 
   it('never warms in development', async () => {
     const booted = await boot(DEVELOPMENT, freePort())
+    await Bun.sleep(500)
+    const seen = await booted.seen()
     booted.stop()
-    expect(booted.seenAtBind).toEqual([])
+    expect(seen.filter(v => v.warmup)).toEqual([])
   })
+})
 
-  // A deploy tool gives up on a release that never binds; past the budget the
-  // server binds and the rest of the warm-up carries on behind it.
-  it('binds once the budget is spent and finishes warming behind the bind', async () => {
-    const booted = await boot(PRODUCTION, freePort(), { pageWarmup: { budgetMs: 300, concurrency: 1 } }, { path: '/', ms: 4000 })
-    expect(booted.elapsed).toBeLessThan(3500)
-
-    let later: Visit[] = []
-    for (let i = 0; i < 160; i++) {
-      later = await booted.seen()
-      if (later.filter(v => v.warmup).length >= 2)
-        break
-      await Bun.sleep(50)
+describe('portIsServed', () => {
+  it('sees a listener and an empty port for what they are', async () => {
+    const server = Bun.serve({ port: 0, fetch: () => new Response('ok') })
+    try {
+      expect(await portIsServed(server.port as number)).toBe(true)
     }
-    booted.stop()
-    expect(later.filter(v => v.warmup).map(v => v.path).sort()).toEqual(['/', '/about'])
+    finally {
+      server.stop(true)
+    }
+    expect(await portIsServed(freePort())).toBe(false)
   })
 })
 

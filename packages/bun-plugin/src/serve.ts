@@ -996,7 +996,7 @@ export interface ServeOptions {
    */
   imageWarmup?: boolean | 'auto'
   /**
-   * Render every page once before a production server binds its port. Also
+   * Render every page once when a production server starts. Also
    * settable as `pageWarmup` in the project's stx/ui config. On by default in
    * production; development never warms.
    *
@@ -1006,7 +1006,9 @@ export interface ServeOptions {
    * on the first visitor to every page after each deploy, while the previous
    * release, still bound to the same port, could have served them warm. So the
    * server renders each static route, plus `paths`, through a private loopback
-   * listener first, and joins the public port afterwards.
+   * listener first. While another instance is serving the same port (the
+   * previous release, with `reusePort`), it joins the port only once warm;
+   * with nobody else there it binds at once and warms behind the bind.
    *
    * - `paths`: extra paths to warm. Dynamic routes (`[slug].stx`) have no URL
    *   of their own, so name one representative path per template you want warm.
@@ -1438,6 +1440,30 @@ export function resolveImageWarmupBindBudget(value: unknown): number {
   return typeof ms === 'number' && Number.isFinite(ms) && ms >= 0
     ? ms
     : DEFAULT_IMAGE_WARMUP_BIND_BUDGET_MS
+}
+
+/**
+ * Whether something already accepts connections on `port` on this machine:
+ * during a zero-downtime deploy, the release this one is replacing.
+ */
+export async function portIsServed(port: number, timeoutMs = 500): Promise<boolean> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    const socket = await Promise.race([
+      Bun.connect({ hostname: '127.0.0.1', port, socket: { data() {}, error() {} } }),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('connect timed out')), timeoutMs)
+      }),
+    ])
+    socket.end()
+    return true
+  }
+  catch {
+    return false
+  }
+  finally {
+    clearTimeout(timer)
+  }
 }
 
 /** The header every page warm-up request carries. */
@@ -5078,22 +5104,25 @@ function __stxOverlay(errs){
     })
   }
 
-  // Production renders its pages before it binds, for the reason it waits for
-  // the image pass above. A page's first render bundles its client scripts
-  // (one build at a time, process-wide), loads the CSS engine and fills the
-  // component caches, so a cold release answered its first visitor to each
-  // page in up to a second, and right after boot several. In a zero-downtime
-  // deploy those visitors did not need to wait at all: the previous release
-  // was still up. Warming on a private loopback listener first means this
-  // instance joins the shared port with its pages already rendered once, and
-  // the kernel only starts sending it visitors then.
+  // Production renders its pages once on startup. A page's first render
+  // bundles its client scripts (one build at a time, process-wide), loads the
+  // CSS engine and fills the component caches, so a cold release answered its
+  // first visitor to each page in up to a second, and right after boot
+  // several. The warm-up runs on a private loopback listener.
   //
-  // Bounded like the image pass: past the budget the server binds and the
-  // remaining pages keep warming behind it.
+  // Whether it holds the bind depends on who else is there. In a zero-downtime
+  // deploy the previous release is still serving this port, so those visitors
+  // never needed to wait: this instance joins the port only once it is warm,
+  // and the kernel starts sending it visitors then (bounded like the image
+  // pass; past the budget it binds and keeps warming behind the bind). With
+  // nobody serving the port (a first deploy, a lone restart, a test run),
+  // holding the bind would only turn slow answers into no answers, so it binds
+  // at once and warms behind the bind.
   if (production && pageWarmup.enabled) {
     const warmupStartedAt = performance.now()
+    const covered = options.reusePort === true && await portIsServed(port)
     const warming = warmPages()
-    const done = await settleWithin(warming, pageWarmup.budgetMs)
+    const done = !covered || await settleWithin(warming, pageWarmup.budgetMs)
     if (!done) {
       console.warn(`[stx] page warm-up still running after ${formatSeconds(pageWarmup.budgetMs)}; binding now and finishing it in the background.`)
     }
