@@ -82,6 +82,8 @@ export interface MenuBarAppOptions<T extends Record<string, unknown>> {
   templateSource?: string
   /** Default preference values. The store is created and persisted for you. */
   preferences?: T
+  /** Optional preference file for a named profile or isolated native tests. */
+  preferencesPath?: string
   /**
    * Values handed to the template on every render. Called per request, so the
    * popup always opens against current state rather than boot-time state.
@@ -100,6 +102,8 @@ export interface MenuBarAppOptions<T extends Record<string, unknown>> {
   window?: WindowOptions
   /** Port for the local server. Defaults to 0 — an arbitrary free port. */
   port?: number
+  /** Release host resources when the native window exits or stop() is called. */
+  onStop?: () => void
 }
 
 export interface MenuBarApp<T extends Record<string, unknown>> {
@@ -171,6 +175,7 @@ export function createMenuBarApp<T extends Record<string, unknown>>(
   const preferences = createPreferences<T>({
     name: options.name.toLowerCase(),
     defaults: (options.preferences ?? {}) as T,
+    path: options.preferencesPath,
   })
 
   const routes = new Map<string, RouteHandler<T>>(
@@ -192,6 +197,8 @@ export function createMenuBarApp<T extends Record<string, unknown>>(
   let server: ReturnType<typeof Bun.serve> | null = null
   let window: WindowInstance | null = null
   let url: string | null = null
+  let stopping = false
+  let started = false
 
   async function renderPopup(): Promise<Response> {
     const context = await options.context?.(preferences) ?? {}
@@ -248,6 +255,8 @@ export function createMenuBarApp<T extends Record<string, unknown>>(
     },
 
     async start() {
+      if (started) return this
+      started = true
       if (!server)
         serve()
       bindLaunchAtLogin()
@@ -258,10 +267,18 @@ export function createMenuBarApp<T extends Record<string, unknown>>(
         ...options.window,
       })
 
+      if (!window) {
+        this.stop()
+        throw new Error(`Could not open ${options.name}'s native window`)
+      }
+      window.onClosed(() => this.stop())
       return this
     },
 
     stop() {
+      if (stopping) return
+      stopping = true
+      options.onStop?.()
       window?.close()
       window = null
       server?.stop()

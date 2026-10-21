@@ -9,7 +9,11 @@
  * loading and the circular-dependency boundaries that require import().
  */
 
-const LAZY_MODULE_PROMISES = Symbol.for('stx.lazy-module-promises')
+import { version } from '../package.json' with { type: 'json' }
+
+// Compiled binaries collapse import.meta.url to the executable's URL. Version
+// the registry itself so bundled copies cannot share incompatible compilers.
+const LAZY_MODULE_PROMISES = Symbol.for(`stx.lazy-module-promises.${version}`)
 
 interface LazyModuleGlobal {
   [LAZY_MODULE_PROMISES]?: Map<string, Promise<unknown>>
