@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.619...v0.2.620)
+
+## ✨ Features
+
+- **bundler**: keep the client bundle cache across project directories ([31c5778](https://github.com/stacksjs/stx/commit/31c5778)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.620 ([02434e1](https://github.com/stacksjs/stx/commit/02434e1)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.618...v0.2.619)
 
 ## 🐛 Bug Fixes
