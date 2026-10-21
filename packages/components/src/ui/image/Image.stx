@@ -3,6 +3,7 @@ import { deliveredImage, getImagePlaceholder } from '@stacksjs/stx'
 
 export const webpSrc = $props.webpSrc || ''
 export const webpSrcSet = $props.webpSrcSet || ''
+export const originalSrc = $props.src || ''
 
 /**
  * The optimized variants stx prepared for this image, unless the caller wrote
@@ -123,12 +124,22 @@ export const imageStyle = [
 ].filter(Boolean).join('; ')
 </script>
 
-<picture class="{{ className }}" style="{{ frameStyle }}">
+<script client>
+const imageSrc = useReactiveProp('src', {{ originalSrc }})
+// Preserve the delivered URL/candidates at hydration. A replacement URL must
+// not keep selecting a responsive candidate belonging to the previous image.
+const currentSrc = derived(() => imageSrc() === {{ originalSrc }} ? {{ src }} : (imageSrc() == null ? '' : String(imageSrc())))
+const keepInitialSources = derived(() => !!currentSrc() && imageSrc() === {{ originalSrc }})
+const initialBackground = {{ placeholder ? `${placeholder} center / cover no-repeat` : '' }}
+</script>
+
+<picture class="{{ className }}" style="{{ frameStyle }}" @if(placeholder):style="{ background: keepInitialSources() ? initialBackground : 'none' }"@endif>
   @foreach(sources as source)
     <source
       @if(source.type)type="{{ source.type }}"@endif
       @if(source.media)media="{{ source.media }}"@endif
       srcset="{{ source.srcset }}"
+      :srcset="keepInitialSources() ? {{ JSON.stringify(source.srcset) }} : null"
       @if(source.sizes || sizes)sizes="{{ source.sizes || sizes }}"@endif
     />
   @endforeach
@@ -137,6 +148,7 @@ export const imageStyle = [
       type="image/webp"
       @if(webpSrcSet)srcset="{{ webpSrcSet }}"@endif
       @if(webpSrc && !webpSrcSet)srcset="{{ webpSrc }}"@endif
+      :srcset="keepInitialSources() ? {{ JSON.stringify(webpSrcSet || webpSrc) }} : null"
       @if(sizes)sizes="{{ sizes }}"@endif
     />
   @endif
@@ -152,7 +164,10 @@ export const imageStyle = [
   --}}
   <img
     src="{{ src }}"
+    data-stx-native-host-root
+    :src="currentSrc() || null"
     @if(srcSet)srcset="{{ srcSet }}"@endif
+    :srcset="keepInitialSources() ? {{ JSON.stringify(srcSet) }} || null : null"
     @if(sizes)sizes="{{ sizes }}"@endif
     alt="{{ alt }}"
     @if(width)width="{{ width }}"@endif

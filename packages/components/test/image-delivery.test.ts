@@ -14,8 +14,10 @@ import path from 'node:path'
 import { encode } from 'ts-images'
 // `../../stx/src`, never `@stacksjs/stx`, which resolves to a lagging dist.
 import { clearImageDeliveryCatalog, prepareImageDelivery } from '../../stx/src/builtins/image-delivery'
+import { defaultConfig } from '../../stx/src/config'
 import { processDirectives } from '../../stx/src/process'
 import { createTempDir } from '../../stx/src/temp-dir'
+import { boot, closeBrowser, find, settle } from '../../stx/test/router/spa-harness'
 
 const ROOT = path.resolve(import.meta.dir, '..')
 const IMAGE_DIR = path.join(ROOT, 'src/ui/image')
@@ -96,4 +98,45 @@ describe('<Image> with a prepared delivery catalog', () => {
     expect(html).not.toContain('sizes=')
     expect(html).toMatch(/<img\s+src="\/images\/elsewhere\.jpg"/)
   })
+
+  it('keeps optimized candidates on hydration and restores them only for their original image', async () => {
+    const html = await processDirectives(`@import('Image', '${path.join(IMAGE_DIR, 'Image.stx')}')
+<!doctype html><html><head></head><body>
+<script client>
+const url = state('/images/hero.png')
+window.probe = { url }
+</script>
+<section><Image src="/images/hero.png" :src="url" alt="Hero" sizes="50vw" /></section>
+</body></html>`, {}, path.join(ROOT, 'image-delivery.stx'), { ...defaultConfig, componentsDir: IMAGE_DIR, root: ROOT, cache: false, debug: false }, new Set())
+    try {
+      const browser = await boot({ documents: new Map([['/', html]]), dispose: async () => {} }, '/')
+      await settle()
+      const image = find(browser, 'picture img')
+      const sources = Array.from(browser.document.querySelectorAll('picture source'))
+      const optimized = image.getAttribute('src')
+      const candidates = image.getAttribute('srcset')
+      const sourceCandidates = sources.map(source => source.getAttribute('srcset'))
+      const picture = find(browser, 'picture')
+      const preview = picture.style.background
+      expect(preview).toContain('data:image/')
+      expect(optimized).toMatch(/^\/_stx\/images\/.+\.png$/)
+      expect(candidates).toContain('/_stx/images/')
+      expect(sourceCandidates.length).toBeGreaterThan(0)
+      expect(sourceCandidates.every(value => value?.includes('/_stx/images/'))).toBe(true)
+      browser.window.probe.url.set('/images/replacement.png')
+      await settle()
+      expect(image.getAttribute('src')).toBe('/images/replacement.png')
+      expect(image.hasAttribute('srcset')).toBe(false)
+      expect(sources.every(source => !source.hasAttribute('srcset'))).toBe(true)
+      expect(picture.style.background).toBe('none')
+      browser.window.probe.url.set('/images/hero.png')
+      await settle()
+      expect(image.getAttribute('src')).toBe(optimized)
+      expect(image.getAttribute('srcset')).toBe(candidates)
+      expect(sources.map(source => source.getAttribute('srcset'))).toEqual(sourceCandidates)
+      expect(picture.style.background).toBe(preview)
+      expect(browser.errors).toEqual([])
+    }
+    finally { closeBrowser() }
+  }, 30_000)
 })

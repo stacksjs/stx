@@ -17,7 +17,7 @@ directories and fails if a new overlap has no recorded compatibility decision.
 | Checkbox | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | Preserve both APIs; device validation |
 | Switch | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | Preserve both APIs; device validation |
 | TextInput | Primitive | Shared file | Broader input-event/API compatibility before changing default resolution |
-| Image | Primitive | `StxImage` builtin alias, not the shared file | Source/fit mapping and builtin/shared precedence decision |
+| Image | Primitive | `StxImage` builtin alias, not the shared file | Fit/position mapping and builtin/shared precedence decision |
 | Video | Primitive | Shared file | Browser custom-element dependency needs a native adapter |
 
 Explicit imports and screen-local components remain overrides. The audit tests
@@ -44,12 +44,23 @@ wrapping `<div>`, a client `value = state('/first')`, and
    default native resolution: legacy primitive input events carry an object,
    while the shared component emits a string. Broader API migration remains
    separate work.
-2. **Image:** `<Image testID="target" alt="Photo" :src="value" />`.
-   The physical Image has `src: ''` before and after the value update; native
-   `source` is not populated. `objectFit` and `objectPosition` also produce
-   unsupported-style diagnostics. Forwarding a binding to the picture wrapper
-   is not sufficient. Decide how shared `src`/fit and native `source`/resizeMode
-   coexist, and account for the browser builtin alias before changing defaults.
+2. **Image (source gap fixed):**
+   `<Image testID="target" alt="Photo" :src="value" />` now updates the inner
+   image, and the native adapter maps image `src` to the host's `source` on
+   creation, update and removal. Use empty string/null to explicitly clear
+   the image, rather than undefined (a missing prop subject to defaults).
+   `shared-image-source.test.ts` covers web/native updates, clearing, identity,
+   remount and native teardown in normal/minified builds. Optimized browser
+   URLs and responsive candidates survive hydration; candidates for the old
+   URL (and its placeholder background) are removed when it changes and
+   restored if that URL returns.
+   `image-delivery.test.ts` covers that with the real delivery catalog, and
+   `image-source-browser.test.ts` verifies actual browser `currentSrc` selection
+   and image decoding through URL replacement, clearing and restoration.
+   Legacy native `source` values and resolution are unchanged.
+   `objectFit`/`objectPosition` still produce unsupported-style diagnostics;
+   fit/position mapping and browser builtin/shared precedence remain migration
+   gates. This fix does not certify native visual parity.
 3. **Video:** `<Video testID="target" label="Movie" :src="value" />`.
    Executing the compiled bundle throws `ReferenceError: customElements is not
    defined`: the shared setup imports and registers browser video-player
