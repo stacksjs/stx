@@ -31,8 +31,13 @@ test('animation clock suspends hidden work, resets delta, and disposes without l
 })
 
 test('animation clock is SSR safe and validates its time budget', () => {
-  const clock = useAnimationFrame(() => { throw new Error('SSR must not run') })
-  expect(clock.active).toBe(false)
+  const browser = Object.getOwnPropertyDescriptor(globalThis, 'window')
+  Reflect.deleteProperty(globalThis, 'window')
+  try {
+    const clock = useAnimationFrame(() => { throw new Error('SSR must not run') })
+    expect(clock.active).toBe(false)
+  }
+  finally { if (browser) Object.defineProperty(globalThis, 'window', browser) }
   expect(() => useAnimationFrame(() => {}, { maxDelta: Infinity })).toThrow(RangeError)
 })
 
