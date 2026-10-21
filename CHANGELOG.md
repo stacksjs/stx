@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.637...v0.2.638)
+
+## 🐛 Bug Fixes
+
+- **render**: use compilation mode for standalone imports ([93364bb](https://github.com/stacksjs/stx/commit/93364bb)) _(by Chris <chris@stacksjs.com>)_
+- **native**: suspend animation clocks with app lifecycle ([fefd06b](https://github.com/stacksjs/stx/commit/fefd06b)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.638 ([8ca48d3](https://github.com/stacksjs/stx/commit/8ca48d3)) _(by Chris <chris@stacksjs.com>)_
+- integrate verified stx release changes ([8973e3a](https://github.com/stacksjs/stx/commit/8973e3a)) _(by Chris <chris@stacksjs.com>)_
+- integrate current stx main before release ([d8ac036](https://github.com/stacksjs/stx/commit/d8ac036)) _(by Chris <chris@stacksjs.com>)_
+- integrate current stx release ([045e2bf](https://github.com/stacksjs/stx/commit/045e2bf)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.635...v0.2.636)
 
 ## 🐛 Bug Fixes
