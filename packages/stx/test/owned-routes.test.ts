@@ -15,6 +15,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { clearOwnedRoutesCache, getOwnedRouteMatchers } from '../src/owned-routes'
+import { getServeModuleBundle } from '../src/caching'
 import { injectRouterScript } from '../src/runtime-injection'
 import { createTempDir } from '../src/temp-dir'
 
@@ -116,6 +117,61 @@ describe('what reaches the page', () => {
     expect(config.interceptAllLinks).toBe(true)
     expect(config.container).toBe('[data-stx-content]')
     expect(config.ownedRoutes.length).toBeGreaterThan(0)
+  })
+})
+
+// Served, the table is the same on every page of an app and nearly the whole
+// config (25 KB of HQ's 25 KB). Inlined, every document carried it and no
+// browser could cache it; linked by content, it is fetched once.
+describe('what a served page links', () => {
+  const DOC = '<html><body><main>x</main></body></html>'
+  const SERVE = { pagesDir: 'pages', buildMode: 'serve', router: { container: 'main', interceptAllLinks: true } } as any
+
+  /** What the linked table script sets, run against a fresh window. */
+  function ownedRoutesFrom(html: string): string[] {
+    const src = html.match(/<script data-stx-owned-routes src="\/_stx\/modules\.([0-9a-f]{16})\.js"><\/script>/)
+    expect(src).not.toBeNull()
+    const code = getServeModuleBundle(src![1])
+    expect(code).toBeDefined()
+    const window: Record<string, any> = { __stxRouterConfig: { container: 'main' } }
+    new Function('window', code!)(window)
+    expect(window.__stxRouterConfig.container).toBe('main')
+    return window.__stxRouterConfig.ownedRoutes
+  }
+
+  it('links the table instead of inlining it, with the same matchers', async () => {
+    const inline = JSON.parse((await injectRouterScript(DOC, { pagesDir: 'pages' } as any)).match(/window\.__stxRouterConfig=(\{.*?\});/)![1]).ownedRoutes
+    const html = await injectRouterScript(DOC, SERVE)
+
+    const config = JSON.parse(html.match(/window\.__stxRouterConfig=(\{.*?\});/)![1])
+    expect(config.ownedRoutes).toBeUndefined()
+    expect(config.interceptAllLinks).toBe(true)
+    expect(ownedRoutesFrom(html)).toEqual(inline)
+  })
+
+  it('sets the table before the router reads its config', async () => {
+    const html = await injectRouterScript(DOC, SERVE)
+    const config = html.indexOf('window.__stxRouterConfig=')
+    const table = html.indexOf('data-stx-owned-routes')
+    const router = html.indexOf('data-stx-router')
+    expect(config).toBeGreaterThanOrEqual(0)
+    expect(table).toBeGreaterThan(config)
+    expect(router).toBeGreaterThan(table)
+  })
+
+  it('names the table by its content, so every page links the same file', async () => {
+    const link = (html: string) => html.match(/data-stx-owned-routes src="([^"]+)"/)![1]
+    const first = link(await injectRouterScript(DOC, SERVE))
+    const second = link(await injectRouterScript('<html><body><p>other</p></body></html>', SERVE))
+    expect(second).toBe(first)
+  })
+
+  it('sets up the config itself when nothing else declared one', async () => {
+    const html = await injectRouterScript(DOC, { pagesDir: 'pages', buildMode: 'serve' } as any)
+    const src = html.match(/data-stx-owned-routes src="\/_stx\/modules\.([0-9a-f]{16})\.js"/)![1]
+    const window: Record<string, any> = {}
+    new Function('window', getServeModuleBundle(src)!)(window)
+    expect(window.__stxRouterConfig.ownedRoutes.length).toBeGreaterThan(0)
   })
 })
 

@@ -414,6 +414,8 @@ export async function injectRouterScript(template: string, options?: StxOptions)
   // Inject router config from stx.config.ts (replaces manual window.STX_ROUTER_OPTIONS scripts)
   const routerConfig = options?.router
   let configScript = ''
+  // The owned-route table as a linked file, in serve mode (see below).
+  let ownedRoutesScript = ''
   {
     const configObj: Record<string, any> = {}
     if (routerConfig) {
@@ -441,8 +443,24 @@ export async function injectRouterScript(template: string, options?: StxOptions)
     // and kill SPA navigation site-wide.
     try {
       const owned = await getOwnedRouteMatchers((options as any)?.pagesDir, (options as any)?.root)
-      if (owned.length > 0)
-        configObj.ownedRoutes = owned
+      if (owned.length > 0) {
+        // Served, the table is a file of its own. It is the same on every page
+        // of an app and nearly all of the config - 25 KB of HQ's 25 KB, in
+        // every document - so inlined, every page carried it and no browser
+        // could cache it. As a script named by its content, linked between
+        // the config and the router, it is fetched once and sets the same
+        // `ownedRoutes` the router reads at boot. The rest of the config
+        // stays inline: it is small, and its name is how the router
+        // recognises an stx document (isStxDocument).
+        if (options?.buildMode === 'serve') {
+          const { registerServeModuleBundle } = await import('./caching')
+          const url = registerServeModuleBundle(`(window.__stxRouterConfig=window.__stxRouterConfig||{}).ownedRoutes=${toScriptJson(owned)};\n`)
+          ownedRoutesScript = `<script data-stx-owned-routes src="${url}"></script>\n`
+        }
+        else {
+          configObj.ownedRoutes = owned
+        }
+      }
     }
     catch {
       // Undiscoverable — leave the key off.
@@ -476,5 +494,5 @@ export async function injectRouterScript(template: string, options?: StxOptions)
 
   // Use string concatenation to avoid $-interpretation in .replace()
   const bodyCloseIdx = template.lastIndexOf('</body>')
-  return template.slice(0, bodyCloseIdx) + configScript + routerScript + '\n</body>' + template.slice(bodyCloseIdx + 7)
+  return template.slice(0, bodyCloseIdx) + configScript + ownedRoutesScript + routerScript + '\n</body>' + template.slice(bodyCloseIdx + 7)
 }
