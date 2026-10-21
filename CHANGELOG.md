@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.626...v0.2.627)
+
+## 🔧 Chores
+
+- release v0.2.627 ([5c769fc](https://github.com/stacksjs/stx/commit/5c769fc)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ⏪ Reverts
+
+- **native**: leave a switch where the user put it until the screen says otherwise ([81dd8a0](https://github.com/stacksjs/stx/commit/81dd8a0)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.625...v0.2.626)
 
 ## 🐛 Bug Fixes
