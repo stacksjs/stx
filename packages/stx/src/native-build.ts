@@ -21,7 +21,7 @@ import { injectCraftBridge } from './craft-bridge'
 import { processCraftComponents, CRAFT_COMPONENT_STYLES } from './craft-components'
 import { renderTemplate } from './render'
 import { createTempDir, removeTempDir } from './temp-dir'
-import { signMacOSBundle } from './native-signing'
+import { signMacOSBundle, type MacOSSigningOptions } from './native-signing'
 
 export type NativeTarget = 'macos' | 'windows' | 'linux' | 'ios' | 'android'
 export type NativeFormat = 'app' | 'dmg' | 'pkg' | 'msi' | 'zip' | 'deb' | 'rpm' | 'appimage' | 'ipa' | 'apk'
@@ -53,6 +53,9 @@ export interface NativeBuildConfig {
 
   /** Bundle identifier (for macOS/iOS) */
   bundleId?: string
+
+  /** macOS signing identity and capability entitlements; defaults to ad-hoc. */
+  macosSigning?: MacOSSigningOptions
 
   /** Path to application icon */
   icon?: string
@@ -463,7 +466,7 @@ exec "$DIR/craft" --html-file "$RESOURCES/index.html" \\
   // signature with the developer's distribution identity afterward.
   await signMacOSBundle(appBundlePath, config.backend
     ? [join(macOSDir, 'craft-runtime')]
-    : style === 'launcher' ? [join(macOSDir, 'craft')] : [])
+    : style === 'launcher' ? [join(macOSDir, 'craft')] : [], config.macosSigning)
 
   // Create DMG if requested
   if (format === 'dmg') {
