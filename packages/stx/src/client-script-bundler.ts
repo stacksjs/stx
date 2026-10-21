@@ -21,7 +21,7 @@ import { describeBuildFailure, formatBuildFailure } from './build-message'
 import { config, loadStxConfig } from './config'
 import { isServerApiSource, type ServerApiOptions } from './server-api'
 import type { DepSnapshot } from './render-memo'
-import { depsUnchanged, renderMemo } from './render-memo'
+import { depsUnchanged, renderMemo, snapshotDeps } from './render-memo'
 import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 
 // 7: bundles written on Bun 1.3 before normalizeRegistrySpecifiers kept their
@@ -35,11 +35,85 @@ function isPrivateClientSource(file: string, root: string, serverApi: boolean | 
   return /^(?:(?:stx|ui)\.config\.[cm]?[jt]s|runtime-config-(?:server|loader)\.[cm]?[jt]s)$/.test(path.basename(file))
     || isServerApiSource(file, root, serverApi)
 }
-const BUNDLE_CACHE_METADATA_VERSION = 1
+// 2: inputs recorded relative to the project, with their size and content
+// hash, so the cache survives a move to another directory (a deploy's next
+// release) instead of starting cold in every one.
+const BUNDLE_CACHE_METADATA_VERSION = 2
+
+/** An input as the sidecar keeps it: portable across project directories. */
+interface CachedInput {
+  /** Relative to the project root when `inRoot`, absolute otherwise. */
+  path: string
+  inRoot?: true
+  mtimeMs: number
+  size: number
+  hash: string
+}
 
 interface BundleCacheMetadata {
   metadataVersion: number
-  files: Array<{ path: string, mtimeMs: number }>
+  files: CachedInput[]
+}
+
+/**
+ * Where the bundle cache lives. `STX_BUNDLE_CACHE_DIR` puts it outside the
+ * project, so a deploy that unpacks every release into a new directory can
+ * share one cache between them; the entries are portable (see `CachedInput`).
+ */
+export function bundleCacheDir(projectRoot: string): string {
+  const shared = process.env.STX_BUNDLE_CACHE_DIR?.trim()
+  return shared ? path.resolve(shared) : stateDir(projectRoot, 'bundle-cache')
+}
+
+/** `text` with the project root written as a marker, so two copies of a project key alike. */
+function withoutProjectRoot(text: string, projectRoot: string): string {
+  const root = path.resolve(projectRoot)
+  return root === path.sep ? text : text.split(root).join('\0root')
+}
+
+function cachedInput(file: string, projectRoot: string): CachedInput | null {
+  try {
+    const stat = fs.statSync(file)
+    const root = path.resolve(projectRoot)
+    const inRoot = file.startsWith(`${root}${path.sep}`)
+    return {
+      path: inRoot ? path.relative(root, file) : file,
+      ...(inRoot ? { inRoot: true as const } : {}),
+      mtimeMs: stat.mtimeMs,
+      size: stat.size,
+      hash: Bun.hash(fs.readFileSync(file)).toString(36),
+    }
+  }
+  catch {
+    return null
+  }
+}
+
+function resolveCachedInput(input: CachedInput, projectRoot: string): string {
+  return input.inRoot ? path.join(path.resolve(projectRoot), input.path) : input.path
+}
+
+/**
+ * Whether every input still holds what the bundle was built from. The mtime
+ * settles it when it matches; when it does not (the same file unpacked into a
+ * new release, a fresh checkout), the content does. A missing input counts
+ * as changed.
+ */
+function cachedInputsUnchanged(inputs: CachedInput[], projectRoot: string): boolean {
+  for (const input of inputs) {
+    const file = resolveCachedInput(input, projectRoot)
+    try {
+      const stat = fs.statSync(file)
+      if (stat.size !== input.size)
+        return false
+      if (stat.mtimeMs !== input.mtimeMs && Bun.hash(fs.readFileSync(file)).toString(36) !== input.hash)
+        return false
+    }
+    catch {
+      return false
+    }
+  }
+  return true
 }
 
 /**
@@ -852,7 +926,7 @@ export async function bundleClientScript(
   const minify = options.minify ?? false
   const externalizeUserModules = options.externalizeUserModules ?? true
   const expose = options.expose?.length ? [...new Set(options.expose)].sort() : undefined
-  const cacheDir = options.cacheDir || stateDir(projectRoot, 'bundle-cache')
+  const cacheDir = options.cacheDir || bundleCacheDir(projectRoot)
   // Read now: the build itself may run later, from the queue.
   const substituted = moduleSubstitutes.getStore()
 
@@ -873,7 +947,7 @@ export async function bundleClientScript(
   const hasher = new Bun.CryptoHasher('md5')
   // Minified or not is part of what was built: a readable bundle cached by a
   // development render was served to production renders asking for minified.
-  hasher.update(`${BUNDLE_CACHE_VERSION}\0${cacheEngineFingerprint()}\0${JSON.stringify(serverApi ?? false)}\0${externalizeUserModules ? 'registry' : 'inline'}\0${expose ? expose.join(',') : '*'}\0${minify ? 'minified' : 'readable'}\0${substituted?.key ?? ''}\0${code}\0${filePath}`)
+  hasher.update(`${BUNDLE_CACHE_VERSION}\0${cacheEngineFingerprint()}\0${JSON.stringify(serverApi ?? false)}\0${externalizeUserModules ? 'registry' : 'inline'}\0${expose ? expose.join(',') : '*'}\0${minify ? 'minified' : 'readable'}\0${substituted?.key ?? ''}\0${withoutProjectRoot(code, projectRoot)}\0${withoutProjectRoot(filePath, projectRoot)}`)
   const hash = hasher.digest('hex').slice(0, 12)
 
   // Check cache. A cache hit requires both the bundled JS to exist AND
@@ -911,16 +985,12 @@ export async function bundleClientScript(
     if (await depsFile.exists()) {
       try {
         const stored = JSON.parse(await depsFile.text()) as BundleCacheMetadata
-        if (stored.metadataVersion !== BUNDLE_CACHE_METADATA_VERSION || !Array.isArray(stored.files))
-          depsValid = false
-        else {
-          storedFiles = stored.files
-          depsValid = true
+        if (stored.metadataVersion === BUNDLE_CACHE_METADATA_VERSION && Array.isArray(stored.files) && cachedInputsUnchanged(stored.files, projectRoot)) {
+          // This project's own copies, with their mtimes now, for the memo.
+          storedFiles = snapshotDeps(stored.files.map(input => resolveCachedInput(input, projectRoot)))
+          depsValid = storedFiles.length === stored.files.length
+            && !storedFiles.some(dep => isPrivateClientSource(dep.path, projectRoot, serverApi))
         }
-
-        // A dep deleted since the build counts as changed.
-        if (storedFiles && (!depsUnchanged(storedFiles) || storedFiles.some(dep => isPrivateClientSource(dep.path, projectRoot, serverApi))))
-          depsValid = false
       }
       catch {
         // Corrupt sidecar — rebundle.
@@ -1288,17 +1358,10 @@ ${publicAssignments}`.trim()
     // changed.
     fs.mkdirSync(cacheDir, { recursive: true })
     await Bun.write(cachePath, bundled)
-    const depsSnapshot = Array.from(inputFiles).map((p) => {
-      try {
-        return { path: p, mtimeMs: fs.statSync(p).mtimeMs }
-      }
-      catch {
-        return null
-      }
-    }).filter((d): d is { path: string, mtimeMs: number } => d !== null)
+    const depsSnapshot = snapshotDeps(inputFiles)
     await Bun.write(depsPath, JSON.stringify({
       metadataVersion: BUNDLE_CACHE_METADATA_VERSION,
-      files: depsSnapshot,
+      files: depsSnapshot.map(dep => cachedInput(dep.path, projectRoot)).filter((input): input is CachedInput => input !== null),
     } satisfies BundleCacheMetadata))
 
     recordBundleInputs(filePath, depsSnapshot.map(dep => dep.path))

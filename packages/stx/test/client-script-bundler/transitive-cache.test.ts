@@ -98,11 +98,14 @@ describe('client-script-bundler transitive cache (#1723)', () => {
     expect(jsFiles).toHaveLength(1)
     expect(depsFiles).toHaveLength(1)
 
-    // The sidecar must reference the helper.
+    // The sidecar must reference the helper, relative to the project so the
+    // entry survives the project moving (relocatable-cache.test.ts).
     const sidecar = JSON.parse(await Bun.file(path.join(cacheDir, depsFiles[0])).text())
-    expect(sidecar.metadataVersion).toBe(1)
+    expect(sidecar.metadataVersion).toBe(2)
+    const helper = sidecar.files.find((f: { path: string }) => f.path === path.relative(projectRoot, helperPath))
+    expect(helper).toMatchObject({ inRoot: true, size: fs.statSync(helperPath).size })
+    expect(typeof helper.hash).toBe('string')
     const filePaths = sidecar.files.map((f: { path: string }) => f.path)
-    expect(filePaths).toContain(helperPath)
     expect(filePaths.some((file: string) => file.includes('bundle-tmp'))).toBe(false)
   })
 
