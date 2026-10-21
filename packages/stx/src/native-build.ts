@@ -21,6 +21,7 @@ import { injectCraftBridge } from './craft-bridge'
 import { processCraftComponents, CRAFT_COMPONENT_STYLES } from './craft-components'
 import { renderTemplate } from './render'
 import { createTempDir, removeTempDir } from './temp-dir'
+import { signMacOSBundle } from './native-signing'
 
 export type NativeTarget = 'macos' | 'windows' | 'linux' | 'ios' | 'android'
 export type NativeFormat = 'app' | 'dmg' | 'pkg' | 'msi' | 'zip' | 'deb' | 'rpm' | 'appimage' | 'ipa' | 'apk'
@@ -455,6 +456,14 @@ exec "$DIR/craft" --html-file "$RESOURCES/index.html" \\
   }
 
   await Bun.write(join(contentsDir, 'Info.plist'), renderInfoPlist(plistEntries))
+
+  // The copied runtime's linker signature identifies Craft and does not bind
+  // this app's Info.plist. Sign after assembly so macOS permission services
+  // see the application identity. Release tooling can replace this development
+  // signature with the developer's distribution identity afterward.
+  await signMacOSBundle(appBundlePath, config.backend
+    ? [join(macOSDir, 'craft-runtime')]
+    : style === 'launcher' ? [join(macOSDir, 'craft')] : [])
 
   // Create DMG if requested
   if (format === 'dmg') {
