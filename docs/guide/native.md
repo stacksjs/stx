@@ -46,6 +46,12 @@ continues to work. Checkbox/Switch use the per-usage policy below. Other overlap
 precedence until their compatibility tests support migration; this is not a
 global precedence change.
 
+The [resolution audit](../proposals/native-component-resolution-audit.md)
+records all six overlapping names, the remaining migration blockers, and the
+tests protecting legacy native APIs. In particular, browser `<Image>` is also
+a `StxImage` builtin alias; a matching shared filename does not prove that the
+browser selected that file.
+
 Checkbox/Switch migration must preserve two existing contracts, covered by
 `test/native/control-compatibility.test.ts`:
 
@@ -119,6 +125,23 @@ This is a native style subset, not a browser CSS engine: CSS transform strings,
 CSS-variable resolution, and arbitrary browser declarations are not supported.
 Unknown directional radius names produce diagnostics
 instead of silently falling back to a different radius.
+
+Text inputs (including the shared `TextInput` component and multiline fields)
+apply supported `focus:` styles when the host emits `onFocus`, and restore the
+unfocused styles on `onBlur`, disabling, hiding, or removal. For example,
+`border-2 border-line-strong focus:border-accent` gives an explicit border-color
+focus treatment. Dynamic classes, semantic colors, `dark:focus:` and
+`focus:dark:` changes work while focused; inline styles still take priority.
+On a wrapper component, use bubbling `@focusin`/`@focusout` to observe its field.
+
+This does **not** implement CSS rings: `ring-*`, `ring-inset`, and ring offsets
+remain `unknown-class` diagnostics, including in focus variants. The maintained
+native style contract has no independent ring/offset drawing fields. STX does
+not substitute borders (which change layout) or shadows (which lose spread,
+offset layers, or existing shadows). `focus-visible:` also remains diagnostic:
+a focus event alone does not establish keyboard modality. Non-text controls
+still diagnose `focus:` because their hosts do not report those events. These
+limits need host support and device verification, not just compiler acceptance.
 
 Numeric `translate-x-*` and `translate-y-*` utilities use the host's transform
 array, including negative spacing values and arbitrary `px`/`rem`/`em` lengths
