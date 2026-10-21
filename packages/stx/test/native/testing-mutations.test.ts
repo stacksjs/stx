@@ -51,3 +51,15 @@ it('validates the entire evolving topology without mutating the input tree', () 
   expect(root.children).toEqual([a, b])
   expect(nodes.has('new')).toBe(false)
 })
+
+it('lets a shape hold its animation, as Craft does', () => {
+  const node = (id: string, type: string): NativeNode => ({ id, type, props: {}, style: {}, events: {}, children: [] })
+  const svg = node('svg', 'Svg')
+  const path = node('path', 'Path')
+  const text = node('text', 'Text')
+  svg.children = [path]
+  const nodes = new Map([svg, path, text].map(value => [value.id, value]))
+  const animate = { op: 'createNode', id: 'move', node: { type: 'Animate', props: {}, style: {}, events: {}, children: [] } }
+  expect(validateTestMutations(nodes, [animate, { op: 'insertChild', parentId: 'path', childId: 'move', index: 0 }] as NativeOperation[])).toBeNull()
+  expect(validateTestMutations(nodes, [animate, { op: 'insertChild', parentId: 'text', childId: 'move', index: 0 }] as NativeOperation[])?.code).toBe('INVALID_PARENT')
+})

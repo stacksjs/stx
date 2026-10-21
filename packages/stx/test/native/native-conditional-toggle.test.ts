@@ -20,7 +20,9 @@ interface ModelNode { id: string, type: string, text: string[], children: string
 const CONTAINER_TYPES = new Set([
   'View', 'SafeAreaView', 'ScrollView', 'KeyboardAvoidingView', 'Modal', 'Pressable',
   'TouchableOpacity', 'TouchableHighlight', 'ImageBackground', 'FlatList', 'SectionList',
-  'Fragment', 'Svg', 'G',
+  'Fragment', 'Svg', 'G', 'Map',
+  // A shape holds its `Animate` (SMIL keyframes), from Craft 0.0.265.
+  'Path', 'Line', 'Rect', 'Circle', 'Ellipse', 'Polyline', 'Polygon',
 ].map(type => type.toLowerCase()))
 
 /**
@@ -233,6 +235,20 @@ window.visible = visible
     ;(scope.visible as any).set(true)
     await settle()
     expect(native.text()).toEqual(['Root content'])
+    expect(native.errors).toEqual([])
+  })
+
+  it('adds and removes a shape\'s animation in place, as an exercise row gets its frames', async () => {
+    const { native, settle, scope } = await mountBundle(`<script client>
+const moving = state(false)
+window.moving = moving
+</script><svg viewBox="0 0 10 10"><path d="M0 0L1 1"><animate :if="moving" attributeName="d" values="M0 0L1 1;M0 0L2 2" dur="1s" repeatCount="indefinite" /></path></svg>`)
+    ;(scope.moving as any).set(true)
+    await settle()
+    ;(scope.moving as any).set(false)
+    await settle()
+    ;(scope.moving as any).set(true)
+    await settle()
     expect(native.errors).toEqual([])
   })
 

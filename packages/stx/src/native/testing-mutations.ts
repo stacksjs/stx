@@ -4,7 +4,7 @@ export interface TestMutationError { code: string, message: string, operationInd
 
 /** Preflight topology on a copy: a rejected batch must never partially alter the test phone. */
 export function validateTestMutations(source: Map<string, NativeNode>, operations: NativeOperation[]): TestMutationError | null {
-  const containers = new Set(['View', 'SafeAreaView', 'ScrollView', 'KeyboardAvoidingView', 'Modal', 'Pressable', 'TouchableOpacity', 'TouchableHighlight', 'ImageBackground', 'FlatList', 'SectionList', 'Fragment', 'Svg', 'G', 'Map'].map(type => type.toLowerCase()))
+  const containers = new Set(['View', 'SafeAreaView', 'ScrollView', 'KeyboardAvoidingView', 'Modal', 'Pressable', 'TouchableOpacity', 'TouchableHighlight', 'ImageBackground', 'FlatList', 'SectionList', 'Fragment', 'Svg', 'G', 'Map', 'Path', 'Line', 'Rect', 'Circle', 'Ellipse', 'Polyline', 'Polygon'].map(type => type.toLowerCase()))
   const nodes = new Map([...source].map(([id, node]) => [id, {
     type: node.type,
     parent: null as string | null,
