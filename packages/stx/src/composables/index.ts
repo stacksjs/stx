@@ -498,3 +498,5 @@ export {
   type BreathStepKind,
 } from './use-breath-pacer'
 export { useAmbientSound, type AmbientGenre, type AmbientSound } from './use-ambient-sound'
+
+export { useAnimationFrame, type AnimationFrameOptions, type AnimationFrameControls } from './use-animation-frame'

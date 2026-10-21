@@ -611,3 +611,23 @@ stx provides several composables out of the box:
 - **Keep composables pure when possible**: Composables that only use signals and computed values (no side effects) are easiest to test
 - **Use `effect()` for side effects**: If a composable needs to sync state to localStorage, the DOM, or an API, use `effect()` so it runs automatically when dependencies change
 - **Composables run in `<script client>` context**: They have access to `document`, `window`, signals, and other client-side APIs
+
+## Animation frames
+
+`useAnimationFrame(callback, { immediate: true, maxDelta: 100 })` runs canvas and
+simulation work before each browser paint. The callback receives elapsed
+milliseconds and the frame timestamp. The first frame, and the first frame after
+resuming a hidden tab, receive a zero delta. `maxDelta` caps long stalls.
+
+```ts
+const clock = useAnimationFrame((delta, timestamp) => draw(delta, timestamp))
+clock.pause()
+clock.resume()
+clock.stop() // permanently releases the frame and visibility listener
+```
+
+The composable is delivered on demand in client scripts, registers with STX's
+component cleanup, and returns inert controls during server rendering. Imported
+TypeScript modules explicitly import it from `@stacksjs/stx/composables` and own
+its `stop()` lifecycle. Advance a simulation using a fixed-step accumulator when
+its results must be independent of display refresh rate.
