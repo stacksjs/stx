@@ -557,7 +557,16 @@ export interface MapProps extends BaseProps {
   region?: MapRegion
   /** Initial region for maps without recorded overlay geometry. */
   initialRegion?: MapRegion
-  /** A native raster basemap; credit remains visible on the map. */
+  /**
+   * A named basemap, drawn the best way each host can: on iOS Apple's vector
+   * map (real terrain from iOS 16) for standard, satellite and hybrid, and
+   * topography with contours over a muted Apple map for outdoors; on Android
+   * a vector style for standard and the same topography and imagery. Its
+   * tiles are cached on the device, and its credit is shown. Prefer it to
+   * `mapType` and `tileOverlay`, which it replaces when set.
+   */
+  basemap?: 'standard' | 'outdoors' | 'satellite' | 'hybrid'
+  /** A native raster basemap of your own; credit remains visible on the map. */
   tileOverlay?: MapTileOverlay
   /** Logical points reserved for floating controls when fitting overlays. */
   edgePadding?: MapEdgePadding
