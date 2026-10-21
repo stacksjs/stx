@@ -304,13 +304,9 @@ export async function showOpenDialog(options: OpenDialogOptions = {}): Promise<O
   if (isInCraftWindow()) {
     // Use Craft's native dialog
     const craftWindow = window as any
-    try {
-      return await craftWindow.craft.dialog.showOpenDialog(toCraftOpenOptions(options))
-    }
-    catch (error) {
-      console.warn('[stx-dialog] Failed to show native open dialog:', error)
-      // Fall through to web fallback
-    }
+    // Native callers require absolute paths. A browser picker after a bridge
+    // failure returns only names, concealing the failure until disk access.
+    return await craftWindow.craft.dialog.showOpenDialog(toCraftOpenOptions(options))
   }
 
   // Web fallback: use file input

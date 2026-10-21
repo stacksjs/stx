@@ -738,3 +738,22 @@ See the [Desktop source code](https://github.com/stacksjs/stx/tree/main/packages
 - Check out [Examples](https://github.com/stacksjs/stx/tree/main/packages/desktop/examples)
 - Learn about [STX CLI](/api/cli)
 - Understand [Configuration](/api/config)
+
+## Bundled local backends (macOS)
+
+A desktop utility that processes local data can add `backend: { entry:
+'src/api.ts', maxRequestBodySize: 33554432 }` to `buildNative` configuration.
+The entry's default export accepts a `Request` and returns a `Response` (or
+`null` for an unhandled route). STX compiles the backend and embedded UI into
+one Bun executable alongside the native Craft runtime. End users need neither
+Bun nor a running development server.
+
+The host binds an ephemeral port on `127.0.0.1`, bootstraps a single-use session,
+and requires an HttpOnly, SameSite cookie for the UI and API. Host and Origin
+checks reject foreign pages and DNS rebinding. Closing Craft stops the server.
+`Contents/MacOS/<AppName> --serve` exposes the same authenticated host for CLI
+clients and integration testing, printing its single-use session URL.
+
+Backend paths resolve from the build working directory. These bundles currently
+support macOS; other targets fail explicitly. Package the complete `.app`
+through Craft's `macos.appBundlePath` option so resources and metadata survive.
