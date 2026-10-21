@@ -54,6 +54,38 @@ describe('screenSharing (with bridge)', () => {
     expect(findCall(bridge.calls, 'screenSharing', 'watch')!.args).toEqual([MAX_WATCH_INTERVAL_MS])
   })
 
+  it('normalizes non-finite intervals before calling native code', async () => {
+    bridge.whenCalled('screenSharing', 'watch', { ok: true, intervalMs: DEFAULT_WATCH_INTERVAL_MS })
+    for (const interval of [Number.NaN, Infinity, -Infinity]) {
+      await screenSharing.watch(interval)
+      expect(bridge.calls.at(-1)!.args).toEqual([DEFAULT_WATCH_INTERVAL_MS])
+    }
+  })
+
+  it('unsubscribes when starting the native watcher fails', async () => {
+    bridge.whenCalled('screenSharing', 'watch', () => { throw new Error('watch failed') })
+    const seen: unknown[] = []
+    await expect(watchScreenSharing(state => seen.push(state))).rejects.toThrow('watch failed')
+    window.dispatchEvent(new CustomEvent('craft:screenSharing:change', { detail: SHARING }))
+    expect(seen).toHaveLength(0)
+  })
+
+  it('awaits native teardown and stops only once', async () => {
+    bridge.whenCalled('screenSharing', 'watch', { ok: true, intervalMs: 1000 })
+    let release: () => void = () => {}
+    bridge.whenCalled('screenSharing', 'unwatch', () => new Promise<void>(resolve => { release = resolve }))
+    const stop = await watchScreenSharing(() => {})
+    let finished = false
+    const first = stop()
+    void first.then(() => { finished = true })
+    expect(stop()).toBe(first)
+    await Promise.resolve()
+    expect(finished).toBe(false)
+    release()
+    await first
+    expect(bridge.calls.filter(call => call.method === 'unwatch')).toHaveLength(1)
+  })
+
   it('watch reports the interval the native side settled on', async () => {
     bridge.whenCalled('screenSharing', 'watch', { ok: true, intervalMs: 5000 })
     expect(await screenSharing.watch(5000)).toBe(5000)
