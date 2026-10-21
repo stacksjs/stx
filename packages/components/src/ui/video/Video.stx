@@ -19,6 +19,10 @@
  *
  * The controls speak the page's language (`<html lang>`): ts-video-player
  * names its buttons and announces playback in it.
+ *
+ * When explicitly used on native, this is the host's Video control: `src`
+ * must be a media URL the platform supports, not a YouTube/Vimeo page.
+ * Browser source selection, tracks and DRM configuration remain web-only.
  */
 export const src = $props.src || ''
 export const poster = $props.poster || ''
@@ -49,6 +53,8 @@ function ratio(value) {
   return /^\d+(?:\.\d+)?(?:\s*\/\s*\d+(?:\.\d+)?)?$/.test(text) ? text : '16 / 9'
 }
 export const aspectRatio = ratio($props.aspectRatio)
+const [ratioWidth, ratioHeight = 1] = aspectRatio.split('/').map(Number)
+export const initialRatio = ratioWidth > 0 && ratioHeight > 0 ? ratioWidth / ratioHeight : 16 / 9
 
 const sources = Array.isArray($props.sources) ? $props.sources : []
 const tracks = Array.isArray($props.tracks) ? $props.tracks : []
@@ -70,18 +76,30 @@ export const containerClasses = `relative w-full ${className}`.trim()
 
 <script client>
 import { registerElements } from 'ts-video-player/elements'
-registerElements()
+// Native Video supplies its own player and controls, without browser globals.
+const nativeVideo = !!window.stx._host.isNative
+if (!nativeVideo)
+  registerElements()
 
 const liveSrc = useReactiveProp('src', {{ src }})
 const livePoster = useReactiveProp('poster', {{ poster }})
 const liveLabel = useReactiveProp('label', {{ label }})
 const liveRatio = useReactiveProp('aspectRatio', {{ aspectRatio }})
 const element = useRef('player')
+const emit = nativeVideo ? defineEmits(['play', 'pause', 'ended', 'timeupdate', 'loadedmetadata', 'loadstart', 'error']) : null
+
+// Browser custom events already bubble. Native media callbacks belong to the
+// physical player, so relay them to the component's caller exactly once.
+function forwardNative(event, payload) {
+  if (nativeVideo) emit(event, payload)
+}
 
 /** Width over height as CSS takes it, whatever the parent bound: "9/16", 0.5625. */
 const playerStyle = derived(() => {
   const value = String(liveRatio() ?? '').trim()
-  return 'aspect-ratio: ' + (/^\d+(?:\.\d+)?(?:\s*\/\s*\d+(?:\.\d+)?)?$/.test(value) ? value : '16 / 9')
+  const valid = /^\d+(?:\.\d+)?(?:\s*\/\s*\d+(?:\.\d+)?)?$/.test(value) ? value : '16 / 9'
+  const [width, height = 1] = valid.split('/').map(Number)
+  return 'aspect-ratio: ' + (nativeVideo ? (width > 0 && height > 0 ? width / height : 16 / 9) : valid)
 })
 
 /*
@@ -102,7 +120,16 @@ effect(() => {
   {{-- No src attribute until there is a video: an empty one resolves to the
        page's own URL, which the browser then downloads as the video. --}}
   <video-player
+    data-native="Video"
+    data-stx-native-host-root
     ref="player"
+    @play="forwardNative('play', $event)"
+    @pause="forwardNative('pause', $event)"
+    @ended="forwardNative('ended', $event)"
+    @timeupdate="forwardNative('timeupdate', $event)"
+    @loadedmetadata="forwardNative('loadedmetadata', $event)"
+    @loadstart="forwardNative('loadstart', $event)"
+    @error="forwardNative('error', $event)"
     @if(src) src="{{ src }}" @endif
     :src="liveSrc() || null"
     :poster="livePoster() || null"
@@ -123,7 +150,7 @@ effect(() => {
     @if(autofocus) autofocus @endif
     @if(label) aria-label="{{ label }}" @endif
     class="block overflow-hidden relative w-full bg-black rounded-panel focus-within:ring-2 focus-within:ring-accent"
-    style="aspect-ratio: {{ aspectRatio }};"
+    style="aspect-ratio: {{ initialRatio }};"
   >
     <media-error-display></media-error-display>
     @if(isPage)
