@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.627...v0.2.628)
+
+## ✨ Features
+
+- **composables**: add lifecycle-aware animation frame clock ([40b6e3d](https://github.com/stacksjs/stx/commit/40b6e3d)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.628 ([a98f8ec](https://github.com/stacksjs/stx/commit/a98f8ec)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.626...v0.2.627)
 
 ## 🔧 Chores
