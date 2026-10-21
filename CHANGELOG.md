@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.621...v0.2.622)
+
+## ✨ Features
+
+- **serve**: pageWarmup.holdBind: 'always' for a caller that wants a warm server first ([31acfa4](https://github.com/stacksjs/stx/commit/31acfa4)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.622 ([a7c038d](https://github.com/stacksjs/stx/commit/a7c038d)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.620...v0.2.621)
 
 ## 🐛 Bug Fixes
