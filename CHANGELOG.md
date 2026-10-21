@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.617...v0.2.618)
+
+## ✨ Features
+
+- **native**: craft.navigation.setChrome, the app's shared bar buttons and tab updates ([f20fb67](https://github.com/stacksjs/stx/commit/f20fb67)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.618 ([6c93c41](https://github.com/stacksjs/stx/commit/6c93c41)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.616...v0.2.617)
 
 ## ✨ Features
