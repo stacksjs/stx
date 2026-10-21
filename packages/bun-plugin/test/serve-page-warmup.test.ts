@@ -141,6 +141,21 @@ describe('page warm-up', () => {
     expect(seen.filter(v => v.warmup)).toEqual([])
   })
 
+  // The budget can run out before every page is warm; the pages the project
+  // named are the ones it most wants warm.
+  it('warms the home page and the configured paths before the rest', async () => {
+    const port = freePort()
+    const previous = previousRelease(port)
+    try {
+      const booted = await boot(PRODUCTION, port, { reusePort: true, pageWarmup: { concurrency: 1, paths: ['/users/ada'] } })
+      booted.stop()
+      expect(booted.seenAtBind.filter(v => v.warmup).map(v => v.path)).toEqual(['/', '/users/ada', '/about'])
+    }
+    finally {
+      previous.stop(true)
+    }
+  })
+
   it('waits for the warm-up with nobody else on the port when asked to', async () => {
     const booted = await boot(PRODUCTION, freePort(), { pageWarmup: { holdBind: 'always', paths: ['/users/ada'] } })
     booted.stop()

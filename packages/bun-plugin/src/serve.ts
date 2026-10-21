@@ -1013,8 +1013,10 @@ export interface ServeOptions {
    * asked for. With nobody else on the port nothing is warmed, unless
    * `holdBind: 'always'` asks for a warm server first.
    *
-   * - `paths`: extra paths to warm. Dynamic routes (`[slug].stx`) have no URL
-   *   of their own, so name one representative path per template you want warm.
+   * - `paths`: extra paths to warm, first after `/`, before the discovered
+   *   pages, so they are warm even when the budget runs out. Dynamic routes
+   *   (`[slug].stx`) have no URL of their own, so name one representative
+   *   path per template you want warm.
    * - `budgetMs`: how long the bind may wait, 60000 by default. Past it the
    *   server binds and stops warming. Keep the image and page budgets
    *   together under your deploy tool's limit (ts-cloud waits 180s).
@@ -5158,10 +5160,14 @@ function __stxOverlay(errs){
    */
   async function warmPages(control: { stop: boolean }): Promise<{ warmed: number, pages: number, failed: number }> {
     const files = await discoverFiles()
+    // The home page and the paths the project named first: the budget can
+    // run out, and those are the pages it chose because they matter. Named
+    // last, a large site never reached them.
     const routes = [...new Set([
+      '/',
+      ...pageWarmup.paths,
       ...files.map(stxViewFileToRoutePath).filter((routePath): routePath is string => routePath !== null),
       ...(discoveredPagePaths ?? []),
-      ...pageWarmup.paths,
     ])]
     const warm = listen(0, false, '127.0.0.1')
     let next = 0
