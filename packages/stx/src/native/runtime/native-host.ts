@@ -38,7 +38,7 @@ import { resolveIconName } from '../compiler/icons'
 import { applyNativeLayoutDefaults, parseNativeStyleLayers } from '../compiler/inline-style'
 import { createStyleVariables, type NativeStyleVariables } from '../compiler/style-variables'
 import type { NativeStylesheetTheme } from '../compiler/stylesheet-theme'
-import { affectsGeometry, parseSvgMarkup, parseViewBox, SVG_NODE_TYPES, svgGeometry } from '../compiler/svg'
+import { affectsGeometry, applySvgAnimation, parseSvgMarkup, parseViewBox, SVG_ANIMATION_ATTRIBUTES, SVG_NODE_TYPES, svgGeometry } from '../compiler/svg'
 import { NATIVE_EVENT_NAMES } from '../event-names'
 import { nativePropName } from '../prop-names'
 import { cloneNativeBindingNode, type NativeBindingNode } from './binding-tree'
@@ -873,6 +873,9 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
           patch[prop] = record.props[prop] = parseViewBox(value)
         if (affectsGeometry(record.type, prop))
           patch.geometry = record.props.geometry = svgGeometry(record.type, record.props)
+        // A bound `values` (an exercise's keyframes) is new keyframes.
+        if (record.type === 'Animate' && SVG_ANIMATION_ATTRIBUTES.includes(prop))
+          Object.assign(patch, applySvgAnimation(record.props))
       }
       if (record.materialized)
         emit({ op: 'updateNode', id: node.__stxId, patch: { props: patch } })
@@ -898,6 +901,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         Object.assign(patch, accessibilityChanges(record.props, accessibilityBefore, prop))
       if (affectsGeometry(record.type, prop))
         patch.geometry = record.props.geometry = svgGeometry(record.type, record.props)
+      if (record.type === 'Animate' && SVG_ANIMATION_ATTRIBUTES.includes(prop))
+        Object.assign(patch, applySvgAnimation(record.props))
       if (record.materialized)
         emit({ op: 'updateNode', id: node.__stxId, patch: { props: patch } })
     },

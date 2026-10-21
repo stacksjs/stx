@@ -34,7 +34,7 @@ import { resolveIconName } from './icons'
 import { applyNativeLayoutDefaults, type NativeStyleContext, parseNativeStyle } from './inline-style'
 import { createStyleVariables, type NativeStyleVariables } from './style-variables'
 import { extractStylesheetTheme } from './stylesheet-theme'
-import { parseViewBox, SVG_DROPPED, SVG_NODE_TYPES, SVG_TYPES, svgGeometry } from './svg'
+import { applySvgAnimation, parseViewBox, SVG_DROPPED, SVG_NODE_TYPES, SVG_TYPES, svgGeometry } from './svg'
 import { compileClassStyles } from './headwind-to-style'
 import { createDocument, createNode } from './ir'
 
@@ -631,6 +631,7 @@ export async function translateHtmlToIR(
     }
     const geometry = svgGeometry(type, props)
     if (geometry) props.geometry = geometry
+    if (type === 'Animate') applySvgAnimation(props)
     const node = createNode(type, props, style, events)
     node._inlineStyle = inline
     node._styleSource = decodeEntities(attributes.find(([name]) => name === 'style')?.[1] ?? '')

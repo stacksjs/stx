@@ -44,6 +44,7 @@ export const SVG_TYPES: Record<string, string> = {
   polygon: 'Polygon',
   text: 'SvgText',
   tspan: 'SvgText',
+  animate: 'Animate',
 }
 
 /** Every IR type a vector drawing is made of. */
@@ -71,6 +72,7 @@ export const SVG_PROP_NAMES = [
   'viewBox', 'preserveAspectRatio', 'strokeWidth', 'strokeDasharray', 'strokeDashoffset',
   'strokeLinecap', 'strokeLinejoin', 'strokeMiterlimit', 'strokeOpacity', 'fillOpacity',
   'fillRule', 'vectorEffect', 'textAnchor', 'dominantBaseline', 'fontSize', 'fontWeight',
+  'attributeName', 'keyTimes', 'repeatCount',
 ] as const
 
 /** The attributes `geometry` is read from, per shape. */
@@ -455,6 +457,56 @@ export function svgGeometry(type: string, props: Record<string, unknown>): numbe
   }
 }
 
+/** The attributes an `Animate` node's keyframes are read from. */
+export const SVG_ANIMATION_ATTRIBUTES: readonly string[] = ['attributeName', 'values', 'keyTimes', 'dur']
+
+/** `2.4s`, `300ms` or a bare number of seconds, as seconds; null for anything else. */
+function seconds(value: unknown): number | null {
+  const match = /^\s*(\d+(?:\.\d+)?|\.\d+)\s*(ms|s)?\s*$/.exec(String(value ?? ''))
+  if (!match) return null
+  const amount = Number(match[1]) / (match[2] === 'ms' ? 1000 : 1)
+  return amount > 0 ? amount : null
+}
+
+/**
+ * An `<animate attributeName="d">` (SMIL) as the renderers play it: each of
+ * its `values` as an outline (`frames`), when in the repetition each is
+ * reached (`frameTimes`, from `keyTimes` or spread evenly), and how long one
+ * repetition takes (`duration`, in seconds). A renderer draws the shape's
+ * outline between the two frames either side of now, as SMIL's linear
+ * `calcMode` does, and its own outline when motion is reduced.
+ *
+ * Only path data animates natively for now: other attributes, too few
+ * frames or an unreadable duration give null, and the shape stays still.
+ */
+export function svgAnimation(props: Record<string, unknown>): { frames: number[][], frameTimes: number[], duration: number } | null {
+  if (props.attributeName !== 'd') return null
+  const duration = seconds(props.dur)
+  const values = String(props.values ?? '').split(';').map(value => value.trim()).filter(Boolean)
+  if (duration === null || values.length < 2) return null
+  const frames = values.map(pathGeometry)
+  if (frames.some(frame => !frame.length)) return null
+  const given = String(props.keyTimes ?? '').split(';').map(value => value.trim()).filter(Boolean).map(Number)
+  const keyed = given.length === frames.length && given[0] === 0 && given[given.length - 1] === 1
+    && given.every((time, index) => Number.isFinite(time) && (index === 0 || time >= given[index - 1]!))
+  const frameTimes = keyed ? given.map(round) : frames.map((_, index) => round(index / (frames.length - 1)))
+  return { frames, frameTimes, duration }
+}
+
+/**
+ * Sets (or clears) an `Animate` node's `frames`, `frameTimes` and `duration`
+ * from its attributes, and returns them as a patch for the renderers.
+ */
+export function applySvgAnimation(props: Record<string, unknown>): Record<string, unknown> {
+  const animation = svgAnimation(props)
+  const patch = { frames: animation?.frames ?? null, frameTimes: animation?.frameTimes ?? null, duration: animation?.duration ?? null }
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === null) delete props[key]
+    else props[key] = value
+  }
+  return patch
+}
+
 /** Whether changing `attribute` on a `type` node changes its outline. */
 export function affectsGeometry(type: string, attribute: string): boolean {
   return SVG_GEOMETRY_ATTRIBUTES[type]?.includes(attribute) ?? false
@@ -606,6 +658,7 @@ export function parseSvgMarkup(markup: string): STXNode[] {
     }
     const geometry = svgGeometry(type, node.props)
     if (geometry) node.props.geometry = geometry
+    if (type === 'Animate') applySvgAnimation(node.props)
     append(node)
     if (!selfClosing) stack.push({ tag: name, node, dropped: false })
   }

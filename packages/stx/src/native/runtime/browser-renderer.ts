@@ -10,7 +10,7 @@ for (const [name, symbol] of Object.entries(LUCIDE_TO_SF)) {
     SYMBOL_TO_ICON[symbol] = name
 }
 const SVG_NS = 'http://www.w3.org/2000/svg'
-const SVG: Record<string, string> = { Svg: 'svg', G: 'g', Path: 'path', Line: 'line', Rect: 'rect', Circle: 'circle', Ellipse: 'ellipse', Polyline: 'polyline', Polygon: 'polygon', SvgText: 'text' }
+const SVG: Record<string, string> = { Svg: 'svg', G: 'g', Path: 'path', Line: 'line', Rect: 'rect', Circle: 'circle', Ellipse: 'ellipse', Polyline: 'polyline', Polygon: 'polygon', SvgText: 'text', Animate: 'animate' }
 const TAGS: Record<string, string> = { View: 'div', SafeAreaView: 'div', ScrollView: 'div', KeyboardAvoidingView: 'div', Text: 'span', TextInput: 'input', Button: 'button', Link: 'a', TouchableOpacity: 'button', TouchableHighlight: 'button', Pressable: 'button', Icon: 'span', Image: 'img', ImageBackground: 'div', Video: 'video', FlatList: 'div', SectionList: 'div', Switch: 'input', Checkbox: 'input', Slider: 'input', Picker: 'select', DatePicker: 'input', Modal: 'dialog', ActivityIndicator: 'progress', StatusBar: 'div', RefreshControl: 'progress', Sidebar: 'aside', SplitView: 'div' }
 const CONTAINERS = new Set(['View', 'SafeAreaView', 'ScrollView', 'KeyboardAvoidingView', 'FlatList', 'SectionList', 'Sidebar', 'SplitView', 'ImageBackground'])
 const UNITLESS = new Set(['opacity', 'flex', 'flexGrow', 'flexShrink', 'fontWeight', 'zIndex', 'aspectRatio', 'order'])
@@ -399,7 +399,7 @@ export class BrowserScreenRenderer {
       element.setAttribute('aria-hidden', props.accessibilityLabel ? 'false' : 'true')
     }
     if (type === 'Text' && props.numberOfLines) { css.overflow = 'hidden'; css.display = '-webkit-box'; css.webkitBoxOrient = 'vertical'; css.webkitLineClamp = String(props.numberOfLines) }
-    if (SVG[type]) for (const [key, value] of Object.entries(props)) { if (['geometry', 'testID', 'accessibilityLabel'].includes(key)) continue; const name = SVG_PROPS[key] ?? key; if (value == null) element.removeAttribute(name); else element.setAttribute(name, Array.isArray(value) ? value.join(' ') : String(value)) }
+    if (SVG[type]) for (const [key, value] of Object.entries(props)) { if (['geometry', 'frames', 'frameTimes', 'duration', 'testID', 'accessibilityLabel'].includes(key)) continue; const name = SVG_PROPS[key] ?? key; if (value == null) element.removeAttribute(name); else element.setAttribute(name, Array.isArray(value) ? value.join(' ') : String(value)) }
     if (props.scrollTarget && typeof props.scrollTarget === 'object') { const target = props.scrollTarget as { id?: string, key?: unknown, animated?: boolean }; const signature = JSON.stringify(target); if (element.getAttribute('data-scroll-target') !== signature) { element.setAttribute('data-scroll-target', signature); queueMicrotask(() => { for (const candidate of this.nodes.values()) if (candidate.props.testID === target.id) candidate.element.scrollIntoView?.({ behavior: target.animated === false ? 'instant' : 'smooth', block: 'start' }) }) } }
     this.syncLayoutObserver(record)
   }

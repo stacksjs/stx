@@ -64,6 +64,7 @@ export type STXComponentType =
   | 'Polyline'
   | 'Polygon'
   | 'SvgText'
+  | 'Animate'
 
 export interface STXNode {
   /** Component type (View, Text, Button, etc.) */

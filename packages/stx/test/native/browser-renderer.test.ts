@@ -234,6 +234,19 @@ describe('the browser peer of the native screen renderer', () => {
     expect(() => renderer.render({ id: 'root', type: 'View', props: {}, style: {}, events: {}, children: [{ id: 'gone', type: 'Icon', props: { symbol: 'missing.fill' }, style: {}, events: {}, children: [] }] })).toThrow('No browser icon registered')
   })
 
+  it('animates an outline in the preview with the browser\'s own SMIL', () => {
+    const { renderer, container, node } = fixture()
+    renderer.render(node('root', 'View', [{ ...node('art', 'Svg', [{ ...node('limb', 'Path', [{ ...node('move', 'Animate'), props: { attributeName: 'd', values: 'M0 0L1 1;M0 0L2 2', dur: '2.4s', keyTimes: '0;1', repeatCount: 'indefinite', frames: [[0, 0, 0, 1, 1, 1], [0, 0, 0, 1, 2, 2]], frameTimes: [0, 1], duration: 2.4 } }]), props: { d: 'M0 0L1 1' } }]), props: { viewBox: [0, 0, 128, 128] } }]))
+    const animate = container.querySelector('[data-stx-node="move"]')!
+    expect(animate.tagName.toLowerCase()).toBe('animate')
+    expect(animate.getAttribute('attributeName')).toBe('d')
+    expect(animate.getAttribute('values')).toBe('M0 0L1 1;M0 0L2 2')
+    expect(animate.getAttribute('keyTimes')).toBe('0;1')
+    // The native keyframes are the renderers' business, not attributes.
+    expect(animate.hasAttribute('frames')).toBe(false)
+    expect(animate.hasAttribute('duration')).toBe(false)
+  })
+
   it('draws each icon that shares a platform symbol with its own glyph', () => {
     const window = new Window()
     const container = window.document.createElement('div')

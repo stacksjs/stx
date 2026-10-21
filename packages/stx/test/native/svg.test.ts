@@ -11,7 +11,7 @@ import { describe, expect, it } from 'bun:test'
 import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import { parseSvgMarkup } from '../../src/native/compiler/svg'
 import { compileClassStyles } from '../../src/native/compiler/headwind-to-style'
-import { CLOSE, CUBIC, LINE, MOVE, pathGeometry, svgGeometry } from '../../src/native/compiler/svg'
+import { CLOSE, CUBIC, LINE, MOVE, pathGeometry, svgAnimation, svgGeometry } from '../../src/native/compiler/svg'
 import type { STXNode } from '../../src/native/compiler/ir'
 import { createNativeHost, type NativeNode } from '../../src/native/runtime/native-host'
 import type { NativeMutationOperation } from '../../src/native/bridge/protocol'
@@ -178,6 +178,44 @@ describe('the translator', () => {
   it('leaves text outside a drawing alone', async () => {
     const { root } = await translateHtmlToIR('<div><span>a</span><text>plain</text></div>')
     expect(root.children.map(child => (child as STXNode).type)).toEqual(['Text', 'Text'])
+  })
+})
+
+describe('animation', () => {
+  it('keeps an animated outline as keyframes, at its key times', async () => {
+    const { root } = await translateHtmlToIR('<svg viewBox="0 0 128 128"><path d="M0 0 L1 1" stroke-width="7"><animate attributeName="d" dur="2.4s" repeatCount="indefinite" values="M0 0 L1 1;M0 0 L5 9;M0 0 L1 1" keyTimes="0;0.25;1" /></path></svg>')
+    const path = root.children[0] as STXNode
+    expect(path.type).toBe('Path')
+    const animate = path.children[0] as STXNode
+    expect(animate.type).toBe('Animate')
+    expect(animate.props).toMatchObject({ attributeName: 'd', repeatCount: 'indefinite', duration: 2.4, frameTimes: [0, 0.25, 1] })
+    expect(animate.props.frames).toEqual([[MOVE, 0, 0, LINE, 1, 1], [MOVE, 0, 0, LINE, 5, 9], [MOVE, 0, 0, LINE, 1, 1]])
+  })
+
+  it('spreads frames evenly without usable key times, and plays nothing it cannot', () => {
+    expect(svgAnimation({ attributeName: 'd', dur: '300ms', values: 'M0 0L1 1; M0 0L2 2; M0 0L3 3', keyTimes: '0;1' })?.frameTimes).toEqual([0, 0.5, 1])
+    expect(svgAnimation({ attributeName: 'd', dur: '300ms', values: 'M0 0L1 1;M0 0L2 2' })?.duration).toBe(0.3)
+    // Not path data, one frame, no duration: the shape stays still.
+    expect(svgAnimation({ attributeName: 'cx', dur: '1s', values: '1;2' })).toBeNull()
+    expect(svgAnimation({ attributeName: 'd', dur: '1s', values: 'M0 0L1 1' })).toBeNull()
+    expect(svgAnimation({ attributeName: 'd', dur: 'indefinite', values: 'M0 0L1 1;M0 0L2 2' })).toBeNull()
+  })
+
+  it('sends new keyframes when bound values change, and none when they go', () => {
+    const batches: NativeMutationOperation[][] = []
+    const host = createNativeHost({ send: ops => batches.push(ops), schedule: () => {} })
+    const svg: NativeNode = host.adopt({ __stxId: 's1' }, 'Svg')
+    const path: NativeNode = host.adopt({ __stxId: 'p1' }, 'Path', svg, { props: { d: 'M0 0 L1 1' }, style: {}, events: {}, children: [] })
+    const animate: NativeNode = host.adopt({ __stxId: 'a1' }, 'Animate', path, { props: { attributeName: 'd', dur: '1s' }, style: {}, events: {}, children: [] })
+    host.snapshot(svg)
+    host.setAttribute(animate, 'values', 'M0 0 L1 1;M0 0 L4 4')
+    host.flush()
+    const update = batches.flat().find(op => op.op === 'updateNode' && op.id === 'a1') as any
+    expect(update.patch.props).toMatchObject({ frames: [[MOVE, 0, 0, LINE, 1, 1], [MOVE, 0, 0, LINE, 4, 4]], frameTimes: [0, 1], duration: 1 })
+    host.removeAttribute(animate, 'values')
+    host.flush()
+    const cleared = batches.flat().filter(op => op.op === 'updateNode' && op.id === 'a1').at(-1) as any
+    expect(cleared.patch.props).toMatchObject({ frames: null, frameTimes: null, duration: null })
   })
 })
 
