@@ -1621,7 +1621,7 @@
     },
     "packages/desktop": {
       "name": "@stacksjs/desktop",
-      "version": "0.2.645",
+      "version": "0.2.646",
       "dependencies": {
         "craft-native": ">=0.0.111",
       },
