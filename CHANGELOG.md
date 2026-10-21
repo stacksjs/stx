@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.644...v0.2.645)
+
+## 🐛 Bug Fixes
+
+- **native**: resolve the installed Craft runtime from PATH ([34e37c8](https://github.com/stacksjs/stx/commit/34e37c8)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.645 ([d675fbe](https://github.com/stacksjs/stx/commit/d675fbe)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.642...v0.2.643)
 
 ## ✨ Features
