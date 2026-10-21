@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.629...v0.2.630)
+
+## 🐛 Bug Fixes
+
+- **typecheck**: retain lifecycle-assigned template binding types ([72b4594](https://github.com/stacksjs/stx/commit/72b4594)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.630 ([f6222ef](https://github.com/stacksjs/stx/commit/f6222ef)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.628...v0.2.629)
 
 ## ✅ Tests
