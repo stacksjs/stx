@@ -47,7 +47,7 @@ import { parseLoopBinding } from './loop-binding'
 import type { StxOptions } from './types'
 import { processConditionals } from './conditionals'
 import { ErrorCodes, inlineError } from './error-handling'
-import { processExpressions } from './expressions'
+import { escapeInterpolatedHtmlValue, processExpressions, replaceInterpolations } from './expressions'
 import { findDirectiveBlocks, findMatchingDelimiter } from './parser'
 import { createSafeFunction, freeIdentifiers, isExpressionSafe, isForExpressionSafe, SANITIZE_CACHE, sanitizeExpression, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
 
@@ -393,28 +393,25 @@ function processUnconditionalLoopControl(content: string): string {
   return result
 }
 
-/**
- * Check if content contains a break marker and clean it up
+/** Compile authored loop text without changing literal backslashes or bypassing
+ * the normal interpolation context escaping. Keep expressions out of the text
+ * escaping pass so nested object literals and template strings remain valid.
  */
-function checkAndCleanBreak(content: string): { hasBreak: boolean, content: string } {
-  const hasBreak = content.includes(BREAK_MARKER)
-  // Remove marker and everything after it
-  const cleanContent = hasBreak
-    ? content.substring(0, content.indexOf(BREAK_MARKER))
-    : content
-  return { hasBreak, content: cleanContent }
+function compileLoopContent(content: string): string {
+  const literal = (text: string) => text.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${')
+  let body = ''
+  let cursor = 0
+  replaceInterpolations(content, (match, expr, offset) => {
+    body += convertLoopControlToJS(literal(content.slice(cursor, offset)))
+    body += `\${__stxRenderLoopValue(${offset}, (${expr}), ${match.length})}`
+    cursor = offset + match.length
+    return match
+  })
+  return body + convertLoopControlToJS(literal(content.slice(cursor)))
 }
 
-/**
- * Check if content contains a continue marker and clean it up
- */
-function checkAndCleanContinue(content: string): { hasContinue: boolean, content: string } {
-  const hasContinue = content.includes(CONTINUE_MARKER)
-  // Remove marker and everything after it
-  const cleanContent = hasContinue
-    ? content.substring(0, content.indexOf(CONTINUE_MARKER))
-    : content
-  return { hasContinue, content: cleanContent }
+function renderLoopValue(content: string, offset: number, value: any, length: number): string {
+  return escapeInterpolatedHtmlValue(content, offset, value == null ? '' : String(value), false, length)
 }
 
 /**
@@ -1040,49 +1037,20 @@ export function processLoops(template: string, context: Record<string, any>, fil
             }
           }
 
-          // Step 1: Process conditional @break(condition) and @continue(condition)
-          // These are evaluated immediately based on the condition expression
-          let processedContent = processConditionalLoopControl(content, itemContext)
-
-          // Check for continue marker from conditional @continue(condition)
-          let continueCheck = checkAndCleanContinue(processedContent)
-          if (continueCheck.hasContinue) {
-            loopResult += continueCheck.content
-            continue
-          }
-
-          // Check for break marker from conditional @break(condition)
-          let breakCheck = checkAndCleanBreak(processedContent)
-          if (breakCheck.hasBreak) {
-            loopResult += breakCheck.content
-            break
-          }
-
-          // Step 2a: Process any nested @forelse blocks with the iteration context
-          processedContent = processForelse(processedContent, itemContext)
-
-          // Step 2b: Recursively process nested loops with the new context
+          // Expand inner loops before evaluating this loop's controls. A
+          // conditional break in an inner body belongs to that inner scope.
+          let processedContent = processForelse(content, itemContext)
           processedContent = processForeachWithContext(processedContent, itemContext)
-
-          // Step 3: Process conditionals with the item context
-          // This evaluates @if/@else blocks and may reveal @break/@continue inside them
           processedContent = processConditionals(processedContent, itemContext, filePath)
-
-          // Step 4: Process unconditional @break and @continue
-          // Now that conditionals are processed, @break/@continue from @if blocks are visible
+          processedContent = processConditionalLoopControl(processedContent, itemContext)
           processedContent = processUnconditionalLoopControl(processedContent)
 
-          // Check for break/continue markers
-          breakCheck = checkAndCleanBreak(processedContent)
-          if (breakCheck.hasBreak) {
-            loopResult += breakCheck.content
-            break
-          }
-          continueCheck = checkAndCleanContinue(processedContent)
-          if (continueCheck.hasContinue) {
-            loopResult += continueCheck.content
-            continue
-          }
+          // Preserve output before the first control, rendering it while the
+          // iteration bindings still exist. Source order decides which wins.
+          const breakAt = processedContent.indexOf(BREAK_MARKER)
+          const continueAt = processedContent.indexOf(CONTINUE_MARKER)
+          const stopAt = breakAt < 0 ? continueAt : continueAt < 0 ? breakAt : Math.min(breakAt, continueAt)
+          if (stopAt >= 0) processedContent = processedContent.slice(0, stopAt)
 
           // Step 5: Process expressions with the item context
           processedContent = processExpressions(processedContent, itemContext, filePath)
@@ -1106,6 +1074,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
           processedContent = preEvaluateIncludeData(processedContent, itemContext)
 
           loopResult += processedContent
+          if (stopAt >= 0 && stopAt === breakAt) break
         }
 
         // Replace the @foreach block with the processed result
@@ -1255,13 +1224,10 @@ function processForLoops(
       const loopKeys = Object.keys(context)
       const loopValues = Object.values(context)
 
-      let processedContent = content.replace(/`/g, '\\`').replace(/\$\{/g, '\\${').replace(/\{\{([^}]+)\}\}/g, (_match: string, expr: string) => {
-        return `\${${expr}}`
-      })
-      processedContent = convertLoopControlToJS(processedContent)
+      let processedContent = compileLoopContent(content)
 
       // eslint-disable-next-line no-new-func
-      const loopFn = new Function(...loopKeys, `
+      const loopFn = new Function(...loopKeys, '__stxRenderLoopValue', `
         let result = '';
         for (${forExpr}) {
           result += \`${processedContent}\`;
@@ -1269,7 +1235,7 @@ function processForLoops(
         return result;
       `)
 
-      const result = loopFn(...loopValues)
+      const result = loopFn(...loopValues, (offset: number, value: any, length: number) => renderLoopValue(content, offset, value, length))
       output = output.substring(0, startPos) + result + output.substring(endPos)
       processedAny = true
     }
@@ -1445,13 +1411,10 @@ function processWhileLoops(template: string, context: Record<string, any>, maxIt
 
       // Process break/continue directives
       // Escape backticks AND ${ to prevent template literal injection
-      let processedContent = content.replace(/`/g, '\\`').replace(/\$\{/g, '\\${').replace(/\{\{([^}]+)\}\}/g, (_match: string, expr: string) => {
-        return `\${${expr}}`
-      })
-      processedContent = convertLoopControlToJS(processedContent)
+      let processedContent = compileLoopContent(content)
 
       // eslint-disable-next-line no-new-func
-      const whileFn = new Function(...loopKeys, `
+      const whileFn = new Function(...loopKeys, '__stxRenderLoopValue', `
         let result = '';
         let maxIterations = ${maxIterations}; // Configurable safety limit
         let counter = 0;
@@ -1465,7 +1428,7 @@ function processWhileLoops(template: string, context: Record<string, any>, maxIt
         return result;
       `)
 
-      const result = whileFn(...loopValues)
+      const result = whileFn(...loopValues, (offset: number, value: any, length: number) => renderLoopValue(content, offset, value, length))
       output = output.substring(0, startPos) + result + output.substring(endPos)
       processedAny = true
     }
