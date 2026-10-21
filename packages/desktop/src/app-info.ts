@@ -14,6 +14,8 @@ import { hasBridge } from './_bridge'
 export interface AppInfo {
   /** Bundle name (e.g. "Photo Booth"). */
   name: string
+  /** Whether native file access needs explicit user-granted directories. */
+  sandboxed?: boolean
   /** CFBundleShortVersionString — the user-facing version. */
   version: string
   /** Bundle identifier (e.g. "com.example.app"). */
