@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.633...v0.2.634)
+
+## 🐛 Bug Fixes
+
+- **serve**: warm the home page and the configured paths first ([f497ddd](https://github.com/stacksjs/stx/commit/f497ddd)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.634 ([d52de33](https://github.com/stacksjs/stx/commit/d52de33)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.632...v0.2.633)
 
 ## 🐛 Bug Fixes
