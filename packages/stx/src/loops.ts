@@ -48,7 +48,7 @@ import type { StxOptions } from './types'
 import { processConditionals } from './conditionals'
 import { ErrorCodes, inlineError } from './error-handling'
 import { processExpressions } from './expressions'
-import { findDirectiveBlocks, findMatchingDelimiter } from './parser'
+import { findDirectiveBlocks, findMatchingDelimiter, findMatchingEndTag } from './parser'
 import { createSafeFunction, freeIdentifiers, isExpressionSafe, isForExpressionSafe, SANITIZE_CACHE, sanitizeExpression, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
 
 // Default loop configuration
@@ -577,7 +577,9 @@ else if (remaining.startsWith('@endforelse')) {
       searchI = atPos + '@endforelse'.length
     }
 else if (nestedDepth === 0 && remaining.startsWith('@empty')) {
-      if (fullContent.length <= atPos + 6 || !/[a-z]/i.test(fullContent[atPos + 6])) {
+      // @empty(expr) ... @endempty in a row is the conditional, not this separator
+      const isConditional = /^@empty[ \t]*\(/.test(remaining) && findMatchingEndTag(fullContent, 'empty', 'endempty', atPos + 6) !== -1
+      if ((fullContent.length <= atPos + 6 || !/[a-z]/i.test(fullContent[atPos + 6])) && !isConditional) {
         emptyPos = atPos
         break
       }
