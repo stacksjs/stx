@@ -67,10 +67,36 @@ export function bundleCacheDir(projectRoot: string): string {
   return shared ? path.resolve(shared) : stateDir(projectRoot, 'bundle-cache')
 }
 
-/** `text` with the project root written as a marker, so two copies of a project key alike. */
+/**
+ * `text` with the project root written as a marker, so two copies of a project
+ * key alike. Both spellings of the root: the path it was reached by and the
+ * real one, which differ through a symlink (macOS's /var -> /private/var).
+ */
 function withoutProjectRoot(text: string, projectRoot: string): string {
-  const root = path.resolve(projectRoot)
-  return root === path.sep ? text : text.split(root).join('\0root')
+  let result = text
+  for (const root of projectRootSpellings(projectRoot)) {
+    if (root !== path.sep)
+      result = result.split(root).join('\0root')
+  }
+  return result
+}
+
+const rootSpellings = new Map<string, string[]>()
+
+function projectRootSpellings(projectRoot: string): string[] {
+  const resolved = path.resolve(projectRoot)
+  let spellings = rootSpellings.get(resolved)
+  if (!spellings) {
+    let real = resolved
+    try {
+      real = fs.realpathSync(resolved)
+    }
+    catch {}
+    // Longest first, so one spelling never leaves half of another behind.
+    spellings = [...new Set([resolved, real])].sort((a, b) => b.length - a.length)
+    rootSpellings.set(resolved, spellings)
+  }
+  return spellings
 }
 
 function cachedInput(file: string, projectRoot: string): CachedInput | null {
@@ -168,8 +194,22 @@ const bundleInputs = new Map<string, string[]>()
  *
  * The cost is one `readdir` and a sort, which is why it is not on every write.
  */
-const CACHE_ENTRY_LIMIT = 600
 const SWEEP_EVERY = 100
+
+/**
+ * How many bundles a cache keeps: `STX_BUNDLE_CACHE_LIMIT`, or 2000.
+ *
+ * It was 600. HQ's 152 static pages alone use 498 distinct bundles, and with
+ * its dynamic pages and signed-in variants a full warm-up needs more than 600:
+ * a pass over a working set bigger than the cache evicts each entry shortly
+ * before it is needed again, so an unchanged release rebuilt nearly every
+ * bundle. 2000 keeps a large site's set with room for a release's changes
+ * (an entry is a few hundred KB).
+ */
+export function bundleCacheEntryLimit(env: Record<string, string | undefined> = process.env): number {
+  const configured = Number(env.STX_BUNDLE_CACHE_LIMIT)
+  return Number.isFinite(configured) && configured >= 1 ? Math.floor(configured) : 2000
+}
 
 const writesSinceSweep = new Map<string, number>()
 
@@ -186,7 +226,8 @@ async function pruneBundleCache(cacheDir: string): Promise<void> {
   try {
     const names = (await fs.promises.readdir(cacheDir)).filter(name => name.endsWith('.js'))
 
-    if (names.length <= CACHE_ENTRY_LIMIT)
+    const limit = bundleCacheEntryLimit()
+    if (names.length <= limit)
       return
 
     const entries = await Promise.all(names.map(async (name) => {
@@ -201,7 +242,7 @@ async function pruneBundleCache(cacheDir: string): Promise<void> {
     const alive = entries.filter((entry): entry is { name: string, at: number } => entry !== null)
     alive.sort((a, b) => b.at - a.at)
 
-    for (const entry of alive.slice(CACHE_ENTRY_LIMIT)) {
+    for (const entry of alive.slice(limit)) {
       const base = entry.name.slice(0, -3)
 
       // The sidecar goes with it. Left behind, it is a dependency list for a
@@ -210,7 +251,7 @@ async function pruneBundleCache(cacheDir: string): Promise<void> {
       await fs.promises.rm(path.join(cacheDir, `${base}.deps.json`), { force: true })
     }
 
-    logBundlerDiagnostic('pruned bundle cache to', CACHE_ENTRY_LIMIT, 'entries')
+    logBundlerDiagnostic('pruned bundle cache to', limit, 'entries')
   }
   catch {
     // A cache that cannot be swept is not a reason to fail a build.
@@ -1008,6 +1049,12 @@ export async function bundleClientScript(
         options.collectInputs?.push(...storedFiles.map(dep => dep.path))
       }
       const code = await cacheFile.text()
+      // A hit is a use: refresh the entry's mtime so the sweep, which keeps
+      // the most recent, keeps what is being used and not only what was
+      // written last. Without it a warm-up pass over a working set near the
+      // limit evicted the very entries it was about to read.
+      const now = new Date()
+      fs.promises.utimes(cachePath, now, now).catch(() => {})
       // Only with a sidecar. Without one there is nothing to re-stat, and an
       // entry with an empty dep list is re-validated by checking nothing — so
       // it would be served for the rest of the process no matter what happened

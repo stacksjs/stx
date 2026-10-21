@@ -51,7 +51,7 @@ import { runPostProcessingMiddleware, runPreProcessingMiddleware } from './middl
 import { performanceMonitor } from './performance-utils'
 import { processRouteDirectives } from './routes'
 import { injectSeoTags, processMetaDirectives, processSeoDirective, processStructuredData } from './seo'
-import { fileExists, resolveTemplatePath } from './utils'
+import { fileExists, resolveTemplatePath, scopeSequenceKey } from './utils'
 import { runComposers } from './view-composers'
 import { processServerBindings } from './server-bindings'
 import { processVueTemplate } from './vue-template'
@@ -517,7 +517,7 @@ export async function processDirectives(
     // and no two ids in a document coincide.
     context.__stx_scope_seq ??= {
       n: 0,
-      key: Bun.hash(String(context.__filename ?? filePath)).toString(36).slice(0, 6),
+      key: scopeSequenceKey(String(context.__filename ?? filePath)),
     }
     // Open the render's head collection before the pipeline runs, not after it,
     // so passes deeper in the pipeline can contribute a fragment instead of

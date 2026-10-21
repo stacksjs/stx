@@ -216,6 +216,47 @@ function escapeAttr(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
+
+/**
+ * The scope-id suffix for a render of `file`, the same in every copy of the
+ * project. Scope ids are written into a page's client scripts, and those
+ * scripts key the client bundle cache, so a suffix hashed from the absolute
+ * path gave every deploy's new release directory different script bytes for
+ * the same page: every bundle missed the cache the previous release had
+ * filled. Hashed from the project-relative path (against `process.cwd()`, as
+ * module registry ids are), a page keys alike wherever the project lives.
+ */
+export function scopeSequenceKey(file: string): string {
+  const root = process.cwd()
+  const cacheKey = `${root}\0${file}`
+  let key = scopeSequenceKeys.get(cacheKey)
+  if (key === undefined) {
+    key = Bun.hash(projectRelative(file, root).split(path.sep).join('/')).toString(36).slice(0, 6)
+    scopeSequenceKeys.set(cacheKey, key)
+  }
+  return key
+}
+
+const scopeSequenceKeys = new Map<string, string>()
+
+/**
+ * `file` relative to `root`, through symlinks on either side: a project
+ * reached through a link (macOS's /var -> /private/var, a deploy's `current`)
+ * must not read as a different project.
+ */
+function projectRelative(file: string, root: string): string {
+  if (!path.isAbsolute(file))
+    return file
+  const real = (p: string): string => {
+    try {
+      return fs.realpathSync(p)
+    }
+    catch {
+      return p
+    }
+  }
+  return path.relative(real(root), real(file))
+}
 /**
  * Check if script should be treated as plain JavaScript (opt-out from TypeScript)
  * By default ALL scripts are TypeScript. Use <script js> or <script lang="js"> to opt-out.
@@ -1661,12 +1702,15 @@ export async function renderComponentWithSlot(
      */
     const scopeSeq = (parentContext.__stx_scope_seq ??= {
       n: 0,
-      key: Bun.hash(String(parentContext.__filename ?? parentFilePath)).toString(36).slice(0, 6),
+      key: scopeSequenceKey(String(parentContext.__filename ?? parentFilePath)),
     }) as { n: number, key: string }
     // Key last, so the id keeps the `stx_<name>_<n>_<suffix>` shape the random
     // one had. Nothing that matched the old ids has to change, and the name
     // stays at the front where it is readable in a DOM inspector.
-    const identity = componentPath.endsWith('.stx') ? componentPath.slice(0, -4) : componentPath
+    // Relative, for the same reason as the key: an absolute path here put the
+    // release directory into every id.
+    const componentName = projectRelative(componentPath, process.cwd())
+    const identity = componentName.endsWith('.stx') ? componentName.slice(0, -4) : componentName
     const componentUid = `stx_${identity.replace(/[^a-zA-Z0-9]/g, '_')}_${++scopeSeq.n}_${scopeSeq.key}`
 
     const componentContext: Record<string, unknown> = {

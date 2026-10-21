@@ -14,16 +14,27 @@
  * to render, so a partial build would evict everything it did not touch.
  */
 
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { bundleClientScript } from '../src/client-script-bundler'
+import { bundleCacheEntryLimit, bundleClientScript } from '../src/client-script-bundler'
+import { clearRenderMemos } from '../src/render-memo'
 import { createTempDir } from '../src/temp-dir'
 
 const made: string[] = []
+const originalLimit = process.env.STX_BUNDLE_CACHE_LIMIT
+
+// The sweeps below run against a 600-entry cache; the default is larger.
+beforeEach(() => {
+  process.env.STX_BUNDLE_CACHE_LIMIT = '600'
+})
 
 afterEach(() => {
+  if (originalLimit === undefined)
+    delete process.env.STX_BUNDLE_CACHE_LIMIT
+  else
+    process.env.STX_BUNDLE_CACHE_LIMIT = originalLimit
   for (const dir of made.splice(0)) fs.rmSync(dir, { recursive: true, force: true })
 })
 
@@ -94,5 +105,44 @@ describe('the bundle cache', () => {
 
     // The five seeded plus whatever this build wrote — nothing evicted.
     expect(fs.readdirSync(cacheDir).filter(f => f.endsWith('.js')).length).toBeGreaterThanOrEqual(5)
+  })
+
+  // A warm-up pass over a working set near the limit evicted each entry just
+  // before reading it, because the sweep went by write time and a hit wrote
+  // nothing. A hit is a use, and the sweep keeps what is used.
+  test('keeps an entry that was read since, however long ago it was written', async () => {
+    const { dir, cacheDir, host } = workspace()
+    const used = "import { value } from './helper'\nconsole.log('used', value)\n"
+    // Built in a scratch cache and copied in, so the write below is this
+    // cache's first, which is when it sweeps.
+    const scratch = path.join(dir, 'scratch-cache')
+    await bundleClientScript(used, host, { projectRoot: dir, cacheDir: scratch })
+    const usedFile = fs.readdirSync(scratch).find(f => f.endsWith('.js'))!
+    const old = (Date.now() - 3_600_000) / 1000
+    for (const name of [usedFile, usedFile.replace(/\.js$/, '.deps.json')]) {
+      fs.copyFileSync(path.join(scratch, name), path.join(cacheDir, name))
+      fs.utimesSync(path.join(cacheDir, name), old, old)
+    }
+    for (let i = 0; i < 650; i++) seedEntry(cacheDir, `newer${i}`, 60_000 + i)
+
+    // Read it from disk (not this process's memo), then write something else,
+    // which sweeps.
+    clearRenderMemos()
+    await bundleClientScript(used, host, { projectRoot: dir, cacheDir })
+    await Bun.sleep(50)
+    await bundleClientScript("import { value } from './helper'\nconsole.log('other', value)\n", host, { projectRoot: dir, cacheDir })
+
+    const left = fs.readdirSync(cacheDir).filter(f => f.endsWith('.js'))
+    expect(left.length).toBeLessThanOrEqual(600)
+    expect(left).toContain(usedFile)
+  })
+})
+
+describe('bundleCacheEntryLimit', () => {
+  test('is 2000 unless STX_BUNDLE_CACHE_LIMIT says otherwise', () => {
+    expect(bundleCacheEntryLimit({})).toBe(2000)
+    expect(bundleCacheEntryLimit({ STX_BUNDLE_CACHE_LIMIT: '5000' })).toBe(5000)
+    expect(bundleCacheEntryLimit({ STX_BUNDLE_CACHE_LIMIT: 'lots' })).toBe(2000)
+    expect(bundleCacheEntryLimit({ STX_BUNDLE_CACHE_LIMIT: '0' })).toBe(2000)
   })
 })
