@@ -2,7 +2,13 @@ import type { NativeMutationOperation, NativeMutationPayload } from '../bridge/p
 import { LUCIDE_TO_SF } from '../compiler/icons'
 import type { STXNode } from '../compiler/ir'
 
-const SYMBOL_TO_ICON = Object.fromEntries(Object.entries(LUCIDE_TO_SF).map(([name, symbol]) => [symbol, name]))
+// Several icons share a symbol (apple, salad and leaf are all `leaf`): a bare
+// symbol draws the icon of its own name, else the first that maps to it.
+const SYMBOL_TO_ICON: Record<string, string> = {}
+for (const [name, symbol] of Object.entries(LUCIDE_TO_SF)) {
+  if (!(symbol in SYMBOL_TO_ICON) || name === symbol)
+    SYMBOL_TO_ICON[symbol] = name
+}
 const SVG_NS = 'http://www.w3.org/2000/svg'
 const SVG: Record<string, string> = { Svg: 'svg', G: 'g', Path: 'path', Line: 'line', Rect: 'rect', Circle: 'circle', Ellipse: 'ellipse', Polyline: 'polyline', Polygon: 'polygon', SvgText: 'text' }
 const TAGS: Record<string, string> = { View: 'div', SafeAreaView: 'div', ScrollView: 'div', KeyboardAvoidingView: 'div', Text: 'span', TextInput: 'input', Button: 'button', Link: 'a', TouchableOpacity: 'button', TouchableHighlight: 'button', Pressable: 'button', Icon: 'span', Image: 'img', ImageBackground: 'div', Video: 'video', FlatList: 'div', SectionList: 'div', Switch: 'input', Checkbox: 'input', Slider: 'input', Picker: 'select', DatePicker: 'input', Modal: 'dialog', ActivityIndicator: 'progress', StatusBar: 'div', RefreshControl: 'progress', Sidebar: 'aside', SplitView: 'div' }

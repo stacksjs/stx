@@ -145,6 +145,10 @@ describe('native class and icon compatibility', () => {
     // HQ's store, gear and breathwork screens.
     for (const name of ['battery-charging', 'bell-ring', 'ban', 'music-2', 'circle-arrow-down', 'clock-3', 'leaf', 'triangle-alert', 'heart-off', 'rectangle-horizontal', 'cylinder', 'disc', 'cable', 'armchair', 'box'])
       expect(resolveIconName(name)).toMatchObject({ known: true })
+    // HQ's habits and food log: food and drink, never the circle fallback.
+    for (const name of ['apple', 'bean', 'beef', 'cake-slice', 'carrot', 'cookie', 'cup-soda', 'drumstick', 'egg', 'fish', 'glass-water', 'hamburger', 'milk', 'nut', 'salad', 'soup', 'utensils', 'wheat', 'wine', 'messages-square', 'clock-alert'])
+      expect(resolveIconName(name)).toMatchObject({ known: true })
+    expect(resolveIconName('glass-water').symbol).toBe('waterbottle')
     expect(resolveIconName('triangle-alert').symbol).toBe('exclamationmark.triangle')
     expect(resolveIconName('heart.fill')).toEqual({ symbol: 'heart.fill', known: true })
     expect(resolveIconName('i-mdi-home')).toEqual({ symbol: 'circle', iconify: 'i-mdi-home', known: false })

@@ -234,6 +234,24 @@ describe('the browser peer of the native screen renderer', () => {
     expect(() => renderer.render({ id: 'root', type: 'View', props: {}, style: {}, events: {}, children: [{ id: 'gone', type: 'Icon', props: { symbol: 'missing.fill' }, style: {}, events: {}, children: [] }] })).toThrow('No browser icon registered')
   })
 
+  it('draws each icon that shares a platform symbol with its own glyph', () => {
+    const window = new Window()
+    const container = window.document.createElement('div')
+    window.document.body.appendChild(container)
+    const icons = { leaf: { body: '<path data-glyph="leaf"/>', width: 24, height: 24 }, salad: { body: '<path data-glyph="salad"/>', width: 24, height: 24 }, apple: { body: '<path data-glyph="apple"/>', width: 24, height: 24 } }
+    const renderer = new BrowserScreenRenderer(container as unknown as HTMLElement, { icons, event() {} })
+    const glyph = (id: string) => decodeURIComponent(container.querySelector(`[data-stx-node="${id}"]`)!.getAttribute('style') || '').match(/data-glyph="([^"]+)"/)?.[1]
+    renderer.render({ id: 'root', type: 'View', props: {}, style: {}, events: {}, children: [
+      { id: 'salad', type: 'Icon', props: { iconify: 'i-lucide-salad', symbol: 'leaf' }, style: {}, events: {}, children: [] },
+      { id: 'apple', type: 'Icon', props: { iconify: 'i-lucide-apple', symbol: 'leaf' }, style: {}, events: {}, children: [] },
+      // A bare symbol draws the icon of its own name, not the last one mapped to it.
+      { id: 'leaf', type: 'Icon', props: { symbol: 'leaf' }, style: {}, events: {}, children: [] },
+    ] })
+    expect(glyph('salad')).toBe('salad')
+    expect(glyph('apple')).toBe('apple')
+    expect(glyph('leaf')).toBe('leaf')
+  })
+
   it('draws nothing for a picture that cannot load, and shows the next one that does', () => {
     const { renderer, container, node, window } = fixture()
     renderer.render(node('root', 'View', [node('avatar', 'Image', [], { source: { uri: 'https://fixture.invalid/missing.png' }, accessibilityLabel: 'Pawel' })]))
