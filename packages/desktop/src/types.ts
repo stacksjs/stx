@@ -82,6 +82,8 @@ export interface SidebarConfig {
  * Window configuration options
  */
 export interface WindowOptions {
+  /** Load the native view without showing its window (macOS). */
+  headless?: boolean
   /** Window title */
   title?: string
   /** Window width in pixels */

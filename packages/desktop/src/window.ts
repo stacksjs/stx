@@ -362,6 +362,7 @@ export function craftWindowArguments(url: string, options: WindowOptions = {}): 
     '--height', String(options.height ?? 800),
   ]
 
+  if (options.headless) args.push('--headless')
   if (options.darkMode) args.push('--dark')
   if (options.hotReload) args.push('--hot-reload')
   if (options.resizable === false) args.push('--no-resize')
@@ -423,6 +424,7 @@ export async function createWindow(url: string, options: WindowOptions = {}): Pr
       // window type to pass them through.
       window: {
         title: options.title || 'stx Desktop',
+        headless: options.headless ?? false,
         width: options.width ?? 1200,
         height: options.height ?? 800,
         darkMode: options.darkMode ?? false,
@@ -518,6 +520,7 @@ export async function openDevWindow(port: number, options: WindowOptions = {}): 
         systemTray: useSystemTray,
         darkMode: options.darkMode ?? true,
         hotReload: options.hotReload ?? true,
+        headless: options.headless ?? false,
         devTools: true,
         titlebarHidden: options.titlebarHidden ?? false,
         nativeSidebar: options.nativeSidebar ?? false,
@@ -617,6 +620,7 @@ export async function createWindowWithHTML(html: string, options: WindowOptions 
       craftPath,
       window: {
         title,
+        headless: options.headless ?? false,
         width,
         height,
         darkMode,

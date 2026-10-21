@@ -8,7 +8,8 @@ it('stops host resources once when the native window exits', () => {
     mock.module('@stacksjs/desktop', () => ({
       createPreferences: () => ({ getAll: () => ({}), close: () => closed++ }),
       setAutoLaunch: async () => {},
-      createWindow: async () => {
+      createWindow: async (_url, options) => {
+        if (options.headless !== true) throw new Error('Menu bar preferences must start hidden')
         opened++
         return { close: () => onClosed(), onClosed: cb => { onClosed = cb } }
       },

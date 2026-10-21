@@ -79,6 +79,7 @@ describe('Window Management', () => {
         width: 320,
         height: 740,
         systemTray: true,
+        headless: true,
         hideDockIcon: true,
         titlebarHidden: true,
         alwaysOnTop: true,
@@ -87,6 +88,7 @@ describe('Window Management', () => {
       })
 
       expect(args).toContain('--system-tray')
+      expect(args).toContain('--headless')
       expect(args).toContain('--hide-dock-icon')
       expect(args).toContain('--titlebar-hidden')
       expect(args).toContain('--always-on-top')

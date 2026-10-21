@@ -122,6 +122,7 @@ const MENU_BAR_WINDOW: WindowOptions = {
   width: 320,
   height: 640,
   systemTray: true,
+  headless: true,
   hideDockIcon: true,
   titlebarHidden: true,
   resizable: false,
