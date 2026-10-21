@@ -103,6 +103,9 @@ export interface NativeBuildConfig {
    */
   menubarOnly?: boolean
 
+  /** A live webview attached to the status item, hidden until clicked (macOS). */
+  trayPopover?: boolean
+
   /**
    * Extra `Info.plist` keys, merged into the generated plist (macOS).
    *
@@ -339,7 +342,8 @@ async function buildMacOS(
       height: config.window?.height || 800,
       devTools: Boolean(config.devTools),
     }
-    if (menubarOnly) manifest.menubarOnly = true
+    if (config.trayPopover) manifest.trayPopover = true
+    else if (menubarOnly) manifest.menubarOnly = true
     else if (config.systemTray) manifest.systemTray = true
     if (config.window?.frameless) manifest.frameless = true
     if (config.window?.transparent) manifest.transparent = true
@@ -362,7 +366,7 @@ async function buildMacOS(
       `--title "${config.window?.title || appName}"`,
       `--width ${config.window?.width || 1200}`,
       `--height ${config.window?.height || 800}`,
-      menubarOnly ? '--menubar-only' : (config.systemTray ? '--system-tray' : ''),
+      config.trayPopover ? '--tray-popover' : menubarOnly ? '--menubar-only' : (config.systemTray ? '--system-tray' : ''),
       config.devTools ? '' : '--no-devtools',
       config.window?.frameless ? '--frameless' : '',
       config.window?.transparent ? '--transparent' : '',
@@ -403,7 +407,7 @@ exec "$DIR/craft" --html-file "$RESOURCES/index.html" \\
     LSMinimumSystemVersion: config.minimumSystemVersion || '13.0',
     NSHighResolutionCapable: true,
     NSSupportsAutomaticGraphicsSwitching: true,
-    LSUIElement: config.menubarOnly ?? Boolean(config.systemTray),
+    LSUIElement: config.trayPopover || (config.menubarOnly ?? Boolean(config.systemTray)),
     ...(hasIcon ? { CFBundleIconFile: 'AppIcon' } : {}),
     ...(config.category ? { LSApplicationCategoryType: config.category } : {}),
     ...(config.copyright ? { NSHumanReadableCopyright: config.copyright } : {}),
