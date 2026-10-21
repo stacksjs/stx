@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.642...v0.2.643)
+
+## ✨ Features
+
+- **native**: embed provisioning profiles and bind app entitlements ([7ea94ce](https://github.com/stacksjs/stx/commit/7ea94ce)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.643 ([0be41a3](https://github.com/stacksjs/stx/commit/0be41a3)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.641...v0.2.642)
 
 ## ✨ Features
