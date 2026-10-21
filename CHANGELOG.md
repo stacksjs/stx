@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.625...v0.2.626)
+
+## 🐛 Bug Fixes
+
+- **serve**: warm pages only while the bind is held ([f6d5af6](https://github.com/stacksjs/stx/commit/f6d5af6)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.626 ([0067e40](https://github.com/stacksjs/stx/commit/0067e40)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.624...v0.2.625)
 
 ## 🐛 Bug Fixes
