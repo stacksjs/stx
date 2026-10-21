@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 import { processLoops } from '../../src/loops'
+import { renderString } from '../../src/render'
 
 const render = (source: string, data: Record<string, any> = {}) => processLoops(source, data, 'loops.stx', { debug: false })
 
@@ -31,4 +32,40 @@ test('for interpolation recognizes nested object literals and URL attributes', (
 
 test('loop control text inside an expression is data', () => {
   expect(render("@for(let i = 0; i < 1; i++){{ '@break(true)' }}@endfor")).toBe('&#64;break(true)')
+})
+
+test('for loop break and continue obey conditions and retain rendered prefixes', () => {
+  expect(render('@for(let i = 0; i < 5; i++){{ i }}@if(i === 2)@break@endif@endfor')).toBe('012')
+  expect(render('@for(let i = 0; i < 3; i++){{ i }}@if(i === 1)@continue@endif!@endfor')).toBe('0!12!')
+})
+
+test('for loop break stops iteration before evaluating later loop updates', () => {
+  const steps: number[] = []
+  expect(render('@for(let i = 0; i < 5; steps.push(i++))@if(i === 2)@break@endif{{ i }}@endfor', { steps })).toBe('01')
+  expect(steps).toEqual([0, 1])
+})
+
+
+test('recursive for rendering keeps control text inside interpolations inert', () => {
+  expect(render("@for(let i = 0; i < 2; i++)@if(true){{ '@break(true)' }}@endif@endfor")).toBe('&#64;break(true)&#64;break(true)')
+  expect(render("@foreach(items as item){{ '@continue' }}@endforeach", { items: [1, 2] })).toBe('&#64;continue&#64;continue')
+})
+
+test('a nested while consumes its own controls', () => {
+  expect(render('@for(let i = 0; i < 2; i++)@if(true)@while(true)X@break@endwhile@endif@endfor')).toBe('XX')
+})
+
+test('control conditions run in source order and stop after an active continue', () => {
+  const queue = [true, false]
+  expect(render('@for(let i = 0; i < 2; i++)@if(true){{ i }}@endif@continue(queue.shift())@break(queue.shift())!@endfor', { queue })).toBe('01!')
+  expect(queue).toEqual([])
+})
+
+
+test('nested for controls stay within an outer foreach', () => {
+  expect(render('@foreach(items as item)[@for(let i = 0; i < 3; i++)@if(i === 1)@break@endif{{ item }}{{ i }}@endfor]@endforeach', { items: ['a', 'b'] })).toBe('[a0][b0]')
+})
+
+test('renderString stops a conditional for loop at its break', async () => {
+  expect(await renderString('@for(let i = 0; i < 4; i++)@if(i === 2)@break@endif{{ i }}@endfor')).toBe('01')
 })

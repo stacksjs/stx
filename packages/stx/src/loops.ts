@@ -47,7 +47,7 @@ import { parseLoopBinding } from './loop-binding'
 import type { StxOptions } from './types'
 import { processConditionals } from './conditionals'
 import { ErrorCodes, inlineError } from './error-handling'
-import { escapeInterpolatedHtmlValue, processExpressions, replaceInterpolations } from './expressions'
+import { escapeInterpolatedHtmlValue, findMustacheEnd, processExpressions, replaceInterpolations } from './expressions'
 import { findDirectiveBlocks, findMatchingDelimiter } from './parser'
 import { createSafeFunction, freeIdentifiers, isExpressionSafe, isForExpressionSafe, SANITIZE_CACHE, sanitizeExpression, safeEvaluate, safeEvaluateObject } from './safe-evaluator'
 
@@ -316,81 +316,45 @@ function processPropBindings(content: string, context: Record<string, any>): str
 const BREAK_MARKER = '<!--__STX_BREAK__-->'
 const CONTINUE_MARKER = '<!--__STX_CONTINUE__-->'
 
-/**
- * Process conditional @break(condition) and @continue(condition) directives.
- * These are evaluated immediately based on the condition.
- *
- * @param content - Loop iteration content
- * @param context - Current iteration context
- * @returns Processed content with break/continue markers where conditions were true
+/** Resolve controls in source order, outside interpolation expressions.
+ * Stop at the first active control so later conditions have no side effects.
  */
-function processConditionalLoopControl(
-  content: string,
-  context: Record<string, any>,
-): string {
-  let result = content
-
-  // Process @break(condition) - conditional break using safe evaluation (balanced parens)
-  result = replaceWithBalancedParens(result, '@break', (condition) => {
-    try {
-      const conditionTrimmed = condition.trim()
-      const boolExpr = `!!(${conditionTrimmed})`
-      let shouldBreak: boolean
-      if (isExpressionSafe(boolExpr)) {
-        const condFn = createSafeFunction(boolExpr, Object.keys(context))
-        shouldBreak = Boolean(condFn(...Object.values(context)))
-      }
-      else {
-        shouldBreak = Boolean(safeEvaluate(boolExpr, context))
-      }
-      return shouldBreak ? BREAK_MARKER : ''
+function processLoopControl(content: string, context: Record<string, any>): string {
+  const tokens = /\{\{\{?|\{!!|@(break|continue)(?![\w$])/g
+  let result = ''
+  let cursor = 0
+  for (let match = tokens.exec(content); match; match = tokens.exec(content)) {
+    if (!match[1]) {
+      const braces = match[0].length === 3 && match[0] === '{{{' ? 3 : 2
+      const end = match[0] === '{!!' ? content.indexOf('!!}', tokens.lastIndex) : findMustacheEnd(content, match.index, braces)
+      if (end < 0) break
+      tokens.lastIndex = end + (match[0] === '{!!' ? 3 : braces)
+      continue
     }
-    catch {
-      return '' // On error, don't break
-    }
-  })
-
-  // Process @continue(condition) - conditional continue using safe evaluation (balanced parens)
-  result = replaceWithBalancedParens(result, '@continue', (condition) => {
-    try {
-      const conditionTrimmed = condition.trim()
-      const boolExpr = `!!(${conditionTrimmed})`
-      let shouldContinue: boolean
-      if (isExpressionSafe(boolExpr)) {
-        const condFn = createSafeFunction(boolExpr, Object.keys(context))
-        shouldContinue = Boolean(condFn(...Object.values(context)))
+    let end = tokens.lastIndex
+    let shouldStop = true
+    const suffix = /^\s*\(/.exec(content.slice(end))
+    if (suffix) {
+      const open = end + suffix[0].length - 1
+      const close = findMatchingDelimiter(content, '(', ')', open)
+      if (close < 0) break
+      end = close + 1
+      try {
+        const expression = `!!(${content.slice(open + 1, close).trim()})`
+        shouldStop = isExpressionSafe(expression)
+          ? Boolean(createSafeFunction(expression, Object.keys(context))(...Object.values(context)))
+          : Boolean(safeEvaluate(expression, context))
       }
-      else {
-        shouldContinue = Boolean(safeEvaluate(boolExpr, context))
+      catch {
+        shouldStop = false
       }
-      return shouldContinue ? CONTINUE_MARKER : ''
     }
-    catch {
-      return '' // On error, don't continue
-    }
-  })
-
-  return result
-}
-
-/**
- * Process unconditional @break and @continue directives.
- * These should be called AFTER conditionals are processed, so @break/@continue
- * inside @if blocks are only visible when the condition is true.
- *
- * @param content - Loop iteration content (after conditionals processed)
- * @returns Processed content with break/continue markers
- */
-function processUnconditionalLoopControl(content: string): string {
-  let result = content
-
-  // Process @break - unconditional break
-  result = result.replace(/@break(?!\()/g, BREAK_MARKER)
-
-  // Process @continue - unconditional continue
-  result = result.replace(/@continue(?!\()/g, CONTINUE_MARKER)
-
-  return result
+    result += content.slice(cursor, match.index)
+    if (shouldStop) return result + (match[1] === 'break' ? BREAK_MARKER : CONTINUE_MARKER)
+    cursor = end
+    tokens.lastIndex = end
+  }
+  return result + content.slice(cursor)
 }
 
 /** Compile authored loop text without changing literal backslashes or bypassing
@@ -1040,10 +1004,9 @@ export function processLoops(template: string, context: Record<string, any>, fil
           // Expand inner loops before evaluating this loop's controls. A
           // conditional break in an inner body belongs to that inner scope.
           let processedContent = processForelse(content, itemContext)
-          processedContent = processForeachWithContext(processedContent, itemContext)
+          processedContent = processLoops(processedContent, itemContext, filePath, options, true)
           processedContent = processConditionals(processedContent, itemContext, filePath)
-          processedContent = processConditionalLoopControl(processedContent, itemContext)
-          processedContent = processUnconditionalLoopControl(processedContent)
+          processedContent = processLoopControl(processedContent, itemContext)
 
           // Preserve output before the first control, rendering it while the
           // iteration bindings still exist. Source order decides which wins.
@@ -1323,40 +1286,33 @@ function renderForLoopWithRecursion(args: {
 }): string {
   const { forExpr, content, iterVarNames, context, filePath, options } = args
 
-  // Run the loop in JS just to capture iter-var values per iteration.
-  // The body itself isn't evaluated here — we render it separately for
-  // each captured iteration so nested directives can be processed with
-  // the iter-var in scope.
   const contextKeys = Object.keys(context)
   const contextValues = Object.values(context)
-
-  // eslint-disable-next-line no-new-func
-  const captureFn = new Function(...contextKeys, '__pushIter', `
-    for (${forExpr}) {
-      __pushIter([${iterVarNames.join(', ')}])
-    }
-  `)
-
-  const captured: any[][] = []
-  captureFn(...contextValues, (vals: any[]) => { captured.push(vals) })
-
   const fp = filePath ?? 'inline.stx'
   let rendered = ''
-  for (const values of captured) {
+
+  // Render during iteration, so a break prevents later conditions and updates
+  // from running. Capturing every iteration first loses that control flow.
+  // eslint-disable-next-line no-new-func
+  const loopFn = new Function(...contextKeys, '__renderIteration', `
+    for (${forExpr}) {
+      if (!__renderIteration([${iterVarNames.join(', ')}])) break;
+    }
+  `)
+  loopFn(...contextValues, (values: any[]) => {
     const iterContext: Record<string, any> = { ...context }
     iterVarNames.forEach((name, idx) => { iterContext[name] = values[idx] })
 
-    // Recursive: nested @for + nested @foreach inside this body. Each
-    // recursive call sees only this iteration's slice of context, so
-    // nested loops can reference the outer iter-var.
-    let chunk = processForLoops(content, iterContext, filePath, options)
-    // @if/@unless branching inside the loop body — needs the iter-var
-    // in scope, which is exactly what we just merged into iterContext.
+    let chunk = processLoops(content, iterContext, fp, options, true)
     chunk = processConditionals(chunk, iterContext, fp)
-    // {{ expr }} / {!! expr !!} interpolation against the iter-context.
-    chunk = processExpressions(chunk, iterContext, fp)
-    rendered += chunk
-  }
+    chunk = processLoopControl(chunk, iterContext)
+    const breakAt = chunk.indexOf(BREAK_MARKER)
+    const continueAt = chunk.indexOf(CONTINUE_MARKER)
+    const stopAt = breakAt < 0 ? continueAt : continueAt < 0 ? breakAt : Math.min(breakAt, continueAt)
+    if (stopAt >= 0) chunk = chunk.slice(0, stopAt)
+    rendered += processExpressions(chunk, iterContext, fp)
+    return stopAt < 0 || stopAt !== breakAt
+  })
 
   return rendered
 }
