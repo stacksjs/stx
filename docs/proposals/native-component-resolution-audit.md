@@ -83,8 +83,10 @@ dark variants, reactive replacement, inline priority and lifecycle restoration.
 The host style contract has no independent ring width/color/inset/offset
 drawing fields. Rings remain diagnostics, not border/shadow approximations.
 Non-text control focus and keyboard modality (`focus-visible:`) also lack the
-necessary host events/state. `focus-within:` is not implemented; supporting
-ancestor state from descendant text-input events is additional STX work, and
-would still need to state the non-text-focus limitation. Full host focus and
-ring support, plus device validation, remain separate work; no Craft code was
-changed in this audit.
+necessary host events/state. STX now implements `focus-within:` from descendant
+text-input events: `focus-within-runtime.test.ts` verifies actual shared
+Card/TextInput ancestry, reactive styles, appearance changes, overlapping
+focus/blur delivery, removal, hiding, remount, reparenting and cloning.
+Non-text-focus coverage is still unavailable. Full host focus and ring support,
+plus device validation, remain separate work; no Craft code was changed in
+this audit.

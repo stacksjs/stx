@@ -76,6 +76,7 @@ interface NodeRecord {
   /** Current unsupported classes, bounded by this node's current class list. */
   reportedClasses?: Set<string>
   focused?: boolean
+  focusWithin?: boolean
   focusListenersInstalled?: boolean
   /** Reject results requested before a node was removed, even if it is reinserted. */
   viewEpoch?: number
@@ -286,6 +287,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     // gone and must not send another removeNode to the strict native host.
     record.materialized = false
     record.focused = false
+    record.focusWithin = false
     ;(node as RetainedNativeNode).__stxDetachedRecord = record
     record.children.forEach(retainDetachedDescriptors)
     records.delete(node.__stxId)
@@ -485,10 +487,13 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     for (const source of record.styleAncestors ?? []) inherited = parseNativeStyleLayers([source], inherited, report).variables
     const resolved = parseNativeStyleLayers([record.styleSource, record.boundStyle, record.forwardedStyle], inherited, report)
     record.variables = resolved.variables
-    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput' })
+    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput', focusWithin: true })
     const classStyle = { ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}) }
-    if (record.focused && classes.focus) {
-      const focused = { ...classes.focus.style, ...(colorScheme === 'dark' ? classes.focus.dark : {}) }
+    // Like utility variant ordering, direct focus overrides focus-within;
+    // authored inline/bound styles still win over both layers below.
+    for (const layer of [record.focusWithin && classes.focusWithin, record.focused && classes.focus]) {
+      if (!layer) continue
+      const focused = { ...layer.style, ...(colorScheme === 'dark' ? layer.dark : {}) }
       if (classStyle.transform && focused.transform) {
         const overridden = new Set(focused.transform.flatMap(step => Object.keys(step)))
         focused.transform = [...classStyle.transform.filter(step => !Object.keys(step).some(key => overridden.has(key))), ...focused.transform]
@@ -497,6 +502,18 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     }
     const style = applyNativeLayoutDefaults({ ...classStyle, ...resolved.styles[0], ...record.baseStyle, ...resolved.styles[1], ...resolved.styles[2] } as STXStyle)
     return { ...style, ...(record.visible && !isHiddenInput(record) ? {} : { display: 'none' }) }
+  }
+
+  function refreshFocusChain(node: NativeNode | null | undefined): void {
+    for (let current = node; current; current = current.__stxOwner) {
+      const record = descriptorOf(current)
+      if (!record) continue
+      const within = record.visible && (record.focused === true || record.children.some(child => descriptorOf(child)?.focusWithin === true))
+      const changed = record.focusWithin !== within
+      record.focusWithin = within
+      if (current.__stxAnchor === undefined && (changed || current === node))
+        applyClasses(current.__stxId, record, true)
+    }
   }
 
   function refreshStyleTree(node: NativeNode, inherited = node.__stxOwner ? descriptorOf(node.__stxOwner)?.variables : stylesheetVariables, appearanceChanged = false): void {
@@ -566,7 +583,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const changed = !onlyIfChanged || JSON.stringify(record.style) !== JSON.stringify(style)
     record.style = style
     if (record.materialized && changed) emit({ op: 'updateNode', id, patch: { style: { ...patch, ...style } } })
-    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput' })
+    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput', focusWithin: true })
     const unsupported = new Set(classes.unknown)
     for (const name of unsupported) {
       if (!record.reportedClasses?.has(name))
@@ -871,7 +888,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       record.props[prop] = value
       if (record.focused && disabled(record)) {
         record.focused = false
-        applyClasses(node.__stxId, record, true)
+        refreshFocusChain(node)
       }
       if (record.type === 'Icon' && prop === 'name') {
         const icon = resolveIconName(String(value ?? ''))
@@ -1021,10 +1038,14 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       registrations.set(nativeEvent, id)
       handlers.set(id, (payload) => {
         if (record.type === 'TextInput' && (nativeEvent === 'onFocus' || nativeEvent === 'onBlur')) {
-          const focused = nativeEvent === 'onFocus' && !disabled(record) && record.visible
+          let focused = nativeEvent === 'onFocus' && !disabled(record)
+          for (let current: NativeNode | null | undefined = node; focused && current; current = current.__stxOwner) {
+            const ancestor = descriptorOf(current)
+            if (!ancestor?.materialized || !ancestor.visible || ancestor.style.display === 'none') focused = false
+          }
           if (record.focused !== focused) {
             record.focused = focused
-            applyClasses(node.__stxId, record, true)
+            refreshFocusChain(node)
           }
         }
         if (disabled(record)) return
@@ -1123,7 +1144,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
           const child = descriptorOf(target)
           if (!child?.focused) continue
           child.focused = false
-          applyClasses(target.__stxId, child, true)
+          refreshFocusChain(target)
         }
       }
       // Hiding is an override on top of the node; showing takes it off again,
@@ -1241,6 +1262,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       refreshStyleTree(node, record.variables)
       insertIntoBindingParent(parent, node, index)
       setConnected(node, record.materialized)
+      // A focused keyed subtree can move between owners without being
+      // recreated. Its old ancestors must lose focus-within, its new ones gain it.
+      if (descriptorOf(node)?.focusWithin) {
+        if (oldOwner && oldOwner !== parent) refreshFocusChain(oldOwner)
+        refreshFocusChain(parent)
+      }
       if (oldOwner && oldOwner !== parent) notifyChildren(oldOwner)
       notifyChildren(parent)
 
@@ -1306,6 +1333,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
     remove(node) {
       const wasMaterialized = descriptorOf(node)?.materialized === true
+      const hadFocus = descriptorOf(node)?.focusWithin === true
       const owner = node.__stxOwner
       if (owner) {
         const record = recordOf(owner)
@@ -1322,6 +1350,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       setConnected(node, false)
       releaseHandlers(node)
       retainDetachedDescriptors(node)
+      if (hadFocus) refreshFocusChain(owner)
       notifyChildren(owner)
       if (node.__stxAnchor !== undefined || !wasMaterialized)
         return

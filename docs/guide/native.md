@@ -134,6 +134,15 @@ focus treatment. Dynamic classes, semantic colors, `dark:focus:` and
 `focus:dark:` changes work while focused; inline styles still take priority.
 On a wrapper component, use bubbling `@focusin`/`@focusout` to observe its field.
 
+`focus-within:` applies supported styles to a text input or its ancestor
+containers while a descendant text input is focused. For example, a shared
+`Card` can use `focus-within:border-accent`. Dark variants and reactive class
+updates work while focused; direct `focus:` takes priority over `focus-within:`,
+and inline styles take priority over both. Hiding/removing the focused subtree
+clears ancestor state; moving it transfers that state, and clones start
+unfocused. This tracks only focus the host reports for text inputs, not
+keyboard/accessibility focus on arbitrary controls.
+
 This does **not** implement CSS rings: `ring-*`, `ring-inset`, and ring offsets
 remain `unknown-class` diagnostics, including in focus variants. The maintained
 native style contract has no independent ring/offset drawing fields. STX does
