@@ -1180,10 +1180,16 @@ export async function renderComponentWithSlot(
       // from evaluated values: false checked still means the shared API.
       // Legacy value-change wins a mixed call; value alongside checked remains
       // a shared Checkbox's form submission value, not its checked state.
+      // `@change` is the primitive's own alias for a value change too (see
+      // event-names.ts), so `:value` with `@change` and no `checked` is the
+      // primitive: reading it as the shared control turned every such
+      // switch in two shipped apps into web markup that never fired.
       const checkedControl = options._nativeHostAttrs && /^(?:checkbox|switch)$/i.test(baseName)
       const eventNames = (renderMetadata?.events ?? []).map(name => name.replace(/^@/, '').split('.')[0].toLowerCase().replace(/-/g, ''))
+      const usesChecked = Object.hasOwn(props, 'checked') || Boolean(renderMetadata?.reactiveProps?.includes('checked'))
+      const usesValue = Object.hasOwn(props, 'value') || Boolean(renderMetadata?.reactiveProps?.includes('value'))
       const sharedCheckedUsage = !eventNames.includes('valuechange')
-        && (Object.hasOwn(props, 'checked') || renderMetadata?.reactiveProps?.includes('checked') || eventNames.includes('change'))
+        && (usesChecked || (eventNames.includes('change') && !usesValue))
       const targetIsFallback = options._targetComponentFallbackNames?.some(name => name.toLowerCase() === baseName.toLowerCase())
         && (!checkedControl || sharedCheckedUsage)
       for (const dir of targetIsFallback ? [] : options._targetComponentDirs ?? []) {

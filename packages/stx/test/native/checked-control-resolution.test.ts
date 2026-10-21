@@ -28,7 +28,9 @@ describe.each(['Checkbox', 'Switch'])('%s usage-based native resolution', (name)
     expect(result.dependencies).not.toContain(join(nativePrimitivesDir(), `${name}.stx`))
   }, 30_000)
 
-  it.each(['', 'value="true"', ':value="false"', '@value-change="noop()"', 'checked @value-change="noop()"'])('preserves primitive source for legacy usage %s', async (attributes) => {
+  // `:value` with `@change` is how apps wrote the primitive before the shared
+  // control existed: `change` has always been its value-change alias.
+  it.each(['', 'value="true"', ':value="false"', '@value-change="noop()"', 'checked @value-change="noop()"', ':value="selected()" @change="noop()"', 'value="true" @change.once="noop()"'])('preserves primitive source for legacy usage %s', async (attributes) => {
     const source = `<${name} ${attributes} />`
     const { file, root } = await fixture(source)
     const result = await compileScreenSource(source, file, { root })
