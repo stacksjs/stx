@@ -228,3 +228,8 @@ describe('showMessageBox against the bridge that actually ships', () => {
     expect(await showConfirmDialog('Empty the trash?')).toBe(false)
   })
 })
+
+it('reports native open-panel failure without substituting browser file names', async () => {
+  ;(window as any).craft = { dialog: { showOpenDialog: async () => { throw new Error('Native panel unavailable') } } }
+  await expect(showOpenDialog()).rejects.toThrow('Native panel unavailable')
+})

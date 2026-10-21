@@ -41,7 +41,10 @@ export const CRAFT_BRIDGE_SCRIPT = `
 (function() {
   'use strict';
 
-  // Skip if already initialized or not in Craft environment
+  // The host owns its wire protocol and full API. Replacing it with this
+  // legacy facade removes showOpenDialog/onFileDrop and posts incompatible
+  // method/params messages to a host that expects t/a/d.
+  if (window.craft && window.craft.__craft_bridge_loaded) return;
   if (window.__craftBridgeInitialized) return;
   window.__craftBridgeInitialized = true;
 
