@@ -90,6 +90,18 @@ if (router.deriveLayoutGroup('layouts/shop/product.stx') !== 'shop') throw new E
 if (!plugin) throw new Error('missing bun-plugin serve export')
 `])
 
+// #2107: dist/signals.js is a server-side generator, not the browser asset.
+// Inspect what the archived package emits, not debug strings in its sources.
+run([process.execPath, '-e', `
+const { generateSignalsRuntime, generateSignalsRuntimeDev } = await import('@stacksjs/stx/signals')
+const { buildRuntimeAsset } = await import('@stacksjs/stx/build-assets')
+for (const runtime of [generateSignalsRuntime(), buildRuntimeAsset().content]) {
+  if (/console\\s*\\.\\s*log\\s*\\(/.test(runtime)) throw new Error('Published production runtime leaks console.log (#2107)')
+  if (!runtime.includes('console.warn(') || !runtime.includes('console.error(')) throw new Error('Published runtime lost diagnostics')
+}
+if (!generateSignalsRuntimeDev().includes('console.log(')) throw new Error('Explicit debug runtime lost its logs')
+`])
+
 // The STX checker intentionally reports only its own generated buffers. An
 // ordinary tsc consumer must also reject errors inside shipped .ts sources.
 writeFileSync(join(smokeRoot, 'mouse-consumer.ts'), `import '@stacksjs/stx'

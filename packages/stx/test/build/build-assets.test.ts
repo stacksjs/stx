@@ -20,6 +20,17 @@ describe('Build Assets', () => {
   })
 
   describe('buildRuntimeAsset', () => {
+    it('strips logs from default build and serve assets, retaining opt-in debug and diagnostics (#2107)', async () => {
+      const { getCachedSignalsRuntime, getServeClientAsset } = await import('../../src/caching')
+      for (const content of [buildRuntimeAsset().content, await getCachedSignalsRuntime(), (await getServeClientAsset('runtime')).content]) {
+        expect(content).not.toMatch(/console\s*\.\s*log\s*\(/)
+        expect(content).toContain('console.warn(')
+        expect(content).toContain('console.error(')
+      }
+      expect(buildRuntimeAsset(true).content).toContain("console.log('[stx] signal.set:")
+      expect(await getCachedSignalsRuntime(true)).toContain("console.log('[stx] signal.set:")
+    })
+
     it('should produce a valid JS asset with fingerprinted filename', () => {
       const asset = buildRuntimeAsset()
       expect(asset.content).toContain('state')

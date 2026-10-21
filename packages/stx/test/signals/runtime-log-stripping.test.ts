@@ -15,6 +15,7 @@
  * fails.
  */
 import { describe, expect, it } from 'bun:test'
+import { Window } from 'very-happy-dom'
 import { generateSignalsRuntime, generateSignalsRuntimeDev } from '../../src/signals'
 
 function logSites(src: string): number {
@@ -22,6 +23,27 @@ function logSites(src: string): number {
 }
 
 describe('signals runtime log stripping (#1873)', () => {
+  it.each([false, true])('executes signal updates quietly unless debug is explicitly enabled (#2107, debug=%s)', (debug) => {
+    const window = new Window()
+    const logs: unknown[][] = []
+    const runtime = debug ? generateSignalsRuntimeDev() : generateSignalsRuntime()
+    try {
+      const execute = new Function('window', 'document', 'Node', 'console', runtime)
+      execute(window, window.document, window.Node, { ...console, log: (...args: unknown[]) => logs.push(args) })
+      const stx = (window as any).stx
+      const value = stx.state(0)
+      const observed: number[] = []
+      const unsubscribe = value.subscribe((next: number) => observed.push(next))
+      for (let next = 1; next <= 20; next++) value.set(next)
+      expect(value()).toBe(20)
+      expect(observed).toEqual(Array.from({ length: 20 }, (_, index) => index + 1))
+      unsubscribe()
+      if (debug) expect(logs.some(args => args[0] === '[stx] signal.set:')).toBe(true)
+      else expect(logs).toEqual([])
+    }
+    finally { window.close() }
+  })
+
   it('keeps console.log in the dev runtime', () => {
     // Deliberate: the dev runtime is what a terminal/dev server shows.
     expect(logSites(generateSignalsRuntimeDev())).toBeGreaterThan(0)
