@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.641...v0.2.642)
+
+## ✨ Features
+
+- **native**: apply app capability entitlements during macOS signing ([89be9e1](https://github.com/stacksjs/stx/commit/89be9e1)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.642 ([c7ee64e](https://github.com/stacksjs/stx/commit/c7ee64e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.640...v0.2.641)
 
 ## 🐛 Bug Fixes
