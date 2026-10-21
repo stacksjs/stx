@@ -4,6 +4,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { signMacOSBundle } from '../src/native-signing'
 
+test.skipIf(process.platform !== 'darwin')('a provisioning profile requires a real signing identity', async () => {
+  await expect(signMacOSBundle('/unused.app', [], { provisioningProfile: '/unused.profile' })).rejects.toThrow('requires a signing identity')
+})
+
 test.skipIf(process.platform !== 'darwin')('macOS signing binds the app identity and rejects changed resources', async () => {
   const work = mkdtempSync(join(tmpdir(), 'stx-signing-'))
   try {
