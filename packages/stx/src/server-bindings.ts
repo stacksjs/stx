@@ -20,6 +20,8 @@
  * @module server-bindings
  */
 
+import { classifyHtmlInterpolation, UnsafeInterpolationContextError } from './interpolation-context'
+import { escapeAttributeValue, escapeHtmlValue } from './expressions'
 import { inheritedClientLoopNames, loopBoundNames, readsAnyName } from './loop-binding'
 import { isRuntimeOwnedColonAttr } from './runtime-globals'
 
@@ -197,6 +199,8 @@ export function processServerBindings(
 
     // eslint-disable-next-line no-cond-assign
     while ((attrMatch = bindingRegex.exec(attrs)) !== null) {
+      if (classifyHtmlInterpolation(attrs, attrMatch.index, true)?.kind === 'attribute')
+        continue
       const attrName = attrMatch[1]
       const expression = attrMatch[2]
 
@@ -257,18 +261,18 @@ export function processServerBindings(
 
         // Handle :class specially (supports object/array syntax)
         if (attrName === 'class') {
-          const classStr = resolveClassBinding(value)
+          const classStr = escapeHtmlValue(resolveClassBinding(value))
           if (classStr) {
             // Merge with existing static class if present
             const existingClassMatch = newAttrs.match(/\sclass="([^"]*)"/)
             if (existingClassMatch) {
               newAttrs = newAttrs.replace(
                 existingClassMatch[0],
-                ` class="${existingClassMatch[1]} ${classStr}"`,
+                () => ` class="${existingClassMatch[1]} ${classStr}"`,
               )
             }
             else {
-              newAttrs = newAttrs.replace(attrMatch[0], ` class="${classStr}"`)
+              newAttrs = newAttrs.replace(attrMatch[0], () => ` class="${classStr}"`)
             }
           }
           else {
@@ -296,16 +300,14 @@ export function processServerBindings(
         }
         else {
           const serialized = nativeHost && typeof value === 'object' ? JSON.stringify(value) : String(value)
-          const escaped = serialized
-            .replace(/&/g, '&amp;')
-            .replace(/"/g, '&quot;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-          newAttrs = newAttrs.replace(attrMatch[0], ` ${attrName}="${escaped}"`)
+          const escaped = escapeAttributeValue(attrName, serialized)
+          newAttrs = newAttrs.replace(attrMatch[0], () => ` ${attrName}="${escaped}"`)
         }
         hadReplacement = true
       }
-      catch {
+      catch (error) {
+        if (error instanceof UnsafeInterpolationContextError)
+          throw error
         // Expression can't be evaluated server-side — leave for client
         continue
       }

@@ -42,17 +42,12 @@
  */
 
 import type { BuiltinComponentDef, RenderContext, ResolvedProps } from '../component-registry'
+import { escapeAttr } from './escape'
 import { forwardResolvedAttrs, forwardStaticAttrs } from './attrs'
 
 const DEFAULT_FALLBACK = '/images/safe-image-default.svg'
 
-function escapeAttr(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-}
+
 
 function resolveProp(props: ResolvedProps, key: string): string | undefined {
   if (props.serverDynamic[key] !== undefined)

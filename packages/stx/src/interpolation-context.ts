@@ -1,3 +1,5 @@
+import { findMustacheEnd } from './mustache-span'
+
 export interface AttributeInterpolationContext {
   kind: 'attribute'
   name: string
@@ -29,12 +31,46 @@ export function classifyHtmlInterpolation(
   offset: number,
   attributeFragment: boolean = false,
 ): HtmlInterpolationContext {
-  const before = source.slice(0, offset)
-  const openTag = before.lastIndexOf('<')
-  const closeTag = before.lastIndexOf('>')
+  // Earlier authored expressions are holes in HTML, including their quotes
+  // and delimiters. They must not change the surrounding attribute state.
+  let before = ''
+  let start = 0
+  for (let index = 0; index < offset; index++) {
+    if (!source.startsWith('{{', index))
+      continue
+    const end = findMustacheEnd(source, index)
+    if (end < 0 || end + 2 > offset)
+      break
+    before += source.slice(start, index) + 'x'
+    index = end + 1
+    start = end + 2
+  }
+  before += source.slice(start, offset)
 
-  if (openTag >= 0 && closeTag > openTag)
-    return null
+  // Delimiters inside quoted values are data. Looking for the last `>`
+  // loses the current tag for perfectly valid HTML such as title="a > b".
+  let openTag = -1
+  let quote: '"' | "'" | null = null
+  for (let index = 0; index < before.length; index++) {
+    const char = before[index]
+    if (quote) {
+      if (char === quote)
+        quote = null
+      continue
+    }
+    if (openTag >= 0 || attributeFragment) {
+      if (char === '"' || char === "'") {
+        quote = char
+        continue
+      }
+      if (char === '>') {
+        openTag = -1
+        continue
+      }
+    }
+    if (char === '<')
+      openTag = index
+  }
 
   if (openTag < 0 && !attributeFragment)
     return null
@@ -46,37 +82,47 @@ export function classifyHtmlInterpolation(
   if (openTag >= 0 && /^\s*$/.test(tail))
     return { kind: 'tag-name' }
 
-  const doubleQuoted = /(?:^|\s)([^\s"'<>/=]+)\s*=\s*"([^"]*)$/.exec(tail)
-  if (doubleQuoted) {
-    return {
-      kind: 'attribute',
-      name: doubleQuoted[1],
-      quote: '"',
-      valuePrefix: doubleQuoted[2],
+  // Walk actual attributes in order. A suffix that looks like `title="`
+  // can itself be text inside onclick='...' or srcdoc='...'.
+  let cursor = 0
+  if (openTag >= 0) {
+    while (cursor < tail.length && !/\s/.test(tail[cursor]))
+      cursor++
+  }
+  while (cursor < tail.length) {
+    while (/\s/.test(tail[cursor] ?? '') && cursor < tail.length)
+      cursor++
+    const nameStart = cursor
+    while (cursor < tail.length && !/[\s=/>]/.test(tail[cursor]))
+      cursor++
+    const name = tail.slice(nameStart, cursor)
+    if (!name)
+      break
+    while (cursor < tail.length && /\s/.test(tail[cursor]))
+      cursor++
+    if (tail[cursor] !== '=')
+      continue
+    cursor++
+    while (cursor < tail.length && /\s/.test(tail[cursor]))
+      cursor++
+    const delimiter = tail[cursor]
+    if (delimiter === '"' || delimiter === "'") {
+      const valueStart = ++cursor
+      const end = tail.indexOf(delimiter, cursor)
+      if (end === -1)
+        return { kind: 'attribute', name, quote: delimiter, valuePrefix: tail.slice(valueStart) }
+      cursor = end + 1
+    }
+    else {
+      const valueStart = cursor
+      while (cursor < tail.length && !/\s/.test(tail[cursor]))
+        cursor++
+      if (cursor === tail.length)
+        return { kind: 'attribute', name, quote: null, valuePrefix: tail.slice(valueStart) }
     }
   }
 
-  const singleQuoted = /(?:^|\s)([^\s"'<>/=]+)\s*=\s*'([^']*)$/.exec(tail)
-  if (singleQuoted) {
-    return {
-      kind: 'attribute',
-      name: singleQuoted[1],
-      quote: "'",
-      valuePrefix: singleQuoted[2],
-    }
-  }
-
-  const unquoted = /(?:^|\s)([^\s"'<>/=]+)\s*=\s*([^\s"'=<>`]*)$/.exec(tail)
-  if (unquoted) {
-    return {
-      kind: 'attribute',
-      name: unquoted[1],
-      quote: null,
-      valuePrefix: unquoted[2],
-    }
-  }
-
-  return openTag >= 0 || /^\s*[^<>]*$/.test(tail) ? { kind: 'tag' } : null
+  return { kind: 'tag' }
 }
 
 export class UnsafeInterpolationContextError extends Error {

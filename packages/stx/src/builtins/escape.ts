@@ -9,11 +9,8 @@
  * Escapes the five attribute-significant characters. Safe for both double- and
  * single-quoted attribute contexts.
  */
+import { escapeHtmlValue } from '../expressions'
+
 export function escapeAttr(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
+  return escapeHtmlValue(value)
 }

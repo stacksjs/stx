@@ -63,6 +63,7 @@ else {
  * - `getTranslationCacheStats()` - Get cache statistics
  */
 
+import { escapeInterpolatedHtmlValue } from './expressions'
 import type { I18nConfig, StxOptions } from './types'
 import path from 'node:path'
 import { ErrorCodes, inlineError } from './error-handling'
@@ -1313,7 +1314,7 @@ export function getTranslation(
     const escapedKey = paramKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     result = result.replace(
       new RegExp(`:${escapedKey}`, 'g'),
-      String(paramValue),
+      () => String(paramValue),
     )
   }
 
@@ -1505,7 +1506,7 @@ export async function processTranslateDirective(
       const translation = getTranslation(key, translations, i18nConfig.fallbackToKey, params)
 
       // Return the translation or fallback to the content if no translation found
-      return translation || content.trim()
+      return translation ? escapeInterpolatedHtmlValue(output, _offset, translation, false, _match.length) : content.trim()
     }
     catch (error) {
       if (options.debug) {
@@ -1577,7 +1578,7 @@ export async function processTranslateDirective(
       }
 
       // Get the translation
-      return getTranslation(key, translations, i18nConfig.fallbackToKey, params)
+      return escapeInterpolatedHtmlValue(output, _offset, getTranslation(key, translations, i18nConfig.fallbackToKey, params), false, _match.length)
     }
     catch (error) {
       if (options.debug) {
@@ -1612,7 +1613,7 @@ async function replaceAsync(
 
   const results = await Promise.all(promises)
   return results.reduce(
-    (str, { match, replacement }) => str.replace(match, replacement),
+    (str, { match, replacement }) => str.replace(match, () => replacement),
     str,
   )
 }

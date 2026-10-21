@@ -9,19 +9,14 @@
  */
 
 import type { BuiltinComponentDef, ResolvedProps, RenderContext } from '../component-registry'
+import { escapeAttr } from './escape'
 import { forwardResolvedAttrs, forwardStaticAttrs } from './attrs'
 import { sanitizeUrlValue } from '../url-safety'
 
 /**
  * Escape a string for safe use inside an HTML attribute value.
  */
-function escapeAttr(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-}
+
 
 /**
  * Resolve the `to` prop from any binding category.

@@ -27,6 +27,7 @@
  */
 
 import type { BuiltinComponentDef, ResolvedProps, RenderContext } from '../component-registry'
+import { escapeAttr } from './escape'
 import { forwardResolvedAttrs, forwardStaticAttrs } from './attrs'
 import { efficientDeliverySources, getImageDelivery, isTransparentImage } from './image-delivery'
 import { getImagePlaceholder } from './image-placeholder'
@@ -44,13 +45,7 @@ const DEFAULT_BREAKPOINTS: Record<string, number> = {
 // Default widths for srcset generation
 const DEFAULT_SRCSET_WIDTHS = [320, 640, 768, 1024, 1280, 1536, 1920]
 
-function escapeAttr(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-}
+
 
 function resolveProp(props: ResolvedProps, key: string): string | undefined {
   if (props.serverDynamic[key] !== undefined) return String(props.serverDynamic[key])

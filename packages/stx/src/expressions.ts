@@ -31,6 +31,8 @@
  * i18n: translate, pluralize, date
  */
 
+import { findMustacheEnd } from './mustache-span'
+export { findMustacheEnd } from './mustache-span'
 import fs from 'node:fs'
 import { isDevelopment } from './env'
 import { stripCommentsAndLiterals } from './strip-literals'
@@ -180,7 +182,7 @@ export const defaultFilters: Record<string, FilterFunction> = {
     Object.entries(params).forEach(([paramKey, paramValue]) => {
       result = result.replace(
         getTranslateRegex(paramKey),
-        String(paramValue),
+        () => String(paramValue),
       )
     })
 
@@ -443,66 +445,6 @@ export function clearCustomFilters(): void {
 }
 
 /**
- * The index of the `}` that starts the `}}` closing a mustache span opened at
- * `openIndex` (the index of its first `{`), or -1 when nothing closes it.
- *
- * Not to be confused with strip-literals' findInterpolationEnd, which closes a
- * JS `${ ... }` interpolation on a single brace.
- *
- * Braces inside the expression are counted and string literals are skipped, so
- * the span is read whole. The matchers here were `/\{\{([\s\S]*?)\}\}/`, which
- * is lazy and knows neither, so ONE level of object nesting ended the
- * expression early:
- *
- *   {{ JSON.stringify({a:1}) }}      worked
- *   {{ JSON.stringify({a:{b:1}}) }}  became `JSON.stringify({a:{b:1`
- *
- * The truncated expression failed to evaluate, which yields empty, and the rest
- * of it leaked as literal text -- pages shipped `) }}` where a value belonged,
- * including inside attribute values, with no error and no warning. A `}}` in a
- * string (`{{ "a}}b" }}`) ended it early the same way.
- */
-export function findMustacheEnd(input: string, openIndex: number, braces: number = 2): number {
-  let depth = 0
-  let quote: string | null = null
-
-  for (let i = openIndex + braces; i < input.length; i++) {
-    const character = input[i]
-
-    if (quote) {
-      if (character === '\\') {
-        i++
-        continue
-      }
-      if (character === quote)
-        quote = null
-      continue
-    }
-
-    if (character === '"' || character === '\'' || character === '`') {
-      quote = character
-      continue
-    }
-    if (character === '{') {
-      depth++
-      continue
-    }
-    if (character === '}') {
-      if (depth > 0) {
-        depth--
-        continue
-      }
-      let run = 0
-      while (input[i + run] === '}') run++
-      if (run >= braces)
-        return i
-    }
-  }
-
-  return -1
-}
-
-/**
  * Replace every `{{ expr }}` span in `input`, each read whole by
  * findMustacheEnd.
  *
@@ -630,7 +572,7 @@ function assertSafeCssInterpolation(value: string, attribute: string): void {
 }
 
 /** Escape a value according to the HTML context it will occupy. */
-function escapeInterpolatedHtmlValue(
+export function escapeInterpolatedHtmlValue(
   source: string,
   offset: number,
   raw: string,
@@ -692,6 +634,12 @@ function escapeInterpolatedHtmlValue(
     return UNSAFE_URL_PREFIX + escaped
 
   return sanitizeSubstitutedUrl(schemeWindow(source, offset), raw, escaped)
+}
+
+/** Serialize a resolved DOM value using the same policy as {{ value }}. */
+export function escapeAttributeValue(name: string, value: string): string {
+  const source = ` ${name}="`
+  return escapeInterpolatedHtmlValue(source, source.length, value, true)
 }
 
 /**
@@ -1029,7 +977,13 @@ export function interpolateScriptExpressions(
       // contains a literal script tag that a downstream scanner would treat as
       // a real boundary. generateServerDataBridge already does exactly this
       // (client-script.ts); this sibling path was missed (#1792).
-      return JSON.stringify(value).replace(/</g, '\\u003c')
+      return JSON.stringify(value)
+        .replace(/</g, '\\u003c')
+        // JSON contains @ only inside strings. Escaping it and template-open
+        // braces preserves the JavaScript value across later directive passes.
+        .replace(/@/g, '\\u0040')
+        .replace(/\{{2,}/g, braces => '\\u007b'.repeat(braces.length))
+        .replace(/\{(?=!)/g, '\\u007b')
     }
     catch {
       return match
@@ -1129,14 +1083,13 @@ export function interpolateScriptsInTemplate(
 ): string {
   const { output, scripts } = stashScriptElements(template)
   const interpolatedScripts = scripts.map((full) => {
-    const match = full.match(/^<script\b([^>]*)>([\s\S]*?)<\/script\s*>$/i)
-    const opening = full.match(/^<script\b[^>]*>/i)
+    const opening = full.match(/^<script\b((?:[^>\"']|\"[^\"]*\"|'[^']*')*)>/i)
     const closingStart = full.search(/<\/script\s*>$/i)
-    if (!match || !opening || closingStart === -1)
+    if (!opening || closingStart === -1)
       return full
 
-    const attrs = match[1]
-    const body = match[2]
+    const attrs = opening[1]
+    const body = full.slice(opening[0].length, closingStart)
 
     // `data-raw` opts the whole tag out; a server script's body is executed
     // rather than emitted, so templating either would be wrong.

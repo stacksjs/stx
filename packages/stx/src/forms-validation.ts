@@ -17,6 +17,8 @@
  */
 
 
+import { processExpressions } from './expressions'
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -575,7 +577,7 @@ else {
       // Render the body for each error
       return errors
         .map((message) => {
-          return body.replace(/\{\{\s*message\s*\}\}/g, message)
+          return processExpressions(body, { ...context, message }, _filePath)
         })
         .join('\n')
     }
@@ -623,7 +625,7 @@ else {
       }
 
       return errors
-        .map((message) => body.replace(/\{\{\s*message\s*\}\}/g, message))
+        .map((message) => processExpressions(body, { ...context, message }, _filePath))
         .join('\n')
     }
 catch {

@@ -57,17 +57,12 @@
  */
 import type { StxOptions } from './types'
 import crypto from 'node:crypto'
+import { escapeHtmlValue, escapeInterpolatedHtmlValue } from './expressions'
 import { isExpressionSafe, safeEvaluate } from './safe-evaluator'
 
 /** Escape HTML special characters in attribute values and content */
 function escapeAttr(str: unknown): string {
-  const s = String(str ?? '')
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
+  return escapeHtmlValue(String(str ?? ''))
 }
 
 // =============================================================================
@@ -551,27 +546,28 @@ export function processErrorDirective(
       // Check if errors object exists and has the specified field
       if (hasFieldError(field, context)) {
         // Replace any expressions in the content with actual values
-        const rendered = content.replace(/\{\{([^}]+)\}\}/g, (_: string, expr: string) => {
+        const rendered = content.replace(/\{\{([^}]+)\}\}/g, (_: string, expr: string, offset: number) => {
+          const escape = (value: unknown): string => escapeInterpolatedHtmlValue(content, offset, String(value ?? ''), false, _.length)
           try {
             // Simple expression evaluation for error messages
             if (expr.trim() === '$message' || expr.trim() === 'message') {
-              return getErrorMessage(field, context)
+              return escape(getErrorMessage(field, context))
             }
 
             // Handle expressions with errors.first() call
             if (expr.trim().includes('errors.first') || expr.trim().includes('$errors.first')) {
               // Extract the message using the errors.first method
               if (typeof context.errors?.first === 'function') {
-                return context.errors.first(field)
+                return escape(context.errors.first(field))
               }
-              return getErrorMessage(field, context)
+              return escape(getErrorMessage(field, context))
             }
 
             // For other expressions, try to evaluate them using safe evaluation
             const trimmedExpr = expr.trim()
             if (isExpressionSafe(trimmedExpr)) {
               const result = safeEvaluate(trimmedExpr, context)
-              return result !== undefined ? String(result) : trimmedExpr
+              return result !== undefined ? escape(result) : trimmedExpr
             }
             return trimmedExpr
           }

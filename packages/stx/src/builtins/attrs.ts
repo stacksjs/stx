@@ -14,7 +14,7 @@
  */
 
 import type { ResolvedProps } from '../component-registry'
-import { escapeAttr } from './escape'
+import { escapeAttributeValue, escapeHtml } from '../expressions'
 import { BOOLEAN_ATTRIBUTE_SENTINEL, stripControlChars } from '../prop-sentinels'
 
 /**
@@ -74,7 +74,7 @@ export function forwardStaticAttrs(props: ResolvedProps, consumed: Set<string>):
 
     if (typeof value === 'boolean') {
       if (value)
-        attrs.push(escapeAttr(name))
+        attrs.push(escapeHtml(name))
       continue
     }
 
@@ -85,14 +85,14 @@ export function forwardStaticAttrs(props: ResolvedProps, consumed: Set<string>):
     // into attributes on the element, so `@else` lands on a builtin as a bare
     // attribute and gets forwarded here.
     if (value === BOOLEAN_ATTRIBUTE_SENTINEL) {
-      attrs.push(escapeAttr(name))
+      attrs.push(escapeHtml(name))
       continue
     }
 
     // stripControlChars is belt and braces: a NUL in a response makes the whole
     // document invalid UTF-8, which is a disproportionate failure for the cost
     // of one check.
-    attrs.push(`${escapeAttr(name)}="${escapeAttr(stripControlChars(String(value)))}"`)
+    attrs.push(`${escapeHtml(name)}="${escapeAttributeValue(name, stripControlChars(String(value)))}"`)
   }
 
   return attrs
@@ -129,7 +129,7 @@ export function forwardResolvedAttrs(props: ResolvedProps, consumed: Set<string>
     const name = props.serverDynamicNames?.[key] ?? key
 
     if (value === true) {
-      attrs.push(escapeAttr(name))
+      attrs.push(escapeHtml(name))
       continue
     }
 
@@ -139,7 +139,7 @@ export function forwardResolvedAttrs(props: ResolvedProps, consumed: Set<string>
     if (typeof value === 'object')
       continue
 
-    attrs.push(`${escapeAttr(name)}="${escapeAttr(stripControlChars(String(value)))}"`)
+    attrs.push(`${escapeHtml(name)}="${escapeAttributeValue(name, stripControlChars(String(value)))}"`)
   }
 
   return attrs

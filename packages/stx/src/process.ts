@@ -1240,7 +1240,12 @@ async function processDirectivesInternal(
       // empty section, so the missed reference is debuggable.
       if (value === undefined)
         return full
-      sections[name] = String(value ?? '')
+      // Keep evaluated section values as data until the layout gives them an
+      // HTML context. Substituting String(value) here lets the next directive
+      // pass execute supplied @js text and skips attribute/URL escaping.
+      const inlineValues = context.__stx_inline_section_values ??= []
+      const index = inlineValues.push(value) - 1
+      sections[name] = `{{ __stx_inline_section_values[${index}] }}`
       return ''
     }
     catch {
@@ -1796,6 +1801,11 @@ async function processOtherDirectives(
   // All other scripts (no attribute, 'client', 'type="module"', 'src=') are client-side
   output = await extractServerScriptVariables(output, context, filePath, options)
 
+  // Process JS/TS directives FIRST - these define variables needed by other directives
+  // These execute server-side code and populate the context with variables
+  output = await processJsDirectives(output, context, filePath)
+  output = await processTsDirectives(output, context, filePath)
+
   // Interpolate server-side {{ expr }} / {!! expr !!} inside every non-server
   // <script> body (client / signals / bare) so pages can splice server data
   // into client code: `const PRICE = {{ car.price }}` → `const PRICE = 89`.
@@ -1812,11 +1822,6 @@ async function processOtherDirectives(
   // BEFORE any downstream processing that consumes script bodies (script
   // setup wrapping, signals transformation, minification).
   output = await interpolateClientScriptExpressions(output, context, filePath)
-
-  // Process JS/TS directives FIRST - these define variables needed by other directives
-  // These execute server-side code and populate the context with variables
-  output = await processJsDirectives(output, context, filePath)
-  output = await processTsDirectives(output, context, filePath)
 
   // Process custom directives
   output = await processCustomDirectives(output, context, filePath, opts)
