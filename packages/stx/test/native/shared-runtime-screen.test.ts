@@ -287,7 +287,11 @@ function select(id) { selected.set(id) }
     expect(beaButton).toBeTruthy()
     expect(beaInput).toBeTruthy()
     expect(adaButton).toBeTruthy()
+    // Text inputs now install focus tracking as they materialize. Authored
+    // handlers join that existing multiplexer, so its id can arrive in the
+    // createNode rather than a later updateNode. Exercise that exact id below.
     const beaFocus = initialOps.find(operation => operation.id === beaInput && operation.patch?.events?.onFocus)?.patch.events.onFocus
+      ?? initialOps.find(operation => operation.id === beaInput && operation.op === 'createNode')?.node.events.onFocus
     expect(beaFocus).toMatch(/^h/)
 
     const reorderId = (compiled.document.root.children[2] as any).props.__stxId

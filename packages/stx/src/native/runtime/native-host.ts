@@ -75,6 +75,8 @@ interface NodeRecord {
   forwardedStyle?: unknown
   /** Current unsupported classes, bounded by this node's current class list. */
   reportedClasses?: Set<string>
+  focused?: boolean
+  focusListenersInstalled?: boolean
   /** Reject results requested before a node was removed, even if it is reinserted. */
   viewEpoch?: number
   events: Record<string, string>
@@ -283,6 +285,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     // :if can dispose its own children afterwards; those views are already
     // gone and must not send another removeNode to the strict native host.
     record.materialized = false
+    record.focused = false
     ;(node as RetainedNativeNode).__stxDetachedRecord = record
     record.children.forEach(retainDetachedDescriptors)
     records.delete(node.__stxId)
@@ -417,6 +420,14 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
   function installControlListeners(node: NativeNode): void {
     const record = descriptorOf(node)
+    // Track even when no focus class exists yet: a reactive :class can add
+    // one while the field is already focused. Use the existing multiplexer
+    // so authored focus/blur listeners retain their handler and ordering.
+    if (record?.type === 'TextInput' && !record.focusListenersInstalled) {
+      record.focusListenersInstalled = true
+      host.listen(node, 'focus', () => {})
+      host.listen(node, 'blur', () => {})
+    }
     if (!record || controlsWithDefaultListeners.has(node)) return
     let delegatedPress = false
     if (record.type === 'Button' || record.type === 'Pressable') {
@@ -474,8 +485,17 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     for (const source of record.styleAncestors ?? []) inherited = parseNativeStyleLayers([source], inherited, report).variables
     const resolved = parseNativeStyleLayers([record.styleSource, record.boundStyle, record.forwardedStyle], inherited, report)
     record.variables = resolved.variables
-    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables)
-    const style = applyNativeLayoutDefaults({ ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}), ...resolved.styles[0], ...record.baseStyle, ...resolved.styles[1], ...resolved.styles[2] } as STXStyle)
+    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput' })
+    const classStyle = { ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}) }
+    if (record.focused && classes.focus) {
+      const focused = { ...classes.focus.style, ...(colorScheme === 'dark' ? classes.focus.dark : {}) }
+      if (classStyle.transform && focused.transform) {
+        const overridden = new Set(focused.transform.flatMap(step => Object.keys(step)))
+        focused.transform = [...classStyle.transform.filter(step => !Object.keys(step).some(key => overridden.has(key))), ...focused.transform]
+      }
+      Object.assign(classStyle, focused)
+    }
+    const style = applyNativeLayoutDefaults({ ...classStyle, ...resolved.styles[0], ...record.baseStyle, ...resolved.styles[1], ...resolved.styles[2] } as STXStyle)
     return { ...style, ...(record.visible && !isHiddenInput(record) ? {} : { display: 'none' }) }
   }
 
@@ -546,7 +566,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const changed = !onlyIfChanged || JSON.stringify(record.style) !== JSON.stringify(style)
     record.style = style
     if (record.materialized && changed) emit({ op: 'updateNode', id, patch: { style: { ...patch, ...style } } })
-    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables)
+    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput' })
     const unsupported = new Set(classes.unknown)
     for (const name of unsupported) {
       if (!record.reportedClasses?.has(name))
@@ -849,6 +869,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const record = recordOf(node)
       const accessibilityBefore = prop === 'role' || prop.startsWith('aria-') || prop.startsWith('accessibility') ? projectAccessibility(record.props) : undefined
       record.props[prop] = value
+      if (record.focused && disabled(record)) {
+        record.focused = false
+        applyClasses(node.__stxId, record, true)
+      }
       if (record.type === 'Icon' && prop === 'name') {
         const icon = resolveIconName(String(value ?? ''))
         this.setAttribute(node, 'iconify', icon.iconify ?? null)
@@ -996,6 +1020,13 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const id = nextId('h')
       registrations.set(nativeEvent, id)
       handlers.set(id, (payload) => {
+        if (record.type === 'TextInput' && (nativeEvent === 'onFocus' || nativeEvent === 'onBlur')) {
+          const focused = nativeEvent === 'onFocus' && !disabled(record) && record.visible
+          if (record.focused !== focused) {
+            record.focused = focused
+            applyClasses(node.__stxId, record, true)
+          }
+        }
         if (disabled(record)) return
         if (nativeEvent === 'onChangeText' || nativeEvent === 'onValueChange') {
           const data = payload && typeof payload === 'object' ? payload as Record<string, any> : {}
@@ -1087,6 +1118,14 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const record = recordOf(node)
       const was = record.visible
       record.visible = visible
+      if (!visible) {
+        for (const target of [node, ...collectDescendants(node)]) {
+          const child = descriptorOf(target)
+          if (!child?.focused) continue
+          child.focused = false
+          applyClasses(target.__stxId, child, true)
+        }
+      }
       // Hiding is an override on top of the node; showing takes it off again,
       // so the node's own display comes back — its inline style, else its
       // classes in this appearance (`hidden dark:flex` stays hidden in light).

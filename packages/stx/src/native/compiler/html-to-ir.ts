@@ -307,7 +307,12 @@ function readAttributes(
     }
   }
 
-  const compiledClasses = classes ? compileClassStyles(classes, variables) : undefined
+  // Both maintained hosts report focus/blur for text inputs, not arbitrary
+  // pressable views. Keep unsupported variants diagnostic on other controls.
+  const focus = props['data-native']
+    ? props['data-native'] === 'TextInput'
+    : tag === 'textarea' || (tag === 'input' && !['checkbox', 'radio', 'hidden'].includes(String(props.type ?? 'text').toLowerCase()))
+  const compiledClasses = classes ? compileClassStyles(classes, variables, { focus }) : undefined
   for (const name of new Set(compiledClasses?.unknown ?? []))
     diagnostics.push({ kind: 'unknown-class', tag, name })
   const style = applyNativeLayoutDefaults({ ...compiledClasses?.style, ...inline })

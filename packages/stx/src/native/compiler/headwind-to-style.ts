@@ -967,6 +967,8 @@ export interface ClassStyles {
   style: STXStyle
   /** What `dark:` classes change on top of `style`, when there are any. */
   dark?: STXStyle
+  /** Text-input focus styles, applied only after the host reports focus. */
+  focus?: { style: STXStyle, dark?: STXStyle }
   /** Classes nothing understood, for a compile warning. */
   unknown: string[]
   /** `truncate` is one line, `line-clamp-3` three: a Text prop, not a style. */
@@ -978,14 +980,17 @@ export interface ClassStyles {
 /**
  * The class list as styles, with `dark:` variants kept apart.
  *
- * Only `dark:` is currently implemented by the native style resolver. Other
- * variants are reported, not applied unconditionally or silently discarded.
+ * `focus:` is opt-in for hosts that report it (currently TextInput). Other
+ * variants remain diagnostic, including focus-visible: focus alone does not
+ * establish keyboard modality. Unsupported rings are never faked as borders.
  */
-export function compileClassStyles(classes: string, variables?: NativeStyleVariables): ClassStyles {
+export function compileClassStyles(classes: string, variables?: NativeStyleVariables, options: { focus?: boolean } = {}): ClassStyles {
   const plain: string[] = []
   const dark: string[] = []
   const semanticDark: string[] = []
   const unsupported: string[] = []
+  const focusClasses: string[] = []
+  const focusOriginals = new Map<string, string[]>()
   const originals = new Map<string, Set<string>>()
   function roleClasses(name: string, scheme: 'light' | 'dark'): string[] | undefined {
     const match = /^(text|bg|border|ring)-([a-z-]+)(\/[^\s]+)?$/.exec(name)
@@ -1017,6 +1022,13 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
     return translated
   }
   for (const name of classes.split(/\s+/).filter(Boolean)) {
+    const focused = /^(?:focus:(dark:)?|dark:focus:)(.+)$/.exec(name)
+    if (options.focus && focused) {
+      const translated = `${focused[1] || name.startsWith('dark:') ? 'dark:' : ''}${focused[2]}`
+      focusClasses.push(translated)
+      focusOriginals.set(translated, [...focusOriginals.get(translated) ?? [], name])
+      continue
+    }
     if (name.startsWith('dark:')) {
       const translated = roleClasses(name.slice(5), 'dark')
       if (!translated) unsupported.push(name)
@@ -1048,6 +1060,17 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
   }
   const authoredUnknown = unknown.flatMap(name => [...originals.get(name) ?? [name]])
   result.unknown = [...new Set([...authoredUnknown.filter(name => !/^line-clamp-\d+$/.test(name)), ...unsupported])]
+  if (focusClasses.length) {
+    const focused = compileClassStyles(focusClasses.join(' '), variables)
+    result.focus = { style: focused.style, dark: focused.dark }
+    result.unknown = [...new Set([...result.unknown, ...focused.unknown.flatMap(name => focusOriginals.get(name) ?? [name])])]
+    // These classes set node props, not style fields; a focus style layer
+    // cannot implement them. Keep them visible rather than accepting a no-op.
+    for (const name of focusClasses) {
+      if (/^(?:dark:)?(?:truncate|line-clamp-\d+|i-[a-z0-9]+-.+)$/.test(name))
+        result.unknown.push(...focusOriginals.get(name)!)
+    }
+  }
   return result
 }
 
