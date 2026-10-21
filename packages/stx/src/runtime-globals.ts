@@ -51,7 +51,7 @@ export const STX_RUNTIME_GLOBALS: readonly string[] = [
   'ref', 'refDebounced', 'refresh', 'registerStoresClient', 'setKeptScope', 'setRouteParams', 'sharedRequest', 'state', 'untrack', 'useAsync', 'useClickOutside', 'useColorMode',
   'useCookie', 'useCounter', 'useDark', 'useDebounce', 'useDebounceFn', 'useDebouncedValue', 'useDocumentVisibility', 'useEventListener',
   'useFetch', 'useFocus', 'useHead', 'useId', 'useInterval', 'useLocalStorage', 'useMediaQuery',
-  'useModel', 'useMutation', 'useOptimistic', 'usePreferredContrast', 'usePreferredDark',
+  'useModel', 'useMutation', 'useNativeDesktop', 'useOptimistic', 'usePreferredContrast', 'usePreferredDark',
   'usePreferredLight', 'usePreferredReducedMotion', 'useQuery', 'useReactiveProp',
   'useRef', 'useRoute', 'useRouteParam', 'useRouteParams', 'useScrollLock', 'useSearchParams', 'useSeoMeta', 'useSessionStorage', 'useSlots', 'useStore',
   'useThrottle', 'useThrottleFn', 'useTimeout', 'useTimeoutFn', 'useToggle', 'useWebSocket', 'watch', 'watchEffect', 'watchMultiple', 'withDefaults',
