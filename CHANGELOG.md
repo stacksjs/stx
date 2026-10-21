@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.631...v0.2.632)
+
+## ✨ Features
+
+- **native**: type Map's basemap, the named map the host draws ([bb26843](https://github.com/stacksjs/stx/commit/bb26843)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.632 ([1ce0c73](https://github.com/stacksjs/stx/commit/1ce0c73)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.630...v0.2.631)
 
 ## 🐛 Bug Fixes
