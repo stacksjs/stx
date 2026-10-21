@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.623...v0.2.624)
+
+## ✨ Features
+
+- **native**: play SMIL path animations on native SVG ([7f1f914](https://github.com/stacksjs/stx/commit/7f1f914)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: draw food, drink and message icons as their SF Symbols ([d1345e3](https://github.com/stacksjs/stx/commit/d1345e3)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.624 ([a223f7b](https://github.com/stacksjs/stx/commit/a223f7b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.622...v0.2.623)
 
 ## 🐛 Bug Fixes
