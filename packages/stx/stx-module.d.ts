@@ -93,6 +93,7 @@ declare module 'stx' {
   export const useLocalStorage: typeof globalThis.useLocalStorage
   export const useMediaQuery: typeof globalThis.useMediaQuery
   export const useModel: typeof globalThis.useModel
+  export const useNativeDesktop: typeof globalThis.useNativeDesktop
   export const useMutation: typeof globalThis.useMutation
   export const useOptimistic: typeof globalThis.useOptimistic
   export const usePreferredContrast: typeof globalThis.usePreferredContrast
