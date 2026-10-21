@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.632...v0.2.633)
+
+## 🐛 Bug Fixes
+
+- **bundler**: keep the bundles a release is using, and scope ids the same in every copy ([2472f67](https://github.com/stacksjs/stx/commit/2472f67)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.633 ([c3fa13d](https://github.com/stacksjs/stx/commit/c3fa13d)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.631...v0.2.632)
 
 ## ✨ Features
