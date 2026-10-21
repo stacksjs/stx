@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.622...v0.2.623)
+
+## 🐛 Bug Fixes
+
+- **native**: a controlled Switch goes back to its bound value when the screen declines a change ([5615dc5](https://github.com/stacksjs/stx/commit/5615dc5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.623 ([a656a6e](https://github.com/stacksjs/stx/commit/a656a6e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.621...v0.2.622)
 
 ## ✨ Features
