@@ -13,7 +13,7 @@
  * ```
  */
 
-import { existsSync, mkdirSync, copyFileSync, chmodSync } from 'node:fs'
+import { existsSync, mkdirSync, copyFileSync, chmodSync, rmSync } from 'node:fs'
 import { join, dirname, basename, resolve } from 'node:path'
 import { spawn, execSync } from 'node:child_process'
 import { homedir, platform as osPlatform } from 'node:os'
@@ -151,6 +151,12 @@ export interface NativeBuildConfig {
   /** Additional environment variables */
   env?: Record<string, string>
 
+  /** Optional local Bun backend. Default export handles API requests; null means 404.
+   * Compiled once with the runtime; no installed Bun or development server needed.
+   * Currently supported on macOS. Paths resolve from the build working directory.
+   */
+  backend?: { entry: string, maxRequestBodySize?: number }
+
   /** Template context passed to the stx renderer. */
   context?: Record<string, unknown>
 
@@ -187,6 +193,11 @@ export async function buildNative(config: NativeBuildConfig): Promise<NativeBuil
     // Determine target platform
     const target = config.target || detectPlatform()
     const format = config.format || getDefaultFormat(target)
+
+    if (config.backend && target !== 'macos')
+      throw new Error('Native backend bundles currently support macOS only.')
+    if (config.backend && !existsSync(resolve(config.backend.entry)))
+      throw new Error(`Native backend not found: ${config.backend.entry}`)
 
     // Setup output directory
     const outputDir = config.output || join(process.cwd(), 'dist', 'native')
@@ -300,6 +311,8 @@ async function buildMacOS(
   const macOSDir = join(contentsDir, 'MacOS')
   const resourcesDir = join(contentsDir, 'Resources')
 
+  // Never retain a launcher, manifest or signature from an earlier bundle shape.
+  rmSync(appBundlePath, { recursive: true, force: true })
   mkdirSync(macOSDir, { recursive: true })
   mkdirSync(resourcesDir, { recursive: true })
 
@@ -322,7 +335,32 @@ async function buildMacOS(
   const menubarOnly = config.menubarOnly ?? config.systemTray
   const style = config.bundleStyle || (await supportsBundleManifest(craftPath) ? 'executable' : 'launcher')
 
-  if (style === 'executable') {
+  if (config.backend) {
+    copyFileSync(craftPath, join(macOSDir, 'craft-runtime'))
+    chmodSync(join(macOSDir, 'craft-runtime'), 0o755)
+    const scratch = createTempDir('native-backend')
+    try {
+      const entry = join(scratch, 'launcher.ts')
+      const runtime = join(import.meta.dir, 'native-backend' + (import.meta.path.endsWith('.ts') ? '.ts' : '.js'))
+      await Bun.write(entry, `import { runNativeBackend } from ${JSON.stringify(runtime)}
+import handler from ${JSON.stringify(resolve(config.backend.entry))}
+await runNativeBackend({ html: ${JSON.stringify(html)}, fetch: handler,
+  title: ${JSON.stringify(config.window?.title || appName)},
+  width: ${config.window?.width || 1200}, height: ${config.window?.height || 800},
+  maxRequestBodySize: ${config.backend.maxRequestBodySize ?? 32 * 1024 * 1024},
+  devTools: ${Boolean(config.devTools)} })
+`)
+      const compiled = Bun.spawn([process.execPath, 'build', entry, '--compile', '--minify',
+        '--no-compile-autoload-bunfig', '--no-compile-autoload-dotenv',
+        '--outfile', join(macOSDir, appName)], { stdout: 'pipe', stderr: 'pipe' })
+      const [stdout, stderr, code] = await Promise.all([
+        new Response(compiled.stdout).text(), new Response(compiled.stderr).text(), compiled.exited,
+      ])
+      if (code !== 0) throw new Error(`Native backend compilation failed: ${stdout}\n${stderr}`)
+    }
+    finally { removeTempDir(scratch) }
+  }
+  else if (style === 'executable') {
     // Craft *is* the executable. It reads `Resources/craft.json` beside it and
     // configures itself, so the bundle contains exactly one program.
     //
