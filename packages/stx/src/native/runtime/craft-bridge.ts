@@ -1,7 +1,7 @@
 import type { AppStatePayload, DeepLinkPayload, NativeBridgeInterface } from '../bridge/protocol'
 import { STXBridge } from '../bridge/protocol'
 import { createEventSourceClass, createStreamingBody, type StreamSink } from './event-stream'
-import { abortError, NativeFormData, nativeFormParts } from './jsc-globals'
+import { abortError, NativeFormData, nativeFormParts, updateNativeDocumentVisibility } from './jsc-globals'
 import type { NativeNavigationButton, NativeNavigationChrome } from './craft'
 import { buttonsKey, changedTabItems, hostButton, mergeChromeButtons, type ButtonSide } from './navigation-chrome'
 
@@ -120,6 +120,7 @@ export function installCraftBridge(
   if (capabilities.has('crypto'))
     craft.crypto = { randomUUID: () => request('Crypto', 'randomUUID', []) }
   let appState = nativeBridge.initialAppState || 'active'
+  updateNativeDocumentVisibility(target, appState)
   let initialDeepLinkClaimed = false
   const appStateHandlers = new Set<(state: string) => unknown>()
   const deepLinkHandlers = new Set<(link: DeepLinkPayload) => unknown>()
@@ -886,6 +887,7 @@ export function installCraftBridge(
   protocol.on<AppStatePayload>('APP_STATE', ({ payload }) => {
     if (payload.state === appState) return
     appState = payload.state
+    updateNativeDocumentVisibility(target, appState)
     appStateHandlers.forEach(handler => handler(appState))
   })
   protocol.on<DeepLinkPayload>('DEEP_LINK', ({ payload }) => {

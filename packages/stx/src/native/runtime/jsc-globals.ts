@@ -1,5 +1,7 @@
 type AnyRecord = Record<string, any> // eslint-disable-line ts/no-explicit-any
 
+const nativeDocuments = new WeakSet<object>()
+
 class NativeEvent {
   type: string
   detail: unknown
@@ -24,6 +26,22 @@ class NativeEvent {
 
   preventDefault(): void { if (this.cancelable) this.defaultPrevented = true }
   stopPropagation(): void { this.cancelBubble = true }
+}
+
+/** Keep the document stx owns in a native realm in step with its host. */
+export function updateNativeDocumentVisibility(target: AnyRecord, appState: string): void {
+  const document = target.document
+  // A browser renderer supplies its real document. Its visibility is owned
+  // by the browser, not by a native bridge or this compatibility surface.
+  if (!document || !nativeDocuments.has(document)) return
+  const hidden = appState !== 'active'
+  if (document.hidden === hidden) return
+  document.hidden = hidden
+  document.visibilityState = hidden ? 'hidden' : 'visible'
+  const event = new NativeEvent('visibilitychange')
+  event.target = document
+  event.currentTarget = document
+  document.dispatchEvent(event)
 }
 
 /**
@@ -775,10 +793,12 @@ export function installJSCGlobals(target: AnyRecord = globalThis as AnyRecord): 
   target.location ??= { href: '', pathname: '/', search: '', hash: '' }
   target.history ??= { back() {}, forward() {}, pushState() {}, replaceState() {} }
   target.navigator ??= { language: 'en' }
-  target.document ??= {
+  if (target.document != null) return
+  target.document = {
     body: null,
     head,
     hidden: false,
+    visibilityState: 'visible',
     documentElement,
     addEventListener,
     removeEventListener,
@@ -794,4 +814,5 @@ export function installJSCGlobals(target: AnyRecord = globalThis as AnyRecord): 
       textContent: '',
     }),
   }
+  nativeDocuments.add(target.document)
 }
