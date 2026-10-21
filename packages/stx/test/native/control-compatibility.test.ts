@@ -28,13 +28,16 @@ function changed(event) { window.received.push(event.value) }
     finally { phone.unmount() }
   }, 30_000)
 
-  it('shows a controlled Switch at its bound value once the handlers have run', async () => {
+  it('keeps a switch where the user put it until the screen says otherwise', async () => {
+    // The pattern HQ's settings use: the switch shows the attempt while the
+    // save is pending, and a refusal puts the saved settings back.
     const { code } = await compileNativeScreen(`<script client>
 const accepted = state(false)
-const refused = state(false)
-window.probe = { accepted, refused }
-async function refuse() { await Promise.resolve(); refused.set(false) }
-</script><View><Switch testID="accepted" :value="accepted()" @change="accepted.set($event.value)" /><Switch testID="refused" :value="refused()" @change="refuse()" /></View>`, { minify })
+const settings = state({ on: false })
+let refuse = () => {}
+window.probe = { accepted, settings, decline: () => refuse() }
+function save(value) { refuse = () => settings.set({ ...settings() }) }
+</script><View><Switch testID="accepted" :value="accepted()" @change="accepted.set($event.value)" /><Switch testID="pending" :value="settings().on" @change="save($event.value)" /></View>`, { minify })
     const phone = mountNativeScreen(code)
     try {
       await phone.settle()
@@ -44,16 +47,19 @@ async function refuse() { await Promise.resolve(); refused.set(false) }
       await phone.settle()
       expect(accepting.props.value).toBe(true)
       expect(phone.context.probe.accepted()).toBe(true)
-      // Taken as given: no update that puts it back first.
-      const patches = phone.operations().slice(before).filter((op: any) => op.id === accepting.id && op.patch?.props && 'value' in op.patch.props)
-      expect(patches.map((op: any) => op.patch.props.value)).not.toContain(false)
+      // Taken as given: nothing puts it back first.
+      const writes = phone.operations().slice(before).filter((op: any) => op.id === accepting.id && op.patch?.props && 'value' in op.patch.props)
+      expect(writes.map((op: any) => op.patch.props.value)).not.toContain(false)
 
-      // The screen declined it (a save the server refused): it goes back.
-      const declining = phone.byTestID('refused')!
-      phone.press(declining, 'onValueChange', { value: true })
+      const pending = phone.byTestID('pending')!
+      phone.press(pending, 'onValueChange', { value: true })
       await phone.settle()
-      expect(phone.context.probe.refused()).toBe(false)
-      expect(declining.props.value).toBe(false)
+      // Still saving: the switch shows what the user chose.
+      expect(pending.props.value).toBe(true)
+      // Refused: the saved settings are set again, and the switch follows them.
+      phone.context.probe.decline()
+      await phone.settle()
+      expect(pending.props.value).toBe(false)
       expect(phone.mutationErrors).toEqual([])
     }
     finally { phone.unmount() }
