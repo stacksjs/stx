@@ -24,6 +24,7 @@ beforeAll(async () => {
   dir = createTempDir('stx-select-options-')
   await Bun.write(join(dir, 'Select.stx'), Bun.file(resolve(import.meta.dir, '../src/ui/select/Select.stx')))
   await Bun.write(join(dir, 'Textarea.stx'), Bun.file(resolve(import.meta.dir, '../src/ui/textarea/Textarea.stx')))
+  await Bun.write(join(dir, 'TextInput.stx'), Bun.file(resolve(import.meta.dir, '../src/ui/input/TextInput.stx')))
   const html = await processDirectives(`<!doctype html><html><head></head><body>
 <script client>
 const rooms = state([])
@@ -31,7 +32,9 @@ const room = state('r2')
 const list = [{ id: 7, name: 'Ada' }, { id: 9, name: 'Grace' }]
 const athlete = state('9')
 const size = state('M')
-window.probe = { rooms, room, athlete, size }
+const fieldDisabled = state(true)
+const fieldValue = state('Seed')
+window.probe = { rooms, room, athlete, size, fieldDisabled, fieldValue, fieldClears: 0 }
 </script>
 <div id="late"><Select :options="rooms()" v-model:value="room" /></div>
 <div id="static"><Select :options="['S', 'M', 'L']" v-model:value="size" /></div>
@@ -39,6 +42,8 @@ window.probe = { rooms, room, athlete, size }
   <option :for="o in list" :value="o.id">{{ o.name }}</option>
 </Select></div>
 <div id="notes"><Textarea autoResize rows="1" value="one\ntwo\nthree\nfour\nfive" /></div>
+<form id="disabled-form"><TextInput name="draft" clearable :disabled="fieldDisabled" v-model:value.lazy="fieldValue"
+  @clear="window.probe.fieldClears++" /></form>
 </body></html>`, {}, join(dir, 'page.stx'), { componentsDir: dir, cache: false, debug: false }, new Set())
   await Bun.write(join(dir, 'page.html'), html)
   view = new WebView({ headless: true })
@@ -103,4 +108,44 @@ it('sizes an autoResize textarea to its content on mount', async () => {
   const height = await view.evaluate(`document.querySelector('#notes textarea').style.height`)
 
   expect(height).toMatch(/^\d+(\.\d+)?px$/)
+}, 15_000)
+
+it('keeps a shared TextInput disabled until enabled, with correct FormData and lazy model events', async () => {
+  const fieldState = () => view.evaluate(`(() => {
+    const form = document.querySelector('#disabled-form');
+    const input = form.querySelector('input');
+    return { disabled: input.disabled, value: input.value, submitted: new FormData(form).get('draft'),
+      dimmed: input.classList.contains('opacity-50'), clearHidden: getComputedStyle(form.querySelector('button').parentElement).display === 'none' };
+  })()`)
+  expect(await fieldState()).toEqual({ disabled: true, value: 'Seed', submitted: null, dimmed: true, clearHidden: true })
+  await view.evaluate(`(() => {
+    const form = document.querySelector('#disabled-form');
+    const input = form.querySelector('input');
+    input.value = 'Blocked';
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    form.querySelector('button').click();
+  })()`)
+  expect(await view.evaluate('window.probe.fieldValue()')).toBe('Seed')
+  expect(await view.evaluate('window.probe.fieldClears')).toBe(0)
+
+  await view.evaluate('window.probe.fieldDisabled.set(false)')
+  await Bun.sleep(50)
+  expect(await fieldState()).toEqual({ disabled: false, value: 'Seed', submitted: 'Seed', dimmed: false, clearHidden: false })
+  await view.evaluate(`(() => {
+    const input = document.querySelector('#disabled-form input');
+    input.value = 'Edited';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  })()`)
+  expect(await view.evaluate('window.probe.fieldValue()')).toBe('Seed')
+  await view.evaluate(`document.querySelector('#disabled-form input').dispatchEvent(new Event('change', { bubbles: true }))`)
+  expect(await view.evaluate('window.probe.fieldValue()')).toBe('Edited')
+
+  await view.evaluate('(() => { window.probe.fieldDisabled.set(true); window.probe.fieldValue.set("From parent") })()')
+  await Bun.sleep(50)
+  expect(await fieldState()).toEqual({ disabled: true, value: 'From parent', submitted: null, dimmed: true, clearHidden: true })
+  await view.evaluate('window.probe.fieldDisabled.set(false)')
+  await Bun.sleep(50)
+  await view.evaluate('document.querySelector("#disabled-form button").click()')
+  expect(await view.evaluate('window.probe.fieldValue()')).toBe('')
+  expect(await view.evaluate('window.probe.fieldClears')).toBe(1)
 }, 15_000)

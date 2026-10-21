@@ -16,7 +16,7 @@ directories and fails if a new overlap has no recorded compatibility decision.
 | Button | Shared app/plugin file, primitive fallback | Shared app/plugin file | Device accessibility/visual validation |
 | Checkbox | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | Preserve both APIs; device validation |
 | Switch | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | Preserve both APIs; device validation |
-| TextInput | Primitive | Shared file | Reactive disabled state and input-event compatibility |
+| TextInput | Primitive | Shared file | Broader input-event/API compatibility before changing default resolution |
 | Image | Primitive | `StxImage` builtin alias, not the shared file | Source/fit mapping and builtin/shared precedence decision |
 | Video | Primitive | Shared file | Browser custom-element dependency needs a native adapter |
 
@@ -32,12 +32,18 @@ Each probe explicitly imports the real shared `.stx` file, compiles with
 wrapping `<div>`, a client `value = state('/first')`, and
 `disabled = state(false)`, exposed through `window.probe`.
 
-1. **TextInput:** `<TextInput testID="target" :value="value" :disabled="disabled" />`.
-   After `disabled.set(true)` and `value.set('/second')`, the physical
-   `TextInput` has the new value but no disabled prop. The shared template
-   still computes disabled state server-side. Migrate only after live
-   disabling/re-enabling, input rejection and legacy event payloads are covered
-   on the same shared file in browser/native tests.
+1. **TextInput (disabled gap fixed):**
+   `<TextInput testID="target" :value="value" :disabled="disabled" />` previously
+   updated value but never forwarded live disabled state to the physical
+   input. The shared template now binds disabled state, styling and clear
+   visibility reactively and rejects disabled input/change/clear actions.
+   `shared-text-input-disabled.test.ts` exercises the actual shared file on
+   web/native in normal/minified builds, including re-enable, parent updates,
+   remount and native teardown. `form-controls-browser.test.ts` checks real
+   browser FormData exclusion and lazy model events. This does not change
+   default native resolution: legacy primitive input events carry an object,
+   while the shared component emits a string. Broader API migration remains
+   separate work.
 2. **Image:** `<Image testID="target" alt="Photo" :src="value" />`.
    The physical Image has `src: ''` before and after the value update; native
    `source` is not populated. `objectFit` and `objectPosition` also produce

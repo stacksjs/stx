@@ -42,7 +42,7 @@ export const inputClassName = $props.inputClassName || ''
 const sizeClasses = { sm: 'px-3 py-1.5 text-sm', md: 'px-control-x py-control-y text-control', lg: 'px-5 py-2.5 text-lg' }
 const iconSizeClasses = { sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 w-6' }
 
-const baseClasses = 'block w-full border-0 rounded-control shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset bg-field'
+const baseClasses = 'block w-full border-0 rounded-control shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset'
 /*
  * The two halves of the validity state, exported so the CLIENT can swap them
  * (stacksjs/stx#2047).
@@ -159,20 +159,31 @@ export const autofocus = $bool($props.autofocus)
 // Validity is live, for the same reason `disabled` is: a form posted with
 // fetch learns it after the submit, and nothing re-renders (#2047).
 const isError = useReactiveProp('error', {{ error }})
+// Keep the physical control and its affordances live on both web and native.
+const isDisabled = useReactiveProp('disabled', {{ disabled }})
 // v-model:value supports modifiers; @input remains available to existing callers.
 const inputValue = useModel('value', { default: {{ value }}, parse: (v) => v == null ? '' : String(v) })
 
 function onInput(event) {
+  if (isDisabled()) {
+    event.target.value = inputValue()
+    return
+  }
   inputValue.input(event.target.value)
   if (!inputValue.modifiers.lazy) emit('input', inputValue())
 }
 
 function onChange(event) {
+  if (isDisabled()) {
+    event.target.value = inputValue()
+    return
+  }
   inputValue.change(event.target.value)
   if (inputValue.modifiers.lazy) emit('input', inputValue())
 }
 
 function onClear() {
+  if (isDisabled()) return
   inputValue.set('')
   emit('input', '')
   emit('clear')
@@ -235,6 +246,7 @@ defineExpose({ value: inputValue, clear: onClear })
       :value="inputValue()"
       placeholder="{{ placeholder }}"
       @if(disabled)disabled@endif
+      :disabled="isDisabled()"
       @if(readonly)readonly@endif
       @if(required)required@endif
       @if(maxLength && freeText)maxlength="{{ maxLength }}"@endif
@@ -242,11 +254,11 @@ defineExpose({ value: inputValue, clear: onClear })
       @change="onChange($event)"
       aria-invalid="{{ error ? 'true' : 'false' }}"
       :aria-invalid="isError() ? 'true' : 'false'"
-      :class="{ '{{ stateInvalidClasses }}': isError(), '{{ stateValidClasses }}': !isError() }"
+      :class="{ '{{ stateInvalidClasses }}': isError(), '{{ stateValidClasses }}': !isError(), 'opacity-50 cursor-not-allowed': isDisabled(), 'bg-surface': isDisabled() || {{ readonly }}, 'bg-field': !isDisabled() && !{{ readonly }}, 'cursor-default': !isDisabled() && {{ readonly }} }"
       @if(helperText)aria-describedby="{{ helperId }}"@endif
     />
       @if(clearable)
-      <div :show="hasValue() && !{{ disabled }} && !{{ readonly }}" class="absolute inset-y-0 right-0 flex items-center pr-3">
+      <div :show="hasValue() && !isDisabled() && !{{ readonly }}" class="absolute inset-y-0 right-0 flex items-center pr-3">
         <button
           type="button"
           @click="onClear()"
@@ -287,7 +299,14 @@ defineExpose({ value: inputValue, clear: onClear })
   </div>
 
 === Extracted Classes ===
-!isError()
+!isDisabled()
+!isError(),
+!{{
+&&
+'bg-field':
+'bg-surface':
+'cursor-default':
+'opacity-50
 '{{
 -
 --
@@ -317,11 +336,13 @@ const
 content
 cursor-default
 cursor-not-allowed
+cursor-not-allowed':
 date
 datetime-local
 declared
 default
 density
+disabled
 duration-200
 email
 error
@@ -350,6 +371,8 @@ inset-y-0
 inside
 instead
 is
+isDisabled()
+isDisabled(),
 isError(),
 it
 items-center
@@ -388,6 +411,7 @@ px-control-x
 py-2
 py-3
 py-control-y
+readonly
 reads
 relative
 right-0
@@ -435,6 +459,8 @@ were
 with
 {
 {{
+||
 }
 }}
 }}':
+}},
