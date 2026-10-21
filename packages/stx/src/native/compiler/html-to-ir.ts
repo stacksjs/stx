@@ -312,7 +312,7 @@ function readAttributes(
   const focus = props['data-native']
     ? props['data-native'] === 'TextInput'
     : tag === 'textarea' || (tag === 'input' && !['checkbox', 'radio', 'hidden'].includes(String(props.type ?? 'text').toLowerCase()))
-  const compiledClasses = classes ? compileClassStyles(classes, variables, { focus }) : undefined
+  const compiledClasses = classes ? compileClassStyles(classes, variables, { focus, focusWithin: true }) : undefined
   for (const name of new Set(compiledClasses?.unknown ?? []))
     diagnostics.push({ kind: 'unknown-class', tag, name })
   const style = applyNativeLayoutDefaults({ ...compiledClasses?.style, ...inline })

@@ -969,6 +969,8 @@ export interface ClassStyles {
   dark?: STXStyle
   /** Text-input focus styles, applied only after the host reports focus. */
   focus?: { style: STXStyle, dark?: STXStyle }
+  /** Focus reported by this node or a descendant text input. */
+  focusWithin?: { style: STXStyle, dark?: STXStyle }
   /** Classes nothing understood, for a compile warning. */
   unknown: string[]
   /** `truncate` is one line, `line-clamp-3` three: a Text prop, not a style. */
@@ -984,13 +986,15 @@ export interface ClassStyles {
  * variants remain diagnostic, including focus-visible: focus alone does not
  * establish keyboard modality. Unsupported rings are never faked as borders.
  */
-export function compileClassStyles(classes: string, variables?: NativeStyleVariables, options: { focus?: boolean } = {}): ClassStyles {
+export function compileClassStyles(classes: string, variables?: NativeStyleVariables, options: { focus?: boolean, focusWithin?: boolean } = {}): ClassStyles {
   const plain: string[] = []
   const dark: string[] = []
   const semanticDark: string[] = []
   const unsupported: string[] = []
-  const focusClasses: string[] = []
-  const focusOriginals = new Map<string, string[]>()
+  const focusLayers = {
+    focus: { classes: [] as string[], originals: new Map<string, string[]>() },
+    focusWithin: { classes: [] as string[], originals: new Map<string, string[]>() },
+  }
   const originals = new Map<string, Set<string>>()
   function roleClasses(name: string, scheme: 'light' | 'dark'): string[] | undefined {
     const match = /^(text|bg|border|ring)-([a-z-]+)(\/[^\s]+)?$/.exec(name)
@@ -1022,11 +1026,13 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
     return translated
   }
   for (const name of classes.split(/\s+/).filter(Boolean)) {
-    const focused = /^(?:focus:(dark:)?|dark:focus:)(.+)$/.exec(name)
-    if (options.focus && focused) {
-      const translated = `${focused[1] || name.startsWith('dark:') ? 'dark:' : ''}${focused[2]}`
-      focusClasses.push(translated)
-      focusOriginals.set(translated, [...focusOriginals.get(translated) ?? [], name])
+    const focused = /^(dark:)?(focus|focus-within):(dark:)?(.+)$/.exec(name)
+    const focusKey = focused?.[2] === 'focus' ? 'focus' : 'focusWithin'
+    if (focused && options[focusKey] && !(focused[1] && focused[3])) {
+      const translated = `${focused[1] || focused[3] ? 'dark:' : ''}${focused[4]}`
+      const layer = focusLayers[focusKey]
+      layer.classes.push(translated)
+      layer.originals.set(translated, [...layer.originals.get(translated) ?? [], name])
       continue
     }
     if (name.startsWith('dark:')) {
@@ -1060,15 +1066,17 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
   }
   const authoredUnknown = unknown.flatMap(name => [...originals.get(name) ?? [name]])
   result.unknown = [...new Set([...authoredUnknown.filter(name => !/^line-clamp-\d+$/.test(name)), ...unsupported])]
-  if (focusClasses.length) {
-    const focused = compileClassStyles(focusClasses.join(' '), variables)
-    result.focus = { style: focused.style, dark: focused.dark }
-    result.unknown = [...new Set([...result.unknown, ...focused.unknown.flatMap(name => focusOriginals.get(name) ?? [name])])]
+  for (const key of ['focus', 'focusWithin'] as const) {
+    const layer = focusLayers[key]
+    if (!layer.classes.length) continue
+    const focused = compileClassStyles(layer.classes.join(' '), variables)
+    result[key] = { style: focused.style, dark: focused.dark }
+    result.unknown = [...new Set([...result.unknown, ...focused.unknown.flatMap(name => layer.originals.get(name) ?? [name])])]
     // These classes set node props, not style fields; a focus style layer
     // cannot implement them. Keep them visible rather than accepting a no-op.
-    for (const name of focusClasses) {
+    for (const name of layer.classes) {
       if (/^(?:dark:)?(?:truncate|line-clamp-\d+|i-[a-z0-9]+-.+)$/.test(name))
-        result.unknown.push(...focusOriginals.get(name)!)
+        result.unknown.push(...layer.originals.get(name)!)
     }
   }
   return result
