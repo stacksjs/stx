@@ -32,7 +32,6 @@ import type { DepSnapshot } from './render-memo'
 import { contentKey, depsUnchanged, renderMemo, snapshotDeps } from './render-memo'
 import { transformStoreImports } from './store-imports'
 import { LRUCache } from './performance-utils'
-import { processDirectives } from './process'
 import { getPublicEnvDefine } from './public-env'
 import { isUsableParamName } from './safe-evaluator'
 import { processScopedStyles } from './style-scoping'
@@ -2123,6 +2122,11 @@ export async function renderComponentWithSlot(
     // (only the top-level page call should inject Css)
     componentContext.__stxProcessingDepth = (parentContext.__stxProcessingDepth as number || 0) + 1
 
+    // Recursive compilation is needed only when rendering a component. Keep
+    // it behind the compiler boundary: eager loading closes the cycle from
+    // config -> a11y -> expressions -> utils -> process -> config before the
+    // built-in directives have initialized.
+    const { processDirectives } = await importOnce('stx/process', () => import('./process'))
     // Process the component content recursively with the new context
     // eslint-disable-next-line ts/no-top-level-await
     const result = await processDirectives(templateContent, componentContext, componentFilePath, componentOptions, dependencies)
