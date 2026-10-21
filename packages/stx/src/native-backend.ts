@@ -1,17 +1,13 @@
-import { dirname, join } from 'node:path'
-
 export interface NativeBackendOptions {
   html: string
   fetch: (request: Request) => Response | null | Promise<Response | null>
-  title: string
-  width: number
-  height: number
   maxRequestBodySize?: number
-  devTools?: boolean
 }
 
 /** Host an embedded app on an authenticated, ephemeral loopback origin. */
 export async function runNativeBackend(options: NativeBackendOptions): Promise<void> {
+  if (!process.argv.includes('--serve'))
+    throw new Error('Launch the native application bundle, rather than its backend helper.')
   const token = crypto.randomUUID()
   const cookie = `stx_native=${token}`
   let authenticated = false
@@ -43,26 +39,16 @@ export async function runNativeBackend(options: NativeBackendOptions): Promise<v
     },
   })
   const url = `${server.url}?session=${token}`
-  // A serve-only process supports CLI clients and packaged integration tests.
-  if (process.argv.includes('--serve')) {
-    console.log(url)
-    const stop = () => { server.stop(true); process.exit(0) }
-    process.once('SIGTERM', stop)
-    process.once('SIGINT', stop)
-    return
-  }
-  const craft = Bun.spawn([
-    join(dirname(process.execPath), 'craft-runtime'), url,
-    '--title', options.title, '--width', String(options.width), '--height', String(options.height),
-    ...(options.devTools ? [] : ['--no-devtools']),
-  ], { stdin: 'inherit', stdout: 'inherit', stderr: 'inherit' })
-  const stop = () => { craft.kill('SIGTERM'); server.stop(true) }
+  console.log(url)
+  const stop = () => { server.stop(true); process.exit(0) }
   process.once('SIGTERM', stop)
   process.once('SIGINT', stop)
-  try { process.exitCode = await craft.exited }
-  finally {
-    server.stop(true)
-    process.removeListener('SIGTERM', stop)
-    process.removeListener('SIGINT', stop)
+  if (process.argv.includes('--managed')) {
+    // The native parent holds this pipe open. EOF is also delivered when the
+    // parent crashes or AppKit terminates without unwinding Zig defers.
+    void (async () => {
+      try { for await (const _ of Bun.stdin.stream()) { /* lifetime lease */ } }
+      finally { stop() }
+    })()
   }
 }

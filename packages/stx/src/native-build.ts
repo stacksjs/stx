@@ -340,8 +340,10 @@ async function buildMacOS(
   const style = config.bundleStyle || (await supportsBundleManifest(craftPath) ? 'executable' : 'launcher')
 
   if (config.backend) {
-    copyFileSync(craftPath, join(macOSDir, 'craft-runtime'))
-    chmodSync(join(macOSDir, 'craft-runtime'), 0o755)
+    if (!await supportsNativeBackendHost(craftPath))
+      throw new Error('This Craft runtime does not support bundled backends. Upgrade Craft before building this app.')
+    copyFileSync(craftPath, join(macOSDir, appName))
+    chmodSync(join(macOSDir, appName), 0o755)
     const scratch = createTempDir('native-backend')
     try {
       const entry = join(scratch, 'launcher.ts')
@@ -349,20 +351,30 @@ async function buildMacOS(
       await Bun.write(entry, `import { runNativeBackend } from ${JSON.stringify(runtime)}
 import handler from ${JSON.stringify(resolve(config.backend.entry))}
 await runNativeBackend({ html: ${JSON.stringify(html)}, fetch: handler,
-  title: ${JSON.stringify(config.window?.title || appName)},
-  width: ${config.window?.width || 1200}, height: ${config.window?.height || 800},
-  maxRequestBodySize: ${config.backend.maxRequestBodySize ?? 32 * 1024 * 1024},
-  devTools: ${Boolean(config.devTools)} })
+  maxRequestBodySize: ${config.backend.maxRequestBodySize ?? 32 * 1024 * 1024} })
 `)
       const compiled = Bun.spawn([process.execPath, 'build', entry, '--compile', '--minify',
         '--no-compile-autoload-bunfig', '--no-compile-autoload-dotenv',
-        '--outfile', join(macOSDir, appName)], { stdout: 'pipe', stderr: 'pipe' })
+        '--outfile', join(macOSDir, 'stx-backend')], { stdout: 'pipe', stderr: 'pipe' })
       const [stdout, stderr, code] = await Promise.all([
         new Response(compiled.stdout).text(), new Response(compiled.stderr).text(), compiled.exited,
       ])
       if (code !== 0) throw new Error(`Native backend compilation failed: ${stdout}\n${stderr}`)
     }
     finally { removeTempDir(scratch) }
+    await Bun.write(join(resourcesDir, 'craft.json'), `${JSON.stringify({
+      backend: { executable: 'stx-backend' },
+      title: config.window?.title || appName,
+      appName,
+      width: config.window?.width || 1200,
+      height: config.window?.height || 800,
+      devTools: Boolean(config.devTools),
+      frameless: Boolean(config.window?.frameless),
+      transparent: Boolean(config.window?.transparent),
+      alwaysOnTop: Boolean(config.window?.alwaysOnTop),
+      resizable: config.window?.resizable !== false,
+      ...(config.trayPopover ? { trayPopover: true } : menubarOnly ? { menubarOnly: true } : config.systemTray ? { systemTray: true } : {}),
+    }, null, 2)}\n`)
   }
   else if (style === 'executable') {
     // Craft *is* the executable. It reads `Resources/craft.json` beside it and
@@ -438,6 +450,7 @@ exec "$DIR/craft" --html-file "$RESOURCES/index.html" \\
   }
 
   const plistEntries: Record<string, string | number | boolean> = {
+    CFBundleInfoDictionaryVersion: '6.0',
     CFBundleExecutable: appName,
     CFBundleIdentifier: bundleId,
     CFBundleName: appName,
@@ -488,6 +501,20 @@ exec "$DIR/craft" --html-file "$RESOURCES/index.html" \\
  * open a default window with no content and no error, so the shape is chosen
  * from what the binary can actually do rather than assumed.
  */
+async function supportsNativeBackendHost(craftPath: string): Promise<boolean> {
+  const child = Bun.spawn([craftPath, '--capabilities'], { stdout: 'pipe', stderr: 'pipe' })
+  const timer = setTimeout(() => child.kill(), 5000)
+  try {
+    const [stdout, stderr, code] = await Promise.all([
+      new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited,
+    ])
+    if (code !== 0) return false
+    return JSON.parse(`${stdout}${stderr}`.trim()).bundleBackend === true
+  }
+  catch { return false }
+  finally { clearTimeout(timer) }
+}
+
 async function supportsBundleManifest(craftPath: string): Promise<boolean> {
   try {
     // Both streams: Craft prints `--version` through its log facility, which

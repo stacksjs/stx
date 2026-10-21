@@ -1,5 +1,5 @@
 import { afterAll, expect, test } from 'bun:test'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { chmodSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildNative } from '../src/native-build'
@@ -12,11 +12,15 @@ test.skipIf(process.platform !== 'darwin')('compiled backend works outside the s
   const handler = join(root, 'handler.ts')
   await Bun.write(template, '<!doctype html><html><head><title>Local</title></head><body><h1>Embedded UI</h1></body></html>')
   await Bun.write(handler, "export default (request: Request) => new URL(request.url).pathname === '/api' ? Response.json({ works: true }) : null")
-  const result = await buildNative({ input: template, output: root, target: 'macos', name: 'Local', craftPath: '/usr/bin/true', backend: { entry: handler } })
+  const craftPath = join(root, 'craft-fixture')
+  await Bun.write(craftPath, `#!/bin/sh\ncase "$1" in\n  --capabilities) echo '{"bundleBackend":true}' ;;\n  --version) echo '0.0.279' ;;\nesac\n`)
+  chmodSync(craftPath, 0o755)
+  const result = await buildNative({ input: template, output: root, target: 'macos', name: 'Local', craftPath, backend: { entry: handler } })
   expect(result.success).toBe(true)
+  expect(await Bun.file(join(result.outputPath!, 'Contents/Resources/craft.json')).json()).toMatchObject({ backend: { executable: 'stx-backend' } })
   await Bun.file(template).delete()
   await Bun.file(handler).delete()
-  const child = Bun.spawn([join(result.outputPath!, 'Contents/MacOS/Local'), '--serve'], { cwd: tmpdir(), stdout: 'pipe', stderr: 'pipe' })
+  const child = Bun.spawn([join(result.outputPath!, 'Contents/MacOS/stx-backend'), '--serve'], { cwd: tmpdir(), stdout: 'pipe', stderr: 'pipe' })
   let origin = ''
   try {
     const reader = child.stdout.getReader()
@@ -36,7 +40,16 @@ test.skipIf(process.platform !== 'darwin')('compiled backend works outside the s
     expect((await fetch(`${origin}/missing`, { headers: { cookie } })).status).toBe(404)
   }
   finally { child.kill('SIGTERM'); await child.exited }
-  expect(fetch(origin)).rejects.toThrow()
+  await expect(fetch(origin)).rejects.toThrow()
+  const managed = Bun.spawn([join(result.outputPath!, 'Contents/MacOS/stx-backend'), '--serve', '--managed'], { cwd: tmpdir(), stdin: 'pipe', stdout: 'pipe', stderr: 'pipe' })
+  try {
+    const first = await managed.stdout.getReader().read()
+    const managedOrigin = new URL(new TextDecoder().decode(first.value).trim()).origin
+    managed.stdin.end()
+    expect(await Promise.race([managed.exited, Bun.sleep(5000).then(() => 'timeout')])).toBe(0)
+    await expect(fetch(managedOrigin)).rejects.toThrow()
+  }
+  finally { if (managed.exitCode === null) { managed.kill(); await managed.exited } }
 }, 30000)
 
 test('refuses unsupported backend targets and missing source', async () => {
