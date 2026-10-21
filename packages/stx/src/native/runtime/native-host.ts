@@ -78,6 +78,12 @@ interface NodeRecord {
   /** Reject results requested before a node was removed, even if it is reinserted. */
   viewEpoch?: number
   events: Record<string, string>
+  /**
+   * The `value` the screen last bound (a reactive `:value`), as opposed to the
+   * one the platform reported. A controlled Switch shows the screen's value
+   * once its change handlers have run, as a controlled input does.
+   */
+  boundValue?: { value: unknown }
   text?: string
   children: NativeNode[]
   visible: boolean
@@ -848,6 +854,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const prop = nativePropName(name)
       const record = recordOf(node)
       const accessibilityBefore = prop === 'role' || prop.startsWith('aria-') || prop.startsWith('accessibility') ? projectAccessibility(record.props) : undefined
+      if (prop === 'value' && record.type === 'Switch') record.boundValue = { value }
       record.props[prop] = value
       if (record.type === 'Icon' && prop === 'name') {
         const icon = resolveIconName(String(value ?? ''))
@@ -1039,6 +1046,17 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
           }
         }
         if (physical) Object.defineProperty(physical, 'currentTarget', { configurable: true, value: node })
+        // A controlled Switch: the screen bound its value, and its handlers
+        // have now run. If they moved the bound value, the binding already
+        // sent it; if they did not - a save the server refused, a change the
+        // screen declined - the switch goes back to what the screen says,
+        // rather than staying where the finger left it. An unbound switch
+        // keeps the user's value, as it always has.
+        if (nativeEvent === 'onValueChange' && record.type === 'Switch' && record.boundValue && !Object.is(record.props.value, record.boundValue.value)) {
+          const value = record.boundValue.value
+          record.props.value = value
+          if (record.materialized) emit({ op: 'updateNode', id: node.__stxId, patch: { props: { value } } })
+        }
         // A native picker/checkbox reports a value change once. Browsers
         // also send input, which shared forms use for change validation.
         if (nativeEvent === 'onValueChange' && (record.type === 'Picker' || record.type === 'Checkbox'))

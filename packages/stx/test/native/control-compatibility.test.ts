@@ -28,6 +28,37 @@ function changed(event) { window.received.push(event.value) }
     finally { phone.unmount() }
   }, 30_000)
 
+  it('shows a controlled Switch at its bound value once the handlers have run', async () => {
+    const { code } = await compileNativeScreen(`<script client>
+const accepted = state(false)
+const refused = state(false)
+window.probe = { accepted, refused }
+async function refuse() { await Promise.resolve(); refused.set(false) }
+</script><View><Switch testID="accepted" :value="accepted()" @change="accepted.set($event.value)" /><Switch testID="refused" :value="refused()" @change="refuse()" /></View>`, { minify })
+    const phone = mountNativeScreen(code)
+    try {
+      await phone.settle()
+      const accepting = phone.byTestID('accepted')!
+      const before = phone.operations().length
+      phone.press(accepting, 'onValueChange', { value: true })
+      await phone.settle()
+      expect(accepting.props.value).toBe(true)
+      expect(phone.context.probe.accepted()).toBe(true)
+      // Taken as given: no update that puts it back first.
+      const patches = phone.operations().slice(before).filter((op: any) => op.id === accepting.id && op.patch?.props && 'value' in op.patch.props)
+      expect(patches.map((op: any) => op.patch.props.value)).not.toContain(false)
+
+      // The screen declined it (a save the server refused): it goes back.
+      const declining = phone.byTestID('refused')!
+      phone.press(declining, 'onValueChange', { value: true })
+      await phone.settle()
+      expect(phone.context.probe.refused()).toBe(false)
+      expect(declining.props.value).toBe(false)
+      expect(phone.mutationErrors).toEqual([])
+    }
+    finally { phone.unmount() }
+  }, 30_000)
+
   it('keeps shared change payloads boolean and checkbox form values separate from checked state', async () => {
     const checkbox = join(import.meta.dir, '../../../components/src/ui/checkbox/Checkbox.stx')
     const toggle = join(import.meta.dir, '../../../components/src/ui/switch/Switch.stx')
