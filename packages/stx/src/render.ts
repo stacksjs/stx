@@ -466,7 +466,7 @@ export async function renderTemplateString(
       // Standalone rendering transforms page scripts after processDirectives
       // has collected component imports. Register these page imports too,
       // before executing their scoped scripts (native builds have no server).
-      const modules = await buildModulesTag(transformedScripts, { ...options, buildMode: 'build' })
+      const modules = await buildModulesTag(transformedScripts, { ...options, buildMode: 'compile' })
       const scriptsHtml = [modules, ...transformedScripts].filter(Boolean).join('\n')
       const bodyEndMatch = output.match(/(<\/body>)/i)
       if (bodyEndMatch) {
