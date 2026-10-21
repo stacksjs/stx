@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.628...v0.2.629)
+
+## ✅ Tests
+
+- **composables**: isolate the server animation clock from browser globals ([94febec](https://github.com/stacksjs/stx/commit/94febec)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.629 ([541281c](https://github.com/stacksjs/stx/commit/541281c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.627...v0.2.628)
 
 ## ✨ Features
