@@ -87,7 +87,9 @@ export const screenSharing: ScreenSharingAPI = {
   },
 
   async watch(intervalMs = DEFAULT_WATCH_INTERVAL_MS) {
-    const clamped = Math.min(MAX_WATCH_INTERVAL_MS, Math.max(MIN_WATCH_INTERVAL_MS, Math.round(intervalMs)))
+    const clamped = Number.isFinite(intervalMs)
+      ? Math.min(MAX_WATCH_INTERVAL_MS, Math.max(MIN_WATCH_INTERVAL_MS, Math.round(intervalMs)))
+      : DEFAULT_WATCH_INTERVAL_MS
     if (!hasBridge('screenSharing')) return clamped
     const r = await window.craft!.screenSharing!.watch(clamped)
     return (r && r.intervalMs) || clamped
@@ -117,11 +119,21 @@ export const screenSharing: ScreenSharingAPI = {
 export async function watchScreenSharing(
   cb: (state: ScreenSharingState) => void,
   intervalMs: number = DEFAULT_WATCH_INTERVAL_MS,
-): Promise<() => void> {
+): Promise<() => Promise<void>> {
   const off = screenSharing.onChange(cb)
-  await screenSharing.watch(intervalMs)
-  return () => {
+  try {
+    await screenSharing.watch(intervalMs)
+  }
+  catch (error) {
     off()
-    void screenSharing.stop()
+    throw error
+  }
+  let stopping: Promise<void> | undefined
+  return () => {
+    if (!stopping) {
+      off()
+      stopping = screenSharing.stop()
+    }
+    return stopping
   }
 }

@@ -360,7 +360,7 @@ else if (data.type === 'event' && data.method) {
   });
 
   // Build the craft API object
-  window.craft = Object.assign({}, existingCraft, {
+  window.craft = Object.assign({}, {
     // Meta
     isCraft,
     on,
@@ -492,7 +492,7 @@ else if (data.type === 'event' && data.method) {
     // Native component helpers
     nativeUI,
     components: componentAPI
-  });
+  }, existingCraft, { nativeUI, components: componentAPI });
 
   // Dispatch ready event
   window.dispatchEvent(new CustomEvent('craft:ready', { detail: { isCraft: isCraft() } }));

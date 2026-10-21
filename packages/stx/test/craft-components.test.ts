@@ -64,8 +64,22 @@ describe('Craft components', () => {
     const script = generateCraftBridgeScript()
 
     expect(script).toContain('const nativeUI = existingCraft.nativeUI || createNativeUIFacade()')
-    expect(script).toContain('window.craft = Object.assign({}, existingCraft')
+    expect(script).toContain('}, existingCraft, { nativeUI, components: componentAPI })')
     expect(script).toContain('nativeUI,')
     expect(script).toContain("sendNativeUI('createSidebar'")
   })
+})
+
+
+it('preserves the native transport methods when adding component helpers', () => {
+  const fs = { readFile: () => 'native file', mkdir: () => 'native directory' }
+  const nativeWindow = { show: () => 'native window' }
+  const page: any = { craft: { fs, window: nativeWindow }, dispatchEvent() {}, addEventListener() {} }
+  const source = generateCraftBridgeScript().replace(/<\/?script>/g, '')
+  // eslint-disable-next-line no-new-func
+  new Function('window', 'CustomEvent', source)(page, class { constructor(public name: string, public options: unknown) {} })
+  expect(page.craft.fs).toBe(fs)
+  expect(page.craft.window).toBe(nativeWindow)
+  expect(page.craft.fs.mkdir()).toBe('native directory')
+  expect(page.craft.nativeUI).toBeDefined()
 })
