@@ -60,6 +60,19 @@ describe('per-page head on the auto-shell path (#1756)', () => {
     expect(result).toContain('<title>Widget · Shop</title>')
   })
 
+  it('escapes a computed section title once without interpreting its data', async () => {
+    const result = await processDirectives(
+      "@section('title', pageTitle)\n<h1>Product</h1>",
+      { pageTitle: '<b>{{ secret }}</b>', secret: 'must not execute' },
+      '/test.stx',
+      shellOptions(),
+      new Set(),
+    )
+    expect(result).toContain('&lt;b&gt;')
+    expect(result).not.toContain('<b>')
+    expect(result).not.toContain('must not execute')
+  })
+
   it('injects @head … @endhead content into the generated <head>', async () => {
     const result = await processDirectives(
       '@head\n<meta name="description" content="Per-page description">\n<link rel="canonical" href="https://example.com/about">\n@endhead\n<h1>About</h1>',
