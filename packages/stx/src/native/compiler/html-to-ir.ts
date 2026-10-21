@@ -552,8 +552,8 @@ export async function translateHtmlToIR(
     if (tag === 'form') props['data-stx-form'] = true
     if (tag === 'button' && props.type === undefined) props.type = 'submit'
 
-    // `<video src>` as the web writes it: the host reads `source`.
-    if (type === 'Video' && props.source === undefined && props.src !== undefined) {
+    // HTML media uses src; the native hosts read source.
+    if ((type === 'Video' || type === 'Image') && props.source === undefined && props.src !== undefined) {
       props.source = props.src
       delete props.src
     }

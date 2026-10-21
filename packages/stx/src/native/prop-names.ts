@@ -50,6 +50,9 @@ function normaliseKey(name: string): string {
 }
 
 /** Restore a native protocol prop after HTML lowercasing or kebab-case binding emission. */
-export function nativePropName(name: string): string {
+export function nativePropName(name: string, type?: string): string {
+  // HTML images use src; the native image contract uses source. Keep this
+  // type-specific so metadata on views and legacy source values are unchanged.
+  if (type === 'Image' && name.toLowerCase() === 'src') return 'source'
   return nativePropNames.get(normaliseKey(name)) ?? name
 }

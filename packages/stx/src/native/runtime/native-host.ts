@@ -773,7 +773,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     getAttribute(node, name) {
       if (!node) return null
       if (isBindingNode(node)) return node.getAttribute(name)
-      const value = descriptorOf(node)?.props[nativePropName(name)]
+      const record = descriptorOf(node)
+      const value = record?.props[nativePropName(name, record.type)]
       return value == null || value === false ? null : value === true ? '' : String(value)
     },
     observeChildren(node, callback) {
@@ -882,8 +883,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         applyClasses(node.__stxId, record)
         return
       }
-      const prop = nativePropName(name)
       const record = recordOf(node)
+      const prop = nativePropName(name, record.type)
       const accessibilityBefore = prop === 'role' || prop.startsWith('aria-') || prop.startsWith('accessibility') ? projectAccessibility(record.props) : undefined
       record.props[prop] = value
       if (record.focused && disabled(record)) {
@@ -924,8 +925,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         node = forwarded
       }
       if (name === 'class' || name === 'className') { this.setAttribute(node, name, ''); return }
-      const prop = nativePropName(name)
       const record = recordOf(node)
+      const prop = nativePropName(name, record.type)
       const accessibilityBefore = prop === 'role' || prop.startsWith('aria-') || prop.startsWith('accessibility') ? projectAccessibility(record.props) : undefined
       delete record.props[prop]
       // Null rather than omitted: a patch is merged on the native side, so an
