@@ -643,3 +643,20 @@ The package is fully functional for basic native windows using craft. System tra
 
 - Powered by [Craft](https://github.com/stacksjs/craft)
 - Part of the [stx](https://github.com/stacksjs/stx) ecosystem
+
+## Background deadlines
+
+Use `backgroundDelay` for native application work that must continue while a
+macOS tray popover is hidden. It requires Craft's native timers capability.
+
+```typescript
+import { backgroundDelay } from '@stacksjs/desktop/browser'
+
+const cancellation = new AbortController()
+await backgroundDelay(1000, { signal: cancellation.signal })
+```
+
+Aborting rejects with `AbortError` and releases the native deadline. Delays must
+be integer milliseconds from zero through one day. Outside Craft, the same API
+uses ordinary browser timers. A native runtime missing timer support reports an
+error; upgrade the runtime before using this feature.

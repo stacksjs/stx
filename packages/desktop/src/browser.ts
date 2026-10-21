@@ -79,3 +79,6 @@ export * from './touchbar'
 export * from './updater'
 export * from './vision'
 export * from './window-events'
+
+export { backgroundDelay } from './background-delay'
+export type { BackgroundDelayOptions } from './background-delay'

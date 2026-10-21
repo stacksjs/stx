@@ -772,3 +772,6 @@ export type { CraftEventMap } from './_bridge'
 // =============================================================================
 export { getCapabilities, getCapability, isAvailable } from './capabilities'
 export type { BridgeCapability, BridgePlatformSupport } from './capabilities'
+
+export { backgroundDelay } from './background-delay'
+export type { BackgroundDelayOptions } from './background-delay'
