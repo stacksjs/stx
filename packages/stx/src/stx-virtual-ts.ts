@@ -1883,8 +1883,14 @@ export function buildVirtualTypeScript(
       let indent = 0
       if (shadowed.length > 0) {
         append(UNWRAP_HELPER_DECL)
-        for (const name of shadowed)
-          append(`type __StxT_${name} = ${UNWRAP_HELPER}<typeof ${name}>`)
+        for (const name of shadowed) {
+          // Template expressions run after setup and lifecycle hooks. A type
+          // query here would capture a let binding's setup-time narrowing
+          // (often null), although onMount later assigns its controller.
+          // Reading through a deferred function retains the declared type.
+          append(`function __StxRead_${name}() { return ${name} }`)
+          append(`type __StxT_${name} = ${UNWRAP_HELPER}<ReturnType<typeof __StxRead_${name}>>`)
+        }
         append(`;((${shadowed.map(name => `${name}: __StxT_${name}`).join(', ')}) => {`)
         indent = 1
       }
