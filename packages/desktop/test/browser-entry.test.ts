@@ -12,3 +12,18 @@ describe('browser entry', () => {
     expect(typeof browser.showMessageBox).toBe('function')
   })
 })
+
+
+it('bundles the browser entry without host-only FFI or Bun require glue', async () => {
+  const result = await Bun.build({
+    entrypoints: [new URL('../src/browser.ts', import.meta.url).pathname],
+    target: 'browser',
+    format: 'iife',
+  })
+  expect(result.success, result.logs.map(String).join('\n')).toBe(true)
+  const script = await result.outputs[0].text()
+  expect(script).not.toContain('bun:ffi')
+  expect(script).not.toContain('import.meta.require')
+  expect(() => new Function(script)).not.toThrow()
+  expect('caffeinate' in browser).toBe(false)
+})

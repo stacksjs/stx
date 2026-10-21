@@ -55,7 +55,8 @@ export * from './network'
 export * from './notifications'
 export * from './pdf'
 export * from './permissions'
-export * from './power'
+// Host IOKit assertions require bun:ffi. Import them from the host entry.
+// In-window power operations belong to Craft's native bridge.
 export * from './printing'
 export * from './screen'
 export * from './screen-capture'
