@@ -1013,6 +1013,7 @@ interface StxRuntimeRegistry {
   refDebounced: typeof refDebounced
   useThrottle: typeof useThrottle
   useThrottleFn: typeof useThrottleFn
+  useNativeDesktop: typeof useNativeDesktop
   useInterval: typeof useInterval
   useTimeout: typeof useTimeout
   useTimeoutFn: typeof useTimeoutFn
@@ -1077,4 +1078,10 @@ interface Window {
   __STX_CURRENT_ELEMENT__?: HTMLElement | null
   __stxRouter?: boolean
   __stxRouterConfig?: Record<string, any>
+}
+
+/** Native bridge accessor with mount-aware, exactly-once readiness and teardown. */
+declare function useNativeDesktop(): {
+  (): import('craft-native').CraftBridgeAPI | null
+  onReady(callback: (bridge: import('craft-native').CraftBridgeAPI) => void): () => void
 }

@@ -59,6 +59,7 @@ export function signalsPublicApiRuntime(componentApiRuntime: string): string {
     useThrottle,
     useThrottleFn,
     useInterval,
+    useNativeDesktop,
     useTimeout,
     useTimeoutFn,
     useToggle,

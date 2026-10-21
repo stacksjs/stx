@@ -3,6 +3,30 @@ export const SIGNALS_TIMER_RUNTIME = `  // =====================================
   // Timer & Utility Composables
   // ==========================================================================
 
+  // Native bridge access and readiness live here so templates need no browser globals.
+  function useNativeDesktop() {
+    var get = function() { return window.craft || null; };
+    get.onReady = function(callback) {
+      var disposed = false;
+      var delivered = false;
+      var run = function() {
+        if (disposed || delivered || !get()) return;
+        delivered = true;
+        window.removeEventListener('craft:ready', run);
+        callback(get());
+      };
+      var stop = function() {
+        disposed = true;
+        window.removeEventListener('craft:ready', run);
+      };
+      window.addEventListener('craft:ready', run);
+      onMount(run);
+      onDestroy(stop);
+      return stop;
+    };
+    return get;
+  }
+
   function useDebounce(fn, delay) {
     delay = delay || 250;
     var timer = null;

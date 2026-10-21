@@ -18,7 +18,7 @@ directories and fails if a new overlap has no recorded compatibility decision.
 | Switch | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | Preserve both APIs; device validation |
 | TextInput | Primitive | Shared file | Broader input-event/API compatibility before changing default resolution |
 | Image | Primitive | `StxImage` builtin alias, not the shared file | Fit/position mapping and builtin/shared precedence decision |
-| Video | Primitive | Shared file | Browser custom-element dependency needs a native adapter |
+| Video | Primitive | Shared file | Shared file playback adapter verified; provider/DRM/API and device validation remain |
 
 Explicit imports and screen-local components remain overrides. The audit tests
 verify dependency paths rather than inferring selection from similar HTML.
@@ -61,12 +61,23 @@ wrapping `<div>`, a client `value = state('/first')`, and
    `objectFit`/`objectPosition` still produce unsupported-style diagnostics;
    fit/position mapping and browser builtin/shared precedence remain migration
    gates. This fix does not certify native visual parity.
-3. **Video:** `<Video testID="target" label="Movie" :src="value" />`.
-   Executing the compiled bundle throws `ReferenceError: customElements is not
-   defined`: the shared setup imports and registers browser video-player
-   elements. Its fallback markup alone does not make its setup portable.
-   Separate host-neutral media state from browser registration first, then
-   test source, pause, events, lifecycle, and platform media capabilities.
+3. **Video (shared setup crash fixed, unreleased):**
+   `<Video testID="target" label="Movie" :src="value" :paused="paused" />`
+   now registers custom elements only in the browser. On native, the physical
+   player is one `Video` leaf: browser fallback videos and custom controls are
+   not emitted as duplicate players or unmapped views. Live `src` writes and
+   removal target native `source`; fractional aspect ratios become numbers.
+   Native play/pause/ended/timeupdate/loadedmetadata/loadstart/error callbacks
+   are relayed to the caller, without intercepting browser event bubbling.
+   `shared-video.test.ts` verifies source replacement/clearing, pause state,
+   playback events and payloads, sizing, conditional remount, stale events and
+   teardown in normal/minified bundles. `video-browser.test.ts` verifies real
+   custom-element registration, single event delivery and pause-on-clear.
+   Native hosts must support the supplied media URL/codec. YouTube/Vimeo page
+   embeds, browser source-list selection, tracks and DRM configuration are not
+   implemented by this adapter. Default native resolution and the primitive's
+   legacy `source` API remain unchanged; device playback/visual validation and
+   broader media API compatibility are still gates before default migration.
 
 These are JS/compiler observations, not simulator screenshots. None justifies
 changing resolution globally. The legacy-media regression tests keep the

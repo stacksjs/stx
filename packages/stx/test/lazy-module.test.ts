@@ -34,3 +34,19 @@ describe('lazy compiler modules', () => {
     expect(imports).toBe(2)
   })
 })
+
+
+test('does not share a compiled compiler cache with unversioned package copies', async () => {
+  const key = `test/versioned/${crypto.randomUUID()}`
+  const legacy = Symbol.for('stx.lazy-module-promises')
+  const shared = globalThis as any
+  const previous = shared[legacy]
+  shared[legacy] = new Map([[`${import.meta.resolve('../src/lazy-module')}\0${key}`, Promise.resolve({ stale: true })]])
+  try {
+    expect(await importOnce(key, async () => ({ fresh: true }))).toEqual({ fresh: true })
+  }
+  finally {
+    if (previous === undefined) delete shared[legacy]
+    else shared[legacy] = previous
+  }
+})

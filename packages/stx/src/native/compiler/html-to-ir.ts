@@ -527,7 +527,7 @@ export async function translateHtmlToIR(
       }
     }
 
-    if (type === tag && !NATIVE_TYPES.has(type) && !DROP_SUBTREE.has(tag) && !UNWRAP.has(tag) && !seenUnmapped.has(tag)) {
+    if (!inheritedDrop && type === tag && !NATIVE_TYPES.has(type) && !DROP_SUBTREE.has(tag) && !UNWRAP.has(tag) && !seenUnmapped.has(tag)) {
       seenUnmapped.add(tag)
       diagnostics.push({ kind: 'unmapped-tag', tag })
     }
@@ -586,9 +586,11 @@ export async function translateHtmlToIR(
       delete props.key
     }
 
-    // `svg` keeps its box and drops its geometry, so it opens as dropped even
-    // though the node itself is kept. A script or a stylesheet is not a view at
-    // all, so its node is discarded rather than attached as a `script` type --
+    // Native Video owns playback and controls: HTML fallback/skin children
+    // must not become a second player or unknown native views. Keep the
+    // Video's own bindings and events, but discard its browser-only subtree.
+    // A script or stylesheet is not a view at all, so its node is discarded
+    // rather than attached as a `script` type --
     // which is what the first version of this did, putting 89 `link` nodes and
     // 52 `script` nodes into the library's trees.
     return {
@@ -596,7 +598,7 @@ export async function translateHtmlToIR(
       node,
       variables,
       declaredNative: typeof declared === 'string' && NATIVE_TYPES.has(declared),
-      dropped: dropped || inheritedDrop || BOX_ONLY.has(tag),
+      dropped: dropped || inheritedDrop || BOX_ONLY.has(tag) || type === 'Video',
       discard: dropped || inheritedDrop,
       unwrap: UNWRAP.has(tag),
     }
