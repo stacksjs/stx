@@ -1,8 +1,8 @@
 /**
  * Power Management API
  *
- * Provides control over system sleep behavior using macOS caffeinate.
- * Spawns and manages /usr/bin/caffeinate processes.
+ * Holds native macOS IOKit assertions in the host process. Assertions are
+ * released on stop, expiry, and process exit; macOS also releases them on crash.
  *
  * @example
  * ```typescript
@@ -30,13 +30,15 @@
  * decaffeinate()
  * ```
  */
-import type { Subprocess } from 'bun'
+import { createPowerAssertion } from './power-native'
 
 // ============================================================================
 // Types
 // ============================================================================
 
 export interface CaffeinateOptions {
+  /** Description shown by macOS power diagnostics. */
+  reason?: string
   /** Duration in minutes. -1 or undefined = indefinite */
   duration?: number
   /** Prevent display from sleeping (-d flag). Default: true */
@@ -52,7 +54,7 @@ export interface CaffeinateOptions {
 }
 
 export interface CaffeinateInstance {
-  /** Process ID of the caffeinate process */
+  /** Process ID of the host owning the native assertions */
   readonly pid: number
   /** When caffeinate was started */
   readonly startedAt: Date
@@ -89,11 +91,10 @@ export interface CaffeinateStatus {
 // Internal State
 // ============================================================================
 
-let currentProcess: Subprocess | null = null
 let currentInstance: CaffeinateInstanceImpl | null = null
 
 class CaffeinateInstanceImpl implements CaffeinateInstance {
-  private _process: Subprocess
+  private _release: () => void
   private _startedAt: Date
   private _endsAt: Date | null
   private _options: CaffeinateOptions
@@ -101,9 +102,9 @@ class CaffeinateInstanceImpl implements CaffeinateInstance {
   private _expireTimer: ReturnType<typeof setTimeout> | null = null
   private _stopped = false
 
-  constructor(process: Subprocess, options: CaffeinateOptions) {
-    this._process = process
-    this._options = options
+  constructor(release: () => void, options: CaffeinateOptions) {
+    this._release = release
+    this._options = { ...options }
     this._startedAt = new Date()
 
     const duration = options.duration
@@ -112,7 +113,7 @@ class CaffeinateInstanceImpl implements CaffeinateInstance {
       this._endsAt = new Date(this._startedAt.getTime() + durationMs)
 
       this._expireTimer = setTimeout(() => {
-        this._stopped = true
+        this.stop()
         for (const handler of this._expireHandlers) {
           try {
             handler()
@@ -127,7 +128,7 @@ class CaffeinateInstanceImpl implements CaffeinateInstance {
   }
 
   get pid(): number {
-    return this._process.pid
+    return process.pid
   }
 
   get startedAt(): Date {
@@ -143,10 +144,7 @@ class CaffeinateInstanceImpl implements CaffeinateInstance {
   }
 
   get isActive(): boolean {
-    if (this._stopped)
-      return false
-    // Check if process is still running
-    return this._process.exitCode === null
+    return !this._stopped
   }
 
   get remainingMs(): number | null {
@@ -170,12 +168,7 @@ class CaffeinateInstanceImpl implements CaffeinateInstance {
       this._expireTimer = null
     }
 
-    try {
-      this._process.kill()
-    }
-    catch {
-      // Process may have already exited
-    }
+    this._release()
   }
 
   onExpire(handler: () => void): void {
@@ -190,53 +183,21 @@ class CaffeinateInstanceImpl implements CaffeinateInstance {
 /**
  * Start preventing the system from sleeping.
  *
- * Spawns a `/usr/bin/caffeinate` process with the specified options.
+ * Acquires native IOKit power assertions with the specified options.
  * If caffeinate is already active, the previous instance is stopped first.
  *
  * @param options - Caffeinate configuration
  * @returns A CaffeinateInstance for monitoring and controlling the session
  */
 export function caffeinate(options: CaffeinateOptions = {}): CaffeinateInstance {
-  // Stop any existing instance
+  if (options.duration !== undefined && options.duration !== -1
+    && (!Number.isFinite(options.duration) || options.duration <= 0))
+  throw new RangeError('duration must be positive minutes or -1 for indefinitely')
+
+  // Acquire first: a failed replacement must leave the existing session intact.
+  const release = createPowerAssertion(options)
+  const instance = new CaffeinateInstanceImpl(release, options)
   decaffeinate()
-
-  const {
-    duration,
-    preventDisplaySleep = true,
-    preventIdleSleep = true,
-    preventSystemSleep = true,
-    preventDiskSleep = false,
-    assertUserActivity = true,
-  } = options
-
-  // Build flags
-  const flags: string[] = []
-  if (preventDisplaySleep)
-    flags.push('-d')
-  if (preventIdleSleep)
-    flags.push('-i')
-  if (preventSystemSleep)
-    flags.push('-s')
-  if (preventDiskSleep)
-    flags.push('-m')
-  if (assertUserActivity)
-    flags.push('-u')
-
-  // Build args
-  const args: string[] = [...flags]
-
-  // Add duration if specified (in seconds)
-  if (duration && duration > 0) {
-    args.push('-t', String(duration * 60))
-  }
-
-  // Spawn caffeinate
-  const proc = Bun.spawn(['/usr/bin/caffeinate', ...args], {
-    stdio: ['ignore', 'ignore', 'ignore'],
-  })
-
-  const instance = new CaffeinateInstanceImpl(proc, options)
-  currentProcess = proc
   currentInstance = instance
 
   return instance
@@ -251,7 +212,6 @@ export function decaffeinate(instance?: CaffeinateInstance): void {
   if (instance) {
     instance.stop()
     if (currentInstance === instance) {
-      currentProcess = null
       currentInstance = null
     }
     return
@@ -260,7 +220,6 @@ export function decaffeinate(instance?: CaffeinateInstance): void {
   if (currentInstance) {
     currentInstance.stop()
   }
-  currentProcess = null
   currentInstance = null
 }
 
@@ -340,3 +299,7 @@ export function formatDuration(minutes: number): string {
   const m = minutes % 60
   return `${h}h ${m}m`
 }
+
+// Normal termination releases eagerly; the OS owns crash cleanup.
+if (typeof process !== 'undefined')
+  process.once('exit', () => decaffeinate())
