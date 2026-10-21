@@ -1008,7 +1008,8 @@ export interface ServeOptions {
    * server renders each static route, plus `paths`, through a private loopback
    * listener first. While another instance is serving the same port (the
    * previous release, with `reusePort`), it joins the port only once warm;
-   * with nobody else there it binds at once and warms behind the bind.
+   * with nobody else there it binds at once and warms behind the bind
+   * (`holdBind: 'always'` waits either way).
    *
    * - `paths`: extra paths to warm. Dynamic routes (`[slug].stx`) have no URL
    *   of their own, so name one representative path per template you want warm.
@@ -1016,6 +1017,7 @@ export interface ServeOptions {
    *   server binds and keeps warming behind the bind. Keep the image and page
    *   budgets together under your deploy tool's limit (ts-cloud waits 180s).
    * - `concurrency`: pages in flight at once, 4 by default.
+   * - `holdBind`: `'replacing'` (default) or `'always'`; see above.
    *
    * Warm-up requests carry the `x-stx-warmup: 1` header, so analytics and
    * other per-visit side effects can ignore them.
@@ -1472,6 +1474,13 @@ export const PAGE_WARMUP_HEADER = 'x-stx-warmup'
 export interface PageWarmupOptions {
   /** Extra paths to warm, e.g. one per dynamic template. */
   paths?: string[]
+  /**
+   * When the bind waits for the warm-up. `'replacing'` (the default) waits
+   * only while another instance serves the port, the previous release in a
+   * zero-downtime deploy. `'always'` waits regardless, for a caller that
+   * wants a warm server before anything reaches it: a test harness.
+   */
+  holdBind?: 'replacing' | 'always'
   /** How long a production start holds its bind for the warm-up, in ms. */
   budgetMs?: number
   /** Pages in flight at once. */
@@ -1481,6 +1490,7 @@ export interface PageWarmupOptions {
 export interface ResolvedPageWarmup {
   enabled: boolean
   paths: string[]
+  holdBind: 'replacing' | 'always'
   budgetMs: number
   concurrency: number
 }
@@ -1494,7 +1504,7 @@ export const DEFAULT_PAGE_WARMUP_BUDGET_MS = 60_000
  * the warm-up only ever asks this server for its own pages.
  */
 export function resolvePageWarmup(value: unknown): ResolvedPageWarmup {
-  const defaults: ResolvedPageWarmup = { enabled: true, paths: [], budgetMs: DEFAULT_PAGE_WARMUP_BUDGET_MS, concurrency: 4 }
+  const defaults: ResolvedPageWarmup = { enabled: true, paths: [], holdBind: 'replacing', budgetMs: DEFAULT_PAGE_WARMUP_BUDGET_MS, concurrency: 4 }
   if (value === false)
     return { ...defaults, enabled: false }
   if (!value || typeof value !== 'object')
@@ -1509,7 +1519,8 @@ export function resolvePageWarmup(value: unknown): ResolvedPageWarmup {
   const concurrency = typeof raw.concurrency === 'number' && Number.isFinite(raw.concurrency) && raw.concurrency >= 1
     ? Math.floor(raw.concurrency)
     : defaults.concurrency
-  return { enabled: true, paths, budgetMs, concurrency }
+  const holdBind = raw.holdBind === 'always' ? 'always' : defaults.holdBind
+  return { enabled: true, paths, holdBind, budgetMs, concurrency }
 }
 
 /**
@@ -5117,10 +5128,11 @@ function __stxOverlay(errs){
   // pass; past the budget it binds and keeps warming behind the bind). With
   // nobody serving the port (a first deploy, a lone restart, a test run),
   // holding the bind would only turn slow answers into no answers, so it binds
-  // at once and warms behind the bind.
+  // at once and warms behind the bind - unless the caller asked for a warm
+  // server first (`holdBind: 'always'`, a test harness).
   if (production && pageWarmup.enabled) {
     const warmupStartedAt = performance.now()
-    const covered = options.reusePort === true && await portIsServed(port)
+    const covered = pageWarmup.holdBind === 'always' || (options.reusePort === true && await portIsServed(port))
     const warming = warmPages()
     const done = !covered || await settleWithin(warming, pageWarmup.budgetMs)
     if (!done) {

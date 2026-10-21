@@ -139,6 +139,12 @@ describe('page warm-up', () => {
     expect(warmed.map(v => v.path).sort()).toEqual(['/', '/about'])
   })
 
+  it('waits for the warm-up with nobody else on the port when asked to', async () => {
+    const booted = await boot(PRODUCTION, freePort(), { pageWarmup: { holdBind: 'always', paths: ['/users/ada'] } })
+    booted.stop()
+    expect(booted.seenAtBind.filter(v => v.warmup).map(v => v.path).sort()).toEqual(['/', '/about', '/users/ada'])
+  })
+
   // A deploy tool gives up on a release that never binds.
   it('joins once the budget is spent and finishes warming behind the bind', async () => {
     const port = freePort()
@@ -194,8 +200,10 @@ describe('portIsServed', () => {
 
 describe('resolvePageWarmup', () => {
   it('is on with the defaults when unset', () => {
-    expect(resolvePageWarmup(undefined)).toEqual({ enabled: true, paths: [], budgetMs: DEFAULT_PAGE_WARMUP_BUDGET_MS, concurrency: 4 })
-    expect(resolvePageWarmup(true)).toEqual({ enabled: true, paths: [], budgetMs: DEFAULT_PAGE_WARMUP_BUDGET_MS, concurrency: 4 })
+    expect(resolvePageWarmup(undefined)).toEqual({ enabled: true, paths: [], holdBind: 'replacing', budgetMs: DEFAULT_PAGE_WARMUP_BUDGET_MS, concurrency: 4 })
+    expect(resolvePageWarmup(true)).toEqual({ enabled: true, paths: [], holdBind: 'replacing', budgetMs: DEFAULT_PAGE_WARMUP_BUDGET_MS, concurrency: 4 })
+    expect(resolvePageWarmup({ holdBind: 'always' }).holdBind).toBe('always')
+    expect(resolvePageWarmup({ holdBind: 'sometimes' }).holdBind).toBe('replacing')
   })
 
   it('turns off on false', () => {
