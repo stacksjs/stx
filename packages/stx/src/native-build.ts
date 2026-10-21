@@ -478,7 +478,7 @@ exec "$DIR/craft" --html-file "$RESOURCES/index.html" \\
   // see the application identity. Release tooling can replace this development
   // signature with the developer's distribution identity afterward.
   await signMacOSBundle(appBundlePath, config.backend
-    ? [join(macOSDir, 'craft-runtime')]
+    ? [join(macOSDir, 'stx-backend')]
     : style === 'launcher' ? [join(macOSDir, 'craft')] : [], config.macosSigning)
 
   // Create DMG if requested

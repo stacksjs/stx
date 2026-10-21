@@ -1,5 +1,5 @@
 import { afterAll, expect, test } from 'bun:test'
-import { chmodSync, mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildNative } from '../src/native-build'
@@ -13,10 +13,12 @@ test.skipIf(process.platform !== 'darwin')('compiled backend works outside the s
   await Bun.write(template, '<!doctype html><html><head><title>Local</title></head><body><h1>Embedded UI</h1></body></html>')
   await Bun.write(handler, "export default (request: Request) => new URL(request.url).pathname === '/api' ? Response.json({ works: true }) : null")
   const craftPath = join(root, 'craft-fixture')
-  await Bun.write(craftPath, `#!/bin/sh\ncase "$1" in\n  --capabilities) echo '{"bundleBackend":true}' ;;\n  --version) echo '0.0.279' ;;\nesac\n`)
-  chmodSync(craftPath, 0o755)
+  const fixture = join(root, 'craft-fixture.ts')
+  await Bun.write(fixture, `if (process.argv.includes('--capabilities')) console.log('{"bundleBackend":true}'); else if (process.argv.includes('--version')) console.log('0.0.279')`)
+  const compiled = Bun.spawnSync([process.execPath, 'build', fixture, '--compile', '--outfile', craftPath])
+  expect(compiled.exitCode).toBe(0)
   const result = await buildNative({ input: template, output: root, target: 'macos', name: 'Local', craftPath, backend: { entry: handler } })
-  expect(result.success).toBe(true)
+  expect(result.success, result.error).toBe(true)
   expect(await Bun.file(join(result.outputPath!, 'Contents/Resources/craft.json')).json()).toMatchObject({ backend: { executable: 'stx-backend' } })
   await Bun.file(template).delete()
   await Bun.file(handler).delete()
