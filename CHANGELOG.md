@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.620...v0.2.621)
+
+## 🐛 Bug Fixes
+
+- **native**: a Switch or Checkbox with :value and @change stays the native primitive ([7fc2644](https://github.com/stacksjs/stx/commit/7fc2644)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.621 ([9f0a06a](https://github.com/stacksjs/stx/commit/9f0a06a)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.619...v0.2.620)
 
 ## ✨ Features
