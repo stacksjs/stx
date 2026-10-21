@@ -575,6 +575,26 @@ describe('Loops Comprehensive', () => {
       expect(result).toContain('x')
       expect(result).not.toContain('empty')
     })
+    it('should not take an @empty(expr) conditional in a row for the @empty separator', () => {
+      const template = '@forelse(items as item)<p>@empty(item.name)missing@else{{ item.name }}@endempty</p>@empty<p>No items</p>@endforelse'
+
+      const full = run(template, { items: [{ name: 'Ann' }, { name: '' }] })
+      expect(full).toContain('<p>Ann</p>')
+      expect(full).toContain('<p>missing</p>')
+      expect(full).not.toContain('No items')
+
+      const empty = run(template, { items: [] })
+      expect(empty).toContain('<p>No items</p>')
+      expect(empty).not.toContain('@empty')
+      expect(empty).not.toContain('@endempty')
+    })
+
+    it('should keep @empty followed by text in parentheses as the separator', () => {
+      const template = '@forelse(items as item)<li>{{ item }}</li>@empty (none)@endforelse'
+      expect(run(template, { items: [] }).trim()).toBe('(none)')
+      expect(run(template, { items: ['a'] })).toContain('<li>a</li>')
+      expect(run(template, { items: ['a'] })).not.toContain('(none)')
+    })
   })
 
   // ===========================================================================
