@@ -28,7 +28,7 @@
 import { dirname, resolve } from 'node:path'
 import { defaultConfig } from './config'
 import { extractVariables } from './variable-extractor'
-import { injectRouterScript, processDirectives } from './process'
+import { buildModulesTag, injectRouterScript, processDirectives } from './process'
 import { extractBridgeData, processClientScript } from './client-script'
 import { findSfcTemplateBlock } from './sfc-template'
 import type { StxOptions } from './types'
@@ -463,7 +463,11 @@ export async function renderTemplateString(
           filePath,
         })
       }))
-      const scriptsHtml = transformedScripts.join('\n')
+      // Standalone rendering transforms page scripts after processDirectives
+      // has collected component imports. Register these page imports too,
+      // before executing their scoped scripts (native builds have no server).
+      const modules = await buildModulesTag(transformedScripts, { ...options, buildMode: 'build' })
+      const scriptsHtml = [modules, ...transformedScripts].filter(Boolean).join('\n')
       const bodyEndMatch = output.match(/(<\/body>)/i)
       if (bodyEndMatch) {
         output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)

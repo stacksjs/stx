@@ -336,7 +336,7 @@ async function externalBundleTag(attrs: string, code: string, options: StxOption
   return `<script ${attrs} src="${registerServeModuleBundle(code)}"></script>`
 }
 
-async function buildModulesTag(
+export async function buildModulesTag(
   sources: Array<string | null>,
   options: StxOptions,
   dependencies?: Set<string>,
