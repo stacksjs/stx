@@ -39,6 +39,7 @@ import type { ParsedEvent, EventModifiers } from './events'
 import { asInvocableStatement, listensPassively } from './events'
 import { transformStoreImports } from './store-imports'
 import { declaresClientIdentifier } from './client-declarations'
+import { scopeObject } from './client-scope-bindings'
 import { declaredNames, parameterAnalysis, unboundNames } from './client-parameter-bindings'
 import { findInterpolationEnd, stripCommentsAndLiterals } from './strip-literals'
 // Re-exported from its old home. It moved to `strip-literals.ts` so the
@@ -1536,7 +1537,7 @@ ${escapeScriptBody(`${autoImportCode}${code}\n${eventCode}`)}
   // Helper: generate stx.mount() wrapper with auto-extracted return statement
   function wrapInMount(declarations: string[]): string {
     const returnStmt = declarations.length > 0
-      ? `\n  return { ${declarations.join(', ')} };`
+      ? `\n  return ${scopeObject(code, declarations)};`
       : ''
     const failureMessage = JSON.stringify(`[stx] client block failed${options.filePath ? ` (${options.filePath})` : ''}; this block will not hydrate`)
 

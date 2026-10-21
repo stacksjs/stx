@@ -12,6 +12,7 @@
  */
 
 import type { StxOptions } from './types'
+import { extractExports as scopeExports, scopePropertyDescriptor } from './client-scope-bindings'
 import { pascalToKebab } from './component-resolution'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -2943,6 +2944,7 @@ async function buildComponentIsland(rawContent: string, componentFilePath: strin
   // Transform store imports before IIFE wrapping (import statements can't be inside functions)
   const content = transformStoreImports(bundledContent)
   const componentLocalNames = extractVariableNames(content)
+  const mutableLocals = new Set(scopeExports(content, true).split(',').map(name => name.trim()))
   // Wrap script content to register in scope
   // Add data-stx-scoped attribute to prevent double-processing by processScriptSetup
   // Pull the full component-system API into scope, not just the
@@ -3012,10 +3014,13 @@ ${content}
   // Register all defined signals and functions in this scope
   const __localVars = {};
   try {
-    ${componentLocalNames.map(v => `if (typeof ${v} !== 'undefined') __localVars['${v}'] = ${v};`).join('\n    ')}
+    ${componentLocalNames.map(v => mutableLocals.has(v)
+      ? `Object.defineProperty(__localVars, '${v}', ${scopePropertyDescriptor(v)});`
+      : `if (typeof ${v} !== 'undefined') __localVars['${v}'] = ${v};`).join('\n    ')}
   }
 catch (e) {}
-  Object.assign(__scopeVars, __localVars);
+  Object.defineProperties(__scopeVars, Object.getOwnPropertyDescriptors(__localVars));
+  if (typeof __stxLiveBindings !== 'undefined') Object.defineProperties(__scopeVars, Object.getOwnPropertyDescriptors(__stxLiveBindings));
 }
 finally {
   __registeringSetupHooks = false;

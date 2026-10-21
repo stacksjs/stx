@@ -163,7 +163,7 @@ export const SIGNALS_HYDRATION_AUDIT_RUNTIME = `  // ===========================
         s.el.__stx_audit_recovered = true;
         try {
           var vars = s.registered ? window.stx._scopes[s.id] : null;
-          if (vars) Object.assign(componentScope, vars);
+          if (vars) assignTemplateScope(componentScope, vars);
           s.el.__stx_disposers = trackEffects(function() { processElement(s.el, componentScope); });
           s.el.removeAttribute('x-cloak');
           s.el.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });

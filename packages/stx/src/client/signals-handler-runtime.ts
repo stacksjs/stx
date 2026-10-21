@@ -51,7 +51,7 @@ export const SIGNALS_HANDLER_RUNTIME = `  function expressionUsesSignalApi(expre
       }
       // First try component-level scope
       const elementScope = findElementScope(el || currentElement);
-      const scope = { ...globalHelpers, ...componentScope, ...(elementScope || {}) };
+      const scope = mergeTemplateScopes(globalHelpers, componentScope, (elementScope || {}));
 
       // Check for shorthand syntax (Feature #8)
       const shorthandFn = parseEventShorthand(expr, scope);

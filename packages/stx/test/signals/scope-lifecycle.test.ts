@@ -88,7 +88,7 @@ describe('Signal scope isolation', () => {
 
     it('should merge componentScope with elementScope', () => {
       const runtime = generateSignalsRuntimeDev()
-      expect(runtime).toContain('...componentScope')
+      expect(runtime).toContain('mergeTemplateScopes(globalHelpers, componentScope,')
       expect(runtime).toContain('elementScope')
     })
 
@@ -107,8 +107,8 @@ describe('Signal scope isolation', () => {
 
     it('should create item scope in @for loops', () => {
       const runtime = generateSignalsRuntimeDev()
-      expect(runtime).toContain('itemScope[itemName] = item')
-      expect(runtime).toContain('itemScope[indexName] = index')
+      expect(runtime).toContain('Object.defineProperty(itemScope, itemName, { value: itemSignal,')
+      expect(runtime).toContain('Object.defineProperty(itemScope, indexName, { value: indexSignal,')
     })
   })
 
@@ -389,7 +389,7 @@ describe('Auto-initialization', () => {
 
   it('should assign setup result to componentScope', () => {
     const runtime = generateSignalsRuntimeDev()
-    expect(runtime).toContain('Object.assign(componentScope, result)')
+    expect(runtime).toContain('assignTemplateScope(componentScope, result)')
   })
 
   it('should adopt the queued setup when layout expansion removes data-stx', () => {
@@ -415,7 +415,7 @@ describe('Auto-initialization', () => {
 
     expect(setupIndex).toBeGreaterThan(-1)
     expect(mountIndex).toBeGreaterThan(setupIndex)
-    expect(runtime).toContain('processElement(root, { ...componentScope, ...(scope || {}) })')
+    expect(runtime).toContain('processElement(root, mergeTemplateScopes(componentScope, (scope || {})))')
   })
 
   it('should activate routed page setup before mounting routed components', () => {

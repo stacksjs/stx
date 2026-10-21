@@ -21,7 +21,7 @@ export const SIGNALS_LAZY_HYDRATION_RUNTIME = `  // Lazy hydration: defer proces
         var effectiveScope = scope;
         if (sid) {
           var reg = window.stx._scopes ? window.stx._scopes[sid] : null;
-          if (reg) effectiveScope = Object.assign({}, scope || {}, reg);
+          if (reg) effectiveScope = mergeTemplateScopes(scope, reg);
         }
         // Walk children and process them with the (now scope-merged) context
         Array.from(el.children).forEach(function(child) { processElement(child, effectiveScope); });

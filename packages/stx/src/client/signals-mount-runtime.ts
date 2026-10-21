@@ -35,7 +35,7 @@ export const SIGNALS_MOUNT_RUNTIME = `    mountEl: function(selector, setupFn) {
         }
 
         var disposeEffects = trackEffects(function() {
-          processElement(root, { ...componentScope, ...(scope || {}) });
+          processElement(root, mergeTemplateScopes(componentScope, (scope || {})));
         });
         root.__stx_disposers = disposeEffects;
 
@@ -202,12 +202,12 @@ else {
           // caller, not a replacement for its handlers/refs/prop signals.
           if (root.hasAttribute('data-stx-component-wrapper')) root.__stx_parent_scope = scope;
           else root.__stx_scope = scope;
-          Object.assign(componentScope, scope);  // Keep for backwards compat
+          assignTemplateScope(componentScope, scope);  // Keep for backwards compat
         }
 
         // Walk DOM and bind directives, tracking effects for cleanup
         var disposeEffects = trackEffects(function() {
-          processElement(root, { ...componentScope, ...(scope || {}) });
+          processElement(root, mergeTemplateScopes(componentScope, (scope || {})));
         });
         root.__stx_disposers = disposeEffects;
 

@@ -43,7 +43,7 @@ export const SIGNALS_IF_RUNTIME = `  const detachedBranches = new Set();
     // Capture BOTH element scope AND passedScope NOW before anything changes
     // passedScope may contain @for iteration variables or parent component signals
     const capturedElementScope = findElementScope(el);
-    const capturedComponentScope = { ...passedScope };
+    const capturedComponentScope = mergeTemplateScopes(passedScope);
 
     preserveConditionalComponentScopes(el, capturedComponentScope);
     stxHost.insert(parent, placeholder, el);
@@ -73,7 +73,7 @@ export const SIGNALS_IF_RUNTIME = `  const detachedBranches = new Set();
         return expression;
       }
       try {
-        const scope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
+        const scope = mergeTemplateScopes(globalHelpers, capturedComponentScope, (capturedElementScope || {}));
         const unwrapScope = createExpressionAutoUnwrapProxy(scope, expression);
         const fn = __stxCompileScoped(unwrapScope, [], 'return ' + expression + '');
         return fn(...__stxArgs(fn, unwrapScope));
@@ -81,7 +81,7 @@ export const SIGNALS_IF_RUNTIME = `  const detachedBranches = new Set();
 catch (e1) {
         try {
           // Retry without the unwrap proxy so call-syntax (signal()) works.
-          const scope2 = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
+          const scope2 = mergeTemplateScopes(globalHelpers, capturedComponentScope, (capturedElementScope || {}));
           const fn2 = __stxCompileScoped(scope2, [], 'return ' + expression + '');
           return fn2(...__stxArgs(fn2, scope2));
         }
@@ -99,7 +99,7 @@ catch (e2) {
     const processChildrenWithScope = () => {
       // Build the combined scope for children - no need to modify global componentScope
       // Just pass the scope explicitly to processElement
-      const childScope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
+      const childScope = mergeTemplateScopes(globalHelpers, capturedComponentScope, (capturedElementScope || {}));
 
 
       Array.from(el.childNodes).forEach(child => processElement(child, childScope));
@@ -113,7 +113,7 @@ catch (e2) {
     // inserted and left inert, so bindings such as :text and {{ expression }}
     // leaked into the rendered UI until the condition toggled.
     const processTemplateNodes = (nodes) => {
-      const childScope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
+      const childScope = mergeTemplateScopes(globalHelpers, capturedComponentScope, (capturedElementScope || {}));
       // Components compiled inside a <template :if> carry setup scripts in the
       // template content. Browser-cloned scripts are inert, so register their
       // scopes and forwarded props before walking the inserted branch. This is
@@ -132,7 +132,7 @@ catch (e2) {
 
     // Evaluate the :if expression — use direct signal read for simple refs,
     // falling back to evalExpr for complex expressions
-    const fullScope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
+    const fullScope = mergeTemplateScopes(globalHelpers, capturedComponentScope, (capturedElementScope || {}));
     const directSignal = fullScope[expr];
 
     effect(() => {
@@ -300,7 +300,7 @@ else if (!value && isInserted) {
               detachedBranches.add(resume);
               return;
             }
-            var childScope = { ...globalHelpers, ...capturedComponentScope, ...(capturedElementScope || {}) };
+            var childScope = mergeTemplateScopes(globalHelpers, capturedComponentScope, (capturedElementScope || {}));
             // A false single-element conditional is detached before the
             // DOMContentLoaded component-scope pass. When it becomes visible,
             // hydrate any component roots in the restored subtree first so

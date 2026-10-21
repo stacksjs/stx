@@ -3,7 +3,7 @@ export const SIGNALS_SHOW_RUNTIME = `  function bindShow(el, expr, passedScope =
     if (el.__stx_show_bound) return;
     el.__stx_show_bound = true;
 
-    const capturedScope = { ...globalHelpers, ...passedScope, ...(findElementScope(el) || {}) };
+    const capturedScope = mergeTemplateScopes(globalHelpers, passedScope, (findElementScope(el) || {}));
 
     // Check if the expression is a simple signal reference (most common case for :show)
     const directSignal = capturedScope[expr];

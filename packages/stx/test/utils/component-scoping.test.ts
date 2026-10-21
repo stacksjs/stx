@@ -81,7 +81,7 @@ describe('Component scoping', () => {
       const runtime = generateSignalsRuntimeDev()
 
       // toValue should merge scopes
-      expect(runtime).toContain('...componentScope')
+      expect(runtime).toContain('mergeTemplateScopes(globalHelpers, componentScope,')
       expect(runtime).toContain('elementScope')
     })
 
@@ -105,14 +105,14 @@ describe('Component scoping', () => {
       const runtime = generateSignalsRuntimeDev()
 
       // Should create item scope
-      expect(runtime).toContain('itemScope[itemName] = item')
+      expect(runtime).toContain('Object.defineProperty(itemScope, itemName, { value: itemSignal,')
     })
 
     it('should support index variable in loops', () => {
       const runtime = generateSignalsRuntimeDev()
 
       // Should support index
-      expect(runtime).toContain('itemScope[indexName] = index')
+      expect(runtime).toContain('Object.defineProperty(itemScope, indexName, { value: indexSignal,')
     })
 
     it('should find scope from parent element for loops', () => {

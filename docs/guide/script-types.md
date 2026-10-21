@@ -221,6 +221,11 @@ onMount(() => {
 
 ### What You Can Do in `<script client>`
 
+A top-level `let` controller assigned in `onMount` stays live in template
+handlers such as `@click="controller?.save()"`, including when its setup imports
+TypeScript modules. Use `state` for values whose changes should trigger a visual
+update; an ordinary `let` provides a live binding without scheduling renders.
+
 - **Signals**: `state()`, `derived()`, `effect()`
 - **Lifecycle hooks**: `onMount()`, `onDestroy()`
 - **DOM manipulation**: `useRef()`, `document.querySelector()` (prefer `useRef`)

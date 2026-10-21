@@ -33,7 +33,7 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
         usedLatestSetup = true;
         if (typeof setupResult === 'object' && setupResult !== null) {
           console.log('[stx:load] _latestSetup keys:', Object.keys(setupResult).slice(0, 10));
-          Object.assign(componentScope, setupResult);
+          assignTemplateScope(componentScope, setupResult);
         }
       } catch (e) {
         console.error('[stx:load] _latestSetup error:', e);
@@ -49,11 +49,11 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
         var setupName = el.getAttribute('data-stx');
         if (setupName && window[setupName]) {
           var result = window[setupName]();
-          if (typeof result === 'object') Object.assign(componentScope, result);
+          if (typeof result === 'object') assignTemplateScope(componentScope, result);
         }
       });
     }
-    var spaPageScopeSnapshot = { ...componentScope };
+    var spaPageScopeSnapshot = mergeTemplateScopes(componentScope);
 
     // Routed component mount scripts execute after DOMContentLoaded. Queue them
     // until the destination page setup is active so projected props and parent
@@ -124,7 +124,7 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
       // the two share take the component's value for the page. The offline
       // banner's connected flag read as a Settings card's "Connected".
       if (el.__stx_disposers) return;
-      Object.assign(componentScope, scopeVars);
+      assignTemplateScope(componentScope, scopeVars);
       var disposeEffects = trackEffects(function() { processElement(el, componentScope); });
       el.__stx_disposers = disposeEffects;
       // A replacement layout's scope can live outside the router container.
@@ -143,7 +143,7 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
     // full load binds the page before any component, so it never saw this.
     // A component's own bindings resolve its locals through its scope element,
     // and a name only a component declares stays reachable as before.
-    Object.assign(componentScope, spaPageScopeSnapshot);
+    assignTemplateScope(componentScope, spaPageScopeSnapshot);
 
     // Process the container content — bind {{ }}, :attr, @event directives.
     // Run synchronously (not in setTimeout) so componentScope is captured correctly.

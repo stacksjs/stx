@@ -43,7 +43,7 @@ export const SIGNALS_EVENT_SHORTHAND_RUNTIME = `  // ===========================
       const signal = scope[varName];
       if (signal && signal._isSignal) {
         return ($event) => {
-          const addValue = toValue(valueExpr, null, true, { ...scope, $event: $event });
+          const addValue = toValue(valueExpr, null, true, mergeTemplateScopes(scope, { $event: $event }));
           signal.update(n => {
             switch (op) {
               case '+': return n + addValue;
@@ -65,7 +65,7 @@ export const SIGNALS_EVENT_SHORTHAND_RUNTIME = `  // ===========================
       const signal = scope[varName];
       if (signal && signal._isSignal) {
         return ($event) => {
-          const newValue = toValue(valueExpr, null, true, { ...scope, $event: $event });
+          const newValue = toValue(valueExpr, null, true, mergeTemplateScopes(scope, { $event: $event }));
           signal.set(newValue);
         };
       }

@@ -17,7 +17,7 @@ export const SIGNALS_COMPONENT_PROPS_RUNTIME = `  function bindParentComponentPr
     }).filter(Boolean);
     if (!bindings.length) return;
     el.__stx_parent_props_bound = true;
-    var scope = { ...globalHelpers, ...callerScope };
+    var scope = mergeTemplateScopes(globalHelpers, callerScope);
 
     bindings.forEach(function(binding) {
       var name = binding.name;
@@ -74,7 +74,7 @@ export const SIGNALS_COMPONENT_PROPS_RUNTIME = `  function bindParentComponentPr
   }
 
   function resolveComponentCallerScope(el, pageScope) {
-    var resolved = { ...pageScope };
+    var resolved = mergeTemplateScopes(pageScope);
     var ancestors = [];
     var current = el && (el.parentElement || el.parentNode);
     while (current && current !== document) {
@@ -84,7 +84,7 @@ export const SIGNALS_COMPONENT_PROPS_RUNTIME = `  function bindParentComponentPr
     }
     ancestors.reverse().forEach(function(scopeId) {
       var ancestorScope = window.stx._scopes && window.stx._scopes[scopeId];
-      if (ancestorScope) Object.assign(resolved, ancestorScope);
+      if (ancestorScope) assignTemplateScope(resolved, ancestorScope);
     });
     return resolved;
   }

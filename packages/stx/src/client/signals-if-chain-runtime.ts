@@ -13,7 +13,7 @@ export const SIGNALS_IF_CHAIN_RUNTIME = `  // Reactive if/else-if/else chain. A 
     var parent = head.parentNode;
     if (!parent) { console.warn('[STX] bindIfChain: head element has no parent, skipping'); return; }
 
-    var capturedComponentScope = { ...passedScope };
+    var capturedComponentScope = mergeTemplateScopes(passedScope);
 
     // Detach every branch up-front, leaving a positional placeholder comment
     // so reinsertion preserves source order. Mark each as a chain member so
@@ -80,7 +80,7 @@ export const SIGNALS_IF_CHAIN_RUNTIME = `  // Reactive if/else-if/else chain. A 
     function evalBranch(b) {
       var expression = b.expr;
       if (/^__[A-Z_]+__$/.test(expression.trim())) return expression;
-      var scope = { ...globalHelpers, ...capturedComponentScope, ...(b.capturedElementScope || {}) };
+      var scope = mergeTemplateScopes(globalHelpers, capturedComponentScope, (b.capturedElementScope || {}));
       try {
         var unwrapScope = createExpressionAutoUnwrapProxy(scope, expression);
         // Compiled over the names the expression mentions (see __stxCompileScoped).
@@ -244,7 +244,7 @@ catch (e) { /* a disposer of its own is not this branch's problem */ }
           // branch picked after render survive their row's removal (#1954).
           pick.el.__stx_chain_disposers = trackEffects(function () {
           peek(function () {
-            var childScope = { ...globalHelpers, ...capturedComponentScope, ...(pick.capturedElementScope || {}) };
+            var childScope = mergeTemplateScopes(globalHelpers, capturedComponentScope, (pick.capturedElementScope || {}));
             // Components compiled inside any branch of an if/else-if/else
             // chain carry scoped setup scripts with them. Branch nodes are
             // detached before those scripts can execute, so simply

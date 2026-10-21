@@ -10,9 +10,8 @@
  * re-harvested the bare `items` (now the raw import) and bound the template
  * to the wrong value — a silent misregistration.
  *
- * Fix: capture the rename map before stripping and re-expose it as
- * `var __stxScopeRenames = { "items": items2 }` so the scope registrar can
- * bind the ORIGINAL name to the renamed (correct) binding.
+ * The isolated bundle namespace preserves the public name with an accessor
+ * onto the renamed local, so later assignments remain visible too.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
@@ -54,7 +53,7 @@ describe('client-script-bundler: import/local name shadow (#1767)', () => {
     expect(out).toMatch(/\bitems2\b/)
     // ...and the isolated bundle re-exposes the original public name from the
     // renamed local binding, so templates receive the derived value.
-    expect(out).toMatch(/"items":\s*items2/)
+    expect(out).toMatch(/get "items"\(\)\s*\{ return items2 \}/)
     expect(out).toContain('var items = undefined')
     expect(out).toMatch(/items = __stxBundle_[a-f0-9]+\["items"\]/)
   })

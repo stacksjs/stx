@@ -25,8 +25,8 @@ describe('Template Improvements Integration', () => {
     it('should inject globalHelpers into @for scope', () => {
       const runtime = generateSignalsRuntimeDev()
       // Verify global helpers and row-local values share the evaluation scope.
-      expect(runtime).toContain('const baseScope = { ...globalHelpers')
-      expect(runtime).toContain('...extraScope }')
+      expect(runtime).toContain('const baseScope = mergeTemplateScopes(globalHelpers,')
+      expect(runtime).toContain('(elementScope || {}), extraScope)')
     })
 
     it('should support @for with @loading state', () => {

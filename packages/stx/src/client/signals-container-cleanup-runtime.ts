@@ -19,7 +19,7 @@ export const SIGNALS_CONTAINER_CLEANUP_RUNTIME = `  // =========================
     document.querySelectorAll('body > *').forEach(function(el) {
       if (el === container) return;
       if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE') return;
-      if (el.__stx_scope) Object.assign(componentScope, el.__stx_scope);
+      if (el.__stx_scope) assignTemplateScope(componentScope, el.__stx_scope);
     });
 
     // 1-2. Every descendant, then the container: cancel pending island

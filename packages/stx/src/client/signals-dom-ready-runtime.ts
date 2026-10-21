@@ -26,7 +26,7 @@ export const SIGNALS_DOM_READY_RUNTIME = `  // =================================
       try {
         const result = latestSetup();
         if (typeof result === 'object' && result !== null)
-          Object.assign(componentScope, result);
+          assignTemplateScope(componentScope, result);
       }
       catch (e) {
         console.error('[stx] initial setup error:', e);
@@ -49,7 +49,7 @@ export const SIGNALS_DOM_READY_RUNTIME = `  // =================================
           const result = window[setupName]();
           console.log('[DOMContentLoaded] setup returned:', result ? Object.keys(result).slice(0, 10) : 'null');
           if (typeof result === 'object' && result !== null) {
-            Object.assign(componentScope, result);
+            assignTemplateScope(componentScope, result);
           }
         }
         catch (e) {
@@ -57,7 +57,7 @@ export const SIGNALS_DOM_READY_RUNTIME = `  // =================================
         }
       }
     });
-    var pageScopeSnapshot = { ...componentScope };
+    var pageScopeSnapshot = mergeTemplateScopes(componentScope);
 
     /*
      * Any x-data scope the reactive bridge did not reach, initialized here.
@@ -194,7 +194,7 @@ export const SIGNALS_DOM_READY_RUNTIME = `  // =================================
       // This ensures expressions can access component variables even for elements
       // where findElementScope might not work (e.g., cloned elements not yet in DOM)
       if (scopeVars) {
-        componentScope = { ...componentScope, ...scopeVars };
+        componentScope = mergeTemplateScopes(componentScope, scopeVars);
       }
 
       console.log('[stx] calling processElement on scope:', scopeId, 'componentScope keys:', Object.keys(componentScope).length, 'scopeVars keys:', Object.keys(scopeVars).length);

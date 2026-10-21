@@ -31,7 +31,7 @@ export const SIGNALS_HYDRATION_RUNTIME = `  // Hydrate a subtree inserted AFTER 
       el.__stx_parent_scope = el.__stx_parent_scope
         || resolveComponentCallerScope(el, componentScope);
       bindParentComponentProps(el, el.__stx_parent_scope);
-      Object.assign(componentScope, scopeVars);
+      assignTemplateScope(componentScope, scopeVars);
       el.__stx_disposers = trackEffects(function() { processElement(el, componentScope); });
       if (scopeVars.__mountCallbacks && !scopeVars.__mounted) {
         scopeVars.__mounted = true;

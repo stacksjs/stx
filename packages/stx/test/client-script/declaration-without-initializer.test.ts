@@ -104,7 +104,7 @@ describe('the rendered page', () => {
       new Set(),
     )
 
-    const returned = html.match(/return \{[^}]*\}/)?.[0] ?? ''
+    const returned = html.match(/return \{[\s\S]*?\};/)?.[0] ?? ''
 
     expect(returned).toContain('withInit')
     // The one that was missing. `withInit` differs only in having an

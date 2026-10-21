@@ -185,7 +185,7 @@ else {
           return expression;
         }
         // Use passedScope instead of componentScope to preserve context through nested processing
-        const scope = { ...globalHelpers, ...passedScope, ...(capturedScope || {}), ...extraScope };
+        const scope = mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}), extraScope);
         const unwrapScope = createAutoUnwrapProxy(scope, function(prop) {
           if (typeof prop !== 'string') return false;
           return expressionCallsSignal(expression, prop)
@@ -206,7 +206,7 @@ catch (e) {
     const evalLazy = (expression, extraScope = {}) => {
       try {
         if (/^__[A-Z_]+__$/.test(expression.trim())) return expression;
-        const scope = { ...globalHelpers, ...passedScope, ...(capturedScope || {}), ...extraScope };
+        const scope = mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}), extraScope);
         const unwrapScope = createAutoUnwrapProxy(scope, function(prop) {
           if (typeof prop !== 'string') return false;
           return expressionCallsSignal(expression, prop)
@@ -275,9 +275,9 @@ catch (e) {
       itemSignal._isStxLoopItem = true;
       const indexSignal = state(index);
 
-      const itemScope = { ...globalHelpers, ...passedScope, ...(capturedScope || {}) };
-      itemScope[itemName] = itemSignal;
-      if (indexName) itemScope[indexName] = indexSignal;
+      const itemScope = mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}));
+      Object.defineProperty(itemScope, itemName, { value: itemSignal, writable: true, enumerable: true, configurable: true });
+      if (indexName) Object.defineProperty(itemScope, indexName, { value: indexSignal, writable: true, enumerable: true, configurable: true });
 
       const elements = [];
       if (isTemplate) {
@@ -399,7 +399,7 @@ catch (e) {
         var rootInScope = true;
         var rootVal;
         try {
-          var diagMerged = { ...globalHelpers, ...passedScope, ...(capturedScope || {}) };
+          var diagMerged = mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}));
           var firstIdent = listExpr.match(/^[A-Za-z_$][\\w$]*/);
           rootName = firstIdent ? firstIdent[0] : '?';
           rootInScope = Object.prototype.hasOwnProperty.call(diagMerged, rootName);

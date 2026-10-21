@@ -163,7 +163,7 @@ export const SIGNALS_COMPONENT_HYDRATION_RUNTIME = `  /*
         return;
       }
       scopeVars.__el = root;
-      var childScope = { ...resolvedCallerScope, ...scopeVars };
+      var childScope = mergeTemplateScopes(resolvedCallerScope, scopeVars);
       root.__stx_disposers = trackEffects(function() {
         processElement(root, childScope);
       });

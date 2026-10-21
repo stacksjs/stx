@@ -68,7 +68,7 @@ export const SIGNALS_MANIFEST_HYDRATION_RUNTIME = `  /**
     finally { activeDestroySink = outerSink; }
     var localMountHooks = mountCallbacks.splice(mountStart);
     var localDestroyHooks = destroyCallbacks.splice(destroyStart);
-    var scope = Object.assign({ $refs: {} }, values || {});
+    var scope = mergeTemplateScopes({ $refs: {} }, values);
     var disposeEffects = trackEffects(function() {
       processFromManifest(root, scope, manifest, resolvedNodes);
     });

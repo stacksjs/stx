@@ -66,6 +66,7 @@
  * @module includes
  */
 
+import { extractExports as scopeExports, scopePropertyDescriptor } from './client-scope-bindings'
 import type { StxOptions } from './types'
 import { StxValidationError } from './errors/types'
 import { validateClientScript } from './script-validation'
@@ -310,8 +311,10 @@ function buildScopeRegistrationTail(scriptContent: string, scopeId: string): str
   // defined` at hydration and kills the whole scope's registration.
   // Wrap each property in a try/catch so a stray harvested name turns
   // into `undefined` instead of a fatal ReferenceError.
-  const scopeAssign = exportNames.map(name =>
-    `  try { __scopeRegistration[${JSON.stringify(name)}] = ${name}; } catch (e) { /* not actually top-level */ }`,
+  const mutable = new Set(scopeExports(scriptContent, true).split(',').map(name => name.trim()))
+  const scopeAssign = exportNames.map(name => mutable.has(name)
+    ? `  try { ${name}; Object.defineProperty(__scopeRegistration, ${JSON.stringify(name)}, ${scopePropertyDescriptor(name)}); } catch (e) { /* not actually top-level */ }`
+    : `  try { __scopeRegistration[${JSON.stringify(name)}] = ${name}; } catch (e) { /* not actually top-level */ }`,
   ).join('\n')
 
   // Use real window.stx APIs (signals runtime is injected in <head>, runs before this script).
@@ -333,6 +336,7 @@ ${scopeAssign}
   // renamed declaration so it resolves to the component's value, not the
   // shadowing import. __stxScopeRenames is emitted by bundleClientScript.
   try { if (typeof __stxScopeRenames !== 'undefined' && __stxScopeRenames) { for (var __stxRK in __stxScopeRenames) __scopeRegistration[__stxRK] = __stxScopeRenames[__stxRK]; } } catch (e) { /* no renames */ }
+  if (typeof __stxLiveBindings !== 'undefined') Object.defineProperties(__scopeRegistration, Object.getOwnPropertyDescriptors(__stxLiveBindings));
   window.stx._scopes['${scopeId}'] = __scopeRegistration;
 `
 }
@@ -1458,7 +1462,7 @@ catch (e) {
           // onDestroy land on its own scope instead of the global queues that
           // every stx:load drains.
           const wrapped = transformScopedScript(resolvedContent, signalScopeId)
-          if (/__scopeRegistration\["(?!__stx)[^"]+"\]\s*=/.test(wrapped))
+          if (/__scopeRegistration\["(?!__stx)[^"]+"\]\s*=|Object\.defineProperty\(__scopeRegistration, "(?!__stx)/.test(wrapped))
             registersBindings = true
           preservedScript += `${vendorStyleTags}<script data-stx-scoped data-stx-run="always" data-stx-owner="${signalScopeId}"${extraAttrs ? ` ${extraAttrs}` : ''}>${wrapped}</script>\n`
         }

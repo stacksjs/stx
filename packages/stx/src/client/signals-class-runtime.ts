@@ -1,7 +1,7 @@
 /** Reactive class binding for the generated client runtime. */
 export const SIGNALS_CLASS_RUNTIME = `  function bindClass(el, expr, passedScope = componentScope, isVisible) {
     const originalClasses = el.className;
-    const capturedScope = { ...globalHelpers, ...passedScope, ...(findElementScope(el) || {}) };
+    const capturedScope = mergeTemplateScopes(globalHelpers, passedScope, (findElementScope(el) || {}));
     const keys = Object.keys(capturedScope);
 
     // Pre-compile — only the names the expression mentions (see

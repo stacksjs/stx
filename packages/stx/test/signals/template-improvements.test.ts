@@ -236,7 +236,7 @@ describe('Feature #5: Global helpers auto-injected', () => {
 
   it('should inject globalHelpers into text interpolation scope', () => {
     const runtime = generateSignalsRuntimeDev()
-    expect(runtime).toContain('...globalHelpers')
+    expect(runtime).toContain('mergeTemplateScopes(globalHelpers,')
   })
 })
 

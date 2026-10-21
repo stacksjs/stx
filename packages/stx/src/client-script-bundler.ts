@@ -9,6 +9,7 @@
  * @module client-script-bundler
  */
 
+import { extractExports as scopeExports } from './client-scope-bindings'
 import path from 'node:path'
 import fs from 'node:fs' // kept for mkdir/rmSync (no Bun equivalent for dir ops)
 import { AsyncLocalStorage } from 'node:async_hooks'
@@ -29,7 +30,8 @@ import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 // like it had changed nothing. A new version is the only thing that retires
 // them, because the key is the source and that did not change.
 // 8: server API sources must not survive in an older browser bundle cache.
-const BUNDLE_CACHE_VERSION = 10
+// 11: bundle namespaces preserve live exports assigned by lifecycle hooks.
+const BUNDLE_CACHE_VERSION = 11
 
 function isPrivateClientSource(file: string, root: string, serverApi: boolean | ServerApiOptions | undefined): boolean {
   return /^(?:(?:stx|ui)\.config\.[cm]?[jt]s|runtime-config-(?:server|loader)\.[cm]?[jt]s)$/.test(path.basename(file))
@@ -1303,8 +1305,9 @@ async function buildBundle(
     }
 
     const namespace = `__stxBundle_${hash}`
+    const mutableBindings = new Set(scopeExports(code, true).split(',').map(name => name.trim()))
     const returnedBindings = exposedBindings
-      .map(([publicName, localName]) => `${JSON.stringify(publicName)}: ${localName}`)
+      .map(([publicName, localName]) => `get ${JSON.stringify(publicName)}() { return ${localName} }${mutableBindings.has(publicName) ? `, set ${JSON.stringify(publicName)}(__stxValue_${localName}) { ${localName} = __stxValue_${localName} }` : ''}`)
       .join(', ')
     // Declare the public bindings before the generated bundle body. The
     // component scope registrar scans this output for top-level declarations,
@@ -1326,7 +1329,12 @@ ${registryReads.join('\n')}
 ${bundled}
 return { ${returnedBindings} };
 })();
-${publicAssignments}`.trim()
+${publicAssignments}
+var __stxLiveBindings = typeof __stxLiveBindings === 'undefined' ? {} : __stxLiveBindings;
+Object.keys(${namespace}).forEach(function(name) {
+  if (!Object.prototype.hasOwnProperty.call(__stxLiveBindings, name))
+    Object.defineProperty(__stxLiveBindings, name, Object.getOwnPropertyDescriptor(${namespace}, name));
+});`.trim()
 
     // External imports stay intact for transformAutoImports and
     // transformStoreImports, which run after this bundling step.

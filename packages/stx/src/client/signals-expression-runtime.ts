@@ -1,5 +1,24 @@
 /** Scope lookup and expression evaluation for the generated client runtime. */
-export const SIGNALS_EXPRESSION_RUNTIME = `  let componentScope = { $refs: {} };
+export const SIGNALS_EXPRESSION_RUNTIME = `  // Setup accessors refer to lexical variables assigned after mounting. Scope
+  // copies preserve those accessors so rows and event closures do not freeze
+  // their setup-time values. Data properties retain ordinary spread semantics.
+  function assignTemplateScope(target, ...sources) {
+    for (var source of sources) {
+      if (!source) continue;
+      for (var key of Object.keys(source)) {
+        var descriptor = Object.getOwnPropertyDescriptor(source, key);
+        descriptor.configurable = true;
+        if ('value' in descriptor) descriptor.writable = true;
+        Object.defineProperty(target, key, descriptor);
+      }
+    }
+    return target;
+  }
+  function mergeTemplateScopes(...sources) {
+    return assignTemplateScope({}, ...sources);
+  }
+
+  let componentScope = { $refs: {} };
 
   // Current element being processed (for scope lookup)
   let currentElement = null;
@@ -30,7 +49,7 @@ export const SIGNALS_EXPRESSION_RUNTIME = `  let componentScope = { $refs: {} };
       }
       // First try component-level scope
       const elementScope = findElementScope(el || currentElement);
-      const baseScope = { ...globalHelpers, ...componentScope, ...(elementScope || {}), ...extraScope };
+      const baseScope = mergeTemplateScopes(globalHelpers, componentScope, (elementScope || {}), extraScope);
 
       // Check for pipe syntax (Feature #2)
       const pipeResult = parsePipeExpression(expr, baseScope);
