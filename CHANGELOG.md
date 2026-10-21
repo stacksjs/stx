@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.630...v0.2.631)
+
+## 🐛 Bug Fixes
+
+- **runtime**: preserve live setup bindings through template scopes ([265b008](https://github.com/stacksjs/stx/commit/265b008)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.631 ([b22bc8c](https://github.com/stacksjs/stx/commit/b22bc8c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.629...v0.2.630)
 
 ## 🐛 Bug Fixes
