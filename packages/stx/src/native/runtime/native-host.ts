@@ -252,6 +252,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   const eventRegistrations = new WeakMap<NativeNode, Map<string, string>>()
   const componentListeners = new WeakMap<NativeNode, Array<{ event: string, handler: (payload?: unknown) => void, once: boolean, capture: boolean }>>()
   const controlsWithDefaultListeners = new WeakSet<NativeNode>()
+  const implicitSubmitListeners = new WeakMap<NativeNode, { listener: (event: unknown) => void, stop: () => void }>()
   const formResetCallbacks = new WeakMap<NativeNode, Set<() => void>>()
   let queue: NativeMutationOperation[] = []
   let scheduled = false
@@ -529,6 +530,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
   function installControlListeners(node: NativeNode): void {
     const record = descriptorOf(node)
+    syncImplicitSubmit(node)
     // Track even when no focus class exists yet: a reactive :class can add
     // one while the field is already focused. Use the existing multiplexer
     // so authored focus/blur listeners retain their handler and ordering.
@@ -556,6 +558,30 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       host.listen(node, 'focusout', () => {})
     }
     if (record.type === 'Button' || record.type === 'Pressable') host.listen(node, 'click', () => {})
+  }
+
+  /** A keyboard return has the same default form action as browser Enter. */
+  function syncImplicitSubmit(node: NativeNode): void {
+    const record = descriptorOf(node)
+    if (record?.type !== 'TextInput') return
+    const eligible = !!formOwner(node) && !record.props.multiline && hostProps(record).returnKeyType !== 'next'
+    const previous = implicitSubmitListeners.get(node)
+    if (eligible && !previous) {
+      const listener = () => {}
+      implicitSubmitListeners.set(node, { listener, stop: host.listen(node, 'submit-editing', listener) })
+    }
+    else if (!eligible && previous) {
+      previous.stop()
+      implicitSubmitListeners.delete(node)
+      const authored = componentListeners.get(node)?.some(listener => (NATIVE_EVENT_NAMES[listener.event.toLowerCase()] ?? listener.event) === 'onSubmitEditing')
+      if (!authored) {
+        const id = record.events.onSubmitEditing
+        if (id) handlers.delete(id)
+        eventRegistrations.get(node)?.delete('onSubmitEditing')
+        delete record.events.onSubmitEditing
+        if (record.materialized) emit({ op: 'updateNode', id: node.__stxId, patch: { events: { onSubmitEditing: '' } } })
+      }
+    }
   }
 
   function materialize(node: NativeNode): void {
@@ -1036,6 +1062,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const textEntryBefore = TEXT_ENTRY_SOURCES.has(prop) ? projectTextEntry(record.type, record.props) : undefined
       const wasDisabled = disabled(record)
       record.props[prop] = value
+      if (TEXT_ENTRY_SOURCES.has(prop) || prop === 'multiline') syncImplicitSubmit(node)
       if (record.focused && disabled(record)) {
         record.focused = false
         refreshFocusChain(node)
@@ -1283,6 +1310,21 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
           }
         }
         const form = formOwner(node)
+        if (form && nativeEvent === 'onSubmitEditing' && !physical?.defaultPrevented && !record.props.multiline && hostProps(record).returnKeyType !== 'next') {
+          const implicit = implicitSubmitListeners.get(node)
+          const authored = componentListeners.get(node)?.some(listener => (NATIVE_EVENT_NAMES[listener.event.toLowerCase()] ?? listener.event) === 'onSubmitEditing' && listener.handler !== implicit?.listener)
+          if (implicit && !authored) {
+            const submitter = collectDescendants(form).find(control => {
+              const candidate = descriptorOf(control)
+              return candidate?.materialized && ['Button', 'Pressable'].includes(candidate.type) && candidate.props.type === 'submit' && formOwner(control) === form
+            })
+            if (submitter) {
+              const candidate = descriptorOf(submitter)!
+              if (!disabled(candidate) && candidate.events.onPress) host.dispatch(candidate.events.onPress, {})
+            }
+            else host.emitComponentEvent(form, eventAt({}, form, 'submit') as Event)
+          }
+        }
         if (form && nativeEvent === 'onPress' && !physical?.defaultPrevented && !disabled(record)) {
           if (record.props.type === 'submit') host.emitComponentEvent(form, eventAt({ submitter: node }, form, 'submit') as Event)
           if (record.props.type === 'reset') resetForm(form)

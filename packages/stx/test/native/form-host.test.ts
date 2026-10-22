@@ -18,6 +18,41 @@ function fixture() {
 }
 
 describe('native form host semantics (#2088)', () => {
+  it('submits a form from keyboard Go through its default button', () => {
+    const { host, form, input, button, fire } = fixture()
+    host.setAttribute(input, 'enterkeyhint', 'go')
+    const submitted: unknown[] = []
+    host.listen(form, 'submit', (event: any) => submitted.push([event.submitter, new NativeFormData(form).get('name')]))
+    fire(input, 'onChangeText', { text: 'Grace' })
+    fire(input, 'onSubmitEditing', { text: 'Grace' })
+    expect(submitted).toEqual([[button, 'Grace']])
+    host.setAttribute(button, 'disabled', true)
+    fire(input, 'onSubmitEditing')
+    expect(submitted).toHaveLength(1)
+  })
+
+  it('keeps Next and multiline returns local and honors an authored submit handler', () => {
+    const { host, form, input, fire } = fixture()
+    let submitted = 0
+    host.listen(form, 'submit', () => submitted++)
+    host.setAttribute(input, 'enterkeyhint', 'next')
+    expect(host.snapshot(input).events.onSubmitEditing).toBeFalsy()
+    host.setAttribute(input, 'enterkeyhint', 'go')
+    expect(host.snapshot(input).events.onSubmitEditing).toBeTruthy()
+    host.setAttribute(input, 'multiline', true)
+    expect(host.snapshot(input).events.onSubmitEditing).toBeFalsy()
+    host.setAttribute(input, 'multiline', false)
+    let handled = 0
+    const stop = host.listen(input, 'submit', () => handled++)
+    fire(input, 'onSubmitEditing')
+    expect(handled).toBe(1)
+    expect(submitted).toBe(0)
+    stop()
+    host.listen(input, 'submit', (event: any) => event.preventDefault())
+    fire(input, 'onSubmitEditing')
+    expect(submitted).toBe(0)
+  })
+
   it('collects successful controls and delivers delegated edits before submit', () => {
     const { host, add, form, input, button, fire } = fixture()
     add('hidden', 'View', { type: 'hidden', name: 'token', value: 'secret' }, form)
