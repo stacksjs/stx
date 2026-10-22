@@ -70,6 +70,20 @@ wrapping `<div>`, a client `value = state('/first')`, and
    and a real browser, including lazy commits, literals, toggling, remount and
    teardown. This uses the existing readonly-to-editable mapping; legacy
    primitive selection and event contracts, and Craft code, are unchanged.
+
+   **Focus/blur and native submit forwarding (unreleased after v0.2.661):**
+   shared `@focus`/`@blur` now receive the physical input's original event on
+   web/native. Browser FocusEvent identity, target and relatedTarget survive;
+   native payload fields survive. Existing bubbling focusin/focusout listeners
+   still fire once. Native `onSubmitEditing` relays `@submit-editing` and its
+   `@submit` alias once each, without committing a lazy model (end-editing
+   retains that job). Browser forms keep their normal submit event; the input
+   does not synthesize one from Enter. Removed inputs cannot forward stale
+   lifecycle events. `shared-text-input-lifecycle-events.test.ts` covers shared
+   and legacy native paths in normal/minified bundles, readonly/disabled,
+   remount and teardown; `shared-text-input-focus-browser.test.ts` exercises
+   actual browser focus, blur, form submission and remount. Craft and global
+   primitive resolution are unchanged; device keyboard behavior is not certified.
 2. **Image (source gap fixed):**
    `<Image testID="target" alt="Photo" :src="value" />` now updates the inner
    image, and the native adapter maps image `src` to the host's `source` on

@@ -169,7 +169,7 @@ export const nativeHelperClasses = `mt-1.5 px-4 text-[13px] ${error ? 'text-[#ff
   <script client>
     // Reserve value events before the first edit: lazy input must not leak its
 // bubbling DOM/native event object to a caller expecting the committed value.
-const emit = defineEmits(['input', 'clear'])
+const emit = defineEmits(['input', 'clear', 'focus', 'blur', 'submit', 'submit-editing'])
 // Validity is live, for the same reason `disabled` is: a form posted with
 // fetch learns it after the submit, and nothing re-renders (#2047).
 const isError = useReactiveProp('error', {{ error }})
@@ -184,6 +184,26 @@ let lastInputText = lastNativeCommit
 function onNativeFocus(event) {
   lastNativeCommit = String(event.text ?? event.target.value ?? '')
   lastInputText = lastNativeCommit
+  onFocus(event)
+}
+
+// Focus/blur do not bubble from the physical input to the component scope.
+// Forward the original event so browser FocusEvent methods and native payloads survive.
+function onFocus(event) {
+  if (!isDisabled() && event.target.isConnected !== false) emit('focus', event)
+}
+
+function onBlur(event) {
+  if (event.target.isConnected !== false) emit('blur', event)
+}
+
+// Native return-key callbacks use submit-editing (with submit as an alias).
+// Do not commit lazy models here: end-editing owns that, and browser form
+// submission remains the form's event rather than a synthetic input event.
+function onNativeSubmit(event) {
+  if (isDisabled() || event.target.isConnected === false) return
+  emit('submit-editing', event)
+  emit('submit', event)
 }
 
 function onNativeChange(event) {
@@ -278,6 +298,8 @@ defineExpose({ value: inputValue, clear: onClear })
       @input="onInput($event)"
       @change="onNativeChange($event)"
       @focus="onNativeFocus($event)"
+      @blur="onBlur($event)"
+      @submit-editing="onNativeSubmit($event)"
       @end-editing="onNativeEndEditing($event)"
       aria-invalid="{{ error ? 'true' : 'false' }}"
       :aria-invalid="isError() ? 'true' : 'false'"
@@ -367,6 +389,8 @@ defineExpose({ value: inputValue, clear: onClear })
       @if(maxLength && freeText)maxlength="{{ maxLength }}"@endif
       @input="onInput($event)"
       @change="onChange($event)"
+      @focus="onFocus($event)"
+      @blur="onBlur($event)"
       aria-invalid="{{ error ? 'true' : 'false' }}"
       :aria-invalid="isError() ? 'true' : 'false'"
       :class="{ '{{ stateInvalidClasses }}': isError(), '{{ stateValidClasses }}': !isError(), 'opacity-50 cursor-not-allowed': isDisabled(), 'bg-surface': isDisabled() || isReadonly(), 'bg-field': !isDisabled() && !isReadonly(), 'cursor-default': !isDisabled() && isReadonly() }"
@@ -445,6 +469,7 @@ around
 bg-field
 bg-surface
 block
+blur
 border
 border-0
 border-[#ff3b30]
@@ -453,6 +478,7 @@ button
 by
 change
 className
+clear
 color
 const
 content
@@ -476,6 +502,7 @@ fallbacks
 false
 field
 flex
+focus
 focus:outline-none
 focus:ring-2
 focus:ring-accent
@@ -565,6 +592,8 @@ so
 stateInvalidClasses
 stateValidClasses
 step
+submit
+submit-editing
 tel
 text
 text-[#6d6d72]
