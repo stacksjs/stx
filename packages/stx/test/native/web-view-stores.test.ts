@@ -5,6 +5,7 @@
  * instance of each store, which the view and its components share.
  */
 import { expect, test } from 'bun:test'
+import { compileNativeBundle } from '../../src/native/compiler/bundle'
 import { mountWebView, webApp } from './web-view-app'
 
 const CART = `import { defineStore, state, derived } from '@stacksjs/stx'
@@ -63,4 +64,31 @@ test('the view and its components share one instance of a store', async () => {
   phone.press(phone.byTestID('add')!)
   await phone.settle()
   expect(phone.texts()).toContain('Badge 2')
+})
+
+test('a screen that reads no store does not carry the stores, nor run them', async () => {
+  const root = webApp({
+    'stores/cart.ts': `${CART}
+localStorage.setItem('cart-store-ran', 'yes')
+`,
+    'views/about.stx': `<script client>
+  const shown = state('About us')
+</script>
+<div><p :text="shown">…</p></div>
+`,
+    'views/shop.stx': `<script client>
+  const cart = useStore('cart')
+  const count = cart.count
+</script>
+<div><p :text="'In the cart: ' + count">…</p></div>
+`,
+  })
+  const { code } = await compileNativeBundle({ root, screens: { About: 'views/about.stx' } })
+  expect(code).not.toContain('cart-store-ran')
+  const about = await mountWebView(root, { About: 'views/about.stx' }, 'About')
+  expect(about.texts()).toContain('About us')
+  expect(about.stored['stx.localStorage:cart-store-ran']).toBeUndefined()
+  const shop = await mountWebView(root, { Shop: 'views/shop.stx' }, 'Shop')
+  expect(shop.texts()).toContain('In the cart: 0')
+  expect(shop.stored['stx.localStorage:cart-store-ran']).toBe('yes')
 })

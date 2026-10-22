@@ -175,28 +175,36 @@ export async function compileScreenSource(
     if (forcedSetup && !scripts.some(script => script.code === forcedSetup.code))
       scripts.push({ code: forcedSetup.code })
   }
+  // Serve HTML externalizes the page's module registry. A native screen has
+  // no HTTP script loader: embed the same registry before component setups.
+  const { buildModuleRegistryScript, registeredModuleIdsIn } = await import('../../client-module-registry')
+  const registry = async (): Promise<string | null> => {
+    const inputs: string[] = []
+    const code = await buildModuleRegistryScript(registeredModuleIdsIn(...scripts.map(script => script.code)), { collectInputs: inputs })
+    for (const input of inputs) dependencies.add(input)
+    return code
+  }
+  let modules = await registry()
   // The app's stores, which the page loads ahead of its own scripts
   // (`data-stx-stores`, process.ts): `useStore` in the screen's setup finds
   // them defined, as it does in the browser. Served HTML may name the bundle
   // by URL, and a native screen has nothing to fetch it from, so the bundle
-  // is built here from the same directory.
-  if (/<script\b[^>]*\bdata-stx-stores\b/i.test(html)) {
+  // is built here from the same directory. Only for a screen whose code (or
+  // a module it imports) reads a store: every store's definition runs when
+  // it loads, which a screen that uses none should not pay for, nor see the
+  // effects of (a store reading a language's messages on definition).
+  const usesStores = [...scripts.map(script => script.code), modules ?? ''].some(code => /\buseStore\s*\(/.test(code))
+  if (usesStores && /<script\b[^>]*\bdata-stx-stores\b/i.test(html)) {
     const { getStoreScript } = await import('../../store-loader')
     const stores = await getStoreScript(config.storesDir)
     if (stores) {
       scripts.unshift({ code: stores })
       for (const file of new Bun.Glob('*.ts').scanSync({ cwd: config.storesDir, absolute: true }))
         dependencies.add(file)
+      // The stores' own imports join the registry.
+      modules = await registry()
     }
   }
-  // Serve HTML externalizes the page's module registry. A native screen has
-  // no HTTP script loader: embed the same registry before component setups.
-  const { buildModuleRegistryScript, registeredModuleIdsIn } = await import('../../client-module-registry')
-  const moduleInputs: string[] = []
-  const modules = await buildModuleRegistryScript(registeredModuleIdsIn(...scripts.map(script => script.code)), {
-    collectInputs: moduleInputs,
-  })
-  for (const input of moduleInputs) dependencies.add(input)
   if (modules) scripts.unshift({ code: modules })
 
   return { document, manifest, setup, scripts, diagnostics, html, dependencies: [...dependencies] }
