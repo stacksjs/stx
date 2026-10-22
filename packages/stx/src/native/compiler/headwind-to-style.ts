@@ -1038,7 +1038,7 @@ export interface ClassStyles {
    * `sm:`/`md:`/`lg:`... layers, smallest first: each applies on a screen at
    * least `min` points wide, over the base style and every smaller layer.
    */
-  responsive?: Array<{ min: number, style: STXStyle, dark?: STXStyle }>
+  responsive?: Array<{ min: number, max?: number, style: STXStyle, dark?: STXStyle }>
   /** What `disabled:` classes change, for a control the host reports disabled. */
   disabled?: { style: STXStyle, dark?: STXStyle }
 }
@@ -1094,16 +1094,26 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
   // Group the authored classes by the layer they belong to. Each group then
   // compiles as a plain class list (dark and focus kept inside it), and an
   // unknown class is reported by the name the author wrote.
-  const groups = new Map<string, { min?: number, disabled?: boolean, classes: string[], authored: Map<string, string> }>()
-  const group = (key: string, init: { min?: number, disabled?: boolean }) => {
+  const groups = new Map<string, { min?: number, max?: number, disabled?: boolean, classes: string[], authored: Map<string, string> }>()
+  const group = (key: string, init: { min?: number, max?: number, disabled?: boolean }) => {
     if (!groups.has(key)) groups.set(key, { ...init, classes: [], authored: new Map() })
     return groups.get(key)!
   }
   group('base', {})
   // The page's own class rules (`.panel-title`), applied under the utilities.
-  const ruleNames: string[] = []
-  for (const authored of classes.split(/\s+/).filter(Boolean)) {
-    if (options.rules && Object.hasOwn(options.rules, authored)) { ruleNames.push(authored); continue }
+  const singleRules: string[] = []
+  const compoundRules: string[] = []
+  const authoredClasses = classes.split(/\s+/).filter(Boolean)
+  // Compound rules (`.card.card-flush`) apply where every class is present, after single ones.
+  if (options.rules) {
+    const present = new Set(authoredClasses)
+    for (const key of Object.keys(options.rules)) {
+      if (key.includes('.') && key.split('.').every(name => present.has(name))) compoundRules.push(key)
+    }
+    compoundRules.sort((a, b) => a.split('.').length - b.split('.').length)
+  }
+  for (const authored of authoredClasses) {
+    if (options.rules && Object.hasOwn(options.rules, authored)) { singleRules.push(authored); continue }
     for (const token of expandShortcuts(authored)) {
       const parts = splitVariants(token)
       const utility = parts.pop()!
@@ -1114,18 +1124,23 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
       if (parts.some(variant => /^(?:group-|peer-)?focus(?:-visible|-within)?$/.test(variant)) && /^(?:ring|outline)(?:-|$)/.test(utility)) continue
       if (WEB_ONLY_UTILITY.test(utility) || (!focusing && parts.some(variant => POINTER_ONLY_VARIANTS.has(variant)))) continue
       let min: number | undefined
+      let max: number | undefined
       let disabled = false
       const kept: string[] = []
       for (const variant of parts) {
         const width = nativeBreakpoint(variant)
+        // `max-md:` is below md, as Tailwind's max-width variant reads.
+        const below = variant.startsWith('max-') ? nativeBreakpoint(variant.slice(4)) : undefined
         if (width !== undefined && min === undefined) min = width
+        else if (below !== undefined && max === undefined) max = below - 0.02
         else if (variant === 'disabled' && !disabled) disabled = true
         else kept.push(variant)
       }
       const stripped = [...kept, utility].join(':')
-      const target = disabled ? group(`disabled`, { disabled: true }) : min !== undefined ? group(`min:${min}`, { min }) : groups.get('base')!
+      const ranged = min !== undefined || max !== undefined
+      const target = disabled ? group(`disabled`, { disabled: true }) : ranged ? group(`range:${min ?? 0}:${max ?? ''}`, { min: min ?? 0, max }) : groups.get('base')!
       // A width layer under `disabled:` is rare enough to stay diagnostic.
-      if (disabled && min !== undefined) {
+      if (disabled && ranged) {
         groups.get('base')!.authored.set(token, authored)
         groups.get('base')!.classes.push(token)
         continue
@@ -1134,10 +1149,11 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
       if (!target.authored.has(stripped)) target.authored.set(stripped, authored === token ? token : `${authored} (${token})`)
     }
   }
+  const ruleNames = [...singleRules, ...compoundRules]
   const authoredNames = (layer: { authored: Map<string, string> }, names: string[]) => names.map(name => layer.authored.get(name) ?? name)
   const base = groups.get('base')!
   const result = compileLayer(base.classes.join(' '), variables, options)
-  const ruleResponsive = new Map<number, { style: STXStyle, dark?: STXStyle }>()
+  const ruleResponsive = new Map<string, { min: number, max?: number, style: STXStyle, dark?: STXStyle }>()
   if (ruleNames.length) {
     const parse = (css: string | undefined): STXStyle => css ? parseNativeStyle(css, () => {}, { inheritedVariables: variables }) : {}
     let light: STXStyle = {}
@@ -1147,10 +1163,11 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
       light = { ...light, ...parse(rule.light) }
       dark = { ...dark, ...parse(rule.dark) }
       for (const layer of rule.responsive ?? []) {
-        const entry = ruleResponsive.get(layer.min) ?? { style: {} }
+        const key = `${layer.min}:${layer.max ?? ''}`
+        const entry = ruleResponsive.get(key) ?? { min: layer.min, ...(layer.max === undefined ? {} : { max: layer.max }), style: {} }
         entry.style = { ...entry.style, ...parse(layer.light) }
         if (layer.dark) entry.dark = { ...entry.dark, ...parse(layer.dark) }
-        ruleResponsive.set(layer.min, entry)
+        ruleResponsive.set(key, entry)
       }
     }
     result.style = { ...light, ...result.style }
@@ -1164,18 +1181,18 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
     result.unknown = [...new Set([...result.unknown, ...authoredNames(layer, compiled.unknown)])]
     const entry = { style: compiled.style, ...(compiled.dark ? { dark: compiled.dark } : {}) }
     if (layer.disabled) result.disabled = entry
-    else responsive.push({ min: layer.min!, ...entry })
+    else responsive.push({ min: layer.min ?? 0, ...(layer.max === undefined ? {} : { max: layer.max }), ...entry })
   }
   // A rule's width layer sits under the utilities' layer of the same width.
-  for (const [min, layer] of ruleResponsive) {
-    const existing = responsive.find(entry => entry.min === min)
+  for (const layer of ruleResponsive.values()) {
+    const existing = responsive.find(entry => entry.min === layer.min && entry.max === layer.max)
     if (existing) {
       existing.style = { ...layer.style, ...existing.style }
       if (layer.dark || existing.dark) existing.dark = { ...layer.dark, ...existing.dark }
     }
-    else responsive.push({ min, ...layer })
+    else responsive.push(layer)
   }
-  if (responsive.length) result.responsive = responsive.sort((a, b) => a.min - b.min)
+  if (responsive.length) result.responsive = responsive.sort((a, b) => a.min - b.min || (a.max ?? Infinity) - (b.max ?? Infinity))
   return result
 }
 

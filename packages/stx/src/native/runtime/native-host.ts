@@ -530,7 +530,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const classStyle = { ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}) }
     // Width layers apply smallest first, as min-width media queries cascade.
     for (const layer of classes.responsive ?? []) {
-      if (viewportWidth >= layer.min) Object.assign(classStyle, layer.style, colorScheme === 'dark' ? layer.dark : {})
+      if (viewportWidth >= layer.min && (layer.max === undefined || viewportWidth <= layer.max)) Object.assign(classStyle, layer.style, colorScheme === 'dark' ? layer.dark : {})
     }
     if (classes.disabled && disabled(record)) Object.assign(classStyle, classes.disabled.style, colorScheme === 'dark' ? classes.disabled.dark : {})
     // Like utility variant ordering, direct focus overrides focus-within;

@@ -12,8 +12,8 @@ import { generate, parse, type CssNode } from '@stacksjs/ts-css/parse'
 export interface NativeStylesheetRule {
   light?: string
   dark?: string
-  /** `@media (min-width: ...)` layers, by min-width in points. */
-  responsive?: Array<{ min: number, light?: string, dark?: string }>
+  /** `@media (min-width/max-width: ...)` layers: from `min` points, up to `max` when it has one. */
+  responsive?: Array<{ min: number, max?: number, light?: string, dark?: string }>
 }
 
 export type NativeStylesheetRules = Record<string, NativeStylesheetRule>
@@ -21,37 +21,49 @@ export type NativeStylesheetRules = Record<string, NativeStylesheetRule>
 /** The variants a touch screen has no use for: the browser draws these states. */
 const POINTER_PSEUDO = /^(?::hover|:active|:visited|:focus|:focus-visible|:focus-within)$/
 
-function mediaLayer(query: string): { dark?: boolean, min?: number } | 'skip' | undefined {
+function mediaLayer(query: string): { dark?: boolean, min?: number, max?: number } | 'skip' | undefined {
   const normalized = query.replace(/\s+/g, '').toLowerCase()
   if (!normalized || normalized === 'all' || normalized === 'screen') return {}
   if (/^(?:screenand)?\(prefers-color-scheme:dark\)$/.test(normalized)) return { dark: true }
   if (/^(?:screenand)?\(prefers-color-scheme:light\)$/.test(normalized)) return {}
   // States a native host has no notion of, or takes care of itself.
   if (/prefers-reduced-motion|\(hover|\(pointer|print|forced-colors|prefers-contrast/.test(normalized)) return 'skip'
-  const width = /^(?:screenand)?\(min-width:([\d.]+)(px|rem|em)\)$/.exec(normalized)
-  if (width) return { min: Number(width[1]) * (width[2] === 'px' ? 1 : 16) }
-  return undefined
+  // `(min-width: 640px)`, `(max-width: 1023px)`, or both joined by `and`.
+  const parts = normalized.replace(/^screenand/, '').split('and')
+  const layer: { min?: number, max?: number } = {}
+  for (const part of parts) {
+    const width = /^\((min|max)-width:([\d.]+)(px|rem|em)\)$/.exec(part)
+    if (!width) return undefined
+    layer[width[1] as 'min' | 'max'] = Number(width[2]) * (width[3] === 'px' ? 1 : 16)
+  }
+  return layer
 }
 
 /** The page's simple class rules; anything more involved is reported, not guessed at. */
-export async function extractStylesheetRules(html: string, report: (name: string) => void): Promise<NativeStylesheetRules> {
+export async function extractStylesheetRules(html: string, report: (name: string, classes: string[]) => void): Promise<NativeStylesheetRules> {
   const rules: NativeStylesheetRules = {}
   const reported = new Set<string>()
-  const warn = (name: string): void => { if (!reported.has(name)) { reported.add(name); report(name) } }
-  const append = (name: string, declarations: string, layer: { dark?: boolean, min?: number }): void => {
+  // The classes a rule styles, so a rule nothing on the page uses is not reported.
+  const warn = (name: string): void => {
+    if (reported.has(name)) return
+    reported.add(name)
+    report(name, [...name.matchAll(/\.(-?[a-z_][\w-]*)/gi)].map(match => match[1]!))
+  }
+  const append = (name: string, declarations: string, layer: { dark?: boolean, min?: number, max?: number }): void => {
     if (!declarations.trim()) return
     const rule = rules[name] ??= {}
     const key = layer.dark ? 'dark' : 'light'
-    if (layer.min === undefined) {
+    if (layer.min === undefined && layer.max === undefined) {
       rule[key] = rule[key] ? `${rule[key]};${declarations}` : declarations
       return
     }
     const responsive = rule.responsive ??= []
-    let entry = responsive.find(item => item.min === layer.min)
-    if (!entry) responsive.push(entry = { min: layer.min })
+    const min = layer.min ?? 0
+    let entry = responsive.find(item => item.min === min && item.max === layer.max)
+    if (!entry) responsive.push(entry = { min, ...(layer.max === undefined ? {} : { max: layer.max }) })
     entry[key] = entry[key] ? `${entry[key]};${declarations}` : declarations
   }
-  function visit(nodes: Iterable<CssNode>, layer: { dark?: boolean, min?: number }): void {
+  function visit(nodes: Iterable<CssNode>, layer: { dark?: boolean, min?: number, max?: number }): void {
     for (const node of nodes) {
       if (node.type === 'Atrule') {
         const name = node.name.toLowerCase()
@@ -65,14 +77,15 @@ export async function extractStylesheetRules(html: string, report: (name: string
         const media = mediaLayer(query)
         if (media === 'skip') continue
         if (!media) { warn(`@media ${query}`); continue }
-        visit(node.block.children, { dark: layer.dark || media.dark, min: media.min ?? layer.min })
+        visit(node.block.children, { dark: layer.dark || media.dark, min: media.min ?? layer.min, max: media.max ?? layer.max })
         continue
       }
       if (node.type !== 'Rule' || node.block.type !== 'Block') continue
       const declarations = [...node.block.children].filter(child => child.type === 'Declaration').map(child => generate(child)).join(';')
       const selectors = node.prelude.type === 'SelectorList' ? [...node.prelude.children].map(generate) : [generate(node.prelude)]
       for (const selector of selectors) {
-        const match = /^(?:(?:html|:root)?\.dark\s+)?\.(-?[a-z_][\w-]*)((?::{1,2}[a-z-]+)*)$/i.exec(selector.trim())
+        // `.panel`, or a compound `.card.card-flush` (keyed `card.card-flush`).
+        const match = /^(?:(?:html|:root)?\.dark\s+)?((?:\.-?[a-z_][\w-]*)+)((?::{1,2}[a-z-]+)*)$/i.exec(selector.trim())
         if (!match) {
           // Element and document selectors are the page's base styles, not a class's.
           if (!/^(?:html|:root|body|\*|::?[a-z-]+)/i.test(selector.trim())) warn(selector.trim())
@@ -84,7 +97,7 @@ export async function extractStylesheetRules(html: string, report: (name: string
           continue
         }
         const dark = layer.dark || /^(?:(?:html|:root)?\.dark\s+)/i.test(selector.trim())
-        append(match[1], declarations, { dark, min: layer.min })
+        append(match[1]!.slice(1), declarations, { dark, min: layer.min, max: layer.max })
       }
     }
   }
@@ -106,6 +119,6 @@ export async function extractStylesheetRules(html: string, report: (name: string
     },
     text(chunk) { css += chunk.text },
   }).transform(new Response(html)).text()
-  for (const rule of Object.values(rules)) rule.responsive?.sort((a, b) => a.min - b.min)
+  for (const rule of Object.values(rules)) rule.responsive?.sort((a, b) => a.min - b.min || (a.max ?? Infinity) - (b.max ?? Infinity))
   return rules
 }

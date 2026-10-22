@@ -175,6 +175,7 @@ html.dark .panel { background-color: #1c1c1e; }
 @keyframes pulse { from { opacity: 0 } to { opacity: 1 } }
 .panel > .row { padding: 4px; }
 .panel::before { content: ''; }
+.elsewhere > .row { padding: 4px; }
 </style>
 <div class="panel p-2"><p class="panel-title">Title</p><span class="chip">Live</span></div>`)
     const find = (node: any): any => node?.props?._classes?.includes?.('panel') || /(^|\s)panel(\s|$)/.test(node?._classes ?? '') ? node : (node?.children ?? []).filter((child: any) => typeof child !== 'string').map(find).find(Boolean)
@@ -189,6 +190,8 @@ html.dark .panel { background-color: #1c1c1e; }
     const reported = diagnostics.filter(d => d.kind === 'unsupported-style-rule').map(d => d.name)
     expect(reported).toEqual(expect.arrayContaining(['.panel>.row', '.panel::before']))
     expect(reported).not.toContain('.panel:hover')
+    // The app's whole stylesheet comes with every page: a rule for classes this page does not use is not its problem.
+    expect(reported).not.toContain('.elsewhere>.row')
     expect(diagnostics.filter(d => d.kind === 'unknown-class')).toEqual([])
   })
 
@@ -214,6 +217,59 @@ html.dark .panel { background-color: #1c1c1e; }
       phone.appearance('dark')
       await phone.settle()
       expect(panel().style.backgroundColor).toBe('#1c1c1e')
+    }
+    finally {
+      phone.unmount?.()
+    }
+  })
+})
+
+describe('events on a web view, natively', () => {
+  it('warns about browser-only events, not about a component\'s own', async () => {
+    const { diagnostics } = await translateHtmlToIR('<div @done="finish()" @unverified="verify($event)" @keydown.enter="send()" @mouseenter="peek()"></div>')
+    expect(diagnostics.filter(d => d.kind === 'unread-event').map(d => d.name)).toEqual(['@keydown.enter', '@mouseenter'])
+  })
+})
+
+describe('compound rules and narrow-screen layers', () => {
+  it('applies a compound class rule where both classes are present, and max-width layers below a width', async () => {
+    const { root } = await translateHtmlToIR(`<style>
+.card { padding: 20px; background-color: #ffffff; }
+.card.card-flush { padding: 0px; }
+@media (max-width: 639px) { .card { border-radius: 0px; } }
+@media (min-width: 640px) and (max-width: 1023px) { .card { border-radius: 8px; } }
+</style>
+<div class="card card-flush">Flush</div>`)
+    expect(root._stylesheetRules?.['card.card-flush']?.light).toContain('padding')
+    expect(root._stylesheetRules?.card?.responsive).toEqual([
+      { min: 0, max: 639, light: expect.stringContaining('border-radius') },
+      { min: 640, max: 1023, light: expect.stringContaining('border-radius') },
+    ])
+    const compiled = compileClassStyles('card card-flush', undefined, { rules: root._stylesheetRules })
+    expect(compiled.style).toMatchObject({ padding: 0, backgroundColor: '#ffffff' })
+    expect(compiled.responsive).toEqual([
+      { min: 0, max: 639, style: { borderRadius: 0 } },
+      { min: 640, max: 1023, style: { borderRadius: 8 } },
+    ])
+    expect(compileClassStyles('p-2 max-md:p-4 md:p-8').responsive).toEqual([
+      { min: 0, max: 767.98, style: { padding: 16 } },
+      { min: 768, style: { padding: 32 } },
+    ])
+  })
+
+  it('draws a below-a-width layer on a phone and drops it on an iPad', async () => {
+    const root = createTempDir('stx-web-view-narrow-')
+    await Bun.write(join(root, 'stx.config.ts'), 'export default {}')
+    const file = join(root, 'Screen.stx')
+    await Bun.write(file, '<div testID="box" class="p-8 max-md:p-2">Box</div>')
+    const result = await compileSharedScreenBundle(file, { root })
+    const phone = mountNativeScreen(result.code, 'Screen', { viewportWidth: 390 })
+    try {
+      await phone.settle()
+      expect(phone.byTestID('box')!.style.padding).toBe(8)
+      phone.viewport(1024)
+      await phone.settle()
+      expect(phone.byTestID('box')!.style.padding).toBe(32)
     }
     finally {
       phone.unmount?.()

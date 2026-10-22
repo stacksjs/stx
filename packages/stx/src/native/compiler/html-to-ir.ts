@@ -39,6 +39,9 @@ import { applySvgAnimation, parseViewBox, SVG_DROPPED, SVG_NODE_TYPES, SVG_TYPES
 import { compileClassStyles } from './headwind-to-style'
 import { createDocument, createNode } from './ir'
 
+/** Events a browser raises from a keyboard, mouse, pointer or the page itself: nothing native produces them. */
+const BROWSER_ONLY_EVENTS = /^(?:key(?:down|up|press)|mouse[a-z]+|pointer[a-z]+|dbl(?:click)?|contextmenu|wheel|drag[a-z]*|drop|copy|cut|paste|beforeinput|compositionstart|compositionupdate|compositionend|animation[a-z]+|transition[a-z]+|resize|hashchange|popstate|beforeunload|unload|visibilitychange|selectionchange|selectstart|auxclick)$/
+
 export type TranslationDiagnosticKind =
   /** The tag has no native type, so its subtree would be dropped on the device. */
   | 'unmapped-tag'
@@ -283,7 +286,10 @@ function readAttributes(
       const [base] = spelling.split('.')
       const native = EVENT_NAMES[base] ?? (base.startsWith('on') ? base : '')
       if (!native || !NATIVE_EVENTS.has(native)) {
-        diagnostics.push({ kind: 'unread-event', tag, name: rawName })
+        // A component's own event (`emit('done')` heard as `@done`) reaches its
+        // listener through the shared runtime on every host. Only a browser
+        // event a native screen never produces is worth a warning.
+        if (BROWSER_ONLY_EVENTS.test(base) || /\./.test(spelling)) diagnostics.push({ kind: 'unread-event', tag, name: rawName })
         continue
       }
       events[native] = decodeEntities(value)
@@ -437,7 +443,12 @@ export async function translateHtmlToIR(
   const diagnostics: TranslationDiagnostic[] = []
   const stylesheetTheme = await extractStylesheetTheme(html, name => diagnostics.push({ kind: 'unsupported-theme-rule', tag: 'style', name }))
   const stylesheetVariables = createStyleVariables(stylesheetTheme.light).computed()
-  const stylesheetRules = await extractStylesheetRules(html, name => diagnostics.push({ kind: 'unsupported-style-rule', tag: 'style', name }))
+  // A page carries the app's whole stylesheet: report a rule natives cannot
+  // read only when something on this page has one of the classes it styles.
+  const usedClasses = new Set([...html.matchAll(/\sclass(?:name)?\s*=\s*"([^"]*)"/gi)].flatMap(match => match[1]!.split(/\s+/)))
+  const stylesheetRules = await extractStylesheetRules(html, (name, classes) => {
+    if (!classes.length || classes.some(name => usedClasses.has(name))) diagnostics.push({ kind: 'unsupported-style-rule', tag: 'style', name })
+  })
   const roots: STXNode[] = []
   const stack: Frame[] = []
   const seenUnmapped = new Set<string>()
