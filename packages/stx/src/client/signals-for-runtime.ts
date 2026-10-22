@@ -318,6 +318,10 @@ catch (e) {
         elements.push(stxHost.anchor('stx-for-item-start'));
         Array.from(templateContent.childNodes).forEach(node => {
           const clone = stxHost.clone(node);
+          if (slotScopeInfo) {
+            clone.__stx_for_scope = itemScope;
+            clone.__stx_slot_scope = itemScope;
+          }
           if (clone.nodeType === 1) {
             // Structural directives need a live parent. Keep the iteration
             // scope on the clone until the keyed diff inserts it, then bind.
@@ -625,6 +629,15 @@ catch (e) {
                 el.__stx_effect_disposers = trackEffects(function() { processElement(el, itemScope); });
               el.removeAttribute('x-cloak');
               el.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
+            } else if (slotScopeInfo && el.nodeType === Node.TEXT_NODE && (el.textContent || '').includes('{{')) {
+              const itemScope = el.__stx_for_scope;
+              delete el.__stx_for_scope;
+              // Interpolation replaces the original text node. Its effects
+              // therefore belong to the range anchor that survives removal.
+              const release = trackEffects(function() { processElement(el, itemScope); });
+              const anchor = elements[0];
+              const previous = anchor.__stx_effect_disposers;
+              anchor.__stx_effect_disposers = function() { if (previous) previous(); release(); };
             }
           });
           newElements.push(...elements);

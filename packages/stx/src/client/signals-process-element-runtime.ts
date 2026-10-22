@@ -77,7 +77,7 @@ export function signalsProcessElementRuntime(
           // Capture scope NOW before effects run asynchronously
           // Use the passed scope parameter (not global componentScope) to preserve context
           // through nested @if/@for processing where componentScope may be restored
-          const capturedScope = mergeTemplateScopes(globalHelpers, scope, (findElementScope(parentEl) || {}));
+          const capturedScope = el.__stx_slot_scope || mergeTemplateScopes(globalHelpers, scope, (findElementScope(parentEl) || {}));
           parts.forEach(part => {
             const match = part.match(/^\\{\\{\\s*([\\s\\S]+?)\\s*\\}\\}$/);
             if (match) {

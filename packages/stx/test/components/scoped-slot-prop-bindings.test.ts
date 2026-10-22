@@ -31,6 +31,7 @@ function edit(value) { window.slotProbe.edited.push(value.id) }
 </template></Box>
 <Box :items="items()"><template #actions="props"><span class="object">{{ props.row.name }}</span></template></Box>
 <Box :items="items()"><template #actions="{ row: { name }, missing: fallback = 'fallback' }"><span class="pattern">{{ name }}:{{ fallback }}</span></template></Box>
+<Box :items="items()" data-bare="true"><template #actions="{ row: entry }">{{ entry.name }}:{{ label() }}</template></Box>
 </section>`
 
 it.each(['default', 'compile'])('binds scoped slot props and aliases independently of child loop names (%s, #2112)', async (mode) => {
@@ -50,19 +51,25 @@ it.each(['default', 'compile'])('binds scoped slot props and aliases independent
     expect(texts('.object')).toEqual(['first', 'second'])
     expect(texts('.pattern')).toEqual(['first:fallback', 'second:fallback'])
     expect(texts('.private')).toEqual(['undefined', 'undefined'])
+    expect(texts('[data-bare] li').map(text => text!.trim())).toEqual(['first:caller', 'second:caller'])
     const second = browser.document.querySelectorAll('.row')[1]
+    const bareSecond = browser.document.querySelectorAll('[data-bare] li')[1]
     browser.window.slotProbe.items.set([{ id: 2, name: 'updated' }, { id: 1, name: 'last' }])
     browser.window.slotProbe.label.set('changed')
     await settle()
     expect(texts('.row')).toEqual(['updated:changed', 'last:changed'])
     expect(browser.document.querySelector('.row')).toBe(second)
     expect(texts('.alias')).toEqual(['0:updated', '1:last'])
+    expect(texts('[data-bare] li').map(text => text!.trim())).toEqual(['updated:changed', 'last:changed'])
     expect(browser.document.querySelector('.alias')!.getAttribute('title')).toBe('updated')
     second!.dispatchEvent(new browser.window.MouseEvent('click', { bubbles: true }))
     expect(browser.window.slotProbe.edited).toEqual([2])
     browser.window.slotProbe.items.set([])
     await settle()
     expect(texts('.row')).toEqual([])
+    browser.window.slotProbe.label.set('after removal')
+    await settle()
+    expect(bareSecond!.textContent!.trim()).toBe('updated:changed')
     expect(browser.errors).toEqual([])
   }
   finally { closeBrowser(); await app.dispose() }
@@ -80,6 +87,7 @@ it.each([false, true])('binds the same slot prop contracts on native (minify=%s)
       expect(phone.texts()).toContain('first:caller')
       expect(phone.texts()).toContain('0:first')
       expect(phone.texts()).toContain('first:fallback')
+      expect(phone.texts().filter(text => text === 'first:caller')).toHaveLength(2)
       const second = phone.byTestID('row-2')!
       expect(second).toBeDefined()
       phone.context.slotProbe.items.set([{ id: 2, name: 'updated' }])

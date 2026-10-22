@@ -399,6 +399,12 @@ function flattenText(node: STXNode): string {
  */
 function settle(frame: Frame, diagnostics: TranslationDiagnostic[]): STXNode {
   const node = frame.node
+  if (node.props['data-stx-native-template']) {
+    // Templates retain their content even when it is only text. They must
+    // not collapse into a physical Text with a loop on the template itself.
+    node.children = node.children.map(child => typeof child === 'string' ? createNode('Text', {}, {}, {}, [child]) : child)
+    return node
+  }
   const elements = node.children.filter((child): child is STXNode => typeof child !== 'string')
   const text = node.children.filter(child => typeof child === 'string').join('').trim()
 
@@ -797,6 +803,9 @@ export async function translateHtmlToIR(
  * them, since a native Button draws a fixed title.
  */
 function bindMustaches(node: STXNode): void {
+  if (node.props['data-stx-native-template']) {
+    return
+  }
   if (node.bindings?.text || node.children.length === 0 || !node.children.every(child => typeof child === 'string'))
     return
   const expression = mustacheBinding(node.children.join(''))
