@@ -41,7 +41,8 @@ export const nativeAnimation = $props.animationType || 'slide'
 </script>
 
 <script client>
-const emit = defineEmits()
+// Reserve this component's event before a nested overlay can emit it.
+const emit = defineEmits(['close'])
 const dialogInstanceId = {{ dialogInstanceId }}
 // useReactiveProp wires `:open="parentSignal()"` from the parent into our
 // local `isOpen` signal — when the parent's signal changes, bindAttr

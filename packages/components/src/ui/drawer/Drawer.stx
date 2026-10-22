@@ -119,7 +119,8 @@ export const drawerInstanceId = $uid
 </script>
 
 <script client>
-const emit = defineEmits()
+// A nested overlay's close belongs to that overlay, never this drawer.
+const emit = defineEmits(['close'])
 const drawerInstanceId = {{ drawerInstanceId }}
 // useReactiveProp lets the parent drive `open` via signals
 // (`:open="drawerOpen()"`) instead of the prop being captured once.
