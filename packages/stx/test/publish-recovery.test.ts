@@ -3,6 +3,17 @@ import { createHash } from 'node:crypto'
 import { acceptedPublications, publicationMatchesOriginal } from '../../../scripts/npm-publication'
 
 describe('accepted npm publication recovery', () => {
+  it('fails the release when any publication job fails', async () => {
+    const workflow = Bun.YAML.parse(await Bun.file(new URL('../../../.github/workflows/release.yml', import.meta.url)).text()) as {
+      jobs: Record<string, { 'continue-on-error'?: boolean, needs?: string | string[] }>
+    }
+    for (const name of ['npm', 'icons']) {
+      expect(workflow.jobs[name]).toBeDefined()
+      expect(workflow.jobs[name]['continue-on-error'] ?? false).toBe(false)
+    }
+    expect(workflow.jobs.icons.needs).toBe('npm')
+  })
+
   const bytes = new TextEncoder().encode('original accepted archive')
   const receipt = {
     name: '@stacksjs/example', version: '1.2.3',

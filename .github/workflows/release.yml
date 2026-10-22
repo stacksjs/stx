@@ -145,15 +145,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # ── Phase 3: icon collections (non-blocking) ────────────────────────────
-  # 218 generated @stacksjs/iconify-* packages. npm rate-limits this volume,
-  # so the job runs after — and independently of — the core release: a 429
-  # storm here can never delay or fail the framework release. skip_existing
-  # means a re-run of this job resumes where the rate limit cut it off.
+  # Phase 3: icon collections, required for a successful release.
+  # Publish core packages first so they become available before this larger
+  # batch. A failed or unverified icon upload must still fail the workflow.
+  # Recovery verifies pending original archives before resuming publication.
   icons:
     needs: npm
     runs-on: ubuntu-latest
-    continue-on-error: true
     timeout-minutes: 150
     permissions:
       contents: read
