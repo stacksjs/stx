@@ -644,6 +644,25 @@ The package is fully functional for basic native windows using craft. System tra
 - Powered by [Craft](https://github.com/stacksjs/craft)
 - Part of the [stx](https://github.com/stacksjs/stx) ecosystem
 
+## Packaging the native runtime
+
+Use `resolveCraftExecutablePath()` when embedding Craft in an application.
+It asks Pantry 0.11.114 or newer for the installed provider file and verifies
+that it is a native executable. Pantry launchers belong to their installation
+tree and cannot be copied into a standalone application. For local source
+builds, pass an explicit executable path or set `CRAFT_BIN`.
+
+```typescript
+import { packageApp, resolveCraftExecutablePath } from '@stacksjs/desktop'
+
+await packageApp({
+  name: 'Example',
+  version: '1.0.0',
+  binaryPath: './dist/example',
+  macos: { additionalExecutables: [resolveCraftExecutablePath()] },
+})
+```
+
 ## Background deadlines
 
 Use `backgroundDelay` for native application work that must continue while a
