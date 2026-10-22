@@ -261,6 +261,7 @@ describe('shared-runtime native capability protocol', () => {
     const workouts = scope.craft.health.getWorkouts({ startDate: 1, endDate: 2, limit: 5 })
     scope.craft.health.getDailyStatistics('steps', { startDate: 1, endDate: 2 })
     scope.craft.health.getHeartRateSamples({ startDate: 1, endDate: 2 })
+    scope.craft.health.getSamples('bloodGlucose', { startDate: 1, limit: 10 })
     scope.craft.health.getSleepIntervals()
     scope.craft.health.requestAuthorization(['workouts'], { write: false })
     scope.craft.health.saveMindfulSession({ id: 'hq-1', startDate: 1, endDate: 2 })
@@ -272,6 +273,7 @@ describe('shared-runtime native capability protocol', () => {
       ['getWorkouts', [{ startDate: 1, endDate: 2, limit: 5 }]],
       ['getDailyStatistics', ['steps', { startDate: 1, endDate: 2 }]],
       ['getHeartRateSamples', [{ startDate: 1, endDate: 2 }]],
+      ['getSamples', ['bloodGlucose', { startDate: 1, limit: 10 }]],
       ['getSleepIntervals', [{}]],
       ['requestAuthorization', [['workouts'], { write: false }]],
       ['saveMindfulSession', [{ id: 'hq-1', startDate: 1, endDate: 2 }]],

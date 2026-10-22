@@ -740,6 +740,8 @@ export function installCraftBridge(
       getWorkouts: (options: AnyRecord = {}) => request('Health', 'getWorkouts', [options]),
       getDailyStatistics: (type: string, options: AnyRecord = {}) => request('Health', 'getDailyStatistics', [type, options]),
       getHeartRateSamples: (options: AnyRecord = {}) => request('Health', 'getHeartRateSamples', [options]),
+      // Glucose, insulin and carbs one sample at a time (Craft 0.0.291).
+      getSamples: (type: string, options: AnyRecord = {}) => request('Health', 'getSamples', [type, options]),
       getSleepIntervals: (options: AnyRecord = {}) => request('Health', 'getSleepIntervals', [options]),
       saveMindfulSession: (session: AnyRecord) => request('Health', 'saveMindfulSession', [session]),
       getMindfulSessions: (options: AnyRecord = {}) => request('Health', 'getMindfulSessions', [options]),

@@ -368,6 +368,8 @@ export interface NativeCraft {
     getWorkouts: (options?: { startDate?: number, endDate?: number, limit?: number }) => Promise<Array<Record<string, unknown>>>
     getDailyStatistics: (type: string, options?: { startDate?: number, endDate?: number }) => Promise<Array<{ date: string, value: number }>>
     getHeartRateSamples: (options?: { startDate?: number, endDate?: number, limit?: number }) => Promise<Array<Record<string, unknown>>>
+    /** Glucose (mg/dL), insulin (IU, basal or bolus) or carbs (g), one sample at a time, oldest first. */
+    getSamples: (type: 'bloodGlucose' | 'insulinDelivery' | 'dietaryCarbohydrates', options?: { startDate?: number, endDate?: number, limit?: number }) => Promise<Array<Record<string, unknown>>>
     getSleepIntervals: (options?: { startDate?: number, endDate?: number }) => Promise<Array<Record<string, unknown>>>
     /** Mindful minutes: `id` is kept as the sample's external UUID, and saving it again keeps the first sample. */
     saveMindfulSession: (session: { id: string, startDate: number, endDate: number }) => Promise<{ id: string, externalId: string, existing: boolean }>
