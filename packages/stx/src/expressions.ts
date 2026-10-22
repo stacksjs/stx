@@ -579,6 +579,23 @@ export function escapeInterpolatedHtmlValue(
   attributeFragment: boolean = false,
   interpolationLength: number = 0,
 ): string {
+  try {
+    return escapeInContext(source, offset, raw, attributeFragment, interpolationLength)
+  }
+  catch (error) {
+    if (error instanceof UnsafeInterpolationContextError)
+      error.locate(source, offset)
+    throw error
+  }
+}
+
+function escapeInContext(
+  source: string,
+  offset: number,
+  raw: string,
+  attributeFragment: boolean,
+  interpolationLength: number,
+): string {
   const context = classifyHtmlInterpolation(source, offset, attributeFragment)
   let escaped = escapeHtmlValue(raw)
 

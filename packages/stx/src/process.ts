@@ -925,6 +925,10 @@ export async function processDirectives(
 
     errorLogger.log(enhancedError, { filePath, context })
     devHelpers.logDetailedError(enhancedError, { filePath, template: template.substring(0, 500) })
+    // Production keeps the reason out of the page, and logged none at all: a
+    // server's log said only that a route failed. Say why, server-side.
+    if (isProduction() && !options.debug)
+      console.error(`[stx] ${path.relative(process.cwd(), filePath) || filePath}: ${enhancedError.message}`)
 
     if (options.debug) {
       throw enhancedError

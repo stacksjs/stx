@@ -285,10 +285,26 @@ function classifyTail(tail: string, openTag: number, attributeFragment: boolean)
 
 export class UnsafeInterpolationContextError extends Error {
   readonly attribute: string
+  /** The markup just before the interpolation, once known. */
+  near?: string
 
   constructor(attribute: string, reason: string) {
     super(`Unsafe interpolation in ${attribute}: ${reason}`)
     this.name = 'UnsafeInterpolationContextError'
     this.attribute = attribute
+  }
+
+  /**
+   * Say where. A composed document (layout, page and components together) has
+   * no line numbers that lead back to a file, so the error quotes the markup
+   * that precedes the interpolation: for a malformed tag that is the tag
+   * itself, which is what someone fixing it has to find.
+   */
+  locate(source: string, offset: number): this {
+    if (this.near === undefined) {
+      this.near = source.slice(Math.max(0, offset - 160), offset).replace(/\s+/g, ' ').trim()
+      this.message += ` (after: ${JSON.stringify(this.near)})`
+    }
+    return this
   }
 }
