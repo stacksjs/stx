@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.664...v0.2.665)
+
+## 🐛 Bug Fixes
+
+- **types**: declare project image startup controls ([46b4ef3](https://github.com/stacksjs/stx/commit/46b4ef3)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.665 ([056a687](https://github.com/stacksjs/stx/commit/056a687)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.663...v0.2.664)
 
 ## 🐛 Bug Fixes
