@@ -17,7 +17,7 @@ it('shows and dismisses the existing native window without closing its page', as
   expect(calls).toEqual(['show', 'hide'])
 })
 
-it('updates the existing status item through Craft with correctly shaped messages', async () => {
+it('updates the existing status item through Craft with Craft’s string-valued public API', async () => {
   const calls: unknown[] = []
   globalThis.window = { craft: { tray: {
     setIcon: async (value: unknown) => { calls.push(value) },
@@ -27,7 +27,7 @@ it('updates the existing status item through Craft with correctly shaped message
   await nativeTray.setIcon('moon.fill')
   await nativeTray.setTitle('')
   await nativeTray.setTooltip('Hush')
-  expect(calls).toEqual([{ icon: 'moon.fill' }, { title: '' }, { tooltip: 'Hush' }])
+  expect(calls).toEqual(['moon.fill', '', 'Hush'])
 })
 
 it('is safe in a browser without Craft', async () => {
