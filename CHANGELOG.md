@@ -1,5 +1,36 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.665...v0.2.666)
+
+## ✨ Features
+
+- **native**: health.getSamples on native screens ([a837df5](https://github.com/stacksjs/stx/commit/a837df5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- **components**: preserve keys on generated loop boundaries ([35836c2](https://github.com/stacksjs/stx/commit/35836c2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **slots**: hydrate and dispose text-only reactive projections ([7db570f](https://github.com/stacksjs/stx/commit/7db570f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **slots**: bind reactive outlet props to caller slot patterns (#2112) ([e20c927](https://github.com/stacksjs/stx/commit/e20c927)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2112](https://github.com/stacksjs/stx/issues/2112), [#2112](https://github.com/stacksjs/stx/issues/2112))
+- **native**: retain transparent keyed template fragments ([2c76a92](https://github.com/stacksjs/stx/commit/2c76a92)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 📝 Documentation
+
+- **native**: track canonical surface blockers and Metal host boundary ([6d66def](https://github.com/stacksjs/stx/commit/6d66def)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: retain HUD device receipt and surface integration limits ([1d67b36](https://github.com/stacksjs/stx/commit/1d67b36)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ✅ Tests
+
+- **native**: verify imported HUD state on protocol and iOS hosts (#2109) ([ef95fa0](https://github.com/stacksjs/stx/commit/ef95fa0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2109](https://github.com/stacksjs/stx/issues/2109), [#2109](https://github.com/stacksjs/stx/issues/2109))
+
+## 🔧 Chores
+
+- release v0.2.666 ([7405625](https://github.com/stacksjs/stx/commit/7405625)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.664...v0.2.665)
 
 ## 🐛 Bug Fixes
