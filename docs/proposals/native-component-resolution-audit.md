@@ -58,6 +58,18 @@ wrapping `<div>`, a client `value = state('/first')`, and
    exercises the actual shared component in WebView. Default native resolution
    and Craft code are unchanged; this is not a transparent migration of legacy
    object-payload callers to the shared value-payload API.
+
+   **Reactive readonly (unreleased after v0.2.661):** the physical input now
+   follows `:readonly` on both targets, including clearing an initially true
+   value. Browser styling and clear-button visibility follow it too. Shared
+   input/change/end-editing/clear handlers reject edits while locked and restore
+   the model value after a stray edit callback; parent-driven value writes
+   remain allowed. Readonly stays distinct from disabled: browser form values
+   are still submitted, and removing readonly cannot bypass disabled state.
+   `shared-text-input-readonly.test.ts` covers normal/minified native bundles
+   and a real browser, including lazy commits, literals, toggling, remount and
+   teardown. This uses the existing readonly-to-editable mapping; legacy
+   primitive selection and event contracts, and Craft code, are unchanged.
 2. **Image (source gap fixed):**
    `<Image testID="target" alt="Photo" :src="value" />` now updates the inner
    image, and the native adapter maps image `src` to the host's `source` on

@@ -166,6 +166,7 @@ const emit = defineEmits(['input', 'clear'])
 const isError = useReactiveProp('error', {{ error }})
 // Keep the physical control and its affordances live on both web and native.
 const isDisabled = useReactiveProp('disabled', {{ disabled }})
+const isReadonly = useReactiveProp('readonly', {{ readonly }})
 // v-model:value supports modifiers; @input remains available to existing callers.
 const inputValue = useModel('value', { default: {{ value }}, parse: (v) => v == null ? '' : String(v) })
 let lastNativeCommit = String(inputValue() ?? '')
@@ -177,7 +178,10 @@ function onNativeFocus(event) {
 }
 
 function onNativeChange(event) {
-  if (isDisabled() || {{ readonly }}) return
+  if (isDisabled() || isReadonly()) {
+    event.target.value = inputValue()
+    return
+  }
   lastNativeCommit = String(event.target.value ?? '')
   onChange(event)
   emit('change', { ...event, type: 'change' })
@@ -187,7 +191,10 @@ function onNativeChange(event) {
 // Keep the shared @change event-shaped and @input value-shaped; the legacy
 // primitive still exposes its original native payload without this adapter.
 function onNativeEndEditing(event) {
-  if (isDisabled() || {{ readonly }}) return
+  if (isDisabled() || isReadonly()) {
+    event.target.value = inputValue()
+    return
+  }
   const text = String(event.text ?? event.nativeEvent?.text ?? event.target.value ?? '')
   if (text === lastNativeCommit) return
   lastNativeCommit = text
@@ -198,7 +205,7 @@ function onNativeEndEditing(event) {
 }
 
 function onInput(event) {
-  if (isDisabled()) {
+  if (isDisabled() || isReadonly()) {
     event.target.value = inputValue()
     return
   }
@@ -208,7 +215,7 @@ function onInput(event) {
 }
 
 function onChange(event) {
-  if (isDisabled()) {
+  if (isDisabled() || isReadonly()) {
     event.target.value = inputValue()
     return
   }
@@ -217,7 +224,7 @@ function onChange(event) {
 }
 
 function onClear() {
-  if (isDisabled()) return
+  if (isDisabled() || isReadonly()) return
   inputValue.set('')
   lastNativeCommit = ''
   lastInputText = ''
@@ -255,6 +262,7 @@ defineExpose({ value: inputValue, clear: onClear })
       @if(disabled)disabled@endif
       :disabled="isDisabled()"
       @if(readonly)readonly@endif
+      :readonly="isReadonly()"
       @if(required)required@endif
       @if(maxLength && freeText)maxlength="{{ maxLength }}"@endif
       @input="onInput($event)"
@@ -269,7 +277,7 @@ defineExpose({ value: inputValue, clear: onClear })
     @if(clearable)
       <button
         type="button"
-        :show="hasValue() && !isDisabled() && !{{ readonly }}"
+        :show="hasValue() && !isDisabled() && !isReadonly()"
         @click="onClear()"
         class="absolute top-0 right-0 h-12 w-10 items-center justify-center"
         aria-label="Clear input"
@@ -336,18 +344,19 @@ defineExpose({ value: inputValue, clear: onClear })
       @if(disabled)disabled@endif
       :disabled="isDisabled()"
       @if(readonly)readonly@endif
+      :readonly="isReadonly()"
       @if(required)required@endif
       @if(maxLength && freeText)maxlength="{{ maxLength }}"@endif
       @input="onInput($event)"
       @change="onChange($event)"
       aria-invalid="{{ error ? 'true' : 'false' }}"
       :aria-invalid="isError() ? 'true' : 'false'"
-      :class="{ '{{ stateInvalidClasses }}': isError(), '{{ stateValidClasses }}': !isError(), 'opacity-50 cursor-not-allowed': isDisabled(), 'bg-surface': isDisabled() || {{ readonly }}, 'bg-field': !isDisabled() && !{{ readonly }}, 'cursor-default': !isDisabled() && {{ readonly }} }"
+      :class="{ '{{ stateInvalidClasses }}': isError(), '{{ stateValidClasses }}': !isError(), 'opacity-50 cursor-not-allowed': isDisabled(), 'bg-surface': isDisabled() || isReadonly(), 'bg-field': !isDisabled() && !isReadonly(), 'cursor-default': !isDisabled() && isReadonly() }"
       @if(helperText)aria-describedby="{{ helperId }}"@endif
     />
 
     @if(clearable)
-      <div :show="hasValue() && !isDisabled() && !{{ readonly }}" class="absolute inset-y-0 right-0 flex items-center pr-3">
+      <div :show="hasValue() && !isDisabled() && !isReadonly()" class="absolute inset-y-0 right-0 flex items-center pr-3">
         <button
           type="button"
           @click="onClear()"
