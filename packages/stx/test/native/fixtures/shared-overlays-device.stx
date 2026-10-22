@@ -1,0 +1,47 @@
+@import('Button', '../../../../components/src/ui/button/Button.stx')
+@import('Tooltip', '../../../../components/src/ui/tooltip/Tooltip.stx')
+@import('Popover', '../../../../components/src/ui/popover/Popover.stx')
+@import('PopoverButton', '../../../../components/src/ui/popover/PopoverButton.stx')
+@import('PopoverPanel', '../../../../components/src/ui/popover/PopoverPanel.stx')
+@import('Dialog', '../../../../components/src/ui/dialog/Dialog.stx')
+@import('DialogPanel', '../../../../components/src/ui/dialog/DialogPanel.stx')
+@import('Drawer', '../../../../components/src/ui/drawer/Drawer.stx')
+@import('TabList', '../../../../components/src/ui/tabs/TabList.stx')
+@import('Tab', '../../../../components/src/ui/tabs/Tab.stx')
+<script client>
+const outer = state(false)
+const inner = state(false)
+const drawer = state(false)
+const tab = state('first')
+const clicks = state(0)
+const helpTaps = state(0)
+</script>
+<section class="p-4 gap-3 bg-white dark:bg-black text-black dark:text-white">
+  <div testID="clip" class="h-12 overflow-hidden">
+    <Popover>
+      <PopoverButton testID="popup-trigger" className="h-12">More actions</PopoverButton>
+      <PopoverPanel testID="popup-panel" className="w-[220px]">
+        <Button testID="popup-action" @click="clicks.set(clicks() + 1)">Popup action</Button>
+        <span testID="popup-count" :text="'Clicks: ' + clicks()"></span>
+      </PopoverPanel>
+    </Popover>
+  </div>
+  <Tooltip content="Helpful native hint"><Button testID="tooltip-trigger" @click="helpTaps.set(helpTaps() + 1)">Help</Button></Tooltip>
+  <span testID="help-taps" :text="'Help taps: ' + helpTaps()"></span>
+  <Button testID="open-dialog" @click="outer.set(true)">Open dialog</Button>
+  <Button testID="open-drawer" @click="drawer.set(true)">Open drawer</Button>
+  <TabList v-model:value="tab" label="Device tabs">
+    <Tab testID="tab-first" value="first">First</Tab>
+    <Tab testID="tab-second" value="second">Second</Tab>
+  </TabList>
+  <span testID="selection" :text="'Selected: ' + tab()"></span>
+  <Dialog :open="outer" title="Outer dialog" @close="outer.set(false)">
+    <DialogPanel><Button testID="open-inner" @click="inner.set(true)">Open nested dialog</Button></DialogPanel>
+    <Dialog :open="inner" title="Inner dialog" @close="inner.set(false)">
+      <DialogPanel><span testID="inner-content">Inner content</span></DialogPanel>
+    </Dialog>
+  </Dialog>
+  <Drawer :open="drawer" title="Device drawer" @close="drawer.set(false)">
+    <Button testID="close-drawer" @click="drawer.set(false)">Close drawer</Button>
+  </Drawer>
+</section>

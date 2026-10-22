@@ -66,3 +66,59 @@ queries are not a VoiceOver navigation audit. Android, overlay clipping/touch
 routing, tabs, media playback, font scaling and broader component coverage
 remain separate checks. Keep #2089, #2090 and #2091 open until their remaining
 requirements have direct evidence.
+
+## Shared overlay and tab device suite
+
+STX also owns `fixtures/shared-overlays-device.stx` and
+`fixtures/SharedPortabilityUITests.swift` under `packages/stx/test/native`.
+The screen imports the real shared Button, Tooltip, Popover, Dialog, Drawer
+and TabList/Tab sources. It exercises an anchored popup inside a clipping
+ancestor, retained popup action state, a tooltip around a shared Button,
+actually nested dialogs, a drawer, and tab selection.
+
+Run this from STX against a clean Craft checkout and an owned booted simulator:
+
+```sh
+bun scripts/native-portability-ios.ts \
+  --craft-root /path/to/craft \
+  --simulator "$STX_TEST_SIMULATOR" \
+  --appearance light
+```
+
+Use `--appearance dark` for dark appearance. This runner generates an app with
+`appearance: 'system'` and selects the specified appearance on that simulator.
+It retains its generated project, exact source/bundle hashes, compiler
+diagnostics, Craft/STX revisions, XCTest result bundle and result summary.
+Four tests, all passing with no skips, are required for success. It never
+edits Craft source or boots/shuts down another task's simulator. These XCTest
+checks run explicitly; the ordinary Bun suite runs the fixture's protocol
+regression on both normal and minified bundles.
+
+The first light-appearance device run on Craft `45a33630` passed popup clipping
+escape, real action taps, outside dismissal, state after reopening, and shared
+tab selection. Two failures exposed additional work:
+
+- A shared Button emits a click before the physical press bubbles. Tooltip
+  toggled twice and remained closed. This was reproduced in the maintained
+  STX protocol test by replacing its bare button with the actual shared file;
+  the Tooltip now ignores that emitted duplicate when toggling native touch.
+  Its dedicated iOS rerun passed (one test, zero failures, 15.653 seconds),
+  verifying one action callback, visible hint and outside dismissal.
+  A later dark-appearance run passed Popover and Tabs but lost the Tooltip
+  Button action (`Help taps: 0`). This is a separate delivery failure after
+  the STX fix; the differing appearances do not establish its cause. Nested
+  host gesture arbitration still needs investigation and repeated device taps,
+  tracked in [Craft #403](https://github.com/craft-native/craft/issues/403).
+- A named native Dialog draws its button but hides it from accessibility
+  queries. Craft makes the labelled Modal an accessibility leaf. This is
+  filed as [Craft #402](https://github.com/craft-native/craft/issues/402).
+  The device test retains the accessible name and its failing assertion so
+  the host fix can be validated without weakening the acceptance check.
+
+The nested-dialog fixture also exposed a separate STX close-event leak before
+device execution: the outer Dialog/Drawer did not declare `close` until it
+emitted it, so it accepted the inner component's close event. Both now declare
+it during setup. `nested-overlay-close.test.ts` covers every Dialog/Drawer
+combination on web/native, repeated inner dismissal, independent close counts
+and teardown. Keep the broader issues open; the full device suite is not yet
+green against this Craft revision.
