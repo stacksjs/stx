@@ -4,6 +4,7 @@ import { compileNativeScreen, mountNativeScreen } from '../../src/native/testing
 
 const ui = join(import.meta.dir, '../../../components/src/ui')
 const imports = `@import('Tooltip', '${ui}/tooltip/Tooltip.stx')
+@import('Button', '${ui}/button/Button.stx')
 @import('Popover', '${ui}/popover/Popover.stx')
 @import('PopoverButton', '${ui}/popover/PopoverButton.stx')
 @import('PopoverPanel', '${ui}/popover/PopoverPanel.stx')`
@@ -15,7 +16,7 @@ const disabled = state(false)
 const present = state(true)
 const taps = state(0)
 window.probe = { disabled, present, taps }
-</script><div :if="present"><Tooltip content="Helpful hint" :disabled="disabled"><button testID="help" @click="taps.set(taps() + 1)">Help</button></Tooltip></div>`, { minify })
+</script><div :if="present"><Tooltip content="Helpful hint" :disabled="disabled"><Button testID="help" @click="taps.set(taps() + 1)">Help</Button></Tooltip></div>`, { minify })
   let anchorX = 100
   let measurements = 0
   const errors: unknown[] = []

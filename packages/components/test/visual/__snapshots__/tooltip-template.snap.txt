@@ -132,7 +132,10 @@ function showTooltip() {
   }
 }
 
-function toggleTouch() {
+function toggleTouch(event) {
+  // A shared Button emits click before the original press bubbles here.
+  // Only the physical press toggles; otherwise one tap opens then closes.
+  if (event && Array.isArray(event.__stx_emit_args)) return
   if (nativePopup) isVisible() ? hideTooltip() : showTooltip()
 }
 
@@ -242,7 +245,7 @@ onDestroy(() => { if (restorePanel) restorePanel() })
     <span
     data-native="Pressable"
     x-ref="triggerRef"
-    @click="toggleTouch()"
+    @click="toggleTouch($event)"
     @mouseenter="showTooltip()"
     @mouseleave="hideTooltip()"
     @focusin="showTooltip()"
