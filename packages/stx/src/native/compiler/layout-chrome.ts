@@ -27,9 +27,12 @@
  * an SF Symbol), else the first Iconify class on it or inside it. Only links
  * to a path of the app (`/plans`) are items: the host opens paths.
  *
- * Everything else the layout renders stays, the content and the overlays
- * beside it (a toast, a video player) alike. On the web the attributes are
- * inert.
+ * A component in the chrome goes with it, its client setup too: that setup
+ * was written for the browser the chrome is drawn in (a menu's key listener,
+ * the colour scheme), and on a phone it would run for markup that is not
+ * there. Everything else the layout renders stays, the content and the
+ * overlays beside it (a toast, a video player) alike. On the web the
+ * attributes are inert.
  */
 import type { NativeChromeItem, NativeLayoutChrome } from './ir'
 import { iconClassIn, resolveIconName } from './icons'
@@ -84,14 +87,63 @@ export async function extractLayoutChrome(html: string): Promise<{ html: string,
 
   const regions: string[] = []
   const items: OpenItem[] = []
+  // The component scopes inside the chrome: their setup scripts follow their
+  // roots (`data-stx-owner`), outside the element, and go with it.
+  const scopes = new Set<string>()
+  // A component whose root is not one element is wrapped, its scope on the
+  // wrapper: a wrapper that holds nothing but chrome is chrome's too.
+  const wrappers: Array<{ scope: string, children: number, chrome: number }> = []
+  // The definitions of components used more than once go ahead of the first
+  // use, which may be inside the chrome: they stay for the content's uses.
+  const preludes: string[] = []
+  let prelude: string | null = null
   let open: OpenItem | null = null
   let marked = false
   await new HTMLRewriter()
     .on(CHROME, {
       element(element) {
         marked = true
+        const scope = element.getAttribute('data-stx-scope')
+        if (scope) scopes.add(scope)
         regions.push(regionKind(element.getAttribute('data-native-chrome')))
         element.onEndTag(() => { regions.pop() })
+      },
+    })
+    .on('[data-stx-component-wrapper]', {
+      element(element) {
+        const wrapper = { scope: element.getAttribute('data-stx-scope') ?? '', children: 0, chrome: 0 }
+        wrappers.push(wrapper)
+        element.onEndTag(() => {
+          wrappers.pop()
+          if (wrapper.scope && wrapper.children > 0 && wrapper.chrome === wrapper.children) scopes.add(wrapper.scope)
+        })
+      },
+    })
+    .on('[data-stx-component-wrapper] > *', {
+      element(element) {
+        const wrapper = wrappers[wrappers.length - 1]
+        if (!wrapper) return
+        wrapper.children++
+        if (element.hasAttribute('data-native-chrome')) wrapper.chrome++
+      },
+    })
+    .on(`${CHROME} [data-stx-scope]`, {
+      element(element) {
+        const scope = element.getAttribute('data-stx-scope')
+        if (scope) scopes.add(scope)
+      },
+    })
+    .on(`${CHROME} script[data-stx-component-factories]`, {
+      element(element) {
+        const attributes = [...element.attributes].map(([name, value]) => value === '' ? name : `${name}="${value.replace(/"/g, '&quot;')}"`).join(' ')
+        prelude = ''
+        element.onEndTag(() => {
+          preludes.push(`<script ${attributes}>${prelude}</script>`)
+          prelude = null
+        })
+      },
+      text(chunk) {
+        if (prelude !== null) prelude += chunk.text
       },
     })
     .on(`${CHROME} a`, {
@@ -131,10 +183,18 @@ export async function extractLayoutChrome(html: string): Promise<{ html: string,
 
   const stripped = await new HTMLRewriter()
     .on(CHROME, { element(element) { element.remove() } })
+    // The chrome's own setup reads the browser it was written for (a menu's
+    // key listener, the colour scheme): on a phone it would run for markup
+    // that is not there.
+    .on('script[data-stx-owner]', {
+      element(element) {
+        if (scopes.has(element.getAttribute('data-stx-owner') ?? '')) element.remove()
+      },
+    })
     .transform(new Response(html))
     .text()
   const of = (region: string): NativeChromeItem[] => items
     .filter(item => item.region === region)
     .map(({ path, title, symbol }) => ({ path, title, ...(symbol ? { symbol } : {}) }))
-  return { html: stripped, chrome: { tabs: of('tabs'), bar: of('bar') } }
+  return { html: preludes.join('\n') + stripped, chrome: { tabs: of('tabs'), bar: of('bar') } }
 }

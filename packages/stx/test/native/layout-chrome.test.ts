@@ -130,3 +130,71 @@ test('the bundle reports each screen\'s tabs, for the app\'s tab bar', async () 
   expect(result.chrome?.Settings?.tabs).toEqual(tabs)
   expect(result.chrome?.Today?.bar).toEqual([{ path: '/settings', title: 'Settings', symbol: 'gearshape' }])
 })
+
+test('the chrome\'s own scripts do not run on a phone, and the content\'s still do', async () => {
+  // The site's nav reads the browser (a colour-scheme query, a menu's key
+  // listener): leaving its markup out but running its setup broke the screen.
+  const root = webApp({
+    'components/SiteNav.stx': `<script client>
+  globalThis.__navRan = true
+  const scheme = window.matchMedia('(prefers-color-scheme: dark)').matches
+  const open = state(false)
+</script>
+<nav data-native-chrome class="flex"><a href="/today">Today</a><button @click="open.set(!open())">Menu</button></nav>
+`,
+    'components/Greeting.stx': `<script client>
+  globalThis.__greetingRan = true
+  const name = state('Ava')
+</script>
+<p>Hello {{ name }}</p>
+`,
+    'layouts/app.stx': `<SiteNav />
+<main>@yield('content')</main>
+`,
+    'views/today.stx': `@extends('layouts/app')
+@section('content')
+<Greeting />
+@endsection
+`,
+  })
+  const ran = globalThis as { __navRan?: boolean, __greetingRan?: boolean }
+  delete ran.__navRan
+  delete ran.__greetingRan
+  const phone = await mountWebView(root, { Today: 'views/today.stx' }, 'Today')
+  expect(phone.texts()).toContain('Hello Ava')
+  expect(phone.texts()).not.toContain('Menu')
+  expect(phone.errors ?? []).toEqual([])
+  const { code } = await compileNativeBundle({ root, screens: { Today: 'views/today.stx' } })
+  expect(code).not.toContain('__navRan')
+  expect(code).toContain('__greetingRan')
+})
+
+test('a component the chrome and the content both use still runs in the content', async () => {
+  // Used twice, its setup is a shared factory, defined once ahead of the first
+  // use: inside the chrome, here. Leaving the chrome out kept that definition.
+  const root = webApp({
+    'components/Badge.stx': `<script client>
+  const count = state(3)
+</script>
+<span>{{ count }} new</span>
+`,
+    'components/SiteNav.stx': `<script client>
+  const open = state(false)
+</script>
+<nav data-native-chrome class="flex"><a href="/today">Today</a><Badge /></nav>
+`,
+    'layouts/app.stx': `<SiteNav />
+<main>@yield('content')</main>
+`,
+    'views/today.stx': `@extends('layouts/app')
+@section('content')
+<p>Inbox</p>
+<Badge />
+@endsection
+`,
+  })
+  const phone = await mountWebView(root, { Today: 'views/today.stx' }, 'Today')
+  expect(phone.texts()).toContain('Inbox')
+  expect(phone.texts()).toContain('3 new')
+  expect(phone.texts().filter(text => text === '3 new')).toHaveLength(1)
+})
