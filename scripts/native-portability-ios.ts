@@ -12,9 +12,13 @@ const { values } = parseArgs({ options: {
   'craft-root': { type: 'string' },
   simulator: { type: 'string' },
   appearance: { type: 'string', default: 'dark' },
+  suite: { type: 'string', default: 'overlays' },
 } })
-if (!values['craft-root'] || !values.simulator || !['light', 'dark'].includes(values.appearance!))
-  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark]')
+if (!values['craft-root'] || !values.simulator || !['light', 'dark'].includes(values.appearance!) || !['overlays', 'hud'].includes(values.suite!))
+  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|hud]')
+const suite = values.suite === 'hud'
+  ? { source: 'native-hud-device.stx', tests: 'NativeHudUITests', count: 1 }
+  : { source: 'shared-overlays-device.stx', tests: 'SharedPortabilityUITests', count: 4 }
 
 function run(command: string[], cwd?: string, capture = false, allowFailure = false): string {
   const result = Bun.spawnSync(command, { cwd, stdout: capture ? 'pipe' : 'inherit', stderr: 'inherit' })
@@ -35,7 +39,7 @@ console.log(`Evidence retained at ${workspace}`)
 const root = resolve(import.meta.dir, '..')
 const fixtures = join(root, 'packages/stx/test/native/fixtures')
 const bundle = join(workspace, 'screen.js')
-const compiled = await compileSharedScreenBundle(join(fixtures, 'shared-overlays-device.stx'), { root, outFile: bundle, minify: true })
+const compiled = await compileSharedScreenBundle(join(fixtures, suite.source), { root, outFile: bundle, minify: true })
 // Meaningful unsupported styles remain diagnostics and are part of the receipt.
 writeFileSync(join(workspace, 'compile.json'), JSON.stringify({ diagnostics: compiled.diagnostics, dependencies: compiled.dependencies }, null, 2))
 const sdk = await import(pathToFileURL(join(craft, 'packages/ios/src/index.ts')).href)
@@ -43,7 +47,7 @@ const output = join(workspace, 'StxPortability')
 await sdk.init({ name: 'StxPortability', bundleId: 'dev.stx.portability', output, runtimeDir: null, config: { renderer: 'native', appearance: 'system' } })
 await sdk.build({ output, nativeBundlePath: bundle, generateProject: false, runtimeDir: null })
 mkdirSync(join(output, 'UITests'))
-copyFileSync(join(fixtures, 'SharedPortabilityUITests.swift'), join(output, 'UITests/SharedPortabilityUITests.swift'))
+copyFileSync(join(fixtures, `${suite.tests}.swift`), join(output, `UITests/${suite.tests}.swift`))
 const projectFile = join(output, 'project.yml')
 let project = readFileSync(projectFile, 'utf8')
 const targets = `
@@ -67,7 +71,7 @@ project = project.replace(test, `${test}      targets:\n        - SharedPortabil
 writeFileSync(projectFile, project)
 if (craftCommit !== run(['git', 'rev-parse', 'HEAD'], craft, true) || run(['git', 'status', '--porcelain'], craft, true))
   throw new Error('Craft changed during generation; rerun with a stable checkout')
-const hashes = Object.fromEntries([bundle, join(fixtures, 'shared-overlays-device.stx'), join(fixtures, 'SharedPortabilityUITests.swift')]
+const hashes = Object.fromEntries([bundle, ...compiled.dependencies, join(fixtures, `${suite.tests}.swift`)]
   .map(file => [file, createHash('sha256').update(readFileSync(file)).digest('hex')]))
 writeFileSync(join(workspace, 'provenance.json'), JSON.stringify({ craftCommit, stxCommit: run(['git', 'rev-parse', 'HEAD'], root, true), stxWorkingTree: run(['git', 'status', '--porcelain'], root, true), hashes, appearance: values.appearance, simulator: values.simulator }, null, 2))
 run(['xcodegen', 'generate'], output)
@@ -80,9 +84,9 @@ run(['xcodebuild', '-project', 'StxPortability.xcodeproj', '-scheme', 'StxPortab
   '-test-timeouts-enabled', 'YES', '-default-test-execution-time-allowance', '300', '-maximum-test-execution-time-allowance', '300',
   'CODE_SIGN_IDENTITY=-', 'CODE_SIGNING_REQUIRED=NO', 'ENABLE_TESTABILITY=YES',
   'ONLY_ACTIVE_ARCH=YES', 'SWIFT_OPTIMIZATION_LEVEL=-Onone', 'test',
-  '-only-testing:SharedPortabilityUITests'], output, false, true)
+  `-only-testing:SharedPortabilityUITests/${suite.tests}`], output, false, true)
 const summary = JSON.parse(run(['xcrun', 'xcresulttool', 'get', 'test-results', 'summary', '--path', results], undefined, true))
 writeFileSync(join(workspace, 'summary.json'), JSON.stringify(summary, null, 2))
-if (summary.result !== 'Passed' || summary.totalTestCount !== 4 || summary.passedTests !== 4 || summary.failedTests !== 0 || summary.skippedTests !== 0)
-  throw new Error(`Expected four passing portability UI tests: ${JSON.stringify(summary)}`)
-console.log(`4 shared-component iOS UI tests passed; evidence: ${workspace}`)
+if (summary.result !== 'Passed' || summary.totalTestCount !== suite.count || summary.passedTests !== suite.count || summary.failedTests !== 0 || summary.skippedTests !== 0)
+  throw new Error(`Expected ${suite.count} passing ${values.suite} UI tests: ${JSON.stringify(summary)}`)
+console.log(`${suite.count} ${values.suite} iOS UI tests passed; evidence: ${workspace}`)
