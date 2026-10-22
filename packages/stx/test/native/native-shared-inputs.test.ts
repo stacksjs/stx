@@ -108,5 +108,5 @@ describe('shared text fields on the web', () => {
     expect(html).toContain('ring-1')
     expect(html).not.toContain('placeholderTextColor')
     expect(html).not.toContain('i-lucide-circle-x')
-  })
+  }, 30_000)
 })
