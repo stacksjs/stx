@@ -1,5 +1,30 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.647...v0.2.649)
+
+## 🐛 Bug Fixes
+
+- **errors**: say where an unsafe interpolation is, and log why a production render failed ([7704b89](https://github.com/stacksjs/stx/commit/7704b89)) _(by Chris Breuer <chris@stacksjs.com>)_
+- defer recursive compilation until directive initialization completes ([d381444](https://github.com/stacksjs/stx/commit/d381444)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ⚡ Performance Improvements
+
+- **router**: link the owned-route table instead of inlining it in every page ([e424d56](https://github.com/stacksjs/stx/commit/e424d56)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **expressions**: classify interpolations in one pass, and read comments as comments ([6c8c4ff](https://github.com/stacksjs/stx/commit/6c8c4ff)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.649 ([d1203cb](https://github.com/stacksjs/stx/commit/d1203cb)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' ([8bd1352](https://github.com/stacksjs/stx/commit/8bd1352)) _(by Chris Breuer <chris@stacksjs.com>)_
+- Merge remote-tracking branch 'origin/main' ([164b2ad](https://github.com/stacksjs/stx/commit/164b2ad)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.646...v0.2.647)
 
 ## 🐛 Bug Fixes
