@@ -77,7 +77,11 @@ export function processReactiveBindings(html: string): ProcessedBindings {
   // Both tokens are required by every binding this pass can consume. Most
   // rendered pages have ordinary tags but no store interpolation; avoid a
   // whole-document tag replacement whose callbacks all return unchanged text.
-  if (!html.includes('{{') || !/\$\w+\./.test(html)) {
+  //
+  // A binding is a `{{ … $name … }}` inside an attribute, so ask for exactly
+  // that rather than for `{{` and `$name.` anywhere: a page's client scripts
+  // carry both, and HQ's home page paid the whole pass on every render.
+  if (!/\{\{[^}]*\$\w/.test(html) || !/\$\w+\./.test(html)) {
     return { html, bindings: [], stores: new Set<string>() }
   }
 
@@ -93,6 +97,12 @@ export function processReactiveBindings(html: string): ProcessedBindings {
   result = result.replace(tagPattern, (match, tagName, attributes, closing) => {
     // Skip script, style, and other non-element tags
     if (['script', 'style', 'template'].includes(tagName.toLowerCase())) {
+      return match
+    }
+    // No expression in this tag's attributes, nothing to bind. The attribute
+    // pattern below cannot match without one, and running it anyway on every
+    // tag of a 400 KB page was a fifth of HQ's home-page render.
+    if (!attributes.includes('{{')) {
       return match
     }
 
