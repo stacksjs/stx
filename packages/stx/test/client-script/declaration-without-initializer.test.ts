@@ -104,7 +104,9 @@ describe('the rendered page', () => {
       new Set(),
     )
 
-    const returned = html.match(/return \{[\s\S]*?\};/)?.[0] ?? ''
+    // The setup function's return object, the one listing `src`: the page's
+    // runtime has `return {…};` text of its own (slot scopes build one).
+    const returned = [...html.matchAll(/return \{[\s\S]*?\};/g)].map(match => match[0]).find(object => /\bsrc\b/.test(object)) ?? ''
 
     expect(returned).toContain('withInit')
     // The one that was missing. `withInit` differs only in having an
