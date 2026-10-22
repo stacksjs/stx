@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.656...v0.2.657)
+
+## ✨ Features
+
+- **native**: compound class rules, narrow-screen layers, quieter checks ([3a650dc](https://github.com/stacksjs/stx/commit/3a650dc)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.657 ([9ab282f](https://github.com/stacksjs/stx/commit/9ab282f)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.655...v0.2.656)
 
 ## 🐛 Bug Fixes
