@@ -577,6 +577,9 @@ export async function translateHtmlToIR(
       // `<i class="i-lucide-sun">` is how a web view draws an icon: the class
       // is a CSS mask the page fills. Natively it is an Icon, not empty text.
       if ((tag === 'i' || tag === 'span') && /(?:^|\s)i-[a-z0-9]+-[a-z0-9-]+(?:\s|$)/.test(classes)) type = 'Icon'
+      // So is an `<i>` whose class a binding gives (`:class="sport.icon"`): the
+      // host reads the icon from the classes it applies, whichever they are.
+      else if (tag === 'i' && attributes.some(([name]) => /^(?::|x-)class$/i.test(name))) type = 'Icon'
       if (tag === 'input') {
         const inputType = String(props.type ?? 'text').toLowerCase()
         if (inputType === 'checkbox') {
