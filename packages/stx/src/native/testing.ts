@@ -122,6 +122,8 @@ export interface NativeScreenOptions {
   /** The phone's sheets (`craft.dialog`); `alert` is always recorded in `alerts`. */
   dialog?: { actionSheet?: (options: any) => Promise<string>, confirm?: (options: any) => Promise<boolean> }
   colorScheme?: 'light' | 'dark'
+  /** The screen's width in points at launch, for `sm:`/`md:`/`lg:` classes (unset: a phone). */
+  viewportWidth?: number
   /** The params the screen was opened with (`craft.route.params`). */
   params?: Record<string, unknown>
   /** What the app reports it can do (`health`, `haptics`, ...), as Craft's host does. */
@@ -260,6 +262,8 @@ export interface NativeScreen {
   /** The app back in the foreground. */
   resume: () => void
   appearance: (scheme: 'light' | 'dark') => void
+  /** The screen resized (rotation, split view, a resized window), as the host reports it. */
+  viewport: (width: number, height?: number) => void
   /** The screen shown again, as the host says when what was over it was popped or its tab chosen again. */
   appear: () => void
   /** The screen covered by another, or its tab left. */
@@ -532,6 +536,7 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
       platform: options.platform ?? 'ios',
       capabilityTimeoutMs: options.capabilityTimeoutMs ?? 100,
       colorScheme: options.colorScheme ?? 'light',
+      ...(options.viewportWidth === undefined ? {} : { viewportWidth: options.viewportWidth }),
       capabilities: options.capabilities ?? [],
       initialAppState: options.initialAppState ?? 'active',
       appURL: options.appURL ?? 'https://fixture.invalid/m',
@@ -683,6 +688,7 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
     /** The app back in the foreground. */
     resume: () => appState('active'),
     appearance: (scheme: 'light' | 'dark') => send('APPEARANCE', { colorScheme: scheme }),
+    viewport: (width: number, height = 800) => send('VIEWPORT', { width, height }),
     /** The screen shown again, as the host says when what was over it was popped or its tab chosen again. */
     appear: () => send('SCREEN_FOCUS', { focused: true }),
     /** The screen covered by another, or its tab left. */

@@ -50,6 +50,7 @@ export type BridgeMessageType =
   | 'SNAPSHOT_CHANGED'    // An app snapshot was saved or removed
   | 'SESSION_CHANGED'     // The signed-in token in secure storage changed (craft.session)
   | 'APPEARANCE'          // Native color scheme changed
+  | 'VIEWPORT'            // The screen's size changed (width/height in points)
   | 'SCREEN_FOCUS'        // Screen gained/lost focus (shown again, or covered)
   | 'ROUTE_PARAMS'        // The screen was opened again with other params
   | 'PUSH_TOKEN'          // A new push device token
@@ -745,6 +746,12 @@ export interface NativeBridgeInterface {
 
   /** Color scheme captured before the generated bundle starts executing. */
   colorScheme?: 'light' | 'dark'
+
+  /**
+   * The screen's width in points before the bundle starts, for `sm:`/`md:`/`lg:`
+   * classes; later sizes arrive as VIEWPORT { width, height }. Absent: a phone.
+   */
+  viewportWidth?: number
 
   /** The secure-storage key the host keeps the signed-in token under (Craft, `auth.token` by default). */
   sessionTokenKey?: string

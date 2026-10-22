@@ -10,6 +10,7 @@ import { DENSITY_FONT_SIZES, DENSITY_SPACING, SEMANTIC_TOKENS, SHAPE_TOKENS, tok
 import type { NativeStyleVariables } from './style-variables'
 import { nativeDensitySpacing, nativeDensityType, nativeShapeRadius } from './design-tokens'
 import type { STXStyle } from './ir'
+import { nativeBreakpoint, nativeShortcut, nativeThemeColor } from './style-config'
 
 // ============================================================================
 // Color Palette (Tailwind v3 colors)
@@ -219,7 +220,9 @@ function resolveColor(colorClass: string): string | undefined {
   // An opacity modifier: `emerald-500/10`, `[#0f172a]/80`. The renderers read
   // `#rrggbbaa`, so the alpha becomes the last two hex digits.
   const slash = colorClass.lastIndexOf('/')
-  if (slash > 0 && !colorClass.endsWith(']')) {
+  // `slate-900/[0.04]` ends in a bracket too: it is an alpha when the slash
+  // comes after the colour, not inside an arbitrary `[#hex]`.
+  if (slash > 0 && (!colorClass.endsWith(']') || /\/\[[\d.]+%?\]$/.test(colorClass))) {
     const base = resolveColor(colorClass.slice(0, slash))
     const amount = colorClass.slice(slash + 1)
     const alpha = /^\[(.+)\]$/.test(amount) ? Number.parseFloat(amount.slice(1, -1)) * (amount.includes('%') ? 1 : 100) : Number.parseFloat(amount)
@@ -385,6 +388,36 @@ const classParsers: Record<string, ClassParser> = {
   'min-w-0': (_, style) => { style.minWidth = 0; return true },
   'aspect-square': (_, style) => { style.aspectRatio = 1; return true },
   'inset-0': (_, style) => { style.top = 0; style.right = 0; style.bottom = 0; style.left = 0; return true },
+  // A block centred in its column on the web: natively, the same box centred
+  // by its parent (a native host has no auto margins).
+  'mx-auto': (_, style) => { style.alignSelf = 'center'; return true },
+  // Pinned to the viewport on the web; natively the screen is the scroller's
+  // parent, so the nearest positioned box is the honest stand-in.
+  'fixed': (_, style) => { style.position = 'absolute'; return true },
+  'sticky': () => true,
+  // Read by a screen reader, not seen: a 1pt clipped box VoiceOver still reaches.
+  'sr-only': (_, style) => { style.position = 'absolute'; style.width = 1; style.height = 1; style.overflow = 'hidden'; return true },
+  // Inline flow and text wrapping: native text wraps and boxes lay out by flex.
+  'inline': () => true,
+  'inline-block': () => true,
+  'contents': () => true,
+  'align-top': () => true,
+  'align-middle': () => true,
+  'align-bottom': () => true,
+  'align-baseline': () => true,
+  'align-text-top': () => true,
+  'whitespace-normal': () => true,
+  'whitespace-pre': () => true,
+  'whitespace-pre-line': () => true,
+  'whitespace-pre-wrap': () => true,
+  'whitespace-nowrap': () => true,
+  'break-words': () => true,
+  'break-all': () => true,
+  'break-normal': () => true,
+  'object-cover': () => true,
+  'object-contain': () => true,
+  'object-fill': () => true,
+  'object-center': () => true,
   'tracking-tighter': (_, style) => { style.letterSpacing = -0.8; return true },
   'tracking-tight': (_, style) => { style.letterSpacing = -0.4; return true },
   'tracking-normal': (_, style) => { style.letterSpacing = 0; return true },
@@ -838,7 +871,27 @@ function parseTypography(className: string, style: STXStyle): boolean {
 }
 
 /** `grid-cols-3`: equal columns, as Craft's native grid draws them. */
+/** `top-2`, `-left-1`, `inset-x-3`, `inset-y-0`, `right-[6px]`: offsets in points (a host reads no percentages here). */
+function parseOffset(className: string, style: STXStyle): boolean {
+  const match = /^(-?)(inset-x|inset-y|inset|top|right|bottom|left)-(.+)$/.exec(className)
+  if (!match) return false
+  const raw = match[3]
+  const bracket = /^\[(-?[\d.]+)px\]$/.exec(raw)
+  const amount = bracket ? Number(bracket[1]) : spacing[raw]
+  if (amount === undefined || !Number.isFinite(amount)) return false
+  const value = match[1] ? -amount : amount
+  const sides = match[2] === 'inset' ? ['top', 'right', 'bottom', 'left'] : match[2] === 'inset-x' ? ['left', 'right'] : match[2] === 'inset-y' ? ['top', 'bottom'] : [match[2]]
+  for (const side of sides) (style as Record<string, unknown>)[side] = value
+  return true
+}
+
 function parseGridColumns(className: string, style: STXStyle): boolean {
+  // `grid-cols-[1.35fr_1fr]`: a native grid has equal columns, so the track count.
+  const tracks = /^grid-cols-\[(.+)\]$/.exec(className)
+  if (tracks) {
+    style.gridColumns = tracks[1].split('_').filter(Boolean).length
+    return true
+  }
   const match = /^grid-cols-(\d+)$/.exec(className)
   if (!match) return false
   style.gridColumns = Number(match[1])
@@ -977,6 +1030,55 @@ export interface ClassStyles {
   numberOfLines?: number
   /** The Iconify class in the list (`i-lucide-sun`), for an `<Icon>`. */
   icon?: string
+  /** `object-cover`/`object-contain`: an Image's or Video's resizeMode prop, not a style. */
+  resizeMode?: string
+  /**
+   * `sm:`/`md:`/`lg:`... layers, smallest first: each applies on a screen at
+   * least `min` points wide, over the base style and every smaller layer.
+   */
+  responsive?: Array<{ min: number, style: STXStyle, dark?: STXStyle }>
+  /** What `disabled:` classes change, for a control the host reports disabled. */
+  disabled?: { style: STXStyle, dark?: STXStyle }
+}
+
+/**
+ * Variants with no meaning on a touch screen: a pointer hovering, a link
+ * visited, a pressed flash (the host's own press feedback stands in). The web
+ * keeps them; a native host accepts and ignores them rather than flag every
+ * shared view that has a hover state.
+ */
+const POINTER_ONLY_VARIANTS = new Set(['hover', 'group-hover', 'peer-hover', 'active', 'group-active', 'visited', 'placeholder', 'selection', 'print', 'motion-safe'])
+
+/** Utilities for the browser's own behaviour: transitions, cursors, scrolling, outline resets. */
+const WEB_ONLY_UTILITY = /^(?:transition(?:-[a-z]+)?|duration-\S+|ease-\S+|delay-\S+|will-change-\S+|cursor-\S+|select-(?:none|text|all|auto)|outline-none|outline-0|appearance-none|scroll-smooth|scroll-auto|antialiased|subpixel-antialiased|touch-\S+|resize(?:-\S+)?|backdrop-blur(?:-\S+)?|isolate|contain-\S+)$/
+
+/** `a:b:[c:d]:e` → ['a', 'b', '[c:d]', 'e']: colons inside brackets are the value's. */
+function splitVariants(token: string): string[] {
+  const parts: string[] = []
+  let depth = 0
+  let start = 0
+  for (let index = 0; index < token.length; index++) {
+    const char = token[index]
+    if (char === '[') depth++
+    else if (char === ']') depth = Math.max(0, depth - 1)
+    else if (char === ':' && depth === 0) {
+      parts.push(token.slice(start, index))
+      start = index + 1
+    }
+  }
+  parts.push(token.slice(start))
+  return parts
+}
+
+/** Each shortcut replaced by its classes, its variants carried onto every one of them. */
+function expandShortcuts(token: string, seen: Set<string> = new Set()): string[] {
+  const parts = splitVariants(token)
+  const utility = parts[parts.length - 1]!
+  const shortcut = seen.has(utility) ? undefined : nativeShortcut(utility)
+  if (shortcut === undefined) return [token]
+  const prefix = parts.slice(0, -1).map(part => `${part}:`).join('')
+  const inner = new Set(seen).add(utility)
+  return shortcut.split(/\s+/).filter(Boolean).flatMap(name => expandShortcuts(`${prefix}${name}`, inner))
 }
 
 /**
@@ -987,6 +1089,65 @@ export interface ClassStyles {
  * establish keyboard modality. Unsupported rings are never faked as borders.
  */
 export function compileClassStyles(classes: string, variables?: NativeStyleVariables, options: { focus?: boolean, focusWithin?: boolean } = {}): ClassStyles {
+  // Group the authored classes by the layer they belong to. Each group then
+  // compiles as a plain class list (dark and focus kept inside it), and an
+  // unknown class is reported by the name the author wrote.
+  const groups = new Map<string, { min?: number, disabled?: boolean, classes: string[], authored: Map<string, string> }>()
+  const group = (key: string, init: { min?: number, disabled?: boolean }) => {
+    if (!groups.has(key)) groups.set(key, { ...init, classes: [], authored: new Map() })
+    return groups.get(key)!
+  }
+  group('base', {})
+  for (const authored of classes.split(/\s+/).filter(Boolean)) {
+    for (const token of expandShortcuts(authored)) {
+      const parts = splitVariants(token)
+      const utility = parts.pop()!
+      // With a focus variant beside it the class stays diagnostic, as before.
+      const focusing = parts.some(variant => variant.startsWith('focus'))
+      // A focus ring is the browser's keyboard cue; native controls draw the
+      // platform's own focus, so the ring has nothing to do there.
+      if (parts.some(variant => /^(?:group-|peer-)?focus(?:-visible|-within)?$/.test(variant)) && /^(?:ring|outline)(?:-|$)/.test(utility)) continue
+      if (WEB_ONLY_UTILITY.test(utility) || (!focusing && parts.some(variant => POINTER_ONLY_VARIANTS.has(variant)))) continue
+      let min: number | undefined
+      let disabled = false
+      const kept: string[] = []
+      for (const variant of parts) {
+        const width = nativeBreakpoint(variant)
+        if (width !== undefined && min === undefined) min = width
+        else if (variant === 'disabled' && !disabled) disabled = true
+        else kept.push(variant)
+      }
+      const stripped = [...kept, utility].join(':')
+      const target = disabled ? group(`disabled`, { disabled: true }) : min !== undefined ? group(`min:${min}`, { min }) : groups.get('base')!
+      // A width layer under `disabled:` is rare enough to stay diagnostic.
+      if (disabled && min !== undefined) {
+        groups.get('base')!.authored.set(token, authored)
+        groups.get('base')!.classes.push(token)
+        continue
+      }
+      target.classes.push(stripped)
+      if (!target.authored.has(stripped)) target.authored.set(stripped, authored === token ? token : `${authored} (${token})`)
+    }
+  }
+  const authoredNames = (layer: { authored: Map<string, string> }, names: string[]) => names.map(name => layer.authored.get(name) ?? name)
+  const base = groups.get('base')!
+  const result = compileLayer(base.classes.join(' '), variables, options)
+  result.unknown = authoredNames(base, result.unknown)
+  const responsive: NonNullable<ClassStyles['responsive']> = []
+  for (const layer of groups.values()) {
+    if (layer === base) continue
+    const compiled = compileLayer(layer.classes.join(' '), variables)
+    result.unknown = [...new Set([...result.unknown, ...authoredNames(layer, compiled.unknown)])]
+    const entry = { style: compiled.style, ...(compiled.dark ? { dark: compiled.dark } : {}) }
+    if (layer.disabled) result.disabled = entry
+    else responsive.push({ min: layer.min!, ...entry })
+  }
+  if (responsive.length) result.responsive = responsive.sort((a, b) => a.min - b.min)
+  return result
+}
+
+/** One layer's classes, with `dark:` and focus variants kept apart. */
+function compileLayer(classes: string, variables?: NativeStyleVariables, options: { focus?: boolean, focusWithin?: boolean } = {}): ClassStyles {
   const plain: string[] = []
   const dark: string[] = []
   const semanticDark: string[] = []
@@ -997,6 +1158,15 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
   }
   const originals = new Map<string, Set<string>>()
   function roleClasses(name: string, scheme: 'light' | 'dark'): string[] | undefined {
+    // The app's theme colours (`bg-hq-action`), as the arbitrary value the
+    // parsers read. A `var(--x, fallback)` reads the screen's variable first.
+    const themed = /^(bg|text|border(?:-[trblxy])?|from|via|to|fill|stroke|divide|decoration|caret|accent)-(.+?)(\/[^\s]+)?$/.exec(name)
+    const themeValue = themed && nativeThemeColor(themed[2])
+    if (themed && themeValue) {
+      const variable = /^var\(\s*(--[\w-]+)\s*(?:,\s*(.+?)\s*)?\)$/.exec(themeValue)
+      const value = variable ? variables?.get(variable[1]) ?? variable[2] : themeValue
+      if (value && /^(?:#[0-9a-f]{3,8}|rgba?\(.+\)|hsla?\(.+\))$/i.test(value)) return [`${themed[1]}-[${value.replace(/\s+/g, '')}]${themed[3] || ''}`]
+    }
     const match = /^(text|bg|border|ring)-([a-z-]+)(\/[^\s]+)?$/.exec(name)
     const role = match && SEMANTIC_TOKENS[match[2]]
     if (role) {
@@ -1059,7 +1229,9 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
     result.dark.transform = [...style.transform.filter(step => !Object.keys(step).some(key => overridden.has(key))), ...result.dark.transform]
   }
   for (const name of plain) {
-    if (name === 'truncate') result.numberOfLines = 1
+    if (name === 'truncate' || name === 'whitespace-nowrap') result.numberOfLines = 1
+    const fit = /^object-(cover|contain|fill)$/.exec(name)
+    if (fit) result.resizeMode = fit[1] === 'fill' ? 'stretch' : fit[1]
     const clamp = /^line-clamp-(\d+)$/.exec(name)
     if (clamp) result.numberOfLines = Number(clamp[1])
     if (!result.icon && /^i-[a-z0-9]+-[a-z0-9-]+$/.test(name)) result.icon = name
@@ -1069,7 +1241,7 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
   for (const key of ['focus', 'focusWithin'] as const) {
     const layer = focusLayers[key]
     if (!layer.classes.length) continue
-    const focused = compileClassStyles(layer.classes.join(' '), variables)
+    const focused = compileLayer(layer.classes.join(' '), variables)
     result[key] = { style: focused.style, dark: focused.dark }
     result.unknown = [...new Set([...result.unknown, ...focused.unknown.flatMap(name => layer.originals.get(name) ?? [name])])]
     // These classes set node props, not style fields; a focus style layer
@@ -1116,6 +1288,10 @@ export function compileHeadwindToStyle(classes: string | string[], unknown?: str
     if (parseSize(className, style)) continue
     if (parseMinMax(className, style)) continue
     if (parseGridColumns(className, style)) continue
+    const layer = /^z-\[(-?\d+)\]$/.exec(className) ?? /^z-(\d+)$/.exec(className)
+    if (layer) { style.zIndex = Number(layer[1]); continue }
+    if (className === 'z-auto') continue
+    if (parseOffset(className, style)) continue
     const order = /^order-\[(-?\d+)\]$/.exec(className) ?? /^order-(-?\d+)$/.exec(className)
     if (order) {
       style.order = Number(order[1])

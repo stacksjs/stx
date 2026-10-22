@@ -23,6 +23,7 @@ import type { BunPlugin } from 'bun'
 import { existsSync, mkdirSync, realpathSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import { compileScreenFile } from './render-screen'
+import { nativeStyleConfigFrom, withNativeStyleConfig, type NativeStyleConfig } from './style-config'
 import type { STXDocument } from './ir'
 import { NATIVE_APP_ROUTE } from '../runtime/shared-screen'
 import { generateSignalsRuntime } from '../../signals'
@@ -95,6 +96,23 @@ export interface CompileNativeBundleOptions {
    * `globalThis.__stxNativeMessages[language][area]`.
    */
   messages?: NativeMessagesOptions
+  /**
+   * The app's utility vocabulary for native styles: Crosswind shortcuts,
+   * theme colours, breakpoints. Defaults to the project's CSS config
+   * (`config/css.ts`), the same one its web pages use.
+   */
+  styleConfig?: NativeStyleConfig
+}
+
+/** The project's CSS config, as native styles read it; empty without one. */
+export async function projectStyleConfig(root: string): Promise<NativeStyleConfig> {
+  try {
+    const { loadCssEngineConfig } = await import('../../dev-server/ts-css')
+    return nativeStyleConfigFrom(await loadCssEngineConfig(root) as Record<string, any> | null)
+  }
+  catch {
+    return {}
+  }
 }
 
 export interface NativeMessagesOptions {
@@ -313,6 +331,9 @@ export async function compileNativeBundle(options: CompileNativeBundleOptions): 
   if (options.messages && !options.sharedRuntime) throw new Error('messages are read by the shared runtime: they need sharedRuntime')
   if (options.messages && options.outFile) throw new Error('messages leave the languages out of the screens\' code, which the one-file bundle cannot read: build it without messages')
   const messages = options.messages ? await collectMessages(root, options.messages) : null
+  // Shortcuts, theme colours and breakpoints mean what the web gives them,
+  // while compiling and (embedded below) on the device.
+  const styleConfig = options.styleConfig ?? await projectStyleConfig(root)
   const stubs = messages ? messageStubs(messages) : null
   const compiledScreens: Array<{ name: string, file: string, compiled: Awaited<ReturnType<typeof compileScreenFile>> }> = []
   const compileScreens = async (): Promise<void> => {
@@ -324,8 +345,7 @@ export async function compileNativeBundle(options: CompileNativeBundleOptions): 
   }
   // A screen's script, its components' and its composables' are bundled as
   // the screen compiles: each message module goes in as its stand-in there.
-  if (stubs) await withModuleSubstitutes(stubs, compileScreens)
-  else await compileScreens()
+  await withNativeStyleConfig(styleConfig, () => stubs ? withModuleSubstitutes(stubs, compileScreens) : compileScreens())
 
   const runtimeGlobals = nativeRuntimeModule('jsc-globals')
   const sharedScreen = nativeRuntimeModule('shared-screen')
@@ -387,6 +407,7 @@ ${app ? `import * as nativeAppModule from ${JSON.stringify(appFile)};` : 'var na
 ${browser ? '(async function() {' : ''}
 var g = globalThis;
 installJSCGlobals(g);
+g.__stxNativeStyleConfig = ${JSON.stringify(styleConfig)};
 ${browser ? `var browserPlatform = await createBrowserPlatform(${JSON.stringify(browser.platformOptions ?? {})});\nvar browserBridge = createBrowserScreenBridge(browserPlatform, ${JSON.stringify(browser)});\nvar bridge = browserBridge;\ng.__stxNativeRoute = ${JSON.stringify(initialScreen)};` : 'var bridge = g.__stxNativeBridge;'}
 if (!bridge) throw new Error('Missing __stxNativeBridge');
 var routeNames = ${JSON.stringify(routed ? names : ['main'])};

@@ -123,13 +123,14 @@ describe('native class and icon compatibility', () => {
     expect(compileHeadwindToStyle('bg-emerald-500/10 border-[#ffffff]/50')).toEqual({ backgroundColor: '#10b9811a', borderColor: '#ffffff80' })
   })
 
-  it('separates dark styles and reports unsupported variants and classes', () => {
+  it('separates dark and width layers, ignores pointer-only variants and reports unknown classes', () => {
     const compiled = compileClassStyles('text-slate-900 dark:text-white hover:bg-red-500 sm:p-4 truncate i-lucide-sun wobble')
     expect(compiled.style).toEqual({ color: '#0f172a' })
     expect(compiled.dark).toEqual({ color: '#ffffff' })
+    expect(compiled.responsive).toEqual([{ min: 640, style: { padding: 16 } }])
     expect(compiled.numberOfLines).toBe(1)
     expect(compiled.icon).toBe('i-lucide-sun')
-    expect(compiled.unknown).toEqual(['wobble', 'hover:bg-red-500', 'sm:p-4'])
+    expect(compiled.unknown).toEqual(['wobble'])
   })
 
   it('maps the app icon vocabulary to SF Symbols', () => {

@@ -42,6 +42,7 @@ export function prepareSharedNativeScreen(
       if (!rendered) throw nativeViewError('VIEW_NOT_MOUNTED', 'The native screen has not rendered')
     }),
     colorScheme: bridge.colorScheme === 'dark' ? 'dark' : 'light',
+    viewportWidth: Number(bridge.viewportWidth) || 0,
     stylesheetTheme: document.root._stylesheetTheme,
     send(operations) {
       const baseRevision = revision
@@ -61,6 +62,13 @@ export function prepareSharedNativeScreen(
       bridge.colorScheme = scheme
       host.setColorScheme(scheme)
     }
+  })
+  // A rotation, a resized window, split view: `md:` and `lg:` classes follow.
+  protocol.on<any>('VIEWPORT', (message) => {
+    const width = Number(message.payload?.width)
+    if (!Number.isFinite(width) || width < 0) return
+    bridge.viewportWidth = width
+    host.setViewportWidth(width)
   })
 
   // Structural bindings remove/insert their own node. The renderer's root

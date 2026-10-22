@@ -135,6 +135,11 @@ export interface NativeHostOptions {
   views?: NativeViewOperations
   /** Initial native appearance; later changes arrive through APPEARANCE. */
   colorScheme?: 'light' | 'dark'
+  /**
+   * The screen's width in points, for `sm:`/`md:`/`lg:` classes; later changes
+   * arrive through VIEWPORT. Unknown (0) is a phone: the base styles only.
+   */
+  viewportWidth?: number
   stylesheetTheme?: NativeStylesheetTheme
   /** Called with each batch. One call per flush, never per operation. */
   send: (operations: NativeMutationOperation[]) => void
@@ -156,6 +161,8 @@ export interface NativeHost {
   getAttribute: (node: NativeNode, name: string) => string | null
   observeChildren: (node: NativeNode, callback: () => void) => (() => void)
   setColorScheme: (scheme: 'light' | 'dark') => void
+  /** The screen's width changed (rotation, a resized window, split view). */
+  setViewportWidth: (width: number) => void
   setText: (node: NativeNode, value: unknown) => void
   setMarkup: (node: NativeNode, value: unknown) => void
   setAttribute: (node: NativeNode, name: string, value: unknown) => void
@@ -228,6 +235,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   let scheduled = false
   let counter = 0
   let colorScheme = options.colorScheme ?? 'light'
+  let viewportWidth = Number.isFinite(options.viewportWidth) ? Math.max(0, options.viewportWidth!) : 0
   let stylesheetVariables = createStyleVariables(options.stylesheetTheme?.[colorScheme] ?? []).computed()
   let disposed = false
 
@@ -489,6 +497,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     record.variables = resolved.variables
     const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput', focusWithin: true })
     const classStyle = { ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}) }
+    // Width layers apply smallest first, as min-width media queries cascade.
+    for (const layer of classes.responsive ?? []) {
+      if (viewportWidth >= layer.min) Object.assign(classStyle, layer.style, colorScheme === 'dark' ? layer.dark : {})
+    }
+    if (classes.disabled && disabled(record)) Object.assign(classStyle, classes.disabled.style, colorScheme === 'dark' ? classes.disabled.dark : {})
     // Like utility variant ordering, direct focus overrides focus-within;
     // authored inline/bound styles still win over both layers below.
     for (const layer of [record.focusWithin && classes.focusWithin, record.focused && classes.focus]) {
@@ -599,6 +612,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     if (classes.numberOfLines !== undefined) {
       record.props.numberOfLines = classes.numberOfLines
       if (record.materialized) emit({ op: 'updateNode', id, patch: { props: { numberOfLines: classes.numberOfLines } } })
+    }
+    // `object-cover` on an <img> or <video>: how it fills its box.
+    if (classes.resizeMode && (record.type === 'Image' || record.type === 'ImageBackground' || record.type === 'Video') && record.props.resizeMode !== classes.resizeMode) {
+      record.props.resizeMode = classes.resizeMode
+      if (record.materialized) emit({ op: 'updateNode', id, patch: { props: { resizeMode: classes.resizeMode } } })
     }
   }
 
@@ -803,6 +821,15 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const children = new Set([...records.values()].flatMap(record => record.children.map(child => child.__stxId)))
       for (const id of records.keys()) if (!children.has(id)) refreshStyleTree({ __stxId: id }, stylesheetVariables, true)
     },
+    setViewportWidth(width) {
+      const next = Number.isFinite(width) ? Math.max(0, width) : 0
+      if (next === viewportWidth) return
+      viewportWidth = next
+      // Shortcuts can hide a width layer, so every node is resolved again;
+      // applyClasses sends a patch only where the style changed.
+      const children = new Set([...records.values()].flatMap(record => record.children.map(child => child.__stxId)))
+      for (const id of records.keys()) if (!children.has(id)) refreshStyleTree({ __stxId: id }, stylesheetVariables, true)
+    },
     pending: () => queue.length,
     flush,
     dispose() {
@@ -886,11 +913,14 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const record = recordOf(node)
       const prop = nativePropName(name, record.type)
       const accessibilityBefore = prop === 'role' || prop.startsWith('aria-') || prop.startsWith('accessibility') ? projectAccessibility(record.props) : undefined
+      const wasDisabled = disabled(record)
       record.props[prop] = value
       if (record.focused && disabled(record)) {
         record.focused = false
         refreshFocusChain(node)
       }
+      // `disabled:` classes follow the control's state.
+      if (prop === 'disabled' && wasDisabled !== disabled(record)) applyClasses(node.__stxId, record, true)
       if (record.type === 'Icon' && prop === 'name') {
         const icon = resolveIconName(String(value ?? ''))
         this.setAttribute(node, 'iconify', icon.iconify ?? null)

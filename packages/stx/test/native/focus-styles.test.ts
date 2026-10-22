@@ -4,13 +4,16 @@ import { compileClassStyles } from '../../src/native/compiler/headwind-to-style'
 import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import { compileNativeScreen, mountNativeScreen } from '../../src/native/testing'
 
-it('keeps focus style layers separate and unsupported ring/modality classes diagnostic', async () => {
+it('keeps focus style layers separate, accepts focus rings and keeps modality classes diagnostic', async () => {
   const classes = 'border-2 focus:border-accent dark:focus:bg-black focus:dark:text-white focus:ring-2 focus:ring-offset-panel focus-visible:border-4 focus:truncate'
   const result = compileClassStyles(classes, undefined, { focus: true })
   expect(result.style).toEqual({ borderWidth: 2 })
   expect(result.focus?.style.borderColor).toBeTruthy()
   expect(result.focus?.dark).toMatchObject({ backgroundColor: '#000000', color: '#ffffff' })
-  expect(result.unknown).toEqual(expect.arrayContaining(['focus:ring-2', 'focus:ring-offset-panel', 'focus-visible:border-4', 'focus:truncate']))
+  expect(result.unknown).toEqual(expect.arrayContaining(['focus-visible:border-4', 'focus:truncate']))
+  // A focus ring is the browser's keyboard cue: native controls draw the platform's own focus.
+  expect(result.unknown).not.toContain('focus:ring-2')
+  expect(result.unknown).not.toContain('focus:ring-offset-panel')
   expect(compileClassStyles('focus:border-4').unknown).toEqual(['focus:border-4'])
   for (const markup of ['<input class="focus:border-4">', '<textarea class="focus:border-4"></textarea>', '<div data-native="TextInput" class="focus:border-4"></div>'])
     expect((await translateHtmlToIR(markup)).diagnostics).toEqual([])
@@ -32,7 +35,7 @@ window.probe = { classes, styles, shown, visible, events: [] }
 <TextInput testID="field" label="Name" :class="classes" :style="styles"
   @focusin="window.probe.events.push('focus')" @focusout="window.probe.events.push('blur')" />
 </section>`, { minify })
-    expect(diagnostics.some(d => d.message.includes('focus:ring-2'))).toBe(true)
+    expect(diagnostics.some(d => d.message.includes('focus:ring-2'))).toBe(false)
     const warnings: string[] = []
     const phone = mountNativeScreen(code, 'Screen', { globals: { console: { ...console, warn: (message: string) => warnings.push(message) } } })
     const field = () => phone.byTestID('field')!
@@ -84,7 +87,7 @@ window.probe = { classes, styles, shown, visible, events: [] }
       phone.press(field(), 'onFocus', {})
       await phone.settle()
       expect(field().style.borderColor).toBe('#3b82f6')
-      expect(warnings.filter(w => w.includes('focus:ring-2')).length).toBeGreaterThan(0)
+      expect(warnings.filter(w => w.includes('focus:ring-2'))).toEqual([])
       expect(warnings.some(w => w.includes('focus:border-'))).toBe(false)
       expect(phone.mutationErrors).toEqual([])
       phone.unmount()

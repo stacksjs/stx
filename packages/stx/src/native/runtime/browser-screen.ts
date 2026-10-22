@@ -260,6 +260,7 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
     platform: 'web', capabilityProtocolVersion: 1, capabilities: platform.capabilities, appURL: new URL(options.appURL, location.href).href,
     initialAppState: document.hidden ? 'background' : 'active',
     colorScheme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+    viewportWidth: container.clientWidth || (globalThis as { innerWidth?: number }).innerWidth || 0,
     onMessage(callback) { listener = callback },
     postMessage(raw) {
       if (disposed) return
@@ -302,6 +303,7 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
       motion.removeEventListener('change', syncTabPulses)
       for (const tab of tabIcons.values()) { tab.animation?.cancel(); tab.icon?.dispose() }
       document.removeEventListener('visibilitychange', visibility)
+      globalThis.removeEventListener?.('resize', resized)
       stopEvents?.()
       renderer.dispose()
       accessoryRenderer?.dispose()
@@ -316,6 +318,14 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
   document.addEventListener('visibilitychange', visibility)
   const media = matchMedia('(prefers-color-scheme: dark)')
   media.addEventListener('change', theme)
+  let lastWidth = bridge.viewportWidth
+  const resized = (): void => {
+    const width = container.clientWidth || (globalThis as { innerWidth?: number }).innerWidth || 0
+    if (width === lastWidth) return
+    lastWidth = width
+    send('VIEWPORT', { width, height: container.clientHeight || (globalThis as { innerHeight?: number }).innerHeight || 0 })
+  }
+  globalThis.addEventListener?.('resize', resized)
   motion.addEventListener('change', syncTabPulses)
   const observer = new MutationObserver(theme)
   observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
