@@ -42,7 +42,7 @@ convention directories (`resources/views/components`, `resources/components`,
 before falling back to the native primitive. With `@stacksjs/components`
 installed, web and native therefore select the same `ui/button/Button.stx`
 unless the app supplies an override. Without a shared Button, the primitive
-continues to work. Checkbox/Switch use the per-usage policy below. Other overlapping names retain their existing primitive
+continues to work. Checkbox/Switch and TextInput use the per-usage policies below. Other overlapping names retain their existing primitive
 precedence until their compatibility tests support migration; this is not a
 global precedence change.
 
@@ -332,6 +332,20 @@ screen-local/configured overrides still win for either API. If no shared
 implementation is installed, the primitive remains the final fallback.
 
 ### Platform controls from shared components
+
+#### TextInput resolution and event compatibility
+
+Native `TextInput` uses the installed shared implementation for
+`v-model:value` (including `.lazy`, `.trim`, and `.number`) or `@update:value`,
+provided the invocation has no `@input` listener. Plain value bindings and
+calls with `@input` keep the native primitive: existing handlers may read
+`$event.text`, whereas shared `@input` emits the model value. Mixed calls are
+not guessed from handler code. Explicitly import the shared TextInput when
+using both a model and its value-shaped `@input` API.
+
+Explicit imports and screen-local overrides still win. The native primitive
+remains a fallback if no shared implementation is installed. Both contracts
+can coexist on one screen, and browser resolution is unchanged.
 
 Compiled for a native host, the shared components draw the platform's own
 controls and its iOS look, while their web markup stays exactly as it was:

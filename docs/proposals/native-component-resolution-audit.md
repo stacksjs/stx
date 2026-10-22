@@ -16,7 +16,7 @@ directories and fails if a new overlap has no recorded compatibility decision.
 | Button | Shared app/plugin file, primitive fallback | Shared app/plugin file | Device accessibility/visual validation |
 | Checkbox | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | Preserve both APIs; device validation |
 | Switch | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | Preserve both APIs; device validation |
-| TextInput | Primitive | Shared file | Broader input-event/API compatibility before changing default resolution |
+| TextInput | Shared for value-model calls without `@input`; primitive for legacy/ambiguous calls | Shared file | Preserve object-payload callers; device validation |
 | Image | Primitive | `StxImage` builtin alias, not the shared file | Position/scale-down support, device validation and builtin/shared precedence decision |
 | Video | Primitive | Shared file | Shared file playback adapter verified; provider/DRM/API and device validation remain |
 
@@ -26,6 +26,23 @@ Adding an override to an already compiled project requires cache invalidation,
 as the dev watcher performs; the test models that invalidation explicitly.
 
 ## Reproduced blockers before further migration
+
+### TextInput resolution batch (unreleased after v0.2.661)
+
+After the shared disabled/readonly, model, focus/blur and native-submit fixes,
+value-model usage (`v-model:value`, including modifiers, or `@update:value`)
+selects conventional/plugin shared TextInput. Any `@input` listener retains
+primitive selection: its body might expect the legacy `$event.text` object,
+and inferring a contract from handler source would not be reliable. Plain
+`:value` calls also retain their existing selection. Authors who want shared
+value-shaped `@input` alongside a model should explicitly import the shared
+file. Explicit imports and screen-local overrides remain first; a primitive
+remains the fallback when no shared implementation is installed.
+
+`text-input-resolution.test.ts` checks actual dependency paths on both targets,
+mixed shared/legacy instances in the same bundle, model modifiers, event
+payloads, readonly updates, remount and disposal. It does not claim to finish
+the Image/Video migration or native-host visual validation.
 
 Each probe explicitly imports the real shared `.stx` file, compiles with
 `compileNativeScreen`, and executes with `mountNativeScreen`. The screen has a

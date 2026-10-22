@@ -1231,8 +1231,15 @@ export async function renderComponentWithSlot(
       const usesValue = Object.hasOwn(props, 'value') || Boolean(renderMetadata?.reactiveProps?.includes('value'))
       const sharedCheckedUsage = !eventNames.includes('valuechange')
         && (usesChecked || (eventNames.includes('change') && !usesValue))
+      // A value model (also expanded from v-model:value) is the shared field's
+      // explicit API. An input listener is ambiguous: existing native callers
+      // read $event.text, while shared callers receive a scalar. Keep those
+      // calls primitive unless the author explicitly imports the shared file.
+      const textInput = options._nativeHostAttrs && /^textinput$/i.test(baseName)
+      const sharedTextInputUsage = eventNames.includes('update:value') && !eventNames.includes('input')
       const targetIsFallback = options._targetComponentFallbackNames?.some(name => name.toLowerCase() === baseName.toLowerCase())
         && (!checkedControl || sharedCheckedUsage)
+        && (!textInput || sharedTextInputUsage)
       for (const dir of targetIsFallback ? [] : options._targetComponentDirs ?? []) {
         if (dir && !searchDirs.includes(dir))
           searchDirs.push(dir)

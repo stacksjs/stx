@@ -14,7 +14,7 @@
  * `components/` beside the screen), so a screen that defines its own `View`
  * still wins. Unmigrated primitive names precede convention directories and
  * plugins. Verified shared names (Button, and checked/change usage of
- * Checkbox/Switch) instead use the same
+ * Checkbox/Switch, and unambiguous value-model usage of TextInput) use the same
  * app/plugin implementation as web, retaining a primitive fallback when none
  * is installed. Native host attributes also fall through ordinary shared roots.
  *
@@ -116,8 +116,9 @@ export async function compileScreenSource(
     _targetComponentDirs: [nativePrimitivesDir()],
     // Verified shared implementations beat the primitive fallback on both
     // targets. Checkbox/Switch keep primitive resolution for legacy value /
-    // value-change calls; utils.ts selects their shared API per invocation.
-    _targetComponentFallbackNames: ['Button', 'Checkbox', 'Switch'],
+    // value-change calls. TextInput keeps primitive resolution for legacy or
+    // ambiguous input listeners; utils.ts selects shared APIs per invocation.
+    _targetComponentFallbackNames: ['Button', 'Checkbox', 'Switch', 'TextInput'],
     _nativeHostAttrs: true,
     // A native screen's events are bindings in its manifest, read from the
     // `@click` it keeps. The web's other path, an element id and a standalone
