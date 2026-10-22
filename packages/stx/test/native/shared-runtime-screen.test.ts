@@ -259,13 +259,14 @@ function select(id) { selected.set(id) }
     expect(scroll.children[0]).toMatchObject({
       bindings: { for: 'item in items', key: 'item.id' },
     })
+    expect(scroll.children[0].props['data-stx-native-template']).toBe(true)
     const sent: any[] = []
     let receive: (message: unknown) => void = () => {}
     const screen = prepareSharedNativeScreen(compiled.document, compiled.manifest, {
       postMessage: raw => sent.push(JSON.parse(raw)),
       onMessage: callback => { receive = callback },
     })
-    const sourceButtonId = ((scroll.children[0] as any).children[1] as any).props.__stxId
+    const sourceButtonId = ((scroll.children[0] as any).children[0].children[1] as any).props.__stxId
 
     installNodeConstants()
     window.__stx_host = screen.host

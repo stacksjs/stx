@@ -1294,7 +1294,9 @@ function emitClientReactiveAttrs(html: string, clientReactive: Record<string, st
 
   const forExpression = clientReactive.for
   if (forExpression) {
-    output = `<template :for="${forExpression.replace(/"/g, '&quot;')}">${output}</template>`
+    const key = clientReactive.key
+    const keyAttribute = key ? ` :key="${key.replace(/"/g, '&quot;')}"` : ''
+    output = `<template :for="${forExpression.replace(/"/g, '&quot;')}"${keyAttribute}>${output}</template>`
   }
 
   return output
