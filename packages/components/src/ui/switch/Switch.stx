@@ -111,7 +111,7 @@ defineExpose({ isChecked, toggle })
     @if(disabled)disabled@endif
     :disabled="isDisabled()"
     :aria-disabled="isDisabled() ? 'true' : 'false'"
-    class="disabled:opacity-50"
+    class="text-accent disabled:opacity-50"
     @change="onNativeChange($event)"
   ></div>
 </label>

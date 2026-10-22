@@ -46,11 +46,15 @@ export const nativePanelClasses = nativeSheet
 export const nativeGrabberClasses = `self-center h-[5px] w-9 shrink-0 rounded-full bg-[#c6c6c8] dark:bg-[#48484a] ${flush ? 'mt-1.5 mb-1.5' : 'mb-4'}`
 </script>
 
+<script client>
+const systemSheet = typeof craft !== 'undefined' && craft.platform === 'ios' && craft.capabilities.nativePlatformControls === true
+</script>
+
 @if($native)
 <div class="{{ nativeWrapperClasses }}">
   <div class="{{ nativePanelClasses }}" data-stx-dialog-panel tabindex="-1">
     @if(nativeSheet)
-      <div aria-hidden="true" class="{{ nativeGrabberClasses }}"></div>
+      <div :show="!systemSheet" aria-hidden="true" class="{{ nativeGrabberClasses }}"></div>
     @endif
     <slot />
   </div>

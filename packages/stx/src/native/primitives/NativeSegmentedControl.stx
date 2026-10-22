@@ -1,0 +1,5 @@
+{{-- SegmentedControl: the platform primitive when no shared component is installed. --}}
+<script server>
+const classes = $props.class ?? $props.className ?? ''
+</script>
+<div data-native="SegmentedControl" class="{{ classes }}"></div>

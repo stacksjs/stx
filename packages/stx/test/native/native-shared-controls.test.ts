@@ -37,19 +37,19 @@ window.probe = { saves, busy, alerts, agreed, sport, sports, locked, changes: []
 afterEach(unmountAllNativeScreens)
 
 describe.each(['ios', 'android'] as const)('shared controls on %s', (platform) => {
-  it.each([false, true])('draw filled system-blue buttons that press and load (minify=%s)', async (minify) => {
+  it.each([false, true])('draw filled app-tinted buttons that press and load (minify=%s)', async (minify) => {
     const { code } = await compileNativeScreen(source, { minify })
     const phone = mountNativeScreen(code, 'Screen', { platform })
     await phone.settle()
     const save = phone.byTestID('save')!
     expect(save.type).toBe('Pressable')
     expect(save.props.activeOpacity).toBe(0.6)
-    expect(save.style).toMatchObject({ height: 44, borderRadius: 10, backgroundColor: '#007aff' })
+    expect(save.style).toMatchObject({ height: 44, borderRadius: 10, backgroundColor: '#3b82f6' })
     const label = (node: typeof save) => node.children.find((child): child is typeof save => typeof child !== 'string' && child.type === 'Text' && child.style.display !== 'none')!
     expect(label(save).style).toMatchObject({ color: '#ffffff', fontSize: 17, fontWeight: '600' })
     expect(phone.byTestID('cancel')!.style.backgroundColor).toBe('#7676801f')
-    expect(label(phone.byTestID('cancel')!).style.color).toBe('#007aff')
-    expect(phone.byTestID('delete')!.style).toMatchObject({ height: 50, borderRadius: 12, backgroundColor: '#ff3b30', width: '100%' })
+    expect(label(phone.byTestID('cancel')!).style.color).toBe('#2563eb')
+    expect(phone.byTestID('delete')!.style).toMatchObject({ height: 50, borderRadius: 12, backgroundColor: '#ef4444', width: '100%' })
     expect(phone.byTestID('more')!.style.backgroundColor).toBeUndefined()
     expect(phone.byTestID('more')!.style.height).toBe(34)
 
@@ -57,7 +57,7 @@ describe.each(['ios', 'android'] as const)('shared controls on %s', (platform) =
     await phone.settle()
     expect(phone.context.probe.saves()).toBe(1)
 
-    const spinner = phone.ofType('ActivityIndicator').find(node => node.props.color === '#ffffff')!
+    const spinner = phone.ofType('ActivityIndicator').find(node => node.style.color === '#ffffff')!
     expect(spinner.style.display).toBe('none')
     phone.context.probe.busy.set(true)
     await phone.settle()
@@ -99,7 +99,7 @@ describe.each(['ios', 'android'] as const)('shared controls on %s', (platform) =
 
     const box = phone.byTestID('agree')!
     expect(box.type).toBe('Checkbox')
-    expect(box.style.color).toBe('#007aff')
+    expect(box.style.color).toBe('#2563eb')
     phone.press(box, 'onValueChange', { value: true })
     await phone.settle()
     expect(phone.context.probe.agreed()).toBe(true)

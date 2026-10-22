@@ -13,7 +13,7 @@ const NATIVE_PROP_NAMES = [
   'keyboardVerticalOffset', 'keyExtractor', 'listRole', 'maxLength', 'maximumDate', 'maximumTrackTintColor', 'maximumValue',
   'maxToRenderPerBatch', 'minimumDate', 'minimumTrackTintColor', 'minimumValue', 'minuteInterval', 'numberOfLines',
   'numColumns', 'onEndReachedThreshold', 'pagingEnabled', 'passwordRules', 'placeholderTextColor', 'pointerEvents',
-  'presentationStyle', 'nonModal', 'dismissOnOutsideTap',
+  'presentationStyle', 'sheetDetents', 'selectedDetent', 'grabberVisible', 'tintColor', 'clearButtonMode', 'nonModal', 'dismissOnOutsideTap',
   'pressRetentionOffset', 'progressBackgroundColor', 'progressViewOffset', 'refreshControl', 'resizeMode',
   'returnKeyType', 'scrollEnabled', 'scrollTarget', 'secureTextEntry', 'selectedValue', 'selectionColor',
   'showsHorizontalScrollIndicator', 'showsVerticalScrollIndicator',
@@ -38,7 +38,7 @@ export const NATIVE_BOOLEAN_PROPS = new Set([
   'refreshing', 'scrollEnabled', 'secureTextEntry', 'selectTextOnFocus', 'showsHorizontalScrollIndicator',
   'showsVerticalScrollIndicator', 'transparent', 'visible', 'nonModal', 'dismissOnOutsideTap',
   'fitToBounds', 'showsUserLocation', 'zoomEnabled', 'rotateEnabled', 'pitchEnabled', 'showsCompass', 'showsScale',
-  'pictureInPicture',
+  'pictureInPicture', 'grabberVisible',
 ])
 
 const nativePropNames = new Map(

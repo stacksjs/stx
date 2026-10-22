@@ -82,6 +82,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     viewFocus: capabilities.has('viewFocus'),
     viewMeasure: capabilities.has('viewMeasure'),
     viewNonModalPresentation: capabilities.has('viewNonModalPresentation'),
+    nativePlatformControls: capabilities.has('nativePlatformControls'),
   }
 }
 

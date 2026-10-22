@@ -81,6 +81,7 @@ const isDisabled = useReactiveProp('disabled', {{ disabled }})
 const segmentBase = {{ segmentBase }}
 const textSize = {{ sizing.text }}
 const groupID = {{ testID }}
+const nativeSegments = typeof craft !== 'undefined' && craft.capabilities.nativePlatformControls === true
 const segmentOn = {{ segmentOn }}
 const segmentOff = {{ segmentOff }}
 const labelOn = {{ labelOn }}
@@ -119,6 +120,12 @@ function choose(segment) {
   emit('change', segment.value)
 }
 
+function onNativeChange(event) {
+  const value = event.value ?? event.nativeEvent?.value
+  const segment = segments().find(choice => choice.value === value)
+  if (segment) choose(segment)
+}
+
 function segmentClasses(segment) {
   const state = isOn(segment) ? segmentOn : 'bg-transparent'
   return `${segmentBase} ${state} ${isOff(segment) ? segmentOff : 'cursor-pointer'}`
@@ -135,7 +142,17 @@ function segmentID(segment) {
 defineExpose({ selected })
 </script>
 
+@if($native)
+<div :if="nativeSegments" data-native="SegmentedControl" data-stx-native-host-root data-stx-segmented-control
+  @if(testID)testID="{{ testID }}"@endif
+  :items="segments()" :value="selected()" :disabled="isDisabled()"
+  :aria-label="groupLabel() || null"
+  class="min-h-[32px] text-fg {{ stretch ? '' : 'self-start' }} {{ className }}"
+  @change="onNativeChange($event)"
+></div>
+@endif
 <div
+  @if($native):if="!nativeSegments"@endif
   role="group"
   @if(label)aria-label="{{ label }}"@endif
   :aria-label="groupLabel() || null"

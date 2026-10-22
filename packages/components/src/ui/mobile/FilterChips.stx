@@ -28,7 +28,7 @@ export const rowClasses = `
 `.replace(/\s+/g, ' ').trim()
 </script>
 
-<div class="{{ rowClasses }}" data-stx-filter-chips role="group" aria-label="Filters">
+<div @if($native)data-native="ScrollView" horizontal showsHorizontalScrollIndicator="false"@endif class="{{ rowClasses }}" data-stx-filter-chips role="group" aria-label="Filters">
   @foreach (chips as chip)
     <FilterChip
       :label="chip.label"

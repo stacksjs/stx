@@ -1,6 +1,9 @@
 export { default as Drawer } from './Drawer.stx'
 
 export interface DrawerProps {
+  /** Native sheet resting sizes; the website retains its existing layout. */
+  sheetDetents?: Array<'medium' | 'large'>
+  selectedDetent?: 'medium' | 'large'
   open?: boolean
   onClose?: () => void
   position?: 'right' | 'left' | 'top' | 'bottom'

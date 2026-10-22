@@ -53,12 +53,13 @@ export const backRouterOwned = routerOwns(backHref)
 
 <header class="px-4 {{ className }}" style="{{ headerStyle }}" data-stx-nav-bar>
   @if (hasControls)
-    <div class="flex h-11 items-center gap-2">
+    <div class="flex h-11 items-center gap-2" data-native-chrome="bar">
       @if (backHref)
         <a
           href="{{ backHref }}"
           class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-raised text-fg"
           aria-label="Back"
+          data-native-chrome
           @if (backRouterOwned)
             data-stx-link
           @endif

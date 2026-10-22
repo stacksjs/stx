@@ -5,6 +5,9 @@ export { default as DialogPanel } from './DialogPanel.stx'
 export { default as DialogTitle } from './DialogTitle.stx'
 
 export interface DialogProps {
+  /** Native sheet resting sizes; the website retains its existing layout. */
+  sheetDetents?: Array<'medium' | 'large'>
+  selectedDetent?: 'medium' | 'large'
   open?: boolean
   onClose?: (value: boolean) => void
   className?: string

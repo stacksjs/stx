@@ -167,7 +167,7 @@ const NATIVE_TYPES = new Set([
   'Icon', 'Image', 'ImageBackground', 'Video',
   'Map', 'MapPolyline', 'MapPolygon', 'MapMarker',
   'FlatList', 'SectionList',
-  'Switch', 'Checkbox', 'Slider', 'Picker', 'DatePicker',
+  'Switch', 'Checkbox', 'Slider', 'Picker', 'SegmentedControl', 'DatePicker',
   'Modal', 'ActivityIndicator',
   'StatusBar', 'RefreshControl',
   ...SVG_NODE_TYPES,

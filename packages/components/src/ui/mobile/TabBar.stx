@@ -40,7 +40,7 @@ export const barClasses = `
   application and a screen reader landing on an unlabelled group of five links
   has no way to know that.
 --}}
-<nav class="{{ barClasses }}" style="{{ barStyle }}" aria-label="Primary" data-stx-tab-bar>
+<nav class="{{ barClasses }}" style="{{ barStyle }}" aria-label="Primary" data-stx-tab-bar data-native-chrome="tabs">
   @foreach (items as item)
     <TabBarItem
       :label="item.label"

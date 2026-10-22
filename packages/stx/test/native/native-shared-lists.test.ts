@@ -47,7 +47,7 @@ afterEach(unmountAllNativeScreens)
 describe.each(['ios', 'android'] as const)('shared lists on %s', (platform) => {
   it.each([false, true])('draw an inset group of cells with hairlines (minify=%s)', async (minify) => {
     const { code } = await compileNativeScreen(source, { minify })
-    const phone = mountNativeScreen(code, 'Screen', { platform })
+    const phone = mountNativeScreen(code, 'Screen', { platform, capabilities: ['nativePlatformControls'] })
     await phone.settle()
     const profile = phone.byTestID('profile')!
     expect(profile.type).toBe('TouchableHighlight')
@@ -74,7 +74,7 @@ describe.each(['ios', 'android'] as const)('shared lists on %s', (platform) => {
 
   it('parts a section card\'s rows with the system separator, following which row is first', async () => {
     const { code } = await compileNativeScreen(source)
-    const phone = mountNativeScreen(code, 'Screen', { platform })
+    const phone = mountNativeScreen(code, 'Screen', { platform, capabilities: ['nativePlatformControls'] })
     await phone.settle()
     const card = phone.find(node => node.style.borderRadius === 10 && node.children.length === 3)!
     expect(card).toBeDefined()
@@ -100,18 +100,19 @@ describe.each(['ios', 'android'] as const)('shared lists on %s', (platform) => {
 
   it('draws a segmented control and a tab strip as UISegmentedControl does', async () => {
     const { code } = await compileNativeScreen(source)
-    const phone = mountNativeScreen(code, 'Screen', { platform })
+    const phone = mountNativeScreen(code, 'Screen', { platform, capabilities: ['nativePlatformControls'] })
     await phone.settle()
     const period = phone.byTestID('period')!
-    expect(period.style).toMatchObject({ backgroundColor: '#7676801f', borderRadius: 9, padding: 2 })
-    const week = phone.byTestID('period-week')!
-    const month = phone.byTestID('period-month')!
-    expect(week.style).toMatchObject({ backgroundColor: '#ffffff', borderRadius: 7 })
-    expect(month.style.backgroundColor).not.toBe('#ffffff')
-    phone.press(month)
+    expect(period.type).toBe('SegmentedControl')
+    expect(period.props.items).toEqual([
+      { value: 'week', label: 'Week', spoken: 'Week', disabled: false },
+      { value: 'month', label: 'Month', spoken: 'Month', disabled: false },
+    ])
+    expect(period.children).toEqual([])
+    phone.press(period, 'onValueChange', { value: 'month', index: 1 })
     await phone.settle()
     expect(phone.context.probe.period()).toBe('month')
-    expect(month.style.backgroundColor).toBe('#ffffff')
+    expect(period.props.value).toBe('month')
 
     const plans = phone.byTestID('tab-plans')!
     const history = phone.byTestID('tab-history')!

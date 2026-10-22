@@ -70,6 +70,8 @@ export type {
   SliderProps,
   PickerOption,
   PickerProps,
+  NativeSegmentOption,
+  NativeSegmentedControlProps,
 } from './components/primitives'
 
 // Hot Reload exports

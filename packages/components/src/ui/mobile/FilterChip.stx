@@ -49,6 +49,7 @@ export const routerOwned = routerOwns(href)
   href="{{ href }}"
   class="{{ chipClasses }}"
   data-stx-filter-chip
+  @if($native)role="button" aria-pressed="{{ active ? 'true' : 'false' }}"@endif
   @if (routerOwned)
     data-stx-link
   @endif

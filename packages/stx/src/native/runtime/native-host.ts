@@ -1228,7 +1228,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
           const record = recordOf(node)
           if (record.type === 'Checkbox' && value !== undefined)
             (node as NativeNode & { checked: boolean }).checked = Boolean(value)
-          if (value !== undefined && !Object.is(record.props.value, value) && (record.type === 'TextInput' || record.type === 'Picker' || record.type === 'Switch')) {
+          if (value !== undefined && !Object.is(record.props.value, value) && (record.type === 'TextInput' || record.type === 'Picker' || record.type === 'SegmentedControl' || record.type === 'Switch')) {
             record.props.value = value
             // The platform already displays the edit, but its retained tree
             // must receive it too. Otherwise the next unrelated mutation

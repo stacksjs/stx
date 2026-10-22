@@ -30,6 +30,25 @@ describe('the browser peer of the native screen renderer', () => {
     expect(root.style.paddingLeft).toBe('calc(env(safe-area-inset-left, 0px) + 10px)')
   })
 
+  it('previews platform segments with live values and per-option disabled state', () => {
+    const { renderer, container, node, events } = fixture()
+    renderer.render(node('period', 'SegmentedControl', [], {
+      value: 'day', items: [{ value: 'day', label: 'Day' }, { value: 'week', label: 'Week' }, { value: 'month', label: 'Month', disabled: true }],
+    }, { onValueChange: 'choose' }))
+    const buttons = container.querySelectorAll<HTMLButtonElement>('button')
+    expect(buttons[0]!.getAttribute('aria-pressed')).toBe('true')
+    expect(buttons[2]!.disabled).toBe(true)
+    buttons[2]!.click()
+    expect(events).toEqual([])
+    buttons[1]!.click()
+    expect(events).toEqual([{ id: 'choose', payload: { value: 'week', index: 1 } }])
+    renderer.mutate({ version: 1, batchId: 'selected', baseRevision: 0, revision: 1, operations: [{ op: 'updateNode', id: 'period', patch: { props: { value: 'week', items: [{ value: 'week', label: 'This week' }] } } }] })
+    expect(container.querySelectorAll('button')).toHaveLength(1)
+    expect(container.querySelector('button')!.textContent).toBe('This week')
+    expect(container.querySelector('button')!.getAttribute('aria-pressed')).toBe('true')
+    expect(events).toHaveLength(1)
+  })
+
   it('reports parent-relative layout frames and tears the observer down', () => {
     const { renderer, container, node, window, events } = fixture()
     let notify: (() => void) | undefined

@@ -1,5 +1,7 @@
 <script server>
 export const open = $bool($props.open)
+export const nativeDetents = $props.sheetDetents || ['medium', 'large']
+export const nativeSelectedDetent = $props.selectedDetent || ''
 export const position = $props.position || 'right'
 export const title = $props.title || ''
 /** Set `closeOnEscape="false"` for a drawer that must be answered, not dismissed. */
@@ -122,6 +124,7 @@ export const drawerInstanceId = $uid
 // A nested overlay's close belongs to that overlay, never this drawer.
 const emit = defineEmits(['close'])
 const drawerInstanceId = {{ drawerInstanceId }}
+const systemSheet = typeof craft !== 'undefined' && craft.platform === 'ios' && craft.capabilities.nativePlatformControls === true
 // useReactiveProp lets the parent drive `open` via signals
 // (`:open="drawerOpen()"`) instead of the prop being captured once.
 // See stacksjs/stx#1704.
@@ -186,7 +189,7 @@ defineExpose({
 {{-- On a native host a drawer is the phone's sheet: it slides up from the
      bottom edge whichever edge it is given, under a title bar with the close
      button where iOS puts it. --}}
-<div x-ref="rootRef" data-native="Modal" animationType="slide" data-stx-drawer="{{ drawerInstanceId }}" :show="isOpen()">
+<div x-ref="rootRef" data-native="Modal" animationType="slide" presentationStyle="pageSheet" :sheetDetents="{{ nativeDetents }}" @if(nativeSelectedDetent)selectedDetent="{{ nativeSelectedDetent }}"@endif data-stx-drawer="{{ drawerInstanceId }}" :show="isOpen()">
   <div class="absolute inset-0 bg-[#000000]/40" aria-hidden="true" @click="onBackdropClick()"></div>
   <div class="absolute inset-0 justify-end pt-12">
     <div
@@ -198,7 +201,7 @@ defineExpose({
       aria-label="{{ title }}"
       tabindex="-1"
     >
-      <div aria-hidden="true" class="self-center mt-1.5 h-[5px] w-9 rounded-full bg-[#c6c6c8] dark:bg-[#48484a]"></div>
+      <div :show="!systemSheet" aria-hidden="true" class="self-center mt-1.5 h-[5px] w-9 rounded-full bg-[#c6c6c8] dark:bg-[#48484a]"></div>
       <div class="flex-row items-center min-h-[44px] px-4">
         <h2 class="flex-1 text-[17px] font-semibold text-[#000000] dark:text-[#ffffff]">{{ title }}</h2>
         <button type="button" @click="close()" aria-label="Close panel" class="h-[30px] w-[30px] items-center justify-center rounded-full bg-[#767680]/12 dark:bg-[#767680]/24">

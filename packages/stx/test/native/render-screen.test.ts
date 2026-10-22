@@ -299,8 +299,9 @@ const route = state([47, 11, 47.1, 11.2])
 
   it('ships one component per native type the IR declares', async () => {
     const files = [...new Bun.Glob('*.stx').scanSync(nativePrimitivesDir())].sort()
-    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(30)
+    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(31)
     expect(files).toContain('Fragment.stx')
+    expect(files).toContain('NativeSegmentedControl.stx')
     expect(files).toContain('Icon.stx')
     expect(files).toContain('TouchableOpacity.stx')
     expect(files).toContain('ActivityIndicator.stx')
@@ -318,8 +319,17 @@ const route = state([47, 11, 47.1, 11.2])
       const source = await Bun.file(path.join(dir, file)).text()
       const declared = /data-native="(\w+)"/.exec(source)
       expect(declared, file).toBeTruthy()
-      expect(declared![1]).toBe(path.basename(file, '.stx'))
+      expect(declared![1]).toBe(file === 'NativeSegmentedControl.stx' ? 'SegmentedControl' : path.basename(file, '.stx'))
     }
+  })
+
+  it('offers a low-level segmented primitive without shadowing the shared component', async () => {
+    const source = `<NativeSegmentedControl testID="period" value="week" :items="[{ value: 'day', label: 'Day' }, { value: 'week', label: 'Week' }]" />`
+    const { document } = await compileScreenSource(source, screen('NativeSegments.stx', source))
+    expect(document.root.type).toBe('SegmentedControl')
+    expect(document.root.props.value).toBe('week')
+    expect(document.root.props.items).toEqual([{ value: 'day', label: 'Day' }, { value: 'week', label: 'Week' }])
+    expect(document.root.children).toEqual([])
   })
 
   it('distinguishes types that share an HTML tag', async () => {

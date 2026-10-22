@@ -172,6 +172,8 @@ export interface TextInputProps extends BaseProps {
   defaultValue?: string
   /** Placeholder text */
   placeholder?: string
+  /** Native clear affordance; clearing emits one text edit with `clear: true`. */
+  clearButtonMode?: 'never' | 'while-editing' | 'unless-editing' | 'always'
   /** Placeholder text color */
   placeholderTextColor?: string
   /** Value change handler */
@@ -385,6 +387,20 @@ export interface PickerProps extends BaseProps {
   onChange?: (value: string | number, index: number) => void
   /** Disable user interaction */
   disabled?: boolean
+}
+
+/** A choice displayed by the platform's segmented control. */
+export interface NativeSegmentOption extends PickerOption {
+  disabled?: boolean
+  spoken?: string
+}
+
+export interface NativeSegmentedControlProps extends BaseProps {
+  tintColor?: string
+  items: NativeSegmentOption[]
+  value?: string | number
+  disabled?: boolean
+  onValueChange?: (event: { value: string, index: number }) => void
 }
 
 /** A value as `<input type="date|time|datetime-local">` writes it. */
@@ -662,6 +678,10 @@ export interface ModalProps extends BaseProps {
   animationType?: 'none' | 'slide' | 'fade'
   /** Presentation style (iOS) */
   presentationStyle?: 'fullScreen' | 'pageSheet' | 'formSheet' | 'overFullScreen'
+  /** Sheet resting sizes. iOS presents a UISheetPresentationController. */
+  sheetDetents?: Array<'medium' | 'large'>
+  selectedDetent?: 'medium' | 'large'
+  grabberVisible?: boolean
   /** Transparent background */
   transparent?: boolean
   /** Request close handler (Android back button) */
@@ -760,6 +780,7 @@ export const ComponentRegistry = {
   Checkbox: 'Checkbox',
   Slider: 'Slider',
   Picker: 'Picker',
+  NativeSegmentedControl: 'SegmentedControl',
   DatePicker: 'DatePicker',
 
   // Media

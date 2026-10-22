@@ -11,7 +11,7 @@ for (const [name, symbol] of Object.entries(LUCIDE_TO_SF)) {
 }
 const SVG_NS = 'http://www.w3.org/2000/svg'
 const SVG: Record<string, string> = { Svg: 'svg', G: 'g', Path: 'path', Line: 'line', Rect: 'rect', Circle: 'circle', Ellipse: 'ellipse', Polyline: 'polyline', Polygon: 'polygon', SvgText: 'text', Animate: 'animate' }
-const TAGS: Record<string, string> = { View: 'div', SafeAreaView: 'div', ScrollView: 'div', KeyboardAvoidingView: 'div', Text: 'span', TextInput: 'input', Button: 'button', Link: 'a', TouchableOpacity: 'button', TouchableHighlight: 'button', Pressable: 'button', Icon: 'span', Image: 'img', ImageBackground: 'div', Video: 'video', FlatList: 'div', SectionList: 'div', Switch: 'input', Checkbox: 'input', Slider: 'input', Picker: 'select', DatePicker: 'input', Modal: 'dialog', ActivityIndicator: 'progress', StatusBar: 'div', RefreshControl: 'progress', Sidebar: 'aside', SplitView: 'div' }
+const TAGS: Record<string, string> = { View: 'div', SafeAreaView: 'div', ScrollView: 'div', KeyboardAvoidingView: 'div', Text: 'span', TextInput: 'input', Button: 'button', Link: 'a', TouchableOpacity: 'button', TouchableHighlight: 'button', Pressable: 'button', Icon: 'span', Image: 'img', ImageBackground: 'div', Video: 'video', FlatList: 'div', SectionList: 'div', Switch: 'input', Checkbox: 'input', Slider: 'input', Picker: 'select', SegmentedControl: 'div', DatePicker: 'input', Modal: 'dialog', ActivityIndicator: 'progress', StatusBar: 'div', RefreshControl: 'progress', Sidebar: 'aside', SplitView: 'div' }
 const CONTAINERS = new Set(['View', 'SafeAreaView', 'ScrollView', 'KeyboardAvoidingView', 'FlatList', 'SectionList', 'Sidebar', 'SplitView', 'ImageBackground'])
 const UNITLESS = new Set(['opacity', 'flex', 'flexGrow', 'flexShrink', 'fontWeight', 'zIndex', 'aspectRatio', 'order'])
 const SVG_PROPS: Record<string, string> = { viewBox: 'viewBox', fillRule: 'fill-rule', clipRule: 'clip-rule', strokeWidth: 'stroke-width', strokeLinecap: 'stroke-linecap', strokeLinejoin: 'stroke-linejoin', strokeDasharray: 'stroke-dasharray', strokeDashoffset: 'stroke-dashoffset', fillOpacity: 'fill-opacity', strokeOpacity: 'stroke-opacity', textAnchor: 'text-anchor' }
@@ -350,6 +350,27 @@ export class BrowserScreenRenderer {
       if (props.autoComplete) input.autocomplete = String(props.autoComplete) as AutoFill
     }
     this.buttonLabel(record)
+    if (type === 'SegmentedControl') {
+      element.setAttribute('role', 'group')
+      css.display = 'flex'
+      css.flexDirection = 'row'
+      const items = (Array.isArray(props.items) ? props.items : []) as Array<{ value: unknown, label?: unknown, spoken?: unknown, disabled?: boolean }>
+      element.replaceChildren(...items.map((item, index) => {
+        const button = element.ownerDocument.createElement('button')
+        button.type = 'button'
+        button.textContent = String(item.label ?? item.value ?? '')
+        button.disabled = this.disabled(record) || item.disabled === true
+        button.setAttribute('aria-label', String(item.spoken ?? item.label ?? item.value ?? ''))
+        button.setAttribute('aria-pressed', String(String(item.value) === String(props.value ?? props.selectedValue ?? '')))
+        button.style.flex = '1'
+        button.style.font = 'inherit'
+        button.style.color = 'inherit'
+        button.addEventListener('click', () => {
+          if (!button.disabled && button.getAttribute('aria-pressed') !== 'true') this.fire(record, 'onValueChange', { value: String(item.value), index })
+        })
+        return button
+      }))
+    }
     if (type === 'Picker') {
       const select = element as HTMLSelectElement
       const options = (Array.isArray(props.items) ? props.items : Array.isArray(props.options) ? props.options : []) as Array<{ value: unknown, label?: unknown }>

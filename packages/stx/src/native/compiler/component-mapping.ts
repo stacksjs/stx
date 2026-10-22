@@ -27,6 +27,8 @@ const COMPONENT_MAPPING: Record<string, STXComponentType> = {
   checkbox: 'Checkbox',
   slider: 'Slider',
   picker: 'Picker',
+  segmentedcontrol: 'SegmentedControl',
+  nativesegmentedcontrol: 'SegmentedControl',
   select: 'Picker',
   loading: 'ActivityIndicator',
   spinner: 'ActivityIndicator',

@@ -357,13 +357,26 @@ controls and its iOS look, while their web markup stays exactly as it was:
 | Component | Native rendering |
 | --- | --- |
 | `TextInput`, `EmailInput`, `PasswordInput` | 48pt filled field, 17pt text, `#8e8e93` placeholder, system-red outline when invalid; the keyboard, autofill hint and secure entry come from the field's type (below). PasswordInput's reveal button flips secure entry in place. |
-| `Button` | Filled system blue (`primary`), grey-filled tinted (`secondary`), outlined, plain tinted (`ghost`) or system red (`danger`), at 28/34/44/50/56pt for xs–xl, dimmed while pressed and while disabled; `loading` shows a native ActivityIndicator. |
+| `Button` | Filled app accent (`primary`), grey-filled tinted (`secondary`), outlined, plain tinted (`ghost`) or app danger (`danger`), at 28/34/44/50/56pt for xs–xl, dimmed while pressed and while disabled; `loading` shows a native ActivityIndicator. |
 | `Switch` | The platform switch (UISwitch, Android's Switch) at the end of its row. |
-| `Checkbox` | The native checkbox control, tinted system blue. |
+| `Checkbox` | The native checkbox control, tinted with the app accent. |
 | `Select` | The platform picker fed with `items` (no option children; slotted `<option>`s are a web-only spelling). The placeholder leads only while nothing is chosen. |
 | `GroupedList`, `GroupedListRow`, `SectionCard`, `ListRow` | iOS inset groups (white / `#1c1c1e`, 10pt corners), hairline system separators, cells that highlight grey while pressed, SF Symbol chevrons. |
-| `SegmentedControl`, `Tabs`, `TabList`/`Tab` | UISegmentedControl's translucent track with the selected segment raised. |
-| `Dialog`/`DialogPanel`, `Drawer` | A Modal that slides up into a bottom sheet with 10pt top corners and the grabber. `DialogPanel variant="center"` with `animationType="fade"` keeps an alert-like centred card. |
+| `SegmentedControl` | UIKit's actual UISegmentedControl, or Android's native RadioGroup segments; reactive items, stable values and disabled choices. |
+| `Tabs`, `TabList`/`Tab` | A composed translucent track with the selected tab raised; panel/tab semantics are preserved. |
+| `Dialog`/`DialogPanel`, `Drawer` | A system page sheet on iOS, with `sheetDetents` (`medium`, `large`) and optional `selectedDetent`. Android sizes its native bottom panel to that detent. `DialogPanel variant="center"` with `animationType="fade"` keeps an alert-like centred card. |
+
+Native control shapes retain their platform dimensions while actionable colors
+follow the app's semantic roles (`accent`, `accent-solid`, `accent-ink`, and
+the equivalent danger roles). Loading indicators inherit the button's ink.
+Clearable TextInput uses the platform clear affordance and commits one empty
+edit, including lazy models. NavBar and TabBar declare their native chrome;
+FilterChips becomes a horizontal native scroller with selected-state semantics.
+
+These controls require Craft's `nativePlatformControls` capability. New stx
+bundles retain their composed segments and clear buttons on installed older
+hosts, and keep the existing overlay sheet presentation there. The iOS system
+sheet owns its grabber and pan gesture; no imitation grabber is drawn above it.
 
 A component chooses its native markup through `$native`, which is true in a
 component's server script and template when it renders for a native host and

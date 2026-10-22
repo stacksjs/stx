@@ -47,6 +47,7 @@ export type STXComponentType =
   | 'Checkbox'
   | 'Slider'
   | 'Picker'
+  | 'SegmentedControl'
   | 'DatePicker'
   // Overlay
   | 'Modal'
