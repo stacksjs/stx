@@ -806,8 +806,21 @@ function bindMustaches(node: STXNode): void {
   if (node.props['data-stx-native-template']) {
     return
   }
-  if (node.bindings?.text || node.children.length === 0 || !node.children.every(child => typeof child === 'string'))
+  if (node.bindings?.text || node.children.length === 0)
     return
+  const words = node.children.filter((child): child is string => typeof child === 'string')
+  if (words.length < node.children.length) {
+    // A link or touchable with an icon beside its words (`<a><i …></i>{{ t('back') }}</a>`):
+    // the host draws its string child as the label, so the words are bound
+    // and the elements stay where they are.
+    const expression = node.type === 'Button' || node.type === 'Text' ? null : mustacheBinding(words.join(''))
+    if (!expression)
+      return
+    node.bindings = { ...node.bindings, text: expression }
+    node._templated = [...(node._templated ?? []), 'text']
+    node.children = node.children.filter(child => typeof child !== 'string')
+    return
+  }
   const expression = mustacheBinding(node.children.join(''))
   if (!expression)
     return

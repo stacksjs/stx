@@ -301,6 +301,37 @@ export interface NativeScreen {
 }
 
 /** Mount a compiled native bundle as screen `screen`, on a fake phone. */
+/** Request headers as a plain record, from a record or a `Headers` (anything with `forEach`). */
+function plainHeaders(headers: unknown): Record<string, string> | undefined {
+  if (headers == null) return undefined
+  if (typeof (headers as { forEach?: unknown }).forEach === 'function' && !Array.isArray(headers)) {
+    const record: Record<string, string> = {}
+    ;(headers as { forEach: (callback: (value: string, name: string) => void) => void }).forEach((value, name) => { record[name] = String(value) })
+    return record
+  }
+  return headers as Record<string, string>
+}
+
+/**
+ * The kit's answer as Craft's fetch shapes one: a status, JSON headers, and
+ * the body as `json()` or `text()`, so code shared with the page that reads
+ * `res.headers.get('date')` or `res.text()` reads it natively too.
+ */
+function answered(status: number, body: unknown): Record<string, unknown> {
+  const headers: Record<string, string> = { 'content-type': 'application/json' }
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    headers: {
+      get: (name: string) => headers[String(name).toLowerCase()] ?? null,
+      has: (name: string) => String(name).toLowerCase() in headers,
+      forEach: (callback: (value: string, name: string) => void) => Object.entries(headers).forEach(([name, value]) => callback(value, name)),
+    },
+    json: async () => body,
+    text: async () => JSON.stringify(body),
+  }
+}
+
 export function mountNativeScreen(code: string, screen: string, options: NativeScreenOptions = {}): NativeScreen {
   /** Ended (unmounted, or its test over): no timer fires, no request goes out, no message comes in. */
   let ended = false
@@ -430,9 +461,11 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
     ...options.globals,
     __stxNativeRoute: screen,
     __stxNativeParams: options.params ?? {},
-    fetch: async (url: string, init: { method?: string, body?: any, headers?: Record<string, string>, signal?: AbortSignal } = {}) => {
+    fetch: async (url: string, given: { method?: string, body?: any, headers?: Record<string, string> | { forEach: (callback: (value: string, name: string) => void) => void }, signal?: AbortSignal } = {}) => {
       // A screen that has ended has no network: whatever it still sends goes nowhere.
       if (ended) throw Object.assign(new TypeError('The screen has ended.'), { code: 'NETWORK_ERROR' })
+      // A `Headers` is read as Craft's fetch reads it (`forEach`), into the plain record `api` and `headers` see.
+      const init = { ...given, headers: plainHeaders(given.headers) }
       fetching++
       let counted = true
       try {
@@ -458,9 +491,9 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
             ? Promise.race([given, new Promise((_, reject) => signal.addEventListener('abort', () => reject(Object.assign(new Error('The operation was aborted.'), { name: 'AbortError' }))))])
             : given)
         }
-        if (answer === undefined) return { ok: false, status: 404, json: async () => ({}) }
-        if (answer instanceof StatusAnswer) return { ok: answer.status < 300, status: answer.status, json: async () => answer.body }
-        return { ok: true, status: 200, json: async () => answer }
+        if (answer === undefined) return answered(404, {})
+        if (answer instanceof StatusAnswer) return answered(answer.status, answer.body)
+        return answered(200, answer)
       }
       finally {
         if (counted) fetching--

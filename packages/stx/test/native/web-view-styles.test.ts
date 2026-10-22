@@ -50,6 +50,24 @@ describe('web view classes on a native host', () => {
     expect(compileClassStyles('focus-within:hover:p-4', undefined, { focusWithin: true }).unknown).toEqual(['focus-within:hover:p-4'])
   })
 
+  it('accepts a page\'s CSS animations and scroll anchoring, which a native screen does not run', () => {
+    // A loading skeleton pulses on the web, a spinner spins; natively the
+    // shape stays and the keyframes go. Scroll margins only offset a
+    // browser's jump to an anchor, which a native screen never makes.
+    const compiled = compileClassStyles('h-4 animate-pulse motion-safe:animate-spin scroll-mt-20 scroll-pt-4 scroll-mx-2 snap-x snap-center overscroll-contain')
+    expect(compiled.style).toEqual({ height: 16 })
+    expect(compiled.unknown).toEqual([])
+  })
+
+  it('draws a card\'s cover ratio and a dashed outline, and passes over a hover group\'s marker', () => {
+    expect(compileClassStyles('aspect-[16/9] group').style).toEqual({ aspectRatio: 16 / 9 })
+    expect(compileClassStyles('aspect-video').style).toEqual({ aspectRatio: 16 / 9 })
+    expect(compileClassStyles('aspect-[4/3]').style).toEqual({ aspectRatio: 4 / 3 })
+    const dashed = compileClassStyles('border-2 border-dashed peer')
+    expect(dashed.style).toMatchObject({ borderWidth: 2, borderStyle: 'dashed' })
+    expect(dashed.unknown).toEqual([])
+  })
+
   it('expands the app\'s shortcuts and theme colours, carrying a variant onto every class', () => {
     setNativeStyleConfig(APP_CONFIG)
     const card = compileClassStyles('card')

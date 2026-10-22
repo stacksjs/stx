@@ -389,6 +389,13 @@ const classParsers: Record<string, ClassParser> = {
   'self-baseline': (_, style) => { style.alignSelf = 'baseline'; return true },
   'min-w-0': (_, style) => { style.minWidth = 0; return true },
   'aspect-square': (_, style) => { style.aspectRatio = 1; return true },
+  'aspect-video': (_, style) => { style.aspectRatio = 16 / 9; return true },
+  'border-solid': (_, style) => { style.borderStyle = 'solid'; return true },
+  'border-dashed': (_, style) => { style.borderStyle = 'dashed'; return true },
+  'border-dotted': (_, style) => { style.borderStyle = 'dotted'; return true },
+  // Markers a `group-hover:`/`peer-*` variant reads on the web: nothing to draw.
+  'group': () => true,
+  'peer': () => true,
   'inset-0': (_, style) => { style.top = 0; style.right = 0; style.bottom = 0; style.left = 0; return true },
   // A block centred in its column on the web: natively, the same box centred
   // by its parent (a native host has no auto margins).
@@ -1080,8 +1087,12 @@ export const NATIVE_STATE_VARIANTS = new Set(['aria-selected', 'aria-pressed', '
  */
 const POINTER_ONLY_VARIANTS = new Set(['hover', 'group-hover', 'peer-hover', 'active', 'group-active', 'visited', 'placeholder', 'selection', 'print', 'motion-safe'])
 
-/** Utilities for the browser's own behaviour: transitions, cursors, scrolling, outline resets. */
-const WEB_ONLY_UTILITY = /^(?:transition(?:-[a-z]+)?|duration-\S+|ease-\S+|delay-\S+|will-change-\S+|cursor-\S+|select-(?:none|text|all|auto)|outline-none|outline-0|appearance-none|scroll-smooth|scroll-auto|antialiased|subpixel-antialiased|touch-\S+|resize(?:-\S+)?|backdrop-blur(?:-\S+)?|isolate|contain-\S+)$/
+/**
+ * Utilities for the browser's own behaviour: transitions and CSS animations
+ * (a skeleton's pulse; natively the shape stays and the keyframes go),
+ * cursors, scrolling and scroll anchoring, outline resets.
+ */
+const WEB_ONLY_UTILITY = /^(?:transition(?:-[a-z]+)?|animate-\S+|scroll-[mp][trblxyse]?-\S+|snap-\S+|overscroll-\S+|duration-\S+|ease-\S+|delay-\S+|will-change-\S+|cursor-\S+|select-(?:none|text|all|auto)|outline-none|outline-0|appearance-none|scroll-smooth|scroll-auto|antialiased|subpixel-antialiased|touch-\S+|resize(?:-\S+)?|backdrop-blur(?:-\S+)?|isolate|contain-\S+)$/
 
 /** `a:b:[c:d]:e` → ['a', 'b', '[c:d]', 'e']: colons inside brackets are the value's. */
 function splitVariants(token: string): string[] {
@@ -1388,6 +1399,9 @@ export function compileHeadwindToStyle(classes: string | string[], unknown?: str
     if (parseSize(className, style)) continue
     if (parseMinMax(className, style)) continue
     if (parseGridColumns(className, style)) continue
+    // `aspect-[16/9]`, `aspect-[4/3]`: the ratio, as `aspect-square` is one.
+    const ratio = /^aspect-\[(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)\]$/.exec(className)
+    if (ratio && Number(ratio[2]) > 0) { style.aspectRatio = Number(ratio[1]) / Number(ratio[2]); continue }
     const layer = /^z-\[(-?\d+)\]$/.exec(className) ?? /^z-(\d+)$/.exec(className)
     if (layer) { style.zIndex = Number(layer[1]); continue }
     if (className === 'z-auto') continue

@@ -102,3 +102,25 @@ const t = key => 'build machine: ' + key
   const phone = await mountWebView(root, { Hello: 'views/hello.stx' }, 'Hello')
   expect(phone.texts()).toContain('device: hello')
 })
+
+test('a link\'s words beside its icon, from a mustache, are its label', async () => {
+  // A back link: an icon, then the words. The words after the icon were
+  // drawn as their braces, since only a link holding nothing but the
+  // mustache was bound.
+  const root = webApp({
+    'views/back.stx': `<script client>
+  const title = state('Store')
+</script>
+<div>
+  <a href="/store" testid="back" class="inline-flex gap-2 items-center"><i aria-hidden="true" class="h-4 w-4 i-lucide-arrow-left"></i>{{ title }}</a>
+  <button testid="rename" @click="title.set('Shop')">Rename</button>
+</div>
+`,
+  })
+  const phone = await mountWebView(root, { Back: 'views/back.stx' }, 'Back')
+  expect(phone.texts()).toContain('Store')
+  expect(phone.texts().some(text => text.includes('{{'))).toBe(false)
+  phone.press(phone.byTestID('rename')!)
+  await phone.settle()
+  expect(phone.texts()).toContain('Shop')
+})

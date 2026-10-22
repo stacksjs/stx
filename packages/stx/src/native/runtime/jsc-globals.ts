@@ -557,6 +557,73 @@ export function isNativeFile(value: unknown): value is NativeFile {
   return !!value && typeof value === 'object' && typeof (value as AnyRecord).path === 'string' && typeof (value as AnyRecord).name === 'string'
 }
 
+/**
+ * `Headers`, which JavaScriptCore does not have: the web's shape, names folded
+ * to lower case and repeated values joined, iterated in name order. A web view
+ * drawn natively builds its requests with one (an auth store's
+ * `new Headers(options.headers)` before it sets the bearer token), and native
+ * `fetch` reads it through `forEach`.
+ */
+export class NativeHeaders {
+  private map = new Map<string, string>()
+
+  constructor(init?: Record<string, unknown> | Iterable<[unknown, unknown]> | { forEach: (callback: (value: string, name: string) => void) => void } | null) {
+    if (init == null) return
+    if (typeof (init as any)[Symbol.iterator] === 'function') {
+      for (const pair of init as Iterable<[unknown, unknown]>) this.append(String(pair[0]), pair[1])
+      return
+    }
+    if (typeof (init as any).forEach === 'function') {
+      (init as { forEach: (callback: (value: string, name: string) => void) => void }).forEach((value, name) => this.append(name, value))
+      return
+    }
+    for (const [name, value] of Object.entries(init)) this.append(name, value)
+  }
+
+  append(name: string, value: unknown): void {
+    const key = String(name).toLowerCase()
+    const text = String(value).trim()
+    const current = this.map.get(key)
+    this.map.set(key, current === undefined ? text : `${current}, ${text}`)
+  }
+
+  set(name: string, value: unknown): void {
+    this.map.set(String(name).toLowerCase(), String(value).trim())
+  }
+
+  get(name: string): string | null {
+    return this.map.get(String(name).toLowerCase()) ?? null
+  }
+
+  has(name: string): boolean {
+    return this.map.has(String(name).toLowerCase())
+  }
+
+  delete(name: string): void {
+    this.map.delete(String(name).toLowerCase())
+  }
+
+  forEach(callback: (value: string, name: string, headers: NativeHeaders) => void): void {
+    for (const [name, value] of this.entries()) callback(value, name, this)
+  }
+
+  entries(): IterableIterator<[string, string]> {
+    return [...this.map.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))[Symbol.iterator]()
+  }
+
+  keys(): IterableIterator<string> {
+    return [...this.entries()].map(([name]) => name)[Symbol.iterator]()
+  }
+
+  values(): IterableIterator<string> {
+    return [...this.entries()].map(([, value]) => value)[Symbol.iterator]()
+  }
+
+  [Symbol.iterator](): IterableIterator<[string, string]> {
+    return this.entries()
+  }
+}
+
 type FormValue = string | NativeFile
 
 /** The native host supplies successful controls, not a browser DOM tree. */
@@ -781,6 +848,7 @@ export function installJSCGlobals(target: AnyRecord = globalThis as AnyRecord): 
   target.Event ??= NativeEvent
   target.CustomEvent ??= NativeEvent
   target.FormData ??= NativeFormData
+  installNativeConstructor(target, 'Headers', NativeHeaders)
   target.addEventListener ??= addEventListener
   target.removeEventListener ??= removeEventListener
   target.dispatchEvent ??= dispatchEvent
