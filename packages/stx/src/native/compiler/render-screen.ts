@@ -26,12 +26,12 @@
  * loops survive as binding-manifest entries and run through the shared stx
  * signals runtime; server-only directives resolve here before translation.
  */
-import type { STXDocument } from './ir'
+import type { STXDocument, STXNode } from './ir'
 import type { TranslationDiagnostic } from './html-to-ir'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { loadStxConfig } from '../../config'
-import { extractBindingManifest, type BindingManifest } from '../../binding-manifest'
+import { classifyAttribute, extractBindingManifest, type BindingManifest } from '../../binding-manifest'
 import { processDirectives } from '../../process'
 import { processScriptSetup } from '../../signal-processing'
 import { appThemeCSS } from './app-theme'
@@ -132,7 +132,9 @@ export async function compileScreenSource(
   // Native style classes are translated into IR below. Generating and
   // injecting browser CSS here is redundant, and its development diagnostics
   // would corrupt `stx native compile --format ir` JSON on stdout.
-  const context = { ...(options.context ?? {}), __stx_inject_css: false }
+  // `__stx_native_screen`: a mustache that calls a server helper (a layout's
+  // request-language `t`) is the device's to answer (expressions.ts).
+  const context = { ...(options.context ?? {}), __stx_inject_css: false, __stx_native_screen: true }
   const dependencies = new Set<string>([filePath])
   const renderedHtml = await processDirectives(
     source,
@@ -155,6 +157,8 @@ export async function compileScreenSource(
     // carries the signals runtime and the router, which are not the screen's.
     script: extractClientScript(source),
   })
+
+  enterTemplatedBindings(document.root, manifest)
 
   // The page's title, as the web's <title> has it: the navigation title.
   const head = (context as { __stx_runtime_head?: { title?: unknown } }).__stx_runtime_head
@@ -195,6 +199,38 @@ export async function compileScreenSource(
   if (modules) scripts.unshift({ code: modules })
 
   return { document, manifest, setup, scripts, diagnostics, html, dependencies: [...dependencies] }
+}
+
+/**
+ * The bindings the translation made of `{{ }}` the server left (html-to-ir.ts
+ * `mustacheBinding`), entered in the manifest the runtime binds from, as the
+ * `:text` an author wrote is: a node keeps its entry and gains them, or gets
+ * an entry of its own.
+ */
+function enterTemplatedBindings(root: STXNode, manifest: BindingManifest): void {
+  const entries = new Map(manifest.entries.map(entry => [entry.id, entry]))
+  let next = manifest.entries.reduce((highest, entry) => Math.max(highest, entry.id), -1) + 1
+  const visit = (node: STXNode): void => {
+    if (node._templated?.length && node.bindings) {
+      if (node.bindingId === undefined || !entries.has(node.bindingId)) {
+        const entry = { id: node.bindingId ?? next++, bindings: [] }
+        node.bindingId = entry.id
+        entries.set(entry.id, entry)
+        manifest.entries.push(entry)
+      }
+      const entry = entries.get(node.bindingId)!
+      for (const name of node._templated) {
+        const attribute = `:${name}`
+        const kind = classifyAttribute(attribute)
+        if (kind && !entry.bindings.some(binding => binding.name === attribute))
+          entry.bindings.push({ name: attribute, value: node.bindings[name]!, kind })
+      }
+    }
+    for (const child of node.children) {
+      if (typeof child !== 'string') visit(child)
+    }
+  }
+  visit(root)
 }
 
 /** The same, reading the screen off disk. */

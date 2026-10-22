@@ -135,6 +135,9 @@ export interface STXNode {
   /** Original Headwind classes, retained for native class and appearance updates. */
   _classes?: string
 
+  /** The `bindings` made of `{{ }}` the server left, not authored attributes: the compiler enters them in the screen's manifest. */
+  _templated?: string[]
+
   /** Source location (for debugging) */
   _source?: {
     file: string

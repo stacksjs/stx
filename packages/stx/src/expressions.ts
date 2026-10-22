@@ -895,6 +895,24 @@ function expressionUsesOnlyContextVars(expr: string, context: Record<string, any
  * Comments and string literals are blanked first, so a name mentioned inside
  * `{{ 'the range of it' }}` is not a reference to `range`.
  */
+/**
+ * Whether `expr` calls a function the render context holds.
+ *
+ * A native screen is compiled once, for every phone, with no request behind
+ * it: a server helper such as a layout's request-language `t` answers for the
+ * machine running the build, and its English would be frozen into the screen.
+ * The device's runtime has its own helpers, so natively such a call is left
+ * for it, as the web leaves a client signal for the browser.
+ */
+function callsContextFunction(expr: string, context: Record<string, any>): boolean {
+  const searchable = stripCommentsAndLiterals(expr)
+  for (const match of searchable.matchAll(/(?<![.\w$])([A-Z_$][\w$]*)\s*\(/gi)) {
+    if (typeof context[match[1]] === 'function')
+      return true
+  }
+  return false
+}
+
 function expressionReadsServerBinding(expr: string, context: Record<string, any>): boolean {
   const declared = context.__stx_serverDeclared as Set<string> | undefined
   if (!declared || declared.size === 0)
@@ -1324,6 +1342,9 @@ export function processExpressions(template: string, context: Record<string, any
     // discarded. Component scripts have already been lifted out, so inherit
     // their recorded names alongside declarations in this page's own scripts.
     if (firstVarIsClientSignal)
+      return match
+
+    if (context.__stx_native_screen === true && callsContextFunction(trimmedExpr, context))
       return match
 
     // Try evaluation first - this allows user-defined helper functions to work

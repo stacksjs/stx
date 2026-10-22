@@ -240,6 +240,39 @@ interface Attributes {
   bindings: Record<string, string>
   classes: string
   inline: STXStyle
+  /** Which of `bindings` are `{{ }}` the server left. */
+  templated: string[]
+}
+
+/**
+ * The binding a `{{ }}`-templated string makes, or null when it has none.
+ *
+ * The server evaluates what it can of a web view's mustaches and leaves the
+ * rest (a client signal, a call the device answers) for the browser's
+ * runtime, which binds them in the page's text. A native screen has no text
+ * nodes for that runtime to find, so a leftover mustache is a binding here,
+ * the `:text` or `:placeholder` an author could have written: a single one is
+ * its expression, words around it are joined in, and null or undefined reads
+ * as nothing, as the browser shows it.
+ */
+export function mustacheBinding(text: string): string | null {
+  if (!text.includes('{{'))
+    return null
+  const parts: string[] = []
+  let last = 0
+  for (const match of text.matchAll(/\{\{([\s\S]+?)\}\}/g)) {
+    if (match.index > last)
+      parts.push(JSON.stringify(text.slice(last, match.index)))
+    parts.push(`(${match[1].trim()})`)
+    last = match.index + match[0].length
+  }
+  if (!parts.some(part => part.startsWith('(')))
+    return null
+  if (last < text.length)
+    parts.push(JSON.stringify(text.slice(last)))
+  if (parts.length === 1)
+    return parts[0].slice(1, -1)
+  return `[${parts.join(', ')}].map(__stxPart => __stxPart == null ? '' : __stxPart).join('')`
 }
 
 function readAttributes(
@@ -252,6 +285,7 @@ function readAttributes(
   const props: Record<string, unknown> = {}
   const events: Record<string, string> = {}
   const bindings: Record<string, string> = {}
+  const fromMustaches: string[] = []
   let classes = ''
   let inline: STXStyle = {}
 
@@ -302,6 +336,12 @@ function readAttributes(
     }
 
     const decoded = decodeEntities(value)
+    const templated = mustacheBinding(decoded)
+    if (templated) {
+      bindings[name] = templated
+      fromMustaches.push(name)
+      continue
+    }
     const prop = nativePropName(rawName)
     if (decoded === '' && NATIVE_BOOLEAN_PROPS.has(prop)) {
       props[prop] = true
@@ -324,7 +364,7 @@ function readAttributes(
   for (const name of new Set(compiledClasses?.unknown ?? []))
     diagnostics.push({ kind: 'unknown-class', tag, name })
   const style = applyNativeLayoutDefaults({ ...compiledClasses?.style, ...inline })
-  return { props, style, events, bindings, classes, inline }
+  return { props, style, events, bindings, classes, inline, templated: fromMustaches }
 }
 
 function inlineStyle(tag: string, css: string, diagnostics: TranslationDiagnostic[], context: NativeStyleContext): STXStyle {
@@ -505,8 +545,8 @@ export async function translateHtmlToIR(
     const dropped = DROP_SUBTREE.has(tag) && !BOX_ONLY.has(tag)
     const inheritedDrop = stack[stack.length - 1]?.dropped ?? false
     let variables = parentFrame?.variables ?? stylesheetVariables
-    const { props, style, events, bindings, classes, inline } = dropped || inheritedDrop
-      ? { props: {}, style: {}, events: {}, bindings: {}, classes: '', inline: {} }
+    const { props, style, events, bindings, classes, inline, templated } = dropped || inheritedDrop
+      ? { props: {}, style: {}, events: {}, bindings: {}, classes: '', inline: {}, templated: [] }
       : readAttributes(tag, attributes, diagnostics, { inheritedVariables: variables, onVariables: value => { variables = value }, rules: stylesheetRules })
     if (tag === 'html') variables = stylesheetVariables
 
@@ -598,6 +638,8 @@ export async function translateHtmlToIR(
       node._classes = classes
     if (Object.keys(bindings).length > 0)
       node.bindings = bindings
+    if (templated.length > 0)
+      node._templated = templated
     if (typeof props.key === 'string') {
       node.key = props.key
       delete props.key
@@ -637,7 +679,7 @@ export async function translateHtmlToIR(
       return { tag, node: createNode('G', {}, {}, {}), svg: true, dropped: true, discard: true, unwrap: false }
     }
     let variables = parent?.variables ?? stylesheetVariables
-    const { props, style, events, bindings, classes, inline } = readAttributes(tag, attributes, diagnostics, { inheritedVariables: variables, onVariables: value => { variables = value }, rules: stylesheetRules })
+    const { props, style, events, bindings, classes, inline, templated } = readAttributes(tag, attributes, diagnostics, { inheritedVariables: variables, onVariables: value => { variables = value }, rules: stylesheetRules })
     if (type === 'Svg') {
       const viewBox = parseViewBox(props.viewBox)
       if (viewBox) props.viewBox = viewBox
@@ -667,6 +709,8 @@ export async function translateHtmlToIR(
       node._classes = classes
     if (Object.keys(bindings).length > 0)
       node.bindings = bindings
+    if (templated.length > 0)
+      node._templated = templated
     if (typeof props.key === 'string') {
       node.key = props.key
       delete props.key
@@ -724,6 +768,7 @@ export async function translateHtmlToIR(
   if (Object.keys(stylesheetRules).length) root._stylesheetRules = stylesheetRules
 
   const project = (node: STXNode): void => {
+    bindMustaches(node)
     const projected = projectAccessibility(node.props)
     if (Object.keys(projected).length) {
       node._accessibilitySource = Object.fromEntries(ACCESSIBILITY_FIELDS.filter(name => name in node.props).map(name => [name, node.props[name]]))
@@ -736,6 +781,32 @@ export async function translateHtmlToIR(
   project(root)
 
   return { root, diagnostics }
+}
+
+/**
+ * Words a server left as `{{ }}` (see `mustacheBinding`): a Text's become its
+ * `text` binding. A button labelled that way gets a Text to hold it, since a
+ * native Button draws a fixed title.
+ */
+function bindMustaches(node: STXNode): void {
+  if (node.bindings?.text || node.children.length === 0 || !node.children.every(child => typeof child === 'string'))
+    return
+  const expression = mustacheBinding(node.children.join(''))
+  if (!expression)
+    return
+  if (node.type === 'Text') {
+    node.bindings = { ...node.bindings, text: expression }
+    node._templated = [...(node._templated ?? []), 'text']
+    node.children = []
+  }
+  else if (node.type === 'Button') {
+    node.type = 'Pressable'
+    node.props.role ??= 'button'
+    const label = createNode('Text', {}, {}, {}, [])
+    label.bindings = { text: expression }
+    label._templated = ['text']
+    node.children = [label]
+  }
 }
 
 /** The same translation, wrapped in an `STXDocument` for the renderers. */
