@@ -189,7 +189,7 @@ export interface NativeHost {
   observeAttributes: (node: NativeNode, names: string[], callback: () => void) => (() => void)
   /** Imperative calls patch styles; :style replaces its own layer and preserves authored defaults. */
   setStyle: (node: NativeNode, value: unknown, replaceBinding?: boolean) => void
-  listen: (node: NativeNode, event: string, handler: (payload?: unknown) => void, options?: unknown) => void
+  listen: (node: NativeNode, event: string, handler: (payload?: unknown) => void, options?: unknown) => (() => void)
   emitComponentEvent: (node: NativeNode, event: Event) => boolean
   onFormReset: (node: NativeNode, callback: () => void) => (() => void)
   scopeOf: (node: NativeNode, from?: boolean) => NativeNode | null
@@ -757,6 +757,9 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     Object.defineProperties(target, {
       focus: { configurable: true, value: (focusOptions?: NativeFocusOptions) => host.focus(node, focusOptions) },
       measure: { configurable: true, value: () => host.measure(node) },
+      // Layout is an invalidation signal, not viewport bounds. Call measure()
+      // after it, and retain polling for scroll/transform-only movement.
+      observeLayout: { configurable: true, value: (callback: () => void) => host.listen(node, 'layout', callback) },
       nextSibling: {
         configurable: true,
         get() {
@@ -1179,11 +1182,19 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     },
 
     listen(node, event, handler, options) {
+      if (disposed) return () => {}
       const listenerOptions = options as { once?: boolean, capture?: boolean } | undefined
       const listeners = componentListeners.get(node) ?? []
       const listener = { event, handler, once: !!listenerOptions?.once, capture: !!listenerOptions?.capture }
       listeners.push(listener)
       componentListeners.set(node, listeners)
+      // Removing a subscription must not remove an authored handler sharing
+      // the same native event ID. Keep that bounded per-node dispatcher until
+      // node teardown; reopening adds no new dispatcher or retained callback.
+      const unsubscribe = () => {
+        const index = listeners.indexOf(listener)
+        if (index !== -1) listeners.splice(index, 1)
+      }
       // The handler stays here and the native side is given an id to report
       // back. Sending a function over a bridge is not possible, and the
       // binding layer never needs to know that -- it hands over a closure
@@ -1195,7 +1206,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const registrations = eventRegistrations.get(node) ?? new Map<string, string>()
       eventRegistrations.set(node, registrations)
       const existing = registrations.get(nativeEvent)
-      if (existing && handlers.has(existing)) return
+      if (existing && handlers.has(existing)) return unsubscribe
       const id = nextId('h')
       registrations.set(nativeEvent, id)
       handlers.set(id, (payload) => {
@@ -1288,6 +1299,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
           if (['Button', 'Pressable'].includes(descriptorOf(child)?.type ?? '')) installControlListeners(child)
         }
       }
+      return unsubscribe
     },
 
     dispatch(handlerId, payload) {

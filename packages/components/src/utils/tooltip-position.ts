@@ -13,6 +13,7 @@ interface NativeTooltipBounds {
 }
 interface NativeTooltipView {
   measure: () => Promise<NativeTooltipBounds>
+  observeLayout?: (callback: () => void) => (() => void)
   parentElement?: NativeTooltipView | null
 }
 
@@ -43,8 +44,9 @@ export async function measureTooltipPosition(trigger: HTMLElement | NativeToolti
 
 /**
  * Craft presents a non-modal Modal in viewport coordinates while retaining its
- * logical parent. There is no host layout-change subscription yet: sample only
- * while open, serially, and ignore replies after close/removal. Never reparent.
+ * logical parent. Observe layout changes as invalidations, not coordinates:
+ * onLayout is parent-relative and omits scrolling/transforms. Keep serial
+ * polling for those changes and older runtimes. Never reparent.
  */
 export function trackNativePopup(
   trigger: NativeTooltipView,
@@ -57,11 +59,23 @@ export function trackNativePopup(
   let timer: ReturnType<typeof setTimeout> | undefined
   let previous = ''
   let reported = false
+  let inFlight = false
+  let dirty = false
+  const subscriptions: Array<() => void> = []
+  function invalidate(): void {
+    if (!active) return
+    dirty = true
+    clearTimeout(timer)
+    if (!inFlight) void update()
+  }
   async function update(): Promise<void> {
+    if (!active) return
+    inFlight = true
+    dirty = false
     try {
       const point = await measureTooltipPosition(trigger, panel, preferred, true)
       if (!active) return
-      if (point) {
+      if (point && !dirty) {
         const style = { position: 'absolute', left: point.left, top: point.top, right: 'auto', bottom: 'auto', margin: 0, marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0, transform: [] }
         const signature = JSON.stringify(style)
         if (signature !== previous) { apply(style); previous = signature }
@@ -73,10 +87,27 @@ export function trackNativePopup(
         warn('[stx:popup] Could not measure native popup: ' + (error instanceof Error ? error.message : String(error)))
       }
     }
-    if (active) timer = setTimeout(update, 250)
+    finally {
+      inFlight = false
+      // Coalesce layout bursts during a measurement into one fresh read.
+      // Defer it so a synchronous layout callback cannot recurse forever.
+      if (active) timer = setTimeout(update, dirty ? 0 : 250)
+    }
   }
-  void update()
-  return () => { active = false; clearTimeout(timer) }
+  const observed = new Set<NativeTooltipView>()
+  for (const root of [trigger, panel]) {
+    for (let node: NativeTooltipView | null | undefined = root; node && !observed.has(node); node = node.parentElement) {
+      observed.add(node)
+      if (node.observeLayout) subscriptions.push(node.observeLayout(invalidate))
+    }
+  }
+  invalidate()
+  return () => {
+    if (!active) return
+    active = false
+    clearTimeout(timer)
+    for (const unsubscribe of subscriptions) unsubscribe()
+  }
 }
 
 /** Position in viewport coordinates; flip when possible, then keep every edge readable. */

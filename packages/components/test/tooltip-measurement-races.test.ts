@@ -44,6 +44,43 @@ describe('Tooltip asynchronous host measurements', () => {
     await new Promise(done => setTimeout(done, 0))
     expect(styles).toEqual([])
   })
+  it('coalesces host layout notifications, discards stale bounds and removes subscriptions', async () => {
+    const callbacks = new Set<() => void>()
+    let subscriptions = 0
+    const observeLayout = (callback: () => void) => {
+      subscriptions++
+      callbacks.add(callback)
+      return () => { callbacks.delete(callback) }
+    }
+    const parent = { measure: async () => box, observeLayout }
+    const replies: Array<(value: typeof box) => void> = []
+    const trigger = { measure: () => new Promise<typeof box>(resolve => replies.push(resolve)), observeLayout, parentElement: parent }
+    const popup = { measure: async () => ({ ...box, ...panel }), observeLayout, parentElement: parent }
+    const styles: Array<Record<string, unknown>> = []
+    const stop = trackNativePopup(trigger, popup, 'bottom', style => styles.push(style))
+    try {
+      expect(subscriptions).toBe(3) // shared ancestor observed once
+      expect(replies).toHaveLength(1)
+      for (let i = 0; i < 5; i++) callbacks.forEach(callback => callback())
+      expect(replies).toHaveLength(1) // never overlap asynchronous measurements
+      replies.shift()!(box)
+      await new Promise(done => setTimeout(done, 10))
+      expect(styles).toEqual([]) // the anchor moved while this reply was pending
+      expect(replies).toHaveLength(1)
+      replies.shift()!({ ...box, x: 200 })
+      await new Promise(done => setTimeout(done, 0))
+      expect(styles).toHaveLength(1)
+      callbacks.forEach(callback => callback())
+      expect(replies).toHaveLength(1) // no 250ms polling delay for a layout event
+      stop()
+      expect(callbacks.size).toBe(0)
+      replies.shift()!({ ...box, x: 300 })
+      await new Promise(done => setTimeout(done, 0))
+      expect(styles).toHaveLength(1)
+      stop() // idempotent cleanup
+    }
+    finally { stop() }
+  })
 })
 
 it('shared Tooltip discards older, closed, disabled and destroyed measurement replies', async () => {

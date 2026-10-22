@@ -42,6 +42,10 @@ window.probe = { disabled, present, taps }
     expect(panel.props).toMatchObject({ visible: true, nonModal: true, dismissOnOutsideTap: true })
     expect(panel.style).toMatchObject({ left: 65, top: 152, transform: [] })
     const id = panel.id
+    anchorX = 150
+    phone.press(trigger, 'onLayout', { layout: { x: 150, y: 200, width: 30, height: 30 } })
+    await phone.settle()
+    expect(panel.style.left).toBe(115)
     anchorX = 200
     await Bun.sleep(300)
     await phone.settle()
@@ -69,6 +73,40 @@ window.probe = { disabled, present, taps }
     expect(phone.mutationErrors).toEqual([])
     expect(errors).toEqual([])
     expect(warnings.filter(message => /\[stx:(popup|tooltip)\]/.test(message))).toEqual([])
+  }
+  finally { phone.unmount() }
+}, 30_000)
+
+it('native layout observers coexist with authored handlers and unsubscribe across reopen/removal', async () => {
+  const { code } = await compileNativeScreen(`<script client>
+const target = useRef('target')
+const shown = state(true)
+const authored = state(0)
+window.probe = { target, shown, count: authored }
+</script><div :if="shown" x-ref="target" testID="observed" @layout="authored.set(authored() + 1)">Anchor</div>`)
+  const phone = mountNativeScreen(code)
+  try {
+    await phone.settle()
+    const view = phone.context.probe.target()
+    const node = phone.byTestID('observed')!
+    let calls = 0
+    for (let i = 0; i < 3; i++) {
+      const stop = view.observeLayout(() => calls++)
+      phone.press(node, 'onLayout', { layout: { x: i } })
+      expect(calls).toBe(i + 1)
+      stop()
+      stop()
+      phone.press(node, 'onLayout', { layout: { x: i + 1 } })
+      expect(calls).toBe(i + 1)
+    }
+    expect(phone.context.probe.count()).toBe(6)
+    const stop = view.observeLayout(() => calls++)
+    phone.context.probe.shown.set(false)
+    await phone.settle()
+    phone.press(node, 'onLayout', { layout: { x: 20 } })
+    expect(calls).toBe(3)
+    stop()
+    expect(phone.mutationErrors).toEqual([])
   }
   finally { phone.unmount() }
 }, 30_000)

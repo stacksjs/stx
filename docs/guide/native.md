@@ -243,11 +243,15 @@ are preserved across closing/reopening; no browser-body portal or native
 cross-parent move is used. Missing capabilities produce a warning and leave the
 popup closed, rather than silently substituting a blocking modal.
 
-Placement uses viewport measurements and shared flip/clamp math. Until a host
-layout-change subscription is available, STX samples serially every 250 ms while
-open (after each measurement completes), updating only changed coordinates.
-Closing, disabling Tooltip, or removing the component cancels the timer and
-invalidates pending replies. Native tooltip arrows are hidden; browser arrows,
+Placement uses viewport measurements and shared flip/clamp math. While open,
+STX subscribes to `onLayout` on the anchor, panel and their logical ancestors.
+Notifications invalidate pending bounds and request a fresh viewport measurement;
+their parent-relative coordinates are never used directly for positioning.
+Bursts are coalesced, with at most one measurement cycle in flight. Serial
+250 ms sampling remains for scroll/transform-only changes (not reported by
+`onLayout`) and older runtimes, updating only changed coordinates.
+Closing, disabling Tooltip, or removing the component cancels subscriptions,
+the timer and pending replies. Native tooltip arrows are hidden; browser arrows,
 hover/focus behavior and portals are unchanged. This is not frame-synchronous
 tracking during scrolling. Maintained iOS/Android visual and accessibility
 validation, including clipping and touch routing, remains outstanding under
