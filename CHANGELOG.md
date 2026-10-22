@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.651...v0.2.653)
+
+## 🐛 Bug Fixes
+
+- **desktop**: resolve native runtime providers for packaging ([6c50f58](https://github.com/stacksjs/stx/commit/6c50f58)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: install web storage only in a native realm ([a6086d5](https://github.com/stacksjs/stx/commit/a6086d5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.653 ([ad44554](https://github.com/stacksjs/stx/commit/ad44554)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.650...v0.2.651)
 
 ## ⚡ Performance Improvements
