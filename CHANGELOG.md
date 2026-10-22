@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.649...v0.2.650)
+
+## ✨ Features
+
+- **native**: run web views unchanged on a native screen ([012fd09](https://github.com/stacksjs/stx/commit/012fd09)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: read a page's own class rules natively ([ab7c04b](https://github.com/stacksjs/stx/commit/ab7c04b)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: draw a web view's classes on the phone ([cbea06b](https://github.com/stacksjs/stx/commit/cbea06b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.650 ([1de763e](https://github.com/stacksjs/stx/commit/1de763e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.647...v0.2.649)
 
 ## 🐛 Bug Fixes
