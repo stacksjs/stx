@@ -126,7 +126,7 @@ function newRun(): string {
 
 /**
  * Install `localStorage` and `sessionStorage` over `craft.storage`, unless the
- * host gave the context its own (a browser renderer does).
+ * host gave the context its own. For a native realm only (craft-bridge.ts).
  */
 export function installNativeWebStorage(target: AnyRecord, craft: AnyRecord): void {
   const store = (): NativeSyncStore | null => craft.storage ?? null

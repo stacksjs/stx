@@ -245,8 +245,9 @@ export function installCraftBridge(
     },
   })
   // The web's localStorage and sessionStorage, over the app's storage
-  // (web-storage.ts): a web view reads its session on the first draw.
-  installNativeWebStorage(target, craft)
+  // (web-storage.ts): a web view reads its session on the first draw. Only
+  // in a native realm: a browser, or a test's DOM, keeps its own.
+  if (isNativeDocument(target.document)) installNativeWebStorage(target, craft)
   craft.secureStorage = Object.assign({ getSync: () => null }, craft.secureStorage || {}, {
     get: (key: string) => request('SecureStorage', 'get', [key]),
     set: (key: string, value: string) => request('SecureStorage', 'set', [key, value]),
