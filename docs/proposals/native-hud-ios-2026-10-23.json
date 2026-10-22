@@ -1,0 +1,55 @@
+{
+  "issue": 2109,
+  "scope": "Imported HUD state/events, keyed native text input and protocol disposal; not surface or game acceptance",
+  "recordedDate": "2026-10-23",
+  "packageBaseline": "0.2.665",
+  "releaseStatus": "Unreleased after baseline",
+  "testedStxCommit": "35836c26da94c93ebf722e1c14fd9f5b64a915bd",
+  "fixtureCommit": "ef95fa0715",
+  "workingTreeAtExecution": "HUD fixture and runner changes, subsequently committed unchanged",
+  "craftCommit": "f6929b7afce6b1a3b444f9b6b8c2b16b73dc681c",
+  "craftWorkingTree": "clean and unchanged",
+  "device": {
+    "name": "STX-Portability-Controls",
+    "udid": "5A6726AD-C259-485F-B4CE-DBC51CD3FAAD",
+    "model": "iPhone 17 Pro",
+    "platform": "iOS Simulator",
+    "osVersion": "26.5",
+    "osBuild": "23F77",
+    "architecture": "arm64",
+    "appearance": "light"
+  },
+  "protocol": {
+    "command": "bun test packages/stx/test/native/imported-hud.test.ts",
+    "passed": 2,
+    "failed": 0,
+    "assertions": 54,
+    "mountsPerBundleMode": 2,
+    "bundleModes": ["normal", "minified"]
+  },
+  "xctest": {
+    "test": "NativeHudUITests/testImportedStateEventsKeyedInputAndFailureFeedback",
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "durationSeconds": 45.847,
+    "result": "Passed"
+  },
+  "sha256": {
+    "packages/stx/test/native/fixtures/native-hud-device.stx": "fc79e6df217c7a2038b0023e8c44f2b0b1fa5754ca945901a5475828522dd8b0",
+    "packages/stx/test/native/fixtures/native-hud-model.ts": "3a59366fe5dcf677007174f27d2bb135c6d8730cf8488fe1faec85255308b275",
+    "packages/stx/test/native/fixtures/NativeHudUITests.swift": "a4fb87712e3f638f1c4813633edb5871f8d02c9593aa1dbc36e0dac01cb41407",
+    "screen.js": "0aa73f1624bd949a25bcb6c780e1204a42147628d4a50ff2ca8ff8c36757cda7",
+    "docs/proposals/assets/native-hud-ios-2026-10-23.png": "bf3f8b998e6e0c5472c9dc39880801815e4518f5d22ba4b048afd7e4eb56ca42"
+  },
+  "compilerDiagnostics": ["dropped-subtree: script"],
+  "localEvidenceDirectory": "/var/folders/sq/p6y46h2x6ddgq6w1yyxhd_9h0000gn/T/stx-portability-ios-oaihXk",
+  "retainedLocalFiles": ["TestResults.xcresult", "summary.json", "provenance.json", "compile.json", "screen.js", "attachments/manifest.json"],
+  "limitations": [
+    "No RenderSurface integration or graphics-resource acceptance",
+    "Protocol-only disposal instrumentation",
+    "No Android execution or game simulation acceptance",
+    "No broad HUD style or navigation-header contrast acceptance",
+    "No published package or downstream adoption claim"
+  ]
+}
