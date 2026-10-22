@@ -18,6 +18,7 @@ export interface NativeBindingNode extends NativeNode {
   readonly nextElementSibling: NativeBindingNode | null
   namespaceURI: string
   isConnected: boolean
+  readonly content?: NativeBindingNode
   hasAttribute: (name: string) => boolean
   getAttribute: (name: string) => string | null
   setAttribute: (name: string, value: unknown) => void
@@ -63,6 +64,9 @@ function createBindingNode(id: string, type: string, bindings: ManifestEntry['bi
       remove(...tokens: string[]) { node.className = node.className.split(/\s+/).filter(token => token && !tokens.includes(token)).join(' ') },
     },
     tagName: type === 'TextInput' ? 'INPUT' : type === 'Picker' ? 'SELECT' : type.toUpperCase(),
+    // Native templates are recorded descriptors, not physical containers.
+    // bindFor clones their children into the real parent on either target.
+    get content(): NativeBindingNode | undefined { return node.tagName === 'TEMPLATE' ? node : undefined },
     attributes,
     parentNode: null,
     parentElement: null,
@@ -150,6 +154,7 @@ export function materializeNativeBindingTree(
     }
     const node = createBindingNode(id, source.type, runtimeBindings, true, source._classes, value => host.setAttribute(node, 'class', value))
     if (source.type === 'Checkbox' && source.props.type === 'checkbox') node.tagName = 'INPUT'
+    if (source.props['data-stx-native-template']) node.tagName = 'TEMPLATE'
     // Static component metadata owns parent prop/event scopes too. The
     // manifest only records dynamic bindings, not these companion attributes.
     for (const [name, value] of Object.entries(authoredTextEntryProps(authoredAccessibilityProps(source.props, source._accessibilitySource), source._textEntrySource))) {

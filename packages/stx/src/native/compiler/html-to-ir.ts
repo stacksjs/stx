@@ -554,8 +554,13 @@ export async function translateHtmlToIR(
     // A primitive component names its own native type, since the HTML tag it
     // emits cannot carry the distinction.
     const declared = props['data-native']
+    const structuralTemplate = tag === 'template' && attributes.some(([name]) => [':for', 'x-for', '@for'].includes(name))
     let type: string
-    if (typeof declared === 'string' && NATIVE_TYPES.has(declared)) {
+    if (structuralTemplate) {
+      type = 'View'
+      props['data-stx-native-template'] = true
+    }
+    else if (typeof declared === 'string' && NATIVE_TYPES.has(declared)) {
       type = declared
       delete props['data-native']
     }
@@ -660,7 +665,7 @@ export async function translateHtmlToIR(
       declaredNative: typeof declared === 'string' && NATIVE_TYPES.has(declared),
       dropped: dropped || inheritedDrop || BOX_ONLY.has(tag) || type === 'Video',
       discard: dropped || inheritedDrop,
-      unwrap: UNWRAP.has(tag),
+      unwrap: UNWRAP.has(tag) && !structuralTemplate,
     }
   }
 

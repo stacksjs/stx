@@ -402,15 +402,19 @@ describe('what is deliberately dropped', () => {
     expect(texts(root)).toEqual(['Hello'])
   })
 
-  it('moves structural template bindings onto the native row root', async () => {
+  it('keeps structural template bindings separate from the native row child', async () => {
     const { root } = await translateHtmlToIR(
       '<template :for="item in items" data-stx-b="7"><span :key="item.id" :text="item.label" data-stx-b="8"></span></template>',
     )
 
-    expect(root.type).toBe('Text')
-    expect(root.bindingId).toBe(8)
-    expect(root.bindings).toEqual({
-      for: 'item in items',
+    expect(root.type).toBe('View')
+    expect(root.props['data-stx-native-template']).toBe(true)
+    expect(root.bindingId).toBe(7)
+    expect(root.bindings).toEqual({ for: 'item in items' })
+    const child = root.children[0] as STXNode
+    expect(child.type).toBe('Text')
+    expect(child.bindingId).toBe(8)
+    expect(child.bindings).toEqual({
       key: 'item.id',
       text: 'item.label',
     })
