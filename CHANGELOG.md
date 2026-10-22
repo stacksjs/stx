@@ -1,5 +1,32 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.661...v0.2.662)
+
+## 🐛 Bug Fixes
+
+- **native**: a link's words from a leftover mustache are its label ([0c2af2f](https://github.com/stacksjs/stx/commit/0c2af2f)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **components**: forward shared TextInput lifecycle events ([9dfa829](https://github.com/stacksjs/stx/commit/9dfa829)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: make shared TextInput readonly reactive ([a2d9e13](https://github.com/stacksjs/stx/commit/a2d9e13)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: preserve TextInput event contracts across targets ([ad01009](https://github.com/stacksjs/stx/commit/ad01009)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: keep shared Image fit reactive across targets (#2091) ([cece0c8](https://github.com/stacksjs/stx/commit/cece0c8)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+
+## ♻️ Code Refactoring
+
+- **native**: select shared TextInput for value-model usage ([c2ad7a4](https://github.com/stacksjs/stx/commit/c2ad7a4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ✅ Tests
+
+- **native**: validate shared controls on maintained iOS host ([cc5e3d4](https://github.com/stacksjs/stx/commit/cc5e3d4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.662 ([0b23516](https://github.com/stacksjs/stx/commit/0b23516)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.660...v0.2.661)
 
 ## 🔧 Chores
