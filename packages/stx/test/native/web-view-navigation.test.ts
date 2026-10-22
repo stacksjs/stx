@@ -158,3 +158,52 @@ test('location reads the address the host opened the screen at', async () => {
   const opened = await mountWebView(root, { Plan: 'views/plan.stx' }, 'Plan', { routeURL: '/plans/12?week=2' })
   expect(opened.texts()).toContain('/plans/12?week=2')
 })
+
+test('a StxLink to the screen being shown takes its active classes, as on the web', async () => {
+  const root = webApp({
+    'views/settings/profile.stx': `<script client>
+  const page = state(1)
+</script>
+<div>
+  <StxLink to="/settings" activeClass="text-blue-500" exactActiveClass="font-bold">Settings</StxLink>
+  <StxLink to="/settings/profile" activeClass="text-blue-500" exactActiveClass="font-bold">Profile</StxLink>
+  <StxLink to="/settings/billing" activeClass="text-blue-500" exactActiveClass="font-bold">Billing</StxLink>
+  <StxLink :to="'/settings/profile?page=' + page" activeClass="text-blue-500" exactActiveClass="font-bold">Page</StxLink>
+</div>
+`,
+  })
+  const phone = await mountWebView(root, { Profile: 'views/settings/profile.stx' }, 'Profile', { routeURL: '/settings/profile?page=2' })
+  const style = (href: string) => linkTo(phone, href).style
+  expect(style('/settings')).toMatchObject({ color: '#3b82f6' })
+  expect(style('/settings').fontWeight).toBeUndefined()
+  // A link without a query is not exact where the page has one, as the web router has it.
+  expect(style('/settings/profile')).toMatchObject({ color: '#3b82f6' })
+  expect(style('/settings/profile').fontWeight).toBeUndefined()
+  expect(style('/settings/billing').color).toBeUndefined()
+  // Its binding points it at page 1, which is not where the screen is.
+  expect(style('/settings/profile?page=1').color).toBeUndefined()
+  phone.press(phone.find(node => node.props.href === '/settings/profile?page=1')!)
+  await phone.settle()
+  expect(phone.opened).toEqual(['/settings/profile?page=1'])
+})
+
+test('useRoute() reads a file-routed view\'s params from its address', async () => {
+  const root = webApp({
+    'views/plans/[id].stx': `<script client>
+  const route = useRoute()
+  const shown = state(route.params.id + ' week ' + route.query.week + ' tab ' + route.params.tab)
+</script>
+<div><p :text="shown">?</p></div>
+`,
+  })
+  const phone = await mountWebView(root, { Plan: 'views/plans/[id].stx' }, 'Plan', { routeURL: '/plans/12?week=2', params: { tab: 'sessions' } })
+  expect(phone.texts()).toContain('12 week 2 tab sessions')
+})
+
+test('route params are matched from the end of the view\'s path', async () => {
+  const { nativeRouteParams } = await import('../../src/native/runtime/web-navigation')
+  expect(nativeRouteParams('resources/views/plans/[id].stx', '/plans/12')).toEqual({ id: '12' })
+  expect(nativeRouteParams('views/gyms/[slug]/classes/[class]/index.stx', '/gyms/trifit/classes/hiit%20am')).toEqual({ slug: 'trifit', class: 'hiit am' })
+  expect(nativeRouteParams('views/docs/[...path].stx', '/docs/guides/start')).toEqual({ path: 'guides/start' })
+  expect(nativeRouteParams('views/settings.stx', '/settings')).toEqual({})
+})

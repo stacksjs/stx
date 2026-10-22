@@ -137,3 +137,83 @@ export function installNativeNavigation(target: AnyRecord, craft: AnyRecord, opt
   }
   return go
 }
+
+/** `/plans/` and `/plans` are one path. */
+function normalPath(path: string): string {
+  return path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path
+}
+
+/**
+ * Whether a link points at the screen being shown, by the web router's rule
+ * (packages/router `linkState`): `active` for its path or a path under it,
+ * `exact` for its path alone; a link with a query is current only where each
+ * param it names has that value, and one without is exact only where there
+ * is no query. `also` (`data-stx-active-match`) names more path prefixes that
+ * make it current. Null for a link that is not the app's.
+ */
+export function nativeLinkState(href: unknown, here: string, also?: string | null): { active: boolean, exact: boolean } | null {
+  if (typeof href !== 'string' || !href || href.startsWith('#')) return null
+  const URLClass = (globalThis as AnyRecord).URL
+  let link: AnyRecord
+  let current: AnyRecord
+  try {
+    current = new URLClass(here)
+    link = new URLClass(href, here)
+  }
+  catch {
+    return null
+  }
+  if (link.origin !== current.origin) return null
+  const path = normalPath(link.pathname)
+  const at = normalPath(current.pathname)
+  const have = new URLClass(`https://stx.invalid/${current.search}`).searchParams
+  let query = true
+  let linkHasQuery = false
+  link.searchParams.forEach((value: string, name: string) => {
+    linkHasQuery = true
+    if (!have.getAll(name).includes(value)) query = false
+  })
+  const matched = String(also ?? '').split(/\s+/).some((prefix) => {
+    const normal = normalPath(prefix)
+    return !!normal && (at === normal || at.startsWith(`${normal}/`))
+  })
+  return {
+    exact: query && (linkHasQuery || !current.search) && path === at,
+    active: (query && (path === '/' ? at === '/' : at === path || at.startsWith(`${path}/`))) || matched,
+  }
+}
+
+/**
+ * A file-routed view's params from the address it is shown at: the view
+ * `views/plans/[id].stx` at `/plans/12` is `{ id: '12' }`, as the web's
+ * server hands them to `useRoute().params`. Segments are matched from the
+ * end, so the directory the views live in does not matter; an `index` file
+ * is its directory's page, and a final catch-all (`[...slug]`) takes what
+ * follows the fixed segment before it.
+ */
+export function nativeRouteParams(source: string, pathname: string): Record<string, string> {
+  const segments = source.replace(/\\/g, '/').replace(/\.stx$/, '').split('/').filter(Boolean)
+  if (segments[segments.length - 1] === 'index') segments.pop()
+  const parts = pathname.split('/').filter(Boolean)
+  const params: Record<string, string> = {}
+  const decode = (value: string): string => {
+    try { return decodeURIComponent(value) }
+    catch { return value }
+  }
+  for (let fromEnd = 0; fromEnd < segments.length; fromEnd++) {
+    const segment = segments[segments.length - 1 - fromEnd]!
+    const name = /^\[(\.\.\.)?([\w-]+)\]$/.exec(segment)
+    if (!name) continue
+    if (name[1]) {
+      // A final catch-all takes what follows the fixed segment before it
+      // (`docs/[...slug]` at `/docs/a/b` is `a/b`).
+      const before = segments[segments.length - 2 - fromEnd]
+      const at = fromEnd === 0 && before && !before.startsWith('[') ? parts.lastIndexOf(before) : -1
+      if (at !== -1) params[name[2]!] = parts.slice(at + 1).map(decode).join('/')
+      continue
+    }
+    const part = parts[parts.length - 1 - fromEnd]
+    if (part !== undefined) params[name[2]!] = decode(part)
+  }
+  return params
+}

@@ -128,6 +128,8 @@ export interface NativeScreenOptions {
   params?: Record<string, unknown>
   /** The address the host opened the screen at (`/plans/12?week=2`): `craft.route.path` and `location`. */
   routeURL?: string
+  /** The web-storage keys the host shares with the Keychain (Craft's `shareStorage`), as a host that names them does. */
+  shareStorage?: Record<string, string>
   /** What the app reports it can do (`health`, `haptics`, ...), as Craft's host does. */
   capabilities?: string[]
   capabilityTimeoutMs?: number
@@ -546,6 +548,7 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
       appBuild: options.appBuild ?? '1',
       ...(options.sessionEvents === false ? {} : { sessionTokenKey }),
       ...(options.routeURL ? { routeURL: options.routeURL } : {}),
+      ...(options.shareStorage ? { shareStorage: options.shareStorage } : {}),
       postMessage: (raw: string) => {
         const message: NativeMessage = JSON.parse(raw)
         // Its own copy: the tree below is the one the host keeps changing.

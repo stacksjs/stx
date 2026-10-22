@@ -3,6 +3,7 @@
  * screens: `stx.config.ts` with the directories a Stacks app has (layouts,
  * partials, stores), then the files a test gives.
  */
+import type { CompileNativeBundleOptions } from '../../src/native/compiler/bundle'
 import type { NativeScreen, NativeScreenOptions } from '../../src/native/testing'
 import path from 'node:path'
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -29,8 +30,8 @@ export function webApp(files: Record<string, string>): string {
 }
 
 /** Compile the app's views as screens (name to view path) and mount `screen`. */
-export async function mountWebView(root: string, screens: Record<string, string>, screen: string, options: NativeScreenOptions = {}): Promise<NativeScreen> {
-  const { code } = await compileNativeBundle({ root, screens })
+export async function mountWebView(root: string, screens: Record<string, string>, screen: string, options: NativeScreenOptions = {}, bundle: Partial<CompileNativeBundleOptions> = {}): Promise<NativeScreen> {
+  const { code } = await compileNativeBundle({ ...bundle, root, screens })
   const phone = mountNativeScreen(code, screen, options)
   await phone.settle()
   return phone

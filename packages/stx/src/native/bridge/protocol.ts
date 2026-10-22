@@ -757,6 +757,13 @@ export interface NativeBridgeInterface {
   sessionTokenKey?: string
 
   /**
+   * Web-storage keys the app shares with its native side, to the secure-storage
+   * key each is kept under (Craft's `shareStorage`, `{ auth_token: 'auth.token' }`):
+   * a web view's localStorage/sessionStorage of the key is that item.
+   */
+  shareStorage?: Record<string, string>
+
+  /**
    * The app's site (Craft's `devServerURL`): where its web pages and API
    * live. '' or omitted when the app has none.
    */

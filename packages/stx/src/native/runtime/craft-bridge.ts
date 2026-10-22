@@ -5,7 +5,7 @@ import { abortError, isNativeDocument, NativeFormData, nativeFormParts, updateNa
 import type { NativeLayoutChrome } from '../compiler/ir'
 import type { NativeChromeButton, NativeNavigationButton, NativeNavigationChrome } from './craft'
 import { buttonsKey, changedTabItems, chromePath, hostButton, mergeChromeButtons, type ButtonSide } from './navigation-chrome'
-import { installNativeNavigation } from './web-navigation'
+import { installNativeNavigation, nativeRouteParams } from './web-navigation'
 import { installNativeWebStorage } from './web-storage'
 
 type AnyRecord = Record<string, any>
@@ -17,6 +17,10 @@ export interface CraftBridgeOptions {
   title?: string
   /** The layout's chrome (layout-chrome.ts): its bar links are bar buttons. */
   chrome?: NativeLayoutChrome
+  /** Web-storage keys the app shares with its native side (Craft's `shareStorage`): key to secure-storage key. */
+  shareStorage?: Record<string, string>
+  /** The screen's view, as the project names it (`views/plans/[id].stx`): its route params come from the address. */
+  source?: string
 }
 
 function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
@@ -244,10 +248,6 @@ export function installCraftBridge(
       return request('Storage', 'compareAndSet', [key, expectedValue, nextValue])
     },
   })
-  // The web's localStorage and sessionStorage, over the app's storage
-  // (web-storage.ts): a web view reads its session on the first draw. Only
-  // in a native realm: a browser, or a test's DOM, keeps its own.
-  if (isNativeDocument(target.document)) installNativeWebStorage(target, craft)
   craft.secureStorage = Object.assign({ getSync: () => null }, craft.secureStorage || {}, {
     get: (key: string) => request('SecureStorage', 'get', [key]),
     set: (key: string, value: string) => request('SecureStorage', 'set', [key, value]),
@@ -284,6 +284,20 @@ export function installCraftBridge(
         if (token !== previous) callback(token, previous)
       }),
   })
+  // The web's localStorage and sessionStorage, over the app's storage
+  // (web-storage.ts): a web view reads its session on the first draw. Only
+  // in a native realm: a browser, or a test's DOM, keeps its own. The keys
+  // the app shares with its native side (Craft's `shareStorage`) are its
+  // secure storage too, so the web view's sign-in is craft.session's.
+  if (isNativeDocument(target.document)) {
+    const shareStorage = { ...options.shareStorage, ...nativeBridge.shareStorage }
+    const shared = installNativeWebStorage(target, craft, {
+      shareStorage,
+      ...(capabilities.has('secureStorage') ? { secure: () => craft.secureStorage } : {}),
+      adopted: (key, value) => target.dispatchEvent?.(new target.CustomEvent('craftsharedstorage', { detail: { key, value } })),
+    })
+    if (shared) craft.session.onChange(() => shared.changed(sessionKey))
+  }
   craft.snapshots = Object.assign({ get: () => null, set: () => Promise.resolve(false) }, craft.snapshots || {}, {
     onChange: (callback: (name: string) => void) => protocol.on<{ name: string }>('SNAPSHOT_CHANGED', (message) => {
       if (typeof message.payload?.name === 'string') callback(message.payload.name)
@@ -891,6 +905,13 @@ export function installCraftBridge(
   if (isNativeDocument(target.document)) {
     // Links, navigate(), location and history move by web path (web-navigation.ts).
     installNativeNavigation(target, craft, { routeURL: nativeBridge.routeURL, appURL: craft.app?.url })
+    // useRoute().params, as the web's server hands them to a file-routed view
+    // (`[id]` from the address), with the params the host opened it with.
+    // Read by the signals runtime when it starts (`__stx_rp`), and set again
+    // when the host opens the screen with others.
+    const pathParams = options.source ? nativeRouteParams(options.source, String(target.location?.pathname ?? '/')) : {}
+    target.__stx_rp = { ...pathParams, ...craft.route.params }
+    craft.route.onParams((params: Record<string, unknown>) => target.stx?.setRouteParams?.({ ...pathParams, ...params }))
     // The page's title names the screen, as <title> names a browser tab:
     // `useHead({ title })` (and `document.title = ...`) set the navigation title.
     let title = typeof options.title === 'string' ? options.title : ''
