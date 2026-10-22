@@ -66,7 +66,7 @@
 import type { StxOptions } from './types'
 import { escapeHtml } from './expressions'
 import { isExpressionSafe, createSafeFunction } from './safe-evaluator'
-import { readsAnyName } from './loop-binding'
+import { loopBoundNames, readsAnyName } from './loop-binding'
 
 // =============================================================================
 // Types
@@ -675,6 +675,7 @@ export async function processSlots(
   template: string,
   parsedSlots: ParsedSlots,
   context: Record<string, unknown>,
+  runtimeOwner?: string,
 ): Promise<string> {
   let result = template
 
@@ -689,6 +690,7 @@ export async function processSlots(
     // Parse props from the slot element
     const propsStr = attrs || ''
     const props: SlotProps = {}
+    const expressions: Array<[string, string]> = []
     const propsRegex = /:([a-zA-Z_$][\w$-]*)\s*=\s*["']([^"']+)["']/g
     let propMatch
     while ((propMatch = propsRegex.exec(propsStr)) !== null) {
@@ -696,6 +698,27 @@ export async function processSlots(
       const propExpr = propMatch[2]
       // Evaluate the prop expression in the current context
       props[propName] = evaluateSimpleExpression(propExpr, context)
+      expressions.push([propName, propExpr])
+    }
+
+    if (runtimeOwner !== undefined && slotDef?.propsBinding && Object.values(props).some(value => value === undefined)) {
+      // Lower a reactive outlet to a transparent, keyed singleton scope. The
+      // existing loop machinery retains its nodes, updates its prop signal,
+      // hydrates nested components and owns disposal on both targets.
+      const binding = slotDef.propsBinding.trim()
+      const names = loopBoundNames(`${binding} in []`)
+      let local = '__stx_slot_props'
+      while (names.includes(local)) local += '_'
+      const source = expressions.map(([key, expression]) => {
+        const value = props[key]
+        let serialized: string | undefined
+        try { serialized = value === undefined ? undefined : JSON.stringify(value) }
+        catch { /* A nonserializable value must be evaluated on the client. */ }
+        return `${JSON.stringify(key)}:(${serialized ?? expression})`
+      }).join(',')
+      const scope = escapeHtml(JSON.stringify({ binding, names, owner: runtimeOwner }))
+      const list = escapeHtml(`${local} in [{${source}}]`)
+      return `<template :for="${list}" data-stx-slot-binding="${encodeURIComponent(binding)}" data-stx-slot-scope="${scope}">${slotDef.content}</template>`
     }
 
     return await renderSlot(slotDef, props, defaultFallback, context)
@@ -797,11 +820,12 @@ export async function applySlots(
   defaultSlotContent: string,
   namedSlots: Map<string, SlotDefinition>,
   context: Record<string, unknown>,
+  runtimeOwner?: string,
 ): Promise<string> {
   const parsedSlots: ParsedSlots = {
     default: defaultSlotContent,
     named: namedSlots,
   }
 
-  return await processSlots(componentTemplate, parsedSlots, context)
+  return await processSlots(componentTemplate, parsedSlots, context, runtimeOwner)
 }

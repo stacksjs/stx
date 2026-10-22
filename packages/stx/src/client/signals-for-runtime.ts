@@ -12,6 +12,30 @@ export const SIGNALS_FOR_RUNTIME = `  function bindFor(el, passedScope = compone
     }
 
     const [, itemName, indexName, listExpr] = match;
+    const slotMetadata = el.getAttribute('data-stx-slot-scope');
+    let slotScopeInfo = null;
+    let slotCallerScope = null;
+    let readSlotBindings = null;
+    if (slotMetadata) {
+      try {
+        slotScopeInfo = JSON.parse(slotMetadata);
+        let receiver = el.parentElement;
+        while (receiver) {
+          if (slotScopeInfo.owner && receiver.getAttribute
+            && (receiver.getAttribute('data-stx-template-scope') || receiver.getAttribute('data-stx-scope')) === slotScopeInfo.owner) break;
+          receiver = receiver.parentElement;
+        }
+        slotCallerScope = receiver && receiver.__stx_parent_scope
+          || findElementScope(el) || passedScope;
+        const bindingScope = mergeTemplateScopes(slotCallerScope);
+        slotScopeInfo.names.concat(['__stx_slot_value']).forEach(function(name) { delete bindingScope[name]; });
+        readSlotBindings = __stxCompileScoped(bindingScope, ['__stx_slot_value'],
+          'const ' + slotScopeInfo.binding + ' = __stx_slot_value; return {' + slotScopeInfo.names.join(',') + '};');
+      } catch (error) {
+        console.error('[stx] Invalid scoped slot binding:', error);
+        return;
+      }
+    }
     let parent = el.parentNode;
 
     // Guard: if element has no parent, it's detached - skip processing
@@ -275,9 +299,19 @@ catch (e) {
       itemSignal._isStxLoopItem = true;
       const indexSignal = state(index);
 
-      const itemScope = mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}));
+      const itemScope = slotScopeInfo
+        ? mergeTemplateScopes(globalHelpers, slotCallerScope)
+        : mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}));
       Object.defineProperty(itemScope, itemName, { value: itemSignal, writable: true, enumerable: true, configurable: true });
-      if (indexName) Object.defineProperty(itemScope, indexName, { value: indexSignal, writable: true, enumerable: true, configurable: true });
+      if (slotScopeInfo) {
+        slotScopeInfo.names.forEach(function(name) {
+          Object.defineProperty(itemScope, name, { enumerable: true, configurable: true, get: function() {
+            return readSlotBindings(...__stxArgs(readSlotBindings, slotCallerScope), itemSignal())[name];
+          } });
+        });
+      } else {
+        if (indexName) Object.defineProperty(itemScope, indexName, { value: indexSignal, writable: true, enumerable: true, configurable: true });
+      }
 
       const elements = [];
       if (isTemplate) {
@@ -288,6 +322,7 @@ catch (e) {
             // Structural directives need a live parent. Keep the iteration
             // scope on the clone until the keyed diff inserts it, then bind.
             clone.__stx_for_scope = itemScope;
+            if (slotScopeInfo && !clone.hasAttribute('data-stx-scope')) clone.__stx_scope = itemScope;
             markLoopRow(clone, itemName, itemSignal);
           }
           elements.push(clone);
@@ -296,6 +331,7 @@ catch (e) {
       } else {
         const clone = stxHost.clone(templateContent);
         clone.__stx_for_scope = itemScope;
+        if (slotScopeInfo && !clone.hasAttribute('data-stx-scope')) clone.__stx_scope = itemScope;
         markLoopRow(clone, itemName, itemSignal);
         elements.push(clone);
         componentSetupTemplates.forEach(function(setupTemplate) {

@@ -2078,7 +2078,7 @@ export async function renderComponentWithSlot(
       ...slot,
       content: projectRefs(slot.content),
     }]))
-    templateContent = await applySlots(templateContent, projectRefs(defaultSlot), projectedSlots, componentContext)
+    templateContent = await applySlots(templateContent, projectRefs(defaultSlot), projectedSlots, componentContext, hasSignalScripts ? componentUid : '')
 
     // Entity decoding used to happen here, over every string in the component's
     // context, on the theory that a value which "looks like HTML" must have been

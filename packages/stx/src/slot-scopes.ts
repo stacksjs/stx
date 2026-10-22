@@ -6,7 +6,7 @@ export interface SlotScope {
 }
 
 export function collectSlotScopes(source: string): SlotScope[] {
-  if (!source.includes('#') && !source.includes('v-slot:'))
+  if (!source.includes('#') && !source.includes('v-slot:') && !source.includes('data-stx-slot-binding'))
     return []
   const scopes: SlotScope[] = []
   const stack: Array<SlotScope | undefined> = []
@@ -23,8 +23,12 @@ export function collectSlotScopes(source: string): SlotScope[] {
     else if (/^<template\b/i.test(tag) && !/\/\s*>$/.test(tag)) {
       const attrs = tag.slice('<template'.length)
       const binding = [...attrs.matchAll(/([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g)]
-        .find(attr => /^(?:#[\w-]+|v-slot:[\w-]+)$/i.test(attr[1]))
-      const value = (binding?.[2] ?? binding?.[3])?.trim()
+        .find(attr => /^(?:#[\w-]+|v-slot:[\w-]+|data-stx-slot-binding)$/i.test(attr[1]))
+      let value = (binding?.[2] ?? binding?.[3])?.trim()
+      if (value && binding?.[1] === 'data-stx-slot-binding') {
+        try { value = decodeURIComponent(value) }
+        catch { value = undefined }
+      }
       const scope = value ? { start: match.index + tag.length, end: source.length, binding: value } : undefined
       stack.push(scope)
       if (scope)
