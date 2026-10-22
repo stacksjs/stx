@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.655...v0.2.656)
+
+## 🐛 Bug Fixes
+
+- **router**: a page's effects end when the router swaps it out ([2de5159](https://github.com/stacksjs/stx/commit/2de5159)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- **reactivity**: pin a :for row following a signal read through a helper ([b1ec708](https://github.com/stacksjs/stx/commit/b1ec708)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.656 ([5410fd8](https://github.com/stacksjs/stx/commit/5410fd8)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.654...v0.2.655)
 
 ## ✅ Tests
