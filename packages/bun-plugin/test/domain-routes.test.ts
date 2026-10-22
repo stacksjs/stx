@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bu
 import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { compileDomainRoutes, matchDomain, requestHost, resolveDomainElsewhere, resolveDomainRoute } from '../src/domain-routes'
-import { freePort } from '../../stx/test-utils/test-port'
+import { freePorts } from '../../stx/test-utils/test-port'
 import { createTempDir } from '../../stx/src/temp-dir'
 
 /**
@@ -102,7 +102,7 @@ describe('requestHost', () => {
 })
 
 describe('serve() with domains', () => {
-  const PORT = freePort()
+  const [PORT, ELSEWHERE_PORT] = freePorts(2)
   const BASE = `http://127.0.0.1:${PORT}`
   const SERVE_SRC = path.join(import.meta.dir, '..', 'src', 'serve.ts')
   let dir: string
@@ -125,7 +125,7 @@ const who = String(route.params?.username ?? '')
 `)
     await Bun.write(path.join(dir, 'driver.ts'), `import { serve } from ${JSON.stringify(SERVE_SRC)}
 serve({ patterns: ['views'], port: ${PORT}, quiet: true, domains: { '{username}.example.com': '/{username}' } })
-serve({ patterns: ['views'], port: ${PORT + 1}, quiet: true, domains: { '{username}.example.com': { to: '/{username}', elsewhere: 'https://example.com' } } })
+serve({ patterns: ['views'], port: ${ELSEWHERE_PORT}, quiet: true, domains: { '{username}.example.com': { to: '/{username}', elsewhere: 'https://example.com' } } })
 `)
     await Bun.write(path.join(dir, 'public', 'robots.txt'), 'User-agent: *\n')
     proc = Bun.spawn(['bun', 'driver.ts'], { cwd: dir, stdout: 'pipe', stderr: 'pipe' })
@@ -161,7 +161,7 @@ serve({ patterns: ['views'], port: ${PORT + 1}, quiet: true, domains: { '{userna
   })
 
   it('with elsewhere, still renders the root, redirects other pages, and serves files in place', async () => {
-    const ELSEWHERE = `http://127.0.0.1:${PORT + 1}`
+    const ELSEWHERE = `http://127.0.0.1:${ELSEWHERE_PORT}`
     for (let i = 0; i < 100; i++) {
       try { await fetch(`${ELSEWHERE}/definitely-not-a-page.txt`); break }
       catch { await Bun.sleep(150) }
