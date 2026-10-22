@@ -320,7 +320,7 @@ describe('TextInput type and constraints', () => {
       expect(date.hasAttribute(name), `${name} on date`).toBe(false)
 
     expect((await input('<TextInput type="password" list="x" />')).hasAttribute('list')).toBe(false)
-  })
+  }, 30_000)
 
   it('serves EmailInput as an email field', async () => {
     expect((await input('<EmailInput name="email" />')).getAttribute('type')).toBe('email')

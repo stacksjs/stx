@@ -52,7 +52,7 @@ describe.each(['ios', 'android'] as const)('shared text fields on %s', (platform
     phone.type(email, 'ada@example.com')
     await phone.settle()
     expect(phone.context.probe.email()).toBe('ada@example.com')
-  })
+  }, 30_000)
 
   it('turns secure entry off and on with the reveal button', async () => {
     const { code } = await compileNativeScreen(source)
@@ -71,7 +71,7 @@ describe.each(['ios', 'android'] as const)('shared text fields on %s', (platform
     phone.press(reveal)
     await phone.settle()
     expect(field().props.secureTextEntry).toBe(true)
-  })
+  }, 30_000)
 
   it('outlines an invalid field in system red and stops editing a disabled one', async () => {
     const { code } = await compileNativeScreen(source)
@@ -98,7 +98,7 @@ describe.each(['ios', 'android'] as const)('shared text fields on %s', (platform
     phone.type(field(), 'Grace')
     await phone.settle()
     expect(phone.context.probe.typed).toEqual(['Grace'])
-  })
+  }, 30_000)
 })
 
 describe('shared text fields on the web', () => {

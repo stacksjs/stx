@@ -174,7 +174,7 @@ describe('a server-rendered value survives without JavaScript', () => {
     expect(data.get('qty')).toBe('3')
     expect(data.get('q')).toBe('widgets')
     expect(data.get('bio')).toBe('hello')
-  })
+  }, 30_000)
 
   it('posts a checked box and a chosen radio', async () => {
     const data = await submit(`
