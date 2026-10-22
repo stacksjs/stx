@@ -1,5 +1,6 @@
 /* eslint-disable style/max-statements-per-line */
 import type { NativeStylesheetTheme } from './stylesheet-theme'
+import type { NativeStylesheetRules } from './stylesheet-rules'
 /**
  * STX Native Intermediate Representation (IR)
  *
@@ -127,6 +128,9 @@ export interface STXNode {
 
   /** Document-level stylesheet variables, resolved for the native appearance. */
   _stylesheetTheme?: NativeStylesheetTheme
+
+  /** The page's own class rules (`.panel-title { ... }`), by class name. */
+  _stylesheetRules?: NativeStylesheetRules
 
   /** Original Headwind classes, retained for native class and appearance updates. */
   _classes?: string

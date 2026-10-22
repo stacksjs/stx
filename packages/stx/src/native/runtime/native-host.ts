@@ -38,6 +38,7 @@ import { resolveIconName } from '../compiler/icons'
 import { applyNativeLayoutDefaults, parseNativeStyleLayers } from '../compiler/inline-style'
 import { createStyleVariables, type NativeStyleVariables } from '../compiler/style-variables'
 import type { NativeStylesheetTheme } from '../compiler/stylesheet-theme'
+import type { NativeStylesheetRules } from '../compiler/stylesheet-rules'
 import { affectsGeometry, applySvgAnimation, parseSvgMarkup, parseViewBox, SVG_ANIMATION_ATTRIBUTES, SVG_NODE_TYPES, svgGeometry } from '../compiler/svg'
 import { NATIVE_EVENT_NAMES } from '../event-names'
 import { nativePropName } from '../prop-names'
@@ -141,6 +142,8 @@ export interface NativeHostOptions {
    */
   viewportWidth?: number
   stylesheetTheme?: NativeStylesheetTheme
+  /** The page's own class rules, read with the utilities when a class changes. */
+  stylesheetRules?: NativeStylesheetRules
   /** Called with each batch. One call per flush, never per operation. */
   send: (operations: NativeMutationOperation[]) => void
   /**
@@ -495,7 +498,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     for (const source of record.styleAncestors ?? []) inherited = parseNativeStyleLayers([source], inherited, report).variables
     const resolved = parseNativeStyleLayers([record.styleSource, record.boundStyle, record.forwardedStyle], inherited, report)
     record.variables = resolved.variables
-    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput', focusWithin: true })
+    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules })
     const classStyle = { ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}) }
     // Width layers apply smallest first, as min-width media queries cascade.
     for (const layer of classes.responsive ?? []) {
@@ -596,7 +599,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const changed = !onlyIfChanged || JSON.stringify(record.style) !== JSON.stringify(style)
     record.style = style
     if (record.materialized && changed) emit({ op: 'updateNode', id, patch: { style: { ...patch, ...style } } })
-    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput', focusWithin: true })
+    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules })
     const unsupported = new Set(classes.unknown)
     for (const name of unsupported) {
       if (!record.reportedClasses?.has(name))

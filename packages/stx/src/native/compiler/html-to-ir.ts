@@ -31,6 +31,7 @@ import { NATIVE_EVENT_NAMES as EVENT_NAMES } from '../event-names'
 import { NATIVE_BOOLEAN_PROPS, nativePropName } from '../prop-names'
 import { mapToNativeComponent } from './component-mapping'
 import { resolveIconName } from './icons'
+import { extractStylesheetRules, type NativeStylesheetRules } from './stylesheet-rules'
 import { applyNativeLayoutDefaults, type NativeStyleContext, parseNativeStyle } from './inline-style'
 import { createStyleVariables, type NativeStyleVariables } from './style-variables'
 import { extractStylesheetTheme } from './stylesheet-theme'
@@ -59,6 +60,7 @@ export type TranslationDiagnosticKind =
   | 'unsupported-control'
   /** A theme declaration cannot be evaluated faithfully on the native target. */
   | 'unsupported-theme-rule'
+  | 'unsupported-style-rule'
 
 export interface TranslationDiagnostic {
   kind: TranslationDiagnosticKind
@@ -241,7 +243,7 @@ function readAttributes(
   tag: string,
   attributes: Array<[string, string]>,
   diagnostics: TranslationDiagnostic[],
-  styleContext: NativeStyleContext = {},
+  styleContext: NativeStyleContext & { rules?: NativeStylesheetRules } = {},
 ): Attributes {
   let variables = styleContext.inheritedVariables
   const props: Record<string, unknown> = {}
@@ -312,7 +314,7 @@ function readAttributes(
   const focus = props['data-native']
     ? props['data-native'] === 'TextInput'
     : tag === 'textarea' || (tag === 'input' && !['checkbox', 'radio', 'hidden'].includes(String(props.type ?? 'text').toLowerCase()))
-  const compiledClasses = classes ? compileClassStyles(classes, variables, { focus, focusWithin: true }) : undefined
+  const compiledClasses = classes ? compileClassStyles(classes, variables, { focus, focusWithin: true, rules: styleContext.rules }) : undefined
   for (const name of new Set(compiledClasses?.unknown ?? []))
     diagnostics.push({ kind: 'unknown-class', tag, name })
   const style = applyNativeLayoutDefaults({ ...compiledClasses?.style, ...inline })
@@ -435,6 +437,7 @@ export async function translateHtmlToIR(
   const diagnostics: TranslationDiagnostic[] = []
   const stylesheetTheme = await extractStylesheetTheme(html, name => diagnostics.push({ kind: 'unsupported-theme-rule', tag: 'style', name }))
   const stylesheetVariables = createStyleVariables(stylesheetTheme.light).computed()
+  const stylesheetRules = await extractStylesheetRules(html, name => diagnostics.push({ kind: 'unsupported-style-rule', tag: 'style', name }))
   const roots: STXNode[] = []
   const stack: Frame[] = []
   const seenUnmapped = new Set<string>()
@@ -493,7 +496,7 @@ export async function translateHtmlToIR(
     let variables = parentFrame?.variables ?? stylesheetVariables
     const { props, style, events, bindings, classes, inline } = dropped || inheritedDrop
       ? { props: {}, style: {}, events: {}, bindings: {}, classes: '', inline: {} }
-      : readAttributes(tag, attributes, diagnostics, { inheritedVariables: variables, onVariables: value => { variables = value } })
+      : readAttributes(tag, attributes, diagnostics, { inheritedVariables: variables, onVariables: value => { variables = value }, rules: stylesheetRules })
     if (tag === 'html') variables = stylesheetVariables
 
     // A primitive component names its own native type, since the HTML tag it
@@ -623,7 +626,7 @@ export async function translateHtmlToIR(
       return { tag, node: createNode('G', {}, {}, {}), svg: true, dropped: true, discard: true, unwrap: false }
     }
     let variables = parent?.variables ?? stylesheetVariables
-    const { props, style, events, bindings, classes, inline } = readAttributes(tag, attributes, diagnostics, { inheritedVariables: variables, onVariables: value => { variables = value } })
+    const { props, style, events, bindings, classes, inline } = readAttributes(tag, attributes, diagnostics, { inheritedVariables: variables, onVariables: value => { variables = value }, rules: stylesheetRules })
     if (type === 'Svg') {
       const viewBox = parseViewBox(props.viewBox)
       if (viewBox) props.viewBox = viewBox
@@ -707,6 +710,7 @@ export async function translateHtmlToIR(
     : createNode('View', {}, {}, {}, roots)
 
   if (stylesheetTheme.light.length || stylesheetTheme.dark.length) root._stylesheetTheme = stylesheetTheme
+  if (Object.keys(stylesheetRules).length) root._stylesheetRules = stylesheetRules
 
   const project = (node: STXNode): void => {
     const projected = projectAccessibility(node.props)

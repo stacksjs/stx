@@ -44,6 +44,7 @@ export function prepareSharedNativeScreen(
     colorScheme: bridge.colorScheme === 'dark' ? 'dark' : 'light',
     viewportWidth: Number(bridge.viewportWidth) || 0,
     stylesheetTheme: document.root._stylesheetTheme,
+    stylesheetRules: document.root._stylesheetRules,
     send(operations) {
       const baseRevision = revision
       revision++

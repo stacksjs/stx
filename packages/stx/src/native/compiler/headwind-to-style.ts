@@ -11,6 +11,8 @@ import type { NativeStyleVariables } from './style-variables'
 import { nativeDensitySpacing, nativeDensityType, nativeShapeRadius } from './design-tokens'
 import type { STXStyle } from './ir'
 import { nativeBreakpoint, nativeShortcut, nativeThemeColor } from './style-config'
+import type { NativeStylesheetRules } from './stylesheet-rules'
+import { parseNativeStyle } from './inline-style'
 
 // ============================================================================
 // Color Palette (Tailwind v3 colors)
@@ -1088,7 +1090,7 @@ function expandShortcuts(token: string, seen: Set<string> = new Set()): string[]
  * variants remain diagnostic, including focus-visible: focus alone does not
  * establish keyboard modality. Unsupported rings are never faked as borders.
  */
-export function compileClassStyles(classes: string, variables?: NativeStyleVariables, options: { focus?: boolean, focusWithin?: boolean } = {}): ClassStyles {
+export function compileClassStyles(classes: string, variables?: NativeStyleVariables, options: { focus?: boolean, focusWithin?: boolean, rules?: NativeStylesheetRules } = {}): ClassStyles {
   // Group the authored classes by the layer they belong to. Each group then
   // compiles as a plain class list (dark and focus kept inside it), and an
   // unknown class is reported by the name the author wrote.
@@ -1098,7 +1100,10 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
     return groups.get(key)!
   }
   group('base', {})
+  // The page's own class rules (`.panel-title`), applied under the utilities.
+  const ruleNames: string[] = []
   for (const authored of classes.split(/\s+/).filter(Boolean)) {
+    if (options.rules && Object.hasOwn(options.rules, authored)) { ruleNames.push(authored); continue }
     for (const token of expandShortcuts(authored)) {
       const parts = splitVariants(token)
       const utility = parts.pop()!
@@ -1132,6 +1137,25 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
   const authoredNames = (layer: { authored: Map<string, string> }, names: string[]) => names.map(name => layer.authored.get(name) ?? name)
   const base = groups.get('base')!
   const result = compileLayer(base.classes.join(' '), variables, options)
+  const ruleResponsive = new Map<number, { style: STXStyle, dark?: STXStyle }>()
+  if (ruleNames.length) {
+    const parse = (css: string | undefined): STXStyle => css ? parseNativeStyle(css, () => {}, { inheritedVariables: variables }) : {}
+    let light: STXStyle = {}
+    let dark: STXStyle = {}
+    for (const name of ruleNames) {
+      const rule = options.rules![name]!
+      light = { ...light, ...parse(rule.light) }
+      dark = { ...dark, ...parse(rule.dark) }
+      for (const layer of rule.responsive ?? []) {
+        const entry = ruleResponsive.get(layer.min) ?? { style: {} }
+        entry.style = { ...entry.style, ...parse(layer.light) }
+        if (layer.dark) entry.dark = { ...entry.dark, ...parse(layer.dark) }
+        ruleResponsive.set(layer.min, entry)
+      }
+    }
+    result.style = { ...light, ...result.style }
+    if (Object.keys(dark).length) result.dark = { ...dark, ...result.dark }
+  }
   result.unknown = authoredNames(base, result.unknown)
   const responsive: NonNullable<ClassStyles['responsive']> = []
   for (const layer of groups.values()) {
@@ -1141,6 +1165,15 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
     const entry = { style: compiled.style, ...(compiled.dark ? { dark: compiled.dark } : {}) }
     if (layer.disabled) result.disabled = entry
     else responsive.push({ min: layer.min!, ...entry })
+  }
+  // A rule's width layer sits under the utilities' layer of the same width.
+  for (const [min, layer] of ruleResponsive) {
+    const existing = responsive.find(entry => entry.min === min)
+    if (existing) {
+      existing.style = { ...layer.style, ...existing.style }
+      if (layer.dark || existing.dark) existing.dark = { ...layer.dark, ...existing.dark }
+    }
+    else responsive.push({ min, ...layer })
   }
   if (responsive.length) result.responsive = responsive.sort((a, b) => a.min - b.min)
   return result

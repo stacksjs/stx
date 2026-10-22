@@ -159,3 +159,64 @@ window.probe = { busy, tone }
     }
   })
 })
+
+describe('the page\'s own class rules', () => {
+  it('applies simple class rules under the utilities, with dark and width layers, and reports what it cannot read', async () => {
+    const { root, diagnostics } = await translateHtmlToIR(`<style>
+:root { --accent: #ff2d55; }
+.panel-title { font-size: 17px; font-weight: 600; color: #1c1c1e; }
+.dark .panel-title { color: #ffffff; }
+html.dark .panel { background-color: #1c1c1e; }
+.panel { background-color: #ffffff; border-radius: 12px; padding: 12px; }
+.panel:hover { background-color: #f2f2f7; }
+.chip { color: var(--accent); }
+@media (min-width: 768px) { .panel { padding: 24px; } }
+@media (prefers-reduced-motion: reduce) { .panel { transition: none; } }
+@keyframes pulse { from { opacity: 0 } to { opacity: 1 } }
+.panel > .row { padding: 4px; }
+.panel::before { content: ''; }
+</style>
+<div class="panel p-2"><p class="panel-title">Title</p><span class="chip">Live</span></div>`)
+    const find = (node: any): any => node?.props?._classes?.includes?.('panel') || /(^|\s)panel(\s|$)/.test(node?._classes ?? '') ? node : (node?.children ?? []).filter((child: any) => typeof child !== 'string').map(find).find(Boolean)
+    const panel = find(root) ?? (root.type === 'View' ? root : undefined)
+    // The utility wins over the rule, as on the web.
+    expect(panel.style).toMatchObject({ backgroundColor: '#ffffff', borderRadius: 12, padding: 8 })
+    const title = panel.children[0]
+    expect(title.style).toMatchObject({ fontSize: 17, fontWeight: '600', color: '#1c1c1e' })
+    expect(panel.children[1].style.color).toBe('#ff2d55')
+    expect(root._stylesheetRules?.panel?.responsive).toEqual([{ min: 768, light: expect.stringContaining('padding') }])
+    expect(root._stylesheetRules?.['panel-title']?.dark).toContain('color')
+    const reported = diagnostics.filter(d => d.kind === 'unsupported-style-rule').map(d => d.name)
+    expect(reported).toEqual(expect.arrayContaining(['.panel>.row', '.panel::before']))
+    expect(reported).not.toContain('.panel:hover')
+    expect(diagnostics.filter(d => d.kind === 'unknown-class')).toEqual([])
+  })
+
+  it('draws a rule\'s dark and width layers on the device', async () => {
+    const root = createTempDir('stx-web-view-rules-')
+    await Bun.write(join(root, 'stx.config.ts'), 'export default {}')
+    const file = join(root, 'Screen.stx')
+    await Bun.write(file, `<style>
+.panel { background-color: #ffffff; padding: 12px; }
+.dark .panel { background-color: #1c1c1e; }
+@media (min-width: 768px) { .panel { padding: 24px; } }
+</style>
+<div testID="panel" class="panel">Panel</div>`)
+    const result = await compileSharedScreenBundle(file, { root })
+    const phone = mountNativeScreen(result.code, 'Screen', { viewportWidth: 390 })
+    try {
+      await phone.settle()
+      const panel = () => phone.byTestID('panel')!
+      expect(panel().style).toMatchObject({ backgroundColor: '#ffffff', padding: 12 })
+      phone.viewport(1024)
+      await phone.settle()
+      expect(panel().style.padding).toBe(24)
+      phone.appearance('dark')
+      await phone.settle()
+      expect(panel().style.backgroundColor).toBe('#1c1c1e')
+    }
+    finally {
+      phone.unmount?.()
+    }
+  })
+})
