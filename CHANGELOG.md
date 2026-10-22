@@ -1,5 +1,25 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.668...v0.2.669)
+
+## 🐛 Bug Fixes
+
+- **native**: an <i> whose class is bound is an Icon ([ffeac0a](https://github.com/stacksjs/stx/commit/ffeac0a)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: a mustache keeps the spaces its expression spells out ([6c308bc](https://github.com/stacksjs/stx/commit/6c308bc)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: a layout's chrome takes its component setups with it ([4ca15ff](https://github.com/stacksjs/stx/commit/4ca15ff)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- **native**: a web view's bound img and video src is the native source ([45a3759](https://github.com/stacksjs/stx/commit/45a3759)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.669 ([520217a](https://github.com/stacksjs/stx/commit/520217a)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.667...v0.2.668)
 
 ## 🐛 Bug Fixes
