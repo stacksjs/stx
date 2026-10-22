@@ -17,7 +17,7 @@ directories and fails if a new overlap has no recorded compatibility decision.
 | Checkbox | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | Preserve both APIs; device validation |
 | Switch | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | Preserve both APIs; device validation |
 | TextInput | Primitive | Shared file | Broader input-event/API compatibility before changing default resolution |
-| Image | Primitive | `StxImage` builtin alias, not the shared file | Fit/position mapping and builtin/shared precedence decision |
+| Image | Primitive | `StxImage` builtin alias, not the shared file | Position/scale-down support, device validation and builtin/shared precedence decision |
 | Video | Primitive | Shared file | Shared file playback adapter verified; provider/DRM/API and device validation remain |
 
 Explicit imports and screen-local components remain overrides. The audit tests
@@ -58,9 +58,22 @@ wrapping `<div>`, a client `value = state('/first')`, and
    `image-source-browser.test.ts` verifies actual browser `currentSrc` selection
    and image decoding through URL replacement, clearing and restoration.
    Legacy native `source` values and resolution are unchanged.
-   `objectFit`/`objectPosition` still produce unsupported-style diagnostics;
-   fit/position mapping and browser builtin/shared precedence remain migration
-   gates. This fix does not certify native visual parity.
+   **Fit binding is now supported (unreleased after v0.2.661):** both
+   `objectFit` and its `fit` alias update the physical image. A nonempty
+   `objectFit` wins; clearing it reveals `fit`, and clearing both restores
+   `cover`. Static SSR styling is preserved. Native CSS styles map `cover` /
+   `contain` / `fill` / `none` to `resizeMode` `cover` / `contain` / `stretch` /
+   `center`, including variable resolution and live style layers.
+   `scale-down` and invalid native fit values are diagnosed and omitted (so
+   an authored fallback can remain); browser `scale-down` is unchanged.
+   `image-fit.test.ts` and `shared-image-fit.test.ts` cover translation,
+   diagnostics, precedence, live changes, defaults, identity, remount and
+   teardown, with normal/minified native bundles and computed browser styles.
+   `objectPosition` remains unsupported. Existing Craft implementations also
+   differ for `contain` upscaling: iOS uses aspect-fit, Android CENTER_INSIDE
+   does not upscale small images. No Craft code was changed, and this is not
+   a claim of device pixel parity. Position/scale-down, host validation and
+   browser builtin/shared precedence remain migration gates.
 3. **Video (shared setup crash fixed, unreleased):**
    `<Video testID="target" label="Movie" :src="value" :paused="paused" />`
    now registers custom elements only in the browser. On native, the physical

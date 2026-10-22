@@ -35,7 +35,7 @@ const STYLE_KEYS = new Set([
   'opacity', 'shadowColor', 'shadowOffset', 'shadowOpacity', 'shadowRadius', 'elevation',
   'color', 'fontSize', 'fontWeight', 'fontStyle', 'fontFamily', 'lineHeight',
   'letterSpacing', 'textAlign', 'textDecorationLine', 'textDecorationColor',
-  'textTransform', 'resizeMode', 'tintColor', 'transform', 'overflow',
+  'textTransform', 'resizeMode', 'objectFit', 'tintColor', 'transform', 'overflow',
   'fill', 'stroke', 'strokeWidth',
   'gradientDirection', 'gradientFrom', 'gradientVia', 'gradientTo',
 ])
@@ -193,6 +193,17 @@ function parseEntries(entries: Array<[string, unknown]>, variables: ReturnType<t
     const value = typeof raw === 'string' ? variables.resolve(raw.trim()) : raw
     if (value === undefined) { report({ kind: 'non-numeric-style', name: property }); continue }
     if (value === '') continue
+    // Shared HTML images express fit as CSS; native media reads resizeMode.
+    // scale-down requires intrinsic-size comparison and has no portable host
+    // mode. Report it (and invalid values) rather than approximating it.
+    if (property === 'objectFit') {
+      const fit = typeof value === 'string' ? value.trim().toLowerCase() : ''
+      if (fit === 'cover' || fit === 'contain') style.resizeMode = fit
+      else if (fit === 'fill') style.resizeMode = 'stretch'
+      else if (fit === 'none') style.resizeMode = 'center'
+      else report({ kind: 'unknown-style', name: `objectFit:${String(value)}` })
+      continue
+    }
     let translated: unknown
     if (NUMERIC_STYLE_KEYS.has(property) || DIMENSION_STYLE_KEYS.has(property)) {
       translated = numericValue(value)

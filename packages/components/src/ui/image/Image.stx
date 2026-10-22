@@ -59,7 +59,9 @@ export const placeholder = placeholderMode === 'empty' || placeholderMode === 'n
     : placeholderMode === 'blur' || placeholderMode === 'thumbhash' ? (imagePlaceholder?.transparent ? '' : preview ? `url("${preview}")` : placeholderColor)
       : customPlaceholder || (delivered?.placeholder ? `url("${delivered.placeholder}")` : '')
 export const aspectRatio = $props.aspectRatio
-export const objectFit = $props.objectFit || $props.fit || 'cover'
+export const authoredObjectFit = $props.objectFit || ''
+export const authoredFit = $props.fit || ''
+export const objectFit = authoredObjectFit || authoredFit || 'cover'
 export const objectPosition = $props.objectPosition || $props.position || 'center'
 export const rounded = $bool($props.rounded)
 export const zoomOnHover = $bool($props.zoomOnHover)
@@ -126,6 +128,10 @@ export const imageStyle = [
 
 <script client>
 const imageSrc = useReactiveProp('src', {{ originalSrc }})
+// Keep the documented alias live without letting it override objectFit.
+const primaryFit = useReactiveProp('objectFit', {{ authoredObjectFit }})
+const fallbackFit = useReactiveProp('fit', {{ authoredFit }})
+const imageFit = derived(() => primaryFit() || fallbackFit() || 'cover')
 // Preserve the delivered URL/candidates at hydration. A replacement URL must
 // not keep selecting a responsive candidate belonging to the previous image.
 const currentSrc = derived(() => imageSrc() === {{ originalSrc }} ? {{ src }} : (imageSrc() == null ? '' : String(imageSrc())))
@@ -177,5 +183,6 @@ const initialBackground = {{ placeholder ? `${placeholder} center / cover no-rep
     decoding="{{ decoding }}"
     fetchpriority="{{ fetchpriority }}"
     style="{{ imageStyle }}"
+    :style="{ objectFit: imageFit() }"
   />
 </picture>
