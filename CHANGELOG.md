@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.659...v0.2.660)
+
+## ✨ Features
+
+- **native**: shared components draw platform controls natively ([d6e7cef](https://github.com/stacksjs/stx/commit/d6e7cef)) _(by Chris Breuer <chris@stacksjs.com>)_ ([#8](https://github.com/stacksjs/stx/issues/8))
+
+## 🔧 Chores
+
+- release v0.2.660 ([e96a8bf](https://github.com/stacksjs/stx/commit/e96a8bf)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.658...v0.2.659)
 
 ## 🐛 Bug Fixes
