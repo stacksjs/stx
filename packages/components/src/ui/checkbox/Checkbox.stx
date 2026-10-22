@@ -10,6 +10,9 @@ export const required = $bool($props.required)
 export const value = $props.value || ''
 export const name = $props.name || ''
 export const className = $props.className || ''
+// WebKit's native switch retains checkbox form, label and keyboard semantics.
+// Other engines keep their ordinary checkbox until they implement `switch`.
+export const switchAppearance = $props.appearance === 'switch'
 
 const sizeClasses = { sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 w-6' }
 const baseClasses = 'rounded border-line-strong text-accent focus:ring-accent focus:ring-2 focus:ring-offset-2 focus:ring-offset-panel transition-colors'
@@ -23,7 +26,9 @@ export const stateInvalidClasses = 'border-danger-line text-danger focus:ring-da
 const stateClasses = error ? stateInvalidClasses : ''
 const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
 
-export const checkboxClasses = `${baseClasses} ${sizeClasses[size] || sizeClasses.md} ${stateClasses} ${disabledClasses}`.trim()
+export const checkboxClasses = switchAppearance
+  ? `shrink-0 cursor-pointer ${disabledClasses}`.trim()
+  : `${baseClasses} ${sizeClasses[size] || sizeClasses.md} ${stateClasses} ${disabledClasses}`.trim()
 export const labelClasses = `text-sm font-medium ${error ? 'text-danger' : 'text-fg'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`.trim()
 export const descriptionClasses = `text-sm ${error ? 'text-danger' : 'text-fg-soft'}`.trim()
 /*
@@ -83,6 +88,7 @@ defineExpose({ isChecked })
       data-stx-native-host-root
       id="{{ inputId }}"
       type="checkbox"
+      @if(switchAppearance)switch role="switch"@endif
       name="{{ name }}"
       @if(label)aria-label="{{ label }}"@endif
       :aria-label="currentLabel() || null"

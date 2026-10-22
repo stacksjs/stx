@@ -1,6 +1,8 @@
 export { default as Checkbox } from './Checkbox.stx'
 
 export interface CheckboxProps {
+  /** Use the host browser's native switch while retaining checkbox semantics. */
+  appearance?: 'checkbox' | 'switch'
   checked?: boolean
   onChange?: (checked: boolean) => void
   disabled?: boolean

@@ -519,6 +519,7 @@ export type { PrintingAPI, PrintToPDFResult } from './printing'
 // Native Auto-Launch (SMAppService — distinct from autolaunch.ts)
 // =============================================================================
 export { nativeAutoLaunch } from './native-autolaunch'
+export { nativeTray } from './native-tray'
 export type { NativeAutoLaunchAPI } from './native-autolaunch'
 export { nativeWindow } from './native-window'
 export type { NativeWindow, NativeWindowOptions, WindowAppearance } from './native-window'

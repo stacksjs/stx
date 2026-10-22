@@ -81,6 +81,8 @@ export interface NativeWindowOptions {
 interface CraftWindowNamespace {
   open?: (options: NativeWindowOptions) => Promise<{ name?: string }>
   close?: () => Promise<void>
+  show?: () => Promise<void>
+  hide?: () => Promise<void>
   focus?: () => Promise<void>
   minimize?: () => Promise<void>
   maximize?: () => Promise<void>
@@ -128,6 +130,10 @@ export interface NativeWindow {
   open: (options: NativeWindowOptions) => Promise<{ name: string }>
   /** Close the window this page is in. */
   close: () => Promise<void>
+  /** Show the existing window, anchored to its status item for tray popovers. */
+  show: () => Promise<void>
+  /** Dismiss the window while retaining its page and background work. */
+  hide: () => Promise<void>
   /** Bring the window this page is in to the front. */
   focus: () => Promise<void>
   minimize: () => Promise<void>
@@ -186,6 +192,8 @@ export const nativeWindow: NativeWindow = {
   },
 
   close: () => call(ns => ns.close?.()),
+  show: () => call(ns => ns.show?.()),
+  hide: () => call(ns => ns.hide?.()),
   focus: () => call(ns => ns.focus?.()),
   minimize: () => call(ns => ns.minimize?.()),
   maximize: () => call(ns => ns.maximize?.()),

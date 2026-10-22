@@ -20,6 +20,7 @@ import { platform as osPlatform } from 'node:os'
 import { injectCraftBridge } from './craft-bridge'
 import { processCraftComponents, CRAFT_COMPONENT_STYLES } from './craft-components'
 import { renderTemplate } from './render'
+import { loadStxConfig } from './config'
 import { createTempDir, removeTempDir } from './temp-dir'
 import { signMacOSBundle, type MacOSSigningOptions } from './native-signing'
 
@@ -213,9 +214,13 @@ export async function buildNative(config: NativeBuildConfig): Promise<NativeBuil
     // hand it straight to Craft, so every directive, component and
     // `<script server>` block shipped verbatim into the app — `build:native`
     // only ever worked for templates that were already plain HTML.
+    // Native builds use the same project component packages, directives and
+    // directory resolution as serve. Rendering with defaults drops installed
+    // controls before the client bundler ever loads the project config.
+    const projectConfig = await loadStxConfig(process.cwd())
     let html = await renderTemplate(config.input, {
       context: config.context,
-      options: { isDev: false },
+      options: { ...projectConfig, isDev: false },
     })
 
     // Inject Craft bridge
