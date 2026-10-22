@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.658...v0.2.659)
+
+## 🐛 Bug Fixes
+
+- **native**: a web view's leftover mustaches are bindings, and the device answers server helpers ([f71ab14](https://github.com/stacksjs/stx/commit/f71ab14)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.659 ([1eb1b2c](https://github.com/stacksjs/stx/commit/1eb1b2c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.656...v0.2.657)
 
 ## ✨ Features
