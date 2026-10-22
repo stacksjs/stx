@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.654...v0.2.655)
+
+## ✅ Tests
+
+- **native**: put back the globals the native runtime installs in this process ([fefe8d5](https://github.com/stacksjs/stx/commit/fefe8d5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.655 ([9fbfe78](https://github.com/stacksjs/stx/commit/9fbfe78)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.651...v0.2.653)
 
 ## 🐛 Bug Fixes
