@@ -51,13 +51,19 @@ fixture's theme and has poor contrast in this capture.
 
 This fixture contains no graphics surface and does not prove HUD/surface
 composition, Android output, actual game simulation agreement or the ts-css
-HUD style acceptance in stacksjs/ts-css#39. Keep #2109 open.
+HUD style acceptance in stacksjs/ts-css#38. Keep #2109 open.
 
-Craft main was inspected at `a301dfd89103eb68b73c253dcb3914113ed26f7a`.
-Its iOS, Android and TypeScript packages have no public RenderSurface contract
-to compile or mount. craft-native/craft#409 remains open, with #406/#407/#408
-as upstream dependencies. STX #2108 therefore remains open: mounting, resource
+Craft main was rechecked at `44fac13d2ff6474390e36cba99a00eaf0aebe9ec`.
+It now has a Zig Metal surface with macOS execution evidence, but its iOS,
+Android and TypeScript packages have no shared RenderSurface node/JS contract
+to compile or mount. Craft #409 and ts-css #39 were closed as accidental
+duplicates, not implemented; their canonical issues are craft-native/craft#395
+and stacksjs/ts-css#38. Craft #395 depends on #392/#393/#394.
+STX #2108 therefore remains open: mounting, resource
 identity, interruption, teardown, unsupported-host behavior and native visual
 output cannot be verified against a real shared surface contract yet. No
 successful no-op surface or fabricated host global was added. Craft changes
 belong to its assigned agent; STX integration follows that published contract.
+
+The [surface integration boundary](native-render-surface-contract.md) records
+what is present upstream and which host evidence is still needed.

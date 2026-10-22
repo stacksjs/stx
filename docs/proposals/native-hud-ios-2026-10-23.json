@@ -9,6 +9,12 @@
   "workingTreeAtExecution": "HUD fixture and runner changes, subsequently committed unchanged",
   "craftCommit": "f6929b7afce6b1a3b444f9b6b8c2b16b73dc681c",
   "craftWorkingTree": "clean and unchanged",
+  "subsequentDependencyAudit": {
+    "craftMainCommit": "44fac13d2ff6474390e36cba99a00eaf0aebe9ec",
+    "surfaceClockIssue": "https://github.com/craft-native/craft/issues/395",
+    "hudStyleIssue": "https://github.com/stacksjs/ts-css/issues/38",
+    "note": "Former #409/#39 closed as duplicates, not fixed; Zig Metal surface is not a shared native JS node contract"
+  },
   "device": {
     "name": "STX-Portability-Controls",
     "udid": "5A6726AD-C259-485F-B4CE-DBC51CD3FAAD",
