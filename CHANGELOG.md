@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.650...v0.2.651)
+
+## ⚡ Performance Improvements
+
+- **reactive-bindings**: skip tags without an expression in their attributes ([1a65c9f](https://github.com/stacksjs/stx/commit/1a65c9f)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.651 ([c5dcaf3](https://github.com/stacksjs/stx/commit/c5dcaf3)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.649...v0.2.650)
 
 ## ✨ Features
