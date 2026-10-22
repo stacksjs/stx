@@ -676,7 +676,10 @@ export async function translateHtmlToIR(
       declaredNative: typeof declared === 'string' && NATIVE_TYPES.has(declared),
       dropped: dropped || inheritedDrop || BOX_ONLY.has(tag) || type === 'Video',
       discard: dropped || inheritedDrop,
-      unwrap: UNWRAP.has(tag) && !structuralTemplate,
+      // Document wrappers normally contribute their children. A scrolling
+      // main (or an explicit primitive) owns native layout and must survive.
+      unwrap: UNWRAP.has(tag) && !structuralTemplate && type !== 'ScrollView'
+        && !(typeof declared === 'string' && NATIVE_TYPES.has(declared)),
     }
   }
 
