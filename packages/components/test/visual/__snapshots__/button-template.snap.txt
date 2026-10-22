@@ -130,11 +130,11 @@ export const spinnerClasses = `animate-spin ${iconClasses}`.trim()
  * pressed, and `disabled:` dims it while it is off.
  */
 const nativeVariants = {
-  primary: { box: 'bg-[#007aff] dark:bg-[#0a84ff]', text: 'text-white' },
-  secondary: { box: 'bg-[#767680]/12 dark:bg-[#767680]/24', text: 'text-[#007aff] dark:text-[#0a84ff]' },
-  outline: { box: 'border border-[#007aff] dark:border-[#0a84ff]', text: 'text-[#007aff] dark:text-[#0a84ff]' },
-  ghost: { box: '', text: 'text-[#007aff] dark:text-[#0a84ff]' },
-  danger: { box: 'bg-[#ff3b30] dark:bg-[#ff453a]', text: 'text-white' },
+  primary: { box: 'bg-accent-solid', text: 'text-accent-ink' },
+  secondary: { box: 'bg-[#767680]/12 dark:bg-[#767680]/24', text: 'text-accent' },
+  outline: { box: 'border border-accent', text: 'text-accent' },
+  ghost: { box: '', text: 'text-accent' },
+  danger: { box: 'bg-danger-solid', text: 'text-danger-ink' },
 }
 const nativeSizes = {
   xs: { box: 'h-7 px-2.5 gap-1 rounded-[7px]', text: 'text-[13px]' },
@@ -147,10 +147,13 @@ const nativeVariant = nativeVariants[variant] || nativeVariants.primary
 const nativeSize = nativeSizes[size] || nativeSizes.md
 export const nativeButtonClasses = `flex-row items-center justify-center ${nativeSize.box} ${nativeVariant.box} disabled:opacity-50 ${fullWidth ? 'w-full' : ''} ${className}`.replace(/\s+/g, ' ').trim()
 export const nativeTextClasses = `font-semibold ${nativeSize.text} ${nativeVariant.text}`
-export const nativeTint = nativeVariant.text === 'text-white' ? '#ffffff' : '#007aff'
+export const legacyNativeTint = $native ? (variant === 'primary' || variant === 'danger' ? '#ffffff' : '#007aff') : ''
+export const nativeTintClass = nativeVariant.text
     </script>
     <script client>
       const emit = defineEmits()
+const platformControls = typeof craft !== 'undefined' && craft.capabilities.nativePlatformControls === true
+const legacyNativeTint = {{ legacyNativeTint }}
 
 /*
  * `disabled` and `loading` are read as live props, not as a server snapshot.
@@ -210,7 +213,7 @@ function onClick(event) {
   @if(ariaLabel)aria-label="{{ ariaLabel }}"@endif
   @click="onClick($event)"
 >
-      <div data-native="ActivityIndicator" :show="isLoading()" color="{{ nativeTint }}" role="status">
+      <div data-native="ActivityIndicator" :show="isLoading()" class="{{ nativeTintClass }}" :color="platformControls ? null : legacyNativeTint" role="status">
       </div>
       @if(leftIcon)
       <span :show="!isLoading()" class="{{ iconClasses }} {{ nativeTextClasses }}">
@@ -401,6 +404,7 @@ loading
 markup
 nativeButtonClasses
 nativeTextClasses
+nativeTintClass
 no
 not
 of
@@ -438,7 +442,6 @@ text-fg
 text-fg-strong
 text-lg
 text-sm
-text-white
 text-xl
 text-xs
 than

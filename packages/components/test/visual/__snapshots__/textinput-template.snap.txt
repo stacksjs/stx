@@ -172,6 +172,7 @@ export const nativeHelperClasses = `mt-1.5 px-4 text-[13px] ${error ? 'text-[#ff
 const emit = defineEmits(['input', 'clear', 'focus', 'blur', 'submit', 'submit-editing'])
 // Validity is live, for the same reason `disabled` is: a form posted with
 // fetch learns it after the submit, and nothing re-renders (#2047).
+const nativeClear = typeof craft !== 'undefined' && craft.capabilities.nativePlatformControls === true
 const isError = useReactiveProp('error', {{ error }})
 // Keep the physical control and its affordances live on both web and native.
 const isDisabled = useReactiveProp('disabled', {{ disabled }})
@@ -234,6 +235,7 @@ function onNativeEndEditing(event) {
 }
 
 function onInput(event) {
+  if (event.clear === true || event.nativeEvent?.clear === true) { onClear(); return }
   if (isDisabled() || isReadonly()) {
     event.target.value = inputValue()
     return
@@ -304,15 +306,11 @@ defineExpose({ value: inputValue, clear: onClear })
       aria-invalid="{{ error ? 'true' : 'false' }}"
       :aria-invalid="isError() ? 'true' : 'false'"
       :class="{ 'border border-[#ff3b30] dark:border-[#ff453a]': isError(), 'opacity-50': isDisabled() }"
-      @if(clearable)style="padding-right: 40px"@endif
+      @if(clearable):clearButtonMode="nativeClear ? 'while-editing' : 'never'" :style="nativeClear ? null : { paddingRight: 40 }"@endif
     />
       @if(clearable)
-      <button
-        type="button"
-        :show="hasValue() && !isDisabled() && !isReadonly()"
-        @click="onClear()"
-        class="absolute top-0 right-0 h-12 w-10 items-center justify-center"
-        aria-label="Clear input"
+      <button :if="!nativeClear" type="button" :show="hasValue() && !isDisabled() && !isReadonly()"
+        @click="onClear()" class="absolute top-0 right-0 h-12 w-10 items-center justify-center" aria-label="Clear input"
       >
         <i class="i-lucide-circle-x h-[17px] w-[17px] text-[#c4c4c7] dark:text-[#5b5b5f]">
         </i>
@@ -628,6 +626,7 @@ w-[17px]
 w-full
 week
 were
+while-editing
 with
 {
 {{

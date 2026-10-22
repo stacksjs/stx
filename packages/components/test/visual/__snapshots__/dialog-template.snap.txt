@@ -46,6 +46,9 @@ export const dialogInstanceId = $uid
  * `animationType="fade"` keeps an alert-like centred card from sliding.
  */
 export const nativeAnimation = $props.animationType || 'slide'
+export const nativePresentation = $props.presentationStyle || (nativeAnimation === 'fade' ? 'overFullScreen' : 'pageSheet')
+export const nativeDetents = $props.sheetDetents || ['medium', 'large']
+export const nativeSelectedDetent = $props.selectedDetent || ''
   </script>
   <script client>
     // Reserve this component's event before a nested overlay can emit it.
@@ -201,7 +204,7 @@ defineExpose({
       </script>
       <div
   data-native="Modal"
-  @if($native)animationType="{{ nativeAnimation }}"@endif
+  @if($native)animationType="{{ nativeAnimation }}" presentationStyle="{{ nativePresentation }}" :sheetDetents="{{ nativeDetents }}" @if(nativeSelectedDetent)selectedDetent="{{ nativeSelectedDetent }}"@endif@endif
   x-ref="rootRef"
   :show="isOpen()"
   :data-state="isOpen() ? 'open' : 'closed'"
@@ -220,7 +223,9 @@ aria-labelledby
 dialog
 dialogClasses
 id
+medium
 open
+overFullScreen
 rootRef
 {{
 }}

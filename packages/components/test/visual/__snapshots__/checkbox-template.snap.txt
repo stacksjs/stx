@@ -36,7 +36,7 @@ const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-poi
  * On a native host ($native) the box is the platform's own control, tinted
  * system blue (red while invalid), beside a label at the 17pt body size.
  */
-const nativeTint = error ? 'text-[#ff3b30] dark:text-[#ff453a]' : 'text-[#007aff] dark:text-[#0a84ff]'
+const nativeTint = error ? 'text-danger' : 'text-accent'
 export const checkboxClasses = $native
   ? `h-[22px] w-[22px] ${nativeTint} disabled:opacity-50`
   : switchAppearance
