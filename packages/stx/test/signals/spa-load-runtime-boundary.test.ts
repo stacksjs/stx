@@ -13,7 +13,7 @@ describe('signals SPA load runtime boundary', () => {
 
   it('keeps setup, component scope, binding, and mount rehydration together', () => {
     expect(SIGNALS_SPA_LOAD_RUNTIME).toContain('function _handleStxLoad()')
-    expect(SIGNALS_SPA_LOAD_RUNTIME).toContain('window.stx._latestSetup()')
+    expect(SIGNALS_SPA_LOAD_RUNTIME).toContain('runPageSetup(window.stx._latestSetup)')
     expect(SIGNALS_SPA_LOAD_RUNTIME).toContain("document.body.querySelectorAll('[data-stx-scope]')")
     expect(SIGNALS_SPA_LOAD_RUNTIME).toContain("auditHydration(container, 'stx:load')")
   })

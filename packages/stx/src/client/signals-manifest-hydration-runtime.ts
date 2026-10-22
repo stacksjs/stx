@@ -64,8 +64,14 @@ export const SIGNALS_MANIFEST_HYDRATION_RUNTIME = `  /**
     var outerSink = activeDestroySink;
     activeDestroySink = null;
     var values;
+    // The setup's own effects end with the host, as its bindings do.
+    var endSetupEffects = beginEffects();
+    var disposeSetupEffects;
     try { values = typeof setup === 'function' ? setup() : setup; }
-    finally { activeDestroySink = outerSink; }
+    finally {
+      activeDestroySink = outerSink;
+      disposeSetupEffects = endSetupEffects();
+    }
     var localMountHooks = mountCallbacks.splice(mountStart);
     var localDestroyHooks = destroyCallbacks.splice(destroyStart);
     var scope = mergeTemplateScopes({ $refs: {} }, values);
@@ -91,6 +97,7 @@ export const SIGNALS_MANIFEST_HYDRATION_RUNTIME = `  /**
       if (!mounted) return;
       mounted = false;
       disposeEffects();
+      disposeSetupEffects();
       disposeSubtreeEffects(root);
       disposeSubtreeScopes(root);
       var hooks = localDestroyHooks.splice(0, localDestroyHooks.length);

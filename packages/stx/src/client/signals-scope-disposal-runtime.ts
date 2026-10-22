@@ -115,6 +115,18 @@ export const SIGNALS_SCOPE_DISPOSAL_RUNTIME = `  // ============================
     }
   }
 
+  // The effects a scope's setup script made, collected by the script itself
+  // (beginEffects). They go when the scope goes for good, not when an :if
+  // hides it: the setup does not run again on a re-show, so they would not
+  // come back.
+  function disposeScopeEffects(scopeVars) {
+    var dispose = scopeVars.__disposeEffects;
+    if (typeof dispose !== 'function') return;
+    scopeVars.__disposeEffects = null;
+    try { dispose(); }
+    catch (e) { console.warn('[stx] scope effect dispose error:', e); }
+  }
+
   function disposeSubtreeScopes(root) {
     if (!root || !window.stx || !window.stx._scopes) return;
     // The host reports which scopes live in this subtree: the document finds
@@ -137,6 +149,7 @@ export const SIGNALS_SCOPE_DISPOSAL_RUNTIME = `  // ============================
           catch (e) { console.warn('[stx] scope destroy error:', e); }
         }
       }
+      disposeScopeEffects(scopeVars);
       delete window.stx._scopes[scopeId];
     }
   }
@@ -190,6 +203,7 @@ export const SIGNALS_SCOPE_DISPOSAL_RUNTIME = `  // ============================
           catch (e) { console.warn('[stx] scope destroy error:', e); }
         }
       }
+      disposeScopeEffects(entry);
       delete scopes[id];
     }
   }

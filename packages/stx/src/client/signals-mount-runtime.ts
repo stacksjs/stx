@@ -18,8 +18,14 @@ export const SIGNALS_MOUNT_RUNTIME = `    mountEl: function(selector, setupFn) {
         var outerSink = activeDestroySink;
         activeDestroySink = null;
         var scope;
+        // Its effects too: they go with the root's bindings (__stx_disposers).
+        var endSetupEffects = beginEffects();
+        var disposeSetupEffects;
         try { scope = setupFn(); }
-        finally { activeDestroySink = outerSink; }
+        finally {
+          activeDestroySink = outerSink;
+          disposeSetupEffects = endSetupEffects();
+        }
 
         // Restore previous context (supports nested components)
         window.__STX_CURRENT_PROPS__ = prevProps;
@@ -37,7 +43,7 @@ export const SIGNALS_MOUNT_RUNTIME = `    mountEl: function(selector, setupFn) {
         var disposeEffects = trackEffects(function() {
           processElement(root, mergeTemplateScopes(componentScope, (scope || {})));
         });
-        root.__stx_disposers = disposeEffects;
+        root.__stx_disposers = function() { disposeEffects(); disposeSetupEffects(); };
 
         root.removeAttribute('x-cloak');
         root.querySelectorAll('[x-cloak]').forEach(function(el) { el.removeAttribute('x-cloak'); });
@@ -181,8 +187,14 @@ else {
         var outerSink = activeDestroySink;
         activeDestroySink = null;
         var scope;
+        // Its effects too: they go with the root's bindings (__stx_disposers).
+        var endSetupEffects = beginEffects();
+        var disposeSetupEffects;
         try { scope = setupFn(); }
-        finally { activeDestroySink = outerSink; }
+        finally {
+          activeDestroySink = outerSink;
+          disposeSetupEffects = endSetupEffects();
+        }
         console.log('[mount] root:', root.tagName, 'scope keys:', scope ? Object.keys(scope).slice(0, 10) : 'null');
 
         // Restore previous context (supports nested components)
@@ -209,7 +221,7 @@ else {
         var disposeEffects = trackEffects(function() {
           processElement(root, mergeTemplateScopes(componentScope, (scope || {})));
         });
-        root.__stx_disposers = disposeEffects;
+        root.__stx_disposers = function() { disposeEffects(); disposeSetupEffects(); };
 
         // Remove x-cloak after bindings are applied (prevents FOUC)
         root.removeAttribute('x-cloak');

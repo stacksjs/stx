@@ -116,6 +116,7 @@ ${componentApiRuntime}
     _cleanupContainer: cleanupContainer,
     _flushLoad: flushStxLoad,
     _beginSwap: beginSwap,
+    _beginEffects: beginEffects,  // A component setup collects its effects (utils.ts)
     _registerSuspense: registerSuspense,  // <Suspense> query registration (#1742)
     _tg: { enter: tgEnter, leave: tgLeave, flip: tgFlip, snapshot: tgSnapshot },  // <TransitionGroup> helpers (#1742)
     _scopes: {},  // Component-level scopes

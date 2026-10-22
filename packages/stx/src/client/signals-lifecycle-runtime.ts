@@ -109,6 +109,21 @@ export const SIGNALS_LIFECYCLE_RUNTIME = `  // =================================
     return scopeVars.__destroyCallbacks;
   }
 
+  // Run a page's setup with its effects collected, and queue their disposal
+  // with the page-level onDestroy callbacks, so they end when the page does:
+  // on the next swap, or with a retained screen when the router disposes it.
+  // Untracked, an effect a page script made (on a store, typically) kept
+  // running after the router had swapped its page out.
+  function runPageSetup(setup) {
+    var endEffects = beginEffects();
+    try {
+      return setup();
+    }
+    finally {
+      destroyCallbacks.push(endEffects());
+    }
+  }
+
   // Drain any early mount/destroy calls captured by the pre-initialization shim
   if (window.__stx_early_mounts) { window.__stx_early_mounts.forEach(function(fn) { mountCallbacks.push(fn); }); window.__stx_early_mounts = null; }
   if (window.__stx_early_destroys) { window.__stx_early_destroys.forEach(function(fn) { destroyCallbacks.push(fn); }); window.__stx_early_destroys = null; }

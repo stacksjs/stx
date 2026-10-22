@@ -24,7 +24,7 @@ export const SIGNALS_DOM_READY_RUNTIME = `  // =================================
       .some(el => el.getAttribute('data-stx') === latestSetupName);
     if (latestSetup && !hasLatestSetupMarker) {
       try {
-        const result = latestSetup();
+        const result = runPageSetup(latestSetup);
         if (typeof result === 'object' && result !== null)
           assignTemplateScope(componentScope, result);
       }
@@ -46,7 +46,7 @@ export const SIGNALS_DOM_READY_RUNTIME = `  // =================================
         // page unhydrated — the user sees raw {{ }}, and the console names the
         // identifier without saying it cost them the document (#1805).
         try {
-          const result = window[setupName]();
+          const result = runPageSetup(window[setupName]);
           console.log('[DOMContentLoaded] setup returned:', result ? Object.keys(result).slice(0, 10) : 'null');
           if (typeof result === 'object' && result !== null) {
             assignTemplateScope(componentScope, result);

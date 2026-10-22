@@ -3049,6 +3049,9 @@ async function buildComponentIsland(rawContent: string, componentFilePath: strin
     __scopeVars.__destroyCallbacks = [];
     __scopeVars.__mountHooks = [];
     __scopeVars.__destroyHooks = [];
+    // So do its effects: the last run's watched a clone that is gone.
+    if (typeof __scopeVars.__disposeEffects === 'function') __scopeVars.__disposeEffects();
+    __scopeVars.__disposeEffects = null;
   }
   __scopeVars.__mountCallbacks = __scopeVars.__mountCallbacks || [];
   __scopeVars.__destroyCallbacks = __scopeVars.__destroyCallbacks || [];
@@ -3062,6 +3065,11 @@ async function buildComponentIsland(rawContent: string, componentFilePath: strin
     // Replaying it AND registering the next mount's teardown doubles cleanup.
     if (__registeringSetupHooks) __scopeVars.__destroyHooks.push(fn);
   };
+  // The effects this setup makes (effect, watch) belong to the scope and are
+  // disposed with it (disposeSubtreeScopes in the runtime), as its bindings
+  // are. Untracked, one reading a store kept running for a component the
+  // router had long swapped out.
+  const __endEffects = window.stx._beginEffects ? window.stx._beginEffects() : null;
 
 try {
 ${content}
@@ -3079,6 +3087,13 @@ catch (e) {}
 }
 finally {
   __registeringSetupHooks = false;
+  if (__endEffects) {
+    const __previousDispose = __scopeVars.__disposeEffects;
+    const __disposeSetup = __endEffects();
+    __scopeVars.__disposeEffects = typeof __previousDispose === 'function'
+      ? function() { __previousDispose(); __disposeSetup(); }
+      : __disposeSetup;
+  }
   window.__STX_CURRENT_ELEMENT__ = __previousCurrentElement;
   window.__STX_CURRENT_PROPS__ = __previousCurrentProps;
 }

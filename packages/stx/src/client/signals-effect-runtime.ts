@@ -84,24 +84,37 @@ export const SIGNALS_EFFECT_RUNTIME = `  // ====================================
   // Effect Tracking
   // ==========================================================================
 
-  function trackEffects(fn) {
+  // Collect the effects made from now until the returned end() is called, which
+  // hands back one disposer for all of them. trackEffects for code that cannot
+  // be passed as a callback: a component's setup script is its own block, and
+  // opens and closes the collection around its body.
+  function beginEffects() {
     var parentDisposers = activeDisposers;
     var disposers = [];
     activeDisposers = disposers;
-    try {
-      fn();
-    }
-finally {
+    return function endEffects() {
       activeDisposers = parentDisposers;
       if (parentDisposers) {
         disposers.forEach(function(d) { parentDisposers.push(d); });
       }
-    }
-    return function disposeAll() {
-      disposers.forEach(function(d) { try { d(); }
+      return function disposeAll() {
+        disposers.forEach(function(d) { try { d(); }
 catch (e) { console.warn('[stx] dispose error:', e); } });
-      disposers.length = 0;
+        disposers.length = 0;
+      };
     };
+  }
+
+  function trackEffects(fn) {
+    var endEffects = beginEffects();
+    var disposeAll;
+    try {
+      fn();
+    }
+finally {
+      disposeAll = endEffects();
+    }
+    return disposeAll;
   }
 
   // ==========================================================================

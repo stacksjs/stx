@@ -27,7 +27,7 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
     var usedLatestSetup = false;
     if (window.stx._latestSetup && typeof window.stx._latestSetup === 'function') {
       try {
-        var setupResult = window.stx._latestSetup();
+        var setupResult = runPageSetup(window.stx._latestSetup);
         // Keep _latestSetup for re-fires (HMR, auto-refresh re-navigation)
         // It will be overwritten when a NEW page's script sets it
         usedLatestSetup = true;
@@ -48,7 +48,7 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
       document.querySelectorAll('[data-stx]').forEach(function(el) {
         var setupName = el.getAttribute('data-stx');
         if (setupName && window[setupName]) {
-          var result = window[setupName]();
+          var result = runPageSetup(window[setupName]);
           if (typeof result === 'object') assignTemplateScope(componentScope, result);
         }
       });

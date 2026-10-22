@@ -394,9 +394,18 @@ function wrapScopedInclude(body: string, scopeId: string): string {
     if (!window.stx._scopes) window.stx._scopes = {};
     window.stx._scopes['${scopeId}'] = {};
   }
+  var __stxEndEffects = (typeof window !== 'undefined' && window.stx && window.stx._beginEffects) ? window.stx._beginEffects() : null;
   try {`
   const foot = `
   } finally {
+    // The body's effects end where its onDestroy callbacks run: with the scope
+    // when the partial has a root, with the page when it has none.
+    if (__stxEndEffects) {
+      var __stxDisposeEffects = __stxEndEffects();
+      var __stxRegistered = __stxScopeEl && window.stx._scopes && window.stx._scopes['${scopeId}'];
+      if (__stxRegistered) __stxRegistered.__disposeEffects = __stxDisposeEffects;
+      else if (window.stx._destroyCallbacks) window.stx._destroyCallbacks.push(__stxDisposeEffects);
+    }
     if (typeof window !== 'undefined') window.__STX_CURRENT_ELEMENT__ = __stxPrevEl;
   }
 })();`
