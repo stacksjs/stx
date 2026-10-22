@@ -1,0 +1,15 @@
+{{-- Matches Craft NativeRenderUITests.testTypingAndButtonUpdatesDoNotDropTheKeyboard.
+     Compile this file with STX, then supply the bundle to the maintained Craft
+     harness through CRAFT_NATIVE_RENDER_BUNDLE. No copied native implementation. --}}
+@import('Button', '../../../../components/src/ui/button/Button.stx')
+@import('TextInput', '../../../../components/src/ui/input/TextInput.stx')
+<script client>
+const count = state(0)
+const name = state('')
+</script>
+<section class="p-4 gap-4 bg-white dark:bg-black text-black dark:text-white">
+  <span testID="count" :text="'Count: ' + count()"></span>
+  <Button testID="increment" @click="count.set(count() + 1)">Increment</Button>
+  <TextInput testID="name-input" placeholder="Type your name" v-model:value="name" />
+  <span testID="name" :text="'Hello ' + name()"></span>
+</section>
