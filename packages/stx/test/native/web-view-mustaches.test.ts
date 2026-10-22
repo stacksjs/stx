@@ -124,3 +124,18 @@ test('a link\'s words beside its icon, from a mustache, are its label', async ()
   await phone.settle()
   expect(phone.texts()).toContain('Shop')
 })
+
+test('a mustache keeps the spaces its expression spells out', async () => {
+  const root = webApp({
+    'views/route.stx': `<script client>
+  const distance = state('1.06 mi')
+  const pace = state('8:03 /mi')
+</script>
+<div>
+  <p testid="route">{{ distance() + '   ' + pace() }}</p>
+</div>
+`,
+  })
+  const phone = await mountWebView(root, { Route: 'views/route.stx' }, 'Route')
+  expect(phone.texts()).toContain('1.06 mi   8:03 /mi')
+})

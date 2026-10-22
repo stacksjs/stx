@@ -228,6 +228,8 @@ interface Frame {
   svg?: boolean
   /** Inside a dropped subtree: children and text are discarded. */
   dropped: boolean
+  /** Its text so far ended inside a `{{ }}`, whose spaces are the expression's. */
+  inMustache?: boolean
   /** The node itself is not part of the tree. Discarded on close. */
   discard: boolean
   /** The node is not a view but its children are: they rise to the parent. */
@@ -760,7 +762,9 @@ export async function translateHtmlToIR(
         const frame = stack[stack.length - 1]
         if (!frame || frame.dropped)
           return
-        const text = decodeEntities(chunk.text).replace(/\s+/g, ' ')
+        const collapsed = collapseOutsideMustaches(decodeEntities(chunk.text), frame.inMustache === true)
+        frame.inMustache = collapsed.inside
+        const text = collapsed.text
         if (!text.trim())
           return
         frame.node.children.push(text)
@@ -794,6 +798,40 @@ export async function translateHtmlToIR(
   project(root)
 
   return { root, diagnostics }
+}
+
+/**
+ * A text run's whitespace collapsed, as a browser lays it out, except inside a
+ * `{{ }}` a server left for the device: there it is the expression's own
+ * (`{{ distance + '   ' + pace }}` spells three spaces). `inside` carries a
+ * mustache open across the text chunks the rewriter hands over.
+ */
+function collapseOutsideMustaches(text: string, inside: boolean): { text: string, inside: boolean } {
+  let out = ''
+  let i = 0
+  while (i < text.length) {
+    if (!inside && text.startsWith('{{', i)) {
+      inside = true
+      out += '{{'
+      i += 2
+      continue
+    }
+    if (inside && text.startsWith('}}', i)) {
+      inside = false
+      out += '}}'
+      i += 2
+      continue
+    }
+    const char = text[i]!
+    if (!inside && /\s/.test(char)) {
+      if (!out.endsWith(' ')) out += ' '
+      while (i < text.length && /\s/.test(text[i]!)) i++
+      continue
+    }
+    out += char
+    i++
+  }
+  return { text: out, inside }
 }
 
 /**
