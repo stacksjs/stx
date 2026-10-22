@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.667...v0.2.668)
+
+## 🐛 Bug Fixes
+
+- **native**: web views keep their requests, labels and page-only classes natively ([86e1616](https://github.com/stacksjs/stx/commit/86e1616)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **ci**: require icon publication for successful releases ([b477d3b](https://github.com/stacksjs/stx/commit/b477d3b)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.668 ([3a4bd01](https://github.com/stacksjs/stx/commit/3a4bd01)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.666...v0.2.667)
 
 ## 🐛 Bug Fixes

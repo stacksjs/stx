@@ -1,7 +1,7 @@
 {
   "name": "bun-plugin-stx",
   "type": "module",
-  "version": "0.2.667",
+  "version": "0.2.668",
   "description": "A Bun plugin that allows for using Laravel Blade-like syntax.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
