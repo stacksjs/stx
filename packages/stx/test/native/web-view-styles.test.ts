@@ -276,3 +276,32 @@ describe('compound rules and narrow-screen layers', () => {
     }
   })
 })
+
+describe('a Stacks app\'s source root', () => {
+  it('finds stores, layouts and components under the config\'s root, as the web does', async () => {
+    const root = createTempDir('stx-native-source-root-')
+    await Bun.write(join(root, 'stx.config.ts'), `export default { root: 'resources', layoutsDir: 'layouts', componentsDir: 'components', partialsDir: 'components' }`)
+    await Bun.write(join(root, 'resources/stores/counter.ts'), `import { defineStore, state } from '@stacksjs/stx'\ndefineStore('counter', () => { const count = state(41); return { count } })\n`)
+    await Bun.write(join(root, 'resources/layouts/app.stx'), '<main data-layout>@yield(\'content\')</main>')
+    await Bun.write(join(root, 'resources/components/Badge.stx'), '<span testID="badge" class="p-1">Badge</span>')
+    const file = join(root, 'resources/views/home.stx')
+    await Bun.write(file, `@extends('layouts/app')
+@section('content')
+<script client>
+const counter = useStore('counter')
+</script>
+<p testID="count" :text="counter.count() + 1"></p>
+<Badge />
+@endsection`)
+    const result = await compileSharedScreenBundle(file, { root })
+    const phone = mountNativeScreen(result.code, 'Screen')
+    try {
+      await phone.settle()
+      expect(phone.byTestID('count')!.children).toEqual(['42'])
+      expect(phone.byTestID('badge')).toBeTruthy()
+    }
+    finally {
+      phone.unmount?.()
+    }
+  })
+})

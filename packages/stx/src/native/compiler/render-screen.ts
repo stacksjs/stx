@@ -98,15 +98,18 @@ export async function compileScreenSource(
   // The app's directories, resolved against its root as the dev server
   // resolves them (serve-app.ts): a web view's `@extends`, `@include` and
   // `useStore` find what they find in the browser.
+  // Relative to the config's source root (`root: 'resources'` in a Stacks
+  // app, whose stores are resources/stores), as the dev server reads them.
+  const sourceRoot = typeof loaded.root === 'string' && loaded.root ? path.resolve(root, loaded.root) : root
   const fromRoot = (dir: string | undefined, fallback: string): string => dir
-    ? (path.isAbsolute(dir) ? dir : path.resolve(root, dir))
-    : path.join(root, fallback)
+    ? (path.isAbsolute(dir) ? dir : path.resolve(sourceRoot, dir))
+    : path.join(sourceRoot, fallback)
   const config = {
     root,
     layoutsDir: fromRoot(loaded.layoutsDir, 'layouts'),
     partialsDir: fromRoot(loaded.partialsDir, 'partials'),
     storesDir: fromRoot((loaded as { storesDir?: string }).storesDir, 'stores'),
-    componentsDir: options.componentsDir ?? loaded.componentsDir ?? path.join(root, 'components'),
+    componentsDir: options.componentsDir ?? (loaded.componentsDir ? fromRoot(loaded.componentsDir, 'components') : path.join(sourceRoot, 'components')),
     buildMode: 'serve',
     cache: false,
     // After screen-owned components; verified shared names move to fallback.
