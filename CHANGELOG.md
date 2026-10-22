@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.647...v0.2.648)
+
+## ⚡ Performance Improvements
+
+- **router**: link the owned-route table instead of inlining it in every page ([e424d56](https://github.com/stacksjs/stx/commit/e424d56)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **expressions**: classify interpolations in one pass, and read comments as comments ([6c8c4ff](https://github.com/stacksjs/stx/commit/6c8c4ff)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.648 ([41f5955](https://github.com/stacksjs/stx/commit/41f5955)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.646...v0.2.647)
 
 ## 🐛 Bug Fixes
