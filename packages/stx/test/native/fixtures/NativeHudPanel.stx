@@ -1,0 +1,22 @@
+<script client>
+import * as hud from './native-hud-model'
+const events = state(0)
+let stop = null
+onMount(() => { stop = hud.subscribe(() => events.set(events() + 1)) })
+onDestroy(() => { if (stop) stop() })
+window.hudEvents = events
+</script>
+<div class="gap-2">
+  <span testID="count" :text="'Count: ' + hud.count()"></span>
+  <span testID="events" :text="'Events: ' + events()"></span>
+  <template :for="unit in hud.rows()" :key="unit.id">
+    <input :testID="'draft-' + unit.id" placeholder="Draft" :value="unit.draft" @input="hud.edit(unit.id, $event.target.value)" class="h-12 px-3 bg-[#eeeeee] dark:bg-[#333333] rounded-lg" />
+    <span :testID="'echo-' + unit.id" :text="'Draft: ' + unit.draft"></span>
+  </template>
+  <div class="flex-row gap-2">
+    <button testID="increment" @click="hud.increment(1)">Increment</button>
+    <button testID="invalid" @click="hud.increment(-1)">Invalid</button>
+    <button testID="reorder" @click="hud.reorder()">Reorder</button>
+  </div>
+  <span testID="error" :text="hud.error()"></span>
+</div>

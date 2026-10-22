@@ -1624,9 +1624,11 @@ export async function processScriptSetup(
     // Reuse the bundle the detection pass above already produced, if any.
     let scriptContent = signalScripts[i].bundled ?? injectBrowserCoreAutoImports(signalScripts[i].content).code
     if (!signalScripts[i].bundled && hasUserImports(scriptContent)) {
+      // Forced native setup uses the same registry as component scripts.
+      // Inlining here gave the screen a second instance of imported state
+      // and subscriptions, disconnected from the components using it.
       scriptContent = await bundleClientScript(scriptContent, filePath || '', {
         projectRoot: process.cwd(),
-        externalizeUserModules: options.forceClientSetup ? false : undefined,
       })
     }
     // Rewrite `import ... from 'stx'|'@stacksjs/stx'|'@stacksjs/browser'`

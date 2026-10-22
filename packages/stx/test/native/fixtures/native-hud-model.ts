@@ -5,10 +5,14 @@ export const count = state(0)
 export const error = state('')
 export const rows = state([{ id: 'a', draft: '' }, { id: 'b', draft: '' }])
 const subscribers = new Set<(value: number) => void>()
-export const subscriberCount = () => subscribers.size
+export const subscriberCount = state(0)
 export function subscribe(callback: (value: number) => void) {
   subscribers.add(callback)
-  return () => { subscribers.delete(callback) }
+  subscriberCount.set(subscribers.size)
+  return () => {
+    subscribers.delete(callback)
+    subscriberCount.set(subscribers.size)
+  }
 }
 export function increment(amount: unknown) {
   if (typeof amount !== 'number' || !Number.isSafeInteger(amount) || amount <= 0) {
