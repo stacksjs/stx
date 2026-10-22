@@ -841,6 +841,18 @@ export interface StxConfig {
   componentPackages?: string[]
   /** Path to public/static assets directory, defaults to 'public' */
   publicDir?: string
+  /**
+   * Build image placeholders and responsive variants during server startup.
+   * Defaults to 'auto', which runs only when templates consume the image
+   * pipeline. Set false when an application renders its source assets itself.
+   */
+  imageWarmup?: boolean | 'auto'
+  /**
+   * Maximum time in milliseconds to hold the production server's bind for
+   * image warm-up. Defaults to 45000. Zero binds immediately; unfinished work
+   * continues in the background. The server validates the numeric budget.
+   */
+  imageWarmupBindBudgetMs?: number
   /** Path to .env file, defaults to '.env' in project root (Bun loads this automatically) */
   envFile?: string | boolean
   /** Environment variable prefix for client-side exposure (e.g. 'STX_PUBLIC_') */

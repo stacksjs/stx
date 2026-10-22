@@ -3,6 +3,35 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 describe('public TypeScript surface', () => {
+  it('types the image startup settings consumed from project configuration', async () => {
+    await fs.promises.mkdir(path.resolve('.stx'), { recursive: true })
+    const dir = await fs.promises.mkdtemp(path.resolve('.stx', 'image-startup-types-'))
+    try {
+      const file = path.join(dir, 'config.ts')
+      await Bun.write(file, `
+        import type { StxOptions } from '../../packages/stx/src/types'
+        const disabled = { imageWarmup: false } satisfies StxOptions
+        const forced = { imageWarmup: true } satisfies StxOptions
+        const automatic = { imageWarmup: 'auto', imageWarmupBindBudgetMs: 0 } satisfies StxOptions
+        const bounded = { imageWarmupBindBudgetMs: 45000 } satisfies StxOptions
+        // @ts-expect-error Only boolean values and 'auto' are supported.
+        const invalidMode = { imageWarmup: 'disabled' } satisfies StxOptions
+        // @ts-expect-error The bind budget is a number of milliseconds.
+        const invalidBudget = { imageWarmupBindBudgetMs: '45000' } satisfies StxOptions
+        void [disabled, forced, automatic, bounded, invalidMode, invalidBudget]
+      `)
+      // Use the same optional dependency declarations as the source project.
+      const declarations = Array.from(new Bun.Glob('packages/stx/src/*.d.ts').scanSync())
+      const result = Bun.spawnSync(['bun', '--bun', 'tsc', '--ignoreConfig', '--moduleResolution', 'bundler', '--module', 'esnext', '--target', 'esnext', '--types', 'bun', '--skipLibCheck', '--noEmit', file, ...declarations], {
+        cwd: process.cwd(), stdout: 'pipe', stderr: 'pipe',
+      })
+      expect(result.exitCode, `${result.stdout.toString()}\n${result.stderr.toString()}`).toBe(0)
+    }
+    finally {
+      await fs.promises.rm(dir, { recursive: true, force: true })
+    }
+  })
+
   it('typechecks public subpath imports and typed JSX components', async () => {
     const dir = path.resolve('.stx', `public-types-${Date.now()}-${Math.random().toString(36).slice(2)}`)
     await fs.promises.mkdir(dir, { recursive: true })

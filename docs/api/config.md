@@ -2,6 +2,25 @@
 
 This document covers stx's configuration options, including strict mode for DOM API validation.
 
+## Image Startup
+
+Project configuration accepts the same image startup controls as the server:
+
+```ts
+import type { StxOptions } from '@stacksjs/stx'
+
+export default {
+  imageWarmup: 'auto',
+  imageWarmupBindBudgetMs: 45000,
+} satisfies StxOptions
+```
+
+`imageWarmup` defaults to `'auto'`, which runs the image pipeline when templates
+use its image components or directive. `true` forces the pass and `false`
+disables it, for example when a canvas renders application-owned atlases.
+`imageWarmupBindBudgetMs` bounds the production server's wait before binding.
+Zero binds immediately. Unfinished image work continues in the background.
+
 ## Strict Mode
 
 Strict mode validates `<script client>` blocks for raw browser API usage (`document.*`, `window.*`) and suggests stx composable alternatives. This helps enforce framework best practices and eliminates the need for developers to write raw DOM manipulation code.
