@@ -47,6 +47,34 @@ and matching echo, validation feedback and keyboard. This is not a general
 style/appearance audit; the generated host navigation header is outside the
 fixture's theme and has poor contrast in this capture.
 
+## Follow-up: shared module identity and component disposal
+
+The extended fixture factors the HUD into `NativeHudPanel.stx`, imported with
+STX's component import directive. The screen and component both import the same
+model module. This exposed a production bug: forced native screen setup inlined
+its imports while components used the page registry, producing two independent
+copies of state and subscription ownership. Native setup now uses the same
+module registry as components. The extended regression failed before this fix.
+
+The parent permanently removes the keyed panel, mutates the model while it is
+absent, then remounts a fresh panel. Two cycles verify subscription counts
+`1 -> 0 -> 1`, no detached event updates, preserved model drafts, and exactly
+one event for each subsequent increment. The protocol fixture performs these
+cycles in each of two fresh mounts per bundle mode: **2 tests, 134 assertions**.
+The focused HUD/component/animation lifecycle cohort passed **7 tests with
+178 assertions**.
+
+The extended UIKit run passed **1 test, 0 failures/skips, 56.637 seconds** on the
+same unchanged Craft revision/device. It verifies visible subscription counts
+through both removal/remount cycles, fresh per-panel event state, persisted
+`Adax`, and final Count 5 / Events 1. This establishes component teardown on
+the native host; whole-screen subscription teardown is still protocol-tested.
+
+[Follow-up receipt](native-hud-remount-ios-2026-10-23.json) retains the exact
+tested bundle/fixture hashes. The compiler fix is not in the v0.2.666 tag.
+
+![UIKit HUD after two removal/remount cycles](assets/native-hud-remount-ios-2026-10-23.png)
+
 ## Remaining work and #2108 dependency
 
 This fixture contains no graphics surface and does not prove HUD/surface

@@ -1,0 +1,52 @@
+{
+  "issue": 2109,
+  "recordedDate": "2026-10-23",
+  "scope": "Shared screen/component module identity and two native HUD removal/remount cycles",
+  "testedStxBase": "6d66def3d90a88cdb8e9ad3668458298796f2c75",
+  "testedWorkingTree": "Native setup registry fix and extended HUD fixtures; a subsequent source comment relocation does not change the fix",
+  "releaseStatus": "Registry fix not included in the v0.2.666 tag",
+  "craftCommit": "f6929b7afce6b1a3b444f9b6b8c2b16b73dc681c",
+  "craftWorkingTree": "clean and unchanged",
+  "device": {
+    "udid": "5A6726AD-C259-485F-B4CE-DBC51CD3FAAD",
+    "model": "iPhone 17 Pro",
+    "platform": "iOS Simulator",
+    "osVersion": "26.5",
+    "osBuild": "23F77",
+    "architecture": "arm64",
+    "appearance": "light"
+  },
+  "protocol": {
+    "command": "bun test packages/stx/test/native/imported-hud.test.ts",
+    "passed": 2,
+    "failed": 0,
+    "assertions": 134,
+    "mountsPerBundleMode": 2,
+    "removalRemountCyclesPerMount": 2,
+    "bundleModes": ["normal", "minified"]
+  },
+  "xctest": {
+    "test": "NativeHudUITests/testImportedStateEventsKeyedInputAndFailureFeedback",
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "durationSeconds": 56.637,
+    "removalRemountCycles": 2,
+    "result": "Passed"
+  },
+  "sha256": {
+    "packages/stx/test/native/fixtures/native-hud-device.stx": "0aa1bb27b72eda2720a6924f89033a5d012888846aba6ef911331fd61cb3b3f6",
+    "packages/stx/test/native/fixtures/NativeHudPanel.stx": "3f2a3d92c383db11eace53d6433e699a20ad9b217014828305a2cf6dc8801d80",
+    "packages/stx/test/native/fixtures/native-hud-model.ts": "7f2307f94ab744411281c390cf0a96f3f7d7192efc7c2d9d590ffa343eca6832",
+    "packages/stx/test/native/fixtures/NativeHudUITests.swift": "96dd108461e5f24378f26bc7b21f472222323fc3ab48a1a3f530c034533039c1",
+    "screen.js": "3c752f12d8d863b141a2e92ff401af3a2d2f33e8c83dd14b309aa9c695af238e",
+    "docs/proposals/assets/native-hud-remount-ios-2026-10-23.png": "c1e34c3788ca268884251b9a8563b08877c1226984cdb665460aba74c613f02f"
+  },
+  "localEvidenceDirectory": "/var/folders/sq/p6y46h2x6ddgq6w1yyxhd_9h0000gn/T/stx-portability-ios-JRAS0Q",
+  "limitations": [
+    "Whole-screen teardown instrumented in protocol tests, component teardown also in UIKit",
+    "No RenderSurface or game simulation integration",
+    "No Android visual execution or broad style acceptance",
+    "No published registry-fix or downstream adoption claim"
+  ]
+}

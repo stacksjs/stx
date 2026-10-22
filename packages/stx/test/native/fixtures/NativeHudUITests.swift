@@ -31,6 +31,22 @@ final class NativeHudUITests: XCTestCase {
         field.typeText("x")
         wait(field, "value", "Adax")
         wait(app.staticTexts["echo-a"], "label", "Draft: Adax")
+        wait(app.staticTexts["subscriptions"], "label", "Subscriptions: 1")
+        for cycle in 0..<2 {
+            app.buttons["toggle-hud"].tap()
+            wait(app.staticTexts["subscriptions"], "label", "Subscriptions: 0")
+            XCTAssertFalse(app.textFields["draft-a"].exists)
+            app.buttons["external-increment"].tap()
+            wait(app.staticTexts["subscriptions"], "label", "Subscriptions: 0")
+            app.buttons["toggle-hud"].tap()
+            wait(app.staticTexts["subscriptions"], "label", "Subscriptions: 1")
+            wait(app.staticTexts["events"], "label", "Events: 0")
+            wait(app.textFields["draft-a"], "value", "Adax")
+            wait(app.staticTexts["count"], "label", "Count: \(2 + cycle * 2)")
+            app.buttons["increment"].tap()
+            wait(app.staticTexts["events"], "label", "Events: 1")
+            wait(app.staticTexts["count"], "label", "Count: \(3 + cycle * 2)")
+        }
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.lifetime = .keepAlways
         add(shot)
