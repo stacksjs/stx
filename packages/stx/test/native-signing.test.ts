@@ -2,7 +2,29 @@ import { expect, test } from 'bun:test'
 import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { signMacOSBundle } from '../src/native-signing'
+import { parseMacOSProfileEntitlements, signMacOSBundle } from '../src/native-signing'
+
+test.skipIf(process.platform !== 'darwin')('profile parsing isolates entitlements from certificate data and dates', () => {
+  const profile = Buffer.from(`<?xml version="1.0"?><plist version="1.0"><dict>
+    <key>CreationDate</key><date>2026-10-21T00:00:00Z</date>
+    <key>DeveloperCertificates</key><array><data>AQIDBA==</data></array>
+    <key>Entitlements</key><dict>
+      <key>com.apple.application-identifier</key><string>TESTTEAM.org.stx.test</string>
+      <key>com.apple.developer.usernotifications.communication</key><true/>
+      <key>keychain-access-groups</key><array><string>TESTTEAM.*</string></array>
+    </dict>
+  </dict></plist>`)
+  expect(parseMacOSProfileEntitlements(profile)).toEqual({
+    'com.apple.application-identifier': 'TESTTEAM.org.stx.test',
+    'com.apple.developer.usernotifications.communication': true,
+    'keychain-access-groups': ['TESTTEAM.*'],
+  })
+})
+
+test.skipIf(process.platform !== 'darwin')('profile parsing rejects missing and non-dictionary entitlements', () => {
+  expect(() => parseMacOSProfileEntitlements(Buffer.from('<plist version="1.0"><dict/></plist>'))).toThrow('Could not extract')
+  expect(() => parseMacOSProfileEntitlements(Buffer.from('<plist version="1.0"><dict><key>Entitlements</key><array/></dict></plist>'))).toThrow('must be a dictionary')
+})
 
 test.skipIf(process.platform !== 'darwin')('a provisioning profile requires a real signing identity', async () => {
   await expect(signMacOSBundle('/unused.app', [], { provisioningProfile: '/unused.profile' })).rejects.toThrow('requires a signing identity')

@@ -13,6 +13,19 @@ export interface MacOSSigningOptions {
   hardenedRuntime?: boolean
 }
 
+/** Isolate the plist dictionary before converting its JSON-compatible values. */
+export function parseMacOSProfileEntitlements(decoded: Uint8Array): Record<string, unknown> {
+  // Profiles also contain certificate data and dates. macOS 15's plutil
+  // rejects those JSON-incompatible siblings when extracting directly as JSON.
+  const dictionary = Bun.spawnSync(['/usr/bin/plutil', '-extract', 'Entitlements', 'xml1', '-o', '-', '-'], { stdin: decoded })
+  if (dictionary.exitCode !== 0) throw new Error(`Could not extract the macOS profile entitlements: ${dictionary.stderr.toString().trim() || dictionary.stdout.toString().trim()}`)
+  const json = Bun.spawnSync(['/usr/bin/plutil', '-convert', 'json', '-o', '-', '-'], { stdin: dictionary.stdout })
+  if (json.exitCode !== 0) throw new Error(`Could not convert the macOS profile entitlements: ${json.stderr.toString().trim() || json.stdout.toString().trim()}`)
+  const entitlements = JSON.parse(json.stdout.toString())
+  if (!entitlements || typeof entitlements !== 'object' || Array.isArray(entitlements)) throw new Error('The macOS profile entitlements must be a dictionary.')
+  return entitlements
+}
+
 export async function signMacOSBundle(bundle: string, nestedExecutables: string[] = [], options: MacOSSigningOptions = {}): Promise<void> {
   if (process.platform !== 'darwin') return
   let signingEntitlements = options.entitlements
@@ -22,9 +35,7 @@ export async function signMacOSBundle(bundle: string, nestedExecutables: string[
       if (!options.identity || options.identity === '-') throw new Error('A provisioning profile requires a signing identity.')
       const decoded = Bun.spawnSync(['/usr/bin/security', 'cms', '-D', '-i', options.provisioningProfile])
       if (decoded.exitCode !== 0) throw new Error('Could not decode the macOS provisioning profile.')
-      const profile = Bun.spawnSync(['/usr/bin/plutil', '-extract', 'Entitlements', 'json', '-o', '-', '-'], { stdin: decoded.stdout })
-      if (profile.exitCode !== 0) throw new Error('The macOS profile has no entitlement dictionary.')
-      const profileEntitlements = JSON.parse(profile.stdout.toString())
+      const profileEntitlements = parseMacOSProfileEntitlements(decoded.stdout)
       let entitlements: Record<string, unknown> = {}
       if (options.entitlements) {
         const requested = Bun.spawnSync(['/usr/bin/plutil', '-convert', 'json', '-o', '-', options.entitlements])

@@ -15,6 +15,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  native-signing:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: pantry-pm/pantry/packages/action@3436eff9cc46cad165a564f30d458963e148294c # v0.11.99
+        with:
+          version: '0.11.99'
+          install: 'false'
+          packages: bun.com@1.4.2 git-scm.org@2.53.0
+      - run: bun install --frozen-lockfile
+      - run: bun test packages/stx/test/native-signing.test.ts
+
   lint:
     runs-on: ubuntu-latest
 
@@ -114,7 +126,7 @@ jobs:
         run: bun test test/integration/
 
   publish-commit:
-    needs: [lint, typecheck, test]
+    needs: [lint, typecheck, test, native-signing]
     runs-on: ubuntu-latest
 
     steps:
