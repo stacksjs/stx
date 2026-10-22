@@ -1,5 +1,26 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.663...v0.2.664)
+
+## 🐛 Bug Fixes
+
+- **native**: bundle the stores only into a screen that reads one ([9c4ac87](https://github.com/stacksjs/stx/commit/9c4ac87)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **components**: toggle native Tooltip once with shared Button ([122674a](https://github.com/stacksjs/stx/commit/122674a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: isolate nested overlay close events ([1cbb072](https://github.com/stacksjs/stx/commit/1cbb072)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ✅ Tests
+
+- **native**: add maintained iOS overlay portability checks ([a0f9886](https://github.com/stacksjs/stx/commit/a0f9886)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.664 ([544ec64](https://github.com/stacksjs/stx/commit/544ec64)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.661...v0.2.662)
 
 ## 🐛 Bug Fixes
