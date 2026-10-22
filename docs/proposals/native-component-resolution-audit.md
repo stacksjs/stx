@@ -42,8 +42,22 @@ wrapping `<div>`, a client `value = state('/first')`, and
    remount and native teardown. `form-controls-browser.test.ts` checks real
    browser FormData exclusion and lazy model events. This does not change
    default native resolution: legacy primitive input events carry an object,
-   while the shared component emits a string. Broader API migration remains
-   separate work.
+   while the shared component emits the model value (normally a string;
+   `.number` can emit a number). Broader API migration remains separate work.
+
+   **Shared event compatibility (unreleased after v0.2.661):** native
+   `onEndEditing` now commits shared lazy models and delivers an event-shaped
+   `@change`; normal edits still emit value-shaped `@input`. The final host
+   text takes precedence over an older change-text callback. Repeated identical
+   end-editing callbacks do not double-emit, and existing synthetic
+   `onValueChange` callers remain supported. Input is declared before the first
+   edit so a lazy draft cannot leak a raw event into the value callback.
+   `shared-text-input-events.test.ts` covers normal/minified native execution,
+   trim/number modifiers, clearing, disabled commits, remount, stale events and
+   legacy primitive input/end/submit payloads. The companion browser test
+   exercises the actual shared component in WebView. Default native resolution
+   and Craft code are unchanged; this is not a transparent migration of legacy
+   object-payload callers to the shared value-payload API.
 2. **Image (source gap fixed):**
    `<Image testID="target" alt="Photo" :src="value" />` now updates the inner
    image, and the native adapter maps image `src` to the host's `source` on

@@ -167,7 +167,9 @@ export const nativeLabelClasses = 'mb-1.5 px-4 text-[13px] uppercase text-[#6d6d
 export const nativeHelperClasses = `mt-1.5 px-4 text-[13px] ${error ? 'text-[#ff3b30] dark:text-[#ff453a]' : 'text-[#6d6d72] dark:text-[#8d8d93]'}`
   </script>
   <script client>
-    const emit = defineEmits()
+    // Reserve value events before the first edit: lazy input must not leak its
+// bubbling DOM/native event object to a caller expecting the committed value.
+const emit = defineEmits(['input', 'clear'])
 // Validity is live, for the same reason `disabled` is: a form posted with
 // fetch learns it after the submit, and nothing re-renders (#2047).
 const isError = useReactiveProp('error', {{ error }})
@@ -175,12 +177,41 @@ const isError = useReactiveProp('error', {{ error }})
 const isDisabled = useReactiveProp('disabled', {{ disabled }})
 // v-model:value supports modifiers; @input remains available to existing callers.
 const inputValue = useModel('value', { default: {{ value }}, parse: (v) => v == null ? '' : String(v) })
+let lastNativeCommit = String(inputValue() ?? '')
+let lastInputText = lastNativeCommit
+
+function onNativeFocus(event) {
+  lastNativeCommit = String(event.text ?? event.target.value ?? '')
+  lastInputText = lastNativeCommit
+}
+
+function onNativeChange(event) {
+  if (isDisabled() || {{ readonly }}) return
+  lastNativeCommit = String(event.target.value ?? '')
+  onChange(event)
+  emit('change', { ...event, type: 'change' })
+}
+
+// Craft commits text with onEndEditing, not a picker's onValueChange.
+// Keep the shared @change event-shaped and @input value-shaped; the legacy
+// primitive still exposes its original native payload without this adapter.
+function onNativeEndEditing(event) {
+  if (isDisabled() || {{ readonly }}) return
+  const text = String(event.text ?? event.nativeEvent?.text ?? event.target.value ?? '')
+  if (text === lastNativeCommit) return
+  lastNativeCommit = text
+  event.target.value = text
+  if (inputValue.modifiers.lazy) onChange(event)
+  else if (lastInputText !== text) onInput(event)
+  emit('change', { ...event, type: 'change' })
+}
 
 function onInput(event) {
   if (isDisabled()) {
     event.target.value = inputValue()
     return
   }
+  lastInputText = String(event.target.value ?? '')
   inputValue.input(event.target.value)
   if (!inputValue.modifiers.lazy) emit('input', inputValue())
 }
@@ -197,6 +228,8 @@ function onChange(event) {
 function onClear() {
   if (isDisabled()) return
   inputValue.set('')
+  lastNativeCommit = ''
+  lastInputText = ''
   emit('input', '')
   emit('clear')
 }
@@ -235,7 +268,9 @@ defineExpose({ value: inputValue, clear: onClear })
       @if(required)required@endif
       @if(maxLength && freeText)maxlength="{{ maxLength }}"@endif
       @input="onInput($event)"
-      @change="onChange($event)"
+      @change="onNativeChange($event)"
+      @focus="onNativeFocus($event)"
+      @end-editing="onNativeEndEditing($event)"
       aria-invalid="{{ error ? 'true' : 'false' }}"
       :aria-invalid="isError() ? 'true' : 'false'"
       :class="{ 'border border-[#ff3b30] dark:border-[#ff453a]': isError(), 'opacity-50': isDisabled() }"
@@ -407,6 +442,7 @@ border-[#ff3b30]
 box
 button
 by
+change
 className
 color
 const
