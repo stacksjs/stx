@@ -49,6 +49,25 @@ test('a button labelled by a mustache draws its label', async () => {
   expect(phone.texts()).toContain('Saving…')
 })
 
+test('a link\'s words from a mustache are its label', async () => {
+  const root = webApp({
+    'views/links.stx': `<script client>
+  const label = state('Forgot password?')
+</script>
+<div>
+  <a href="/forgot" testid="forgot" class="text-red-500">{{ label }}</a>
+  <button testid="rename" @click="label.set('Reset it')">Rename</button>
+</div>
+`,
+  })
+  const phone = await mountWebView(root, { Links: 'views/links.stx' }, 'Links')
+  expect(phone.texts()).toContain('Forgot password?')
+  expect(phone.texts().some(text => text.includes('{{'))).toBe(false)
+  phone.press(phone.byTestID('rename')!)
+  await phone.settle()
+  expect(phone.texts()).toContain('Reset it')
+})
+
 test('a mustache in an attribute is that attribute\'s binding', async () => {
   const root = webApp({
     'views/search.stx': `<script client>

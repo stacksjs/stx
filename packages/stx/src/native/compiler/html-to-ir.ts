@@ -786,9 +786,10 @@ export async function translateHtmlToIR(
 }
 
 /**
- * Words a server left as `{{ }}` (see `mustacheBinding`): a Text's become its
- * `text` binding. A button labelled that way gets a Text to hold it, since a
- * native Button draws a fixed title.
+ * Words a server left as `{{ }}` (see `mustacheBinding`) become the node's
+ * `text` binding: a Text's, and a link's or touchable's, whose words are its
+ * children as a label's are. A button labelled that way gets a Text to hold
+ * them, since a native Button draws a fixed title.
  */
 function bindMustaches(node: STXNode): void {
   if (node.bindings?.text || node.children.length === 0 || !node.children.every(child => typeof child === 'string'))
@@ -796,12 +797,12 @@ function bindMustaches(node: STXNode): void {
   const expression = mustacheBinding(node.children.join(''))
   if (!expression)
     return
-  if (node.type === 'Text') {
+  if (node.type !== 'Button') {
     node.bindings = { ...node.bindings, text: expression }
     node._templated = [...(node._templated ?? []), 'text']
     node.children = []
   }
-  else if (node.type === 'Button') {
+  else {
     node.type = 'Pressable'
     node.props.role ??= 'button'
     const label = createNode('Text', {}, {}, {}, [])
