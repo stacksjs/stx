@@ -48,6 +48,12 @@ export const NATIVE_WEB_STORAGE_PREFIX = { local: 'stx.localStorage:', session: 
 export const NATIVE_SESSION_RUN_KEY = 'stx.sessionStorage.run'
 
 const INDEX = '\u0000keys'
+const METADATA_PREFIX = 'stx.webStorage.metadata:'
+
+interface StorageMetadata {
+  keys: string[]
+  escaped: Record<string, unknown>
+}
 
 /** Hook-free access to an area's values, for the shared keys' bookkeeping. */
 const RAW = Symbol('stx.nativeWebStorage.raw')
@@ -101,13 +107,46 @@ export class NativeWebStorage {
     return store
   }
 
+  #metadata(): StorageMetadata {
+    const value = this.#store().getSync(METADATA_PREFIX + this.#prefix) as Partial<StorageMetadata> | null
+    if (value && Array.isArray(value.keys)) return { keys: value.keys.filter(key => typeof key === 'string'), escaped: value.escaped ?? {} }
+    // Earlier releases put the index under a key that maintained iOS hosts
+    // reject. Other hosts may already have a valid index there; adopt it.
+    let legacy: unknown
+    try { legacy = this.#store().getSync(this.#prefix + INDEX) }
+    catch { legacy = null }
+    return { keys: Array.isArray(legacy) ? legacy.filter(key => typeof key === 'string') : [], escaped: {} }
+  }
+
   #keys(): string[] {
-    const keys = this.#store().getSync(this.#prefix + INDEX)
-    return Array.isArray(keys) ? keys.filter((key): key is string => typeof key === 'string') : []
+    return this.#metadata().keys
+  }
+
+  #saveMetadata(metadata: StorageMetadata): void {
+    this.#store().setSync(METADATA_PREFIX + this.#prefix, metadata.keys.length || Object.keys(metadata.escaped).length ? metadata : null)
+    try {
+      if (this.#store().getSync(this.#prefix + INDEX) !== null) this.#store().setSync(this.#prefix + INDEX, null)
+    }
+    catch { /* Maintained hosts may reject the old NUL key outright. */ }
   }
 
   #writeKeys(keys: string[]): void {
-    this.#store().setSync(this.#prefix + INDEX, keys.length ? keys : null)
+    this.#saveMetadata({ ...this.#metadata(), keys })
+  }
+
+  #escaped(key: string): boolean {
+    return key.includes('\0') || (this.#prefix + key).length > 512
+  }
+
+  #writeValue(key: string, value: unknown): void {
+    if (!this.#escaped(key)) this.#store().setSync(this.#prefix + key, value)
+    else {
+      const metadata = this.#metadata()
+      const escaped = { ...metadata.escaped }
+      if (value === null) delete escaped[key]
+      else Object.defineProperty(escaped, key, { value, enumerable: true, configurable: true, writable: true })
+      this.#saveMetadata({ ...metadata, escaped })
+    }
   }
 
   /** The keys whose values are readable now: a past run's are not. */
@@ -145,13 +184,14 @@ export class NativeWebStorage {
 
   clear(): void {
     const keys = this.#keys()
-    for (const key of keys) this.#store().setSync(this.#prefix + key, null)
+    for (const key of keys) this.#writeValue(key, null)
     this.#writeKeys([])
     for (const key of keys) this.#hooks?.wrote(key)
   }
 
   #get(key: string): string | null {
-    const value = this.#store().getSync(this.#prefix + key)
+    const escaped = this.#escaped(key) ? this.#metadata().escaped : null
+    const value = escaped ? Object.hasOwn(escaped, key) ? escaped[key] : null : this.#store().getSync(this.#prefix + key)
     if (this.#run) {
       if (!value || typeof value !== 'object' || (value as AnyRecord).run !== this.#run()) return null
       const kept = (value as AnyRecord).value
@@ -161,13 +201,13 @@ export class NativeWebStorage {
   }
 
   #set(key: string, text: string): void {
-    this.#store().setSync(this.#prefix + key, this.#run ? { run: this.#run(), value: text } : text)
+    this.#writeValue(key, this.#run ? { run: this.#run(), value: text } : text)
     const keys = this.#keys()
     if (!keys.includes(key)) this.#writeKeys([...keys, key])
   }
 
   #remove(key: string): void {
-    this.#store().setSync(this.#prefix + key, null)
+    this.#writeValue(key, null)
     const keys = this.#keys()
     if (keys.includes(key)) this.#writeKeys(keys.filter(other => other !== key))
   }
