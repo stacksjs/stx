@@ -1,5 +1,25 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.666...v0.2.667)
+
+## 🐛 Bug Fixes
+
+- **native**: share imported state between screens and components (#2109) ([206d9cf](https://github.com/stacksjs/stx/commit/206d9cf)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2109](https://github.com/stacksjs/stx/issues/2109), [#2109](https://github.com/stacksjs/stx/issues/2109))
+
+## ✅ Tests
+
+- **client-script**: read the setup's return object, not the runtime's ([d162f00](https://github.com/stacksjs/stx/commit/d162f00)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: retain UIKit HUD removal and remount evidence (#2109) ([c62ab5c](https://github.com/stacksjs/stx/commit/c62ab5c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2109](https://github.com/stacksjs/stx/issues/2109), [#2109](https://github.com/stacksjs/stx/issues/2109))
+
+## 🔧 Chores
+
+- release v0.2.667 ([8a48127](https://github.com/stacksjs/stx/commit/8a48127)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.665...v0.2.666)
 
 ## ✨ Features
