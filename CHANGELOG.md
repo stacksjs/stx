@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.646...v0.2.647)
+
+## 🐛 Bug Fixes
+
+- resolve shell titles and native retry identifiers ([f04b187](https://github.com/stacksjs/stx/commit/f04b187)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
+## 0.2.646 (2026-10-21)
+
+- Add cancellable native background deadlines to `@stacksjs/desktop`, so macOS tray apps can schedule work while WebKit is hidden.
+- Fix native CLI and typecheck startup by loading recursive component compilation after built-in directive initialization.
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.644...v0.2.645)
 
 ## 🐛 Bug Fixes

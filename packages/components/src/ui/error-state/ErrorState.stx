@@ -47,7 +47,7 @@ function retry() {
   <button
     type="button"
     :show="retryText()"
-    @if(testID):testID="'{{ testID }}-retry'"@endif
+    @if(testID)testID="{{ testID }}-retry"@endif
     :disabled="isBusy()"
     :aria-busy="isBusy() ? 'true' : 'false'"
     class="mt-2 min-h-[44px] items-center justify-center rounded-control bg-accent-solid px-5 text-[15px] font-semibold text-accent-ink disabled:opacity-60"

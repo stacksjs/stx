@@ -590,7 +590,11 @@ export async function processDirectives(
           pageHeadTitle = rawTitleMatch[1].trim()
           pageHeadRaw = pageHeadRaw.replace(rawTitleMatch[0], '').trim()
         }
-        const sectionTitle = (context.__sections as Record<string, string> | undefined)?.title
+        const storedSectionTitle = (context.__sections as Record<string, string> | undefined)?.title
+        // Sections are stored before expression rendering. The auto-shell is
+        // created afterwards, so resolve its title once in the same escaped
+        // expression pipeline used by a layout's @yield.
+        const sectionTitle = storedSectionTitle ? processExpressions(storedSectionTitle, context, filePath) : undefined
 
         // Title precedence: useHead()/@title > @head <title> > @section('title') > config
         const pageTitle = runtimeHead.title || pageHeadTitle || sectionTitle
