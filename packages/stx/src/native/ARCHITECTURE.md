@@ -194,11 +194,19 @@ browser:
   by web path (`navigation.open('/plans/12')`, `replace` for a replacing
   move). A pressed link is followed after its own listeners, unless one
   prevented it. Other sites, `mailto:` and `tel:` go to `craft.linking`.
-  Native routes are the web paths: nothing adds a `/m` prefix.
+  Native routes are the web paths: nothing adds a `/m` prefix. A `<StxLink>`
+  to the screen being shown takes its active and exact-active classes by the
+  web router's rule, and `useRoute().params` reads a file-routed view's
+  `[id]` segments from the screen's address.
 - **Storage** (`runtime/web-storage.ts`): `localStorage` and `sessionStorage`
   are the web's synchronous Storage over `craft.storage.getSync`/`setSync`,
   shared by every screen of the app; sessionStorage lasts for one run (the
   app script starts a new one per launch). `keptState` keeps its values there.
+  A key the app shares with its native side (`compileNativeBundle({
+  shareStorage })`, Craft's `shareStorage`, such as `auth_token` to
+  `auth.token`) is also that secure-storage item, as on Craft's hybrid page:
+  a web view's sign-in is `craft.session`'s, and a native sign-in or sign-out
+  is adopted and announced as `craftsharedstorage`.
 - **Layouts** (`compiler/layout-chrome.ts`): a layout marks its chrome with
   `data-native-chrome` (`tabs`, `bar`, or empty for chrome that is just not
   drawn, such as a footer). The native compile leaves it out; its links are

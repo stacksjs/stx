@@ -97,6 +97,14 @@ export interface CompileNativeBundleOptions {
    */
   messages?: NativeMessagesOptions
   /**
+   * Web-storage keys the app shares with its native side, to the secure-storage
+   * key each is kept under: Craft's `shareStorage` (`{ auth_token: 'auth.token' }`).
+   * A web view's localStorage or sessionStorage of the key is that item, so its
+   * sign-in is `craft.session`'s and a native sign-in is the web view's. A host
+   * that names its own (`__stxNativeBridge.shareStorage`) adds to these.
+   */
+  shareStorage?: Record<string, string>
+  /**
    * The app's utility vocabulary for native styles: Crosswind shortcuts,
    * theme colours, breakpoints. Defaults to the project's CSS config
    * (`config/css.ts`), the same one its web pages use.
@@ -417,6 +425,7 @@ g.__stxNativeStyleConfig = ${JSON.stringify(styleConfig)};
 ${browser ? `var browserPlatform = await createBrowserPlatform(${JSON.stringify(browser.platformOptions ?? {})});\nvar browserBridge = createBrowserScreenBridge(browserPlatform, ${JSON.stringify(browser)});\nvar bridge = browserBridge;\ng.__stxNativeRoute = ${JSON.stringify(initialScreen)};` : 'var bridge = g.__stxNativeBridge;'}
 if (!bridge) throw new Error('Missing __stxNativeBridge');
 var routeNames = ${JSON.stringify(routed ? names : ['main'])};
+var shareStorage = ${JSON.stringify(options.shareStorage ?? {})};
 ${route}
 g.__stxNativeRoute = routeName;
 var nativeDocument;
@@ -425,11 +434,11 @@ ${selections}
 var screen = null;
 var app = null;
 if (isApp) {
-  app = prepareNativeApp(bridge, { routeName: routeName, routeNames: routeNames });
+  app = prepareNativeApp(bridge, { routeName: routeName, routeNames: routeNames, shareStorage: shareStorage });
   g.__stxNativeUnmount = function() { app.unmount(); };
 }
 else {
-  screen = prepareSharedNativeScreen(nativeDocument, manifest, bridge, { routeName: routeName, routeNames: routeNames });
+  screen = prepareSharedNativeScreen(nativeDocument, manifest, bridge, { routeName: routeName, routeNames: routeNames, shareStorage: shareStorage });
   g.__stx_host = screen.host;
   g.__stxNativeUnmount = function() { screen.unmount(); };
 }

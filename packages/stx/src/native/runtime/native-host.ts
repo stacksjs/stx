@@ -157,6 +157,12 @@ export interface NativeHostOptions {
    * prevented it: the screen moves to `href`, as a browser follows a link.
    */
   followLink?: (href: string) => void
+  /**
+   * Whether a link points at the screen being shown (web-navigation.ts
+   * `nativeLinkState`): a `<StxLink>` takes its active and exact-active
+   * classes from it, as the web router gives them.
+   */
+  linkState?: (href: string, match: string | null) => { active: boolean, exact: boolean } | null
 }
 
 export interface NativeHost {
@@ -252,6 +258,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
   const schedule = options.schedule ?? ((flush: () => void) => queueMicrotask(flush))
   const followLink = options.followLink
+  const linkState = options.linkState
 
   const nextId = (prefix: string): string => `${prefix}${++counter}`
 
@@ -311,10 +318,28 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
    * handler would follow the template's href.
    */
   function installLinkListener(node: NativeNode): void {
+    markCurrentLink(node)
     if (!followLink) return
     const bound = isBindingNode(node) && node.attributes.some(attribute => /^(?::|x-bind:|@bind:|x-)href$/.test(attribute.name))
     if (bound || typeof descriptorOf(node)?.props.href === 'string')
       host.listen(node, 'click', followsHref)
+  }
+
+  /** A `<StxLink>`'s active and exact-active classes, for where it points now. */
+  function markCurrentLink(node: NativeNode): void {
+    const record = descriptorOf(node)
+    if (!linkState || !record || record.props['data-stx-link'] === undefined) return
+    const href = linkHref(node)
+    const state = href === null ? null : linkState(href, typeof record.props['data-stx-active-match'] === 'string' ? record.props['data-stx-active-match'] : null)
+    if (!state) return
+    const words = (value: unknown, fallback: string): string[] => String(typeof value === 'string' ? value : fallback).split(/\s+/).filter(Boolean)
+    const active = words(record.props['data-stx-active-class'], 'active')
+    const exact = words(record.props['data-stx-exact-active-class'], 'exact-active')
+    const kept = record.classes.split(/\s+/).filter(word => word && !active.includes(word) && !exact.includes(word))
+    const next = [...kept, ...(state.exact ? exact : []), ...(state.active ? active : [])].filter((word, index, all) => all.indexOf(word) === index).join(' ')
+    if (next === record.classes) return
+    record.classes = next
+    applyClasses(node.__stxId, record)
   }
 
   function retainDetachedDescriptors(node: NativeNode): void {
@@ -958,6 +983,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         this.setAttribute(node, 'iconify', icon.iconify ?? null)
         this.setAttribute(node, 'symbol', icon.symbol)
       }
+      if (prop === 'href') markCurrentLink(node)
       const patch: Record<string, unknown> = { [prop]: value }
       if (accessibilityBefore)
         Object.assign(patch, accessibilityChanges(record.props, accessibilityBefore, prop))

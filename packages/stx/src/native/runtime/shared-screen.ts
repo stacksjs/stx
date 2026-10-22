@@ -8,7 +8,7 @@ import type { NativeBindingNode } from './binding-tree'
 import { installCraftBridge, type CraftBridgeOptions } from './craft-bridge'
 import { createNativeHost, type NativeHost } from './native-host'
 import { createNativeViewOperations, nativeViewError } from './view-operations'
-import { nativeLinkFollower } from './web-navigation'
+import { nativeLinkFollower, nativeLinkState } from './web-navigation'
 import { startNativeSessionRun } from './web-storage'
 
 interface SharedSignalsRuntime {
@@ -41,6 +41,7 @@ export function prepareSharedNativeScreen(
     ...options,
     ...(document.title ? { title: document.title } : {}),
     ...(document.chrome ? { chrome: document.chrome } : {}),
+    source: document.meta.source,
   })
 
   const followLink = nativeLinkFollower(craft)
@@ -52,7 +53,7 @@ export function prepareSharedNativeScreen(
     viewportWidth: Number(bridge.viewportWidth) || 0,
     stylesheetTheme: document.root._stylesheetTheme,
     stylesheetRules: document.root._stylesheetRules,
-    ...(followLink ? { followLink } : {}),
+    ...(followLink ? { followLink, linkState: (href: string, match: string | null) => nativeLinkState(href, String((globalThis as Record<string, any>).location?.href ?? ''), match) } : {}),
     send(operations) {
       const baseRevision = revision
       revision++
