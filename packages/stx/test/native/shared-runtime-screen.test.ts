@@ -7,9 +7,14 @@ import { compileScreenSource, nativePrimitivesDir } from '../../src/native/compi
 import { prepareSharedNativeScreen } from '../../src/native/runtime/shared-screen'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import { installNodeConstants } from '../../test-utils/dom-runtime-shim'
+import { restoreGlobalsAfterEach } from '../../test-utils/native-globals'
 import { createTempDir } from '../../src/temp-dir'
 
 declare const window: any
+
+// The runtime installs craft and web storage on the global it runs in, which
+// here is this process's own (test-utils/native-globals.ts).
+restoreGlobalsAfterEach()
 
 describe('a native screen on the shared stx signals runtime', () => {
   it('round trips native text and picker edits through x-model and application resets', async () => {

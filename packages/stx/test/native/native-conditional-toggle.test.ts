@@ -6,9 +6,14 @@ import { compileScreenSource, nativePrimitivesDir } from '../../src/native/compi
 import { prepareSharedNativeScreen } from '../../src/native/runtime/shared-screen'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import { installNodeConstants } from '../../test-utils/dom-runtime-shim'
+import { NATIVE_RUNTIME_GLOBALS, restoreGlobalsAfterEach } from '../../test-utils/native-globals'
 import { createTempDir } from '../../src/temp-dir'
 
 declare const window: any
+
+// The runtime installs craft and web storage on the global it runs in, which
+// here is this process's own (test-utils/native-globals.ts).
+restoreGlobalsAfterEach([...NATIVE_RUNTIME_GLOBALS, '__pressed'])
 
 interface ModelNode { id: string, type: string, text: string[], children: string[], parent: string | null, events: Record<string, string> }
 
