@@ -29,7 +29,8 @@ describe.each([false, true])('shared control labels (minify=%s)', (minify) => {
     try {
       await phone.settle()
       const checkbox = () => phone.ofType('Checkbox')[0]!
-      const toggle = () => phone.ofType('Pressable')[0]!
+      // The platform switch natively (Switch.stx), named by its ARIA label.
+      const toggle = () => phone.ofType('Switch')[0]!
       expect(toggle().props.accessibilityLabel).toBe('Toggle switch')
       expect(phone.ofType('Text').some(node => node.children.includes('Toggle switch'))).toBe(false)
       phone.context.probe.label.set('Receive updates')

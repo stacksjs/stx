@@ -39,6 +39,13 @@ export const dialogClasses = `${baseClasses} ${className}`.trim()
  * each other's Escape. Same idiom as Drawer, Dropdown and Popover.
  */
 export const dialogInstanceId = $uid
+
+/*
+ * On a native host ($native) a dialog is presented the phone's way, as a
+ * sheet that slides up from the bottom edge (DialogPanel draws the sheet).
+ * `animationType="fade"` keeps an alert-like centred card from sliding.
+ */
+export const nativeAnimation = $props.animationType || 'slide'
   </script>
   <script client>
     const emit = defineEmits()
@@ -193,6 +200,7 @@ defineExpose({
       </script>
       <div
   data-native="Modal"
+  @if($native)animationType="{{ nativeAnimation }}"@endif
   x-ref="rootRef"
   :show="isOpen()"
   :data-state="isOpen() ? 'open' : 'closed'"

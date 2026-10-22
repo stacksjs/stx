@@ -146,7 +146,9 @@ window.probe = { classes, styles, label, testID, shown }
   await phone.settle()
   expect(control().style).toMatchObject({ fontSize: 24, paddingLeft: 7 })
   expect(control().props).toMatchObject({ testID: 'second', accessibilityLabel: 'Accessible two' })
-  expect(phone.byTestID('untouched')!.style.fontSize).toBe(16)
+  // The other button keeps its own styling; natively a button's text size
+  // is its label's (Button.stx), so its root carries none.
+  expect(phone.byTestID('untouched')!.style.fontSize ?? null).toBeNull()
   phone.context.probe.shown.set(false)
   await phone.settle()
   expect(control()).toBeUndefined()
@@ -160,7 +162,7 @@ window.probe = { classes, styles, label, testID, shown }
   phone.context.probe.label.set(null)
   phone.context.probe.testID.set(null)
   await phone.settle()
-  expect(control().style.fontSize).toBe(16)
+  expect(control().style.fontSize).toBeNull()
   expect(control().style.paddingLeft).toBeNull()
   expect(control().props.accessibilityLabel).toBeNull()
   expect(control().props.testID).toBeNull()

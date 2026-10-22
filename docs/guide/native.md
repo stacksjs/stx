@@ -331,6 +331,61 @@ components precede the primitive fallback for shared usage; existing
 screen-local/configured overrides still win for either API. If no shared
 implementation is installed, the primitive remains the final fallback.
 
+### Platform controls from shared components
+
+Compiled for a native host, the shared components draw the platform's own
+controls and its iOS look, while their web markup stays exactly as it was:
+
+| Component | Native rendering |
+| --- | --- |
+| `TextInput`, `EmailInput`, `PasswordInput` | 48pt filled field, 17pt text, `#8e8e93` placeholder, system-red outline when invalid; the keyboard, autofill hint and secure entry come from the field's type (below). PasswordInput's reveal button flips secure entry in place. |
+| `Button` | Filled system blue (`primary`), grey-filled tinted (`secondary`), outlined, plain tinted (`ghost`) or system red (`danger`), at 28/34/44/50/56pt for xs–xl, dimmed while pressed and while disabled; `loading` shows a native ActivityIndicator. |
+| `Switch` | The platform switch (UISwitch, Android's Switch) at the end of its row. |
+| `Checkbox` | The native checkbox control, tinted system blue. |
+| `Select` | The platform picker fed with `items` (no option children; slotted `<option>`s are a web-only spelling). The placeholder leads only while nothing is chosen. |
+| `GroupedList`, `GroupedListRow`, `SectionCard`, `ListRow` | iOS inset groups (white / `#1c1c1e`, 10pt corners), hairline system separators, cells that highlight grey while pressed, SF Symbol chevrons. |
+| `SegmentedControl`, `Tabs`, `TabList`/`Tab` | UISegmentedControl's translucent track with the selected segment raised. |
+| `Dialog`/`DialogPanel`, `Drawer` | A Modal that slides up into a bottom sheet with 10pt top corners and the grabber. `DialogPanel variant="center"` with `animationType="fade"` keeps an alert-like centred card. |
+
+A component chooses its native markup through `$native`, which is true in a
+component's server script and template when it renders for a native host and
+false otherwise (it is always declared, so `@if($native)` never throws on the
+web):
+
+```html
+@if($native)
+  <div data-native="Switch" :value="isChecked()" @change="onNativeChange($event)"></div>
+@else
+  <button role="switch" ...>...</button>
+@endif
+```
+
+The render cache keys `$native`, so a web and a native render of one
+component never share an entry.
+
+Three translations serve web views generally, not only these components:
+
+- **Text fields.** HTML's `type`, `inputmode`, `enterkeyhint`,
+  `autocapitalize`, `autocorrect`/`spellcheck`, `readonly` and `disabled` on an
+  `<input>` reach the host as `keyboardType`, `secureTextEntry`,
+  `returnKeyType`, `autoCapitalize`, `autoCorrect` and `editable`
+  (`src/native/text-entry.ts`): `type="email"` brings the email keyboard, no
+  capitals and the email autofill hint; a bound `:type` between `password`
+  and `text` turns secure entry off and on. A native prop written on the
+  element wins.
+- **`aria-selected:`, `aria-pressed:`, `aria-checked:`, `aria-expanded:`**
+  compile to state layers the host applies while the node's attribute is
+  `"true"`, dark variants included.
+- **`divide-y`/`divide-x`** and their colour become the leading border of
+  every child shown after the first, kept right as children are inserted,
+  removed, shown or hidden, and across appearance changes.
+
+`test/native/native-shared-{inputs,controls,lists,sheets}.test.ts` run each
+component on the iOS and Android hosts in normal and minified bundles, and
+render the same source for the web to show its markup is unchanged.
+`native-text-entry.test.ts` and `native-state-layers.test.ts` cover the three
+translations. These are protocol tests, not device screenshots.
+
 ### Shared-control host validation screen
 
 `examples/shared-controls.stx` explicitly imports the actual shared Button,

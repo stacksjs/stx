@@ -69,7 +69,8 @@ describe('list and state components on a native host', () => {
     // Rows: two labels each, the value, and a hairline only above the second.
     const rows = phone.all().filter(node => node.props.testID === 'trail-row')
     expect(rows).toHaveLength(2)
-    expect(rows[0].type).toBe('Pressable')
+    // A cell that highlights grey while pressed, as a table cell does (GroupedListRow.stx).
+    expect(rows[0].type).toBe('TouchableHighlight')
     expect(texts()).toEqual(expect.arrayContaining(['Ridge loop', '4.2 mi', 'Old mill', 'Run', 'Trails', 'Two saved']))
     expect(texts()).not.toContain('Ridge loop4.2 mi')
     const rules = phone.all().filter(node => node.props['aria-hidden'] === true && node.type === 'View' && node.style.height === 0.5)

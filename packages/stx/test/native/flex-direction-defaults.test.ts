@@ -75,7 +75,8 @@ window.probe = { styles, classes, shown }
     const phone = mountNativeScreen(code)
     try {
       await phone.settle()
-      const toggle = phone.ofType('Pressable')[0]!
+      // The shared Switch is the platform switch natively, at the end of its row.
+      const toggle = phone.ofType('Switch')[0]!
       const switchRow = phone.all().find(node => node.children.includes(toggle))!
       expect(switchRow.style.flexDirection).toBe('row')
       const control = phone.ofType('Checkbox')[0]!

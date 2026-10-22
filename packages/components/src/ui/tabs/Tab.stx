@@ -20,7 +20,11 @@ const variantClasses = {
   pills: `px-3 py-1.5 font-medium text-sm rounded-control text-fg-muted hover:text-fg aria-selected:bg-field aria-selected:text-fg aria-selected:shadow-sm transition-colors ${focusRing}`,
   none: '',
 }
-export const tabClasses = `${variantClasses[variant] ?? variantClasses.line} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`.replace(/\s+/g, ' ').trim()
+// On a native host ($native), a segment of the list's segmented control.
+const nativeSegment = 'flex-1 min-h-[30px] px-3 items-center justify-center rounded-[7px] text-[13px] font-medium text-[#000000] dark:text-[#ffffff] aria-selected:font-semibold aria-selected:bg-[#ffffff] dark:aria-selected:bg-[#636366] aria-selected:shadow-sm'
+export const tabClasses = $native && variant !== 'none'
+  ? `${nativeSegment} ${disabled ? 'opacity-50' : ''} ${className}`.replace(/\s+/g, ' ').trim()
+  : `${variantClasses[variant] ?? variantClasses.line} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`.replace(/\s+/g, ' ').trim()
 </script>
 
 <button

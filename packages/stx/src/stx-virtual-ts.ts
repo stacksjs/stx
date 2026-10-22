@@ -876,11 +876,14 @@ export const STX_SERVER_CONTEXT = [
  *   `$props`; this is its exact signature.
  * - `$uid` is the per-instance id `utils.ts` puts in a component's context.
  *   A page has no component instance, so it is optional there.
+ * - `$native` is true when a component renders for a native host (Craft),
+ *   false in a browser.
  */
 const TYPED_SERVER_CONTEXT: Record<string, string> = {
   $bool: 'declare function $bool(value: unknown, fallback?: boolean): boolean',
   $num: 'declare function $num(value: unknown, fallback?: number): number',
   $uid: 'declare var $uid: string',
+  $native: 'declare var $native: boolean',
 }
 
 export function serverContextDeclarations(typed: ReadonlySet<string> = new Set()): string {
@@ -1302,6 +1305,8 @@ export const STX_TEMPLATE_GLOBALS = [
   'loop',
   '$errors',
   '$csrf',
+  // A component's target: true when it renders for a native host.
+  '$native',
   'props',
   'slot',
 ] as const

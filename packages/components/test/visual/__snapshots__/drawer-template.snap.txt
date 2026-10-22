@@ -185,6 +185,41 @@ defineExpose({
   isOpen,
 })
 </script>
+@if($native)
+{{-- On a native host a drawer is the phone's sheet: it slides up from the
+     bottom edge whichever edge it is given, under a title bar with the close
+     button where iOS puts it. --}}
+<div x-ref="rootRef" data-native="Modal" animationType="slide" data-stx-drawer="{{ drawerInstanceId }}" :show="isOpen()">
+  <div class="absolute inset-0 bg-[#000000]/40" aria-hidden="true" @click="onBackdropClick()">
+  </div>
+  <div class="absolute inset-0 justify-end pt-12">
+    <div
+      class="w-full max-h-full rounded-t-[10px] bg-[#f2f2f7] dark:bg-[#1c1c1e] {{ className }}"
+      data-stx-drawer-panel="{{ drawerInstanceId }}"
+      x-ref="panelRef"
+      role="dialog"
+      aria-modal="true"
+      aria-label="{{ title }}"
+      tabindex="-1"
+    >
+      <div aria-hidden="true" class="self-center mt-1.5 h-[5px] w-9 rounded-full bg-[#c6c6c8] dark:bg-[#48484a]">
+      </div>
+      <div class="flex-row items-center min-h-[44px] px-4">
+        <h2 class="flex-1 text-[17px] font-semibold text-[#000000] dark:text-[#ffffff]">
+          {{ title }}
+        </h2>
+        <button type="button" @click="close()" aria-label="Close panel" class="h-[30px] w-[30px] items-center justify-center rounded-full bg-[#767680]/12 dark:bg-[#767680]/24">
+          <i class="i-lucide-x h-3.5 w-3.5 text-[#8a8a8e] dark:text-[#98989f]">
+          </i>
+        </button>
+      </div>
+      <div class="overflow-y-auto px-4 pb-[34px]">
+        <slot />
+      </div>
+    </div>
+  </div>
+</div>
+@else
 <div x-ref="rootRef" data-native="Modal" data-stx-drawer="{{ drawerInstanceId }}" :show="isOpen()">
   <div
     class="fixed inset-0 z-50 {{ backdropClass }} transition-opacity duration-500"
@@ -239,6 +274,7 @@ defineExpose({
     </div>
   </div>
 </div>
+@endif
 <style>
   @keyframes fadeIn {
   from { opacity: 0; }
@@ -274,26 +310,45 @@ defineExpose({
 -inset-2.5
 absolute
 backdropClass
+bg-[#000000]/40
+bg-[#767680]/12
+bg-[#c6c6c8]
+bg-[#f2f2f7]
 bg-panel
 bottom-0
+className
 closeButtonClasses
 containerClasses
+dark:bg-[#1c1c1e]
+dark:bg-[#48484a]
+dark:bg-[#767680]/24
+dark:text-[#98989f]
+dark:text-[#ffffff]
 duration-500
 fixed
 flex
 flex-1
 flex-col
+flex-row
 focus-visible:outline-2
 focus-visible:outline-accent
 focus-visible:outline-offset-2
 font-semibold
+h-3.5
 h-6
+h-[30px]
+h-[5px]
 h-full
 hover:text-white
+i-lucide-x
 inset-0
 inset-x-0
 inset-y-0
+items-center
+justify-center
+justify-end
 left-0
+max-h-full
 max-w-2xl
 max-w-3xl
 max-w-4xl
@@ -306,6 +361,8 @@ max-w-md
 max-w-sm
 max-w-xl
 max-w-xs
+min-h-[44px]
+mt-1.5
 mt-6
 open
 overflow-hidden
@@ -313,17 +370,22 @@ overflow-y-auto
 panelClass
 panelClasses
 pb-10
+pb-[34px]
 pl-10
 pointer-events-none
 pr-10
 pr-2
 pt-10
+pt-12
 pt-4
 px-4
 py-6
 relative
 right-0
 rounded-control
+rounded-full
+rounded-t-[10px]
+self-center
 shadow-xl
 slideInBottom
 slideInLeft
@@ -336,12 +398,18 @@ sm:pr-16
 sm:pr-4
 sm:px-6
 sr-only
+text-[#000000]
+text-[#8a8a8e]
+text-[17px]
 text-base
 text-fg
 text-neutral-300
 top-0
 transition-opacity
+w-3.5
 w-6
+w-9
+w-[30px]
 w-full
 w-screen
 z-50

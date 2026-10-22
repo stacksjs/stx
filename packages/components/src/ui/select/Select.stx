@@ -146,6 +146,19 @@ function normaliseOptions(list) {
 const optionSource = useReactiveProp('options', {{ options }}, { parse: v => normaliseOptions(v) })
 const optionList = derived(() => normaliseOptions(optionSource()))
 
+/*
+ * The choices as a native picker takes them (`items`), for a native host.
+ * Disabled choices are left out, since neither platform picker can show one
+ * it will not let you pick; the placeholder leads the list only while
+ * nothing in it is chosen, as the web's disabled first option does.
+ */
+const placeholderText = {{ placeholder }}
+const nativeItems = derived(() => {
+  const list = optionList().filter(option => !option.disabled).map(option => ({ value: option.value, label: option.label }))
+  const chosen = list.some(option => option.value === selectedValue())
+  return placeholderText && !chosen ? [{ value: '', label: placeholderText }, ...list] : list
+})
+
 function onChange(event) {
   selectedValue.set(event.target.value)
   emit('change', selectedValue())
@@ -154,6 +167,31 @@ function onChange(event) {
 defineExpose({ value: selectedValue, options: optionList })
 </script>
 
+@if($native)
+{{-- On a native host the control is the platform's picker (UIPickerView,
+     Android's Spinner) fed with its items. Children are not something either
+     picker holds, so slotted <option>s are a web-only spelling. --}}
+<div class="w-full {{ className }}">
+  @if(label)
+    <label for="{{ selectId }}" class="mb-1.5 px-4 text-[13px] uppercase text-[#6d6d72] dark:text-[#8d8d93]">{{ label }}</label>
+  @endif
+  <div
+    data-native="Picker"
+    data-stx-native-host-root
+    id="{{ selectId }}"
+    :items="nativeItems()"
+    :value="selectedValue()"
+    @if(disabled)disabled@endif
+    class="w-full disabled:opacity-50"
+    @change="onChange($event)"
+    aria-invalid="{{ error ? 'true' : 'false' }}"
+    :aria-invalid="isError() ? 'true' : 'false'"
+  ></div>
+  @if(helperText)
+    <p id="{{ helperId }}" class="mt-1.5 px-4 text-[13px] {{ error ? 'text-[#ff3b30] dark:text-[#ff453a]' : 'text-[#6d6d72] dark:text-[#8d8d93]' }}">{{ helperText }}</p>
+  @endif
+</div>
+@else
 <div class="w-full">
   @if(label)
     <label for="{{ selectId }}" class="{{ labelClasses }}">
@@ -224,3 +262,4 @@ defineExpose({ value: selectedValue, options: optionList })
     </p>
   @endif
 </div>
+@endif

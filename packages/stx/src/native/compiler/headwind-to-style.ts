@@ -1041,7 +1041,36 @@ export interface ClassStyles {
   responsive?: Array<{ min: number, max?: number, style: STXStyle, dark?: STXStyle }>
   /** What `disabled:` classes change, for a control the host reports disabled. */
   disabled?: { style: STXStyle, dark?: STXStyle }
+  /**
+   * What `aria-selected:`, `aria-pressed:`, `aria-checked:` and
+   * `aria-expanded:` classes change, by the attribute each one reads: they
+   * apply while the node's attribute is `"true"`, as Tailwind's variants
+   * select `[aria-selected="true"]`.
+   */
+  states?: Record<string, { style: STXStyle, dark?: STXStyle }>
+  /**
+   * `divide-y` / `divide-x` and their colour, as the border each child after
+   * the first draws (the host applies it: a phone has no sibling selector).
+   */
+  divide?: { style: STXStyle, dark?: STXStyle }
 }
+
+/**
+ * A `divide-*` utility as the border it puts on a child: `divide-y` is that
+ * child's `border-t`, `divide-x-2` its `border-l-2`, `divide-line` its
+ * `border-line`. `divide-*-reverse` orders a reversed flex row, which a
+ * native host has no need of.
+ */
+function divideAsBorder(name: string): string | null {
+  const rule = /^divide-(?:(y|x)(?:-(.+))?|(.+))$/.exec(name)
+  if (!rule) return null
+  if (rule[2] === 'reverse') return ''
+  if (rule[1]) return `border-${rule[1] === 'y' ? 't' : 'l'}${rule[2] ? `-${rule[2]}` : ''}`
+  return `border-${rule[3]}`
+}
+
+/** ARIA state variants a native node can carry: its attribute is on the node, so the layer can follow it. */
+export const NATIVE_STATE_VARIANTS = new Set(['aria-selected', 'aria-pressed', 'aria-checked', 'aria-expanded'])
 
 /**
  * Variants with no meaning on a touch screen: a pointer hovering, a link
@@ -1094,8 +1123,8 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
   // Group the authored classes by the layer they belong to. Each group then
   // compiles as a plain class list (dark and focus kept inside it), and an
   // unknown class is reported by the name the author wrote.
-  const groups = new Map<string, { min?: number, max?: number, disabled?: boolean, classes: string[], authored: Map<string, string> }>()
-  const group = (key: string, init: { min?: number, max?: number, disabled?: boolean }) => {
+  const groups = new Map<string, { min?: number, max?: number, disabled?: boolean, state?: string, classes: string[], authored: Map<string, string> }>()
+  const group = (key: string, init: { min?: number, max?: number, disabled?: boolean, state?: string }) => {
     if (!groups.has(key)) groups.set(key, { ...init, classes: [], authored: new Map() })
     return groups.get(key)!
   }
@@ -1126,6 +1155,7 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
       let min: number | undefined
       let max: number | undefined
       let disabled = false
+      let state: string | undefined
       const kept: string[] = []
       for (const variant of parts) {
         const width = nativeBreakpoint(variant)
@@ -1134,13 +1164,15 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
         if (width !== undefined && min === undefined) min = width
         else if (below !== undefined && max === undefined) max = below - 0.02
         else if (variant === 'disabled' && !disabled) disabled = true
+        else if (NATIVE_STATE_VARIANTS.has(variant) && state === undefined) state = variant
         else kept.push(variant)
       }
       const stripped = [...kept, utility].join(':')
       const ranged = min !== undefined || max !== undefined
-      const target = disabled ? group(`disabled`, { disabled: true }) : ranged ? group(`range:${min ?? 0}:${max ?? ''}`, { min: min ?? 0, max }) : groups.get('base')!
-      // A width layer under `disabled:` is rare enough to stay diagnostic.
-      if (disabled && ranged) {
+      const target = disabled ? group(`disabled`, { disabled: true }) : state ? group(`state:${state}`, { state }) : ranged ? group(`range:${min ?? 0}:${max ?? ''}`, { min: min ?? 0, max }) : groups.get('base')!
+      // A width layer under `disabled:` or a state is rare enough to stay
+      // diagnostic, as is a state under `disabled:`.
+      if ((disabled || state) && (ranged || (disabled && state))) {
         groups.get('base')!.authored.set(token, authored)
         groups.get('base')!.classes.push(token)
         continue
@@ -1181,6 +1213,7 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
     result.unknown = [...new Set([...result.unknown, ...authoredNames(layer, compiled.unknown)])]
     const entry = { style: compiled.style, ...(compiled.dark ? { dark: compiled.dark } : {}) }
     if (layer.disabled) result.disabled = entry
+    else if (layer.state) (result.states ??= {})[layer.state] = entry
     else responsive.push({ min: layer.min ?? 0, ...(layer.max === undefined ? {} : { max: layer.max }), ...entry })
   }
   // A rule's width layer sits under the utilities' layer of the same width.
@@ -1245,7 +1278,19 @@ function compileLayer(classes: string, variables?: NativeStyleVariables, options
     originals.get(translated)!.add(original)
     return translated
   }
+  const dividers: string[] = []
+  const dividerOriginals = new Map<string, string>()
   for (const name of classes.split(/\s+/).filter(Boolean)) {
+    const darkDivide = name.startsWith('dark:') ? name.slice(5) : name
+    const border = divideAsBorder(darkDivide)
+    if (border !== null) {
+      const translated = border && `${name === darkDivide ? '' : 'dark:'}${border}`
+      if (translated) {
+        dividers.push(translated)
+        dividerOriginals.set(translated, name)
+      }
+      continue
+    }
     const focused = /^(dark:)?(focus|focus-within):(dark:)?(.+)$/.exec(name)
     const focusKey = focused?.[2] === 'focus' ? 'focus' : 'focusWithin'
     if (focused && options[focusKey] && !(focused[1] && focused[3])) {
@@ -1288,6 +1333,11 @@ function compileLayer(classes: string, variables?: NativeStyleVariables, options
   }
   const authoredUnknown = unknown.flatMap(name => [...originals.get(name) ?? [name]])
   result.unknown = [...new Set([...authoredUnknown.filter(name => !/^line-clamp-\d+$/.test(name)), ...unsupported])]
+  if (dividers.length) {
+    const divided = compileLayer(dividers.join(' '), variables)
+    result.divide = { style: divided.style, ...(divided.dark ? { dark: divided.dark } : {}) }
+    result.unknown = [...new Set([...result.unknown, ...divided.unknown.map(name => dividerOriginals.get(name) ?? name)])]
+  }
   for (const key of ['focus', 'focusWithin'] as const) {
     const layer = focusLayers[key]
     if (!layer.classes.length) continue

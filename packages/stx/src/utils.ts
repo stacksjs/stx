@@ -1716,6 +1716,16 @@ export async function renderComponentWithSlot(
       ...filteredParentContext,
       // Readable from the component's own `<script server>` and template.
       $uid: componentUid,
+      /*
+       * Whether this render is for a native host (Craft on iOS/Android), where
+       * the markup is translated to the platform's own views rather than
+       * shown in a browser. A shared component draws the platform's controls
+       * there (a native switch, a picker with items, an iOS grouped field)
+       * and keeps its web markup byte for byte everywhere else. Always
+       * declared, so `@if($native)` on the web reads false rather than
+       * throwing on an undeclared name.
+       */
+      $native: options._nativeHostAttrs === true,
       ...props,
       props, // Allow `props.foo` syntax in addition to just `foo`
       slot: componentSlotContent,
@@ -1826,6 +1836,9 @@ export async function renderComponentWithSlot(
           : undefined,
         buildMode: options.buildMode ?? '',
         skipEventDirectives: options.skipEventDirectives === true,
+        // `$native` picks the markup, so a web and a native render of one
+        // component never share an entry.
+        native: options._nativeHostAttrs === true,
         // The same slot renders differently inside a client loop, where its
         // loop variables stay bindings instead of resolving on the server.
         clientLoopNames: [...clientLoopNames].sort(),

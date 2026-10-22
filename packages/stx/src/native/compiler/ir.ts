@@ -86,6 +86,9 @@ export interface STXNode {
   /** Authored native accessibility overrides, before ARIA projection. */
   _accessibilitySource?: Record<string, unknown>
 
+  /** Authored native text-field props, before the HTML input projection (text-entry.ts). */
+  _textEntrySource?: Record<string, unknown>
+
   /** Compiled style object */
   style: STXStyle
 

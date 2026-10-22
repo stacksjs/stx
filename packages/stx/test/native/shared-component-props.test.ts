@@ -83,7 +83,8 @@ window.probe = { enabled, checked }
       SharedCheckbox: await Bun.file(path.join(ui, 'checkbox/Checkbox.stx')).text(),
     })
     try {
-      await app.fireControl('Pressable', 'onPress', {})
+      // The shared Switch is the platform switch natively and reports its value.
+      await app.fireControl('Switch', 'onValueChange', { value: true })
       expect(app.scope.probe.enabled()).toBe(true)
       await app.fireControl('Checkbox', 'onValueChange', { value: true })
       expect(app.scope.probe.checked()).toBe(true)

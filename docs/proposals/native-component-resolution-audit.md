@@ -101,6 +101,22 @@ in normal and minified builds.
 - Maintained-host visual/accessibility checks: still outstanding. Protocol
   tests are not VoiceOver, TalkBack, keyboard-modality or pixel-parity evidence.
 
+## Platform controls (after v0.2.657)
+
+Resolution is unchanged, but what the shared files draw natively is not: a
+component reads `$native` and renders the platform's control there, keeping
+its web markup byte for byte. Switch is the host's `Switch`, Select a
+`Picker` with `items` (fixing the rejected option-children mutation), the text
+fields 48pt platform fields with keyboard, autofill and secure entry projected
+from HTML (`src/native/text-entry.ts`), Button a filled system-blue
+Pressable with an ActivityIndicator, lists iOS inset groups with `divide-y`
+separators, SegmentedControl/Tabs a segmented track via `aria-selected:`
+layers, Dialog/Drawer slide-up sheets. The shared Button, TextInput and Select
+no longer read the web's control density/shape tokens natively; Card and
+plain elements still do. Evidence: `test/native/native-shared-*.test.ts`,
+`native-text-entry.test.ts`, `native-state-layers.test.ts`; still protocol
+evidence, not device screenshots.
+
 ## Focus/ring audit boundary
 
 The maintained Craft templates report `onFocus`/`onBlur` for text fields and

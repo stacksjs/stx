@@ -153,6 +153,18 @@ export const minLength = freeText && given($props.minLength ?? $props.minlength)
 export const htmlSize = freeText && given($props.htmlSize) ? String($props.htmlSize) : ''
 export const list = type !== 'password' && given($props.list) ? String($props.list) : ''
 export const autofocus = $bool($props.autofocus)
+
+/*
+ * The field a phone app draws, for a native host ($native): 48pt tall, the
+ * 17pt body size, a filled rounded box that reads on a grouped background and
+ * a plain one alike, and the system's placeholder grey. The web's rings,
+ * shadow and density roles have nothing to draw on a device, and its icon
+ * slot is a web flourish iOS fields do without. An invalid field gets the
+ * system red outline, a disabled one dims as UIKit's do.
+ */
+export const nativeFieldClasses = `h-12 px-4 text-[17px] text-[#000000] dark:text-[#ffffff] bg-[#767680]/12 dark:bg-[#767680]/24 rounded-[10px] border-0 ${inputClassName}`.trim()
+export const nativeLabelClasses = 'mb-1.5 px-4 text-[13px] uppercase text-[#6d6d72] dark:text-[#8d8d93]'
+export const nativeHelperClasses = `mt-1.5 px-4 text-[13px] ${error ? 'text-[#ff3b30] dark:text-[#ff453a]' : 'text-[#6d6d72] dark:text-[#8d8d93]'}`
   </script>
   <script client>
     const emit = defineEmits()
@@ -194,6 +206,65 @@ const charCount = derived(() => `${String(inputValue()).length} / {{ maxLength |
 
 defineExpose({ value: inputValue, clear: onClear })
   </script>
+  @if($native)
+  <div class="w-full {{ className }}">
+    @if(label)
+    <label for="{{ inputId }}" class="{{ nativeLabelClasses }}">
+      {{ label }}
+    </label>
+    @endif
+    <div class="relative justify-center">
+      <input
+      data-stx-native-host-root
+      @if(name)name="{{ name }}"@endif
+      @if(autocomplete)autocomplete="{{ autocomplete }}"@endif
+      @if(form)form="{{ form }}"@endif
+      @if(inputMode)inputmode="{{ inputMode }}"@endif
+      @if(enterKeyHint)enterkeyhint="{{ enterKeyHint }}"@endif
+      type="{{ type }}"
+      @if(autofocus)autofocus@endif
+      id="{{ inputId }}"
+      class="{{ nativeFieldClasses }}"
+      placeholderTextColor="#8e8e93"
+      value="{{ value }}"
+      :value="inputValue()"
+      placeholder="{{ placeholder }}"
+      @if(disabled)disabled@endif
+      :disabled="isDisabled()"
+      @if(readonly)readonly@endif
+      @if(required)required@endif
+      @if(maxLength && freeText)maxlength="{{ maxLength }}"@endif
+      @input="onInput($event)"
+      @change="onChange($event)"
+      aria-invalid="{{ error ? 'true' : 'false' }}"
+      :aria-invalid="isError() ? 'true' : 'false'"
+      :class="{ 'border border-[#ff3b30] dark:border-[#ff453a]': isError(), 'opacity-50': isDisabled() }"
+      @if(clearable)style="padding-right: 40px"@endif
+    />
+      @if(clearable)
+      <button
+        type="button"
+        :show="hasValue() && !isDisabled() && !{{ readonly }}"
+        @click="onClear()"
+        class="absolute top-0 right-0 h-12 w-10 items-center justify-center"
+        aria-label="Clear input"
+      >
+        <i class="i-lucide-circle-x h-[17px] w-[17px] text-[#c4c4c7] dark:text-[#5b5b5f]">
+        </i>
+      </button>
+      @endif
+    </div>
+    @if(helperText)
+    <p id="{{ helperId }}" class="{{ nativeHelperClasses }}">
+      {{ helperText }}
+    </p>
+    @endif
+  @if(showCount && maxLength)
+    <p class="mt-1.5 px-4 text-right text-[13px] text-[#6d6d72] dark:text-[#8d8d93]" :text="charCount()">
+    </p>
+    @endif
+  </div>
+  @else
   <div class="w-full {{ className }}">
     @if(label)
     <label for="{{ inputId }}" class="{{ labelClasses }}">
@@ -297,6 +368,7 @@ defineExpose({ value: inputValue, clear: onClear })
     </div>
     @endif
   </div>
+  @endif
 
 === Extracted Classes ===
 !isDisabled()
@@ -305,8 +377,10 @@ defineExpose({ value: inputValue, clear: onClear })
 &&
 'bg-field':
 'bg-surface':
+'border
 'cursor-default':
 'opacity-50
+'opacity-50':
 '{{
 -
 --
@@ -327,8 +401,11 @@ around
 bg-field
 bg-surface
 block
+border
 border-0
+border-[#ff3b30]
 box
+button
 by
 className
 color
@@ -337,6 +414,9 @@ content
 cursor-default
 cursor-not-allowed
 cursor-not-allowed':
+dark:border-[#ff453a]':
+dark:text-[#5b5b5f]
+dark:text-[#8d8d93]
 date
 datetime-local
 declared
@@ -359,11 +439,14 @@ focus:ring-inset
 font-medium
 form
 h-10
+h-12
 h-4
 h-5
 h-6
+h-[17px]
 helperClasses
 hover:text-fg-strong
+i-lucide-circle-x
 iconClasses
 input
 inputClasses
@@ -378,6 +461,7 @@ it
 items-center
 its
 justify-between
+justify-center
 labelClasses
 lands
 leading-6
@@ -388,7 +472,11 @@ md
 ml-1
 month
 moves
+mt-1.5
 mt-2
+nativeFieldClasses
+nativeHelperClasses
+nativeLabelClasses
 nearly
 needed
 nothing
@@ -432,6 +520,9 @@ stateValidClasses
 step
 tel
 text
+text-[#6d6d72]
+text-[#c4c4c7]
+text-[13px]
 text-control
 text-danger
 text-danger-fg
@@ -439,20 +530,25 @@ text-fg
 text-fg-soft
 text-lg
 text-like
+text-right
 text-sm
 that
 the
 ties
 time
+top-0
 transition-colors
 true
 types
+uppercase
 url
 uses
 value
+w-10
 w-4
 w-5
 w-6
+w-[17px]
 w-full
 week
 were

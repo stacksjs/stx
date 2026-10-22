@@ -27,6 +27,7 @@
  */
 import type { STXDocument, STXNode, STXStyle } from './ir'
 import { ACCESSIBILITY_FIELDS, projectAccessibility } from '../accessibility'
+import { applyStaticTextEntry } from '../text-entry'
 import { NATIVE_EVENT_NAMES as EVENT_NAMES } from '../event-names'
 import { NATIVE_BOOLEAN_PROPS, nativePropName } from '../prop-names'
 import { mapToNativeComponent } from './component-mapping'
@@ -774,6 +775,7 @@ export async function translateHtmlToIR(
       node._accessibilitySource = Object.fromEntries(ACCESSIBILITY_FIELDS.filter(name => name in node.props).map(name => [name, node.props[name]]))
       Object.assign(node.props, projected)
     }
+    applyStaticTextEntry(node)
     for (const child of node.children) {
       if (typeof child !== 'string') project(child)
     }

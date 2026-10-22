@@ -79,9 +79,10 @@ window.probe = { checked, rows }
     const phone = mountNativeScreen(code)
     try {
       await phone.settle()
-      const toggle = phone.ofType('Pressable').find(node => node.props.testID === undefined)!
+      // The shared Switch is the platform switch natively, announced by its ARIA state.
+      const toggle = phone.ofType('Switch')[0]!
       expect(toggle.props.accessibilityState).toMatchObject({ checked: false })
-      phone.press(toggle)
+      phone.press(toggle, 'onValueChange', { value: true })
       await phone.settle()
       expect(toggle.props.accessibilityState).toMatchObject({ checked: true })
       expect(phone.byTestID('row-1')!.props.accessibilityState).toEqual({ checked: true })

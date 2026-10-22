@@ -84,7 +84,8 @@ function switchChanged(value) { window.received.push(value); enabled.set(value) 
       const control = phone.ofType('Checkbox')[0]!
       expect(control.props.formValue).toBe('accepted')
       phone.press(control, 'onValueChange', { value: true })
-      phone.press(phone.ofType('Pressable')[0]!)
+      // The shared Switch is the platform switch natively and reports its value.
+      phone.press(phone.ofType('Switch')[0]!, 'onValueChange', { value: true })
       await phone.settle()
       expect(Array.from(phone.context.received)).toEqual([true, true])
       expect(phone.context.probe.checked()).toBe(true)
@@ -94,7 +95,8 @@ function switchChanged(value) { window.received.push(value); enabled.set(value) 
       await phone.settle()
       expect(control.props.value).toBe(false)
       expect(control.props.formValue).toBe('accepted')
-      expect(phone.ofType('Pressable')[0]!.props['aria-checked']).toBe('false')
+      expect(phone.ofType('Switch')[0]!.props['aria-checked']).toBe('false')
+      expect(phone.ofType('Switch')[0]!.props.value).toBe(false)
     }
     finally { phone.unmount() }
   }, 30_000)

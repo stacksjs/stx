@@ -16,26 +16,29 @@ describe.each([false, true])('runnable shared-controls example (minify=%s)', (mi
     for (const component of ['button/Button', 'card/Card', 'input/TextInput', 'checkbox/Checkbox', 'switch/Switch'])
       expect(result.dependencies).toContain(join(root, 'packages/components/src/ui', `${component}.stx`))
     expect(result.diagnostics.some(item => item.message.endsWith(': rounded-control'))).toBe(false)
-    // Unsupported visual features must remain visible to the host-validation owner.
-    expect(result.diagnostics.some(item => item.message.endsWith(': ring-inset'))).toBe(true)
+    // The field is the platform's natively (TextInput.stx), with no web ring
+    // to report as unsupported.
+    expect(result.diagnostics.some(item => item.message.endsWith(': ring-inset'))).toBe(false)
     const phone = mountNativeScreen(result.code)
     const byId = (id: string) => phone.all().find(node => node.props.id === id)!
     try {
       await phone.settle()
       const field = () => phone.ofType('TextInput')[0]!
       expect(field().props.value).toBe('Ada')
-      expect(field().style).toMatchObject({ borderRadius: 6, paddingHorizontal: 16, paddingVertical: 8 })
+      const platformField = { height: 48, borderRadius: 10, paddingHorizontal: 16, fontSize: 17 }
+      expect(field().style).toMatchObject(platformField)
       const light = field().style.backgroundColor
       phone.appearance('dark')
       await phone.settle()
       expect(field().style.backgroundColor).not.toBe(light)
       phone.press(field(), 'onChangeText', { text: 'Grace' })
       phone.press(phone.ofType('Checkbox')[0]!, 'onValueChange', { value: true })
-      phone.press(byId('sample-alerts'))
+      phone.press(byId('sample-alerts'), 'onValueChange', { value: true })
       phone.press(byId('toggle-density'))
       await phone.settle()
       expect(phone.texts()).toContain('Grace | consent=true | alerts=true')
-      expect(field().style).toMatchObject({ borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, fontSize: 14 })
+      // Density re-shapes the card; the platform field keeps the platform's size.
+      expect(field().style).toMatchObject(platformField)
       expect(byId('sample-card').style.borderRadius).toBe(20)
       phone.press(byId('toggle-controls'))
       await phone.settle()
@@ -48,7 +51,8 @@ describe.each([false, true])('runnable shared-controls example (minify=%s)', (mi
       phone.press(byId('toggle-density'))
       phone.appearance('light')
       await phone.settle()
-      expect(field().style).toMatchObject({ borderRadius: 6, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: light })
+      expect(field().style).toMatchObject({ ...platformField, backgroundColor: light })
+      expect(byId('sample-card').style.borderRadius).toBe(8)
       expect(phone.mutationErrors).toEqual([])
     }
     finally { phone.unmount() }

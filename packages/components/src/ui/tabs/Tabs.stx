@@ -36,7 +36,17 @@ const variantClasses = {
 }
 
 export const containerClasses = `flex ${orientationClasses[orientation] || orientationClasses.horizontal} ${className}`.trim()
-export const tabListClasses = `flex ${tabListOrientationClasses[orientation] || tabListOrientationClasses.horizontal} ${variantClasses[variant] || variantClasses.line}`.trim()
+/*
+ * On a native host ($native) a horizontal strip is the phone's segmented
+ * control: a grey track, the selected tab raised (getTabClasses).
+ */
+export const nativeTabs = $native && orientation !== 'vertical'
+// Empty on the web, so its stylesheet never meets them.
+export const nativeTabBase = nativeTabs ? 'flex-1 min-h-[30px] px-3 items-center justify-center rounded-[7px]' : ''
+export const nativeTabOn = nativeTabs ? 'bg-[#ffffff] dark:bg-[#636366] shadow-sm' : ''
+export const tabListClasses = nativeTabs
+  ? 'flex-row gap-0.5 p-0.5 rounded-[9px] bg-[#767680]/12 dark:bg-[#767680]/24'
+  : `flex ${tabListOrientationClasses[orientation] || tabListOrientationClasses.horizontal} ${variantClasses[variant] || variantClasses.line}`.trim()
 export const tabPanelClasses = `p-4 focus:outline-none`.trim()
 // True when the parent passes a non-empty `tabs` array — switches to the
 // legacy render path, preserving the existing prop-array API.
@@ -50,6 +60,9 @@ const tabs = {{ tabs }}
 const variant = {{ variant }}
 const orientation = {{ orientation }}
 const hasPropTabs = {{ hasPropTabs }}
+const nativeTabs = {{ nativeTabs }}
+const nativeTabBase = {{ nativeTabBase }}
+const nativeTabOn = {{ nativeTabOn }}
 // useRef takes the NAME the x-ref attribute uses. Called with no
 // argument it read $refs[undefined], which nothing ever fills, so
 // containerRef.value was null forever - the mount hook found no panels,
@@ -166,6 +179,8 @@ function isActive(index) {
 
 function getTabClasses(index) {
   const isActiveTab = isActive(index)
+  if (nativeTabs)
+    return `${nativeTabBase} ${isActiveTab ? nativeTabOn : ''}`
   const base = 'px-4 py-2 font-medium text-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-panel'
   if (variant === 'line') {
     const border = orientation === 'horizontal' ? 'border-b-2' : 'border-r-2'

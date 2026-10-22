@@ -63,6 +63,18 @@ function trackClasses() {
   return `${trackBase} ${stateClass} ${isDisabled() ? trackDisabled : ''} ${config.track} ${extraClass}`.trim()
 }
 
+// The platform's switch reports its new value itself (a native host's
+// value change); the web's button only says it was pressed.
+function onNativeChange(event) {
+  if (isDisabled()) return
+  const next = event && typeof event === 'object'
+    ? (event.value ?? event.nativeEvent?.value ?? event.target?.value)
+    : event
+  if (typeof next !== 'boolean' || next === isChecked()) return
+  isChecked.set(next)
+  emit('change', isChecked())
+}
+
 function thumbClasses() {
   const pos = isChecked() ? config.translate : 'translate-x-0'
   return `${thumbBase} ${pos} ${config.thumb}`.trim()
@@ -71,6 +83,39 @@ function thumbClasses() {
 defineExpose({ isChecked, toggle })
 </script>
 
+@if($native)
+{{-- On a native host the control is the platform's own switch (UISwitch,
+     Android's Switch), at the end of its row as a settings row puts it. --}}
+<label class="flex-row items-center justify-between gap-3 {{ className }}">
+  <span :if="currentLabel()" :text="currentLabel()" class="flex-1 text-[17px] text-[#000000] dark:text-[#ffffff]">{{ label }}</span>
+  @if(name)
+    <input
+      type="hidden"
+      name="{{ name }}"
+      @if(disabled)disabled@endif
+      :disabled="isDisabled()"
+      @if(form)form="{{ form }}"@endif
+      value="{{ checked ? checkedValue : uncheckedValue }}"
+      :value="isChecked() ? '{{ checkedValue }}' : '{{ uncheckedValue }}'"
+    />
+  @endif
+  <div
+    data-native="Switch"
+    data-stx-native-host-root
+    role="switch"
+    value="{{ checked ? 'true' : 'false' }}"
+    :value="isChecked()"
+    aria-label="{{ label || 'Toggle switch' }}"
+    :aria-label="currentLabel() || 'Toggle switch'"
+    :aria-checked="isChecked() ? 'true' : 'false'"
+    @if(disabled)disabled@endif
+    :disabled="isDisabled()"
+    :aria-disabled="isDisabled() ? 'true' : 'false'"
+    class="disabled:opacity-50"
+    @change="onNativeChange($event)"
+  ></div>
+</label>
+@else
 <label class="inline-flex items-center gap-3 cursor-pointer">
   <span :if="currentLabel()" :text="currentLabel()" class="text-sm font-medium text-fg-strong">
     {{ label }}
@@ -108,3 +153,4 @@ defineExpose({ isChecked, toggle })
     <span aria-hidden="true" :class="thumbClasses()"></span>
   </button>
 </label>
+@endif

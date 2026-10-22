@@ -32,17 +32,19 @@ describe.each([false, true])('shared Switch disabled state (minify=%s)', (minify
     const phone = mountNativeScreen(code, 'Screen')
     try {
       await phone.settle()
-      const control = () => phone.ofType('Pressable')[0]
-      const thumb = () => phone.all().find(node => node.props['aria-hidden'] === true)!
+      // The platform switch natively (Switch.stx): its value is the state the
+      // web draws with the thumb, and a tap reports the new value.
+      const control = () => phone.ofType('Switch')[0]
+      const flip = () => phone.press(control(), 'onValueChange', { value: !control().props.value })
       const probe = phone.context.probe
       expect(probe.values().alerts).toBe('false')
       expect(phone.all().find(node => node.props.type === 'hidden')!.style.display).toBe('none')
-      expect(thumb().style.transform).toEqual([{ translateX: 0 }])
+      expect(control().props.value).toBe(false)
       probe.disabled.set(true)
       await phone.settle()
       expect(control().props.disabled).toBe(true)
       expect(probe.values().alerts).toBeUndefined()
-      phone.press(control())
+      flip()
       await phone.settle()
       expect(probe.checked()).toBe(false)
       expect(probe.changes()).toBe(0)
@@ -53,12 +55,12 @@ describe.each([false, true])('shared Switch disabled state (minify=%s)', (minify
       expect(control().props.disabled).toBe(false)
       expect(probe.values().alerts).toBe('true')
       expect(phone.all().find(node => node.props.type === 'hidden')!.style.display).toBe('none')
-      expect(thumb().style.transform).toEqual([{ translateX: 36 }])
-      phone.press(control())
+      expect(control().props.value).toBe(true)
+      flip()
       await phone.settle()
       expect(probe.checked()).toBe(false)
       expect(probe.changes()).toBe(1)
-      expect(thumb().style.transform).toEqual([{ translateX: 0 }])
+      expect(control().props.value).toBe(false)
 
       probe.shown.set(false)
       await phone.settle()
@@ -69,7 +71,7 @@ describe.each([false, true])('shared Switch disabled state (minify=%s)', (minify
       await phone.settle()
       expect(control().props.disabled).toBe(true)
       expect(control().props['aria-checked']).toBe('true')
-      expect(thumb().style.transform).toEqual([{ translateX: 36 }])
+      expect(control().props.value).toBe(true)
       expect(probe.values().alerts).toBeUndefined()
       phone.unmount()
       const count = phone.messages.length

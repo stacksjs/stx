@@ -40,18 +40,23 @@ window.probe = { compact, clear, override, theme }
     const field = () => phone.ofType('TextInput')[0]!
     const select = () => phone.ofType('Picker')[0]!
     const card = () => phone.all().find(node => node.props.id === 'card')!
-    expect(phone.all().find(node => node.props.id === 'button')!.style.borderRadius).toBe(6)
+    // The shared button, field and picker are the platform's controls on a
+    // native host (Button.stx, TextInput.stx, Select.stx): iOS's sizes and
+    // corners, not the web's control tokens. Everything else that names a
+    // token reads it, below.
+    const platformField = { height: 48, borderRadius: 10, paddingHorizontal: 16, fontSize: 17 }
+    expect(phone.all().find(node => node.props.id === 'button')!.style.borderRadius).toBe(10)
     expect(card().style.borderRadius).toBe(8)
     const control = { borderRadius: 6, paddingHorizontal: 16, paddingVertical: 8, fontSize: 16, lineHeight: 24 }
-    expect(field().style).toMatchObject(control)
-    expect(select().style).toMatchObject(control)
+    expect(field().style).toMatchObject(platformField)
+    expect(select().props.items).toEqual([{ value: '', label: 'Select an option' }])
     expect(density().style).toMatchObject(control)
     const lightBackground = field().style.backgroundColor
     expect(lightBackground).toBeTruthy()
     phone.appearance('dark')
     await phone.settle()
     expect(field().style.backgroundColor).not.toBe(lightBackground)
-    expect(field().style).toMatchObject(control)
+    expect(field().style).toMatchObject(platformField)
     expect(card().style.borderRadius).toBe(8)
     phone.context.probe.compact.set(true)
     await phone.settle()
@@ -70,17 +75,22 @@ window.probe = { compact, clear, override, theme }
       expect(density().style[key]).toBeNull()
     phone.context.probe.theme.set({ '--stx-field': '#123456', '--stx-radius-control': '12px', '--stx-radius-panel': '20px', '--stx-control-px': '10px', '--stx-control-py': '4px', '--stx-control-text': '14px', '--stx-control-leading': '18px' })
     await phone.settle()
+    // The density box again, in its control shape, now read from the theme.
+    phone.context.probe.compact.set(false)
+    phone.context.probe.clear.set(false)
+    await phone.settle()
     const themed = { backgroundColor: '#123456', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, fontSize: 14, lineHeight: 18 }
-    expect(field().style).toMatchObject(themed)
-    expect(select().style).toMatchObject(themed)
+    expect(density().style).toMatchObject(themed)
+    expect(field().style).toMatchObject(platformField)
     expect(card().style.borderRadius).toBe(20)
     expect(phone.byTestID('local-theme')!.style.borderRadius).toBe(3)
     phone.appearance('dark')
     await phone.settle()
-    expect(field().style).toMatchObject(themed)
+    expect(density().style).toMatchObject(themed)
     phone.context.probe.theme.set(null)
     await phone.settle()
-    expect(field().style).toMatchObject(control)
+    expect(density().style).toMatchObject(control)
+    expect(field().style).toMatchObject(platformField)
     expect(field().style.backgroundColor).not.toBe(lightBackground)
     expect(card().style.borderRadius).toBe(8)
     expect(phone.mutationErrors).toEqual([])

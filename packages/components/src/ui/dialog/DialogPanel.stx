@@ -31,8 +31,31 @@ const shape = isSheet
 const panelClasses = `transform overflow-hidden ${shape} bg-panel text-left align-middle shadow-xl transition-all ${className}`.replace(/\s+/g, ' ').trim()
 const panelStyle = isSheet ? (flush ? 'padding-bottom: env(safe-area-inset-bottom);' : 'padding-bottom: max(1.25rem, env(safe-area-inset-bottom));') : ''
 const grabberClasses = `mx-auto h-1.5 w-10 shrink-0 rounded-pill bg-line sm:hidden ${flush ? 'mt-2.5' : '-mt-2 mb-4'}`
+
+/*
+ * On a native host ($native) a panel is a sheet unless it asks to be the
+ * centred card (`variant="center"`): what a phone presents a form or a
+ * confirmation in. Anchored to the bottom edge, 10pt top corners, the
+ * system's grabber, and room for the home indicator under its content.
+ */
+export const nativeSheet = $props.variant !== 'center'
+export const nativeWrapperClasses = nativeSheet ? 'absolute inset-0 justify-end' : 'absolute inset-0 items-center justify-center p-6'
+export const nativePanelClasses = nativeSheet
+  ? `w-full max-h-[92%] rounded-t-[10px] bg-[#ffffff] dark:bg-[#1c1c1e] ${flush ? 'flex-col pb-[34px]' : 'px-5 pt-2 pb-[34px]'} ${className}`.replace(/\s+/g, ' ').trim()
+  : `w-full max-w-[400px] rounded-[14px] bg-[#ffffff] dark:bg-[#2c2c2e] ${flush ? 'flex-col' : 'p-5'} ${className}`.replace(/\s+/g, ' ').trim()
+export const nativeGrabberClasses = `self-center h-[5px] w-9 shrink-0 rounded-full bg-[#c6c6c8] dark:bg-[#48484a] ${flush ? 'mt-1.5 mb-1.5' : 'mb-4'}`
 </script>
 
+@if($native)
+<div class="{{ nativeWrapperClasses }}">
+  <div class="{{ nativePanelClasses }}" data-stx-dialog-panel tabindex="-1">
+    @if(nativeSheet)
+      <div aria-hidden="true" class="{{ nativeGrabberClasses }}"></div>
+    @endif
+    <slot />
+  </div>
+</div>
+@else
 <component :is="{{ as }}" class="{{ baseClasses }}">
   <div class="{{ panelWrapperClasses }}">
     <!-- data-stx-dialog-panel is what Dialog scopes its focus trap and its
@@ -46,3 +69,4 @@ const grabberClasses = `mx-auto h-1.5 w-10 shrink-0 rounded-pill bg-line sm:hidd
     </div>
   </div>
 </component>
+@endif

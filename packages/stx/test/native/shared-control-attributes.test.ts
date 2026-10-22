@@ -49,7 +49,10 @@ window.probe = { label, styles, classes, draft, shown }
       phone.context.probe.shown.set(true)
       await phone.settle()
       expect(field().props.value).toBe('Restored')
-      expect(field().style.paddingLeft).toBe(40) // authored left-icon padding
+      // Natively the field draws no left icon (TextInput.stx), so no inset
+      // for one: its own padding, and room for the clear button.
+      expect(field().style.paddingLeft ?? null).toBeNull()
+      expect(field().style).toMatchObject({ paddingHorizontal: 16, paddingRight: 40 })
       expect(field().style.borderWidth).toBe(0) // authored border-0
       expect(phone.mutationErrors).toEqual([])
       phone.unmount()
@@ -85,7 +88,8 @@ window.probe = { suffix, label, styles, classes, checked, shown }
     const phone = mountNativeScreen(code)
     try {
       await phone.settle()
-      for (const [prefix, type] of [['checkbox', 'Checkbox'], ['switch', 'Pressable']]) {
+      // The shared Switch is the platform switch natively (Switch.stx).
+      for (const [prefix, type] of [['checkbox', 'Checkbox'], ['switch', 'Switch']]) {
         const control = phone.byTestID(`${prefix}-one`)!
         expect(control.type).toBe(type)
         expect(control.props.accessibilityLabel).toBe('Native name')
@@ -106,7 +110,7 @@ window.probe = { suffix, label, styles, classes, checked, shown }
         expect(phone.byTestID(`${prefix}-two`)!.props.accessibilityLabel).toBe('Updated name')
         expect(phone.byTestID(`${prefix}-two`)!.style).toMatchObject({ paddingLeft: 7, opacity: 0.7, width: 64, borderWidth: 4 })
       }
-      phone.press(phone.byTestID('switch-two')!)
+      phone.press(phone.byTestID('switch-two')!, 'onValueChange', { value: false })
       await phone.settle()
       expect(phone.context.probe.checked()).toBe(false)
       phone.context.probe.shown.set(false)
@@ -122,7 +126,8 @@ window.probe = { suffix, label, styles, classes, checked, shown }
         expect(control.props.accessibilityLabel).toBe(name)
         expect(control.style.paddingLeft ?? null).toBeNull()
         expect(control.style.opacity ?? null).toBeNull()
-        expect(control.style.width).toBe(prefix === 'checkbox' ? 20 : 74)
+        // The checkbox's own native size; the platform sizes its switch.
+        expect(control.style.width ?? null).toBe(prefix === 'checkbox' ? 22 : null)
         expect(control.style.borderWidth ?? null).toBe(phone.byTestID(`static-${prefix}`)!.style.borderWidth ?? null)
       }
       expect(phone.mutationErrors).toEqual([])

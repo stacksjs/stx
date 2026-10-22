@@ -2,7 +2,8 @@
 export const className = $props.className || ''
 export const as = $props.as || 'h3'
 
-const baseClasses = 'text-lg font-medium leading-6 text-fg'
+// A sheet's title on a native host ($native): iOS's 17pt semibold headline.
+const baseClasses = $native ? 'text-[17px] font-semibold text-[#000000] dark:text-[#ffffff]' : 'text-lg font-medium leading-6 text-fg'
 const titleClasses = `${baseClasses} ${className}`.trim()
 </script>
 

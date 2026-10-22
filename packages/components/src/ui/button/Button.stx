@@ -107,6 +107,35 @@ export const isDisabled = disabled || loading
 export const buttonClasses = `${baseClasses} ${variantClasses[variant] || variantClasses.primary} ${sizeClasses[size] || sizeClasses.md} ${widthClasses} ${className}`.trim()
 export const iconClasses = iconSizeClasses[size] || iconSizeClasses.md
 export const spinnerClasses = `animate-spin ${iconClasses}`.trim()
+
+/*
+ * The button a phone app draws, for a native host ($native): iOS's filled
+ * system-blue button for `primary`, its grey-filled tinted one for
+ * `secondary`, a plain tinted label for `ghost`, and the system red for
+ * `danger`, at the platform's control heights (44pt by default, 50pt for the
+ * `lg` button at the end of a flow). The web's hover, shadow and focus ring
+ * have nothing to draw on a device; the host dims the button while it is
+ * pressed, and `disabled:` dims it while it is off.
+ */
+const nativeVariants = {
+  primary: { box: 'bg-[#007aff] dark:bg-[#0a84ff]', text: 'text-white' },
+  secondary: { box: 'bg-[#767680]/12 dark:bg-[#767680]/24', text: 'text-[#007aff] dark:text-[#0a84ff]' },
+  outline: { box: 'border border-[#007aff] dark:border-[#0a84ff]', text: 'text-[#007aff] dark:text-[#0a84ff]' },
+  ghost: { box: '', text: 'text-[#007aff] dark:text-[#0a84ff]' },
+  danger: { box: 'bg-[#ff3b30] dark:bg-[#ff453a]', text: 'text-white' },
+}
+const nativeSizes = {
+  xs: { box: 'h-7 px-2.5 gap-1 rounded-[7px]', text: 'text-[13px]' },
+  sm: { box: 'h-[34px] px-3 gap-1.5 rounded-[8px]', text: 'text-[15px]' },
+  md: { box: 'h-11 px-4 gap-2 rounded-[10px]', text: 'text-[17px]' },
+  lg: { box: 'h-[50px] px-5 gap-2 rounded-[12px]', text: 'text-[17px]' },
+  xl: { box: 'h-14 px-6 gap-2.5 rounded-[14px]', text: 'text-[19px]' },
+}
+const nativeVariant = nativeVariants[variant] || nativeVariants.primary
+const nativeSize = nativeSizes[size] || nativeSizes.md
+export const nativeButtonClasses = `flex-row items-center justify-center ${nativeSize.box} ${nativeVariant.box} disabled:opacity-50 ${fullWidth ? 'w-full' : ''} ${className}`.replace(/\s+/g, ' ').trim()
+export const nativeTextClasses = `font-semibold ${nativeSize.text} ${nativeVariant.text}`
+export const nativeTint = nativeVariant.text === 'text-white' ? '#ffffff' : '#007aff'
 </script>
 
 <script client>
@@ -156,6 +185,29 @@ function onClick(event) {
 }
 </script>
 
+@if($native)
+<button
+  type="{{ type }}"
+  class="{{ nativeButtonClasses }}"
+  activeOpacity="0.6"
+  @if(isDisabled)disabled@endif
+  :disabled="isDisabled()"
+  aria-busy="{{ loading ? 'true' : 'false' }}"
+  :aria-busy="isLoading() ? 'true' : 'false'"
+  @if(ariaLabel)aria-label="{{ ariaLabel }}"@endif
+  @click="onClick($event)"
+>
+  <div data-native="ActivityIndicator" :show="isLoading()" color="{{ nativeTint }}" role="status"></div>
+  @if(leftIcon)
+    <span :show="!isLoading()" class="{{ iconClasses }} {{ nativeTextClasses }}">{!! leftIcon !!}</span>
+  @endif
+  <span :if="!labelText()" class="{{ nativeTextClasses }}"><slot /></span>
+  <span :if="labelText()" class="{{ nativeTextClasses }}" :text="labelText()">{{ label }}</span>
+  @if(rightIcon)
+    <span :show="!isLoading()" class="{{ iconClasses }} {{ nativeTextClasses }}">{!! rightIcon !!}</span>
+  @endif
+</button>
+@else
 <button
   type="{{ type }}"
   class="{{ buttonClasses }}"
@@ -226,3 +278,4 @@ function onClick(event) {
     <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">{!! rightIcon !!}</span>
   @endif
 </button>
+@endif

@@ -153,6 +153,19 @@ function normaliseOptions(list) {
 const optionSource = useReactiveProp('options', {{ options }}, { parse: v => normaliseOptions(v) })
 const optionList = derived(() => normaliseOptions(optionSource()))
 
+/*
+ * The choices as a native picker takes them (`items`), for a native host.
+ * Disabled choices are left out, since neither platform picker can show one
+ * it will not let you pick; the placeholder leads the list only while
+ * nothing in it is chosen, as the web's disabled first option does.
+ */
+const placeholderText = {{ placeholder }}
+const nativeItems = derived(() => {
+  const list = optionList().filter(option => !option.disabled).map(option => ({ value: option.value, label: option.label }))
+  const chosen = list.some(option => option.value === selectedValue())
+  return placeholderText && !chosen ? [{ value: '', label: placeholderText }, ...list] : list
+})
+
 function onChange(event) {
   selectedValue.set(event.target.value)
   emit('change', selectedValue())
@@ -160,19 +173,51 @@ function onChange(event) {
 
 defineExpose({ value: selectedValue, options: optionList })
   </script>
-  <div class="w-full">
-    @if(label)
-    <label for="{{ selectId }}" class="{{ labelClasses }}">
-      {{ label }}
-      @if(required)
-      <span class="text-danger ml-1">
-        *
-      </span>
+  @if($native)
+{{-- On a native host the control is the platform's picker (UIPickerView,
+     Android's Spinner) fed with its items. Children are not something either
+     picker holds, so slotted
+  <option>
+    s are a web-only spelling. --}}
+    <div class="w-full {{ className }}">
+      @if(label)
+      <label for="{{ selectId }}" class="mb-1.5 px-4 text-[13px] uppercase text-[#6d6d72] dark:text-[#8d8d93]">
+        {{ label }}
+      </label>
       @endif
-    </label>
-    @endif
-    <div class="{{ label ? 'mt-2' : '' }}">
-      <select
+      <div
+    data-native="Picker"
+    data-stx-native-host-root
+    id="{{ selectId }}"
+    :items="nativeItems()"
+    :value="selectedValue()"
+    @if(disabled)disabled@endif
+    class="w-full disabled:opacity-50"
+    @change="onChange($event)"
+    aria-invalid="{{ error ? 'true' : 'false' }}"
+    :aria-invalid="isError() ? 'true' : 'false'"
+  >
+      </div>
+      @if(helperText)
+      <p id="{{ helperId }}" class="mt-1.5 px-4 text-[13px] {{ error ? 'text-[#ff3b30] dark:text-[#ff453a]' : 'text-[#6d6d72] dark:text-[#8d8d93]' }}">
+        {{ helperText }}
+      </p>
+      @endif
+    </div>
+    @else
+    <div class="w-full">
+      @if(label)
+      <label for="{{ selectId }}" class="{{ labelClasses }}">
+        {{ label }}
+      @if(required)
+        <span class="text-danger ml-1">
+          *
+        </span>
+        @endif
+      </label>
+      @endif
+      <div class="{{ label ? 'mt-2' : '' }}">
+        <select
       @if(name)name="{{ name }}"@endif
       @if(autocomplete)autocomplete="{{ autocomplete }}"@endif
       @if(form)form="{{ form }}"@endif
@@ -187,11 +232,11 @@ defineExpose({ value: selectedValue, options: optionList })
       :class="{ '{{ stateInvalidClasses }}': isError(), '{{ stateValidClasses }}': !isError() }"
       @if(helperText)aria-describedby="{{ helperId }}"@endif
     >
-        @if(placeholder)
-        <option value="" disabled>
-          {{ placeholder }}
-        </option>
-        @endif
+          @if(placeholder)
+          <option value="" disabled>
+            {{ placeholder }}
+          </option>
+          @endif
 
       {{-- First paint, and the whole list with JavaScript off.
 
@@ -204,50 +249,53 @@ defineExpose({ value: selectedValue, options: optionList })
            than `:if` because @foreach pre-evaluates every `:name="…"` inside
            it as a component prop, which turns `:if` into a dead attribute. --}}
       @foreach(option in options)
-        <option
+          <option
           x-no-cloak
           x-if="false"
           value="{{ option.value }}"
           @if(option.disabled)disabled@endif
           @if(option.value === String(value))selected@endif
         >
-          {{ option.label }}
-        </option>
-        @endforeach
+            {{ option.label }}
+          </option>
+          @endforeach
 
       {{-- The live list. A
-        <template>
-          , so nothing of it shows before the
+          <template>
+            , so nothing of it shows before the
            runtime expands it -- an
-          <option :for>
-            would paint as an empty
+            <option :for>
+              would paint as an empty
            entry first. The select's own `:value` re-applies itself when its
            options change, so the chosen value is reflected once they arrive. --}}
-            <template :for="option in optionList()" :key="option.value">
-              <option :value="option.value" :disabled="option.disabled" x-text="option.label">
-              </option>
-            </template>
-            {{-- Or the options as children, for a list the page draws itself:
-            <Select v-model:value="x">
-              <option :for="o in list" :value="o.id">
-                …
-              </option>
-            </Select>
-            --}}
-            <slot />
-          </select>
+              <template :for="option in optionList()" :key="option.value">
+                <option :value="option.value" :disabled="option.disabled" x-text="option.label">
+                </option>
+              </template>
+              {{-- Or the options as children, for a list the page draws itself:
+              <Select v-model:value="x">
+                <option :for="o in list" :value="o.id">
+                  …
+                </option>
+              </Select>
+              --}}
+              <slot />
+            </select>
+          </div>
+          @if(helperText)
+          <p id="{{ helperId }}" class="{{ helperClasses }}">
+            {{ helperText }}
+          </p>
+          @endif
         </div>
-        @if(helperText)
-        <p id="{{ helperId }}" class="{{ helperClasses }}">
-          {{ helperText }}
-        </p>
         @endif
-      </div>
 
 === Extracted Classes ===
 !isError()
 ''
 'mt-2'
+'text-[#6d6d72]
+'text-[#ff3b30]
 '{{
 -
 --
@@ -280,9 +328,13 @@ const
 content
 cursor-not-allowed
 cursor-pointer
+dark:text-[#8d8d93]
+dark:text-[#8d8d93]'
+dark:text-[#ff453a]'
 declared
 default
 density
+disabled:opacity-50
 duration-200
 error
 every
@@ -311,9 +363,11 @@ lands
 leading-6
 line-height
 list
+mb-1.5
 md
 ml-1
 moves
+mt-1.5
 mt-2
 nearly
 needed
@@ -349,6 +403,8 @@ so
 stateInvalidClasses
 stateValidClasses
 step
+text-[#6d6d72]
+text-[13px]
 text-control
 text-danger
 text-danger-fg
@@ -361,6 +417,7 @@ the
 ties
 transition-colors
 true
+uppercase
 uses
 value
 w-full

@@ -33,7 +33,7 @@
 import type { NativeMutationOperation } from '../bridge/protocol'
 import type { STXNode, STXStyle } from '../compiler/ir'
 import { accessibilityChanges, authoredAccessibilityProps, projectAccessibility } from '../accessibility'
-import { compileClassStyles } from '../compiler/headwind-to-style'
+import { compileClassStyles, NATIVE_STATE_VARIANTS } from '../compiler/headwind-to-style'
 import { resolveIconName } from '../compiler/icons'
 import { applyNativeLayoutDefaults, parseNativeStyleLayers } from '../compiler/inline-style'
 import { createStyleVariables, type NativeStyleVariables } from '../compiler/style-variables'
@@ -42,6 +42,7 @@ import type { NativeStylesheetRules } from '../compiler/stylesheet-rules'
 import { affectsGeometry, applySvgAnimation, parseSvgMarkup, parseViewBox, SVG_ANIMATION_ATTRIBUTES, SVG_NODE_TYPES, svgGeometry } from '../compiler/svg'
 import { NATIVE_EVENT_NAMES } from '../event-names'
 import { nativePropName } from '../prop-names'
+import { authoredTextEntryProps, projectTextEntry, TEXT_ENTRY_SOURCES, textEntryChanges } from '../text-entry'
 import { cloneNativeBindingNode, type NativeBindingNode } from './binding-tree'
 import { NATIVE_FORM_ENTRIES } from './jsc-globals'
 import { createNativeOverlayPresenter, type NativeOverlayEntry } from './overlay-presenter'
@@ -93,6 +94,10 @@ interface NodeRecord {
   /** Last runtime markup assigned through a native `:html` binding. */
   markup?: string
   controlDefaults?: { value: unknown, checked: unknown }
+  /** This node's `divide-*` classes, as the border each later child draws. */
+  divide?: { style: STXStyle, dark?: STXStyle }
+  /** The border its parent's `divide-*` gives this node, when it is not the first child shown. */
+  dividerStyle?: Record<string, unknown>
 }
 
 interface RetainedNativeNode extends NativeNode {
@@ -268,7 +273,35 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     }
   }
 
+  /**
+   * `divide-y` and its kin: every child shown after the first draws the
+   * parent's divider as its own leading border, as the web's sibling selector
+   * does. Run when the parent's classes or its children change, or a child is
+   * shown or hidden.
+   */
+  function refreshDividers(parent: NativeNode | null | undefined): void {
+    const record = parent && descriptorOf(parent)
+    if (record) refreshDividersOf(record)
+  }
+
+  function refreshDividersOf(record: NodeRecord): void {
+    let first = true
+    for (const child of record.children) {
+      if (child.__stxAnchor !== undefined) continue
+      const childRecord = descriptorOf(child)
+      if (!childRecord) continue
+      const divider = record.divide && !first
+        ? { ...record.divide.style, ...(colorScheme === 'dark' ? record.divide.dark : {}) } as Record<string, unknown>
+        : undefined
+      if (childRecord.visible) first = false
+      if (JSON.stringify(divider) === JSON.stringify(childRecord.dividerStyle)) continue
+      childRecord.dividerStyle = divider
+      applyClasses(child.__stxId, childRecord, true)
+    }
+  }
+
   function notifyChildren(node: NativeNode | null | undefined): void {
+    refreshDividers(node)
     for (let current = node; current; current = current.__stxOwner) {
       for (const notify of childObservers.get(current) ?? []) notify()
     }
@@ -449,6 +482,16 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     return null
   }
 
+  /** A node's props as the host reads them: authored, plus the ARIA and text-field projections. */
+  function hostProps(record: NodeRecord): Record<string, unknown> {
+    return { ...record.props, ...projectAccessibility(record.props), ...projectTextEntry(record.type, record.props) }
+  }
+
+  /** An ARIA state attribute that is on: `aria-selected="true"`, as the web's variant matches it. */
+  function ariaState(value: unknown): boolean {
+    return value === true || value === 'true'
+  }
+
   function disabled(record: NodeRecord): boolean {
     return record.props.disabled === true || record.props.disabled === '' || record.props.disabled === 'true'
   }
@@ -528,7 +571,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       node: {
         type: record.type,
         ...(record.key === undefined ? {} : { key: record.key }),
-        props: { ...record.props, ...projectAccessibility(record.props) },
+        props: hostProps(record),
         style: { ...record.style },
         ...(Object.keys(record.events).length ? { events: { ...record.events } } : {}),
         ...(record.text === undefined ? {} : { children: [record.text] }),
@@ -557,6 +600,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     for (const layer of classes.responsive ?? []) {
       if (viewportWidth >= layer.min && (layer.max === undefined || viewportWidth <= layer.max)) Object.assign(classStyle, layer.style, colorScheme === 'dark' ? layer.dark : {})
     }
+    // `aria-selected:` and its kin, while the node says so. Before
+    // `disabled:`, as Tailwind orders the two variants.
+    for (const [attribute, layer] of Object.entries(classes.states ?? {})) {
+      if (ariaState(record.props[attribute])) Object.assign(classStyle, layer.style, colorScheme === 'dark' ? layer.dark : {})
+    }
     if (classes.disabled && disabled(record)) Object.assign(classStyle, classes.disabled.style, colorScheme === 'dark' ? classes.disabled.dark : {})
     // Like utility variant ordering, direct focus overrides focus-within;
     // authored inline/bound styles still win over both layers below.
@@ -569,7 +617,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       }
       Object.assign(classStyle, focused)
     }
-    const style = applyNativeLayoutDefaults({ ...classStyle, ...resolved.styles[0], ...record.baseStyle, ...resolved.styles[1], ...resolved.styles[2] } as STXStyle)
+    const style = applyNativeLayoutDefaults({ ...classStyle, ...record.dividerStyle, ...resolved.styles[0], ...record.baseStyle, ...resolved.styles[1], ...resolved.styles[2] } as STXStyle)
     return { ...style, ...(record.visible && !isHiddenInput(record) ? {} : { display: 'none' }) }
   }
 
@@ -653,6 +701,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     record.style = style
     if (record.materialized && changed) emit({ op: 'updateNode', id, patch: { style: { ...patch, ...style } } })
     const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules })
+    // Re-checked on every application while there is a divider, since an
+    // appearance change recolours it without changing the classes.
+    const divideChanged = JSON.stringify(classes.divide) !== JSON.stringify(record.divide)
+    record.divide = classes.divide
+    if (divideChanged || record.divide) refreshDividersOf(record)
     const unsupported = new Set(classes.unknown)
     for (const name of unsupported) {
       if (!record.reportedClasses?.has(name))
@@ -775,17 +828,18 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     }
   }
 
-  function adopt(node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'key' | 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle' | '_styleSource' | '_styleAncestors' | '_accessibilitySource'>): NativeNode {
+  function adopt(node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'key' | 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle' | '_styleSource' | '_styleAncestors' | '_accessibilitySource' | '_textEntrySource'>): NativeNode {
     const suffix = /(?:^|\D)(\d+)$/.exec(node.__stxId)?.[1]
     if (suffix)
       counter = Math.max(counter, Number(suffix))
     const classes = descriptor?._classes ?? ''
-    const classStyle = compileClassStyles(classes).style as Record<string, unknown>
+    const compiledClasses = compileClassStyles(classes)
+    const classStyle = compiledClasses.style as Record<string, unknown>
     const baseStyle = descriptor?._styleSource !== undefined ? {} : descriptor?._inlineStyle ? { ...descriptor._inlineStyle } : Object.fromEntries(Object.entries(descriptor?.style ?? {}).filter(([key, value]) => classStyle[key] !== value))
     const record: NodeRecord = {
       type,
       key: descriptor?.key,
-      props: authoredAccessibilityProps(descriptor?.props ?? {}, descriptor?._accessibilitySource),
+      props: authoredTextEntryProps(authoredAccessibilityProps(descriptor?.props ?? {}, descriptor?._accessibilitySource), descriptor?._textEntrySource),
       style: { ...(descriptor?.style ?? {}) },
       baseStyle,
       styleSource: descriptor?._styleSource,
@@ -798,7 +852,13 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       visible: true,
       materialized: true,
       controlDefaults: { value: descriptor?.props.value ?? '', checked: descriptor?.props.checked ?? descriptor?.props.value ?? false },
+      divide: compiledClasses.divide,
     }
+    // Children are adopted in order, so a divided parent that already holds
+    // a shown child gives this one its divider before its first render.
+    const ownerRecord = owner ? descriptorOf(owner) : undefined
+    if (ownerRecord?.divide && ownerRecord.children.some(child => child.__stxAnchor === undefined && descriptorOf(child)?.visible))
+      record.dividerStyle = { ...ownerRecord.divide.style, ...(colorScheme === 'dark' ? ownerRecord.divide.dark : {}) }
     record.style = resolveStyle(record, node.__stxId)
     if (descriptor) descriptor.style = { ...record.style } as STXNode['style']
     records.set(node.__stxId, record)
@@ -910,7 +970,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         return {
           id: node.__stxId,
           type: record.type,
-          props: { ...record.props, ...projectAccessibility(record.props) },
+          props: hostProps(record),
           style: { ...record.style } as STXNode['style'],
           events: { ...record.events },
           children: record.text === undefined ? children : [record.text],
@@ -970,14 +1030,17 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const record = recordOf(node)
       const prop = nativePropName(name, record.type)
       const accessibilityBefore = prop === 'role' || prop.startsWith('aria-') || prop.startsWith('accessibility') ? projectAccessibility(record.props) : undefined
+      const textEntryBefore = TEXT_ENTRY_SOURCES.has(prop) ? projectTextEntry(record.type, record.props) : undefined
       const wasDisabled = disabled(record)
       record.props[prop] = value
       if (record.focused && disabled(record)) {
         record.focused = false
         refreshFocusChain(node)
       }
-      // `disabled:` classes follow the control's state.
+      // `disabled:` classes follow the control's state, and `aria-selected:`
+      // and its kin follow their attribute.
       if (prop === 'disabled' && wasDisabled !== disabled(record)) applyClasses(node.__stxId, record, true)
+      else if (NATIVE_STATE_VARIANTS.has(prop)) applyClasses(node.__stxId, record, true)
       if (record.type === 'Icon' && prop === 'name') {
         const icon = resolveIconName(String(value ?? ''))
         this.setAttribute(node, 'iconify', icon.iconify ?? null)
@@ -987,6 +1050,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const patch: Record<string, unknown> = { [prop]: value }
       if (accessibilityBefore)
         Object.assign(patch, accessibilityChanges(record.props, accessibilityBefore, prop))
+      if (textEntryBefore) {
+        Object.assign(patch, textEntryChanges(record.type, record.props, textEntryBefore))
+        // A field written in HTML's words (`autocapitalize="off"`) reaches the host translated.
+        const projected = projectTextEntry(record.type, record.props)
+        if (prop in projected) patch[prop] = projected[prop]
+      }
       // A drawing's bound attribute: the renderers read the outline as
       // commands (svg.ts), so a new `d` or `x1` is a new `geometry`.
       if (SVG_NODE_TYPES.has(record.type)) {
@@ -1016,18 +1085,22 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const record = recordOf(node)
       const prop = nativePropName(name, record.type)
       const accessibilityBefore = prop === 'role' || prop.startsWith('aria-') || prop.startsWith('accessibility') ? projectAccessibility(record.props) : undefined
+      const textEntryBefore = TEXT_ENTRY_SOURCES.has(prop) ? projectTextEntry(record.type, record.props) : undefined
       delete record.props[prop]
       // Null rather than omitted: a patch is merged on the native side, so an
       // absent key means "unchanged" and would leave the attribute in place.
       const patch: Record<string, unknown> = { [prop]: null }
       if (accessibilityBefore)
         Object.assign(patch, accessibilityChanges(record.props, accessibilityBefore, prop))
+      if (textEntryBefore)
+        Object.assign(patch, textEntryChanges(record.type, record.props, textEntryBefore))
       if (affectsGeometry(record.type, prop))
         patch.geometry = record.props.geometry = svgGeometry(record.type, record.props)
       if (record.type === 'Animate' && SVG_ANIMATION_ATTRIBUTES.includes(prop))
         Object.assign(patch, applySvgAnimation(record.props))
       if (record.materialized)
         emit({ op: 'updateNode', id: node.__stxId, patch: { props: patch } })
+      if (NATIVE_STATE_VARIANTS.has(prop)) applyClasses(node.__stxId, record, true)
     },
 
     observeAttributes(node, names, callback) {
@@ -1264,6 +1337,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const display = visible ? irDisplay(record.style.display) : 'none'
       if (record.materialized)
         emit({ op: 'updateNode', id: node.__stxId, patch: { style: { display } } })
+      // Which child is the first one shown decides where dividers go.
+      if (was !== visible) refreshDividers(node.__stxOwner)
       return was
     },
 

@@ -34,7 +34,14 @@ const variantClasses = {
   none: '',
 }
 const directionClasses = orientation === 'vertical' ? 'flex-col' : ''
-export const listClasses = `${variantClasses[variant] ?? variantClasses.line} ${directionClasses} ${className}`.replace(/\s+/g, ' ').trim()
+/*
+ * On a native host ($native) a horizontal strip is the phone's segmented
+ * control, the control iOS uses to switch a screen between views; its tabs
+ * draw the raised segment through `aria-selected:` (Tab.stx).
+ */
+export const listClasses = $native && orientation === 'horizontal' && variant !== 'none'
+  ? `flex-row gap-0.5 p-0.5 rounded-[9px] bg-[#767680]/12 dark:bg-[#767680]/24 ${className}`.replace(/\s+/g, ' ').trim()
+  : `${variantClasses[variant] ?? variantClasses.line} ${directionClasses} ${className}`.replace(/\s+/g, ' ').trim()
 </script>
 
 <script client>

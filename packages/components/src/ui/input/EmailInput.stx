@@ -24,6 +24,15 @@ export const autocomplete = $props.autocomplete || $props.autoComplete || ''
 export const form = $props.form || ''
 export const inputMode = $props.inputMode || $props.inputmode || ''
 export const enterKeyHint = $props.enterKeyHint || $props.enterkeyhint || ''
+
+/*
+ * On a native host ($native) the field is the platform's: no envelope glyph
+ * and no monospace, which iOS mail fields do without. type="email" brings the
+ * email keyboard, no capitals and the person's addresses as autofill there
+ * (text-entry.ts).
+ */
+export const fieldIcon = $native ? '' : emailIcon
+export const fieldFont = $native ? '' : 'font-mono'
 </script>
 
 {{-- type="email": served as text, an email field got no email keyboard on a
@@ -44,8 +53,8 @@ export const enterKeyHint = $props.enterKeyHint || $props.enterkeyhint || ''
   :label="label"
   :helperText="helperText"
   :required="required"
-  :leftIcon="emailIcon"
+  :leftIcon="fieldIcon"
   :clearable="true"
   :className="className"
-  inputClassName="font-mono"
+  :inputClassName="fieldFont"
 />

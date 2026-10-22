@@ -17,10 +17,22 @@ export const action = $props.action || ''
 export const actionHref = $props.actionHref || ''
 export const className = $props.className || ''
 
-export const cardClasses = `
+/*
+ * On a native host ($native) the card is iOS's inset group: white
+ * (#1c1c1e in dark) with 10pt corners and no outline, its rows parted by
+ * the system separator through the same `divide-y` (the host gives the
+ * border to every row shown after the first), under the large bold header a
+ * Today-style list heads a group with.
+ */
+export const cardClasses = $native
+  ? 'overflow-hidden rounded-[10px] bg-[#ffffff] dark:bg-[#1c1c1e] divide-y-[0.5px] divide-[#c6c6c8] dark:divide-[#38383a]'
+  : `
   overflow-hidden rounded-2xl border border-line bg-surface-raised
   divide-y divide-line
 `.replace(/\s+/g, ' ').trim()
+export const headerClasses = $native ? 'flex-row items-baseline justify-between px-1 pb-2' : 'flex items-baseline justify-between px-1 pb-2'
+export const titleClasses = $native ? 'text-[22px] font-bold text-[#000000] dark:text-[#ffffff]' : 'text-2xl font-bold tracking-tight text-fg-strong'
+export const actionClasses = $native ? 'text-[17px] text-[#007aff] dark:text-[#0a84ff]' : 'text-sm font-medium text-accent'
 
 /*
  * Whether the router should own this link.
@@ -46,15 +58,15 @@ export const actionRouterOwned = routerOwns(actionHref)
 
 <section class="{{ className }}" data-stx-section-card>
   @if (title || action)
-    <header class="flex items-baseline justify-between px-1 pb-2">
+    <header class="{{ headerClasses }}">
       @if (title)
-        <h2 class="text-2xl font-bold tracking-tight text-fg-strong">{{ title }}</h2>
+        <h2 class="{{ titleClasses }}">{{ title }}</h2>
       @endif
 
       @if (action)
         <a
           href="{{ actionHref }}"
-          class="text-sm font-medium text-accent"
+          class="{{ actionClasses }}"
           @if (actionRouterOwned)
             data-stx-link
           @endif

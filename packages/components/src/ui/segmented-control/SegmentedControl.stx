@@ -52,9 +52,23 @@ export const sizing = sizeClasses[size]
 
 // A block flex box already fills its column, so `stretch` needs no `w-full` -
 // which beside a margin (`mx-4`) ran the track off the screen's edge.
-export const trackClasses = `${stretch ? 'flex' : 'inline-flex'} flex-row gap-0.5 p-0.5 rounded-control bg-surface-sunken ${className}`.replace(/\s+/g, ' ').trim()
 const segmentSizing = stretch ? sizing.segment.replace(/\bpx-\S+/, stretchedPadding[size]) : sizing.segment
-export const segmentBase = `${stretch ? 'flex-1 min-w-0' : ''} items-center justify-center rounded-control transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${segmentSizing}`.replace(/\s+/g, ' ').trim()
+/*
+ * On a native host ($native) the track and segments are UISegmentedControl's
+ * own: a translucent grey track with 9pt corners, the chosen segment raised
+ * white (#636366 in dark) with 7pt corners, every label in the label colour
+ * and the chosen one semibold.
+ */
+export const trackClasses = $native
+  ? `${stretch ? 'flex' : 'self-start'} flex-row gap-0.5 p-0.5 rounded-[9px] bg-[#767680]/12 dark:bg-[#767680]/24 ${className}`.replace(/\s+/g, ' ').trim()
+  : `${stretch ? 'flex' : 'inline-flex'} flex-row gap-0.5 p-0.5 rounded-control bg-surface-sunken ${className}`.replace(/\s+/g, ' ').trim()
+export const segmentBase = $native
+  ? `${stretch ? 'flex-1 min-w-0' : ''} items-center justify-center rounded-[7px] ${segmentSizing}`.replace(/\s+/g, ' ').trim()
+  : `${stretch ? 'flex-1 min-w-0' : ''} items-center justify-center rounded-control transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${segmentSizing}`.replace(/\s+/g, ' ').trim()
+export const segmentOn = $native ? 'bg-[#ffffff] dark:bg-[#636366] shadow-sm' : 'bg-panel dark:bg-neutral-600 shadow-sm'
+export const segmentOff = $native ? 'opacity-50' : 'opacity-50 cursor-not-allowed'
+export const labelOn = $native ? 'font-semibold text-[#000000] dark:text-[#ffffff]' : 'font-semibold text-fg'
+export const labelOff = $native ? 'font-medium text-[#000000] dark:text-[#ffffff]' : 'font-medium text-fg-muted'
 </script>
 
 <script client>
@@ -67,6 +81,10 @@ const isDisabled = useReactiveProp('disabled', {{ disabled }})
 const segmentBase = {{ segmentBase }}
 const textSize = {{ sizing.text }}
 const groupID = {{ testID }}
+const segmentOn = {{ segmentOn }}
+const segmentOff = {{ segmentOff }}
+const labelOn = {{ labelOn }}
+const labelOff = {{ labelOff }}
 
 /** A choice as `{ value, label, disabled }`, whichever way it was written. */
 function normalise(choice) {
@@ -102,12 +120,12 @@ function choose(segment) {
 }
 
 function segmentClasses(segment) {
-  const state = isOn(segment) ? 'bg-panel dark:bg-neutral-600 shadow-sm' : 'bg-transparent'
-  return `${segmentBase} ${state} ${isOff(segment) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`
+  const state = isOn(segment) ? segmentOn : 'bg-transparent'
+  return `${segmentBase} ${state} ${isOff(segment) ? segmentOff : 'cursor-pointer'}`
 }
 
 function labelClasses(segment) {
-  return `${textSize} ${isOn(segment) ? 'font-semibold text-fg' : 'font-medium text-fg-muted'}`
+  return `${textSize} ${isOn(segment) ? labelOn : labelOff}`
 }
 
 function segmentID(segment) {

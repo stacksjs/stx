@@ -26,8 +26,18 @@ export const flush = $bool($props.flush)
 export const testID = $props.testID || ''
 export const className = $props.className || ''
 
-export const groupClasses = `overflow-hidden bg-panel ${flush ? '' : 'mx-4 rounded-panel'}`.replace(/\s+/g, ' ').trim()
 export const noteInset = flush ? 'mx-4' : 'mx-8'
+/*
+ * On a native host ($native) the group is iOS's own: a white
+ * (#1c1c1e in dark) inset group with 10pt corners on the grouped background,
+ * its heading and note in the system's grouped-header grey.
+ */
+export const groupClasses = $native
+  ? `overflow-hidden bg-[#ffffff] dark:bg-[#1c1c1e] ${flush ? '' : 'mx-4 rounded-[10px]'}`.replace(/\s+/g, ' ').trim()
+  : `overflow-hidden bg-panel ${flush ? '' : 'mx-4 rounded-panel'}`.replace(/\s+/g, ' ').trim()
+const noteColour = $native ? 'text-[#6d6d72] dark:text-[#8d8d93]' : 'text-fg-soft'
+export const headingClasses = `mb-1.5 ${noteInset} text-[13px] uppercase ${noteColour}`
+export const noteClasses = `mt-1.5 ${noteInset} text-[13px] ${noteColour}`
 </script>
 
 <script client>
@@ -36,9 +46,9 @@ const note = useReactiveProp('footer', {{ footer }})
 </script>
 
 <section class="flex flex-col {{ className }}" @if(testID)testID="{{ testID }}"@endif data-stx-grouped-list>
-  <h2 :show="heading()" :text="heading()" class="mb-1.5 {{ noteInset }} text-[13px] uppercase text-fg-soft">{{ title }}</h2>
+  <h2 :show="heading()" :text="heading()" class="{{ headingClasses }}">{{ title }}</h2>
   <div class="{{ groupClasses }}">
     <slot />
   </div>
-  <p :show="note()" :text="note()" class="mt-1.5 {{ noteInset }} text-[13px] text-fg-soft">{{ footer }}</p>
+  <p :show="note()" :text="note()" class="{{ noteClasses }}">{{ footer }}</p>
 </section>

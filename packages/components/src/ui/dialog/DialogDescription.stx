@@ -2,7 +2,8 @@
 export const className = $props.className || ''
 export const as = $props.as || 'p'
 
-const baseClasses = 'mt-2 text-sm text-fg-soft'
+// The secondary-label body text under it, on a native host ($native).
+const baseClasses = $native ? 'mt-1.5 text-[15px] text-[#3c3c43] dark:text-[#ebebf5]' : 'mt-2 text-sm text-fg-soft'
 const descriptionClasses = `${baseClasses} ${className}`.trim()
 </script>
 

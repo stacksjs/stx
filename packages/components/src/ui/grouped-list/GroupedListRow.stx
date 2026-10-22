@@ -29,20 +29,45 @@ export const separator = $bool($props.separator)
 export const testID = $props.testID || ''
 export const className = $props.className || ''
 
-const tintFills = {
-  accent: 'bg-accent-solid',
-  success: 'bg-success-solid',
-  danger: 'bg-danger-solid',
-  warning: 'bg-warning-solid',
-  info: 'bg-info-solid',
-  secondary: 'bg-secondary-solid',
-}
+const tintFills = $native
+  ? {
+      // The system colours a Settings tile is filled with.
+      accent: 'bg-[#007aff]',
+      success: 'bg-[#34c759]',
+      danger: 'bg-[#ff3b30]',
+      warning: 'bg-[#ff9500]',
+      info: 'bg-[#32ade6]',
+      secondary: 'bg-[#8e8e93]',
+    }
+  : {
+      accent: 'bg-accent-solid',
+      success: 'bg-success-solid',
+      danger: 'bg-danger-solid',
+      warning: 'bg-warning-solid',
+      info: 'bg-info-solid',
+      secondary: 'bg-secondary-solid',
+    }
 export const hasIcon = icon !== ''
 export const tag = pressable ? 'button' : 'div'
 export const tileClasses = `flex shrink-0 items-center justify-center h-[29px] w-[29px] rounded-[7px] text-white ${tintFills[tint]}`
-export const rowClasses = `flex flex-row items-center gap-3 w-full min-h-[44px] px-4 py-2.5 text-left ${pressable ? 'cursor-pointer active:bg-surface-hover focus:outline-none focus-visible:bg-surface-hover' : ''} ${className}`.replace(/\s+/g, ' ').trim()
-export const ruleClasses = `h-[0.5px] bg-line ${hasIcon ? 'ml-[57px]' : 'ml-4'}`
-export const titleClasses = `text-[17px] ${destructive ? 'text-danger' : 'text-fg'}`
+/*
+ * On a native host ($native) the row is a table cell: it highlights grey
+ * while pressed (TouchableHighlight, a translucent fill that reads in both
+ * appearances), its hairline is the system separator, its words are the
+ * label and secondary-label colours and its chevron the SF Symbol.
+ */
+export const rowClasses = $native
+  ? `flex-row items-center gap-3 w-full min-h-[44px] px-4 py-2.5 ${className}`.replace(/\s+/g, ' ').trim()
+  : `flex flex-row items-center gap-3 w-full min-h-[44px] px-4 py-2.5 text-left ${pressable ? 'cursor-pointer active:bg-surface-hover focus:outline-none focus-visible:bg-surface-hover' : ''} ${className}`.replace(/\s+/g, ' ').trim()
+export const ruleClasses = $native
+  ? `h-[0.5px] bg-[#c6c6c8] dark:bg-[#38383a] ${hasIcon ? 'ml-[57px]' : 'ml-4'}`
+  : `h-[0.5px] bg-line ${hasIcon ? 'ml-[57px]' : 'ml-4'}`
+export const titleClasses = $native
+  ? `text-[17px] ${destructive ? 'text-[#ff3b30] dark:text-[#ff453a]' : 'text-[#000000] dark:text-[#ffffff]'}`
+  : `text-[17px] ${destructive ? 'text-danger' : 'text-fg'}`
+const secondary = $native ? 'text-[#8a8a8e] dark:text-[#98989f]' : 'text-fg-soft'
+export const subtitleClasses = `text-[15px] ${secondary}`
+export const valueClasses = `shrink-0 text-[17px] ${secondary}`
 </script>
 
 <script client>
@@ -59,17 +84,19 @@ function select() {
 
 <div class="flex flex-col" data-stx-grouped-list-row>
   <div :show="ruled()" class="{{ ruleClasses }}" aria-hidden="true"></div>
-  <{{ tag }} @if(pressable)type="button" @click="select()"@endif class="{{ rowClasses }}" @if(testID)testID="{{ testID }}"@endif>
+  <{{ tag }} @if(pressable)type="button" @click="select()"@endif @if(pressable && $native)data-native="TouchableHighlight" underlayColor="#7676803d"@endif class="{{ rowClasses }}" @if(testID)testID="{{ testID }}"@endif>
     @if(hasIcon)
       <span class="{{ tileClasses }}" aria-hidden="true">{!! icon !!}</span>
     @endif
     <span class="flex flex-1 min-w-0 flex-col">
       <span :text="heading()" class="{{ titleClasses }}">{{ title }}</span>
-      <span :show="detail()" :text="detail()" class="text-[15px] text-fg-soft">{{ subtitle }}</span>
+      <span :show="detail()" :text="detail()" class="{{ subtitleClasses }}">{{ subtitle }}</span>
     </span>
-    <span :show="trailing()" :text="trailing()" class="shrink-0 text-[17px] text-fg-soft">{{ value }}</span>
+    <span :show="trailing()" :text="trailing()" class="{{ valueClasses }}">{{ value }}</span>
     <slot />
-    @if(chevron)
+    @if(chevron && $native)
+      <i class="i-lucide-chevron-right h-3.5 w-3.5 shrink-0 text-[#c4c4c7] dark:text-[#5b5b5f]" aria-hidden="true"></i>
+    @elseif(chevron)
       <svg class="h-3.5 w-3.5 shrink-0 text-fg-soft" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
     @endif
   </{{ tag }}>
