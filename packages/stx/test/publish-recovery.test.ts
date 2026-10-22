@@ -26,6 +26,14 @@ describe('accepted npm publication recovery', () => {
     expect(() => acceptedPublications('Publishing @stacksjs/example@1.2.3...\nError: Upload accepted; publication is pending public metadata')).toThrow('no complete original archive receipt')
   })
 
+  it('retains ambiguous upload outcomes without treating them as verified publications', async () => {
+    const message = 'Upload outcome is pending public verification. Do not send another upload while this version may be staged.'
+    const pending = acceptedPublications(`Publishing ${receipt.name}@${receipt.version}...\nShasum: ${receipt.shasum}\nIntegrity: ${receipt.integrity}\nError: ${message}`)
+    expect(pending).toEqual([receipt])
+    expect(await publicationMatchesOriginal(pending[0], async () => new Response(null, { status: 404 }))).toBe(false)
+    expect(() => acceptedPublications(`Publishing ${receipt.name}@${receipt.version}...\nError: ${message}`)).toThrow('no complete original archive receipt')
+  })
+
   it('refuses to resume when metadata is absent even if the tarball is readable', async () => {
     const requests: string[] = []
     expect(await publicationMatchesOriginal(receipt, async (url) => {
