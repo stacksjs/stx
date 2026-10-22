@@ -147,13 +147,13 @@ const nativeVariant = nativeVariants[variant] || nativeVariants.primary
 const nativeSize = nativeSizes[size] || nativeSizes.md
 export const nativeButtonClasses = `flex-row items-center justify-center ${nativeSize.box} ${nativeVariant.box} disabled:opacity-50 ${fullWidth ? 'w-full' : ''} ${className}`.replace(/\s+/g, ' ').trim()
 export const nativeTextClasses = `font-semibold ${nativeSize.text} ${nativeVariant.text}`
-export const legacyNativeTint = $native ? (variant === 'primary' || variant === 'danger' ? '#ffffff' : '#007aff') : ''
+export const legacyNativeTint = variant === 'primary' || variant === 'danger' ? '#ffffff' : '#007aff'
 export const nativeTintClass = nativeVariant.text
     </script>
     <script client>
       const emit = defineEmits()
 const platformControls = typeof craft !== 'undefined' && craft.capabilities.nativePlatformControls === true
-const legacyNativeTint = {{ legacyNativeTint }}
+const legacyNativeTint = {{ $native ? legacyNativeTint : '' }}
 
 /*
  * `disabled` and `loading` are read as live props, not as a server snapshot.
