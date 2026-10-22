@@ -1,5 +1,15 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.660...v0.2.661)
+
+## 🔧 Chores
+
+- release v0.2.661 ([acb562b](https://github.com/stacksjs/stx/commit/acb562b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.659...v0.2.660)
 
 ## ✨ Features
