@@ -37,6 +37,7 @@ import { processScriptSetup } from '../../signal-processing'
 import { appThemeCSS } from './app-theme'
 import { translateHtmlToDocument } from './html-to-ir'
 import { extractClientScript } from './client-script'
+import { extractLayoutChrome } from './layout-chrome'
 import { extractGeneratedSetupScript, extractNativeClientScripts, type GeneratedSetupScript, type NativeClientScript } from './setup-script'
 
 /**
@@ -94,8 +95,17 @@ export async function compileScreenSource(
 ): Promise<CompiledScreen> {
   const root = options.root ?? path.dirname(filePath)
   const loaded = await loadStxConfig(root)
+  // The app's directories, resolved against its root as the dev server
+  // resolves them (serve-app.ts): a web view's `@extends`, `@include` and
+  // `useStore` find what they find in the browser.
+  const fromRoot = (dir: string | undefined, fallback: string): string => dir
+    ? (path.isAbsolute(dir) ? dir : path.resolve(root, dir))
+    : path.join(root, fallback)
   const config = {
     root,
+    layoutsDir: fromRoot(loaded.layoutsDir, 'layouts'),
+    partialsDir: fromRoot(loaded.partialsDir, 'partials'),
+    storesDir: fromRoot((loaded as { storesDir?: string }).storesDir, 'stores'),
     componentsDir: options.componentsDir ?? loaded.componentsDir ?? path.join(root, 'components'),
     buildMode: 'serve',
     cache: false,
@@ -128,7 +138,10 @@ export async function compileScreenSource(
     config as never,
     dependencies,
   )
-  const { html, manifest } = extractBindingManifest(renderedHtml)
+  // The layout's chrome is the app's own on a phone: left out of the tree,
+  // its links kept for the tab and navigation bars (layout-chrome.ts).
+  const { html: content, chrome } = await extractLayoutChrome(renderedHtml)
+  const { html, manifest } = extractBindingManifest(content)
 
   // The app's answers for the role tokens, which the web gets from the page
   // stylesheet and a native screen otherwise never sees (app-theme.ts).
@@ -140,6 +153,11 @@ export async function compileScreenSource(
     script: extractClientScript(source),
   })
 
+  // The page's title, as the web's <title> has it: the navigation title.
+  const head = (context as { __stx_runtime_head?: { title?: unknown } }).__stx_runtime_head
+  if (typeof head?.title === 'string' && head.title.trim()) document.title = head.title.trim()
+  if (chrome) document.chrome = chrome
+
   let setup = extractGeneratedSetupScript(html)
   const scripts = extractNativeClientScripts(html)
   if (extractClientScript(source).code.trim()) {
@@ -148,6 +166,20 @@ export async function compileScreenSource(
     setup = forcedSetup ?? setup
     if (forcedSetup && !scripts.some(script => script.code === forcedSetup.code))
       scripts.push({ code: forcedSetup.code })
+  }
+  // The app's stores, which the page loads ahead of its own scripts
+  // (`data-stx-stores`, process.ts): `useStore` in the screen's setup finds
+  // them defined, as it does in the browser. Served HTML may name the bundle
+  // by URL, and a native screen has nothing to fetch it from, so the bundle
+  // is built here from the same directory.
+  if (/<script\b[^>]*\bdata-stx-stores\b/i.test(html)) {
+    const { getStoreScript } = await import('../../store-loader')
+    const stores = await getStoreScript(config.storesDir)
+    if (stores) {
+      scripts.unshift({ code: stores })
+      for (const file of new Bun.Glob('*.ts').scanSync({ cwd: config.storesDir, absolute: true }))
+        dependencies.add(file)
+    }
   }
   // Serve HTML externalizes the page's module registry. A native screen has
   // no HTTP script loader: embed the same registry before component setups.

@@ -24,7 +24,7 @@ import { existsSync, mkdirSync, realpathSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import { compileScreenFile } from './render-screen'
 import { nativeStyleConfigFrom, withNativeStyleConfig, type NativeStyleConfig } from './style-config'
-import type { STXDocument } from './ir'
+import type { NativeLayoutChrome, STXDocument } from './ir'
 import { NATIVE_APP_ROUTE } from '../runtime/shared-screen'
 import { generateSignalsRuntime } from '../../signals'
 import { withModuleSubstitutes } from '../../client-script-bundler'
@@ -160,6 +160,12 @@ export interface NativeBundleResult {
     routes: Record<string, string[]>
   }
   diagnostics: NativeDiagnostic[]
+  /**
+   * Each screen's layout chrome, by screen name, for the screens whose layout
+   * marks some (`data-native-chrome`, layout-chrome.ts): an app builds its
+   * tab bar from `tabs`, in the order the web's nav lists them.
+   */
+  chrome?: Record<string, NativeLayoutChrome>
 }
 
 /** @deprecated Use `CompileNativeBundleOptions`. */
@@ -462,6 +468,8 @@ g.addEventListener('pagehide', function(event) { if (!event.persisted) g.__stxNa
     level: 'warning' as const,
     message: [diagnostic.kind, diagnostic.tag, diagnostic.name].filter(Boolean).join(': '),
   }))
+  const chromed = compiledScreens.filter(({ compiled }) => compiled.document.chrome)
+  const chrome = chromed.length ? { chrome: Object.fromEntries(chromed.map(({ name, compiled }) => [name, compiled.document.chrome!])) } : {}
   const minify = options.minify ?? false
   let routes: Record<string, string> | undefined
   let runtime: string | undefined
@@ -559,14 +567,14 @@ ${signalsRuntime}
       for (const file of messages.files.keys()) dependencies.add(file)
       written = { dir: messagesDir, languages: [...messages.data.keys()], routes: sorted }
     }
-    if (!options.outFile) return { code: '', routes, runtime, ...(written ? { messages: written } : {}), diagnostics, dependencies: [...dependencies] }
+    if (!options.outFile) return { code: '', routes, runtime, ...(written ? { messages: written } : {}), ...chrome, diagnostics, dependencies: [...dependencies] }
   }
   const code = await build('stx:native-shared-screens', [plugin(entry(compiledScreens, true))], minify, dependencies)
-  if (!options.outFile) return { code, diagnostics, dependencies: [...dependencies] }
+  if (!options.outFile) return { code, ...chrome, diagnostics, dependencies: [...dependencies] }
   const outFile = path.resolve(root, options.outFile)
   mkdirSync(path.dirname(outFile), { recursive: true })
   await Bun.write(outFile, code)
-  return { code, outFile, ...(routes ? { routes, runtime } : {}), ...(written ? { messages: written } : {}), diagnostics, dependencies: [...dependencies] }
+  return { code, outFile, ...(routes ? { routes, runtime } : {}), ...(written ? { messages: written } : {}), ...chrome, diagnostics, dependencies: [...dependencies] }
 }
 
 /** Compile one screen against stx's shared signals runtime, without the legacy parser/runtime. */

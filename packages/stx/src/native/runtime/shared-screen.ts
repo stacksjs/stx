@@ -8,6 +8,8 @@ import type { NativeBindingNode } from './binding-tree'
 import { installCraftBridge, type CraftBridgeOptions } from './craft-bridge'
 import { createNativeHost, type NativeHost } from './native-host'
 import { createNativeViewOperations, nativeViewError } from './view-operations'
+import { nativeLinkFollower } from './web-navigation'
+import { startNativeSessionRun } from './web-storage'
 
 interface SharedSignalsRuntime {
   hydrateHost: (root: unknown, setup: (() => Record<string, unknown>) | Record<string, unknown> | null, manifest: BindingManifest, nodes: Map<number, unknown>) => (() => void)
@@ -35,8 +37,13 @@ export function prepareSharedNativeScreen(
   let rendered = false
   const protocol = new STXBridge()
   protocol.initialize(bridge)
-  installCraftBridge(protocol, bridge, globalThis as Record<string, any>, options)
+  const craft = installCraftBridge(protocol, bridge, globalThis as Record<string, any>, {
+    ...options,
+    ...(document.title ? { title: document.title } : {}),
+    ...(document.chrome ? { chrome: document.chrome } : {}),
+  })
 
+  const followLink = nativeLinkFollower(craft)
   const host = createNativeHost({
     views: createNativeViewOperations(protocol, bridge.capabilities ?? [], () => {
       if (!rendered) throw nativeViewError('VIEW_NOT_MOUNTED', 'The native screen has not rendered')
@@ -45,6 +52,7 @@ export function prepareSharedNativeScreen(
     viewportWidth: Number(bridge.viewportWidth) || 0,
     stylesheetTheme: document.root._stylesheetTheme,
     stylesheetRules: document.root._stylesheetRules,
+    ...(followLink ? { followLink } : {}),
     send(operations) {
       const baseRevision = revision
       revision++
@@ -167,6 +175,9 @@ export function prepareNativeApp(bridge: NativeBridgeInterface, options: CraftBr
   const protocol = new STXBridge()
   protocol.initialize(bridge)
   const craft = installCraftBridge(protocol, bridge, globalThis as Record<string, any>, { ...options, routeName: options.routeName || NATIVE_APP_ROUTE })
+  // Once per launch: a new run, so sessionStorage starts empty as a new
+  // visit's does (web-storage.ts).
+  startNativeSessionRun(craft)
   let cleanup: (() => void) | null = null
   let stopped = false
   const report = (error: unknown) => console.error(`[stx native] the app script failed: ${error instanceof Error ? error.stack || error.message : String(error)}`)

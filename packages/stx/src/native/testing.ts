@@ -126,6 +126,8 @@ export interface NativeScreenOptions {
   viewportWidth?: number
   /** The params the screen was opened with (`craft.route.params`). */
   params?: Record<string, unknown>
+  /** The address the host opened the screen at (`/plans/12?week=2`): `craft.route.path` and `location`. */
+  routeURL?: string
   /** What the app reports it can do (`health`, `haptics`, ...), as Craft's host does. */
   capabilities?: string[]
   capabilityTimeoutMs?: number
@@ -543,6 +545,7 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
       appVersion: options.appVersion ?? '1.0.0',
       appBuild: options.appBuild ?? '1',
       ...(options.sessionEvents === false ? {} : { sessionTokenKey }),
+      ...(options.routeURL ? { routeURL: options.routeURL } : {}),
       postMessage: (raw: string) => {
         const message: NativeMessage = JSON.parse(raw)
         // Its own copy: the tree below is the one the host keeps changing.

@@ -1,0 +1,4 @@
+<nav data-native-chrome="tabs" class="flex gap-4 p-4">
+  <a href="/" data-native-icon="i-lucide-house">Home</a>
+  <a href="/settings" data-native-icon="i-lucide-settings">Settings</a>
+</nav>

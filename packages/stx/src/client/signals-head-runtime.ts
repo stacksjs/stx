@@ -47,7 +47,8 @@ export const SIGNALS_HEAD_RUNTIME = `  // ======================================
         document.head.appendChild(se);
       }
       // Body class
-      if (config.bodyAttrs && config.bodyAttrs.class) {
+      // A native screen's document has no body (jsc-globals.ts).
+      if (config.bodyAttrs && config.bodyAttrs.class && document.body) {
         config.bodyAttrs.class.split(' ').forEach(function(cls) { if (cls) document.body.classList.add(cls); });
       }
       // Html attributes. Every key, not just lang — the module impl

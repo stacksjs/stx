@@ -1,0 +1,16 @@
+@extends('layouts/app')
+
+@section('content')
+<script client>
+  const counter = useStore('counter')
+  const count = counter.count
+  useHead({ title: 'Home' })
+  function increment() { counter.increment() }
+  function openSettings() { navigate('/settings') }
+</script>
+<p :text="'Count ' + count">Count</p>
+<button testid="increment" @click="increment()">Add one</button>
+<StxLink to="/settings/profile">Profile</StxLink>
+<a href="/about">About</a>
+<button testid="go" @click="openSettings()">Settings</button>
+@endsection

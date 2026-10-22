@@ -1,0 +1,10 @@
+@include('site-nav')
+<header data-native-chrome="bar" class="p-2">
+  <a href="/account" data-native-icon="person.crop.circle">Account</a>
+</header>
+<main data-native-content class="flex-1 p-4">
+  @yield('content')
+</main>
+<footer data-native-chrome class="p-4">
+  <p>Footer links</p>
+</footer>

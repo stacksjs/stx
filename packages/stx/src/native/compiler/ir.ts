@@ -393,6 +393,32 @@ export interface STXDocument {
     /** What the compiler could not translate exactly (unknown icons, classes). */
     warnings?: string[]
   }
+
+  /**
+   * The page's title (`useHead({ title })` in a server script, `@title`):
+   * the screen's navigation title before its own script names another.
+   */
+  title?: string
+
+  /** The layout's chrome, which the screen does not draw (layout-chrome.ts). */
+  chrome?: NativeLayoutChrome
+}
+
+/** A link of a layout's chrome: a tab, or a navigation-bar button. */
+export interface NativeChromeItem {
+  /** The app path it opens, as the web writes it (`/plans`). */
+  path: string
+  title: string
+  /** An SF Symbol name. */
+  symbol?: string
+}
+
+/** What a layout marked as chrome (`data-native-chrome`), by where it goes. */
+export interface NativeLayoutChrome {
+  /** `data-native-chrome="tabs"`: the app's tab bar. */
+  tabs: NativeChromeItem[]
+  /** `data-native-chrome="bar"`: the navigation bar's buttons. */
+  bar: NativeChromeItem[]
 }
 
 // ============================================================================

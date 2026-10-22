@@ -152,6 +152,11 @@ export interface NativeHostOptions {
    * the bridge is the expensive part, not the bookkeeping.
    */
   schedule?: (flush: () => void) => void
+  /**
+   * A pressed link's default action, after its listeners ran and none
+   * prevented it: the screen moves to `href`, as a browser follows a link.
+   */
+  followLink?: (href: string) => void
 }
 
 export interface NativeHost {
@@ -225,6 +230,9 @@ export const HOST_METHODS: readonly string[] = [
   'scopesIn',
 ]
 
+/** A link's own press listener: the press handler's default action follows it. */
+function followsHref(): void {}
+
 export function createNativeHost(options: NativeHostOptions): NativeHost {
   const records = new Map<string, NodeRecord>()
   const attributeObservers = new WeakMap<NativeNode, Set<{ names: string[], notify: () => void }>>()
@@ -243,6 +251,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   let disposed = false
 
   const schedule = options.schedule ?? ((flush: () => void) => queueMicrotask(flush))
+  const followLink = options.followLink
 
   const nextId = (prefix: string): string => `${prefix}${++counter}`
 
@@ -287,6 +296,25 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
   function descriptorOf(node: NativeNode): NodeRecord | undefined {
     return records.get(node.__stxId) ?? (node as RetainedNativeNode).__stxDetachedRecord
+  }
+
+  /** The href a link node goes to (static, or as its `:href` last set it), or null. */
+  function linkHref(node: NativeNode): string | null {
+    const href = descriptorOf(node)?.props.href
+    return typeof href === 'string' && href ? href : null
+  }
+
+  /**
+   * A link is pressable with no @click of its own: the press handler's
+   * default action follows its href (`followLink`). Installed for every
+   * link adopted or cloned, since a :for row's copy of the template's
+   * handler would follow the template's href.
+   */
+  function installLinkListener(node: NativeNode): void {
+    if (!followLink) return
+    const bound = isBindingNode(node) && node.attributes.some(attribute => /^(?::|x-bind:|@bind:|x-)href$/.test(attribute.name))
+    if (bound || typeof descriptorOf(node)?.props.href === 'string')
+      host.listen(node, 'click', followsHref)
   }
 
   function retainDetachedDescriptors(node: NativeNode): void {
@@ -758,6 +786,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         children.push(node)
     }
     installControlListeners(node)
+    installLinkListener(node)
     return node
   }
 
@@ -1134,6 +1163,15 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         // also send input, which shared forms use for change validation.
         if (nativeEvent === 'onValueChange' && (record.type === 'Picker' || record.type === 'Checkbox'))
           host.emitComponentEvent(node, eventAt(payload, node, 'input') as Event)
+        // A press inside a link follows it, as a click does in a browser.
+        if (nativeEvent === 'onPress' && !physical?.defaultPrevented && followLink) {
+          for (let at: NativeNode | null | undefined = node; at; at = at.__stxOwner) {
+            const href = linkHref(at)
+            if (href === null) continue
+            followLink(href)
+            break
+          }
+        }
         const form = formOwner(node)
         if (form && nativeEvent === 'onPress' && !physical?.defaultPrevented && !disabled(record)) {
           if (record.props.type === 'submit') host.emitComponentEvent(form, eventAt({ submitter: node }, form, 'submit') as Event)
@@ -1255,6 +1293,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       })
       decorateControl(copy, descriptor.type)
       setConnected(copy, false)
+      installLinkListener(copy)
 
       // Materialised from the descriptor, depth first -- a view hierarchy
       // cannot be deep-copied the way a DOM subtree can.

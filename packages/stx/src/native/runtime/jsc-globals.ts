@@ -28,6 +28,11 @@ class NativeEvent {
   stopPropagation(): void { this.cancelBubble = true }
 }
 
+/** Whether `document` is the stand-in stx installed, rather than a browser's own. */
+export function isNativeDocument(document: unknown): boolean {
+  return !!document && typeof document === 'object' && nativeDocuments.has(document)
+}
+
 /** Keep the document stx owns in a native realm in step with its host. */
 export function updateNativeDocumentVisibility(target: AnyRecord, appState: string): void {
   const document = target.document
@@ -767,7 +772,8 @@ export function installJSCGlobals(target: AnyRecord = globalThis as AnyRecord): 
     return true
   }
   const emptyList: unknown[] = []
-  const documentElement = { setAttribute() {}, removeAttribute() {}, getAttribute() { return null } }
+  // useHead({ htmlAttrs: { class } }) adds classes here; a screen has no root element to give them.
+  const documentElement = { setAttribute() {}, removeAttribute() {}, getAttribute() { return null }, classList: { add() {}, remove() {}, toggle() { return false }, contains() { return false } } }
   const head = { appendChild() {} }
 
   target.window ??= target

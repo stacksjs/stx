@@ -2042,7 +2042,14 @@ export async function renderComponentWithSlot(
      * lists disagreeing is what made this reachable from a component and not
      * from a page.
      */
-    const hasSignalScripts = clientScripts.some(s =>
+    /*
+     * A native screen gives every component with a client script a boundary.
+     * The other path, `stx.mount()`, finds its root by the script's place in
+     * the DOM, and a native tree has no scripts in it: a component that only
+     * read a store (`useStore('cart').count`) or held plain functions drew
+     * its bindings empty and its buttons dead.
+     */
+    const hasSignalScripts = (options._nativeHostAttrs === true && clientScripts.length > 0) || clientScripts.some(s =>
       /\b(?:state|derived|effect|ref|useRef|reactive|computed|watch|watchEffect|useModel|useReactiveProp|onMount|onDestroy|defineProps|withDefaults|defineEmits|defineExpose|defineSlots)\s*(?:<[^<>()]*>)?\s*\(/.test(s),
     )
     const projectRefs = (content: string) => hasSignalScripts ? markProjectedRefs(content, componentUid) : content

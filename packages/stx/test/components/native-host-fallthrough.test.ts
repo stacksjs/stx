@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
 import { createTempDir } from '../../src/temp-dir'
+import type { STXNode } from '../../src/native/compiler/ir'
 import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 
 async function render(component: string, usage: string, native: boolean) {
@@ -62,10 +63,13 @@ it('does not select markers in comments, quoted attributes, raw scripts or neste
 <button data-stx-native-host-root title="a > b">Owned</button>
 </div>`, '<Control testID="owned" />', true)
   const { root } = await translateHtmlToIR(html)
-  expect(root.props.testID).toBeUndefined()
-  const nested = root.children.find(child => typeof child !== 'string' && child.type === 'View')
-  expect(nested).not.toBeUndefined()
-  const owned = root.children.find(child => typeof child !== 'string' && child.type === 'Button')
+  // The component's script gives it a scope boundary on a native compile,
+  // which may wrap its root: look through the tree, not just its children.
+  const nodes = (node: STXNode): STXNode[] => [node, ...node.children.flatMap(child => typeof child === 'string' ? [] : nodes(child))]
+  expect(nodes(root).filter(node => node.props.testID !== undefined).map(node => node.props.title)).toEqual(['a > b'])
+  const nested = nodes(root).find(node => node.type === 'Button' && node.children.includes('Nested'))
+  expect(nested?.props.testID).toBeUndefined()
+  const owned = nodes(root).find(node => node.type === 'Button' && node.props.title === 'a > b')
   expect(owned).toMatchObject({ props: { testID: 'owned', title: 'a > b' } })
   const onlyNested = await render('<div><div data-stx-component-wrapper><button data-stx-native-host-root>Nested</button></div></div>',
     '<Control testID="outer" />', true)

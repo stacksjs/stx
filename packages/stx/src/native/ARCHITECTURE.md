@@ -173,6 +173,39 @@ arrive as the page's CustomEvents on its global (`craftNotificationResponse`,
 screens included, has `craft.app` (`url`, `version`, `build`): the app's site,
 so code reaching its API needs no page to have said where it is.
 
+### Web views as native screens
+
+A web view (`resources/views/*.stx`, with its layout, components and stores)
+compiles to a native screen unchanged, and behaves there as it does in the
+browser:
+
+- **Stores**: the app's `storesDir` is bundled into the screen ahead of its
+  scripts, as the page loads it, so `useStore` finds what `defineStore` made.
+  A screen's context has one instance of each store, shared by the view and
+  its components; what must outlive the screen lives where it does on the web
+  (`localStorage`, `keptState`). Every component with a client script gets a
+  scope boundary on a native compile: the web's other path, `stx.mount()`,
+  finds its root by the script's place in the DOM.
+- **`useHead`**: the title (a server script's `useHead`, then every client
+  call, `document.title`) is the navigation title. Meta tags, links and
+  document attributes are ignored.
+- **Navigation** (`runtime/web-navigation.ts`): `<a href>`, `<StxLink>`,
+  `navigate()`, `location` and `history.back()` go through Craft navigation
+  by web path (`navigation.open('/plans/12')`, `replace` for a replacing
+  move). A pressed link is followed after its own listeners, unless one
+  prevented it. Other sites, `mailto:` and `tel:` go to `craft.linking`.
+  Native routes are the web paths: nothing adds a `/m` prefix.
+- **Storage** (`runtime/web-storage.ts`): `localStorage` and `sessionStorage`
+  are the web's synchronous Storage over `craft.storage.getSync`/`setSync`,
+  shared by every screen of the app; sessionStorage lasts for one run (the
+  app script starts a new one per launch). `keptState` keeps its values there.
+- **Layouts** (`compiler/layout-chrome.ts`): a layout marks its chrome with
+  `data-native-chrome` (`tabs`, `bar`, or empty for chrome that is just not
+  drawn, such as a footer). The native compile leaves it out; its links are
+  the screen's `chrome`: `bar` links become navigation-bar buttons, `tabs` are
+  reported by `compileNativeBundle` (`result.chrome[screen].tabs`) for the
+  app's tab-bar configuration.
+
 ## Current Status
 
 - The compiler, IR, style mapping, CLI, bundle generation and shared-runtime

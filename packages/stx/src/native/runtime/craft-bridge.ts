@@ -1,15 +1,22 @@
 import type { AppStatePayload, DeepLinkPayload, NativeBridgeInterface } from '../bridge/protocol'
 import { STXBridge } from '../bridge/protocol'
 import { createEventSourceClass, createStreamingBody, type StreamSink } from './event-stream'
-import { abortError, NativeFormData, nativeFormParts, updateNativeDocumentVisibility } from './jsc-globals'
-import type { NativeNavigationButton, NativeNavigationChrome } from './craft'
-import { buttonsKey, changedTabItems, hostButton, mergeChromeButtons, type ButtonSide } from './navigation-chrome'
+import { abortError, isNativeDocument, NativeFormData, nativeFormParts, updateNativeDocumentVisibility } from './jsc-globals'
+import type { NativeLayoutChrome } from '../compiler/ir'
+import type { NativeChromeButton, NativeNavigationButton, NativeNavigationChrome } from './craft'
+import { buttonsKey, changedTabItems, chromePath, hostButton, mergeChromeButtons, type ButtonSide } from './navigation-chrome'
+import { installNativeNavigation } from './web-navigation'
+import { installNativeWebStorage } from './web-storage'
 
 type AnyRecord = Record<string, any>
 
 export interface CraftBridgeOptions {
   routeName?: string
   routeNames?: string[]
+  /** The page's title (`useHead` in a server script): the first navigation title. */
+  title?: string
+  /** The layout's chrome (layout-chrome.ts): its bar links are bar buttons. */
+  chrome?: NativeLayoutChrome
 }
 
 function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
@@ -237,6 +244,9 @@ export function installCraftBridge(
       return request('Storage', 'compareAndSet', [key, expectedValue, nextValue])
     },
   })
+  // The web's localStorage and sessionStorage, over the app's storage
+  // (web-storage.ts): a web view reads its session on the first draw.
+  installNativeWebStorage(target, craft)
   craft.secureStorage = Object.assign({ getSync: () => null }, craft.secureStorage || {}, {
     get: (key: string) => request('SecureStorage', 'get', [key]),
     set: (key: string, value: string) => request('SecureStorage', 'set', [key, value]),
@@ -778,8 +788,22 @@ export function installCraftBridge(
   const sentTabItems = new Map<string, string>()
   let sentAccessory: string | undefined
   let chrome: NativeNavigationChrome | null = null
+  // The layout's bar links, after the app's own chrome: a button the app
+  // already has for the same path is not added twice.
+  const layoutButtons: NativeChromeButton[] = (options.chrome?.bar ?? []).map(item => ({
+    id: `layout:${item.path}`,
+    open: item.path,
+    accessibilityLabel: item.title,
+    ...(item.symbol ? { symbol: item.symbol } : { title: item.title }),
+  }))
+  const effectiveChrome = (): NativeNavigationChrome | null => {
+    if (!layoutButtons.length) return chrome
+    const right = chrome?.rightButtons ?? []
+    const taken = new Set([...right, ...(chrome?.leftButtons ?? [])].filter(button => button?.open).map(button => chromePath(button.open)))
+    return { ...chrome, rightButtons: [...right, ...layoutButtons.filter(button => !taken.has(chromePath(button.open)))] }
+  }
   const barButtons = (side: ButtonSide): NativeNavigationButton[] => {
-    const merged = mergeChromeButtons(ownButtons[side] as NativeNavigationButton[], chrome, side, { name: craft.route?.name ?? '', path: craft.route?.path })
+    const merged = mergeChromeButtons(ownButtons[side] as NativeNavigationButton[], effectiveChrome(), side, { name: craft.route?.name ?? '', path: craft.route?.path })
     const presses = navButtonPresses[side]
     presses.clear()
     for (const button of merged) {
@@ -858,6 +882,31 @@ export function installCraftBridge(
     },
     isFocused: () => focused,
   })
+  if (layoutButtons.length) {
+    const buttons = barButtons('rightButtons')
+    if (buttons.length) sendOptions({ rightButtons: buttons })
+  }
+  // A browser renderer keeps its own document, location and history.
+  if (isNativeDocument(target.document)) {
+    // Links, navigate(), location and history move by web path (web-navigation.ts).
+    installNativeNavigation(target, craft, { routeURL: nativeBridge.routeURL, appURL: craft.app?.url })
+    // The page's title names the screen, as <title> names a browser tab:
+    // `useHead({ title })` (and `document.title = ...`) set the navigation title.
+    let title = typeof options.title === 'string' ? options.title : ''
+    Object.defineProperty(target.document, 'title', {
+      configurable: true,
+      enumerable: true,
+      get: () => title,
+      set: (value: unknown) => {
+        const next = value == null ? '' : String(value)
+        if (next === title) return
+        title = next
+        sendOptions({ title: next })
+      },
+    })
+    if (title) sendOptions({ title })
+  }
+
   protocol.on<{ focused?: boolean }>('SCREEN_FOCUS', ({ payload }) => {
     focused = payload?.focused !== false
     const handlers = focused ? appearHandlers : disappearHandlers
