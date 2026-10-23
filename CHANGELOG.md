@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.672...v0.2.673)
+
+## 🐛 Bug Fixes
+
+- **loops**: preserve reactive bindings with missing server state ([8605221](https://github.com/stacksjs/stx/commit/8605221)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.673 ([406856c](https://github.com/stacksjs/stx/commit/406856c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.671...v0.2.672)
 
 ## ✨ Features
