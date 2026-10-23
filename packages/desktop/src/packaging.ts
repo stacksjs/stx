@@ -22,7 +22,7 @@
 import { accessSync, closeSync, constants, openSync, readSync, realpathSync } from 'node:fs'
 import { resolveCraftBinary } from 'craft-native'
 
-export { pack, packageApp } from 'craft-native'
+export { macOSRuntimeExecutablePath, pack, packageApp } from 'craft-native'
 
 export type { PackageConfig, PackageResult } from 'craft-native'
 
