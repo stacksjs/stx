@@ -212,7 +212,7 @@ describe('services', () => {
     const status = scope.craft.permissions.check('notifications')
     answer(requests().at(-1)!, 'granted')
     expect(await status).toBe('granted')
-    expect(await scope.craft.permissions.check('camera')).toBe('undetermined')
+    await expect(scope.craft.permissions.check('camera')).rejects.toMatchObject({ code: 'PERMISSION_UNSUPPORTED' })
     const token = scope.craft.push.register()
     expect(requests().at(-1)!.payload).toMatchObject({ module: 'Push', method: 'register' })
     answer(requests().at(-1)!, 'abc123')

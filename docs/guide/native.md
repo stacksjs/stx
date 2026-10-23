@@ -587,6 +587,23 @@ WebView; inspect the generated host error instead.
 
 Inside a native screen's `<script>`, the JavaScriptCore bridge exposes `craft.device.getInfo()`, `craft.clipboard.write(text)`, `craft.clipboard.read()`, `craft.haptic(style)`, and high-level `craft.haptics.impact(style)`, `.notification(type)`, `.selection()` and `.prepare(kind)`. Calls return promises. Rejections retain a `code` such as `CAPABILITY_DISABLED` or `INVALID_ARGUMENT`. The generated app must enable haptics and clipboard in its Craft config before those capabilities perform work.
 
+`craft.permissions` preserves existing host implementations, including methods
+on their prototype and their original receiver. Missing `check`, `request` and
+`openSettings` methods are supplied independently of push being enabled. STX's
+fallback only knows `check('notifications')`, `request('notifications')` and
+notification settings when the host advertises `push`; these use the existing
+Push bridge. Other fallback permission questions reject with
+`code: 'PERMISSION_UNSUPPORTED'`, including notifications when push is absent.
+They do not return a guessed `'undetermined'`, send an unimplemented Permissions
+request, or pretend that a permission prompt appeared. A real host method's
+answers and errors pass through unchanged.
+
+Handle unsupported checks separately from a real `'denied'` or `'undetermined'`
+answer. For example, disable a permission-dependent feature and show that the
+current app build cannot check its permission; do not interpret the rejection
+as permission to start it. This adapter does not implement location, camera or
+microphone permission checks in Craft.
+
 Haptics are feedback, never an outcome, so every haptics call resolves: none of `craft.haptic`, `craft.haptics.impact`, `.notification`, `.selection` or `.prepare` rejects, whatever the host answers (`UNSUPPORTED`, `CAPABILITY_DISABLED`, an unknown action, a timeout). A screen calls them without `?.catch?.(() => {})`. `notification('success' | 'warning' | 'error')` and `selection()` play the host's own notification and selection haptics (`UINotificationFeedbackGenerator` and `UISelectionFeedbackGenerator` on Craft iOS); a host that answers `UNKNOWN_ACTION` gets the impact they used to be (light, medium or heavy for a notification, soft for a selection) and is not asked again. `prepare(kind)` warms the engine before a haptic that has to land at once (a timer's last second).
 
 ```html

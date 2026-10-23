@@ -1,5 +1,5 @@
 import type { AppStatePayload, DeepLinkPayload, NativeBridgeInterface } from '../bridge/protocol'
-import { STXBridge } from '../bridge/protocol'
+import { NativeCapabilityError, STXBridge } from '../bridge/protocol'
 import { createEventSourceClass, createStreamingBody, type StreamSink } from './event-stream'
 import { abortError, isNativeDocument, NativeFormData, nativeFormParts, updateNativeDocumentVisibility } from './jsc-globals'
 import type { NativeLayoutChrome } from '../compiler/ir'
@@ -9,6 +9,10 @@ import { installNativeNavigation, nativeRouteParams } from './web-navigation'
 import { installNativeWebStorage } from './web-storage'
 
 type AnyRecord = Record<string, any>
+
+// Refresh our own defaults when a target is reinstalled with new capabilities,
+// without replacing a host method installed before or after this adapter.
+const permissionFallbacks = new WeakSet<object>()
 
 export interface CraftBridgeOptions {
   routeName?: string
@@ -717,11 +721,6 @@ export function installCraftBridge(
       openSettings: () => request('Push', 'openSettings', []).then(Boolean),
     }
     craft.registerPush = craft.push.register
-    craft.permissions = Object.assign({}, craft.permissions, {
-      check: (permission: string) => permission === 'notifications' ? craft.push.getPermissionStatus() : Promise.resolve('undetermined'),
-      request: (permission: string) => permission === 'notifications' ? craft.push.requestPermission() : Promise.resolve('undetermined'),
-      openSettings: () => craft.push.openSettings().then(() => undefined),
-    })
     protocol.on<{ token?: string }>('PUSH_TOKEN', ({ payload }) => {
       const token = String(payload?.token || '')
       if (!token) return
@@ -729,6 +728,27 @@ export function installCraftBridge(
       if (typeof target.dispatchEvent === 'function' && typeof target.CustomEvent === 'function')
         target.dispatchEvent(new target.CustomEvent('craftPushToken', { detail: { token } }))
     })
+  }
+
+  // A permission question is not conditional on push being enabled. Preserve
+  // the host object itself (including prototypes and method receivers), filling
+  // only missing methods. Unsupported questions reject, not a guessed status.
+  const permissions = craft.permissions ??= {}
+  const unsupportedPermission = (method: string, permission?: string): Promise<never> =>
+    Promise.reject(new NativeCapabilityError('PERMISSION_UNSUPPORTED',
+      `Native permissions.${method}${permission === undefined ? '' : `("${permission}")`} is not supported by this host`))
+  const permissionDefaults = {
+    check: (permission: string) => capabilities.has('push') && permission === 'notifications'
+      ? craft.push.getPermissionStatus() : unsupportedPermission('check', permission),
+    request: (permission: string) => capabilities.has('push') && permission === 'notifications'
+      ? craft.push.requestPermission() : unsupportedPermission('request', permission),
+    openSettings: () => capabilities.has('push')
+      ? craft.push.openSettings().then(() => undefined) : unsupportedPermission('openSettings'),
+  }
+  for (const [method, fallback] of Object.entries(permissionDefaults)) {
+    if (typeof permissions[method] === 'function' && !permissionFallbacks.has(permissions[method])) continue
+    permissions[method] = fallback
+    permissionFallbacks.add(fallback)
   }
 
   // Apple Health, the page's `craft.health` shape: present only when the app

@@ -319,6 +319,12 @@ export interface NativeCraft {
   }
   /** The page's names for push, which `@stacksjs/mobile` reads. */
   registerPush?: () => Promise<string>
+  /**
+   * Host permission methods are preserved, including their receiver. STX fills
+   * missing methods even without push, but only knows notification permissions
+   * when push is enabled. Other fallback calls reject with PERMISSION_UNSUPPORTED
+   * rather than guessing 'undetermined'. Native errors propagate unchanged.
+   */
   permissions?: {
     check: (permission: string) => Promise<NativePermissionStatus>
     request: (permission: string) => Promise<NativePermissionStatus>
