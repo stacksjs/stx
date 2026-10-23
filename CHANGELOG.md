@@ -1,5 +1,34 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.669...v0.2.670)
+
+## ✨ Features
+
+- **native**: adopt platform controls and app colors in shared UI ([e3bcd98](https://github.com/stacksjs/stx/commit/e3bcd98)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: acknowledge controlled text edits without erasing later input ([e75ea8d](https://github.com/stacksjs/stx/commit/e75ea8d)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: keep web storage metadata outside user keys ([3af3e78](https://github.com/stacksjs/stx/commit/3af3e78)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: submit forms from keyboard return ([2220116](https://github.com/stacksjs/stx/commit/2220116)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: retain scrolling semantic page wrappers ([0ac54b5](https://github.com/stacksjs/stx/commit/0ac54b5)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: keep button server cache independent of the host ([df91907](https://github.com/stacksjs/stx/commit/df91907)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- give shared web input rendering the integration budget ([d5b5ec2](https://github.com/stacksjs/stx/commit/d5b5ec2)) _(by Chris Breuer <chris@stacksjs.com>)_
+- allow render integration tests enough time on CI ([584b4a1](https://github.com/stacksjs/stx/commit/584b4a1)) _(by Chris Breuer <chris@stacksjs.com>)_
+- reserve both domain-route server ports independently ([3022147](https://github.com/stacksjs/stx/commit/3022147)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: refresh shared control template snapshots ([e32cfc9](https://github.com/stacksjs/stx/commit/e32cfc9)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.670 ([27d5b51](https://github.com/stacksjs/stx/commit/27d5b51)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.668...v0.2.669)
 
 ## 🐛 Bug Fixes
