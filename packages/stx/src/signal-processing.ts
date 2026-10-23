@@ -304,7 +304,7 @@ function hasTopLevelElseBranch(content: string): boolean {
  * via `state()`/etc., so they never land in this set — which is exactly why a
  * server-loop `@if/@else` chain is left alone.
  */
-function extractClientSignalNames(template: string): Set<string> {
+export function extractClientSignalNames(template: string): Set<string> {
   const names = new Set<string>()
   // Non-server, non-src <script> blocks only — same gating as usesSignalsInScript.
   const scriptRe = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi

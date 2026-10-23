@@ -43,7 +43,8 @@
  * ```
  */
 
-import { parseLoopBinding } from './loop-binding'
+import { loopBoundNames, parseLoopBinding, readsAnyName } from './loop-binding'
+import { extractClientSignalNames } from './signal-processing'
 import type { StxOptions } from './types'
 import { processConditionals } from './conditionals'
 import { ErrorCodes, inlineError } from './error-handling'
@@ -253,6 +254,8 @@ function processPropBindings(content: string, context: Record<string, any>): str
   // Now process all :prop="expression" bindings
   result = result.replace(/:([a-zA-Z_][a-zA-Z0-9_-]*)\s*=\s*"([^"]*)"/g, (match, propName, expression) => {
     try {
+      if (readsAnyName(expression, context.__stx_client_signal_names || []))
+        return match
       // Evaluate the expression in the loop context using safe evaluation
       const contextKeys = Object.keys(context)
       const contextValues = Object.values(context)
@@ -714,6 +717,10 @@ export function reportDeferredLoopWarnings(html: string): string {
  */
 export function processLoops(template: string, context: Record<string, any>, filePath: string, options?: StxOptions, deferWarnings = false): string {
   let output = template
+  const clientSignals = new Set<string>(context.__stx_client_signal_names || [])
+  for (const name of extractClientSignalNames(template)) clientSignals.add(name)
+  if (clientSignals.size)
+    context = { ...context, __stx_client_signal_names: [...clientSignals] }
 
   // Process @forelse loops using balanced parsing (handles nested parens and nested @forelse)
   output = processForelse(output, context)
@@ -930,6 +937,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
         }
 
         let loopResult = ''
+        const boundNames = new Set(loopBoundNames(`${arrayExpr} as ${itemVar}`))
         const items = array as any[]
         // One set of sanitized copies for every iteration (see SANITIZE_CACHE);
         // a nested loop inherits its parent's through the spread below.
@@ -954,6 +962,10 @@ export function processLoops(template: string, context: Record<string, any>, fil
             $loop: loopContext, // Alternative name to avoid conflicts with user's 'loop' variable
             [SANITIZE_CACHE]: sanitizeCache,
           }
+          // Iteration locals shadow a client signal too. Every other signal
+          // stays client-owned even if the server seeded a same-named value.
+          if (Array.isArray(ctx.__stx_client_signal_names))
+            itemContext.__stx_client_signal_names = ctx.__stx_client_signal_names.filter((name: string) => !boundNames.has(name))
 
           // Handle array destructuring syntax: @foreach(items as [key, val])
           if (itemName.startsWith('[') && itemName.endsWith(']')) {
