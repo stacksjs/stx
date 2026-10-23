@@ -85,6 +85,10 @@ const liveSrc = useReactiveProp('src', {{ src }})
 const livePoster = useReactiveProp('poster', {{ poster }})
 const liveLabel = useReactiveProp('label', {{ label }})
 const liveRatio = useReactiveProp('aspectRatio', {{ aspectRatio }})
+const liveControls = useReactiveProp('controls', {{ controls }})
+const liveAutoplay = useReactiveProp('autoplay', {{ autoplay }})
+const liveLoop = useReactiveProp('loop', {{ loop }})
+const liveMuted = useReactiveProp('muted', {{ muted }})
 const element = useRef('player')
 const emit = nativeVideo ? defineEmits(['play', 'pause', 'ended', 'timeupdate', 'loadedmetadata', 'loadstart', 'error']) : null
 
@@ -135,6 +139,10 @@ effect(() => {
     :poster="livePoster() || null"
     :aria-label="liveLabel() || null"
     :style="playerStyle()"
+    :controls="liveControls()"
+    :autoplay="liveAutoplay()"
+    :loop="liveLoop()"
+    :muted="liveMuted()"
     data-media-config="{{ playerConfig }}"
     @if(poster) poster="{{ poster }}" @endif
     @if(controls) controls @endif
@@ -156,7 +164,7 @@ effect(() => {
     @if(isPage)
       <span data-native-fallback class="block h-full w-full"></span>
     @else
-      <video data-native-fallback @if(src) src="{{ src }}" @endif @if(poster) poster="{{ poster }}" @endif @if(controls) controls @endif @if(loop) loop @endif @if(playsinline) playsinline @endif preload="none" @if(crossorigin) crossorigin="{{ crossorigin }}" @endif controlslist="{{ controlslist }}" @if(disablePictureInPicture) disablepictureinpicture @endif @if(label) aria-label="{{ label }}" @endif class="object-contain h-full w-full"></video>
+      <video data-native-fallback @if(src) src="{{ src }}" @endif @if(poster) poster="{{ poster }}" @endif @if(controls) controls @endif @if(loop) loop @endif :controls="liveControls()" :loop="liveLoop()" :muted="liveMuted()" @if(playsinline) playsinline @endif preload="none" @if(crossorigin) crossorigin="{{ crossorigin }}" @endif controlslist="{{ controlslist }}" @if(disablePictureInPicture) disablepictureinpicture @endif @if(label) aria-label="{{ label }}" @endif class="object-contain h-full w-full"></video>
     @endif
     <video-skin>
       <media-seek-button slot="left" seconds="-10"></media-seek-button>

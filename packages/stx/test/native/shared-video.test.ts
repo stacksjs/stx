@@ -11,10 +11,11 @@ const url = state('/first.mp4')
 const paused = state(false)
 const shown = state(true)
 const shape = state('16/9')
-const probe = { url, paused, shown, shape, plays: 0, pauses: 0, ends: 0, time: 0, error: '' }
+const enabled = state(false)
+const probe = { url, paused, shown, shape, enabled, plays: 0, pauses: 0, ends: 0, time: 0, error: '' }
 window.probe = probe
 </script><section><div :if="shown">
-<Video testID="movie" :src="url" :paused="paused" :aspectRatio="shape" label="Movie" autoplay muted loop
+<Video testID="movie" :src="url" :paused="paused" :aspectRatio="shape" :controls="enabled" :autoplay="enabled" :muted="enabled" :loop="enabled" label="Movie"
   @play="probe.plays++" @pause="probe.pauses++" @ended="probe.ends++"
   @timeupdate="probe.time = $event.currentTime" @error="probe.error = $event.message" />
 </div></section>`, { minify })
@@ -27,7 +28,13 @@ window.probe = probe
     expect(movie().type).toBe('Video')
     expect(phone.ofType('Video')).toHaveLength(1)
     expect(movie().children).toEqual([])
-    expect(movie().props).toMatchObject({ source: '/first.mp4', paused: false, controls: true, autoplay: true, muted: true, loop: true })
+    expect(movie().props).toMatchObject({ source: '/first.mp4', paused: false, controls: false, autoplay: false, muted: false, loop: false })
+    probe.enabled.set(true)
+    await phone.settle()
+    expect(movie().props).toMatchObject({ controls: true, autoplay: true, muted: true, loop: true })
+    probe.enabled.set(false)
+    await phone.settle()
+    expect(movie().props).toMatchObject({ controls: false, autoplay: false, muted: false, loop: false })
     const id = movie().id
     phone.press(movie(), 'onPlay', {})
     phone.press(movie(), 'onPause', {})
@@ -66,6 +73,7 @@ window.probe = probe
     probe.shown.set(true)
     await phone.settle()
     expect(movie().props).toMatchObject({ source: '/remounted.mp4', paused: true })
+    expect(movie().props).toMatchObject({ controls: false, autoplay: false, muted: false, loop: false })
     phone.press(movie(), 'onPlay', {})
     await phone.settle()
     expect(probe.plays).toBe(2)

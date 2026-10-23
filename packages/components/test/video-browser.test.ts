@@ -11,8 +11,9 @@ it('still registers the browser player, forwards events once and pauses when its
 <!doctype html><html><head></head><body>
 <script client>
 const url = state('')
-window.probe = { url, plays: 0 }
-</script><section><Video :src="url" @play="window.probe.plays++" /></section>
+const enabled = state(false)
+window.probe = { url, enabled, plays: 0 }
+</script><section><Video :src="url" :controls="enabled" :autoplay="enabled" :muted="enabled" :loop="enabled" @play="window.probe.plays++" /></section>
 </body></html>`, {}, join(root, 'video-browser.stx'), { ...defaultConfig, root, cache: false, debug: false }, new Set())
   const server = Bun.serve({
     port: 0,
@@ -31,6 +32,18 @@ window.probe = { url, plays: 0 }
     }
     expect(await view.evaluate(ready)).toBe(true)
     expect(await view.evaluate(`!!customElements.get('media-play-button')`)).toBe(true)
+    const flags = `(() => {
+      const player = document.querySelector('video-player');
+      const fallback = player.querySelector('video[data-native-fallback]');
+      return [player.hasAttribute('controls'), player.hasAttribute('autoplay'), player.hasAttribute('muted'), player.hasAttribute('loop'), fallback.hasAttribute('controls'), fallback.hasAttribute('muted'), fallback.hasAttribute('loop')];
+    })()`
+    expect(await view.evaluate(flags)).toEqual([false, false, false, false, false, false, false])
+    await view.evaluate('window.probe.enabled.set(true)')
+    await Bun.sleep(50)
+    expect(await view.evaluate(flags)).toEqual([true, true, true, true, true, true, true])
+    await view.evaluate('window.probe.enabled.set(false)')
+    await Bun.sleep(50)
+    expect(await view.evaluate(flags)).toEqual([false, false, false, false, false, false, false])
     await view.evaluate(`(() => {
       const player = document.querySelector('video-player');
       player.dispatchEvent(new CustomEvent('play', { bubbles: true }));
