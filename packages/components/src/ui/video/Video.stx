@@ -20,7 +20,9 @@
  * The controls speak the page's language (`<html lang>`): ts-video-player
  * names its buttons and announces playback in it.
  *
- * When explicitly used on native, this is the host's Video control: `src`
+ * On native, src calls using the shared media events select this component
+ * when installed. Legacy source, mixed src/source and legacy-event calls
+ * retain the native primitive. This is the host's Video control: `src`
  * must be a media URL the platform supports, not a YouTube/Vimeo page.
  * Browser source selection, tracks and DRM configuration remain web-only.
  */

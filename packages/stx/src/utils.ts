@@ -1237,9 +1237,22 @@ export async function renderComponentWithSlot(
       // calls primitive unless the author explicitly imports the shared file.
       const textInput = options._nativeHostAttrs && /^textinput$/i.test(baseName)
       const sharedTextInputUsage = eventNames.includes('update:value') && !eventNames.includes('input')
+      // The shared Video API names its media URL `src`. Keep the primitive's
+      // `source` API (including object payloads) and mixed calls unchanged.
+      // Select from authored bindings, not their current value: an empty or
+      // initially undefined src must not change the selected implementation.
+      // The shared adapter emits web media names. Native-only aliases (for
+      // example @progress instead of @timeupdate) keep their primitive path.
+      const video = options._nativeHostAttrs && /^video$/i.test(baseName)
+      const usesSrc = Object.hasOwn(props, 'src') || Boolean(renderMetadata?.reactiveProps?.includes('src'))
+      const usesSource = Object.hasOwn(props, 'source') || Boolean(renderMetadata?.reactiveProps?.includes('source'))
+      const sharedVideoUsage = video && usesSrc && !usesSource && (renderMetadata?.events ?? []).every(event =>
+        /^(?:play|pause|ended|timeupdate|loadedmetadata|loadstart|error)$/.test(event.replace(/^@/, '').split('.')[0]),
+      )
       const targetIsFallback = options._targetComponentFallbackNames?.some(name => name.toLowerCase() === baseName.toLowerCase())
         && (!checkedControl || sharedCheckedUsage)
         && (!textInput || sharedTextInputUsage)
+        && (!video || sharedVideoUsage)
       for (const dir of targetIsFallback ? [] : options._targetComponentDirs ?? []) {
         if (dir && !searchDirs.includes(dir))
           searchDirs.push(dir)

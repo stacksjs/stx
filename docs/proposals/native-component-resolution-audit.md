@@ -18,7 +18,7 @@ directories and fails if a new overlap has no recorded compatibility decision.
 | Switch | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | Preserve both APIs; device validation |
 | TextInput | Shared for value-model calls without `@input`; primitive for legacy/ambiguous calls | Shared file | Preserve object-payload callers; device validation |
 | Image | Primitive | `StxImage` builtin alias, not the shared file | Position/scale-down support, device validation and builtin/shared precedence decision |
-| Video | Primitive | Shared file | Shared file playback adapter verified; provider/DRM/API and device validation remain |
+| Video | Shared for src with shared media events; primitive for source, mixed, bare or legacy-event calls | Shared file | Preserve legacy API; provider/DRM/API and device validation remain |
 
 Explicit imports and screen-local components remain overrides. The audit tests
 verify dependency paths rather than inferring selection from similar HTML.
@@ -26,6 +26,37 @@ Adding an override to an already compiled project requires cache invalidation,
 as the dev watcher performs; the test models that invalidation explicitly.
 
 ## Reproduced blockers before further migration
+
+### Video resolution batch (unreleased after v0.2.674)
+
+Native `src` calls now select the app/plugin shared Video implementation when
+installed. Legacy `source`, mixed `src`/`source`, and calls without either
+remain primitive. Calls with legacy event names such as `@progress`, `@end`,
+`@load` and `@playing` also remain primitive; the shared adapter uses
+`@timeupdate`, `@ended`, `@loadedmetadata` and `@play`. Selection uses authored
+props/bindings, not truthiness, so
+an empty or initially undefined `src` still selects shared; an initially
+undefined `source` still preserves the legacy path. Explicit imports and
+screen-local overrides remain first, and the primitive remains available
+when no shared component library is installed.
+
+The prerequisite shared-player fix makes `controls`, `autoplay`, `muted` and
+`loop` reactive on the physical player. Explicit-import native tests and the
+real-browser test toggle these flags in both directions, including false
+initial values; browser fallback controls/mute/loop follow the same props.
+
+`video-resolution.test.ts` checks actual shared dependency paths on web/native
+and runs shared URL and legacy object-source players in one normal/minified
+bundle. It covers source replacement/clearing, reactive controls/pause/aspect
+ratio, payload forwarding once per event, retained identity, conditional
+remount, stale callbacks and teardown. Existing primitive-media regressions
+remain in `remaining-component-resolution.test.ts`.
+
+This is not native media/device certification. Provider page embeds, browser
+source-list/track selection and DRM remain outside the shared native adapter's
+supported contract. Image resolution is intentionally unchanged: web still
+selects its builtin alias unless overridden, and object-position/scale-down
+plus host visual validation remain gates. Craft is not modified.
 
 ### TextInput resolution batch (unreleased after v0.2.661)
 
@@ -145,9 +176,9 @@ wrapping `<div>`, a client `value = state('/first')`, and
    custom-element registration, single event delivery and pause-on-clear.
    Native hosts must support the supplied media URL/codec. YouTube/Vimeo page
    embeds, browser source-list selection, tracks and DRM configuration are not
-   implemented by this adapter. Default native resolution and the primitive's
-   legacy `source` API remain unchanged; device playback/visual validation and
-   broader media API compatibility are still gates before default migration.
+   implemented by this adapter. The resolution batch above now enables shared
+   `src` usage while preserving the primitive's legacy `source` API. Device
+   playback/visual validation and broader media API compatibility remain open.
 
 These are JS/compiler observations, not simulator screenshots. None justifies
 changing resolution globally. The legacy-media regression tests keep the
