@@ -894,39 +894,96 @@ export function preEvalLiteralReactiveIfs(template: string): string {
     return template
   }
 
-  // Index every <script> / <style> body so we don't rewrite content inside them.
-  const skipRanges: Array<[number, number]> = []
-  const rawTagRe = /<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi
-  let rawMatch: RegExpExecArray | null
-  while ((rawMatch = rawTagRe.exec(template)) !== null) {
-    skipRanges.push([rawMatch.index, rawMatch.index + rawMatch[0].length])
-  }
-  const inSkipRange = (i: number) => skipRanges.some(([s, e]) => i >= s && i < e)
-
-  // Match an opening tag carrying one of our six attribute names with a
-  // quoted value. The non-greedy attrs prefix/suffix lets the attribute
-  // appear anywhere in the tag.
-  const tagWithLiteralIf = /<([a-zA-Z][\w-]*)\b((?:\s+[^=\s>]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]*))?)*?)\s+(:if|:show|x-if|x-show|@if|@show)\s*=\s*"([^"]*)"((?:\s+[^=\s>]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]*))?)*\s*)(\/?)>/g
+  // Reuse the element-position walker so quoted attribute contents and raw
+  // script/style bodies never become candidate opening tags. A repeated,
+  // optional attribute regex backtracks on ordinary expanded input markup;
+  // walk each attribute and its quoted value once instead.
+  const candidates: Array<{
+    start: number
+    end: number
+    tag: string
+    attrName: string
+    attrStart: number
+    attrEnd: number
+    value: string
+  }> = []
+  const tagName = /<([a-zA-Z][\w-]*)/y
+  const whitespace = /\s/
+  const conditionalNames = new Set([':if', ':show', 'x-if', 'x-show', '@if', '@show'])
+  scanAtElementPosition(template, (html, start) => {
+    tagName.lastIndex = start
+    const name = tagName.exec(html)
+    if (!name || /^(?:script|style)$/i.test(name[1])) return -1
+    let i = tagName.lastIndex
+    let conditional: { attrName: string, attrStart: number, attrEnd: number, value: string } | undefined
+    while (i < html.length) {
+      const beforeSpace = i
+      while (i < html.length && whitespace.test(html[i])) i++
+      // A closing slash is part of the tag, not an attribute. Keep its exact
+      // spelling/spacing when a truthy conditional is removed.
+      let closing = i
+      if (html[closing] === '/') {
+        closing++
+        while (closing < html.length && whitespace.test(html[closing])) closing++
+      }
+      if (html[closing] === '>') {
+        if (conditional) candidates.push({ start, end: closing + 1, tag: name[1], ...conditional })
+        return -1
+      }
+      // Attributes require a separator. Malformed or incomplete tags stay
+      // untouched; the element walker still skips their quoted contents.
+      if (i === beforeSpace) return -1
+      const attrStart = i
+      while (i < html.length && !whitespace.test(html[i]) && html[i] !== '=' && html[i] !== '>') i++
+      if (i === attrStart) return -1
+      const attrName = html.slice(attrStart, i)
+      // Inline server directives can still choose this tag's attributes.
+      // Defer the whole opening tag until that syntax has been resolved;
+      // in particular, Select retains its first-paint fallback options.
+      if (attrName.startsWith('@') && attrName.includes('(')) return -1
+      const nameEnd = i
+      let valueStart = i
+      while (valueStart < html.length && whitespace.test(html[valueStart])) valueStart++
+      if (html[valueStart] !== '=') {
+        i = nameEnd
+        continue
+      }
+      valueStart++
+      while (valueStart < html.length && whitespace.test(html[valueStart])) valueStart++
+      const quote = html[valueStart]
+      if (quote === '"' || quote === "'") {
+        const end = html.indexOf(quote, valueStart + 1)
+        if (end === -1) return -1
+        // Preserve the existing literal subset: only double-quoted bindings
+        // participate, and the first such binding owns this element's pass.
+        if (!conditional && quote === '"' && conditionalNames.has(attrName)) {
+          conditional = {
+            attrName, attrStart: beforeSpace, attrEnd: end + 1,
+            value: html.slice(valueStart + 1, end),
+          }
+        }
+        i = end + 1
+      }
+      else {
+        i = valueStart
+        while (i < html.length && !whitespace.test(html[i]) && html[i] !== '>') i++
+      }
+    }
+    return -1
+  })
 
   const replacements: Array<{ start: number, end: number, replacement: string }> = []
-  let m: RegExpExecArray | null
-  while ((m = tagWithLiteralIf.exec(template)) !== null) {
-    if (inSkipRange(m.index)) continue
-    const [full, tag, beforeAttrs, attrName, value, afterAttrs, selfClose] = m
+  let skippedThrough = -1
+  for (const candidate of candidates) {
+    const { start: startIdx, end: startTagEnd, tag, attrName, value } = candidate
+    if (startIdx < skippedThrough) continue
     const verdict = evalLiteralCondition(value)
     if (verdict === undefined) continue
 
-    const startIdx = m.index
-    const startTagEnd = startIdx + full.length
-
-    // Compute the element end up-front: needed to drop a falsy element, and to
-    // peek at the next sibling for if/else chain detection. Derive self-close
-    // from the WHOLE matched start tag, not the trailing `(\/?)` capture — a
-    // space before `/>` (`<section :if="false" />`) lets the greedy attrs group
-    // swallow the `/`, leaving that capture empty and fooling the void check
-    // into searching for a `</section>` that doesn't exist (stacksjs/stx#1739
-    // review).
-    const isSelfClose = !!selfClose || /\/\s*>$/.test(full)
+    // Compute the element end up-front for removal and sibling-chain checks.
+    // The complete start tag retains the closing slash even with space before
+    // it; a self-closed custom element must not need a separate closing tag.
+    const isSelfClose = /\/\s*>$/.test(template.slice(startIdx, startTagEnd))
     const isVoid = isSelfClose || VOID_ELEMENT_TAGS.has(tag.toLowerCase())
     const elementEnd = isVoid ? startTagEnd : findElementEnd(template, startIdx, tag, startTagEnd)
     if (elementEnd === -1) continue // Unbalanced — defer to runtime
@@ -939,31 +996,30 @@ export function preEvalLiteralReactiveIfs(template: string): string {
     // no else partner, so it's exempt.
     const isIfFamily = attrName === ':if' || attrName === 'x-if' || attrName === '@if'
     if (isIfFamily && nextSiblingHasElse(template, elementEnd)) {
-      tagWithLiteralIf.lastIndex = startTagEnd
       continue
     }
 
     if (verdict === true) {
-      // Truthy literal — strip the attribute, keep everything else. Leave the
-      // scanner just past the start tag so nested `:if`s inside are still seen.
-      const rebuiltStartTag = `<${tag}${beforeAttrs}${afterAttrs}${selfClose}>`
+      // Truthy literal — strip only its original attribute span, retaining the
+      // remaining bytes and allowing descendant candidates to be processed.
+      const rebuiltStartTag = template.slice(startIdx, candidate.attrStart) + template.slice(candidate.attrEnd, startTagEnd)
       replacements.push({ start: startIdx, end: startTagEnd, replacement: rebuiltStartTag })
       continue
     }
 
-    // Falsy literal — drop the element including children. Resume scanning AFTER
-    // the dropped element so a nested `:if` inside it isn't matched again:
+    // Falsy literal — drop the element including children. Skip all candidates
+    // inside the dropped element rather than producing overlapping edits:
     // overlapping replacements (an inner range fully contained in this outer
     // one) would corrupt the end-to-start apply pass, since the outer's `end`
     // index goes stale once the inner substring is removed first.
     replacements.push({ start: startIdx, end: elementEnd, replacement: '' })
-    tagWithLiteralIf.lastIndex = elementEnd
+    skippedThrough = elementEnd
   }
 
   if (replacements.length === 0) return template
 
   // Defensive: drop any replacement whose range overlaps an already-kept one.
-  // The lastIndex skip above prevents nested matches in the common path, but a
+  // The skippedThrough guard prevents nested matches in the common path, but a
   // belt-and-suspenders filter keeps the apply pass correct no matter what the
   // scanner produced. Sort by start asc, keep a running high-water mark.
   replacements.sort((a, b) => a.start - b.start)
