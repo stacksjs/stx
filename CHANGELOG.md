@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.670...v0.2.671)
+
+## 🐛 Bug Fixes
+
+- **native**: preserve dark selector precedence and block visibility ([cce01d4](https://github.com/stacksjs/stx/commit/cce01d4)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.671 ([2c3f6ec](https://github.com/stacksjs/stx/commit/2c3f6ec)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.669...v0.2.670)
 
 ## ✨ Features
