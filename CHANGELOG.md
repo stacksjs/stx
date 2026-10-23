@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.671...v0.2.672)
+
+## ✨ Features
+
+- **build**: bundle embedded menu bar template dependencies ([b46e419](https://github.com/stacksjs/stx/commit/b46e419)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.672 ([4190e19](https://github.com/stacksjs/stx/commit/4190e19)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.670...v0.2.671)
 
 ## 🐛 Bug Fixes
