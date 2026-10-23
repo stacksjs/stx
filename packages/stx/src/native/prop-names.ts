@@ -10,7 +10,7 @@ const NATIVE_PROP_NAMES = [
   'autoComplete', 'autoCorrect', 'autoFocus', 'contentContainerStyle', 'currentTime', 'defaultSource', 'defaultValue',
   'ellipsizeMode', 'hidesWhenStopped', 'hitSlop', 'imageStyle', 'initialNumToRender',
   'ios_backgroundColor', 'keyboardDismissMode', 'keyboardShouldPersistTaps', 'keyboardType',
-  'keyboardVerticalOffset', 'keyExtractor', 'listRole', 'maxLength', 'maximumDate', 'maximumTrackTintColor', 'maximumValue',
+  'keyboardVerticalOffset', 'keyExtractor', 'listRole', 'maxLength', 'mostRecentEventCount', 'maximumDate', 'maximumTrackTintColor', 'maximumValue',
   'maxToRenderPerBatch', 'minimumDate', 'minimumTrackTintColor', 'minimumValue', 'minuteInterval', 'numberOfLines',
   'numColumns', 'onEndReachedThreshold', 'pagingEnabled', 'passwordRules', 'placeholderTextColor', 'pointerEvents',
   'presentationStyle', 'sheetDetents', 'selectedDetent', 'grabberVisible', 'tintColor', 'clearButtonMode', 'nonModal', 'dismissOnOutsideTap',

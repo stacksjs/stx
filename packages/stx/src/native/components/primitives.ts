@@ -166,6 +166,8 @@ export interface TextProps extends BaseProps {
 }
 
 export interface TextInputProps extends BaseProps {
+  /** Last native text edit acknowledged by the runtime; older echoes must not replace newer typing. */
+  mostRecentEventCount?: number
   /** Current value */
   value?: string
   /** Default value */

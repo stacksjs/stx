@@ -676,3 +676,33 @@ describe('reaching a subtree without a selector', () => {
     expect(batches).toEqual([])
   })
 })
+
+
+describe('native text edit acknowledgements', () => {
+  it('acknowledges each edit and keeps the count on intentional controlled updates', () => {
+    const { host, node, ops } = harness()
+    const input = node('search', 'TextInput')
+    host.setAttribute(input, 'value', '')
+    host.listen(input, 'input', () => {})
+    host.flush()
+    const registration = ops().find(op => op.op === 'updateNode' && op.patch.events?.onChangeText)
+    const id = (registration as { patch: { events: Record<string, string> } }).patch.events.onChangeText!
+    host.dispatch(id, { nativeEvent: { text: 'Pl', eventCount: 2 } })
+    host.dispatch(id, { nativeEvent: { text: 'Pla', eventCount: 3 } })
+    host.flush()
+    const echoes = ops().filter(op => op.op === 'updateNode' && op.patch.props?.mostRecentEventCount !== undefined)
+    expect(echoes).toMatchObject([
+      { patch: { props: { value: 'Pl', mostRecentEventCount: 2 } } },
+      { patch: { props: { value: 'Pla', mostRecentEventCount: 3 } } },
+    ])
+    expect(host.snapshot(input).props).toMatchObject({ value: 'Pla', mostRecentEventCount: 3 })
+    expect(ops().at(-1)).toMatchObject({ patch: { props: { value: 'Pla', mostRecentEventCount: 3 } } })
+    host.dispatch(id, { nativeEvent: { text: 'Pla', eventCount: 4 } })
+    host.flush()
+    expect(ops().at(-1)).toMatchObject({ patch: { props: { value: 'Pla', mostRecentEventCount: 4 } } })
+    host.setAttribute(input, 'value', '')
+    expect(host.snapshot(input).props).toMatchObject({ value: '', mostRecentEventCount: 4 })
+    host.dispatch(id, { nativeEvent: { text: 'Legacy' } })
+    expect(host.snapshot(input).props.value).toBe('Legacy')
+  })
+})
