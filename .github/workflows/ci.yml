@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   native-signing:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: pantry-pm/pantry/packages/action@3436eff9cc46cad165a564f30d458963e148294c # v0.11.99
