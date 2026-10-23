@@ -7,6 +7,7 @@ import { createTempDir, removeTempDir } from '../../stx/src/temp-dir'
 // Mock craft-native before importing window module
 // Note: mock.module() MUST be called before importing the module being mocked
 mock.module('craft-native', () => ({
+  macOSRuntimeExecutablePath: (app: string) => join(app, 'Contents/Helpers/CraftRuntime.app/Contents/MacOS/craft'),
   createApp: () => ({
     show: async () => {
       // Simulate craft error (since binary path issues in test environment)
@@ -155,21 +156,24 @@ describe('Window Management', () => {
       }
     })
 
-    it('still uses the copy bundled inside a packaged .app', async () => {
-      // The gate must not simply disable the step: a shipped app carries its own
-      // craft in Contents/MacOS and must resolve that rather than depending on
-      // the user having pantry installed.
+    it('uses the identified native agent inside a packaged .app', async () => {
       const scratch = createTempDir('craft-app')
       const bundle = join(scratch, 'MyApp.app')
       const macos = join(bundle, 'Contents', 'MacOS')
       mkdirSync(macos, { recursive: true })
       writeFileSync(join(macos, 'craft'), '')
+      const helper = join(bundle, 'Contents/Helpers/CraftRuntime.app/Contents/MacOS/craft')
+      mkdirSync(join(helper, '..'), { recursive: true })
+      writeFileSync(helper, '')
       const previous = process.execPath
       Object.defineProperty(process, 'execPath', { value: join(macos, 'MyApp'), configurable: true })
 
       try {
         await createWindow('http://localhost:3000')
-        expect(spawned[0].command).toBe(join(macos, 'craft'))
+        expect(spawned[0].command).toBe(helper)
+        rmSync(helper)
+        await expect(createWindow('http://localhost:3000')).rejects.toThrow('Packaged native runtime is missing')
+        expect(spawned).toHaveLength(1)
       }
       finally {
         Object.defineProperty(process, 'execPath', { value: previous, configurable: true })

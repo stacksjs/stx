@@ -2,8 +2,8 @@
 import type { SidebarConfig, WindowInstance, WindowOptions } from './types'
 import process from 'node:process'
 import { existsSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { craftBinaryNotFoundMessage, resolveCraftBinary } from 'craft-native'
+import { basename, dirname } from 'node:path'
+import { craftBinaryNotFoundMessage, macOSRuntimeExecutablePath, resolveCraftBinary } from 'craft-native'
 
 // =============================================================================
 // Configuration
@@ -95,44 +95,42 @@ function prepareSidebarConfig(options: WindowOptions): SidebarConfig | undefined
  * `craft` resolves to on PATH" — `resolveCraftBinary` in craft-native owns that
  * contract, including the `CRAFT_BIN` escape hatch for local builds. This
  * function only layers on the overrides that are part of the desktop package's
- * own API, plus the one location craft cannot know about: inside a packaged app
- * bundle, where `packageApp` puts the binary next to the app's executable.
+ * own API and Craft's explicitly packaged native runtime agent.
  *
  * Resolution order:
  * 1. `CRAFT_BINARY_PATH` environment variable
  * 2. `config.craftBinaryPath` (set via `setDesktopConfig`)
  * 3. `config.additionalSearchPaths`
- * 4. Beside the running executable (a packaged `.app`)
+ * 4. The packaged native runtime agent (a packaged `.app`)
  * 5. `craft`'s own contract — `CRAFT_BIN`, else PATH
  *
  * @returns The string to spawn. Never undefined: a bare `'craft'` defers to PATH,
  *   and an ENOENT from the spawn produces craft's pantry-aware guidance.
  */
 function getCraftBinaryPath(): string {
-  // A packaged app bundles craft into Contents/MacOS/ beside its own binary
-  // (see packageApp's macos.additionalExecutables), so a shipped app resolves
-  // its own copy rather than depending on the user having pantry.
-  //
-  // Gated on actually being inside an app bundle. Unqualified, "beside the
-  // running executable" matches the user's global bin directory during ordinary
-  // development — `~/.bun/bin/bun` sits next to `~/.bun/bin/craft` the moment
-  // craft is installed — so this step hijacked resolution from PATH and, worse,
-  // from `CRAFT_BIN`, which step 5 exists to honour.
   const executableDir = dirname(process.execPath)
-  const bundledBeside = executableDir.includes('.app/Contents/MacOS')
-    ? join(executableDir, 'craft')
-    : undefined
+  const contents = dirname(executableDir)
+  const app = dirname(contents)
+  const packaged = basename(executableDir) === 'MacOS' && basename(contents) === 'Contents' && app.endsWith('.app')
 
   const overrides = [
     process.env.CRAFT_BINARY_PATH,
     currentConfig.craftBinaryPath,
     ...(currentConfig.additionalSearchPaths || []),
-    bundledBeside,
   ]
 
   for (const candidate of overrides) {
     if (candidate && existsSync(candidate))
       return candidate
+  }
+
+  // A GUI process must have its own matching CFBundleExecutable. Running a
+  // loose sibling binary makes macOS lose its identity for menu visibility.
+  if (packaged) {
+    const runtime = macOSRuntimeExecutablePath(app)
+    if (!existsSync(runtime))
+      throw new Error('Packaged native runtime is missing. Build with packageApp({ macos: { nativeRuntimePath } }).')
+    return runtime
   }
 
   return resolveCraftBinary()

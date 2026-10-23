@@ -659,9 +659,16 @@ await packageApp({
   name: 'Example',
   version: '1.0.0',
   binaryPath: './dist/example',
-  macos: { additionalExecutables: [resolveCraftExecutablePath()] },
+  macos: { nativeRuntimePath: resolveCraftExecutablePath() },
 })
 ```
+
+Craft embeds its GUI provider as an agent app with a matching executable and
+bundle identity. The desktop launcher resolves that packaged agent directly;
+loose command line helpers belong in `additionalExecutables`.
+Migrate GUI runtime entries from `additionalExecutables` to `nativeRuntimePath`.
+A packaged app without its native agent fails explicitly instead of using a
+loose executable or a different runtime from PATH.
 
 ## Background deadlines
 
