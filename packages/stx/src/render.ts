@@ -448,6 +448,10 @@ export async function renderTemplateString(
       // Seed <script client> with referenced <script server> data (the bridge).
       const serverData = extractBridgeData(context as Record<string, unknown>)
       const transformedScripts = await Promise.all(clientScripts.map(async (fullScript: string) => {
+        // Data blocks are HTML content, not executable client controllers.
+        const attrs = fullScript.match(/<script\b([^>]*)>/i)?.[1] || ''
+        if (/\btype\s*=\s*["'](?!(?:text\/javascript|application\/javascript|module)["'])[^"']*["']/i.test(attrs))
+          return fullScript
         const contentMatch = fullScript.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)
         if (!contentMatch)
           return fullScript

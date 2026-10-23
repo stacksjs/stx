@@ -154,3 +154,30 @@ await packageApp({
 
 See Craft's [packaging guide](https://github.com/stacksjs/craft/blob/main/docs/PACKAGING.md)
 for signing, notarization and App Store submission.
+
+## Standalone template builds
+
+When compiling an app to one binary, prepare its embedded templates before
+`Bun.build`. Client imports must be bundled while their source files exist;
+runtime rendering still supplies current preferences and server data.
+
+```ts
+import { menuBarTemplatePlugin } from '@stacksjs/stx/menubar-build'
+
+const templates = await menuBarTemplatePlugin({ templates: ['./src/popup.stx'] })
+await Bun.build({
+  entrypoints: ['./app.ts'],
+  target: 'bun',
+  compile: { outfile: './dist/MyApp' },
+  plugins: [templates],
+})
+```
+
+The app imports the template with `with { type: 'text' }` and passes it as
+`templateSource` to `createMenuBarApp`. List every embedded `.stx` template.
+Client TypeScript and its transitive imports are prepared by stx, including
+handlers used only in template expressions. Missing imports stop the build.
+Pass server values through rendered data attributes so they remain runtime data
+instead of build-time JavaScript. Native access stays behind
+`useNativeDesktop()`; optional native menu bar grouping is provided by Craft's
+`menubar` API and must be selected explicitly.
