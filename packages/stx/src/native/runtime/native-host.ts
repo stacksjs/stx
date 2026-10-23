@@ -620,11 +620,17 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     for (const source of record.styleAncestors ?? []) inherited = parseNativeStyleLayers([source], inherited, report).variables
     const resolved = parseNativeStyleLayers([record.styleSource, record.boundStyle, record.forwardedStyle], inherited, report)
     record.variables = resolved.variables
-    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules })
-    const classStyle = { ...classes.style, ...(colorScheme === 'dark' ? classes.dark : {}) }
+    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules, appearance: colorScheme })
+    const classStyle = { ...classes.style }
     // Width layers apply smallest first, as min-width media queries cascade.
-    for (const layer of classes.responsive ?? []) {
-      if (viewportWidth >= layer.min && (layer.max === undefined || viewportWidth <= layer.max)) Object.assign(classStyle, layer.style, colorScheme === 'dark' ? layer.dark : {})
+    const responsive = (classes.responsive ?? []).filter(layer => viewportWidth >= layer.min && (layer.max === undefined || viewportWidth <= layer.max))
+    for (const layer of responsive) Object.assign(classStyle, layer.style)
+    // ts-css emits `.dark .dark:utility`: that selector outranks a plain
+    // responsive utility even when its media rule comes later. Semantic
+    // theme defaults are already in each ordinary layer, not in this tier.
+    if (colorScheme === 'dark') {
+      Object.assign(classStyle, classes.dark)
+      for (const layer of responsive) Object.assign(classStyle, layer.dark)
     }
     // `aria-selected:` and its kin, while the node says so. Before
     // `disabled:`, as Tailwind orders the two variants.

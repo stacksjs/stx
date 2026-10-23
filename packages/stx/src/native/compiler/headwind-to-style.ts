@@ -332,6 +332,9 @@ type ClassParser = (value: string, style: STXStyle) => boolean
 const classParsers: Record<string, ClassParser> = {
   // Display
   flex: (_, style) => { style.display = 'flex'; return true },
+  // A normal-flow block uses the native stack's visible layout, like an
+  // unstyled div. In particular `hidden dark:block` must become visible.
+  block: (_, style) => { style.display = 'flex'; return true },
   hidden: (_, style) => { style.display = 'none'; return true },
   // Craft's native stack lays out an equal-column grid (`gridColumns`).
   grid: (_, style) => { style.display = 'grid'; return true },
@@ -434,9 +437,8 @@ const classParsers: Record<string, ClassParser> = {
   'tracking-wider': (_, style) => { style.letterSpacing = 0.8; return true },
   'tracking-widest': (_, style) => { style.letterSpacing = 1.6; return true },
   // Web-only concerns with no native meaning, accepted so they are not
-  // reported as unknown: tabular figures, the block display, pointer cues.
+  // reported as unknown: tabular figures and pointer cues.
   'tabular-nums': () => true,
-  'block': () => true,
   'inline-flex': (_, style) => { style.display = 'flex'; return true },
   'truncate': () => true,
 
@@ -1129,8 +1131,10 @@ function expandShortcuts(token: string, seen: Set<string> = new Set()): string[]
  * `focus:` is opt-in for hosts that report it (currently TextInput). Other
  * variants remain diagnostic, including focus-visible: focus alone does not
  * establish keyboard modality. Unsupported rings are never faked as borders.
+ * With `appearance`, semantic token defaults are resolved in the ordinary
+ * style, leaving `dark` for selectors with explicit appearance specificity.
  */
-export function compileClassStyles(classes: string, variables?: NativeStyleVariables, options: { focus?: boolean, focusWithin?: boolean, rules?: NativeStylesheetRules } = {}): ClassStyles {
+export function compileClassStyles(classes: string, variables?: NativeStyleVariables, options: { focus?: boolean, focusWithin?: boolean, rules?: NativeStylesheetRules, appearance?: 'light' | 'dark' } = {}): ClassStyles {
   // Group the authored classes by the layer they belong to. Each group then
   // compiles as a plain class list (dark and focus kept inside it), and an
   // unknown class is reported by the name the author wrote.
@@ -1220,7 +1224,7 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
   const responsive: NonNullable<ClassStyles['responsive']> = []
   for (const layer of groups.values()) {
     if (layer === base) continue
-    const compiled = compileLayer(layer.classes.join(' '), variables)
+    const compiled = compileLayer(layer.classes.join(' '), variables, { appearance: options.appearance })
     result.unknown = [...new Set([...result.unknown, ...authoredNames(layer, compiled.unknown)])]
     const entry = { style: compiled.style, ...(compiled.dark ? { dark: compiled.dark } : {}) }
     if (layer.disabled) result.disabled = entry
@@ -1241,7 +1245,7 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
 }
 
 /** One layer's classes, with `dark:` and focus variants kept apart. */
-function compileLayer(classes: string, variables?: NativeStyleVariables, options: { focus?: boolean, focusWithin?: boolean } = {}): ClassStyles {
+function compileLayer(classes: string, variables?: NativeStyleVariables, options: { focus?: boolean, focusWithin?: boolean, appearance?: 'light' | 'dark' } = {}): ClassStyles {
   const plain: string[] = []
   const dark: string[] = []
   const semanticDark: string[] = []
@@ -1317,7 +1321,7 @@ function compileLayer(classes: string, variables?: NativeStyleVariables, options
       else dark.push(...translated.map(value => remember(value, name)))
     }
     else if (!name.includes(':') || name.startsWith('[')) {
-      const lightClasses = roleClasses(name, 'light')
+      const lightClasses = roleClasses(name, options.appearance ?? 'light')
       const darkClasses = roleClasses(name, 'dark')
       if (!lightClasses || !darkClasses) { unsupported.push(name); continue }
       plain.push(...lightClasses.map(value => remember(value, name)))
@@ -1326,9 +1330,13 @@ function compileLayer(classes: string, variables?: NativeStyleVariables, options
     else unsupported.push(name)
   }
   const unknown: string[] = []
+  // A semantic token changes its default value with the appearance, but
+  // does not acquire the extra selector specificity of an authored dark:
+  // utility. Keep the two apart when resolving the runtime cascade.
   const style = compileHeadwindToStyle(plain, unknown)
   const result: ClassStyles = { style, unknown }
-  if (dark.length || semanticDark.length) result.dark = compileHeadwindToStyle([...semanticDark, ...dark], unknown)
+  const darkClasses = [...(options.appearance === undefined ? semanticDark : []), ...dark]
+  if (darkClasses.length) result.dark = compileHeadwindToStyle(darkClasses, unknown)
   // A dark x translation replaces x, not the entire light transform array.
   if (style.transform && result.dark?.transform) {
     const overridden = new Set(result.dark.transform.flatMap(step => Object.keys(step)))
@@ -1345,14 +1353,14 @@ function compileLayer(classes: string, variables?: NativeStyleVariables, options
   const authoredUnknown = unknown.flatMap(name => [...originals.get(name) ?? [name]])
   result.unknown = [...new Set([...authoredUnknown.filter(name => !/^line-clamp-\d+$/.test(name)), ...unsupported])]
   if (dividers.length) {
-    const divided = compileLayer(dividers.join(' '), variables)
+    const divided = compileLayer(dividers.join(' '), variables, { appearance: options.appearance })
     result.divide = { style: divided.style, ...(divided.dark ? { dark: divided.dark } : {}) }
     result.unknown = [...new Set([...result.unknown, ...divided.unknown.map(name => dividerOriginals.get(name) ?? name)])]
   }
   for (const key of ['focus', 'focusWithin'] as const) {
     const layer = focusLayers[key]
     if (!layer.classes.length) continue
-    const focused = compileLayer(layer.classes.join(' '), variables)
+    const focused = compileLayer(layer.classes.join(' '), variables, { appearance: options.appearance })
     result[key] = { style: focused.style, dark: focused.dark }
     result.unknown = [...new Set([...result.unknown, ...focused.unknown.flatMap(name => layer.originals.get(name) ?? [name])])]
     // These classes set node props, not style fields; a focus style layer
