@@ -1,5 +1,33 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.674...v0.2.675)
+
+## ✨ Features
+
+- **native**: support shared paging fonts and website-only content ([bf228f3](https://github.com/stacksjs/stx/commit/bf228f3)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: resolve shared Video for compatible src calls (#2091) ([1506dc0](https://github.com/stacksjs/stx/commit/1506dc0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+
+## 🐛 Bug Fixes
+
+- scan literal conditional attributes without backtracking ([b1a078d](https://github.com/stacksjs/stx/commit/b1a078d)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **ssg**: fail builds when static path discovery fails (#2116) ([d7759e8](https://github.com/stacksjs/stx/commit/d7759e8)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2116](https://github.com/stacksjs/stx/issues/2116), [#2116](https://github.com/stacksjs/stx/issues/2116))
+- **components**: keep Video playback flags reactive across targets (#2091) ([78619f9](https://github.com/stacksjs/stx/commit/78619f9)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **serve**: scope automatic image warm-up to served templates (#2113) ([818064a](https://github.com/stacksjs/stx/commit/818064a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2113](https://github.com/stacksjs/stx/issues/2113), [#2113](https://github.com/stacksjs/stx/issues/2113))
+- **native**: preserve host permissions and reject unsupported checks (#2115) ([7e7edac](https://github.com/stacksjs/stx/commit/7e7edac)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2115](https://github.com/stacksjs/stx/issues/2115), [#2115](https://github.com/stacksjs/stx/issues/2115))
+
+## ✅ Tests
+
+- **native**: gate installed packages on shared HUD state and cleanup (#2109) ([6406d30](https://github.com/stacksjs/stx/commit/6406d30)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2109](https://github.com/stacksjs/stx/issues/2109), [#2109](https://github.com/stacksjs/stx/issues/2109))
+
+## 🔧 Chores
+
+- release v0.2.675 ([e1ed857](https://github.com/stacksjs/stx/commit/e1ed857)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.673...v0.2.674)
 
 ## 🐛 Bug Fixes
