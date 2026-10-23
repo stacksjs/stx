@@ -347,15 +347,26 @@ catch (e) {
       return elements;
     };
 
-    // Helper: compute key for an item
+    // Keys have the same component and enclosing-row scope as other bindings.
+    // Compiling with only item/index hid helper functions and outer signals,
+    // silently turning explicit keyed lists into positional lists.
+    let warnedKeyExpression = false;
     const getItemKey = (item, index) => {
       if (!keyExpr) return String(index);
       try {
-        const scope = { [itemName]: item };
-        if (indexName) scope[indexName] = index;
-        const fn = __stxCompile([itemName, indexName || '_idx'], 'return ' + keyExpr);
-        return String(fn(item, index));
+        const rowScope = { [itemName]: item };
+        rowScope[indexName || '_idx'] = index;
+        const scope = mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}), rowScope);
+        const unwrapScope = createExpressionAutoUnwrapProxy(scope, keyExpr);
+        const fn = __stxCompileScoped(unwrapScope, [], 'return ' + keyExpr);
+        const key = fn(...__stxArgs(fn, unwrapScope));
+        if (key === null || key === undefined) throw new Error('The key is null or undefined');
+        return String(key);
       } catch (e) {
+        if (!warnedKeyExpression) {
+          warnedKeyExpression = true;
+          console.warn('[STX] :for could not evaluate :key "' + keyExpr + '"; using item positions. Give each item a valid unique key.', e);
+        }
         return String(index);
       }
     };
