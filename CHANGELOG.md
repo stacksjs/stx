@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.675...v0.2.676)
+
+## 🐛 Bug Fixes
+
+- **signals**: evaluate list keys in their component scope ([e9ff9d0](https://github.com/stacksjs/stx/commit/e9ff9d0)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **build**: preserve executable permissions on the published CLI ([46cae6e](https://github.com/stacksjs/stx/commit/46cae6e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.676 ([fd2d532](https://github.com/stacksjs/stx/commit/fd2d532)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.674...v0.2.675)
 
 ## ✨ Features
