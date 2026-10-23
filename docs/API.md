@@ -3282,6 +3282,23 @@ export const getStaticPaths = defineStaticPaths(() => [
 ])
 ```
 
+#### Static path discovery failures
+
+SSG distinguishes a missing `getStaticPaths` (warning) from a hook that
+intentionally returns no paths (informational). Parse/extraction errors,
+thrown exceptions, rejected promises and malformed results are build failures:
+`SSGResult.failedCount`/`errors` and `hooks.onError` identify the route, template
+file, phase and original error. The build CLI exits non-zero for these failures.
+Other pages may still be written; do not deploy an output from a failed build.
+An unknown dynamic page count is recorded as one failed route, not an invented
+number of missing pages.
+
+Function declarations (including nested blocks and TypeScript), const/arrow
+hooks and `defineStaticPaths(...)` initializers are supported. Return
+`{ paths: [...] }` or a path array; each entry needs a `params` object.
+As before, hooks are evaluated independently of other page server declarations:
+this does not add resolution of imported or module-local closure dependencies.
+
 ### createISRHandler()
 
 On-demand revalidation for static pages:

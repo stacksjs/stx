@@ -61,6 +61,8 @@ import { extractPageMetaFromSource } from './page-meta'
 import { resolveSiteUrl, siteUrlFallbackWarning } from './site-url'
 import { generateRobotsTxt } from './seo'
 import { stateDir } from './state-dir'
+import { defineStaticPaths, readStaticPaths } from './ssg-static-paths'
+export { defineStaticPaths } from './ssg-static-paths'
 import { injectCss } from './dev-server/ts-css'
 import { clearBundleFailures, getBundleFailures } from './client-script-bundler'
 import {
@@ -549,44 +551,6 @@ catch {
 // =============================================================================
 
 /**
- * Extract getStaticPaths from a template file
- */
-async function extractStaticPaths(filePath: string): Promise<StaticPathsResult | null> {
-  try {
-    const content = await Bun.file(filePath).text()
-
-    // Look for <script server> block with getStaticPaths
-    const serverScriptMatch = content.match(/<script\s+server\b[^>]*>([\s\S]*?)<\/script>/i)
-    if (!serverScriptMatch) return null
-
-    const scriptContent = serverScriptMatch[1]
-    if (!scriptContent.includes('getStaticPaths')) return null
-
-    // Extract and evaluate the function
-    // Allow optional leading whitespace before the closing `}` so indented
-    // functions inside <script server> blocks are matched.
-    const fnMatch = scriptContent.match(
-      /(?:export\s+)?(?:async\s+)?function\s+getStaticPaths\s*\([^)]*\)\s*\{([\s\S]*?)\n[\t ]*\}/
-    )
-    if (!fnMatch) return null
-
-    // Create a safe evaluation context
-    const asyncFn = new Function(`
-      return (async function getStaticPaths() {
-        ${fnMatch[1]}
-      })()
-    `)
-
-    const result = await asyncFn()
-    return result as StaticPathsResult
-  }
-catch (error) {
-    console.error(`Error extracting static paths from ${filePath}:`, error)
-    return null
-  }
-}
-
-/**
  * Generate all static paths for a route
  */
 // eslint-disable-next-line pickier/no-unused-vars
@@ -612,10 +576,17 @@ async function generatePathsForRoute(route: Route): Promise<Array<{
   }
 else {
     // Dynamic route - need getStaticPaths
-    const staticPaths = await extractStaticPaths(route.filePath)
-
-    if (!staticPaths || staticPaths.paths.length === 0) {
-      console.warn(`Warning: Dynamic route ${route.pattern} has no getStaticPaths or returned empty paths`)
+    const outcome = await readStaticPaths(route.filePath)
+    if (outcome.kind === 'error') {
+      throw new Error(`getStaticPaths ${outcome.phase} failed for ${route.pattern} (${route.filePath}): ${outcome.error.message}`, { cause: outcome.error })
+    }
+    if (outcome.kind === 'absent') {
+      console.warn(`Warning: Dynamic route ${route.pattern} (${route.filePath}) has no getStaticPaths`)
+      return results
+    }
+    const staticPaths = outcome.value
+    if (staticPaths.paths.length === 0) {
+      console.info(`getStaticPaths returned no paths for dynamic route ${route.pattern} (${route.filePath})`)
       return results
     }
 
@@ -1284,21 +1255,32 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     }> = []
 
     for (const route of routes) {
-      const paths = await generatePathsForRoute(route)
-      for (const pathInfo of paths) {
-        pagesToGenerate.push({
-          route,
-          url: pathInfo.url,
-          params: pathInfo.params,
-          props: pathInfo.props,
-          revalidate: pathInfo.revalidate ?? cfg.revalidate,
-        })
+      try {
+        const paths = await generatePathsForRoute(route)
+        for (const pathInfo of paths) {
+          pagesToGenerate.push({
+            route,
+            url: pathInfo.url,
+            params: pathInfo.params,
+            props: pathInfo.props,
+            revalidate: pathInfo.revalidate ?? cfg.revalidate,
+          })
+        }
+      }
+      catch (error) {
+        const failure = error instanceof Error ? error : new Error(String(error))
+        result.failedCount++
+        result.errors.push({ route: route.pattern, error: failure })
+        await cfg.hooks.onError?.(failure, route.pattern)
+        console.error(`Error discovering paths for ${route.pattern}:`, failure)
       }
     }
 
-    result.totalPages = pagesToGenerate.length
+    // A failed dynamic route has an unknown page count. Count its discovery
+    // failure once, rather than claiming to know how many pages were lost.
+    result.totalPages = pagesToGenerate.length + result.failedCount
 
-    console.log(`Generating ${result.totalPages} pages...`)
+    console.log(`Generating ${pagesToGenerate.length} pages...`)
 
     // Sitemap entries
     const sitemapEntries: SitemapEntry[] = []
@@ -1881,18 +1863,6 @@ else {
         await cache.invalidatePattern(route)
       }
     },
-  }
-}
-
-/**
- * Define static paths for dynamic routes (used in templates)
- */
-export function defineStaticPaths(
-  pathsFn: () => Promise<StaticPath[]> | StaticPath[]
-): () => Promise<StaticPathsResult> {
-  return async () => {
-    const paths = await pathsFn()
-    return { paths, fallback: false }
   }
 }
 
