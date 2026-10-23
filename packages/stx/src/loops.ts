@@ -257,8 +257,15 @@ function processPropBindings(content: string, context: Record<string, any>): str
       const contextKeys = Object.keys(context)
       const contextValues = Object.values(context)
       sanitizeExpression(expression)
-      const evaluator = createSafeFunction(expression, contextKeys)
+      let missingBinding = false
+      const evaluator = createSafeFunction(expression, contextKeys, () => { missingBinding = true })
       const value = evaluator(...contextValues)
+      // Missing client state can still produce a serializable value: an
+      // unknown selection compared with a loop value evaluates to false, and
+      // a nullish expression can produce a fallback. Keep those bindings live
+      // rather than freezing the evaluator's missing-identifier retry result.
+      if (missingBinding)
+        return match
 
       // Serialize the value to JSON, then base64-encode it. base64 contains no
       // quotes, backslashes or angle brackets, so the payload survives both

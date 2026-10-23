@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { menuBarTemplatePlugin } from '../src/menubar-build'
+import { boot, closeBrowser, settle } from './router/spa-harness'
 
 it('embeds transitive client imports before the app is compiled and retains runtime server values', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'stx-menubar-build-'))
@@ -11,9 +12,9 @@ it('embeds transitive client imports before the app is compiled and retains runt
     await writeFile(join(dir, 'message.ts'), 'export const message = "embedded client helper"')
     await writeFile(join(dir, 'panel.css'), '.fixture { color: tomato; }')
     await writeFile(join(dir, 'helper.ts'), 'export { message } from "./message"')
-    await writeFile(join(dir, 'panel.stx'), `<h1>{{ title }}</h1><script type="application/json">{"keep":"original"}</script><script client lang="ts">import './panel.css'\nimport { message } from './helper'; const caption = state(message); function readCaption() { return caption() }</script>`)
+    await writeFile(join(dir, 'panel.stx'), `<h1>{{ title }}</h1><script type="application/json">{"keep":"original"}</script><script client lang="ts">import './panel.css'\nimport { message } from './helper'; const caption = state(message); const selected = state(-1); const duration = derived(() => selected()); const mode = state(null); function readCaption() { return caption() }</script><main>@foreach(durations as minutes)<button :class="{ selected: duration === {{ minutes }} }" :data-mode="mode ?? 'waiting'" @click="selected.set({{ minutes }}); mode.set('chosen')">{{ minutes }}</button>@endforeach</main>`)
     const renderer = fileURLToPath(import.meta.resolve('../src/render'))
-    await writeFile(join(dir, 'app.ts'), `import template from './panel.stx' with {type:'text'}; import {renderTemplateString} from ${JSON.stringify(renderer)}; console.log(await renderTemplateString(template, '/source-no-longer-exists/panel.stx', {context: {title:'Fresh preference'}}));`)
+    await writeFile(join(dir, 'app.ts'), `import template from './panel.stx' with {type:'text'}; import {renderTemplateString} from ${JSON.stringify(renderer)}; console.log(await renderTemplateString(template, '/source-no-longer-exists/panel.stx', {context: {title:'Fresh preference', durations:[5,-1]}}));`)
     const binary = join(dir, 'app')
     const build = await Bun.build({ entrypoints: [join(dir, 'app.ts')], target: 'bun', compile: { outfile: binary }, plugins: [await menuBarTemplatePlugin({ templates: [join(dir, 'panel.stx')] })] })
     expect(build.success).toBe(true)
@@ -33,8 +34,21 @@ it('embeds transitive client imports before the app is compiled and retains runt
     expect(html.includes('get caption()')).toBe(true)
     expect(html).not.toContain('from "./helper"')
     expect(run.stderr.toString()).not.toContain('File not found')
+    const browser = await boot({ documents: new Map([['/', html]]), dispose: async () => {} }, '/')
+    await settle()
+    const buttons = browser.document.querySelectorAll('button')
+    expect(buttons[0].classList.contains('selected')).toBe(false)
+    expect(buttons[1].classList.contains('selected')).toBe(true)
+    expect(buttons[0].getAttribute('data-mode')).toBe('waiting')
+    buttons[0].dispatchEvent(new browser.window.MouseEvent('click', { bubbles: true }))
+    await settle()
+    expect(buttons[0].classList.contains('selected')).toBe(true)
+    expect(buttons[1].classList.contains('selected')).toBe(false)
+    expect(buttons[0].getAttribute('data-mode')).toBe('chosen')
+    expect(browser.errors).toEqual([])
   }
   finally {
+    closeBrowser()
     await rm(dir, { recursive: true, force: true })
   }
 }, 30000)
