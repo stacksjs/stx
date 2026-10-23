@@ -1,4 +1,4 @@
-import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs'
+import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { Glob } from 'bun'
 import { dts } from 'bun-plugin-dtsx'
@@ -320,6 +320,7 @@ const cliContent = await Bun.file(cliPath).text()
 if (!cliContent.startsWith('#!/')) {
   await Bun.write(cliPath, `#!/usr/bin/env bun\n${cliContent}`)
 }
+chmodSync(cliPath, 0o755)
 
 // dtsx can truncate declarations for a few standalone public modules when
 // bundling the full source graph in one call. Re-emit those public declaration
