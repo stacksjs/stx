@@ -50,3 +50,14 @@ The APG carousel pattern: a region with `aria-roledescription="carousel"`, each
 page a group with `aria-roledescription="slide"` labelled "2 of 5", the pages
 off screen `inert`, the current dot `aria-current="step"`, and the arrow keys
 (outside a field, tab strip, radio group or slider) stepping between pages.
+
+
+## Native host
+
+On Craft hosts advertising `nativePager`, the same slotted content uses platform
+horizontal paging. Each direct slot child fills one viewport. `index` follows
+buttons and settled swipes; adding/removing pages updates the dots and clamps the
+selection. Rotation preserves the selected page. Offscreen pages are excluded
+from native accessibility. Use a definite height or flex space for the pager;
+its native setup uses no DOM measurement, observers or scroll-snap emulation.
+The website keeps its existing scroll-snap and keyboard behavior.

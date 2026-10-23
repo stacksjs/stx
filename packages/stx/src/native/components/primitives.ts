@@ -128,6 +128,9 @@ export interface ScrollViewProps extends ViewProps {
    * same view again (Craft iOS).
    */
   scrollTarget?: string | { id: string, key?: string | number, animated?: boolean } | null
+  /** Controlled viewport-sized pages; requires a host with nativePager support. */
+  pageIndex?: number
+  onPageSelected?: (event: { nativeEvent: { index: number, count: number } }) => void
   /** Paging enabled */
   pagingEnabled?: boolean
   /** Scroll enabled */

@@ -121,6 +121,7 @@ export const NATIVE_EVENTS = new Set([
   'onEndReached',
   'onError',
   'onFocus',
+  'onPageSelected',
   'onLayout',
   'onLoad',
   'onLoadEnd',
@@ -489,6 +490,7 @@ export async function translateHtmlToIR(
   html: string,
   options: TranslateOptions = {},
 ): Promise<TranslationResult> {
+  html = await excludeNativeSubtrees(html)
   const diagnostics: TranslationDiagnostic[] = []
   const stylesheetTheme = await extractStylesheetTheme(html, name => diagnostics.push({ kind: 'unsupported-theme-rule', tag: 'style', name }))
   const stylesheetVariables = createStyleVariables(stylesheetTheme.light).computed()
@@ -894,4 +896,10 @@ export async function translateHtmlToDocument(
     document: createDocument(root, script, { source: options.source ?? 'unknown' }),
     diagnostics,
   }
+}
+
+/** Explicit website-only markup; unlike chrome this does not configure app navigation. */
+export async function excludeNativeSubtrees(html: string): Promise<string> {
+  if (!/\bdata-native-exclude\b/i.test(html)) return html
+  return new HTMLRewriter().on('[data-native-exclude]', { element(element) { element.remove() } }).transform(new Response(html)).text()
 }

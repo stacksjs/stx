@@ -17,6 +17,8 @@ export interface NativeStyleConfig {
   shortcuts?: Record<string, string>
   /** Theme colours, nested as the CSS config nests them (`hq: { action: ... }` → `hq-action`). */
   colors?: Record<string, unknown>
+  /** CSS font family names/fallback lists, including sans, serif and mono. */
+  fontFamily?: Record<string, string | string[]>
   /** Breakpoint min-widths in points, defaulting to DEFAULT_BREAKPOINTS. */
   breakpoints?: Record<string, number>
 }
@@ -24,6 +26,7 @@ export interface NativeStyleConfig {
 interface ResolvedStyleConfig {
   shortcuts: Map<string, string>
   colors: Map<string, string>
+  fontFamily: Map<string, string>
   breakpoints: Map<string, number>
 }
 
@@ -68,6 +71,7 @@ function resolve(config: NativeStyleConfig): ResolvedStyleConfig {
   return {
     shortcuts: new Map(Object.entries(config.shortcuts ?? {}).filter(([, value]) => typeof value === 'string')),
     colors: flattenColors(config.colors),
+    fontFamily: new Map(Object.entries(config.fontFamily ?? {}).map(([name, value]) => [name, Array.isArray(value) ? value.join(', ') : value])),
     breakpoints: new Map(Object.entries({ ...DEFAULT_BREAKPOINTS, ...breakpointsOf(config.breakpoints as Record<string, unknown>) })),
   }
 }
@@ -102,6 +106,7 @@ export function nativeStyleConfigFrom(cssConfig: Record<string, any> | null | un
   const shortcuts = Object.fromEntries(Object.entries(cssConfig.shortcuts ?? {}).filter(([, value]) => typeof value === 'string')) as Record<string, string>
   return {
     ...(Object.keys(shortcuts).length ? { shortcuts } : {}),
+    ...(theme.fontFamily ? { fontFamily: JSON.parse(JSON.stringify(theme.fontFamily)) } : {}),
     ...(theme.colors ? { colors: JSON.parse(JSON.stringify(theme.colors)) } : {}),
     ...(theme.screens ? { breakpoints: breakpointsOf(theme.screens) } : {}),
   }
@@ -120,4 +125,9 @@ export function nativeThemeColor(name: string): string | undefined {
 /** A breakpoint's min-width in points, or undefined when `name` is not one. */
 export function nativeBreakpoint(name: string): number | undefined {
   return active().breakpoints.get(name)
+}
+
+/** The app font stack; generic families are resolved by the platform host. */
+export function nativeThemeFont(name: string): string | undefined {
+  return active().fontFamily.get(name)
 }

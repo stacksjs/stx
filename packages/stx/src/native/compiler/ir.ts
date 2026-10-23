@@ -352,6 +352,7 @@ export type STXEventType =
   | 'onMomentumScrollBegin'
   | 'onMomentumScrollEnd'
   // Layout events
+  | 'onPageSelected'
   | 'onLayout'
   // List events
   | 'onEndReached'

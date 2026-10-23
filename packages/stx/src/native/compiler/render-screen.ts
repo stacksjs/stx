@@ -36,7 +36,7 @@ import { classifyAttribute, extractBindingManifest, type BindingManifest } from 
 import { processDirectives } from '../../process'
 import { processScriptSetup } from '../../signal-processing'
 import { appThemeCSS } from './app-theme'
-import { translateHtmlToDocument } from './html-to-ir'
+import { excludeNativeSubtrees, translateHtmlToDocument } from './html-to-ir'
 import { extractClientScript } from './client-script'
 import { extractLayoutChrome } from './layout-chrome'
 import { extractGeneratedSetupScript, extractNativeClientScripts, type GeneratedSetupScript, type NativeClientScript } from './setup-script'
@@ -94,6 +94,7 @@ export async function compileScreenSource(
   filePath: string,
   options: CompileScreenOptions = {},
 ): Promise<CompiledScreen> {
+  source = await excludeNativeSubtrees(source)
   const root = options.root ?? path.dirname(filePath)
   const loaded = await loadStxConfig(root)
   // The app's directories, resolved against its root as the dev server
@@ -149,8 +150,8 @@ export async function compileScreenSource(
   )
   // The layout's chrome is the app's own on a phone: left out of the tree,
   // its links kept for the tab and navigation bars (layout-chrome.ts).
-  const { html: content, chrome } = await extractLayoutChrome(renderedHtml)
-  const { html, manifest } = extractBindingManifest(content)
+  const { html: content, chrome } = await extractLayoutChrome(await excludeNativeSubtrees(renderedHtml))
+  const { html, manifest } = extractBindingManifest(await excludeNativeSubtrees(content))
 
   // The app's answers for the role tokens, which the web gets from the page
   // stylesheet and a native screen otherwise never sees (app-theme.ts).

@@ -426,3 +426,30 @@ interface StyleObject {
 2. Expand host capability tests for navigation and recycling lists.
 3. Add native hot reload, inspection and performance tooling without forking
    the compiler or signals runtime again.
+
+
+## Shared pages, fonts and website-only content
+
+`Pager` uses the same `index` model, `change` event and slotted page content on
+both hosts. The website keeps its scroll-snap carousel, keyboard handling and
+DOM observers. Native compilation emits a horizontal `ScrollView` with
+`pagingEnabled`, a controlled `pageIndex` and `onPageSelected` events containing
+`{ index, count }`. A host advertising `nativePager` sizes each direct child to
+the viewport, reports settled selection/count changes, clamps removed pages,
+keeps the selection through rotation, and hides offscreen pages from native
+accessibility. Give a native Pager a definite height or flex space. Its native
+client setup does not read DOM sizes or install DOM observers.
+
+`font-sans`, `font-serif` and `font-mono` retain the app's CSS `theme.fontFamily`
+fallback lists. The platform selects the first available custom/bundled family,
+then resolves CSS generic families to system fonts. The mono generic is a real
+monospaced system face; size accessibility scaling, weight and italic apply.
+These platform contracts require a Craft version advertising `nativePager`.
+
+Use `data-native-exclude` on a subtree that belongs only to the website. The
+attribute is presence-based, so `data-native-exclude="false"` also excludes it.
+It leaves browser rendering unchanged and removes that subtree before native
+binding/setup extraction and chrome collection. It is separate from
+`data-native-chrome`, which declares app navigation. Put website-only component
+calls and their scoped scripts inside the excluded subtree. A page-level shared
+script outside it still runs on both hosts and must use host-aware composables.

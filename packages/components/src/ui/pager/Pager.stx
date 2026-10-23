@@ -24,6 +24,7 @@
  * "2 of 5", pages off screen inert, and the arrow keys (outside a field)
  * stepping between them.
  */
+export const nativeHost = $native
 export const index = Math.max(0, Math.trunc($num($props.index) || 0))
 export const label = $props.label || ''
 export const swipe = $bool($props.swipe, true)
@@ -42,6 +43,7 @@ export const dotRowClasses = `flex items-center justify-center gap-1.5 py-3 ${do
 
 <script client>
 const emit = defineEmits()
+const nativeHost = {{ nativeHost }}
 const allowSwipe = {{ swipe }}
 const slideWords = {{ slideLabel }}
 const goToWords = {{ goToLabel }}
@@ -92,7 +94,7 @@ function labelPages() {
 }
 
 function clamp(i) {
-  const total = count() || pages().length
+  const total = count() || (nativeHost ? 0 : pages().length)
   return Math.min(Math.max(0, i), Math.max(0, total - 1))
 }
 
@@ -121,6 +123,16 @@ function settle() {
   fromSwipe = i
   selected.set(i)
   emit('change', i)
+}
+
+function onNativePage(event) {
+  const page = event.nativeEvent || event
+  const total = Math.max(0, Math.trunc(Number(page.count) || 0))
+  count.set(total)
+  const next = Math.min(Math.max(0, Math.trunc(Number(page.index) || 0)), Math.max(0, total - 1))
+  if (next === selected()) return
+  selected.set(next)
+  emit('change', next)
 }
 
 function onScroll() {
@@ -162,7 +174,7 @@ function dotLabel(i) { return words(goToWords, i + 1, count()) }
 
 effect(() => {
   const i = selected()
-  if (!mounted()) return
+  if (nativeHost || !mounted()) return
   labelPages()
   if (fromSwipe === i) { fromSwipe = -1; return }
   fromSwipe = -1
@@ -170,6 +182,7 @@ effect(() => {
 })
 
 onMount(() => {
+  if (nativeHost) return
   mounted.set(true)
   labelPages()
   const track = trackRef.value
@@ -202,9 +215,15 @@ defineExpose({ selected, count, go, next, prev })
 </script>
 
 <section class="{{ rootClasses }}" aria-roledescription="carousel" @if(label)aria-label="{{ label }}"@endif @keydown="onKey($event)">
+  @if(nativeHost)
+    <div data-native="ScrollView" horizontal pagingEnabled :pageIndex="selected()" :scrollEnabled="allowSwipe" showsHorizontalScrollIndicator="false" showsVerticalScrollIndicator="false" class="flex-1 min-h-0" @page-selected="onNativePage($event)">
+      <slot />
+    </div>
+  @else
   <div x-ref="trackRef" class="{{ trackClasses }}" aria-live="polite" @scroll="onScroll()">
     <slot />
   </div>
+  @endif
   @if(dots)
     <div class="{{ dotRowClasses }}" role="group" aria-label="{{ dotsLabel }}">
       <button

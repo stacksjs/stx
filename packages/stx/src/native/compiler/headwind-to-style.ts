@@ -10,7 +10,7 @@ import { DENSITY_FONT_SIZES, DENSITY_SPACING, SEMANTIC_TOKENS, SHAPE_TOKENS, tok
 import type { NativeStyleVariables } from './style-variables'
 import { nativeDensitySpacing, nativeDensityType, nativeShapeRadius } from './design-tokens'
 import type { STXStyle } from './ir'
-import { nativeBreakpoint, nativeShortcut, nativeThemeColor } from './style-config'
+import { nativeBreakpoint, nativeShortcut, nativeThemeColor, nativeThemeFont } from './style-config'
 import type { NativeStylesheetRules } from './stylesheet-rules'
 import { parseNativeStyle } from './inline-style'
 
@@ -458,6 +458,9 @@ const classParsers: Record<string, ClassParser> = {
   'overflow-y-scroll': () => true,
 
   // Font weight
+  'font-sans': (_, style) => { style.fontFamily = nativeThemeFont('sans') ?? 'sans-serif'; return true },
+  'font-serif': (_, style) => { style.fontFamily = nativeThemeFont('serif') ?? 'serif'; return true },
+  'font-mono': (_, style) => { style.fontFamily = nativeThemeFont('mono') ?? 'monospace'; return true },
   'font-thin': (_, style) => { style.fontWeight = '100'; return true },
   'font-extralight': (_, style) => { style.fontWeight = '200'; return true },
   'font-light': (_, style) => { style.fontWeight = '300'; return true },

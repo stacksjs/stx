@@ -37,6 +37,8 @@ export const NATIVE_EVENT_NAMES: Readonly<Record<string, string>> = {
   momentumscrollbegin: 'onMomentumScrollBegin',
   'momentum-scroll-end': 'onMomentumScrollEnd',
   momentumscrollend: 'onMomentumScrollEnd',
+  'page-selected': 'onPageSelected',
+  pageselected: 'onPageSelected',
   refresh: 'onRefresh',
   layout: 'onLayout',
   'end-reached': 'onEndReached',
