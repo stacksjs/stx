@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.673...v0.2.674)
+
+## 🐛 Bug Fixes
+
+- **loops**: preserve client signal ownership across server iterations ([a579d09](https://github.com/stacksjs/stx/commit/a579d09)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.674 ([c214cde](https://github.com/stacksjs/stx/commit/c214cde)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.672...v0.2.673)
 
 ## 🐛 Bug Fixes
