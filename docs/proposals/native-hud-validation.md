@@ -19,6 +19,20 @@ supplied Craft SDK to generate a temporary native app. It does not edit Craft.
 It requires exactly one passing XCTest with no failures or skips, and retains
 the project, bundle, dependency hashes, compiler diagnostics and xcresult.
 
+`bun run smoke:install` also runs `scripts/native-hud-package-probe.ts` in a
+clean consumer made from the six publishable package archives. Only fixtures
+and assertions are copied into that consumer, not source runtimes. Normal and
+minified bundles each undergo two mounts, shared screen/component state,
+keyed edits, failure feedback, removal/remount and post-unmount mutation checks.
+This is a release gate for the shipped module graph, not additional device or
+RenderSurface evidence.
+
+The same probe passed against a clean npm install of **@stacksjs/stx 0.2.674**
+and a subsequent frozen install, not just locally built archives. The
+[published-package receipt](native-hud-package-0.2.674.json) pins its npm
+integrity, lockfile, probe and fixture hashes. This establishes shipped HUD
+module identity and cleanup, not actual game adoption or RenderSurface support.
+
 ## Recorded run: 2026-10-23
 
 The [receipt](native-hud-ios-2026-10-23.json) records the revisions, fixture

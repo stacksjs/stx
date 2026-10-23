@@ -2,7 +2,7 @@
 
 ## Inspected upstream, 2026-10-23
 
-Craft main `44fac13d2ff6474390e36cba99a00eaf0aebe9ec` adds
+Craft main was rechecked at `1997ba33` (v0.0.304). It includes
 `craft.metal_surface.Surface` in `packages/zig/src/metal_surface.zig`.
 Its maintained guide is `docs/guides/metal-surface.md`; the native execution
 receipt is `docs/receipts/metal-surface-macos.json`.
@@ -11,8 +11,13 @@ This is real progress, not a no-op: it accepts a host-owned native view,
 maintains a CAMetalLayer, resizes to view/backing-scale metrics, presents bounded
 opaque CPU frames and supports readback. It enforces main-thread ownership,
 suspension, dimension/buffer limits and terminal GPU failure handling. Its
-recorded execution is on macOS. The guide explicitly leaves iOS acceptance,
-native input/clocks and STX HUD integration separate.
+recorded execution now includes macOS and an actual UIKit fixture. The latter
+uses a **test-only C boundary**, not a shared JavaScript surface API. Its
+`packages/ios/fixtures/metal-surface/README.md` and retained
+`docs/receipts/metal-surface-ios.json` describe passing unit/UI checks on
+Xcode 26.2 / iOS 26.2, resize and background/resume screen samples. This is real
+iOS presentation evidence. Native input/clocks and STX HUD integration remain
+separate; the fixture's C boundary is not a public bridge STX can call.
 
 The shared TypeScript/native node API is not present in the inspected iOS,
 Android and TypeScript packages. STX cannot instantiate the Zig owner from

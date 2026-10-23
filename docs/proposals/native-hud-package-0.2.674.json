@@ -1,0 +1,38 @@
+{
+  "issue": 2109,
+  "recordedDate": "2026-10-23",
+  "package": "@stacksjs/stx",
+  "version": "0.2.674",
+  "npmIntegrity": "sha512-lRX6If8di9hj45zTr+6S4cJKRNxMek+0WJSjxYmWV7qylZPvXe17RDmQ+7IHrXFDvxSP/JZylmRf1MSdXF/YQQ==",
+  "tagCommit": "a3bf9037110fecbf3d8977a97352276eb15ee382",
+  "fixtureBase": "a3bf9037110fecbf3d8977a97352276eb15ee382",
+  "commands": [
+    "bun install",
+    "bun install --frozen-lockfile",
+    "bun native-hud-package-probe.ts"
+  ],
+  "result": "passed",
+  "bundleModes": ["normal", "minified"],
+  "mountsPerBundleMode": 2,
+  "sha256": {
+    "consumer/bun.lock": "8521df192aa8085186cc455b292dc0ec0294577b7e7ffa226fa2d91cec43f8ed",
+    "scripts/native-hud-package-probe.ts": "4f558b649b3453401fa5cf0f36532de7eef211401aad2ea732db78f1e31df3d6",
+    "packages/stx/test/native/fixtures/native-hud-device.stx": "0aa1bb27b72eda2720a6924f89033a5d012888846aba6ef911331fd61cb3b3f6",
+    "packages/stx/test/native/fixtures/NativeHudPanel.stx": "3f2a3d92c383db11eace53d6433e699a20ad9b217014828305a2cf6dc8801d80",
+    "packages/stx/test/native/fixtures/native-hud-model.ts": "7f2307f94ab744411281c390cf0a96f3f7d7192efc7c2d9d590ffa343eca6832"
+  },
+  "verified": [
+    "public installed compiler and testing exports",
+    "shared imported state between screen and component",
+    "keyed field identity and edited value after reorder",
+    "invalid-input feedback without count mutation",
+    "subscription release on removal and exactly one on remount",
+    "no detached component events or post-unmount host mutations"
+  ],
+  "localConsumer": "/tmp/stx-published-hud.ov3HeV",
+  "limitations": [
+    "Protocol execution, not additional native device evidence",
+    "No RenderSurface or full game integration acceptance",
+    "No modification or adoption in Craft, Stacks or the game repository"
+  ]
+}

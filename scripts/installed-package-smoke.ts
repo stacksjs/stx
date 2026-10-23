@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createTempDir, removeTempDir } from '../packages/stx/src/temp-dir'
 
@@ -51,6 +51,15 @@ writeFileSync(join(smokeRoot, 'bunfig.toml'), '[install]\nlinker = "hoisted"\n')
 // unshipped source files visible and cannot prove a published consumer works.
 run([process.execPath, 'install'])
 run([process.execPath, 'install', '--frozen-lockfile'])
+
+// #2109: public native exports and shared imports must work from the archives,
+// not only from the source tree. Only test fixtures/assertions are copied;
+// every compiler, signal and host-runtime module comes from installed STX.
+mkdirSync(join(smokeRoot, 'fixtures'))
+for (const file of ['native-hud-device.stx', 'NativeHudPanel.stx', 'native-hud-model.ts'])
+  copyFileSync(join(root, 'packages/stx/test/native/fixtures', file), join(smokeRoot, 'fixtures', file))
+copyFileSync(join(root, 'scripts/native-hud-package-probe.ts'), join(smokeRoot, 'native-hud-package-probe.ts'))
+run([process.execPath, 'native-hud-package-probe.ts'])
 
 writeFileSync(join(smokeRoot, 'pages', 'index.stx'), `<script server>
 export const products = [
