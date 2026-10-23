@@ -16,7 +16,13 @@ export default {
 ```
 
 `imageWarmup` defaults to `'auto'`, which runs the image pipeline when templates
-use its image components or directive. `true` forces the pass and `false`
+use its image components or directive. Detection starts from the server's
+discovered pages (after exclusions and page-root overrides), then follows
+literal layout, partial, import, and component references. Unserved framework
+views and unused resource definitions do not enable warm-up. Conditional
+references count conservatively; no server scripts run during detection.
+Use `true` when template paths or image markup are computed at runtime.
+`true` forces the pass and `false`
 disables it, for example when a canvas renders application-owned atlases.
 `imageWarmupBindBudgetMs` bounds the production server's wait before binding.
 Zero binds immediately. Unfinished image work continues in the background.

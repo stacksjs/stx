@@ -344,6 +344,37 @@ serve({ patterns: ['views'], port: ${port}, stxModule: stxModule as any, imageWa
 })
 
 describe('projectUsesImageBuiltins', () => {
+  it('does not launch workers for unserved defaults, excluded pages or overridden views', async () => {
+    const booted = await boot(PRODUCTION, freePort(), {
+      patterns: ['views', 'defaults/views'],
+      exclude: ['views/excluded.stx'],
+    }, NO_IMAGE, {
+      'defaults/views/index.stx': USES_IMAGE,
+      'views/excluded.stx': USES_IMAGE,
+      'storage/framework/defaults/resources/views/unused.stx': USES_IMAGE,
+    })
+    try {
+      expect(existsSync(path.join(booted.dir, 'delivery-dir.txt'))).toBe(false)
+      expect(await (await fetch(`http://localhost:${booted.port}/`)).text()).toContain('bound')
+    }
+    finally {
+      booted.stop()
+    }
+  })
+
+  it('still warms images for a fallback page that is actually served', async () => {
+    const booted = await boot(PRODUCTION, freePort(), {
+      patterns: ['views', 'defaults/views'],
+    }, NO_IMAGE, { 'defaults/views/catalog.stx': USES_IMAGE })
+    try {
+      expect(booted.warmupDoneAtBind).toBe(true)
+      expect(existsSync(path.join(booted.dir, 'delivery-dir.txt'))).toBe(true)
+    }
+    finally {
+      booted.stop()
+    }
+  })
+
   async function project(files: Record<string, string>): Promise<string> {
     const dir = createTempDir('stx-uses-image-')
     dirs.push(dir)

@@ -29,6 +29,8 @@ import { FILE_SEGMENT_GUARD, isFileRequestPath } from 'stx-router/file-requests'
 import { actionRedirectResponse, compressResponse, runPageAction as sharedRunPageAction } from '@stacksjs/stx'
 import { compileDomainRoutes, describeDomainRoutes, requestHost, resolveDomainElsewhere, resolveDomainRoute } from './domain-routes'
 import type { DomainRoutesOption } from './domain-routes'
+import { IMAGE_BUILTIN_PATTERN, servedTemplatesUseImageBuiltins } from './image-warmup-scope'
+import type { ImageTemplateScope } from './image-warmup-scope'
 
 export { compileDomainRoutes, describeDomainRoutes, matchDomain, requestHost, resolveDomainElsewhere, resolveDomainRoute } from './domain-routes'
 export type { DomainRoute, DomainRoutesOption } from './domain-routes'
@@ -3775,9 +3777,24 @@ function __stxOverlay(errs){
 
   /** Derive placeholders and build the responsive image catalog. Settles `placeholdersReady`. */
   async function runImageWarmup(): Promise<void> {
-    const imageWarmupEnabled = imageWarmupSetting === 'auto'
-      ? await projectUsesImageBuiltins(process.cwd())
-      : imageWarmupSetting !== false
+    let imageWarmupEnabled = imageWarmupSetting !== false
+    if (imageWarmupSetting === 'auto') {
+      const seen = new Set<string>()
+      // Discovery is in page-root order: the app's copy wins, just as it does
+      // in getRoute. An overridden default must not enable the image pass.
+      const pages = (await discoverFiles()).filter((file) => {
+        const relative = pageRootOf(file, patterns).relative
+        if (seen.has(relative))
+          return false
+        seen.add(relative)
+        return true
+      })
+      imageWarmupEnabled = await projectUsesImageBuiltins(process.cwd(), {
+        pages,
+        options: { componentsDir, layoutsDir, fallbackLayoutsDir, fallbackComponentsDir, partialsDir },
+        pluginComponentDirs: stxConfig._pluginComponentDirs,
+      })
+    }
     if (!imageWarmupEnabled) {
       // Nothing to wait for, and nothing to fall back from: every lookup
       // misses, which is the same answer it would give before the pass
@@ -5366,9 +5383,6 @@ if (import.meta.main) {
   main().catch(console.error)
 }
 
-/** Template syntax that reads the image pass's output. */
-const IMAGE_BUILTIN_PATTERN = /<(?:StxImage|Image|stx-image|stx-img)[\s/>]|@image\s*\(/
-
 /** Directories a template scan never needs to enter. */
 const TEMPLATE_SCAN_SKIP = new Set(['node_modules', 'dist', 'build', 'coverage', 'vendor'])
 
@@ -5412,8 +5426,14 @@ interface ScannedTemplate {
  * plain `<img>` tags spent over seven minutes of each cold boot encoding
  * 213MB of variants that no page could ask for. A use is followed through
  * wrappers of wrappers, and a page, layout or partial using one counts.
+ *
+ * serve() supplies a scope of discovered pages and their resource directories
+ * so unserved templates do not count. Omitting it retains the legacy project
+ * scan for callers that explicitly want to inspect a whole directory tree.
  */
-export async function projectUsesImageBuiltins(root: string): Promise<boolean> {
+export async function projectUsesImageBuiltins(root: string, scope?: ImageTemplateScope): Promise<boolean> {
+  if (scope)
+    return servedTemplatesUseImageBuiltins(root, scope)
   const { readdir, readFile } = await import('node:fs/promises')
   const templates: ScannedTemplate[] = []
   const pending = [root]
