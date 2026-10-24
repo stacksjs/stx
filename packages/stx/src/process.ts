@@ -970,6 +970,13 @@ async function processDirectivesInternal(
 
   let output = template
 
+  // What the page and the layouts so far pushed, when this call renders the
+  // layout that a layout extends (see the nested-layout branch). Taken off the
+  // context before anything else runs, so view composers, middleware,
+  // components and includes never see it.
+  const inheritedStacks = context.__stx_layout_stacks as { stacks: Record<string, string[]>, htmlComments: string[] } | undefined
+  delete context.__stx_layout_stacks
+
   await runViewComposersForTemplate(filePath, context)
   prepareDirectiveContext(context, opts)
 
@@ -1060,8 +1067,16 @@ async function processDirectivesInternal(
   // and: <link href="./file.css" stx-inline />
   output = await processInlineAssets(output, filePath, dependencies)
 
-  // Store stacks for @push/@stack directives
+  // Store stacks for @push/@stack directives, starting with the inherited
+  // ones. Their HTML comments are masked against the caller's table, so each
+  // one moves into this call's table under a new index.
   const stacks: Record<string, string[]> = {}
+  for (const [name, entries] of Object.entries(inheritedStacks?.stacks ?? {})) {
+    stacks[name] = entries.map(entry => entry.replace(/\x00STX_HTML_COMMENT_(\d+)\x00/g, (_, i) => {
+      htmlComments.push(inheritedStacks!.htmlComments[Number(i)] ?? '')
+      return `\x00STX_HTML_COMMENT_${htmlComments.length - 1}\x00`
+    }))
+  }
 
   // Process @push and @prepend directives first
   output = processStackPushDirectives(output, stacks)
@@ -1474,8 +1489,8 @@ async function processDirectivesInternal(
           }
         }
 
-        // Create a new context with merged sections for the nested layout
-        const nestedContext = { ...context, __sections: sections }
+        // Create a new context with merged sections and the pushes so far for the nested layout
+        const nestedContext = { ...context, __sections: sections, __stx_layout_stacks: { stacks, htmlComments } }
 
         // Process the nested layout by recursively calling processDirectives
         // with the modified template that includes the @layout directive
