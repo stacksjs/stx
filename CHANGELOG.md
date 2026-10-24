@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.687...v0.2.688)
+
+## ✨ Features
+
+- share keyed scrolling lists across web and native hosts ([014c432](https://github.com/stacksjs/stx/commit/014c432)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **menubar**: support authenticated Craft-hosted app backends ([34c374f](https://github.com/stacksjs/stx/commit/34c374f)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- defer native list paging until requests settle ([6cb23c2](https://github.com/stacksjs/stx/commit/6cb23c2)) _(by Chris Breuer <chris@stacksjs.com>)_
+- preserve list viewport padding and continue short pages ([d7ea20a](https://github.com/stacksjs/stx/commit/d7ea20a)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.686...v0.2.687)
 
 ## 🐛 Bug Fixes

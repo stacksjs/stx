@@ -153,9 +153,10 @@ describe('shared scrolling List', () => {
 const rows = state([{ id: 1, title: 'First' }, { id: 2, title: 'Second' }])
 const pages = state(0)
 const refreshes = state(0)
-window.probe = { rows, pages, refreshes }
+const loading = state(true)
+window.probe = { rows, pages, refreshes, loading }
 </script>
-<List :contentContainerStyle="{ paddingBottom: 92, paddingTop: 7 }" testID="collection" @end-reached="pages.set(pages() + 1)" @refresh="refreshes.set(refreshes() + 1)">
+<List :loading="loading" :contentContainerStyle="{ paddingBottom: 92, paddingTop: 7 }" testID="collection" @end-reached="pages.set(pages() + 1)" @refresh="refreshes.set(refreshes() + 1)">
   <div key="controls" listRole="header"><p>Filters</p></div>
   <div :for="row in rows" :key="row.id"><p :text="row.title"></p></div>
 </List>`
@@ -169,6 +170,9 @@ window.probe = { rows, pages, refreshes }
     expect(list.events.onEndReached).toBeDefined()
     phone.press(list, 'onEndReached', {})
     phone.press(list, 'onRefresh', {})
+    await phone.settle()
+    expect(phone.context.probe.pages()).toBe(0)
+    phone.context.probe.loading.set(false)
     await phone.settle()
     expect(phone.context.probe.pages()).toBe(1)
     expect(phone.context.probe.refreshes()).toBe(1)

@@ -28,6 +28,13 @@ const endRef = useRef('endRef')
 const contentStyle = useReactiveProp('contentContainerStyle', {{ contentContainerStyle }})
 const loading = useReactiveProp('loading', {{ loading }})
 const hasMore = useReactiveProp('hasMore', {{ hasMore }})
+const pendingEnd = state(false)
+function reachedEnd() { pendingEnd.set(true) }
+effect(() => {
+  if (!nativeHost || !pendingEnd() || loading() || !hasMore()) return
+  pendingEnd.set(false)
+  emit('end-reached')
+})
 const webPadding = derived(() => {
   const style = contentStyle() || {}
   const all = style.padding || 0
@@ -64,7 +71,7 @@ onMount(() => {
   return () => { stop(); changes.disconnect(); observer.disconnect() }
 })
 </script>
-<div data-native="FlatList" ref="listRef" role="list" class="flex-1 min-h-0 min-w-0 overflow-y-auto {{ className }}" :contentContainerStyle="contentStyle()" :style="nativeHost ? {} : webPadding()" data-stx-list data-stx-layout-root @end-reached="emit('end-reached')" @refresh="emit('refresh')">
+<div data-native="FlatList" ref="listRef" role="list" class="flex-1 min-h-0 min-w-0 overflow-y-auto {{ className }}" :contentContainerStyle="contentStyle()" :style="nativeHost ? {} : webPadding()" data-stx-list data-stx-layout-root @end-reached="reachedEnd()" @refresh="emit('refresh')">
   <slot />
   @if(!nativeHost)
   <div ref="endRef" aria-hidden="true" style="height:1px"></div>
