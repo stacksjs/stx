@@ -1408,7 +1408,14 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     anchor(label) {
       // Logical only: it is a position in this host's ordering and is never
       // created on the native side, so it costs no view.
-      const anchor = { __stxId: nextId('a'), __stxAnchor: label }
+      const anchor: NativeNode = { __stxId: nextId('a'), __stxAnchor: label }
+      // Structural bindings use a placeholder's parent on reinsertion, just
+      // as they do for a DOM comment. Anchors have no native view but still
+      // belong to the logical tree, including after a move or removal.
+      Object.defineProperties(anchor, {
+        parentNode: { configurable: true, get: () => anchor.__stxOwner ?? null },
+        parentElement: { configurable: true, get: () => anchor.__stxOwner ?? null },
+      })
       decoratePosition(anchor)
       return anchor
     },
