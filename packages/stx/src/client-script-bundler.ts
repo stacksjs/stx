@@ -635,6 +635,7 @@ function createBundlePlugin(
   projectRoot: string,
   templateDir: string,
   tmpEntry: string,
+  entrySource: string,
   inputFiles: Set<string>,
   externalizeUserModules: boolean,
   registrySpecifiers: Map<string, string> = new Map(),
@@ -708,6 +709,7 @@ function createBundlePlugin(
       // browser bundle so the application's HTTP server can resolve them.
       // Preserve genuine absolute filesystem imports when the target exists.
       build.onResolve({ filter: /^\// }, (args) => {
+        if (args.path === tmpEntry) return { path: tmpEntry }
         // Extensions are probed, not just the literal path. A specifier
         // written `../composables/useApp` and pinned to an absolute path (see
         // `absolutizeTemplateImports`, which is how a layout's imports survive
@@ -819,6 +821,7 @@ function createBundlePlugin(
       // relative and aliased imports handled above, so their mtimes participate
       // in cache validation.
       build.onLoad({ filter: /\.(?:[cm]?[jt]sx?|json)$/ }, (args) => {
+        if (args.path === tmpEntry) return { contents: entrySource, loader: 'ts' }
         if (isPrivateClientSource(args.path, projectRoot, serverApi))
           throw new Error(`Server-only API source cannot be imported by a client script: ${args.path}`)
         const extension = path.extname(args.path).toLowerCase()
@@ -1095,7 +1098,7 @@ export async function bundleClientScript(
 let tmpBuildCounter = 0
 
 /**
- * The name one build's temp entry and output directory go by: the script's
+ * The name one build's virtual entry and output directory go by: the script's
  * hash, this process and a count, so no other build — here or in another dev
  * server on the same checkout — shares them. See where they are made.
  */
@@ -1123,19 +1126,14 @@ async function buildBundle(
 ): Promise<string> {
   const { projectRoot, minify, cacheDir, hash, cachePath, depsPath, externalizeUserModules } = options
 
-  // Write temp entry file (Bun.build needs a real file).
-  //
-  // Named per build, not per script. Keyed on the content hash alone, two
-  // builds of the same script at once — two requests for one page, or two dev
-  // servers on one checkout — shared a file, and the first to finish deleted
-  // it under the second: "No such file or directory: writing chunk", and the
-  // page shipped its script unbundled.
+  // Keep the virtual entry in the project so Bun resolves bare packages
+  // with its browser conditions even when STX_DIR points outside the checkout.
+  // The plugin supplies its contents; no generated file touches source folders.
+  // Only build outputs live in the configured state directory.
   const tmpDir = stateDir(projectRoot, 'bundle-tmp')
   const tmpName = tempBuildName(hash)
-  const tmpEntry = path.join(tmpDir, `${tmpName}.ts`)
+  const tmpEntry = path.join(projectRoot, `.stx-client-${tmpName}.ts`)
   const tmpOutDir = path.join(tmpDir, 'out', tmpName)
-
-  fs.mkdirSync(tmpDir, { recursive: true })
   fs.mkdirSync(tmpOutDir, { recursive: true })
 
   // Resolve relative imports from the template's directory
@@ -1235,8 +1233,6 @@ async function buildBundle(
   }
   const exportLine = declNames.size > 0 ? `\nexport { ${[...declNames].join(', ')} }` : ''
 
-  await Bun.write(tmpEntry, code + exportLine)
-
   logBundlerDiagnostic('bundling:', hash, 'from:', path.basename(filePath))
 
   // Collected during build by the plugin's onResolve hooks. Each entry
@@ -1258,7 +1254,7 @@ async function buildBundle(
       // matched, the export capture found nothing, and the script shipped
       // unbundled with raw imports in a classic <script>.
       minify: minify ? { whitespace: false, identifiers: true, syntax: true } : false,
-      plugins: [createBundlePlugin(projectRoot, templateDir, tmpEntry, inputFiles, externalizeUserModules, registrySpecifiers, options.serverApi, options.substitutes)],
+      plugins: [createBundlePlugin(projectRoot, templateDir, tmpEntry, code + exportLine, inputFiles, externalizeUserModules, registrySpecifiers, options.serverApi, options.substitutes)],
       define: {
         'process.env.NODE_ENV': minify ? '"production"' : '"development"',
         ...getPublicEnvDefine(),
@@ -1436,8 +1432,8 @@ Object.keys(${namespace}).forEach(function(name) {
     // formatBuildFailure unwraps those and recovers the line/column Bun put on
     // `position` and left off `message` (#1810).
     //
-    // The source path must be threaded in: the entrypoint here is a temp file
-    // under .stx/bundle-tmp, so Bun reports THAT, sending the reader to a
+    // The source path must be threaded in: the entrypoint here is virtual,
+    // so Bun reports THAT, sending the reader to a
     // generated file instead of their view. A BuildMessage also fails
     // `instanceof Error`, so the usual message-or-String idiom reduced it to a
     // bare "Unexpected ===" with no location at all.
@@ -1463,7 +1459,6 @@ Object.keys(${namespace}).forEach(function(name) {
   finally {
     // Clean up temp files
     try {
-      fs.rmSync(tmpEntry, { force: true })
       fs.rmSync(tmpOutDir, { recursive: true, force: true })
     }
     catch {}
