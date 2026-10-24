@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.679...v0.2.680)
+
+## 🐛 Bug Fixes
+
+- inherit caller scope for native conditional components ([baf3414](https://github.com/stacksjs/stx/commit/baf3414)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.680 ([b2415ce](https://github.com/stacksjs/stx/commit/b2415ce)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.678...v0.2.679)
 
 ## 🐛 Bug Fixes
