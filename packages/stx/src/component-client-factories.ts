@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { scanAtElementPosition } from './html-masking'
 
 export const COMPONENT_CLIENT_FACTORIES_CONTEXT_KEY = '__stx_component_client_factories'
 
@@ -112,13 +113,22 @@ ${definitions}
 })();
 </script>`
 
-  // Every generated invocation already sits inside a scoped component script,
-  // so its opening tag precedes its replacement and keeps the same offset.
-  const firstScopedScript = html.search(/<script\b(?=[^>]*\bdata-stx-scoped\b)/i)
-  const insertionPoint = firstScopedScript < 0 ? 0 : firstScopedScript
+  // The first invocation can be inside an inert <template>. Its shared
+  // definitions must execute even when that branch never mounts, because
+  // later active instances use them too. Place the prelude before the first
+  // template or scoped script, ignoring tag-like text in comments/attributes.
+  let insertionPoint: number | undefined
+  const boundary = /<(?:template\b|script\b(?=[^>]*\bdata-stx-scoped\b))/iy
+  scanAtElementPosition(html, (source, index) => {
+    if (insertionPoint === undefined) {
+      boundary.lastIndex = index
+      if (boundary.test(source)) insertionPoint = index
+    }
+    return -1
+  })
   edits.push({
-    start: insertionPoint,
-    end: insertionPoint,
+    start: insertionPoint ?? 0,
+    end: insertionPoint ?? 0,
     replacement: `${prelude}\n`,
   })
   return applyFactoryEdits(html, edits)

@@ -14,7 +14,7 @@ describe('signals manifest-hydration runtime boundary', () => {
   it('keeps manifest walking and native host hydration together', () => {
     expect(SIGNALS_MANIFEST_HYDRATION_RUNTIME).toContain('function processFromManifest')
     expect(SIGNALS_MANIFEST_HYDRATION_RUNTIME).toContain('function hydrateHost')
-    expect(SIGNALS_MANIFEST_HYDRATION_RUNTIME).toContain('processElement(node, scope, true)')
+    expect(SIGNALS_MANIFEST_HYDRATION_RUNTIME).toContain('processElement(node, node.__stx_parent_scope || scope, true)')
     expect(SIGNALS_MANIFEST_HYDRATION_RUNTIME).toContain('return function disposeHost()')
   })
 })
