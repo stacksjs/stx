@@ -126,7 +126,7 @@
     "typecheck": "bun tsc -p tsconfig.src.json --noEmit"
   },
   "dependencies": {
-    "@stacksjs/ts-css": "^0.3.11",
+    "@stacksjs/ts-css": "^0.3.19",
     "@stacksjs/clapp": "^0.2.16",
     "@stacksjs/desktop": "workspace:*",
     "@stacksjs/sanitizer": "workspace:*",
@@ -135,7 +135,7 @@
     "bunfig": "^0.15.21",
     "stx-router": "workspace:*",
     "ts-broadcasting": "^0.0.11",
-    "ts-images": "^0.2.22",
-    "ts-syntax-highlighter": "^0.2.1"
+    "ts-images": "^0.2.32",
+    "ts-syntax-highlighter": "^0.2.17"
   }
 }
