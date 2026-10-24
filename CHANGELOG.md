@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.678...v0.2.679)
+
+## 🐛 Bug Fixes
+
+- preserve browser package resolution with external state directories ([82b267d](https://github.com/stacksjs/stx/commit/82b267d)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.679 ([b5b90e3](https://github.com/stacksjs/stx/commit/b5b90e3)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.677...v0.2.678)
 
 ## ✨ Features
