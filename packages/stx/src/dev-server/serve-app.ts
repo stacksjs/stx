@@ -17,6 +17,7 @@ import {
 import { partialsCache } from '../includes'
 import { pageShipsSignalsRuntime } from '../runtime-injection'
 import { BUILD_ID_HEADER, getBuildId } from '../build-id'
+import { generateOfflineWorker, OFFLINE_WORKER_PATH } from '../offline/app-service-worker'
 import { decodeTitleEntities, FRAGMENT_CACHE_CONTROL, spaNavVaryHeaders } from '../spa-nav'
 import { stateDir } from '../state-dir'
 import { plugin as stxPlugin } from '../plugin'
@@ -642,6 +643,14 @@ catch {
     port: actualPort,
     async fetch(request) {
       const url = new URL(request.url)
+      const offline = options.stxOptions?.offline ?? projectConfig.offline
+      if (url.pathname === OFFLINE_WORKER_PATH && offline?.enabled) {
+        if (!['GET', 'HEAD'].includes(request.method))
+          return new Response('Method Not Allowed', { status: 405, headers: { Allow: 'GET, HEAD' } })
+        return new Response(request.method === 'HEAD' ? null : generateOfflineWorker(offline, getBuildId()), {
+          headers: { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-store', 'Service-Worker-Allowed': '/' },
+        })
+      }
 
       // Static-file routing across the three search roots (public/, the
       // app dir for Css dist output, and outputDir).

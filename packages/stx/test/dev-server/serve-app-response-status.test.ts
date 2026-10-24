@@ -63,6 +63,7 @@ setResponseHeader('X-Robots-Tag', 'noindex')
 `)
 
   await Bun.write(path.join(dir, 'pages', 'index.stx'), `<main>home</main>\n`)
+  await Bun.write(path.join(dir, 'stx.config.ts'), 'export default { offline: { enabled: true, pages: ["/"] } }')
 
   await Bun.write(path.join(dir, 'driver.ts'), `import { serveApp } from ${JSON.stringify(SERVE_APP_SRC)}
 
@@ -91,6 +92,15 @@ afterAll(async () => {
 })
 
 describe('serveApp and the status a page asked for', () => {
+  it('serves the configured offline worker that its rendered pages register', async () => {
+    const response = await fetch(`${BASE}/_stx/sw.js`)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toContain('application/javascript')
+    expect(response.headers.get('service-worker-allowed')).toBe('/')
+    expect(response.headers.get('cache-control')).toBe('no-store')
+    expect(await response.text()).toContain('stx offline worker')
+    expect((await fetch(`${BASE}/_stx/sw.js`, { method: 'POST' })).status).toBe(405)
+  })
   it('answers 404 for notFound() on a dynamic route, 200 for the record that exists', async () => {
     const missing = await fetch(`${BASE}/thing/anything-else`)
     const found = await fetch(`${BASE}/thing/known`)
