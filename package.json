@@ -113,11 +113,11 @@
   ],
   "dependencies": {
     "@stacksjs/ts-css": "^0.3.11",
-    "very-happy-dom": "^0.3.6"
+    "very-happy-dom": "^0.4.0"
   },
   "devDependencies": {
-    "@iconify/json": "^2.2.535",
-    "@stacksjs/bumpx": "0.2.25",
+    "@iconify/json": "^2.2.547",
+    "@stacksjs/bumpx": "0.2.26",
     "better-dx": "^0.2.38"
   },
   "overrides": {
