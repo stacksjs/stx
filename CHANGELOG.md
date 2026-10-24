@@ -1,5 +1,25 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.684...v0.2.685)
+
+## 🐛 Bug Fixes
+
+- preserve feedback state across anchor navigation ([bd2bec9](https://github.com/stacksjs/stx/commit/bd2bec9)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.685 ([9872e50](https://github.com/stacksjs/stx/commit/9872e50)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **deps**: update dependency happy-dom to v21 [security] (#2118) ([09d0fd5](https://github.com/stacksjs/stx/commit/09d0fd5)) _(by [renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot]))_ ([#2118](https://github.com/stacksjs/stx/issues/2118), [#2118](https://github.com/stacksjs/stx/issues/2118))
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' into feat/coaching-voice ([a930601](https://github.com/stacksjs/stx/commit/a930601)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _[renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot])_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.683...v0.2.684)
 
 ## ✨ Features
