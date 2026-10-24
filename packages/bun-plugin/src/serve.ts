@@ -3748,6 +3748,15 @@ function __stxOverlay(errs){
     html = ensureRouterConfig(html)
 
     const headers = new Headers(res.headers)
+    const fragmentTitle = headers.get('X-STX-Title')
+    if (res.headers.get('X-STX-Fragment') === 'true' && fragmentTitle && i18nConfig && stx.applyTranslations) {
+      // The fragment's title was captured before this final translation pass.
+      // Treat it as HTML text while translating, then return plain title text
+      // to the router. Escaping first preserves literal entities in the title.
+      const titleHtml = escapeHtml(decodeURIComponent(fragmentTitle))
+      const translated = stx.applyTranslations(titleHtml, i18nConfig, locale)
+      headers.set('X-STX-Title', encodeURIComponent(decodeTitleEntities(translated)))
+    }
     headers.delete('content-length')
     return new Response(html, {
       status: res.status,
