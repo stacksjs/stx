@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.683...v0.2.684)
+
+## ✨ Features
+
+- support private on-demand application previews ([892f09a](https://github.com/stacksjs/stx/commit/892f09a)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.684 ([ec81837](https://github.com/stacksjs/stx/commit/ec81837)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **deps**: update dependency happy-dom to ^20.14.6 [security] (#2117) ([28ee287](https://github.com/stacksjs/stx/commit/28ee287)) _(by [renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot]))_ ([#2117](https://github.com/stacksjs/stx/issues/2117), [#2117](https://github.com/stacksjs/stx/issues/2117))
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _[renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>](https://github.com/renovate[bot])_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.682...v0.2.683)
 
 ## 🔧 Chores
