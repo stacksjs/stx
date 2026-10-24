@@ -78,6 +78,22 @@ function page(): string {
 }
 
 describe('a package imported by <script client>', () => {
+  it('compiles production client bundles even when built from a development shell', async () => {
+    const previous = process.env.NODE_ENV
+    process.env.NODE_ENV = 'development'
+    try {
+      await Bun.write(path.join(pkg, 'index.js'), `export function version() { const descriptiveUnusedDevelopmentBinding = 'never shipped'; return '1.0.0' }`)
+      await build()
+      expect(page()).toContain('1.0.0')
+      expect(page()).not.toContain('descriptiveUnusedDevelopmentBinding')
+      expect(page()).not.toContain('never shipped')
+    }
+    finally {
+      if (previous === undefined) delete process.env.NODE_ENV
+      else process.env.NODE_ENV = previous
+    }
+  })
+
   it('is served from the page module registry', async () => {
     // The premise: if the package were inlined into the page's own bundle,
     // this would be the client-import case, already covered.

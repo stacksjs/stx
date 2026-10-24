@@ -353,7 +353,7 @@ export async function buildModulesTag(
     // package left the build cache serving the page with the old copy inlined.
     const inputs: string[] = []
     const code = await buildModuleRegistryScript(registeredModuleIdsIn(...sources), {
-      minify: minifiesClientCode(options.buildMode),
+      minify: minifiesClientCode(options.buildMode, options.minifyClient),
       collectInputs: inputs,
     })
     for (const input of inputs)
@@ -2374,7 +2374,7 @@ else {
 
     // Use callback form of replace to avoid $ pattern interpretation in replacement string
     // Note: processClientScript handles transpilation internally based on attrs
-    const scriptResult = await processClientScript(content, { eventBindings, attrs, hasColonDirectives, templateContent: template, filePath, projectRoot: process.cwd(), production: minifiesClientCode(options.buildMode), serverData })
+    const scriptResult = await processClientScript(content, { eventBindings, attrs, hasColonDirectives, templateContent: template, filePath, projectRoot: process.cwd(), production: minifiesClientCode(options.buildMode, options.minifyClient), serverData })
     output = output.replace(match, () => scriptResult)
   }
   // Only clear event bindings if scripts were found and transformed.

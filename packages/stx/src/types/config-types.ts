@@ -966,6 +966,9 @@ export interface StxConfig {
    */
   buildMode?: 'compile' | 'serve' | 'spa'
 
+  /** Minify client scripts independently of asset emission mode. Static builds enable this. */
+  minifyClient?: boolean
+
   /**
    * Auto-generate document shell (<!DOCTYPE>, <html>, <head>, <body>) around output.
    * Set by serve paths to wrap page output. Not set for tests or programmatic usage.

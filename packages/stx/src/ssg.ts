@@ -766,6 +766,9 @@ async function renderPage(
   const serverScriptFailures: string[] = []
   const stxOptions = {
     ...stxConfig,
+    // Static artifacts ship production client code regardless of the shell's
+    // NODE_ENV, while retaining SSG's document and asset emission pipeline.
+    minifyClient: true,
     // Explicit overrides beat the loaded config, matching every other key here.
     ...(options.partialsDir ? { partialsDir: options.partialsDir } : {}),
     ...(options.componentsDir ? { componentsDir: options.componentsDir } : {}),
@@ -1537,7 +1540,7 @@ catch (error) {
       const notFoundPath = path.join(cfg.pagesDir, '404.stx')
       if (await Bun.file(notFoundPath).exists()) {
         const notFoundDeps = new Set<string>()
-        const notFoundOptions = { ...stxConfig, debug: false, cache: false }
+        const notFoundOptions = { ...stxConfig, minifyClient: true, debug: false, cache: false }
         const html = await processDirectives(
           await Bun.file(notFoundPath).text(),
           {},
@@ -1580,7 +1583,7 @@ else {
       const errorPagePath = path.join(cfg.pagesDir, `${errorCode}.stx`)
       if (await Bun.file(errorPagePath).exists()) {
         const errorDeps = new Set<string>()
-        const errorOptions = { ...stxConfig, debug: false, cache: false }
+        const errorOptions = { ...stxConfig, minifyClient: true, debug: false, cache: false }
         const html = await processDirectives(
           await Bun.file(errorPagePath).text(),
           {},
@@ -1596,7 +1599,7 @@ else {
     const genericErrorPath = path.join(cfg.pagesDir, 'error.stx')
     if (await Bun.file(genericErrorPath).exists()) {
       const errorDeps = new Set<string>()
-      const errorOptions = { ...stxConfig, debug: false, cache: false }
+      const errorOptions = { ...stxConfig, minifyClient: true, debug: false, cache: false }
       const html = await processDirectives(
         await Bun.file(genericErrorPath).text(),
         {},

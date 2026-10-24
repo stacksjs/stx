@@ -48,8 +48,8 @@ export function isTest(): boolean {
  * registry readable (hq.training's home page: a 2.9 MB store bundle of
  * 61,843 lines, comments included).
  */
-export function minifiesClientCode(buildMode?: string): boolean {
-  return buildMode === 'compile' || isProduction()
+export function minifiesClientCode(buildMode?: string, minifyClient?: boolean): boolean {
+  return minifyClient ?? (buildMode === 'compile' || isProduction())
 }
 
 /**
