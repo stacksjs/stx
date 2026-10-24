@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.680...v0.2.681)
+
+## 🐛 Bug Fixes
+
+- serve configured offline workers in application development ([b1493db](https://github.com/stacksjs/stx/commit/b1493db)) _(by Chris Breuer <chris@stacksjs.com>)_
+- keep shared component factories outside inert templates ([d47f61b](https://github.com/stacksjs/stx/commit/d47f61b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.681 ([a7e671f](https://github.com/stacksjs/stx/commit/a7e671f)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.679...v0.2.680)
 
 ## 🐛 Bug Fixes
