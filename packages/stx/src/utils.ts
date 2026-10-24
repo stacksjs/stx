@@ -45,6 +45,13 @@ import { isFallthroughAttribute } from './builtins/attrs'
 import { StxValidationError } from './errors/types'
 import { validateClientScript } from './script-validation'
 
+/** Resolve external resource attributes after every server block has run. */
+function renderExternalComponentScript(script: string, context: Record<string, unknown>, filePath: string): string | null {
+  const opening = /^<script\b([^>]*)>/i.exec(script)
+  if (!opening || !/(?:^|\s)src\s*=/i.test(opening[1] ?? '')) return null
+  return processExpressions(opening[0], context, filePath) + script.slice(opening[0].length)
+}
+
 // Re-export from extracted modules for backward compatibility
 export {
   extractDirectiveNames,
@@ -2277,6 +2284,10 @@ export async function renderComponentWithSlot(
         if (!scriptMatch) return script
 
         const [, attrs, rawContent] = scriptMatch
+        // An external module is a browser resource, not an empty component
+        // setup island. Its server-resolved attributes must survive unchanged.
+        const external = renderExternalComponentScript(script, componentContext, componentFilePath)
+        if (external !== null) return external
         const island = await buildComponentIsland(
           rawContent,
           componentFilePath,
@@ -2352,6 +2363,8 @@ else {
         const eventBindings = (componentContext.__stx_event_bindings || []) as any[]
         const serverData = extractBridgeData(componentContext as Record<string, unknown>)
         const transformedScripts = await Promise.all(clientScripts.map(async (fullScript: string) => {
+          const external = renderExternalComponentScript(fullScript, componentContext, componentFilePath)
+          if (external !== null) return external
           const contentMatch = fullScript.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)
           if (!contentMatch) return fullScript
           // No scope root for data-stx-owner to name, so the instance is
