@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.685...v0.2.686)
+
+## 🐛 Bug Fixes
+
+- compile production client scripts in static builds ([2b84665](https://github.com/stacksjs/stx/commit/2b84665)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.686 ([fcb5d0f](https://github.com/stacksjs/stx/commit/fcb5d0f)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.684...v0.2.685)
 
 ## 🐛 Bug Fixes
