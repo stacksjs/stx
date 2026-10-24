@@ -131,6 +131,10 @@ function routerSource(): string {
   var o=Object.assign({},defaults,window.__stxRouterConfig||{},window.STX_ROUTER_OPTIONS||{});
   var containerSel=o.container;
   var debug=!!o.debug;
+  function pagePath(){return location.pathname+location.search}
+  // location already points at the destination when popstate fires. Keep the
+  // document we actually rendered so a native anchor visit does not remount it.
+  var renderedPage=pagePath();
   function log(){if(debug&&typeof console!=='undefined'&&console.log)console.log.apply(console,arguments)}
 
   // Shorthands for the document-rooted queries this script makes ~33 times.
@@ -1377,7 +1381,7 @@ function routerSource(): string {
       isNavigating=false;navAbort=null;
       document.body.classList.remove(o.loadingClass);finishProgress();
       settleDirection();
-      if(openingUrl&&location.pathname+location.search!==openingUrl)keepOpeningPage();
+      if(openingUrl&&pagePath()!==openingUrl)keepOpeningPage();
     }
     function stale(){return id!==navSeq}
     // A failed fetch keeps the app: the destination shows a way to try again
@@ -1925,6 +1929,7 @@ else {
         // Remove old page scripts
         qsa('script[data-stx-page]').forEach(function(s){s.remove()});
         if(pushState!==false)writeHistory(pushState,url+(hash||''));
+        renderedPage=cacheKey(url);
         if(scr)screenCommit(scr,url+(hash||''));
         refreshCurrentLinks();
         applyScroll(hash);
@@ -2386,6 +2391,7 @@ else {
 
       // Push history state (before active link updates so location.pathname is current)
       if(pushState!==false)writeHistory(pushState,url+(hash||''));
+      renderedPage=cacheKey(url);
 
       // Update active nav links
       refreshCurrentLinks();
@@ -2627,7 +2633,7 @@ else {
     // are hidden (off the page, so out of reach of a DOM walk) goes with them.
     if(host.__stx_detached_if){el.__stx_detached_if=host.__stx_detached_if;host.__stx_detached_if=null}
     if(!curTab)curTab=currentTabId();
-    active=newEntry(location.pathname+location.search+location.hash,scrollToken,histDepth);
+    active=newEntry(pagePath()+location.hash,scrollToken,histDepth);
     active.el=el;
     active.cattrs=hostAttrString(host);
     active.shown=++shownSeq;
@@ -2811,6 +2817,7 @@ else {
   // told it is on screen again (stx:screen-shown) so it can refresh whatever
   // may have gone stale while it was hidden.
   function showRetained(to,dir,opts){
+    renderedPage=cacheKey(to.url);
     opts=opts||{};
     settleAnimation();
     var from=active,host=getContainer();
@@ -3404,7 +3411,7 @@ else {
   }
 
   function formTargetUrl(form,submitter){
-    return formAttrOf(form,submitter,'formaction','action')||(location.pathname+location.search);
+    return formAttrOf(form,submitter,'formaction','action')||(pagePath());
   }
 
   function formMethodOf(form,submitter){
@@ -3549,8 +3556,13 @@ else {
       var target=(tabs[curTab]||[])[depth];
       if(target&&target.el&&target.token===scrollToken&&target!==active){showRetained(target,dir==='replace'?'pop':dir,{settled:settled===target});return}
     }
+    if(renderedPage===pagePath()){
+      applyScroll(location.hash);
+      refreshCurrentLinks();
+      return;
+    }
     navCtxNext={direction:dir};
-    navigate(location.pathname+location.search+location.hash,false);
+    navigate(pagePath()+location.hash,false);
   });
 
   // ── Offline stand-in ──
@@ -3562,9 +3574,9 @@ else {
   var standIn=document.querySelector('meta[name="stx-offline-fallback"]');
   if(standIn&&shouldUseFragmentResponse()){
     standIn.remove();
-    var wanted=location.pathname+location.search;
+    var wanted=pagePath();
     fetch(wanted,{headers:{'X-STX-Router':'true','Accept':'text/html'}}).then(function(r){
-      if(r.ok&&r.headers.get('X-STX-Fragment')==='true'&&location.pathname+location.search===wanted)
+      if(r.ok&&r.headers.get('X-STX-Fragment')==='true'&&pagePath()===wanted)
         navigate(wanted+location.hash,false,true);
     }).catch(function(){});
   }
@@ -3752,7 +3764,7 @@ else {
   // on load, it cost the opening page its instant restore when the person
   // left the app and came back (a full-document Back). A router navigation
   // has already fetched one, so after it nothing more is lost.
-  var openingUrl=location.pathname+location.search;
+  var openingUrl=pagePath();
   function keepOpeningPage(){
     var url=openingUrl;
     openingUrl='';
@@ -4020,12 +4032,12 @@ else {
     // had rather than adding a second code path. 'replace' because a refresh
     // is not a new place — it must not add a history entry you can go Back to.
     refresh:function(){
-      return navigate(location.pathname+location.search+location.hash,'replace',true);
+      return navigate(pagePath()+location.hash,'replace',true);
     },
     // Expire ONE entry, so a mutation can invalidate just the page it affected
     // and let the next visit re-fetch, instead of throwing the whole cache away.
     invalidate:function(url){
-      evictCache(cacheKey(url||(location.pathname+location.search)));
+      evictCache(cacheKey(url||(pagePath())));
     },
     clearCache:function(){for(var k in cache)delete cache[k];for(var lk in layoutCache)delete layoutCache[lk];for(var gk in layoutGroupCache)delete layoutGroupCache[gk];cacheOrder.length=0},
     // Switch to the tab whose link points at href, as a tap on it would:

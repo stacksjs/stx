@@ -60,6 +60,31 @@ async function waitForRouterSwap() {
 }
 
 describe('router browser navigation behavior', () => {
+  it('preserves mounted feedback and draft input on native anchor history visits', async () => {
+    const calls: string[] = []
+    const window = installRouter('<html><head><title>Feedback</title></head><body><main><textarea>reviewed transcript</textarea><section id="feedback">Feedback</section></main></body></html>', async (input) => {
+      calls.push(String(input))
+      return response('<html><head><title>Updated</title></head><body><main>replacement</main></body></html>')
+    }, { prefetch: false, screens: false })
+    const textarea = window.document.querySelector('textarea')!
+    textarea.value = 'unsent athlete feedback'
+    window.history.pushState(null, '', '/#feedback')
+    window.dispatchEvent(new window.PopStateEvent('popstate', { state: null }))
+    await waitForRouterSwap()
+    expect(calls).toEqual([])
+    expect(window.document.querySelector('textarea')).toBe(textarea)
+    expect(textarea.value).toBe('unsent athlete feedback')
+    window.history.replaceState(null, '', '/')
+    window.dispatchEvent(new window.PopStateEvent('popstate', { state: null }))
+    await waitForRouterSwap()
+    expect(calls).toEqual([])
+    expect(window.document.querySelector('textarea')).toBe(textarea)
+    window.history.replaceState(null, '', '/?subscription=2#feedback')
+    window.dispatchEvent(new window.PopStateEvent('popstate', { state: null }))
+    await waitForRouterSwap()
+    expect(calls.length).toBeGreaterThan(0)
+  })
+
   it('swaps only the container for same-layout fragments', async () => {
     const calls: string[] = []
     const window = installRouter(`
