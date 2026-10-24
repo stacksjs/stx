@@ -1623,7 +1623,7 @@
       "name": "@stacksjs/desktop",
       "version": "0.2.674",
       "dependencies": {
-        "craft-native": ">=0.0.111",
+        "craft-native": ">=0.0.319",
       },
     },
     "packages/devtools": {
@@ -2387,7 +2387,7 @@
 
     "constantinople": ["constantinople@4.0.1", "", { "dependencies": { "@babel/parser": "^7.6.0", "@babel/types": "^7.6.1" } }, "sha512-vCrqcSIq4//Gx74TXXCGnHpulY1dskqLTFGDmhrGxzeXL8lF8kvXv6mpNWlJj1uD4DW23D4ljAqbY4RRaaUZIw=="],
 
-    "craft-native": ["craft-native@0.0.115", "", { "bin": { "craft-sdk": "dist/cli.js" } }, "sha512-k5zO/e16r3uE+dYB5L+aGlHRvAEDa0zUVxiMAcTebKKbpnys3D9uiGKEFlF2R9E3i8ibcDcRy1nwOwlwB3eEBw=="],
+    "craft-native": ["craft-native@0.0.319", "", { "bin": { "craft-sdk": "dist/cli.js" } }, "sha512-6tJG3C8V3SXB1JWPPxQZq127wCECGq2wu6DWx412IUJCsmtQH/9Z2dQiMZBocUucxNMY3CX472i+R/o/ecfdgg=="],
 
     "create-stx": ["create-stx@workspace:packages/create-stx"],
 
