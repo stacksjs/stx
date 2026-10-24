@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.686...v0.2.687)
+
+## 🐛 Bug Fixes
+
+- retain native conditional anchor parents ([6428ddb](https://github.com/stacksjs/stx/commit/6428ddb)) _(by Chris Breuer <chris@stacksjs.com>)_
+- translate fragment navigation titles ([4516375](https://github.com/stacksjs/stx/commit/4516375)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.687 ([20e94c5](https://github.com/stacksjs/stx/commit/20e94c5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.685...v0.2.686)
 
 ## 🐛 Bug Fixes
