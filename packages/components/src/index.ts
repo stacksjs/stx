@@ -37,6 +37,7 @@ export * from './ui/form'
 export * from './ui/grouped-list'
 export * from './ui/image'
 export * from './ui/input'
+export * from './ui/list'
 export * from './ui/listbox'
 // The phone primitives: a bottom tab bar, filter pills, dense list rows.
 export * from './ui/mobile'

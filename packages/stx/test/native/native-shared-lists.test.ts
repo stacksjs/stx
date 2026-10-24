@@ -144,3 +144,40 @@ describe('shared lists on the web', () => {
     expect(html).not.toContain('#c6c6c8')
   })
 })
+
+
+describe('shared scrolling List', () => {
+  it('keeps keyed rows at the native recycling boundary and forwards paging and refresh', async () => {
+    const source = `@import('List', '${ui}/list/List.stx')
+<script client>
+const rows = state([{ id: 1, title: 'First' }, { id: 2, title: 'Second' }])
+const pages = state(0)
+const refreshes = state(0)
+window.probe = { rows, pages, refreshes }
+</script>
+<List testID="collection" @end-reached="pages.set(pages() + 1)" @refresh="refreshes.set(refreshes() + 1)">
+  <div key="controls" listRole="header"><p>Filters</p></div>
+  <div :for="row in rows" :key="row.id"><p :text="row.title"></p></div>
+</List>`
+    const { code } = await compileNativeScreen(source)
+    const phone = mountNativeScreen(code, 'Screen', { platform: 'ios' })
+    await phone.settle()
+    const list = phone.byTestID('collection')!
+    expect(list.type).toBe('FlatList')
+    expect(list.props.contentContainerStyle).toEqual({ paddingBottom: 16 })
+    expect(list.children.filter(child => typeof child !== 'string').length).toBe(3)
+    expect(list.events.onEndReached).toBeDefined()
+    phone.press(list, 'onEndReached', {})
+    phone.press(list, 'onRefresh', {})
+    await phone.settle()
+    expect(phone.context.probe.pages()).toBe(1)
+    expect(phone.context.probe.refreshes()).toBe(1)
+    phone.context.probe.rows.set([{ id: 2, title: 'Updated' }, { id: 3, title: 'Third' }])
+    await phone.settle()
+    expect(phone.texts()).toContain('Updated')
+    expect(phone.texts()).not.toContain('First')
+    const html = await renderWeb(source)
+    expect(html).toContain('data-stx-list')
+    expect(html).toContain('overflow-y-auto')
+  })
+})

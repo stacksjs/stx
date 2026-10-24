@@ -1,0 +1,42 @@
+<script server>
+/*
+ * A scrolling collection with keyed, variable-height children. Native hosts
+ * recycle rows with FlatList; browsers keep normal document measurement so
+ * wrapped text and images never depend on an estimated fixed row height.
+ *
+ * Keep each :for/:key row directly inside List. Put controls and empty states
+ * in keyed listRole="header"/"footer" children. @end-reached requests the next
+ * page; guard it with the page's loading and has-more state. A button can call
+ * the same loader for keyboard access and recovery after a failed request.
+ *
+ * The viewport must have a bounded height (usually a flex-1 parent). Safe
+ * areas belong to the host; contentContainerStyle supplies extra space for
+ * an application-owned overlay. Content padding belongs here, not on a
+ * viewport whose height could then exclude its last rows.
+ */
+export const className = $props.className || ''
+export const nativeHost = $native
+</script>
+<script client>
+const emit = defineEmits()
+const nativeHost = {{ nativeHost }}
+const listRef = useRef('listRef')
+const endRef = useRef('endRef')
+onMount(() => {
+  if (nativeHost || typeof IntersectionObserver !== 'function') return
+  const root = listRef.value
+  const end = endRef.value
+  if (!root || !end) return
+  const observer = new IntersectionObserver(entries => {
+    if (entries.some(entry => entry.isIntersecting)) emit('end-reached')
+  }, { root, rootMargin: '0px 0px 200px 0px' })
+  observer.observe(end)
+  return () => observer.disconnect()
+})
+</script>
+<div data-native="FlatList" ref="listRef" role="list" class="flex-1 min-h-0 min-w-0 overflow-y-auto {{ className }}" :contentContainerStyle="{ paddingBottom: 16 }" data-stx-list @end-reached="emit('end-reached')" @refresh="emit('refresh')">
+  <slot />
+  @if(!nativeHost)
+  <div ref="endRef" aria-hidden="true" style="height:1px; margin-bottom:16px"></div>
+  @endif
+</div>
