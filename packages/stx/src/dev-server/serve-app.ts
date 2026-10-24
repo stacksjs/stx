@@ -567,19 +567,23 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
 
   // Build all pages (including plugin pages)
   const buildAllPages = async (): Promise<boolean> => {
+    const activePages = new Set(builtPages.keys())
+    const activePluginPages = new Set(builtPluginPages.keys())
     builtPages.clear()
     builtPluginPages.clear()
 
-    for (let i = 0; i < routes.length; i += BUILD_CONCURRENCY) {
-      const chunk = routes.slice(i, i + BUILD_CONCURRENCY)
+    const selectedRoutes = options.prebuild === false ? routes.filter(route => activePages.has(route.pattern)) : routes
+    const selectedPlugins = options.prebuild === false ? pluginRoutes.filter(({ route }) => activePluginPages.has(route.pattern)) : pluginRoutes
+    for (let i = 0; i < selectedRoutes.length; i += BUILD_CONCURRENCY) {
+      const chunk = selectedRoutes.slice(i, i + BUILD_CONCURRENCY)
       const results = await Promise.all(chunk.map(route => buildPage(route)))
       for (const built of results) {
         if (built) builtPages.set(built.route.pattern, built)
       }
     }
 
-  for (let i = 0; i < pluginRoutes.length; i += BUILD_CONCURRENCY) {
-      const chunk = pluginRoutes.slice(i, i + BUILD_CONCURRENCY)
+    for (let i = 0; i < selectedPlugins.length; i += BUILD_CONCURRENCY) {
+      const chunk = selectedPlugins.slice(i, i + BUILD_CONCURRENCY)
       const results = await Promise.all(chunk.map(({ route }) => buildPage(route)))
       for (const built of results) {
         if (built) builtPluginPages.set(built.route.pattern, built)
@@ -590,8 +594,8 @@ export async function serveApp(appDir: string = '.', options: DevServerOptions =
   }
 
   // Initial build
-  console.log(`${colors.blue}Building pages...${colors.reset}`)
-  const buildSuccess = await buildAllPages()
+  console.log(`${colors.blue}${options.prebuild === false ? 'Rendering pages on request...' : 'Building pages...'}${colors.reset}`)
+  const buildSuccess = options.prebuild === false ? routes.length + pluginRoutes.length > 0 : await buildAllPages()
   if (!buildSuccess) {
     console.error(`${colors.red}No pages were successfully built${colors.reset}`)
     return false
@@ -641,6 +645,7 @@ catch {
   console.log(`${colors.blue}Starting server...${colors.reset}`)
   const server = serve({
     port: actualPort,
+    hostname: options.hostname,
     async fetch(request) {
       const url = new URL(request.url)
       const offline = options.stxOptions?.offline ?? projectConfig.offline
@@ -741,9 +746,12 @@ catch {
         // URL params. Static routes use the cached startup build.
         let builtPage = builtPages.get(routeMatch.route.pattern)
         const isStreamingRoute = streamingRoutes.has(routeMatch.route.pattern)
-        if ((routeMatch.route.isDynamic && Object.keys(routeMatch.params).length > 0) || isStreamingRoute) {
+        if (!builtPage || (routeMatch.route.isDynamic && Object.keys(routeMatch.params).length > 0) || isStreamingRoute) {
           const rebuilt = await buildPage(routeMatch.route, routeMatch.params)
-          if (rebuilt) builtPage = rebuilt
+          if (rebuilt) {
+            builtPage = rebuilt
+            if (!routeMatch.route.isDynamic && !isStreamingRoute) builtPages.set(routeMatch.route.pattern, rebuilt)
+          }
         }
         if (builtPage) {
           const responseStatus = builtPage.status ?? 200
@@ -973,7 +981,14 @@ catch {
         const allPluginPatterns = pluginRoutes.map(pr => pr.route)
         const pluginMatch = matchRoute(url.pathname, allPluginPatterns)
         if (pluginMatch) {
-          const builtPage = builtPluginPages.get(pluginMatch.route.pattern)
+          let builtPage = builtPluginPages.get(pluginMatch.route.pattern)
+          if (!builtPage || pluginMatch.route.isDynamic) {
+            const rebuilt = await buildPage(pluginMatch.route, pluginMatch.params)
+            if (rebuilt) {
+              builtPage = rebuilt
+              if (!pluginMatch.route.isDynamic) builtPluginPages.set(pluginMatch.route.pattern, rebuilt)
+            }
+          }
           if (builtPage) {
             let content = builtPage.content
 
@@ -1009,7 +1024,17 @@ catch {
         // serve that plugin's index page
         for (const { prefix: pluginPrefix } of pluginPageDirs) {
           if (pluginPrefix !== '/' && url.pathname.startsWith(pluginPrefix)) {
-            const pluginIndex = builtPluginPages.get(pluginPrefix) || builtPluginPages.get(pluginPrefix + '/')
+            let pluginIndex = builtPluginPages.get(pluginPrefix) || builtPluginPages.get(pluginPrefix + '/')
+            if (!pluginIndex) {
+              const indexRoute = pluginRoutes.find(({ route }) => route.pattern === pluginPrefix || route.pattern === `${pluginPrefix}/`)
+              if (indexRoute) {
+                const rebuilt = await buildPage(indexRoute.route)
+                if (rebuilt) {
+                  pluginIndex = rebuilt
+                  builtPluginPages.set(indexRoute.route.pattern, rebuilt)
+                }
+              }
+            }
             if (pluginIndex) {
               let content = pluginIndex.content
               if (shell) {

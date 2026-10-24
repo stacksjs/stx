@@ -389,6 +389,13 @@ The old `components/StxLink.stx` and `components/StxImage.stx` template files ha
 
 ### Dev Server Output
 
+`serveApp(root, { hostname: '127.0.0.1', prebuild: false })` binds a private
+preview to loopback and renders pages when requested. The default still builds
+all pages before listening. On-demand rendering retains static response status
+and headers, renders dynamic parameters per request, supports plugin pages and
+rebuilds only visited pages when watching. This avoids compiling an entire large
+application just to preview one journey.
+
 The dev server displays a Bun-style startup banner with interactive shortcuts:
 
 - Pretty banner matching Bun's HTML dev server aesthetic

@@ -28,6 +28,10 @@ export interface MarkdownOptions {
 export interface DevServerOptions {
   /** Port to run the server on (default: 3000) */
   port?: number
+  /** Network interface to listen on. Use 127.0.0.1 for private local previews. */
+  hostname?: string
+  /** Render all pages before listening (default: true). False renders pages on first request. */
+  prebuild?: boolean
   /** Watch for file changes and reload (default: true) */
   watch?: boolean
   /** Open in native window instead of browser */
@@ -151,6 +155,8 @@ export function getMimeType(ext: string): string {
  */
 export const DEFAULT_DEV_OPTIONS: Required<Omit<DevServerOptions, 'stxOptions' | 'markdown' | 'pagesDir'>> = {
   port: 3000,
+  hostname: '0.0.0.0',
+  prebuild: true,
   watch: true,
   native: false,
   cache: false,
