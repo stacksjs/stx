@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.681...v0.2.682)
+
+## 🐛 Bug Fixes
+
+- resolve external component scripts from server attributes ([c70e853](https://github.com/stacksjs/stx/commit/c70e853)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.682 ([22cd42a](https://github.com/stacksjs/stx/commit/22cd42a)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.680...v0.2.681)
 
 ## 🐛 Bug Fixes
