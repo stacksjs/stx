@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.677...v0.2.678)
+
+## ✨ Features
+
+- expose owned native voice recordings to shared screens ([3c04b96](https://github.com/stacksjs/stx/commit/3c04b96)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.678 ([046c5ed](https://github.com/stacksjs/stx/commit/046c5ed)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.676...v0.2.677)
 
 ## ✨ Features
