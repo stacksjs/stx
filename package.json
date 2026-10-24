@@ -117,7 +117,7 @@
   },
   "devDependencies": {
     "@iconify/json": "^2.2.535",
-    "@stacksjs/bumpx": "0.2.25",
+    "@stacksjs/bumpx": "0.2.27",
     "better-dx": "^0.2.38"
   },
   "overrides": {
