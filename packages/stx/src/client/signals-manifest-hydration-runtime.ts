@@ -49,7 +49,10 @@ export const SIGNALS_MANIFEST_HYDRATION_RUNTIME = `  /**
         node.__stx_parent_scope = resolveComponentCallerScope(node, scope);
         bindParentComponentProps(node, node.__stx_parent_scope);
       }
-      processElement(node, scope, true);
+      // A structural directive on a component belongs to its caller. Unlike
+      // the recursive DOM walk, the manifest reaches this node directly and
+      // has not inherited the enclosing component's lexical scope.
+      processElement(node, node.__stx_parent_scope || scope, true);
     }
     return true;
   }
