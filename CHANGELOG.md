@@ -1,5 +1,16 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.682...v0.2.683)
+
+## 🔧 Chores
+
+- release v0.2.683 ([812ef96](https://github.com/stacksjs/stx/commit/812ef96)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **desktop**: upgrade Craft native SDK to 0.0.328 ([ea4d8e6](https://github.com/stacksjs/stx/commit/ea4d8e6)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.681...v0.2.682)
 
 ## 🐛 Bug Fixes
