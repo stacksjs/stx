@@ -177,6 +177,8 @@ macos: {
   nativeWindow: {
     width: 320, height: 640, systemTray: true,
     headless: true, keepRunning: true, hideDockIcon: true,
+    titlebarHidden: true, darkMode: true,
+    resizable: false, alwaysOnTop: true,
   },
   signIdentity: '3rd Party Mac Developer Application: You (TEAMID)',
   installerIdentity: '3rd Party Mac Developer Installer: You (TEAMID)',
