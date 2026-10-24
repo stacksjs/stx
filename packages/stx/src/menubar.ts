@@ -28,6 +28,7 @@
  * ```
  */
 import type { Preferences, WindowInstance, WindowOptions } from '@stacksjs/desktop'
+import { randomUUID } from 'node:crypto'
 import { createPreferences, createWindow, setAutoLaunch } from '@stacksjs/desktop'
 import { renderTemplate, renderTemplateString } from './render'
 
@@ -98,6 +99,11 @@ export interface MenuBarAppOptions<T extends Record<string, unknown>> {
    * in sync with it, including when the user changes it at runtime.
    */
   launchAtLogin?: keyof T
+  /** Craft owns the sandboxed main process and starts this inherited backend.
+   * The backend prints an authenticated loopback session URL on stdout.
+   * Login items belong to the native bridge, not a LaunchAgent file.
+   */
+  host?: 'application' | 'craft'
   /** Window overrides. Menu bar defaults are applied first. */
   window?: WindowOptions
   /** Port for the local server. Defaults to 0 — an arbitrary free port. */
@@ -173,6 +179,10 @@ export function applyPreferencePatch<T extends Record<string, unknown>>(
 export function createMenuBarApp<T extends Record<string, unknown>>(
   options: MenuBarAppOptions<T>,
 ): MenuBarApp<T> {
+  if (options.host === 'craft' && options.launchAtLogin)
+    throw new Error('Craft-hosted apps must manage login items through the native autoLaunch API')
+  const session = options.host === 'craft' ? randomUUID() : null
+  const cookieName = 'stx-native-session'
   const preferences = createPreferences<T>({
     name: options.name.toLowerCase(),
     defaults: (options.preferences ?? {}) as T,
@@ -218,10 +228,25 @@ export function createMenuBarApp<T extends Record<string, unknown>>(
       // the loopback interface.
       hostname: '127.0.0.1',
       async fetch(request) {
-        const { pathname } = new URL(request.url)
+        const requestUrl = new URL(request.url)
+        const { pathname } = requestUrl
+        const initialSession = session && request.method === 'GET' && pathname === '/'
+          && requestUrl.searchParams.get('session') === session
+        if (session) {
+          const cookie = request.headers.get('cookie')?.split(';').some(value => value.trim() === `${cookieName}=${session}`)
+          if (!initialSession && !cookie)
+            return new Response('Unauthorized', { status: 401 })
+          const origin = request.headers.get('origin')
+          if (origin && origin !== requestUrl.origin)
+            return new Response('Forbidden', { status: 403 })
+        }
 
-        if (request.method === 'GET' && (pathname === '/' || pathname === '/index.html'))
-          return renderPopup()
+        if (request.method === 'GET' && (pathname === '/' || pathname === '/index.html')) {
+          const response = await renderPopup()
+          if (initialSession)
+            response.headers.set('Set-Cookie', `${cookieName}=${session}; HttpOnly; SameSite=Strict; Path=/`)
+          return response
+        }
 
         const handler = routes.get(`${request.method} ${pathname}`)
         if (!handler)
@@ -230,7 +255,7 @@ export function createMenuBarApp<T extends Record<string, unknown>>(
         return toResponse(await handler(request, preferences))
       },
     })
-    url = `http://127.0.0.1:${server.port}`
+    url = `http://127.0.0.1:${server.port}${session ? `/?session=${session}` : ''}`
   }
 
   /** Keep the login item in sync with the preference that controls it. */
@@ -260,6 +285,13 @@ export function createMenuBarApp<T extends Record<string, unknown>>(
       started = true
       if (!server)
         serve()
+      if (options.host === 'craft') {
+        // Craft consumes exactly the first line, then drains normal app logs.
+        process.stdout.write(`${url}\n`)
+        process.stdin.resume()
+        process.stdin.once('end', () => this.stop())
+        return this
+      }
       bindLaunchAtLogin()
 
       window = await createWindow(url!, {
