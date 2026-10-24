@@ -99,6 +99,22 @@ export { validateClientScript } from './script-validation'
  */
 const PARENT_PLACEHOLDER = '<!--PARENT_CONTENT_PLACEHOLDER-->'
 
+/**
+ * Mark the `@parent` in a section of a layout that extends another layout, as
+ * the page's own sections are marked, so the layout it extends splices its
+ * section in there. Layout source arrives raw, so `@@parent`, a longer word
+ * (`a@parents.com`) and a `@parent` inside a comment stay text.
+ */
+function markLayoutParent(content: string): string {
+  const visible = maskAtElementPosition(
+    content.replace(/\{\{--[\s\S]*?--\}\}/g, comment => ' '.repeat(comment.length)),
+    matchHtmlComment,
+    comment => ' '.repeat(comment.length),
+  ).output
+  const at = visible.search(/(?<![\w@])@parent(?!\w)/)
+  return at === -1 ? content : content.slice(0, at) + PARENT_PLACEHOLDER + content.slice(at + '@parent'.length)
+}
+
 function escapeHtmlAttribute(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -1458,7 +1474,7 @@ async function processDirectivesInternal(
         // Extract layout sections for parent content
         const layoutSections: Record<string, string> = {}
         const processedLayout = layoutContent.replace(/@section\(\s*['"]([^'"]+)['"]\s*\)([\s\S]*?)(?:@show|@endsection)/g, (_, name, content) => {
-          layoutSections[name] = content.trim()
+          layoutSections[name] = markLayoutParent(content.trim())
           return '' // Remove the section from the template
         })
 
