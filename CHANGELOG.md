@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.676...v0.2.677)
+
+## ✨ Features
+
+- **desktop**: expose native runtime packaging paths ([4b82281](https://github.com/stacksjs/stx/commit/4b82281)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- **desktop**: launch the packaged native runtime agent ([19de9f2](https://github.com/stacksjs/stx/commit/19de9f2)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.677 ([70886b4](https://github.com/stacksjs/stx/commit/70886b4)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **deps**: upgrade the desktop Craft SDK to 0.0.319 ([cdf23aa](https://github.com/stacksjs/stx/commit/cdf23aa)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.675...v0.2.676)
 
 ## 🐛 Bug Fixes
