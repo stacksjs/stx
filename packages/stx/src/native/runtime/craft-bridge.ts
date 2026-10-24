@@ -68,6 +68,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     flashlight: false,
     speech: capabilities.has('speech'),
     audio: capabilities.has('audio'),
+    audioRecording: capabilities.has('audioRecording'),
     eventStream: capabilities.has('eventStream'),
     linking: capabilities.has('linking'),
     network: false,
@@ -445,6 +446,14 @@ export function installCraftBridge(
         return ask('Speech', 'speak', [text, options]).then(spoken => spoken === true)
       },
       stop: () => request('Speech', 'stop', []).then(() => undefined),
+    }
+  }
+
+  if (capabilities.has('audioRecording')) {
+    craft.audioRecording = {
+      start: (owner: string, options: AnyRecord = {}) => ask('AudioRecording', 'start', [owner, options]),
+      stop: (owner: string) => ask('AudioRecording', 'stop', [owner]),
+      cancel: (owner: string) => ask('AudioRecording', 'cancel', [owner]),
     }
   }
 

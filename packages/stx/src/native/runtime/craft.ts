@@ -291,6 +291,12 @@ export interface NativeCraft {
   animation?: {
     next: (options?: { duration?: number, curve?: 'spring' | 'easeInOut' | 'linear', bounce?: number }) => void
   }
+  /** A private bounded microphone recording, owned by the requesting screen. */
+  audioRecording?: {
+    start: (owner: string, options?: { maxSeconds?: number }) => Promise<boolean>
+    stop: (owner: string) => Promise<NativeFile & { durationSeconds: number }>
+    cancel: (owner: string) => Promise<boolean>
+  }
   /** Speech (`capabilities.speech`): true once the words were said, false when cut off. */
   speech?: {
     speak: (text: string, options?: { language?: string, rate?: number, interrupt?: boolean, pitch?: number, preDelay?: number }) => Promise<boolean>

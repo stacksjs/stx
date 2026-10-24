@@ -17,6 +17,20 @@ function host() {
 }
 
 describe('typed native capability bridge', () => {
+  it('exposes owned audio recording only when the host advertises it', async () => {
+    const native = host()
+    const protocol = new STXBridge()
+    protocol.initialize(native.bridge)
+    const craft = installCraftBridge(protocol, { ...native.bridge, capabilities: ['audioRecording'] }, {})
+    expect(craft.capabilities.audioRecording).toBe(true)
+    const pending = craft.audioRecording.start('owner', { maxSeconds: 60 })
+    const request = native.sent.find(message => message.payload?.module === 'AudioRecording')!
+    expect(request.payload).toMatchObject({ version: 1, module: 'AudioRecording', method: 'start', args: ['owner', { maxSeconds: 60 }] })
+    native.receive({ type: 'API_RESPONSE', correlationId: request.id, payload: { version: 1, requestId: request.id, data: true } })
+    await expect(pending).resolves.toBe(true)
+    protocol.dispose()
+  })
+
   it.each(['ios', 'android'])('preserves screen chrome options and explicit navigation on %s', (platform) => {
     const native = host()
     const protocol = new STXBridge()

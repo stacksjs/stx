@@ -148,6 +148,7 @@ export interface NativeScreenOptions {
    * cancels. Absent by default, so a screen that offers a picture only when
    * the host can pick one is tested both ways.
    */
+  audioRecording?: { start: (owner: string, options?: { maxSeconds?: number }) => Promise<boolean>, stop: (owner: string) => Promise<{ path: string, name: string, type: string, size: number, durationSeconds: number }>, cancel: (owner: string) => Promise<boolean> }
   files?: { pickImage: { path: string, name: string, type: string, size: number } | null }
   /** The keychain (`craft.secureStorage`), by key: a sign-in token, a page's shared values. */
   secureStorage?: Record<string, string>
@@ -538,6 +539,7 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
         onChange: () => () => {},
       },
       lifecycle: { onStateChange: () => () => {} },
+      ...(options.audioRecording ? { audioRecording: options.audioRecording } : {}),
       ...(options.files
         ? {
             files: {
