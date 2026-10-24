@@ -155,7 +155,7 @@ const pages = state(0)
 const refreshes = state(0)
 window.probe = { rows, pages, refreshes }
 </script>
-<List testID="collection" @end-reached="pages.set(pages() + 1)" @refresh="refreshes.set(refreshes() + 1)">
+<List :contentContainerStyle="{ paddingBottom: 92, paddingTop: 7 }" testID="collection" @end-reached="pages.set(pages() + 1)" @refresh="refreshes.set(refreshes() + 1)">
   <div key="controls" listRole="header"><p>Filters</p></div>
   <div :for="row in rows" :key="row.id"><p :text="row.title"></p></div>
 </List>`
@@ -164,7 +164,7 @@ window.probe = { rows, pages, refreshes }
     await phone.settle()
     const list = phone.byTestID('collection')!
     expect(list.type).toBe('FlatList')
-    expect(list.props.contentContainerStyle).toEqual({ paddingBottom: 16 })
+    expect(list.props.contentContainerStyle).toEqual({ paddingBottom: 92, paddingTop: 7 })
     expect(list.children.filter(child => typeof child !== 'string').length).toBe(3)
     expect(list.events.onEndReached).toBeDefined()
     phone.press(list, 'onEndReached', {})

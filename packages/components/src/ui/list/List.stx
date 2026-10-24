@@ -6,7 +6,7 @@
  *
  * Keep each :for/:key row directly inside List. Put controls and empty states
  * in keyed listRole="header"/"footer" children. @end-reached requests the next
- * page; guard it with the page's loading and has-more state. A button can call
+ * page; pass :loading and :hasMore from the page's pagination state. A button can call
  * the same loader for keyboard access and recovery after a failed request.
  *
  * The viewport must have a bounded height (usually a flex-1 parent). Safe
@@ -16,27 +16,57 @@
  */
 export const className = $props.className || ''
 export const nativeHost = $native
+export const contentContainerStyle = $props.contentContainerStyle || { paddingBottom: 16 }
+export const loading = $bool($props.loading)
+export const hasMore = $bool($props.hasMore, true)
 </script>
 <script client>
 const emit = defineEmits()
 const nativeHost = {{ nativeHost }}
 const listRef = useRef('listRef')
 const endRef = useRef('endRef')
+const contentStyle = useReactiveProp('contentContainerStyle', {{ contentContainerStyle }})
+const loading = useReactiveProp('loading', {{ loading }})
+const hasMore = useReactiveProp('hasMore', {{ hasMore }})
+const webPadding = derived(() => {
+  const style = contentStyle() || {}
+  const all = style.padding || 0
+  const vertical = style.paddingVertical ?? all
+  const horizontal = style.paddingHorizontal ?? all
+  const px = value => `${Math.max(0, Number(value) || 0)}px`
+  return { paddingTop: px(style.paddingTop ?? vertical), paddingBottom: px(style.paddingBottom ?? vertical), paddingLeft: px(style.paddingLeft ?? horizontal), paddingRight: px(style.paddingRight ?? horizontal) }
+})
 onMount(() => {
   if (nativeHost || typeof IntersectionObserver !== 'function') return
   const root = listRef.value
   const end = endRef.value
   if (!root || !end) return
+  let revision = 0
+  let requestedRevision = -1
   const observer = new IntersectionObserver(entries => {
-    if (entries.some(entry => entry.isIntersecting)) emit('end-reached')
+    if (loading() || !hasMore() || requestedRevision === revision) return
+    if (entries.some(entry => entry.isIntersecting)) {
+      requestedRevision = revision
+      emit('end-reached')
+    }
   }, { root, rootMargin: '0px 0px 200px 0px' })
+  const rearm = () => { observer.unobserve(end); observer.observe(end) }
+  // A short page can leave the sentinel visible. Ask again when rows arrive,
+  // or an initial load finishes, without automatically retrying a failed page.
+  const changes = new MutationObserver(records => {
+    if (!records.some(record => record.addedNodes.length || record.removedNodes.length)) return
+    revision++
+    rearm()
+  })
+  changes.observe(root, { childList: true })
+  const stop = watch(() => `${loading()}:${hasMore()}`, rearm)
   observer.observe(end)
-  return () => observer.disconnect()
+  return () => { stop(); changes.disconnect(); observer.disconnect() }
 })
 </script>
-<div data-native="FlatList" ref="listRef" role="list" class="flex-1 min-h-0 min-w-0 overflow-y-auto {{ className }}" :contentContainerStyle="{ paddingBottom: 16 }" data-stx-list @end-reached="emit('end-reached')" @refresh="emit('refresh')">
+<div data-native="FlatList" ref="listRef" role="list" class="flex-1 min-h-0 min-w-0 overflow-y-auto {{ className }}" :contentContainerStyle="contentStyle()" :style="nativeHost ? {} : webPadding()" data-stx-list data-stx-layout-root @end-reached="emit('end-reached')" @refresh="emit('refresh')">
   <slot />
   @if(!nativeHost)
-  <div ref="endRef" aria-hidden="true" style="height:1px; margin-bottom:16px"></div>
+  <div ref="endRef" aria-hidden="true" style="height:1px"></div>
   @endif
 </div>

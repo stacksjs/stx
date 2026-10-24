@@ -7,6 +7,8 @@ export interface ListProps {
   refreshing?: boolean
   onRefresh?: () => void
   onEndReached?: () => void
-  onEndReachedThreshold?: number
+  /** Block paging during a request; hasMore stops it after the final page. */
+  loading?: boolean
+  hasMore?: boolean
   contentContainerStyle?: Record<string, number>
 }
