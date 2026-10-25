@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.697...v0.2.698)
+
+## ✨ Features
+
+- support compact Craft webview runtimes ([0a39db3](https://github.com/stacksjs/stx/commit/0a39db3)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.698 ([136ac89](https://github.com/stacksjs/stx/commit/136ac89)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.696...v0.2.697)
 
 ## ✨ Features
