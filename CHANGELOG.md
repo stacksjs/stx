@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.694...v0.2.695)
+
+## 🐛 Bug Fixes
+
+- **native**: expose network status and reconnect events ([1aafc5b](https://github.com/stacksjs/stx/commit/1aafc5b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.695 ([79ec73e](https://github.com/stacksjs/stx/commit/79ec73e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.692...v0.2.693)
 
 ## 🐛 Bug Fixes
