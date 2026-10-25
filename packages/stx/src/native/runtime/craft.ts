@@ -192,8 +192,9 @@ export interface NativeStorage {
   compareAndSet: (key: string, expectedValue: unknown, nextValue: unknown) => Promise<boolean>
   /** Atomically create a missing key. Existing JSON null is still a value. */
   setIfAbsent: (key: string, value: unknown) => Promise<boolean>
-  /** What `get` would resolve to, synchronously (`null` when the host has none). */
+  /** What `get` would resolve to, synchronously. Throws STORAGE_SYNC_UNSUPPORTED without a host implementation. */
   getSync: <T = unknown>(key: string) => T | null
+  /** Synchronously persist through the host. Throws STORAGE_SYNC_UNSUPPORTED without a host implementation. */
   setSync: (key: string, value: unknown) => void
 }
 

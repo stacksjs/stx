@@ -17,6 +17,46 @@ function host() {
 }
 
 describe('typed native capability bridge', () => {
+  it.each(['getSync', 'setSync'])('rejects unsupported synchronous storage %s without pretending to persist', (method) => {
+    const native = host()
+    const protocol = new STXBridge()
+    protocol.initialize(native.bridge)
+    // Advertising asynchronous storage does not install a synchronous host API.
+    const craft = installCraftBridge(protocol, { ...native.bridge, capabilities: ['storage'] }, {})
+    let failure: unknown
+    try {
+      if (method === 'getSync') craft.storage.getSync('checkpoint')
+      else craft.storage.setSync('checkpoint', { generation: 1 })
+    }
+    catch (error) { failure = error }
+    expect(failure).toBeInstanceOf(NativeCapabilityError)
+    expect(failure).toMatchObject({ code: 'STORAGE_SYNC_UNSUPPORTED' })
+    expect(native.sent).toEqual([])
+    protocol.dispose()
+  })
+
+  it('preserves real synchronous host storage methods and their failures', () => {
+    const native = host()
+    const protocol = new STXBridge()
+    protocol.initialize(native.bridge)
+    let value: unknown = null
+    const diskFull = new Error('Disk full')
+    const getSync = () => value
+    const setSync = (key: string, next: unknown) => {
+      if (key === 'full') throw diskFull
+      value = next
+    }
+    const craft = installCraftBridge(protocol, native.bridge, { craft: { storage: { getSync, setSync } } })
+    expect(craft.storage.getSync).toBe(getSync)
+    expect(craft.storage.setSync).toBe(setSync)
+    expect(craft.storage.getSync('checkpoint')).toBeNull()
+    craft.storage.setSync('checkpoint', { generation: 1 })
+    expect(craft.storage.getSync('checkpoint')).toEqual({ generation: 1 })
+    expect(() => craft.storage.setSync('full', { generation: 2 })).toThrow(diskFull)
+    expect(craft.storage.getSync('checkpoint')).toEqual({ generation: 1 })
+    protocol.dispose()
+  })
+
   it('exposes owned audio recording only when the host advertises it', async () => {
     const native = host()
     const protocol = new STXBridge()

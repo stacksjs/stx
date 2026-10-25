@@ -237,7 +237,10 @@ export function installCraftBridge(
     },
   }
 
-  craft.storage = Object.assign({ getSync: () => null, setSync: () => undefined }, craft.storage || {}, {
+  const synchronousStorageUnsupported = () => {
+    throw new NativeCapabilityError('STORAGE_SYNC_UNSUPPORTED', 'This host does not provide synchronous storage')
+  }
+  craft.storage = Object.assign({ getSync: synchronousStorageUnsupported, setSync: synchronousStorageUnsupported }, craft.storage || {}, {
     get: (key: string) => request('Storage', 'get', [key]),
     set: (key: string, value: unknown) => request('Storage', 'set', [key, value]),
     remove: (key: string) => request('Storage', 'remove', [key]),

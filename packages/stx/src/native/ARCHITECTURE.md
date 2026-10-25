@@ -202,6 +202,11 @@ browser:
   are the web's synchronous Storage over `craft.storage.getSync`/`setSync`,
   shared by every screen of the app; sessionStorage lasts for one run (the
   app script starts a new one per launch). `keptState` keeps its values there.
+  These methods require the host's actual synchronous storage implementation.
+  Without it they throw `NativeCapabilityError` with code
+  `STORAGE_SYNC_UNSUPPORTED`; asynchronous storage capability alone does not
+  provide synchronous access. Existing host methods and their storage errors
+  pass through unchanged.
   A key the app shares with its native side (`compileNativeBundle({
   shareStorage })`, Craft's `shareStorage`, such as `auth_token` to
   `auth.token`) is also that secure-storage item, as on Craft's hybrid page:
