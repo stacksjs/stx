@@ -1,0 +1,2 @@
+{{-- A host-owned outline, for desktop navigation with native selection and badges. --}}
+<aside data-native="Sidebar"><slot /></aside>

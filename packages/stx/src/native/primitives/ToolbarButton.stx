@@ -1,0 +1,7 @@
+<script client>
+const label = useReactiveProp('label', '')
+const symbol = useReactiveProp('symbol', '')
+const disabled = useReactiveProp('disabled', false)
+const iconOnly = useReactiveProp('iconOnly', true)
+</script>
+<button data-native="Button" type="button" variant="toolbar" class="min-w-[30px] h-[30px] text-[17px]" :style="{width:iconOnly() ? 30 : 'auto'}" :title="label()" :accessibilityLabel="label()" :symbol="symbol()" :disabled="disabled()" :iconOnly="iconOnly()"><slot /></button>

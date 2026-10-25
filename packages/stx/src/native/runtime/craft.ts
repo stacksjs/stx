@@ -456,7 +456,7 @@ export interface NativeCraft {
 }
 
 export interface NativeDesktop {
-  openWindow: (options: { name: string, route: string, title?: string, width?: number, height?: number, minWidth?: number, minHeight?: number, params?: Record<string, unknown> }) => Promise<{ name: string }>
+  openWindow: (options: { name: string, route: string, title?: string, titlebarStyle?: 'standard' | 'transparent', width?: number, height?: number, minWidth?: number, minHeight?: number, params?: Record<string, unknown> }) => Promise<{ name: string }>
   closeWindow: () => Promise<void>
   focus: (identifier: string) => Promise<void>
   setMenus: (menus: Array<{ label: string, items: Array<{ id?: string, label?: string, shortcut?: string, separator?: boolean, disabled?: boolean }> }>) => Promise<boolean>
