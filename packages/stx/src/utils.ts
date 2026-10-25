@@ -2274,11 +2274,16 @@ export async function renderComponentWithSlot(
        * nothing in the library does that.
        */
       const inlineRoot = /^\s*(?:(?:<!--[\s\S]*?-->|\x00STX_HTML_COMMENT_\d+\x00)\s*)*<span(?=[\s/>])/i.test(result)
-      // A bounded layout component can opt into a transparent scope wrapper.
-      // Its own root remains the flex/grid item, with its viewport constraints.
+      // Bounded layout components fill the parent's available viewport. Web
+      // scopes can be transparent, but native hosts need a real flex item:
+      // UIKit/Android do not implement display:contents. Keep the scope (and
+      // separate parent/child event handlers) while giving its root a bound.
       const layoutRoot = /^\s*(?:(?:<!--[\s\S]*?-->|\x00STX_HTML_COMMENT_\d+\x00)\s*)*<[^>]+\bdata-stx-layout-root(?:\s|=|>)/i.test(result)
       const wrapperTag = inlineRoot ? 'span' : 'div'
-      output = scopeOnRootElement(result, scopeAttrs) ?? `<${wrapperTag}${scopeAttrs} data-stx-component-wrapper${inlineRoot || layoutRoot ? ' style="display:contents"' : ''}>${result}</${wrapperTag}>`
+      const wrapperStyle = layoutRoot && options._nativeHostAttrs
+        ? ' style="display:flex;flex:1;min-height:0;min-width:0"'
+        : inlineRoot || layoutRoot ? ' style="display:contents"' : ''
+      output = scopeOnRootElement(result, scopeAttrs) ?? `<${wrapperTag}${scopeAttrs} data-stx-component-wrapper${wrapperStyle}>${result}</${wrapperTag}>`
 
       // Modify client scripts to register variables in this scope
       const scopedScripts = await Promise.all(clientScripts.map(async (script) => {

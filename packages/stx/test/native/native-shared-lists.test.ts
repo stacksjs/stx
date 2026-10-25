@@ -147,6 +147,27 @@ describe('shared lists on the web', () => {
 
 
 describe('shared scrolling List', () => {
+  it.each(['ios', 'android'] as const)('bounds a list through its component scope on %s', async (platform) => {
+    const source = `@import('List', '${ui}/list/List.stx')
+<div class="flex flex-1 flex-col" testID="viewport">
+  <List testID="collection"><div key="intro" listRole="header"><p>Share Activity</p></div></List>
+</div>`
+    const { code } = await compileNativeScreen(source)
+    const phone = mountNativeScreen(code, 'Screen', { platform })
+    await phone.settle()
+    const list = phone.byTestID('collection')!
+    const parent = [...phone.nodes.values()].find(node => node.children.some(child => typeof child !== 'string' && child.id === list.id))!
+    expect(list.type).toBe('FlatList')
+    expect(list.style.flex).toBe(1)
+    // UIKit has no display:contents layout box. An extra, unbounded View
+    // makes the flex list zero-height even though its rows exist in JS.
+    expect(parent.style.flex).toBe(1)
+    expect(parent.style.display).toBe('flex')
+    const viewport = phone.byTestID('viewport')!
+    expect(viewport.children.some(child => typeof child !== 'string' && child.id === parent.id)).toBe(true)
+    expect(phone.texts()).toContain('Share Activity')
+  })
+
   it('keeps keyed rows at the native recycling boundary and forwards paging and refresh', async () => {
     const source = `@import('List', '${ui}/list/List.stx')
 <script client>
