@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.695...v0.2.696)
+
+## 🐛 Bug Fixes
+
+- **native**: bound scoped list viewports on mobile hosts ([1ca354f](https://github.com/stacksjs/stx/commit/1ca354f)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.696 ([40d8284](https://github.com/stacksjs/stx/commit/40d8284)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.694...v0.2.695)
 
 ## 🐛 Bug Fixes
