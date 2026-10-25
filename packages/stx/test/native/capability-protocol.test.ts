@@ -57,6 +57,26 @@ describe('shared-runtime native capability protocol', () => {
     })
   })
 
+  it('reports native network paths, normalizes both connection names and releases listeners', async () => {
+    expect((await runtime('', { capabilities: [], timers: false })).scope.craft.network).toBeUndefined()
+    const { scope, sent, receive } = await runtime('', { capabilities: ['network'] })
+    expect(scope.craft.capabilities.network).toBe(true)
+    const answer = scope.craft.network.getStatus()
+    const call = sent.find(message => message.type === 'API_REQUEST')!
+    expect(call.payload).toMatchObject({ module: 'Network', method: 'getStatus' })
+    receive({ type: 'API_RESPONSE', correlationId: call.id, payload: { version: 1, requestId: call.id, data: { isConnected: true, type: 'wifi' } } })
+    expect(await answer).toMatchObject({ connected: true, isConnected: true, isWifi: true })
+    const changes: any[] = []
+    const stop = scope.craft.network.onChange((value: any) => changes.push(value))
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'other', detail: { connected: true } } })
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftNetworkChange', detail: { isConnected: false, type: 'none' } } })
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftNetworkChange', detail: { connected: true, type: 'cellular' } } })
+    expect(changes.map(value => [value.connected, value.isConnected, value.type])).toEqual([[false, false, 'none'], [true, true, 'cellular']])
+    stop()
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftNetworkChange', detail: { connected: false } } })
+    expect(changes).toHaveLength(2)
+  })
+
   it('exposes the host-owned app badge module only when advertised', async () => {
     const { scope, sent } = await runtime('', { capabilities: ['badge'], timers: false })
     expect(scope.craft.capabilities.badge).toBe(true)

@@ -71,7 +71,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     audioRecording: capabilities.has('audioRecording'),
     eventStream: capabilities.has('eventStream'),
     linking: capabilities.has('linking'),
-    network: false,
+    network: capabilities.has('network'),
     deviceInfo: capabilities.has('device'),
     fetch: capabilities.has('fetch'),
     badge: capabilities.has('badge'),
@@ -312,6 +312,21 @@ export function installCraftBridge(
       if (typeof message.payload?.name === 'string') callback(message.payload.name)
     }),
   })
+  // A native connection is a path, not proof that any particular server
+  // answers. Preserve both names used by Craft's page and native clients.
+  if (capabilities.has('network')) {
+    const status = (data: AnyRecord = {}) => {
+      const connected = data.isConnected === true || data.connected === true
+      const type = typeof data.type === 'string' ? data.type : 'unknown'
+      return { ...data, connected, isConnected: connected, type, isWifi: connected && type === 'wifi', isCellular: connected && type === 'cellular' }
+    }
+    craft.network = {
+      getStatus: () => request('Network', 'getStatus', []).then(status),
+      onChange: (callback: (value: AnyRecord) => void) => protocol.on<any>('CRAFT_EVENT', ({ payload }) => {
+        if (payload?.event === 'craftNetworkChange') callback(status(payload.detail))
+      }),
+    }
+  }
   craft.biometrics = {
     isAvailable: () => request('Biometrics', 'isAvailable', []),
     getBiometricType: () => request('Biometrics', 'getBiometricType', []),
