@@ -1,5 +1,15 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.698...HEAD)
+
+## 🐛 Bug Fixes
+
+- embed resolved native providers in standalone bundles ([cbe44f3](https://github.com/stacksjs/stx/commit/cbe44f3)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.697...v0.2.698)
 
 ## ✨ Features
