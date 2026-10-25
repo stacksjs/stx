@@ -39,11 +39,11 @@ export { craftBinaryNotFoundMessage, resolveCraftBinary } from 'craft-native'
  * relocated outside its installation tree. Pantry owns that resolution; local
  * source builds can supply a native executable through CRAFT_BIN or `explicit`.
  */
-export function resolveCraftExecutablePath(explicit?: string): string {
-  const command = resolveCraftBinary(explicit)
+export function resolveCraftExecutablePath(explicit?: string, profile: 'full' | 'webview' = 'full'): string {
+  const command = resolveCraftBinary(explicit, profile)
   let path = command
-  if (command === 'craft') {
-    const result = Bun.spawnSync(['pantry', 'which', 'craft', '--resolve'])
+  if (command === 'craft' || command === 'craft-webview') {
+    const result = Bun.spawnSync(['pantry', 'which', command, '--resolve'])
     if (result.exitCode !== 0) {
       const detail = `${result.stderr}${result.stdout}`.trim()
       throw new Error(`Cannot locate Craft's native executable. Install Craft through Pantry and use Pantry 0.11.114 or newer.${detail ? ` ${detail}` : ''}`)

@@ -7,8 +7,8 @@ const directory = mkdtempSync(join(tmpdir(), 'stx-packaging-'))
 const modulePath = join(import.meta.dir, '../src/packaging.ts')
 afterAll(() => rmSync(directory, { recursive: true, force: true }))
 
-function resolveInChild(explicit?: string, env: Record<string, string | undefined> = {}) {
-  return Bun.spawnSync([process.execPath, '-e', `import { resolveCraftExecutablePath } from ${JSON.stringify(modulePath)}; console.log(resolveCraftExecutablePath(${JSON.stringify(explicit)}))`], {
+function resolveInChild(explicit?: string, env: Record<string, string | undefined> = {}, profile: 'full' | 'webview' = 'full') {
+  return Bun.spawnSync([process.execPath, '-e', `import { resolveCraftExecutablePath } from ${JSON.stringify(modulePath)}; console.log(resolveCraftExecutablePath(${JSON.stringify(explicit)}, ${JSON.stringify(profile)}))`], {
     env: { ...process.env, CRAFT_BIN: undefined, PATH: directory, ...env },
   })
 }
@@ -38,6 +38,10 @@ describe('native runtime packaging', () => {
     expect(result.exitCode).toBe(0)
     expect(result.stdout.toString().trim()).toBe(realpathSync(process.execPath))
     expect(readFileSync(argumentsFile, 'utf8')).toBe('which\ncraft\n--resolve\n')
+    const webview = resolveInChild(undefined, { ARGUMENTS_FILE: argumentsFile, PROVIDER_FILE: process.execPath }, 'webview')
+    expect(webview.exitCode).toBe(0)
+    expect(webview.stdout.toString().trim()).toBe(realpathSync(process.execPath))
+    expect(readFileSync(argumentsFile, 'utf8')).toBe('which\ncraft-webview\n--resolve\n')
     writeFileSync(pantry, '#!/bin/sh\nprintf "provider is missing\\n" >&2\nexit 1\n')
     const failure = resolveInChild()
     expect(failure.exitCode).not.toBe(0)

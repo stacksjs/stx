@@ -17,6 +17,7 @@ import { existsSync, mkdirSync, copyFileSync, chmodSync, rmSync } from 'node:fs'
 import { join, dirname, basename, resolve } from 'node:path'
 import { spawn } from 'node:child_process'
 import { platform as osPlatform } from 'node:os'
+import { resolveCraftExecutablePath } from '@stacksjs/desktop'
 import { injectCraftBridge } from './craft-bridge'
 import { processCraftComponents, CRAFT_COMPONENT_STYLES } from './craft-components'
 import { renderTemplate } from './render'
@@ -244,7 +245,7 @@ export async function buildNative(config: NativeBuildConfig): Promise<NativeBuil
     const appVersion = config.version || '1.0.0'
 
     // Find Craft binary
-    const craftPath = config.craftPath || findCraftBinary(config.runtimeProfile)
+    let craftPath = config.craftPath || findCraftBinary(config.runtimeProfile)
     if (!craftPath) {
       return {
         success: false,
@@ -261,6 +262,11 @@ export async function buildNative(config: NativeBuildConfig): Promise<NativeBuil
       if (probe.exitCode !== 0 || probe.stdout.toString().trim() !== 'webview')
         throw new Error('The requested Craft webview runtime is unavailable. Upgrade Craft with Pantry before building.')
     }
+
+    // A PATH command can be a Pantry activation launcher. Resolve its provider
+    // before relocation: a launcher keeps installation-relative paths and is
+    // not a native payload that can be copied into a standalone app.
+    craftPath = resolveCraftExecutablePath(config.craftPath, config.runtimeProfile)
 
     if (config.verbose) {
       console.log(`📦 Building native app for ${target}...`)

@@ -1,5 +1,5 @@
 import { afterAll, expect, test } from 'bun:test'
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildNative, findCraftBinary } from '../src/native-build'
@@ -54,3 +54,23 @@ test('a requested webview profile refuses a full runtime rather than silently su
   expect(result.success).toBe(false)
   expect(result.error).toContain('requested Craft webview runtime is unavailable')
 })
+
+test.skipIf(process.platform !== 'darwin')('bundles the Pantry provider instead of its installation-relative activation launcher', () => {
+  const managedBin = join(root, 'activation-bin')
+  mkdirSync(managedBin)
+  const template = join(root, 'activation.stx')
+  const args = join(root, 'provider-arguments')
+  writeFileSync(template, '<html><body>Relocatable native app</body></html>')
+  writeFileSync(join(managedBin, 'craft'), '#!/bin/sh\nexec "$PROVIDER_FILE" "$@"\n', { mode: 0o755 })
+  writeFileSync(join(managedBin, 'pantry'), '#!/bin/sh\nprintf "%s\\n" "$@" > "$ARGUMENTS_FILE"\nprintf "%s\\n" "$PROVIDER_FILE"\n', { mode: 0o755 })
+  const result = Bun.spawnSync([process.execPath, '-e', `
+    import { buildNative } from ${JSON.stringify(join(import.meta.dir, '../src/native-build.ts'))};
+    const result = await buildNative({ input: ${JSON.stringify(template)}, output: ${JSON.stringify(join(root, 'relocated'))}, name: 'Relocated', target: 'macos', bundleStyle: 'executable' });
+    if (!result.success) throw new Error(result.error);
+  `], { env: { ...process.env, CRAFT_BIN: undefined, PATH: `${managedBin}:/usr/bin:/bin`, PROVIDER_FILE: process.execPath, ARGUMENTS_FILE: args } })
+  expect(result.exitCode, result.stderr.toString()).toBe(0)
+  expect(readFileSync(args, 'utf8')).toBe('which\ncraft\n--resolve\n')
+  const relocated = Bun.spawnSync([join(root, 'relocated/Relocated.app/Contents/MacOS/Relocated'), '--version'], { env: { PATH: '' } })
+  expect(relocated.exitCode, relocated.stderr.toString()).toBe(0)
+  expect(relocated.stdout.toString().trim()).toBe(Bun.version)
+}, 30000)
