@@ -863,16 +863,16 @@ function parseOpacity(className: string, style: STXStyle): boolean {
 }
 
 /** `tracking-[-0.02em]` and `leading-[18px]`, `leading-5`, `leading-tight`. */
-function parseTypography(className: string, style: STXStyle): boolean {
+function parseTypography(className: string, style: STXStyle, fontSize: number): boolean {
   if (className.startsWith('tracking-[')) {
-    const value = arbitraryLength(className.slice(9), typeof style.fontSize === 'number' ? style.fontSize : 16)
+    const value = arbitraryLength(className.slice(9), fontSize)
     if (value === undefined) return false
     style.letterSpacing = value
     return true
   }
   if (className.startsWith('leading-')) {
     const value = className.slice(8)
-    const size = typeof style.fontSize === 'number' ? style.fontSize : 16
+    const size = fontSize
     const ratios: Record<string, number> = { none: 1, tight: 1.25, snug: 1.375, normal: 1.5, relaxed: 1.625, loose: 2 }
     const length = value.startsWith('[')
       ? (/^\[[\d.]+\]$/.test(value) ? Number.parseFloat(value.slice(1, -1)) * size : arbitraryLength(value, size))
@@ -1379,6 +1379,13 @@ function compileLayer(classes: string, variables?: NativeStyleVariables, options
 export function compileHeadwindToStyle(classes: string | string[], unknown?: string[]): STXStyle {
   const style: STXStyle = {}
   const classNames = Array.isArray(classes) ? classes : classes.split(/\s+/).filter(Boolean)
+  // Unitless leading and em tracking use the final font size, including a
+  // size utility later in the list. Absolute leading retains its own units.
+  const typography: STXStyle = {}
+  for (const className of classNames) {
+    if (className.startsWith('text-')) parseTextColor(className, typography)
+  }
+  const fontSize = typeof typography.fontSize === 'number' ? typography.fontSize : 16
 
   for (const className of classNames) {
     // An Iconify class names the glyph of an <Icon>, not a style.
@@ -1406,7 +1413,7 @@ export function compileHeadwindToStyle(classes: string | string[], unknown?: str
     if (parseBorderColor(className, style)) continue
     if (parseOpacity(className, style)) continue
     if (parseGap(className, style)) continue
-    if (parseTypography(className, style)) continue
+    if (parseTypography(className, style, fontSize)) continue
     if (parseSize(className, style)) continue
     if (parseMinMax(className, style)) continue
     if (parseGridColumns(className, style)) continue
