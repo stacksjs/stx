@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.696...v0.2.697)
+
+## ✨ Features
+
+- add reusable conversation rows and message bubbles ([f8ae25d](https://github.com/stacksjs/stx/commit/f8ae25d)) _(by Chris Breuer <chris@stacksjs.com>)_
+- add native sidebar and toolbar components ([367ed68](https://github.com/stacksjs/stx/commit/367ed68)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- preserve native button titles and symbols with shared components ([7fa24f5](https://github.com/stacksjs/stx/commit/7fa24f5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.697 ([19a52e5](https://github.com/stacksjs/stx/commit/19a52e5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.695...v0.2.696)
 
 ## 🐛 Bug Fixes
