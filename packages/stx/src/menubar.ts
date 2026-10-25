@@ -86,8 +86,8 @@ export interface MenuBarAppOptions<T extends Record<string, unknown>> {
   /** Optional preference file for a named profile or isolated native tests. */
   preferencesPath?: string
   /**
-   * Values handed to the template on every render. Called per request, so the
-   * popup always opens against current state rather than boot-time state.
+   * Values handed to the template on every render. Startup prepares the first
+   * document before opening the native host; later requests render current state.
    */
   context?: (preferences: Preferences<T>) => Record<string, unknown> | Promise<Record<string, unknown>>
   /** JSON API routes, on top of the built-in preference and menu endpoints. */
@@ -210,6 +210,7 @@ export function createMenuBarApp<T extends Record<string, unknown>>(
   let url: string | null = null
   let stopping = false
   let started = false
+  let initialPopup: Response | null = null
 
   async function renderPopup(): Promise<Response> {
     const context = await options.context?.(preferences) ?? {}
@@ -242,7 +243,8 @@ export function createMenuBarApp<T extends Record<string, unknown>>(
         }
 
         if (request.method === 'GET' && (pathname === '/' || pathname === '/index.html')) {
-          const response = await renderPopup()
+          const response = initialPopup ?? await renderPopup()
+          initialPopup = null
           if (initialSession)
             response.headers.set('Set-Cookie', `${cookieName}=${session}; HttpOnly; SameSite=Strict; Path=/`)
           return response
@@ -283,6 +285,16 @@ export function createMenuBarApp<T extends Record<string, unknown>>(
     async start() {
       if (started) return this
       started = true
+      try {
+        // Compile the first document before publishing its URL or opening WebKit.
+        // A cold render under resource pressure must not spend the native
+        // navigation timeout with a blank window waiting for this server.
+        initialPopup = await renderPopup()
+      }
+      catch (error) {
+        started = false
+        throw error
+      }
       if (!server)
         serve()
       if (options.host === 'craft') {
@@ -316,6 +328,7 @@ export function createMenuBarApp<T extends Record<string, unknown>>(
       window = null
       server?.stop()
       server = null
+      initialPopup = null
       url = null
       preferences.close()
     },

@@ -15,7 +15,7 @@ it('stops host resources once when the native window exits', () => {
       },
     }))
     const { createMenuBarApp } = await import(${JSON.stringify(import.meta.resolve('../src/menubar'))})
-    const app = createMenuBarApp({ name: 'Lifecycle', template: '/unused.stx', onStop: () => stopped++ })
+    const app = createMenuBarApp({ name: 'Lifecycle', template: '/unused.stx', templateSource: '<p>Lifecycle</p>', onStop: () => stopped++ })
     await app.start()
     await app.start()
     if (!app.url) throw new Error('server was not started')
@@ -75,4 +75,66 @@ it('refuses LaunchAgent management in a native Craft host', () => {
   `
   const result = Bun.spawnSync([process.execPath, '--eval', script], {stdout:'pipe',stderr:'pipe'})
   expect(result.exitCode).toBe(0)
+})
+
+
+it('prepares the first document before opening the native window and renders fresh state on reload', () => {
+  const script = `
+    import { mock } from 'bun:test'
+    let contextCalls = 0, prepared = false
+    mock.module('@stacksjs/desktop', () => ({
+      createPreferences: () => ({ getAll: () => ({}), close: () => {} }),
+      setAutoLaunch: async () => {},
+      createWindow: async url => {
+        if (!prepared) throw new Error('native navigation started before the document was ready')
+        const initial = await fetch(url).then(r => r.text())
+        if (!initial.includes('snapshot-1') || contextCalls !== 1) throw new Error('initial document rendered again')
+        const reload = await fetch(url).then(r => r.text())
+        if (!reload.includes('snapshot-2') || contextCalls !== 2) throw new Error('reload reused stale context')
+        return { close: () => {}, onClosed: () => {} }
+      },
+    }))
+    const { createMenuBarApp } = await import(${JSON.stringify(import.meta.resolve('../src/menubar'))})
+    const app = createMenuBarApp({
+      name: 'Prepared', template: '/unused.stx', templateSource: '<p>{{ snapshot }}</p>',
+      context: async () => {
+        await Bun.sleep(25)
+        prepared = true
+        return { snapshot: 'snapshot-' + ++contextCalls }
+      },
+    })
+    await app.start()
+    app.stop()
+  `
+  const result = Bun.spawnSync([process.execPath, '--eval', script], { stdout: 'pipe', stderr: 'pipe' })
+  expect(result.stderr.toString()).toBe('')
+  expect(result.exitCode).toBe(0)
+})
+
+it('does not publish a host URL when its first render fails and allows startup to be retried', async () => {
+  const script = `
+    import { mock } from 'bun:test'
+    let fail = true
+    mock.module('@stacksjs/desktop', () => ({
+      createPreferences: () => ({ getAll: () => ({}), close: () => {} }),
+      setAutoLaunch: async () => {},
+      createWindow: async () => { throw new Error('hosted app spawned a window') },
+    }))
+    const { createMenuBarApp } = await import(${JSON.stringify(import.meta.resolve('../src/menubar'))})
+    const app = createMenuBarApp({ name: 'PreparedHost', host: 'craft', template: '/unused.stx', templateSource: '<p>Ready</p>', context: () => { if (fail) throw new Error('render failed'); return {} } })
+    try { await app.start(); throw new Error('failed render accepted') }
+    catch (error) { if (error.message !== 'render failed') throw error }
+    if (app.url !== null) throw new Error('unready URL published')
+    fail = false
+    await app.start()
+    const document = await fetch(app.url).then(r => r.text())
+    if (!document.includes('Ready')) throw new Error('retry failed')
+    app.stop()
+    process.stdin.pause()
+  `
+  const child = Bun.spawn([process.execPath, '--eval', script], { stdin: 'pipe', stdout: 'pipe', stderr: 'pipe' })
+  const [code, stdout, stderr] = await Promise.all([child.exited, new Response(child.stdout).text(), new Response(child.stderr).text()])
+  expect(stderr).toBe('')
+  expect(code).toBe(0)
+  expect(stdout).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/\?session=[a-f\d-]+\n$/)
 })
