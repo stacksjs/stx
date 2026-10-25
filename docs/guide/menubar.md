@@ -131,11 +131,11 @@ createMenuBarApp({
 })
 ```
 
-Package it with [Craft](https://github.com/stacksjs/craft), which sets
+Package it through the stx desktop API, backed by [Craft](https://github.com/craft-native/craft), which sets
 `LSUIElement` so it ships without a Dock icon:
 
 ```typescript
-import { packageApp } from 'craft-native'
+import { packageApp, resolveCraftExecutablePath } from '@stacksjs/stx/desktop'
 
 await packageApp({
   name: 'Timer',
@@ -144,16 +144,62 @@ await packageApp({
   bundleId: 'com.example.timer',
   macos: {
     menuBarOnly: true,
-    appStore: true,
-    signIdentity: '3rd Party Mac Developer Application: You (TEAMID)',
-    installerIdentity: '3rd Party Mac Developer Installer: You (TEAMID)',
+    nativeRuntimePath: resolveCraftExecutablePath(),
+    signIdentity: 'Developer ID Application: You (TEAMID)',
     category: 'public.app-category.utilities',
   },
 })
 ```
 
-See Craft's [packaging guide](https://github.com/stacksjs/craft/blob/main/docs/PACKAGING.md)
+See Craft's [packaging guide](https://github.com/craft-native/craft/blob/main/docs/PACKAGING.md)
 for signing, notarization and App Store submission.
+
+### Sandboxed native host
+
+For a sandboxed Store app, make Craft the native application and run the
+compiled TypeScript server as its inherited backend. Set `host: 'craft'` in
+`createMenuBarApp`. This mode serves the template without launching another
+window process. It prints its initial authenticated loopback URL on stdout;
+Craft loads that URL and owns the backend's input pipe. Closing that pipe stops
+the server and releases its resources.
+
+The initial URL carries a random session token. Loading it establishes an
+HttpOnly, SameSite cookie; subsequent API requests require that cookie and
+reject foreign origins. Keep the token out of public logs and links.
+
+Package the compiled backend with these macOS options:
+
+```typescript
+macos: {
+  appStore: true,
+  menuBarOnly: true,
+  nativeRuntimePath: resolveCraftExecutablePath(),
+  nativeWindow: {
+    width: 320, height: 640, systemTray: true,
+    headless: true, keepRunning: true, hideDockIcon: true,
+    titlebarHidden: true, darkMode: true,
+    resizable: false, alwaysOnTop: true,
+  },
+  signIdentity: '3rd Party Mac Developer Application: You (TEAMID)',
+  installerIdentity: '3rd Party Mac Developer Installer: You (TEAMID)',
+  provisioningProfile: '/absolute/path/to/profile.provisionprofile',
+  entitlements: '/absolute/path/to/app-store.entitlements',
+}
+```
+
+Craft requires the adjacent public-only `craft-app-store` binary from Pantry;
+it refuses a missing variant or one built with private APIs. The native host
+is the main app executable and the backend inherits its sandbox. Provide the
+matching application/team identifiers and sandbox network client/server
+entitlements for the loopback connection.
+
+`launchAtLogin` is rejected in Craft-hosted mode because a LaunchAgent does not
+belong in a sandboxed Store app. Use `useNativeDesktop().bridge` and its
+`autoLaunch.enable()`, `disable()` and `isEnabled()` methods for native login
+registration. The `window` option applies when stx launches the application
+host; configure the Store host's window through `nativeWindow` when packaging.
+Private menu bar visibility and external self-update installers must be
+excluded from Store consumers.
 
 ## Standalone template builds
 
