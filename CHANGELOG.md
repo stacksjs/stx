@@ -1,5 +1,15 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.692...v0.2.693)
+
+## 🐛 Bug Fixes
+
+- **menubar**: prepare the first document before native navigation ([4b5b6cf](https://github.com/stacksjs/stx/commit/4b5b6cf)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.691...v0.2.692)
 
 ## 🐛 Bug Fixes
