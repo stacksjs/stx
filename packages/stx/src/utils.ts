@@ -1256,10 +1256,16 @@ export async function renderComponentWithSlot(
       const sharedVideoUsage = video && usesSrc && !usesSource && (renderMetadata?.events ?? []).every(event =>
         /^(?:play|pause|ended|timeupdate|loadedmetadata|loadstart|error)$/.test(event.replace(/^@/, '').split('.')[0]),
       )
+      // Desktop callers already use title/symbol for an NSButton. Resolving
+      // those calls to the shared label/slot API silently erased their words.
+      const hasProp = (name: string) => Object.hasOwn(props, name) || Boolean(renderMetadata?.reactiveProps?.includes(name))
+      const nativeButtonUsage = options._nativeHostAttrs && /^button$/i.test(baseName)
+        && (hasProp('symbol') || hasProp('iconOnly') || (hasProp('title') && !hasProp('label') && !slotContent.trim()))
       const targetIsFallback = options._targetComponentFallbackNames?.some(name => name.toLowerCase() === baseName.toLowerCase())
         && (!checkedControl || sharedCheckedUsage)
         && (!textInput || sharedTextInputUsage)
         && (!video || sharedVideoUsage)
+        && !nativeButtonUsage
       for (const dir of targetIsFallback ? [] : options._targetComponentDirs ?? []) {
         if (dir && !searchDirs.includes(dir))
           searchDirs.push(dir)

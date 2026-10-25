@@ -21,6 +21,22 @@ async function fixture(source: string, withPlugin = true) {
 
 afterEach(closeBrowser)
 
+it('retains native title and symbol buttons when the shared component package is installed', async () => {
+  const source = '<View><Button title="Pair a phone" testID="pair" /><Button title="Archive" symbol="archivebox" variant="toolbar" testID="archive" /></View>'
+  const { root, file } = await fixture(source)
+  const compiled = await compileScreenSource(source, file, { root })
+  expect(compiled.dependencies).toContain(join(nativePrimitivesDir(), 'Button.stx'))
+  expect(compiled.dependencies).not.toContain(sharedButton)
+  const { code } = await compileSharedScreenBundle(file, { root })
+  const screen = mountNativeScreen(code, 'Screen')
+  try {
+    await screen.settle()
+    expect(screen.byTestID('pair')!.props.title).toBe('Pair a phone')
+    expect(screen.byTestID('archive')!.props).toMatchObject({ title: 'Archive', symbol: 'archivebox', variant: 'toolbar' })
+  }
+  finally { screen.unmount() }
+})
+
 describe.each([false, true])('shared Button resolution (minify=%s)', (minify) => {
   it('selects the same shipped file and retains reactive behavior and lifecycle on both targets', async () => {
     const source = `<script client>
