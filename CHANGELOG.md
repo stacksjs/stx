@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.690...v0.2.691)
+
+## 🐛 Bug Fixes
+
+- **native**: reject unavailable synchronous storage ([9967733](https://github.com/stacksjs/stx/commit/9967733)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.691 ([2c6d152](https://github.com/stacksjs/stx/commit/2c6d152)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.687...v0.2.688)
 
 ## ✨ Features
