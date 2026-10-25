@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.691...v0.2.692)
+
+## 🐛 Bug Fixes
+
+- **desktop**: require the SDK that supplies hosted native windows ([8a23465](https://github.com/stacksjs/stx/commit/8a23465)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.692 ([9a3a7c9](https://github.com/stacksjs/stx/commit/9a3a7c9)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.690...v0.2.691)
 
 ## 🐛 Bug Fixes
