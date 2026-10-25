@@ -63,3 +63,28 @@ window.probe = { rows, loading, more, padding, requests: () => requests }
   }
   finally { view.close(); server.stop(true) }
 }, 30_000)
+
+
+it('caps an unbounded page collection before its end sentinel loads all history', async () => {
+  const root = join(import.meta.dir, '..')
+  const html = await processDirectives(`@import('List', '${root}/src/ui/list/List.stx')
+<!doctype html><html><head><style>.overflow-y-auto { overflow-y:auto; }</style></head><body>
+<List :hasMore="false">
+  @for(let row = 0; row < 80; row++)
+    <div style="height:40px">Row {{ row }}</div>
+  @endfor
+</List></body></html>`, {}, join(root, 'list-page-browser.stx'), { ...defaultConfig, root, cache: false, debug: false }, new Set())
+  const server = Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: () => new Response(html, { headers: { 'Content-Type': 'text/html' } }) })
+  const view = new WebView({ headless: true })
+  try {
+    await view.navigate(server.url.href)
+    let bounded = false
+    for (let i = 0; i < 100; i++) {
+      bounded = await view.evaluate(`(() => { const list = document.querySelector('[data-stx-list]'); return !!list && list.scrollHeight > list.clientHeight && list.clientHeight <= innerHeight; })()`)
+      if (bounded) break
+      await Bun.sleep(25)
+    }
+    expect(bounded).toBe(true)
+  }
+  finally { view.close(); server.stop(true) }
+}, 30_000)

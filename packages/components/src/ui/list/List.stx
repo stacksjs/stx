@@ -9,7 +9,9 @@
  * page; pass :loading and :hasMore from the page's pagination state. A button can call
  * the same loader for keyboard access and recovery after a failed request.
  *
- * The viewport must have a bounded height (usually a flex-1 parent). Safe
+ * Give the viewport a bounded height (usually a flex-1 parent). Browsers
+ * also cap an otherwise unbounded page list at one viewport, so an end
+ * sentinel cannot eagerly load the entire history. Safe
  * areas belong to the host; contentContainerStyle supplies extra space for
  * an application-owned overlay. Content padding belongs here, not on a
  * viewport whose height could then exclude its last rows.
@@ -41,7 +43,7 @@ const webPadding = derived(() => {
   const vertical = style.paddingVertical ?? all
   const horizontal = style.paddingHorizontal ?? all
   const px = value => `${Math.max(0, Number(value) || 0)}px`
-  return { paddingTop: px(style.paddingTop ?? vertical), paddingBottom: px(style.paddingBottom ?? vertical), paddingLeft: px(style.paddingLeft ?? horizontal), paddingRight: px(style.paddingRight ?? horizontal) }
+  return { maxHeight: '100dvh', boxSizing: 'border-box', paddingTop: px(style.paddingTop ?? vertical), paddingBottom: px(style.paddingBottom ?? vertical), paddingLeft: px(style.paddingLeft ?? horizontal), paddingRight: px(style.paddingRight ?? horizontal) }
 })
 onMount(() => {
   if (nativeHost || typeof IntersectionObserver !== 'function') return
