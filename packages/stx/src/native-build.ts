@@ -153,6 +153,9 @@ export interface NativeBuildConfig {
   /** Path to Craft binary (auto-detected if not specified) */
   craftPath?: string
 
+  /** macOS webview and native bridge without Craft's separate scripting engine. */
+  runtimeProfile?: 'full' | 'webview'
+
   /** Additional environment variables */
   env?: Record<string, string>
 
@@ -241,7 +244,7 @@ export async function buildNative(config: NativeBuildConfig): Promise<NativeBuil
     const appVersion = config.version || '1.0.0'
 
     // Find Craft binary
-    const craftPath = config.craftPath || await findCraftBinary()
+    const craftPath = config.craftPath || findCraftBinary(config.runtimeProfile)
     if (!craftPath) {
       return {
         success: false,
@@ -249,6 +252,14 @@ export async function buildNative(config: NativeBuildConfig): Promise<NativeBuil
         format,
         error: 'Craft native binary not found on PATH. Run pantry install craft, or specify craftPath for framework development.',
       }
+    }
+
+    if (config.runtimeProfile === 'webview') {
+      if (target !== 'macos')
+        throw new Error('The webview runtime profile is currently available on macOS only.')
+      const probe = Bun.spawnSync([craftPath, '--runtime-profile'], { stdout: 'pipe', stderr: 'pipe', timeout: 10_000 })
+      if (probe.exitCode !== 0 || probe.stdout.toString().trim() !== 'webview')
+        throw new Error('The requested Craft webview runtime is unavailable. Upgrade Craft with Pantry before building.')
     }
 
     if (config.verbose) {
@@ -369,6 +380,7 @@ await runNativeBackend({ html: ${JSON.stringify(html)}, fetch: handler,
     finally { removeTempDir(scratch) }
     await Bun.write(join(resourcesDir, 'craft.json'), `${JSON.stringify({
       backend: { executable: 'stx-backend' },
+      runtimeProfile: config.runtimeProfile || 'full',
       title: config.window?.title || appName,
       appName,
       width: config.window?.width || 1200,
@@ -744,13 +756,13 @@ async function buildAndroid(
  * Use the Pantry runtime on PATH, with an explicit development override.
  * A nearby source checkout must never silently replace an installed release.
  */
-export function findCraftBinary(): string | null {
+export function findCraftBinary(profile: 'full' | 'webview' = 'full'): string | null {
   const explicit = process.env.CRAFT_BIN
   if (explicit) {
     if (!existsSync(explicit)) throw new Error(`CRAFT_BIN points to a missing file: ${explicit}`)
     return explicit
   }
-  return Bun.which('craft', { PATH: process.env.PATH ?? '', cwd: process.cwd() })
+  return Bun.which(profile === 'webview' ? 'craft-webview' : 'craft', { PATH: process.env.PATH ?? '', cwd: process.cwd() })
 }
 
 /**

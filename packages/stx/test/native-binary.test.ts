@@ -2,7 +2,7 @@ import { afterAll, expect, test } from 'bun:test'
 import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { findCraftBinary } from '../src/native-build'
+import { buildNative, findCraftBinary } from '../src/native-build'
 
 const root = mkdtempSync(join(tmpdir(), 'stx-native-binary-'))
 const project = join(root, 'apps/sample')
@@ -23,6 +23,11 @@ test('uses the installed runtime rather than a neighboring Craft checkout', () =
     process.env.PATH = join(root, 'managed')
     delete process.env.CRAFT_BIN
     expect(findCraftBinary()).toBe(managed)
+    expect(findCraftBinary('webview')).toBeNull()
+    const webview = join(root, 'managed/craft-webview')
+    writeFileSync(webview, '#!/bin/sh\nexit 0\n', { mode: 0o755 })
+    expect(findCraftBinary('webview')).toBe(webview)
+    expect(findCraftBinary()).toBe(managed)
     process.env.PATH = ''
     expect(findCraftBinary()).toBeNull()
     process.env.CRAFT_BIN = checkout
@@ -37,4 +42,15 @@ test('uses the installed runtime rather than a neighboring Craft checkout', () =
     if (previous.override === undefined) delete process.env.CRAFT_BIN
     else process.env.CRAFT_BIN = previous.override
   }
+})
+
+
+test('a requested webview profile refuses a full runtime rather than silently substituting it', async () => {
+  const template = join(root, 'profile.stx')
+  const full = join(root, 'full-runtime')
+  writeFileSync(template, '<html><body>Profile check</body></html>')
+  writeFileSync(full, '#!/bin/sh\nprintf "full\\n"\n', { mode: 0o755 })
+  const result = await buildNative({ input: template, target: 'macos', output: join(root, 'out'), craftPath: full, runtimeProfile: 'webview' })
+  expect(result.success).toBe(false)
+  expect(result.error).toContain('requested Craft webview runtime is unavailable')
 })

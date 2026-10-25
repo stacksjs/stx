@@ -1043,3 +1043,13 @@ The documentation will include:
 - Usage examples
 
 This makes it easy for developers to understand how to use your web components in their HTML.
+
+
+#### Smaller macOS backend applications
+
+Set `runtimeProfile: 'webview'` in `craft.config.ts` for applications whose
+application logic runs in a bundled Bun backend. STX selects Pantry's official
+`craft-webview` executable, which retains the native window, bridge and backend
+host while omitting Craft's separate headless scripting engine. Install a Craft
+release that includes this profile; builds fail if the requested profile is
+missing. The default `full` profile continues to support Craft scripts.
