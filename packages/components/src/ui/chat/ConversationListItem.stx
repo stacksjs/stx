@@ -1,0 +1,25 @@
+<script client>
+const item = useReactiveProp('item', {})
+const selected = useReactiveProp('selected', false)
+const palette = useReactiveProp('palette', { selection: '#007aff', text: '#1d1d1f', muted: '#737377', separator: '#dedee0', avatar: '#969ba6' })
+const emit = defineEmits(['choose', 'menu'])
+const ink = derived(() => selected() ? '#ffffff' : palette().text)
+const muted = derived(() => selected() ? '#ffffff' : palette().muted)
+</script>
+
+<div data-native="Pressable" class="relative flex flex-row items-center gap-[10px] h-[70px] px-[10px] py-2 rounded-[9px]" :style="{backgroundColor: selected() ? palette().selection : 'transparent'}" :accessibilityLabel="item().title" :accessibilityState="{selected:selected()}" @click="emit('choose', item())" @contextmenu="emit('menu', item())">
+  <span :if="item().unread" class="absolute w-[6px] h-[6px] rounded-full left-0 top-[32px]" :style="{backgroundColor: selected() ? '#ffffff' : palette().selection}" accessibilityLabel="Unread"></span>
+  <div class="relative w-[42px] h-[42px] shrink-0">
+    <Avatar :src="item().avatar || ''" :alt="item().title || ''" :initials="item().initials || ''" size="md" />
+    <span :if="item().sourceSymbol" data-native="View" class="absolute right-0 bottom-0 w-[16px] h-[16px] rounded-full items-center justify-center border" :style="{backgroundColor:item().sourceColor || palette().selection,borderColor:selected() ? palette().selection : '#ffffff'}">
+      <span data-native="Icon" :symbol="item().sourceSymbol" class="w-[10px] h-[10px] text-white"></span>
+    </span>
+  </div>
+  <div class="flex flex-1 min-w-0 flex-col gap-[3px]">
+    <div class="flex flex-row gap-2 items-center">
+      <span class="flex-1 min-w-0 text-[13px] font-semibold" :numberOfLines="1" :style="{color:ink()}" :text="item().title || ''"></span>
+      <span class="text-[10.5px] shrink-0" :numberOfLines="1" :style="{color:muted()}" :text="item().timestamp || ''"></span>
+    </div>
+    <span class="text-[12px]" :numberOfLines="2" :style="{color:muted()}" :text="item().preview || ''"></span>
+  </div>
+</div>

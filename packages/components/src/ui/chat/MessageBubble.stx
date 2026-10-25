@@ -1,0 +1,25 @@
+<script client>
+const outgoing = useReactiveProp('outgoing', false)
+const body = useReactiveProp('body', '')
+const quote = useReactiveProp('quote', '')
+const reactions = useReactiveProp('reactions', '')
+const unsent = useReactiveProp('unsent', false)
+const edited = useReactiveProp('edited', false)
+const retained = useReactiveProp('retained', false)
+const background = useReactiveProp('background', '#e9e9eb')
+const color = useReactiveProp('color', '#1d1d1f')
+const metadataColor = useReactiveProp('metadataColor', '#737377')
+const joined = useReactiveProp('joined', false)
+const emit = defineEmits(['menu'])
+</script>
+
+<div class="flex flex-col gap-[3px] max-w-[72%]" :style="{alignSelf:outgoing() ? 'flex-end' : 'flex-start',marginTop:joined() ? 2 : 8}">
+  <span :if="quote()" class="px-3 text-[11px]" :numberOfLines="2" :style="{color:metadataColor()}" :text="quote()"></span>
+  <span :if="reactions()" class="px-2 text-[14px]" :style="{alignSelf:outgoing() ? 'flex-end' : 'flex-start'}" :text="reactions()"></span>
+  <div data-native="Pressable" class="flex flex-col gap-1 px-3 py-[7px] rounded-[17px]" :style="{backgroundColor:unsent() ? 'transparent' : background(),borderWidth:retained() ? 1 : 0,borderColor:'#b88231'}" @contextmenu="emit('menu')">
+    <span :if="unsent()" class="text-[12px]" :style="{color:metadataColor()}" :text="'Message unsent'"></span>
+    <span :if="body() && !unsent()" class="text-[13px]" :style="{color:color()}" :text="body()"></span>
+    <slot />
+  </div>
+  <span :if="edited()" class="px-3 text-[10px]" :style="{color:metadataColor()}" :text="'Edited'"></span>
+</div>
