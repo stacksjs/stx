@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.699...v0.2.700)
+
+## ✨ Features
+
+- expose lossless Bluetooth stream reads and writes ([0e3ba55](https://github.com/stacksjs/stx/commit/0e3ba55)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.700 ([e15fa4d](https://github.com/stacksjs/stx/commit/e15fa4d)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.698...HEAD)
 
 ## 🐛 Bug Fixes
