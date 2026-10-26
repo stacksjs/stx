@@ -182,6 +182,10 @@ wrapping `<div>`, a client `value = state('/first')`, and
    Typed false/null/default writes made while hidden survive remount, even
    when the outer prop attribute stays absent; parsed numeric/boolean defaults
    are also retained through the reactive-prop bridge.
+   The historical #1704 observer guard is tested behaviorally in
+   `edge-cases/issue-fixes.test.ts`: unchanged raw or parsed values cause no
+   redundant writes, while a pending typed value with identical serialized
+   text is still consumed. Router tests verify that type changes notify once.
    `image-loading-browser.test.ts` checks actual browser hint properties,
    precedence, SSR, clearing/defaults and retained identity in WebKit/Chrome.
    Its offscreen test verifies that enabling priority starts and decodes a

@@ -8,6 +8,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import vm from 'node:vm'
+import { signalsAuthoringRuntime } from '../../src/client/signals-authoring-runtime'
 import { processDirectives } from '../../src/process'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import { runtimeWindowStxSurface } from '../../test-utils/runtime-surface'
@@ -593,10 +595,42 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
   })
 
   it('only updates the local signal when the parsed value actually changes', () => {
-    // Guards against MutationObserver re-firing for unrelated attribute
-    // writes (and prevents feedback loops if .set() ever propagated back).
-    expect(runtime).toMatch(/if\s*\(raw === lastRaw\)\s*return/)
-    expect(runtime).toMatch(/if\s*\(next !== s\(\)\)\s*s\.set\(next\)/)
+    const attributes = new Map([['count', '1']])
+    const root = {
+      hasAttribute: (name: string) => attributes.has(name),
+      getAttribute: (name: string) => attributes.get(name) ?? null,
+      __stx_direct_prop_values: {} as Record<string, { raw: string, value: unknown }>,
+    }
+    const writes: unknown[] = []
+    let notify = () => {}
+    const useReactiveProp = vm.runInNewContext(`${signalsAuthoringRuntime('function() {}')}\nuseReactiveProp`, {
+      window: { __STX_CURRENT_ELEMENT__: root },
+      state: (initial: unknown) => {
+        let current = initial
+        const signal = () => current
+        signal.set = (next: unknown) => { writes.push(next); current = next }
+        return signal
+      },
+      stxHost: { observeAttributes: (_root: unknown, _names: unknown, callback: () => void) => { notify = callback; return () => {} } },
+      onMount: () => {},
+      onDestroy: () => {},
+    })
+    const count = useReactiveProp('count', 0)
+    expect(count()).toBe(1)
+    notify() // unchanged raw attribute
+    attributes.set('count', '01')
+    notify() // changed raw attribute, identical parsed number
+    expect(writes).toEqual([])
+    attributes.set('count', '2')
+    notify()
+    expect(writes).toEqual([2])
+    // A typed number -> string change can serialize to the same attribute.
+    root.__stx_direct_prop_values.count = { raw: '2', value: '2' }
+    notify()
+    expect(count()).toBe('2')
+    expect(writes).toEqual([2, '2'])
+    notify() // a repeated observer notification must not create feedback
+    expect(writes).toEqual([2, '2'])
   })
 
   it('evaluates prop expressions lazily without subscribing to every child signal', () => {
