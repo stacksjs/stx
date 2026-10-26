@@ -65,7 +65,7 @@ interface NodeRecord {
   props: Record<string, unknown>
   style: Record<string, unknown>
   baseStyle: Record<string, unknown>
-  layoutDefaults?: Record<string, unknown>
+  layoutDefaults?: STXStyle
   styleSource?: string
   styleAncestors?: string[]
   inheritedVariables?: NativeStyleVariables
