@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.702...v0.2.703)
+
+## 🐛 Bug Fixes
+
+- **native**: preserve layout default style types ([cce82e0](https://github.com/stacksjs/stx/commit/cce82e0)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.703 ([4bbe3bd](https://github.com/stacksjs/stx/commit/4bbe3bd)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.701...v0.2.702)
 
 ## 🐛 Bug Fixes
