@@ -662,7 +662,12 @@ function routerSource(): string {
   // Apply a page title captured from the fragment response's X-STX-Title
   // header (URI-encoded) so SPA swaps keep document.title in sync with the
   // page — full-document swaps set the title from the <title> tag directly.
-  function applyTitle(t){if(t){try{document.title=decodeURIComponent(t)}catch(e){document.title=t}}}
+  function applyTitle(t,html){
+    // The parsed metadata payload already set the title with the browser's
+    // complete entity decoder. A legacy header must not overwrite it.
+    if(html&&/^<!--stx-fragment(?: rt=[01])?--><template data-stx-page-head="1">/.test(html))return;
+    if(t){try{document.title=decodeURIComponent(t)}catch(e){document.title=t}}
+  }
   // Only these page-owned tags are reconciled. Assets, security tokens,
   // theme metadata and arbitrary attributes never enter the contract (#2121).
   function pageMetadataTag(node){
@@ -1453,7 +1458,7 @@ function routerSource(): string {
       var loading=beforeSwap(cached,url);
       return (loading?loading.then(function(ok){if(!ok){if(!stale())recoverUnbound(url,ctx);return false}return swapCached()}):Promise.resolve(swapCached())).then(function(swapped){
         if(swapped===false)return false;
-        applyTitle(titleCache[targetPath]);
+        applyTitle(titleCache[targetPath],cached);
         // Shown from the cache at once; asked again behind it, so a page that
         // changed since says so (stx:updated) instead of staying stale.
         revalidate(targetPath,url);
@@ -1529,7 +1534,7 @@ else {
           if(swapped===false)return false;
           // Fragment swaps carry no <head>; apply the title from the header.
           // Full-document swaps already set document.title from the <title> tag.
-          if(result.isFragment)applyTitle(result.title);
+          if(result.isFragment)applyTitle(result.title,result.html);
           return true;
         });
       }).catch(failed).finally(done);
@@ -3525,7 +3530,7 @@ else {
         // 'replace' so re-rendered validation errors do not stack one history
         // entry per attempt.
         return Promise.resolve(swap(marked,cacheKey(action),'replace','')).then(function(){
-          applyTitle(r.headers.get('X-STX-Title')||'');
+          applyTitle(r.headers.get('X-STX-Title')||'',marked);
         });
       });
     }).catch(function(err){

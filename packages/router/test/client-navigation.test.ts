@@ -68,7 +68,7 @@ describe('bounded page metadata navigation (#2121)', () => {
 <meta property="og:title" content="Detail"><meta name="twitter:card" content="summary">
 <link rel="canonical" href="/detail?x=1&amp;y=2"><link rel="alternate" hreflang="de" href="/de/detail">`
   const payload = (head: string) => `<template data-stx-page-head="1">${head}</template>\n<section>Destination</section>`
-  const headers = { 'X-STX-Fragment': 'true', 'X-STX-Runtime': 'false' }
+  const headers = { 'X-STX-Fragment': 'true', 'X-STX-Runtime': 'false', 'X-STX-Title': 'Legacy%20header' }
 
   it('reconciles supported tags, decodes once, removes missing tags, and preserves unrelated head identities', async () => {
     const window = installRouter(initial, async input => response(payload(String(input).includes('empty') ? '' : metadata), headers), { screens: false })
