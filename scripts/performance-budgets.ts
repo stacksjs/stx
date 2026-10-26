@@ -45,7 +45,9 @@ const budgets = {
   // swap that waits for its module bundles, the opening page kept for Back
   // and prefetch-on-sight leaving bundles for an intent took it from 68285
   // to 70782 bytes. The same ~2KB of slack.
-  routerScriptBytes: 71 * 1024,
+  // Bounded head reconciliation and retained-head snapshots (#2121) add
+  // ~2KB uncompressed. Keep the previous ~2KB feature-growth headroom.
+  routerScriptBytes: 73 * 1024,
 }
 
 async function measure<T>(fn: () => T | Promise<T>, iterations: number): Promise<number> {

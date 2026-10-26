@@ -663,6 +663,32 @@ function routerSource(): string {
   // header (URI-encoded) so SPA swaps keep document.title in sync with the
   // page — full-document swaps set the title from the <title> tag directly.
   function applyTitle(t){if(t){try{document.title=decodeURIComponent(t)}catch(e){document.title=t}}}
+  // Only these page-owned tags are reconciled. Assets, security tokens,
+  // theme metadata and arbitrary attributes never enter the contract (#2121).
+  function pageMetadataTag(node){
+    var tag=node.tagName.toLowerCase(),out;
+    if(tag==='meta'){
+      var kind=node.hasAttribute('property')?'property':'name';
+      var name=(node.getAttribute(kind)||'').toLowerCase();
+      if(name!=='description'&&!/^(og|twitter):[\\w:]+$/.test(name))return null;
+      out=ce('meta');out.setAttribute(kind,name);out.setAttribute('content',node.getAttribute('content')||'');return out;
+    }
+    if(tag==='link'){
+      var rel=(node.getAttribute('rel')||'').toLowerCase(),lang=node.getAttribute('hreflang');
+      if(rel!=='canonical'&&!(rel==='alternate'&&lang))return null;
+      out=ce('link');out.setAttribute('rel',rel);out.setAttribute('href',node.getAttribute('href')||'');
+      if(rel==='alternate')out.setAttribute('hreflang',lang);return out;
+    }
+    return null;
+  }
+  function pageMetadataNodes(root){return Array.prototype.slice.call(root.querySelectorAll('meta,link'))}
+  function capturePageHead(){return pageMetadataNodes(document.head).map(function(node){var tag=pageMetadataTag(node);return tag?tag.outerHTML:''}).join('')}
+  function applyPageHead(html){
+    var doc=new DOMParser().parseFromString('<html><head>'+html+'</head><body></body></html>','text/html');
+    pageMetadataNodes(document.head).forEach(function(node){if(pageMetadataTag(node))node.remove()});
+    pageMetadataNodes(doc.head).forEach(function(node){var tag=pageMetadataTag(node);if(tag)document.head.appendChild(tag)});
+    var title=doc.head.querySelector('title');if(title)document.title=title.textContent;
+  }
   // ── Container attributes ──
   // A fragment carries only the container's INNER content, so any layout that
   // lives on the destination's <main> itself (e.g. a centered auth page whose
@@ -1799,6 +1825,11 @@ else {
     var isFragment=!!fragMark;
     var declaredRuntime=fragMark&&fragMark[1]?fragMark[1]:'';
     if(isFragment)html=html.slice(fragMark[0].length);
+    var incomingHead=null;
+    if(isFragment){
+      var headPayload=/^<template data-stx-page-head="1">([\\s\\S]*?)<\\/template>\\n?/.exec(html);
+      if(headPayload){incomingHead=headPayload[1];html=html.slice(headPayload[0].length)}
+    }
     if(!isFragment&&!isStxDocument(html)){log('[router] non-stx document — full navigation to:',url);location.href=url;return Promise.resolve(false)}
     var ctx=pendingCtx||{direction:pushState==='replace'?'replace':pushState==='tab'?'tab':pushState===false?'pop':'push'};
     pendingCtx=null;
@@ -2046,6 +2077,7 @@ else {
               setDirection(ctx.direction);
               if(useScreens){scr=screenBegin(host,ctx,html,pushState!==false);currentContent=scr.el}
               beginPageSwap();
+              if(incomingHead!==null)applyPageHead(incomingHead);
               doFragSwap();
               if(scr)screenEnd(scr);
               resolve(true);
@@ -2402,6 +2434,7 @@ else {
       // Update title
       var newTitle=doc.querySelector('title');
       if(newTitle)document.title=newTitle.textContent;
+      applyPageHead(doc.head.innerHTML);
 
       // Update <html lang> from the destination doc so screen readers,
       // CSS :lang() selectors, and any i18n picker that mirrors
@@ -2658,6 +2691,7 @@ else {
   function saveEntry(e){
     var stx=window.stx||{};
     e.title=document.title;
+    e.head=capturePageHead();
     e.setup=stx._latestSetup;
     e.data=window.__STX_DATA__;
     e.config=window.__STX_RUNTIME_CONFIG__;
@@ -2667,6 +2701,7 @@ else {
   function restoreEntry(e){
     var stx=window.stx||{};
     if(e.title)document.title=e.title;
+    if(typeof e.head==='string')applyPageHead(e.head);
     if(e.setup)stx._latestSetup=e.setup;
     window.__STX_DATA__=e.data||{};
     window.__STX_RUNTIME_CONFIG__=e.config||{};

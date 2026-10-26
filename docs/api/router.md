@@ -2,6 +2,22 @@
 
 This document details stx's routing system API, including route configuration, navigation guards, and route management.
 
+## Page metadata on navigation
+
+STX fragment responses include an inert `<template data-stx-page-head="1">`
+payload. On navigation, the router synchronizes the destination title,
+description, Open Graph (`og:*`) and Twitter (`twitter:*`) metadata, canonical
+link, and locale alternate links (`rel="alternate"` with `hreflang`). Prefetch
+does not change the active head; cached and retained back/forward visits restore
+the destination metadata. Supported tags missing from the new payload are removed.
+
+This is not a whole-head replacement. Scripts, stylesheets, preload links,
+security tokens, theme metadata, and unrelated head state are outside this
+contract. Only the supported tags' semantic attributes are copied. Older
+clients leave the template inert; a new client receiving an older server's
+fragment without a payload leaves its existing metadata unchanged. Full-document
+SPA swaps use the same metadata allowlist. Full browser navigations are unchanged.
+
 ## Router Setup
 
 ### Basic Configuration

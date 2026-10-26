@@ -59,6 +59,61 @@ async function waitForRouterSwap() {
   await new Promise(resolve => setTimeout(resolve, 180))
 }
 
+describe('bounded page metadata navigation (#2121)', () => {
+  const initial = `<html><head><title>Home</title><meta name="description" content="Home">
+<meta property="og:title" content="Home"><link rel="canonical" href="/">
+<link rel="alternate" hreflang="en" href="/en"><meta name="csrf-token" content="secret">
+<meta name="theme-color" content="red"><link rel="stylesheet" href="/app.css"></head><body><main>Home</main></body></html>`
+  const metadata = `<title>Detail &amp; &amp;lt;</title><meta name="description" content="Grüß &quot;你好&quot; &amp; &lt;literal&gt;">
+<meta property="og:title" content="Detail"><meta name="twitter:card" content="summary">
+<link rel="canonical" href="/detail?x=1&amp;y=2"><link rel="alternate" hreflang="de" href="/de/detail">`
+  const payload = (head: string) => `<template data-stx-page-head="1">${head}</template>\n<section>Destination</section>`
+  const headers = { 'X-STX-Fragment': 'true', 'X-STX-Runtime': 'false' }
+
+  it('reconciles supported tags, decodes once, removes missing tags, and preserves unrelated head identities', async () => {
+    const window = installRouter(initial, async input => response(payload(String(input).includes('empty') ? '' : metadata), headers), { screens: false })
+    const unrelated = ['meta[name="csrf-token"]', 'meta[name="theme-color"]', 'link[rel="stylesheet"]'].map(selector => window.document.querySelector(selector))
+    await window.stxRouter.navigate('/detail')
+    expect(window.document.title).toBe('Detail & &lt;')
+    expect(window.document.querySelector('meta[name="description"]')?.getAttribute('content')).toBe('Grüß "你好" & <literal>')
+    expect(window.document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe('/detail?x=1&y=2')
+    expect(window.document.querySelectorAll('link[rel="alternate"]')).toHaveLength(1)
+    expect(window.document.querySelector('link[hreflang="de"]')).not.toBeNull()
+    expect(window.document.querySelector('template[data-stx-page-head]')).toBeNull()
+    expect(unrelated.every(node => node?.isConnected)).toBe(true)
+    await window.stxRouter.navigate('/empty')
+    expect(window.document.head.querySelectorAll('meta[name="description"],meta[property^="og:"],meta[name^="twitter:"],link[rel="canonical"],link[hreflang]')).toHaveLength(0)
+    expect(unrelated.every(node => node?.isConnected)).toBe(true)
+  })
+
+  it('leaves metadata intact for an older server without a payload', async () => {
+    const window = installRouter(initial, async () => response('<p>Old server</p>', { ...headers, 'X-STX-Title': 'Old%20server' }), { screens: false })
+    await window.stxRouter.navigate('/legacy')
+    expect(window.document.title).toBe('Old server')
+    expect(window.document.querySelector('meta[name="description"]')?.getAttribute('content')).toBe('Home')
+    expect(window.document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe('/')
+  })
+
+  it('keeps metadata in prefetched fragments but applies it only on navigation', async () => {
+    let calls = 0
+    const window = installRouter(initial, async () => { calls++; return response(payload(metadata), headers) }, { screens: false })
+    await window.stxRouter.prefetch('/detail')
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(window.document.title).toBe('Home')
+    await window.stxRouter.navigate('/detail')
+    expect(calls).toBe(1)
+    expect(window.document.title).toBe('Detail & &lt;')
+    expect(window.document.querySelector('meta[name="twitter:card"]')?.getAttribute('content')).toBe('summary')
+  })
+
+  it('uses the same allowlist for full-document fallback', async () => {
+    const window = installRouter(initial, async () => response(`<html><head><meta name="stx-layout" content="">${metadata}<meta name="csrf-token" content="wrong"></head><body><main>Full document</main></body></html>`), { screens: false })
+    await window.stxRouter.navigate('/full')
+    expect(window.document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe('/detail?x=1&y=2')
+    expect(window.document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')).toBe('secret')
+  })
+})
+
 describe('router browser navigation behavior', () => {
   it('preserves mounted feedback and draft input on native anchor history visits', async () => {
     const calls: string[] = []
