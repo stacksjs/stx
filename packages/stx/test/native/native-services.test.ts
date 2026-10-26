@@ -657,6 +657,8 @@ describe('generic Bluetooth channel', () => {
     expect(host.scope.craft.capabilities.bluetooth).toBe(true)
     for (const [method, options, data] of [
       ['scan', { services: ['180a'], namePrefix: 'LARQ_' }, []],
+      ['write', { bytes: [0, 5, 0] }, true],
+      ['read', { timeoutMs: 1000 }, [0, 6]],
       ['connect', { id: 'cap', service: 'nus', write: 'rx', notify: 'tx' }, { id: 'cap' }],
       ['exchange', { bytes: [13, 1, 0, 0, 0], responsePrefix: [13, 1, 0, 0, 0] }, [13, 1, 0, 0, 0, 16, 1]],
     ] as const) {

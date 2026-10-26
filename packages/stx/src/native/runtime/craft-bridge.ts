@@ -614,6 +614,8 @@ export function installCraftBridge(
       stopScan: () => request('Bluetooth', 'stopScan', []),
       connect: (options: AnyRecord) => ask('Bluetooth', 'connect', [options]),
       exchange: (options: AnyRecord) => request('Bluetooth', 'exchange', [options]),
+      read: (options: AnyRecord) => request('Bluetooth', 'read', [options]),
+      write: (options: AnyRecord) => request('Bluetooth', 'write', [options]),
       disconnect: () => request('Bluetooth', 'disconnect', []),
     }
   }
