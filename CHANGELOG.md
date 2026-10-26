@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.705...v0.2.706)
+
+## 🐛 Bug Fixes
+
+- **native**: complete workout and connection icon mappings ([8ae1213](https://github.com/stacksjs/stx/commit/8ae1213)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.706 ([b579891](https://github.com/stacksjs/stx/commit/b579891)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.704...v0.2.705)
 
 ## 🐛 Bug Fixes
