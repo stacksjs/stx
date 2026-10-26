@@ -116,3 +116,26 @@ const props = defineProps({ label: { type: String, required: true }, count: { de
   expect(result.failure).toBeUndefined()
   expect(result.diagnostics.map(d => d.line)).toEqual([4])
 })
+
+it('accepts runtime event lists and checks their handlers as the first emitted payload', async () => {
+  const { dir, page } = await fixture('')
+  await Bun.write(join(dir, 'components/Counter.stx'), `<script client>
+const emit = defineEmits(['change', 'close'])
+emit('change', { id: 1 })
+emit('close')
+emit('forwarded')
+const typed = defineEmits<{ change: [value: number] }>()
+typed('missing', 1)
+typed('change', 'bad')
+</script><button @click="emit('change', { id: 2 })">Change</button>`)
+  const child = await typecheckStxFiles([join(dir, 'components/Counter.stx')])
+  expect(child.failure).toBeUndefined()
+  expect(child.diagnostics.map(d => d.line)).toEqual([7, 8])
+  expect(child.diagnostics[0].message).toContain('missing')
+  await Bun.write(page, `<script client>
+function onChange(value: { id: number }) {}
+</script><Counter @change="onChange" @change.inline="onChange($event)" />`)
+  const parent = await typecheckStxFiles([page])
+  expect(parent.failure).toBeUndefined()
+  expect(parent.diagnostics).toEqual([])
+})

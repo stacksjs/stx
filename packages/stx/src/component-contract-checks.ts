@@ -90,7 +90,8 @@ export function componentContractChecks(source: string, masked: string, options:
   const declarations = [COMPONENT_CONTRACT_HELPERS,
     'type __StxAssignedValue<T> = T extends { readonly _isSignal: true } | { readonly _isDerived: true } ? T extends () => infer V ? V : T : T;',
     'type __StxProp<P, K> = K extends keyof P ? P[K] : unknown;',
-    'type __StxEvent<E, K> = K extends keyof E ? E[K] extends readonly unknown[] ? Exclude<E[K]["length"], 0 | 1> extends never ? E[K][0] : E[K] : E[K] : any;']
+    // Runtime event lists have unbounded argument arrays, not array payloads.
+    'type __StxEvent<E, K> = K extends keyof E ? E[K] extends readonly unknown[] ? number extends E[K]["length"] ? E[K][0] : Exclude<E[K]["length"], 0 | 1> extends never ? E[K][0] : E[K] : E[K] : any;']
   const events = new Map<number, string>()
   const dependencies = new Map<string, string>()
   const imported = new Map<string, string>()

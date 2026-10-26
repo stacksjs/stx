@@ -782,6 +782,7 @@ declare function withDefaults<T extends Record<string, any>>(_props: T, _default
  * @example
  * const emit = defineEmits<{ view: [record: Row], remove: [id: number] }>()
  */
+declare function defineEmits(_events: readonly string[]): (_event: string, ..._args: unknown[]) => void
 declare function defineEmits<T extends string = string>(): (_event: T, ..._args: unknown[]) => void
 declare function defineEmits<T extends Record<string, unknown[]>>(): <K extends keyof T & string>(_event: K, ..._args: T[K]) => void
 declare function defineExpose<T extends Record<string, any>>(_exposed: T): void
