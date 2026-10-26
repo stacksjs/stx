@@ -152,6 +152,8 @@ const liveFetchPriority = useReactiveProp('fetchpriority', {{ authoredFetchPrior
 const isPriority = derived(() => imageBoolean(livePriority(), false))
 const imageLoading = derived(() => isPriority() ? 'eager' : (liveLoading() || (imageBoolean(liveLazy(), true) ? 'lazy' : 'eager')))
 const imageFetchPriority = derived(() => isPriority() ? 'high' : (liveFetchPriority() || 'auto'))
+const liveDecoding = useReactiveProp('decoding', {{ decoding }})
+const imageDecoding = derived(() => liveDecoding() || 'async')
 // Keep the documented alias live without letting it override objectFit.
 const primaryFit = useReactiveProp('objectFit', {{ authoredObjectFit }})
 const fallbackFit = useReactiveProp('fit', {{ authoredFit }})
@@ -255,6 +257,7 @@ const initialBackground = {{ placeholder ? `${placeholder} center / cover no-rep
     @if(decorative)aria-hidden="true"@endif
     :aria-hidden="isDecorative() ? 'true' : null"
     decoding="{{ decoding }}"
+    :decoding="imageDecoding()"
     style="{{ imageStyle }}"
     :style="{ objectFit: imageFit(), objectPosition: imagePosition() }"
   />

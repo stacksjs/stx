@@ -194,6 +194,18 @@ wrapping `<div>`, a client `value = state('/first')`, and
    `shared-image-loading.test.ts` verifies normal/minified native source,
    labels, identity, remount and teardown; it does not claim host support for
    browser loading hints. Craft and component resolution remain unchanged.
+
+   **Reactive decoding hint (unreleased after v0.2.709):** shared `decoding`
+   updates the physical browser image without replacing it or changing its
+   source/candidates. `async`, `sync` and `auto` remain browser hints, not
+   guarantees about scheduling or completed decoding. Empty/null uses the
+   component's `async` fallback; undefined restores the authored SSR default.
+   `image-decoding-browser.test.ts` checks the actual image property and
+   attribute, defaults and retained-node remounts, including writes while
+   hidden. `shared-image-decoding.test.ts` protects native source, labels,
+   identity, remount and teardown in normal/minified bundles; it does not add
+   native host decoding-policy support. Craft and resolution are unchanged.
+
    **Fit binding is now supported (unreleased after v0.2.661):** both
    `objectFit` and its `fit` alias update the physical image. A nonempty
    `objectFit` wins; clearing it reveals `fit`, and clearing both restores
