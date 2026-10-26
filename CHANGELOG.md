@@ -1,5 +1,17 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.708...v0.2.709)
+
+## 🐛 Bug Fixes
+
+- **image**: distinguish missing candidates from explicit clears (#2091) ([0dbc5a0](https://github.com/stacksjs/stx/commit/0dbc5a0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **props**: retain alias clears and restore missing defaults (#2091) ([8b7c8fe](https://github.com/stacksjs/stx/commit/8b7c8fe)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **image**: react to responsive candidates and sizes (#2091) ([131445f](https://github.com/stacksjs/stx/commit/131445f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.707...v0.2.708)
 
 ## 🐛 Bug Fixes
