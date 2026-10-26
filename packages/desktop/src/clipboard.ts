@@ -9,9 +9,19 @@
  * **Permissions:** browsers require a user gesture (click, key) for
  * `writeText`. The native side has no such requirement.
  */
-import { hasBridge } from './_bridge'
+import { hasBridge, requireBridge } from './_bridge'
+
+export interface ClipboardHistorySnapshot {
+  changeCount: number
+  text: string | null
+  blocked: boolean
+  /** Best-effort foreground source at the time of observation. */
+  sourceBundleId: string
+}
 
 export interface Clipboard {
+  /** Opt-in metadata-first native history read. -1 establishes a baseline without reading text. */
+  historySnapshot: (since?: number) => Promise<ClipboardHistorySnapshot>
   /** Write plain text to the clipboard. */
   writeText: (text: string) => Promise<void>
   /** Read plain text from the clipboard. Returns "" if empty/unavailable. */
@@ -31,6 +41,12 @@ export interface Clipboard {
 }
 
 export const clipboard: Clipboard = {
+  async historySnapshot(since = -1) {
+    if (!Number.isSafeInteger(since)) throw new Error('Clipboard history requires an integer change cursor.')
+    const bridge = requireBridge<{ historySnapshot?: (cursor: number) => Promise<ClipboardHistorySnapshot> }>('clipboard')
+    if (!bridge.historySnapshot) throw new Error('This Craft runtime does not support protected clipboard history.')
+    return bridge.historySnapshot(since)
+  },
   async writeText(text: string): Promise<void> {
     if (hasBridge('clipboard')) {
       await window.craft!.clipboard.writeText(text)

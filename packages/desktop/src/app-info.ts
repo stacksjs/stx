@@ -9,7 +9,7 @@
  * defaults (empty / "0.0.0") so call sites can render an About panel
  * without branching on environment.
  */
-import { hasBridge } from './_bridge'
+import { hasBridge, requireBridge } from './_bridge'
 
 export interface AppInfo {
   /** Bundle name (e.g. "Photo Booth"). */
@@ -34,6 +34,8 @@ export interface AppNotifyOptions {
 }
 
 export interface AppAPI {
+  /** The actual macOS .app icon, encoded as a PNG data URL. */
+  icon: (path: string) => Promise<string | null>
   /** Hide the dock icon (turn the app into a menubar-only / accessory app). */
   hideDockIcon: () => Promise<void>
   /** Restore the dock icon. */
@@ -57,6 +59,12 @@ export interface AppAPI {
 const DEFAULT_INFO: AppInfo = { name: '', version: '0.0.0' }
 
 export const app: AppAPI = {
+  async icon(path) {
+    if (!path.startsWith('/') || !path.endsWith('.app') || path.includes('\0')) throw new Error('Application icons require an absolute .app path.')
+    const bridge = requireBridge<{ icon?: (path: string) => Promise<string | null> }>('app')
+    if (!bridge.icon) throw new Error('This Craft runtime does not support native application icons.')
+    return bridge.icon(path)
+  },
   async hideDockIcon() { if (hasBridge('app')) await window.craft!.app.hideDockIcon() },
   async showDockIcon() { if (hasBridge('app')) await window.craft!.app.showDockIcon() },
   async quit() { if (hasBridge('app')) await window.craft!.app.quit() },
