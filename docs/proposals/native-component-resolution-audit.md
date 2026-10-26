@@ -162,6 +162,24 @@ wrapping `<div>`, a client `value = state('/first')`, and
    does not upscale small images. No Craft code was changed, and this is not
    a claim of device pixel parity. Position/scale-down, host validation and
    browser builtin/shared precedence remain migration gates.
+
+   **Reactive dimensions and layout (unreleased after v0.2.707):** the shared
+   file now updates the physical image's `width`/`height` attributes and the
+   picture frame's `aspectRatio`. Native ratio bindings accept positive finite
+   numbers or CSS fractions such as `9 / 16`, converted to the numeric style
+   protocol. With no authored ratio, none is inferred from intrinsic dimensions.
+   Browser `objectPosition` and its `position` alias are live too: a nonempty
+   primary position wins, clearing it reveals the alias, and clearing both
+   restores `center`. Static HTML, responsive-source ownership, fit, and the
+   existing full-size frame/image styles are preserved.
+   `shared-image-layout.test.ts` reproduces the frozen values before the fix,
+   then checks native protocol updates in normal/minified bundles and actual
+   browser attributes/computed styles, clearing, retained native identity,
+   hide/reopen and teardown. Dimension assertions concern HTML attributes and
+   native props, not certification of device pixel layout. Native non-centred
+   positions remain unsupported and diagnosed, not approximated. Resolution
+   remains unchanged: use an explicit shared import to opt in; legacy native
+   calls and the browser builtin are not silently migrated.
 3. **Video (shared setup crash fixed, unreleased):**
    `<Video testID="target" label="Movie" :src="value" :paused="paused" />`
    now registers custom elements only in the browser. On native, the physical

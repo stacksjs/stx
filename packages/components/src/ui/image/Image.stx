@@ -62,7 +62,9 @@ export const aspectRatio = $props.aspectRatio
 export const authoredObjectFit = $props.objectFit || ''
 export const authoredFit = $props.fit || ''
 export const objectFit = authoredObjectFit || authoredFit || 'cover'
-export const objectPosition = $props.objectPosition || $props.position || 'center'
+export const authoredObjectPosition = $props.objectPosition || ''
+export const authoredPosition = $props.position || ''
+export const objectPosition = authoredObjectPosition || authoredPosition || 'center'
 export const rounded = $bool($props.rounded)
 export const zoomOnHover = $bool($props.zoomOnHover)
 export const className = $props.className || $props.class || ''
@@ -132,6 +134,23 @@ const imageSrc = useReactiveProp('src', {{ originalSrc }})
 const primaryFit = useReactiveProp('objectFit', {{ authoredObjectFit }})
 const fallbackFit = useReactiveProp('fit', {{ authoredFit }})
 const imageFit = derived(() => primaryFit() || fallbackFit() || 'cover')
+const primaryPosition = useReactiveProp('objectPosition', {{ authoredObjectPosition }})
+const fallbackPosition = useReactiveProp('position', {{ authoredPosition }})
+const imagePosition = derived(() => primaryPosition() || fallbackPosition() || 'center')
+const imageWidth = useReactiveProp('width', {{ width ?? null }})
+const imageHeight = useReactiveProp('height', {{ height ?? null }})
+const liveRatio = useReactiveProp('aspectRatio', {{ aspectRatio ?? null }})
+const nativeImage = !!window.stx._host.isNative
+const imageRatio = derived(() => {
+  const value = String(liveRatio() ?? '').trim()
+  if (!nativeImage) return value || null
+  // Hosts take a finite number, not CSS's "width / height" syntax. No
+  // authored ratio means auto layout; never infer one from intrinsic size.
+  if (!/^\d+(?:\.\d+)?(?:\s*\/\s*\d+(?:\.\d+)?)?$/.test(value)) return null
+  const [width, height = 1] = value.split('/').map(Number)
+  const ratio = width / height
+  return width > 0 && height > 0 && Number.isFinite(ratio) ? ratio : null
+})
 // Preserve the delivered URL/candidates at hydration. A replacement URL must
 // not keep selecting a responsive candidate belonging to the previous image.
 const currentSrc = derived(() => imageSrc() === {{ originalSrc }} ? {{ src }} : (imageSrc() == null ? '' : String(imageSrc())))
@@ -139,7 +158,7 @@ const keepInitialSources = derived(() => !!currentSrc() && imageSrc() === {{ ori
 const initialBackground = {{ placeholder ? `${placeholder} center / cover no-repeat` : '' }}
 </script>
 
-<picture class="{{ className }}" style="{{ frameStyle }}" @if(placeholder):style="{ background: keepInitialSources() ? initialBackground : 'none' }"@endif>
+<picture class="{{ className }}" style="{{ frameStyle }}" :style="{ aspectRatio: imageRatio()@if(placeholder), background: keepInitialSources() ? initialBackground : 'none'@endif }">
   @foreach(sources as source)
     <source
       @if(source.type)type="{{ source.type }}"@endif
@@ -178,11 +197,13 @@ const initialBackground = {{ placeholder ? `${placeholder} center / cover no-rep
     alt="{{ alt }}"
     @if(width)width="{{ width }}"@endif
     @if(height)height="{{ height }}"@endif
+    :width="imageWidth() ?? null"
+    :height="imageHeight() ?? null"
     loading="{{ loading }}"
     @if(decorative)aria-hidden="true"@endif
     decoding="{{ decoding }}"
     fetchpriority="{{ fetchpriority }}"
     style="{{ imageStyle }}"
-    :style="{ objectFit: imageFit() }"
+    :style="{ objectFit: imageFit(), objectPosition: imagePosition() }"
   />
 </picture>
