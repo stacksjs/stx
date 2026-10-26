@@ -11,12 +11,15 @@ const image = join(import.meta.dir, '../../../components/src/ui/image/Image.stx'
 const source = `@import('Image', '${image}')
 <script client>
 const url = state('/first.png')
+const candidates = state('/responsive.png 1x')
+const size = state('50vw')
 const shown = state(true)
-window.probe = { url, shown }
+window.probe = { url, candidates, size, shown }
 </script><section><div :if="shown">
 <Image testID="photo" className="photo" src="/first.png" :src="url" alt="Photo"
   webpSrc="/first.webp" srcSet="/first.png 1x, /first-large.png 2x" />
 </div><Image testID="dynamic" className="dynamic" :src="url" alt="Dynamic" />
+<Image testID="responsive" src="/first.png" :src="url" :srcSet="candidates" :sizes="size" alt="Responsive" />
 <Image testID="static" className="static" src="/static.png" alt="Static" /></section>`
 
 afterEach(closeBrowser)
@@ -32,11 +35,20 @@ describe.each([false, true])('shared Image source (minify=%s)', (minify) => {
       expect(photo().type).toBe('Image')
       expect(photo().props.source).toBe('/first.png')
       expect(phone.byTestID('static')!.props.source).toBe('/static.png')
+      const responsiveId = phone.byTestID('responsive')!.id
+      for (const value of ['/different.png 200w, /larger.png 2000w', null, '']) {
+        probe.candidates.set(value)
+        probe.size.set(value ? '100vw' : value)
+        await phone.settle()
+        expect(phone.byTestID('responsive')!.id).toBe(responsiveId)
+        expect(phone.byTestID('responsive')!.props.source).toBe('/first.png')
+      }
       const id = photo().id
       probe.url.set('/second.png')
       await phone.settle()
       expect(photo().id).toBe(id)
       expect(photo().props.source).toBe('/second.png')
+      expect(phone.byTestID('responsive')!.props.source).toBe('/second.png')
       for (const empty of ['', null]) {
         probe.url.set('/before-clear.png')
         await phone.settle()
@@ -44,6 +56,7 @@ describe.each([false, true])('shared Image source (minify=%s)', (minify) => {
         await phone.settle()
         expect(photo().props.source).toBeNull()
         expect(phone.byTestID('dynamic')!.props.source).toBeNull()
+        expect(phone.byTestID('responsive')!.props.source).toBeNull()
       }
       probe.shown.set(false)
       await phone.settle()
@@ -56,6 +69,8 @@ describe.each([false, true])('shared Image source (minify=%s)', (minify) => {
       phone.unmount()
       const count = phone.messages.length
       probe.url.set('/disposed.png')
+      probe.candidates.set('/disposed-candidate.png 1x')
+      probe.size.set('75vw')
       await phone.settle()
       expect(phone.messages).toHaveLength(count)
     }

@@ -95,7 +95,7 @@ describe('<Image> with a prepared delivery catalog', () => {
 
     expect(html).not.toContain('/_stx/images/')
     expect(html).not.toContain('<source')
-    expect(html).not.toContain('sizes=')
+    expect(html).not.toMatch(/\ssizes=/)
     expect(html).toMatch(/<img\s+src="\/images\/elsewhere\.jpg"/)
   })
 
@@ -104,9 +104,11 @@ describe('<Image> with a prepared delivery catalog', () => {
 <!doctype html><html><head></head><body>
 <script client>
 const url = state('/images/hero.png')
-window.probe = { url }
+const candidates = state(undefined)
+const size = state(undefined)
+window.probe = { url, candidates, size }
 </script>
-<section><Image src="/images/hero.png" :src="url" alt="Hero" sizes="50vw" /></section>
+<section><Image src="/images/hero.png" :src="url" :srcSet="candidates" :sizes="size" alt="Hero" sizes="50vw" /></section>
 </body></html>`, {}, path.join(ROOT, 'image-delivery.stx'), { ...defaultConfig, componentsDir: IMAGE_DIR, root: ROOT, cache: false, debug: false }, new Set())
     try {
       const browser = await boot({ documents: new Map([['/', html]]), dispose: async () => {} }, '/')
@@ -123,6 +125,29 @@ window.probe = { url }
       expect(candidates).toContain('/_stx/images/')
       expect(sourceCandidates.length).toBeGreaterThan(0)
       expect(sourceCandidates.every(value => value?.includes('/_stx/images/'))).toBe(true)
+      expect(image.getAttribute('sizes')).toBe('50vw')
+      browser.window.probe.size.set('25vw')
+      await settle()
+      expect(image.getAttribute('sizes')).toBe('25vw')
+      expect(sources.every(source => source.getAttribute('sizes') === '25vw')).toBe(true)
+      browser.window.probe.candidates.set('/custom.png 200w')
+      await settle()
+      expect(image.getAttribute('srcset')).toBe('/custom.png 200w')
+      expect(sources.every(source => !source.hasAttribute('srcset'))).toBe(true)
+      for (const value of [null, '']) {
+        browser.window.probe.candidates.set(value)
+        browser.window.probe.size.set(value)
+        await settle()
+        expect(image.hasAttribute('srcset')).toBe(false)
+        expect(image.hasAttribute('sizes')).toBe(false)
+        expect(sources.every(source => !source.hasAttribute('srcset') && !source.hasAttribute('sizes'))).toBe(true)
+      }
+      browser.window.probe.candidates.set(undefined)
+      browser.window.probe.size.set(undefined)
+      await settle()
+      expect(image.getAttribute('srcset')).toBe(candidates)
+      expect(image.getAttribute('sizes')).toBe('50vw')
+      expect(sources.map(source => source.getAttribute('srcset'))).toEqual(sourceCandidates)
       browser.window.probe.url.set('/images/replacement.png')
       await settle()
       expect(image.getAttribute('src')).toBe('/images/replacement.png')

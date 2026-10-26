@@ -146,6 +146,26 @@ wrapping `<div>`, a client `value = state('/first')`, and
    `image-source-browser.test.ts` verifies actual browser `currentSrc` selection
    and image decoding through URL replacement, clearing and restoration.
    Legacy native `source` values and resolution are unchanged.
+
+   **Reactive responsive selection (unreleased after v0.2.708):** shared
+   `srcSet` (also spelled `srcset`) and `sizes` update the physical browser
+   image. A changed candidate set takes ownership from initial picture sources,
+   so those sources cannot silently win over the new candidates. Unchanged
+   initial candidates remain tied to the original `src`; replacing that URL
+   drops them, while a replacement set can accompany a replacement URL.
+   Restoring the original URL and initial set restores the initial sources.
+   Empty string/null clears candidates or sizes; undefined restores defaults,
+   including prepared catalog candidates. Clearing `src` still clears all
+   candidate sets. Source-specific `sizes` wins over the live global value;
+   sources without their own size follow it. The source list itself remains
+   setup-time, not a reactive art-direction API.
+   `image-responsive-browser.test.ts` verifies decoded `currentSrc` selection
+   for both prop spellings, size-driven selection, clearing and remount in
+   actual WebKit/Chrome browsers (use `STX_IMAGE_BROWSER=chrome` on macOS).
+   `image-delivery.test.ts` protects prepared formats/default restoration;
+   `shared-image-source.test.ts` verifies normal/minified native bundles keep
+   using `src`, never browser responsive URLs. This does not add native
+   responsive image selection or change component resolution. Craft is untouched.
    **Fit binding is now supported (unreleased after v0.2.661):** both
    `objectFit` and its `fit` alias update the physical image. A nonempty
    `objectFit` wins; clearing it reveals `fit`, and clearing both restores

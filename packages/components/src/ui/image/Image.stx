@@ -172,7 +172,21 @@ const imageRatio = derived(() => {
 // Preserve the delivered URL/candidates at hydration. A replacement URL must
 // not keep selecting a responsive candidate belonging to the previous image.
 const currentSrc = derived(() => imageSrc() === {{ originalSrc }} ? {{ src }} : (imageSrc() == null ? '' : String(imageSrc())))
-const keepInitialSources = derived(() => !!currentSrc() && imageSrc() === {{ originalSrc }})
+// useReactiveProp also registers the lowercase HTML spelling, `srcset`.
+// Seed with the delivered candidates, not just the author's unoptimized input.
+const liveSrcSet = useReactiveProp('srcSet', {{ srcSet }})
+const liveSizes = useReactiveProp('sizes', {{ sizes }})
+const imageSizes = derived(() => liveSizes() == null || liveSizes() === '' ? null : String(liveSizes()))
+const initialCandidates = {{ srcSet }}
+const keepInitialSources = derived(() => !!currentSrc() && imageSrc() === {{ originalSrc }} && liveSrcSet() === initialCandidates)
+// An explicit replacement set owns selection, even when src changes too.
+// Otherwise candidates belong to the initial URL, including picture sources:
+// leaving those enabled would silently override a replacement img.srcset.
+const imageCandidates = derived(() => {
+  if (!currentSrc()) return null
+  if (liveSrcSet() === initialCandidates) return keepInitialSources() ? initialCandidates || null : null
+  return liveSrcSet() == null || liveSrcSet() === '' ? null : String(liveSrcSet())
+})
 const initialBackground = {{ placeholder ? `${placeholder} center / cover no-repeat` : '' }}
 </script>
 
@@ -184,6 +198,7 @@ const initialBackground = {{ placeholder ? `${placeholder} center / cover no-rep
       srcset="{{ source.srcset }}"
       :srcset="keepInitialSources() ? {{ JSON.stringify(source.srcset) }} : null"
       @if(source.sizes || sizes)sizes="{{ source.sizes || sizes }}"@endif
+      :sizes="{{ JSON.stringify(source.sizes || '') }} || imageSizes()"
     />
   @endforeach
   @if(hasWebP)
@@ -193,6 +208,7 @@ const initialBackground = {{ placeholder ? `${placeholder} center / cover no-rep
       @if(webpSrc && !webpSrcSet)srcset="{{ webpSrc }}"@endif
       :srcset="keepInitialSources() ? {{ JSON.stringify(webpSrcSet || webpSrc) }} : null"
       @if(sizes)sizes="{{ sizes }}"@endif
+      :sizes="imageSizes()"
     />
   @endif
   {{--
@@ -212,8 +228,9 @@ const initialBackground = {{ placeholder ? `${placeholder} center / cover no-rep
     @load="forwardImageEvent('load', $event)"
     @error="forwardImageEvent('error', $event)"
     @if(srcSet)srcset="{{ srcSet }}"@endif
-    :srcset="keepInitialSources() ? {{ JSON.stringify(srcSet) }} || null : null"
+    :srcset="imageCandidates()"
     @if(sizes)sizes="{{ sizes }}"@endif
+    :sizes="imageSizes()"
     alt="{{ alt }}"
     :alt="imageAlt()"
     @if(width)width="{{ width }}"@endif
