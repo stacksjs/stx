@@ -155,7 +155,11 @@ wrapping `<div>`, a client `value = state('/first')`, and
    drops them, while a replacement set can accompany a replacement URL.
    Restoring the original URL and initial set restores the initial sources.
    Empty string/null clears candidates or sizes; undefined restores defaults,
-   including prepared catalog candidates. Clearing `src` still clears all
+   including prepared catalog candidates. This distinction also applies to
+   pictures whose initial candidates live only on their source elements.
+   Lowercase/kebab prop aliases retain typed null/empty writes through the
+   attribute observer instead of reverting to serialized defaults.
+   Clearing `src` still clears all
    candidate sets. Source-specific `sizes` wins over the live global value;
    sources without their own size follow it. The source list itself remains
    setup-time, not a reactive art-direction API.

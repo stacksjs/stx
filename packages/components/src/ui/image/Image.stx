@@ -173,18 +173,19 @@ const imageRatio = derived(() => {
 // not keep selecting a responsive candidate belonging to the previous image.
 const currentSrc = derived(() => imageSrc() === {{ originalSrc }} ? {{ src }} : (imageSrc() == null ? '' : String(imageSrc())))
 // useReactiveProp also registers the lowercase HTML spelling, `srcset`.
-// Seed with the delivered candidates, not just the author's unoptimized input.
-const liveSrcSet = useReactiveProp('srcSet', {{ srcSet }})
+// Missing restores prepared candidates; an explicit empty value clears them.
+const liveSrcSet = useReactiveProp('srcSet', undefined, { parse: value => value == null ? null : String(value) })
 const liveSizes = useReactiveProp('sizes', {{ sizes }})
 const imageSizes = derived(() => liveSizes() == null || liveSizes() === '' ? null : String(liveSizes()))
 const initialCandidates = {{ srcSet }}
-const keepInitialSources = derived(() => !!currentSrc() && imageSrc() === {{ originalSrc }} && liveSrcSet() === initialCandidates)
+const keepInitialSources = derived(() => !!currentSrc() && imageSrc() === {{ originalSrc }}
+  && (liveSrcSet() === undefined || (!!initialCandidates && liveSrcSet() === initialCandidates)))
 // An explicit replacement set owns selection, even when src changes too.
 // Otherwise candidates belong to the initial URL, including picture sources:
 // leaving those enabled would silently override a replacement img.srcset.
 const imageCandidates = derived(() => {
   if (!currentSrc()) return null
-  if (liveSrcSet() === initialCandidates) return keepInitialSources() ? initialCandidates || null : null
+  if (liveSrcSet() === undefined || liveSrcSet() === initialCandidates) return keepInitialSources() ? initialCandidates || null : null
   return liveSrcSet() == null || liveSrcSet() === '' ? null : String(liveSrcSet())
 })
 const initialBackground = {{ placeholder ? `${placeholder} center / cover no-repeat` : '' }}

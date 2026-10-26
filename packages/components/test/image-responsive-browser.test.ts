@@ -5,7 +5,9 @@ import { encode } from 'ts-images'
 import { defaultConfig } from '../../stx/src/config'
 import { processDirectives } from '../../stx/src/process'
 
-it.each(['srcSet', 'srcset'])('selects live %s candidates and sizes in a real browser without stale picture sources', async (prop) => {
+it.each(['srcSet', 'srcset', 'source-only'])('selects live %s candidates and sizes in a real browser without stale picture sources', async (mode) => {
+  const prop = mode === 'source-only' ? 'srcSet' : mode
+  const initial = mode === 'source-only' ? '' : '/initial.png 200w'
   const root = join(import.meta.dir, '..')
   const image = join(root, 'src/ui/image/Image.stx')
   const html = await processDirectives(`@import('Image', '${image}')
@@ -17,11 +19,11 @@ const shown = state(true)
 window.probe = { url, candidates, size, shown }
 </script><section><div :if="shown">
 <Image className="photo" src="/fallback.png" :src="url" alt="Photo" loading="eager"
-  ${prop}="/initial.png 200w" :${prop}="candidates" sizes="10px" :sizes="size"
+  ${initial ? `${prop}="${initial}"` : ''} :${prop}="candidates" sizes="10px" :sizes="size"
   :sources="[{ type: 'image/png', srcset: '/initial-source.png 200w', sizes: '25px' }]"
   webpSrc="/initial.webp" />
 </div></section></body></html>`, {}, join(root, 'image-responsive.stx'), { ...defaultConfig, root, cache: false, debug: false }, new Set())
-  expect(html).toContain('srcset="/initial.png 200w"')
+  if (initial) expect(html).toContain('srcset="/initial.png 200w"')
   expect(html).toContain('sizes="10px"')
   const pixels = (width: number) => new Uint8Array(width * 4).fill(255)
   const small = await encode({ data: pixels(200), width: 200, height: 1, channels: 4 }, 'png')
@@ -54,6 +56,12 @@ window.probe = { url, candidates, size, shown }
     await selected({ selected: '/small.png', decoded: true, sizes: '1px', sources: [null, null], sourceSizes: ['25px', '1px'] })
     await view.evaluate(`(() => { window.originalImage = document.querySelector('.photo img'); window.probe.size.set('10000px') })()`)
     await selected({ selected: '/large.png', decoded: true, sizes: '10000px', sourceSizes: ['25px', '10000px'] })
+    for (const value of [null, '']) {
+      await view.evaluate(`window.probe.candidates.set(${JSON.stringify(value)})`)
+      await selected({ selected: '/fallback.png', decoded: true, candidates: null, sources: [null, null] })
+      await view.evaluate(`window.probe.candidates.set(undefined)`)
+      await selected({ selected: '/initial-source.png', decoded: true, sources: ['/initial-source.png 200w', '/initial.webp'] })
+    }
     await view.evaluate(`(() => { window.probe.url.set('/replacement.png'); window.probe.candidates.set('/replacement-small.png 200w, /replacement-large.png 2000w'); window.probe.size.set('1px') })()`)
     await selected({ selected: '/replacement-small.png', decoded: true, sources: [null, null] })
     expect(await view.evaluate(`document.querySelector('.photo img') === window.originalImage`)).toBe(true)
@@ -61,7 +69,7 @@ window.probe = { url, candidates, size, shown }
       await view.evaluate(`(() => { window.probe.candidates.set(${JSON.stringify(value)}); window.probe.size.set(${JSON.stringify(value)}) })()`)
       await selected({ selected: '/replacement.png', decoded: true, candidates: null, sizes: null })
     }
-    await view.evaluate(`(() => { window.probe.url.set('/fallback.png'); window.probe.candidates.set('/initial.png 200w'); window.probe.size.set('1px') })()`)
+    await view.evaluate(`(() => { window.probe.url.set('/fallback.png'); window.probe.candidates.set(${JSON.stringify(initial || undefined)}); window.probe.size.set('1px') })()`)
     await selected({ selected: '/initial-source.png', decoded: true, sources: ['/initial-source.png 200w', '/initial.webp'] })
     await view.evaluate(`window.probe.shown.set(false)`)
     await selected(null)
