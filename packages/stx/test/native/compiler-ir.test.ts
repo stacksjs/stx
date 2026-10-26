@@ -159,6 +159,15 @@ describe('native class and icon compatibility', () => {
 describe('the stx HTML translator produces the documented IR', () => {
   const translate = async (html: string) => (await translateHtmlToDocument(html, { source: 'Screen.stx' })).document.root
 
+  it('preserves workout, connection and attachment icons instead of the circle fallback', async () => {
+    for (const name of ['circle-pause', 'cloud-alert', 'key-round', 'paperclip', 'rotate-cw', 'route-off', 'syringe', 'volume-1']) {
+      const node = await translate(`<i class="i-lucide-${name}"></i>`)
+      expect(node.type).toBe('Icon')
+      expect(node.props.symbol).not.toBe('circle')
+      expect(node.props.iconify).toBe(`i-lucide-${name}`)
+    }
+  })
+
   it('preserves the current Lucide help icon instead of emitting an empty circle', async () => {
     const node = await translate('<i class="h-3 w-3 i-lucide-circle-question-mark"></i>')
     expect(node.type).toBe('Icon')

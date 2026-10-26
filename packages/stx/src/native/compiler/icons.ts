@@ -17,6 +17,14 @@ export const FALLBACK_SYMBOL = 'circle'
 
 /** lucide name (without the `i-lucide-` prefix) to SF Symbol name. */
 export const LUCIDE_TO_SF: Record<string, string> = {
+  'circle-pause': 'pause.circle',
+  'cloud-alert': 'exclamationmark.icloud',
+  'key-round': 'key',
+  'paperclip': 'paperclip',
+  'rotate-cw': 'arrow.clockwise',
+  'route-off': 'location.slash',
+  'syringe': 'syringe',
+  'volume-1': 'speaker.wave.1',
   'activity': 'waveform.path.ecg',
   'alarm-clock': 'alarm',
   'alert-circle': 'exclamationmark.circle',
