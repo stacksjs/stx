@@ -793,7 +793,7 @@ export async function translateHtmlToIR(
 
   const project = (node: STXNode): void => {
     bindMustaches(node)
-    const projected = projectAccessibility(node.props)
+    const projected = projectAccessibility(node.props, node.type)
     if (Object.keys(projected).length) {
       node._accessibilitySource = Object.fromEntries(ACCESSIBILITY_FIELDS.filter(name => name in node.props).map(name => [name, node.props[name]]))
       Object.assign(node.props, projected)

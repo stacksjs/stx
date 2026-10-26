@@ -486,7 +486,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
   /** A node's props as the host reads them: authored, plus the ARIA and text-field projections. */
   function hostProps(record: NodeRecord): Record<string, unknown> {
-    return { ...record.props, ...projectAccessibility(record.props), ...projectTextEntry(record.type, record.props) }
+    return { ...record.props, ...projectAccessibility(record.props, record.type), ...projectTextEntry(record.type, record.props) }
   }
 
   /** An ARIA state attribute that is on: `aria-selected="true"`, as the web's variant matches it. */
@@ -1066,7 +1066,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       }
       const record = recordOf(node)
       const prop = nativePropName(name, record.type)
-      const accessibilityBefore = prop === 'role' || prop.startsWith('aria-') || prop.startsWith('accessibility') ? projectAccessibility(record.props) : undefined
+      const accessibilityBefore = (record.type === 'Image' && prop === 'alt') || prop === 'role' || prop.startsWith('aria-') || prop.startsWith('accessibility') ? projectAccessibility(record.props, record.type) : undefined
       const textEntryBefore = TEXT_ENTRY_SOURCES.has(prop) ? projectTextEntry(record.type, record.props) : undefined
       const wasDisabled = disabled(record)
       record.props[prop] = value
@@ -1087,7 +1087,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       if (prop === 'href') markCurrentLink(node)
       const patch: Record<string, unknown> = { [prop]: value }
       if (accessibilityBefore)
-        Object.assign(patch, accessibilityChanges(record.props, accessibilityBefore, prop))
+        Object.assign(patch, accessibilityChanges(record.props, accessibilityBefore, prop, record.type))
       if (textEntryBefore) {
         Object.assign(patch, textEntryChanges(record.type, record.props, textEntryBefore))
         // A field written in HTML's words (`autocapitalize="off"`) reaches the host translated.
@@ -1122,14 +1122,14 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       if (name === 'class' || name === 'className') { this.setAttribute(node, name, ''); return }
       const record = recordOf(node)
       const prop = nativePropName(name, record.type)
-      const accessibilityBefore = prop === 'role' || prop.startsWith('aria-') || prop.startsWith('accessibility') ? projectAccessibility(record.props) : undefined
+      const accessibilityBefore = (record.type === 'Image' && prop === 'alt') || prop === 'role' || prop.startsWith('aria-') || prop.startsWith('accessibility') ? projectAccessibility(record.props, record.type) : undefined
       const textEntryBefore = TEXT_ENTRY_SOURCES.has(prop) ? projectTextEntry(record.type, record.props) : undefined
       delete record.props[prop]
       // Null rather than omitted: a patch is merged on the native side, so an
       // absent key means "unchanged" and would leave the attribute in place.
       const patch: Record<string, unknown> = { [prop]: null }
       if (accessibilityBefore)
-        Object.assign(patch, accessibilityChanges(record.props, accessibilityBefore, prop))
+        Object.assign(patch, accessibilityChanges(record.props, accessibilityBefore, prop, record.type))
       if (textEntryBefore)
         Object.assign(patch, textEntryChanges(record.type, record.props, textEntryBefore))
       if (affectsGeometry(record.type, prop))

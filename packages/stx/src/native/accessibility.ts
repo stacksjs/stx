@@ -161,15 +161,20 @@ export const ACCESSIBILITY_FIELDS = ['accessibilityLabel', 'accessibilityRole', 
  * disappear later, and explicit native props must still take precedence.
  * Reuse the compiler's role/state vocabulary rather than a second mapping.
  */
-export function projectAccessibility(props: Record<string, unknown>): Record<string, unknown> {
+export function projectAccessibility(props: Record<string, unknown>, type?: string): Record<string, unknown> {
   const projected = { ...props }
   applyStaticAccessibility(projected)
+  // HTML names an image from alt, not just aria-label. Preserve explicit
+  // native/ARIA labels and keep this type-specific: an alt prop on a View
+  // is not an accessible name. Empty alt deliberately supplies no label.
+  if (type === 'Image' && projected.accessibilityLabel === undefined && props.alt != null && props.alt !== '')
+    projected.accessibilityLabel = String(props.alt)
   return Object.fromEntries(ACCESSIBILITY_FIELDS.filter(name => name in projected).map(name => [name, projected[name]]))
 }
 
 /** Patch derived fields including removals; native prop patches merge by key. */
-export function accessibilityChanges(props: Record<string, unknown>, before: Record<string, unknown>, changedField: string): Record<string, unknown> {
-  const projected = projectAccessibility(props)
+export function accessibilityChanges(props: Record<string, unknown>, before: Record<string, unknown>, changedField: string, type?: string): Record<string, unknown> {
+  const projected = projectAccessibility(props, type)
   return Object.fromEntries(ACCESSIBILITY_FIELDS
     .filter(name => name === changedField || JSON.stringify(before[name]) !== JSON.stringify(projected[name]))
     .map(name => [name, projected[name] ?? null]))
