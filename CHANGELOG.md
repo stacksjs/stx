@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.707...v0.2.708)
+
+## 🐛 Bug Fixes
+
+- **scope**: skip regex literals when collecting top-level declarations ([ce23f57](https://github.com/stacksjs/stx/commit/ce23f57)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2122](https://github.com/stacksjs/stx/issues/2122), [stacksjs/stacks#3008](https://github.com/stacksjs/stacks/issues/3008))
+- **image**: react to accessible text and decorative status (#2091) ([42026c7](https://github.com/stacksjs/stx/commit/42026c7)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **native**: project image alt labels without overriding authored names (#2091) ([b153658](https://github.com/stacksjs/stx/commit/b153658)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **image**: forward shared load and error events without losing payloads (#2091) ([7de7424](https://github.com/stacksjs/stx/commit/7de7424)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **image**: keep shared dimensions and frame layout reactive (#2091) ([ee19109](https://github.com/stacksjs/stx/commit/ee19109)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+
+## ✅ Tests
+
+- **image**: assert resource targets during callback delivery on both engines ([13cbc9c](https://github.com/stacksjs/stx/commit/13cbc9c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.706...v0.2.707)
 
 ## 🐛 Bug Fixes
