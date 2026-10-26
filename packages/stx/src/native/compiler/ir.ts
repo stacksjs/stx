@@ -121,6 +121,9 @@ export interface STXNode {
   /** Child nodes or text content */
   children: (STXNode | string)[]
 
+  /** Compiler-inferred layout below authored class and inline styles. */
+  _layoutDefaults?: STXStyle
+
   /** Inline styles retain precedence over class styles in every appearance. */
   _inlineStyle?: STXStyle
 

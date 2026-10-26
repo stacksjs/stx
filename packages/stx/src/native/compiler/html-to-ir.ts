@@ -804,8 +804,33 @@ export async function translateHtmlToIR(
     }
   }
   project(root)
+  boundScrollingViewports(root)
 
   return { root, diagnostics }
+}
+
+/**
+ * A flexible scrolling viewport needs bounded ancestors. Shared web layouts
+ * often add an otherwise unsized wrapper beside headers or empty components;
+ * measuring that wrapper to its content makes the scroller as tall as its rows.
+ * Carry the viewport's flex intent through those wrappers, stopping at an
+ * authored size/flex opt-out or another scroll content boundary. Headers and
+ * ordinary detail content keep their intrinsic sizing.
+ */
+function boundScrollingViewports(node: STXNode): boolean {
+  if (['ScrollView', 'FlatList', 'SectionList'].includes(node.type)) {
+    // Children belong to the scroll content, not to its viewport's ancestry.
+    return !node.props.horizontal && (Number(node.style.flex) > 0 || Number(node.style.flexGrow) > 0)
+  }
+  const boundedChild = node.children.map(child => typeof child === 'string' ? false : boundScrollingViewports(child)).some(Boolean)
+  if (!boundedChild || !['View', 'SafeAreaView', 'KeyboardAvoidingView'].includes(node.type)) return false
+  if (node.style.height !== undefined || node.style.maxHeight !== undefined) return false
+  if (node.style.flex === 0 || node.style.flexGrow === 0 || node.style.flexShrink === 0) return false
+  if (node.style.flex === undefined && node.style.flexGrow === undefined) {
+    node._layoutDefaults = { flex: 1, flexGrow: 1, flexShrink: 1, flexBasis: 0 }
+    node.style = { ...node._layoutDefaults, ...node.style }
+  }
+  return true
 }
 
 /**

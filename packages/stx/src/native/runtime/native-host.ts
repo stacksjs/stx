@@ -65,6 +65,7 @@ interface NodeRecord {
   props: Record<string, unknown>
   style: Record<string, unknown>
   baseStyle: Record<string, unknown>
+  layoutDefaults?: Record<string, unknown>
   styleSource?: string
   styleAncestors?: string[]
   inheritedVariables?: NativeStyleVariables
@@ -201,7 +202,7 @@ export interface NativeHost {
   descendants: (node: NativeNode) => NativeNode[]
   scopesIn: (node: NativeNode) => string[]
   /** Register a node the native side already created, so the host can track it. */
-  adopt: (node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'key' | 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle' | '_styleSource' | '_styleAncestors'>) => NativeNode
+  adopt: (node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'key' | 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle' | '_layoutDefaults' | '_styleSource' | '_styleAncestors'>) => NativeNode
   /** Send whatever is pending now, rather than waiting for the scheduled flush. */
   flush: () => void
   /** Dispatch an event the native side reported, by the id handed to it. */
@@ -649,7 +650,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       }
       Object.assign(classStyle, focused)
     }
-    const style = applyNativeLayoutDefaults({ ...classStyle, ...record.dividerStyle, ...resolved.styles[0], ...record.baseStyle, ...resolved.styles[1], ...resolved.styles[2] } as STXStyle)
+    const style = applyNativeLayoutDefaults({ ...record.layoutDefaults, ...classStyle, ...record.dividerStyle, ...resolved.styles[0], ...record.baseStyle, ...resolved.styles[1], ...resolved.styles[2] } as STXStyle)
     return { ...style, ...(record.visible && !isHiddenInput(record) ? {} : { display: 'none' }) }
   }
 
@@ -863,7 +864,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     }
   }
 
-  function adopt(node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'key' | 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle' | '_styleSource' | '_styleAncestors' | '_accessibilitySource' | '_textEntrySource'>): NativeNode {
+  function adopt(node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'key' | 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle' | '_layoutDefaults' | '_styleSource' | '_styleAncestors' | '_accessibilitySource' | '_textEntrySource'>): NativeNode {
     const suffix = /(?:^|\D)(\d+)$/.exec(node.__stxId)?.[1]
     if (suffix)
       counter = Math.max(counter, Number(suffix))
@@ -877,6 +878,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       props: authoredTextEntryProps(authoredAccessibilityProps(descriptor?.props ?? {}, descriptor?._accessibilitySource), descriptor?._textEntrySource),
       style: { ...(descriptor?.style ?? {}) },
       baseStyle,
+      layoutDefaults: descriptor?._layoutDefaults,
       styleSource: descriptor?._styleSource,
       styleAncestors: descriptor?._styleAncestors,
       inheritedVariables: owner ? descriptorOf(owner)?.variables : stylesheetVariables,
@@ -1447,6 +1449,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         props: { ...descriptor.props, __stxId: copy.__stxId },
         style: { ...descriptor.style },
         baseStyle: { ...descriptor.baseStyle },
+        layoutDefaults: { ...descriptor.layoutDefaults },
         styleSource: descriptor.styleSource,
         styleAncestors: descriptor.styleAncestors,
         inheritedVariables: descriptor.inheritedVariables,
