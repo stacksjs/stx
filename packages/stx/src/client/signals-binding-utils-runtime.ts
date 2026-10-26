@@ -130,6 +130,13 @@ export const SIGNALS_BINDING_UTILS_RUNTIME = `  // Minimal attribute-only pass f
       });
       if (propSignal && typeof propSignal.__stx_resetProp === 'function')
         peek(function() { propSignal.__stx_resetProp(); });
+      else {
+        // Child setup may not have run yet, or its prop registry is suspended.
+        // Remember the missing write so setup/remount can apply its own default.
+        var missingDirect = { raw: el.hasAttribute(name) ? el.getAttribute(name) : null, missing: true };
+        directValues[name] = missingDirect;
+        directValues[camelName] = missingDirect;
+      }
       return;
     }
     var directValue = {

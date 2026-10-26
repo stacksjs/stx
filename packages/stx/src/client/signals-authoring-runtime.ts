@@ -105,6 +105,10 @@ export function signalsAuthoringRuntime(createModelSignalSource: string): string
         catch (e) {}
       }
     }
+    function missingPropValue() {
+      return typeof staticValue === 'string' && (opts.parse || typeof defaultValue !== 'string')
+        ? parse(staticValue) : staticValue;
+    }
     var initial;
     var lastRaw = null;
     var initialAttribute = readAttribute();
@@ -112,7 +116,7 @@ export function signalsAuthoringRuntime(createModelSignalSource: string): string
     var initialDirect = initialDirectValues && (initialDirectValues[name] || initialDirectValues[kebabName] || initialDirectValues[lowerName]);
     if (initialDirect && initialDirect.raw === initialAttribute.raw) {
       lastRaw = initialAttribute.raw;
-      initial = initialDirect.value;
+      initial = initialDirect.missing ? missingPropValue() : initialDirect.value;
       Object.keys(initialDirectValues).forEach(function(key) {
         if (initialDirectValues[key] === initialDirect) delete initialDirectValues[key];
       });
@@ -133,9 +137,7 @@ export function signalsAuthoringRuntime(createModelSignalSource: string): string
     // A typed missing prop can leave the DOM attribute already absent (null
     // -> undefined). The parent bridge must still restore this prop's default.
     s.__stx_resetProp = function() {
-      var missing = typeof staticValue === 'string' && (opts.parse || typeof defaultValue !== 'string')
-        ? parse(staticValue) : staticValue;
-      s.set(missing);
+      s.set(missingPropValue());
     };
     if (!root) return s;
     var propSignals = root.__stx_reactive_prop_signals
@@ -150,20 +152,22 @@ export function signalsAuthoringRuntime(createModelSignalSource: string): string
       var attribute = readAttribute();
       var hasAttr = attribute.has;
       var raw = attribute.raw;
-      if (raw === lastRaw) return;
-      lastRaw = raw;
       var directValues = root.__stx_direct_prop_values;
       var directValue = directValues && (directValues[name] || directValues[kebabName] || directValues[lowerName]);
+      // A pending typed write may change false/null/default without changing
+      // the absent DOM attribute, especially while this scope is suspended.
+      if (raw === lastRaw && !(directValue && directValue.raw === raw)) return;
+      lastRaw = raw;
       var next;
       if (directValue && directValue.raw === raw) {
-        next = directValue.value;
+        next = directValue.missing ? missingPropValue() : directValue.value;
         delete directValues[name];
         for (var directKey in directValues) {
           if (directValues[directKey] === directValue) delete directValues[directKey];
         }
       }
       else {
-        next = hasAttr ? parse(raw) : staticValue;
+        next = hasAttr ? parse(raw) : missingPropValue();
       }
       if (next !== s()) s.set(next);
     }
