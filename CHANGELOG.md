@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.714...v0.2.715)
+
+## 🐛 Bug Fixes
+
+- **native**: sign bundled backends with inherited sandbox and JIT ([f97e4aa](https://github.com/stacksjs/stx/commit/f97e4aa)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.715 ([3e1bc13](https://github.com/stacksjs/stx/commit/3e1bc13)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.713...v0.2.714)
 
 ## 🐛 Bug Fixes
