@@ -191,6 +191,24 @@ wrapping `<div>`, a client `value = state('/first')`, and
    image decoding/network failure, native callbacks in normal/minified
    bundles, hide/reopen and disposal. Legacy primitive selection and payloads
    are unchanged; this does not certify device image-loader delivery.
+
+   **Reactive accessibility (unreleased after v0.2.707):** shared `alt` and
+   `decorative` now update the physical image. Decorative images expose empty
+   alt text; restoring meaningful status restores the current authored label,
+   including text initially masked by static `decorative`. Browser
+   `aria-hidden` follows the live flag and is removed when it clears. String
+   boolean values use the same interpretation as server `$bool`.
+   The native adapter projects image `alt` to `accessibilityLabel` as a fallback
+   behind explicit native and ARIA labels, including static creation, updates
+   and explicit clears. Other native types and legacy source/event contracts
+   are unchanged. The shared component still requires meaningful server alt
+   (or static decorative status) for SSR; this does not relax that validation.
+   `image-accessibility.test.ts` verifies projection, overrides and wire clears;
+   `shared-image-accessibility.test.ts` verifies both native bundle modes and
+   a real browser, clearing, static-decorative recovery, identity and lifecycle.
+   Native `aria-hidden` exclusion is not part of the current projection:
+   clearing a label is not proof that a device screen reader skips the image.
+   Host/device accessibility validation therefore remains a migration gate.
 3. **Video (shared setup crash fixed, unreleased):**
    `<Video testID="target" label="Movie" :src="value" :paused="paused" />`
    now registers custom elements only in the browser. On native, the physical

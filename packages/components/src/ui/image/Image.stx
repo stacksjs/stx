@@ -29,7 +29,9 @@ export const sources = explicitSources.length ? explicitSources : (delivered ? d
 export const decorative = $bool($props.decorative)
 if (!decorative && !$props.alt?.trim())
   throw new TypeError('Image alt text is required unless decorative is true')
-export const alt = decorative ? '' : $props.alt
+// Keep the authored text for a decorative image that becomes meaningful later.
+export const originalAlt = $props.alt ?? ''
+export const alt = decorative ? '' : originalAlt
 export const width = $props.width || delivered?.width
 export const height = $props.height || delivered?.height
 export const priority = $bool($props.priority)
@@ -130,6 +132,16 @@ export const imageStyle = [
 
 <script client>
 const imageSrc = useReactiveProp('src', {{ originalSrc }})
+const liveAlt = useReactiveProp('alt', {{ originalAlt }})
+const liveDecorative = useReactiveProp('decorative', {{ decorative }})
+// Typed parent writes can bypass DOM parsing; keep the server $bool contract.
+const isDecorative = derived(() => {
+  const value = liveDecorative()
+  if (value == null) return false
+  if (typeof value === 'string') return !['false', '0', 'off', 'no'].includes(value.trim().toLowerCase())
+  return Boolean(value)
+})
+const imageAlt = derived(() => isDecorative() ? '' : (liveAlt() == null ? '' : String(liveAlt())))
 // Keep the documented alias live without letting it override objectFit.
 const primaryFit = useReactiveProp('objectFit', {{ authoredObjectFit }})
 const fallbackFit = useReactiveProp('fit', {{ authoredFit }})
@@ -203,12 +215,14 @@ const initialBackground = {{ placeholder ? `${placeholder} center / cover no-rep
     :srcset="keepInitialSources() ? {{ JSON.stringify(srcSet) }} || null : null"
     @if(sizes)sizes="{{ sizes }}"@endif
     alt="{{ alt }}"
+    :alt="imageAlt()"
     @if(width)width="{{ width }}"@endif
     @if(height)height="{{ height }}"@endif
     :width="imageWidth() ?? null"
     :height="imageHeight() ?? null"
     loading="{{ loading }}"
     @if(decorative)aria-hidden="true"@endif
+    :aria-hidden="isDecorative() ? 'true' : null"
     decoding="{{ decoding }}"
     fetchpriority="{{ fetchpriority }}"
     style="{{ imageStyle }}"

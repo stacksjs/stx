@@ -79,15 +79,16 @@ it('forwards real browser image load/error events, preserving the original event
     await waitFor(`!!(window.probe && document.querySelector('.photo img'))`)
     await view.evaluate(`(() => {
       const img = document.querySelector('.photo img'); window.oldImage = img;
-      img.addEventListener('load', e => window.actualLoad = e);
-      img.addEventListener('error', e => window.actualError = e);
+      // Observe before the component listener relays this event to its caller.
+      img.addEventListener('load', e => window.actualLoad = e, { capture: true });
+      img.addEventListener('error', e => window.actualError = e, { capture: true });
       window.probe.url.set('/good.png');
     })()`)
-    await waitFor(`window.probe.loads.length === 1`)
-    expect(await view.evaluate(`window.probe.loads[0] === window.actualLoad && window.probe.loads[0].target === window.oldImage && window.oldImage.naturalWidth === 1`)).toBe(true)
+    await waitFor(`window.probe.loads.length === 1 && !!window.actualLoad`)
+    expect(await view.evaluate(`({ same: window.probe.loads[0] === window.actualLoad, target: window.probe.loads[0].target === window.oldImage, width: window.oldImage.naturalWidth })`)).toEqual({ same: true, target: true, width: 1 })
     expect(await view.evaluate(`window.probe.errors.length`)).toBe(0)
     await view.evaluate(`window.probe.url.set('/missing.png')`)
-    await waitFor(`window.probe.errors.length === 1`)
+    await waitFor(`window.probe.errors.length === 1 && !!window.actualError`)
     expect(await view.evaluate(`({ same: window.probe.errors[0] === window.actualError, target: window.probe.errors[0].target === window.oldImage, type: window.probe.errors[0].type })`)).toEqual({ same: true, target: true, type: 'error' })
     await view.evaluate(`window.probe.shown.set(false)`)
     await waitFor(`!document.querySelector('.photo img')`)
