@@ -159,6 +159,13 @@ describe('native class and icon compatibility', () => {
 describe('the stx HTML translator produces the documented IR', () => {
   const translate = async (html: string) => (await translateHtmlToDocument(html, { source: 'Screen.stx' })).document.root
 
+  it('preserves the current Lucide help icon instead of emitting an empty circle', async () => {
+    const node = await translate('<i class="h-3 w-3 i-lucide-circle-question-mark"></i>')
+    expect(node.type).toBe('Icon')
+    expect(node.props.symbol).toBe('questionmark.circle')
+    expect(node.props.iconify).toBe('i-lucide-circle-question-mark')
+  })
+
   it('compiles the reference tree exactly', async () => {
     const node = await translate(
       '<View class="flex-1 flex-col justify-center items-center p-4 bg-blue-500">'

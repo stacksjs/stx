@@ -93,6 +93,7 @@ export const LUCIDE_TO_SF: Record<string, string> = {
   'circle-check-big': 'checkmark.circle',
   'circle-dot': 'smallcircle.filled.circle',
   'circle-help': 'questionmark.circle',
+  'circle-question-mark': 'questionmark.circle',
   'circle-play': 'play.circle',
   'circle-plus': 'plus.circle',
   'circle-user': 'person.crop.circle',
