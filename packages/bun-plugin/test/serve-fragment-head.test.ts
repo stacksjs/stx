@@ -129,6 +129,8 @@ for (const retained of [false, true]) {
       await view.evaluate('document.querySelector("#literal").click()')
       await until(view, 'document.title === "Literal &lt; 100% © 🌱"')
       expect(await view.evaluate(read)).toEqual({ title: 'Literal &lt; 100% © 🌱', description: 'Literal "你好" & <value> 🌱 © &lt;', canonical: 'https://example.test/literal', alternates: 0, og: 0, csrf: true })
+      const liveScreens = await view.evaluate('window.stxRouter.screens().filter(screen => screen.live).length') as number
+      expect(retained ? liveScreens >= 2 : liveScreens === 0).toBe(true)
       // Explicit locale switches use the same force flag as the lang picker;
       // ordinary links are intentionally localized to the current language.
       await view.evaluate('window.stxRouter.navigate("/de/page",true,true)')

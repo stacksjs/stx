@@ -19,6 +19,8 @@ fragment without a payload leaves its existing metadata unchanged. Full-document
 SPA swaps use the same metadata allowlist. Full browser navigations are unchanged.
 Authored numeric and named HTML entities are preserved for a single browser
 decode, including literal entity text such as `&amp;lt;`.
+The parsed payload title takes precedence over the legacy `X-STX-Title`
+header; that header remains the fallback for older fragment responses.
 
 ## Router Setup
 

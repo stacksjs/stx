@@ -46,7 +46,7 @@ const budgets = {
   // and prefetch-on-sight leaving bundles for an intent took it from 68285
   // to 70782 bytes. The same ~2KB of slack.
   // Bounded head reconciliation and retained-head snapshots (#2121) add
-  // ~2KB uncompressed. Keep the previous ~2KB feature-growth headroom.
+  // ~1.5KB uncompressed (~470 bytes gzip). Retain a hard 73KiB ceiling.
   routerScriptBytes: 73 * 1024,
 }
 
