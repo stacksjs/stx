@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.710...v0.2.711)
+
+## 🐛 Bug Fixes
+
+- match runtime event lists in template type checking ([6c90322](https://github.com/stacksjs/stx/commit/6c90322)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.711 ([4ef0140](https://github.com/stacksjs/stx/commit/4ef0140)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.709...v0.2.710)
 
 ## 🐛 Bug Fixes
