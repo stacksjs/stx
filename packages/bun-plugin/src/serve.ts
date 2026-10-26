@@ -21,7 +21,7 @@ import nodeFs from 'node:fs/promises'
 import nodePath from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
-import { BUILD_ID_HEADER, decodeTitleEntities, externalScriptsOutsideContainer, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, mergeCssConfig, readResponseHeaders, readResponseStatus, renderFontCSS, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
+import { BUILD_ID_HEADER, decodeTitleEntities, externalScriptsOutsideContainer, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, mergeCssConfig, pageHeadFragment, readResponseHeaders, readResponseStatus, renderFontCSS, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
 import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { extractLayoutMetadata } from 'stx-router/layout-metadata'
@@ -3680,6 +3680,13 @@ function __stxOverlay(errs){
 
     const stx = await siteStxPromise
     let html = await res.text()
+    // Post-processing can prepend locale/SEO tags. Keep the page head
+    // separate so its contract stays first and never scans body/SVG titles.
+    const fragmentHead = res.headers.get('X-STX-Fragment') === 'true'
+      ? /^<template data-stx-page-head="1">([\s\S]*?)<\/template>\n?/.exec(html)
+      : null
+    let fragmentMetadata = fragmentHead ? `<head>${fragmentHead[1]}</head>` : null
+    if (fragmentHead) html = html.slice(fragmentHead[0].length)
 
     // Theme bootstrap — FOUC guard + dark-mode toggle handler. The
     // <ThemeToggle /> component's click handler is part of this
@@ -3693,6 +3700,8 @@ function __stxOverlay(errs){
     if (siteConfig && stx.injectSeo) {
       const pageMeta = (siteConfig.pages ?? {})[normalizedPath] ?? {}
       html = stx.injectSeo(html, siteConfig, pageMeta, normalizedPath)
+      if (fragmentMetadata !== null)
+        fragmentMetadata = stx.injectSeo(fragmentMetadata, siteConfig, pageMeta, normalizedPath)
     }
 
     // Lang-picker bootstrap — wires `data-lang="<code>"` button clicks
@@ -3742,12 +3751,18 @@ function __stxOverlay(errs){
     // Translations — applied LAST so {t:key} markers inside any
     // injected content (e.g. SEO tags reading from translations)
     // resolve.
-    if (i18nConfig && stx.applyTranslations)
+    if (i18nConfig && stx.applyTranslations) {
       html = stx.applyTranslations(html, i18nConfig, locale)
+      if (fragmentMetadata !== null)
+        fragmentMetadata = stx.applyTranslations(fragmentMetadata, i18nConfig, locale)
+    }
 
     html = ensureRouterConfig(html)
+    if (fragmentMetadata !== null) html = pageHeadFragment(fragmentMetadata) + html
 
     const headers = new Headers(res.headers)
+    if (fragmentHead && i18nConfig)
+      headers.set('X-STX-Layout-Group', `i18n:${locale}`)
     const fragmentTitle = headers.get('X-STX-Title')
     if (res.headers.get('X-STX-Fragment') === 'true' && fragmentTitle && i18nConfig && stx.applyTranslations) {
       // The fragment's title was captured before this final translation pass.
@@ -3756,6 +3771,10 @@ function __stxOverlay(errs){
       const titleHtml = escapeHtml(decodeURIComponent(fragmentTitle))
       const translated = stx.applyTranslations(titleHtml, i18nConfig, locale)
       headers.set('X-STX-Title', encodeURIComponent(decodeTitleEntities(translated)))
+    }
+    if (fragmentMetadata !== null) {
+      const resolvedTitle = /<title\b[^>]*>([\s\S]*?)<\/title>/i.exec(fragmentMetadata)
+      if (resolvedTitle) headers.set('X-STX-Title', encodeURIComponent(decodeTitleEntities(resolvedTitle[1])))
     }
     headers.delete('content-length')
     return new Response(html, {
@@ -4742,7 +4761,7 @@ function __stxOverlay(errs){
                   // request-scoped factory prelude is normally emitted in the
                   // document head. Keep the prelude ahead of fragment content so
                   // calls never run before the shared factory is registered.
-                  fragment = `${headStyles.join('\n')}\n${externalPageScripts.join('\n')}\n${componentFactoryScripts.join('\n')}\n${fragment}\n${clearStale}\n${trailingPageScripts.join('\n')}`
+                  fragment = `${pageHeadFragment(content)}${headStyles.join('\n')}\n${externalPageScripts.join('\n')}\n${componentFactoryScripts.join('\n')}\n${fragment}\n${clearStale}\n${trailingPageScripts.join('\n')}`
 
                   // Carry the page <title> (from the full page, before it was
                   // reduced to the <main> fragment) so the SPA router can keep

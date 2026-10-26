@@ -873,7 +873,7 @@ catch {
             // return it all, the router injects nav/footer INSIDE <main>,
             // causing broken nesting and layout issues.
             const routerContainer = (projectConfig as any)?.router?.container || 'main'
-            content = extractContainerContent(content, routerContainer)
+            content = extractContainerContent(content, routerContainer, true)
             return new Response(content, {
               status: responseStatus,
               headers: {
