@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.704...v0.2.705)
+
+## 🐛 Bug Fixes
+
+- **native**: preserve the current Lucide question circle icon ([ce0638d](https://github.com/stacksjs/stx/commit/ce0638d)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.705 ([5d8b067](https://github.com/stacksjs/stx/commit/5d8b067)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.703...v0.2.704)
 
 ## 🐛 Bug Fixes
