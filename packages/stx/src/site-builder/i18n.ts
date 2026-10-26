@@ -199,7 +199,9 @@ export function applyTranslations(
     /\{t(!?):([a-zA-Z][\w.-]*)\}/g,
     (_match, raw, key) => {
       const value = translate(i18n, locale, key)
-      return raw === '!' ? value : escapeHtml(value)
+      // Tokens are valid in quoted HTML attributes as well as text. Quotes
+      // must not terminate description/social metadata (or other bindings).
+      return raw === '!' ? value : escapeHtml(value).replace(/"/g, '&quot;').replace(/'/g, '&#39;')
     },
   )
 }
