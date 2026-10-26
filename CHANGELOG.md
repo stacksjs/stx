@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.713...v0.2.714)
+
+## 🐛 Bug Fixes
+
+- **native**: preserve document scripts and include utility CSS ([1f429ce](https://github.com/stacksjs/stx/commit/1f429ce)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.714 ([26d1083](https://github.com/stacksjs/stx/commit/26d1083)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.712...v0.2.713)
 
 ## 🐛 Bug Fixes
