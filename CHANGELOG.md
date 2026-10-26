@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.712...v0.2.713)
+
+## 🐛 Bug Fixes
+
+- classify broadcast streams across browser authoring surfaces ([66f9690](https://github.com/stacksjs/stx/commit/66f9690)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.713 ([789fdad](https://github.com/stacksjs/stx/commit/789fdad)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.711...v0.2.712)
 
 ## 🐛 Bug Fixes
