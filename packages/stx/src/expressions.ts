@@ -1220,6 +1220,8 @@ export function processExpressions(template: string, context: Record<string, any
 
   // Replace triple curly braces with unescaped expressions {{{ expr }}} - similar to {!! expr !!}
   output = replaceInterpolations(output, (match, expr, offset) => {
+    if (readsAnyName(expr, clientSignalNames))
+      return match
     try {
       const value = evaluateExpression(expr, context, false, r => warnRejectedExpression(r, match, filePath, template))
       // Return raw content without escaping
@@ -1240,6 +1242,8 @@ export function processExpressions(template: string, context: Record<string, any
 
   // Replace {!! expr !!} with unescaped expressions
   output = output.replace(/\{!!([\s\S]*?)!!\}/g, (match, expr, offset) => {
+    if (readsAnyName(expr, clientSignalNames))
+      return match
     try {
       // Compile mode turns an undefined value into a request-time placeholder,
       // but the rejection is a property of the text, so the request will
@@ -1320,7 +1324,6 @@ export function processExpressions(template: string, context: Record<string, any
     const firstVarName = identifierMatch?.[1]
     // eslint-disable-next-line pickier/no-unused-vars
     const firstVarInContext = firstVarName && (firstVarName in context || jsBuiltins.includes(firstVarName))
-    const firstVarIsClientSignal = Boolean(firstVarName && clientSignalNames.has(firstVarName))
 
     // Detect if this looks like a client-side signal expression
     // Signals are typically function calls like loading(), sessions().length, etc.
@@ -1341,7 +1344,9 @@ export function processExpressions(template: string, context: Record<string, any
     // calling that helper first can submit a request even when its result is
     // discarded. Component scripts have already been lifted out, so inherit
     // their recorded names alongside declarations in this page's own scripts.
-    if (firstVarIsClientSignal)
+    // Ownership applies to every read, not just the leading identifier:
+    // `"Status: " + report()` must not call a server-global reporter (#2119).
+    if (readsAnyName(trimmedExpr, clientSignalNames))
       return match
 
     if (context.__stx_native_screen === true && callsContextFunction(trimmedExpr, context))
