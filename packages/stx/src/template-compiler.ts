@@ -17,6 +17,7 @@ import { stripDocumentWrapper } from './app-shell'
 import { createHash } from 'node:crypto'
 import { collectBlockDeclarations } from './stx-virtual-ts'
 import { extractPageResponseStatus } from './page-response'
+import { pageHeadFragment } from './page-head'
 
 /**
  * A pre-compiled template ready for serve-time hydration.
@@ -177,7 +178,7 @@ export async function compileTemplate(
   const html = await processDirectives(content, context, absolutePath, opts, dependencies)
 
   // Extract the SPA fragment (content inside <main> or the body without document wrapper)
-  const fragment = stripDocumentWrapper(html)
+  const fragment = pageHeadFragment(html) + stripDocumentWrapper(html)
 
   // Build placeholder map from the registry (populated during processDirectives)
   // The registry stores each token → expression mapping when createPlaceholder() is called

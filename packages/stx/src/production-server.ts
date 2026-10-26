@@ -399,7 +399,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
               headers.set('X-STX-Layout', layout.layout)
               headers.set('X-STX-Layout-Group', layout.group)
             }
-            return streamToResponse(renderStreamingPage(isSpaNav && !isMutating ? extractContainerContent(html, manifest.routerContainer || 'main') : html, boundaries, { timeoutMs: 30000 }), {
+            return streamToResponse(renderStreamingPage(isSpaNav && !isMutating ? extractContainerContent(html, manifest.routerContainer || 'main', true) : html, boundaries, { timeoutMs: 30000 }), {
               status: status ?? compiled.status ?? 200,
               headers,
             })
@@ -430,7 +430,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
             headers.set('X-STX-Runtime', pageShipsSignalsRuntime(html) ? 'true' : 'false')
             headers.set('X-STX-Layout', layout.layout)
             headers.set('X-STX-Layout-Group', layout.group)
-            return new Response(extractContainerContent(html, manifest.routerContainer || 'main'), { status: status ?? compiled.status ?? 200, headers })
+            return new Response(extractContainerContent(html, manifest.routerContainer || 'main', true), { status: status ?? compiled.status ?? 200, headers })
           }
 
           /*

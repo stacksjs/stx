@@ -20,6 +20,7 @@ import type { ContainerRegion } from './fragment-container'
 import { matchScriptElement, scanAtElementPosition } from './html-masking'
 import { isDevelopment } from './env'
 import { isSpaNavRequest } from './spa-nav'
+import { pageHeadFragment } from './page-head'
 export { extractLayoutMetadata } from 'stx-router/layout-metadata'
 export type { LayoutMetadata } from 'stx-router/layout-metadata'
 
@@ -437,8 +438,9 @@ export function externalScriptsOutsideContainer(html: string, container: Contain
  *
  * @param html - Full HTML document (with or without doctype/html/head/body)
  * @param containerSelector - Tag name or selector for the router container (e.g. `main`)
+ * @param includePageHead - Include the versioned, inert page metadata contract for router responses
  */
-export function extractContainerContent(html: string, containerSelector: string = 'main'): string {
+export function extractContainerContent(html: string, containerSelector: string = 'main', includePageHead = false): string {
   const trimmed = html.trim()
 
   // Preserve <style> tags from <head> so css / scoped styles still apply,
@@ -467,7 +469,7 @@ export function extractContainerContent(html: string, containerSelector: string 
   const containerRegion = findContainerRegion(trimmed, containerSelector)
   if (!containerRegion) {
     // Container not found — fall back to full body extraction
-    return stripDocumentWrapper(html)
+    return (includePageHead ? pageHeadFragment(html) : '') + stripDocumentWrapper(html)
   }
   const externalScripts = externalScriptsOutsideContainer(trimmed, containerRegion)
   const externalSet = new Set(externalScripts)
@@ -516,6 +518,7 @@ export function extractContainerContent(html: string, containerSelector: string 
   }
 
   const parts: string[] = []
+  if (includePageHead) parts.push(pageHeadFragment(html))
   if (headStyles.length > 0) parts.push(headStyles.join('\n'))
   if (externalScripts.length > 0) parts.push(externalScripts.join('\n'))
   if (headScripts.length > 0) parts.push(headScripts.filter(script => !externalSet.has(script)).join('\n'))

@@ -323,7 +323,7 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
       // container's inner content, not the full body. The SPA router injects
       // fragments into the container via innerHTML, so anything outside the
       // container (nav, footer, etc.) would duplicate on navigation.
-      compiled.fragment = extractContainerContent(compiled.html, routerContainer)
+      compiled.fragment = extractContainerContent(compiled.html, routerContainer, true)
 
       // Write compiled template
       const safeRouteName = route.pattern === '/' ? 'index' : route.pattern.slice(1).replace(/\//g, '-').replace(/[[\]]/g, '_')
