@@ -75,6 +75,7 @@ declare module 'stx' {
   export const state: typeof globalThis.state
   export const untrack: typeof globalThis.untrack
   export const useAsync: typeof globalThis.useAsync
+  export const useBroadcastStream: typeof globalThis.useBroadcastStream
   export const useClickOutside: typeof globalThis.useClickOutside
   export const useColorMode: typeof globalThis.useColorMode
   export const useCookie: typeof globalThis.useCookie

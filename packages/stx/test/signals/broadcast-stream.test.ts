@@ -22,6 +22,7 @@ for (const name of ['module', 'runtime'] as const) {
       const message = new Promise(resolve => { received = resolve })
       const encoder = new TextEncoder()
       const statuses: boolean[] = []
+      let connected = 0
       const stream = useBroadcastStream({
         endpoint: '/notifications/events', reconnectDelay: 5,
         request: async (path, init) => {
@@ -39,6 +40,7 @@ for (const name of ['module', 'runtime'] as const) {
           }), { headers: { 'content-type': 'text/event-stream' } })
         },
         onStatus: value => { statuses.push(value) },
+        onConnected: () => { connected++ },
         onMessage: frame => { stream.close(); received(frame) },
       })
       try {
@@ -48,6 +50,7 @@ for (const name of ['module', 'runtime'] as const) {
         expect(statuses).toContain(true)
         expect(statuses.at(-1)).toBe(false)
         expect(requests).toBe(1)
+        expect(connected).toBe(1)
       }
       finally { stream.close() }
     })

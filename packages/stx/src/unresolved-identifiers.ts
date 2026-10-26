@@ -40,7 +40,7 @@ export const SERVER_ONLY_COMPOSABLES: readonly string[] = [
   'requestOrientationPermission', 'setCookie', 'share', 'shareCurrentPage', 'shareFiles',
   'shareText', 'shareURL', 'shareWithFallback', 'speak', 'stopSpeaking', 'toggleFullscreen',
   'useAmbientSound', 'useAnimationFrame', 'useAsyncData', 'useAttributeObserver', 'useAutoLogout', 'useAutoWakeLock', 'useBattery',
-  'useBreakpoint', 'useBreathPacer', 'useBroadcastChannel', 'useBroadcastStream', 'useChannel', 'useChildListObserver', 'useClipboard',
+  'useBreakpoint', 'useBreathPacer', 'useBroadcastChannel', 'useChannel', 'useChildListObserver', 'useClipboard',
   'useColorHistory', 'useConditionalWakeLock', 'useCookies', 'useCopySelection',
   'useDeviceMotion', 'useDeviceOrientation', 'useElementSize', 'useElementTextSelection',
   'useElementVisibility', 'useEventSource', 'useEyeDropper', 'useFavicon', 'useForm', 'useFullscreen',

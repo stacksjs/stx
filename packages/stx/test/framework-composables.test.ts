@@ -14,8 +14,6 @@
  * same way the auto-import list did (#1804).
  */
 import { afterEach, describe, expect, it } from 'bun:test'
-import vm from 'node:vm'
-import type { BroadcastStreamClientOptions } from '../src/composables/use-broadcast-stream'
 import { defaultConfig } from '../src/config'
 import {
   __setRuntimeOwnedForTest,
@@ -97,36 +95,10 @@ describe('getFrameworkComposableScript', () => {
     expect(two).toContain('function useGeolocation')
   })
 
-  it('delivers authenticated broadcasts as a callable client composable', async () => {
-    const script = await getFrameworkComposableScript('useBroadcastStream(options)')
-    expect(script).not.toBeNull()
-    const browser: { useBroadcastStream?: (options: BroadcastStreamClientOptions) => { close: () => void } } = {}
-    vm.runInNewContext(script!.replace(/^<script[^>]*>/, '').replace(/<\/script>$/, ''), {
-      window: browser, AbortController, TextDecoder, setTimeout, clearTimeout,
-    })
-    expect(typeof browser.useBroadcastStream).toBe('function')
-    const frames: unknown[] = []
-    let signal: AbortSignal | undefined
-    let connected = 0
-    const stream = browser.useBroadcastStream!({
-      endpoint: '/broadcasts',
-      request: async (url, init) => {
-        expect(url).toBe('/broadcasts')
-        expect(init?.headers).toEqual({ Accept: 'text/event-stream' })
-        expect(init?.cache).toBe('no-store')
-        signal = init?.signal as AbortSignal
-        return new Response('data: {"channel":"private-chat","event":"message","data":{"id":1}}\n\n', { headers: { 'content-type': 'text/event-stream' } })
-      },
-      onConnected: () => { connected++ },
-      onMessage: frame => frames.push(frame),
-    })
-    try {
-      await Bun.sleep(10)
-      expect(connected).toBe(1)
-      expect(frames).toEqual([{ channel: 'private-chat', event: 'message', data: { id: 1 } }])
-    }
-    finally { stream.close() }
-    expect(signal?.aborted).toBe(true)
+  it('does not duplicate the runtime-owned authenticated broadcast stream', async () => {
+    // Its streaming behaviour is covered for module and runtime implementations
+    // in signals/broadcast-stream.test.ts. It no longer needs a second bundle.
+    expect(await getFrameworkComposableScript('useBroadcastStream(options)')).toBeNull()
   })
 
   it('produces parseable JavaScript', async () => {
