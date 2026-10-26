@@ -494,6 +494,53 @@ function extractVariableNames(code: string): string[] {
     return false
   }
 
+  // A `/` that starts a regex literal rather than dividing. The token before
+  // it decides, as it does for the JS parser: after an operator, an opening
+  // bracket, a separator, the start of the code or a keyword such as
+  // `return`, an expression is expected, so `/` begins a regex. After a name,
+  // a number or a closing bracket it divides.
+  const regexKeywords = new Set(['return', 'typeof', 'instanceof', 'in', 'of', 'new', 'delete', 'void', 'throw', 'case', 'do', 'else', 'yield', 'await'])
+  const startsRegex = (): boolean => {
+    let j = i - 1
+    while (j >= 0 && /\s/.test(code[j]!)) j--
+    if (j < 0)
+      return true
+    const previous = code[j]!
+    if ('(,=:[!&|?{};+-*%<>~^'.includes(previous))
+      return true
+    if (!/[\w$]/.test(previous))
+      return false
+    let start = j
+    while (start > 0 && /[\w$]/.test(code[start - 1]!)) start--
+    return regexKeywords.has(code.slice(start, j + 1))
+  }
+
+  // Skip a regex literal. Its quotes are not strings, its braces are not
+  // blocks, and a `/` inside a character class does not end it. Reading
+  // `/['"]/g` as the start of a string skipped to the next quote in the file,
+  // and every top-level declaration in between went unregistered.
+  const skipRegex = (): void => {
+    i++ // Skip opening slash
+    let inClass = false
+    while (i < len && code[i] !== '\n') {
+      const char = code[i]
+      if (char === '\\') {
+        i += 2
+        continue
+      }
+      if (char === '[')
+        inClass = true
+      else if (char === ']')
+        inClass = false
+      else if (char === '/' && !inClass) {
+        i++ // Skip closing slash
+        while (i < len && /[a-z]/i.test(code[i]!)) i++ // Flags
+        return
+      }
+      i++
+    }
+  }
+
   // Check for variable declaration at current position (only at depth 0)
   const checkDeclaration = (): void => {
     if (depth !== 0) return
@@ -561,6 +608,12 @@ function extractVariableNames(code: string): string[] {
     // Skip template literals
     if (code[i] === '`') {
       skipTemplateLiteral()
+      continue
+    }
+
+    // Skip regex literals (comments were handled above)
+    if (code[i] === '/' && startsRegex()) {
+      skipRegex()
       continue
     }
 
