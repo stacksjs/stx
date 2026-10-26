@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.715...v0.2.716)
+
+## ✨ Features
+
+- **desktop**: expose native app icons and protected clipboard history ([ad56f0d](https://github.com/stacksjs/stx/commit/ad56f0d)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.716 ([3bb28b8](https://github.com/stacksjs/stx/commit/3bb28b8)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.714...v0.2.715)
 
 ## 🐛 Bug Fixes
