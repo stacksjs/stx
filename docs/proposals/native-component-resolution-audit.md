@@ -170,6 +170,26 @@ wrapping `<div>`, a client `value = state('/first')`, and
    `shared-image-source.test.ts` verifies normal/minified native bundles keep
    using `src`, never browser responsive URLs. This does not add native
    responsive image selection or change component resolution. Craft is untouched.
+
+   **Reactive loading policy (unreleased after v0.2.709):** shared `priority`,
+   `lazy`, `loading` and `fetchpriority` now update the physical image's browser
+   hints. Priority forces `eager`/`high`; turning it off reveals the current
+   authored hints, even when priority originally masked them during SSR.
+   Without priority, explicit loading wins over lazy, and empty/null loading
+   falls back to lazy (`true` by default). Empty/null fetch priority falls back
+   to `auto`. Undefined restores the authored defaults. Boolean strings follow
+   server `$bool` semantics, including `off`/`no`/`0` and the empty attribute.
+   Typed false/null/default writes made while hidden survive remount, even
+   when the outer prop attribute stays absent; parsed numeric/boolean defaults
+   are also retained through the reactive-prop bridge.
+   `image-loading-browser.test.ts` checks actual browser hint properties,
+   precedence, SSR, clearing/defaults and retained identity in WebKit/Chrome.
+   Its offscreen test verifies that enabling priority starts and decodes a
+   previously deferred request without replacing the image. Hints cannot undo
+   an already-started request and do not guarantee network scheduling order.
+   `shared-image-loading.test.ts` verifies normal/minified native source,
+   labels, identity, remount and teardown; it does not claim host support for
+   browser loading hints. Craft and component resolution remain unchanged.
    **Fit binding is now supported (unreleased after v0.2.661):** both
    `objectFit` and its `fit` alias update the physical image. A nonempty
    `objectFit` wins; clearing it reveals `fit`, and clearing both restores

@@ -36,9 +36,11 @@ export const width = $props.width || delivered?.width
 export const height = $props.height || delivered?.height
 export const priority = $bool($props.priority)
 export const lazy = $bool($props.lazy, true)
-export const loading = priority ? 'eager' : ($props.loading || (lazy ? 'lazy' : 'eager'))
+export const authoredLoading = $props.loading || ''
+export const authoredFetchPriority = $props.fetchpriority || ''
+export const loading = priority ? 'eager' : (authoredLoading || (lazy ? 'lazy' : 'eager'))
 export const decoding = $props.decoding || 'async'
-export const fetchpriority = priority ? 'high' : ($props.fetchpriority || 'auto')
+export const fetchpriority = priority ? 'high' : (authoredFetchPriority || 'auto')
 
 /**
  * A CSS value painted behind the image while it arrives - a colour, a
@@ -135,13 +137,21 @@ const imageSrc = useReactiveProp('src', {{ originalSrc }})
 const liveAlt = useReactiveProp('alt', {{ originalAlt }})
 const liveDecorative = useReactiveProp('decorative', {{ decorative }})
 // Typed parent writes can bypass DOM parsing; keep the server $bool contract.
-const isDecorative = derived(() => {
-  const value = liveDecorative()
-  if (value == null) return false
+function imageBoolean(value, fallback) {
+  if (value == null) return fallback
   if (typeof value === 'string') return !['false', '0', 'off', 'no'].includes(value.trim().toLowerCase())
   return Boolean(value)
-})
+}
+const isDecorative = derived(() => imageBoolean(liveDecorative(), false))
 const imageAlt = derived(() => isDecorative() ? '' : (liveAlt() == null ? '' : String(liveAlt())))
+const livePriority = useReactiveProp('priority', {{ priority }}, { parse: value => imageBoolean(value, false) })
+const liveLazy = useReactiveProp('lazy', {{ lazy }}, { parse: value => imageBoolean(value, true) })
+// Preserve authored defaults separately: SSR priority may have masked them.
+const liveLoading = useReactiveProp('loading', {{ authoredLoading }})
+const liveFetchPriority = useReactiveProp('fetchpriority', {{ authoredFetchPriority }})
+const isPriority = derived(() => imageBoolean(livePriority(), false))
+const imageLoading = derived(() => isPriority() ? 'eager' : (liveLoading() || (imageBoolean(liveLazy(), true) ? 'lazy' : 'eager')))
+const imageFetchPriority = derived(() => isPriority() ? 'high' : (liveFetchPriority() || 'auto'))
 // Keep the documented alias live without letting it override objectFit.
 const primaryFit = useReactiveProp('objectFit', {{ authoredObjectFit }})
 const fallbackFit = useReactiveProp('fit', {{ authoredFit }})
@@ -238,11 +248,13 @@ const initialBackground = {{ placeholder ? `${placeholder} center / cover no-rep
     @if(height)height="{{ height }}"@endif
     :width="imageWidth() ?? null"
     :height="imageHeight() ?? null"
+    fetchpriority="{{ fetchpriority }}"
+    :fetchpriority="imageFetchPriority()"
     loading="{{ loading }}"
+    :loading="imageLoading()"
     @if(decorative)aria-hidden="true"@endif
     :aria-hidden="isDecorative() ? 'true' : null"
     decoding="{{ decoding }}"
-    fetchpriority="{{ fetchpriority }}"
     style="{{ imageStyle }}"
     :style="{ objectFit: imageFit(), objectPosition: imagePosition() }"
   />
