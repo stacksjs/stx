@@ -28,7 +28,7 @@ beforeAll(async () => {
 <meta name="twitter:card" content="summary"><link rel="canonical" href="https://example.test/page?x=1&amp;y=2">
 <link rel="alternate" hreflang="en" href="/page"><link rel="alternate" hreflang="de" href="/de/page">`, '{t:title}'))
   await Bun.write(path.join(directory, 'views/literal.stx'), shell(`<title>Literal &amp;lt; 100%</title>
-<meta name="description" content="Literal &quot;你好&quot; &amp; &lt;value&gt;">
+<meta name="description" content="Literal &quot;你好&quot; &amp; &lt;value&gt; &#x1f331; &copy; &amp;lt;">
 <link rel="canonical" href="https://example.test/literal">`, 'Literal'))
   await Bun.write(path.join(directory, 'views/empty.stx'), shell('<title>Empty</title>', 'Empty'))
   const { getRouterScript } = await import(routerPath)
@@ -128,7 +128,7 @@ for (const retained of [false, true]) {
       expect((await view.evaluate(read) as any).description).toBe('English & "quoted" <literal>')
       await view.evaluate('document.querySelector("#literal").click()')
       await until(view, 'document.title === "Literal &lt; 100%"')
-      expect(await view.evaluate(read)).toEqual({ title: 'Literal &lt; 100%', description: 'Literal "你好" & <value>', canonical: 'https://example.test/literal', alternates: 0, og: 0, csrf: true })
+      expect(await view.evaluate(read)).toEqual({ title: 'Literal &lt; 100%', description: 'Literal "你好" & <value> 🌱 © &lt;', canonical: 'https://example.test/literal', alternates: 0, og: 0, csrf: true })
       // Explicit locale switches use the same force flag as the lang picker;
       // ordinary links are intentionally localized to the current language.
       await view.evaluate('window.stxRouter.navigate("/de/page",true,true)')

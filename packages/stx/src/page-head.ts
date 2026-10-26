@@ -1,7 +1,12 @@
 import { escapeAttr } from './builtins/escape'
-import { decodeAttributeEntities } from './component-processing'
 import { scanAtElementPosition } from './html-masking'
 import { decodeTitleEntities } from './spa-nav'
+
+// Preserve authored entities verbatim: the browser, not a partial entity
+// table, decodes them once. Only syntax-significant raw characters change.
+function quoteValue(value: string): string {
+  return value.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
 
 /** Only page metadata travels across a fragment swap; never executable head state. */
 export function pageHeadFragment(html: string): string {
@@ -14,25 +19,25 @@ export function pageHeadFragment(html: string): string {
   const metadata: string[] = []
   for (const { token } of tags) {
     if (/^<title\b/i.test(token)) {
-      metadata.push(`<title>${escapeAttr(decodeTitleEntities(token.replace(/^<title\b[^>]*>|<\/title\s*>$/gi, '')))}</title>`)
+      metadata.push(`<title>${quoteValue(token.replace(/^<title\b[^>]*>|<\/title\s*>$/gi, ''))}</title>`)
       continue
     }
     const attrs: Record<string, string> = Object.create(null)
-    const attributes = token.replace(/^<\w+\b|\/?>$/g, '')
+    const attributes = token.replace(/^<\w+\b|>$/g, '')
     for (const match of attributes.matchAll(/([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g)) {
       const name = match[1].toLowerCase()
-      if (!(name in attrs)) attrs[name] = decodeAttributeEntities(match[2] ?? match[3] ?? match[4] ?? '')
+      if (!(name in attrs)) attrs[name] = match[2] ?? match[3] ?? match[4] ?? ''
     }
     if (/^<meta\b/i.test(token)) {
       const kind = attrs.property ? 'property' : 'name'
-      const name = (attrs[kind] ?? '').toLowerCase()
+      const name = decodeTitleEntities(attrs[kind] ?? '').toLowerCase()
       if (name === 'description' || /^(?:og|twitter):[\w:]+$/.test(name))
-        metadata.push(`<meta ${kind}="${escapeAttr(name)}" content="${escapeAttr(attrs.content ?? '')}">`)
+        metadata.push(`<meta ${kind}="${escapeAttr(name)}" content="${quoteValue(attrs.content ?? '')}">`)
     }
     else {
-      const rel = (attrs.rel ?? '').toLowerCase()
+      const rel = decodeTitleEntities(attrs.rel ?? '').toLowerCase()
       if (rel === 'canonical' || (rel === 'alternate' && attrs.hreflang)) {
-        metadata.push(`<link rel="${rel}" href="${escapeAttr(attrs.href ?? '')}"${rel === 'alternate' ? ` hreflang="${escapeAttr(attrs.hreflang)}"` : ''}>`)
+        metadata.push(`<link rel="${rel}" href="${quoteValue(attrs.href ?? '')}"${rel === 'alternate' ? ` hreflang="${quoteValue(attrs.hreflang)}"` : ''}>`)
       }
     }
   }

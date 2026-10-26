@@ -40,3 +40,10 @@ test('translations are safe in quoted metadata without double-decoding literal e
   const html = applyTranslations('<head><meta name="description" content="{t:description}"></head>', i18n, 'en')
   expect(pageHeadFragment(html)).toContain('content="&quot;quoted&quot; &#39;text&#39; &amp; &lt;literal&gt; &amp;lt;"')
 })
+
+test('preserves numeric and named entities and unquoted trailing slashes for the HTML parser', () => {
+  const fragment = pageHeadFragment(`<head><title>&copy; &#x1f331; &amp;lt;</title><meta name="description" content='&copy; &#169; &#x1f331; &amp;lt; "quote"'><link rel=canonical href=/en/></head>`)
+  expect(fragment).toContain('<title>&copy; &#x1f331; &amp;lt;</title>')
+  expect(fragment).toContain('content="&copy; &#169; &#x1f331; &amp;lt; &quot;quote&quot;"')
+  expect(fragment).toContain('href="/en/"')
+})

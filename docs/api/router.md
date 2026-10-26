@@ -17,6 +17,8 @@ contract. Only the supported tags' semantic attributes are copied. Older
 clients leave the template inert; a new client receiving an older server's
 fragment without a payload leaves its existing metadata unchanged. Full-document
 SPA swaps use the same metadata allowlist. Full browser navigations are unchanged.
+Authored numeric and named HTML entities are preserved for a single browser
+decode, including literal entity text such as `&amp;lt;`.
 
 ## Router Setup
 
