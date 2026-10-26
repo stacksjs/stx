@@ -1,5 +1,16 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.706...v0.2.707)
+
+## 🐛 Bug Fixes
+
+- **ssr**: preserve compound client signal reads before evaluation, without suppressing explicit server reporting ([#2119](https://github.com/stacksjs/stx/issues/2119), [94f3019](https://github.com/stacksjs/stx/commit/94f3019789)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **router**: synchronize bounded page metadata through fragments, prefetch, retained history, locale processing and production rendering; preserve HTML entities and parsed titles ([#2121](https://github.com/stacksjs/stx/issues/2121), [28a67be](https://github.com/stacksjs/stx/commit/28a67be87c), [33f2721](https://github.com/stacksjs/stx/commit/33f2721914), [043314a](https://github.com/stacksjs/stx/commit/043314a42c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.705...v0.2.706)
 
 ## 🐛 Bug Fixes
