@@ -141,6 +141,12 @@ const imageWidth = useReactiveProp('width', {{ width ?? null }})
 const imageHeight = useReactiveProp('height', {{ height ?? null }})
 const liveRatio = useReactiveProp('aspectRatio', {{ aspectRatio ?? null }})
 const nativeImage = !!window.stx._host.isNative
+const emit = defineEmits(['load', 'error'])
+// Image load/error events do not bubble to the picture/component root.
+// Forward the original browser event or host payload, never a lossy copy.
+function forwardImageEvent(name, event) {
+  if (event.target?.isConnected !== false) emit(name, event)
+}
 const imageRatio = derived(() => {
   const value = String(liveRatio() ?? '').trim()
   if (!nativeImage) return value || null
@@ -188,9 +194,11 @@ const initialBackground = {{ placeholder ? `${placeholder} center / cover no-rep
     2020, without blocking the parser or double-fetching through a probe.
   --}}
   <img
-    src="{{ src }}"
+    @if(src)src="{{ src }}"@endif
     data-stx-native-host-root
     :src="currentSrc() || null"
+    @load="forwardImageEvent('load', $event)"
+    @error="forwardImageEvent('error', $event)"
     @if(srcSet)srcset="{{ srcSet }}"@endif
     :srcset="keepInitialSources() ? {{ JSON.stringify(srcSet) }} || null : null"
     @if(sizes)sizes="{{ sizes }}"@endif

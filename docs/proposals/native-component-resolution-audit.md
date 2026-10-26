@@ -180,6 +180,17 @@ wrapping `<div>`, a client `value = state('/first')`, and
    positions remain unsupported and diagnosed, not approximated. Resolution
    remains unchanged: use an explicit shared import to opt in; legacy native
    calls and the browser builtin are not silently migrated.
+
+   **Load/error forwarding (unreleased after v0.2.707):** listeners now attach
+   to the physical image and emit through the shared component once. The
+   browser's original non-bubbling event (including identity, methods and
+   target) and the native callback payload survive. Removed images cannot
+   deliver stale callbacks. An empty initial URL omits `src` rather than
+   requesting the page as an image and reporting a spurious load failure.
+   `shared-image-events.test.ts` covers real browser
+   image decoding/network failure, native callbacks in normal/minified
+   bundles, hide/reopen and disposal. Legacy primitive selection and payloads
+   are unchanged; this does not certify device image-loader delivery.
 3. **Video (shared setup crash fixed, unreleased):**
    `<Video testID="target" label="Movie" :src="value" :paused="paused" />`
    now registers custom elements only in the browser. On native, the physical
