@@ -55,9 +55,28 @@ export async function signMacOSBundle(bundle: string, nestedExecutables: string[
       }
       copyFileSync(options.provisioningProfile, join(bundle, 'Contents', 'embedded.provisionprofile'))
     }
+    let helperEntitlements: string | undefined
+    if (nestedExecutables.length) {
+      let sandboxed = false
+      if (signingEntitlements) {
+        const parent = Bun.spawnSync(['/usr/bin/plutil', '-convert', 'json', '-o', '-', signingEntitlements])
+        if (parent.exitCode !== 0) throw new Error('Could not read native parent entitlements.')
+        sandboxed = JSON.parse(parent.stdout.toString())['com.apple.security.app-sandbox'] === true
+      }
+      temporary ??= mkdtempSync(join(tmpdir(), 'stx-entitlements-'))
+      helperEntitlements = join(temporary, 'helper.entitlements.plist')
+      writeFileSync(helperEntitlements, JSON.stringify({
+        // The compiled backend embeds Bun/JSC, including in webview-only apps.
+        'com.apple.security.cs.allow-jit': true,
+        ...(sandboxed ? { 'com.apple.security.app-sandbox': true, 'com.apple.security.inherit': true } : {}),
+      }))
+      if (Bun.spawnSync(['/usr/bin/plutil', '-convert', 'xml1', helperEntitlements]).exitCode !== 0)
+        throw new Error('Could not generate native helper entitlements.')
+    }
     for (const target of [...nestedExecutables, bundle]) {
       const flags = options.hardenedRuntime ? ['--options', 'runtime'] : []
       if (target === bundle && signingEntitlements) flags.push('--entitlements', signingEntitlements)
+      if (target !== bundle && helperEntitlements) flags.push('--entitlements', helperEntitlements)
       const timestamp = options.identity && options.identity !== '-' ? '--timestamp' : '--timestamp=none'
       const proc = Bun.spawn(['/usr/bin/codesign', '--force', '--sign', options.identity || '-', timestamp, ...flags, target], { stdout: 'pipe', stderr: 'pipe' })
       const [stderr, code] = await Promise.all([new Response(proc.stderr).text(), proc.exited])
