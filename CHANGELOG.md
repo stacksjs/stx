@@ -1,5 +1,27 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.709...v0.2.710)
+
+## 🐛 Bug Fixes
+
+- **router**: bound speculative page fetches and prioritize navigation ([e8cf45c](https://github.com/stacksjs/stx/commit/e8cf45c)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **image**: make decoding hints reactive across remounts (#2091) ([5c6e525](https://github.com/stacksjs/stx/commit/5c6e525)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **image**: keep loading and priority hints reactive (#2091) ([5163cf8](https://github.com/stacksjs/stx/commit/5163cf8)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **props**: replay typed clears and defaults after hidden remounts (#2091) ([b42dec7](https://github.com/stacksjs/stx/commit/b42dec7)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+
+## ✅ Tests
+
+- **props**: verify observer deduplication behavior instead of guard syntax (#2091) ([182c61c](https://github.com/stacksjs/stx/commit/182c61c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+
+## 🔧 Chores
+
+- release v0.2.710 ([a7b68eb](https://github.com/stacksjs/stx/commit/a7b68eb)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.708...v0.2.709)
 
 ## 🐛 Bug Fixes
