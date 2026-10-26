@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.711...v0.2.712)
+
+## 🐛 Bug Fixes
+
+- expose authenticated broadcast streams in the browser runtime ([baf33c4](https://github.com/stacksjs/stx/commit/baf33c4)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.712 ([507cacd](https://github.com/stacksjs/stx/commit/507cacd)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.710...v0.2.711)
 
 ## 🐛 Bug Fixes
