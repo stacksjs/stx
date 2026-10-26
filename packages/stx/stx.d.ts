@@ -469,6 +469,7 @@ declare function useTimeout(_fn: () => void, _ms?: number): {
   subscribe: (_fn: (_pending: boolean) => void) => () => void
 }
 declare const useTimeoutFn: typeof useTimeout
+declare const useBroadcastStream: typeof import('@stacksjs/stx').useBroadcastStream
 declare function nextTick(_fn?: () => void): Promise<void>
 
 // ============================================================================

@@ -9,7 +9,7 @@ export interface BroadcastStreamClientOptions {
   reconnectDelay?: number
 }
 
-/** Native authenticated Stacks broadcast stream; bearer credentials stay in request headers. */
+/** Authenticated Stacks broadcast stream for browser and native clients; credentials stay in request headers. */
 export function useBroadcastStream(options: BroadcastStreamClientOptions): { close: () => void } {
   let closed = false
   let abort: AbortController | null = null
