@@ -11,10 +11,10 @@ const source = `@import('Image', '${image}')
 <script client>
 const url = state(null)
 const shown = state(true)
-window.probe = { url, shown, loads: [], errors: [] }
+window.probe = { url, shown, loads: [], errors: [], loadTargets: [], errorTargets: [] }
 </script><section><div :if="shown">
 <Image testID="photo" className="photo" :src="url" alt="Photo"
-  @load="window.probe.loads.push($event)" @error="window.probe.errors.push($event)" />
+  @load="window.probe.loads.push($event); window.probe.loadTargets.push($event.target)" @error="window.probe.errors.push($event); window.probe.errorTargets.push($event.target)" />
 </div></section>`
 
 it.each([false, true])('forwards shared native Image load/error payloads once and stops stale callbacks (minify=%s)', async (minify) => {
@@ -66,7 +66,8 @@ it('forwards real browser image load/error events, preserving the original event
       : path.startsWith('/good') ? new Response(png, { headers: { 'Content-Type': 'image/png' } })
         : new Response('', { status: 404 })
   } })
-  const view = new WebView({ headless: true })
+  // Opt into the CI browser engine on macOS without attaching to user tabs.
+  const view = new WebView({ headless: true, backend: process.env.STX_IMAGE_BROWSER === 'chrome' ? { type: 'chrome', url: false } : undefined })
   const waitFor = async (expression: string) => {
     for (let i = 0; i < 150; i++) {
       if (await view.evaluate(expression)) return
@@ -80,16 +81,18 @@ it('forwards real browser image load/error events, preserving the original event
     await view.evaluate(`(() => {
       const img = document.querySelector('.photo img'); window.oldImage = img;
       // Observe before the component listener relays this event to its caller.
-      img.addEventListener('load', e => window.actualLoad = e, { capture: true });
-      img.addEventListener('error', e => window.actualError = e, { capture: true });
+      img.addEventListener('load', e => { window.actualLoad = e; window.actualLoadTarget = e.target; }, { capture: true });
+      img.addEventListener('error', e => { window.actualError = e; window.actualErrorTarget = e.target; }, { capture: true });
       window.probe.url.set('/good.png');
     })()`)
     await waitFor(`window.probe.loads.length === 1 && !!window.actualLoad`)
-    expect(await view.evaluate(`({ same: window.probe.loads[0] === window.actualLoad, target: window.probe.loads[0].target === window.oldImage, width: window.oldImage.naturalWidth })`)).toEqual({ same: true, target: true, width: 1 })
+    // Chrome clears resource Event.target after dispatch. Verify the physical
+    // target captured by the caller during delivery, not on a stored Event.
+    expect(await view.evaluate(`({ same: window.probe.loads[0] === window.actualLoad, target: window.probe.loadTargets[0] === window.oldImage && window.actualLoadTarget === window.oldImage, width: window.oldImage.naturalWidth })`)).toEqual({ same: true, target: true, width: 1 })
     expect(await view.evaluate(`window.probe.errors.length`)).toBe(0)
     await view.evaluate(`window.probe.url.set('/missing.png')`)
     await waitFor(`window.probe.errors.length === 1 && !!window.actualError`)
-    expect(await view.evaluate(`({ same: window.probe.errors[0] === window.actualError, target: window.probe.errors[0].target === window.oldImage, type: window.probe.errors[0].type })`)).toEqual({ same: true, target: true, type: 'error' })
+    expect(await view.evaluate(`({ same: window.probe.errors[0] === window.actualError, target: window.probe.errorTargets[0] === window.oldImage && window.actualErrorTarget === window.oldImage, type: window.probe.errors[0].type })`)).toEqual({ same: true, target: true, type: 'error' })
     await view.evaluate(`window.probe.shown.set(false)`)
     await waitFor(`!document.querySelector('.photo img')`)
     await view.evaluate(`(() => { window.oldImage.dispatchEvent(new Event('load')); window.oldImage.dispatchEvent(new Event('error')) })()`)
@@ -99,6 +102,7 @@ it('forwards real browser image load/error events, preserving the original event
     await view.evaluate(`window.probe.url.set('/good-again.png')`)
     await waitFor(`window.probe.loads.length === 2`)
     expect(await view.evaluate(`window.probe.errors.length === 1`)).toBe(true)
+    expect(await view.evaluate(`window.probe.loadTargets[1] === document.querySelector('.photo img')`)).toBe(true)
   }
   finally { view.close(); server.stop(true) }
 }, 30_000)

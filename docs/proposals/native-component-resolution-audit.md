@@ -191,6 +191,13 @@ wrapping `<div>`, a client `value = state('/first')`, and
    image decoding/network failure, native callbacks in normal/minified
    bundles, hide/reopen and disposal. Legacy primitive selection and payloads
    are unchanged; this does not certify device image-loader delivery.
+   Resource-event targets must be read during the callback: Chrome clears
+   `Event.target` after dispatch, unlike WebKit. The test retains both the
+   original Event (for identity) and the target observed by the caller (for
+   delivery semantics), rather than asserting a platform-dependent later read.
+   On macOS, `STX_IMAGE_BROWSER=chrome bun test
+   packages/stx/test/native/shared-image-events.test.ts` reproduces the CI
+   engine in a fresh headless browser without attaching to user tabs.
 
    **Reactive accessibility (unreleased after v0.2.707):** shared `alt` and
    `decorative` now update the physical image. Decorative images expose empty
