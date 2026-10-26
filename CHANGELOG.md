@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.703...v0.2.704)
+
+## 🐛 Bug Fixes
+
+- **native**: preserve status bar style prop spelling ([ebf21e8](https://github.com/stacksjs/stx/commit/ebf21e8)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.704 ([f9b8798](https://github.com/stacksjs/stx/commit/f9b8798)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.702...v0.2.703)
 
 ## 🐛 Bug Fixes
