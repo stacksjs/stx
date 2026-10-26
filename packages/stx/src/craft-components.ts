@@ -19,6 +19,8 @@
  * ```
  */
 
+import { insertBeforeDocumentClose } from './document-injection'
+
 export interface CraftComponentConfig {
   /**
    * Use native components when available (default: true)
@@ -975,23 +977,12 @@ export function processCraftComponents(
 
   // Inject styles/runtime if not already present
   if (!content.includes('craft-component-styles')) {
-    if (content.includes('</head>')) {
-      content = content.replace('</head>', `${CRAFT_COMPONENT_STYLES}\n</head>`)
-    }
-else if (content.includes('<style>')) {
-      content = content.replace('<style>', `${CRAFT_COMPONENT_STYLES}\n<style>`)
-    }
-else {
-      content = CRAFT_COMPONENT_STYLES + content
-    }
+    content = insertBeforeDocumentClose(content, 'head', `${CRAFT_COMPONENT_STYLES}\n`)
+      ?? CRAFT_COMPONENT_STYLES + content
   }
   if (!content.includes('craft-component-runtime')) {
-    if (content.includes('</body>')) {
-      content = content.replace('</body>', `${CRAFT_COMPONENT_RUNTIME}\n</body>`)
-    }
-else {
-      content += CRAFT_COMPONENT_RUNTIME
-    }
+    content = insertBeforeDocumentClose(content, 'body', `${CRAFT_COMPONENT_RUNTIME}\n`)
+      ?? content + CRAFT_COMPONENT_RUNTIME
   }
 
   // Process sidebar containers before generic self-closing tags so nested

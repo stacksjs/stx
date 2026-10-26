@@ -17,6 +17,9 @@
  * ```
  */
 
+import { insertBeforeDocumentClose } from './document-injection'
+import { findBodyOpenTag } from './find-body-tag'
+
 export interface CraftBridgeConfig {
   /**
    * Enable debug logging for bridge messages
@@ -588,13 +591,14 @@ export function injectCraftBridge(
   const script = generateCraftBridgeScript(config)
 
   // Try to inject before </head>
-  if (html.includes('</head>')) {
-    return html.replace('</head>', `${script}\n</head>`)
-  }
+  const withHead = insertBeforeDocumentClose(html, 'head', `${script}\n`)
+  if (withHead !== null) return withHead
 
   // Try to inject after <body>
-  if (html.includes('<body')) {
-    return html.replace(/(<body[^>]*>)/, `$1\n${script}`)
+  const body = findBodyOpenTag(html)
+  if (body) {
+    const end = body.index + body.tag.length
+    return html.slice(0, end) + `\n${script}` + html.slice(end)
   }
 
   // Prepend to content

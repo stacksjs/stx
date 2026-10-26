@@ -225,6 +225,7 @@ export async function buildNative(config: NativeBuildConfig): Promise<NativeBuil
     let html = await renderTemplate(config.input, {
       context: config.context,
       options: { ...projectConfig, isDev: false },
+      injectCSS: true,
     })
 
     // Inject Craft bridge
