@@ -357,6 +357,59 @@ describe('prefetch on sight', () => {
     expect(loading()).toContain('/_stx/modules.0123456789abcdef.js')
   })
 
+  it('bounds speculative fetches and starts a tapped queued page immediately without a duplicate', async () => {
+    const releases = new Map<string, () => void>()
+    const links = Array.from({ length: 6 }, (_, i) => `<a id="page-${i}" href="/page-${i}" data-stx-link>Page ${i}</a>`).join('')
+    const { window, calls } = install(page(links), async (path) => {
+      await new Promise<void>(resolve => releases.set(path, resolve))
+      if (path === '/page-0') throw new TypeError('offline')
+      return fragment(`<p>${path}</p>`)
+    }, { prefetch: true, prefetchVisible: true }, { IntersectionObserver: FakeObserver })
+    await sleep(20)
+    FakeObserver.last!.callback([...window.document.querySelectorAll('[data-stx-link][id^="page-"]')].map(target => ({ isIntersecting: true, target })))
+    await sleep(20)
+    expect(calls).toEqual(['/page-0', '/page-1'])
+
+    // The destination must not wait behind other speculative requests.
+    const navigation = window.stxRouter.navigate('/page-5')
+    await sleep(20)
+    expect(calls).toEqual(['/page-0', '/page-1', '/page-5'])
+    releases.get('/page-5')!()
+    expect(await navigation).toBe(true)
+    expect(window.location.pathname).toBe('/page-5')
+    expect(calls.filter(path => path === '/page-5')).toHaveLength(1)
+
+    // Failed responses release their slots too and the remaining queue drains.
+    for (let i = 0; i < 6; i++) {
+      for (const release of releases.values()) release()
+      await sleep(20)
+    }
+    expect(new Set(calls)).toEqual(new Set(Array.from({ length: 6 }, (_, i) => `/page-${i}`)))
+    expect(calls).toHaveLength(6)
+    expect(window.stxRouter.cache['/page-0']).toBeUndefined()
+  })
+
+  it('puts a hovered queued page ahead of pages only seen in the viewport', async () => {
+    const releases = new Map<string, () => void>()
+    const links = Array.from({ length: 5 }, (_, i) => `<a id="page-${i}" href="/page-${i}" data-stx-link>Page ${i}</a>`).join('')
+    const { window, calls } = install(page(links), async (path) => {
+      await new Promise<void>(resolve => releases.set(path, resolve))
+      return fragment(`<p>${path}</p>`)
+    }, { prefetch: true, prefetchVisible: true }, { IntersectionObserver: FakeObserver })
+    await sleep(20)
+    FakeObserver.last!.callback([...window.document.querySelectorAll('[id^="page-"]')].map(target => ({ isIntersecting: true, target })))
+    await sleep(20)
+    window.document.getElementById('page-4').dispatchEvent(new window.Event('mouseover', { bubbles: true }))
+    releases.get('/page-0')!()
+    await sleep(20)
+    expect(calls).toEqual(['/page-0', '/page-1', '/page-4'])
+    for (let i = 0; i < 5; i++) {
+      for (const release of releases.values()) release()
+      await sleep(20)
+    }
+    expect(calls).toHaveLength(5)
+  })
+
   it('does nothing on a connection that asked to save data', async () => {
     FakeObserver.last = null
     install(page(LINKS), path => fragment(`<p>${path}</p>`), { prefetch: true, prefetchVisible: true }, {

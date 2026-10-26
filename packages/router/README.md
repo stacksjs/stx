@@ -161,6 +161,11 @@ const script = getRouterScript()
 // - Loading indicator
 ```
 
+Background page prefetches and revalidations run at most two at a time. Hover or
+touch intent moves a queued page ahead of links merely visible on screen. A
+navigation starts its queued destination immediately and shares that request,
+so it never waits for the speculative queue or fetches the page twice.
+
 ### Route Type Generation
 
 ```typescript

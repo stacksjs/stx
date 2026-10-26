@@ -123,7 +123,7 @@ function routerSource(): string {
   return `
 ;(function(){
   'use strict';
-  var ROUTER_REV=7;
+  var ROUTER_REV=8;
   if(window.__stxRouter&&window.__stxRouter.__rev===ROUTER_REV)return;
 
   // ── Configuration ──
@@ -588,6 +588,37 @@ function routerSource(): string {
   // checking behind the swap (revalidate).
   var cacheAt={};
   var prefetching={};
+  // Speculative HTML still renders on the server. A viewport with twelve
+  // links must not start twelve renders alongside the page being read.
+  // Intent moves a queued page to the front; navigation starts it at once,
+  // sharing the same promise instead of waiting behind background work.
+  var prefetchQueue=[],prefetchActive=0;
+  function runPrefetch(job){
+    prefetchActive++;
+    var started;
+    try{started=job.start()}catch(error){started=Promise.reject(error)}
+    Promise.resolve(started).then(job.resolve,job.reject).finally(function(){
+      prefetchActive--;
+      while(prefetchActive<2&&prefetchQueue.length)runPrefetch(prefetchQueue.shift());
+    });
+  }
+  function queuePrefetch(key,start,intent){
+    return new Promise(function(resolve,reject){
+      var job={key:key,start:start,resolve:resolve,reject:reject};
+      if(prefetchActive<2)runPrefetch(job);
+      else if(intent)prefetchQueue.unshift(job);
+      else prefetchQueue.push(job);
+    });
+  }
+  function promotePrefetch(key,navigation){
+    for(var i=0;i<prefetchQueue.length;i++){
+      if(prefetchQueue[i].key!==key)continue;
+      var job=prefetchQueue.splice(i,1)[0];
+      if(navigation)runPrefetch(job);
+      else prefetchQueue.unshift(job);
+      break;
+    }
+  }
   var awaitingKey='';
   var isNavigating=false;
 
@@ -1375,6 +1406,7 @@ function routerSource(): string {
     var awaitedKey=cacheKey(url);
     if(o.cache&&!force&&!cache[awaitedKey]&&prefetching[awaitedKey]&&prefetching[awaitedKey].then){
       awaitingKey=awaitedKey;
+      promotePrefetch(awaitedKey,true);
       // Answer the tap now, not when the prefetch lands. The page it asked
       // for is on the way, but until then nothing on screen said so: no
       // loading class, no progress bar. On a server a second or two away
@@ -3258,7 +3290,7 @@ else {
     if(Date.now()-(cacheAt[key]||0)<o.revalidateAfter)return;
     // Compare like with like, including documents prefetched across layouts.
     var before=cache[key],wantsFragment=before?isFragment(before):shouldUseFragmentResponse();
-    prefetching[key]=fetch(url,{headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
+    prefetching[key]=queuePrefetch(key,function(){return fetch(url,{priority:'low',headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
       var incoming=r.headers.get('X-STX-Build')||'';
       if(isBuildSkew(incoming)){reloadForSkew(url,incoming,true);return null}
       return readPrefetchResponse(r,wantsFragment);
@@ -3266,7 +3298,7 @@ else {
       if(!result)return;
       if(o.cache)setCache(key,result.html,result.layout,result.layoutGroup,result.title,result.containerAttrs);
       if(before!==undefined&&before!==result.html&&cacheKey(location.href)===key)emitUpdated(url,'page');
-    }).catch(function(){}).finally(function(){delete prefetching[key]});
+    }).catch(function(){}).finally(function(){delete prefetching[key]})});
   }
   // The offline worker answered from its cache and found something newer
   // behind it. It posts { type: 'stx:updated', url, kind }, which its own
@@ -3643,12 +3675,12 @@ else {
     var key=cacheKey(href);
     if(cache[key]&&!fresh){if(!glance)loadModuleRegistries(cache[key],href);return}
     if(prefetching[key]){
-      if(!glance)prefetching[key].then(function(){if(cache[key])loadModuleRegistries(cache[key],href)});
+      if(!glance){promotePrefetch(key,false);prefetching[key].then(function(){if(cache[key])loadModuleRegistries(cache[key],href)})}
       return;
     }
     var eager=link.getAttribute('data-stx-prefetch')==='eager';
     var wantsFragment=shouldUseFragmentResponse();
-    prefetching[key]=fetch(href,{headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
+    prefetching[key]=queuePrefetch(key,function(){return fetch(href,{priority:'low',headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
       return readPrefetchResponse(r,wantsFragment);
     }).then(function(result){
       // A page in another layout cannot be swapped in as a fragment: the tap
@@ -3657,7 +3689,7 @@ else {
       // still reaching for the link, so the tap is a swap like any other.
       if(!result||!isFragment(result.html)||!checkLayoutChange(result.layout,href,result.layoutGroup))return result;
       // Same guards as any prefetch; the layout is the one the fragment declared.
-      return fetch(href,{headers:{'Accept':'text/html'}}).then(function(full){
+      return fetch(href,{priority:'low',headers:{'Accept':'text/html'}}).then(function(full){
         return full.ok?readPrefetchResponse(full,false).then(function(doc){return doc&&(doc.layout=result.layout,doc.layoutGroup=result.layoutGroup,doc)}):null;
       });
     }).then(function(result){
@@ -3673,7 +3705,7 @@ else {
         // A whole document's generated sheets too, named the same way in its head.
         preloadGeneratedCss(fragmentCssHrefs(result.html),location.href);
       }
-    }).catch(function(){}).finally(function(){delete prefetching[key]});
+    }).catch(function(){}).finally(function(){delete prefetching[key]})},!glance);
   }
 
   // ── Pages kept between launches ──
