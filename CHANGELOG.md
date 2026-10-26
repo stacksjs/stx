@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.701...v0.2.702)
+
+## 🐛 Bug Fixes
+
+- **native**: bound scrolling viewports through layout wrappers ([bc39614](https://github.com/stacksjs/stx/commit/bc39614)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.702 ([daa9edc](https://github.com/stacksjs/stx/commit/daa9edc)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.700...v0.2.701)
 
 ## 🔧 Chores
