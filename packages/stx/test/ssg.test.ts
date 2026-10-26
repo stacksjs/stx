@@ -514,6 +514,12 @@ No frontmatter here.
       // a prefetch hint for that exact chunk, inside the head
       expect(html).toContain(`<link rel="prefetch" href="${m![1]}" as="script">`)
       expect(html.indexOf('rel="prefetch"')).toBeLessThan(html.indexOf('</head>'))
+      // The router contains a literal closing head tag. The hint belongs in
+      // the HTML head, never in the script subsequently externalized to disk.
+      const routerAsset = html.match(/data-stx-router src="([^"]+)"/)
+      expect(routerAsset).toBeTruthy()
+      expect(await Bun.file(path.join(outputDir, routerAsset![1])).text())
+        .not.toContain(`<link rel="prefetch" href="${m![1]}" as="script">`)
     })
 
     it('no prefetch hints when prefetchIslands is off (chunking only)', async () => {

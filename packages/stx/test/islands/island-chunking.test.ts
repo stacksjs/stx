@@ -131,6 +131,17 @@ describe('injectIslandChunkPrefetch (#1746)', () => {
     expect(out).toContain('href="/_stx/islands/bbb.js"')
   })
 
+  it('ignores closing head text inside scripts, comments and attributes', () => {
+    const html = chunkedPage('S1', 'visible', 'aaa')
+      .replace('</head>', '<!-- </head> --><meta content="</head>"></HEAD >')
+      .replace('</body>', `<script>const closingHead = '</head>';</script></body>`)
+    const out = injectIslandChunkPrefetch(html)
+    const link = '<link rel="prefetch" href="/_stx/islands/aaa.js" as="script">'
+    expect(out).toContain(`${link}</HEAD >`)
+    expect(out).toContain(`<script>const closingHead = '</head>';</script>`)
+    expect(out.match(/rel="prefetch"/g)).toHaveLength(1)
+  })
+
   it('does NOT prefetch interaction or media islands (may never hydrate)', () => {
     expect(injectIslandChunkPrefetch(chunkedPage('S1', 'interaction', 'ccc'))).not.toContain('rel="prefetch"')
     expect(injectIslandChunkPrefetch(chunkedPage('S1', 'media:(max-width:768px)', 'ddd'))).not.toContain('rel="prefetch"')

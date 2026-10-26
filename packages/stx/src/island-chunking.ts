@@ -20,6 +20,7 @@
  * run unconditionally and idempotently.
  */
 import { createHash } from 'node:crypto'
+import { scanAtElementPosition } from './html-masking'
 
 /** One extracted island chunk: a content hash and the IIFE it holds. */
 export interface IslandChunk {
@@ -172,7 +173,14 @@ export function injectIslandChunkPrefetch(html: string): string {
       urls.add(t[2])
   }
 
-  const headEnd = html.lastIndexOf('</head>')
+  // The router/runtime may contain a literal closing head tag. Never insert
+  // HTML into that JavaScript string (and subsequently hoist the hint into
+  // its externalized asset) instead of the actual document head.
+  const closeHead = /<\/head\s*>/iy
+  const headEnd = scanAtElementPosition(html, (source, index) => {
+    closeHead.lastIndex = index
+    return closeHead.exec(source) ? closeHead.lastIndex : -1
+  })[0]?.start ?? -1
   if (urls.size === 0 || headEnd === -1)
     return html
 

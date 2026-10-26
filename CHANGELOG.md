@@ -6,6 +6,7 @@
 
 - **ssr**: preserve compound client signal reads before evaluation, without suppressing explicit server reporting ([#2119](https://github.com/stacksjs/stx/issues/2119), [94f3019](https://github.com/stacksjs/stx/commit/94f3019789)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - **router**: synchronize bounded page metadata through fragments, prefetch, retained history, locale processing and production rendering; preserve HTML entities and parsed titles ([#2121](https://github.com/stacksjs/stx/issues/2121), [28a67be](https://github.com/stacksjs/stx/commit/28a67be87c), [33f2721](https://github.com/stacksjs/stx/commit/33f2721914), [043314a](https://github.com/stacksjs/stx/commit/043314a42c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **ssg**: place island prefetch hints in the actual document head, ignoring closing-tag text inside inline scripts and comments. _(by glennmichael123 <gtorregosa@gmail.com>)_
 
 ## Contributors
 
