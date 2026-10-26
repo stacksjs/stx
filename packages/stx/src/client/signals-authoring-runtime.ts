@@ -130,6 +130,13 @@ export function signalsAuthoringRuntime(createModelSignalSource: string): string
       initial = staticValue;
     }
     var s = state(initial);
+    // A typed missing prop can leave the DOM attribute already absent (null
+    // -> undefined). The parent bridge must still restore this prop's default.
+    s.__stx_resetProp = function() {
+      var missing = typeof staticValue === 'string' && (opts.parse || typeof defaultValue !== 'string')
+        ? parse(staticValue) : staticValue;
+      s.set(missing);
+    };
     if (!root) return s;
     var propSignals = root.__stx_reactive_prop_signals
       || (root.__stx_reactive_prop_signals = {});
@@ -146,7 +153,7 @@ export function signalsAuthoringRuntime(createModelSignalSource: string): string
       if (raw === lastRaw) return;
       lastRaw = raw;
       var directValues = root.__stx_direct_prop_values;
-      var directValue = directValues && directValues[name];
+      var directValue = directValues && (directValues[name] || directValues[kebabName] || directValues[lowerName]);
       var next;
       if (directValue && directValue.raw === raw) {
         next = directValue.value;

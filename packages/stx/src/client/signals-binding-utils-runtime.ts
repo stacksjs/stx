@@ -107,7 +107,7 @@ export const SIGNALS_BINDING_UTILS_RUNTIME = `  // Minimal attribute-only pass f
   }
 
   function syncComponentPropSignal(el, name, value) {
-    if (!el || !el.getAttribute || value === undefined) return;
+    if (!el || !el.getAttribute) return;
     var scopeId = el.getAttribute('data-stx-scope');
     var scopeVars = scopeId && window.stx._scopes && window.stx._scopes[scopeId];
     var camelName = name.replace(/-([a-z0-9])/g, function(_, character) {
@@ -123,6 +123,15 @@ export const SIGNALS_BINDING_UTILS_RUNTIME = `  // Minimal attribute-only pass f
     if (!propSignal && scopeVars)
       propSignal = scopeVars[name] || scopeVars[camelName];
     var directValues = el.__stx_direct_prop_values || (el.__stx_direct_prop_values = {});
+    if (value === undefined) {
+      var staleDirect = directValues[name] || directValues[camelName];
+      if (staleDirect) Object.keys(directValues).forEach(function(key) {
+        if (directValues[key] === staleDirect) delete directValues[key];
+      });
+      if (propSignal && typeof propSignal.__stx_resetProp === 'function')
+        peek(function() { propSignal.__stx_resetProp(); });
+      return;
+    }
     var directValue = {
       raw: el.hasAttribute(name) ? el.getAttribute(name) : null,
       value: value,
