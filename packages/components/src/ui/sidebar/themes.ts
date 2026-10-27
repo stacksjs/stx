@@ -132,11 +132,14 @@ const macos: SidebarTheme = {
     'group/section flex w-full items-center',
     'pl-[8px] pr-[6px] pt-[16px] pb-[5px]',
     'text-[11px] font-semibold leading-[13px]',
-    'text-[#3c3c43]/60 dark:text-[#ebebf5]/60',
+    // AppKit's secondary label is 60%, which is 3.31:1 on this pane in light
+    // mode. 75% clears WCAG AA's 4.5:1; dark mode is already 6:1. Row counts
+    // and the chevrons below follow the same measurement.
+    'text-[#3c3c43]/75 dark:text-[#ebebf5]/60',
   ].join(' '),
   sectionChevron: [
     'i-f7-chevron-down h-[11px] w-[11px] ml-auto',
-    'text-[#3c3c43]/45 dark:text-[#ebebf5]/45',
+    'text-[#3c3c43]/60 dark:text-[#ebebf5]/45',
     'opacity-0 group-hover/section:opacity-100 transition-opacity duration-150',
     'transition-transform duration-200',
   ].join(' '),
@@ -161,7 +164,7 @@ const macos: SidebarTheme = {
     disclosure: 'flex h-[16px] w-[18px] shrink-0 items-center justify-center',
     chevron: [
       'i-f7-chevron-right h-[11px] w-[11px]',
-      'text-[#3c3c43]/55 dark:text-[#ebebf5]/55',
+      'text-[#3c3c43]/60 dark:text-[#ebebf5]/55',
       'transition-transform duration-200 ease-out',
     ].join(' '),
     iconSlot: 'flex h-[20px] w-[22px] shrink-0 items-center justify-center mr-[7px]',
@@ -171,7 +174,7 @@ const macos: SidebarTheme = {
     count: [
       'ml-[8px] shrink-0 tabular-nums',
       'text-[13px] leading-[16px]',
-      'text-[#3c3c43]/60 dark:text-[#ebebf5]/60',
+      'text-[#3c3c43]/75 dark:text-[#ebebf5]/60',
     ].join(' '),
     indentPerLevel: 16,
   },
