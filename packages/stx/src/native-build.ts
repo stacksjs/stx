@@ -70,6 +70,8 @@ export interface NativeBuildConfig {
     resizable?: boolean
     frameless?: boolean
     transparent?: boolean
+    /** Native macOS window clipping using public layer APIs. */
+    cornerRadius?: number
     alwaysOnTop?: boolean
     fullscreen?: boolean
   }
@@ -186,6 +188,8 @@ export interface NativeBuildResult {
  * Build an stx template into a native application
  */
 export async function buildNative(config: NativeBuildConfig): Promise<NativeBuildResult> {
+  if (config.window?.cornerRadius !== undefined && (!Number.isFinite(config.window.cornerRadius) || config.window.cornerRadius < 0 || config.window.cornerRadius > 128))
+    throw new Error('Native window cornerRadius must be between 0 and 128')
   const startTime = Date.now()
 
   try {
@@ -395,6 +399,7 @@ await runNativeBackend({ html: ${JSON.stringify(html)}, fetch: handler,
       devTools: Boolean(config.devTools),
       frameless: Boolean(config.window?.frameless),
       transparent: Boolean(config.window?.transparent),
+      cornerRadius: config.window?.cornerRadius ?? 0,
       alwaysOnTop: Boolean(config.window?.alwaysOnTop),
       resizable: config.window?.resizable !== false,
       ...(config.trayPopover ? { trayPopover: true } : menubarOnly ? { menubarOnly: true } : config.systemTray ? { systemTray: true } : {}),
@@ -425,6 +430,7 @@ await runNativeBackend({ html: ${JSON.stringify(html)}, fetch: handler,
     else if (config.systemTray) manifest.systemTray = true
     if (config.window?.frameless) manifest.frameless = true
     if (config.window?.transparent) manifest.transparent = true
+    if (config.window?.cornerRadius) manifest.cornerRadius = config.window.cornerRadius
     if (config.window?.alwaysOnTop) manifest.alwaysOnTop = true
     if (config.window?.resizable === false) manifest.resizable = false
 
@@ -448,6 +454,7 @@ await runNativeBackend({ html: ${JSON.stringify(html)}, fetch: handler,
       config.devTools ? '' : '--no-devtools',
       config.window?.frameless ? '--frameless' : '',
       config.window?.transparent ? '--transparent' : '',
+      config.window?.cornerRadius ? `--corner-radius ${config.window.cornerRadius}` : '',
       config.window?.alwaysOnTop ? '--always-on-top' : '',
       config.window?.resizable === false ? '--no-resize' : '',
       sidebarFlags,

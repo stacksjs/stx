@@ -17,9 +17,9 @@ test.skipIf(process.platform !== 'darwin')('compiled backend works outside the s
   await Bun.write(fixture, `if (process.argv.includes('--capabilities')) console.log('{"bundleBackend":true}'); else if (process.argv.includes('--version')) console.log('0.0.279')`)
   const compiled = Bun.spawnSync([process.execPath, 'build', fixture, '--compile', '--outfile', craftPath])
   expect(compiled.exitCode).toBe(0)
-  const result = await buildNative({ input: template, output: root, target: 'macos', name: 'Local', craftPath, backend: { entry: handler } })
+  const result = await buildNative({ input: template, output: root, target: 'macos', name: 'Local', window: { frameless: true, transparent: false, cornerRadius: 12 }, craftPath, backend: { entry: handler } })
   expect(result.success, result.error).toBe(true)
-  expect(await Bun.file(join(result.outputPath!, 'Contents/Resources/craft.json')).json()).toMatchObject({ backend: { executable: 'stx-backend' } })
+  expect(await Bun.file(join(result.outputPath!, 'Contents/Resources/craft.json')).json()).toMatchObject({ backend: { executable: 'stx-backend' }, cornerRadius: 12, transparent: false, frameless: true })
   await Bun.file(template).delete()
   await Bun.file(handler).delete()
   const child = Bun.spawn([join(result.outputPath!, 'Contents/MacOS/stx-backend'), '--serve'], { cwd: tmpdir(), stdout: 'pipe', stderr: 'pipe' })
@@ -59,4 +59,9 @@ test('refuses unsupported backend targets and missing source', async () => {
   await Bun.write(template, '<html><body>test</body></html>')
   expect((await buildNative({ input: template, target: 'linux', backend: { entry: 'missing.ts' } })).error).toContain('macOS only')
   expect((await buildNative({ input: template, target: 'macos', backend: { entry: 'missing.ts' } })).error).toContain('Native backend not found')
+})
+
+test('rejects invalid native corner radii before building', async () => {
+  for (const cornerRadius of [-1, 129, Number.NaN, Number.POSITIVE_INFINITY])
+    await expect(buildNative({ input: 'missing.stx', window: { cornerRadius } })).rejects.toThrow('cornerRadius')
 })
