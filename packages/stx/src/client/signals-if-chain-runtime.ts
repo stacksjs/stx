@@ -210,9 +210,12 @@ catch (e) { /* a disposer of its own is not this branch's problem */ }
         var pickHost = pick.placeholder.parentNode;
         if (pick.isTemplate && pick.nodes.length === 0)
           pick.nodes = Array.prototype.slice.call(stxHost.clone(pick.pristine).childNodes);
-        pick.nodes.forEach(function (n) {
-          if (pickHost.__stx_detached_if) pickHost.__stx_detached_if.delete(n);
-          stxHost.insert(pickHost, n, anchor);
+        // Connecting setup scripts must not make child state a chain dependency.
+        peek(function () {
+          pick.nodes.forEach(function (n) {
+            if (pickHost.__stx_detached_if) pickHost.__stx_detached_if.delete(n);
+            stxHost.insert(pickHost, n, anchor);
+          });
         });
         pick.el.__stx_if_visible.set(true);
         // Bound AFTER the clones, so hiding can remove whatever a structural

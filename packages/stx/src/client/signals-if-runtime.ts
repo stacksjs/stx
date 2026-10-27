@@ -147,19 +147,23 @@ catch (e2) {
 
       if (isTemplate) {
         if (value && !isInserted) {
-          // Re-insert cloned content
-          currentNodes = Array.from(el.content.childNodes).map(n => stxHost.clone(n));
-          const insertionAnchor = placeholder.nextSibling;
-          currentNodes.forEach(node => stxHost.insert(parent, node, insertionAnchor));
-          // Bound AFTER the clones, so hiding can remove whatever a nested
-          // structural directive rendered as their sibling (#1955).
-          if (!endMarker) endMarker = stxHost.anchor('stx-if-end');
-          stxHost.insert(parent, endMarker, insertionAnchor);
-          processTemplateNodes(currentNodes);
-          childrenProcessed = true;
-          // Stamp insertion time for click propagation guard
-          currentNodes.forEach(function(n) { if (n.nodeType === 1) n.__stx_shown_at = performance.now(); });
+          // Inserting a component runs its setup synchronously. Child prop
+          // reconciliation must not subscribe this branch to the child state.
           isInserted = true;
+          childrenProcessed = true;
+          peek(function() {
+            // Re-insert cloned content
+            currentNodes = Array.from(el.content.childNodes).map(n => stxHost.clone(n));
+            const insertionAnchor = placeholder.nextSibling;
+            currentNodes.forEach(node => stxHost.insert(parent, node, insertionAnchor));
+            // Bound AFTER the clones, so hiding can remove whatever a nested
+            // structural directive rendered as their sibling (#1955).
+            if (!endMarker) endMarker = stxHost.anchor('stx-if-end');
+            stxHost.insert(parent, endMarker, insertionAnchor);
+            processTemplateNodes(currentNodes);
+            // Stamp insertion time for click propagation guard
+            currentNodes.forEach(function(n) { if (n.nodeType === 1) n.__stx_shown_at = performance.now(); });
+          });
         }
 else if (!value && isInserted) {
           // Remove all current nodes. Do NOT disposeSubtreeScopes — :if is a
