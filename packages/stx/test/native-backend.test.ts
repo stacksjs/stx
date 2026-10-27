@@ -11,7 +11,8 @@ test.skipIf(process.platform !== 'darwin')('compiled backend works outside the s
   const template = join(root, 'app.stx')
   const handler = join(root, 'handler.ts')
   await Bun.write(template, '<!doctype html><html><head><title>Local</title></head><body><h1>Embedded UI</h1></body></html>')
-  await Bun.write(handler, "export default (request: Request) => new URL(request.url).pathname === '/api' ? Response.json({ works: true }) : null")
+  const marker = join(root, 'shutdown.txt')
+  await Bun.write(handler, "export async function shutdown() { await Bun.sleep(30); await Bun.write(" + JSON.stringify(marker) + ", 'saved') }\nexport default (request: Request) => new URL(request.url).pathname === '/api' ? Response.json({ works: true }) : null")
   const craftPath = join(root, 'craft-fixture')
   const fixture = join(root, 'craft-fixture.ts')
   await Bun.write(fixture, `if (process.argv.includes('--capabilities')) console.log('{"bundleBackend":true}'); else if (process.argv.includes('--version')) console.log('0.0.279')`)
@@ -42,6 +43,8 @@ test.skipIf(process.platform !== 'darwin')('compiled backend works outside the s
     expect((await fetch(`${origin}/missing`, { headers: { cookie } })).status).toBe(404)
   }
   finally { child.kill('SIGTERM'); await child.exited }
+  expect(await Bun.file(marker).text()).toBe('saved')
+  await Bun.file(marker).delete()
   await expect(fetch(origin)).rejects.toThrow()
   const managed = Bun.spawn([join(result.outputPath!, 'Contents/MacOS/stx-backend'), '--serve', '--managed'], { cwd: tmpdir(), stdin: 'pipe', stdout: 'pipe', stderr: 'pipe' })
   try {
@@ -49,6 +52,7 @@ test.skipIf(process.platform !== 'darwin')('compiled backend works outside the s
     const managedOrigin = new URL(new TextDecoder().decode(first.value).trim()).origin
     managed.stdin.end()
     expect(await Promise.race([managed.exited, Bun.sleep(5000).then(() => 'timeout')])).toBe(0)
+    expect(await Bun.file(marker).text()).toBe('saved')
     await expect(fetch(managedOrigin)).rejects.toThrow()
   }
   finally { if (managed.exitCode === null) { managed.kill(); await managed.exited } }
@@ -65,3 +69,23 @@ test('rejects invalid native corner radii before building', async () => {
   for (const cornerRadius of [-1, 129, Number.NaN, Number.POSITIVE_INFINITY])
     await expect(buildNative({ input: 'missing.stx', window: { cornerRadius } })).rejects.toThrow('cornerRadius')
 })
+
+test('backend shutdown is optional, bounded, and reports failures', async () => {
+  for (const [name, shutdown, expected] of [
+    ['none', 'undefined', 0],
+    ['failed', '() => { throw new Error("private failure") }', 1],
+    ['stuck', '() => new Promise(() => {})', 1],
+  ] as const) {
+    const entry = join(root, `${name}.ts`)
+    await Bun.write(entry, `import { runNativeBackend } from ${JSON.stringify(join(import.meta.dir, '../src/native-backend.ts'))}
+await runNativeBackend({ html: '', fetch: () => null, shutdown: ${shutdown} })`)
+    const child = Bun.spawn([process.execPath, entry, '--serve', '--managed'], { stdin: 'pipe', stdout: 'pipe', stderr: 'pipe' })
+    try {
+      await child.stdout.getReader().read()
+      child.stdin.end()
+      expect(await Promise.race([child.exited, Bun.sleep(4000).then(() => 'timeout')])).toBe(expected)
+      expect(await new Response(child.stderr).text()).not.toContain('private failure')
+    }
+    finally { if (child.exitCode === null) { child.kill(); await child.exited } }
+  }
+}, 10000)

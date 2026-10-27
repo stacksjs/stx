@@ -376,8 +376,8 @@ async function buildMacOS(
       const entry = join(scratch, 'launcher.ts')
       const runtime = join(import.meta.dir, 'native-backend' + (import.meta.path.endsWith('.ts') ? '.ts' : '.js'))
       await Bun.write(entry, `import { runNativeBackend } from ${JSON.stringify(runtime)}
-import handler from ${JSON.stringify(resolve(config.backend.entry))}
-await runNativeBackend({ html: ${JSON.stringify(html)}, fetch: handler,
+import * as backend from ${JSON.stringify(resolve(config.backend.entry))}
+await runNativeBackend({ html: ${JSON.stringify(html)}, fetch: backend.default, shutdown: Reflect.get(backend, "shutdown"),
   maxRequestBodySize: ${config.backend.maxRequestBodySize ?? 32 * 1024 * 1024} })
 `)
       const compiled = Bun.spawn([process.execPath, 'build', entry, '--compile', '--minify',

@@ -2,6 +2,8 @@ export interface NativeBackendOptions {
   html: string
   fetch: (request: Request) => Response | null | Promise<Response | null>
   maxRequestBodySize?: number
+  /** Flush application state before the managed backend exits. Limited to two seconds. */
+  shutdown?: () => void | Promise<void>
 }
 
 /** Host an embedded app on an authenticated, ephemeral loopback origin. */
@@ -40,7 +42,24 @@ export async function runNativeBackend(options: NativeBackendOptions): Promise<v
   })
   const url = `${server.url}?session=${token}`
   console.log(url)
-  const stop = () => { server.stop(true); process.exit(0) }
+  let stopping = false
+  const stop = () => {
+    if (stopping) return
+    stopping = true
+    server.stop(true)
+    const timeout = setTimeout(() => {
+      console.error('Native backend shutdown exceeded two seconds.')
+      process.exit(1)
+    }, 2000)
+    void Promise.resolve().then(() => options.shutdown?.()).then(() => {
+      clearTimeout(timeout)
+      process.exit(0)
+    }, () => {
+      clearTimeout(timeout)
+      console.error('Native backend shutdown failed.')
+      process.exit(1)
+    })
+  }
   process.once('SIGTERM', stop)
   process.once('SIGINT', stop)
   if (process.argv.includes('--managed')) {

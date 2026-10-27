@@ -1053,3 +1053,9 @@ application logic runs in a bundled Bun backend. STX selects Pantry's official
 host while omitting Craft's separate headless scripting engine. Install a Craft
 release that includes this profile; builds fail if the requested profile is
 missing. The default `full` profile continues to support Craft scripts.
+
+A backend entry can export `async function shutdown()` to finish local writes
+when the native host quits, receives a termination signal, or closes its lifetime
+pipe. STX stops serving requests, awaits the hook once, and exits. The hook has a
+two second deadline; a failure or timeout exits with status 1. Craft must allow
+its backend a graceful exit (Craft 0.0.370 or newer) before forcing termination.
