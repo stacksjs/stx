@@ -242,19 +242,6 @@ if (elementProto) {
     }
   }
 
-  // Add options property for select elements
-  if (!Object.getOwnPropertyDescriptor(elementProto, 'options')) {
-    Object.defineProperty(elementProto, 'options', {
-      get(this: Element) {
-        if (this.tagName !== 'SELECT')
-          return undefined
-        return this.querySelectorAll('option')
-      },
-      enumerable: true,
-      configurable: true,
-    })
-  }
-
   // Add reset method for form elements
   if (!elementProto.reset) {
     elementProto.reset = function (this: Element) {

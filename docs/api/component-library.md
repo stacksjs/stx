@@ -123,6 +123,10 @@ SSR interpolations and reflected attributes are escaped. Slot strings and `{!! r
 
 ### Cross-framework usage
 
+Generated elements keep the native `HTMLElement` API. A declared prop named `style` or `onclick` is read from its attribute for rendering, while `element.style` remains a `CSSStyleDeclaration` and `element.onclick` remains the browser's event handler accessor. Native attribute changes still update the component's declared prop and bindings. Such props need an attribute binding; disabling it with `attribute: false` is rejected when the element is defined.
+
+The generated `Props` interface describes the component's declared props. The element class retains native DOM property types and exposes custom props as its own typed fields. For example, `element.style.setProperty('--accent', 'blue')` and `element.onclick = event => event.preventDefault()` work alongside a custom `element.label` prop.
+
 Import the component module or bundle once, then use native tags. The generated JSX declaration supplies typed attributes and `onActivate`; `custom-elements.json` supplies the same contract to supporting editors and documentation tools.
 
 ```tsx

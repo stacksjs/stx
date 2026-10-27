@@ -1078,7 +1078,12 @@ const escapeHTML = (value) => String(value ?? '')
 
 const valueAt = (host, path) => {
   const parts = path.trim().split('.');
-  let value = host;
+  const first = parts.shift();
+  // Render bindings read declared props, including attributes whose names
+  // also belong to the native DOM API. The public element keeps that API.
+  let value = host._values && Object.prototype.hasOwnProperty.call(host._values, first)
+    ? host._values[first]
+    : host[first];
   for (const part of parts) value = value?.[part];
   return typeof value === 'function' ? value.call(host) : value;
 };
@@ -1339,6 +1344,12 @@ export function defineComponent(Component, definition) {
       attributeToProperty[attribute] = name;
       observedAttributes.push(attribute);
     }
+    // A style prop is an attribute value, not a replacement for the browser's
+    // CSSStyleDeclaration. Native event handler accessors must survive too.
+    if (name in HTMLElementBase.prototype) {
+      if (!attribute) throw new TypeError('STX prop "' + name + '" overlaps the native DOM API and needs an attribute binding');
+      continue;
+    }
     Object.defineProperty(Component.prototype, name, {
       configurable: true,
       enumerable: true,
@@ -1471,9 +1482,6 @@ function componentDeclaration(component: CompiledComponent): string {
   const props = Object.entries(component.properties).map(([name, property]) =>
     `  ${name}${property.required ? '' : '?'}: ${typeForProperty(property)}`,
   ).join('\n')
-  const fields = Object.entries(component.properties).map(([name, property]) =>
-    `  ${name}: ${typeForProperty(property)}`,
-  ).join('\n')
   const events = Object.entries(component.events).map(([name, event]) =>
     `  ${JSON.stringify(name)}: CustomEvent<${event.detailType || 'unknown'}>`).join('\n')
   const methods = Object.keys(component.methods).map(name => `  ${name}($event?: Event): unknown`).join('\n')
@@ -1486,8 +1494,9 @@ export interface ${component.name}EventMap {
 ${events}
 }
 
+export interface ${component.name} extends Required<Pick<${component.name}Props, Exclude<keyof ${component.name}Props, keyof HTMLElement>>> {}
+
 export declare class ${component.name} extends HTMLElement {
-${fields}
 ${methods}
   readonly updateComplete: Promise<void>
   requestUpdate(): Promise<void>

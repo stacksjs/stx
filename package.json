@@ -113,7 +113,7 @@
   ],
   "dependencies": {
     "@stacksjs/ts-css": "^0.3.11",
-    "very-happy-dom": "^0.3.6"
+    "very-happy-dom": "^0.4.1"
   },
   "devDependencies": {
     "@iconify/json": "^2.2.535",
