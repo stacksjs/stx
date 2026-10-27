@@ -38,7 +38,7 @@ interface CompiledComponent {
   slots: Array<{ name: string, description?: string }>
   cssProperties: Array<{ name: string, description?: string }>
   /** The component's script, compiled: hoisted imports and the derived scope. */
-  scope: { imports: string[], body: string, propNames: string[], defaults: Record<string, string> }
+  scope: { imports: string[], body: string, propNames: string[], propBindings: Record<string, string>, defaults: Record<string, string> }
   /** The template's control flow, compiled into a render function body. */
   render: string
 }
@@ -589,6 +589,7 @@ interface PropsDeclaration {
   /** The source text of the whole statement, so the caller can remove it. */
   text: string
   propNames: string[]
+  propBindings: Record<string, string>
   defaults: Record<string, string>
   declared: Record<string, string>
   /** A named type argument, when the props were typed by `defineProps<Props>()`. */
@@ -649,6 +650,7 @@ function parsePropsDeclaration(code: string): PropsDeclaration | null {
   const declared: Record<string, string> = {}
   const defaults: Record<string, string> = {}
   const propNames: string[] = []
+  const propBindings: Record<string, string> = {}
   let cursor = start + (/^(?:const|let|var)\s+/.exec(code.slice(start))?.[0].length ?? 0)
   const skipSpace = (): void => {
     while (cursor < code.length && /\s/.test(code[cursor]!)) cursor++
@@ -782,6 +784,7 @@ function parsePropsDeclaration(code: string): PropsDeclaration | null {
       if (!name)
         continue
       propNames.push(name)
+      propBindings[name] = binding.trim()
       if (assignment !== -1)
         defaults[name] = entry.slice(assignment + 1).trim()
     }
@@ -790,7 +793,7 @@ function parsePropsDeclaration(code: string): PropsDeclaration | null {
     propNames.push(...Object.keys(declared))
   }
 
-  return { text: code.slice(start, cursor), propNames, defaults, declared, typeName }
+  return { text: code.slice(start, cursor), propNames, propBindings, defaults, declared, typeName }
 }
 
 export function parseDefaults(object: string): Array<[string, string]> {
@@ -850,17 +853,19 @@ function compileScriptScope(source: string, file: string, outputDir: string): {
   imports: string[]
   body: string
   propNames: string[]
+  propBindings: Record<string, string>
   defaults: Record<string, string>
   declared: Record<string, string>
 } {
   const scripts = [...source.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
   const block = scripts.find(script => !/\bcomponent\b|\bstx:component\b|\bclient\b/i.test(script[1]))
 
-  if (!block) return { imports: [], body: '', propNames: [], defaults: {}, declared: {} }
+  if (!block) return { imports: [], body: '', propNames: [], propBindings: {}, defaults: {}, declared: {} }
 
   let code = block[2]
   const imports: string[] = []
   const propNames: string[] = []
+  const propBindings: Record<string, string> = {}
   const defaults: Record<string, string> = {}
   /** Prop name to the TypeScript type the component declared for it. */
   const declared: Record<string, string> = {}
@@ -894,6 +899,7 @@ function compileScriptScope(source: string, file: string, outputDir: string): {
   const props = parsePropsDeclaration(code)
   if (props) {
     propNames.push(...props.propNames)
+    Object.assign(propBindings, props.propBindings)
     Object.assign(defaults, props.defaults)
     Object.assign(declared, props.declared)
     code = code.replace(props.text, '')
@@ -937,7 +943,7 @@ function compileScriptScope(source: string, file: string, outputDir: string): {
   // them as dead: the template that uses them has not been attached yet. The
   // two are built together further down, where `const doubled = total * 2` is
   // visibly used by the line that prints it and survives.
-  return { imports, body: code.trim(), propNames, defaults, declared }
+  return { imports, body: code.trim(), propNames, propBindings, defaults, declared }
 }
 
 function compileEventDirectives(template: string): { template: string, eventTypes: string[] } {
@@ -1390,7 +1396,10 @@ function componentModule(component: CompiledComponent): string {
   // the defineProps set leaves the others as free identifiers and the render
   // throws a ReferenceError for a prop that is declared and working.
   const destructured = [...new Set([...Object.keys(component.properties), ...scope.propNames])]
-    .map(name => scope.defaults[name] === undefined ? name : `${name} = ${scope.defaults[name]}`)
+    .map(name => {
+      const binding = scope.propBindings[name] || name
+      return scope.defaults[name] === undefined ? binding : `${binding} = ${scope.defaults[name]}`
+    })
     .join(', ')
   const indent = (code: string): string =>
     code.split('\n').map(line => line.trim() === '' ? line : `    ${line}`).join('\n')
