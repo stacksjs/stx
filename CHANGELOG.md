@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.724...v0.2.725)
+
+## ✨ Features
+
+- **serve**: additionalComponentsDirs, ordered component roots after componentsDir ([b2bda8b](https://github.com/stacksjs/stx/commit/b2bda8b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2130](https://github.com/stacksjs/stx/issues/2130), [#3032](https://github.com/stacksjs/stx/issues/3032))
+
+## 🔧 Chores
+
+- release v0.2.725 ([52aa465](https://github.com/stacksjs/stx/commit/52aa465)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.723...v0.2.724)
 
 ## 🐛 Bug Fixes
