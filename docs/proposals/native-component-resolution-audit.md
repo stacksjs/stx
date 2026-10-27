@@ -206,6 +206,23 @@ wrapping `<div>`, a client `value = state('/first')`, and
    identity, remount and teardown in normal/minified bundles; it does not add
    native host decoding-policy support. Craft and resolution are unchanged.
 
+   **Reactive rounding (unreleased after v0.2.719):** shared `rounded` updates
+   both the picture frame and physical image's border radius. The existing
+   boolean/$bool contract is unchanged: enabled uses `0.5rem`, false-like
+   strings and null disable it, an empty attribute enables it, and undefined
+   restores the authored default. On web, disabling removes the inline radius
+   rather than forcing zero, so application CSS can take over. Setup hands
+   SSR-owned rounding to the reactive layer through existing host APIs, so
+   clearing does not restore a stale SSR radius. Native clears use the existing
+   nullable style field. SSR behavior and component resolution are unchanged;
+   this does not introduce radius tokens.
+   `image-rounded-browser.test.ts` checks actual computed and inline styles,
+   application CSS fallback, both defaults, typed clears and writes while
+   hidden, with retained frame/image identity after remount.
+   `shared-image-rounded.test.ts` checks both native node radii, defaults,
+   source/labels, identity, remount and teardown in normal/minified bundles.
+   These are protocol tests, not device clipping certification. Craft is untouched.
+
    **Fit binding is now supported (unreleased after v0.2.661):** both
    `objectFit` and its `fit` alias update the physical image. A nonempty
    `objectFit` wins; clearing it reveals `fit`, and clearing both restores
