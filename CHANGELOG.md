@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.722...v0.2.723)
+
+## 🐛 Bug Fixes
+
+- preserve native DOM APIs in component libraries ([23e412b](https://github.com/stacksjs/stx/commit/23e412b)) _(by Chris <chris@stacksjs.com>)_ ([#2129](https://github.com/stacksjs/stx/issues/2129), [#1625](https://github.com/stacksjs/stx/issues/1625))
+- **components**: make macos sidebar secondary text readable in light mode ([ec91d06](https://github.com/stacksjs/stx/commit/ec91d06)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#3](https://github.com/stacksjs/stx/issues/3), [#3030](https://github.com/stacksjs/stx/issues/3030))
+
+## 🔧 Chores
+
+- release v0.2.723 ([b4b9009](https://github.com/stacksjs/stx/commit/b4b9009)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.721...v0.2.722)
 
 ## 🐛 Bug Fixes
