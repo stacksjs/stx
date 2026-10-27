@@ -35,7 +35,7 @@ jobs:
         run: sha256sum --check artifacts/native-authored-keys/lock-before.sha256
       - name: Retain actual compiled native observations
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: native-authored-keys
           path: artifacts/native-authored-keys
