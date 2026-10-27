@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.717...v0.2.718)
+
+## 🐛 Bug Fixes
+
+- **native**: make embedded provisioning profiles readable ([746c97b](https://github.com/stacksjs/stx/commit/746c97b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.718 ([8e5e1fe](https://github.com/stacksjs/stx/commit/8e5e1fe)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.716...v0.2.717)
 
 ## ✨ Features
