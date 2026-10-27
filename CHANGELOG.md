@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.716...v0.2.717)
+
+## ✨ Features
+
+- **native**: configure public macOS window corner clipping ([e74bdce](https://github.com/stacksjs/stx/commit/e74bdce)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.717 ([b431c8e](https://github.com/stacksjs/stx/commit/b431c8e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.715...v0.2.716)
 
 ## ✨ Features
