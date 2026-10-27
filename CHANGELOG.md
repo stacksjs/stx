@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.721...v0.2.722)
+
+## 🐛 Bug Fixes
+
+- distinguish the STX Marketplace extension name ([b45cad3](https://github.com/stacksjs/stx/commit/b45cad3)) _(by Chris <chris@stacksjs.com>)_ ([#2125](https://github.com/stacksjs/stx/issues/2125))
+- retain prop aliases in component library render modules ([2f11c6b](https://github.com/stacksjs/stx/commit/2f11c6b)) _(by Chris <chris@stacksjs.com>)_ ([#2128](https://github.com/stacksjs/stx/issues/2128))
+- preserve caller refs through nested component slots ([7161b32](https://github.com/stacksjs/stx/commit/7161b32)) _(by Chris <chris@stacksjs.com>)_ ([#2127](https://github.com/stacksjs/stx/issues/2127))
+
+## 🔧 Chores
+
+- release v0.2.722 ([2e67862](https://github.com/stacksjs/stx/commit/2e67862)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.720...v0.2.721)
 
 ## 🐛 Bug Fixes
