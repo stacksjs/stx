@@ -87,10 +87,21 @@ const liveSrc = useReactiveProp('src', {{ src }})
 const livePoster = useReactiveProp('poster', {{ poster }})
 const liveLabel = useReactiveProp('label', {{ label }})
 const liveRatio = useReactiveProp('aspectRatio', {{ aspectRatio }})
-const liveControls = useReactiveProp('controls', {{ controls }})
-const liveAutoplay = useReactiveProp('autoplay', {{ autoplay }})
-const liveLoop = useReactiveProp('loop', {{ loop }})
-const liveMuted = useReactiveProp('muted', {{ muted }})
+// Match server $bool for attributes, authored-default replay and typed parent
+// writes (which bypass parsing). Controls alone defaults to enabled when null.
+function videoBoolean(value, fallback) {
+  if (value == null) return fallback
+  if (typeof value === 'string') return !['false', '0', 'off', 'no'].includes(value.trim().toLowerCase())
+  return Boolean(value)
+}
+const liveControls = useReactiveProp('controls', {{ controls }}, { parse: value => videoBoolean(value, true) })
+const liveAutoplay = useReactiveProp('autoplay', {{ autoplay }}, { parse: value => videoBoolean(value, false) })
+const liveLoop = useReactiveProp('loop', {{ loop }}, { parse: value => videoBoolean(value, false) })
+const liveMuted = useReactiveProp('muted', {{ muted }}, { parse: value => videoBoolean(value, false) })
+const playerControls = derived(() => videoBoolean(liveControls(), true))
+const playerAutoplay = derived(() => videoBoolean(liveAutoplay(), false))
+const playerLoop = derived(() => videoBoolean(liveLoop(), false))
+const playerMuted = derived(() => videoBoolean(liveMuted(), false))
 const element = useRef('player')
 const emit = nativeVideo ? defineEmits(['play', 'pause', 'ended', 'timeupdate', 'loadedmetadata', 'loadstart', 'error']) : null
 
@@ -141,10 +152,10 @@ effect(() => {
     :poster="livePoster() || null"
     :aria-label="liveLabel() || null"
     :style="playerStyle()"
-    :controls="liveControls()"
-    :autoplay="liveAutoplay()"
-    :loop="liveLoop()"
-    :muted="liveMuted()"
+    :controls="playerControls()"
+    :autoplay="playerAutoplay()"
+    :loop="playerLoop()"
+    :muted="playerMuted()"
     data-media-config="{{ playerConfig }}"
     @if(poster) poster="{{ poster }}" @endif
     @if(controls) controls @endif
@@ -166,7 +177,7 @@ effect(() => {
     @if(isPage)
       <span data-native-fallback class="block h-full w-full"></span>
     @else
-      <video data-native-fallback @if(src) src="{{ src }}" @endif @if(poster) poster="{{ poster }}" @endif @if(controls) controls @endif @if(loop) loop @endif :controls="liveControls()" :loop="liveLoop()" :muted="liveMuted()" @if(playsinline) playsinline @endif preload="none" @if(crossorigin) crossorigin="{{ crossorigin }}" @endif controlslist="{{ controlslist }}" @if(disablePictureInPicture) disablepictureinpicture @endif @if(label) aria-label="{{ label }}" @endif class="object-contain h-full w-full"></video>
+      <video data-native-fallback @if(src) src="{{ src }}" @endif @if(poster) poster="{{ poster }}" @endif @if(controls) controls @endif @if(loop) loop @endif @if(muted) muted @endif :controls="playerControls()" :loop="playerLoop()" :muted="playerMuted()" @if(playsinline) playsinline @endif preload="none" @if(crossorigin) crossorigin="{{ crossorigin }}" @endif controlslist="{{ controlslist }}" @if(disablePictureInPicture) disablepictureinpicture @endif @if(label) aria-label="{{ label }}" @endif class="object-contain h-full w-full"></video>
     @endif
     <video-skin>
       <media-seek-button slot="left" seconds="-10"></media-seek-button>

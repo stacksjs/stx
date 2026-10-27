@@ -107,11 +107,6 @@ else {
       await selected({ scale: 'none', duration: '0s', animations: 0, reduced: true, ...retained })
       await media(false)
       await selected({ scale: '1.05', reduced: false, ...retained })
-      await view.cdp('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 })
-      await selected({ hover: false, scale: 'none', duration: '0s', ...retained })
-      await view.cdp('Emulation.setTouchEmulationEnabled', { enabled: false })
-      await hover()
-      await selected({ hover: true, scale: '1.05', ...retained })
       await set('zoom', undefined)
       await selected({ enabled: initial, scale: initial ? '1.05' : 'none', ...retained })
       await set('zoom', true)
@@ -133,6 +128,16 @@ else {
       await selected({ scale: '1.05', ...retained })
       await set('url', '/replacement.png')
       await selected({ scale: '1.05', src: '/replacement.png', candidates: null, ...retained })
+      // Touch disable restores the embedder's physical pointer capabilities,
+      // not the startup Blink override. Headless Linux may still have no mouse;
+      // finish the desktop checks first, then validate both real media states.
+      await view.cdp('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 })
+      await selected({ hover: false, scale: 'none', duration: '0s', ...retained })
+      await view.cdp('Emulation.setTouchEmulationEnabled', { enabled: false })
+      await hover()
+      const restoredHover = await view.evaluate<boolean>("matchMedia('(hover: hover)').matches")
+      await selected({ hover: restoredHover, scale: restoredHover ? '1.05' : 'none', enlarged: restoredHover,
+        duration: restoredHover ? '0.3s' : '0s', ...retained })
     }
     finally { browser.close() }
   }, 60_000)

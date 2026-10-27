@@ -280,6 +280,11 @@ wrapping `<div>`, a client `value = state('/first')`, and
    emulation for the no-hover checks. Isolation is necessary because Bun's
    Chrome process uses the first caller's launch flags. Existing pointer,
    motion, remount and identity assertions remain; no other browser is closed.
+   Touch disable restores the embedder's physical pointer capabilities, which
+   can still be no-hover on headless Linux. The suite now completes desktop
+   default/remount/source checks before touch emulation, then checks scale and
+   transition against the actual restored hover capability rather than assuming
+   that disabling touch creates a mouse. No production zoom behavior changes.
 
    **Fit binding is now supported (unreleased after v0.2.661):** both
    `objectFit` and its `fit` alias update the physical image. A nonempty
@@ -368,6 +373,32 @@ wrapping `<div>`, a client `value = state('/first')`, and
    implemented by this adapter. The resolution batch above now enables shared
    `src` usage while preserving the primitive's legacy `source` API. Device
    playback/visual validation and broader media API compatibility remain open.
+
+   **Boolean normalization (unreleased after v0.2.720):** shared `controls`,
+   `autoplay`, `loop` and `muted` now apply server `$bool` semantics to client
+   attribute parsing, authored-default restoration and typed parent writes.
+   Previously false-like strings could enable flags at hydration or on update.
+   Empty strings enable; `false`, `off`, `no` and `0` strings (case/whitespace
+   normalized) disable. Null uses the intrinsic defaults (controls true, the
+   other flags false); undefined restores each authored default. The browser
+   fallback video also receives static `muted` for no-JavaScript rendering.
+   `video-booleans-browser.test.ts` covers actual custom-element registration,
+   normalized player/fallback attributes, live muted state, independent flags,
+   literal/default/attribute parsing, hidden writes, retained element/player/
+   fallback identity and single forwarding of a dispatched play event.
+   `shared-video-booleans.test.ts` covers corresponding native boolean props,
+   independent flags, defaults, remounts, source changes, stale handlers and
+   teardown in both bundle modes. Existing resolution/legacy suites remain
+   the compatibility gate; neither primitive resolution nor Craft is changed.
+
+   **Browser dependency boundary:** the installed `ts-video-player` custom
+   element handles live muted changes but does not reconfigure autoplay/loop
+   policy from changed attributes, nor expose a public controls/autoplay/loop
+   setter. The normalized attributes tested here are not evidence that those
+   policies changed inside an already-created provider. Supporting that needs
+   a separate player dependency change; no private-field mutation or player
+   replacement is introduced in this normalization batch. Device playback
+   policy is likewise not certified by the native protocol tests.
 
 These are JS/compiler observations, not simulator screenshots. None justifies
 changing resolution globally. The legacy-media regression tests keep the
