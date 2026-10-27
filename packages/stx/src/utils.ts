@@ -2148,7 +2148,14 @@ export async function renderComponentWithSlot(
      * read a store (`useStore('cart').count`) or held plain functions drew
      * its bindings empty and its buttons dead.
      */
-    const hasSignalScripts = (options._nativeHostAttrs === true && clientScripts.length > 0) || clientScripts.some(s =>
+    // A plain-script component can receive reactive caller handlers without
+    // any mustache expressions (a confirmation panel with two buttons). Give
+    // that component the maintained scope too: otherwise its static event
+    // pass captures the caller's @click in the component's local script,
+    // where the handler is undefined. Its own handlers still need that scope.
+    const callerEvents = parentContext.__stx_signals_gate === true
+      && /\s(?:@[\w:.-]+|x-on:[\w:.-]+)\s*=/.test(componentSlotContent)
+    const hasSignalScripts = (options._nativeHostAttrs === true && clientScripts.length > 0) || (callerEvents && clientScripts.length > 0) || clientScripts.some(s =>
       /\b(?:state|derived|effect|ref|useRef|reactive|computed|watch|watchEffect|useModel|useReactiveProp|onMount|onDestroy|defineProps|withDefaults|defineEmits|defineExpose|defineSlots)\s*(?:<[^<>()]*>)?\s*\(/.test(s),
     )
     const projectRefs = (content: string) => hasSignalScripts ? markProjectedRefs(content, componentUid) : content
