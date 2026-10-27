@@ -223,6 +223,18 @@ wrapping `<div>`, a client `value = state('/first')`, and
    source/labels, identity, remount and teardown in normal/minified bundles.
    These are protocol tests, not device clipping certification. Craft is untouched.
 
+   **Named rounding tokens (unreleased after v0.2.720):** the documented
+   `full`, `sm`, `md`, `lg`, `xl` and `2xl` values now survive server coercion
+   and reactive parsing instead of all collapsing to boolean `true`/8px.
+   One server-authored radius table supplies SSR and client bindings; native
+   projection uses the existing numeric border-radius field. Boolean and
+   false-like values retain the contract above, unknown truthy values retain
+   the legacy 8px fallback, and undefined restores the authored token.
+   The rounding suites cover every token as an authored default and live
+   value, CSS fallback on web, hidden updates/default restoration, retained
+   frame/image identity and native teardown in both bundle modes. Device
+   clipping, component resolution and Craft are unchanged.
+
    **Reactive placeholder props (unreleased after v0.2.720):** shared
    `placeholder` and `placeholderColor` now update the picture background,
    never the physical image's background. Existing mode semantics remain:
@@ -261,6 +273,13 @@ wrapping `<div>`, a client `value = state('/first')`, and
    reduced motion, remounts and identity. Native normal/minified tests protect
    source, labels, rounding, identity, remount and teardown without browser
    transforms/transition fields. Craft and component resolution are unchanged.
+
+   The first hover-zoom CI run exposed a harness assumption: headless Linux
+   reports no primary hover device. The browser suite now runs in its own Bun
+   process with explicit desktop pointer flags, then switches to touch
+   emulation for the no-hover checks. Isolation is necessary because Bun's
+   Chrome process uses the first caller's launch flags. Existing pointer,
+   motion, remount and identity assertions remain; no other browser is closed.
 
    **Fit binding is now supported (unreleased after v0.2.661):** both
    `objectFit` and its `fit` alias update the physical image. A nonempty

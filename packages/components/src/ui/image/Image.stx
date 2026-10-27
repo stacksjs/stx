@@ -73,14 +73,15 @@ export const objectFit = authoredObjectFit || authoredFit || 'cover'
 export const authoredObjectPosition = $props.objectPosition || ''
 export const authoredPosition = $props.position || ''
 export const objectPosition = authoredObjectPosition || authoredPosition || 'center'
-export const rounded = $bool($props.rounded)
+// Preserve named tokens; coercing them to boolean loses the requested radius.
+export const rounded = typeof $props.rounded === 'string' ? $props.rounded : $bool($props.rounded)
 export const zoomOnHover = $bool($props.zoomOnHover)
 export const className = $props.className || $props.class || ''
 
 export const hasWebP = !!(webpSrc || webpSrcSet)
 
 export const roundingRadius = '0.5rem'
-const RADII = {
+export const roundingRadii = {
   true: roundingRadius,
   full: '9999px',
   sm: '0.125rem',
@@ -90,7 +91,7 @@ const RADII = {
   '2xl': '1rem',
 }
 
-const radius = rounded ? (RADII[String(rounded)] || RADII.true) : ''
+const radius = $bool(rounded) ? (Object.prototype.hasOwnProperty.call(roundingRadii, String(rounded)) ? roundingRadii[String(rounded)] : roundingRadii.true) : ''
 
 /**
  * Styles inline rather than as utility classes.
@@ -158,12 +159,17 @@ const imageLoading = derived(() => isPriority() ? 'eager' : (liveLoading() || (i
 const imageFetchPriority = derived(() => isPriority() ? 'high' : (liveFetchPriority() || 'auto'))
 const liveDecoding = useReactiveProp('decoding', {{ decoding }})
 const imageDecoding = derived(() => liveDecoding() || 'async')
-// Preserve the server's boolean contract, including typed false-like strings.
-const liveRounded = useReactiveProp('rounded', {{ rounded }}, { parse: value => imageBoolean(value, false) })
-const imageRadius = derived(() => imageBoolean(liveRounded(), false) ? {{ roundingRadius }} : null)
+// Keep tokens intact through attribute parsing and authored-default replay.
+const liveRounded = useReactiveProp('rounded', {{ rounded }}, { parse: value => value })
+const roundingRadii = {{ roundingRadii }}
+const imageRadius = derived(() => {
+  const value = liveRounded()
+  if (!imageBoolean(value, false)) return null
+  return Object.prototype.hasOwnProperty.call(roundingRadii, String(value)) ? roundingRadii[String(value)] : roundingRadii.true
+})
 // Transfer SSR-owned rounding to the binding before it captures its baseline.
 // Otherwise clearing a binding restores the original rounded inline style.
-if ({{ rounded }}) {
+if (imageBoolean({{ rounded }}, false)) {
   const physicalImage = window.__STX_CURRENT_ELEMENT__?.querySelector('[data-stx-native-host-root]')
   if (physicalImage) {
     const frame = window.stx._host.parent(physicalImage)
