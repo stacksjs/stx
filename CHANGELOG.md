@@ -1,5 +1,15 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.723...v0.2.724)
+
+## 🐛 Bug Fixes
+
+- **video**: require ts-video-player ^0.1.11 for live controls, autoplay and loop updates without replacing the player, provider or media element; preserve authored defaults and legacy callers across remounts ([79dd105](https://github.com/stacksjs/stx/commit/79dd10514052ccf756dafb10e020e91b287d9860)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091))
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.722...v0.2.723)
 
 ## 🐛 Bug Fixes
