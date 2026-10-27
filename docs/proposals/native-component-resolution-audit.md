@@ -391,14 +391,28 @@ wrapping `<div>`, a client `value = state('/first')`, and
    teardown in both bundle modes. Existing resolution/legacy suites remain
    the compatibility gate; neither primitive resolution nor Craft is changed.
 
-   **Browser dependency boundary:** the installed `ts-video-player` custom
-   element handles live muted changes but does not reconfigure autoplay/loop
-   policy from changed attributes, nor expose a public controls/autoplay/loop
-   setter. The normalized attributes tested here are not evidence that those
-   policies changed inside an already-created provider. Supporting that needs
-   a separate player dependency change; no private-field mutation or player
-   replacement is introduced in this normalization batch. Device playback
-   policy is likewise not certified by the native protocol tests.
+   **Live browser playback policy (requires published ts-video-player v0.1.11;
+   STX integration unreleased after v0.2.723):** player changes d3063fe and
+   20ad960 add public `setControls`, `setAutoplay` and `setLoop` APIs. The shared
+   package requires ^0.1.11, with the registry build pinned in the lockfile.
+   Its custom element consumes the existing normalized attributes to
+   update the same player/provider. Controls disable the skin and its focus
+   targets; activity cannot re-enable disabled UI. Reconnecting a keep-alive
+   skin reconciles current state before subscribing, so hidden updates survive.
+   Player owns loop/autoplay policy rather than retaining stale native provider
+   options. Disabling autoplay cancels queued automatic starts without dropping
+   explicit play requests or pausing existing playback. Browser autoplay
+   restrictions still apply. Standalone provider APIs and native primitive
+   resolution are unchanged; there are no STX private-field patches.
+   `video-booleans-browser.test.ts` now checks actual player policy and computed
+   skin visibility/inertness, in addition to the original attribute/default
+   matrix. `video-playback-policy-browser.test.ts` plays real local PCM media,
+   verifies repeated ended/restart cycles, stops looping, changes sources without
+   unwanted autoplay, restores authored defaults while hidden, and retains the
+   physical element, player, provider and media element across remounts.
+   Existing native normal/minified and legacy-resolution suites remain the
+   compatibility gate. They are not device playback certification. Craft is
+   untouched, and no STX release is cut as part of this integration.
 
 These are JS/compiler observations, not simulator screenshots. None justifies
 changing resolution globally. The legacy-media regression tests keep the

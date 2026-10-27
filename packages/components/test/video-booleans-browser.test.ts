@@ -40,7 +40,10 @@ window.probe = { controls, autoplay, loop, muted, shown, url, plays: 0 }
     const el = document.querySelector('video-player');
     if (!window.probe || !el?.player) return null;
     const fallback = el.querySelector('video[data-native-fallback]');
+    const skin = el.querySelector('video-skin');
     return { flags: ['controls', 'autoplay', 'loop', 'muted'].map(name => el.hasAttribute(name)),
+      policy: [el.player.state.controls, el.player.state.autoplay, el.player.state.loop],
+      skinHidden: getComputedStyle(skin).display === 'none', skinInert: skin.inert,
       fallback: ['controls', 'loop', 'muted'].map(name => fallback.hasAttribute(name)), muted: el.player.state.muted,
       same: el === window.initialElement, samePlayer: el.player === window.initialPlayer, sameFallback: fallback === window.initialFallback,
       count: document.querySelectorAll('video-player').length, src: el.getAttribute('src') };
@@ -58,7 +61,8 @@ window.probe = { controls, autoplay, loop, muted, shown, url, plays: 0 }
     if (expected === null) expect(await snapshot()).toBeNull()
     else expect(await snapshot()).toMatchObject(expected)
   }
-  const flags = (values: boolean[]) => ({ flags: values, fallback: [values[0], values[2], values[3]], muted: values[3] })
+  const flags = (values: boolean[]) => ({ flags: values, policy: values.slice(0, 3), skinHidden: !values[0], skinInert: !values[0],
+    fallback: [values[0], values[2], values[3]], muted: values[3] })
   const retained = { same: true, samePlayer: true, sameFallback: true, count: 1 }
   const set = (value: unknown) => view.evaluate(`(() => { for (const name of ['controls', 'autoplay', 'loop', 'muted']) window.probe[name].set(${JSON.stringify(value)}) })()`)
   try {
