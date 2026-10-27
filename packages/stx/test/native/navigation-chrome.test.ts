@@ -102,7 +102,7 @@ describe('craft.navigation.setChrome', () => {
 
   it('sends a tab accessory once, and removes it with null', () => {
     const { craft, options, protocol } = host({ name: 'Feed', url: '/feed' })
-    const accessory = { path: '/explore', title: 'Map', symbol: 'map' }
+    const accessory = { path: '/explore', title: 'Map', symbol: 'map', iconOnly: true }
     craft.navigation.setChrome({ tabAccessory: accessory })
     craft.navigation.setChrome({ tabAccessory: accessory })
     craft.navigation.setChrome({ tabAccessory: null })

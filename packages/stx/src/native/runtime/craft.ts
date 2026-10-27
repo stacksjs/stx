@@ -63,7 +63,7 @@ export interface NativeNavigationOptions {
   leftButtons?: NativeNavigationButton[]
   rightButtons?: NativeNavigationButton[]
   /** A destination in its own box beside the tab pill. Null removes it. */
-  tabAccessory?: { path: string, title: string, symbol: string, badge?: string | null, accessibilityLabel?: string } | null
+  tabAccessory?: { path: string, title: string, symbol: string, badge?: string | null, accessibilityLabel?: string, iconOnly?: boolean } | null
   tabItem?: NativeTabItemOptions
 }
 
