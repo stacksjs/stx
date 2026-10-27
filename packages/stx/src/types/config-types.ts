@@ -794,6 +794,18 @@ export interface StxConfig {
    */
   fallbackComponentsDir?: string
   /**
+   * More component roots, searched in order right after `componentsDir` and
+   * walked recursively like it, ahead of the convention, plugin and
+   * `fallbackComponentsDir` directories.
+   *
+   * For a host that layers an app's components over a framework's when a
+   * plugin shares names with the framework's. `fallbackComponentsDir` ranks
+   * below plugins, so the plugin's would win. The Stacks dashboard passes the
+   * app's directory as `componentsDir` and its own here, ahead of
+   * `@stacksjs/components` (stacksjs/stx#2130).
+   */
+  additionalComponentsDirs?: string[]
+  /**
    * Path to the stores directory, resolved against `root`.
    *
    * Every `.ts` file in it (except `index.ts`, `types.ts` and `.d.ts`) is

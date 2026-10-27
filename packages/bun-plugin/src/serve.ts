@@ -870,6 +870,8 @@ export interface ServeOptions {
   fallbackLayoutsDir?: string
   /** Where to look for a component `componentsDir` does not have. */
   fallbackComponentsDir?: string
+  /** More component roots, searched in order right after `componentsDir` (stacksjs/stx#2130). */
+  additionalComponentsDirs?: string[]
   partialsDir?: string
   /**
    * Additional source directories that can affect rendered HTML.
@@ -1625,6 +1627,7 @@ export async function serve(options: ServeOptions): Promise<void> {
   const layoutsDir = options.layoutsDir ?? stxConfig.layoutsDir ?? defaultStxConfig.layoutsDir
   const fallbackLayoutsDir = options.fallbackLayoutsDir ?? stxConfig.fallbackLayoutsDir
   const fallbackComponentsDir = options.fallbackComponentsDir ?? stxConfig.fallbackComponentsDir
+  const additionalComponentsDirs = options.additionalComponentsDirs ?? stxConfig.additionalComponentsDirs
   const partialsDir = options.partialsDir ?? stxConfig.partialsDir ?? defaultStxConfig.partialsDir
   const publicDir = options.publicDir ?? stxConfig.publicDir ?? 'public'
   // Compiled once: a request only walks the list.
@@ -3085,6 +3088,7 @@ function __stxOverlay(errs){
       ...(layoutsDir && { layoutsDir }),
       ...(fallbackLayoutsDir && { fallbackLayoutsDir }),
       ...(fallbackComponentsDir && { fallbackComponentsDir }),
+      ...(additionalComponentsDirs && { additionalComponentsDirs }),
       ...(partialsDir && { partialsDir }),
       autoShell: true,
       buildMode: 'serve' as const,
@@ -3510,6 +3514,7 @@ function __stxOverlay(errs){
         ...(layoutsDir && { layoutsDir }),
         ...(fallbackLayoutsDir && { fallbackLayoutsDir }),
         ...(fallbackComponentsDir && { fallbackComponentsDir }),
+        ...(additionalComponentsDirs && { additionalComponentsDirs }),
         ...(partialsDir && { partialsDir }),
         autoShell: true,
         buildMode: 'serve' as const,
@@ -3819,7 +3824,7 @@ function __stxOverlay(errs){
       })
       imageWarmupEnabled = await projectUsesImageBuiltins(process.cwd(), {
         pages,
-        options: { componentsDir, layoutsDir, fallbackLayoutsDir, fallbackComponentsDir, partialsDir },
+        options: { componentsDir, additionalComponentsDirs, layoutsDir, fallbackLayoutsDir, fallbackComponentsDir, partialsDir },
         pluginComponentDirs: stxConfig._pluginComponentDirs,
       })
     }
@@ -4400,6 +4405,7 @@ function __stxOverlay(errs){
                       ...(layoutsDir && { layoutsDir }),
                       ...(fallbackLayoutsDir && { fallbackLayoutsDir }),
                       ...(fallbackComponentsDir && { fallbackComponentsDir }),
+                      ...(additionalComponentsDirs && { additionalComponentsDirs }),
                       ...(partialsDir && { partialsDir }),
                       autoShell: false,
                     }

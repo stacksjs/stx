@@ -27,6 +27,8 @@ export async function servedTemplatesUseImageBuiltins(root: string, scope: Image
     if (options[key])
       options[key] = absolute(options[key])
   }
+  if (options.additionalComponentsDirs)
+    options.additionalComponentsDirs = options.additionalComponentsDirs.map(absolute)
   const directories = new Map<string, Promise<string[]>>()
   const sources = new Map<string, Promise<string>>()
 
@@ -79,6 +81,7 @@ export async function servedTemplatesUseImageBuiltins(root: string, scope: Image
       path.join(path.dirname(page), 'components'),
       options.componentsDir,
       path.join(path.dirname(file), 'components'),
+      ...(options.additionalComponentsDirs ?? []),
       path.join(root, 'resources/views/components'),
       path.join(root, 'resources/components'),
       path.join(root, 'src/components'),

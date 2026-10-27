@@ -890,6 +890,7 @@ export async function userComponentFileExists(
   push(options._rootComponentsDir)
   push(path.join(path.dirname(parentFilePath), 'components'))
   push(options.componentsDir)
+  for (const dir of options.additionalComponentsDirs ?? []) push(dir)
   // The render target's own components (the native primitives) rank above
   // the convention directories, as in `renderComponentWithSlot`.
   const targetIsFallback = options._targetComponentFallbackNames?.some(name => name.toLowerCase() === baseName.toLowerCase())
@@ -1266,6 +1267,12 @@ export async function renderComponentWithSlot(
       }
       if (options.componentsDir && options.componentsDir !== componentsDir && !searchDirs.includes(options.componentsDir)) {
         searchDirs.push(options.componentsDir)
+      }
+      // A host's further component roots, in its order, ahead of every
+      // convention, plugin and fallback directory (stacksjs/stx#2130).
+      for (const dir of options.additionalComponentsDirs ?? []) {
+        if (dir && !searchDirs.includes(dir))
+          searchDirs.push(dir)
       }
 
       // The render target's own components: a native screen's `View`,
