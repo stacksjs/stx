@@ -1,4 +1,4 @@
-# stx Language Support for VS Code
+# stx Templates by Stacks
 
 > Beautiful, intelligent language support for stx templates in Visual Studio Code
 
@@ -78,7 +78,7 @@ TypeScript errors in `<script server>`, `<script client>` and template expressio
 
 1. Open VS Code
 2. Press `Cmd+Shift+X` (Mac) or `Ctrl+Shift+X` (Windows/Linux)
-3. Search for "stx Language Support"
+3. Search for "stx Templates by Stacks"
 4. Click Install
 
 The extension ID is `Stacks.vscode-stx`, so `code --install-extension Stacks.vscode-stx` works too. If you build with the Stacks framework you do not need it: the Stacks extension (`Stacks.vscode-stacks`) has the same stx support built in, through [`@stacksjs/stx-vscode`](../stx-vscode). With both installed, this one stands down so nothing is registered twice.

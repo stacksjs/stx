@@ -92,8 +92,8 @@ describe('VSCODE: marketplace identity', () => {
     expect(extensionId(manifest).toLowerCase()).not.toBe(STACKS_EXTENSION_ID.toLowerCase())
   })
 
-  test('presents itself as stx, not as Stacks', () => {
-    expect(manifest.displayName).toMatch(/^stx\b/)
+  test('uses the distinct stx Marketplace display name', () => {
+    expect(manifest.displayName).toBe('stx Templates by Stacks')
     expect(manifest.contributes.configuration.title).toBe('stx')
     expect(manifest.contributes.languages.find((language: any) => language.id === 'stx').aliases[0]).toBe('stx')
   })

@@ -4,7 +4,7 @@ This guide provides detailed information on how to use the stx templating langua
 
 ## Installation
 
-1. Install the extension from the VS Code marketplace or by searching for "stx Language Support" in the Extensions view (Ctrl+Shift+X or Cmd+Shift+X).
+1. Install the extension from the VS Code marketplace or by searching for "stx Templates by Stacks" in the Extensions view (Ctrl+Shift+X or Cmd+Shift+X).
 2. Once installed, the extension will automatically activate for files with the `.stx` extension.
 
 ## Creating Your First stx Template

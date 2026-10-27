@@ -8,7 +8,7 @@ The stx VS Code extension provides comprehensive support for stx development wit
 
 1. Open VS Code
 2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "stx Language Support"
+3. Search for "stx Templates by Stacks"
 4. Click Install
 
 ### From Command Line
