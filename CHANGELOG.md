@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.719...v0.2.720)
+
+## 🐛 Bug Fixes
+
+- retain caller handlers in plain-script component slots ([dc47421](https://github.com/stacksjs/stx/commit/dc47421)) _(by Chris <chris@stacksjs.com>)_ ([#2126](https://github.com/stacksjs/stx/issues/2126))
+- **image**: keep rounding reactive across defaults and remounts (#2091) ([600c130](https://github.com/stacksjs/stx/commit/600c130)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+
+## 🔧 Chores
+
+- release v0.2.720 ([c4141c8](https://github.com/stacksjs/stx/commit/c4141c8)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.718...v0.2.719)
 
 ## 🐛 Bug Fixes
