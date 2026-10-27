@@ -231,7 +231,7 @@ export function markProjectedRefs(template: string, receiver: string): string {
     if (!match || /^(?:script|style)$/i.test(match[1])) return -1
     return tagPattern.lastIndex
   })
-  const ancestors: Array<{ name: string, scoped: boolean }> = []
+  const ancestors: Array<{ name: string, scoped: boolean, scopeId?: string }> = []
   let scopedDepth = 0
   let cursor = 0
   const output: string[] = []
@@ -248,14 +248,25 @@ export function markProjectedRefs(template: string, receiver: string): string {
     // Kebab-case children may already have rendered before their parent.
     // Their refs belong to that child, not to this newly projected slot.
     const scoped = /\sdata-stx-scope\s*=/.test(token)
-    if (!scopedDepth && !scoped
+    const projected = /\sdata-stx-ref-caller\s*=\s*(["'])(.*?)\1/.exec(token)
+    const boundary = ancestors.find(ancestor => ancestor.scoped)?.scopeId
+    // Components can render before the component receiving this slot. A ref
+    // already projected through the outermost rendered child still belongs
+    // to this slot's caller. Forward that boundary, while leaving the child's
+    // own refs and projections inside its implementation with their owners.
+    if (projected && boundary && projected[2] === boundary) {
+      output.push(template.slice(cursor, start), token.replace(projected[0], ` data-stx-ref-caller="${receiver}"`))
+      cursor = end
+    }
+    else if (!scopedDepth && !scoped
       && /\s(?:ref|@ref|:ref|x-ref|data-stx-ref)\s*=/.test(token)
       && !/\sdata-stx-ref-caller\s*=/.test(token)) {
       output.push(template.slice(cursor, start), token.replace(/\s*\/?>$/, ending => ` data-stx-ref-caller="${receiver}"${ending}`))
       cursor = end
     }
     if (!VOID_TAGS.has(name) && !/\/>$/.test(token)) {
-      ancestors.push({ name, scoped })
+      const scopeId = /\sdata-stx-scope\s*=\s*(?:"([^"]*)"|'([^']*)')/.exec(token)
+      ancestors.push({ name, scoped, scopeId: scopeId?.[1] ?? scopeId?.[2] })
       if (scoped) scopedDepth++
     }
   }

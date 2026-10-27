@@ -59,6 +59,28 @@ describe('template ref ownership', () => {
     expect(pageRef?.current).toBe(document.querySelector('button'))
   })
 
+  it('forwards caller refs through rendered children while retaining refs authored by those children', () => {
+    const template = `<section data-stx-scope="panel">
+<input data-stx-ref="control">
+<input data-stx-ref="control" data-stx-ref-caller="panel">
+<article data-stx-scope="nested">
+<input data-stx-ref="control" data-stx-ref-caller="nested">
+<input data-stx-ref="control" data-stx-ref-caller="panel">
+</article>
+</section>`
+    const expected = `<section data-stx-scope="panel">
+<input data-stx-ref="control">
+<input data-stx-ref="control" data-stx-ref-caller="dialog">
+<article data-stx-scope="nested">
+<input data-stx-ref="control" data-stx-ref-caller="nested">
+<input data-stx-ref="control" data-stx-ref-caller="dialog">
+</article>
+</section>`
+    expect(markProjectedRefs(template, 'dialog')).toBe(expected)
+    const forwarded = markProjectedRefs(`<main data-stx-scope="dialog">${expected}</main>`, 'page-shell')
+    expect(forwarded).toBe(`<main data-stx-scope="dialog">${expected.replaceAll('data-stx-ref-caller="dialog"', 'data-stx-ref-caller="page-shell"')}</main>`)
+  })
+
   it('retains page refs when a queued layout mount creates its own ref map', () => {
     document.body.innerHTML = '<main data-stx="__stx_setup_projected_ref"><div data-stx-ref="control">Map</div></main><footer><span>Language</span><script id="layout-script"></script></footer>'
     window.__STX_CURRENT_ELEMENT__ = null

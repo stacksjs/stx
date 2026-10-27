@@ -5,7 +5,7 @@ import { defaultConfig } from '../../stx/src/config'
 import { generateCss } from '../../stx/src/dev-server/ts-css'
 import { processDirectives } from '../../stx/src/process'
 
-it('keeps caller confirmation handlers in a plain-script dialog panel reactive', async () => {
+it.each([false, true])('keeps caller confirmation handlers in a plain-script dialog panel reactive (projected refs: %s)', async (projectedRefs) => {
   const root = join(import.meta.dir, '..')
   const imports = ['Dialog', 'DialogPanel', 'DialogBackdrop', 'DialogTitle']
     .map(name => `@import('${name}', '${join(root, 'src/ui/dialog', `${name}.stx`)}')`).join('\n')
@@ -14,6 +14,16 @@ it('keeps caller confirmation handlers in a plain-script dialog panel reactive',
 <script client>
 const shown = state(false)
 const answer = state('unanswered')
+// The dialog also owns rootRef. This caller ref must retain its own map.
+const field = useRef('rootRef')
+const seed = state('')
+const error = state('')
+function validate() {
+  if (!/^\\d+$/.test(seed())) {
+    error.set('Enter a numeric seed')
+    nextTick(() => field.current?.focus())
+  }
+}
 function cancel() { answer.set('kept'); shown.set(false) }
 function confirm() { answer.set('removed'); shown.set(false) }
 </script>
@@ -23,6 +33,7 @@ function confirm() { answer.set('removed'); shown.set(false) }
   <DialogBackdrop />
   <DialogPanel variant="center">
     <DialogTitle>Tear down the building?</DialogTitle>
+    ${projectedRefs ? '<input id="seed" ref="rootRef" x-model="seed" :aria-invalid="error() ? \'true\' : \'false\'"><button id="validate" @click="validate()">Validate seed</button>' : ''}
     <button id="keep" autofocus @click="cancel()">Keep building</button>
     <button id="confirm" @click="confirm()">Tear down</button>
   </DialogPanel>
@@ -46,12 +57,22 @@ function confirm() { answer.set('removed'); shown.set(false) }
     await view.click('#open')
     await waitFor(visible, 1)
     await waitFor(() => view.evaluate('document.activeElement.id'), 'keep')
+    if (projectedRefs) {
+      await view.type('#seed', 'invalid')
+      await view.click('#validate')
+      await waitFor(() => view.evaluate("document.querySelector('#seed').getAttribute('aria-invalid')"), 'true')
+      await waitFor(() => view.evaluate('document.activeElement.id'), 'seed')
+    }
     await view.click('#keep')
     await waitFor(visible, 0)
     await waitFor(() => view.evaluate("document.querySelector('#answer').textContent"), 'kept')
     await waitFor(() => view.evaluate('document.activeElement.id'), 'open')
     await view.click('#open')
     await waitFor(visible, 1)
+    if (projectedRefs) {
+      await view.click('#validate')
+      await waitFor(() => view.evaluate('document.activeElement.id'), 'seed')
+    }
     await view.click('#confirm')
     await waitFor(visible, 0)
     await waitFor(() => view.evaluate("document.querySelector('#answer').textContent"), 'removed')
