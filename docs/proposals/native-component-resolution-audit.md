@@ -223,6 +223,29 @@ wrapping `<div>`, a client `value = state('/first')`, and
    source/labels, identity, remount and teardown in normal/minified bundles.
    These are protocol tests, not device clipping certification. Craft is untouched.
 
+   **Reactive placeholder props (unreleased after v0.2.720):** shared
+   `placeholder` and `placeholderColor` now update the picture background,
+   never the physical image's background. Existing mode semantics remain:
+   `none`/`empty` disables the component placeholder; null/empty mode uses
+   automatic delivery behavior; undefined restores the authored default.
+   Empty/null color uses the prepared palette or neutral `#e5e7eb` fallback;
+   undefined restores the authored color. Blur/thumbhash uses a prepared
+   preview when available and otherwise the color fallback. Explicit CSS
+   colors, gradients and preview URLs remain supported. Transparent images
+   suppress automatic color/blur/preview painting; explicit CSS remains an
+   intentional author choice. Setup transfers SSR background ownership to the
+   binding so clearing can reveal application CSS rather than stale SSR paint.
+   The existing original-source/candidate guard remains: changing away drops
+   the placeholder, restoring the original uses the latest props. This does
+   not fetch replacement-image metadata on the client.
+   `image-placeholder-browser.test.ts` checks actual backgrounds, prepared and
+   missing metadata, transparency, defaults, source/candidate guards and hidden
+   writes/remounts with retained frame/image identity. Native normal/minified
+   compatibility tests protect source, labels, rounding, identity, remount and
+   teardown. Browser background shorthand is not sent as a new native binding;
+   native placeholder painting is not implemented or certified here. Craft and
+   component resolution are unchanged.
+
    **Fit binding is now supported (unreleased after v0.2.661):** both
    `objectFit` and its `fit` alias update the physical image. A nonempty
    `objectFit` wins; clearing it reveals `fit`, and clearing both restores

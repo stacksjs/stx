@@ -78,7 +78,11 @@ describe('media features formerly shadowed in Stacks defaults', () => {
     }
     for (const placeholder of ['/preview.jpg', 'data:image/png;base64,AAAA'])
       expect(await render('Image', { src: '/photo.jpg', alt: 'Photo', placeholder })).toContain(`background: url(&quot;${placeholder}&quot;)`)
-    for (const placeholder of ['empty', 'none'])
-      expect(await render('Image', { src: '/photo.jpg', alt: 'Photo', placeholder })).not.toContain('background:')
+    for (const placeholder of ['empty', 'none']) {
+      // Inspect SSR paint, not background keys in the reactive client script.
+      const picture = (await render('Image', { src: '/photo.jpg', alt: 'Photo', placeholder })).match(/<picture\b[^>]*>/)?.[0]
+      expect(picture).toBeDefined()
+      expect(picture).not.toContain('background:')
+    }
   })
 })

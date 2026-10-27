@@ -51,13 +51,17 @@ export const fetchpriority = priority ? 'high' : (authoredFetchPriority || 'auto
  * through anything transparent in it and stays there once it has loaded,
  * which is a permanent artefact on every PNG with an alpha channel.
  */
-const placeholderMode = $props.placeholder
+export const placeholderMode = $props.placeholder ?? null
 // Stacks' former default accepted a preview URL; keep CSS backgrounds too.
 const customPlaceholder = typeof placeholderMode === 'string' && /^(?:data:image\/|https?:\/\/|\/|\.{1,2}\/)/i.test(placeholderMode)
   ? `url(${JSON.stringify(placeholderMode)})` : placeholderMode
 const imagePlaceholder = getImagePlaceholder($props.src || '')
-const placeholderColor = $props.placeholderColor || imagePlaceholder?.color || '#e5e7eb'
-const preview = delivered?.placeholder || imagePlaceholder?.dataUrl
+export const authoredPlaceholderColor = $props.placeholderColor || ''
+export const paletteColor = imagePlaceholder?.color || '#e5e7eb'
+const placeholderColor = authoredPlaceholderColor || paletteColor
+export const preview = delivered?.placeholder || imagePlaceholder?.dataUrl || ''
+export const hasAutomaticPlaceholder = !!delivered?.placeholder
+export const placeholderIsTransparent = !!imagePlaceholder?.transparent
 export const placeholder = placeholderMode === 'empty' || placeholderMode === 'none' ? ''
   : placeholderMode === 'color' ? (imagePlaceholder?.transparent ? '' : placeholderColor)
     : placeholderMode === 'blur' || placeholderMode === 'thumbhash' ? (imagePlaceholder?.transparent ? '' : preview ? `url("${preview}")` : placeholderColor)
@@ -214,10 +218,36 @@ const imageCandidates = derived(() => {
   if (liveSrcSet() === undefined || liveSrcSet() === initialCandidates) return keepInitialSources() ? initialCandidates || null : null
   return liveSrcSet() == null || liveSrcSet() === '' ? null : String(liveSrcSet())
 })
-const initialBackground = {{ placeholder ? `${placeholder} center / cover no-repeat` : '' }}
+const livePlaceholder = useReactiveProp('placeholder', {{ placeholderMode }}, { parse: value => value == null ? value : String(value) })
+const livePlaceholderColor = useReactiveProp('placeholderColor', {{ authoredPlaceholderColor }})
+const preparedPlaceholderPreview = {{ preview }}
+const transparentPlaceholder = imageBoolean({{ placeholderIsTransparent }}, false)
+const automaticPlaceholder = imageBoolean({{ hasAutomaticPlaceholder }}, false)
+const hadPlaceholder = imageBoolean({{ !!placeholder }}, false)
+// Hand the SSR background to its binding, rather than restoring it on clear.
+// Native hosts do not implement this browser background shorthand.
+if (!nativeImage && hadPlaceholder) {
+  const physicalImage = window.__STX_CURRENT_ELEMENT__?.querySelector('[data-stx-native-host-root]')
+  const frame = physicalImage && window.stx._host.parent(physicalImage)
+  if (frame) window.stx._host.setStyle(frame, { background: null })
+}
+const imagePlaceholderStyles = derived(() => {
+  if (nativeImage) return {}
+  const mode = livePlaceholder()
+  const color = livePlaceholderColor() || {{ paletteColor }}
+  const custom = typeof mode === 'string' && /^(?:data:image\/|https?:\/\/|\/|\.{1,2}\/)/i.test(mode)
+    ? `url(${JSON.stringify(mode)})` : mode
+  const background = mode === 'empty' || mode === 'none' ? ''
+    : mode === 'color' ? (transparentPlaceholder ? '' : color)
+      : mode === 'blur' || mode === 'thumbhash' ? (transparentPlaceholder ? '' : preparedPlaceholderPreview ? `url(${JSON.stringify(preparedPlaceholderPreview)})` : color)
+        : custom || (automaticPlaceholder ? `url(${JSON.stringify(preparedPlaceholderPreview)})` : '')
+  // Prepared metadata belongs to the original source/candidates, as before.
+  if (!keepInitialSources()) return { background: hadPlaceholder || background ? 'none' : null }
+  return { background: background ? `${background} center / cover no-repeat` : null }
+})
 </script>
 
-<picture class="{{ className }}" style="{{ frameStyle }}" :style="{ aspectRatio: imageRatio(), borderRadius: imageRadius()@if(placeholder), background: keepInitialSources() ? initialBackground : 'none'@endif }">
+<picture class="{{ className }}" style="{{ frameStyle }}" :style="{ aspectRatio: imageRatio(), borderRadius: imageRadius(), ...imagePlaceholderStyles() }">
   @foreach(sources as source)
     <source
       @if(source.type)type="{{ source.type }}"@endif
