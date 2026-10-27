@@ -1,4 +1,4 @@
-import { copyFileSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, copyFileSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -24,6 +24,13 @@ export function parseMacOSProfileEntitlements(decoded: Uint8Array): Record<strin
   const entitlements = JSON.parse(json.stdout.toString())
   if (!entitlements || typeof entitlements !== 'object' || Array.isArray(entitlements)) throw new Error('The macOS profile entitlements must be a dictionary.')
   return entitlements
+}
+
+/** The embedded profile is a public bundle resource, unlike the private signing input. */
+export function embedMacOSProvisioningProfile(source: string, bundle: string): void {
+  const embedded = join(bundle, 'Contents', 'embedded.provisionprofile')
+  copyFileSync(source, embedded)
+  chmodSync(embedded, 0o644)
 }
 
 export async function signMacOSBundle(bundle: string, nestedExecutables: string[] = [], options: MacOSSigningOptions = {}): Promise<void> {
@@ -53,7 +60,7 @@ export async function signMacOSBundle(bundle: string, nestedExecutables: string[
       if (Bun.spawnSync(['/usr/bin/plutil', '-convert', 'xml1', signingEntitlements]).exitCode !== 0) {
         throw new Error('Could not generate the provisioned app entitlements.')
       }
-      copyFileSync(options.provisioningProfile, join(bundle, 'Contents', 'embedded.provisionprofile'))
+      embedMacOSProvisioningProfile(options.provisioningProfile, bundle)
     }
     let helperEntitlements: string | undefined
     if (nestedExecutables.length) {

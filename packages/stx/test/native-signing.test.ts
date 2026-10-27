@@ -1,8 +1,31 @@
 import { expect, test } from 'bun:test'
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { parseMacOSProfileEntitlements, signMacOSBundle } from '../src/native-signing'
+import { embedMacOSProvisioningProfile, parseMacOSProfileEntitlements, signMacOSBundle } from '../src/native-signing'
+
+test.skipIf(process.platform === 'win32')('a private signing profile becomes a readable bundle resource without changing the input', () => {
+  const work = mkdtempSync(join(tmpdir(), 'stx-profile-permissions-'))
+  try {
+    const profile = join(work, 'private.provisionprofile')
+    const bundle = join(work, 'Store App.app')
+    mkdirSync(join(bundle, 'Contents'), { recursive: true })
+    writeFileSync(profile, Buffer.from([0x30, 0x82, 0x00, 0x04, 1, 2, 3, 4]))
+    chmodSync(profile, 0o600)
+    embedMacOSProvisioningProfile(profile, bundle)
+    const embedded = join(bundle, 'Contents', 'embedded.provisionprofile')
+    expect(readFileSync(embedded)).toEqual(readFileSync(profile))
+    expect(statSync(embedded).mode & 0o777).toBe(0o644)
+    expect(statSync(profile).mode & 0o777).toBe(0o600)
+    // Rebuilds must repair an existing private copy as well.
+    chmodSync(embedded, 0o600)
+    embedMacOSProvisioningProfile(profile, bundle)
+    expect(statSync(embedded).mode & 0o777).toBe(0o644)
+  }
+  finally {
+    rmSync(work, { recursive: true, force: true })
+  }
+})
 
 test.skipIf(process.platform !== 'darwin')('profile parsing isolates entitlements from certificate data and dates', () => {
   const profile = Buffer.from(`<?xml version="1.0"?><plist version="1.0"><dict>
