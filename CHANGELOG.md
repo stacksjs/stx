@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.726...v0.2.727)
+
+## ✨ Features
+
+- support background desktop palettes and tray controls ([03f75d4](https://github.com/stacksjs/stx/commit/03f75d4)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.727 ([86d9152](https://github.com/stacksjs/stx/commit/86d9152)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.724...v0.2.725)
 
 ## ✨ Features
