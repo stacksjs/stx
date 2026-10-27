@@ -36,3 +36,23 @@ it('is safe in a browser without Craft', async () => {
   await nativeWindow.hide()
   await nativeTray.setIcon('moon.fill')
 })
+
+it('sets the native context menu and tears down direct click and menu subscriptions', async () => {
+  const target = document.createElement('div')
+  let menu: unknown
+  globalThis.window = Object.assign(target, { craft: { tray: { setMenu: async (items: unknown) => { menu = items } } } }) as any
+  const items = [{ label: 'Open', action: 'show' }, { type: 'separator' as const }, { label: 'Settings', action: 'settings' }]
+  await nativeTray.setMenu(items)
+  expect(menu).toEqual(items)
+  const calls: string[] = []
+  const stopClick = nativeTray.onClick(event => calls.push(event.button))
+  const stopMenu = nativeTray.onMenuAction(event => calls.push(event.action))
+  target.dispatchEvent(new CustomEvent('craft:tray:click', { detail: { button: 'left', timestamp: 1, modifiers: {} } }))
+  target.dispatchEvent(new CustomEvent('craft:tray:menuAction', { detail: { action: 'settings' } }))
+  expect(calls).toEqual(['left', 'settings'])
+  stopClick()
+  stopMenu()
+  target.dispatchEvent(new CustomEvent('craft:tray:click', { detail: { button: 'left' } }))
+  target.dispatchEvent(new CustomEvent('craft:tray:menuAction', { detail: { action: 'settings' } }))
+  expect(calls).toEqual(['left', 'settings'])
+})

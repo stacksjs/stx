@@ -74,6 +74,8 @@ export interface NativeBuildConfig {
     cornerRadius?: number
     alwaysOnTop?: boolean
     fullscreen?: boolean
+    /** Create the window without showing or activating it until requested. */
+    startHidden?: boolean
   }
 
   /** Native sidebar configuration (macOS only) */
@@ -104,10 +106,13 @@ export interface NativeBuildConfig {
   /** Enable system tray/menubar */
   systemTray?: boolean
 
+  /** Keep the app out of the macOS Dock and app switcher, including when its window opens. */
+  hideDockIcon?: boolean
+
   /**
-   * Run without a dock icon — a pure menubar app. Defaults to whatever
-   * `systemTray` is, since a tray app that also claims a dock slot is almost
-   * never what's wanted; set it explicitly to `false` to keep both.
+   * Run a windowless menubar app. Defaults to `systemTray`.
+   * A tray app with a searchable window should use `menubarOnly: false`,
+   * `hideDockIcon: true` and `window.startHidden: true` instead.
    */
   menubarOnly?: boolean
 
@@ -402,6 +407,8 @@ await runNativeBackend({ html: ${JSON.stringify(html)}, fetch: backend.default, 
       cornerRadius: config.window?.cornerRadius ?? 0,
       alwaysOnTop: Boolean(config.window?.alwaysOnTop),
       resizable: config.window?.resizable !== false,
+      hideDockIcon: Boolean(config.hideDockIcon),
+      headless: Boolean(config.window?.startHidden),
       ...(config.trayPopover ? { trayPopover: true } : menubarOnly ? { menubarOnly: true } : config.systemTray ? { systemTray: true } : {}),
     }, null, 2)}\n`)
   }
@@ -433,6 +440,8 @@ await runNativeBackend({ html: ${JSON.stringify(html)}, fetch: backend.default, 
     if (config.window?.cornerRadius) manifest.cornerRadius = config.window.cornerRadius
     if (config.window?.alwaysOnTop) manifest.alwaysOnTop = true
     if (config.window?.resizable === false) manifest.resizable = false
+    if (config.hideDockIcon) manifest.hideDockIcon = true
+    if (config.window?.startHidden) manifest.headless = true
 
     await Bun.write(join(resourcesDir, 'craft.json'), `${JSON.stringify(manifest, null, 2)}\n`)
   }
@@ -457,6 +466,8 @@ await runNativeBackend({ html: ${JSON.stringify(html)}, fetch: backend.default, 
       config.window?.cornerRadius ? `--corner-radius ${config.window.cornerRadius}` : '',
       config.window?.alwaysOnTop ? '--always-on-top' : '',
       config.window?.resizable === false ? '--no-resize' : '',
+      config.hideDockIcon ? '--hide-dock-icon' : '',
+      config.window?.startHidden ? '--headless' : '',
       sidebarFlags,
     ].filter(Boolean)
 
@@ -493,7 +504,7 @@ exec "$DIR/craft" --html-file "$RESOURCES/index.html" \\
     LSMinimumSystemVersion: config.minimumSystemVersion || '13.0',
     NSHighResolutionCapable: true,
     NSSupportsAutomaticGraphicsSwitching: true,
-    LSUIElement: config.trayPopover || (config.menubarOnly ?? Boolean(config.systemTray)),
+    LSUIElement: config.hideDockIcon || config.trayPopover || (config.menubarOnly ?? Boolean(config.systemTray)),
     ...(hasIcon ? { CFBundleIconFile: 'AppIcon' } : {}),
     ...(config.category ? { LSApplicationCategoryType: config.category } : {}),
     ...(config.copyright ? { NSHumanReadableCopyright: config.copyright } : {}),

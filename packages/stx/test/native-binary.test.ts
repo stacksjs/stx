@@ -74,3 +74,27 @@ test.skipIf(process.platform !== 'darwin')('bundles the Pantry provider instead 
   expect(relocated.exitCode, relocated.stderr.toString()).toBe(0)
   expect(relocated.stdout.toString().trim()).toBe(Bun.version)
 }, 30000)
+
+test.skipIf(process.platform !== 'darwin')('a background tray bundle retains its window and hides its Dock identity in both bundle formats', async () => {
+  const template = join(root, 'background.stx')
+  writeFileSync(template, '<html><body>Background palette</body></html>')
+  for (const bundleStyle of ['executable', 'launcher'] as const) {
+    const result = await buildNative({ input: template, output: join(root, bundleStyle), name: 'Background', target: 'macos', craftPath: process.execPath, bundleStyle, systemTray: true, menubarOnly: false, hideDockIcon: true, window: { startHidden: true } })
+    expect(result.success, result.error).toBe(true)
+    const contents = join(result.outputPath!, 'Contents')
+    const plist = Bun.spawnSync(['/usr/bin/plutil', '-convert', 'json', '-o', '-', join(contents, 'Info.plist')])
+    expect(JSON.parse(plist.stdout.toString()).LSUIElement).toBe(true)
+    if (bundleStyle === 'executable') {
+      const manifest = await Bun.file(join(contents, 'Resources/craft.json')).json()
+      expect(manifest).toMatchObject({ html: 'index.html', systemTray: true, hideDockIcon: true, headless: true })
+      expect(manifest.menubarOnly).toBeUndefined()
+    }
+    else {
+      const launcher = readFileSync(join(contents, 'MacOS/Background'), 'utf8')
+      expect(launcher).toContain('--system-tray')
+      expect(launcher).toContain('--hide-dock-icon')
+      expect(launcher).toContain('--headless')
+      expect(launcher).not.toContain('--menubar-only')
+    }
+  }
+}, 30000)
