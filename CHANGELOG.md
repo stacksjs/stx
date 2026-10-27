@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.720...v0.2.721)
+
+## 🐛 Bug Fixes
+
+- await native backend shutdown hooks before exiting ([049e309](https://github.com/stacksjs/stx/commit/049e309)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **video**: align reactive booleans with SSR defaults (#2091) ([4466e09](https://github.com/stacksjs/stx/commit/4466e09)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **image**: preserve rounding tokens across reactive lifecycles (#2091) ([7354cf6](https://github.com/stacksjs/stx/commit/7354cf6)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **image**: implement reactive motion-aware hover zoom (#2091) ([0ddb800](https://github.com/stacksjs/stx/commit/0ddb800)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+- **image**: react to placeholder mode and color changes (#2091) ([77b3ad1](https://github.com/stacksjs/stx/commit/77b3ad1)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2091](https://github.com/stacksjs/stx/issues/2091))
+
+## 🔧 Chores
+
+- release v0.2.721 ([864e289](https://github.com/stacksjs/stx/commit/864e289)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.719...v0.2.720)
 
 ## 🐛 Bug Fixes
