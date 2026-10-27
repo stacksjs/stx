@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.718...v0.2.719)
+
+## 🐛 Bug Fixes
+
+- let dialog backdrops receive outside pointer input ([fdb0bba](https://github.com/stacksjs/stx/commit/fdb0bba)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.719 ([1f84c06](https://github.com/stacksjs/stx/commit/1f84c06)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.717...v0.2.718)
 
 ## 🐛 Bug Fixes
