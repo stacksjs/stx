@@ -246,6 +246,22 @@ wrapping `<div>`, a client `value = state('/first')`, and
    native placeholder painting is not implemented or certified here. Craft and
    component resolution are unchanged.
 
+   **Reactive hover zoom (unreleased after v0.2.720):** shared `zoomOnHover`
+   now scales the physical browser image to 1.05 inside its clipped frame,
+   instead of only supplying a transition hook. Its boolean/default behavior
+   follows the other Image flags. A reactive marker controls CSS rules gated
+   by hover capability and `prefers-reduced-motion: no-preference`; reduced
+   motion disables both scale and transition, including live preference changes.
+   Individual CSS scale preserves authored transforms. No pointer/media-query
+   listeners or image replacements are needed. Native style projection skips
+   these browser media rules, and the marker is omitted from native markup;
+   no native zoom or host change is introduced.
+   `image-zoom-browser.test.ts` uses actual Chrome pointer input and media/touch
+   emulation to verify zoom, clearing/defaults, preference changes, initial
+   reduced motion, remounts and identity. Native normal/minified tests protect
+   source, labels, rounding, identity, remount and teardown without browser
+   transforms/transition fields. Craft and component resolution are unchanged.
+
    **Fit binding is now supported (unreleased after v0.2.661):** both
    `objectFit` and its `fit` alias update the physical image. A nonempty
    `objectFit` wins; clearing it reveals `fit`, and clearing both restores

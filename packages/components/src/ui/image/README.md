@@ -87,6 +87,20 @@ opts out: your sources are used as written.
 />
 ```
 
+### Hover zoom
+
+```stx
+<Image src="/photo.jpg" alt="Photo" zoomOnHover />
+```
+
+On hover-capable browsers, the image scales to 1.05 inside its clipped frame
+with a 0.3-second transition. The individual CSS `scale` property preserves
+authored transforms. `:zoomOnHover="enabled"` toggles this live, including
+while hovered. False/null disables it; undefined restores the authored default.
+Reduced-motion preferences disable both scaling and its transition, including
+preference changes while hovered. Touch-only and native views do not zoom.
+The same image node and source are retained; no pointer/media listeners are added.
+
 ## Props
 
 | Prop | Type | Default | Description |
@@ -111,7 +125,7 @@ opts out: your sources are used as written.
 | `objectFit` | `'contain' \| 'cover' \| 'fill' \| 'none' \| 'scale-down'` | `'cover'` | How the image fills its box |
 | `objectPosition` | `string` | `'center'` | Focal point of the crop |
 | `rounded` | `boolean \| 'full' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| '2xl'` | `false` | Corner radius |
-| `zoomOnHover` | `boolean` | `false` | Transition hook for a hover scale |
+| `zoomOnHover` | `boolean` | `false` | Reactive 1.05 hover zoom; disabled for reduced motion and non-hover/native views |
 | `fit` / `position` | `string` | - | Aliases for objectFit / objectPosition |
 | `class` | `string` | - | Alias for className |
 | `className` | `string` | `''` | Extra classes on the `<picture>` |

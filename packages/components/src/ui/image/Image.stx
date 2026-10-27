@@ -133,7 +133,6 @@ export const imageStyle = [
   `object-fit: ${objectFit}`,
   `object-position: ${objectPosition}`,
   radius ? `border-radius: ${radius}` : '',
-  zoomOnHover ? 'transition: transform 0.3s ease-in-out' : '',
 ].filter(Boolean).join('; ')
 </script>
 
@@ -183,6 +182,8 @@ const imageWidth = useReactiveProp('width', {{ width ?? null }})
 const imageHeight = useReactiveProp('height', {{ height ?? null }})
 const liveRatio = useReactiveProp('aspectRatio', {{ aspectRatio ?? null }})
 const nativeImage = !!window.stx._host.isNative
+const liveZoomOnHover = useReactiveProp('zoomOnHover', {{ zoomOnHover }}, { parse: value => imageBoolean(value, false) })
+const imageZoomEnabled = derived(() => !nativeImage && imageBoolean(liveZoomOnHover(), false))
 const emit = defineEmits(['load', 'error'])
 // Image load/error events do not bubble to the picture/component root.
 // Forward the original browser event or host payload, never a lossy copy.
@@ -247,7 +248,12 @@ const imagePlaceholderStyles = derived(() => {
 })
 </script>
 
-<picture class="{{ className }}" style="{{ frameStyle }}" :style="{ aspectRatio: imageRatio(), borderRadius: imageRadius(), ...imagePlaceholderStyles() }">
+<picture class="{{ className }}" style="{{ frameStyle }}" :style="{ aspectRatio: imageRatio(), borderRadius: imageRadius(), ...imagePlaceholderStyles() }"
+  @if(!$native)
+    @if(zoomOnHover)data-stx-image-zoom@endif
+    :data-stx-image-zoom="imageZoomEnabled() ? '' : null"
+  @endif
+>
   @foreach(sources as source)
     <source
       @if(source.type)type="{{ source.type }}"@endif
@@ -306,3 +312,14 @@ const imagePlaceholderStyles = derived(() => {
     :style="{ objectFit: imageFit(), objectPosition: imagePosition(), borderRadius: imageRadius() }"
   />
 </picture>
+
+<style>
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  picture[data-stx-image-zoom] > img {
+    transition: scale 0.3s ease-in-out;
+  }
+  picture[data-stx-image-zoom]:hover > img {
+    scale: 1.05;
+  }
+}
+</style>
