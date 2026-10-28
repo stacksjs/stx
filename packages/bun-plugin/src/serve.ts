@@ -2038,15 +2038,22 @@ function __stxOverlay(errs){
   // new `resources/views/<feature>/index.stx`) invalidates the discovered-
   // files cache without a server restart. Without this, the file glob
   // is cached at startup and new pages 404 until the user kills the dev
-  // server. We also clear `routes` so any stale rendered HTML for a now-
+  // server. We also clear rendered HTML so any cached response for a now-
   // missing file is dropped, AND fire an HMR reload event so any open
   // browser session refreshes without the user lifting a finger.
-  const watchersStarted = new Set<string>()
+  const watchersStarted = new Map<string, ReturnType<typeof fsWatch>>()
+  const clearRenderCaches = () => {
+    htmlCache.clear()
+    cssCssCache.clear()
+    resolvedStxModule?.clearDevCaches?.()
+    resolvedStxModule?.clearStoreCache?.()
+    resolvedStxModule?.clearComposableCache?.()
+  }
   const startWatcher = (dir: string) => {
     if (production) return
     if (watchersStarted.has(dir)) return
     try {
-      const watcher = fsWatch(dir, { recursive: true }, (_event, filename) => {
+      const watcher = fsWatch(dir, { recursive: true }, (event, filename) => {
         if (!filename) return
         const f = String(filename)
         // Source files that affect rendered HTML.
@@ -2063,18 +2070,19 @@ function __stxOverlay(errs){
           || f.endsWith('.jpg') || f.endsWith('.jpeg') || f.endsWith('.png')
           || f.endsWith('.gif') || f.endsWith('.svg') || f.endsWith('.webp') || f.endsWith('.avif')
           || f.endsWith('.woff') || f.endsWith('.woff2') || f.endsWith('.ttf') || f.endsWith('.otf')
-        if (!isStxLike && !isAsset && !isData) return
+        // A directory rename/removal need not emit events for its children.
+        // Ignoring extensionless events retained paths to deleted pages (#2131).
+        const topologyChanged = event === 'rename'
+        if (!isStxLike && !isAsset && !isData && !topologyChanged) return
 
-        if (isStxLike || isCode || isData) {
-          if (isStxLike)
+        if (isStxLike || isCode || isData || topologyChanged) {
+          if (isStxLike || topologyChanged)
             sourceFiles = null
           // Wipe the rendered-HTML cache and Css CSS cache too. The
           // signature check should catch most edits, but it relies on every
           // dependency being tracked correctly during the previous render —
           // a single missed dep is enough for a page to render stale. Clearing
           // on watch is the simple, correct fallback for dev.
-          htmlCache.clear()
-          cssCssCache.clear()
           // Also wipe stx's framework-level caches (fileContentCache, signals
           // runtime, router script). The app-render caches above are cleared
           // on every edit, but the framework caches previously survived until
@@ -2082,13 +2090,11 @@ function __stxOverlay(errs){
           // transitive dependency slipped past the mtime tracker (the #1926
           // failure class) could outlive an edit. Optional-chained: a missing
           // module/method is a no-op (stacksjs/stx#1745 item C).
-          resolvedStxModule?.clearDevCaches?.()
           // The store and composable bundles are memoised separately from the
           // template caches, and nothing outside tests ever invalidated them —
           // so every store edit needed a server restart (#1877). Optional-chained
           // for the same reason as above: an older stx module is a no-op.
-          resolvedStxModule?.clearStoreCache?.()
-          resolvedStxModule?.clearComposableCache?.()
+          clearRenderCaches()
           // The layout union is only useful if it tracks the directory, so
           // regenerate when a layout is added or renamed (#1879).
           if (layoutsDir && f.endsWith('.stx') && nodePath.resolve(f).startsWith(nodePath.resolve(layoutsDir)))
@@ -2123,9 +2129,35 @@ function __stxOverlay(errs){
           broadcastHmr({ type: 'reload', file: f })
       })
       watcher.on('error', () => { /* ignore — best-effort */ })
-      watchersStarted.add(dir)
+      watchersStarted.set(dir, watcher)
     }
     catch { /* directory missing or unwatchable — ignore */ }
+  }
+
+  // A recursive watcher follows the original directory, not a replacement at
+  // the same path. Watch only the root's entry in its parent (non-recursively)
+  // so deleting, moving or recreating an entire page root invalidates discovery
+  // and reattaches its watcher. Unrelated sibling edits are ignored.
+  const pageRootWatchersStarted = new Set<string>()
+  const watchPageRoot = (dir: string) => {
+    if (production || pageRootWatchersStarted.has(dir)) return
+    const absolute = nodePath.resolve(dir)
+    const parent = nodePath.dirname(absolute)
+    if (parent === absolute) return
+    try {
+      const watcher = fsWatch(parent, { recursive: false }, (event, filename) => {
+        if (event !== 'rename' || String(filename) !== nodePath.basename(absolute)) return
+        watchersStarted.get(dir)?.close()
+        watchersStarted.delete(dir)
+        startWatcher(dir)
+        sourceFiles = null
+        clearRenderCaches()
+        broadcastHmr({ type: 'reload', file: dir })
+      })
+      watcher.on('error', () => { /* ignore — best-effort */ })
+      pageRootWatchersStarted.add(dir)
+    }
+    catch { /* parent missing or unwatchable — ignore */ }
   }
 
   // Eagerly watch the auxiliary source roots. The pattern dirs are watched
@@ -2631,6 +2663,8 @@ function __stxOverlay(errs){
       try {
 
         const stat = await nodeFs.stat(pattern).catch(() => null)
+        if (stat?.isDirectory() || (!stat && !pattern.includes('*') && !supportedExtensions.some(ext => pattern.endsWith(ext))))
+          watchPageRoot(pattern)
 
         if (stat?.isDirectory()) {
           // Watch this directory tree once so subsequent file changes
@@ -4348,6 +4382,10 @@ function __stxOverlay(errs){
               // middleware groups, then runs the handlers in order. The first
               // one that returns a `Response` short-circuits the chain — the
               // same shape Laravel's `handle($request, $next)` produces.
+              // Discovery also rebuilds middleware ownership. Resolve it before
+              // checking guards so removing an override cannot expose a guarded
+              // framework fallback for the first request after invalidation.
+              await discoverFiles()
               const route = resolveRouteMiddleware(path)
               const extraNames = extraProtectedPrefixes.some(p => path === p || path.startsWith(p.endsWith('/') ? p : `${p}/`))
                 ? ['auth']

@@ -55,6 +55,11 @@ like `componentsDir`, whether configured in `stx.config.ts` or passed to
 update. These roots do not need a duplicate `watchDirs` entry. Missing roots
 are tolerated; resolution order and app overrides are unchanged.
 
+Page roots in `patterns` are watched as well. Removing an app override file or
+directory re-resolves the route against the remaining roots, including the
+fallback page's middleware. Recreating the override restores its precedence
+without restarting the development server.
+
 ## Usage with ESM
 
 ### 1. Configure Bun to use the plugin
