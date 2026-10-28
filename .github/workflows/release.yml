@@ -188,3 +188,8 @@ jobs:
         run: bash scripts/publish-npm.sh --npm --access public --skip bun-plugin,components,config,create-stx,desktop,iconify-core,iconify-generator,markdown,router,sanitizer,stx
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # v0.2.731: npm accepted emojione-v1 at 05:18 UTC but published it
+          # at 06:13, six minutes after the default 20-minute recovery expired.
+          # Keep verifying the ORIGINAL archive; never re-upload pending bytes.
+          # This is inside the existing 150-minute icon job, not a longer gate.
+          PUBLISH_VISIBLE_WAIT_SECONDS: '3600'

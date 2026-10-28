@@ -14,6 +14,19 @@ describe('accepted npm publication recovery', () => {
     expect(workflow.jobs.icons.needs).toBe('npm')
   })
 
+  it('allows slow accepted icon uploads to become public without bypassing recovery or slowing core releases', async () => {
+    const workflow = Bun.YAML.parse(await Bun.file(new URL('../../../.github/workflows/release.yml', import.meta.url)).text()) as {
+      jobs: Record<string, { 'timeout-minutes'?: number, steps: { name?: string, run?: string, env?: Record<string, string> }[] }>
+    }
+    const publish = workflow.jobs.icons.steps.find(step => step.name === 'Publish icon collections')
+    expect(publish?.run).toStartWith('bash scripts/publish-npm.sh ')
+    const wait = Number(publish?.env?.PUBLISH_VISIBLE_WAIT_SECONDS)
+    expect(wait).toBe(3600)
+    expect(wait).toBeLessThan(workflow.jobs.icons['timeout-minutes']! * 60)
+    for (const step of workflow.jobs.npm.steps)
+      expect(step.env?.PUBLISH_VISIBLE_WAIT_SECONDS).toBeUndefined()
+  })
+
   const bytes = new TextEncoder().encode('original accepted archive')
   const receipt = {
     name: '@stacksjs/example', version: '1.2.3',
