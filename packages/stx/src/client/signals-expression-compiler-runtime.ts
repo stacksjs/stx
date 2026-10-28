@@ -9,8 +9,9 @@ export const SIGNALS_EXPRESSION_COMPILER_RUNTIME = `  // Compiled expression fun
   function reportUnknownBinding(error, expression, scope, node) {
     // Native setup names are final by hydration. Undefined values and async
     // object paths are not missing identifiers; the host distinguishes them.
-    if (!stxHost.reportBindingError) return;
-    try { stxHost.reportBindingError(error, expression, scope, node); }
+    try {
+      if (stxHost.reportBindingError) stxHost.reportBindingError(error, expression, scope, node);
+    }
     catch (diagnosticError) { /* Diagnostics must never break a binding. */ }
   }
   function __stxCompile(params, body) {

@@ -209,7 +209,7 @@ else {
           return expression;
         }
         // Use passedScope instead of componentScope to preserve context through nested processing
-        const scope = mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}), extraScope);
+        var scope = mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}), extraScope);
         const unwrapScope = createAutoUnwrapProxy(scope, function(prop) {
           if (typeof prop !== 'string') return false;
           return expressionCallsSignal(expression, prop)
@@ -219,7 +219,7 @@ else {
         return fn(...__stxArgs(fn, unwrapScope));
       }
 catch (e) {
-        reportUnknownBinding(e, expression, mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}), extraScope), el);
+        reportUnknownBinding(e, expression, scope || {}, el);
         if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Expression error:', expression, e);
         return '';
       }
@@ -231,7 +231,7 @@ catch (e) {
     const evalLazy = (expression, extraScope = {}) => {
       try {
         if (/^__[A-Z_]+__$/.test(expression.trim())) return expression;
-        const scope = mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}), extraScope);
+        var scope = mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}), extraScope);
         const unwrapScope = createAutoUnwrapProxy(scope, function(prop) {
           if (typeof prop !== 'string') return false;
           return expressionCallsSignal(expression, prop)
@@ -244,7 +244,7 @@ catch (e) {
         const fn = __stxCompileScoped(unwrapScope, [], 'return ' + expression + '');
         return fn(...__stxArgs(fn, unwrapScope));
       } catch (e) {
-        reportUnknownBinding(e, expression, mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}), extraScope), el);
+        reportUnknownBinding(e, expression, scope || {}, el);
         if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Expression error:', expression, e);
         return '';
       }

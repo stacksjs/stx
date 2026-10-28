@@ -49,7 +49,7 @@ export const SIGNALS_EXPRESSION_RUNTIME = `  // Setup accessors refer to lexical
       }
       // First try component-level scope
       const elementScope = findElementScope(el || currentElement);
-      const baseScope = mergeTemplateScopes(globalHelpers, componentScope, (elementScope || {}), extraScope);
+      var baseScope = mergeTemplateScopes(globalHelpers, componentScope, (elementScope || {}), extraScope);
 
       // Check for pipe syntax (Feature #2)
       const pipeResult = parsePipeExpression(expr, baseScope);
@@ -80,7 +80,7 @@ export const SIGNALS_EXPRESSION_RUNTIME = `  // Setup accessors refer to lexical
       return (result && typeof result === 'function' && (result._isSignal || result._isDerived)) ? result() : result;
     }
 catch (e) {
-      reportUnknownBinding(e, expr, mergeTemplateScopes(globalHelpers, componentScope, (findElementScope(el || currentElement) || {}), extraScope), el || currentElement);
+      reportUnknownBinding(e, expr, baseScope || {}, el || currentElement);
       if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Expression error:', expr, e);
       return '';
     }

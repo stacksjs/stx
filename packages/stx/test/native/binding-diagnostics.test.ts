@@ -29,8 +29,9 @@ describe('unknown native binding identifiers (#2132)', () => {
 function setup() { const appAttribution = true; return { appGym: state(true) } }
 const { appGym } = setup()
 const tick = state(0)
+const deferred = state(false)
 const rows = state([{ label: 'one' }])
-window.probe = { appGym, tick }
+window.probe = { appGym, tick, deferred }
 </script>
 <div>
   <span :if="!appGym || appAttribution">attribution</span>
@@ -39,6 +40,7 @@ window.probe = { appGym, tick }
   <span :if="tick > 0">first</span><span :else-if="missingBranch">second</span><span :else>fallback</span>
   <span :show="tick + missingVisible">shown</span>
   <span :for="row in missingRows" :text="row.label"></span>
+  <span :if="deferred && laterMissing">deferred</span>
   <div :for="(row, index) in rows"><span :if="row.label && index === 0">valid row</span></div>
   <span testID="healthy" :text="tick"></span>
 </div>`, { name: 'MissingConditions', minify })
@@ -59,6 +61,10 @@ window.probe = { appGym, tick }
         await phone.settle()
         expect(phone.texts()).toContain('first')
         expect(unknown()).toHaveLength(6)
+        phone.context.probe.deferred.set(true)
+        await phone.settle()
+        expect(unknown()).toHaveLength(7)
+        expect(unknown()[6]).toContain(': laterMissing is not in the setup scope')
       }
       finally { phone.unmount() }
     }, 30_000)
@@ -104,4 +110,24 @@ window.probe = { tick, rows }
       finally { phone.unmount() }
     }, 30_000)
   }
+
+  test('a broken diagnostic sink cannot break hydration or later healthy updates', async () => {
+    const compiled = await compileNativeScreen(`<script client>
+const count = state(0)
+window.probe = { count }
+</script><div><span :text="missingSink"></span><span :text="'healthy:' + count"></span></div>`, { name: 'BrokenDiagnosticSink' })
+    let attempted = 0
+    const phone = mountNativeScreen(compiled.code, 'BrokenDiagnosticSink', { globals: {
+      console: { ...console, warn: () => { attempted++; throw new Error('sink unavailable') } },
+    } })
+    try {
+      await phone.settle()
+      expect(attempted).toBe(1)
+      expect(phone.texts()).toContain('healthy:0')
+      phone.context.probe.count.set(1)
+      await phone.settle()
+      expect(phone.texts()).toContain('healthy:1')
+    }
+    finally { phone.unmount() }
+  }, 30_000)
 })

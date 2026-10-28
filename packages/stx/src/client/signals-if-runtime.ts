@@ -73,7 +73,7 @@ export const SIGNALS_IF_RUNTIME = `  const detachedBranches = new Set();
         return expression;
       }
       try {
-        const scope = mergeTemplateScopes(globalHelpers, capturedComponentScope, (capturedElementScope || {}));
+        var scope = mergeTemplateScopes(globalHelpers, capturedComponentScope, (capturedElementScope || {}));
         const unwrapScope = createExpressionAutoUnwrapProxy(scope, expression);
         const fn = __stxCompileScoped(unwrapScope, [], 'return ' + expression + '');
         return fn(...__stxArgs(fn, unwrapScope));
@@ -86,7 +86,7 @@ catch (e1) {
           return fn2(...__stxArgs(fn2, scope2));
         }
 catch (e2) {
-          reportUnknownBinding(e2, expression, mergeTemplateScopes(globalHelpers, capturedComponentScope, (capturedElementScope || {})), el);
+          reportUnknownBinding(e2, expression, scope || {}, el);
           if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Expression error:', expression, e2);
           return '';
         }
