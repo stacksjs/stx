@@ -146,3 +146,18 @@ describe('list and state components in a browser', () => {
     expect(browser.window.probe.filter()).toBe('kudos')
   }, 30_000)
 })
+
+it('keeps horizontal List card widths and an explicit viewport height on native hosts', async () => {
+  const source = `<List horizontal className="h-[180px]" :hasMore="false"><button :for="n in [1,2,3]" :key="n" class="shrink-0 w-[180px]">Card {{ n }}</button></List>`
+  const { root, file } = await fixture()
+  await Bun.write(file, source)
+  const { code } = await compileSharedScreenBundle(file, { root })
+  const phone = mountNativeScreen(code, 'Screen')
+  await settle(phone)
+  const list = phone.ofType('FlatList')[0]!
+  expect(list.props.horizontal).toBe(true)
+  expect(list.style.height).toBe(180)
+  const rows = list.children.filter(child => typeof child !== 'string')
+  expect(rows).toHaveLength(3)
+  expect(rows.map(row => row.style.width)).toEqual([180, 180, 180])
+})

@@ -18,6 +18,8 @@
  */
 export const className = $props.className || ''
 export const nativeHost = $native
+export const horizontal = $bool($props.horizontal)
+export const viewportClasses = horizontal ? 'min-h-0 min-w-0 overflow-x-auto' : 'flex-1 min-h-0 min-w-0 overflow-y-auto'
 export const contentContainerStyle = $props.contentContainerStyle || { paddingBottom: 16 }
 export const loading = $bool($props.loading)
 export const hasMore = $bool($props.hasMore, true)
@@ -30,6 +32,7 @@ const endRef = useRef('endRef')
 const contentStyle = useReactiveProp('contentContainerStyle', {{ contentContainerStyle }})
 const loading = useReactiveProp('loading', {{ loading }})
 const hasMore = useReactiveProp('hasMore', {{ hasMore }})
+const horizontal = useReactiveProp('horizontal', {{ horizontal }})
 const pendingEnd = state(false)
 function reachedEnd() { pendingEnd.set(true) }
 effect(() => {
@@ -41,9 +44,9 @@ const webPadding = derived(() => {
   const style = contentStyle() || {}
   const all = style.padding || 0
   const vertical = style.paddingVertical ?? all
-  const horizontal = style.paddingHorizontal ?? all
+  const across = style.paddingHorizontal ?? all
   const px = value => `${Math.max(0, Number(value) || 0)}px`
-  return { maxHeight: '100dvh', boxSizing: 'border-box', paddingTop: px(style.paddingTop ?? vertical), paddingBottom: px(style.paddingBottom ?? vertical), paddingLeft: px(style.paddingLeft ?? horizontal), paddingRight: px(style.paddingRight ?? horizontal) }
+  return { maxHeight: horizontal() ? 'none' : '100dvh', maxWidth: '100%', boxSizing: 'border-box', ...(horizontal() ? { display: 'flex', flexDirection: 'row', overflowX: 'auto', overflowY: 'hidden' } : {}), paddingTop: px(style.paddingTop ?? vertical), paddingBottom: px(style.paddingBottom ?? vertical), paddingLeft: px(style.paddingLeft ?? across), paddingRight: px(style.paddingRight ?? across) }
 })
 onMount(() => {
   if (nativeHost || typeof IntersectionObserver !== 'function') return
@@ -58,7 +61,7 @@ onMount(() => {
       requestedRevision = revision
       emit('end-reached')
     }
-  }, { root, rootMargin: '0px 0px 200px 0px' })
+  }, { root, rootMargin: horizontal() ? '0px 200px 0px 0px' : '0px 0px 200px 0px' })
   const rearm = () => { observer.unobserve(end); observer.observe(end) }
   // A short page can leave the sentinel visible. Ask again when rows arrive,
   // or an initial load finishes, without automatically retrying a failed page.
@@ -73,9 +76,9 @@ onMount(() => {
   return () => { stop(); changes.disconnect(); observer.disconnect() }
 })
 </script>
-<div data-native="FlatList" ref="listRef" role="list" class="flex-1 min-h-0 min-w-0 overflow-y-auto {{ className }}" :contentContainerStyle="contentStyle()" :style="nativeHost ? {} : webPadding()" data-stx-list data-stx-layout-root @end-reached="reachedEnd()" @refresh="emit('refresh')">
+<div data-native="FlatList" ref="listRef" role="list" class="{{ viewportClasses }} {{ className }}" :horizontal="horizontal()" :contentContainerStyle="contentStyle()" :style="nativeHost ? {} : webPadding()" data-stx-list data-stx-layout-root @end-reached="reachedEnd()" @refresh="emit('refresh')">
   <slot />
   @if(!nativeHost)
-  <div ref="endRef" aria-hidden="true" style="height:1px"></div>
+  <div ref="endRef" aria-hidden="true" style="height:1px;width:1px;flex-shrink:0"></div>
   @endif
 </div>
