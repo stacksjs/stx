@@ -55,6 +55,39 @@ describe('fallbackLayoutsDir', () => {
     expect(resolved).toBe(join(root, 'app/layouts/default.stx'))
   })
 
+  // A framework page sits beside the framework's own `layouts/` (the Stacks
+  // dashboard's home, login and other top-level pages do). Resolving
+  // `layouts/default` relative to the page found the framework's layout before
+  // the app's `layoutsDir` was consulted, so an app override applied to nested
+  // pages and not to those (stacksjs/stacks#3032).
+  test('the app wins even for a framework page that sits beside the framework layouts', async () => {
+    const root = tree({
+      'app/layouts/default.stx': '<html>app</html>',
+      'defaults/layouts/default.stx': '<html>framework</html>',
+      'defaults/index.stx': '@extends(\'layouts/default\')',
+      'defaults/commerce/orders.stx': '@extends(\'layouts/default\')',
+    })
+    const options = { layoutsDir: join(root, 'app/layouts'), fallbackLayoutsDir: join(root, 'defaults/layouts') } as never
+
+    for (const page of ['defaults/index.stx', 'defaults/commerce/orders.stx'])
+      expect(await resolveTemplatePath('layouts/default', join(root, page), options)).toBe(join(root, 'app/layouts/default.stx'))
+  })
+
+  test('a framework page beside the framework layouts still gets them when the app has none', async () => {
+    const root = tree({
+      'app/layouts/marketing.stx': '<html></html>',
+      'defaults/layouts/default.stx': '<html>framework</html>',
+      'defaults/index.stx': '@extends(\'layouts/default\')',
+    })
+
+    const resolved = await resolveTemplatePath('layouts/default', join(root, 'defaults/index.stx'), {
+      layoutsDir: join(root, 'app/layouts'),
+      fallbackLayoutsDir: join(root, 'defaults/layouts'),
+    } as never)
+
+    expect(resolved).toBe(join(root, 'defaults/layouts/default.stx'))
+  })
+
   test('resolves a nested layout name', async () => {
     const root = tree({
       'app/layouts/marketing.stx': '<html></html>',

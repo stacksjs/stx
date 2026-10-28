@@ -2674,17 +2674,31 @@ async function resolveTemplatePathInner(
     return safe
   }
 
+  // A hit beside the page that lies inside `fallbackLayoutsDir` is the
+  // framework's own layout, found from a framework page that sits next to it
+  // (the Stacks dashboard's top-level pages do). The app's `layoutsDir` still
+  // wins over it, as it does for every other page (stacksjs/stacks#3032).
+  const preferAppLayout = async (hit: string): Promise<string> => {
+    if (!options.layoutsDir || !options.fallbackLayoutsDir)
+      return hit
+    const insideFallback = path.relative(path.resolve(projectRoot, options.fallbackLayoutsDir), hit)
+    if (insideFallback.startsWith('..') || path.isAbsolute(insideFallback))
+      return hit
+    return await findLayoutIn(path.resolve(projectRoot, options.layoutsDir), templatePath, dependencies, options.debug) ?? hit
+  }
+
   // 2. Direct path relative to current file
   const directPath = path.join(dirPath, templatePath)
   if (await fileExists(directPath)) {
     if (options.debug) {
       console.log(`Found direct path: ${directPath}`)
     }
+    const resolved = await preferAppLayout(directPath)
     // Track dependency
     if (dependencies) {
-      dependencies.add(directPath)
+      dependencies.add(resolved)
     }
-    return directPath
+    return resolved
   }
 
   // 3. Add .stx extension if not present, also try .jsx/.tsx
@@ -2695,10 +2709,11 @@ async function resolveTemplatePathInner(
         if (options.debug) {
           console.log(`Found direct path with extension: ${pathWithExt}`)
         }
+        const resolved = await preferAppLayout(pathWithExt)
         if (dependencies) {
-          dependencies.add(pathWithExt)
+          dependencies.add(resolved)
         }
-        return pathWithExt
+        return resolved
       }
     }
   }
