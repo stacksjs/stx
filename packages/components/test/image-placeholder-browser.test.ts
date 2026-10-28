@@ -7,6 +7,7 @@ import { join } from 'node:path'
 import { installImageDelivery, snapshotImageDelivery } from '../../stx/src/builtins/image-delivery'
 import { defaultConfig } from '../../stx/src/config'
 import { processDirectives } from '../../stx/src/process'
+import { createBrowserFixture, isolatedBrowserBackend } from '../../stx/test-utils/browser-fixture'
 
 const root = join(import.meta.dir, '..')
 const image = join(root, 'src/ui/image/Image.stx')
@@ -36,10 +37,13 @@ window.probe = { mode, color, url, candidates, shown }
 <Image className="photo" src="${src}" :src="url" :srcSet="candidates" alt="Photo"
   ${authored ? `placeholder="${authored}"` : ''} placeholderColor="#123456" :placeholder="mode" :placeholderColor="color" />
 </div></section></body></html>`, {}, join(root, 'image-placeholder.stx'), { ...defaultConfig, root, cache: false, debug: false }, new Set())
-  const server = Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: request => new URL(request.url).pathname === '/'
-    ? new Response(html, { headers: { 'Content-Type': 'text/html' } }) : new Response('', { status: 404 }) })
-  const view = new WebView({ headless: true, backend: process.env.STX_IMAGE_BROWSER === 'chrome' ? { type: 'chrome', url: false } : undefined })
-  const snapshot = () => view.evaluate(`(() => {
+  const browser = createBrowserFixture({
+    createServer: () => Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: request => new URL(request.url).pathname === '/'
+      ? new Response(html, { headers: { 'Content-Type': 'text/html' } }) : new Response('', { status: 404 }) }),
+    createView: () => new WebView({ headless: true, backend: isolatedBrowserBackend() }),
+  })
+  const { view } = browser
+  const snapshotScript = `(() => {
     if (!window.probe) return null;
     const img = document.querySelector('.photo img');
     if (!img) return null;
@@ -49,22 +53,16 @@ window.probe = { mode, color, url, candidates, shown }
       noImage: style.backgroundImage === 'none', inline: frame.style.background, imageBackground: getComputedStyle(img).backgroundColor,
       same: img === window.initialImage, sameFrame: frame === window.initialFrame,
       src: img.getAttribute('src'), candidates: img.getAttribute('srcset') };
-  })()`)
+  })()`
+  const snapshot = () => view.evaluate(snapshotScript)
   const selected = async (expected: Record<string, unknown> | null) => {
-    for (let i = 0; i < 150; i++) {
-      const actual = await snapshot() as Record<string, unknown> | null
-      if (expected === null ? actual === null : actual && Object.entries(expected).every(([key, value]) => actual[key] === value)) {
-        if (expected === null) expect(actual).toBeNull()
-        else expect(actual).toMatchObject(expected)
-        return
-      }
-      await Bun.sleep(20)
-    }
-    if (expected === null) expect(await snapshot()).toBeNull()
-    else expect(await snapshot()).toMatchObject(expected)
+    const actual = await browser.waitFor<Record<string, unknown> | null>(snapshotScript, value =>
+      expected === null ? value === null : !!value && Object.entries(expected).every(([key, item]) => value[key] === item))
+    if (expected === null) expect(actual).toBeNull()
+    else expect(actual).toMatchObject(expected)
   }
   const set = (key: string, value: unknown) => view.evaluate(`window.probe.${key}.set(${JSON.stringify(value)})`)
-  return { html, url: server.url.href, view, selected, set, snapshot, close() { view.close(); server.stop(true) } }
+  return { html, url: browser.url, view, selected, set, snapshot, close: browser.close }
 }
 
 it.each([undefined, 'color'])('updates Image placeholder modes/colors, defaults and retained remounts (authored=%s)', async (authored) => {
