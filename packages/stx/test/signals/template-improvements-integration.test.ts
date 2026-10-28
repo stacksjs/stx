@@ -2,8 +2,14 @@
  * Integration tests for STX template improvements
  * Tests features working together in realistic scenarios
  */
-import { describe, expect, it } from 'bun:test'
+import { beforeAll, describe, expect, it } from 'bun:test'
 import { generateSignalsRuntimeDev } from '../../src/signals'
+import { flushEffects, installNodeConstants, shimAttributes } from '../../test-utils/dom-runtime-shim'
+
+// eslint-disable-next-line ts/no-explicit-any
+declare const window: any
+// eslint-disable-next-line ts/no-explicit-any
+declare const document: any
 
 describe('Template Improvements Integration', () => {
   describe('Pipe syntax with global helpers', () => {
@@ -22,11 +28,48 @@ describe('Template Improvements Integration', () => {
   })
 
   describe('Auto-unwrap with @for loops', () => {
-    it('should inject globalHelpers into @for scope', () => {
-      const runtime = generateSignalsRuntimeDev()
-      // Verify global helpers and row-local values share the evaluation scope.
-      expect(runtime).toContain('const baseScope = mergeTemplateScopes(globalHelpers,')
-      expect(runtime).toContain('(elementScope || {}), extraScope)')
+    beforeAll(() => {
+      installNodeConstants()
+      globalThis.MutationObserver = window.MutationObserver
+      // eslint-disable-next-line no-new-func
+      new Function(generateSignalsRuntimeDev())()
+    })
+
+    it('evaluates global helpers with reactive page, component and keyed row values', async () => {
+      const items = window.stx.state([{ id: 1, amount: 1000 }])
+      const multiplier = window.stx.state(200)
+      const offset = window.stx.state(300)
+      const output = window.stx.state('')
+      window.__stx_setup_helper_row = () => ({ items, multiplier, output })
+      window.stx._scopes.helper_row_child = {
+        offset,
+        __mountCallbacks: [],
+        __destroyCallbacks: [],
+      }
+      document.body.innerHTML = `
+        <main data-stx="__stx_setup_helper_row">
+          <section data-stx-scope="helper_row_child">
+            <button :for="row in items" :key="row.id"
+              @click="output = fmt(row.amount + offset + multiplier)">Format</button>
+          </section>
+        </main>
+      `
+      shimAttributes(document.body)
+      document.dispatchEvent(new window.Event('DOMContentLoaded'))
+      await flushEffects()
+
+      const button = document.querySelector('button')
+      expect(button).not.toBeNull()
+      button.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
+      expect(output()).toBe('1.5K')
+
+      multiplier.set(400)
+      offset.set(600)
+      items.set([{ id: 1, amount: 2000 }])
+      await flushEffects()
+      expect(document.querySelector('button')).toBe(button)
+      button.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
+      expect(output()).toBe('3.0K')
     })
 
     it('should support @for with @loading state', () => {
