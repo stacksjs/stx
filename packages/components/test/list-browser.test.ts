@@ -99,8 +99,10 @@ it('scrolls horizontal cards at their authored widths without widening the page'
   try {
     await view.navigate(server.url.href)
     for (let i = 0; i < 100; i++) { if (await view.evaluate('document.querySelectorAll("[data-row]").length === 4')) break; await Bun.sleep(20) }
-    const metrics = await view.evaluate(`(() => {const list=document.querySelector('[data-stx-list]');list.scrollLeft=10000;const last=list.querySelector('[data-row="4"]');return {width:list.clientWidth,height:list.clientHeight,scroll:list.scrollWidth,left:list.scrollLeft,card:last.getBoundingClientRect().width,lastRight:last.getBoundingClientRect().right,right:list.getBoundingClientRect().right,body:document.body.scrollWidth}})()`)
+    const metrics = await view.evaluate(`(() => {const list=document.querySelector('[data-stx-list]');list.scrollLeft=10000;const last=list.querySelector('[data-row="4"]');return {width:list.clientWidth,height:list.getBoundingClientRect().height,scroll:list.scrollWidth,left:list.scrollLeft,card:last.getBoundingClientRect().width,lastRight:last.getBoundingClientRect().right,right:list.getBoundingClientRect().right,body:document.body.scrollWidth}})()`)
     expect(metrics.width).toBe(360)
+    // clientHeight excludes classic scrollbars on Linux; the authored
+    // viewport is its outer border box on every platform.
     expect(metrics.height).toBe(160)
     expect(metrics.card).toBe(180)
     expect(metrics.scroll).toBeGreaterThan(700)
