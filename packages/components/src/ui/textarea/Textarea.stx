@@ -83,10 +83,22 @@ export const enterKeyHint = $props.enterKeyHint || $props.enterkeyhint || ''
 </script>
 
 <script client>
-const emit = defineEmits()
+// Reserve input before the first edit so blocked/lazy edits cannot leak a
+// bubbling event object to callers expecting the component's string payload.
+const emit = defineEmits(['input'])
 // Validity is live, for the same reason `disabled` is: a form posted with
 // fetch learns it after the submit, and nothing re-renders (#2047).
 const isError = useReactiveProp('error', {{ error }})
+// Match server $bool, including typed parent writes that bypass prop parsing.
+function textareaBoolean(value) {
+  if (value == null) return false
+  if (typeof value === 'string') return !['false', '0', 'off', 'no'].includes(value.trim().toLowerCase())
+  return Boolean(value)
+}
+const liveDisabled = useReactiveProp('disabled', {{ disabled }}, { parse: textareaBoolean })
+const liveReadonly = useReactiveProp('readonly', {{ readonly }}, { parse: textareaBoolean })
+const isDisabled = derived(() => textareaBoolean(liveDisabled()))
+const isReadonly = derived(() => textareaBoolean(liveReadonly()))
 const autoResize = {{ autoResize }}
 const maxRows = {{ maxRows }}
 /*
@@ -107,12 +119,20 @@ function resizeTextarea(el) {
 }
 
 function onInput(event) {
+  if (isDisabled() || isReadonly() || event.target.isConnected === false) {
+    event.target.value = inputValue()
+    return
+  }
   inputValue.input(event.target.value)
   resizeTextarea(event.target)
   if (!inputValue.modifiers.lazy) emit('input', inputValue())
 }
 
 function onChange(event) {
+  if (isDisabled() || isReadonly() || event.target.isConnected === false) {
+    event.target.value = inputValue()
+    return
+  }
   inputValue.change(event.target.value)
   if (inputValue.modifiers.lazy) emit('input', inputValue())
 }
@@ -152,7 +172,9 @@ defineExpose({ value: inputValue })
     rows="{{ rows }}"
     placeholder="{{ placeholder }}"
     @if(disabled)disabled@endif
+    :disabled="isDisabled()"
     @if(readonly)readonly@endif
+    :readonly="isReadonly()"
     @if(required)required@endif
     @if(maxLength)maxlength="{{ maxLength }}"@endif
     {{-- The live value. The served text between the tags is the default
@@ -163,7 +185,7 @@ defineExpose({ value: inputValue })
     @change="onChange($event)"
     aria-invalid="{{ error ? 'true' : 'false' }}"
     :aria-invalid="isError() ? 'true' : 'false'"
-    :class="{ '{{ stateInvalidClasses }}': isError(), '{{ stateValidClasses }}': !isError() }"
+    :class="{ '{{ stateInvalidClasses }}': isError(), '{{ stateValidClasses }}': !isError(), 'opacity-50 cursor-not-allowed': isDisabled(), 'bg-surface': isDisabled() || isReadonly(), 'bg-field': !isDisabled() && !isReadonly(), 'cursor-default': !isDisabled() && isReadonly() }"
     @if(helperText)aria-describedby="{{ helperId }}"@endif
   >{{ value }}</textarea>
 
