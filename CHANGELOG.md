@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.739...v0.2.740)
+
+## 🐛 Bug Fixes
+
+- refresh server data across cached SSG builds ([60d8c5b](https://github.com/stacksjs/stx/commit/60d8c5b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.740 ([691cfc8](https://github.com/stacksjs/stx/commit/691cfc8)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.738...v0.2.739)
 
 ## 🐛 Bug Fixes
