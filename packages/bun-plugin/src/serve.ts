@@ -2293,7 +2293,7 @@ function __stxOverlay(errs){
         production,
         options: {
           patterns,
-          root: options.root,
+          root: cwd,
           componentsDir,
           additionalComponentsDirs,
           layoutsDir,
