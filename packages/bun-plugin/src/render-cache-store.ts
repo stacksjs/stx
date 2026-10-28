@@ -52,10 +52,14 @@ export async function renderInputsFingerprint(inputs: RenderInputs): Promise<str
       lines.push(`root ${absolute} missing`)
       continue
     }
+    // Dependency and hidden directories inside a root are skipped for cost.
+    // Hidden files are not: the watcher reacts to them, and an app can keep
+    // generated input in one. Only the part below the root is looked at, so
+    // a root that lives under a hidden directory still counts.
     const files = entries
       .filter(entry => entry.isFile() && WATCHED_EXTENSIONS.has(nodePath.extname(entry.name)))
       .map(entry => nodePath.join(entry.parentPath, entry.name))
-      .filter(file => !file.split(nodePath.sep).some(part => part === 'node_modules' || part.startsWith('.')))
+      .filter(file => !nodePath.relative(absolute, nodePath.dirname(file)).split(nodePath.sep).some(part => part === 'node_modules' || part.startsWith('.')))
     const stats = await Promise.all(files.map(file => nodeFs.stat(file).catch(() => null)))
     files.forEach((file, index) => lines.push(`file ${file} ${stats[index]?.mtimeMs ?? 'gone'} ${stats[index]?.size ?? 0}`))
   }

@@ -146,6 +146,25 @@ describe('render inputs fingerprint', () => {
     await Bun.write(path.join(root, 'functions/extra.ts'), 'export {}')
     expect(await renderInputsFingerprint(inputs)).not.toBe(before)
   })
+
+  it('counts a hidden file, which the watcher reacts to as well', async () => {
+    // Stacks keeps the dashboard's discovered models in `.discovered-models.json`.
+    const { root, inputs } = await project()
+    const before = await renderInputsFingerprint(inputs)
+    await Bun.write(path.join(root, 'functions/.discovered-models.json'), '{}')
+    expect(await renderInputsFingerprint(inputs)).not.toBe(before)
+  })
+
+  it('counts the files of a root that itself sits under a hidden directory', async () => {
+    const outer = createTempDir('stx-render-store-')
+    dirs.push(outer)
+    const root = path.join(outer, '.config', 'app', 'functions')
+    await Bun.write(path.join(root, 'format.ts'), 'export const a = 1')
+    const inputs = { roots: [root], files: [], extra: null }
+    const before = await renderInputsFingerprint(inputs)
+    await touch(path.join(root, 'format.ts'), 'export const a = 2')
+    expect(await renderInputsFingerprint(inputs)).not.toBe(before)
+  })
 })
 
 describe('restampBuildId', () => {
