@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.728...v0.2.729)
+
+## 🐛 Bug Fixes
+
+- **components**: support horizontal scrolling lists on web and native ([b9071cb](https://github.com/stacksjs/stx/commit/b9071cb)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.729 ([90514ad](https://github.com/stacksjs/stx/commit/90514ad)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.726...v0.2.727)
 
 ## ✨ Features
