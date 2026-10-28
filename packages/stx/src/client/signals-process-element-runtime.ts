@@ -123,6 +123,7 @@ catch (e) {
                     bindingNode.textContent = maybeUnwrapSignal(fn(...__stxArgs(fn, capturedScope)));
                   }
 catch (e2) {
+                    reportUnknownBinding(e2, expr, capturedScope, parentEl);
                     if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Expression error:', expr, e2);
                     bindingNode.textContent = '';
                   }

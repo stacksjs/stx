@@ -14,6 +14,7 @@ describe('unknown native binding identifiers (#2132)', () => {
       report(new ReferenceError('known is not defined'), 'known', { known: undefined }, node)
       report(new TypeError('unknown is not defined'), 'unknown', {}, node)
       report(new ReferenceError('insideHelper is not defined'), 'format()', {}, node)
+      report(new ReferenceError("Cannot access 'pending' before initialization"), 'pending', {}, node)
       expect(warning.mock.calls.map(call => call[0])).toEqual([
         '[STX Native] unknown-binding: /screens/Attribution.stx: n197: appAttribution is not in the setup scope ("!appGym || appAttribution")',
         '[STX Native] unknown-binding: /screens/Attribution.stx: n197: other is not in the setup scope ("other")',
@@ -76,6 +77,9 @@ window.probe = { tick, rows }
   <span :text="typeof optionalName"></span>
   <span :text="Math.max(1, tick)"></span>
   <span :text="rows.map(({ label }) => label).join(',')"></span>
+  <span :text="/missingRegex/.test('missingLiteral') ? 'literal' : 'safe'"></span>
+  <span :text="({ arbitraryKey: 1 }).arbitraryKey"></span>
+  <span :text="(() => { const local = 'local'; return local })()"></span>
   <span :for="(row, index) in rows" :text="index + ':' + row.label"></span>
 </div>`, { name: 'UnknownBindings', minify })
       const warnings: string[] = []
@@ -86,6 +90,7 @@ window.probe = { tick, rows }
         await phone.settle()
         expect(phone.texts()).toContain('count:0')
         expect(phone.texts()).toContain('0:one')
+        expect(phone.texts()).toContain('local')
         const unknown = () => warnings.filter(message => message.includes('unknown-binding:'))
         expect(unknown()).toHaveLength(1)
         expect(unknown()[0]).toContain('UnknownBindings.stx')

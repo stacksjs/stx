@@ -80,6 +80,7 @@ export const SIGNALS_EXPRESSION_RUNTIME = `  // Setup accessors refer to lexical
       return (result && typeof result === 'function' && (result._isSignal || result._isDerived)) ? result() : result;
     }
 catch (e) {
+      reportUnknownBinding(e, expr, mergeTemplateScopes(globalHelpers, componentScope, (findElementScope(el || currentElement) || {}), extraScope), el || currentElement);
       if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Expression error:', expr, e);
       return '';
     }
