@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.729...v0.2.730)
+
+## ✅ Tests
+
+- **components**: measure horizontal viewport outside platform scrollbars ([a3e7168](https://github.com/stacksjs/stx/commit/a3e7168)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.730 ([cab30ad](https://github.com/stacksjs/stx/commit/cab30ad)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.728...v0.2.729)
 
 ## 🐛 Bug Fixes
