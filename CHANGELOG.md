@@ -1,5 +1,43 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.736...v0.2.737)
+
+## ✨ Features
+
+- **desktop**: read localized application names through Core Foundation ([26e6a42](https://github.com/stacksjs/stx/commit/26e6a42)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **serve**: renderCachePersist keeps rendered pages across restarts ([f119fa7](https://github.com/stacksjs/stx/commit/f119fa7)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2133](https://github.com/stacksjs/stx/issues/2133))
+- **serve**: a render cache store that survives restarts ([65a791b](https://github.com/stacksjs/stx/commit/65a791b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2133](https://github.com/stacksjs/stx/issues/2133), [#2133](https://github.com/stacksjs/stx/issues/2133))
+
+## 🐛 Bug Fixes
+
+- **native**: keep binding diagnostics isolated from evaluation (#2132) ([e96ade2](https://github.com/stacksjs/stx/commit/e96ade2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2132](https://github.com/stacksjs/stx/issues/2132), [#2132](https://github.com/stacksjs/stx/issues/2132))
+- **serve**: fingerprint the actual root and satisfy cache CI gates (#2133) ([0284399](https://github.com/stacksjs/stx/commit/0284399)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2133](https://github.com/stacksjs/stx/issues/2133), [#2133](https://github.com/stacksjs/stx/issues/2133))
+- **native**: diagnose unresolved model style and component props (#2132) ([5b7a053](https://github.com/stacksjs/stx/commit/5b7a053)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2132](https://github.com/stacksjs/stx/issues/2132), [#2132](https://github.com/stacksjs/stx/issues/2132))
+- **native**: report missing conditional and loop binding names (#2132) ([7ed19f4](https://github.com/stacksjs/stx/commit/7ed19f4)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2132](https://github.com/stacksjs/stx/issues/2132), [#2132](https://github.com/stacksjs/stx/issues/2132))
+- **native**: diagnose unresolved attribute binding identifiers (#2132) ([5f2a80d](https://github.com/stacksjs/stx/commit/5f2a80d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2132](https://github.com/stacksjs/stx/issues/2132), [#2132](https://github.com/stacksjs/stx/issues/2132))
+- **serve**: the render fingerprint counts hidden files, and roots under hidden directories ([36140a2](https://github.com/stacksjs/stx/commit/36140a2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2133](https://github.com/stacksjs/stx/issues/2133))
+- **components**: keep Textarea disabled and readonly reactive ([47ed5a3](https://github.com/stacksjs/stx/commit/47ed5a3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **release**: allow delayed accepted icon uploads to finish verification ([c89f301](https://github.com/stacksjs/stx/commit/c89f301)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **serve**: image warm-up scope reads each directory once ([1f04af9](https://github.com/stacksjs/stx/commit/1f04af9)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#3035](https://github.com/stacksjs/stx/issues/3035))
+
+## ✅ Tests
+
+- **native**: cover binding scope and interpolation diagnostics (#2132) ([7fcc35a](https://github.com/stacksjs/stx/commit/7fcc35a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2132](https://github.com/stacksjs/stx/issues/2132), [#2132](https://github.com/stacksjs/stx/issues/2132))
+- **ci**: qualify browser startup before component cases ([711c879](https://github.com/stacksjs/stx/commit/711c879)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: bound Image browser waits and clean up stalled fixtures ([9f06714](https://github.com/stacksjs/stx/commit/9f06714)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.737 ([d64cb95](https://github.com/stacksjs/stx/commit/d64cb95)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.735...v0.2.736)
 
 ## 🐛 Bug Fixes
