@@ -1,5 +1,15 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.735...v0.2.736)
+
+## 🐛 Bug Fixes
+
+- **serve**: re-resolve deleted app page overrides against remaining page roots, refresh fallback middleware before guards run, and restore watching when an override directory is recreated ([b756671](https://github.com/stacksjs/stx/commit/b756671236eea989ff9756a5239ce9524f88f2f2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2131](https://github.com/stacksjs/stx/issues/2131))
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.734...v0.2.735)
 
 ## 🐛 Bug Fixes
