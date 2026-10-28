@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.734...v0.2.735)
+
+## 🐛 Bug Fixes
+
+- **layouts**: an app layout beats the framework layout beside a framework page ([3875943](https://github.com/stacksjs/stx/commit/3875943)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#3032](https://github.com/stacksjs/stx/issues/3032))
+
+## 🔧 Chores
+
+- release v0.2.735 ([abd77c5](https://github.com/stacksjs/stx/commit/abd77c5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.733...v0.2.734)
 
 ## 🐛 Bug Fixes
