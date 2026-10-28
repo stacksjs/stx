@@ -1,5 +1,15 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.733...v0.2.734)
+
+## 🐛 Bug Fixes
+
+- **serve**: watch every `additionalComponentsDirs` root supplied through options or config, invalidating rendered output and sending fragment HMR without duplicate `watchDirs` entries; tolerate missing directories and preserve component resolution precedence ([e6f1b9c](https://github.com/stacksjs/stx/commit/e6f1b9c6c423ee2f4d1cf4cd90e95923bca18f7d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2130](https://github.com/stacksjs/stx/issues/2130))
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.732...v0.2.733)
 
 ## 🐛 Bug Fixes
