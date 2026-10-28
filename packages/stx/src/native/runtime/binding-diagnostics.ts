@@ -1,5 +1,7 @@
+export type BindingDiagnosticReporter = (error: unknown, expression: string, scope: Record<string, unknown>, node?: { __stxId?: string }) => void
+
 /** First-evaluation diagnostics: let JavaScript, not an identifier heuristic, resolve names. */
-export function createBindingDiagnostics(source: string) {
+export function createBindingDiagnostics(source: string): BindingDiagnosticReporter {
   const reported = new WeakMap<object, Set<string>>()
   const unowned = new Set<string>()
   return (error: unknown, expression: string, scope: Record<string, unknown>, node?: { __stxId?: string }): void => {
