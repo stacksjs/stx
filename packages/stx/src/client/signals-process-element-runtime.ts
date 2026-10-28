@@ -263,6 +263,7 @@ catch (e) {
           return retried;
         }
 catch (e2) {
+          reportUnknownBinding(e2, expr, activeScope, el);
           if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Attribute expression error:', expr, e2);
           // ReferenceError/TypeError stay unlogged HERE on purpose: a signal
           // may not exist yet on an effect's first pass, and warning on every

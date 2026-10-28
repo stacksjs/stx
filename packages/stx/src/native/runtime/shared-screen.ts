@@ -4,6 +4,7 @@ import type { STXDocument } from '../compiler/ir'
 import { createNode } from '../compiler/ir'
 import { STXBridge } from '../bridge/protocol'
 import { materializeNativeBindingTree } from './binding-tree'
+import { createBindingDiagnostics } from './binding-diagnostics'
 import type { NativeBindingNode } from './binding-tree'
 import { installCraftBridge, type CraftBridgeOptions } from './craft-bridge'
 import { createNativeHost, type NativeHost } from './native-host'
@@ -66,6 +67,8 @@ export function prepareSharedNativeScreen(
       })
     },
   })
+  // Optional host hook: browser bindings retain their existing diagnostics.
+  Object.assign(host, { reportBindingError: createBindingDiagnostics(document.meta.source ?? 'native screen') })
   protocol.on<any>('APPEARANCE', (message) => {
     const scheme = message.payload?.colorScheme
     if (scheme === 'light' || scheme === 'dark') {
