@@ -46,7 +46,7 @@ jobs:
       - run: bun run lint
       - run: bun run format:check
       - run: bun run preflight:release
-      - run: bun test packages examples --max-concurrency=1
+      - run: bun test --preload ./scripts/browser-test-preload.ts packages examples --max-concurrency=1
 
   npm:
     needs: [gate, native-signing]
