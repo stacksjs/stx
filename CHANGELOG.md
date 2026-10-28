@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.730...v0.2.731)
+
+## 🐛 Bug Fixes
+
+- honor live polling and response metadata in useFetch ([ac2e485](https://github.com/stacksjs/stx/commit/ac2e485)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.731 ([669d5a9](https://github.com/stacksjs/stx/commit/669d5a9)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.729...v0.2.730)
 
 ## ✅ Tests
