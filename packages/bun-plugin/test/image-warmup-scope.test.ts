@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from 'bun:test'
-import { rm } from 'node:fs/promises'
+import { mkdir, rm, stat, symlink } from 'node:fs/promises'
 import path from 'node:path'
 import type { StxOptions } from '@stacksjs/stx'
 import { createTempDir } from '../../stx/src/temp-dir'
@@ -120,5 +120,44 @@ describe('served image template scope (#2113)', () => {
     expect(await projectUsesImageBuiltins(root, { pages, options: {}, pluginComponentDirs })).toBe(true)
     await Bun.write(path.join(root, pages[0]), '<main>unused</main>')
     expect(await projectUsesImageBuiltins(root, { pages, options: {}, pluginComponentDirs })).toBe(false)
+  })
+
+  // Directory listings and component resolutions are cached for the scan.
+  // These pin what the cache must not change.
+
+  it('resolves a shared component\'s tag again for a page whose own components directory has it', async () => {
+    // Both pages use the shared Shell, which uses <Card>. From the first page
+    // that is the shared Card; the second page has a Card of its own, which
+    // wins there and holds the image. Same tag, same file, different answer.
+    expect(await detect({
+      'views/a/index.stx': '<Shell />',
+      'views/b/index.stx': '<Shell />',
+      'components/Shell.stx': '<Card />',
+      'components/Card.stx': '<div>shared</div>',
+      'views/b/components/Card.stx': '<StxImage src="/hero.jpg" />',
+    }, {}, ['views/a/index.stx', 'views/b/index.stx'])).toBe(true)
+  })
+
+  it('follows a component that is a symlink to a file', async () => {
+    const root = createTempDir('stx-image-symlink-')
+    dirs.push(root)
+    await Bun.write(path.join(root, 'shared/hero-banner.stx'), '<StxImage src="/hero.jpg" />')
+    // A kebab-case name, so no case variant of another candidate reaches it.
+    await Bun.write(path.join(root, 'views/index.stx'), '<HeroBanner />')
+    await mkdir(path.join(root, 'components'), { recursive: true })
+    await symlink(path.join(root, 'shared/hero-banner.stx'), path.join(root, 'components/hero-banner.stx'))
+    expect(await projectUsesImageBuiltins(root, { pages: ['views/index.stx'], options: { root, componentsDir: path.join(root, 'components') } })).toBe(true)
+  })
+
+  it('decides a name that differs only in case the way the filesystem does', async () => {
+    // `<UserCard>` looks for UserCard.stx and user-card.stx; the file is
+    // Usercard.stx. A case-insensitive filesystem (the macOS default) finds
+    // it and a case-sensitive one does not, so the oracle is stat itself.
+    const root = createTempDir('stx-image-case-')
+    dirs.push(root)
+    await Bun.write(path.join(root, 'components/Usercard.stx'), '<StxImage src="/hero.jpg" />')
+    await Bun.write(path.join(root, 'views/index.stx'), '<UserCard />')
+    const filesystemFindsIt = await stat(path.join(root, 'components/UserCard.stx')).then(result => result.isFile(), () => false)
+    expect(await projectUsesImageBuiltins(root, { pages: ['views/index.stx'], options: { root, componentsDir: path.join(root, 'components') } })).toBe(filesystemFindsIt)
   })
 })
