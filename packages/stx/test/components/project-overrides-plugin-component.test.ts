@@ -122,3 +122,61 @@ describe('fallbackComponentsDir', () => {
     }
   })
 })
+
+/**
+ * The fallback's own components render each other by name, and a nested
+ * component resolves beside its parent first. So an app's copy of a framework
+ * component lost wherever a framework sibling rendered it: an app
+ * `Container.stx` was ignored inside every framework marketing section that
+ * renders `<Container>` from the same folder (stacksjs/stacks#3033).
+ */
+describe('fallbackComponentsDir siblings', () => {
+  it("lets the app override a component its framework sibling renders", async () => {
+    const root = createTempDir('stx-fallback-sibling-')
+    try {
+      const app = path.join(root, 'resources/components')
+      const framework = path.join(root, 'framework/components')
+      await mkdir(path.join(app, 'Marketing'), { recursive: true })
+      await mkdir(path.join(framework, 'Marketing'), { recursive: true })
+
+      await writeFile(path.join(framework, 'Marketing/Header.stx'), '<header>HEADER <Container /></header>')
+      await writeFile(path.join(framework, 'Marketing/Container.stx'), '<div>FRAMEWORK CONTAINER</div>')
+      await writeFile(path.join(app, 'Marketing/Container.stx'), '<div>APP CONTAINER</div>')
+
+      const page = path.join(root, 'page.stx')
+      await writeFile(page, '<Header />')
+      const output = await processDirectives('<Header />', {}, page, { root, componentsDir: app, fallbackComponentsDir: framework } as any, new Set())
+
+      expect(output).toContain('APP CONTAINER')
+      expect(output).not.toContain('FRAMEWORK CONTAINER')
+    }
+    finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('still renders the framework sibling when the app has none', async () => {
+    const root = createTempDir('stx-fallback-sibling-')
+    try {
+      const app = path.join(root, 'resources/components')
+      const framework = path.join(root, 'framework/components')
+      await mkdir(app, { recursive: true })
+      await mkdir(path.join(framework, 'Marketing'), { recursive: true })
+
+      await writeFile(path.join(framework, 'Marketing/Header.stx'), '<header>HEADER <Container /></header>')
+      await writeFile(path.join(framework, 'Marketing/Container.stx'), '<div>FRAMEWORK CONTAINER</div>')
+      await writeFile(path.join(framework, 'Container.stx'), '<div>TOP-LEVEL CONTAINER</div>')
+
+      const page = path.join(root, 'page.stx')
+      await writeFile(page, '<Header />')
+      const output = await processDirectives('<Header />', {}, page, { root, componentsDir: app, fallbackComponentsDir: framework } as any, new Set())
+
+      // The sibling, not another framework component of the same name.
+      expect(output).toContain('FRAMEWORK CONTAINER')
+      expect(output).not.toContain('TOP-LEVEL CONTAINER')
+    }
+    finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+})

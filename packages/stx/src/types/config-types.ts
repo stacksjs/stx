@@ -791,6 +791,10 @@ export interface StxConfig {
    * first option, so an app that had written its own `NativeAppShell.stx`
    * still rendered the framework's, and the only symptom was that file's
    * relative includes failing with ENOENT paths the author had never written.
+   *
+   * That holds inside the framework's own components too: one that renders a
+   * sibling by name finds the app's copy before the framework's beside it
+   * (stacksjs/stacks#3033).
    */
   fallbackComponentsDir?: string
   /**

@@ -847,19 +847,21 @@ export function scopeOnRootElement(html: string, attrs: string): string | null {
  * built-in shipping its own `.stx` file must not count as a user override.
  */
 /**
- * Whether `dir` is one of the host's `additionalComponentsDirs` or inside one.
+ * Whether `dir` is inside a framework's component root: one of the host's
+ * `additionalComponentsDirs`, or its `fallbackComponentsDir`.
  *
  * A nested component resolves beside its parent first. When the parent is a
- * framework component in an additional root, its siblings are framework files
- * too, and they would beat the app's copy of the same name - the override the
- * additional roots exist for (stacksjs/stx#2130). Such a parent searches the
+ * framework component, its siblings are framework files too, and they would
+ * beat the app's copy of the same name - the override both options exist for
+ * (stacksjs/stx#2130, stacksjs/stacks#3033). Such a parent searches the
  * configured root first instead; a parent in the app's own tree keeps its
  * siblings first.
  */
-function isInsideAdditionalComponentsDir(dir: string | undefined, options: Pick<StxOptions, 'additionalComponentsDirs'>): boolean {
+function isInsideFrameworkComponentsDir(dir: string | undefined, options: Pick<StxOptions, 'additionalComponentsDirs' | 'fallbackComponentsDir'>): boolean {
   if (!dir)
     return false
-  return (options.additionalComponentsDirs ?? []).some((root) => {
+  const roots = [...(options.additionalComponentsDirs ?? []), ...(options.fallbackComponentsDir ? [options.fallbackComponentsDir] : [])]
+  return roots.some((root) => {
     const relativeDir = path.relative(path.resolve(root), path.resolve(dir))
     return !relativeDir.startsWith('..') && !path.isAbsolute(relativeDir)
   })
@@ -905,7 +907,7 @@ export async function userComponentFileExists(
 
   const originalFilePath = parentContext.__originalFilePath as string | undefined
   if (originalFilePath) push(path.join(path.dirname(originalFilePath), 'components'))
-  if (isInsideAdditionalComponentsDir(componentsDir, options))
+  if (isInsideFrameworkComponentsDir(componentsDir, options))
     push(options._rootComponentsDir)
   push(componentsDir)
   push(options._rootComponentsDir)
@@ -1278,9 +1280,9 @@ export async function renderComponentWithSlot(
       }
 
       // Then search global componentsDir and parent-relative paths. A parent
-      // in an additional root yields to the configured root first.
+      // in a framework root yields to the configured root first.
       const rootComponentsDir = options._rootComponentsDir
-      if (typeof rootComponentsDir === 'string' && isInsideAdditionalComponentsDir(componentsDir, options) && !searchDirs.includes(rootComponentsDir))
+      if (typeof rootComponentsDir === 'string' && isInsideFrameworkComponentsDir(componentsDir, options) && !searchDirs.includes(rootComponentsDir))
         searchDirs.push(rootComponentsDir)
       if (componentsDir && !searchDirs.includes(componentsDir)) searchDirs.push(componentsDir)
       if (typeof rootComponentsDir === 'string' && !searchDirs.includes(rootComponentsDir))
