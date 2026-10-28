@@ -219,6 +219,7 @@ else {
         return fn(...__stxArgs(fn, unwrapScope));
       }
 catch (e) {
+        reportUnknownBinding(e, expression, mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}), extraScope), el);
         if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Expression error:', expression, e);
         return '';
       }
@@ -243,6 +244,7 @@ catch (e) {
         const fn = __stxCompileScoped(unwrapScope, [], 'return ' + expression + '');
         return fn(...__stxArgs(fn, unwrapScope));
       } catch (e) {
+        reportUnknownBinding(e, expression, mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}), extraScope), el);
         if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] Expression error:', expression, e);
         return '';
       }

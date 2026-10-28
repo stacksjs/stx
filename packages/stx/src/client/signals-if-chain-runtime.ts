@@ -93,6 +93,7 @@ catch (e1) {
           return fn2(...__stxArgs(fn2, scope));
         }
 catch (e2) {
+          reportUnknownBinding(e2, expression, scope, b.el);
           if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Expression error:', expression, e2);
           return '';
         }

@@ -23,6 +23,45 @@ describe('unknown native binding identifiers (#2132)', () => {
   })
 
   for (const minify of [false, true]) {
+    test(`reports evaluated structural names and stays silent on valid nested scopes (minify=${minify})`, async () => {
+      const compiled = await compileNativeScreen(`<script client>
+function setup() { const appAttribution = true; return { appGym: state(true) } }
+const { appGym } = setup()
+const tick = state(0)
+const rows = state([{ label: 'one' }])
+window.probe = { appGym, tick }
+</script>
+<div>
+  <span :if="!appGym || appAttribution">attribution</span>
+  <span :if="missingPositive">positive</span>
+  <span :if="!missingNegative">negative</span>
+  <span :if="tick > 0">first</span><span :else-if="missingBranch">second</span><span :else>fallback</span>
+  <span :show="tick + missingVisible">shown</span>
+  <span :for="row in missingRows" :text="row.label"></span>
+  <div :for="(row, index) in rows"><span :if="row.label && index === 0">valid row</span></div>
+  <span testID="healthy" :text="tick"></span>
+</div>`, { name: 'MissingConditions', minify })
+      const warnings: string[] = []
+      const phone = mountNativeScreen(compiled.code, 'MissingConditions', { globals: {
+        console: { ...console, warn: (...args: unknown[]) => warnings.push(args.map(String).join(' ')) },
+      } })
+      try {
+        await phone.settle()
+        const unknown = () => warnings.filter(message => message.includes('unknown-binding:'))
+        expect(unknown()).toHaveLength(6)
+        for (const name of ['appAttribution', 'missingPositive', 'missingNegative', 'missingBranch', 'missingVisible', 'missingRows']) {
+          expect(unknown().filter(message => message.includes(`: ${name} is not in`))).toHaveLength(1)
+        }
+        expect(unknown().every(message => /MissingConditions\.stx: n\d+:/.test(message))).toBe(true)
+        expect(phone.texts()).toContain('valid row')
+        phone.context.probe.tick.set(1)
+        await phone.settle()
+        expect(phone.texts()).toContain('first')
+        expect(unknown()).toHaveLength(6)
+      }
+      finally { phone.unmount() }
+    }, 30_000)
+
     test(`names the expression, file and node without breaking healthy bindings (minify=${minify})`, async () => {
       const compiled = await compileNativeScreen(`<script client>
 const tick = state(0)

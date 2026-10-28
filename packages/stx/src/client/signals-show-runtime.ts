@@ -33,6 +33,7 @@ export const SIGNALS_SHOW_RUNTIME = `  function bindShow(el, expr, passedScope =
             var fn2 = __stxCompileScoped(capturedScope, [], 'return ' + expr);
             value = fn2(...__stxArgs(fn2, capturedScope));
           } catch (e2) {
+            reportUnknownBinding(e2, expr, capturedScope, el);
             // Suppress ReferenceError/TypeError during async init — a signal
             // or object may not be ready yet on the first effect run, and
             // the next pass will re-evaluate once data arrives.
