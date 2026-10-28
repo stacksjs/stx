@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.731...v0.2.732)
+
+## 🐛 Bug Fixes
+
+- **components**: an app copy beats a framework sibling of the same name ([4416c9c](https://github.com/stacksjs/stx/commit/4416c9c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2130](https://github.com/stacksjs/stx/issues/2130), [#3032](https://github.com/stacksjs/stx/issues/3032))
+
+## 🔧 Chores
+
+- release v0.2.732 ([c40690f](https://github.com/stacksjs/stx/commit/c40690f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.730...v0.2.731)
 
 ## 🐛 Bug Fixes
