@@ -21,6 +21,7 @@ catch (e1) {
           return fn2(...__stxArgs(fn2, capturedScope));
         }
 catch (e2) {
+          reportUnknownBinding(e2, expr, capturedScope, el);
           if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Style expression error:', expr, e2);
           return {};
         }

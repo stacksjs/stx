@@ -43,6 +43,7 @@ export const SIGNALS_CLASS_RUNTIME = `  function bindClass(el, expr, passedScope
         try {
           value = fn.apply(null, safeKeys.map(k => capturedScope[k]));
         } catch (e2) {
+          reportUnknownBinding(e2, expr, capturedScope, el);
           if (!(e2 instanceof ReferenceError) && !(e2 instanceof TypeError)) console.warn('[STX] Class expression error:', expr, e2);
           value = '';
         }

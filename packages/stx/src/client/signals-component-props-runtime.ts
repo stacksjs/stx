@@ -40,6 +40,7 @@ export const SIGNALS_COMPONENT_PROPS_RUNTIME = `  function bindParentComponentPr
           if (value && typeof value === 'function' && (value._isSignal || value._isDerived)) value = value();
         }
         catch (e) {
+          reportUnknownBinding(e, expression, scope, el);
           if (!(e instanceof ReferenceError) && !(e instanceof TypeError))
             console.warn('[STX] Parent component prop error:', expression, e);
           value = undefined;

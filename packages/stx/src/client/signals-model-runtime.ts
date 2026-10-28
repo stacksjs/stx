@@ -26,6 +26,7 @@ export const SIGNALS_MODEL_RUNTIME = `  function bindModel(el, expr, passedScope
         return fn(...__stxArgs(fn, unwrapScope));
       }
       catch (e) {
+        reportUnknownBinding(e, expr, capturedScope, el);
         if (!(e instanceof ReferenceError) && !(e instanceof TypeError)) console.warn('[STX] ' + attrName + ' get error:', expr, e);
         return '';
       }
