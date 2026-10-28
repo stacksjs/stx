@@ -23,6 +23,8 @@ export function signalsFetchRuntime(readHydratedDataSource: string, clearServerD
     // a background refresh is the case where those two stop agreeing (#1929).
     const isFetching = state(immediate);
     const error = state(hydrated ? (hydrated.error || null) : null);
+    const status = state(null);
+    const statusText = state(null);
     if (options.suspense) registerSuspense(loading, error);
 
     // A superseded or unmounted request must not resolve into a torn-down
@@ -30,6 +32,8 @@ export function signalsFetchRuntime(readHydratedDataSource: string, clearServerD
     // reactive URL change) aborts the one before it, and onDestroy aborts the
     // last in-flight one. State writes are guarded on signal.aborted (#1871).
     let __stxAbort = null;
+    let __stxPoll = null;
+    let __stxFocus = null;
 
     // runOptions: { background: true } refreshes data WITHOUT touching loading
     // or clearing the current error, so a poll cannot flash a spinner or blank
@@ -60,6 +64,11 @@ export function signalsFetchRuntime(readHydratedDataSource: string, clearServerD
           },
           signal: __signal
         };
+        // Request cache policy is part of the transport contract. In
+        // particular, no-store must reach an offline worker unchanged.
+        for (const key of ['cache', 'credentials', 'mode', 'redirect', 'referrerPolicy', 'integrity', 'keepalive']) {
+          if (options[key] !== undefined) fetchOptions[key] = options[key];
+        }
 
         if (options.body) {
           fetchOptions.body = typeof options.body === 'string'
@@ -69,6 +78,8 @@ export function signalsFetchRuntime(readHydratedDataSource: string, clearServerD
 
         const response = await __stxFetch('useFetch', url, fetchOptions);
         if (__signal && __signal.aborted) return;
+        status.set(response.status);
+        statusText.set(response.statusText || '');
 
         if (!response.ok) throw await __stxHttpError(response);
 
@@ -125,15 +136,41 @@ else if (immediate) {
       onMount(fetchData);
     }
 
-    // Abort an in-flight request when the owning scope is destroyed, so its
-    // resolution can't write into a torn-down component (#1871).
-    if (typeof onDestroy === 'function') onDestroy(function() { if (__stxAbort) __stxAbort.abort(); });
+    const abort = function() {
+      if (__stxAbort) __stxAbort.abort();
+      if (__stxPoll !== null) clearInterval(__stxPoll);
+      __stxPoll = null;
+      if (__stxFocus) document.removeEventListener('visibilitychange', __stxFocus);
+      __stxFocus = null;
+      loading.set(false);
+      isFetching.set(false);
+    };
+
+    // Polling and focus refreshes retain existing data and never supersede a
+    // slow request with the next timer tick. One scope owns their cleanup.
+    const setupRefresh = function() {
+      if (__stxPoll === null && typeof options.refetchInterval === 'number' && Number.isFinite(options.refetchInterval) && options.refetchInterval > 0) {
+        __stxPoll = setInterval(function() { if (!isFetching()) fetchData({ background: true }); }, options.refetchInterval);
+      }
+      if (!__stxFocus && options.refetchOnFocus && typeof document !== 'undefined') {
+        __stxFocus = function() {
+          if (document.visibilityState === 'visible' && !isFetching()) fetchData({ background: true });
+        };
+        document.addEventListener('visibilitychange', __stxFocus);
+      }
+    };
+    onMount(function() { if (options.immediate !== false) setupRefresh(); });
+    if (typeof onDestroy === 'function') onDestroy(abort);
 
     return {
       data,
       loading,
       isFetching,
       error,
+      status,
+      statusText,
+      abort,
+      execute: async function() { await fetchData(); setupRefresh(); },
       refetch: fetchData,
       // Convenience getters
       get isLoading() { return loading(); },

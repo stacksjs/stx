@@ -105,30 +105,5 @@ describe('a function URL fetches once', () => {
   })
 })
 
-describe('refetchOnFocus cleans up', () => {
-  // Structural. Driving a full scope teardown through this harness would test
-  // the teardown machinery rather than the pairing, and the pairing is the
-  // defect: the listener was added and never removed, unlike refetchInterval
-  // three lines below it.
-  const runtime = generateSignalsRuntimeDev()
-
-  it('pairs its listener with a removal', () => {
-    const at = runtime.indexOf("addEventListener('visibilitychange'")
-    expect(at).toBeGreaterThan(-1)
-    const near = runtime.slice(at, at + 400)
-    expect(near).toContain("removeEventListener('visibilitychange'")
-  })
-
-  it('registers that removal with onDestroy', () => {
-    const at = runtime.indexOf("addEventListener('visibilitychange'")
-    const near = runtime.slice(at, at + 400)
-    expect(near).toContain('onDestroy(')
-  })
-
-  it('names the handler so it CAN be removed', () => {
-    // An inline anonymous function is unremovable — that was the bug.
-    const at = runtime.indexOf("addEventListener('visibilitychange'")
-    const before = runtime.slice(Math.max(0, at - 300), at)
-    expect(before).toMatch(/var\s+\w+\s*=\s*function/)
-  })
-})
+// Poll/focus cleanup now executes the generated implementation in
+// use-fetch-polling.test.ts rather than inspecting an unrelated listener.

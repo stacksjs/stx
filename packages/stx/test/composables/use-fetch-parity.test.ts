@@ -114,6 +114,9 @@ for (const name of ['composable', 'runtime'] as const) {
       expect(typeof r.loading).toBe('function')
       expect(typeof r.error).toBe('function')
       expect(typeof r.refetch).toBe('function')
+      expect(typeof (r as any).status).toBe('function')
+      expect(typeof (r as any).statusText).toBe('function')
+      expect(typeof (r as any).abort).toBe('function')
     })
 
     it('refetch() resolves data and flips loading true → false', async () => {
