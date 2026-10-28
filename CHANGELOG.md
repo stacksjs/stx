@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.738...v0.2.739)
+
+## 🐛 Bug Fixes
+
+- **native**: declare the binding diagnostic reporter return type ([77d87d6](https://github.com/stacksjs/stx/commit/77d87d6)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.739 ([f6f5aa6](https://github.com/stacksjs/stx/commit/f6f5aa6)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.737...v0.2.738)
 
 ## ✅ Tests
