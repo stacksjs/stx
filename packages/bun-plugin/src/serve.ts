@@ -31,6 +31,8 @@ import { compileDomainRoutes, describeDomainRoutes, requestHost, resolveDomainEl
 import type { DomainRoutesOption } from './domain-routes'
 import { IMAGE_BUILTIN_PATTERN, servedTemplatesUseImageBuiltins } from './image-warmup-scope'
 import type { ImageTemplateScope } from './image-warmup-scope'
+import { createRenderCacheStore } from './render-cache-store'
+import type { RenderInputs, RenderTicket } from './render-cache-store'
 
 export { compileDomainRoutes, describeDomainRoutes, matchDomain, requestHost, resolveDomainElsewhere, resolveDomainRoute } from './domain-routes'
 export type { DomainRoute, DomainRoutesOption } from './domain-routes'
@@ -900,6 +902,23 @@ export interface ServeOptions {
    * intended for source-derived shells whose live data loads on the client.
    */
   renderCacheVary?: 'request' | 'source'
+
+  /**
+   * Keep the render cache on disk, so a restart does not render every page
+   * again (stacksjs/stx#2133). Only with `renderCache` and
+   * `renderCacheVary: 'source'`.
+   *
+   * An entry is used after a restart only while a fingerprint of what its
+   * signature does not cover still matches: every file the watcher reacts to
+   * under the watched roots (pages, components, layouts, partials, public,
+   * stores, composables and `watchDirs`), the lockfiles, package.json, the
+   * `.env` files, the stx and css config files, the installed stx, Bun, and
+   * the serve options. Anything a server script reads from somewhere else
+   * belongs in `watchDirs`, which also keeps the in-memory cache honest.
+   *
+   * Default: `false`.
+   */
+  renderCachePersist?: boolean
 
   /**
    * How many rendered pages the render cache keeps, least recently used
@@ -1821,6 +1840,32 @@ export async function serve(options: ServeOptions): Promise<void> {
   // fast path without weakening HMR.
   const ENABLE_HTML_CACHE = options.renderCache === true
   const RENDER_CACHE_VARY = options.renderCacheVary ?? 'request'
+  // The same entries, kept for the next process; see `renderCachePersist`.
+  const renderCacheStore = ENABLE_HTML_CACHE && RENDER_CACHE_VARY === 'source' && options.renderCachePersist === true
+    ? createRenderCacheStore({ dir: stateDir(process.cwd(), 'render-cache'), inputs: () => renderInputs(), buildId: getBuildId })
+    : null
+
+  /** A render's ticket for the store, taken before it reads anything. */
+  async function renderTicket(reqCtx?: ServeRequestContext): Promise<RenderTicket | undefined> {
+    if (!renderCacheStore || (reqCtx && reqCtx.method !== 'GET' && reqCtx.method !== 'HEAD'))
+      return undefined
+    return renderCacheStore.begin().catch(() => undefined)
+  }
+
+  /** Memory first, then what a previous process kept. */
+  async function readRenderCache(key: string): Promise<HtmlCacheEntry | undefined> {
+    const hit = htmlCache.read(key)
+    if (hit || !renderCacheStore)
+      return hit
+    const kept = await renderCacheStore.read(key).catch(() => undefined)
+    return kept ? htmlCache.remember(key, kept) : undefined
+  }
+
+  function rememberRender(key: string, entry: HtmlCacheEntry, ticket: RenderTicket | undefined): void {
+    htmlCache.remember(key, entry)
+    if (renderCacheStore && ticket)
+      void renderCacheStore.write(key, entry, ticket).catch(() => {})
+  }
   /*
    * Css-generated CSS, keyed by the page's sorted class set. Lives here
    * for the same reason as `htmlCache`: so the watcher can wipe it on a source
@@ -2044,6 +2089,7 @@ function __stxOverlay(errs){
   const watchersStarted = new Map<string, ReturnType<typeof fsWatch>>()
   const clearRenderCaches = () => {
     htmlCache.clear()
+    renderCacheStore?.invalidate()
     cssCssCache.clear()
     resolvedStxModule?.clearDevCaches?.()
     resolvedStxModule?.clearStoreCache?.()
@@ -2202,7 +2248,7 @@ function __stxOverlay(errs){
     ? [nodePath.resolve(stxConfig.root || '.', stxConfig.composablesDir)]
     : ['composables', 'functions'].map(d => nodePath.resolve(stxConfig.root || '.', d))
 
-  for (const dir of [
+  const watchedRoots = [
     componentsDir,
     ...(additionalComponentsDirs ?? []),
     layoutsDir,
@@ -2212,9 +2258,54 @@ function __stxOverlay(errs){
     storesDir,
     ...composableDirs,
     ...(options.watchDirs ?? []),
-  ]) {
-    if (!dir) continue
+  ].filter((dir): dir is string => !!dir)
+  for (const dir of watchedRoots)
     startWatcher(dir)
+
+  /**
+   * What a kept render must still match: the watched roots and the page
+   * roots, which the in-memory cache relies on the watcher for, and what is
+   * fixed for the life of a process. See `renderCachePersist`.
+   */
+  function renderInputs(): RenderInputs {
+    const cwd = process.cwd()
+    const configFiles = ['stx', 'css'].flatMap(name => [
+      `${name}.config.ts`,
+      `${name}.config.js`,
+      `.config/${name}.ts`,
+      `config/${name}.ts`,
+    ])
+    let stxEntry: string | undefined
+    try {
+      stxEntry = Bun.resolveSync('@stacksjs/stx', import.meta.dir)
+    }
+    catch { /* resolved elsewhere; its version still shows in the lockfile */ }
+    return {
+      roots: [...watchedRoots, ...patterns.filter(pattern => !pattern.includes('*'))],
+      files: [
+        ...['package.json', 'bun.lock', 'bun.lockb', 'pantry.lock', '.env', '.env.local', '.env.development', '.env.production', ...configFiles]
+          .map(file => nodePath.join(cwd, file)),
+        import.meta.path,
+        ...(stxEntry ? [stxEntry] : []),
+      ],
+      extra: {
+        bun: Bun.version,
+        production,
+        options: {
+          patterns,
+          root: options.root,
+          componentsDir,
+          additionalComponentsDirs,
+          layoutsDir,
+          fallbackLayoutsDir: options.fallbackLayoutsDir,
+          fallbackComponentsDir: options.fallbackComponentsDir,
+          partialsDir,
+          publicDir,
+          watchDirs: options.watchDirs,
+          domains: options.domains,
+        },
+      },
+    }
   }
 
   // ── Page middleware registry ─────────────────────────────────────────
@@ -3049,6 +3140,7 @@ function __stxOverlay(errs){
   }
 
   async function processTemplate(filePath: string, reqCtx?: ServeRequestContext): Promise<string> {
+    const ticket = await renderTicket(reqCtx)
     const content = await Bun.file(filePath).text()
     if (reqCtx)
       reqCtx.responseStatus = extractPageResponseStatus(content) ?? 200
@@ -3065,7 +3157,7 @@ function __stxOverlay(errs){
     // pay the stat cost once. Query-driven pages opt out entirely.
     if (ENABLE_HTML_CACHE && !skipCacheHint && !isMutating) {
       const cacheKey = htmlCacheKey(filePath, reqCtx)
-      const cachedEntry = htmlCache.read(cacheKey)
+      const cachedEntry = await readRenderCache(cacheKey)
       if (cachedEntry && await templateSignatureFresh(cachedEntry.signature)) {
         // Braced: two statements now, and a brace-less `if` would have run the
         // second unconditionally against a context that may not exist.
@@ -3220,7 +3312,7 @@ function __stxOverlay(errs){
         && placeholdersAreReady
     ) {
       const signature = await buildTemplateSignature(filePath, dependencies)
-      htmlCache.remember(htmlCacheKey(filePath, reqCtx), { html: output, signature, status: reqCtx?.responseStatus ?? 200, headers: reqCtx?.responseHeaders })
+      rememberRender(htmlCacheKey(filePath, reqCtx), { html: output, signature, status: reqCtx?.responseStatus ?? 200, headers: reqCtx?.responseHeaders }, ticket)
     }
 
     return output
@@ -3439,6 +3531,7 @@ function __stxOverlay(errs){
     reqCtx?: ServeRequestContext,
   ): Promise<string> {
 
+    const ticket = await renderTicket(reqCtx)
     const content = await Bun.file(filePath).text()
     if (reqCtx)
       reqCtx.responseStatus = extractPageResponseStatus(content) ?? 200
@@ -3484,7 +3577,7 @@ function __stxOverlay(errs){
     if (reqCtx)
       reqCtx.params = paramsObj
     if (cacheShell) {
-      const cachedEntry = htmlCache.read(filePath)
+      const cachedEntry = await readRenderCache(filePath)
       if (cachedEntry && await templateSignatureFresh(cachedEntry.signature)) {
         if (reqCtx) {
           reqCtx.responseStatus = cachedEntry.status
@@ -3623,7 +3716,7 @@ function __stxOverlay(errs){
           && placeholdersAreReady
       ) {
         const signature = await buildTemplateSignature(filePath, dependencies)
-        htmlCache.remember(filePath, { html: output, signature, status: reqCtx?.responseStatus ?? 200, headers: reqCtx?.responseHeaders })
+        rememberRender(filePath, { html: output, signature, status: reqCtx?.responseStatus ?? 200, headers: reqCtx?.responseHeaders }, ticket)
       }
       return fillRouteParams(output, paramsObj)
     }
