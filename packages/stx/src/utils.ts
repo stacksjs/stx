@@ -846,6 +846,25 @@ export function scopeOnRootElement(html: string, attrs: string): string | null {
  * but deliberately EXCLUDES stx's own built-in components directory — a
  * built-in shipping its own `.stx` file must not count as a user override.
  */
+/**
+ * Whether `dir` is one of the host's `additionalComponentsDirs` or inside one.
+ *
+ * A nested component resolves beside its parent first. When the parent is a
+ * framework component in an additional root, its siblings are framework files
+ * too, and they would beat the app's copy of the same name - the override the
+ * additional roots exist for (stacksjs/stx#2130). Such a parent searches the
+ * configured root first instead; a parent in the app's own tree keeps its
+ * siblings first.
+ */
+function isInsideAdditionalComponentsDir(dir: string | undefined, options: Pick<StxOptions, 'additionalComponentsDirs'>): boolean {
+  if (!dir)
+    return false
+  return (options.additionalComponentsDirs ?? []).some((root) => {
+    const relativeDir = path.relative(path.resolve(root), path.resolve(dir))
+    return !relativeDir.startsWith('..') && !path.isAbsolute(relativeDir)
+  })
+}
+
 export async function userComponentFileExists(
   componentPath: string,
   componentsDir: string,
@@ -886,6 +905,8 @@ export async function userComponentFileExists(
 
   const originalFilePath = parentContext.__originalFilePath as string | undefined
   if (originalFilePath) push(path.join(path.dirname(originalFilePath), 'components'))
+  if (isInsideAdditionalComponentsDir(componentsDir, options))
+    push(options._rootComponentsDir)
   push(componentsDir)
   push(options._rootComponentsDir)
   push(path.join(path.dirname(parentFilePath), 'components'))
@@ -1256,9 +1277,12 @@ export async function renderComponentWithSlot(
         searchDirs.push(originalDir)
       }
 
-      // Then search global componentsDir and parent-relative paths
-      if (componentsDir) searchDirs.push(componentsDir)
+      // Then search global componentsDir and parent-relative paths. A parent
+      // in an additional root yields to the configured root first.
       const rootComponentsDir = options._rootComponentsDir
+      if (typeof rootComponentsDir === 'string' && isInsideAdditionalComponentsDir(componentsDir, options) && !searchDirs.includes(rootComponentsDir))
+        searchDirs.push(rootComponentsDir)
+      if (componentsDir && !searchDirs.includes(componentsDir)) searchDirs.push(componentsDir)
       if (typeof rootComponentsDir === 'string' && !searchDirs.includes(rootComponentsDir))
         searchDirs.push(rootComponentsDir)
       const parentRelative = path.join(path.dirname(parentFilePath), 'components')

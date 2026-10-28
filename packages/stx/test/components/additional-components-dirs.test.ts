@@ -77,6 +77,57 @@ describe('additionalComponentsDirs', () => {
     }
   })
 
+  // The dashboard's real shape: the overridden component is rendered by a
+  // sibling framework component, not by the page. A nested component resolves
+  // beside its parent first, which found the framework's copy before the app's.
+  it("lets the app override a component a framework component renders beside itself", async () => {
+    const root = createTempDir('stx-additional-')
+    try {
+      const app = path.join(root, 'app/components/Dashboard')
+      const framework = path.join(root, 'framework/components/Dashboard')
+      await mkdir(path.join(app, 'Commerce'), { recursive: true })
+      await mkdir(path.join(framework, 'Commerce'), { recursive: true })
+      await mkdir(path.join(root, 'empty'), { recursive: true })
+
+      await writeFile(path.join(framework, 'Commerce/OrdersDashboard.stx'), '<div>DASHBOARD <OrdersTable /></div>')
+      await writeFile(path.join(framework, 'Commerce/OrdersTable.stx'), '<div>FRAMEWORK ORDERS</div>')
+      await writeFile(path.join(app, 'Commerce/OrdersTable.stx'), '<div>APP ORDERS</div>')
+
+      const overridden = await render(root, '<OrdersDashboard />', { componentsDir: app, additionalComponentsDirs: [framework] })
+      expect(overridden).toContain('APP ORDERS')
+      expect(overridden).not.toContain('FRAMEWORK ORDERS')
+
+      // With nothing in the app's directory, the sibling still resolves.
+      const plain = await render(root, '<OrdersDashboard />', { componentsDir: path.join(root, 'empty'), additionalComponentsDirs: [framework] })
+      expect(plain).toContain('FRAMEWORK ORDERS')
+    }
+    finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it("keeps an app component's own sibling ahead of the rest of the app's tree", async () => {
+    const root = createTempDir('stx-additional-')
+    try {
+      const app = path.join(root, 'app/components')
+      const framework = path.join(root, 'framework/components')
+      await mkdir(path.join(app, 'Shop'), { recursive: true })
+      await mkdir(path.join(app, 'Blog'), { recursive: true })
+      await mkdir(framework, { recursive: true })
+
+      await writeFile(path.join(app, 'Shop/Header.stx'), '<div>SHOP <Logo /></div>')
+      await writeFile(path.join(app, 'Shop/Logo.stx'), '<b>SHOP LOGO</b>')
+      await writeFile(path.join(app, 'Blog/Logo.stx'), '<b>BLOG LOGO</b>')
+
+      const output = await render(root, '<Header />', { componentsDir: app, additionalComponentsDirs: [framework] })
+      expect(output).toContain('SHOP LOGO')
+      expect(output).not.toContain('BLOG LOGO')
+    }
+    finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   it('searches the list in the order given', async () => {
     const root = createTempDir('stx-additional-')
     try {
