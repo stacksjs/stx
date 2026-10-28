@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.737...v0.2.738)
+
+## ✅ Tests
+
+- **signals**: verify row helper scope through rendered events ([60de04e](https://github.com/stacksjs/stx/commit/60de04e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.738 ([26d6edd](https://github.com/stacksjs/stx/commit/26d6edd)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.736...v0.2.737)
 
 ## ✨ Features
