@@ -47,6 +47,14 @@ await build({
 })
 ```
 
+## Development component roots
+
+The development server watches `additionalComponentsDirs` automatically, just
+like `componentsDir`, whether configured in `stx.config.ts` or passed to
+`serve()`. Component edits invalidate rendered output and send a fragment HMR
+update. These roots do not need a duplicate `watchDirs` entry. Missing roots
+are tolerated; resolution order and app overrides are unchanged.
+
 ## Usage with ESM
 
 ### 1. Configure Bun to use the plugin

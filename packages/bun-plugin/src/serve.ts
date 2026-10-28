@@ -2172,6 +2172,7 @@ function __stxOverlay(errs){
 
   for (const dir of [
     componentsDir,
+    ...(additionalComponentsDirs ?? []),
     layoutsDir,
     partialsDir,
     publicDir,
