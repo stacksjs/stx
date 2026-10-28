@@ -20,7 +20,7 @@ jobs:
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
       - run: bun install --frozen-lockfile
-      - run: bun test packages/stx/test/native-signing.test.ts
+      - run: bun test packages/stx/test/native-signing.test.ts packages/desktop/test/application-metadata.test.ts
 
   # ── Phase 1+2: core packages (blocking) ─────────────────────────────────
   # Publish order is controlled with staged --skip lists: pantry publishes in

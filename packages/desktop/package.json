@@ -32,6 +32,10 @@
       "types": "./dist/browser.d.ts",
       "import": "./dist/browser.js"
     },
+    "./application-metadata": {
+      "types": "./dist/application-metadata.d.ts",
+      "import": "./dist/application-metadata.js"
+    },
     "./test-utils": {
       "types": "./dist/test-utils.d.ts",
       "import": "./dist/test-utils.js"

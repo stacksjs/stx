@@ -22,6 +22,27 @@ Native desktop application framework for stx powered by craft.
 bun add @stacksjs/desktop
 ```
 
+## Localized application names on macOS
+
+Host processes and compiled Bun backends can read another app's localized name:
+
+```ts
+import { readApplicationMetadata } from '@stacksjs/desktop/application-metadata'
+
+const metadata = readApplicationMetadata('/Applications/Things3.app')
+console.log(metadata?.displayName) // Things, using the user's preferred localization
+```
+
+This host-only entry uses Core Foundation's public bundle APIs. It reads localized
+`CFBundleDisplayName`, falls back to `CFBundleName`, and also returns the bundle
+identifier. A missing or unreadable name returns `null`; the caller can then use
+the bundle filename. Importing on other platforms is safe, while calling the
+macOS-only reader reports an unsupported-platform error. No application code is
+loaded and no external metadata process is started.
+
+Keep this entry in the host or backend. Code inside a Craft window continues to
+import `@stacksjs/desktop/browser`.
+
 ## Requirements
 
 - **craft** - For native window support (linked locally or via npm)

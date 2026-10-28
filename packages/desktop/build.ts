@@ -4,7 +4,7 @@ console.log('Building @stacksjs/desktop...')
 
 const host = await Bun.build({
   splitting: true,
-  entrypoints: ['./src/index.ts', './src/test-utils.ts'],
+  entrypoints: ['./src/index.ts', './src/test-utils.ts', './src/application-metadata.ts'],
   outdir: './dist',
   target: 'bun',
   format: 'esm',
