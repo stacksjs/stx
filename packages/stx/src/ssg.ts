@@ -61,6 +61,7 @@ import { extractPageMetaFromSource } from './page-meta'
 import { resolveSiteUrl, siteUrlFallbackWarning } from './site-url'
 import { generateRobotsTxt } from './seo'
 import { stateDir } from './state-dir'
+import { scanScriptTags } from './signal-processing'
 import { defineStaticPaths, readStaticPaths } from './ssg-static-paths'
 export { defineStaticPaths } from './ssg-static-paths'
 import { injectCss } from './dev-server/ts-css'
@@ -170,7 +171,7 @@ export interface SSGConfig {
   rss?: boolean | RSSConfig
   /** Parallel page generation limit (default: 10) */
   concurrency?: number
-  /** Enable build caching (default: true) */
+  /** Enable build caching for pages without server scripts or data loaders (default: true). */
   cache?: boolean
   /** Cache directory (default: `ssg-cache` inside the state directory) */
   cacheDir?: string
@@ -464,6 +465,22 @@ catch {
     const entry = this.cache.get(route)
     if (!entry) return null
 
+    // Server code can read an API, database or environment without any source
+    // mtime changing. Re-execute it on every build, including in transitive
+    // components/layouts/includes. Inspect the stored dependency list so old
+    // cache entries also refresh automatically (https://github.com/stacksjs/stx/issues/2134).
+    // Keep writing entries: their dependencies tell the next build which
+    // templates it must inspect before deciding whether HTML is reusable.
+    const hasDataLoader = companionDataFiles(filePath).some(file => fs.existsSync(file))
+    const hasServerScript = [filePath, ...entry.dependencies ?? []].some(file =>
+      file.endsWith('.stx') && fs.existsSync(file)
+      && scanScriptTags(fs.readFileSync(file, 'utf8')).some(script => /\bserver\b/.test(script.attrs)),
+    )
+    if (hasDataLoader || hasServerScript) {
+      this.cache.delete(route)
+      return null
+    }
+
     const currentHash = this.getHash(filePath, entry.dependencies ?? [])
     if (entry.hash !== currentHash) {
       this.cache.delete(route)
@@ -617,16 +634,17 @@ else {
  * Load data from a companion .data.ts file
  * e.g., pages/mail/welcome.stx -> pages/mail/welcome.data.ts
  */
-async function loadDataFile(templatePath: string): Promise<Record<string, unknown> | null> {
-  // Try multiple data file patterns
-  const dataFilePatterns = [
+function companionDataFiles(templatePath: string): string[] {
+  return [
     templatePath.replace(/\.stx$/, '.data.ts'),
     templatePath.replace(/\.stx$/, '.data.js'),
     templatePath + '.data.ts',
     templatePath + '.data.js',
   ]
+}
 
-  for (const dataFile of dataFilePatterns) {
+async function loadDataFile(templatePath: string): Promise<Record<string, unknown> | null> {
+  for (const dataFile of companionDataFiles(templatePath)) {
     if (await Bun.file(dataFile).exists()) {
       try {
         // Use dynamic import to load the data file

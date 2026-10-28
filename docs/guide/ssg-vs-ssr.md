@@ -144,6 +144,8 @@ bun run dev
 
 The `ssr` flag only affects `bun run build`. In dev mode, every request re-reads files from disk, re-executes server scripts, and re-renders templates. No caching, no build step.
 
+SSG builds refresh pages with `<script server>` blocks or companion `.data.ts` / `.data.js` loaders on every build, even when the source files are unchanged. This includes server scripts in layouts, includes and nested components: their API or database data can change independently of the template. Unchanged static and client-only pages can reuse the build cache. Deployed SSG files remain static until the next build or regeneration.
+
 ## `<script server>` Works in Both Modes
 
 The `ssr` config flag controls **when** server scripts run, not **whether** they run:
