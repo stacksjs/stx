@@ -56,6 +56,10 @@ describe.each(['ios', 'android'] as const)('shared overlays on %s', (platform) =
     expect(panel.style).toMatchObject({ width: '100%', backgroundColor: '#ffffff', borderTopRightRadius: 10 })
     const wrapper = phone.all().find(node => node.children.includes(panel))!
     expect(wrapper.style.justifyContent).toBe('flex-end')
+    // UIKit moves Modal content into a sheet controller. An absolute-only
+    // content root can measure as empty there; keep a full-size flow box.
+    expect(wrapper.style).toMatchObject({ width: '100%', height: '100%' })
+    expect(wrapper.style.position).not.toBe('absolute')
     const grabber = panel.children[0] as typeof panel
     expect(grabber.style).toMatchObject({ height: 5, width: 36, backgroundColor: '#c6c6c8' })
     const title = phone.find(node => node.type === 'Text' && String(node.children[0]).trim() === 'Delete plan?')!

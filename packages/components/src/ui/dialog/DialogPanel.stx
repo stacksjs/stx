@@ -41,7 +41,9 @@ const grabberClasses = `mx-auto h-1.5 w-10 shrink-0 rounded-pill bg-line sm:hidd
  * system's grabber, and room for the home indicator under its content.
  */
 export const nativeSheet = $props.variant !== 'center'
-export const nativeWrapperClasses = nativeSheet ? 'absolute inset-0 justify-end' : 'absolute inset-0 items-center justify-center p-6'
+// Keep content in flow when UIKit reparents it into its sheet controller.
+// Absolute-only content can measure as empty inside that presentation surface.
+export const nativeWrapperClasses = nativeSheet ? 'w-full h-full justify-end' : 'w-full h-full items-center justify-center p-6'
 export const nativePanelClasses = nativeSheet
   ? `w-full max-h-[92%] rounded-t-[10px] bg-[#ffffff] dark:bg-[#1c1c1e] ${flush ? 'flex-col pb-[34px]' : 'px-5 pt-2 pb-[34px]'} ${className}`.replace(/\s+/g, ' ').trim()
   : `w-full max-w-[400px] rounded-[14px] bg-[#ffffff] dark:bg-[#2c2c2e] ${flush ? 'flex-col' : 'p-5'} ${className}`.replace(/\s+/g, ' ').trim()
