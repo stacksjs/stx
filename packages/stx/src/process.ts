@@ -1986,12 +1986,6 @@ async function processOtherDirectives(
   // Second component pass — catch components introduced by @include (e.g. StxLink in sidebar partials)
   output = await processComponents(output, context, filePath, opts, dependencies)
 
-  // File components compile their reactive client setup into request-scoped
-  // factories. Emit every factory once, before the tiny per-instance calls.
-  // This is the same compile-once, instantiate-many shape used by SFC runtimes.
-  if (context.__stxProcessingDepth === 1)
-    output = injectComponentClientFactories(output, context)
-
   // Strip any `@push(...) ... @endpush` markers that survived past
   // include resolution. The page-level push pass at line 495 ran
   // BEFORE includes were resolved, so push directives inside
@@ -2009,6 +2003,12 @@ async function processOtherDirectives(
   // Process conditionals (@if, @unless, etc.) - AFTER loops to allow loop variables in scope
   output = processConditionals(output, context, filePath)
   output = reportDeferredLoopWarnings(output)
+
+  // A server branch can remove the first component instance. Hoist shared
+  // definitions only after those branches are resolved, or their prelude goes
+  // away with that instance and later live components cannot hydrate.
+  if (context.__stxProcessingDepth === 1)
+    output = injectComponentClientFactories(output, context)
 
   // @status(code) — the page's own HTTP status.
   //

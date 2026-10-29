@@ -447,3 +447,13 @@ describe('data-nav-direction', () => {
     expect(window.document.documentElement.hasAttribute('data-nav-direction')).toBe(false)
   })
 })
+
+
+it('scopes navigation before choosing the request and history URL', async () => {
+  const app = install(page('<p>Home</p>'), () => fragment('<p>Scoped</p>'))
+  app.window.addEventListener('stx:before-navigate', (event: any) => { event.detail.url += '?brand=example' })
+  await app.window.stxRouter.navigate('/b')
+  await sleep(50)
+  expect(app.calls.some(url => url.includes('/b?brand=example'))).toBe(true)
+  expect(app.window.location.search).toBe('?brand=example')
+})

@@ -48,6 +48,7 @@ beforeEach(() => {
   replaceCalls = []
   routerCalls = []
   g.window = {
+    dispatchEvent: () => true,
     stx,
     location: {
       get href() { return 'http://localhost/current' },
@@ -145,4 +146,11 @@ describe('navigate options', () => {
     expect(replaceCalls).toEqual(['/somewhere'])
     expect(hrefWrites).toEqual([])
   })
+})
+
+// A full document load must preserve the same tenant context as the SPA.
+it('lets the shell scope a full reload before writing its destination', () => {
+  g.window.dispatchEvent = (event: CustomEvent) => { event.detail.url += '?brand=example' }
+  stx.navigate('/staff/setup', { reload: true, replace: true })
+  expect(replaceCalls).toEqual(['/staff/setup?brand=example'])
 })

@@ -22,6 +22,15 @@ decode, including literal entity text such as `&amp;lt;`.
 The parsed payload title takes precedence over the legacy `X-STX-Title`
 header; that header remains the fallback for older fragment responses.
 
+## Navigation destination hook
+
+A tenant shell can preserve its explicit scope before the router selects the
+request, cache key and history URL. Listen for `stx:before-navigate` on the host
+and update `event.detail.url` with a string destination. The hook also runs for
+`navigate(url, { reload: true })` and the no-router fallback. Keep the transform
+idempotent and preserve external destinations and authorization boundaries.
+Remove the listener when its shell is disposed.
+
 ## Router Setup
 
 ### Basic Configuration

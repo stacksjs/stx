@@ -103,6 +103,10 @@ export function navigate(url: string, options?: NavigateOptions | boolean): void
     return
   }
 
+  const destination = { url }
+  window.dispatchEvent(new CustomEvent('stx:before-navigate', { detail: destination }))
+  if (typeof destination.url === 'string') url = destination.url
+
   if (opts.replace)
     window.location.replace(url)
   else

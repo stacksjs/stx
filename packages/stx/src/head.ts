@@ -243,13 +243,25 @@ export function useHead(config: HeadConfig): void {
 /**
  * Merge two head configs.
  */
+/** A page can replace the application identity without retaining its old metadata. */
+function mergeHeadTags<T>(base: T[] | undefined, override: T[] | undefined, identity: (tag: T) => string | undefined): T[] {
+  const merged = [...(base || [])]
+  for (const tag of override || []) {
+    const key = identity(tag)
+    const index = key ? merged.findIndex(existing => identity(existing) === key) : -1
+    if (index < 0) merged.push(tag)
+    else merged[index] = tag
+  }
+  return merged
+}
+
 export function mergeHeadConfigs(base: HeadConfig, override: HeadConfig): HeadConfig {
   return {
     title: override.title ?? base.title,
     titleTemplate: override.titleTemplate ?? base.titleTemplate,
     base: override.base ?? base.base,
-    meta: [...(base.meta || []), ...(override.meta || [])],
-    link: [...(base.link || []), ...(override.link || [])],
+    meta: mergeHeadTags(base.meta, override.meta, tag => tag.name || tag.property || (tag.httpEquiv ? `http:${tag.httpEquiv}` : undefined)),
+    link: mergeHeadTags(base.link, override.link, tag => ['icon', 'apple-touch-icon', 'canonical'].includes(tag.rel || '') ? [tag.rel, tag.type, tag.media, tag.sizes].join(':') : undefined),
     script: [...(base.script || []), ...(override.script || [])],
     style: [...(base.style || []), ...(override.style || [])],
     htmlAttrs: { ...base.htmlAttrs, ...override.htmlAttrs },

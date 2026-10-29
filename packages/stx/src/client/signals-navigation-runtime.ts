@@ -23,6 +23,9 @@ export const SIGNALS_NAVIGATION_RUNTIME = `  // ================================
       window.stxRouter.navigate(url, routed);
       return;
     }
+    var destination = { url: url };
+    window.dispatchEvent(new CustomEvent('stx:before-navigate', { detail: destination }));
+    if (typeof destination.url === 'string') url = destination.url;
     if (replace) window.location.replace(url);
     else window.location.href = url;
   }

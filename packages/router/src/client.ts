@@ -1365,6 +1365,11 @@ function routerSource(): string {
     return fetch(url,init);
   }
   function navigate(url,pushState,force){
+    // Tenant shells can keep their explicit scope on links and programmatic
+    // navigation before the cache key, request and history entry are chosen.
+    var destination={url:url};
+    window.dispatchEvent(new CustomEvent('stx:before-navigate',{detail:destination}));
+    url=destination.url;
     releaseScrollHold();
     winSnap=undefined;
     var ctx=navCtxNext||{};
