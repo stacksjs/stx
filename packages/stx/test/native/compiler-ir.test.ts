@@ -152,7 +152,7 @@ describe('native class and icon compatibility', () => {
     expect(resolveIconName('glass-water').symbol).toBe('waterbottle')
     expect(resolveIconName('triangle-alert').symbol).toBe('exclamationmark.triangle')
     expect(resolveIconName('heart.fill')).toEqual({ symbol: 'heart.fill', known: true })
-    expect(resolveIconName('i-mdi-home')).toEqual({ symbol: 'circle', iconify: 'i-mdi-home', known: false })
+    expect(resolveIconName('i-mdi-home')).toEqual({ symbol: 'questionmark.square.dashed', iconify: 'i-mdi-home', known: false })
   })
 })
 

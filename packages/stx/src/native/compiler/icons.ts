@@ -8,12 +8,12 @@
  *
  * The table is lucide first, because that is the collection HQ uses. Entries
  * pick the closest symbol in meaning, not in shape: `footprints` is a run, so
- * it is `figure.run`. Anything missing falls back to `circle` and the compiler
+ * it is `figure.run`. Anything missing falls back to a question mark and the compiler
  * says which name it did not know.
  */
 
 /** The symbol drawn for a name the table does not have. */
-export const FALLBACK_SYMBOL = 'circle'
+export const FALLBACK_SYMBOL = 'questionmark.square.dashed'
 
 /** lucide name (without the `i-lucide-` prefix) to SF Symbol name. */
 export const LUCIDE_TO_SF: Record<string, string> = {
@@ -297,6 +297,12 @@ export interface IconResolution {
   known: boolean
 }
 
+/** Semantic native equivalents, keyed by collection so names cannot collide. */
+export const COLLECTION_TO_SF: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  lucide: LUCIDE_TO_SF,
+  hugeicons: { 'workout-run': 'figure.run' },
+}
+
 /**
  * Resolve whatever a screen wrote to an SF Symbol.
  *
@@ -313,13 +319,13 @@ export function resolveIconName(name: string | null | undefined, asSymbol = fals
   const prefixed = /^i-([a-z0-9]+)-(.+)$/.exec(value) ?? /^([a-z0-9]+):(.+)$/.exec(value)
   const collection = prefixed ? prefixed[1] : 'lucide'
   const icon = prefixed ? prefixed[2] : value
-  if (collection === 'lucide') {
-    const symbol = LUCIDE_TO_SF[icon]
-    if (symbol)
-      return { symbol, iconify: `i-lucide-${icon}`, known: true }
-    if (!prefixed && value.includes('.'))
-      return { symbol: value, known: true }
-  }
+  // Only own entries are mappings: names such as `constructor` and
+  // `toString` must not resolve to inherited Object members.
+  const symbols = Object.hasOwn(COLLECTION_TO_SF, collection) ? COLLECTION_TO_SF[collection] : undefined
+  if (symbols && Object.hasOwn(symbols, icon))
+    return { symbol: symbols[icon], iconify: `i-${collection}-${icon}`, known: true }
+  if (!prefixed && value.includes('.'))
+    return { symbol: value, known: true }
   return { symbol: FALLBACK_SYMBOL, iconify: prefixed ? value : `i-lucide-${icon}`, known: false }
 }
 

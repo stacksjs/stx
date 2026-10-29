@@ -78,6 +78,8 @@ interface NodeRecord {
   forwardedStyle?: unknown
   /** Current unsupported classes, bounded by this node's current class list. */
   reportedClasses?: Set<string>
+  /** The current unmapped icon, so style refreshes do not repeat its warning. */
+  reportedIcon?: string
   focused?: boolean
   focusWithin?: boolean
   focusListenersInstalled?: boolean
@@ -746,7 +748,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     }
     record.reportedClasses = unsupported
     if (record.type === 'Icon' && classes.icon) {
-      const icon = resolveIconName(classes.icon)
+      const icon = resolveNodeIcon(id, record, classes.icon)
       record.props.symbol = icon.symbol
       record.props.iconify = icon.iconify
       if (record.materialized) emit({ op: 'updateNode', id, patch: { props: { symbol: record.props.symbol, iconify: icon.iconify } } })
@@ -760,6 +762,15 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       record.props.resizeMode = classes.resizeMode
       if (record.materialized) emit({ op: 'updateNode', id, patch: { props: { resizeMode: classes.resizeMode } } })
     }
+  }
+
+  function resolveNodeIcon(id: string, record: NodeRecord, name: string) {
+    const icon = resolveIconName(name)
+    const unknown = !icon.known && name.trim() ? name : undefined
+    if (unknown && record.reportedIcon !== unknown)
+      console.warn(`[STX Native] unknown-icon: ${id}: ${unknown}; no native symbol mapping; using ${icon.symbol}. Use an explicit Icon symbol or add a collection mapping.`)
+    record.reportedIcon = unknown
+    return icon
   }
 
   /** Every node under this one, read off the parentage the host recorded. */
@@ -1080,7 +1091,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       if (prop === 'disabled' && wasDisabled !== disabled(record)) applyClasses(node.__stxId, record, true)
       else if (NATIVE_STATE_VARIANTS.has(prop)) applyClasses(node.__stxId, record, true)
       if (record.type === 'Icon' && prop === 'name') {
-        const icon = resolveIconName(String(value ?? ''))
+        const icon = resolveNodeIcon(node.__stxId, record, String(value ?? ''))
         this.setAttribute(node, 'iconify', icon.iconify ?? null)
         this.setAttribute(node, 'symbol', icon.symbol)
       }

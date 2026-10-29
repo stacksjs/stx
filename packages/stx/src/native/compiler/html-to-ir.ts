@@ -56,6 +56,8 @@ export type TranslationDiagnosticKind =
   | 'unknown-style'
   /** A static utility class has no native style translation. */
   | 'unknown-class'
+  /** An Iconify name has no native symbol mapping. */
+  | 'unknown-icon'
   /** A value the IR's field cannot hold, so emitting it would brick the screen. */
   | 'non-numeric-style'
   /** A legacy virtual-list prop has no meaning in the shared-runtime tree. */
@@ -639,7 +641,10 @@ export async function translateHtmlToIR(
     }
     if (type === 'Icon') {
       const icon = compileClassStyles(classes).icon
-      const resolved = resolveIconName(String(props.symbol || props.name || icon || ''), Boolean(props.symbol))
+      const name = String(props.symbol || props.name || icon || '')
+      const resolved = resolveIconName(name, Boolean(props.symbol))
+      if (name.trim() && !resolved.known)
+        diagnostics.push({ kind: 'unknown-icon', tag, name })
       props.symbol = resolved.symbol
       if (resolved.iconify) props.iconify = resolved.iconify
     }
