@@ -52,13 +52,45 @@ export const SIGNALS_HOST_RUNTIME = `  // ── Host ──
       if (replaceBinding) {
         var next = Object.create(null);
         var priorities = Object.create(null);
+        var pendingShorthands = Object.create(null);
         if (typeof value === 'string') {
           var parsed = document.createElement('div').style;
           parsed.cssText = value;
           for (var i = 0; i < parsed.length; i++) {
             var property = parsed.item(i);
-            next[property] = parsed.getPropertyValue(property);
+            var declaration = parsed.getPropertyValue(property);
+            if (!declaration) continue;
+            next[property] = declaration;
             priorities[property] = parsed.getPropertyPriority(property);
+          }
+          // CSSOM enumerates longhands, but their values are empty when a
+          // shorthand contains var()/env(). Keep the authored declaration in
+          // that case. Scan the browser's normalized cssText, respecting quoted
+          // strings and nested tokens (custom properties may contain semicolons).
+          var css = parsed.cssText, start = 0, quote = '', depth = 0, name = '';
+          for (var c = 0; c <= css.length; c++) {
+            var ch = css[c] || ';';
+            if (quote) {
+              if (ch === String.fromCharCode(92)) c++;
+              else if (ch === quote) quote = '';
+              continue;
+            }
+            if (ch === '"' || ch === "'") { quote = ch; continue; }
+            if (ch === '(' || ch === '[' || ch === '{') { depth++; continue; }
+            if (ch === ')' || ch === ']' || ch === '}') { depth--; continue; }
+            if (depth) continue;
+            if (ch === ':' && !name) name = css.slice(start, c).trim();
+            if (ch !== ';') continue;
+            if (name && !Object.prototype.hasOwnProperty.call(next, name)) {
+              var authored = parsed.getPropertyValue(name);
+              if (authored) {
+                next[name] = authored;
+                priorities[name] = parsed.getPropertyPriority(name);
+                pendingShorthands[name] = true;
+              }
+            }
+            start = c + 1;
+            name = '';
           }
         }
         else if (value && typeof value === 'object' && !Array.isArray(value)) {
@@ -74,6 +106,9 @@ export const SIGNALS_HOST_RUNTIME = `  // ── Host ──
           var prior = baseline[name];
           if (prior.value) node.style.setProperty(name, prior.value, prior.priority);
           else node.style.removeProperty(name);
+          if (prior.overlaps) prior.overlaps.forEach(function(item) {
+            node.style.setProperty(item.name, item.value, item.priority);
+          });
           if (name === 'display') node.__stx_display = prior.value;
           delete baseline[name];
         });
@@ -83,6 +118,20 @@ export const SIGNALS_HOST_RUNTIME = `  // ── Host ──
               value: name === 'display' && node.__stx_visible === false ? node.__stx_display || '' : node.style.getPropertyValue(name),
               priority: node.style.getPropertyPriority(name)
             };
+            // A variable-valued shorthand may replace distinct original
+            // longhands, including !important ones. Restore those declarations
+            // when this binding releases the shorthand.
+            if (pendingShorthands[name] && !baseline[name].value) {
+              var affected = document.createElement('div').style;
+              affected.setProperty(name, 'initial');
+              var overlaps = [];
+              for (var n = 0; n < affected.length; n++) {
+                var key = affected.item(n);
+                var previous = node.style.getPropertyValue(key);
+                if (previous) overlaps.push({ name: key, value: previous, priority: node.style.getPropertyPriority(key) });
+              }
+              baseline[name].overlaps = overlaps;
+            }
           }
           node.style.setProperty(name, next[name], priorities[name] || '');
           if (name === 'display') node.__stx_display = next[name];
