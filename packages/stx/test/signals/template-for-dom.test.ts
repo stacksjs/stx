@@ -389,6 +389,47 @@ describe('template for DOM binding', () => {
     expect(selected()).toBe(3)
   })
 
+  it('runs every script block of a cloned component against its same row scope', async () => {
+    const rows = window.stx.state([{ id: 1, title: 'Run' }, { id: 2, title: 'Strength' }])
+    window.__stx_setup_multiblock_rows = () => ({ rows })
+    document.body.innerHTML = `
+      <main data-stx="__stx_setup_multiblock_rows">
+        <article :for="row in rows" :key="row.id">
+          <section data-stx-scope="multi_block_card" data-stx-parent-bindings="card" :card="row">
+            <span :text="card()?.title"></span>
+            <button @click="count.update(n => n + 1)" :text="String(count())"></button>
+          </section>
+          <script data-stx-scoped>
+            window.stx._scopes.multi_block_card = window.stx._scopes.multi_block_card || {};
+            window.stx._scopes.multi_block_card.propsBlock = true;
+          </script>
+          <script data-stx-scoped>
+            var root = window.__STX_SETUP_ROOT__ || document.querySelector('[data-stx-scope="multi_block_card"]');
+            window.__STX_CURRENT_ELEMENT__ = root;
+            var scope = window.stx._scopes.multi_block_card = window.stx._scopes.multi_block_card || {};
+            scope.card = window.stx.useReactiveProp('card', null);
+            scope.count = window.stx.state(0);
+            scope.__mountCallbacks = [];
+            scope.__destroyCallbacks = [];
+            window.__STX_CURRENT_ELEMENT__ = null;
+          </script>
+        </article>
+      </main>`
+    shimAttributes(document.body)
+    document.dispatchEvent(new window.Event('DOMContentLoaded'))
+    await new Promise(resolve => setTimeout(resolve, 20))
+    const cards = [...document.querySelectorAll('article section')]
+    expect(cards.map(card => card.querySelector('span')?.textContent)).toEqual(['Run', 'Strength'])
+    for (const card of cards)
+      expect(window.stx._scopes[card.getAttribute('data-stx-scope')].propsBlock).toBeTrue()
+    cards[1].querySelector('button').dispatchEvent(new window.Event('click', { bubbles: true }))
+    expect(cards.map(card => card.querySelector('button')?.textContent)).toEqual(['0', '1'])
+    rows.set([{ id: 2, title: 'Updated strength' }])
+    await new Promise(resolve => setTimeout(resolve, 20))
+    expect(document.querySelector('article section span')?.textContent).toBe('Updated strength')
+    expect(document.querySelector('article section button')?.textContent).toBe('1')
+  })
+
   it('binds a nested signal component prop from an element loop item', async () => {
     const deployments = window.stx.state([])
     const loading = window.stx.state(true)

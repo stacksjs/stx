@@ -9,6 +9,11 @@ export const SIGNALS_COMPONENT_HYDRATION_RUNTIME = `  /*
     var originalScopeId = root.getAttribute('data-stx-template-scope') || scopeId;
     if (!scopeId || !originalScopeId) return;
 
+    // A component can have separate props and client script blocks. Each
+    // compiled block shares its instance scope, including when the loop has
+    // remapped that scope id. Reuse the clone's scope before the next block.
+    if (originalScopeId !== scopeId && window.stx._scopes && window.stx._scopes[scopeId])
+      window.stx._scopes[originalScopeId] = window.stx._scopes[scopeId];
     root.setAttribute('data-stx-scope', originalScopeId);
     // The setup finds its root by id, which a detached clone cannot answer
     // to: rows a :for builds inside a component's closed :if are set up
@@ -72,6 +77,7 @@ export const SIGNALS_COMPONENT_HYDRATION_RUNTIME = `  /*
     // every loop instance. Temporarily restoring the template's original scope
     // id lets existing compiled setup code locate the correct root without
     // rewriting and reparsing the full script for every row.
+    var setupRoots = new Set();
     scripts.forEach(function(old) {
       var text = old.textContent || '';
       var pendingRoots = roots.filter(function(root) {
@@ -81,7 +87,7 @@ export const SIGNALS_COMPONENT_HYDRATION_RUNTIME = `  /*
           && originalScopeId
           && text.indexOf(originalScopeId) !== -1
           && !hasPendingStructuralAncestor(root)
-          && !(window.stx._scopes && window.stx._scopes[scopeId]);
+          && (!(window.stx._scopes && window.stx._scopes[scopeId]) || setupRoots.has(root));
       });
       if (!pendingRoots.length) return;
 
@@ -97,7 +103,7 @@ export const SIGNALS_COMPONENT_HYDRATION_RUNTIME = `  /*
         }
       }
 
-      pendingRoots.forEach(function(root) { runClonedComponentSetup(setup, root); });
+      pendingRoots.forEach(function(root) { setupRoots.add(root); runClonedComponentSetup(setup, root); });
 
       // A component that is itself a structural source still needs its setup
       // sibling when bindFor/bindIf turns that source into a clone template.
