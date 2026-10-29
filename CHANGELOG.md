@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.740...v0.2.741)
+
+## 🐛 Bug Fixes
+
+- hydrate every script block of cloned components ([444e6fc](https://github.com/stacksjs/stx/commit/444e6fc)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.741 ([d767c13](https://github.com/stacksjs/stx/commit/d767c13)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.739...v0.2.740)
 
 ## 🐛 Bug Fixes
