@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.745...v0.2.746)
+
+## 🐛 Bug Fixes
+
+- **serve**: bound concurrent page rendering and queued work ([8aaba3d](https://github.com/stacksjs/stx/commit/8aaba3d)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ⚡ Performance Improvements
+
+- **evaluator**: remember dangerous-key verdicts, and sort parameters by code unit ([1651895](https://github.com/stacksjs/stx/commit/1651895)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#3035](https://github.com/stacksjs/stx/issues/3035), [#3035](https://github.com/stacksjs/stx/issues/3035))
+
+## 🔧 Chores
+
+- release v0.2.746 ([3d3e72d](https://github.com/stacksjs/stx/commit/3d3e72d)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.744...v0.2.745)
 
 ## 🐛 Bug Fixes
