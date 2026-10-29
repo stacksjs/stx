@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.741...v0.2.742)
+
+## 🐛 Bug Fixes
+
+- retain variable-valued CSS shorthands during hydration ([b87c914](https://github.com/stacksjs/stx/commit/b87c914)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.742 ([2af371a](https://github.com/stacksjs/stx/commit/2af371a)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.740...v0.2.741)
 
 ## 🐛 Bug Fixes
