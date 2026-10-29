@@ -589,6 +589,30 @@ export function sanitizeExpression(expression: string): string {
  */
 export const SANITIZE_CACHE: unique symbol = Symbol('stx.sanitizeCache')
 
+/**
+ * Whether a context key names something templates must not see.
+ *
+ * Asked of every key in the context on every `@if`, and the answer for a key
+ * never changes: the patterns are constants without the `g` flag, so `test`
+ * keeps no state. Working it out once per key took the regex scans out of a
+ * condition's cost, which they had been the largest part of on component-dense
+ * pages (stacksjs/stacks#3035). The key space is template-derived, so the
+ * limit is a runaway guard, cleared wholesale like the compile cache.
+ */
+const DANGEROUS_KEY_LIMIT = 4000
+const dangerousKeyVerdicts = new Map<string, boolean>()
+
+function isDangerousContextKey(key: string): boolean {
+  let verdict = dangerousKeyVerdicts.get(key)
+  if (verdict === undefined) {
+    verdict = DANGEROUS_PATTERNS.some(pattern => pattern.test(key))
+    if (dangerousKeyVerdicts.size >= DANGEROUS_KEY_LIMIT)
+      dangerousKeyVerdicts.clear()
+    dangerousKeyVerdicts.set(key, verdict)
+  }
+  return verdict
+}
+
 export function createSafeContext(context: Record<string, unknown>): Record<string, unknown> {
   const safeContext: Record<string, unknown> = {}
   const cache = (context as Record<symbol, unknown>)[SANITIZE_CACHE] as WeakMap<object, unknown> | undefined
@@ -613,7 +637,7 @@ export function createSafeContext(context: Record<string, unknown>): Record<stri
   for (const [key, value] of Object.entries(context)) {
     // Skip internal stx keys (double underscore) and dangerous keys.
     // Single underscore keys like _id, _name are user variables and should be kept.
-    if (key.startsWith('__') || DANGEROUS_PATTERNS.some(p => p.test(key))) {
+    if (key.startsWith('__') || isDangerousContextKey(key)) {
       continue
     }
 
@@ -1000,7 +1024,10 @@ export function createSafeFunction(
   // the same bindings in different orders therefore produced separate JSC
   // code objects. Canonicalise the parameter order and project the caller's
   // positional values back onto it so equivalent scopes share one compile.
-  validEntries.sort((a, b) => a.key.localeCompare(b.key))
+  // By code unit rather than localeCompare: the order only has to be
+  // canonical, keys are unique, and a locale-aware compare per pair was most
+  // of this function's cost on wide component contexts (stacksjs/stacks#3035).
+  validEntries.sort((a, b) => (a.key < b.key ? -1 : 1))
   const filteredKeys = validEntries.map(entry => entry.key)
   const validIndices = validEntries.map(entry => entry.index)
 
