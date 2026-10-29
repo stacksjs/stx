@@ -1,5 +1,16 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.746...v0.2.747)
+
+## 🐛 Bug Fixes
+
+- Resolve native icons by collection, including Hugeicons workout-run; report unmapped static, reactive and layout-chrome icons and use a visible question-mark fallback ([2a8dcd7780](https://github.com/stacksjs/stx/commit/2a8dcd7780), [a11ce4930a](https://github.com/stacksjs/stx/commit/a11ce4930a)).
+- Keep native DialogPanel content in flow when presented in a system sheet, preserving its interactive children, alignment and existing web markup ([575fc90bea](https://github.com/stacksjs/stx/commit/575fc90bea)).
+
+## 🧪 Tests
+
+- Add same-source shared-control density, appearance and retained-identity checks, with maintained iOS acceptance in light and dark appearance ([7b3749e82e](https://github.com/stacksjs/stx/commit/7b3749e82e)).
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.745...v0.2.746)
 
 ## 🐛 Bug Fixes
