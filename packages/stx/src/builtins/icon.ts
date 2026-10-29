@@ -18,7 +18,37 @@ import type { BuiltinComponentDef, ResolvedProps, RenderContext } from '../compo
 import { escapeAttr } from './escape'
 import { existsSync, readFileSync } from 'node:fs'
 
-type IconCollection = Record<string, { body: string, width?: number, height?: number }>
+interface IconEntry { body: string, width?: number, height?: number }
+
+/**
+ * An Iconify alias: a second name for an icon, optionally flipped or rotated.
+ * Collections rename icons this way rather than deleting the old name, so an
+ * alias is a perfectly ordinary thing for a template to ask for.
+ */
+interface IconAlias { parent: string, hFlip?: boolean, vFlip?: boolean, rotate?: number }
+
+/**
+ * A collection as its `icons.json` is actually shaped.
+ *
+ * Only `icons` used to be kept, which threw away the other two things the file
+ * says. `aliases` is how a collection records a rename — lucide has 220 of
+ * them, `trash-2` among them — and dropping it meant those names resolved to
+ * nothing: an HTML comment where the glyph should be, so the button was still
+ * there and still clickable and simply invisible. The top-level `width` and
+ * `height` are the collection's own default size, which most icons rely on
+ * rather than repeating per icon; assuming 24 instead draws, say, Framework7's
+ * 56-unit artwork into a 24-unit viewBox, cropping every one of its icons to
+ * roughly its top-left corner.
+ */
+interface IconCollection {
+  icons: Record<string, IconEntry>
+  aliases?: Record<string, IconAlias>
+  width?: number
+  height?: number
+}
+
+/** An icon ready to draw: body, and the viewBox it is drawn in. */
+interface ResolvedIcon { body: string, width: number, height: number }
 
 // Cache loaded icon collections to avoid re-reading JSON files
 const collectionCache = new Map<string, IconCollection>()
@@ -99,9 +129,9 @@ function loadCollectionSync(prefix: string): IconCollection | null {
   }
 
   try {
-    const data = JSON.parse(readFileSync(jsonPath, 'utf8'))
-    collectionCache.set(prefix, data.icons)
-    return data.icons
+    const data = JSON.parse(readFileSync(jsonPath, 'utf8')) as IconCollection
+    collectionCache.set(prefix, data)
+    return data
   }
   catch {
     return null
@@ -130,13 +160,59 @@ async function loadCollection(prefix: string, speculative = false): Promise<Icon
   }
 
   try {
-    const data = await Bun.file(jsonPath).json()
-    collectionCache.set(prefix, data.icons)
-    return data.icons
+    const data = await Bun.file(jsonPath).json() as IconCollection
+    collectionCache.set(prefix, data)
+    return data
   }
   catch {
     return null
   }
+}
+
+/**
+ * Wrap a body in the flip or rotation an alias asked for.
+ *
+ * Iconify expresses these as properties on the alias rather than in the path
+ * data, so a renderer that follows the parent and stops has drawn the icon
+ * pointing the wrong way — which looks deliberate, and so is worse than
+ * drawing nothing. No collection shipped with stx uses one today; the format
+ * allows them and other collections do.
+ */
+function applyTransform(body: string, flip: { hFlip: boolean, vFlip: boolean, rotate: number }, width: number, height: number): string {
+  const parts: string[] = []
+  if (flip.rotate) parts.push(`rotate(${flip.rotate * 90} ${width / 2} ${height / 2})`)
+  if (flip.hFlip) parts.push(`translate(${width} 0) scale(-1 1)`)
+  if (flip.vFlip) parts.push(`translate(0 ${height}) scale(1 -1)`)
+  return parts.length ? `<g transform="${parts.join(' ')}">${body}</g>` : body
+}
+
+/**
+ * Find an icon by the name a template wrote, following aliases.
+ *
+ * The size comes from the icon when it states one and from the collection's
+ * default otherwise, which is the order Iconify itself resolves in.
+ */
+export function lookupIcon(collection: IconCollection, name: string): ResolvedIcon | null {
+  let current = name
+  let entry = collection.icons[current]
+  const flip = { hFlip: false, vFlip: false, rotate: 0 }
+
+  // An alias may name another alias. The hop limit is for a malformed
+  // collection that points a name at itself, not for any real one.
+  for (let hop = 0; !entry && hop < 8; hop++) {
+    const alias = collection.aliases?.[current]
+    if (!alias) return null
+    if (alias.hFlip) flip.hFlip = !flip.hFlip
+    if (alias.vFlip) flip.vFlip = !flip.vFlip
+    if (alias.rotate) flip.rotate = ((flip.rotate + alias.rotate) % 4 + 4) % 4
+    current = alias.parent
+    entry = collection.icons[current]
+  }
+  if (!entry) return null
+
+  const width = entry.width ?? collection.width ?? 24
+  const height = entry.height ?? collection.height ?? 24
+  return { body: applyTransform(entry.body, flip, width, height), width, height }
 }
 
 /**
@@ -183,19 +259,17 @@ export const IconBuiltin: BuiltinComponentDef = {
     // surrounding wrapper div (typically a colored circle) without
     // anything inside it. Sync read on first miss keeps the render
     // self-healing.
-    const icons = collectionCache.get(collection) ?? loadCollectionSync(collection)
-    if (!icons) {
+    const data = collectionCache.get(collection) ?? loadCollectionSync(collection)
+    if (!data) {
       return `<!-- Icon: collection "${collection}" not loaded -->`
     }
 
-    const iconData = icons[iconName]
+    const iconData = lookupIcon(data, iconName)
     if (!iconData) {
       return `<!-- Icon: "${iconName}" not found in ${collection} -->`
     }
 
-    const width = iconData.width || 24
-    const height = iconData.height || 24
-    const viewBox = `0 0 ${width} ${height}`
+    const viewBox = `0 0 ${iconData.width} ${iconData.height}`
 
     // Replace currentColor if custom color specified
     let body = iconData.body
