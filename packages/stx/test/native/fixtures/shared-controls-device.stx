@@ -3,13 +3,24 @@
      harness through CRAFT_NATIVE_RENDER_BUNDLE. No copied native implementation. --}}
 @import('Button', '../../../../components/src/ui/button/Button.stx')
 @import('TextInput', '../../../../components/src/ui/input/TextInput.stx')
+@import('Card', '../../../../components/src/ui/card/Card.stx')
 <script client>
 const count = state(0)
 const name = state('')
+const compact = state(false)
 </script>
-<section class="p-4 gap-4 bg-white dark:bg-black text-black dark:text-white">
+<style>
+:root { --stx-panel: #f8fafc; }
+.dark { --stx-panel: #172554; }
+</style>
+<section class="p-4 gap-4 bg-white dark:bg-black text-black dark:text-white" :style="compact ? { '--stx-control-px': '8px', '--stx-radius-panel': '4px' } : { '--stx-control-px': '24px', '--stx-radius-panel': '16px' }">
   <span testID="count" :text="'Count: ' + count()"></span>
-  <Button testID="increment" @click="count.set(count() + 1)">Increment</Button>
-  <TextInput testID="name-input" placeholder="Type your name" v-model:value="name" />
+  <Button testID="increment" data-testid="increment" @click="count.set(count() + 1)">Increment</Button>
+  <TextInput testID="name-input" data-testid="name-input" placeholder="Type your name" v-model:value="name" />
   <span testID="name" :text="'Hello ' + name()"></span>
+  <Card testID="token-card" data-testid="token-card" padding="none" className="w-full px-control-x">
+    <span testID="token-content">Density sample</span>
+  </Card>
+  <Button testID="density-toggle" data-testid="density-toggle" @click="compact.set(!compact())">Toggle density</Button>
+  <span testID="density" :text="compact ? 'Density: compact' : 'Density: comfortable'"></span>
 </section>

@@ -14,11 +14,13 @@ const { values } = parseArgs({ options: {
   appearance: { type: 'string', default: 'dark' },
   suite: { type: 'string', default: 'overlays' },
 } })
-if (!values['craft-root'] || !values.simulator || !['light', 'dark'].includes(values.appearance!) || !['overlays', 'hud'].includes(values.suite!))
-  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|hud]')
+if (!values['craft-root'] || !values.simulator || !['light', 'dark'].includes(values.appearance!) || !['overlays', 'controls', 'hud'].includes(values.suite!))
+  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|controls|hud]')
 const suite = values.suite === 'hud'
   ? { source: 'native-hud-device.stx', tests: 'NativeHudUITests', count: 1 }
-  : { source: 'shared-overlays-device.stx', tests: 'SharedPortabilityUITests', count: 4 }
+  : values.suite === 'controls'
+    ? { source: 'shared-controls-device.stx', tests: 'SharedControlsUITests', count: 2 }
+    : { source: 'shared-overlays-device.stx', tests: 'SharedPortabilityUITests', count: 4 }
 
 function run(command: string[], cwd?: string, capture = false, allowFailure = false): string {
   const result = Bun.spawnSync(command, { cwd, stdout: capture ? 'pipe' : 'inherit', stderr: 'inherit' })
