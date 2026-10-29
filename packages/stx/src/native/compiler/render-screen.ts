@@ -150,7 +150,10 @@ export async function compileScreenSource(
   )
   // The layout's chrome is the app's own on a phone: left out of the tree,
   // its links kept for the tab and navigation bars (layout-chrome.ts).
-  const { html: content, chrome } = await extractLayoutChrome(await excludeNativeSubtrees(renderedHtml))
+  const chromeDiagnostics: TranslationDiagnostic[] = []
+  const { html: content, chrome } = await extractLayoutChrome(await excludeNativeSubtrees(renderedHtml), name => {
+    chromeDiagnostics.push({ kind: 'unknown-icon', tag: 'data-native-chrome', name })
+  })
   const { html, manifest } = extractBindingManifest(await excludeNativeSubtrees(content))
 
   // The app's answers for the role tokens, which the web gets from the page
@@ -162,6 +165,7 @@ export async function compileScreenSource(
     // carries the signals runtime and the router, which are not the screen's.
     script: extractClientScript(source),
   })
+  diagnostics.unshift(...chromeDiagnostics)
 
   enterTemplatedBindings(document.root, manifest)
 

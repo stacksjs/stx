@@ -53,8 +53,9 @@ function regionKind(value: string | null): string {
  * The SF Symbol for an icon a link names: an Iconify name (`i-lucide-house`,
  * or a bare lucide name the table knows), else the symbol as written (`tray`).
  */
-function chromeSymbol(icon: string): string {
+function chromeSymbol(icon: string, onUnknownIcon?: (name: string) => void): string {
   const resolved = resolveIconName(icon)
+  if (!resolved.known && /^i-|:/.test(icon)) onUnknownIcon?.(icon)
   return resolved.known || /^i-|:/.test(icon) ? resolved.symbol : icon
 }
 
@@ -82,7 +83,7 @@ function readable(text: string): string {
  * Take the chrome out of a rendered page: the page without it, and its links.
  * `chrome` is null when the page marks none.
  */
-export async function extractLayoutChrome(html: string): Promise<{ html: string, chrome: NativeLayoutChrome | null }> {
+export async function extractLayoutChrome(html: string, onUnknownIcon?: (name: string) => void): Promise<{ html: string, chrome: NativeLayoutChrome | null }> {
   if (!/\bdata-native-chrome\b/i.test(html)) return { html, chrome: null }
 
   const regions: string[] = []
@@ -157,7 +158,7 @@ export async function extractLayoutChrome(html: string): Promise<{ html: string,
           title: '',
           region,
           label: element.getAttribute('aria-label') || element.getAttribute('title') || '',
-          ...(icon ? { symbol: chromeSymbol(icon) } : {}),
+          ...(icon ? { symbol: chromeSymbol(icon, onUnknownIcon) } : {}),
         }
         open = item
         element.onEndTag(() => {
@@ -174,7 +175,7 @@ export async function extractLayoutChrome(html: string): Promise<{ html: string,
       element(element) {
         if (!open || open.symbol) return
         const icon = element.getAttribute('data-native-icon') || iconClassIn(element.getAttribute('class') ?? '')
-        if (icon) open.symbol = chromeSymbol(icon)
+        if (icon) open.symbol = chromeSymbol(icon, onUnknownIcon)
       },
     })
     .transform(new Response(html))

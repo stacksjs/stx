@@ -47,6 +47,25 @@ test('a page that marks no chrome is left as it is', async () => {
   expect(await extractLayoutChrome(page)).toEqual({ html: page, chrome: null })
 })
 
+test('reports unmapped chrome icons and resolves known collection icons before stripping the chrome', async () => {
+  const unknown: string[] = []
+  const { chrome } = await extractLayoutChrome(`<nav data-native-chrome="tabs">
+    <a href="/run" data-native-icon="hugeicons:workout-run">Run</a>
+    <a href="/unknown" data-native-icon="i-other-workout-run">Unknown</a>
+    <a href="/nested"><i class="i-other-nested"></i>Nested</a>
+    <a href="/native" data-native-icon="tray">Native</a>
+  </nav><main>Content</main>`, name => unknown.push(name))
+  expect(unknown).toEqual(['i-other-workout-run', 'i-other-nested'])
+  expect(chrome?.tabs.map(tab => tab.symbol)).toEqual(['figure.run', 'questionmark.square.dashed', 'questionmark.square.dashed', 'tray'])
+})
+
+test('retains unknown chrome icon diagnostics in the public bundle result', async () => {
+  const root = webApp({ 'views/screen.stx': `<nav data-native-chrome="tabs"><a href="/run" data-native-icon="i-other-workout-run">Run</a></nav><main><p>Content</p></main>` })
+  const result = await compileNativeBundle({ root, screens: { Screen: 'views/screen.stx' } })
+  expect(result.diagnostics).toContainEqual({ level: 'warning', message: 'unknown-icon: data-native-chrome: i-other-workout-run' })
+  expect(result.chrome?.Screen.tabs[0].symbol).toBe('questionmark.square.dashed')
+})
+
 const APP = {
   'partials/app-nav.stx': `<nav data-native-chrome="tabs">
   <a href="/today" data-native-icon="i-lucide-house">Today</a>
