@@ -189,7 +189,7 @@ defineExpose({
 {{-- On a native host a drawer is the phone's sheet: it slides up from the
      bottom edge whichever edge it is given, under a title bar with the close
      button where iOS puts it. --}}
-<div x-ref="rootRef" data-native="Modal" animationType="slide" presentationStyle="pageSheet" :sheetDetents="{{ nativeDetents }}" @if(nativeSelectedDetent)selectedDetent="{{ nativeSelectedDetent }}"@endif data-stx-drawer="{{ drawerInstanceId }}" :show="isOpen()">
+<div x-ref="rootRef" data-native="Modal" animationType="slide" presentationStyle="pageSheet" :sheetDetents="{{ JSON.stringify(nativeDetents) }}" @if(nativeSelectedDetent)selectedDetent="{{ nativeSelectedDetent }}"@endif data-stx-drawer="{{ drawerInstanceId }}" :show="isOpen()">
   <div class="absolute inset-0 bg-[#000000]/40" aria-hidden="true" @click="onBackdropClick()"></div>
   <div class="absolute inset-0 justify-end pt-12">
     <div

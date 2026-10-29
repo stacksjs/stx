@@ -194,7 +194,7 @@ defineExpose({
 
 <div
   data-native="Modal"
-  @if($native)animationType="{{ nativeAnimation }}" presentationStyle="{{ nativePresentation }}" :sheetDetents="{{ nativeDetents }}" @if(nativeSelectedDetent)selectedDetent="{{ nativeSelectedDetent }}"@endif@endif
+  @if($native)animationType="{{ nativeAnimation }}" presentationStyle="{{ nativePresentation }}" :sheetDetents="{{ JSON.stringify(nativeDetents) }}" @if(nativeSelectedDetent)selectedDetent="{{ nativeSelectedDetent }}"@endif@endif
   x-ref="rootRef"
   :show="isOpen()"
   :data-state="isOpen() ? 'open' : 'closed'"

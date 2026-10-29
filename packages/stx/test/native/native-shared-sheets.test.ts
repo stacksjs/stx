@@ -38,11 +38,15 @@ afterEach(unmountAllNativeScreens)
 describe.each(['ios', 'android'] as const)('shared overlays on %s', (platform) => {
   it.each([false, true])('present a dialog as a sheet that slides up (minify=%s)', async (minify) => {
     const { code } = await compileNativeScreen(source, { minify })
-    const phone = mountNativeScreen(code, 'Screen', { platform })
+    const warnings: string[] = []
+    const phone = mountNativeScreen(code, 'Screen', { platform, globals: {
+      console: { ...console, warn: (...args: unknown[]) => warnings.push(args.map(String).join(' ')) },
+    } })
     await phone.settle()
     const modal = phone.byTestID('confirm')!
     expect(modal.type).toBe('Modal')
     expect(modal.props.animationType).toBe('slide')
+    expect(modal.props.sheetDetents).toEqual(['medium', 'large'])
     expect(modal.props.visible).not.toBe(true)
 
     phone.context.probe.confirm.set(true)
@@ -66,6 +70,35 @@ describe.each(['ios', 'android'] as const)('shared overlays on %s', (platform) =
     phone.context.probe.confirm.set(true)
     await phone.settle()
     expect(panel.style.backgroundColor).toBe('#1c1c1e')
+    expect(phone.byTestID('confirm')).toBe(modal)
+    expect(modal.props.sheetDetents).toEqual(['medium', 'large'])
+    expect(warnings.filter(message => message.includes('unknown-binding:'))).toEqual([])
+  })
+
+  it.each([false, true])('preserves explicit detent arrays and empty arrays through reopen (minify=%s)', async (minify) => {
+    const customSource = source
+      .replace('<Dialog testID="confirm"', '<Dialog :sheetDetents="[\'large\']" testID="confirm"')
+      .replace('<Drawer testID="filters"', '<Drawer :sheetDetents="[]" testID="filters"')
+    const { code } = await compileNativeScreen(customSource, { minify })
+    const warnings: string[] = []
+    const phone = mountNativeScreen(code, 'Screen', { platform, globals: {
+      console: { ...console, warn: (...args: unknown[]) => warnings.push(args.map(String).join(' ')) },
+    } })
+    await phone.settle()
+    const dialog = phone.byTestID('confirm')!
+    const drawer = phone.byTestID('filters')!
+    for (const open of [true, false, true]) {
+      phone.context.probe.confirm.set(open)
+      phone.context.probe.filters.set(open)
+      await phone.settle()
+      expect(phone.byTestID('confirm')).toBe(dialog)
+      expect(phone.byTestID('filters')).toBe(drawer)
+      expect(dialog.props.visible).toBe(open)
+      expect(drawer.props.visible).toBe(open)
+      expect(dialog.props.sheetDetents).toEqual(['large'])
+      expect(drawer.props.sheetDetents).toEqual([])
+    }
+    expect(warnings.filter(message => message.includes('unknown-binding:'))).toEqual([])
   })
 
   it('keeps an asked-for centred card and its fade', async () => {
@@ -86,7 +119,7 @@ describe.each(['ios', 'android'] as const)('shared overlays on %s', (platform) =
     phone.context.probe.filters.set(true)
     await phone.settle()
     const modal = phone.byTestID('filters')!
-    expect(modal.props).toMatchObject({ animationType: 'slide', visible: true })
+    expect(modal.props).toMatchObject({ animationType: 'slide', visible: true, sheetDetents: ['medium', 'large'] })
     const sheet = phone.find(node => node.props.accessibilityLabel === 'Filters' && node.style.borderTopLeftRadius === 10)!
     expect(sheet.style.backgroundColor).toBe('#f2f2f7')
     expect(phone.find(node => node.type === 'Text' && node.children[0] === 'Filters')!.style).toMatchObject({ fontSize: 17, fontWeight: '600' })
@@ -107,6 +140,7 @@ describe('shared overlays on the web', () => {
     expect(html).toContain('fixed inset-0')
     expect(html).toContain('slideInRight')
     expect(html).not.toContain('animationType="slide"')
+    expect(html).not.toContain(':sheetDetents=')
     expect(html).not.toContain('#f2f2f7')
   })
 })
