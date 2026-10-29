@@ -89,10 +89,91 @@ Use `--appearance dark` for dark appearance. This runner generates an app with
 `appearance: 'system'` and selects the specified appearance on that simulator.
 It retains its generated project, exact source/bundle hashes, compiler
 diagnostics, Craft/STX revisions, XCTest result bundle and result summary.
-Four tests, all passing with no skips, are required for success. It never
+The overlay suite requires four tests, all passing with no skips. It never
 edits Craft source or boots/shuts down another task's simulator. These XCTest
 checks run explicitly; the ordinary Bun suite runs the fixture's protocol
 regression on both normal and minified bundles.
+
+## Updated shared-controls acceptance: 2026-10-30
+
+`--suite controls` now selects STX's own `SharedControlsUITests` against the
+extended `shared-controls-device.stx` fixture. It imports the actual shared
+Button, TextInput and Card; no alternative implementation is embedded in the
+test app. Run both appearances:
+
+```sh
+bun scripts/native-portability-ios.ts --craft-root /path/to/clean/craft \
+  --simulator "$STX_TEST_SIMULATOR" --appearance light --suite controls
+bun scripts/native-portability-ios.ts --craft-root /path/to/clean/craft \
+  --simulator "$STX_TEST_SIMULATOR" --appearance dark --suite controls
+```
+
+The controls selection requires exactly two passing tests with zero failures
+and skips. The receipt includes the exact source/bundle hashes, revisions,
+appearance, simulator and XCTest summary. The new fixture/test batch is
+`7b3749e82e`, source after v0.2.745; the initial run's provenance records the
+uncommitted fixture batch on top of `a11ce4930a`, before that batch was committed.
+
+Validated with a clean Craft `b49aa1e894198d1b8b5fe7b07a6fa43d2d6d34f6`
+snapshot, Xcode 26.6 and an owned iPhone 17 Pro / iOS 26.5 simulator:
+
+| Check | Result |
+| --- | --- |
+| Light appearance: native input/keyboard and real Card layout | 2 passed, 0 failed/skipped |
+| Dark appearance: same generated app and tests | 2 passed, 0 failed/skipped |
+| Actual web fixture: typing, token updates and retained field/Card identity | 1 passed |
+| Native protocol: iOS/Android, normal/minified | 4 passed |
+
+The keyboard test types `Ada`, taps the shared Button three times, verifies
+each counter update, retains the keyboard and continues typing to `Adaxxx`.
+The density test measures the actual content inset at 24, 8 and 24 points as
+the shared Button changes the Card's inherited control-spacing variable.
+Protocol checks additionally verify radius changes (16/4/16), panel colors
+across live appearance changes and retained native input/Card identity.
+Web checks verify computed padding/radius and retained DOM input/Card identity.
+
+Retained XCTest screenshots were inspected in both appearances: shared labels
+are legible, controls remain distinct, and the Card changes from the light to
+the authored dark panel color. This does not certify host navigation chrome,
+Android device drawing, assistive-technology navigation or unsupported styles.
+Ring/inset/offset and unsupported focus modes continue to produce diagnostics;
+they are not approximated with borders or shadows. Craft source was untouched.
+
+## Updated overlay gate: 2026-10-30
+
+Craft #402 and #403 are closed upstream. The STX acceptance suite was rerun
+against the clean Craft revision above rather than assuming their closure
+made the complete suite pass. Popover clipping/actions/state, tabs and Tooltip
+touch/outside dismissal passed in both light and dark appearance. Before the
+DialogPanel fix, the suite was **3 passed / 1 failed**: opening a nested Dialog
+did not expose its `open-inner` action. An isolated rerun reproduced the failure.
+
+The fixture includes a `dialog-state` label in the failure hierarchy. It
+reads `Dialog taps: 1; open: true`, proving the opening callback and parent
+signal update ran. Existing modal/button assertions remain unchanged. The
+protocol fixture also asserts that marker on opening and closing. At that
+point #2089 remained open: passing the callback assertion alone did not
+establish presentation.
+
+The missing content was then isolated with a temporary raw-Modal probe: both
+overFullScreen and pageSheet displayed an ordinary flow child on the same host.
+Shared DialogPanel used an absolute-only wrapper, which did not produce usable
+content in the sheet. Its native wrapper now uses a full-width/full-height
+normal-flow box, preserving bottom alignment or explicit centered alignment.
+The host can reparent and lay out that content inside its sheet controller.
+Web markup and Craft source are unchanged.
+
+The fix is `575fc90bea`, source after v0.2.745. The new structural assertions
+failed in all four iOS/Android normal/minified
+cases before the change. After it, the sheet/device-fixture/nested-close group
+passes all 27 tests. The unchanged four-test iOS overlay suite now passes in
+both light and dark appearance: **4 passed / 0 failed / 0 skipped per appearance**,
+including actually nested dismissal and Drawer interaction. The dark run reused
+the same generated app/tests with system appearance changed, rather than building
+a second implementation. This supplies maintained iOS evidence for the shared
+overlay contract; Android protocol coverage is not Android device certification.
+
+## Historical overlay failures: 2026-10-22
 
 The first light-appearance device run on Craft `45a33630` passed popup clipping
 escape, real action taps, outside dismissal, state after reopening, and shared

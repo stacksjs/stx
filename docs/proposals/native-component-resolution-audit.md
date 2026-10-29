@@ -1,7 +1,7 @@
 # Shared/native component resolution audit
 
-Audited against v0.2.634 source plus the text-input focus-style work for
-[#2090](https://github.com/stacksjs/stx/issues/2090). This is an acceptance audit
+Updated against v0.2.745 plus the maintained shared-controls acceptance suite
+for [#2090](https://github.com/stacksjs/stx/issues/2090). This is an acceptance audit
 for [#2091](https://github.com/stacksjs/stx/issues/2091), not a claim that every
 component is portable or that device rendering has been certified.
 
@@ -430,11 +430,23 @@ in normal and minified builds.
   `shared-controls-example.test.ts`, and the Button resolution suite.
 - Native physical attribute targeting and compatibility:
   `shared-control-attributes.test.ts`, `control-compatibility.test.ts`.
-- Remaining overlaps: identified and their existing contracts protected, but
-  **not migrated**. Explicitly compiling a shared file is not proof of correct
-  execution; the probes above demonstrate why.
-- Maintained-host visual/accessibility checks: still outstanding. Protocol
-  tests are not VoiceOver, TalkBack, keyboard-modality or pixel-parity evidence.
+- TextInput and Video now have the compatibility selections recorded above;
+  the older claim that every remaining overlap is unmigrated no longer applies.
+  Image retains the native primitive and browser builtin unless explicitly
+  imported. Its migration still needs a decision preserving builtin consumers,
+  native object-position/scale-down support and device validation.
+  The host contract prerequisite is tracked in
+  [Craft #427](https://github.com/craft-native/craft/issues/427); STX continues
+  diagnosing unsupported values and preserving existing source/resizeMode calls.
+- The maintained shared-controls suite now runs the actual Button, TextInput
+  and Card on an iOS host in light and dark appearance. It verifies retained
+  keyboard/value across button updates and measures real Card padding at
+  24/8/24 points as density changes. The same fixture passes a real browser and
+  normal/minified iOS/Android protocol execution, including live radii and
+  appearance changes. See the [device receipt](shared-controls-device-validation.md).
+- This is scoped visual/layout and interaction evidence, not a VoiceOver,
+  TalkBack, keyboard-modality, Android-device or pixel-parity certification.
+  Image resolution and remaining device acceptance continue under #2091.
 
 ## Platform controls (after v0.2.657)
 
