@@ -1,5 +1,15 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.744...v0.2.745)
+
+## 🐛 Bug Fixes
+
+- **icon**: follow aliases, and take a collection's own default size ([4d983a5](https://github.com/stacksjs/stx/commit/4d983a5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.743...v0.2.744)
 
 ## 🐛 Bug Fixes
