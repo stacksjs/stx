@@ -1,5 +1,12 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.743...v0.2.744)
+
+## 🐛 Bug Fixes
+
+- Serialize shared Dialog/Drawer sheet detents as arrays, preserving defaults and explicit empty arrays ([5d96e34839](https://github.com/stacksjs/stx/commit/5d96e34839)).
+- Preserve shared Textarea multiline semantics, newlines and retained field identity; prevent duplicate input events and accidental textarea submits in the browser peer host while retaining legacy TextInput behavior ([783f0b3d3b](https://github.com/stacksjs/stx/commit/783f0b3d3b)).
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.742...v0.2.743)
 
 ## 🐛 Bug Fixes
