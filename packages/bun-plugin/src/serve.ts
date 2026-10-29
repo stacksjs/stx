@@ -32,6 +32,8 @@ import type { DomainRoutesOption } from './domain-routes'
 import { IMAGE_BUILTIN_PATTERN, servedTemplatesUseImageBuiltins } from './image-warmup-scope'
 import type { ImageTemplateScope } from './image-warmup-scope'
 import { createRenderCacheStore } from './render-cache-store'
+import { createRenderAdmission, RenderAdmissionError } from './render-admission'
+import type { RenderAdmissionOptions } from './render-admission'
 import type { RenderInputs, RenderTicket } from './render-cache-store'
 
 export { compileDomainRoutes, describeDomainRoutes, matchDomain, requestHost, resolveDomainElsewhere, resolveDomainRoute } from './domain-routes'
@@ -834,7 +836,7 @@ export function pageExcluder(exclude: readonly string[] | undefined, cwd: string
 /** The Bun server `serve()` started - handed to `onRequest` beside each request. */
 export type ServeServer = ReturnType<typeof bunServe>
 
-export interface ServeOptions {
+export interface ServeOptions extends RenderAdmissionOptions {
   patterns: string[]
   /**
    * Page files to leave out of routing even though a pattern directory holds
@@ -1834,6 +1836,7 @@ export async function serve(options: ServeOptions): Promise<void> {
   // than URL. Concurrent misses must share a completed render, not race to
   // replace the cache with independently evaluated server scripts.
   const pendingShellRenders = new Map<string, Promise<void>>()
+  const renderAdmission = createRenderAdmission(options)
   // Opt-in because generic server scripts may read external state that no
   // filesystem watcher can observe. For applications whose static views are
   // source-derived, the signature and watcher invalidation below provide a
@@ -3140,6 +3143,10 @@ function __stxOverlay(errs){
   }
 
   async function processTemplate(filePath: string, reqCtx?: ServeRequestContext): Promise<string> {
+    return renderAdmission.run(() => renderTemplate(filePath, reqCtx), reqCtx?.request?.signal)
+  }
+
+  async function renderTemplate(filePath: string, reqCtx?: ServeRequestContext): Promise<string> {
     const ticket = await renderTicket(reqCtx)
     const content = await Bun.file(filePath).text()
     if (reqCtx)
@@ -3531,6 +3538,19 @@ function __stxOverlay(errs){
     reqCtx?: ServeRequestContext,
   ): Promise<string> {
 
+    return renderAdmission.run(
+      () => renderTemplateDynamic(filePath, paramNames, paramValues, routePath, reqCtx),
+      reqCtx?.request?.signal,
+    )
+  }
+
+  async function renderTemplateDynamic(
+    filePath: string,
+    paramNames: string[],
+    paramValues: string[],
+    routePath: string,
+    reqCtx?: ServeRequestContext,
+  ): Promise<string> {
     const ticket = await renderTicket(reqCtx)
     const content = await Bun.file(filePath).text()
     if (reqCtx)
@@ -3594,7 +3614,7 @@ function __stxOverlay(errs){
         await pending
         // Re-read source and cache eligibility after waiting: a source edit
         // or a response that could not be cached requires a fresh render.
-        return processTemplateDynamic(filePath, paramNames, paramValues, routePath, reqCtx)
+        return renderTemplateDynamic(filePath, paramNames, paramValues, routePath, reqCtx)
       }
       pendingShellRenders.set(filePath, new Promise<void>((resolve) => { releaseShell = resolve }))
     }
@@ -4067,6 +4087,16 @@ function __stxOverlay(errs){
       // is the API server's own 120.
       idleTimeout: production ? 120 : 0,
       error(error) {
+        if (error instanceof RenderAdmissionError) {
+          return new Response(error.message, {
+            status: error.status,
+            headers: {
+              'Content-Type': 'text/plain; charset=utf-8',
+              'Cache-Control': 'no-store',
+              ...(error.status === 503 && { 'Retry-After': '1' }),
+            },
+          })
+        }
         // Fatal render/validation failures must not fall back to Bun's
         // development error response, which can expose paths and source.
         console.error('[stx] Request failed:', error)
@@ -4541,12 +4571,17 @@ function __stxOverlay(errs){
                       ...(partialsDir && { partialsDir }),
                       autoShell: false,
                     }
-                    const html = await processDirectives(componentTemplate, {}, `${componentsDir}/${componentName}.stx`, componentOpts, new Set())
+                    const html = await renderAdmission.run(
+                      () => processDirectives(componentTemplate, {}, `${componentsDir}/${componentName}.stx`, componentOpts, new Set()),
+                      req.signal,
+                    )
                     return new Response(html, {
                       headers: { 'Content-Type': 'text/html; charset=utf-8', ...corsHeaders },
                     })
                   }
                   catch (e: any) {
+                    if (e instanceof RenderAdmissionError)
+                      throw e
                     return new Response(`<div class="stx-async-error">${e.message}</div>`, {
                       status: 500,
                       headers: { 'Content-Type': 'text/html; charset=utf-8', ...corsHeaders },
