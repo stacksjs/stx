@@ -37,6 +37,23 @@ const html = parseMarkdown('# Hello **world**')
 
 The parser supports GitHub Flavored Markdown (GFM) including tables, task lists, and strikethrough text.
 
+## Page render admission
+
+`bun-plugin-stx/serve` limits each server to four active page renders and 32 waiting requests by default. This bounds overlapping template contexts while server scripts await data. API responses returned by `onRequest` and static assets remain outside the render gate.
+
+```typescript
+import { serve } from 'bun-plugin-stx/serve'
+
+await serve({
+  patterns: ['resources/views'],
+  renderConcurrency: 4,
+  renderQueueLimit: 32,
+  renderQueueTimeoutMs: 15_000,
+})
+```
+
+A full queue or expired wait returns `503` with `Retry-After: 1` and `Cache-Control: no-store`. A disconnected queued request is removed before its script starts. A disconnected active request keeps its slot until its script finishes; otherwise repeated disconnects could create unlimited background work. All three options accept finite integers; concurrency and wait must be positive, and a zero queue limit refuses new renders immediately when busy. Each server owns its own capacity and executes queued scripts with their original request context.
+
 ## Runtime Performance
 
 ### Fast Template Compilation
