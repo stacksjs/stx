@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.742...v0.2.743)
+
+## 🐛 Bug Fixes
+
+- preserve branded workspace navigation and component setup ([00244c3](https://github.com/stacksjs/stx/commit/00244c3)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.743 ([0f31a23](https://github.com/stacksjs/stx/commit/0f31a23)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.741...v0.2.742)
 
 ## 🐛 Bug Fixes
