@@ -217,12 +217,16 @@ export class BrowserScreenRenderer {
       if ((event.target as Element)?.closest('[data-stx-pressable]') !== element && element.hasAttribute('data-stx-pressable')) return
       this.fire(record, 'onPress')
     })
-    listen('input', () => {
+    listen('input', (event) => {
+      // NativeHost delivers logical bubbling. Forward the physical control
+      // once, not again from every ancestor's DOM listener.
+      if (event.target !== element) return
       const input = element as HTMLInputElement
       if (record.type === 'Slider') this.fire(record, 'onValueChange', { value: Number(input.value) })
       else this.fire(record, 'onChangeText', { text: input.value, value: input.value })
     })
-    listen('change', () => {
+    listen('change', (event) => {
+      if (event.target !== element) return
       const input = element as HTMLInputElement
       const value = record.type === 'Switch' || record.type === 'Checkbox' ? input.checked : record.type === 'Slider' ? Number(input.value) : input.value
       this.fire(record, 'onValueChange', { value, text: input.value })
@@ -237,7 +241,8 @@ export class BrowserScreenRenderer {
         this.fire(record, 'onPress')
         return
       }
-      if (key === 'Enter' && !record.props.multiline) this.fire(record, 'onSubmitEditing', { text: (element as HTMLInputElement).value })
+      if (key === 'Enter' && record.type === 'TextInput' && event.target === element && !record.props.multiline)
+        this.fire(record, 'onSubmitEditing', { text: (element as HTMLInputElement).value })
     })
     listen('contextmenu', (event) => { if (record.events.onLongPress) { event.preventDefault(); this.fire(record, 'onLongPress') } })
     listen('pointerdown', () => this.fire(record, 'onPressIn'))

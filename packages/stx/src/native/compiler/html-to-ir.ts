@@ -627,6 +627,10 @@ export async function translateHtmlToIR(
     // host can collect controls and implement submit/reset default actions.
     if (tag === 'form') props['data-stx-form'] = true
     if (tag === 'button' && props.type === undefined) props.type = 'submit'
+    // The shared Textarea emits HTML, not a native primitive. Preserve its
+    // multiline semantics for keyboard returns and the browser peer renderer.
+    // Do not change ordinary inputs or override an explicit native choice.
+    if (tag === 'textarea' && type === 'TextInput') props.multiline ??= true
 
     // HTML media uses src; the native hosts read source.
     if ((type === 'Video' || type === 'Image') && props.source === undefined && props.src !== undefined) {
