@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.747...v0.2.748)
+
+## ⚡ Performance Improvements
+
+- **native**: skip unchanged visibility mutations ([0f60096](https://github.com/stacksjs/stx/commit/0f60096)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.748 ([7d19712](https://github.com/stacksjs/stx/commit/7d19712)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.746...v0.2.747)
 
 ## 🐛 Bug Fixes
