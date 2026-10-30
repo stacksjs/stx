@@ -1,5 +1,29 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.749...v0.2.750)
+
+## ✨ Features
+
+- **desktop**: connect Pantry releases to the native self updater ([2b47c25](https://github.com/stacksjs/stx/commit/2b47c25)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- **desktop**: require the verified release-feed updater SDK ([280de3c](https://github.com/stacksjs/stx/commit/280de3c)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **desktop**: retain local data across distribution changes ([41f4092](https://github.com/stacksjs/stx/commit/41f4092)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- **desktop**: qualify native updater controls on macOS ([ab4ac0d](https://github.com/stacksjs/stx/commit/ab4ac0d)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **desktop**: keep store copies on the App Store update path ([d13d3ba](https://github.com/stacksjs/stx/commit/d13d3ba)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.750 ([343d818](https://github.com/stacksjs/stx/commit/343d818)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.748...v0.2.749)
 
 ## 🐛 Bug Fixes
