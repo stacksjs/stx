@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.754...v0.2.755)
+
+## ✨ Features
+
+- **components**: select shared Image presentation across targets ([d14c583](https://github.com/stacksjs/stx/commit/d14c583)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091))
+- **native**: render Image geometry without changing legacy media identity ([6999c8a](https://github.com/stacksjs/stx/commit/6999c8a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091))
+- **native**: preserve explicit Image fit and position geometry ([5e60fc9](https://github.com/stacksjs/stx/commit/5e60fc9)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091))
+
+## ✅ Tests
+
+- **components**: qualify shared Image loading and intrinsic geometry ([caa08e1](https://github.com/stacksjs/stx/commit/caa08e1)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091))
+- keep slotted handlers with the page runtime in static builds ([007bf83](https://github.com/stacksjs/stx/commit/007bf83)) _(by Chris Breuer <chris@stacksjs.com>)_ ([#2139](https://github.com/stacksjs/stx/issues/2139))
+- qualify pointer policies, worker bundles and static caller slots ([75e437f](https://github.com/stacksjs/stx/commit/75e437f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2137](https://github.com/stacksjs/stx/issues/2137), [#2138](https://github.com/stacksjs/stx/issues/2138), [#2139](https://github.com/stacksjs/stx/issues/2139))
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.753...v0.2.754)
 
 ## 🐛 Bug Fixes
