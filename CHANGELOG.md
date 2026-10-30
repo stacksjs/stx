@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.748...v0.2.749)
+
+## 🐛 Bug Fixes
+
+- **native**: keep centered collection viewports vertically bounded ([c0bd7e8](https://github.com/stacksjs/stx/commit/c0bd7e8)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.749 ([686d9f3](https://github.com/stacksjs/stx/commit/686d9f3)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.747...v0.2.748)
 
 ## ⚡ Performance Improvements
