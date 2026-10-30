@@ -10,6 +10,11 @@ export interface NativeClientScript {
   owner?: string
   /** The module registry: what the screen's other scripts import, bundled. */
   registry?: boolean
+  /**
+   * The stores this script defines, each as a function that defines it, in
+   * order (store-loader.ts): what the routes of one build share is held once.
+   */
+  stores?: string[]
 }
 
 const SCOPED_SCRIPT = /<script\b([^>]*\bdata-stx-scoped\b[^>]*)>([\s\S]*?)<\/script>/gi

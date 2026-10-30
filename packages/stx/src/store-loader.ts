@@ -279,6 +279,48 @@ function assembleStoreScript(chunks: StoreChunk[]): string {
   return isProduction() ? minifyClassicScript(assembled) : assembled
 }
 
+/** The names a built store binds at its top level (not indented: Bun prints them at the start of a line). */
+function topLevelNames(code: string): Set<string> {
+  const names = new Set<string>()
+  for (const match of code.matchAll(/^(?:export\s+)?(?:async\s+)?(?:const|let|var|function\*?|class)\s+([A-Z_a-z$][\w$]*)/gm))
+    names.add(match[1]!)
+  for (const match of code.matchAll(/^(?:const|let|var)\s*[{[]([^=]*)[}\]]\s*=/gm)) {
+    for (const part of (match[1] ?? '').split(',')) {
+      const name = (part.includes(':') ? part.split(':').pop()! : part).replace(/=.*$/s, '').replace(/^\s*\.\.\./, '').trim()
+      if (/^[A-Z_a-z$][\w$]*$/.test(name)) names.add(name)
+    }
+  }
+  return names
+}
+
+/**
+ * Each store as a function of its own (`function() { … }`), which runs it as
+ * the shared script would: with the runtime names it reads bound first. A
+ * screen's stores can then be held once for every screen that defines them
+ * (the native runtime prelude). Null when a store reads a name another one
+ * binds, which only their shared scope gives it.
+ */
+function storeFunctions(chunks: StoreChunk[]): string[] | null {
+  const bound = chunks.map(chunk => topLevelNames(chunk.code))
+  for (const [index, chunk] of chunks.entries()) {
+    for (const [other, names] of bound.entries()) {
+      if (other === index) continue
+      for (const name of names) {
+        if (bound[index]!.has(name) || chunk.declared.has(name)) continue
+        if (new RegExp(`(?<![\\w$.])${name.replace(/\$/g, '\\$')}(?![\\w$])`).test(chunk.code)) return null
+      }
+    }
+  }
+  return chunks.map((chunk, index) => {
+    const own = new Set([...chunk.declared, ...bound[index]!])
+    const bindings = STX_RUNTIME_GLOBALS
+      .filter(name => !own.has(name) && new RegExp(`\\b${name}\\b`).test(chunk.code))
+      .map(name => `var ${name} = __stx[${JSON.stringify(name)}];`)
+      .join('\n')
+    return `function() {\nvar __stx = window.stx || {};\n${bindings}\n${chunk.code}\n}`
+  })
+}
+
 /** The assembled script of every store, kept for as long as the chunks it was built from. */
 const _assembledStoreScripts = new WeakMap<StoreChunks, string>()
 
@@ -336,7 +378,7 @@ export async function getStoreScriptFor(
   storesDir: string | undefined,
   usedBy: Array<string | null | undefined>,
   options: { sharedModules?: boolean } = {},
-): Promise<{ code: string, stores: string[] } | null> {
+): Promise<{ code: string, stores: string[], functions: string[] | null } | null> {
   const built = await loadStoreChunks(storesDir, options.sharedModules)
   if (!built) return null
   const { chunks } = built
@@ -363,7 +405,7 @@ export async function getStoreScriptFor(
     kept = everything ? chunks : chunks.filter(chunk => included.has(chunk))
   }
   if (kept.length === 0) return null
-  return { code: assembleStoreScript(kept), stores: kept.map(chunk => chunk.name) }
+  return { code: assembleStoreScript(kept), stores: kept.map(chunk => chunk.name), functions: storeFunctions(kept) }
 }
 
 /**

@@ -11,7 +11,9 @@
  * Both are functions of the scope they set up (`function (__scopeId) { … }`),
  * called with the scope's id, so the code can live in the runtime once, by its
  * content, and a route call it. What this does not read as one of the two
- * forms stays in the route as it is.
+ * forms stays in the route as it is. A screen's stores are the same: each is
+ * a function that defines it (`NativeClientScript.stores`), and HQ's `auth`
+ * store alone was in 70 of its 74 routes.
  */
 import type { NativeClientScript } from './setup-script'
 
@@ -100,6 +102,8 @@ export function shareComponentScripts(screens: Array<{ name: string, scripts: Na
       const component = componentOf(script)
       if (component)
         count(name, component.body)
+      for (const store of script.stores ?? [])
+        count(name, store)
     }
   }
   const bodies = new Map<string, string>()
@@ -121,6 +125,13 @@ export function shareComponentScripts(screens: Array<{ name: string, scripts: Na
           ...script,
           code: `${FACTORIES_SCRIPT}${own.map(definition => `${definition.text}\n`).join('')}  [${ids}].forEach(function (id) { factories[id] = factories[id] || runtime.components[id]; });\n})();`,
         }
+      }
+      // The stores the screen defines, in order: those other screens define
+      // too run from the runtime, the rest from here.
+      if (script.stores?.some(common)) {
+        for (const store of script.stores.filter(common))
+          bodies.set(keyOf(store), store)
+        return { code: `;(function() {\n${script.stores.map(store => common(store) ? `runtime.components[${JSON.stringify(keyOf(store))}]();` : `(${store})();`).join('\n')}\n})();` }
       }
       const component = componentOf(script)
       if (component && common(component.body)) {

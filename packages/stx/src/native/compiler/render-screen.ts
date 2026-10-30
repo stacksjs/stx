@@ -220,7 +220,7 @@ export async function compileScreenSource(
       if (!stores) break
       if (stores.stores.join() === kept) break
       kept = stores.stores.join()
-      scripts.splice(0, scripts.length, { code: stores.code }, ...own)
+      scripts.splice(0, scripts.length, { code: stores.code, ...(stores.functions ? { stores: stores.functions } : {}) }, ...own)
       for (const file of new Bun.Glob('*.ts').scanSync({ cwd: config.storesDir, absolute: true }))
         dependencies.add(file)
       modules = await registry()

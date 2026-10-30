@@ -16,6 +16,7 @@ import vm from 'node:vm'
 import { compileNativeBundle } from '../../src/native/compiler/bundle'
 import { getStoreScriptFor, storesRead } from '../../src/store-loader'
 import { mountWebView, webApp } from './web-view-app'
+import { mountNativeScreen } from '../../src/native/testing'
 
 const store = (id: string, body = '', extra = ''): string => `import { defineStore, state } from '@stacksjs/stx'
 ${extra}
@@ -60,6 +61,59 @@ describe('the stores a screen carries', () => {
     expect(code).not.toContain('unrelated-ran')
     const phone = await mountWebView(root, { Shop: 'views/shop.stx' }, 'Shop')
     expect(phone.texts()).toContain('orders-value')
+  })
+
+  it('holds a store more than one route defines in the runtime, and runs each in order', async () => {
+    const root = webApp({
+      'stores/shared.ts': store('shared', 'localStorage.setItem(\'order\', (localStorage.getItem(\'order\') || \'\') + \'shared-ran,\')'),
+      'stores/later.ts': store('later', 'const shared = useStore(\'shared\'); localStorage.setItem(\'order\', localStorage.getItem(\'order\') + \'later-ran,\' + shared.value())'),
+      'stores/own.ts': store('own', 'localStorage.setItem(\'own-store-marker\', \'yes\')'),
+      'views/one.stx': `<script client>
+  const later = useStore('later')
+  const own = useStore('own')
+  const value = later.value
+</script>
+<div><p :text="value">…</p></div>
+`,
+      'views/two.stx': `<script client>
+  const later = useStore('later')
+  const value = later.value
+</script>
+<div><p :text="value">…</p></div>
+`,
+    })
+    const built = await getStoreScriptFor(path.join(root, 'stores'), ["useStore('later')"], { sharedModules: true })
+    expect(built?.functions?.length).toBe(2)
+    const routed = await compileNativeBundle({ root, screens: { One: 'views/one.stx', Two: 'views/two.stx' }, minify: true, routesDir: 'routes', sharedRuntime: true })
+    const runtime = readFileSync(routed.runtime!, 'utf8')
+    const one = readFileSync(routed.routes!.One!, 'utf8')
+    const two = readFileSync(routed.routes!.Two!, 'utf8')
+    // Both routes define these two: the runtime holds them once.
+    expect(runtime).toContain('later-ran')
+    expect(runtime).toContain('shared-ran')
+    expect(one).not.toContain('later-ran')
+    expect(two).not.toContain('shared-ran')
+    // Only one route defines this one: it stays there.
+    expect(one).toContain('own-store-marker')
+    expect(runtime).not.toContain('own-store-marker')
+    // Each route, run after the runtime, defines its stores in order.
+    for (const [name, route] of [['One', one], ['Two', two]] as const) {
+      const phone = mountNativeScreen(`${runtime}\n${route}`, name)
+      await phone.settle()
+      expect(phone.texts()).toContain('later-value')
+      expect(phone.context.localStorage.getItem('order')).toBe('shared-ran,later-ran,shared-value')
+      phone.unmount()
+    }
+  })
+
+  it('keeps stores in one script when one reads a name another binds', async () => {
+    const root = webApp({
+      'stores/first.ts': `import { defineStore } from '@stacksjs/stx'\nvar sharedHelper = () => 'helper'\nexport const firstStore = defineStore('first', () => ({ value: 1 }))\n`,
+      'stores/second.ts': `import { defineStore, useStore } from '@stacksjs/stx'\nexport const secondStore = defineStore('second', () => { useStore('first'); return { value: sharedHelper() } })\n`,
+    })
+    const built = await getStoreScriptFor(path.join(root, 'stores'), ["useStore('second')"], { sharedModules: true })
+    expect(built?.stores.sort()).toEqual(['first', 'second'])
+    expect(built?.functions).toBeNull()
   })
 
   it('keeps every store for code that may read any of them', async () => {
