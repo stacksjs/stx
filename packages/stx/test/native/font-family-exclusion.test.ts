@@ -34,6 +34,18 @@ it('removes excluded binding scopes before native setup extraction', async () =>
   expect(phone.mutationErrors).toEqual([])
 })
 
+it('excludes a self-closed component call alone, keeping the siblings after it', async () => {
+  const { excludeNativeSubtrees } = await import('../../src/native/compiler/html-to-ir')
+  const source = '<form @submit="go()"><p>Before</p><PasskeySignIn :if="!inApp && a > b" data-native-exclude :label="\'x />\'" /><input id="email" /><Other data-native-exclude="false"/></form><p>After</p>'
+  expect(await excludeNativeSubtrees(source)).toBe('<form @submit="go()"><p>Before</p><input id="email" /></form><p>After</p>')
+  // Paired and void tags are excluded as before; a self-closed tag without the attribute stays.
+  expect(await excludeNativeSubtrees('<div><section data-native-exclude><Inner /><b>gone</b></section><Keep /><input data-native-exclude /><i>end</i></div>')).toBe('<div><Keep /><i>end</i></div>')
+  const { code } = await compileNativeScreen('<div><WebOnly data-native-exclude /><p>Shared</p><p>Also shared</p></div>')
+  const phone = mountNativeScreen(code, 'Screen')
+  await phone.settle()
+  expect(phone.texts()).toEqual(['Shared', 'Also shared'])
+})
+
 it('carries a layout wrapper\'s face onto the page it unwraps, below the page\'s own classes', async () => {
   setNativeStyleConfig(nativeStyleConfigFrom({ theme: { fontFamily: { sans: ['Barlow-Regular', 'Barlow', 'system-ui'], mono: ['Training Mono', 'monospace'] } } }))
   const { root } = await translateHtmlToIR('<html><body class="font-mono"><main class="flex-1 font-sans"><div class="p-4"><p>Today</p></div><p class="font-mono">00:42</p></main></body></html>')

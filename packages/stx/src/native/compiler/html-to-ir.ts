@@ -942,8 +942,40 @@ export async function translateHtmlToDocument(
   }
 }
 
+/**
+ * The excluded tags written self-closed, as a component call usually is
+ * (`<PasskeySignIn data-native-exclude />`), taken out of the source as they
+ * stand: they hold nothing. HTML has no self-closing elements, so the
+ * rewriter below reads `<Name … />` as an open tag and removed everything
+ * after it, to the end of its parent and the parent's end tag with it.
+ */
+function removeSelfClosedExcludedTags(html: string): string {
+  let out = ''
+  let last = 0
+  for (let start = html.indexOf('<'); start !== -1; start = html.indexOf('<', start + 1)) {
+    if (!/[a-z]/i.test(html[start + 1] ?? '')) continue
+    let end = start + 1
+    let quote = ''
+    for (; end < html.length; end++) {
+      const char = html[end]!
+      if (quote) { if (char === quote) quote = ''; continue }
+      if (char === '"' || char === '\'') quote = char
+      else if (char === '>' || char === '<') break
+    }
+    if (html[end] !== '>' || html[end - 1] !== '/') continue
+    const unquoted = html.slice(start, end + 1).replace(/"[^"]*"|'[^']*'/g, '""')
+    if (!/\sdata-native-exclude(?=[\s=/>])/i.test(unquoted)) continue
+    out += html.slice(last, start)
+    last = end + 1
+    start = end
+  }
+  return last ? out + html.slice(last) : html
+}
+
 /** Explicit website-only markup; unlike chrome this does not configure app navigation. */
 export async function excludeNativeSubtrees(html: string): Promise<string> {
+  if (!/\bdata-native-exclude\b/i.test(html)) return html
+  html = removeSelfClosedExcludedTags(html)
   if (!/\bdata-native-exclude\b/i.test(html)) return html
   return new HTMLRewriter().on('[data-native-exclude]', { element(element) { element.remove() } }).transform(new Response(html)).text()
 }
