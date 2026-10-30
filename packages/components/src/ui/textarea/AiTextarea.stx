@@ -1,0 +1,342 @@
+<script server>
+export const value = $props.value || ''
+export const placeholder = $props.placeholder || ''
+export const disabled = $bool($props.disabled)
+export const readonly = $bool($props.readonly)
+export const rows = $num($props.rows) || 4
+export const error = $bool($props.error)
+export const label = $props.label || ''
+/*
+ * Ids unique to this instance, for the same reasons Textarea gives: a label
+ * derived id collides when two of these share a page. The ghost layer and the
+ * announcement hang off the same id.
+ */
+export const inputId = $props.id || `ai-textarea-${$uid}`
+export const ghostId = `${inputId}-ghost`
+export const helperId = `${inputId}-helper`
+export const helperText = $props.helperText || ''
+export const required = $bool($props.required)
+export const maxLength = $props.maxLength
+export const resize = $props.resize || 'vertical'
+export const className = $props.className || ''
+export const name = $props.name || ''
+export const autocomplete = $props.autocomplete || $props.autoComplete || ''
+export const form = $props.form || ''
+
+/*
+ * What is being written. It steers the instruction the model gets, so a todo
+ * title completes as a short phrase and a prompt completes as part of the
+ * prompt rather than as an answer to it.
+ */
+export const kind = ['note', 'prompt', 'todo', 'text'].includes($props.kind) ? $props.kind : 'text'
+export const context = $props.context || ''
+/*
+ * `fetcher` is a URL (a string, POSTed `{ before, after, kind, context }`,
+ * answered `{ completion }`) or a function `(ctx, signal) => Promise<string>`.
+ * The function can only arrive through a bound attribute, so the client reads
+ * it live; this is the default for the string form. `/ai/complete` is where
+ * Stacks mounts CompleteAction.
+ */
+export const endpoint = typeof $props.fetcher === 'string' && $props.fetcher ? $props.fetcher : '/ai/complete'
+export const debounceMs = $num($props.debounceMs, 250)
+export const minChars = $num($props.minChars, 12)
+export const completions = $bool($props.completions, true)
+
+const resizeClasses = { none: 'resize-none', vertical: 'resize-y', horizontal: 'resize-x', both: 'resize' }
+const baseClasses = 'block w-full border-0 rounded-control shadow-sm ring-1 ring-inset transition-colors duration-200 focus:ring-2 focus:ring-inset px-control-x py-control-y text-control bg-field'
+export const stateInvalidClasses = 'ring-danger-line text-danger-fg placeholder-danger focus:ring-danger-focus'
+export const stateValidClasses = 'ring-line-strong text-fg placeholder-fg-soft focus:ring-accent'
+const stateClasses = error ? stateInvalidClasses : stateValidClasses
+const disabledClasses = disabled
+  ? 'opacity-50 cursor-not-allowed bg-surface'
+  : readonly
+    ? 'bg-surface cursor-default'
+    : 'bg-field'
+
+export const textareaClasses = `${baseClasses} ${stateClasses} ${disabledClasses} ${resizeClasses[resize] || resizeClasses.vertical} ${className}`.trim()
+export const labelClasses = `block text-sm font-medium leading-6 mb-2 ${error ? 'text-danger' : 'text-fg'}`.trim()
+export const helperClasses = `mt-2 text-sm ${error ? 'text-danger' : 'text-fg-soft'}`.trim()
+</script>
+
+<script client>
+/*
+ * <AiTextarea>: a textarea that shows an AI suggestion as grey ghost text after
+ * the caret. Tab accepts it, Escape dismisses it, Ctrl/Cmd+Right takes one
+ * word, and typing the first letters of it just keeps going.
+ *
+ * The WHEN of it (debounce, abort, stale answers, IME, selection) is
+ * useCompletion; this file is the DOM half: reading the field, drawing the
+ * overlay and handling keys.
+ *
+ * The overlay is a second element laid exactly over the textarea with the same
+ * font, padding, border and wrapping (copied from the textarea's computed style
+ * whenever it resizes), holding the text before the caret in invisible ink and
+ * the suggestion after it in grey. It is aria-hidden and pointer-events none;
+ * the suggestion reaches a screen reader through the polite live region.
+ */
+const emit = defineEmits(['input', 'accept'])
+const isError = useReactiveProp('error', {{ error }})
+function aiBoolean(value) {
+  if (value == null) return false
+  if (typeof value === 'string') return !['false', '0', 'off', 'no'].includes(value.trim().toLowerCase())
+  return Boolean(value)
+}
+const liveDisabled = useReactiveProp('disabled', {{ disabled }}, { parse: aiBoolean })
+const liveReadonly = useReactiveProp('readonly', {{ readonly }}, { parse: aiBoolean })
+const liveCompletions = useReactiveProp('completions', {{ completions }}, { parse: aiBoolean })
+const isDisabled = derived(() => aiBoolean(liveDisabled()))
+const isReadonly = derived(() => aiBoolean(liveReadonly()))
+const liveKind = useReactiveProp('kind', {{ kind }}, { parse: v => (v == null ? 'text' : String(v)) })
+const liveContext = useReactiveProp('context', {{ context }}, { parse: v => (v == null ? '' : String(v)) })
+// A function when the parent bound one (:fetcher="load"), else the URL string.
+const liveFetcher = useReactiveProp('fetcher', {{ endpoint }}, { parse: v => v })
+const inputValue = useModel('value', { default: {{ value }}, parse: (v) => v == null ? '' : String(v) })
+
+async function requestCompletion(ctx, signal) {
+  const request = { before: ctx.before, after: ctx.after, caret: ctx.caret, kind: liveKind(), context: liveContext() }
+  const source = liveFetcher()
+  if (typeof source === 'function') {
+    const out = await source(request, signal)
+    if (typeof out === 'string') return out
+    return out && typeof out.completion === 'string' ? out.completion : ''
+  }
+  const url = typeof source === 'string' && source ? source : {{ endpoint }}
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    credentials: 'same-origin',
+    signal,
+    body: JSON.stringify({ before: request.before, after: request.after, kind: request.kind, context: request.context }),
+  })
+  // No driver, signed out, rate limited, provider down: all just "no suggestion".
+  if (!response.ok) return ''
+  const data = await response.json()
+  return data && typeof data.completion === 'string' ? data.completion : ''
+}
+
+const completion = useCompletion({
+  fetch: requestCompletion,
+  debounceMs: {{ debounceMs }},
+  minChars: {{ minChars }},
+  enabled: () => !isDisabled() && !isReadonly() && aiBoolean(liveCompletions()),
+})
+const ghost = completion.ghost
+const mirrorBefore = state('')
+const announcement = derived(() => {
+  const text = ghost()
+  if (!text) return ''
+  const shown = text.trim().slice(0, 120)
+  return 'Suggestion available: ' + shown + '. Press Tab to accept or Escape to dismiss.'
+})
+let composing = false
+
+function field() { return document.getElementById({{ inputId }}) }
+function overlay() { return document.getElementById({{ ghostId }}) }
+
+// The properties that decide where a character lands. Copied, not duplicated
+// in classes, so the overlay follows whatever the app styled the textarea with.
+const MIRRORED = [
+  'boxSizing', 'fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'fontVariant', 'fontStretch', 'fontKerning',
+  'fontFeatureSettings', 'letterSpacing', 'wordSpacing', 'lineHeight', 'textIndent', 'textTransform', 'textAlign',
+  'tabSize', 'direction', 'whiteSpace', 'wordBreak', 'overflowWrap', 'textRendering',
+  'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+  'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
+]
+
+function syncMetrics() {
+  const t = field()
+  const m = overlay()
+  if (!t || !m) return
+  const cs = window.getComputedStyle(t)
+  for (const property of MIRRORED) m.style[property] = cs[property]
+  m.style.borderStyle = 'solid'
+  m.style.borderColor = 'transparent'
+  // A scrollbar takes width from the textarea's text area; the overlay has
+  // none, so it pays the same in padding or its lines would wrap differently.
+  const bar = t.offsetWidth - t.clientWidth - (Number.parseFloat(cs.borderLeftWidth) || 0) - (Number.parseFloat(cs.borderRightWidth) || 0)
+  if (bar > 0) m.style.paddingRight = ((Number.parseFloat(cs.paddingRight) || 0) + bar) + 'px'
+  m.scrollTop = t.scrollTop
+  m.scrollLeft = t.scrollLeft
+}
+
+function syncScroll() {
+  const t = field()
+  const m = overlay()
+  if (t && m) {
+    m.scrollTop = t.scrollTop
+    m.scrollLeft = t.scrollLeft
+  }
+}
+
+// Tell the composable what the field looks like now.
+function sync() {
+  const t = field()
+  if (!t) return
+  const text = t.value
+  const start = t.selectionStart == null ? text.length : t.selectionStart
+  const end = t.selectionEnd == null ? start : t.selectionEnd
+  const after = text.slice(end)
+  // Ghost text is drawn on the caret's line; with text after the caret on that
+  // line it would paint over it, so a suggestion is only asked for at a line end.
+  const atLineEnd = after === '' || after.charAt(0) === '\n' || after.charAt(0) === '\r'
+  mirrorBefore.set(text.slice(0, start))
+  completion.update(text.slice(0, start), after, start, {
+    composing: composing,
+    selecting: start !== end,
+    blocked: !atLineEnd || document.activeElement !== t,
+  })
+  syncScroll()
+}
+
+function onInput(event) {
+  const t = event.target
+  if (isDisabled() || isReadonly() || t.isConnected === false) {
+    t.value = inputValue()
+    return
+  }
+  inputValue.input(t.value)
+  if (!inputValue.modifiers.lazy) emit('input', inputValue())
+  sync()
+}
+
+function onChange(event) {
+  if (isDisabled() || isReadonly() || event.target.isConnected === false) {
+    event.target.value = inputValue()
+    return
+  }
+  inputValue.change(event.target.value)
+  if (inputValue.modifiers.lazy) emit('input', inputValue())
+}
+
+function onCompositionStart() {
+  composing = true
+  sync()
+}
+
+function onCompositionEnd() {
+  composing = false
+  sync()
+}
+
+// Insert through the editing pipeline so Undo takes the suggestion back out in
+// one step; setRangeText is the fallback where execCommand is gone.
+function insertText(text) {
+  const t = field()
+  if (!t || !text) return
+  t.focus()
+  let done = false
+  try { done = document.execCommand('insertText', false, text) }
+  catch (e) { done = false }
+  if (!done) {
+    t.setRangeText(text, t.selectionStart, t.selectionEnd, 'end')
+    t.dispatchEvent(new Event('input', { bubbles: true }))
+  }
+  emit('accept', text)
+}
+
+function onKeydown(event) {
+  if (event.isComposing || event.keyCode === 229) return
+  if (!ghost()) return
+  const plain = !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey
+  if (event.key === 'Tab' && plain) {
+    event.preventDefault()
+    insertText(completion.accept())
+  }
+  else if (event.key === 'Escape') {
+    // Only a visible suggestion swallows Escape, so it still closes a dialog otherwise.
+    event.preventDefault()
+    event.stopPropagation()
+    completion.dismiss()
+  }
+  else if (event.key === 'ArrowRight' && (event.ctrlKey || event.metaKey) && !event.shiftKey && !event.altKey) {
+    event.preventDefault()
+    insertText(completion.acceptWord())
+  }
+}
+
+let resizeObserver
+onMount(() => {
+  syncMetrics()
+  const t = field()
+  if (t && typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(syncMetrics)
+    resizeObserver.observe(t)
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncMetrics)
+  window.addEventListener('resize', syncMetrics)
+})
+
+onDestroy(() => {
+  if (resizeObserver) resizeObserver.disconnect()
+  window.removeEventListener('resize', syncMetrics)
+  completion.destroy()
+})
+
+defineExpose({ value: inputValue, ghost, accept: () => insertText(completion.accept()), dismiss: completion.dismiss })
+</script>
+
+<div class="w-full">
+  @if(label)
+    <label for="{{ inputId }}" class="{{ labelClasses }}">
+      {{ label }}
+      @if(required)
+        <span class="text-danger ml-1">*</span>
+      @endif
+    </label>
+  @endif
+
+  <div class="relative">
+    <textarea
+      @if(name)name="{{ name }}"@endif
+      @if(autocomplete)autocomplete="{{ autocomplete }}"@endif
+      @if(form)form="{{ form }}"@endif
+      id="{{ inputId }}"
+      class="{{ textareaClasses }}"
+      rows="{{ rows }}"
+      placeholder="{{ placeholder }}"
+      @if(disabled)disabled@endif
+      :disabled="isDisabled()"
+      @if(readonly)readonly@endif
+      :readonly="isReadonly()"
+      @if(required)required@endif
+      @if(maxLength)maxlength="{{ maxLength }}"@endif
+      spellcheck="true"
+      aria-autocomplete="inline"
+      aria-invalid="{{ error ? 'true' : 'false' }}"
+      :aria-invalid="isError() ? 'true' : 'false'"
+      @if(helperText)aria-describedby="{{ helperId }}"@endif
+      :value="inputValue()"
+      @input="onInput($event)"
+      @change="onChange($event)"
+      @keydown="onKeydown($event)"
+      @keyup="sync()"
+      @mouseup="sync()"
+      @select="sync()"
+      @focus="sync()"
+      @blur="sync()"
+      @scroll="syncScroll()"
+      @compositionstart="onCompositionStart()"
+      @compositionend="onCompositionEnd()"
+      :class="{ '{{ stateInvalidClasses }}': isError(), '{{ stateValidClasses }}': !isError(), 'opacity-50 cursor-not-allowed': isDisabled(), 'bg-surface': isDisabled() || isReadonly(), 'bg-field': !isDisabled() && !isReadonly(), 'cursor-default': !isDisabled() && isReadonly() }"
+    >{{ value }}</textarea>
+
+    {{-- The ghost layer. Same box as the textarea (metrics copied at mount and
+         on resize), invisible text before the caret so the suggestion starts
+         exactly where the caret is. Never read aloud: the live region is. --}}
+    <div
+      id="{{ ghostId }}"
+      aria-hidden="true"
+      data-stx-ai-ghost
+      class="absolute inset-0 overflow-hidden pointer-events-none select-none"
+      style="white-space: pre-wrap; overflow-wrap: break-word;"
+    ><span class="invisible" x-text="mirrorBefore()"></span><span class="text-fg-soft motion-safe:transition-opacity motion-safe:duration-150" :class="{ 'opacity-100': ghost() !== '', 'opacity-0': ghost() === '' }" data-stx-ai-ghost-text x-text="ghost()"></span></div>
+
+    <span class="sr-only" role="status" aria-live="polite" aria-atomic="true" x-text="announcement()"></span>
+  </div>
+
+  @if(helperText)
+    <p id="{{ helperId }}" class="{{ helperClasses }}">
+      {{ helperText }}
+    </p>
+  @endif
+</div>

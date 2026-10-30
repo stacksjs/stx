@@ -268,7 +268,7 @@ Each component has its own README with prop docs and examples in `packages/compo
 
 **Layout & Display:** Avatar, Badge, Card, Skeleton, Spinner, Progress
 
-**Forms & Input:** Button, Checkbox, Radio, RadioGroup, Select, Switch, Textarea, TextInput, EmailInput, NumberInput, PasswordInput, SearchInput
+**Forms & Input:** Button, Checkbox, Radio, RadioGroup, Select, Switch, Textarea, AiTextarea, TextInput, EmailInput, NumberInput, PasswordInput, SearchInput
 
 **Overlays:** Dialog, Drawer, Dropdown, Notification, Popover, Tooltip
 

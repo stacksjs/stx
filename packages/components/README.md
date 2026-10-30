@@ -82,6 +82,19 @@ yarn add @stacksjs/components
 ### Form Components (3)
 
 - **Textarea** - Multi-line input with auto-resize
+- **AiTextarea** - Textarea with AI ghost-text completions: Tab accepts, Escape dismisses, Ctrl/Cmd+Right takes a word
+
+```html
+<AiTextarea
+  label="Note"
+  kind="note"
+  context="Meeting notes"
+  fetcher="/api/complete"
+  v-model:value="body"
+/>
+```
+
+`fetcher` is a URL that answers `POST { before, after, kind, context }` with `{ completion }` (default `/ai/complete`, which Stacks mounts), or a function `(ctx, signal) => Promise<string>` bound with `:fetcher`. `kind` is `note`, `prompt`, `todo` or `text`. `debounceMs` (250) and `minChars` (12) tune when it asks; `:completions="false"` turns it off. The suggestion is drawn on an aria-hidden overlay that copies the textarea's metrics and scroll, and announced politely through a live region. Honours `prefers-reduced-motion` and works in dark mode through the role tokens.
 - **Checkbox** - Checkbox with indeterminate state
 - **Radio** - Radio button with descriptions
 
