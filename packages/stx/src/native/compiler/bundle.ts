@@ -28,6 +28,7 @@ import type { NativeLayoutChrome, STXDocument } from './ir'
 import { NATIVE_APP_ROUTE } from '../runtime/shared-screen'
 import { generateSignalsRuntime } from '../../signals'
 import { withModuleSubstitutes } from '../../client-script-bundler'
+import { shareComponentScripts, type SharedScripts } from './shared-scripts'
 import { buildSharedModuleRegistries, registeredModuleIdsIn, registeredModuleNamesIn, type SharedRegistries } from '../../client-module-registry'
 import type { BrowserScreenOptions } from '../runtime/browser-screen'
 
@@ -77,12 +78,14 @@ export interface CompileNativeBundleOptions {
    */
   sharedRuntime?: boolean
   /**
-   * With `sharedRuntime`: the modules more than one route reaches are built
-   * once, into the runtime, instead of into each route's file (HQ's routes
-   * came to 12 MB from 24 with it). On by default; `false`, or the
+   * With `sharedRuntime`: the modules more than one route reaches, and the
+   * code of the components more than one route draws, are held by the runtime
+   * once instead of by each route's file (HQ's routes came to 10 MB from 46
+   * with this and the other shared constants). On by default; `false`, or the
    * `STX_NATIVE_SHARE_MODULES=0` environment variable, builds each route's
-   * modules into its own file. A build the sharing cannot express (a module
-   * that exports a binding that changes later, say) does that by itself.
+   * modules and components into its own file. A build the sharing of modules
+   * cannot express (a module that exports a binding that changes later, say)
+   * does that by itself.
    */
   shareModules?: boolean
   /**
@@ -466,6 +469,10 @@ export async function compileNativeBundle(options: CompileNativeBundleOptions): 
     if (sharedModules) for (const input of moduleInputs) dependencies.add(input)
   }
   const shared = sharedModules
+  // The component code the routes have in common, held by the runtime too.
+  const sharedScripts: SharedScripts | null = options.routesDir && options.sharedRuntime && options.shareModules !== false && process.env.STX_NATIVE_SHARE_MODULES !== '0'
+    ? shareComponentScripts(compiledScreens.map(({ name, compiled }) => ({ name, scripts: compiled.scripts })))
+    : null
   const sharedSheets = sharedStylesheets(compiledScreens.map(({ name, compiled }) => ({ name, document: compiled.document })))
   const entry = (bundled: typeof compiledScreens, withApp: boolean, runtimeVersion?: string): string => {
     const route = routed
@@ -487,7 +494,7 @@ if (isApp ? ${!withApp} : ${JSON.stringify(bundled.map(({ name }) => name))}.ind
     }).join('\n')
     const setups = bundled.map(({ name, compiled }, index) => `${index === 0 ? 'if' : 'else if'} (routeName === ${JSON.stringify(routed ? name : 'main')}) {
   g.__stx_latestSetup = null;
-${compiled.scripts.map(script => runtimeVersion && script.registry && shared?.routes.has(name)
+${(runtimeVersion && sharedScripts?.screens.get(name) || compiled.scripts).map(script => runtimeVersion && script.registry && shared?.routes.has(name)
     // The modules other routes reach too are the runtime's: this route reads its chunks from it.
     ? shared.routes.get(name)!
     : script.owner
@@ -609,6 +616,9 @@ globalThis.__stxNativeRuntime = {
   // The modules more than one route reaches (client-module-registry.ts),
   // each run the first time a route asks for it, and once.
   chunks: {${shared ? [...shared.chunks].map(([name, code]) => `\n${JSON.stringify(name)}: ${code}`).join(',') : ''}},
+  // The component code the routes have in common: the functions that set up
+  // a component, by content, which a route's factories and calls name.
+  components: {${sharedScripts ? [...sharedScripts.bodies].sort(([a], [b]) => (a < b ? -1 : 1)).map(([hash, body]) => `\n${JSON.stringify(hash)}: ${body}`).join(',') : ''}},
   chunk: function(name) {
     var loaded = this.loaded || (this.loaded = {});
     if (Object.prototype.hasOwnProperty.call(loaded, name)) return loaded[name];

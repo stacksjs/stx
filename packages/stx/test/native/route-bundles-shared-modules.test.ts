@@ -174,6 +174,49 @@ describe('modules the routes of one build share', () => {
   })
 })
 
+describe('component code the routes of one build have in common', () => {
+  const app = webApp({
+    'components/Badge.stx': `<script client>
+  globalThis.__badges = (globalThis.__badges || 0) + 1
+  const badgeMarker = 'badge-component-marker'
+</script>
+<div><p>Badge</p></div>
+`,
+    'components/Lonely.stx': `<script client>
+  globalThis.__lonely = 'lonely-component-marker'
+</script>
+<div><p>Lonely</p></div>
+`,
+    'views/gamma.stx': '<div><Badge /><Badge /><Lonely /></div>',
+    'views/delta.stx': '<div><Badge /></div>',
+  })
+  const screens = { Gamma: 'views/gamma.stx', Delta: 'views/delta.stx' }
+  const build = (options: Record<string, unknown> = {}, dir = 'routes') => compileNativeBundle({ root: app, screens, minify: true, routesDir: dir, sharedRuntime: true, ...options })
+
+  it('holds a component two screens draw in the runtime, and one only a screen draws in the screen', async () => {
+    const result = await build()
+    const runtime = readFileSync(result.runtime!, 'utf8')
+    for (const name of ['Gamma', 'Delta'])
+      expect(readFileSync(result.routes![name]!, 'utf8')).not.toContain('badge-component-marker')
+    expect(runtime).toContain('badge-component-marker')
+    expect(readFileSync(result.routes!.Gamma!, 'utf8')).toContain('lonely-component-marker')
+    expect(runtime).not.toContain('lonely-component-marker')
+  })
+
+  it('sets the components up as it does with their code in the route', async () => {
+    const shared = await build({}, 'shared')
+    const alone = await build({ shareModules: false }, 'alone')
+    for (const [name, badges] of [['Gamma', 2], ['Delta', 1]] as const) {
+      const withShared = run(shared, name)
+      const withOwn = run(alone, name)
+      expect(withShared.scope.__badges).toBe(badges)
+      expect(withOwn.scope.__badges).toBe(badges)
+      expect(withShared.sent.find(message => message.type === 'RENDER')?.payload.document).toEqual(withOwn.sent.find(message => message.type === 'RENDER')?.payload.document)
+    }
+    expect(run(shared, 'Gamma').scope.__lonely).toBe('lonely-component-marker')
+  })
+})
+
 describe('a source that exports a binding that changes', () => {
   it('is found by its export', () => {
     expect(exportsMutableBinding('export let count = 0\nexport function add() { count++ }')).toBe(true)
