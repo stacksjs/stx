@@ -8,6 +8,8 @@
 package com.stx.native.renderer
 
 import android.content.Context
+import android.graphics.Matrix
+import android.graphics.drawable.Drawable
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -23,6 +25,44 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.facebook.yoga.*
 import org.json.JSONArray
 import org.json.JSONObject
+
+private class STXPositionedImage(context: Context) : ImageView(context) {
+    private var fit: String? = null
+    private var x = 0.5f
+    private var y = 0.5f
+
+    fun configureGeometry(rawFit: String?, rawPosition: String?) {
+        fit = if (rawFit != null || rawPosition != null) rawFit?.takeIf { it in setOf("fill", "contain", "cover", "none", "scale-down") } ?: "fill" else null
+        var parts = (rawPosition ?: "center").trim().lowercase().split(Regex("\\s+"))
+        if (parts.size == 1) parts = if (parts[0] in setOf("top", "bottom")) listOf("center", parts[0]) else listOf(parts[0], "center")
+        else if (parts.size == 2 && (parts[0] in setOf("top", "bottom") || parts[1] in setOf("left", "right"))) parts = parts.reversed()
+        fun fraction(value: String, low: String, high: String): Float? = when (value) {
+            low -> 0f; high -> 1f; "center" -> 0.5f
+            else -> if (value.endsWith("%")) value.dropLast(1).toFloatOrNull()?.takeIf { it.isFinite() }?.div(100f) else null
+        }
+        val horizontal = if (parts.size == 2) fraction(parts[0], "left", "right") else null
+        val vertical = if (parts.size == 2) fraction(parts[1], "top", "bottom") else null
+        x = if (horizontal != null && vertical != null) horizontal else 0.5f
+        y = if (horizontal != null && vertical != null) vertical else 0.5f
+        updateGeometry()
+    }
+
+    override fun setImageDrawable(drawable: Drawable?) { super.setImageDrawable(drawable); updateGeometry() }
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) { super.onSizeChanged(w, h, oldw, oldh); updateGeometry() }
+    private fun updateGeometry() {
+        val mode = fit ?: return
+        val source = drawable ?: return
+        val iw = source.intrinsicWidth.toFloat(); val ih = source.intrinsicHeight.toFloat()
+        if (iw <= 0 || ih <= 0) return
+        val bw = (width - paddingLeft - paddingRight).toFloat(); val bh = (height - paddingTop - paddingBottom).toFloat()
+        val contain = minOf(bw / iw, bh / ih)
+        val scale = when (mode) { "cover" -> maxOf(bw / iw, bh / ih); "none" -> 1f; "scale-down" -> minOf(1f, contain); else -> contain }
+        val sx = if (mode == "fill") bw / iw else scale; val sy = if (mode == "fill") bh / ih else scale
+        scaleType = ScaleType.MATRIX
+        cropToPadding = true
+        imageMatrix = Matrix().apply { setScale(sx, sy); postTranslate((bw - iw * sx) * x, (bh - ih * sy) * y) }
+    }
+}
 
 // ============================================================================
 // STX IR Types (Mirror of TypeScript definitions)
@@ -151,6 +191,8 @@ data class STXStyle(
 
     // Image
     val resizeMode: String? = null,
+    val objectFit: String? = null,
+    val objectPosition: String? = null,
     val tintColor: String? = null,
 
     // Linear gradient (bg-gradient-to-br from-* via-* to-*)
@@ -244,6 +286,8 @@ data class STXStyle(
                 textTransform = json.optString("textTransform", null),
 
                 resizeMode = json.optString("resizeMode", null),
+                objectFit = json.optString("objectFit", null),
+                objectPosition = json.optString("objectPosition", null),
                 tintColor = json.optString("tintColor", null),
                 gradientDirection = json.optString("gradientDirection", null),
                 gradientFrom = json.optString("gradientFrom", null),
@@ -498,7 +542,7 @@ class STXRenderer(private val context: Context) {
     }
 
     private fun renderImage(node: STXNode): ImageView {
-        val imageView = ImageView(context)
+        val imageView = STXPositionedImage(context)
 
         // Set scale type based on resizeMode
         imageView.scaleType = when (node.style.resizeMode ?: node.props["resizeMode"] as? String) {
@@ -508,6 +552,9 @@ class STXRenderer(private val context: Context) {
             "center" -> ImageView.ScaleType.CENTER
             else -> ImageView.ScaleType.FIT_CENTER
         }
+
+        imageView.configureGeometry(node.props["objectFit"] as? String ?: node.style.objectFit,
+            node.props["objectPosition"] as? String ?: node.style.objectPosition)
 
         // Load image from source
         val source = node.props["source"]

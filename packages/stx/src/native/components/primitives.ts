@@ -456,6 +456,9 @@ export interface ImageProps extends BaseProps {
   alt?: string
   /** Resize mode */
   resizeMode?: 'cover' | 'contain' | 'stretch' | 'center'
+  /** CSS geometry; requires a Craft 0.0.396+ regenerated native shell. */
+  objectFit?: 'fill' | 'contain' | 'cover' | 'none' | 'scale-down'
+  objectPosition?: string
   /** Load handler */
   onLoad?: () => void
   /** Load start handler */

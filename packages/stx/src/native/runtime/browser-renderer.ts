@@ -1,5 +1,6 @@
 import type { NativeMutationOperation, NativeMutationPayload } from '../bridge/protocol'
 import { LUCIDE_TO_SF } from '../compiler/icons'
+import { parseNativeStyle } from '../compiler/inline-style'
 import type { STXNode } from '../compiler/ir'
 
 // Several icons share a symbol (apple, salad and leaf are all `leaf`): a bare
@@ -303,6 +304,15 @@ export class BrowserScreenRenderer {
     if (type === 'TextInput') { css.font = 'inherit'; css.color = 'inherit'; css.background = 'transparent'; css.border = '0'; css.minWidth = '0'; css.minHeight = '32px'; css.outlineOffset = '2px' }
     if (type === 'Icon') { css.display = 'inline-block'; css.width = '20px'; css.height = '20px'; css.flexShrink = '0' }
     this.style(css, style)
+    if (type === 'Image') {
+      const fit = props.objectFit ?? style.objectFit
+      const position = props.objectPosition ?? style.objectPosition
+      const explicitGeometry = fit != null || position != null
+      const legacy = props.resizeMode ?? style.resizeMode ?? 'cover'
+      css.objectFit = explicitGeometry ? (typeof fit === 'string' && ['fill', 'contain', 'cover', 'none', 'scale-down'].includes(fit) ? fit : 'fill')
+        : legacy === 'stretch' ? 'fill' : legacy === 'center' ? 'none' : String(legacy)
+      css.objectPosition = explicitGeometry ? parseNativeStyle({ objectPosition: position }).objectPosition ?? 'center' : 'center'
+    }
     if (props.contentContainerStyle && typeof props.contentContainerStyle === 'object') this.style(css, props.contentContainerStyle as Record<string, unknown>)
     if (type === 'SafeAreaView') {
       const authored = { ...style, ...(props.contentContainerStyle && typeof props.contentContainerStyle === 'object' ? props.contentContainerStyle as Record<string, unknown> : {}) }

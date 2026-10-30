@@ -55,6 +55,58 @@ private final class STXPointerInput: UITextField {
 }
 
 private final class STXPointerImage: UIImageView {
+    private var storedImage: UIImage?
+    private var fittedImage: UIImageView?
+    private var fit: String?
+    private var alignment = CGPoint(x: 0.5, y: 0.5)
+
+    override var image: UIImage? {
+        get { storedImage }
+        set {
+            storedImage = newValue
+            if fit == nil { super.image = newValue }
+            else { fittedImage?.image = newValue; setNeedsLayout() }
+        }
+    }
+
+    func configureGeometry(fit rawFit: String?, position: String?) {
+        guard rawFit != nil || position != nil else {
+            fit = nil; fittedImage?.removeFromSuperview(); fittedImage = nil
+            super.image = storedImage
+            return
+        }
+        fit = ["fill", "contain", "cover", "none", "scale-down"].contains(rawFit ?? "") ? rawFit : "fill"
+        var parts = (position ?? "center").lowercased().split(whereSeparator: { $0.isWhitespace }).map(String.init)
+        if parts.count == 1 { parts = ["top", "bottom"].contains(parts[0]) ? ["center", parts[0]] : [parts[0], "center"] }
+        else if parts.count == 2 && (["top", "bottom"].contains(parts[0]) || ["left", "right"].contains(parts[1])) { parts.swapAt(0, 1) }
+        func fraction(_ value: String, low: String, high: String) -> CGFloat? {
+            if value == low { return 0 }; if value == high { return 1 }; if value == "center" { return 0.5 }
+            guard value.hasSuffix("%"), let number = Double(value.dropLast()), number.isFinite else { return nil }
+            return CGFloat(number / 100)
+        }
+        alignment = CGPoint(x: 0.5, y: 0.5)
+        if parts.count == 2, let x = fraction(parts[0], low: "left", high: "right"), let y = fraction(parts[1], low: "top", high: "bottom") { alignment = CGPoint(x: x, y: y) }
+        if fittedImage == nil {
+            let child = UIImageView(); child.contentMode = .scaleToFill; child.isUserInteractionEnabled = false
+            addSubview(child); fittedImage = child
+        }
+        super.image = nil
+        fittedImage?.image = storedImage
+        clipsToBounds = true
+        setNeedsLayout()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard let fit, let child = fittedImage, let size = storedImage?.size, size.width > 0, size.height > 0 else { return }
+        let contain = min(bounds.width / size.width, bounds.height / size.height)
+        let scale = fit == "cover" ? max(bounds.width / size.width, bounds.height / size.height)
+            : fit == "none" ? 1 : fit == "scale-down" ? min(1, contain) : contain
+        let rendered = fit == "fill" ? bounds.size : CGSize(width: size.width * scale, height: size.height * scale)
+        child.frame = CGRect(x: (bounds.width - rendered.width) * alignment.x, y: (bounds.height - rendered.height) * alignment.y, width: rendered.width, height: rendered.height)
+        child.tintColor = tintColor
+    }
+
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         stxPointerHitTest(self, point: point, event: event) { super.hitTest(point, with: event) }
     }
@@ -245,6 +297,8 @@ struct STXStyle: Codable {
 
     // Image
     var resizeMode: String?
+    var objectFit: String?
+    var objectPosition: String?
     var tintColor: String?
 
     // Clipping
@@ -490,12 +544,14 @@ class STXRenderer {
         default: imageView.contentMode = .scaleAspectFit
         }
 
+        imageView.configureGeometry(fit: (node.props["objectFit"]?.value as? String) ?? node.style.objectFit,
+            position: (node.props["objectPosition"]?.value as? String) ?? node.style.objectPosition)
         if let tint = node.style.tintColor.flatMap(UIColor.init(hex:)) {
             imageView.tintColor = tint
         }
 
-        if let source = node.props["source"]?.value as? [String: Any],
-           let uri = source["uri"] as? String {
+        let source = node.props["source"]?.value
+        if let uri = (source as? String) ?? ((source as? [String: Any])?["uri"] as? String) {
             loadImage(from: uri, into: imageView, renderAsTemplate: node.style.tintColor != nil)
         }
 
