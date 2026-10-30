@@ -813,10 +813,14 @@ export interface StxConfig {
    * Path to the stores directory, resolved against `root`.
    *
    * Every `.ts` file in it (except `index.ts`, `types.ts` and `.d.ts`) is
-   * discovered, bundled, and injected ahead of any page script, so a
-   * `defineStore(...)` call has already run by the time `useStore('id')` looks
-   * it up. Files are ordered so stores that call `useStore()` load after the
-   * ones they depend on.
+   * discovered and bundled, and a page gets the stores its code (its scripts,
+   * the modules they import, its composables) reads by name, with the ones
+   * those read, injected ahead of any page script: a `defineStore(...)` call
+   * has already run by the time `useStore('id')` looks it up. Each runs once
+   * per document; the router loads the next page's before swapping it in.
+   * Every store ships when a page may read any (`useStore(name)` with a name
+   * that is not a literal), or with `STX_PAGE_STORES=all`. Files are ordered
+   * so stores that call `useStore()` load after the ones they depend on.
    *
    * @default 'stores'
    */
@@ -957,6 +961,15 @@ export interface StxConfig {
    * src/offline/app-service-worker.ts). Pair with `useOutbox` for writes.
    */
   offline?: import('../offline/app-service-worker').OfflineAppConfig
+  /**
+   * Message catalogs kept a language at a time (`<dir>/<language>/<area>.ts`,
+   * default export plain data): a page ships the messages of its own
+   * language and the fallback, for the areas its scripts import, instead of
+   * every language (src/message-catalogs.ts). In production; set
+   * `STX_PAGE_MESSAGES=0` to ship every language, `=1` to split outside
+   * production too.
+   */
+  messages?: import('../message-catalogs').PageMessagesOptions
   /** Component configuration */
   components?: Partial<ComponentConfig>
   /** Route middleware configuration */

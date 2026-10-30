@@ -28,6 +28,7 @@ import type { NativeLayoutChrome, STXDocument } from './ir'
 import { NATIVE_APP_ROUTE } from '../runtime/shared-screen'
 import { generateSignalsRuntime } from '../../signals'
 import { withModuleSubstitutes } from '../../client-script-bundler'
+import { type CollectedMessages, collectMessageCatalogs } from '../../message-catalogs'
 import { shareComponentScripts, type SharedScripts } from './shared-scripts'
 import { compactDocument, compactManifest } from '../runtime/compact-document'
 import { buildSharedModuleRegistries, registeredModuleIdsIn, registeredModuleNamesIn, type SharedRegistries } from '../../client-module-registry'
@@ -234,47 +235,9 @@ async function build(entry: string, plugins: BunPlugin[], minify: boolean, depen
   return (await result.outputs[0].text()).trim()
 }
 
-const MESSAGE_AREA = /^[\w-]+(?:\/[\w-]+)*$/
-const MESSAGE_LANGUAGE = /^[\w-]+$/
-
-interface CollectedMessages {
-  /** Each message module, by absolute path: its language and area. */
-  files: Map<string, { language: string, area: string }>
-  /** Each language's messages, as JSON text, by area. */
-  data: Map<string, Map<string, string>>
-}
-
-/** Read every language's message modules, at build time. */
-async function collectMessages(root: string, options: NativeMessagesOptions): Promise<CollectedMessages> {
-  const dir = path.resolve(root, options.dir)
-  if (!options.languages?.length) throw new Error('messages.languages must name at least one language')
-  const files: CollectedMessages['files'] = new Map()
-  const data: CollectedMessages['data'] = new Map()
-  for (const language of options.languages) {
-    if (!MESSAGE_LANGUAGE.test(language)) throw new Error(`messages: "${language}" is not a language directory name`)
-    const base = path.join(dir, language)
-    if (!existsSync(base)) throw new Error(`messages: ${path.relative(root, base)} does not exist`)
-    const areas = new Map<string, string>()
-    for (const relative of [...new Bun.Glob('**/*.{ts,js,mjs,json}').scanSync({ cwd: base })].sort()) {
-      if (/\.(?:test|spec|d)\.[^.]+$/.test(relative)) continue
-      const area = relative.replace(/\.[^./]+$/, '').split(path.sep).join('/')
-      if (!MESSAGE_AREA.test(area)) throw new Error(`messages: ${language}/${relative} is not an area name`)
-      if (areas.has(area)) throw new Error(`messages: ${language}/${area} is defined twice`)
-      const file = path.join(base, relative)
-      const module = await import(file) as Record<string, unknown>
-      const others = Object.keys(module).filter(name => name !== 'default')
-      // The route files see the default export alone.
-      if (others.length) throw new Error(`messages: ${language}/${relative} exports ${others.join(', ')}; a message module exports its messages as default, and nothing else`)
-      const value = module.default
-      const json = value !== null && typeof value === 'object' && !Array.isArray(value) ? JSON.stringify(value) : undefined
-      if (json === undefined || !Bun.deepEquals(JSON.parse(json), value, true))
-        throw new Error(`messages: ${language}/${relative} must export plain data (an object JSON can hold) as default`)
-      areas.set(area, json)
-      files.set(file, { language, area })
-    }
-    data.set(language, areas)
-  }
-  return { files, data }
+/** Read every language's message modules, at build time (shared with web pages: message-catalogs.ts). */
+function collectMessages(root: string, options: NativeMessagesOptions): Promise<CollectedMessages> {
+  return collectMessageCatalogs(root, options)
 }
 
 /**

@@ -340,6 +340,8 @@ export async function buildModulesTag(
   sources: Array<string | null>,
   options: StxOptions,
   dependencies?: Set<string>,
+  /** Receives the registry's code and the files it was built from (`collectInputs`). */
+  built?: { code?: string, inputs?: string[] },
 ): Promise<string | null> {
   try {
     const { registeredModuleIdsIn, buildModuleRegistryScript } = await importOnce(
@@ -358,6 +360,10 @@ export async function buildModulesTag(
     })
     for (const input of inputs)
       dependencies?.add(input)
+    if (built) {
+      built.inputs = inputs
+      built.code = code ?? undefined
+    }
     if (!code)
       return null
     // Serve mode links the bundle as a content-addressed file the Bun serve
@@ -375,6 +381,218 @@ export async function buildModulesTag(
   catch {
     return null
   }
+}
+
+/** The bundles a page loads after the signals runtime, built (`buildPageBundles`). */
+interface PageBundles {
+  modulesTag: string | null
+  modulesCode: string | null
+  storeTag: string | null
+  storeCode: string | null
+  composableTag: string | null
+  composableCode: string | null
+  frameworkScript: string | null
+}
+
+/**
+ * The page's own stores, module registry and composables, each sized to what
+ * the page reads.
+ *
+ * They depend on each other: a store's imports join the registry, and the
+ * registry's modules and the composables may read stores in turn. So the
+ * stores the page's own code reads come first, the registry and composables
+ * are built for them, and the stores are read again from what those were
+ * built from (their source files: the built registry is minified, where a
+ * call through an alias cannot be read). Usually the second reading adds
+ * nothing and one build of each is all it costs.
+ *
+ * Every store ships when the page's code may read any (a name that is not a
+ * literal), when the stores cannot run apart, with `STX_PAGE_STORES=all`,
+ * and for a native screen, whose compiler picks its own.
+ */
+async function buildPageBundles(
+  result: string,
+  options: StxOptions,
+  dependencies: Set<string>,
+  context: Record<string, any>,
+): Promise<PageBundles> {
+  const built: PageBundles = { modulesTag: null, modulesCode: null, storeTag: null, storeCode: null, composableTag: null, composableCode: null, frameworkScript: null }
+
+  // Framework composables the page actually calls but the runtime does
+  // not provide (#1805). Bundled from the real modules rather than
+  // hand-ported, demand-driven, and skip-never-clobber so the runtime's
+  // own signal-based versions always win. Read off the page alone: its scan
+  // strips every stx-owned script block, so that an injected bundle cannot
+  // look like page code asking for a composable.
+  try {
+    const { getFrameworkComposableScript } = await importOnce(
+      'stx/framework-composables',
+      () => import('./framework-composables'),
+    )
+    built.frameworkScript = await getFrameworkComposableScript(result)
+  }
+  catch {
+    // Framework composables are an enhancement; never fail a render.
+  }
+
+  let storeLoader: typeof import('./store-loader') | null = null
+  try {
+    storeLoader = await importOnce('stx/store-loader', () => import('./store-loader'))
+  }
+  catch {
+    // Store loading is optional
+  }
+  // Prefer the resolved storesDir from options (set by serve-app.ts to point
+  // at the real app directory). Fall back to config lookup.
+  const storesDir = (options as any).storesDir as string | undefined
+  const everyStore = !!context.__stx_native_screen || (storeLoader?.pageStoresAll() ?? true)
+
+  // What the page's own code reads: stx's runtime and router, when inlined
+  // (a static build, a test), are the store registry's code, not a reader.
+  const authored = everyStore ? '' : result.replace(/<script\b[^>]*\bdata-stx-(?:runtime|router|hmr)\b[^>]*>[\s\S]*?<\/script>/gi, '')
+  let registryInputs: string[] = []
+  let composableInputs: string[] = []
+  let shipped: string | null = null
+  // A store's imports can only add stores; eight rounds is far more than any
+  // app's stores reach through each other.
+  for (let round = 0; round < 8; round++) {
+    // Auto-inject store definitions from storesDir.
+    let storeCode: string | null = null
+    let storeNames = ''
+    let runOnce = false
+    try {
+      if (storeLoader) {
+        const stores = everyStore
+          ? await storeLoader.getStoreScript(storesDir).then(code => code ? { code, stores: ['*'], functions: null } : null)
+          : await storeLoader.getStoreScriptFor(storesDir, [authored], {
+              reads: storeLoader.storesReadInFiles([...registryInputs, ...composableInputs]),
+              runOnce: true,
+            })
+        if (stores) {
+          storeCode = stores.code
+          storeNames = stores.stores.join(',')
+          runOnce = !!stores.functions && !everyStore
+        }
+      }
+    }
+    catch {
+      // Store loading is optional
+    }
+    if (shipped !== null && storeNames === shipped)
+      break
+    shipped = storeNames
+
+    // Run-once stores (a page's own) are carried by an SPA fragment and run
+    // beside the stores already defined; every store in one shared scope is
+    // the same script on every page, and runs once like any page script.
+    const storeAttrs = runOnce ? 'data-stx-scoped data-stx-run="always" data-stx-stores' : 'data-stx-stores'
+    // The store code as text, for the scans below: the tag itself can be
+    // just a src, which a scan for imports or composables reads as nothing.
+    const storeScan = storeCode ? `<script ${storeAttrs}>${storeCode}</script>` : null
+    built.storeCode = storeCode
+    built.storeTag = storeCode ? ((await externalBundleTag(storeAttrs, storeCode, options)) ?? storeScan) : null
+
+    // The page-level module registry (#1957): every module a component or
+    // store imports, bundled and evaluated ONCE for the page, so module
+    // state is shared instead of duplicated per component bundle.
+    const registry: { code?: string, inputs?: string[] } = {}
+    built.modulesTag = await buildModulesTag([result, storeScan], options, dependencies, registry)
+    built.modulesCode = registry.code ?? null
+    registryInputs = registry.inputs ?? []
+
+    // Auto-inject composables from composablesDir (default: composables/,
+    // then functions/). Populates window.__composables, which is what
+    // `import { useThing } from '@composables'` compiles to — without it
+    // that import destructured undefined and every binding using a
+    // composable silently did nothing (#1780).
+    //
+    // Unlike the framework pass, this one wants to see the other bundles: it
+    // prunes to what the page can reach, and a composable used only from a
+    // store has to survive (#1936). They are handed over as extra scan
+    // sources rather than spliced in first, which is the same text to a
+    // reachability scan and one document copy cheaper. The registry's code
+    // rather than its tag: in serve mode the tag is only a src.
+    built.composableTag = null
+    built.composableCode = null
+    composableInputs = []
+    try {
+      const { getComposableScript } = await importOnce('stx/composable-loader', () => import('./composable-loader'))
+      const resolvedComposablesDir = (options as any).composablesDir as string | undefined
+      const pending = [built.modulesCode ?? built.modulesTag, storeScan, built.frameworkScript].filter((text): text is string => text !== null)
+      const composableCode = await getComposableScript(options._layerComposableDirs ?? resolvedComposablesDir, result, pending, composableInputs)
+      if (composableCode) {
+        built.composableCode = composableCode
+        // Scoped and always-run like the module registry, so a fragment
+        // navigation carries it and the router runs it: the next page may
+        // call a composable this one never loaded.
+        built.composableTag = (await externalBundleTag('data-stx-scoped data-stx-run="always" data-stx-composables', composableCode, options))
+          ?? `<script data-stx-scoped data-stx-run="always" data-stx-composables>${composableCode}</script>`
+      }
+    }
+    catch {
+      // Composable loading is optional
+    }
+
+    // Every store is every store: nothing more to read.
+    if (everyStore || !storeLoader)
+      break
+  }
+  return built
+}
+
+/**
+ * The scripts that follow the signals runtime, in the order they run: the
+ * page's messages (with the `messages` option), the module registry, the
+ * stores, the composables, the framework composables.
+ *
+ * The registry leads the bundles: stores, composables and every component
+ * script read from it, so it has to have run before any of them; the
+ * messages lead it, since its modules may read a message as they load.
+ * Composables ahead of framework composables is the order the separate
+ * splices produced (#1945).
+ */
+async function pageBundleTags(
+  result: string,
+  options: StxOptions,
+  dependencies: Set<string>,
+  context: Record<string, any> = {},
+): Promise<string[]> {
+  const { withModuleSubstitutes, moduleSubstitutionKey } = await import('./client-script-bundler')
+  const catalogs = await import('./message-catalogs')
+  const messagesOption = (options as { messages?: import('./message-catalogs').PageMessagesOptions }).messages
+  let messages: import('./message-catalogs').PageMessages | null = null
+  // A build already standing modules in for others (a native screen's) keeps
+  // its own: substitutes do not nest.
+  if (messagesOption && catalogs.pageMessagesEnabled(options as never) && moduleSubstitutionKey() === '' && !context.__stx_native_screen) {
+    try {
+      messages = await catalogs.loadPageMessages(process.cwd(), messagesOption)
+    }
+    catch (error) {
+      // Every language then ships, as without the option.
+      warnPageMessagesOnce(error)
+    }
+  }
+  const build = (): Promise<PageBundles> => buildPageBundles(result, options, dependencies, context)
+  const built = messages ? await withModuleSubstitutes(messages.stubs, build) : await build()
+
+  let messagesTag: string | null = null
+  if (messages) {
+    const areas = catalogs.messageAreasIn(built.modulesCode, built.storeCode, built.composableCode)
+    const code = catalogs.pageMessagesScript(messages, catalogs.pageLanguages(result, messages), areas)
+    if (code) {
+      const attrs = 'data-stx-scoped data-stx-run="always" data-stx-messages'
+      messagesTag = (await externalBundleTag(attrs, code, options)) ?? `<script ${attrs}>${code.replace(/<\/script/gi, '<\\/script')}</script>`
+    }
+  }
+  return [messagesTag, built.modulesTag, built.storeTag, built.composableTag, built.frameworkScript]
+    .filter((tag): tag is string => tag !== null)
+}
+
+let warnedPageMessages = false
+function warnPageMessagesOnce(error: unknown): void {
+  if (warnedPageMessages) return
+  warnedPageMessages = true
+  console.warn(`[stx] messages: ${error instanceof Error ? error.message : String(error)}; pages ship every language`)
 }
 
 function placeSignalsRuntimeBeforeScripts(html: string, afterRuntime = ''): string {
@@ -750,96 +968,10 @@ export async function processDirectives(
       if (isTopLevel) {
         const runtime = findScriptBlockByAttribute(result, 'data-stx-runtime')
         if (runtime) {
-          let modulesTag: string | null = null
-          let storeTag: string | null = null
-          // The store code as text, for the scans below: the tag itself can be
-          // just a src, which a scan for imports or composables reads as nothing.
-          let storeScan: string | null = null
-          let composableTag: string | null = null
-          let frameworkScript: string | null = null
-
-          // Auto-inject store definitions from storesDir.
-          try {
-            const { getStoreScript } = await importOnce('stx/store-loader', () => import('./store-loader'))
-            // Prefer the resolved storesDir from options (set by serve-app.ts to
-            // point at the real app directory). Fall back to config lookup.
-            const resolvedStoresDir = (options as any).storesDir as string | undefined
-            const storeCode = await getStoreScript(resolvedStoresDir)
-            if (storeCode) {
-              storeScan = `<script data-stx-stores>${storeCode}</script>`
-              storeTag = (await externalBundleTag('data-stx-stores', storeCode, options)) ?? storeScan
-            }
-          }
-          catch {
-            // Store loading is optional
-          }
-
-          // The page-level module registry (#1957): every module a component or
-          // store imports, bundled and evaluated ONCE for the page, so module
-          // state is shared instead of duplicated per component bundle.
-          modulesTag = await buildModulesTag([result, storeScan], options, dependencies)
-
-          // Framework composables the page actually calls but the runtime does
-          // not provide (#1805). Bundled from the real modules rather than
-          // hand-ported, demand-driven, and skip-never-clobber so the runtime's
-          // own signal-based versions always win.
-          //
-          // Scans a document that no longer carries the store tag, which is what
-          // it effectively saw before: its scan strips every stx-owned script
-          // block, the store tag included, so that an injected bundle cannot
-          // look like page code asking for a composable.
-          try {
-            const { getFrameworkComposableScript } = await importOnce(
-              'stx/framework-composables',
-              () => import('./framework-composables'),
-            )
-            frameworkScript = await getFrameworkComposableScript(result)
-          }
-          catch {
-            // Framework composables are an enhancement; never fail a render.
-          }
-
-          // Auto-inject composables from composablesDir (default: composables/,
-          // then functions/). Populates window.__composables, which is what
-          // `import { useThing } from '@composables'` compiles to — without it
-          // that import destructured undefined and every binding using a
-          // composable silently did nothing (#1780).
-          //
-          // Unlike the pass above, this one wants to see the other bundles: it
-          // prunes to what the page can reach, and a composable used only from a
-          // store has to survive (#1936). They are handed over as extra scan
-          // sources rather than spliced in first, which is the same text to a
-          // reachability scan and one document copy cheaper.
-          try {
-            const { getComposableScript } = await importOnce('stx/composable-loader', () => import('./composable-loader'))
-            const resolvedComposablesDir = (options as any).composablesDir as string | undefined
-            const pending = [modulesTag, storeScan, frameworkScript].filter((text): text is string => text !== null)
-            const composableCode = await getComposableScript(options._layerComposableDirs ?? resolvedComposablesDir, result, pending)
-            if (composableCode)
-              // Scoped and always-run like the module registry, so a fragment
-              // navigation carries it and the router runs it: the next page may
-              // call a composable this one never loaded.
-              composableTag = (await externalBundleTag('data-stx-scoped data-stx-run="always" data-stx-composables', composableCode, options))
-                ?? `<script data-stx-scoped data-stx-run="always" data-stx-composables>${composableCode}</script>`
-          }
-          catch {
-            // Composable loading is optional
-          }
-
-          // Composables ahead of framework composables is the order the separate
-          // splices produced: both anchored to the store tag, so whichever went
-          // in last ended up first. Reproduced rather than corrected -- the
-          // comment on the framework block claims the opposite order, and
-          // deciding which is right is a behaviour change, not a perf one.
-          // The module registry leads: stores, composables and every component
-          // script read from it, so it has to have run before any of them.
-          const tags = [modulesTag, storeTag, composableTag, frameworkScript]
-            .filter((text): text is string => text !== null)
-            .map(tag => `\n${tag}`)
-            .join('')
+          const tags = await pageBundleTags(result, options, dependencies, context)
           // Move the runtime and attach its dependent bundles in the same
           // rebuild. These used to be two consecutive page-sized splices.
-          result = placeSignalsRuntimeBeforeScripts(result, tags)
+          result = placeSignalsRuntimeBeforeScripts(result, tags.map(tag => `\n${tag}`).join(''))
         }
         else {
           // No runtime to anchor to, but a client script can still import a

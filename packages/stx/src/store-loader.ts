@@ -9,7 +9,10 @@
  * @module store-loader
  */
 
+import fs from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
+import { unboundNames } from './client-parameter-bindings'
 import { bundleClientScript, clientBundleDependencies, hasUserImports, moduleSubstitutionKey } from './client-script-bundler'
 import { loadStxConfig } from './config'
 import { isProduction, minifyClassicScript } from './env'
@@ -303,13 +306,26 @@ function topLevelNames(code: string): Set<string> {
 function storeFunctions(chunks: StoreChunk[]): string[] | null {
   const bound = chunks.map(chunk => topLevelNames(chunk.code))
   for (const [index, chunk] of chunks.entries()) {
+    const others = new Set<string>()
     for (const [other, names] of bound.entries()) {
       if (other === index) continue
       for (const name of names) {
-        if (bound[index]!.has(name) || chunk.declared.has(name)) continue
-        if (new RegExp(`(?<![\\w$.])${name.replace(/\$/g, '\\$')}(?![\\w$])`).test(chunk.code)) return null
+        if (!bound[index]!.has(name) && !chunk.declared.has(name)) others.add(name)
       }
     }
+    if (others.size === 0) continue
+    // Read with scopes: a store's own local `data` or `json` is not another
+    // store's top-level one, and a word test took every such local for a
+    // read (hq.training's stores never ran apart). A parse it cannot make
+    // falls back to the word test.
+    let reads: Set<string>
+    try {
+      reads = unboundNames(chunk.code, others)
+    }
+    catch {
+      reads = new Set([...others].filter(name => new RegExp(`(?<![\\w$.])${name.replace(/\$/g, '\\$')}(?![\\w$])`).test(chunk.code)))
+    }
+    if (reads.size > 0) return null
   }
   return chunks.map((chunk, index) => {
     const own = new Set([...chunk.declared, ...bound[index]!])
@@ -336,10 +352,52 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
 }
 
 /**
+ * Whether code takes `useStore` as a value rather than calling it: an alias
+ * (`import { useStore as get }`, `const { useStore: get } = …`,
+ * `const get = useStore`), a property key, or `useStore` handed to something
+ * else. Calls made through such a name cannot be read, so the code may read
+ * any store.
+ *
+ * What is not a use: a call (`useStore("a")`, `stx.useStore<T>("a")`), the
+ * name bound from the runtime (`const { useStore } = window.stx`,
+ * `var useStore = __stx["useStore"]`), `typeof useStore`, and the name as a
+ * string.
+ */
+function takesUseStoreAsValue(source: string): boolean {
+  if (!/\buseStore\b/.test(source)) return false
+  // Renamed while bound: everything read through the new name is unknown.
+  if (/\buseStore\s+as\s+[A-Za-z_$]/.test(source)) return true
+  if (/\{[^{}]*\buseStore\s*:\s*[A-Za-z_$[{][^{}]*\}\s*=(?!=)/.test(source)) return true
+  // Read off the runtime by a computed key the scan cannot follow.
+  if (/\[\s*(['"`])useStore\1\s*\]/.test(source.replace(/\b(?:var|let|const)\s+useStore\s*=\s*[\w$.]*\[\s*(['"`])useStore\1\s*\]/g, ' '))) return true
+  const text = source
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/(^|[^:\\'"`])\/\/[^\n]*/g, '$1 ')
+    .replace(/\b(?:var|let|const)\s+useStore\s*=\s*[\w$.]*\[\s*(['"`])useStore\1\s*\]/g, ' ')
+    .replace(/\b(?:const|let|var)\s*\{[^{}]*\}\s*=/g, ' ')
+    .replace(/\bimport\s*(?:type\s+)?\{[^{}]*\}\s*from\b/g, ' ')
+    .replace(/\bexport\s*(?:type\s+)?\{[^{}]*\}/g, ' ')
+    .replace(/\btypeof\s+useStore\b/g, ' ')
+    .replace(/(['"`])useStore\1/g, ' ')
+  for (const match of text.matchAll(/\buseStore\b/g)) {
+    const before = text.slice(Math.max(0, match.index! - 9), match.index!)
+    // Its own declaration (a function named so): the calls in it still count.
+    if (/\bfunction\s*$/.test(before)) continue
+    const after = text.slice(match.index! + 8).trimStart()
+    if (after.startsWith('(') || after.startsWith('<') || after.startsWith('?.(')) continue
+    // Assigned to, not read: `useStore = …`.
+    if (/^=(?![=>])/.test(after)) continue
+    return true
+  }
+  return false
+}
+
+/**
  * Every store a piece of code reads by name: `useStore("auth")`.
  *
- * `all` is set when it cannot tell: a call whose name is not a literal, or a
- * look into the registry itself. Such code may read any store.
+ * `all` is set when it cannot tell: a call whose name is not a literal,
+ * `useStore` taken as a value (an alias the calls then go through), or a look
+ * into the registry itself. Such code may read any store.
  */
 export function storesRead(...sources: Array<string | null | undefined>): { names: Set<string>, all: boolean } {
   const names = new Set<string>()
@@ -347,16 +405,63 @@ export function storesRead(...sources: Array<string | null | undefined>): { name
   for (const source of sources) {
     if (!source) continue
     if (/__STX_STORES__|\b_stores\b/.test(source)) all = true
-    const calls = source.match(/\buseStore\s*(?:<[^>()]*>)?\(/g)?.length ?? 0
+    if (takesUseStoreAsValue(source)) all = true
+    const calls = source.match(/\buseStore\s*(?:<[^>()]*>)?\s*(?:\?\.\s*)?\(/g)?.length ?? 0
     if (calls === 0) continue
     let literal = 0
-    for (const match of source.matchAll(/\buseStore\s*(?:<[^>()]*>)?\(\s*(['"`])([^'"`$\\]+)\1\s*[,)]/g)) {
+    for (const match of source.matchAll(/\buseStore\s*(?:<[^>()]*>)?\s*(?:\?\.\s*)?\(\s*(['"`])([^'"`$\\]+)\1\s*[,)]/g)) {
       names.add(match[2]!)
       literal++
     }
     if (literal !== calls) all = true
   }
   return { names, all }
+}
+
+const _storesReadByFile = new Map<string, { mtimeMs: number, size: number, read: { names: Set<string>, all: boolean } }>()
+
+/**
+ * The stores the files read (`storesRead`), each file read once per version.
+ * For the sources a page's bundles were built from: the built bundles may be
+ * minified, where `useStore` can be an alias the scan cannot follow, while
+ * the sources still say which stores they read. A file that cannot be read
+ * makes the answer `all`.
+ */
+export function storesReadInFiles(files: Iterable<string>): { names: Set<string>, all: boolean } {
+  const names = new Set<string>()
+  let all = false
+  for (const file of files) {
+    // Built output and data cannot call a store.
+    if (/\.(?:css|json|svg|wasm|png|jpe?g|gif|webp|avif|woff2?|ttf|txt|md)$/i.test(file)) continue
+    let read: { names: Set<string>, all: boolean }
+    try {
+      const stat = fs.statSync(file)
+      const cached = _storesReadByFile.get(file)
+      if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) {
+        read = cached.read
+      }
+      else {
+        read = storesRead(fs.readFileSync(file, 'utf8'))
+        _storesReadByFile.set(file, { mtimeMs: stat.mtimeMs, size: stat.size, read })
+      }
+    }
+    catch {
+      read = { names: new Set(), all: true }
+    }
+    if (read.all) all = true
+    for (const name of read.names) names.add(name)
+  }
+  return { names, all }
+}
+
+/**
+ * Whether a page ships only the stores it reads (the default) or every store.
+ * `STX_PAGE_STORES=all` ships every store on every page, as stx did before
+ * 0.2.761: a store whose definition has an effect a page relies on without
+ * reading the store would otherwise not run on that page.
+ */
+export function pageStoresAll(env: Record<string, string | undefined> = process.env): boolean {
+  return env.STX_PAGE_STORES === 'all'
 }
 
 /**
@@ -377,14 +482,34 @@ export function storesRead(...sources: Array<string | null | undefined>): { name
 export async function getStoreScriptFor(
   storesDir: string | undefined,
   usedBy: Array<string | null | undefined>,
-  options: { sharedModules?: boolean } = {},
+  options: {
+    sharedModules?: boolean
+    /** Stores read elsewhere (`storesReadInFiles`), on top of what `usedBy` reads. */
+    reads?: { names: Iterable<string>, all: boolean }
+    /**
+     * Each store runs once per document, however many pages' scripts carry
+     * it (`runOnceStoreScript`): what a web page needs, whose router loads
+     * the next page's stores beside the ones already defined. The stores are
+     * all kept when they cannot run apart (one reads a name another binds).
+     */
+    runOnce?: boolean
+    /** Keep every store, as when the analysis is turned off (`STX_PAGE_STORES=all`). */
+    all?: boolean
+  } = {},
 ): Promise<{ code: string, stores: string[], functions: string[] | null } | null> {
   const built = await loadStoreChunks(storesDir, options.sharedModules)
   if (!built) return null
   const { chunks } = built
   const wanted = storesRead(...usedBy)
+  if (options.reads) {
+    if (options.reads.all) wanted.all = true
+    for (const name of options.reads.names) wanted.names.add(name)
+  }
+  // Run apart, each store is a function of its own; when they cannot be, the
+  // page needs them together, in the one scope they share.
+  const apart = options.runOnce ? runOnceFunctions(built) : undefined
   let kept: StoreChunk[]
-  if (wanted.all || chunks.some(chunk => chunk.ids.length === 0)) {
+  if (options.all || wanted.all || chunks.some(chunk => chunk.ids.length === 0) || apart === null) {
     kept = chunks
   }
   else {
@@ -405,7 +530,51 @@ export async function getStoreScriptFor(
     kept = everything ? chunks : chunks.filter(chunk => included.has(chunk))
   }
   if (kept.length === 0) return null
+  if (apart) {
+    const functions = kept.map(chunk => apart.get(chunk)!)
+    const names = kept.map(chunk => chunk.name)
+    // Pages share their sets, and the script is minified in production:
+    // built once per set of the same build of the stores.
+    let scripts = _runOnceScripts.get(built)
+    if (!scripts) _runOnceScripts.set(built, scripts = new Map())
+    let code = scripts.get(names.join('\0'))
+    if (code === undefined) scripts.set(names.join('\0'), code = runOnceStoreScript(names, functions))
+    return { code, stores: names, functions }
+  }
   return { code: assembleStoreScript(kept), stores: kept.map(chunk => chunk.name), functions: storeFunctions(kept) }
+}
+
+const _runOnceScripts = new WeakMap<StoreChunks, Map<string, string>>()
+
+/** Every store as a function of its own (`storeFunctions`), by chunk; null when they cannot run apart. */
+const _runOnceFunctions = new WeakMap<StoreChunks, Map<StoreChunk, string> | null>()
+function runOnceFunctions(built: StoreChunks): Map<StoreChunk, string> | null {
+  if (_runOnceFunctions.has(built)) return _runOnceFunctions.get(built)!
+  const functions = storeFunctions(built.chunks)
+  const byChunk = functions ? new Map(built.chunks.map((chunk, index) => [chunk, functions[index]!])) : null
+  _runOnceFunctions.set(built, byChunk)
+  return byChunk
+}
+
+/**
+ * A page's stores as one script that runs each store file once per
+ * document. Pages read different stores, so the stores a page needs come in
+ * its own script, and the router loads the next page's beside the ones it
+ * has (they are module bundles, loaded before a swap). A store another page
+ * already defined is skipped rather than run again: `defineStore` would hand
+ * back the instance anyway, but whatever else the file does at its top level
+ * (an event listener) would happen twice.
+ *
+ * Store HMR re-runs every store on purpose (`__hmrReplaceStores`), and goes
+ * through the shared script (`getStoreScript`), not this one.
+ *
+ * A store that throws no longer takes the ones after it down with it, as it
+ * did in the shared scope: each is reported on its own.
+ */
+function runOnceStoreScript(names: string[], functions: string[]): string {
+  const calls = names.map((name, index) => `run(${JSON.stringify(name)}, ${functions[index]})`).join(';\n')
+  const assembled = `;(function(){\nvar ran = window.__stxStoreFiles || (window.__stxStoreFiles = {});\nfunction run(name, define) {\n  if (ran[name]) return;\n  ran[name] = 1;\n  try { define(); }\n  catch (error) { console.error('[stx] store ' + name + ' failed to load:', error); }\n}\n${calls};\n})();`
+  return isProduction() ? minifyClassicScript(assembled) : assembled
 }
 
 /**

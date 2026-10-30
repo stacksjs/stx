@@ -30,11 +30,12 @@ const storesDir = path.join(APP, 'stores')
 const composablesDir = path.join(APP, 'functions')
 
 // `state(` in the page is what makes the signals runtime ship; the bundles
-// anchor to it, so without it there is nothing to assert.
+// anchor to it, so without it there is nothing to assert. A page ships the
+// stores it reads, so it reads the one these are about.
 const PAGE = [
   '<html><head><meta charset="utf-8"><title>t</title></head><body>',
   '<main><p>page</p></main>',
-  '<script client>const open = state(false)</script>',
+  '<script client>const open = state(false)\nconst cart = useStore(\'cart\')</script>',
   '</body></html>',
 ].join('\n')
 
@@ -131,7 +132,7 @@ describe('large bundles in serve mode', () => {
   it('links the stores as a cached file instead of inlining them in every page', async () => {
     const { getServeModuleBundle } = await import('../../src/caching')
     const output = await renderServed()
-    const src = output.match(/<script data-stx-stores src="([^"]+)"><\/script>/)?.[1]
+    const src = output.match(/<script\b[^>]*\bdata-stx-stores\b[^>]*\bsrc="([^"]+)"><\/script>/)?.[1]
     expect(src).toBeTruthy()
     expect(output).not.toContain('x'.repeat(6000))
     const hash = src!.match(/([0-9a-f]{16})\.js$/)?.[1]

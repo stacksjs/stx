@@ -171,7 +171,20 @@ const isLoggedIn = auth.isAuthenticated
 
 ## Auto-Discovery
 
-Store files are auto-discovered from your `storesDir` (default: `stores/`). Any `.ts` file in that directory (except `index.ts`, `types.ts`, and `.d.ts` files) is automatically bundled and injected into the page.
+Store files are auto-discovered from your `storesDir` (default: `stores/`). Any `.ts` file in that directory (except `index.ts`, `types.ts`, and `.d.ts` files) is automatically bundled, and each page gets the stores it reads.
+
+### Which stores a page gets
+
+A page ships the stores its code reads by name: `useStore('cart')` in its scripts and templates, in the modules they import, and in its composables, together with the stores those stores read. A page that reads none ships none. Each store runs once per document: when the router navigates to a page that reads a store the current page did not have, it loads that page's stores before swapping it in, and a store already defined is left as it is.
+
+Every store ships, as on every page before, when a page may read any of them:
+
+- a store read by a name that is not a literal (`useStore(name)`)
+- `useStore` taken as a value (`const get = useStore`, `import { useStore as get }`)
+- a store file that reads a top-level name another store file binds (they then share one scope)
+- `STX_PAGE_STORES=all` in the environment
+
+A store's definition only runs on pages that read it. A store whose definition does something a page relies on without reading the store (a global listener, say) should be read where that is needed, or the app can set `STX_PAGE_STORES=all`.
 
 ```
 stores/
