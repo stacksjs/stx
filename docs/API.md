@@ -4769,6 +4769,37 @@ const { isVisible, stop } = useIntersectionObserver(elementRef, {
 const { isFocused, focus, blur } = useFocus(inputRef)
 ```
 
+### useCompletion (inline ghost text)
+
+`useCompletion()` decides when to ask for an inline suggestion (the grey text after the caret, accepted with Tab) and what to keep of the answer. It does not draw anything and does not care where suggestions come from, so a textarea, a contenteditable and a native text view can share it. It is demand-bundled into `<script client>` blocks, like `useForm`, so it needs no import there.
+
+```typescript
+const completion = useCompletion({
+  // Resolve '' for "no suggestion". `signal` aborts when a newer edit makes the answer pointless.
+  fetch: async ({ before, after, caret }, signal) => {
+    const res = await fetch('/api/complete', { method: 'POST', signal, body: JSON.stringify({ before, after }) })
+    return (await res.json()).completion
+  },
+  debounceMs: 250, // quiet time after the last edit
+  minChars: 12, // fewest characters before the caret that earn a request
+  enabled: () => !readOnly(), // a boolean, or a function (a signal works)
+})
+
+// On input, selection change and composition end:
+completion.update(text.slice(0, caret), text.slice(caret), caret, { composing, selecting: start !== end })
+
+completion.ghost() // the suggestion still to accept ('' when none)
+completion.pending() // a request is in flight
+insert(completion.accept()) // Tab: the whole suggestion
+insert(completion.acceptWord()) // Ctrl/Cmd+Right: the next word, leading whitespace included
+completion.dismiss() // Escape
+completion.destroy() // on teardown
+```
+
+Behaviour you can rely on: a burst of edits asks once; a newer edit aborts the previous request; an answer for text that is no longer there never shows (even if the fetch ignored the abort); no request during an IME composition, with text selected, mid-word, or below `minChars`; typing the first characters of the suggestion consumes it (the ghost shrinks, nothing is fetched) while any other edit clears it; accepting does not immediately ask for the next one.
+
+`<AiTextarea>` in `@stacksjs/components` is the textarea built on it.
+
 ### Async
 
 ```typescript

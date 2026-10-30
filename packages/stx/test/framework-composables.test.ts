@@ -211,6 +211,37 @@ const form = useForm({ email: v.required() })
   })
 })
 
+describe('useCompletion reaches the client', () => {
+  it('is offered for a page that calls it', () => {
+    expect(referencedFrameworkComposables('const c = useCompletion({ fetch: async () => "" })')).toEqual(['useCompletion'])
+  })
+
+  it('bundles a script that runs and exposes the composable on window.stx', async () => {
+    const script = await getFrameworkComposableScript('useCompletion({})')
+    expect(script).toContain('function useCompletion')
+    const body = script!.replace(/^<script[^>]*>/, '').replace(/<\/script>$/, '')
+    expect(body).not.toMatch(/^\s*import\s/m)
+    // eslint-disable-next-line no-new-func
+    expect(() => new Function(body)).not.toThrow()
+  })
+
+  it('ships through the render pipeline on a page that calls it', async () => {
+    const template = `<script client>
+const text = state('')
+const completion = useCompletion({ fetch: async () => '' })
+</script>
+<main><p>{{ completion.ghost() }}</p></main>`
+    const out = await processDirectives(template, {}, '/app/editor.stx', {
+      ...defaultConfig,
+      partialsDir: '/tmp',
+      componentsDir: '/tmp',
+      autoShell: true,
+    } as never, new Set<string>())
+    expect(out).toContain('data-stx-framework-composables')
+    expect(out).toContain('function useCompletion')
+  })
+})
+
 describe('a page reached by the router', () => {
   it('carries the framework composables in its fragment', async () => {
     // A fragment carries the container and the head scripts marked

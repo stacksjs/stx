@@ -483,6 +483,10 @@ export {
 // re-export, two contradictory test suites. See #1849.
 export { defineForm, useForm } from './use-form'
 
+// Inline AI-style ghost text for a text field: debounce, abort, stale discard, accept.
+// Demand-bundled for client scripts like useForm.
+export { useCompletion, type Completion, type CompletionContext, type CompletionMeta, type UseCompletionOptions } from './use-completion'
+
 // Authenticated server broadcasts, demand-bundled for client scripts.
 export { useBroadcastStream, type BroadcastStreamFrame, type BroadcastStreamClientOptions } from './use-broadcast-stream'
 
