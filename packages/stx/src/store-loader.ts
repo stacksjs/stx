@@ -20,8 +20,6 @@ import { clearSourceSignatures, readSigned, type SignedCacheEntry, sourceSignatu
 import { stripModuleImports, transformStoreImports } from './store-imports'
 import { getSharedTranspiler } from './utils'
 
-const _cachedStoreScripts = new Map<string, SignedCacheEntry<string>>()
-
 /**
  * Discover store files from storesDir and bundle them into a single
  * script that can be injected into the page.
@@ -72,7 +70,26 @@ function collectDeclaredNames(code: string, into: Set<string>): void {
   }
 }
 
-export async function getStoreScript(storesDir?: string): Promise<string | null> {
+/** One store file, built: what it defines, the names it binds itself, and its code. */
+interface StoreChunk {
+  /** The file's name without `.ts`. */
+  name: string
+  /** The ids its `defineStore("id", …)` calls name. Empty when a call names its store some other way. */
+  ids: string[]
+  /** The names the file binds at the top level. */
+  declared: Set<string>
+  /** The store, built and ready to be concatenated into the shared IIFE. */
+  code: string
+}
+
+interface StoreChunks {
+  chunks: StoreChunk[]
+}
+
+const _cachedStoreChunks = new Map<string, SignedCacheEntry<StoreChunks>>()
+
+/** Every store file's chunk, in dependency order; null when the directory holds none. */
+async function loadStoreChunks(storesDir?: string, sharedModules: boolean = isProduction()): Promise<StoreChunks | null> {
   let resolvedDir: string
   if (storesDir) {
     resolvedDir = path.resolve(storesDir)
@@ -92,7 +109,7 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
   // life of the process (#1877).
   // Stores bundled under module substitutes (the native compiler's) are
   // another build of the same files.
-  const cacheKey = `${resolvedDir}\u0000${moduleSubstitutionKey()}`
+  const cacheKey = `${resolvedDir}\u0000${moduleSubstitutionKey()}\u0000${sharedModules ? 'shared' : 'inline'}`
   const glob = new Bun.Glob('*.ts')
   const storeFiles: string[] = []
 
@@ -107,7 +124,7 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
   }
   catch {
     // storesDir doesn't exist — no stores to load
-    writeSigned(_cachedStoreScripts, cacheKey, '', '')
+    writeSigned(_cachedStoreChunks, cacheKey, '', { chunks: [] })
     return null
   }
 
@@ -118,11 +135,11 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
     ...storeFiles.flatMap(file => clientBundleDependencies(file)),
   ])]
   let signature = sourceSignature(storeInputs())
-  const cached = readSigned(_cachedStoreScripts, cacheKey, signature)
-  if (cached !== undefined) return cached || null
+  const cached = readSigned(_cachedStoreChunks, cacheKey, signature)
+  if (cached !== undefined) return cached.chunks.length > 0 ? cached : null
 
   if (storeFiles.length === 0) {
-    writeSigned(_cachedStoreScripts, cacheKey, signature, '')
+    writeSigned(_cachedStoreChunks, cacheKey, signature, { chunks: [] })
     return null
   }
 
@@ -147,12 +164,7 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
   // Read each store file, strip imports/exports, and concatenate.
   // Store files use `import { defineStore, state, derived } from '@stacksjs/stx'`
   // but in the browser these are already globals — just strip the imports.
-  const chunks: string[] = []
-
-  // Names the store files declare themselves. A local `const useCookie = …`
-  // must win over the runtime global of the same name, exactly as it would in a
-  // client script, so those are excluded from the preamble below.
-  const declaredNames = new Set<string>()
+  const chunks: StoreChunk[] = []
 
   const transpiler = getSharedTranspiler({ loader: 'ts', target: 'browser', define: getPublicEnvDefine() })
 
@@ -161,7 +173,14 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
       let code = await Bun.file(file).text()
       const storeName = path.basename(file, '.ts')
 
-      collectDeclaredNames(code, declaredNames)
+      // Names the store file declares itself. A local `const useCookie = …`
+      // must win over the runtime global of the same name, exactly as it would
+      // in a client script, so those are excluded from the preamble.
+      const declared = new Set<string>()
+      collectDeclaredNames(code, declared)
+      const ids = [...code.matchAll(/\bdefineStore\s*(?:<[^>()]*>)?\(\s*(['"`])([^'"`$\\]+)\1/g)].map(match => match[2]!)
+      // A call whose id is not a literal makes the file's ids unknown.
+      const definitions = code.match(/\bdefineStore\s*(?:<[^>()]*>)?\(/g)?.length ?? 0
 
       // A store is browser code just like a <script client> block. Explicit
       // imports from installed packages and local helpers therefore need the
@@ -177,7 +196,7 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
         // every helper it imports: hq.training's thirty stores came to 2.9 MB
         // on every page, i18n and request helpers repeated in each. There the
         // page registry, which already reads the store code, holds one copy.
-        code = await bundleClientScript(code, file, { projectRoot: process.cwd(), externalizeUserModules: isProduction() })
+        code = await bundleClientScript(code, file, { projectRoot: process.cwd(), externalizeUserModules: sharedModules })
 
       // A bundled dependency may import the same STX runtime names as the
       // store entry. Bun keeps that external import and renames the dependency
@@ -205,7 +224,7 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
       // This is 100% reliable vs fragile regex stripping.
       code = transpiler.transformSync(code)
 
-      chunks.push(`// Store: ${storeName}\n${code.trim()}`)
+      chunks.push({ name: storeName, ids: ids.length === definitions ? ids : [], declared, code: `// Store: ${storeName}\n${code.trim()}` })
     }
     catch (e) {
       console.warn(`[stx] Failed to load store ${file}:`, e)
@@ -213,27 +232,43 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
   }
 
   if (chunks.length === 0) {
-    writeSigned(_cachedStoreScripts, cacheKey, signature, '')
+    writeSigned(_cachedStoreChunks, cacheKey, signature, { chunks: [] })
     return null
   }
 
-  // Destructure the runtime globals the store files actually reference.
-  //
-  // signals.js puts roughly a dozen names directly on `window` — state, effect,
-  // batch, navigate, defineStore — but the other ~34 live only on `window.stx`.
-  // A <script client> block gets this preamble generated for it, so a bare
-  // `useCookie(...)` works there; a store file got none, so the identical line
-  // was a ReferenceError (#1838).
-  //
-  // It failed unreadably, too: store files are stripped of `export` and
-  // concatenated into ONE shared IIFE, so the throw aborted every store, not
-  // just the one at fault, and the developer saw `Store not found` raised later
-  // by an unrelated `useStore(...)` call.
-  //
-  // Only referenced names are emitted, and locally-declared ones are skipped so
-  // a store's own binding still shadows the global. Same construction as
-  // composable-loader.ts, deliberately — one mechanism, not two.
-  const joinedChunks = chunks.join('\n\n')
+  // The first cold bundle discovers its transitive inputs. Sign the cached
+  // aggregate with that complete graph so editing an imported helper
+  // invalidates the store script on the next read.
+  signature = sourceSignature(storeInputs())
+  const built = { chunks }
+  writeSigned(_cachedStoreChunks, cacheKey, signature, built)
+  return built
+}
+
+/**
+ * Concatenate store chunks into the one script a page loads.
+ *
+ * Destructures the runtime globals the store files actually reference.
+ *
+ * signals.js puts roughly a dozen names directly on `window` — state, effect,
+ * batch, navigate, defineStore — but the other ~34 live only on `window.stx`.
+ * A <script client> block gets this preamble generated for it, so a bare
+ * `useCookie(...)` works there; a store file got none, so the identical line
+ * was a ReferenceError (#1838).
+ *
+ * It failed unreadably, too: store files are stripped of `export` and
+ * concatenated into ONE shared IIFE, so the throw aborted every store, not
+ * just the one at fault, and the developer saw `Store not found` raised later
+ * by an unrelated `useStore(...)` call.
+ *
+ * Only referenced names are emitted, and locally-declared ones are skipped so
+ * a store's own binding still shadows the global. Same construction as
+ * composable-loader.ts, deliberately — one mechanism, not two.
+ */
+function assembleStoreScript(chunks: StoreChunk[]): string {
+  const declaredNames = new Set<string>()
+  for (const chunk of chunks) for (const name of chunk.declared) declaredNames.add(name)
+  const joinedChunks = chunks.map(chunk => chunk.code).join('\n\n')
   const runtimeBindings = STX_RUNTIME_GLOBALS
     .filter(name => !declaredNames.has(name) && new RegExp(`\\b${name}\\b`).test(joinedChunks))
     .map(name => `var ${name} = __stx[${JSON.stringify(name)}];`)
@@ -241,19 +276,100 @@ export async function getStoreScript(storesDir?: string): Promise<string | null>
 
   const assembled = `;(function(){\nvar __stx = window.stx || {};\n${runtimeBindings}\n${joinedChunks}\n})();`
   // Production ships it minified, as one script: it is every page's.
-  const code = isProduction() ? minifyClassicScript(assembled) : assembled
-  // The first cold bundle discovers its transitive inputs. Sign the cached
-  // aggregate with that complete graph so editing an imported helper
-  // invalidates the store script on the next read.
-  signature = sourceSignature(storeInputs())
-  writeSigned(_cachedStoreScripts, cacheKey, signature, code)
+  return isProduction() ? minifyClassicScript(assembled) : assembled
+}
+
+/** The assembled script of every store, kept for as long as the chunks it was built from. */
+const _assembledStoreScripts = new WeakMap<StoreChunks, string>()
+
+export async function getStoreScript(storesDir?: string): Promise<string | null> {
+  const built = await loadStoreChunks(storesDir)
+  if (!built) return null
+  let code = _assembledStoreScripts.get(built)
+  if (code === undefined) {
+    code = assembleStoreScript(built.chunks)
+    _assembledStoreScripts.set(built, code)
+  }
   return code
+}
+
+/**
+ * Every store a piece of code reads by name: `useStore("auth")`.
+ *
+ * `all` is set when it cannot tell: a call whose name is not a literal, or a
+ * look into the registry itself. Such code may read any store.
+ */
+export function storesRead(...sources: Array<string | null | undefined>): { names: Set<string>, all: boolean } {
+  const names = new Set<string>()
+  let all = false
+  for (const source of sources) {
+    if (!source) continue
+    if (/__STX_STORES__|\b_stores\b/.test(source)) all = true
+    const calls = source.match(/\buseStore\s*(?:<[^>()]*>)?\(/g)?.length ?? 0
+    if (calls === 0) continue
+    let literal = 0
+    for (const match of source.matchAll(/\buseStore\s*(?:<[^>()]*>)?\(\s*(['"`])([^'"`$\\]+)\1\s*[,)]/g)) {
+      names.add(match[2]!)
+      literal++
+    }
+    if (literal !== calls) all = true
+  }
+  return { names, all }
+}
+
+/**
+ * The store script for code that reads only some of the stores: those it names
+ * with `useStore("…")`, and those the stores it names read in turn. A page
+ * that loads every store defines thirty of them (HQ's phone screens: ~140 KB of
+ * every route), each running its setup, for one or two it uses.
+ *
+ * `usedBy` is all the code that will run beside the stores (the page's
+ * scripts, its modules). With code that may read any store, or a store file
+ * whose ids cannot be read, every store is kept. `stores` names the files
+ * kept, for the caller to rebuild what depends on them.
+ *
+ * `sharedModules`: the stores' imports are left to the page's module registry
+ * (what production does) instead of inlined in each store. Defaults to
+ * production's.
+ */
+export async function getStoreScriptFor(
+  storesDir: string | undefined,
+  usedBy: Array<string | null | undefined>,
+  options: { sharedModules?: boolean } = {},
+): Promise<{ code: string, stores: string[] } | null> {
+  const built = await loadStoreChunks(storesDir, options.sharedModules)
+  if (!built) return null
+  const { chunks } = built
+  const wanted = storesRead(...usedBy)
+  let kept: StoreChunk[]
+  if (wanted.all || chunks.some(chunk => chunk.ids.length === 0)) {
+    kept = chunks
+  }
+  else {
+    const byId = new Map<string, StoreChunk>()
+    for (const chunk of chunks) for (const id of chunk.ids) byId.set(id, chunk)
+    const included = new Set<StoreChunk>()
+    const queue = [...wanted.names]
+    let everything = false
+    while (queue.length > 0 && !everything) {
+      const chunk = byId.get(queue.pop()!)
+      // A name no store defines is for something else to answer.
+      if (!chunk || included.has(chunk)) continue
+      included.add(chunk)
+      const next = storesRead(chunk.code)
+      if (next.all) everything = true
+      else queue.push(...next.names)
+    }
+    kept = everything ? chunks : chunks.filter(chunk => included.has(chunk))
+  }
+  if (kept.length === 0) return null
+  return { code: assembleStoreScript(kept), stores: kept.map(chunk => chunk.name) }
 }
 
 /**
  * Clear the cached store script (for dev mode hot reload).
  */
 export function clearStoreCache(): void {
-  _cachedStoreScripts.clear()
+  _cachedStoreChunks.clear()
   clearSourceSignatures()
 }

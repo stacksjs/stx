@@ -185,10 +185,13 @@ export async function compileScreenSource(
   }
   // Serve HTML externalizes the page's module registry. A native screen has
   // no HTTP script loader: embed the same registry before component setups.
-  const { buildModuleRegistryScript, registeredModuleIdsIn } = await import('../../client-module-registry')
+  const { buildModuleRegistryScript, registeredModuleIdsIn, registeredModuleNamesIn } = await import('../../client-module-registry')
   const registry = async (): Promise<string | null> => {
     const inputs: string[] = []
-    const code = await buildModuleRegistryScript(registeredModuleIdsIn(...scripts.map(script => script.code)), { collectInputs: inputs })
+    const sources = scripts.map(script => script.code)
+    // The route's code is fixed, so a module is registered with the names it
+    // is read for and the rest of what it exports stays out of the file.
+    const code = await buildModuleRegistryScript(registeredModuleIdsIn(...sources), { collectInputs: inputs, names: registeredModuleNamesIn(...sources) })
     for (const input of inputs) dependencies.add(input)
     return code
   }
@@ -201,15 +204,25 @@ export async function compileScreenSource(
   // a module it imports) reads a store: every store's definition runs when
   // it loads, which a screen that uses none should not pay for, nor see the
   // effects of (a store reading a language's messages on definition).
+  //
+  // And only the stores it reads, with those they read in turn: thirty
+  // stores' definitions were ~140 KB of every route, for the one or two a
+  // screen uses. Code that may read any store (a name that is not a literal)
+  // keeps them all.
   const usesStores = [...scripts.map(script => script.code), modules ?? ''].some(code => /\buseStore\s*\(/.test(code))
   if (usesStores && /<script\b[^>]*\bdata-stx-stores\b/i.test(html)) {
-    const { getStoreScript } = await import('../../store-loader')
-    const stores = await getStoreScript(config.storesDir)
-    if (stores) {
-      scripts.unshift({ code: stores })
+    const { getStoreScriptFor } = await import('../../store-loader')
+    const own = [...scripts]
+    let kept = ''
+    for (let round = 0; round < 8; round++) {
+      // The stores' imports join the registry, so what they read is found in it.
+      const stores = await getStoreScriptFor(config.storesDir, [...own.map(script => script.code), modules], { sharedModules: true })
+      if (!stores) break
+      if (stores.stores.join() === kept) break
+      kept = stores.stores.join()
+      scripts.splice(0, scripts.length, { code: stores.code }, ...own)
       for (const file of new Bun.Glob('*.ts').scanSync({ cwd: config.storesDir, absolute: true }))
         dependencies.add(file)
-      // The stores' own imports join the registry.
       modules = await registry()
     }
   }

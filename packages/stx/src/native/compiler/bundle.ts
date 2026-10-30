@@ -317,6 +317,69 @@ function runtimeDocument(document: STXDocument, root: string): STXDocument {
 }
 
 /**
+ * The stylesheets the screens carry (`_stylesheetRules`, `_stylesheetTheme`:
+ * the app theme's role tokens every screen is given, and the rules of the
+ * components it uses), held once. Every screen's rules are nearly the same
+ * ones (HQ: 114 to 121 rules, 16 KB, in each of its 74 routes), so the
+ * prelude holds each rule once, with the value most screens give it, and a
+ * screen names its rules in order and carries only those that differ.
+ */
+interface SharedStylesheets {
+  /** Each rule's most common value, by name. */
+  rules: Record<string, unknown>
+  /** Each theme, by the hash of its content. */
+  themes: Record<string, unknown>
+  /** What a screen carries: its rules' names in order, its own rules, its theme's key. */
+  screens: Map<string, { order: string[], own: Record<string, unknown>, theme: string | null }>
+}
+
+function sharedStylesheets(documents: Array<{ name: string, document: STXDocument }>): SharedStylesheets {
+  const seen = new Map<string, Map<string, { value: unknown, count: number }>>()
+  const sheets = documents.flatMap(({ name, document }) => {
+    const { _stylesheetRules: rules, _stylesheetTheme: theme } = document.root
+    return rules === undefined && theme === undefined ? [] : [{ name, rules: (rules ?? {}) as Record<string, unknown>, theme }]
+  })
+  for (const { rules } of sheets) {
+    for (const [rule, value] of Object.entries(rules)) {
+      const json = JSON.stringify(value)
+      const values = seen.get(rule) ?? new Map<string, { value: unknown, count: number }>()
+      const known = values.get(json)
+      if (known) known.count++
+      else values.set(json, { value, count: 1 })
+      seen.set(rule, values)
+    }
+  }
+  const shared: Record<string, unknown> = {}
+  const sharedJson = new Map<string, string>()
+  for (const [rule, values] of seen) {
+    const [json, best] = [...values].sort(([, a], [, b]) => b.count - a.count)[0]!
+    shared[rule] = best.value
+    sharedJson.set(rule, json)
+  }
+  const themes: Record<string, unknown> = {}
+  const screens: SharedStylesheets['screens'] = new Map()
+  for (const { name, rules, theme } of sheets) {
+    const own: Record<string, unknown> = {}
+    for (const [rule, value] of Object.entries(rules)) {
+      if (JSON.stringify(value) !== sharedJson.get(rule)) own[rule] = value
+    }
+    let key: string | null = null
+    if (theme !== undefined) {
+      key = Bun.hash(JSON.stringify(theme)).toString(36)
+      themes[key] = theme
+    }
+    screens.set(name, { order: Object.keys(rules), own, theme: key })
+  }
+  return { rules: shared, themes, screens }
+}
+
+/** The document without the stylesheet the runtime prelude holds for it. */
+function withoutStylesheet(document: STXDocument): STXDocument {
+  const { _stylesheetRules, _stylesheetTheme, ...root } = document.root
+  return { ...document, root: root as STXDocument['root'] }
+}
+
+/**
  * Build the bundle the host loads as `native-screen.js`.
  *
  * @example
@@ -378,6 +441,7 @@ export async function compileNativeBundle(options: CompileNativeBundleOptions): 
    * route file; evaluated as a file of their own, a host's shared
    * JavaScriptCore VM parses them once for every screen.
    */
+  const sharedSheets = sharedStylesheets(compiledScreens.map(({ name, compiled }) => ({ name, document: compiled.document })))
   const entry = (bundled: typeof compiledScreens, withApp: boolean, runtimeVersion?: string): string => {
     const route = routed
       ? `var routeName = g.__stxNativeRoute || ${JSON.stringify(initialScreen)};
@@ -385,10 +449,17 @@ var isApp = ${appFile ? `routeName === ${JSON.stringify(NATIVE_APP_ROUTE)}` : 'f
 if (!isApp && routeNames.indexOf(routeName) === -1) throw new Error(['Unknown native screen:', routeName].join(' '));
 if (isApp ? ${!withApp} : ${JSON.stringify(bundled.map(({ name }) => name))}.indexOf(routeName) === -1) throw new Error(['This bundle does not hold the native screen', routeName].join(' '));`
       : "var routeName = 'main';\nvar isApp = false;"
-    const selections = bundled.map(({ name, compiled }, index) => `${index === 0 ? 'if' : 'else if'} (routeName === ${JSON.stringify(routed ? name : 'main')}) {
-  nativeDocument = ${JSON.stringify(runtimeDocument(compiled.document, root))};
+    const selections = bundled.map(({ name, compiled }, index) => {
+      // The app's stylesheet is nearly the same in every screen: the prelude holds it.
+      const sheet = runtimeVersion ? sharedSheets.screens.get(name) : undefined
+      const document = runtimeDocument(sheet ? withoutStylesheet(compiled.document) : compiled.document, root)
+      return `${index === 0 ? 'if' : 'else if'} (routeName === ${JSON.stringify(routed ? name : 'main')}) {
+  nativeDocument = ${JSON.stringify(document)};${sheet ? `
+  nativeDocument.root._stylesheetRules = runtime.stylesheetRules(${JSON.stringify(sheet.order)}, ${JSON.stringify(sheet.own)});${sheet.theme ? `
+  nativeDocument.root._stylesheetTheme = runtime.themes[${JSON.stringify(sheet.theme)}];` : ''}` : ''}
   manifest = ${JSON.stringify(compiled.manifest)};
-}`).join('\n')
+}`
+    }).join('\n')
     const setups = bundled.map(({ name, compiled }, index) => `${index === 0 ? 'if' : 'else if'} (routeName === ${JSON.stringify(routed ? name : 'main')}) {
   g.__stx_latestSetup = null;
 ${compiled.scripts.map(script => script.owner
@@ -421,11 +492,11 @@ ${app ? `import * as nativeAppModule from ${JSON.stringify(appFile)};` : 'var na
 ${browser ? '(async function() {' : ''}
 var g = globalThis;
 installJSCGlobals(g);
-g.__stxNativeStyleConfig = ${JSON.stringify(styleConfig)};
+g.__stxNativeStyleConfig = ${runtimeVersion ? 'runtime.styleConfig' : JSON.stringify(styleConfig)};
 ${browser ? `var browserPlatform = await createBrowserPlatform(${JSON.stringify(browser.platformOptions ?? {})});\nvar browserBridge = createBrowserScreenBridge(browserPlatform, ${JSON.stringify(browser)});\nvar bridge = browserBridge;\ng.__stxNativeRoute = ${JSON.stringify(initialScreen)};` : 'var bridge = g.__stxNativeBridge;'}
 if (!bridge) throw new Error('Missing __stxNativeBridge');
-var routeNames = ${JSON.stringify(routed ? names : ['main'])};
-var shareStorage = ${JSON.stringify(options.shareStorage ?? {})};
+var routeNames = ${runtimeVersion ? 'runtime.routeNames' : JSON.stringify(routed ? names : ['main'])};
+var shareStorage = ${runtimeVersion ? 'runtime.shareStorage' : JSON.stringify(options.shareStorage ?? {})};
 ${route}
 g.__stxNativeRoute = routeName;
 var nativeDocument;
@@ -494,6 +565,20 @@ import { installJSCGlobals } from ${JSON.stringify(runtimeGlobals)};
 import { prepareNativeApp, prepareSharedNativeScreen } from ${JSON.stringify(sharedScreen)};
 globalThis.__stxNativeRuntime = {
   version: '__STX_NATIVE_RUNTIME_VERSION__',
+  // What every route of this build shares, held once instead of in each
+  // route file: the app's style vocabulary, its route names and shared
+  // storage keys, and the rules and themes of the stylesheets its screens carry.
+  styleConfig: ${JSON.stringify(styleConfig)},
+  routeNames: ${JSON.stringify(routed ? names : ['main'])},
+  shareStorage: ${JSON.stringify(options.shareStorage ?? {})},
+  stylesheetRules: function(order, own) {
+    var rules = {};
+    var shared = this.rules;
+    for (var i = 0; i < order.length; i++) rules[order[i]] = Object.prototype.hasOwnProperty.call(own, order[i]) ? own[order[i]] : shared[order[i]];
+    return rules;
+  },
+  rules: ${JSON.stringify(sharedSheets.rules)},
+  themes: ${JSON.stringify(sharedSheets.themes)},
   installJSCGlobals: installJSCGlobals,
   prepareNativeApp: prepareNativeApp,
   prepareSharedNativeScreen: prepareSharedNativeScreen,
