@@ -264,6 +264,23 @@ describe('the three operations a DOM shape would have leaked through', () => {
     expect(host.setVisible(n, true)).toBe(true)
   })
 
+  it('unchanged visibility sends no native layout mutations', () => {
+    const { host, node, ops } = harness()
+    const n = node('n1')
+    host.setVisible(n, true)
+    host.flush()
+    expect(ops()).toEqual([])
+    host.setVisible(n, false)
+    host.flush()
+    expect(ops()).toHaveLength(1)
+    host.setVisible(n, false)
+    host.flush()
+    expect(ops()).toHaveLength(1)
+    host.setVisible(n, true)
+    host.flush()
+    expect(ops()).toHaveLength(2)
+  })
+
   it('setVisible speaks the IR\'s own vocabulary for display', () => {
     const { host, node, ops } = harness()
     host.setVisible(node('n1'), false)

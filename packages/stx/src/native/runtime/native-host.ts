@@ -1385,6 +1385,9 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     setVisible(node, visible) {
       const record = recordOf(node)
       const was = record.visible
+      // A :show effect may rerun for another dependency without changing
+      // visibility. Avoid walking its chart subtree and relaying out UIKit.
+      if (was === visible) return was
       record.visible = visible
       if (!visible) {
         for (const target of [node, ...collectDescendants(node)]) {
