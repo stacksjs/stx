@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.756...v0.2.757)
+
+## ⚡ Performance Improvements
+
+- **native**: hold the component code routes have in common in the runtime ([cf1a68c](https://github.com/stacksjs/stx/commit/cf1a68c)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: build the modules routes share once, into the runtime ([ac0f201](https://github.com/stacksjs/stx/commit/ac0f201)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: ship only the stores, module names and shared constants a route needs ([35234fd](https://github.com/stacksjs/stx/commit/35234fd)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.757 ([b0e562e](https://github.com/stacksjs/stx/commit/b0e562e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.755...v0.2.756)
 
 ## ✨ Features
