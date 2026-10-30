@@ -8,6 +8,8 @@ export interface NativeClientScript {
   code: string
   /** Component scope whose root must be exposed while its factory runs. */
   owner?: string
+  /** The module registry: what the screen's other scripts import, bundled. */
+  registry?: boolean
 }
 
 const SCOPED_SCRIPT = /<script\b([^>]*\bdata-stx-scoped\b[^>]*)>([\s\S]*?)<\/script>/gi

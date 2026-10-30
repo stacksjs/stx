@@ -642,7 +642,11 @@ function createBundlePlugin(
   registrySpecifiers: Map<string, string> = new Map(),
   serverApi?: boolean | ServerApiOptions,
   substitutes?: ReadonlyMap<string, string>,
+  /** More virtual entries (path to source), for a build of several. */
+  moreEntries?: ReadonlyMap<string, string>,
 ): BunPlugin {
+  const entrySources = new Map<string, string>([[tmpEntry, entrySource], ...(moreEntries ?? [])])
+  const isEntry = (file: string | undefined): boolean => file !== undefined && entrySources.has(file)
   // A direct import of the script being bundled goes to the page registry
   // instead of being inlined (#1957). Only the ENTRY's imports: the modules
   // themselves are never loaded here, so nothing transitive reaches this.
@@ -652,7 +656,7 @@ function createBundlePlugin(
     // into a later registry build with a potentially different project root.
     if (isPrivateClientSource(resolved, projectRoot, serverApi))
       return null
-    if (!externalizeUserModules || importer !== tmpEntry || !REGISTRY_MODULE_EXTENSION.test(resolved))
+    if (!externalizeUserModules || !isEntry(importer) || !REGISTRY_MODULE_EXTENSION.test(resolved))
       return null
     try {
       if (!fs.statSync(resolved, { throwIfNoEntry: false })?.isFile())
@@ -683,7 +687,7 @@ function createBundlePlugin(
     // page-originated body should resolve from `templateDir`. For
     // imports inside a transitively-bundled module we honor the
     // module's own dirname — only the entry's relatives get rebased.
-    const fromDir = importer === tmpEntry ? templateDir : path.dirname(importer)
+    const fromDir = isEntry(importer) ? templateDir : path.dirname(importer)
     const resolved = path.resolve(fromDir, request)
     return probeModuleFile(resolved) ?? resolved
   }
@@ -710,7 +714,7 @@ function createBundlePlugin(
       // browser bundle so the application's HTTP server can resolve them.
       // Preserve genuine absolute filesystem imports when the target exists.
       build.onResolve({ filter: /^\// }, (args) => {
-        if (args.path === tmpEntry) return { path: tmpEntry }
+        if (isEntry(args.path)) return { path: args.path }
         // Extensions are probed, not just the literal path. A specifier
         // written `../composables/useApp` and pinned to an absolute path (see
         // `absolutizeTemplateImports`, which is how a layout's imports survive
@@ -727,7 +731,7 @@ function createBundlePlugin(
           // too, and it is an absolute path that exists — recording it would
           // put a file whose name changes every build into the cache-key
           // inputs, so no cached bundle could ever be reused.
-          if (resolved !== tmpEntry)
+          if (!isEntry(resolved))
             inputFiles.add(resolved)
           return { path: resolved }
         }
@@ -804,7 +808,7 @@ function createBundlePlugin(
       // hydrate on "module is not registered on this page".
       if (externalizeUserModules) {
         build.onResolve({ filter: /^(?!node:|bun:)(?:@[\w.-]+\/)?[\w.-]/ }, (args) => {
-          if (args.importer !== tmpEntry)
+          if (!isEntry(args.importer))
             return undefined
           const registryPath = `${MODULE_SPECIFIER_PREFIX}npm:${args.path}`
           registrySpecifiers.set(args.path, registryPath)
@@ -822,7 +826,7 @@ function createBundlePlugin(
       // relative and aliased imports handled above, so their mtimes participate
       // in cache validation.
       build.onLoad({ filter: /\.(?:[cm]?[jt]sx?|json)$/ }, (args) => {
-        if (args.path === tmpEntry) return { contents: entrySource, loader: 'ts' }
+        if (entrySources.has(args.path)) return { contents: entrySources.get(args.path)!, loader: 'ts' }
         if (isPrivateClientSource(args.path, projectRoot, serverApi))
           throw new Error(`Server-only API source cannot be imported by a client script: ${args.path}`)
         const extension = path.extname(args.path).toLowerCase()
@@ -840,7 +844,7 @@ function createBundlePlugin(
         // the persistent dependency sidecar makes every later lookup miss,
         // because cache validation correctly sees that the file disappeared.
         // Track only durable source inputs.
-        if (args.path !== tmpEntry)
+        if (!isEntry(args.path))
           inputFiles.add(args.path)
         const substitute = substitutes?.get(args.path)
         if (substitute !== undefined)
@@ -1104,6 +1108,83 @@ export async function bundleClientScript(
  */
 export function tempBuildName(hash: string): string {
   return `${hash}-${process.pid}-${randomUUID()}`
+}
+
+/** A split build's files: the entries by the name they were given, the chunks they share by file name. */
+export interface SplitClientBundle {
+  entries: Map<string, string>
+  chunks: Map<string, string>
+}
+
+/**
+ * Bundle several client entries together, the modules more than one of them
+ * reaches built once, in chunks of their own (ES modules: `import`/`export`
+ * between the files). The entries are virtual sources that import by absolute
+ * path, as the module registry's do. Unlike `bundleClientScript`, nothing is
+ * cached and nothing is wrapped: the caller turns the files into scripts.
+ *
+ * The modules are bundled with the same hooks (aliases, the runtime and
+ * stores left external, the message stand-ins of `withModuleSubstitutes`) and
+ * not minified, so a caller can read the names it finds in the output.
+ */
+export async function bundleClientEntriesSplit(
+  entries: ReadonlyMap<string, string>,
+  options: { projectRoot: string, filePath: string, collectInputs?: string[] },
+): Promise<SplitClientBundle> {
+  const { projectRoot } = options
+  const tmpName = tempBuildName(new Bun.CryptoHasher('md5').update([...entries.keys()].join('\0')).digest('hex').slice(0, 12))
+  const tmpOutDir = path.join(stateDir(projectRoot, 'bundle-tmp'), 'out', tmpName)
+  fs.mkdirSync(tmpOutDir, { recursive: true })
+  const virtual = new Map<string, string>()
+  const byFile = new Map<string, string>()
+  let index = 0
+  for (const [name, source] of entries) {
+    const file = path.join(projectRoot, `.stx-split-${tmpName}-${index++}.ts`)
+    virtual.set(file, source)
+    byFile.set(path.basename(file).replace(/\.ts$/, ''), name)
+  }
+  const [firstFile, firstSource] = [...virtual][0]!
+  const inputFiles = new Set<string>()
+  try {
+    const result = await Bun.build({
+      entrypoints: [...virtual.keys()],
+      outdir: tmpOutDir,
+      target: 'browser',
+      format: 'esm',
+      splitting: true,
+      minify: false,
+      naming: { entry: '[name].js', chunk: 'chunk-[hash].js' },
+      plugins: [createBundlePlugin(projectRoot, path.dirname(options.filePath), firstFile, firstSource, inputFiles, false, new Map(), undefined, moduleSubstitutes.getStore()?.modules, virtual)],
+      define: {
+        // As the registry's own build defines it (`bundleClientScript` without `minify`).
+        'process.env.NODE_ENV': '"development"',
+        ...getPublicEnvDefine(),
+      },
+      root: projectRoot,
+    })
+    if (!result.success)
+      throw new Error(result.logs.filter(log => log.level === 'error').map(log => log.message).join(', ') || 'Unable to bundle the entries')
+    const split: SplitClientBundle = { entries: new Map(), chunks: new Map() }
+    for (const output of result.outputs) {
+      const file = path.basename(output.path)
+      if (output.kind === 'entry-point') {
+        const name = byFile.get(file.replace(/\.js$/, ''))
+        if (name !== undefined)
+          split.entries.set(name, await output.text())
+      }
+      else if (output.kind === 'chunk') {
+        split.chunks.set(file.replace(/\.js$/, ''), await output.text())
+      }
+    }
+    options.collectInputs?.push(...inputFiles)
+    return split
+  }
+  finally {
+    try {
+      fs.rmSync(tmpOutDir, { recursive: true, force: true })
+    }
+    catch {}
+  }
 }
 
 async function buildBundle(

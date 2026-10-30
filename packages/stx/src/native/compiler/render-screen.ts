@@ -226,7 +226,7 @@ export async function compileScreenSource(
       modules = await registry()
     }
   }
-  if (modules) scripts.unshift({ code: modules })
+  if (modules) scripts.unshift({ code: modules, registry: true })
 
   return { document, manifest, setup, scripts, diagnostics, html, dependencies: [...dependencies] }
 }

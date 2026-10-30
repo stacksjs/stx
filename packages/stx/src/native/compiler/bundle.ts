@@ -28,6 +28,7 @@ import type { NativeLayoutChrome, STXDocument } from './ir'
 import { NATIVE_APP_ROUTE } from '../runtime/shared-screen'
 import { generateSignalsRuntime } from '../../signals'
 import { withModuleSubstitutes } from '../../client-script-bundler'
+import { buildSharedModuleRegistries, registeredModuleIdsIn, registeredModuleNamesIn, type SharedRegistries } from '../../client-module-registry'
 import type { BrowserScreenOptions } from '../runtime/browser-screen'
 
 export interface CompileNativeBundleOptions {
@@ -75,6 +76,15 @@ export interface CompileNativeBundleOptions {
    * route file built so refuses to run without it.
    */
   sharedRuntime?: boolean
+  /**
+   * With `sharedRuntime`: the modules more than one route reaches are built
+   * once, into the runtime, instead of into each route's file (HQ's routes
+   * came to 12 MB from 24 with it). On by default; `false`, or the
+   * `STX_NATIVE_SHARE_MODULES=0` environment variable, builds each route's
+   * modules into its own file. A build the sharing cannot express (a module
+   * that exports a binding that changes later, say) does that by itself.
+   */
+  shareModules?: boolean
   /**
    * Message catalogs to ship a language at a time, with `routesDir` and
    * `sharedRuntime` (whose runtime reads them), for a host that answers
@@ -441,6 +451,21 @@ export async function compileNativeBundle(options: CompileNativeBundleOptions): 
    * route file; evaluated as a file of their own, a host's shared
    * JavaScriptCore VM parses them once for every screen.
    */
+  // Route files that lean on a shared runtime share the modules more than one
+  // of them reaches: they are built together, and held by the runtime once.
+  const dependencies = new Set(compiledScreens.flatMap(({ compiled }) => compiled.dependencies))
+  let sharedModules: SharedRegistries | null = null
+  if (options.routesDir && options.sharedRuntime && options.shareModules !== false && process.env.STX_NATIVE_SHARE_MODULES !== '0') {
+    const moduleInputs: string[] = []
+    const routes = compiledScreens.map(({ name, compiled }) => {
+      const sources = compiled.scripts.filter(script => !script.registry).map(script => script.code)
+      return { name, ids: registeredModuleIdsIn(...sources), names: registeredModuleNamesIn(...sources) }
+    })
+    const share = (): Promise<SharedRegistries | null> => buildSharedModuleRegistries(routes, { collectInputs: moduleInputs })
+    sharedModules = await (stubs ? withModuleSubstitutes(stubs, share) : share())
+    if (sharedModules) for (const input of moduleInputs) dependencies.add(input)
+  }
+  const shared = sharedModules
   const sharedSheets = sharedStylesheets(compiledScreens.map(({ name, compiled }) => ({ name, document: compiled.document })))
   const entry = (bundled: typeof compiledScreens, withApp: boolean, runtimeVersion?: string): string => {
     const route = routed
@@ -462,7 +487,10 @@ if (isApp ? ${!withApp} : ${JSON.stringify(bundled.map(({ name }) => name))}.ind
     }).join('\n')
     const setups = bundled.map(({ name, compiled }, index) => `${index === 0 ? 'if' : 'else if'} (routeName === ${JSON.stringify(routed ? name : 'main')}) {
   g.__stx_latestSetup = null;
-${compiled.scripts.map(script => script.owner
+${compiled.scripts.map(script => runtimeVersion && script.registry && shared?.routes.has(name)
+    // The modules other routes reach too are the runtime's: this route reads its chunks from it.
+    ? shared.routes.get(name)!
+    : script.owner
     ? `  g.__stx_componentSetups = g.__stx_componentSetups || {};
   // Kept by id as well as run once: a :for or :if clone of this component
   // has no script to copy, and is set up from this (component hydration).
@@ -543,7 +571,6 @@ g.addEventListener('pagehide', function(event) { if (!event.persisted) g.__stxNa
       builder.onLoad({ filter: /.*/, namespace: 'stx-native-shared-screens' }, () => ({ contents, loader: 'js' }))
     },
   })
-  const dependencies = new Set(compiledScreens.flatMap(({ compiled }) => compiled.dependencies))
   const diagnostics = compiledScreens.flatMap(({ compiled }) => compiled.diagnostics).map(diagnostic => ({
     level: 'warning' as const,
     message: [diagnostic.kind, diagnostic.tag, diagnostic.name].filter(Boolean).join(': '),
@@ -579,6 +606,15 @@ globalThis.__stxNativeRuntime = {
   },
   rules: ${JSON.stringify(sharedSheets.rules)},
   themes: ${JSON.stringify(sharedSheets.themes)},
+  // The modules more than one route reaches (client-module-registry.ts),
+  // each run the first time a route asks for it, and once.
+  chunks: {${shared ? [...shared.chunks].map(([name, code]) => `\n${JSON.stringify(name)}: ${code}`).join(',') : ''}},
+  chunk: function(name) {
+    var loaded = this.loaded || (this.loaded = {});
+    if (Object.prototype.hasOwnProperty.call(loaded, name)) return loaded[name];
+    var runtime = this;
+    return (loaded[name] = this.chunks[name](function(chunk) { return runtime.chunk(chunk); }));
+  },
   installJSCGlobals: installJSCGlobals,
   prepareNativeApp: prepareNativeApp,
   prepareSharedNativeScreen: prepareSharedNativeScreen,
@@ -648,7 +684,13 @@ ${signalsRuntime}
         const code = await build('stx:native-shared-screens', [plugin(entry(target.screens, target.app, runtimeVersion))], minify, dependencies, stubs ?? undefined)
         await Bun.write(file, code)
         routes![target.name] = file
-        if (messages) routeAreas[target.name] = areasRead(code)
+        if (messages) {
+          // The areas the route's own code reads, and those of the chunks it runs.
+          const areas = new Set(areasRead(code))
+          for (const chunk of shared?.reads.get(target.name) ?? [])
+            for (const area of areasRead(shared?.chunks.get(chunk) ?? '')) areas.add(area)
+          routeAreas[target.name] = [...areas].sort()
+        }
       }))
     }
     if (messages) {
