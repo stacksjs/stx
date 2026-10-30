@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.759...v0.2.760)
+
+## 🐛 Bug Fixes
+
+- **native**: exclude a self-closed component call without its siblings ([714c1c2](https://github.com/stacksjs/stx/commit/714c1c2)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ⚡ Performance Improvements
+
+- **native**: hold the stores routes share in the runtime ([8a836ac](https://github.com/stacksjs/stx/commit/8a836ac)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: carry route documents and manifests compact ([d248ba0](https://github.com/stacksjs/stx/commit/d248ba0)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.760 ([7a833ca](https://github.com/stacksjs/stx/commit/7a833ca)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.758...v0.2.759)
 
 ## 🐛 Bug Fixes
