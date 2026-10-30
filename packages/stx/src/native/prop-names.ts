@@ -22,6 +22,8 @@ const NATIVE_PROP_NAMES = [
   'initialRegion', 'tileOverlay', 'edgePadding', 'fitToBounds', 'showsUserLocation', 'zoomEnabled', 'rotateEnabled', 'pitchEnabled', 'mapType', 'fillColor', 'strokeColor', 'pinColor',
   'showsCompass', 'showsScale', 'cameraPitch', 'cameraHeading',
   'autoScrollBottom', 'scrollKey',
+  // An inline completion drawn after the caret of a multi-line TextInput.
+  'ghostText',
   // A video floating in Picture in Picture, and one element across an
   // animated change (craft.animation.next).
   'pictureInPicture', 'transitionID',

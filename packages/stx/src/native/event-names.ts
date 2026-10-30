@@ -24,6 +24,9 @@ export const NATIVE_EVENT_NAMES: Readonly<Record<string, string>> = {
   submit: 'onSubmitEditing',
   'submit-editing': 'onSubmitEditing',
   submitediting: 'onSubmitEditing',
+  // An inline completion shown as ghost text, taken with Tab (`ghostText` on a multi-line TextInput).
+  'accept-completion': 'onAcceptCompletion',
+  acceptcompletion: 'onAcceptCompletion',
   'end-editing': 'onEndEditing',
   endediting: 'onEndEditing',
   scroll: 'onScroll',
