@@ -12,7 +12,7 @@ const NATIVE_PROP_NAMES = [
   'ios_backgroundColor', 'keyboardDismissMode', 'keyboardShouldPersistTaps', 'keyboardType',
   'keyboardVerticalOffset', 'keyExtractor', 'listRole', 'maxLength', 'mostRecentEventCount', 'maximumDate', 'maximumTrackTintColor', 'maximumValue',
   'maxToRenderPerBatch', 'minimumDate', 'minimumTrackTintColor', 'minimumValue', 'minuteInterval', 'numberOfLines',
-  'numColumns', 'onEndReachedThreshold', 'pageIndex', 'pagingEnabled', 'passwordRules', 'placeholderTextColor', 'pointerEvents',
+  'numColumns', 'objectFit', 'objectPosition', 'onEndReachedThreshold', 'pageIndex', 'pagingEnabled', 'passwordRules', 'placeholderTextColor', 'pointerEvents',
   'presentationStyle', 'sheetDetents', 'selectedDetent', 'grabberVisible', 'tintColor', 'clearButtonMode', 'nonModal', 'dismissOnOutsideTap',
   'pressRetentionOffset', 'progressBackgroundColor', 'progressViewOffset', 'refreshControl', 'resizeMode',
   'returnKeyType', 'scrollEnabled', 'scrollTarget', 'secureTextEntry', 'selectedValue', 'selectionColor',

@@ -35,7 +35,7 @@ const STYLE_KEYS = new Set([
   'opacity', 'shadowColor', 'shadowOffset', 'shadowOpacity', 'shadowRadius', 'elevation',
   'color', 'fontSize', 'fontWeight', 'fontStyle', 'fontFamily', 'lineHeight',
   'letterSpacing', 'textAlign', 'textDecorationLine', 'textDecorationColor',
-  'textTransform', 'resizeMode', 'objectFit', 'tintColor', 'transform', 'overflow', 'pointerEvents',
+  'textTransform', 'resizeMode', 'objectFit', 'objectPosition', 'tintColor', 'transform', 'overflow', 'pointerEvents',
   'fill', 'stroke', 'strokeWidth',
   'gradientDirection', 'gradientFrom', 'gradientVia', 'gradientTo',
 ])
@@ -198,15 +198,23 @@ function parseEntries(entries: Array<[string, unknown]>, variables: ReturnType<t
       else report({ kind: 'unknown-style', name: `pointerEvents:${String(value)}` })
       continue
     }
-    // Shared HTML images express fit as CSS; native media reads resizeMode.
-    // scale-down requires intrinsic-size comparison and has no portable host
-    // mode. Report it (and invalid values) rather than approximating it.
+    // Craft 0.0.396 owns CSS image geometry. Keep its explicit properties
+    // distinct from resizeMode so clearing both restores the legacy path.
     if (property === 'objectFit') {
       const fit = typeof value === 'string' ? value.trim().toLowerCase() : ''
-      if (fit === 'cover' || fit === 'contain') style.resizeMode = fit
-      else if (fit === 'fill') style.resizeMode = 'stretch'
-      else if (fit === 'none') style.resizeMode = 'center'
+      if (['fill', 'contain', 'cover', 'none', 'scale-down'].includes(fit)) style.objectFit = fit
       else report({ kind: 'unknown-style', name: `objectFit:${String(value)}` })
+      continue
+    }
+    if (property === 'objectPosition') {
+      const position = typeof value === 'string' ? value.trim().toLowerCase().replace(/\s+/g, ' ') : ''
+      const parts = position.split(' ')
+      if (parts.length === 1) parts.push('center')
+      if (['top', 'bottom'].includes(parts[0]) || ['left', 'right'].includes(parts[1])) parts.reverse()
+      const percentage = (part: string) => part.endsWith('%') && NUMBER.test(part.slice(0, -1)) && Number.isFinite(Number(part.slice(0, -1)))
+      if (parts.length === 2 && (['left', 'center', 'right'].includes(parts[0]) || percentage(parts[0]))
+        && (['top', 'center', 'bottom'].includes(parts[1]) || percentage(parts[1]))) style.objectPosition = position
+      else report({ kind: 'unknown-style', name: `objectPosition:${String(value)}` })
       continue
     }
     let translated: unknown

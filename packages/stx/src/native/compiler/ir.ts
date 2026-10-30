@@ -297,6 +297,9 @@ export interface STXStyle {
 
   // Image
   resizeMode?: 'cover' | 'contain' | 'stretch' | 'center'
+  objectFit?: 'fill' | 'contain' | 'cover' | 'none' | 'scale-down'
+  /** Maintained hosts support one/two alignment keywords or percentages. */
+  objectPosition?: string
   tintColor?: string
 
   // Transform

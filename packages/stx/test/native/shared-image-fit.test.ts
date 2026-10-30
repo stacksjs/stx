@@ -1,5 +1,5 @@
 import { WebView } from 'bun'
-import { expect, it, spyOn } from 'bun:test'
+import { expect, it } from 'bun:test'
 import { join } from 'node:path'
 import { defaultConfig } from '../../src/config'
 import { processDirectives } from '../../src/process'
@@ -10,55 +10,71 @@ const source = `@import('Image', '${image}')
 <script client>
 const fit = state('contain')
 const primary = state('')
+const position = state('top right')
 const shown = state(true)
-window.probe = { fit, primary, shown }
+window.probe = { fit, primary, position, shown }
 </script><section><div :if="shown">
-<Image testID="photo" className="photo" src="/photo.png" alt="Photo" :fit="fit" :objectFit="primary" />
+<Image testID="photo" className="photo" src="/photo.png" alt="Photo" :fit="fit" :objectFit="primary" :objectPosition="position" />
 </div><Image testID="static" className="static" src="/photo.png" alt="Static" objectFit="fill" /></section>`
 
-it.each([false, true])('updates shared native Image fit, precedence, defaults and lifecycle (minify=%s)', async (minify) => {
+it.each([['ios', false], ['ios', true], ['android', false], ['android', true]] as const)('updates shared native Image fit, precedence, defaults and lifecycle (%s, minify=%s)', async (platform, minify) => {
   const { code, diagnostics } = await compileNativeScreen(source, { minify })
   expect(diagnostics.filter(item => item.message.includes('objectFit'))).toEqual([])
-  const phone = mountNativeScreen(code)
   const warnings: string[] = []
-  const warning = spyOn(console, 'warn').mockImplementation((...args) => { warnings.push(args.join(' ')) })
+  const phone = mountNativeScreen(code, 'Screen', { platform, globals: { console: { ...console, warn: (...args: unknown[]) => warnings.push(args.join(' ')) } } })
   try {
     await phone.settle()
     const photo = () => phone.byTestID('photo')!
     const probe = phone.context.probe
     const id = photo().id
     expect(photo().type).toBe('Image')
-    expect(photo().style.resizeMode).toBe('contain')
-    expect(phone.byTestID('static')!.style.resizeMode).toBe('stretch')
-    for (const [fit, mode] of [['cover', 'cover'], ['fill', 'stretch'], ['none', 'center'], ['contain', 'contain']]) {
+    expect(photo().style.objectFit).toBe('contain')
+    expect(phone.byTestID('static')!.style.objectFit).toBe('fill')
+    for (const fit of ['cover', 'fill', 'none', 'contain', 'scale-down']) {
       probe.fit.set(fit)
       await phone.settle()
       expect(photo().id).toBe(id)
-      expect(photo().style.resizeMode).toBe(mode)
+      expect(photo().style.objectFit).toBe(fit)
       expect(photo().props.source).toBe('/photo.png')
     }
     probe.primary.set('fill')
     probe.fit.set('none')
     await phone.settle()
-    expect(photo().style.resizeMode).toBe('stretch')
+    expect(photo().style.objectFit).toBe('fill')
     probe.primary.set('scale-down')
     await phone.settle()
-    expect(warnings.some(message => message.includes('unknown-style') && message.includes('objectFit:scale-down'))).toBe(true)
-    // Unsupported bindings are omitted; the authored cover default survives.
-    expect(photo().style.resizeMode).toBe('cover')
+    expect(photo().style.objectFit).toBe('scale-down')
+    expect(photo().style.objectPosition).toBe('top right')
+    for (const position of ['25% 75%', 'bottom', '-20% 120%']) {
+      probe.position.set(position)
+      await phone.settle()
+      expect(photo().id).toBe(id)
+      expect(photo().style.objectPosition).toBe(position)
+    }
+    probe.position.set(null)
+    await phone.settle()
+    expect(photo().style.objectPosition).toBe('center')
     probe.primary.set(null)
     await phone.settle()
-    expect(photo().style.resizeMode).toBe('center')
+    expect(photo().style.objectFit).toBe('none')
     probe.fit.set(null)
     await phone.settle()
-    expect(photo().style.resizeMode).toBe('cover')
+    expect(photo().style.objectFit).toBe('cover')
+    probe.primary.set('unsupported-fit')
+    probe.position.set('10px 20px')
+    await phone.settle()
+    expect(photo().style).toMatchObject({ objectFit: 'cover', objectPosition: 'center' })
+    expect(warnings.some(message => message.includes('unknown-style') && message.includes('objectFit:unsupported-fit'))).toBe(true)
+    expect(warnings.some(message => message.includes('unknown-style') && message.includes('objectPosition:10px 20px'))).toBe(true)
+    probe.primary.set(null)
+    probe.position.set(null)
     probe.shown.set(false)
     await phone.settle()
     expect(photo()).toBeUndefined()
     probe.fit.set('contain')
     probe.shown.set(true)
     await phone.settle()
-    expect(photo().style.resizeMode).toBe('contain')
+    expect(photo().style.objectFit).toBe('contain')
     expect(phone.mutationErrors).toEqual([])
     phone.unmount()
     const count = phone.messages.length
@@ -66,7 +82,7 @@ it.each([false, true])('updates shared native Image fit, precedence, defaults an
     await phone.settle()
     expect(phone.messages).toHaveLength(count)
   }
-  finally { phone.unmount(); warning.mockRestore() }
+  finally { phone.unmount() }
 }, 30_000)
 
 it('updates actual browser object-fit without changing SSR, source or other image styles', async () => {
