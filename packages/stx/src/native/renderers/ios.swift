@@ -8,6 +8,87 @@
 import UIKit
 import JavaScriptCore
 import YogaKit
+import ObjectiveC
+
+// Target authored nodes without changing a control's enabled state or UIKit's
+// implementation children. The maintained Craft host uses the same policy.
+private var stxPointerEventsKey: UInt8 = 0
+
+private func stxPointerHitTest(_ view: UIView, point: CGPoint, event: UIEvent?, native: () -> UIView?) -> UIView? {
+    let mode = objc_getAssociatedObject(view, &stxPointerEventsKey) as? String ?? "auto"
+    if mode == "none" { return nil }
+    if mode == "auto" { return native() }
+    guard let hit = native() else { return nil }
+    var candidate: UIView? = hit
+    var authoredDescendant = false
+    while let current = candidate, current !== view {
+        if objc_getAssociatedObject(current, &stxPointerEventsKey) != nil { authoredDescendant = true; break }
+        candidate = current.superview
+    }
+    if mode == "box-none" { return authoredDescendant ? hit : nil }
+    guard view.point(inside: point, with: event) else { return nil }
+    return authoredDescendant ? view : hit
+}
+
+private final class STXPointerView: UIView {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        stxPointerHitTest(self, point: point, event: event) { super.hitTest(point, with: event) }
+    }
+}
+
+private final class STXPointerText: UILabel {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        stxPointerHitTest(self, point: point, event: event) { super.hitTest(point, with: event) }
+    }
+}
+
+private final class STXPointerButton: UIButton {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        stxPointerHitTest(self, point: point, event: event) { super.hitTest(point, with: event) }
+    }
+}
+
+private final class STXPointerInput: UITextField {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        stxPointerHitTest(self, point: point, event: event) { super.hitTest(point, with: event) }
+    }
+}
+
+private final class STXPointerImage: UIImageView {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        stxPointerHitTest(self, point: point, event: event) { super.hitTest(point, with: event) }
+    }
+}
+
+private final class STXPointerScroll: UIScrollView {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        stxPointerHitTest(self, point: point, event: event) { super.hitTest(point, with: event) }
+    }
+}
+
+private final class STXPointerSwitch: UISwitch {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        stxPointerHitTest(self, point: point, event: event) { super.hitTest(point, with: event) }
+    }
+}
+
+private final class STXPointerIndicator: UIActivityIndicatorView {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        stxPointerHitTest(self, point: point, event: event) { super.hitTest(point, with: event) }
+    }
+}
+
+private final class STXPointerSlider: UISlider {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        stxPointerHitTest(self, point: point, event: event) { super.hitTest(point, with: event) }
+    }
+}
+
+private final class STXPointerPicker: UIPickerView {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        stxPointerHitTest(self, point: point, event: event) { super.hitTest(point, with: event) }
+    }
+}
 
 private struct STXPickerOption {
     let label: String
@@ -75,6 +156,7 @@ enum STXChild: Codable {
 }
 
 struct STXStyle: Codable {
+    var pointerEvents: String?
     // Layout
     var display: String?
     var flex: CGFloat?
@@ -236,39 +318,44 @@ class STXRenderer {
     // MARK: - Render Methods
 
     func render(_ node: STXNode) -> UIView {
+        let view: UIView
         switch node.type {
         case "View":
-            return renderView(node)
+            view = renderView(node)
         case "Text":
-            return renderText(node)
+            view = renderText(node)
         case "Button", "Link":
-            return renderButton(node)
+            view = renderButton(node)
         case "TextInput":
-            return renderTextInput(node)
+            view = renderTextInput(node)
         case "Image":
-            return renderImage(node)
+            view = renderImage(node)
         case "ScrollView":
-            return renderScrollView(node)
+            view = renderScrollView(node)
         case "TouchableOpacity":
-            return renderTouchableOpacity(node)
+            view = renderTouchableOpacity(node)
         case "Switch":
-            return renderSwitch(node)
+            view = renderSwitch(node)
         case "ActivityIndicator":
-            return renderActivityIndicator(node)
+            view = renderActivityIndicator(node)
         case "SafeAreaView":
-            return renderSafeAreaView(node)
+            view = renderSafeAreaView(node)
         case "Modal":
-            return renderModal(node)
+            view = renderModal(node)
         case "Slider":
-            return renderSlider(node)
+            view = renderSlider(node)
         case "Picker":
-            return renderPicker(node)
+            view = renderPicker(node)
         case "Svg":
-            return renderSvg(node)
+            view = renderSvg(node)
         default:
             print("[STX] Unknown component type: \(node.type), rendering as View")
-            return renderView(node)
+            view = renderView(node)
         }
+        let raw = node.props["pointerEvents"]?.value as? String ?? node.style.pointerEvents ?? "auto"
+        let policy = ["auto", "none", "box-none", "box-only"].contains(raw) ? raw : "auto"
+        objc_setAssociatedObject(view, &stxPointerEventsKey, policy as NSString, .OBJC_ASSOCIATION_COPY_NONATOMIC)
+        return view
     }
 
     // MARK: - Component Renderers
@@ -284,7 +371,7 @@ class STXRenderer {
     }
 
     private func renderView(_ node: STXNode) -> UIView {
-        let view = UIView()
+        let view = STXPointerView()
         applyStyle(to: view, style: node.style)
         applyEvents(to: view, events: node.events)
 
@@ -304,7 +391,7 @@ class STXRenderer {
     }
 
     private func renderText(_ node: STXNode) -> UILabel {
-        let label = UILabel()
+        let label = STXPointerText()
         label.numberOfLines = 0
 
         // Collect text from children
@@ -324,7 +411,7 @@ class STXRenderer {
     }
 
     private func renderButton(_ node: STXNode) -> UIButton {
-        let button = UIButton(type: .system)
+        let button = STXPointerButton(type: .system)
 
         // Get title from children or props
         if let title = node.props["title"]?.value as? String {
@@ -366,7 +453,7 @@ class STXRenderer {
     }
 
     private func renderTextInput(_ node: STXNode) -> UITextField {
-        let textField = UITextField()
+        let textField = STXPointerInput()
         textField.borderStyle = .none
 
         if let placeholder = node.props["placeholder"]?.value as? String {
@@ -395,7 +482,7 @@ class STXRenderer {
     }
 
     private func renderImage(_ node: STXNode) -> UIImageView {
-        let imageView = UIImageView()
+        let imageView = STXPointerImage()
         switch node.style.resizeMode ?? node.props["resizeMode"]?.value as? String {
         case "cover": imageView.contentMode = .scaleAspectFill
         case "stretch": imageView.contentMode = .scaleToFill
@@ -430,8 +517,8 @@ class STXRenderer {
     }
 
     private func renderScrollView(_ node: STXNode) -> UIScrollView {
-        let scrollView = UIScrollView()
-        let contentView = UIView()
+        let scrollView = STXPointerScroll()
+        let contentView = STXPointerView()
 
         scrollView.addSubview(contentView)
 
@@ -448,7 +535,7 @@ class STXRenderer {
     }
 
     private func renderTouchableOpacity(_ node: STXNode) -> UIView {
-        let view = UIView()
+        let view = STXPointerView()
         view.isUserInteractionEnabled = true
 
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
@@ -487,7 +574,7 @@ class STXRenderer {
     }
 
     private func renderSwitch(_ node: STXNode) -> UISwitch {
-        let switchView = UISwitch()
+        let switchView = STXPointerSwitch()
 
         if let value = node.props["value"]?.value as? Bool {
             switchView.isOn = value
@@ -508,7 +595,7 @@ class STXRenderer {
     }
 
     private func renderActivityIndicator(_ node: STXNode) -> UIActivityIndicatorView {
-        let indicator = UIActivityIndicatorView(style: .medium)
+        let indicator = STXPointerIndicator(style: .medium)
 
         if let colorHex = node.style.color ?? node.props["color"]?.value as? String {
             indicator.color = UIColor(hex: colorHex)
@@ -523,7 +610,7 @@ class STXRenderer {
     }
 
     private func renderSafeAreaView(_ node: STXNode) -> UIView {
-        let view = UIView()
+        let view = STXPointerView()
         // Safe area will be handled by layout constraints
         applyStyle(to: view, style: node.style)
 
@@ -539,7 +626,7 @@ class STXRenderer {
     }
 
     private func renderModal(_ node: STXNode) -> UIView {
-        let container = UIView()
+        let container = STXPointerView()
         container.isHidden = !(node.props["visible"]?.value as? Bool ?? false)
 
         if node.props["transparent"]?.value as? Bool != true {
@@ -558,7 +645,7 @@ class STXRenderer {
     }
 
     private func renderSlider(_ node: STXNode) -> UISlider {
-        let slider = UISlider()
+        let slider = STXPointerSlider()
         func number(_ name: String) -> Double? {
             if let value = node.props[name]?.value as? Double { return value }
             if let value = node.props[name]?.value as? Int { return Double(value) }
@@ -597,7 +684,7 @@ class STXRenderer {
     }
 
     private func renderPicker(_ node: STXNode) -> UIPickerView {
-        let picker = UIPickerView()
+        let picker = STXPointerPicker()
         let rawItems = node.props["items"]?.value as? [Any] ?? []
         let options = rawItems.compactMap { item -> STXPickerOption? in
             guard let item = item as? [String: Any],
@@ -982,6 +1069,10 @@ struct STXSvgPaint {
 }
 
 final class STXSvgView: UIView {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        stxPointerHitTest(self, point: point, event: event) { super.hitTest(point, with: event) }
+    }
+
     let node: STXNode
 
     init(node: STXNode) {
