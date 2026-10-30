@@ -516,11 +516,21 @@ export async function translateHtmlToIR(
 
   /** A wrapper's children take its place. */
   function hoist(frame: Frame): void {
+    // A layout's `<main class="font-sans">` (or its body's) sets the face its
+    // whole page inherits on the web. The wrapper is gone natively, so its
+    // children carry the face as a default below their own classes, and the
+    // host's font inheritance takes it down from there. The nearest wrapper
+    // closes first and wins, as the nearest ancestor does in CSS.
+    const fontFamily = frame.node.style.fontFamily
     const preserveVariables = (node: STXNode): void => {
       // HTML's declarations already participate in the document cascade,
       // including stylesheet !important and aliases resolved on that element.
       if (frame.tag !== 'html' && frame.node._styleSource)
         node._styleAncestors = [frame.node._styleSource, ...node._styleAncestors ?? []]
+      if (fontFamily && node.style.fontFamily === undefined) {
+        node._layoutDefaults = { ...node._layoutDefaults, fontFamily }
+        node.style = { fontFamily, ...node.style }
+      }
     }
     if (frame.node.bindings && Object.keys(frame.node.bindings).length > 0) {
       const children = frame.node.children

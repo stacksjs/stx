@@ -33,3 +33,25 @@ it('removes excluded binding scopes before native setup extraction', async () =>
   expect(phone.context.excludedSetupRan).toBeUndefined()
   expect(phone.mutationErrors).toEqual([])
 })
+
+it('carries a layout wrapper\'s face onto the page it unwraps, below the page\'s own classes', async () => {
+  setNativeStyleConfig(nativeStyleConfigFrom({ theme: { fontFamily: { sans: ['Barlow-Regular', 'Barlow', 'system-ui'], mono: ['Training Mono', 'monospace'] } } }))
+  const { root } = await translateHtmlToIR('<html><body class="font-mono"><main class="flex-1 font-sans"><div class="p-4"><p>Today</p></div><p class="font-mono">00:42</p></main></body></html>')
+  const [page, clock] = root.children as Array<{ style: Record<string, unknown>, _layoutDefaults?: Record<string, unknown> }>
+  expect(page.style).toMatchObject({ fontFamily: 'Barlow-Regular, Barlow, system-ui', padding: 16 })
+  expect(page._layoutDefaults).toEqual({ fontFamily: 'Barlow-Regular, Barlow, system-ui' })
+  expect(clock.style.fontFamily).toBe('Training Mono, monospace')
+  expect(clock._layoutDefaults).toBeUndefined()
+})
+
+it('keeps the inherited face when a bound class restyles the node', async () => {
+  const { code } = await compileNativeScreen(`<script client>const on = state(false)</script><main style="font-family: Barlow-Regular, Barlow"><button testID="start" class="p-2" :class="on ? 'text-red-600' : ''" @click="on.set(!on())">Start</button></main>`)
+  const phone = mountNativeScreen(code, 'Screen')
+  await phone.settle()
+  const style = (): Record<string, unknown> => phone.find(node => node.type === 'Button' || node.type === 'Pressable')!.style
+  expect(style().fontFamily).toBe('Barlow-Regular, Barlow')
+  phone.press(phone.find(node => node.type === 'Button' || node.type === 'Pressable')!)
+  await phone.settle()
+  expect(style()).toMatchObject({ fontFamily: 'Barlow-Regular, Barlow', color: expect.any(String) })
+  expect(phone.mutationErrors).toEqual([])
+})
