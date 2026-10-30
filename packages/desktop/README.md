@@ -393,6 +393,10 @@ so the replacement can acquire its shortcuts and database connection.
 Use `applicationDataDirectory(name, { bundleIdentifier })` for native model
 data paths when moving from sandboxed to direct distribution. It keeps an
 existing container in place instead of silently starting a second database.
+An explicit `dataRoot` option or `STX_DATA_HOME` environment variable selects an
+isolated profile instead. Native launch checks can use a temporary root without
+opening or changing the installed app's protected data. The application name is
+appended to that root; relative roots are rejected.
 
 #### What is checked before the bundle is swapped
 

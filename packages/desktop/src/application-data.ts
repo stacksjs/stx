@@ -1,8 +1,10 @@
 import { existsSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { isAbsolute, join } from 'node:path'
 
 export interface ApplicationDataOptions {
+  /** Explicit profile root; defaults to STX_DATA_HOME when configured. */
+  dataRoot?: string
   bundleIdentifier?: string
   home?: string
   platform?: NodeJS.Platform
@@ -12,6 +14,11 @@ export interface ApplicationDataOptions {
 export function applicationDataDirectory(name: string, options: ApplicationDataOptions = {}): string {
   if (!name || name === '.' || name === '..' || /[/\\\0]/.test(name))
     throw new Error('Application data requires an application name')
+  const dataRoot = options.dataRoot ?? process.env.STX_DATA_HOME
+  if (dataRoot) {
+    if (!isAbsolute(dataRoot) || dataRoot.includes('\0')) throw new Error('Application data root must be an absolute directory')
+    return join(dataRoot, name)
+  }
   const home = options.home ?? homedir()
   const platform = options.platform ?? process.platform
   if (platform === 'darwin') {
