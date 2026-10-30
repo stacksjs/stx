@@ -2380,7 +2380,7 @@ export async function renderComponentWithSlot(
       const layoutRoot = /^\s*(?:(?:<!--[\s\S]*?-->|\x00STX_HTML_COMMENT_\d+\x00)\s*)*<[^>]+\bdata-stx-layout-root(?:\s|=|>)/i.test(result)
       const wrapperTag = inlineRoot ? 'span' : 'div'
       const wrapperStyle = layoutRoot && options._nativeHostAttrs
-        ? ' style="display:flex;flex:1;min-height:0;min-width:0"'
+        ? ' style="display:flex;flex-direction:column;flex:1;min-height:0;min-width:0"'
         : inlineRoot || layoutRoot ? ' style="display:contents"' : ''
       output = scopeOnRootElement(result, scopeAttrs) ?? `<${wrapperTag}${scopeAttrs} data-stx-component-wrapper${wrapperStyle}>${result}</${wrapperTag}>`
 

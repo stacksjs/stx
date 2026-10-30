@@ -14,6 +14,18 @@ async function render(component: string, usage: string, native: boolean) {
   }, new Set())
 }
 
+it('bounds a centered native list vertically without turning horizontal centering into a zero-height cross axis', async () => {
+  const component = `<script client>const mounted = state(true)</script><div data-native="FlatList" data-stx-layout-root class="flex-1 mx-auto max-w-2xl w-full"><slot /></div>`
+  const html = await render(component, '<Control><p>First row</p></Control>', true)
+  const { root } = await translateHtmlToIR(html)
+  expect(root.props['data-stx-component-wrapper']).toBeDefined()
+  expect(root.style).toMatchObject({ flex: 1, flexDirection: 'column', minHeight: 0 })
+  const list = root.children.find(child => typeof child !== 'string' && child.type === 'FlatList')
+  expect(list).toMatchObject({ style: { flex: 1, alignSelf: 'center', width: '100%' } })
+  const browser = await render(component, '<Control><p>First row</p></Control>', false)
+  expect(browser).toContain('style="display:contents"')
+})
+
 it('forwards unconsumed native host props and classes without requiring data-native', async () => {
   const html = await render('<button data-class="keep" class=bg-red-500><slot /></button>',
     '<Control testID="save" accessibilityLabel="Save changes" :enabled="false" class="text-[15px]">Save</Control>', true)
