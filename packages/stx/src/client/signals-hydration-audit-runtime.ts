@@ -109,6 +109,8 @@ export const SIGNALS_HYDRATION_AUDIT_RUNTIME = `  // ===========================
       // missing String#indexOf method.
       var text = node.nodeValue == null ? '' : String(node.nodeValue);
       if (text.indexOf('{{') === -1 || text.indexOf('}}') === -1) continue;
+      // Text a binding wrote is data and may legitimately hold braces.
+      if (typeof isInertContent === 'function' && isInertContent(node)) continue;
       if (auditSkipped(node)) continue;
       found.push(text.trim().slice(0, 80));
       if (found.length >= 5) break;

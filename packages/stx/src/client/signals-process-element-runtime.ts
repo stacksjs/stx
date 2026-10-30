@@ -3,7 +3,13 @@ export function signalsProcessElementRuntime(
   eventRegexLiteral: string,
   handledXAttrsLiteral: string,
 ): string {
-  return `  // skipChildren: this element's bindings only, because something else already
+  return `  // True for text a binding wrote, or markup :html injected: data, never
+  // template. Checked only for text that holds braces, so the climb is rare.
+  function isInertContent(node) {
+    for (var n = node; n; n = n.parentNode) if (n.__stx_inert_content) return true;
+    return false;
+  }
+  // skipChildren: this element's bindings only, because something else already
   // knows where the rest are. The manifest path passes it for every entry, so
   // the tree is never walked; see processFromManifest.
   function processElement(el, scope = componentScope, skipChildren) {
@@ -69,6 +75,10 @@ export function signalsProcessElementRuntime(
       // implementations and user-created nodes can retain a numeric value
       // assigned by a binding. Normalize before interpolation detection.
       const text = el.textContent == null ? '' : String(el.textContent);
+      // Text a binding wrote is data, never template: the scan below only
+      // reads what the author wrote. A binding marks the element (or text node)
+      // that owns its output, so a later pass over the same tree skips it.
+      if (text && text.includes('{{') && isInertContent(el)) return;
       if (text && text.includes('{{')) {
         const parts = text.split(/(\\{\\{[\\s\\S]+?\\}\\})/g);
         if (parts.length > 1) {
@@ -95,6 +105,7 @@ export function signalsProcessElementRuntime(
               const bindingNode = isTextOnlyParent
                 ? document.createTextNode('')
                 : document.createElement('span');
+              bindingNode.__stx_inert_content = true;
               fragment.appendChild(bindingNode);
               // Use captured scope, not dynamic lookup
               effect(() => {
@@ -484,12 +495,16 @@ else if (name === '@style' || name === ':style' || name === 'x-style') {
         el.removeAttribute(name);
       }
 else if (name === '@text' || name === ':text' || name === 'x-text') {
+        el.__stx_inert_content = true;
         effect(() => {
           stxHost.setText(el, evalAttrExpr(value));
         });
         el.removeAttribute(name);
       }
 else if (name === '@html' || name === ':html' || name === 'x-html') {
+        // Injected markup is data: nothing in it is a binding, so the child
+        // walk below must not read its text or attributes as template syntax.
+        el.__stx_inert_content = true;
         effect(() => {
           // Coerce null/undefined to '' so a missing/unresolved binding renders
           // nothing rather than the literal string "undefined" (#1767).
@@ -704,7 +719,7 @@ catch (e) {
 
     // Process children (skip script/style elements — their text content is not template markup)
     // Skip elements that are roots of nested stx.mount() components — those have their own scope
-    if (!skipChildren && el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
+    if (!skipChildren && !el.__stx_inert_content && el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
       var children = Array.from(el.childNodes);
       children.forEach(function(child) {
         if (child.nodeType !== Node.ELEMENT_NODE) { processElement(child, scope); return; }
