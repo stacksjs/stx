@@ -48,9 +48,9 @@ global precedence change.
 
 The [resolution audit](../proposals/native-component-resolution-audit.md)
 records all six overlapping names, the remaining migration blockers, and the
-tests protecting legacy native APIs. In particular, browser `<Image>` is also
-a `StxImage` builtin alias; a matching shared filename does not prove that the
-browser selected that file.
+tests protecting legacy native APIs. Image presentation calls can now select
+the shared file on both targets; plain calls and builtin-specific options keep
+the builtin/primitive paths. A matching filename alone does not prove selection.
 
 Checkbox/Switch migration must preserve two existing contracts, covered by
 `test/native/control-compatibility.test.ts`:
@@ -665,7 +665,7 @@ function open(id: string) { craft.navigation.push('Session', { id }) }
 - **Native boolean props** retain explicit false values. For example, `<TextInput :editable="false" />` compiles with `editable: false` instead of applying HTML's attribute-removal semantics.
 - **Scripts** are TypeScript and may import from the project; each screen is bundled with `Bun.build`. Pass `--minify` for a smaller bundle.
 - **Icons:** `<Icon symbol="sun.max" />`, `<Icon name="sun" />` or `<Icon class="i-lucide-sun w-5 h-5 text-amber-400" />` draw SF Symbols. `src/native/compiler/icons.ts` maps names by collection: Lucide uses its existing table, and `hugeicons:workout-run` / `i-hugeicons-workout-run` maps to `figure.run`. Installing an Iconify collection does not automatically add native symbol mappings. Unmapped names use `questionmark.square.dashed` and appear as `unknown-icon` in compiler diagnostics, including layout chrome removed from the screen tree. Reactive class/name changes also warn at runtime with the node and icon name; repeated style refreshes do not repeat the same warning. Use an explicit native `symbol` or add the collection/name to the mapping table. A deliberate Lucide `circle` remains a circle; web Iconify rendering is unchanged.
-- **Shared DialogPanel:** native content uses a full-size normal-flow wrapper so UIKit can reparent it into a page sheet without losing its children. The default panel remains bottom-aligned; `variant="center"` remains centered. The same shared source keeps its existing browser markup. The maintained [portability checks](../proposals/shared-controls-device-validation.md) cover sheet opening, nested dismissal, Drawer, popups/tabs and shared control density on an actual iOS host; protocol checks cover iOS/Android and normal/minified bundles. Unsupported image positioning/scale-down remains diagnosed pending [Craft #427](https://github.com/craft-native/craft/issues/427), with existing Image resolution preserved.
+- **Shared DialogPanel:** native content uses a full-size normal-flow wrapper so UIKit can reparent it into a page sheet without losing its children. The default panel remains bottom-aligned; `variant="center"` remains centered. The same shared source keeps its existing browser markup. The maintained [portability checks](../proposals/shared-controls-device-validation.md) cover sheet opening, nested dismissal, Drawer, popups/tabs and shared control density on an actual iOS host; protocol checks cover iOS/Android and normal/minified bundles. Image fit/position integration requires Craft 0.0.396+ and a regenerated shell; unsupported pixel/edge offsets remain diagnosed. See the [Image compatibility selection](../proposals/native-component-resolution-audit.md#image-resolution-batch-unreleased-after-v02754) before migrating legacy builtin or source/resizeMode callers.
 - **Sticky headers and scroll targets:** `<ScrollView stickyHeaderIndices={[0]} scrollTarget={target}>` keeps the first child at the top once scrolled to (as in React Native), and scrolls the view whose `testID` is `target.id` to the top, below that header, whenever `target` changes (`{ id, key, animated }`; a new `key` scrolls again). Craft's iOS host draws both.
 - **Navigation bar:** `craft.navigation.setOptions({ title, largeTitle, hidden, backTitle, rightButtons: [{ id, symbol, onPress }] })`, with taps also delivered to `craft.navigation.onButton(cb)`.
 

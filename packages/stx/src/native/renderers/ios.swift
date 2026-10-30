@@ -54,6 +54,16 @@ private final class STXPointerInput: UITextField {
     }
 }
 
+// Pure geometry shared by layout and the standalone renderer acceptance check.
+private func stxImageFrame(box: CGSize, intrinsic: CGSize, fit: String, alignment: CGPoint) -> CGRect {
+    guard intrinsic.width > 0, intrinsic.height > 0 else { return .zero }
+    let contain = min(box.width / intrinsic.width, box.height / intrinsic.height)
+    let scale = fit == "cover" ? max(box.width / intrinsic.width, box.height / intrinsic.height)
+        : fit == "none" ? 1 : fit == "scale-down" ? min(1, contain) : contain
+    let rendered = fit == "fill" ? box : CGSize(width: intrinsic.width * scale, height: intrinsic.height * scale)
+    return CGRect(x: (box.width - rendered.width) * alignment.x, y: (box.height - rendered.height) * alignment.y, width: rendered.width, height: rendered.height)
+}
+
 private final class STXPointerImage: UIImageView {
     private var storedImage: UIImage?
     private var fittedImage: UIImageView?
@@ -99,11 +109,7 @@ private final class STXPointerImage: UIImageView {
     override func layoutSubviews() {
         super.layoutSubviews()
         guard let fit, let child = fittedImage, let size = storedImage?.size, size.width > 0, size.height > 0 else { return }
-        let contain = min(bounds.width / size.width, bounds.height / size.height)
-        let scale = fit == "cover" ? max(bounds.width / size.width, bounds.height / size.height)
-            : fit == "none" ? 1 : fit == "scale-down" ? min(1, contain) : contain
-        let rendered = fit == "fill" ? bounds.size : CGSize(width: size.width * scale, height: size.height * scale)
-        child.frame = CGRect(x: (bounds.width - rendered.width) * alignment.x, y: (bounds.height - rendered.height) * alignment.y, width: rendered.width, height: rendered.height)
+        child.frame = stxImageFrame(box: bounds.size, intrinsic: size, fit: fit, alignment: alignment)
         child.tintColor = tintColor
     }
 

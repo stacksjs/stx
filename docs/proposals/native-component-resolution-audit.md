@@ -1,6 +1,6 @@
 # Shared/native component resolution audit
 
-Updated against v0.2.745 plus the maintained shared-controls acceptance suite
+Updated against source after v0.2.754 plus the maintained shared-controls acceptance suite
 for [#2090](https://github.com/stacksjs/stx/issues/2090). This is an acceptance audit
 for [#2091](https://github.com/stacksjs/stx/issues/2091), not a claim that every
 component is portable or that device rendering has been certified.
@@ -17,7 +17,7 @@ directories and fails if a new overlap has no recorded compatibility decision.
 | Checkbox | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | Preserve both APIs; device validation |
 | Switch | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | Preserve both APIs; device validation |
 | TextInput | Shared for value-model calls without `@input`; primitive for legacy/ambiguous calls | Shared file | Preserve object-payload callers; device validation |
-| Image | Primitive | `StxImage` builtin alias, not the shared file | Position/scale-down support, device validation and builtin/shared precedence decision |
+| Image | Shared for src + presentation API + alt/decorative; primitive for plain/legacy calls | Same shared selection; builtin for plain/legacy/transformation calls | Matching Craft 0.0.396+ shell and device validation |
 | Video | Shared for src with shared media events; primitive for source, mixed, bare or legacy-event calls | Shared file | Preserve legacy API; provider/DRM/API and device validation remain |
 
 Explicit imports and screen-local components remain overrides. The audit tests
@@ -54,9 +54,41 @@ remain in `remaining-component-resolution.test.ts`.
 
 This is not native media/device certification. Provider page embeds, browser
 source-list/track selection and DRM remain outside the shared native adapter's
-supported contract. Image resolution is intentionally unchanged: web still
-selects its builtin alias unless overridden, and object-position/scale-down
-plus host visual validation remain gates. Craft is not modified.
+supported contract. Image now has the separate compatibility selection below.
+Craft is not modified.
+
+### Image resolution batch (unreleased after v0.2.754)
+
+With the shared library installed, `Image` selects the same file on web/native
+when its authored API includes `src`, a nonempty SSR `alt` or true `decorative`,
+and a presentation
+prop: `fit`/`objectFit`, `position`/`objectPosition`, `rounded`, `aspectRatio`,
+`zoomOnHover`, `sources`, `webpSrc` or `webpSrcSet`. Selection uses authored keys,
+including initially empty/undefined source/presentation bindings, rather than
+their current values. Empty alt and client-only accessibility bindings without
+an SSR fallback keep their old path instead of acquiring the shared file's
+SSR accessibility error. An explicit import retains the shared API's validation.
+
+Plain calls retain the browser builtin/native primitive. `source`, `resizeMode`,
+`defaultSource`, mixed API calls and native-only event aliases retain their old
+selection. `provider`, `format`, `densities`, `quality`, `preload`, `modifiers`
+and `preset` retain the builtin transformation/preload API. `StxImage` always
+remains the explicit builtin. Explicit imports and screen-local overrides win;
+without a shared library the old fallback remains available.
+
+STX now transports explicit `objectFit` and `objectPosition` instead of aliasing
+fit to `resizeMode`. Craft 0.0.396+ (with a regenerated shell) supports all five
+CSS fit modes, including non-upscaling `scale-down`, and one/two alignment
+keywords or percentages. Pixel offsets and three/four-token positions remain
+diagnostics. Clear both explicit fields to restore legacy `resizeMode`; clearing
+a shared component prop instead restores its own cover/center defaults.
+
+The browser peer and STX standalone renderers understand the explicit geometry.
+Tests cover actual dependency paths, shared/legacy images together, retained
+identity and unchanged source during geometry writes, event payloads, stale
+callbacks, defaults, conditional reinsertion and disposal. Real Chrome coverage
+also verifies one load per source, no reload for fit/position updates, and current
+values after remount. These checks are not new physical-device certification.
 
 ### TextInput resolution batch (unreleased after v0.2.661)
 
@@ -286,22 +318,19 @@ wrapping `<div>`, a client `value = state('/first')`, and
    transition against the actual restored hover capability rather than assuming
    that disabling touch creates a mouse. No production zoom behavior changes.
 
-   **Fit binding is now supported (unreleased after v0.2.661):** both
-   `objectFit` and its `fit` alias update the physical image. A nonempty
-   `objectFit` wins; clearing it reveals `fit`, and clearing both restores
-   `cover`. Static SSR styling is preserved. Native CSS styles map `cover` /
-   `contain` / `fill` / `none` to `resizeMode` `cover` / `contain` / `stretch` /
-   `center`, including variable resolution and live style layers.
-   `scale-down` and invalid native fit values are diagnosed and omitted (so
-   an authored fallback can remain); browser `scale-down` is unchanged.
+   **Fit/position integration (source after v0.2.754):** both `objectFit`
+   and its `fit` alias update the physical image. A nonempty primary wins;
+   clearing it reveals the alias, and clearing both restores `cover`.
+   Position follows the same primary/alias rule and restores `center`.
+   Static SSR styling is preserved. Native CSS styles now retain explicit
+   `objectFit`/`objectPosition` for Craft 0.0.396+, including `scale-down`.
+   Unsupported offsets and invalid fits still produce diagnostics, with the
+   authored baseline restored rather than stale previous bindings.
    `image-fit.test.ts` and `shared-image-fit.test.ts` cover translation,
    diagnostics, precedence, live changes, defaults, identity, remount and
-   teardown, with normal/minified native bundles and computed browser styles.
-   `objectPosition` remains unsupported. Existing Craft implementations also
-   differ for `contain` upscaling: iOS uses aspect-fit, Android CENTER_INSIDE
-   does not upscale small images. No Craft code was changed, and this is not
-   a claim of device pixel parity. Position/scale-down, host validation and
-   browser builtin/shared precedence remain migration gates.
+   teardown on iOS/Android normal/minified bundles and real browser styles.
+   Legacy `resizeMode` remains separate. This is not a new device pixel-parity
+   claim; the compatibility selection and remaining device boundary are above.
 
    **Reactive dimensions and layout (unreleased after v0.2.707):** the shared
    file now updates the physical image's `width`/`height` attributes and the
@@ -432,12 +461,11 @@ in normal and minified builds.
   `shared-control-attributes.test.ts`, `control-compatibility.test.ts`.
 - TextInput and Video now have the compatibility selections recorded above;
   the older claim that every remaining overlap is unmigrated no longer applies.
-  Image retains the native primitive and browser builtin unless explicitly
-  imported. Its migration still needs a decision preserving builtin consumers,
-  native object-position/scale-down support and device validation.
-  The host contract prerequisite is tracked in
-  [Craft #427](https://github.com/craft-native/craft/issues/427); STX continues
-  diagnosing unsupported values and preserving existing source/resizeMode calls.
+  Image now has the compatibility selection below, preserving plain calls,
+  builtin transformations and native source/resizeMode calls.
+  [Craft #427](https://github.com/craft-native/craft/issues/427) shipped the
+  required host contract in 0.0.396. STX passes valid fit/position values and
+  continues diagnosing unsupported positions; device acceptance remains separate.
 - The maintained shared-controls suite now runs the actual Button, TextInput
   and Card on an iOS host in light and dark appearance. It verifies retained
   keyboard/value across button updates and measures real Card padding at
@@ -446,7 +474,7 @@ in normal and minified builds.
   appearance changes. See the [device receipt](shared-controls-device-validation.md).
 - This is scoped visual/layout and interaction evidence, not a VoiceOver,
   TalkBack, keyboard-modality, Android-device or pixel-parity certification.
-  Image resolution and remaining device acceptance continue under #2091.
+  Remaining device acceptance continues under #2091.
 
 ## Platform controls (after v0.2.657)
 
