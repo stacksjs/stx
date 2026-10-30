@@ -776,3 +776,8 @@ export type { BridgeCapability, BridgePlatformSupport } from './capabilities'
 
 export { backgroundDelay } from './background-delay'
 export type { BackgroundDelayOptions } from './background-delay'
+
+export { createNativeUpdateApi, createPantrySelfUpdater, parsePantryUpdateManifest } from './native-update'
+export type { NativeUpdateState } from './native-update'
+export { applicationDataDirectory } from './application-data'
+export type { ApplicationDataOptions } from './application-data'

@@ -93,6 +93,9 @@ const tokenizer = await import('@stacksjs/stx/parser/tokenizer')
 const router = await import('stx-router/layout-metadata')
 const plugin = await import('bun-plugin-stx/serve')
 const desktop = await import('@stacksjs/stx/desktop')
+const updates = await import('@stacksjs/desktop')
+const status = await updates.createNativeUpdateApi({ repository: 'example/app', currentVersion: '1.0.0' })(new Request('http://localhost/api/updates'))
+if (!(status instanceof Response) || (await status.json()).currentVersion !== '1.0.0') throw new Error('bad packaged native updater API')
 if (typeof stx.processDirectives !== 'function') throw new Error('missing processDirectives')
 if (typeof expressions.processExpressions !== 'function') throw new Error('missing processExpressions')
 if (typeof tokenizer.findMatchingDelimiter !== 'function') throw new Error('missing tokenizer')
@@ -119,6 +122,11 @@ if (!generateSignalsRuntimeDev().includes('console.log(')) throw new Error('Expl
 writeFileSync(join(smokeRoot, 'mouse-consumer.ts'), `import '@stacksjs/stx'
 import { $path, definePageMeta, type CheckHref } from '@stacksjs/stx'
 import { createChat } from '@stacksjs/components/chat'
+import { createNativeUpdateApi, applicationDataDirectory, type NativeUpdateState } from '@stacksjs/desktop'
+const updateApi: (request: Request) => Promise<Response | null> = createNativeUpdateApi({ repository: 'example/app', currentVersion: '1.0.0' })
+const updateState: NativeUpdateState = { currentVersion: '1.0.0', phase: 'checking' }
+const dataPath: string = applicationDataDirectory('Example', { bundleIdentifier: 'com.example.app' })
+void [updateApi, updateState, dataPath]
 import { closeOverlay, openOverlay, openOverlays } from '@stacksjs/components/overlays'
 const href: CheckHref<'/calendar'> = '/calendar'
 $path('/athletes/:id', { id: '42' })
