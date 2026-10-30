@@ -14,6 +14,7 @@
 import type { StxOptions } from './types'
 import { extractExports as scopeExports, scopePropertyDescriptor } from './client-scope-bindings'
 import { pascalToKebab } from './component-resolution'
+import { usesSharedImageApi } from './component-image-usage'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -1337,6 +1338,8 @@ export async function renderComponentWithSlot(
       // The shared adapter emits web media names. Native-only aliases (for
       // example @progress instead of @timeupdate) keep their primitive path.
       const video = options._nativeHostAttrs && /^video$/i.test(baseName)
+      const image = options._nativeHostAttrs && /^image$/i.test(baseName)
+      const sharedImageUsage = usesSharedImageApi([...Object.keys(props), ...renderMetadata?.reactiveProps ?? []], renderMetadata?.events, props)
       const usesSrc = Object.hasOwn(props, 'src') || Boolean(renderMetadata?.reactiveProps?.includes('src'))
       const usesSource = Object.hasOwn(props, 'source') || Boolean(renderMetadata?.reactiveProps?.includes('source'))
       const sharedVideoUsage = video && usesSrc && !usesSource && (renderMetadata?.events ?? []).every(event =>
@@ -1351,6 +1354,7 @@ export async function renderComponentWithSlot(
         && (!checkedControl || sharedCheckedUsage)
         && (!textInput || sharedTextInputUsage)
         && (!video || sharedVideoUsage)
+        && (!image || sharedImageUsage)
         && !nativeButtonUsage
       for (const dir of targetIsFallback ? [] : options._targetComponentDirs ?? []) {
         if (dir && !searchDirs.includes(dir))

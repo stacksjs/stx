@@ -122,7 +122,7 @@ export async function compileScreenSource(
     // ambiguous input listeners. Video keeps primitive resolution for source
     // and mixed src/source calls or legacy event aliases. utils.ts selects
     // shared APIs per invocation.
-    _targetComponentFallbackNames: ['Button', 'Checkbox', 'Switch', 'TextInput', 'Video'],
+    _targetComponentFallbackNames: ['Button', 'Checkbox', 'Switch', 'TextInput', 'Image', 'Video'],
     _nativeHostAttrs: true,
     // A native screen's events are bindings in its manifest, read from the
     // `@click` it keeps. The web's other path, an element id and a standalone

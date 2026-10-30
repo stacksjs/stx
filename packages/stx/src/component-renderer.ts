@@ -18,6 +18,7 @@
  * @module component-renderer
  */
 import { buildStxIndex, componentImportCandidates, resolvePackageDir } from './component-resolution'
+import { usesSharedImageApi } from './component-image-usage'
 import type { StxOptions } from './types'
 import type { ResolvedProps, RenderContext } from './component-registry'
 import { registry } from './component-registry'
@@ -1085,8 +1086,13 @@ async function processCustomElementTags(
       const overriddenByUser = builtinDef
         ? await userComponentFileExists(tag.tagName, componentsDir, context, filePath, options)
         : false
+      const sharedImage = tag.tagName === 'Image'
+        && usesSharedImageApi([
+          ...Object.keys(resolvedProps.static), ...Object.keys(resolvedProps.serverDynamic), ...Object.keys(resolvedProps.clientReactive),
+        ], Object.keys(resolvedProps.events), { ...resolvedProps.static, ...resolvedProps.serverDynamic })
+        && ((options as StxOptions & { _pluginComponentDirs?: string[] })._pluginComponentDirs ?? []).some(dir => buildStxIndex(dir).has('Image'))
 
-      if (builtinDef && !overriddenByUser) {
+      if (builtinDef && !overriddenByUser && !sharedImage) {
         // Build the render context
         const renderCtx: RenderContext = {
           context,
