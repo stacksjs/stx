@@ -2,6 +2,51 @@ import { describe, expect, it } from 'bun:test'
 import { compileNativeScreen, mountNativeScreen } from '../../src/native/testing'
 
 describe.each([false, true])('reactive native inline styles (minify=%s)', (minify) => {
+  it.each(['ios', 'android'] as const)('normalizes pointer policies through the compiled bundle and clears retained nodes (%s)', async (platform) => {
+    const { code, diagnostics } = await compileNativeScreen(`<script client>
+const styles = state('pointer-events:none')
+const shown = state(true)
+window.probe = { styles, shown }
+</script><div :if="shown">
+  <div testID="policy" :style="styles">Overlay</div>
+  <div testID="fallback" class="pointer-events-auto" :style="styles">Fallback</div>
+</div>`, { minify })
+    expect(diagnostics.filter(item => item.message.includes('unknown-style'))).toEqual([])
+    const warnings: string[] = []
+    const phone = mountNativeScreen(code, 'Screen', { platform, globals: { console: { ...console, warn: (...args: unknown[]) => warnings.push(args.join(' ')) } } })
+    try {
+      await phone.settle()
+      const original = phone.byTestID('policy')!
+      expect(original.style.pointerEvents).toBe('none')
+      for (const pointerEvents of ['auto', 'none', 'box-none', 'box-only']) {
+        for (const input of [{ pointerEvents }, JSON.stringify({ pointerEvents }), `pointer-events:${pointerEvents}`]) {
+          phone.context.probe.styles.set(input)
+          await phone.settle()
+          expect(phone.byTestID('policy')).toBe(original)
+          expect(original.style.pointerEvents).toBe(pointerEvents)
+          expect(phone.byTestID('fallback')!.style.pointerEvents).toBe(pointerEvents)
+        }
+      }
+      phone.context.probe.styles.set(null)
+      await phone.settle()
+      expect(original.style.pointerEvents).toBeNull()
+      expect(phone.byTestID('fallback')!.style.pointerEvents).toBe('auto')
+      expect(phone.operations()).toContainEqual({ op: 'updateNode', id: original.id, patch: { style: { pointerEvents: null } } })
+      phone.context.probe.styles.set({ pointerEvents: 'invalid' })
+      await phone.settle()
+      expect(original.style.pointerEvents).toBeNull()
+      expect(warnings.some(warning => warning.includes('unknown-style') && warning.includes('pointerEvents:invalid'))).toBe(true)
+      phone.context.probe.shown.set(false)
+      await phone.settle()
+      phone.context.probe.styles.set({ pointerEvents: 'box-none' })
+      phone.context.probe.shown.set(true)
+      await phone.settle()
+      expect(phone.byTestID('policy')!.style.pointerEvents).toBe('box-none')
+      expect(phone.mutationErrors).toEqual([])
+    }
+    finally { phone.unmount() }
+  }, 30_000)
+
   it('keeps hidden form inputs out of native layout through style, appearance and lifecycle updates', async () => {
     const { code } = await compileNativeScreen(`<script client>
 const styles = state({ display: 'flex' })

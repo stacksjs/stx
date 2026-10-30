@@ -1,5 +1,13 @@
 import { parentPort, workerData } from 'node:worker_threads'
-import { tempBuildName } from '../../../src/client-script-bundler'
+import { bundleClientScript, tempBuildName } from '../../../src/client-script-bundler'
 
-parentPort!.postMessage(tempBuildName(String(workerData)))
+if (typeof workerData === 'string') {
+  parentPort!.postMessage(tempBuildName(workerData))
+}
+else {
+  const { script, templatePath, projectRoot, cacheDir } = workerData
+  parentPort!.postMessage(await bundleClientScript(script, templatePath, {
+    projectRoot, cacheDir, throwOnFailure: true, externalizeUserModules: false,
+  }))
+}
 parentPort!.close()

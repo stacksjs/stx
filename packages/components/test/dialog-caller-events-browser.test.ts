@@ -5,6 +5,36 @@ import { defaultConfig } from '../../stx/src/config'
 import { generateCss } from '../../stx/src/dev-server/ts-css'
 import { processDirectives } from '../../stx/src/process'
 
+it('closes an initially open dialog whose caller slot contains only a static button (#2139)', async () => {
+  const root = join(import.meta.dir, '..')
+  const imports = ['Dialog', 'DialogPanel']
+    .map(name => `@import('${name}', '${join(root, 'src/ui/dialog', `${name}.stx`)}')`).join('\n')
+  const html = await processDirectives(`${imports}
+<!doctype html><html><head></head><body>
+<script client>
+const open = state(true)
+function close() { open.set(false) }
+</script>
+<Dialog :open="open()"><DialogPanel>
+  <button id="close" type="button" @click="close()">Close</button>
+</DialogPanel></Dialog>
+</body></html>`, {}, join(root, 'dialog-static-slot.stx'), { ...defaultConfig, root, cache: false, debug: false }, new Set())
+  const css = await generateCss(html, root)
+  const page = html.replace('</head>', `<style>${css}</style></head>`)
+  const server = Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: () => new Response(page, { headers: { 'Content-Type': 'text/html' } }) })
+  const view = new WebView({ headless: true, width: 800, height: 600, backend: { type: 'chrome', url: false } })
+  try {
+    await view.navigate(server.url.href)
+    const visible = () => view.evaluate(`Array.from(document.querySelectorAll('[data-stx-dialog]')).filter(node => getComputedStyle(node).display !== 'none').length`)
+    for (let i = 0; i < 100 && await visible() !== 1; i++) await Bun.sleep(20)
+    expect(await visible()).toBe(1)
+    await view.click('#close')
+    for (let i = 0; i < 100 && await visible() !== 0; i++) await Bun.sleep(20)
+    expect(await visible()).toBe(0)
+  }
+  finally { view.close(); server.stop(true) }
+}, 30_000)
+
 it.each([false, true])('keeps caller confirmation handlers in a plain-script dialog panel reactive (projected refs: %s)', async (projectedRefs) => {
   const root = join(import.meta.dir, '..')
   const imports = ['Dialog', 'DialogPanel', 'DialogBackdrop', 'DialogTitle']

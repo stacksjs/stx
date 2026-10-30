@@ -125,4 +125,33 @@ describe('client-script-bundler concurrency', () => {
     expect(second).toContain(`-${process.pid}-`)
     expect(first).not.toBe(second)
   })
+
+  it('builds complete executable bundles in independent workers sharing the temporary directory', async () => {
+    const workers: Worker[] = []
+    const script = `import { formatDate } from './helper'
+const label = formatDate(new Date(0))
+function greet() { return 'hi ' + label }`
+    try {
+      const results = await Promise.all(Array.from({ length: 4 }, () => new Promise<string>((resolve, reject) => {
+        const worker = new Worker(new URL('./fixtures/temp-build-worker.ts', import.meta.url), {
+          workerData: { script, templatePath, projectRoot, cacheDir },
+        })
+        workers.push(worker)
+        let received = false
+        worker.once('message', (output) => { received = true; resolve(output) })
+        worker.once('error', reject)
+        worker.once('exit', (code) => {
+          if (code !== 0 || !received) reject(new Error(`Bundle worker exited ${code} without a result`))
+        })
+      })))
+      for (const output of results) {
+        expect(output).not.toContain('./helper')
+        // Execute each result: merely retaining a declaration can hide a
+        // fallback whose import was never bundled.
+        const result = new Function(`${output}; return greet()`)()
+        expect(result).toBe(`hi ${String(new Date(0))}`)
+      }
+    }
+    finally { await Promise.all(workers.map(worker => worker.terminate())) }
+  })
 })
