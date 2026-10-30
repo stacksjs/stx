@@ -268,6 +268,58 @@ function composableUses(text: string, names: ReadonlySet<string>): Set<string> {
   return used
 }
 
+/** Script types whose body is JavaScript (stx's own deferred branch scripts among them). */
+function isScriptType(type: string | undefined): boolean {
+  return !type || /^(?:module|(?:text|application)\/(?:java|ecma)script|application\/stx-[\w-]+)$/i.test(type)
+}
+
+/**
+ * Which composable names a rendered page uses: its markup by mention (an
+ * expression in an attribute, `{{ }}`), its scripts by what they use without
+ * binding it themselves (`composableUses`).
+ *
+ * The page's scripts used to be read by mention like the markup. A component
+ * that imports a module of the composables directory reads it from the page's
+ * module registry (`var useThing = __stxMod0["useThing"]`), and the mention
+ * pulled a second, global copy of it into the composables bundle: on
+ * hq.training a layout component that imports `useActiveWorkout` put a 580 KB
+ * copy of it (and everything it imports) on every page, beside the one in the
+ * registry. Data (`application/ld+json`) is neither markup nor script.
+ */
+const pageUsesByScript = renderMemo<Set<string>>(256)
+function pageUses(page: string, names: Iterable<string>): Set<string> {
+  const all = new Set(names)
+  let markup = ''
+  let last = 0
+  const used = new Set<string>()
+  for (const match of page.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)) {
+    markup += page.slice(last, match.index!)
+    last = match.index! + match[0].length
+    const attrs = match[1] ?? ''
+    const body = match[2] ?? ''
+    const type = /\btype\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(attrs)
+    const typeName = type ? (type[1] ?? type[2] ?? type[3] ?? '').trim() : undefined
+    if (!isScriptType(typeName)) {
+      // A template kept in a script element is markup; data is not read.
+      if (!/json/i.test(typeName ?? '')) markup += ` ${body} `
+      continue
+    }
+    // Most scripts name no composable; only those are parsed.
+    const candidates = mentionedNames(body, all)
+    if (candidates.size === 0) continue
+    const key = contentKey(body, [...candidates].sort().join(','))
+    let uses = pageUsesByScript.get(key)
+    if (!uses) {
+      uses = composableUses(body, candidates)
+      pageUsesByScript.set(key, uses)
+    }
+    for (const name of uses) used.add(name)
+  }
+  markup += page.slice(last)
+  for (const name of mentionedNames(markup, all)) used.add(name)
+  return used
+}
+
 function selectReachable(
   modules: ComposableModule[],
   codeByFile: Map<string, string>,
@@ -281,12 +333,6 @@ function selectReachable(
     }
   }
 
-  const filesMentionedIn = (text: string): string[] => {
-    const found: string[] = []
-    for (const name of mentionedNames(text, fileForName.keys()))
-      found.push(fileForName.get(name)!)
-    return found
-  }
   // A script read for what it uses rather than for every word in it: the
   // bundles beside the page, and the composables themselves.
   const allNames = new Set(fileForName.keys())
@@ -299,8 +345,11 @@ function selectReachable(
 
   const selected = new Set<string>()
   // The page itself is markup as much as script ({{ fmt(x) }}, @click="…"),
-  // so it keeps the loose word scan; what ships beside it is plain script.
-  let frontier = pageSources.flatMap((source, index) => index === 0 ? filesMentionedIn(source) : filesUsedBy(source))
+  // so its markup keeps the loose word scan; its scripts, and what ships
+  // beside it, are plain script.
+  let frontier = pageSources.flatMap((source, index) => index === 0
+    ? [...pageUses(source, fileForName.keys())].map(name => fileForName.get(name)!)
+    : filesUsedBy(source))
   while (frontier.length > 0) {
     const next: string[] = []
     for (const file of frontier) {
@@ -334,6 +383,12 @@ export async function getComposableScript(
    * rather than splicing them in first is what lets the three share one splice.
    */
   extraSources?: readonly string[],
+  /**
+   * Receives the files the bundle was built from: each composable it carries
+   * and what that composable bundled in. A caller reading what the page's
+   * code does (the stores it reads) reads these, not the built bundle.
+   */
+  collectInputs?: string[],
 ): Promise<string | null> {
   const { key: resolvedDir, files: composableFiles } = await composableSources(composablesDir)
   if (!resolvedDir) return null
@@ -406,9 +461,16 @@ export async function getComposableScript(
     return null
 
   const includedFiles = composableFiles.filter(file => selected.has(file))
+  const reportInputs = (): void => {
+    if (!collectInputs) return
+    for (const file of includedFiles) collectInputs.push(file, ...clientBundleDependencies(file))
+  }
   const cacheKey = `${resolvedDir}\u0000${includedFiles.join('\u0000')}\u0000${moduleSubstitutionKey()}`
   const cached = readSigned(_cachedComposableScripts, cacheKey, signature)
-  if (cached !== undefined) return cached || null
+  if (cached !== undefined) {
+    reportInputs()
+    return cached || null
+  }
 
   const chunks: string[] = []
   const exportedNames = new Set<string>()
@@ -552,6 +614,7 @@ ${assignments}
   // Bundling has now recorded what each composable pulled in.
   signature = sourceSignature(composableInputs())
   writeSigned(_cachedComposableScripts, cacheKey, signature, code)
+  reportInputs()
   return code
 }
 

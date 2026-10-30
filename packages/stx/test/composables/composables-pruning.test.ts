@@ -220,3 +220,41 @@ describe('caching', () => {
     expect(second).not.toContain('COUNTER_STEP')
   })
 })
+
+describe('a page script that binds the name itself', () => {
+  // A component that imports a module of the composables directory reads it
+  // from the page's module registry; the name it binds is not a call to the
+  // global composable. Read by mention, hq.training's layout shipped a 580 KB
+  // second copy of `useActiveWorkout` (and all it imports) on every page.
+  it('does not ship a composable the script reads from the module registry', async () => {
+    const bundle = await bundleFor(`<script data-stx-scoped>var __stxMod0 = globalThis.__stxModules && globalThis.__stxModules["functions/counter.ts"];
+var increment = __stxMod0["increment"];
+const n = increment(1)</script>`)
+
+    expect(bundle).toBe('')
+  })
+
+  it('still ships one the script calls without binding it', async () => {
+    const bundle = await bundleFor(`<script data-stx-scoped>function go() { return increment(1) }</script>`)
+
+    expect(bundle).toContain('COUNTER_STEP')
+  })
+
+  it('still ships one the markup names', async () => {
+    const bundle = await bundleFor(`<button @click="increment(1)">+</button><script data-stx-scoped>var increment = 1</script>`)
+
+    expect(bundle).toContain('COUNTER_STEP')
+  })
+
+  it('still ships one a deferred branch script calls', async () => {
+    const bundle = await bundleFor(`<script type="application/stx-pending">increment(1)</script>`)
+
+    expect(bundle).toContain('COUNTER_STEP')
+  })
+
+  it('does not read data as a call', async () => {
+    const bundle = await bundleFor(`<script type="application/ld+json">{"name": "increment"}</script>`)
+
+    expect(bundle).toBe('')
+  })
+})
