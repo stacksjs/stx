@@ -70,6 +70,21 @@ describe('the native host satisfies the same contract as the DOM one', () => {
 })
 
 describe('host calls become bridge operations', () => {
+  it('updates pointer policies and clears the bound style through the mutation protocol', () => {
+    const { host, node, ops } = harness()
+    const overlay = node('overlay')
+    for (const pointerEvents of ['auto', 'none', 'box-none', 'box-only']) {
+      host.setStyle(overlay, { pointerEvents }, true)
+      host.flush()
+      expect(host.snapshot(overlay).style.pointerEvents).toBe(pointerEvents)
+      expect(ops().at(-1)).toMatchObject({ op: 'updateNode', id: 'overlay', patch: { style: { pointerEvents } } })
+    }
+    host.setStyle(overlay, null, true)
+    host.flush()
+    expect(host.snapshot(overlay).style.pointerEvents).toBeUndefined()
+    expect(ops().at(-1)).toMatchObject({ op: 'updateNode', id: 'overlay', patch: { style: { pointerEvents: null } } })
+  })
+
   it('skips stateless child attribute targets when forwarding a parent update', () => {
     const { host } = harness()
     const nested = createNode('View', { 'data-stx-native-host-owner': true }, {}, {}, [

@@ -315,6 +315,9 @@ export interface STXStyle {
     | { skewY: string }
   >
 
+  /** Pointer targeting for this box and its descendants. */
+  pointerEvents?: 'auto' | 'none' | 'box-none' | 'box-only'
+
   // Overflow
   overflow?: 'visible' | 'hidden' | 'scroll'
 }

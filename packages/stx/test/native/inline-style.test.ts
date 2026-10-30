@@ -1,8 +1,30 @@
 import { describe, expect, it } from 'bun:test'
+import { compileClassStyles } from '../../src/native/compiler/headwind-to-style'
 import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import { type NativeStyleDiagnostic, parseNativeStyle } from '../../src/native/compiler/inline-style'
 
 describe('shared native inline-style normalization', () => {
+  it('preserves pointer targeting across CSS, objects and class utilities', async () => {
+    for (const mode of ['auto', 'none', 'box-none', 'box-only']) {
+      for (const input of [{ pointerEvents: mode }, JSON.stringify({ pointerEvents: mode }), `pointer-events:${mode}`]) {
+        const diagnostics: NativeStyleDiagnostic[] = []
+        expect(parseNativeStyle(input, d => diagnostics.push(d))).toEqual({ pointerEvents: mode })
+        expect(diagnostics).toEqual([])
+      }
+      const result = await translateHtmlToIR(`<div style="pointer-events:${mode}"><button>Action</button></div>`)
+      expect(result.root.style.pointerEvents).toBe(mode)
+      expect(result.diagnostics.filter(d => d.kind === 'unknown-style')).toEqual([])
+    }
+    for (const mode of ['auto', 'none']) {
+      expect(compileClassStyles(`pointer-events-${mode}`)).toEqual({ style: { pointerEvents: mode }, unknown: [] })
+    }
+    for (const mode of ['all', 'invalid', 0, true]) {
+      const diagnostics: NativeStyleDiagnostic[] = []
+      expect(parseNativeStyle({ pointerEvents: mode }, d => diagnostics.push(d))).toEqual({})
+      expect(diagnostics).toEqual([{ kind: 'unknown-style', name: `pointerEvents:${mode}` }])
+    }
+  })
+
   it('normalizes CSS, object and serialized object styles identically', async () => {
     const object = { paddingLeft: '12px', fontSize: '1.5rem', width: '50%', opacity: '.5', fontWeight: '700' }
     const css = 'padding-left:12px;font-size:1.5rem;width:50%;opacity:.5;font-weight:700'

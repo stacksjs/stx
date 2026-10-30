@@ -446,6 +446,10 @@ const classParsers: Record<string, ClassParser> = {
   relative: (_, style) => { style.position = 'relative'; return true },
   absolute: (_, style) => { style.position = 'absolute'; return true },
 
+  // Pointer targeting
+  'pointer-events-none': (_, style) => { style.pointerEvents = 'none'; return true },
+  'pointer-events-auto': (_, style) => { style.pointerEvents = 'auto'; return true },
+
   // Overflow
   'overflow-visible': (_, style) => { style.overflow = 'visible'; return true },
   'overflow-hidden': (_, style) => { style.overflow = 'hidden'; return true },
