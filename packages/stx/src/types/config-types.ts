@@ -759,6 +759,11 @@ export interface StxConfig {
    * verified shared names explicitly listed in _targetComponentFallbackNames.
    */
   _targetComponentDirs?: string[]
+  /**
+   * @internal The native primitives as components of last resort on the web
+   * (`nativePrimitives`), except names that already have a web implementation.
+   */
+  _nativePrimitivesFallback?: { dir: string, except: string[] }
   /** @internal Verified shared names whose target primitives are fallbacks, not overrides. */
   _targetComponentFallbackNames?: string[]
   /** @internal Native translation preserves unconsumed host props on ordinary shared roots too. */
@@ -846,6 +851,15 @@ export interface StxConfig {
   composablesDir?: string
   /** Default layout to use for pages without DOCTYPE, relative to layoutsDir */
   defaultLayout?: string
+  /**
+   * Resolve the native primitives (`View`, `Text`, `ScrollView`, `Icon`, ...) as
+   * components of last resort when rendering for the web, so a view written once
+   * with them is also a web page. An app's own components and plugins' win by
+   * name. Set `false` to leave those tags unresolved.
+   *
+   * @default true
+   */
+  nativePrimitives?: boolean
   /** Plugins to load — npm packages, local paths, or [path, options] tuples */
   plugins?: Array<string | [string, Record<string, any>]>
 

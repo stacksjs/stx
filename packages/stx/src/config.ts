@@ -11,6 +11,7 @@ import { stxRouterDirective } from './client/directive'
 import { heatmapDirective } from './heatmap'
 import { markdownDirectiveHandler } from './markdown'
 import { imgDirective } from './media/image/directive'
+import { nativePrimitivesDir } from './native/primitives-dir'
 import { videoDirective } from './media/video/directive'
 import { pwaDirectives } from './pwa/directives'
 import { metaDirective, structuredDataDirective } from './seo'
@@ -923,6 +924,14 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
       ;(loaded as any)._pluginComponentDirs = pluginComponentDirs
       ;(loaded as any)._pluginPageDirs = pluginPageDirs
     }
+
+    // The native primitives are the lowest-priority fallback for component
+    // tags, so one set of views can be a web page and a native screen: an app's
+    // own component of the same name, then a plugin's, still win. Searched last.
+    // The names that already have a web implementation (the shared Button,
+    // Checkbox, Switch, TextInput, Image and Video) keep resolving as before.
+    if (loaded.nativePrimitives !== false)
+      (loaded as any)._nativePrimitivesFallback = { dir: nativePrimitivesDir(), except: ['Button', 'Checkbox', 'Switch', 'TextInput', 'Image', 'Video'] }
 
     return loaded
   })()

@@ -33,6 +33,12 @@ STX provides platform-agnostic primitives that map to native components:
 | `<MapPolyline>` | `MKPolyline` | `Polyline` | flat latitude/longitude geometry |
 | `<MapMarker>` | `MKPointAnnotation` | `Marker` | flat coordinate plus marker id |
 
+The Web column is real: the web server resolves these primitives as components
+of last resort (config `nativePrimitives`, on by default), so a view written with
+`<View>` and `<Text>` is also a web page. An app's own component of the same name,
+and a plugin's, win; `Button`, `Checkbox`, `Switch`, `TextInput`, `Image` and `Video`
+keep the web implementations they already had.
+
 ### 2. Styling with Headwind
 
 Headwind classes compile to typed native style values:

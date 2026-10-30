@@ -37,30 +37,12 @@ import { processDirectives } from '../../process'
 import { processScriptSetup } from '../../signal-processing'
 import { appThemeCSS } from './app-theme'
 import { excludeNativeSubtrees, translateHtmlToDocument } from './html-to-ir'
+import { nativePrimitivesDir } from '../primitives-dir'
 import { extractClientScript } from './client-script'
 import { extractLayoutChrome } from './layout-chrome'
 import { extractGeneratedSetupScript, extractNativeClientScripts, type GeneratedSetupScript, type NativeClientScript } from './setup-script'
 
-/**
- * Where the native primitive components live, for an app's stx config.
- *
- * Resolved by looking, because the answer differs between running from source,
- * the per-module build and the bundled CLI. A path that is merely plausible
- * would fail only in the built binary, which is the one users run.
- */
-export function nativePrimitivesDir(): string {
-  // `src/native/primitives` from source; the build copies them next to the
-  // per-module output as `dist/native/primitives`, which the bundled CLI
-  // (chunks in `dist/`) reaches as `native/primitives`.
-  const candidates = [
-    path.join(import.meta.dir, '..', 'primitives'),
-    path.join(import.meta.dir, 'native', 'primitives'),
-  ]
-  for (const candidate of candidates)
-    if (existsSync(path.join(candidate, 'View.stx')))
-      return candidate
-  return candidates[0]
-}
+export { nativePrimitivesDir }
 
 export interface CompileScreenOptions {
   /** Override the app's configured component directory, before primitives. */

@@ -945,6 +945,8 @@ export async function userComponentFileExists(
   push(options.fallbackComponentsDir)
   if (targetIsFallback)
     for (const dir of options._targetComponentDirs ?? []) push(dir)
+  const primitives = options._nativePrimitivesFallback
+  if (primitives && !primitives.except.some(name => name.toLowerCase() === baseName.toLowerCase())) push(primitives.dir)
 
   // Relative path components (./Foo, ../Foo) are always user-authored.
   if (baseName.startsWith('./') || baseName.startsWith('../')) {
@@ -1422,6 +1424,11 @@ export async function renderComponentWithSlot(
           if (dir && !searchDirs.includes(dir)) searchDirs.push(dir)
         }
       }
+
+      // The native primitives, as the web's components of last resort.
+      const primitiveFallback = options._nativePrimitivesFallback
+      if (primitiveFallback && !primitiveFallback.except.some(name => name.toLowerCase() === baseName.toLowerCase()) && !searchDirs.includes(primitiveFallback.dir))
+        searchDirs.push(primitiveFallback.dir)
 
       const normalizedSearchDirs = [...new Set(searchDirs.map((dir) => {
         if (!dir)
