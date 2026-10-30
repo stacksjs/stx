@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.757...v0.2.758)
+
+## 💄 Styles
+
+- **desktop**: format apple-script.ts so the release's format check passes ([6c3b168](https://github.com/stacksjs/stx/commit/6c3b168)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.758 ([7cbedd9](https://github.com/stacksjs/stx/commit/7cbedd9)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.756...v0.2.757)
 
 ## ⚡ Performance Improvements
