@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.760...v0.2.761)
+
+## ⚡ Performance Improvements
+
+- ship each page only the stores and messages it reads ([b3c5dd1](https://github.com/stacksjs/stx/commit/b3c5dd1)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **composables**: read a page's scripts by what they use, not every word ([514d1b5](https://github.com/stacksjs/stx/commit/514d1b5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.761 ([e8a15a6](https://github.com/stacksjs/stx/commit/e8a15a6)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.759...v0.2.760)
 
 ## 🐛 Bug Fixes
