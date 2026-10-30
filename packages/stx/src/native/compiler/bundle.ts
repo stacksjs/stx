@@ -29,6 +29,7 @@ import { NATIVE_APP_ROUTE } from '../runtime/shared-screen'
 import { generateSignalsRuntime } from '../../signals'
 import { withModuleSubstitutes } from '../../client-script-bundler'
 import { shareComponentScripts, type SharedScripts } from './shared-scripts'
+import { compactDocument, compactManifest } from '../runtime/compact-document'
 import { buildSharedModuleRegistries, registeredModuleIdsIn, registeredModuleNamesIn, type SharedRegistries } from '../../client-module-registry'
 import type { BrowserScreenOptions } from '../runtime/browser-screen'
 
@@ -192,7 +193,7 @@ export interface NativeBundleResult {
 /** @deprecated Use `CompileNativeBundleOptions`. */
 export type BundleOptions = CompileNativeBundleOptions
 
-function nativeRuntimeModule(name: 'jsc-globals' | 'shared-screen' | 'browser-screen'): string {
+function nativeRuntimeModule(name: 'jsc-globals' | 'shared-screen' | 'browser-screen' | 'compact-document'): string {
   // Source modules, published ESM modules, and shared CLI chunks have different
   // directories and extensions. Resolve a shipped file before generating imports.
   const candidates = [
@@ -485,11 +486,14 @@ if (isApp ? ${!withApp} : ${JSON.stringify(bundled.map(({ name }) => name))}.ind
       // The app's stylesheet is nearly the same in every screen: the prelude holds it.
       const sheet = runtimeVersion ? sharedSheets.screens.get(name) : undefined
       const document = runtimeDocument(sheet ? withoutStylesheet(compiled.document) : compiled.document, root)
+      // The runtime prelude restores what a compact document and manifest leave out.
+      const compactDoc = runtimeVersion ? compactDocument(document) : null
+      const compactBindings = runtimeVersion ? compactManifest(compiled.manifest) : null
       return `${index === 0 ? 'if' : 'else if'} (routeName === ${JSON.stringify(routed ? name : 'main')}) {
-  nativeDocument = ${JSON.stringify(document)};${sheet ? `
+  nativeDocument = ${compactDoc ? `runtime.document(${JSON.stringify(compactDoc)})` : JSON.stringify(document)};${sheet ? `
   nativeDocument.root._stylesheetRules = runtime.stylesheetRules(${JSON.stringify(sheet.order)}, ${JSON.stringify(sheet.own)});${sheet.theme ? `
   nativeDocument.root._stylesheetTheme = runtime.themes[${JSON.stringify(sheet.theme)}];` : ''}` : ''}
-  manifest = ${JSON.stringify(compiled.manifest)};
+  manifest = ${compactBindings ? `runtime.manifest(${JSON.stringify(compactBindings)})` : JSON.stringify(compiled.manifest)};
 }`
     }).join('\n')
     const setups = bundled.map(({ name, compiled }, index) => `${index === 0 ? 'if' : 'else if'} (routeName === ${JSON.stringify(routed ? name : 'main')}) {
@@ -597,6 +601,7 @@ g.addEventListener('pagehide', function(event) { if (!event.persisted) g.__stxNa
     const prelude = `
 import { installJSCGlobals } from ${JSON.stringify(runtimeGlobals)};
 import { prepareNativeApp, prepareSharedNativeScreen } from ${JSON.stringify(sharedScreen)};
+${options.sharedRuntime ? `import { expandDocument, expandManifest } from ${JSON.stringify(nativeRuntimeModule('compact-document'))};` : 'var expandDocument = null, expandManifest = null;'}
 globalThis.__stxNativeRuntime = {
   version: '__STX_NATIVE_RUNTIME_VERSION__',
   // What every route of this build shares, held once instead of in each
@@ -625,6 +630,9 @@ globalThis.__stxNativeRuntime = {
     var runtime = this;
     return (loaded[name] = this.chunks[name](function(chunk) { return runtime.chunk(chunk); }));
   },
+  // A route's document and binding manifest, as compact as it carries them (compact-document.ts).
+  document: expandDocument,
+  manifest: expandManifest,
   installJSCGlobals: installJSCGlobals,
   prepareNativeApp: prepareNativeApp,
   prepareSharedNativeScreen: prepareSharedNativeScreen,

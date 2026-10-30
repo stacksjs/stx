@@ -10,7 +10,7 @@ beforeAll(async () => {
   directory = createTempDir('stx-published-native-')
   const source = path.resolve(import.meta.dir, '../../src/native')
   const runtime = await Bun.build({
-    entrypoints: [path.join(source, 'runtime/jsc-globals.ts'), path.join(source, 'runtime/shared-screen.ts')],
+    entrypoints: [path.join(source, 'runtime/jsc-globals.ts'), path.join(source, 'runtime/shared-screen.ts'), path.join(source, 'runtime/compact-document.ts')],
     outdir: path.join(directory, 'dist/native/runtime'), target: 'browser', format: 'esm', minify: false,
   })
   expect(runtime.success, runtime.logs.map(log => log.message).join('\n')).toBe(true)
