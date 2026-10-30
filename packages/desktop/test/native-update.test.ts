@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 import { EventEmitter } from 'node:events'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import type { AutoUpdater } from '../src/self-update'
 import { createNativeUpdateApi, parsePantryUpdateManifest } from '../src/native-update'
 
@@ -103,6 +106,20 @@ describe.skipIf(process.platform !== 'darwin')('native update API', () => {
     expect((await f.settled()).phase).toBe('error')
     expect((await f.request('/install', 'POST'))!.status).toBe(409)
     expect(f.updater.installs).toBe(0)
+  })
+  it('leaves App Store copies on the App Store update path', async () => {
+    const appPath = mkdtempSync(join(tmpdir(), 'store-update-'))
+    let initialized = false
+    try {
+      mkdirSync(join(appPath, 'Contents/_MASReceipt'), { recursive: true })
+      writeFileSync(join(appPath, 'Contents/_MASReceipt/receipt'), 'fixture')
+      const api = createNativeUpdateApi({ repository, currentVersion: '1.0.10', appPath }, async () => { initialized = true; return new FakeUpdater() as unknown as AutoUpdater })
+      const response = await api(new Request('http://localhost/api/updates/check', { method: 'POST' }))
+      expect(response!.status).toBe(409)
+      expect((await response!.json()).phase).toBe('unavailable')
+      expect(initialized).toBe(false)
+    }
+    finally { rmSync(appPath, { recursive: true, force: true }) }
   })
   it('ignores unrelated routes and rejects reads that mutate state', async () => {
     const f = fixture()
