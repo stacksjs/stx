@@ -185,6 +185,8 @@ export interface RelaunchOptions {
    * successful install from a crash.
    */
   quitDelayMs?: number
+  /** Wait for this old host to exit before opening the replacement. */
+  waitForPid?: number
 }
 
 /**
@@ -226,7 +228,12 @@ export function relaunchBundle(options: RelaunchOptions = {}): void {
   if (appPath) {
     // No shell: a bundle path is user-controlled enough (`~/Applications`, a
     // renamed app) that quoting it into `sh -c` is a needless risk.
-    const child = spawn('/usr/bin/open', ['-n', appPath], { detached: true, stdio: 'ignore' })
+    // A detached waiter survives shutdown of the backend. Opening first lets
+    // the replacement race the old host for global shortcuts and model files.
+    const waiting = options.waitForPid && Number.isSafeInteger(options.waitForPid) && options.waitForPid > 1
+    const child = waiting
+      ? spawn('/bin/sh', ['-c', 'attempt=0; while kill -0 "$1" 2>/dev/null; do attempt=$((attempt + 1)); [ "$attempt" -lt 200 ] || exit 1; sleep 0.1; done; exec /usr/bin/open -n "$2"', 'stx-relaunch', String(options.waitForPid), appPath], { detached: true, stdio: 'ignore' })
+      : spawn('/usr/bin/open', ['-n', appPath], { detached: true, stdio: 'ignore' })
     child.unref()
   }
 
@@ -284,12 +291,14 @@ export async function createSelfUpdater(options: SelfUpdaterOptions): Promise<Au
   }
 
   // An explicit policy wins; otherwise pin to whoever signed the copy on disk.
-  const teamId = macos?.teamId ?? (requireSameTeam ? (await readBundleIdentity(bundle)).teamId ?? undefined : undefined)
+  const identity = await readBundleIdentity(bundle)
+  const teamId = macos?.teamId ?? (requireSameTeam ? identity.teamId ?? undefined : undefined)
+  const bundleIdentifier = macos?.bundleIdentifier ?? identity.identifier ?? undefined
 
   return createGitHubUpdater({
     ...rest,
     appPath: bundle,
-    macos: { ...macos, teamId },
-    relaunch: options.relaunch ?? (target => relaunchBundle({ appPath: target, quit: quitLauncher, quitDelayMs: 250 })),
+    macos: { ...macos, teamId, bundleIdentifier },
+    relaunch: options.relaunch ?? (target => relaunchBundle({ appPath: target, quit: quitLauncher, quitDelayMs: 250, waitForPid: process.ppid })),
   })
 }

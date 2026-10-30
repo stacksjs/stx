@@ -363,6 +363,37 @@ if (update) {
   copy already on disk. You do not configure your own team ID, and you cannot get it
   wrong by copying an example.
 
+#### Pantry native releases
+
+For apps published by Buddy and Pantry, mount the host endpoint behind
+`runNativeBackend` session authentication:
+
+```typescript
+import { createNativeUpdateApi } from '@stacksjs/desktop'
+
+const updates = createNativeUpdateApi({
+  repository: 'stacksjs/launchpad',
+  currentVersion: '1.0.11',
+})
+export default async (request: Request) => await updates(request)
+```
+
+`GET /api/updates` returns the current phase. `POST /api/updates/check`,
+`/download`, and `/install` start serialized operations and return 202; poll GET
+only while an operation is active. Errors remain distinct from being up to date.
+The endpoint accepts no client-supplied download URL, path or trust policy.
+Development copies report unavailable; App Store copies use the App Store.
+
+`createPantrySelfUpdater` provides the same lower-level Craft updater for a
+custom host interface. It reads Pantry's `release-manifest.json`, validates the
+repository, version, architecture and DMG checksum, then delegates download,
+trust verification and atomic replacement to Craft. The running app's bundle
+identifier and signing team are pinned. Relaunch waits for the old host to exit
+so the replacement can acquire its shortcuts and database connection.
+Use `applicationDataDirectory(name, { bundleIdentifier })` for native model
+data paths when moving from sandboxed to direct distribution. It keeps an
+existing container in place instead of silently starting a second database.
+
 #### What is checked before the bundle is swapped
 
 On macOS, the SHA-256 in the manifest is the weakest of the three checks, not the
