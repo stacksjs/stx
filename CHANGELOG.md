@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.751...v0.2.752)
+
+## 🐛 Bug Fixes
+
+- **native**: carry a layout wrapper's face onto the page it unwraps ([8a181c6](https://github.com/stacksjs/stx/commit/8a181c6)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.752 ([87812ea](https://github.com/stacksjs/stx/commit/87812ea)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.750...v0.2.751)
 
 ## 🐛 Bug Fixes
