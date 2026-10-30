@@ -23,6 +23,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
+import { Worker } from 'node:worker_threads'
 import { bundleClientScript, tempBuildName } from '../../src/client-script-bundler'
 
 const TMP = path.join(import.meta.dir, 'temp-concurrent')
@@ -110,5 +111,18 @@ describe('client-script-bundler concurrency', () => {
 
     expect(second).toBe(first)
     expect(second).toContain('greet')
+  })
+
+  it('keeps temporary names distinct across workers sharing the process', async () => {
+    const name = () => new Promise<string>((resolve, reject) => {
+      const worker = new Worker(new URL('./fixtures/temp-build-worker.ts', import.meta.url), { workerData: '10c4462b39cf' })
+      worker.once('message', resolve)
+      worker.once('error', reject)
+      worker.once('exit', (code) => { if (code !== 0) reject(new Error(`Bundle worker exited ${code}`)) })
+    })
+    const [first, second] = await Promise.all([name(), name()])
+    expect(first).toContain(`-${process.pid}-`)
+    expect(second).toContain(`-${process.pid}-`)
+    expect(first).not.toBe(second)
   })
 })

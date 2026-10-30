@@ -13,6 +13,7 @@ import { extractExports as scopeExports } from './client-scope-bindings'
 import path from 'node:path'
 import fs from 'node:fs' // kept for mkdir/rmSync (no Bun equivalent for dir ops)
 import { AsyncLocalStorage } from 'node:async_hooks'
+import { randomUUID } from 'node:crypto'
 import type { BunPlugin } from 'bun'
 import type { BuildFailureDetail } from './build-message'
 import { getPublicEnvDefine } from './public-env'
@@ -1095,15 +1096,14 @@ export async function bundleClientScript(
   }
 }
 
-let tmpBuildCounter = 0
-
 /**
  * The name one build's virtual entry and output directory go by: the script's
- * hash, this process and a count, so no other build — here or in another dev
- * server on the same checkout — shares them. See where they are made.
+ * hash, this process and a fresh token. Workers and separately loaded copies
+ * share a PID but have independent counters and build queues, so a module-local
+ * counter let one isolate remove another's output while it was being read.
  */
 export function tempBuildName(hash: string): string {
-  return `${hash}-${process.pid}-${++tmpBuildCounter}`
+  return `${hash}-${process.pid}-${randomUUID()}`
 }
 
 async function buildBundle(
