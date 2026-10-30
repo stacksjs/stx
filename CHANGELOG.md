@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.762...v0.2.763)
+
+## ✨ Features
+
+- **native**: ghostText and accept-completion for multi-line text inputs ([21795e5](https://github.com/stacksjs/stx/commit/21795e5)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **native**: resolve the native primitives on the web as components of last resort ([4c59e19](https://github.com/stacksjs/stx/commit/4c59e19)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.763 ([4d1121e](https://github.com/stacksjs/stx/commit/4d1121e)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.761...v0.2.762)
 
 ## ✨ Features
