@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.753...v0.2.754)
+
+## 🐛 Bug Fixes
+
+- isolate client-bundle temporary names across workers ([5a3ae6c](https://github.com/stacksjs/stx/commit/5a3ae6c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.754 ([63211be](https://github.com/stacksjs/stx/commit/63211be)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.752...v0.2.753)
 
 ## ✨ Features
