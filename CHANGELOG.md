@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.758...v0.2.759)
+
+## 🐛 Bug Fixes
+
+- **native**: share a module whose text has a line that starts with a word like export ([b7946e0](https://github.com/stacksjs/stx/commit/b7946e0)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.759 ([f1799fb](https://github.com/stacksjs/stx/commit/f1799fb)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.757...v0.2.758)
 
 ## 💄 Styles
