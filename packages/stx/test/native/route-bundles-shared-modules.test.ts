@@ -157,6 +157,29 @@ describe('modules the routes of one build share', () => {
     expect(run(result, 'Two').scope.__two).toBe('counter-module-marker')
   })
 
+  it('shares a module whose text has a line that begins with a word the build reads as a statement', async () => {
+    // A message catalog built into the routes (an app with no `messages`) has keys like `export:`.
+    const catalog = webApp({
+      'functions/words.ts': 'export const words = {\n  export: \'Export all records\',\n  import: \'Import\',\n}\nexport const WORDS_MARKER = \'words-module-marker\'\n',
+      'views/one.stx': '<script client>import { words, WORDS_MARKER } from \'../functions/words\'\nglobalThis.__one = [words.export, WORDS_MARKER]</script><div><p>One</p></div>',
+      'views/two.stx': '<script client>import { words, WORDS_MARKER } from \'../functions/words\'\nglobalThis.__two = [words.import, WORDS_MARKER]</script><div><p>Two</p></div>',
+    })
+    const warnings: string[] = []
+    const warn = console.warn
+    console.warn = (...args: unknown[]) => { warnings.push(args.map(String).join(' ')) }
+    let result: Awaited<ReturnType<typeof compileNativeBundle>>
+    try {
+      result = await compileNativeBundle({ root: catalog, screens: { One: 'views/one.stx', Two: 'views/two.stx' }, minify: true, routesDir: 'routes', sharedRuntime: true })
+    }
+    finally {
+      console.warn = warn
+    }
+    expect(warnings.join('\n')).not.toContain('could not share')
+    expect(readFileSync(result.runtime!, 'utf8')).toContain('Export all records')
+    expect(readFileSync(result.routes!.One!, 'utf8')).not.toContain('Export all records')
+    expect(run(result, 'One').scope.__one).toEqual(['Export all records', 'words-module-marker'])
+  })
+
   it('lists, for a host that reads a route\'s messages ahead of it, the areas of the modules it runs', async () => {
     const app = webApp({
       'lang/en/greet.ts': 'export default { hello: \'Hello there\' }\n',

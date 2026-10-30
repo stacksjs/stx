@@ -361,7 +361,7 @@ function parseSplitModule(text: string): ParsedModule {
     return ''
   })
   // Anything else a module can export, or a chunk import in a form not read above.
-  const left = [/\bimport\.meta\b/, /\b__chunks\b/, /\b__preload\b/, /^\s*export\b/m, /\bfrom\s*["']\.\/chunk-/, /^\s*import\s*["']\.\/chunk-/m].find(pattern => pattern.test(body))
+  const left = [/\bimport\.meta\b/, /\b__chunks\b/, /\b__preload\b/, /^\s*export\s+(?:default\b|const\b|let\b|var\b|function\b|class\b|async\b|\*|\{)/m, /\bfrom\s*["']\.\/chunk-/, /^\s*import\s*["']\.\/chunk-/m].find(pattern => pattern.test(body))
   if (!ok || left)
     throw new Error(`${left ? `${left.source} is left in it` : 'an export it does not read'}`)
   return { reads: reads.join('\n'), chunks, lazy, body, exports }
