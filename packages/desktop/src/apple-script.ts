@@ -32,12 +32,12 @@ export interface AppleScriptResult {
 }
 
 export type AppleScriptFailureKind
-  = | 'automation-denied'
-    | 'accessibility-denied'
-    | 'cancelled'
-    | 'syntax'
-    | 'app-not-running'
-    | 'unknown'
+ = | 'automation-denied'
+| 'accessibility-denied'
+| 'cancelled'
+| 'syntax'
+| 'app-not-running'
+| 'unknown'
 
 /** The error numbers an app can act on. Anything else is `unknown` and keeps AppleScript's own message. */
 const failureKinds: Readonly<Record<number, AppleScriptFailureKind>> = {
