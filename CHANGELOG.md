@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.752...v0.2.753)
+
+## ✨ Features
+
+- **native**: honor pointer policies in the standalone iOS renderer ([82abfb9](https://github.com/stacksjs/stx/commit/82abfb9)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: compile pointer targeting styles for native hosts ([c9626c9](https://github.com/stacksjs/stx/commit/c9626c9)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.753 ([c6eff78](https://github.com/stacksjs/stx/commit/c6eff78)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.751...v0.2.752)
 
 ## 🐛 Bug Fixes
