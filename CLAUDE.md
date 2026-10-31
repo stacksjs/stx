@@ -46,6 +46,14 @@ The core template processing is orchestrated by `packages/stx/src/process.ts` (~
 - `signals.ts` (~3075 lines) — runtime generation (template literal for client-side signals runtime)
 - `signals-api.ts` (~550 lines) — TypeScript API (state, derived, effect, batch, lifecycle, type guards)
 
+#### Client runtime rules that are easy to break
+
+The runtime is emitted from template literals in `src/client/*-runtime.ts` and assembled by `signals.ts`.
+
+- **Scopes are layered views, not copies.** `layerTemplateScopes(...sources)` (`signals-expression-runtime.ts`) returns a Proxy over its sources, so a merge costs one small object however many names the page declares. A copy per binding made 60 to-do rows cost 180 ms on a page of 300 names. Use it where the result is only read; `mergeTemplateScopes` still copies (use it when the result is mutated or must be a snapshot). The page-wide `componentScope` is rewritten as components mount, so a view is handed a per-rewrite snapshot of it (`snapshotOfPageScope`), and any code that mutates `componentScope` must bump `__stxScopeGen` (`assignTemplateScope` already does). Never enumerate a scope per row (`Object.keys(scope)`): name what the expression mentions instead (`__stxNamesIn`). `test/signals/scope-views.test.ts` counts the walks.
+- **Text a binding wrote is data.** `:text`, `:html` and `{{ }}` interpolation mark what they wrote with `__stx_inert_content`, and the `{{ expr }}` scan (`processElement`) and the hydration audit skip it, so a value containing braces is never evaluated. Anything new that writes user data into the DOM must do the same. `test/security/binding-output-inert.test.ts`.
+- Measure list changes with `packages/benchmarks/src/for-list` in a real browser (`performance.now()` around the synchronous work), not with timers in happy-dom.
+
 ### Plugin System
 
 The Bun plugin (`packages/bun-plugin/src/index.ts`) registers loaders for:
