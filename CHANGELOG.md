@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.778...v0.2.779)
+
+## ✨ Features
+
+- **native**: craft.desktop.post and onMessage between an app's windows ([5fee7bb](https://github.com/stacksjs/stx/commit/5fee7bb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.779 ([f01c0f7](https://github.com/stacksjs/stx/commit/f01c0f7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.777...v0.2.778)
 
 ## ✨ Features
