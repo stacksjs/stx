@@ -3337,8 +3337,35 @@ else {
   // "hover" (hover and touch still prefetch everything).
   var sightObserver=null;
   var sightCount=0;
+  // Prefetching is for the next page. It must not compete with the paint of
+  // this one, so the first sight-prefetch waits for first contentful paint
+  // (stacksjs/stacks#3082's measurement: two 600 KB documents were already in flight
+  // when the page the person asked for had drawn nothing, three seconds each on a
+  // slow link). A browser without paint timing keeps the immediate behaviour, and
+  // a tab that never paints still gets its prefetches after five seconds.
+  function afterFirstPaint(run){
+    var fired=false;
+    function fire(){ if(fired)return; fired=true; run() }
+    try{
+      var types=typeof PerformanceObserver==='function'&&PerformanceObserver.supportedEntryTypes;
+      if(types&&types.indexOf('paint')>=0){
+        if(performance.getEntriesByName('first-contentful-paint').length){ fire(); return }
+        var po=new PerformanceObserver(function(list){
+          if(!list.getEntriesByName('first-contentful-paint').length)return;
+          po.disconnect(); fire();
+        });
+        po.observe({type:'paint',buffered:true});
+        setTimeout(fire,5000);
+        return;
+      }
+    }catch(e){}
+    fire();
+  }
   function observeLinks(){
     if(!o.prefetch||!o.cache||o.prefetchVisible===false||typeof IntersectionObserver!=='function')return;
+    afterFirstPaint(observeLinksNow);
+  }
+  function observeLinksNow(){
     var c=navigator.connection;
     if(c&&(c.saveData||/2g/.test(c.effectiveType||'')))return;
     if(!sightObserver)sightObserver=new IntersectionObserver(function(entries){
