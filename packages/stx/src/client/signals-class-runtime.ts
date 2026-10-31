@@ -1,14 +1,14 @@
 /** Reactive class binding for the generated client runtime. */
 export const SIGNALS_CLASS_RUNTIME = `  function bindClass(el, expr, passedScope = componentScope, isVisible) {
     const originalClasses = el.className;
-    const capturedScope = mergeTemplateScopes(globalHelpers, passedScope, (findElementScope(el) || {}));
-    const keys = Object.keys(capturedScope);
+    const capturedScope = layerTemplateScopes(globalHelpers, passedScope, (findElementScope(el) || {}));
 
     // Pre-compile — only the names the expression mentions (see
     // __stxCompileScoped: reading every signal subscribed the class binding to
-    // every signal on the page), and only valid JS identifiers.
-    const mentioned = new Set(__stxNamesIn(expr));
-    const safeKeys = keys.filter(k => mentioned.has(k) && /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k));
+    // every signal on the page), and only valid JS identifiers. The names come
+    // from the expression, never from enumerating the scope: a page scope holds
+    // hundreds, and listing them cost more than the rest of the row.
+    const safeKeys = __stxNamesIn(expr).filter(k => Object.prototype.propertyIsEnumerable.call(capturedScope, k) && /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k));
     let fn;
     try {
       fn = __stxCompile(safeKeys, 'return ' + expr);

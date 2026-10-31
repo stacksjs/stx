@@ -1,7 +1,7 @@
 /** Reactive style binding for the generated client runtime. */
 export const SIGNALS_STYLE_RUNTIME = `  function bindStyle(el, expr, passedScope = componentScope, isVisible) {
     // Capture scope at setup time - use passed scope to preserve context
-    const capturedScope = mergeTemplateScopes(globalHelpers, passedScope, (findElementScope(el) || {}));
+    const capturedScope = layerTemplateScopes(globalHelpers, passedScope, (findElementScope(el) || {}));
 
     const evalExpr = () => {
       // Mirror bindClass: first try the auto-unwrap proxy (so an expression

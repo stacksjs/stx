@@ -5,7 +5,7 @@ export const SIGNALS_MODEL_RUNTIME = `  function bindModel(el, expr, passedScope
     const tag = el.tagName.toLowerCase();
     const type = el.type;
     const modifiers = attrName.split('.').slice(1);
-    const capturedScope = mergeTemplateScopes(globalHelpers, passedScope, (findElementScope(el) || {}));
+    const capturedScope = layerTemplateScopes(globalHelpers, passedScope, (findElementScope(el) || {}));
     const coerceValue = (value) => {
       var next = value;
       if (modifiers.includes('trim') && typeof next === 'string') next = next.trim();

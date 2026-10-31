@@ -46,14 +46,14 @@ export function signalsProcessElementRuntime(
       if (el.hasAttribute('x-data') || el.hasAttribute('data-stx-xdata') || el.__stx_scope) {
         var xdScope = el.__stx_scope || (findElementScope(el) || {});
         if (xdScope && Object.keys(xdScope).length > 0) {
-          scope = mergeTemplateScopes(scope, xdScope);
+          scope = layerTemplateScopes(scope, xdScope);
         }
       }
       // v-memo / @memo — skip re-processing if dependency values haven't changed
       if (el.hasAttribute('data-stx-memo')) {
         var memoExpr = el.getAttribute('data-stx-memo');
         try {
-          var memoScope = mergeTemplateScopes(globalHelpers, scope, (findElementScope(el) || {}));
+          var memoScope = layerTemplateScopes(globalHelpers, scope, (findElementScope(el) || {}));
           var memoFn = __stxCompileScoped(memoScope, [], 'return ' + memoExpr);
           var memoVals = JSON.stringify(memoFn(...__stxArgs(memoFn, memoScope)));
           if (el.__stx_memo_prev === memoVals) {
@@ -87,7 +87,7 @@ export function signalsProcessElementRuntime(
           // Capture scope NOW before effects run asynchronously
           // Use the passed scope parameter (not global componentScope) to preserve context
           // through nested @if/@for processing where componentScope may be restored
-          const capturedScope = el.__stx_slot_scope || mergeTemplateScopes(globalHelpers, scope, (findElementScope(parentEl) || {}));
+          const capturedScope = el.__stx_slot_scope || layerTemplateScopes(globalHelpers, scope, (findElementScope(parentEl) || {}));
           parts.forEach(part => {
             const match = part.match(/^\\{\\{\\s*([\\s\\S]+?)\\s*\\}\\}$/);
             if (match) {
@@ -219,7 +219,7 @@ else if (part) {
 
     // Capture scope once for all attribute bindings on this element
     // Use the passed scope parameter to preserve context through nested processing
-    const attrCapturedScope = mergeTemplateScopes(globalHelpers, scope, (findElementScope(el) || {}));
+    const attrCapturedScope = layerTemplateScopes(globalHelpers, scope, (findElementScope(el) || {}));
 
     // Keep the conditional owners captured while the element is in the tree.
     // Walking parents on each update loses an outer owner when an inner :if
@@ -581,8 +581,8 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
         // Capture scope at setup time so @for loop variables are available when event fires
         const isForwardedComponentEvent = !!(el.__stx_parent_scope && parentEventNames.includes(eventName));
         let eventCapturedScope = isForwardedComponentEvent
-          ? mergeTemplateScopes(globalHelpers, el.__stx_parent_scope)
-          : mergeTemplateScopes(globalHelpers, scope, (findElementScope(el) || {}));
+          ? layerTemplateScopes(globalHelpers, el.__stx_parent_scope)
+          : layerTemplateScopes(globalHelpers, scope, (findElementScope(el) || {}));
 
         stxHost.listen(el, eventName, (event) => {
           // A forwarded handler belongs to the caller, whose scope can be
@@ -591,7 +591,7 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
           // page's scope and only later handed its real caller, so
           // @pick="pickFromBank" found nothing and did nothing. Read it now.
           if (isForwardedComponentEvent && el.__stx_parent_scope)
-            eventCapturedScope = mergeTemplateScopes(globalHelpers, el.__stx_parent_scope);
+            eventCapturedScope = layerTemplateScopes(globalHelpers, el.__stx_parent_scope);
           // Vue-style component listeners fall through to the rendered native
           // root unless the child emits the same event. Signal components use
           // a scope wrapper, so native events arrive here from a descendant.

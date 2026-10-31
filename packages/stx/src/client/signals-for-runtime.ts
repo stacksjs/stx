@@ -27,7 +27,7 @@ export const SIGNALS_FOR_RUNTIME = `  function bindFor(el, passedScope = compone
         }
         slotCallerScope = receiver && receiver.__stx_parent_scope
           || findElementScope(el) || passedScope;
-        const bindingScope = mergeTemplateScopes(slotCallerScope);
+        const bindingScope = layerTemplateScopes(slotCallerScope);
         slotScopeInfo.names.concat(['__stx_slot_value']).forEach(function(name) { delete bindingScope[name]; });
         readSlotBindings = __stxCompileScoped(bindingScope, ['__stx_slot_value'],
           'const ' + slotScopeInfo.binding + ' = __stx_slot_value; return {' + slotScopeInfo.names.join(',') + '};');
@@ -209,7 +209,7 @@ else {
           return expression;
         }
         // Use passedScope instead of componentScope to preserve context through nested processing
-        var scope = mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}), extraScope);
+        var scope = layerTemplateScopes(globalHelpers, passedScope, (capturedScope || {}), extraScope);
         const unwrapScope = createAutoUnwrapProxy(scope, function(prop) {
           if (typeof prop !== 'string') return false;
           return expressionCallsSignal(expression, prop)
@@ -231,7 +231,7 @@ catch (e) {
     const evalLazy = (expression, extraScope = {}) => {
       try {
         if (/^__[A-Z_]+__$/.test(expression.trim())) return expression;
-        var scope = mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}), extraScope);
+        var scope = layerTemplateScopes(globalHelpers, passedScope, (capturedScope || {}), extraScope);
         const unwrapScope = createAutoUnwrapProxy(scope, function(prop) {
           if (typeof prop !== 'string') return false;
           return expressionCallsSignal(expression, prop)
@@ -302,8 +302,8 @@ catch (e) {
       const indexSignal = state(index);
 
       const itemScope = slotScopeInfo
-        ? mergeTemplateScopes(globalHelpers, slotCallerScope)
-        : mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}));
+        ? layerTemplateScopes(globalHelpers, slotCallerScope)
+        : layerTemplateScopes(globalHelpers, passedScope, (capturedScope || {}));
       Object.defineProperty(itemScope, itemName, { value: itemSignal, writable: true, enumerable: true, configurable: true });
       if (slotScopeInfo) {
         slotScopeInfo.names.forEach(function(name) {
@@ -358,7 +358,7 @@ catch (e) {
       try {
         const rowScope = { [itemName]: item };
         rowScope[indexName || '_idx'] = index;
-        const scope = mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}), rowScope);
+        const scope = layerTemplateScopes(globalHelpers, passedScope, (capturedScope || {}), rowScope);
         const unwrapScope = createExpressionAutoUnwrapProxy(scope, keyExpr);
         const fn = __stxCompileScoped(unwrapScope, [], 'return ' + keyExpr);
         const key = fn(...__stxArgs(fn, unwrapScope));
@@ -452,7 +452,7 @@ catch (e) {
         var rootInScope = true;
         var rootVal;
         try {
-          var diagMerged = mergeTemplateScopes(globalHelpers, passedScope, (capturedScope || {}));
+          var diagMerged = layerTemplateScopes(globalHelpers, passedScope, (capturedScope || {}));
           var firstIdent = listExpr.match(/^[A-Za-z_$][\\w$]*/);
           rootName = firstIdent ? firstIdent[0] : '?';
           rootInScope = Object.prototype.hasOwnProperty.call(diagMerged, rootName);

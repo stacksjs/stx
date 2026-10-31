@@ -112,6 +112,7 @@ export const SIGNALS_DOM_READY_RUNTIME = `  // =================================
     // map during setup; bind its DOM back into that same map before onMount.
     // Keep the layout's other exposed names available for legacy bindings.
     componentScope.$refs = pageScopeSnapshot.$refs;
+    __stxScopeGen++;
 
     // Bind page roots after child components have registered their local scope.
     document.querySelectorAll('[data-stx]').forEach(el => {
