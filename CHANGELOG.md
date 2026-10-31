@@ -1,5 +1,15 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.774...v0.2.775)
+
+## 🔧 Chores
+
+- release v0.2.775 ([2aed54e](https://github.com/stacksjs/stx/commit/2aed54e)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.773...v0.2.774)
 
 ## ✨ Features
