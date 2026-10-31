@@ -1,5 +1,25 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.771...v0.2.772)
+
+## ✨ Features
+
+- **native**: drag and drop and hover events in the web's names ([216312d](https://github.com/stacksjs/stx/commit/216312d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **native**: hover, press and transitions for hosts with a pointer ([585831f](https://github.com/stacksjs/stx/commit/585831f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **router**: answer a page that has no router container with a whole document, not a fragment ([7077e19](https://github.com/stacksjs/stx/commit/7077e19)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_ ([#2143](https://github.com/stacksjs/stx/issues/2143))
+- **signals**: mount a page after the component scopes it contains have hydrated ([ace650e](https://github.com/stacksjs/stx/commit/ace650e)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_ ([#2142](https://github.com/stacksjs/stx/issues/2142))
+
+## 🔧 Chores
+
+- release v0.2.772 ([3969fbb](https://github.com/stacksjs/stx/commit/3969fbb)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.770...v0.2.771)
 
 ## ✨ Features
