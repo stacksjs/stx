@@ -141,6 +141,7 @@ export const NATIVE_EVENTS = new Set([
   'onDragStart',
   'onDrop',
   'onHoverChange',
+  'onKeyPress',
   'onPress',
   'onPressIn',
   'onPressOut',
@@ -331,7 +332,9 @@ function readAttributes(
       // `@keydown.enter` -- the modifier is a DOM concept with no native form.
       const [base] = spelling.split('.')
       const native = EVENT_NAMES[base] ?? (base.startsWith('on') ? base : '')
-      if (!native || !NATIVE_EVENTS.has(native)) {
+      // `@keydown` is every key the host reports; `@keydown.enter` means one key, which only a browser can filter.
+      const filteredKey = native === 'onKeyPress' && spelling !== base
+      if (!native || !NATIVE_EVENTS.has(native) || filteredKey) {
         // A component's own event (`emit('done')` heard as `@done`) reaches its
         // listener through the shared runtime on every host. Only a browser
         // event a native screen never produces is worth a warning.

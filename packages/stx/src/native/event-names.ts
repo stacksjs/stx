@@ -88,4 +88,7 @@ export const NATIVE_EVENT_NAMES: Readonly<Record<string, string>> = {
   // The pointer moved onto or off the node ({ hovered }), for what a style alone cannot do (a row's close button).
   'hover-change': 'onHoverChange',
   hoverchange: 'onHoverChange',
+  // A key a field does not type: ArrowUp, ArrowDown and Tab ({ key, shiftKey, text }), to drive a list from it.
+  keydown: 'onKeyPress',
+  keypress: 'onKeyPress',
 }

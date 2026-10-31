@@ -33,6 +33,8 @@ const NATIVE_PROP_NAMES = [
   // the URL another app receives (`dragURL`), the kinds a drop target accepts
   // (`dropTypes`), and whether it reports `inside` as well as before and after.
   'dragData', 'dragURL', 'dropTypes', 'dropInside',
+  // A field that selects all it holds when it takes focus (an address bar).
+  'selectTextOnFocus',
 ]
 
 /**

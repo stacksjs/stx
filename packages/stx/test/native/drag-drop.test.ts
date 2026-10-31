@@ -35,3 +35,20 @@ it('compiles draggable rows and drop targets to the host names', async () => {
   }
   finally { await rm(root, { recursive: true, force: true }) }
 }, 30_000)
+
+it('hears a field\'s arrow keys as @keydown, and leaves a key filter to the browser', async () => {
+  const root = createTempDir('stx-keydown-')
+  const file = join(root, 'Main.stx')
+  const source = `<script client>const q = state(''); const at = state(0)</script>
+<View><TextInput testID="bar" autofocus select-text-on-focus @keydown="at.set(at() + 1)" /><TextInput testID="other" @keydown.enter="at.set(0)" /></View>`
+  await Bun.write(file, source)
+  try {
+    const result = await compileScreenSource(source, file, { root })
+    const bar = find(result.document.root ?? result.document, 'bar')
+    expect(bar.events).toHaveProperty('onKeyPress')
+    expect(bar.props).toMatchObject({ autoFocus: true, selectTextOnFocus: true })
+    expect(find(result.document.root ?? result.document, 'other').events ?? {}).not.toHaveProperty('onKeyPress')
+    expect(result.diagnostics.some((d: any) => String(d.message ?? d.name ?? '').includes('keydown.enter') || d.name === '@keydown.enter')).toBe(true)
+  }
+  finally { await rm(root, { recursive: true, force: true }) }
+}, 30_000)
