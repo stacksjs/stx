@@ -989,6 +989,30 @@ function looksLikeServerValue(expression: string): boolean {
 }
 
 /**
+ * A `{{` that is the text of a string literal in script code, not a mustache:
+ * `const chip = name => '{{' + name + '}}'`.
+ *
+ * The scan read the string `' + name + '` as the expression, evaluated it and
+ * wrote its JSON, so the script shipped `'" + name + "'` and the braces the
+ * author wrote were gone. Same test as in a binding attribute: the first
+ * character after the braces is the quote of an enclosing string, with an odd
+ * number of that quote earlier on the line.
+ */
+function isBraceLiteralInCode(source: string, offset: number, expr: string): boolean {
+  const quote = expr[0]
+  if (quote !== '\'' && quote !== '"' && quote !== '`')
+    return false
+  let count = 0
+  for (let i = source.lastIndexOf('\n', offset - 1) + 1; i < offset; i++) {
+    if (source[i] === '\\')
+      i++
+    else if (source[i] === quote)
+      count++
+  }
+  return count % 2 === 1
+}
+
+/**
  * Emit `undefined` for a server value that was not there, and say so.
  *
  * `undefined` rather than `null` or `''` because it is what actually happened:
@@ -1031,6 +1055,8 @@ export function interpolateScriptExpressions(
   // {{ expr }} — safe JSON-stringified value (JS-aware, unlike HTML escaping)
   output = replaceInterpolations(output, (match, expr, offset) => {
     const trimmed = expr.trim()
+    // Braces the author wrote inside a string literal: `'{{' + name + '}}'`.
+    if (isBraceLiteralInCode(output, offset, expr)) return match
     // Preserve build-time placeholders (e.g. __TITLE__) — they're resolved later
     if (/^__[A-Z_]+__$/.test(trimmed)) return match
     try {

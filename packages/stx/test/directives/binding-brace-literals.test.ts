@@ -44,3 +44,16 @@ describe('braces inside a binding string literal', () => {
     expect(html).toContain('placeholder="Use {{name}} here"')
   })
 })
+
+describe('braces inside a string literal in a client script', () => {
+  it('survive a variable chip built in script code', async () => {
+    const html = await render(`<script client>\nconst chip = name => '{{' + name + '}}'\nconst other = "{{" + 1 + "}}"\n</script>\n<p>x</p>`)
+    expect(html).toContain(`'{{' + name + '}}'`)
+    expect(html).toContain(`"{{" + 1 + "}}"`)
+  })
+
+  it('still substitute a server value written as a mustache in a string', async () => {
+    const html = await render(`<script server>\nconst id = 7\n</script>\n<script client>\nconst url = '/items/{{ id }}'\n</script>\n<p>x</p>`)
+    expect(html).toContain('/items/7')
+  })
+})
