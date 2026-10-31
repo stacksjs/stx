@@ -237,7 +237,7 @@ export interface NativeCraft {
   storage: NativeStorage
   secureStorage: NativeSecureStorage
   snapshots: NativeSnapshots
-  appearance: { colorScheme: () => 'light' | 'dark' }
+  appearance: { colorScheme: () => 'light' | 'dark', onChange: (callback: (scheme: 'light' | 'dark') => void) => () => void }
   /** Feedback only: every call resolves, on every host (none of them rejects). */
   haptics: {
     impact: (style?: 'light' | 'medium' | 'heavy' | 'soft' | 'rigid' | (string & {})) => Promise<void>

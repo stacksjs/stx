@@ -76,6 +76,20 @@ describe('desktop window capabilities', () => {
   })
 })
 
+describe('appearance', () => {
+  it('reports the scheme now and each change of it, until unsubscribed', async () => {
+    const host = await runtime([])
+    const seen: string[] = []
+    const stop = host.scope.craft.appearance.onChange((scheme: string) => seen.push(scheme))
+    host.receive({ type: 'APPEARANCE', payload: { colorScheme: 'dark' } })
+    expect(host.scope.craft.appearance.colorScheme()).toBe('dark')
+    host.receive({ type: 'APPEARANCE', payload: { colorScheme: 'sepia' } })
+    stop()
+    host.receive({ type: 'APPEARANCE', payload: { colorScheme: 'light' } })
+    expect(seen).toEqual(['dark'])
+  })
+})
+
 describe('web tabs', () => {
   it('exposes craft.web only when the host advertises web', async () => {
     const unsupported = await runtime(['desktop'])

@@ -186,7 +186,13 @@ export function installCraftBridge(
     target.__stxNativeParams = params
     paramsHandlers.forEach(handler => handler(params, previous))
   })
-  craft.appearance = { colorScheme: () => nativeBridge.colorScheme === 'dark' ? 'dark' : 'light' }
+  // The scheme now, and each change of it: what a screen colours itself (a space's palette) cannot leave to `dark:` classes.
+  craft.appearance = {
+    colorScheme: () => nativeBridge.colorScheme === 'dark' ? 'dark' : 'light',
+    onChange: (callback: (scheme: 'light' | 'dark') => void) => protocol.on<AnyRecord>('APPEARANCE', ({ payload }) => {
+      if (payload?.colorScheme === 'light' || payload?.colorScheme === 'dark') callback(payload.colorScheme)
+    }),
+  }
   craft.device = { getInfo: () => request('Device', 'getInfo', []) }
   craft.clipboard = {
     write: (value: string) => request('Clipboard', 'write', [value]),
