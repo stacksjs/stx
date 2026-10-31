@@ -312,6 +312,32 @@ In SSR mode, the server script runs on every request:
 - Can access request context
 - Requires a running Bun server
 
+### Request data and structural directives (`@if`, `@foreach`)
+
+A page is compiled once and its server blocks are re-run for each request, but the two halves do not
+resolve the same things. `{{ }}` that reads a variable a server block declares is re-resolved per request.
+`@if`, `@elseif`, `@unless` and `@foreach` shape the page's structure, so they are decided while the page is
+compiled, when there is no request. A condition built from request data (a cookie, a query value, a header)
+is therefore decided once, with that data absent, and the result stays in the compiled page.
+
+```stx
+<script server>
+const signedIn = !!requestContext.cookie('session')
+</script>
+
+<!-- Decided at compile time, with no cookie: this link always renders -->
+@if (!signedIn)
+  <a href="/login">Sign in</a>
+@endif
+
+<!-- Resolved per request: put the decision in an expression instead -->
+<a href="/login" class="{{ signedIn ? 'hidden' : '' }}">Sign in</a>
+```
+
+For a request-dependent branch use an expression (a class, an attribute or `{{ cond ? a : b }}`), a
+`:if` that runs in the browser, or a `<script server>` redirect or `notFound()`. A condition built only from
+values the server block computes without request data (a constant, a config value) is safe in `@if`.
+
 ## Security: Server Code Never Reaches the Browser
 
 Everything inside `<script server>` is executed on the server and then **completely stripped** from the HTML output. Only the template expressions' rendered values appear in the final page.
