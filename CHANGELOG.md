@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.769...v0.2.770)
+
+## ✨ Features
+
+- **pages**: webModules, a stand-in a web page bundles for a native-only module ([fce05cf](https://github.com/stacksjs/stx/commit/fce05cf)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.770 ([337d068](https://github.com/stacksjs/stx/commit/337d068)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.768...v0.2.769)
 
 ## ⚡ Performance Improvements
