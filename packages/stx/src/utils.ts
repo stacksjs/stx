@@ -74,6 +74,17 @@ export {
 
 // Cache for components to avoid repeated file reads (LRU with max 500 entries)
 const componentsCache = new LRUCache<string, string>(500)
+/** `size:mtimeMs` of each cached component file as it was read. */
+const componentStamps = new Map<string, string>()
+function fileStamp(filePath: string): string {
+  try {
+    const stat = fs.statSync(filePath)
+    return `${stat.size}:${stat.mtimeMs}`
+  }
+  catch {
+    return ''
+  }
+}
 // Resolving a nested component can walk every configured component tree.
 // Keep successful resolutions for the dev-server lifetime; clearDevCaches()
 // invalidates this alongside component contents on every watched source edit.
@@ -1536,15 +1547,25 @@ export async function renderComponentWithSlot(
 
     // Check if the component is cached
     let componentContent: string
-    if (componentsCache.has(componentFilePath)) {
+    // A cached component is trusted only while the file still has the size and
+    // mtime it was read with. The dev watcher clears these caches on a change,
+    // but a file written twice in quick succession (a stub, then the real
+    // component) can be read between the two events, and then nothing was left
+    // to say it had changed: the page kept rendering the stub until the file
+    // was touched again.
+    if (componentsCache.has(componentFilePath) && componentStamps.get(componentFilePath) === fileStamp(componentFilePath)) {
       componentContent = componentsCache.get(componentFilePath)!
     }
     else {
       // Read the file
       try {
+        // Stamped BEFORE the read: a write that lands in between leaves a stale
+        // stamp, so the next request reads again rather than trusting the content.
+        const stamp = fileStamp(componentFilePath)
         componentContent = await Bun.file(componentFilePath).text()
         // Cache for future use
         componentsCache.set(componentFilePath, componentContent)
+        componentStamps.set(componentFilePath, stamp)
       }
       catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error)
@@ -3088,6 +3109,7 @@ export function createDetailedErrorMessage(
  */
 export function clearComponentCache(): void {
   componentsCache.clear()
+  componentStamps.clear()
   componentResolutionCache.clear()
   userComponentFileCache.clear()
   realDirCache.clear()
