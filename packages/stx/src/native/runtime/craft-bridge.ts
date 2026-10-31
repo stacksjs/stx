@@ -80,6 +80,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     health: capabilities.has('health'),
     dialogs: capabilities.has('dialog'),
     browser: capabilities.has('browser'),
+    web: capabilities.has('web'),
     appleSignIn: capabilities.has('appleSignIn'),
     background: capabilities.has('background'),
     crashReporter: capabilities.has('crashReporter'),
@@ -399,6 +400,30 @@ export function installCraftBridge(
         if (payload?.event === 'craftDesktopCommand' && typeof payload.detail?.id === 'string') callback(payload.detail.id)
       }),
     }
+  }
+
+  // Web pages in a `<WebView tab>`: tabs the host owns (Craft's AppKit host built
+  // with `webkit: true`). Events arrive as CRAFT_EVENT `craftWebView`.
+  if (capabilities.has('web')) {
+    const call = (method: string, args: unknown[]) => request('Web', method, args)
+    const web: AnyRecord = {
+      create: (options: AnyRecord = {}) => call('create', [options]),
+      list: () => call('list', []),
+      on: (type: string, callback: (event: AnyRecord) => void) => protocol.on<AnyRecord>('CRAFT_EVENT', ({ payload }) => {
+        if (payload?.event === 'craftWebView' && payload.detail && (type === '*' || payload.detail.type === type)) callback(payload.detail)
+      }),
+    }
+    for (const method of ['navigate', 'back', 'forward', 'reload', 'stop', 'close', 'state', 'focus', 'setZoom', 'setInspectable', 'evaluate', 'find', 'snapshot'])
+      web[method] = (id: string, ...args: unknown[]) => call(method, [String(id), ...args])
+    // One tab's methods and events, bound to its id: `craft.web.tab(id).back()`.
+    web.tab = (id: string): AnyRecord => {
+      const tab: AnyRecord = { id: String(id) }
+      for (const method of ['navigate', 'back', 'forward', 'reload', 'stop', 'close', 'state', 'focus', 'setZoom', 'setInspectable', 'evaluate', 'find', 'snapshot'])
+        tab[method] = (...args: unknown[]) => web[method](id, ...args)
+      tab.on = (type: string, callback: (event: AnyRecord) => void) => web.on(type, (event: AnyRecord) => { if (event.tab === tab.id) callback(event) })
+      return tab
+    }
+    craft.web = web
   }
 
   // Background time handed back to iOS: the page's `craft.background.complete`

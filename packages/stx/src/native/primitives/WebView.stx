@@ -1,0 +1,7 @@
+{{-- WebView: a web page beside native controls (WKWebView in Craft's AppKit host, built with
+     `webkit: true`). `tab` names a tab created through `craft.web`; the host owns the tab, so its
+     page survives re-renders and moves when another WebView names it. --}}
+<script server>
+const classes = $props.class ?? $props.className ?? ''
+</script>
+<iframe data-native="WebView" class="{{ classes }}"></iframe>

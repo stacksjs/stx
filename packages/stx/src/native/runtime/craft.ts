@@ -226,6 +226,8 @@ export interface NativeCraft {
   liveActivity?: NativeLiveActivities
   /** AppKit window and menu operations (`capabilities.desktop`). */
   desktop?: NativeDesktop
+  /** Web pages shown by `<WebView tab>` (`capabilities.web`: Craft's AppKit host built with `webkit: true`). */
+  web?: NativeWeb
   platform: string
   capabilityProtocolVersion: number
   route: NativeRoute
@@ -468,4 +470,80 @@ export interface NativeDesktop {
   qrCode: (text: string) => Promise<string>
   setBadge: (count: number) => Promise<boolean>
   onCommand: (callback: (id: string) => void) => () => void
+}
+
+/** What a tab reports: in `create`, `state` and `list` answers and in every `state` event. */
+export interface NativeWebTabState {
+  tab: string
+  profile: string
+  private: boolean
+  title: string
+  url: string
+  /** 0 to 1. */
+  progress: number
+  loading: boolean
+  canGoBack: boolean
+  canGoForward: boolean
+  /** Every resource of the page came over a secure connection. */
+  secure: boolean
+  zoom: number
+  /** The page's `theme-color`, as `#rrggbb`. */
+  themeColor?: string
+  camera: boolean
+  microphone: boolean
+}
+
+export type NativeWebEvent =
+  | ({ type: 'state' } & NativeWebTabState)
+  | { type: 'navigationStart' | 'navigationFinish', tab: string, url: string }
+  | { type: 'navigationError', tab: string, url: string, code: number, domain: string, message: string }
+  | { type: 'favicon', tab: string, url: string }
+  /** `target=_blank` and `window.open` bring a ready `child` tab; a modifier click brings only the `url`. */
+  | { type: 'open', tab: string, url: string, child?: string, popup?: boolean, width?: number, height?: number, background?: boolean, reason: 'script' | 'modifier' }
+  | { type: 'close' | 'crashed', tab: string, url?: string }
+  | { type: 'download', tab: string, id: string, state: 'started' | 'progress' | 'finished' | 'failed', path: string, name: string, url: string, received: number, total: number, fraction: number, message?: string }
+
+export interface NativeWebTab {
+  readonly id: string
+  navigate: (url: string) => Promise<boolean>
+  back: () => Promise<boolean>
+  forward: () => Promise<boolean>
+  reload: (options?: { ignoreCache?: boolean }) => Promise<boolean>
+  stop: () => Promise<boolean>
+  close: () => Promise<boolean>
+  state: () => Promise<NativeWebTabState>
+  focus: () => Promise<boolean>
+  setZoom: (zoom: number) => Promise<number>
+  setInspectable: (inspectable: boolean) => Promise<boolean>
+  /** Runs in the page's own world, or `isolated` where the page's scripts cannot see it. */
+  evaluate: <T = unknown>(script: string, options?: { isolated?: boolean }) => Promise<T>
+  find: (text: string, options?: { backwards?: boolean, caseSensitive?: boolean, wraps?: boolean }) => Promise<{ found: boolean }>
+  /** A JPEG data URL. */
+  snapshot: (options?: { width?: number }) => Promise<string>
+  on: <K extends NativeWebEvent['type']>(type: K | '*', callback: (event: Extract<NativeWebEvent, { type: K }>) => void) => () => void
+}
+
+/**
+ * Tabs the host owns, shown by `<WebView tab="id">`. A tab outlives the view
+ * showing it, so a page survives re-renders and moves between panes.
+ */
+export interface NativeWeb {
+  /** `profile` keeps its own cookies and storage; `private` keeps nothing on disk. */
+  create: (options?: { id?: string, url?: string, profile?: string, private?: boolean, inspectable?: boolean }) => Promise<NativeWebTabState>
+  list: () => Promise<NativeWebTabState[]>
+  tab: (id: string) => NativeWebTab
+  on: <K extends NativeWebEvent['type']>(type: K | '*', callback: (event: Extract<NativeWebEvent, { type: K }>) => void) => () => void
+  navigate: (id: string, url: string) => Promise<boolean>
+  back: (id: string) => Promise<boolean>
+  forward: (id: string) => Promise<boolean>
+  reload: (id: string, options?: { ignoreCache?: boolean }) => Promise<boolean>
+  stop: (id: string) => Promise<boolean>
+  close: (id: string) => Promise<boolean>
+  state: (id: string) => Promise<NativeWebTabState>
+  focus: (id: string) => Promise<boolean>
+  setZoom: (id: string, zoom: number) => Promise<number>
+  setInspectable: (id: string, inspectable: boolean) => Promise<boolean>
+  evaluate: <T = unknown>(id: string, script: string, options?: { isolated?: boolean }) => Promise<T>
+  find: (id: string, text: string, options?: { backwards?: boolean, caseSensitive?: boolean, wraps?: boolean }) => Promise<{ found: boolean }>
+  snapshot: (id: string, options?: { width?: number }) => Promise<string>
 }

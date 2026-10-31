@@ -76,6 +76,51 @@ describe('desktop window capabilities', () => {
   })
 })
 
+describe('web tabs', () => {
+  it('exposes craft.web only when the host advertises web', async () => {
+    const unsupported = await runtime(['desktop'])
+    expect(unsupported.scope.craft.web).toBeUndefined()
+    expect(unsupported.scope.craft.capabilities.web).toBe(false)
+    const host = await runtime(['desktop', 'web'])
+    expect(host.scope.craft.capabilities.web).toBe(true)
+  })
+
+  it('creates and drives tabs through the Web module, bound or by id', async () => {
+    const host = await runtime(['web'])
+    const created = host.scope.craft.web.create({ id: 't1', url: 'https://example.com', profile: 'work' })
+    let request = host.requests().at(-1)!
+    expect(request.payload).toMatchObject({ module: 'Web', method: 'create', args: [{ id: 't1', url: 'https://example.com', profile: 'work' }] })
+    host.answer(request, { tab: 't1', title: '' })
+    expect(await created).toEqual({ tab: 't1', title: '' })
+    const tab = host.scope.craft.web.tab('t1')
+    tab.navigate('https://stacksjs.com').catch(() => {}) // left unanswered on purpose
+    expect(host.requests().at(-1)!.payload).toMatchObject({ module: 'Web', method: 'navigate', args: ['t1', 'https://stacksjs.com'] })
+    tab.reload({ ignoreCache: true }).catch(() => {}) // left unanswered on purpose
+    expect(host.requests().at(-1)!.payload).toMatchObject({ method: 'reload', args: ['t1', { ignoreCache: true }] })
+    host.scope.craft.web.evaluate('t1', 'document.title', { isolated: true }).catch(() => {}) // left unanswered on purpose
+    request = host.requests().at(-1)!
+    expect(request.payload).toMatchObject({ method: 'evaluate', args: ['t1', 'document.title', { isolated: true }] })
+  })
+
+  it('delivers tab events by type, and a bound tab hears only its own', async () => {
+    const host = await runtime(['web'])
+    const titles: string[] = []
+    const opened: string[] = []
+    const stop = host.scope.craft.web.on('state', (event: any) => titles.push(`${event.tab}:${event.title}`))
+    host.scope.craft.web.tab('a').on('open', (event: any) => opened.push(event.child))
+    const send = (detail: Record<string, unknown>) => host.receive({ type: 'CRAFT_EVENT', payload: { event: 'craftWebView', detail } })
+    send({ tab: 'a', type: 'state', title: 'One' })
+    send({ tab: 'b', type: 'state', title: 'Two' })
+    send({ tab: 'b', type: 'open', child: 'x' })
+    send({ tab: 'a', type: 'open', child: 'y' })
+    host.receive({ type: 'CRAFT_EVENT', payload: { event: 'craftDesktopCommand', detail: { id: 'escape', type: 'state' } } })
+    stop()
+    send({ tab: 'a', type: 'state', title: 'Three' })
+    expect(titles).toEqual(['a:One', 'b:Two'])
+    expect(opened).toEqual(['y'])
+  })
+})
+
 describe('the screen coming back, and new params', () => {
   it('goes back one screen, or to the first of the stack', async () => {
     const { scope, sent } = await runtime()

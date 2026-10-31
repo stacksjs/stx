@@ -299,7 +299,7 @@ const route = state([47, 11, 47.1, 11.2])
 
   it('ships one component per native type the IR declares', async () => {
     const files = [...new Bun.Glob('*.stx').scanSync(nativePrimitivesDir())].sort()
-    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(33)
+    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(34)
     expect(files).toContain('Fragment.stx')
     expect(files).toContain('NativeSegmentedControl.stx')
     expect(files).toContain('Icon.stx')
@@ -309,6 +309,7 @@ const route = state([47, 11, 47.1, 11.2])
     expect(files).toContain('MapPolyline.stx')
     expect(files).toContain('MapPolygon.stx')
     expect(files).toContain('MapMarker.stx')
+    expect(files).toContain('WebView.stx')
   })
 
   it('names a type the translator will accept, in every one of them', async () => {

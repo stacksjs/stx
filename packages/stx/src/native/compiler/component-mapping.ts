@@ -12,6 +12,7 @@ const COMPONENT_MAPPING: Record<string, STXComponentType> = {
   image: 'Image',
   img: 'Image',
   video: 'Video',
+  webview: 'WebView',
   map: 'Map',
   mappolyline: 'MapPolyline',
   mappolygon: 'MapPolygon',

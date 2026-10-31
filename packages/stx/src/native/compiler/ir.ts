@@ -35,6 +35,8 @@ export type STXComponentType =
   | 'Image'
   | 'ImageBackground'
   | 'Video'
+  /** A web page: a tab the host owns (`craft.web`), shown where the screen puts it. */
+  | 'WebView'
   | 'Map'
   | 'MapPolyline'
   | 'MapPolygon'
