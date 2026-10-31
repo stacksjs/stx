@@ -574,8 +574,12 @@ export interface NativeWeb {
   removeContentRules: (identifier: string) => Promise<boolean>
   /** Sites (and their subdomains) that load with no blocker applied. Replaces the list. */
   allowContent: (hosts: string[]) => Promise<boolean>
-  /** CSS and JS for named hosts (and their subdomains), in an isolated world. Replaces the set; pages pick it up on their next load. */
-  setUserScripts: (scripts: Array<{ id: string, hosts: string[], css?: string, js?: string, allFrames?: boolean }>) => Promise<boolean>
+  /**
+   * CSS and JS for named hosts (and their subdomains; none is every site), in
+   * an isolated world unless `world: 'page'`. JS runs at document end unless
+   * `at: 'start'`. Replaces the set; pages pick it up on their next load.
+   */
+  setUserScripts: (scripts: Array<{ id: string, hosts: string[], css?: string, js?: string, world?: 'isolated' | 'page', at?: 'start' | 'end', allFrames?: boolean }>) => Promise<boolean>
   /** Resolves whether the request was still waiting. */
   answerPermission: (request: string, decision: 'grant' | 'deny' | 'prompt') => Promise<boolean>
   /** A profile's cookies, storage and caches: one site's, or all of them. */
