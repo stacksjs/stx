@@ -723,7 +723,7 @@ export interface NativeBridgeInterface {
   /** The complete current application path, when the host exposes it. */
   routeURL?: string
   /** Native host platform. */
-  platform?: 'ios' | 'android' | 'web'
+  platform?: 'ios' | 'android' | 'web' | 'macos'
 
   /** Versioned API request/response contract. Omitted by legacy hosts. */
   capabilityProtocolVersion?: 1
