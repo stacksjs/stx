@@ -845,15 +845,20 @@ export async function translateHtmlToIR(
  * authored size/flex opt-out or another scroll content boundary. Headers and
  * ordinary detail content keep their intrinsic sizing.
  */
-function boundScrollingViewports(node: STXNode): boolean {
+function boundScrollingViewports(node: STXNode, inRow = false): boolean {
   if (['ScrollView', 'FlatList', 'SectionList'].includes(node.type)) {
     // Children belong to the scroll content, not to its viewport's ancestry.
     return !node.props.horizontal && (Number(node.style.flex) > 0 || Number(node.style.flexGrow) > 0)
   }
-  const boundedChild = node.children.map(child => typeof child === 'string' ? false : boundScrollingViewports(child)).some(Boolean)
+  // A row lays its children out across: `display: flex` alone is a row once layout defaults apply.
+  const row = node.style.flexDirection === 'row' || (node.style.display === 'flex' && node.style.flexDirection == null)
+  const boundedChild = node.children.map(child => typeof child === 'string' ? false : boundScrollingViewports(child, row)).some(Boolean)
   if (!boundedChild || !['View', 'SafeAreaView', 'KeyboardAvoidingView'].includes(node.type)) return false
   if (node.style.height !== undefined || node.style.maxHeight !== undefined) return false
   if (node.style.flex === 0 || node.style.flexGrow === 0 || node.style.flexShrink === 0) return false
+  // In a row, flex would size the width (a sidebar of `w-[248px]` took half the window); the row's
+  // stretch already bounds the height, so the intent carries on up without a default here.
+  if (inRow) return true
   if (node.style.flex === undefined && node.style.flexGrow === undefined) {
     node._layoutDefaults = { flex: 1, flexGrow: 1, flexShrink: 1, flexBasis: 0 }
     node.style = { ...node._layoutDefaults, ...node.style }
