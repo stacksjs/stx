@@ -470,6 +470,12 @@ export interface NativeDesktop {
   qrCode: (text: string) => Promise<string>
   setBadge: (count: number) => Promise<boolean>
   onCommand: (callback: (id: string) => void) => () => void
+  /**
+   * Run `callback` when the app is about to quit, and wait for the promise it
+   * returns (a final save). The host waits a few seconds at most; returns the
+   * unsubscribe.
+   */
+  onQuit: (callback: () => unknown) => () => void
 }
 
 /** What a tab reports: in `create`, `state` and `list` answers and in every `state` event. */

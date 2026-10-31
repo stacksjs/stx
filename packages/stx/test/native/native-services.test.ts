@@ -74,6 +74,26 @@ describe('desktop window capabilities', () => {
     host.receive({ type: 'CRAFT_EVENT', payload: { event: 'craftDesktopCommand', detail: { id: 'settings' } } })
     expect(seen).toEqual(['archive'])
   })
+
+  it('holds the quit while a handler is registered, and answers once every handler settles', async () => {
+    const host = await runtime(['desktop'])
+    const calls = () => host.requests().map(request => [request.payload.method, ...request.payload.args])
+    let finishSave!: () => void
+    const saved = new Promise<void>((resolve) => { finishSave = resolve })
+    const stopSave = host.scope.craft.desktop.onQuit(() => saved)
+    const stopThrow = host.scope.craft.desktop.onQuit(() => { throw new Error('ignored') })
+    expect(calls()).toEqual([['holdQuit', true]])
+    host.receive({ type: 'CRAFT_EVENT', payload: { event: 'craftDesktopQuit', detail: { token: 'q1' } } })
+    await tick()
+    expect(calls()).toEqual([['holdQuit', true]])
+    finishSave()
+    await tick()
+    expect(calls()).toEqual([['holdQuit', true], ['quitReady', 'q1']])
+    stopSave()
+    expect(calls()).toHaveLength(2)
+    stopThrow()
+    expect(calls().at(-1)).toEqual(['holdQuit', false])
+  })
 })
 
 describe('appearance', () => {

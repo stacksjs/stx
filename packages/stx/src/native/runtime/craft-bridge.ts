@@ -390,6 +390,30 @@ export function installCraftBridge(
   // AppKit screens use the same native protocol as mobile screens. These
   // operations are available only when the host advertises desktop support.
   if (capabilities.has('desktop')) {
+    // Work to finish before the app quits. The host waits (a few seconds at
+    // most) only while a screen holds the quit, so an app without handlers
+    // quits at once. One listener answers for all of a screen's handlers.
+    const quitHandlers = new Set<() => unknown>()
+    let stopQuitListener: (() => void) | null = null
+    const onQuit = (callback: () => unknown): (() => void) => {
+      quitHandlers.add(callback)
+      if (!stopQuitListener) {
+        stopQuitListener = protocol.on<AnyRecord>('CRAFT_EVENT', ({ payload }) => {
+          if (payload?.event !== 'craftDesktopQuit') return
+          const token = typeof payload.detail?.token === 'string' ? payload.detail.token : null
+          void Promise.allSettled([...quitHandlers].map(async handler => handler()))
+            .then(() => request('Desktop', 'quitReady', [token]))
+            .catch(() => {})
+        })
+        request('Desktop', 'holdQuit', [true]).catch(() => {})
+      }
+      return () => {
+        if (!quitHandlers.delete(callback) || quitHandlers.size) return
+        stopQuitListener?.()
+        stopQuitListener = null
+        request('Desktop', 'holdQuit', [false]).catch(() => {})
+      }
+    }
     craft.desktop = {
       openWindow: (options: AnyRecord) => request('Desktop', 'openWindow', [options]),
       closeWindow: () => request('Desktop', 'closeWindow', []),
@@ -405,6 +429,7 @@ export function installCraftBridge(
       onCommand: (callback: (id: string) => void) => protocol.on<AnyRecord>('CRAFT_EVENT', ({ payload }) => {
         if (payload?.event === 'craftDesktopCommand' && typeof payload.detail?.id === 'string') callback(payload.detail.id)
       }),
+      onQuit,
     }
   }
 
