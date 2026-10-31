@@ -57,7 +57,7 @@
     },
     "packages/bun-plugin": {
       "name": "bun-plugin-stx",
-      "version": "0.2.773",
+      "version": "0.2.774",
       "dependencies": {
         "@stacksjs/stx": "workspace:*",
         "stx-router": "workspace:*"
@@ -1591,7 +1591,7 @@
     },
     "packages/components": {
       "name": "@stacksjs/components",
-      "version": "0.2.773",
+      "version": "0.2.774",
       "dependencies": {
         "@iconify-json/f7": "^1.2.2",
         "@stacksjs/stx": "workspace:*",
@@ -1626,7 +1626,7 @@
     },
     "packages/devtools": {
       "name": "@stacksjs/devtools",
-      "version": "0.2.773",
+      "version": "0.2.774",
       "dependencies": {
         "bun-plugin-stx": "workspace:*"
       }
@@ -1656,7 +1656,7 @@
     },
     "packages/stx": {
       "name": "@stacksjs/stx",
-      "version": "0.2.773",
+      "version": "0.2.774",
       "dependencies": {
         "@stacksjs/clapp": "^0.2.16",
         "@stacksjs/desktop": "workspace:*",

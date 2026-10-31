@@ -1,5 +1,25 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.773...v0.2.774)
+
+## ✨ Features
+
+- **native**: craft.appearance.onChange for colours a screen sets itself ([94c4ab5](https://github.com/stacksjs/stx/commit/94c4ab5)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **native**: @keydown from fields, and selectTextOnFocus by its name ([2b51b7b](https://github.com/stacksjs/stx/commit/2b51b7b)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: let the bridge platform say macos, which the pointer check already tests ([caae18f](https://github.com/stacksjs/stx/commit/caae18f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **native**: a fixed-width column in a row keeps its width when its list scrolls ([cfa583c](https://github.com/stacksjs/stx/commit/cfa583c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.774 ([eedb3c9](https://github.com/stacksjs/stx/commit/eedb3c9)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.772...v0.2.773)
 
 ## 🔧 Chores
