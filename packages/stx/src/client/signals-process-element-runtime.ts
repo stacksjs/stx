@@ -441,7 +441,11 @@ catch (e2) {
             }
             return;
           }
-          if (attrName.startsWith('aria-') && typeof v === 'boolean') {
+          // aria-* and data-* carry a STRING: the platform's boolean attribute
+          // is presence, which cannot say "false" and wrote data-open="" for
+          // true, so a [data-open='true'] selector never matched. React renders
+          // both as "true" / "false", and so does this.
+          if ((attrName.startsWith('aria-') || attrName.startsWith('data-')) && typeof v === 'boolean') {
             stxHost.setAttribute(el, attrName, String(v));
           }
           else if (typeof v === 'boolean') {
