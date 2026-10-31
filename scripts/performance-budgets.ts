@@ -47,7 +47,13 @@ const budgets = {
   // to 70782 bytes. The same ~2KB of slack.
   // Bounded head reconciliation and retained-head snapshots (#2121) add
   // ~1.5KB uncompressed (~470 bytes gzip). Retain a hard 73KiB ceiling.
-  routerScriptBytes: 73 * 1024,
+  // Raised from 73KiB to 75KiB, measured first: prefetching visible links only
+  // after the page's first contentful paint (6240cf6360) took the script from
+  // under the ceiling to 75229 bytes, 477 over it. v0.2.766 and v0.2.767 were
+  // cut and failed this preflight in the release workflow for it, so no release
+  // reached npm. A deliberate raise for a behaviour added on purpose, with 1.5KB
+  // of slack; the next real win is still trimming what the router ships inline.
+  routerScriptBytes: 75 * 1024,
 }
 
 async function measure<T>(fn: () => T | Promise<T>, iterations: number): Promise<number> {
