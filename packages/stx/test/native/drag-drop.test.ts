@@ -1,0 +1,37 @@
+/**
+ * Drag and drop on a pointer host: a sidebar row that can be dragged and
+ * dropped on, in the web's attribute and event names.
+ */
+import { expect, it } from 'bun:test'
+import { rm } from 'node:fs/promises'
+import { join } from 'node:path'
+import { compileScreenSource } from '../../src/native/compiler/render-screen'
+import { createTempDir } from '../../src/temp-dir'
+
+function find(node: any, id: string): any {
+  if (!node || typeof node !== 'object') return null
+  if (node.props?.testID === id) return node
+  for (const child of node.children ?? []) {
+    const hit = find(child, id)
+    if (hit) return hit
+  }
+  return null
+}
+
+it('compiles draggable rows and drop targets to the host names', async () => {
+  const root = createTempDir('stx-drag-drop-')
+  const file = join(root, 'Main.stx')
+  const source = `<script client>const moved = state('')</script>
+<View><Pressable testID="row" draggable drag-data="tab-1" drag-url="https://stacksjs.com" drop-inside
+  @dragstart="moved.set('start')" @drag-over="moved.set($event.position)" @dragleave="moved.set('')"
+  @drop="moved.set($event.data)" @dragend="moved.set('end')" @hover-change="moved.set('hover')"><Text>Row</Text></Pressable></View>`
+  await Bun.write(file, source)
+  try {
+    const result = await compileScreenSource(source, file, { root })
+    const row = find(result.document.root ?? result.document, 'row')
+    expect(row.props).toMatchObject({ draggable: true, dragData: 'tab-1', dragURL: 'https://stacksjs.com', dropInside: true })
+    expect(Object.keys(row.events).sort()).toEqual(['onDragEnd', 'onDragLeave', 'onDragOver', 'onDragStart', 'onDrop', 'onHoverChange'])
+    expect(result.diagnostics.filter((d: any) => /unknown|unsupported/i.test(d.message))).toEqual([])
+  }
+  finally { await rm(root, { recursive: true, force: true }) }
+}, 30_000)

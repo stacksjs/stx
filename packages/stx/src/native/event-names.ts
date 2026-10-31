@@ -73,4 +73,19 @@ export const NATIVE_EVENT_NAMES: Readonly<Record<string, string>> = {
   loadedmetadata: 'onLoad',
   enterpictureinpicture: 'onPictureInPictureStart',
   leavepictureinpicture: 'onPictureInPictureStop',
+  // Drag and drop on a pointer host (a Mac), in the web's names: a `draggable`
+  // node starts and ends a drag; a node with `@drop` hears it pass over and land,
+  // with `position` before, after or inside (`drop-inside`).
+  dragstart: 'onDragStart',
+  'drag-start': 'onDragStart',
+  dragover: 'onDragOver',
+  'drag-over': 'onDragOver',
+  dragleave: 'onDragLeave',
+  'drag-leave': 'onDragLeave',
+  drop: 'onDrop',
+  dragend: 'onDragEnd',
+  'drag-end': 'onDragEnd',
+  // The pointer moved onto or off the node ({ hovered }), for what a style alone cannot do (a row's close button).
+  'hover-change': 'onHoverChange',
+  hoverchange: 'onHoverChange',
 }

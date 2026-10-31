@@ -29,6 +29,10 @@ const NATIVE_PROP_NAMES = [
   // A video floating in Picture in Picture, and one element across an
   // animated change (craft.animation.next).
   'pictureInPicture', 'transitionID',
+  // Drag and drop on a pointer host: what a drag carries (`dragData`, any JSON),
+  // the URL another app receives (`dragURL`), the kinds a drop target accepts
+  // (`dropTypes`), and whether it reports `inside` as well as before and after.
+  'dragData', 'dragURL', 'dropTypes', 'dropInside',
 ]
 
 /**
@@ -37,7 +41,7 @@ const NATIVE_PROP_NAMES = [
  * `<video controls>` or a folded `:multiline="true"` reached the host as "".
  */
 export const NATIVE_BOOLEAN_PROPS = new Set([
-  'alwaysBounceHorizontal', 'alwaysBounceVertical', 'animating', 'autoCorrect', 'autoFocus', 'autoplay', 'autoPlay', 'bounces', 'controls', 'disabled',
+  'alwaysBounceHorizontal', 'alwaysBounceVertical', 'animating', 'autoCorrect', 'autoFocus', 'autoplay', 'autoPlay', 'bounces', 'controls', 'disabled', 'draggable', 'dropInside',
   'editable', 'hidesWhenStopped', 'horizontal', 'loop', 'multiline', 'muted', 'pagingEnabled', 'paused',
   'refreshing', 'scrollEnabled', 'secureTextEntry', 'selectTextOnFocus', 'showsHorizontalScrollIndicator',
   'showsVerticalScrollIndicator', 'transparent', 'visible', 'nonModal', 'dismissOnOutsideTap',
