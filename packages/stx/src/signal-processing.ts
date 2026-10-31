@@ -1057,6 +1057,29 @@ export function preEvalLiteralReactiveIfs(template: string): string {
 const LOOP_ATTRS = [':for', '@for', 'x-for'] as const
 
 /**
+ * `{{ }}` inside a JS string of a reactive attribute, within a client loop.
+ *
+ * The loop body is evaluated in the browser, where `{{ item.id }}` in an
+ * element's text reads the loop's `item`. The value of a `:class`, `@click`
+ * or other reactive attribute is not text but a JavaScript expression, and the
+ * runtime never looks for a placeholder inside it: `@click="pick('{{ item.id }}')"`
+ * passed the literal characters `{{ item.id }}` (stacksjs/stx#2140). The
+ * placeholder is rewritten to the expression it names, so the string becomes a
+ * template literal that reads the loop variable.
+ */
+export function bindLoopInterpolations(html: string): string {
+  const reactive = /(\s)((?::|@|x-|v-)[\w.:-]+)\s*=\s*"([^"]*\{\{[^"]*)"/g
+  return html.replace(reactive, (whole, space: string, name: string, value: string) => {
+    const bound = value.replace(/'((?:[^'\\]|\\.)*)'/g, (literal, body: string) => {
+      if (!body.includes('{{')) return literal
+      const text = body.replace(/`/g, '\\`').replace(/\$\{/g, '\\${')
+      return `\`${text.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (_, expression: string) => `\${${expression}}`)}\``
+    })
+    return `${space}${name}="${bound}"`
+  })
+}
+
+/**
  * A `:for` over `<script server>` data becomes a server loop (stacksjs/stx#2051).
  *
  * `convertSignalLoopsToAttributes` below already makes this decision in the
@@ -1291,7 +1314,7 @@ export function convertSignalLoopsToAttributes(template: string, context?: Recor
     const nestedContext = context ? { ...context } : {}
     if (parsed.itemVar) delete nestedContext[parsed.itemVar]
     if (parsed.indexVar) delete nestedContext[parsed.indexVar]
-    const convertedContent = convertSignalLoopsToAttributes(content, nestedContext)
+    const convertedContent = bindLoopInterpolations(convertSignalLoopsToAttributes(content, nestedContext))
 
     // Check for single root element
     // Handle > in attribute values by matching quoted attrs properly
