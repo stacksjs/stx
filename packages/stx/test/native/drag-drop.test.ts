@@ -52,3 +52,16 @@ it('hears a field\'s arrow keys as @keydown, and leaves a key filter to the brow
   }
   finally { await rm(root, { recursive: true, force: true }) }
 }, 30_000)
+
+it('hears a right-click as @contextmenu, @longpress or @long-press', async () => {
+  const root = createTempDir('stx-long-press-')
+  const file = join(root, 'Main.stx')
+  const source = `<script client>const n = state(0)</script>
+<View><Pressable testID="a" @contextmenu="n.set(1)"><Text>A</Text></Pressable><Pressable testID="b" @longpress="n.set(2)"><Text>B</Text></Pressable><Pressable testID="c" @long-press="n.set(3)"><Text>C</Text></Pressable></View>`
+  await Bun.write(file, source)
+  try {
+    const result = await compileScreenSource(source, file, { root })
+    for (const id of ['a', 'b', 'c']) expect(Object.keys(find(result.document.root ?? result.document, id).events)).toEqual(['onLongPress'])
+  }
+  finally { await rm(root, { recursive: true, force: true }) }
+}, 30_000)

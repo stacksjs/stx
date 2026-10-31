@@ -331,7 +331,8 @@ function readAttributes(
       const spelling = name.startsWith('@') ? name.slice(1) : name.slice(5)
       // `@keydown.enter` -- the modifier is a DOM concept with no native form.
       const [base] = spelling.split('.')
-      const native = EVENT_NAMES[base] ?? (base.startsWith('on') ? base : '')
+      // Any hyphenated spelling of a known name (`@long-press`, `@end-reached`) is that name.
+      const native = EVENT_NAMES[base] ?? EVENT_NAMES[base.replaceAll('-', '')] ?? (base.startsWith('on') ? base : '')
       // `@keydown` is every key the host reports; `@keydown.enter` means one key, which only a browser can filter.
       const filteredKey = native === 'onKeyPress' && spelling !== base
       if (!native || !NATIVE_EVENTS.has(native) || filteredKey) {
