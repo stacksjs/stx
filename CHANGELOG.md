@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.770...v0.2.771)
+
+## ✨ Features
+
+- **native**: WebView primitive and craft.web for tabs the host owns ([2e8fc37](https://github.com/stacksjs/stx/commit/2e8fc37)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.771 ([682634f](https://github.com/stacksjs/stx/commit/682634f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.769...v0.2.770)
 
 ## ✨ Features
