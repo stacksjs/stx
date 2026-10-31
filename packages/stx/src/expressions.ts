@@ -481,6 +481,36 @@ export function replaceInterpolations(
 }
 
 /**
+ * A `{{` that is the TEXT of a JavaScript string inside a binding attribute,
+ * not the start of a mustache: `:text="'{{' + name + '}}'"`.
+ *
+ * The span scanner reads strings, and the string here is `' + name + '`, so it
+ * found a complete mustache, evaluated it and left `:text="' + name + '"`: the
+ * braces the author wrote were gone and the binding no longer said what it said.
+ * It happens only when the first character after the braces is the quote of an
+ * enclosing string (an odd number of that quote precedes it in the value), which
+ * no real mustache starts with, so `onDelete('{{ item.id }}')` still evaluates.
+ */
+function isBraceLiteralInBinding(source: string, offset: number, expr: string): boolean {
+  const quote = expr[0]
+  if (quote !== '\'' && quote !== '"' && quote !== '`')
+    return false
+  const context = classifyHtmlInterpolation(source, offset)
+  if (!context || context.kind !== 'attribute' || context.quote === quote)
+    return false
+  if (!/^(?::|@|x-|v-)/.test(context.name))
+    return false
+  let count = 0
+  for (let i = 0; i < context.valuePrefix.length; i++) {
+    if (context.valuePrefix[i] === '\\')
+      i++
+    else if (context.valuePrefix[i] === quote)
+      count++
+  }
+  return count % 2 === 1
+}
+
+/**
  * HTML escape function to prevent XSS
  */
 export function escapeHtml(unsafe: string): string {
@@ -1293,6 +1323,10 @@ export function processExpressions(template: string, context: Record<string, any
   const enclosingLoopNames = new Set(inheritedClientLoopNames(context))
   output = replaceInterpolations(output, (match, expr, offset) => {
     const trimmedExpr = expr.trim()
+
+    // Braces written inside a binding's string literal are the author's text.
+    if (isBraceLiteralInBinding(output, offset, expr))
+      return match
 
     // Slot locals belong to the receiving component, even when the caller
     // has no client script or has a server variable with the same name.
