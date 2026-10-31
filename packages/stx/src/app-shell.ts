@@ -425,6 +425,19 @@ export function externalScriptsOutsideContainer(html: string, container: Contain
 }
 
 /**
+ * Whether a page has the router's container element at all.
+ *
+ * A page without one cannot be answered with a fragment: `extractContainerContent`
+ * falls back to the whole body for it, and the router would then drop that
+ * page's header and footer inside the current page's container, stacking two
+ * headers (stacksjs/stx#2143). The servers send such a page as a whole
+ * document instead, which the router loads in full.
+ */
+export function hasContainerRegion(html: string, containerSelector: string = 'main'): boolean {
+  return !!findContainerRegion(html.trim(), containerSelector)
+}
+
+/**
  * Extract the inner content of the router container element from a full HTML
  * document, preserving page styles and route state found in `<head>`.
  *

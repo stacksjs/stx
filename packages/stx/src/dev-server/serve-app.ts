@@ -5,7 +5,7 @@ import type { Route, RouteMatch } from '../router'
 import { serve } from 'bun'
 import fs from 'node:fs'
 import path from 'node:path'
-import { detectShell, processShell, composeShellWithPage, stripDocumentWrapper, isSpaNavigation, extractContainerContent, extractLayoutMetadata } from '../app-shell'
+import { detectShell, processShell, composeShellWithPage, stripDocumentWrapper, isSpaNavigation, extractContainerContent, hasContainerRegion, extractLayoutMetadata } from '../app-shell'
 import {
   getHmrServer,
   injectHotReload,
@@ -847,7 +847,9 @@ catch {
           let content = builtPage.content
 
           // Shell mode: SPA navigation returns page fragment only
-          if (shell && isSpaNavigation(request)) {
+          // A page with no router container is answered as a whole document, not as a fragment that would
+          // nest its own header and footer inside the current page (stacksjs/stx#2143).
+          if (shell && isSpaNavigation(request) && hasContainerRegion(content, (projectConfig as any)?.router?.container || 'main')) {
             const layoutMetadata = extractLayoutMetadata(content)
             // Read from the FULL page: the runtime script lives in <head>, and
             // the fragment is about to be reduced to the container's inner

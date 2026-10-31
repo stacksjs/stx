@@ -15,7 +15,7 @@ import { serve } from 'bun'
 import { loadManifest, type BuildManifest, type ManifestRoute } from './manifest'
 import { hydrateTemplateStream } from './template-hydrator'
 import type { CompiledTemplate } from './template-compiler'
-import { extractContainerContent, extractLayoutMetadata, type LayoutMetadata } from './app-shell'
+import { extractContainerContent, extractLayoutMetadata, hasContainerRegion, type LayoutMetadata } from './app-shell'
 import { pageShipsSignalsRuntime } from './runtime-injection'
 import { isFileRequestPath, patternToRegex } from 'stx-router'
 import { compressResponse } from './compression'
@@ -131,7 +131,9 @@ export async function startProductionServer(options: ProductionServerOptions = {
 
       // Pre-load fragments
       const fragmentPath = path.join(outputDir, route.fragmentPath)
-      if (await Bun.file(fragmentPath).exists()) {
+      // A page with no router container has no fragment to serve: its "fragment" is the whole body, which
+      // would nest its own header and footer inside the page it is swapped into (stacksjs/stx#2143).
+      if (hasContainerRegion(compiled.html, manifest.routerContainer || 'main') && await Bun.file(fragmentPath).exists()) {
         const fragment = await Bun.file(fragmentPath).text()
         fragmentCache.set(route.pattern, runtimeConfig ? injectRuntimeConfig(fragment, runtimeConfig) : fragment)
       }
@@ -392,14 +394,14 @@ export async function startProductionServer(options: ProductionServerOptions = {
             const headers = new Headers({ ...spaNavVaryHeaders(), ...pageHeaders, 'Cache-Control': 'private, no-store' })
             for (const cookie of cookies ?? [])
               headers.append('Set-Cookie', cookie)
-            if (isSpaNav && !isMutating) {
+            if (isSpaNav && !isMutating && hasContainerRegion(html, manifest.routerContainer || 'main')) {
               const layout = extractLayoutMetadata(html)
               headers.set('X-STX-Fragment', 'true')
               headers.set('X-STX-Runtime', pageShipsSignalsRuntime(html) ? 'true' : 'false')
               headers.set('X-STX-Layout', layout.layout)
               headers.set('X-STX-Layout-Group', layout.group)
             }
-            return streamToResponse(renderStreamingPage(isSpaNav && !isMutating ? extractContainerContent(html, manifest.routerContainer || 'main', true) : html, boundaries, { timeoutMs: 30000 }), {
+            return streamToResponse(renderStreamingPage(isSpaNav && !isMutating && hasContainerRegion(html, manifest.routerContainer || 'main') ? extractContainerContent(html, manifest.routerContainer || 'main', true) : html, boundaries, { timeoutMs: 30000 }), {
               status: status ?? compiled.status ?? 200,
               headers,
             })
@@ -424,7 +426,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
           for (const [name, value] of Object.entries(pageHeaders ?? {}))
             headers.set(name, value)
           headers.set('Vary', spaNavVaryHeaders(headers.get('Vary')).Vary)
-          if (isSpaNav && !isMutating) {
+          if (isSpaNav && !isMutating && hasContainerRegion(html, manifest.routerContainer || 'main')) {
             const layout = extractLayoutMetadata(html)
             headers.set('X-STX-Fragment', 'true')
             headers.set('X-STX-Runtime', pageShipsSignalsRuntime(html) ? 'true' : 'false')
