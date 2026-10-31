@@ -458,7 +458,8 @@ export interface NativeCraft {
 }
 
 export interface NativeDesktop {
-  openWindow: (options: { name: string, route: string, title?: string, titlebarStyle?: 'standard' | 'transparent', width?: number, height?: number, minWidth?: number, minHeight?: number, params?: Record<string, unknown> }) => Promise<{ name: string }>
+  /** `floating` keeps the window above others (a small window for a link from another app). */
+  openWindow: (options: { name: string, route: string, title?: string, titlebarStyle?: 'standard' | 'transparent', width?: number, height?: number, minWidth?: number, minHeight?: number, floating?: boolean, params?: Record<string, unknown> }) => Promise<{ name: string }>
   closeWindow: () => Promise<void>
   focus: (identifier: string) => Promise<void>
   setMenus: (menus: Array<{ label: string, items: Array<{ id?: string, label?: string, shortcut?: string, separator?: boolean, disabled?: boolean }> }>) => Promise<boolean>
@@ -476,6 +477,13 @@ export interface NativeDesktop {
    * unsubscribe.
    */
   onQuit: (callback: () => unknown) => () => void
+  /** Links and files other apps open with this one (a default browser's links). Returns the unsubscribe. */
+  onOpenURL: (callback: (urls: string[]) => void) => () => void
+  /** What other apps opened before the screen listened (the link that launched the app); each is handed out once. */
+  takeOpenedURLs: () => Promise<string[]>
+  isDefaultBrowser: () => Promise<boolean>
+  /** Asks macOS to make this app the browser; the person confirms. Resolves whether it now is. */
+  setDefaultBrowser: () => Promise<boolean>
 }
 
 /** What a tab reports: in `create`, `state` and `list` answers and in every `state` event. */
@@ -507,7 +515,9 @@ export type NativeWebEvent =
   /** `target=_blank` and `window.open` bring a ready `child` tab; a modifier click brings only the `url`. */
   | { type: 'open', tab: string, url: string, child?: string, popup?: boolean, width?: number, height?: number, background?: boolean, reason: 'script' | 'modifier' }
   | { type: 'close' | 'crashed', tab: string, url?: string }
-  | { type: 'download', tab: string, id: string, state: 'started' | 'progress' | 'finished' | 'failed', path: string, name: string, url: string, received: number, total: number, fraction: number, message?: string }
+  | { type: 'download', tab: string, id: string, state: 'started' | 'progress' | 'finished' | 'failed', path: string, name: string, url: string, received: number, total: number, fraction: number, message?: string, cancelled?: boolean }
+  /** A site asks for the camera or microphone; answer with `answerPermission(request, ...)`. */
+  | { type: 'permission', tab: string, request: string, kind: 'camera' | 'microphone' | 'camera+microphone', origin: string, protocol: string, port: number, mainFrame: boolean }
 
 export interface NativeWebTab {
   readonly id: string
@@ -526,6 +536,8 @@ export interface NativeWebTab {
   find: (text: string, options?: { backwards?: boolean, caseSensitive?: boolean, wraps?: boolean }) => Promise<{ found: boolean }>
   /** A JPEG data URL. */
   snapshot: (options?: { width?: number }) => Promise<string>
+  /** Opens the print sheet. */
+  print: () => Promise<boolean>
   on: <K extends NativeWebEvent['type']>(type: K | '*', callback: (event: Extract<NativeWebEvent, { type: K }>) => void) => () => void
 }
 
@@ -552,4 +564,25 @@ export interface NativeWeb {
   evaluate: <T = unknown>(id: string, script: string, options?: { isolated?: boolean }) => Promise<T>
   find: (id: string, text: string, options?: { backwards?: boolean, caseSensitive?: boolean, wraps?: boolean }) => Promise<{ found: boolean }>
   snapshot: (id: string, options?: { width?: number }) => Promise<string>
+  print: (id: string) => Promise<boolean>
+  /**
+   * A content blocker, as a WebKit content-rule list. WebKit compiles it once
+   * and keeps it by identifier and version: ask without `json` first, and send
+   * the rules only when the answer is `missing`.
+   */
+  setContentRules: (identifier: string, list: { version: string, json?: string }) => Promise<{ identifier: string, cached?: boolean, missing?: boolean }>
+  removeContentRules: (identifier: string) => Promise<boolean>
+  /** Sites (and their subdomains) that load with no blocker applied. Replaces the list. */
+  allowContent: (hosts: string[]) => Promise<boolean>
+  /** CSS and JS for named hosts (and their subdomains), in an isolated world. Replaces the set; pages pick it up on their next load. */
+  setUserScripts: (scripts: Array<{ id: string, hosts: string[], css?: string, js?: string, allFrames?: boolean }>) => Promise<boolean>
+  /** Resolves whether the request was still waiting. */
+  answerPermission: (request: string, decision: 'grant' | 'deny' | 'prompt') => Promise<boolean>
+  /** A profile's cookies, storage and caches: one site's, or all of them. */
+  clearData: (options: { profile: string, private?: boolean, host?: string, types?: Array<'cookies' | 'storage' | 'cache'> }) => Promise<{ cleared: boolean, records?: number }>
+  cancelDownload: (id: string) => Promise<boolean>
+  /** Shows a downloaded file in Finder. Only files in ~/Downloads. */
+  revealDownload: (path: string) => Promise<boolean>
+  /** Opens a downloaded file; an app or script is revealed instead. Only files in ~/Downloads. */
+  openDownload: (path: string) => Promise<boolean>
 }

@@ -96,6 +96,23 @@ describe('desktop window capabilities', () => {
   })
 })
 
+describe('links from other apps', () => {
+  it('hears opened links, hands over early ones, and asks to be the browser', async () => {
+    const host = await runtime(['desktop'])
+    const seen: string[][] = []
+    const stop = host.scope.craft.desktop.onOpenURL((urls: string[]) => seen.push(urls))
+    host.receive({ type: 'CRAFT_EVENT', payload: { event: 'craftDesktopOpenURL', detail: { urls: ['https://a.com', 3] } } })
+    stop()
+    host.receive({ type: 'CRAFT_EVENT', payload: { event: 'craftDesktopOpenURL', detail: { urls: ['https://b.com'] } } })
+    expect(seen).toEqual([['https://a.com']])
+    const early = host.scope.craft.desktop.takeOpenedURLs()
+    host.answer(host.requests().at(-1)!, ['https://launch.com'])
+    expect(await early).toEqual(['https://launch.com'])
+    host.scope.craft.desktop.setDefaultBrowser().catch(() => {}) // left unanswered on purpose
+    expect(host.requests().at(-1)!.payload).toMatchObject({ module: 'Desktop', method: 'setDefaultBrowser', args: [] })
+  })
+})
+
 describe('appearance', () => {
   it('reports the scheme now and each change of it, until unsubscribed', async () => {
     const host = await runtime([])
@@ -134,6 +151,26 @@ describe('web tabs', () => {
     host.scope.craft.web.evaluate('t1', 'document.title', { isolated: true }).catch(() => {}) // left unanswered on purpose
     request = host.requests().at(-1)!
     expect(request.payload).toMatchObject({ method: 'evaluate', args: ['t1', 'document.title', { isolated: true }] })
+  })
+
+  it('sends blockers, scripts, permission answers and download actions to the Web module', async () => {
+    const host = await runtime(['web'])
+    const web = host.scope.craft.web
+    const last = () => host.requests().at(-1)!.payload
+    web.setContentRules('ads', { version: '3' }).catch(() => {}) // left unanswered on purpose
+    expect(last()).toMatchObject({ module: 'Web', method: 'setContentRules', args: ['ads', { version: '3' }] })
+    web.allowContent(['example.com']).catch(() => {}) // left unanswered on purpose
+    expect(last()).toMatchObject({ method: 'allowContent', args: [['example.com']] })
+    web.setUserScripts([{ id: 'b', hosts: ['x.com'], css: 'a{}' }]).catch(() => {}) // left unanswered on purpose
+    expect(last()).toMatchObject({ method: 'setUserScripts', args: [[{ id: 'b', hosts: ['x.com'], css: 'a{}' }]] })
+    web.answerPermission('r1', 'grant').catch(() => {}) // left unanswered on purpose
+    expect(last()).toMatchObject({ method: 'answerPermission', args: ['r1', 'grant'] })
+    web.clearData({ profile: 'work', host: 'x.com' }).catch(() => {}) // left unanswered on purpose
+    expect(last()).toMatchObject({ method: 'clearData', args: [{ profile: 'work', host: 'x.com' }] })
+    web.revealDownload('/Users/me/Downloads/a.zip').catch(() => {}) // left unanswered on purpose
+    expect(last()).toMatchObject({ method: 'revealDownload', args: ['/Users/me/Downloads/a.zip'] })
+    web.tab('t1').print().catch(() => {}) // left unanswered on purpose
+    expect(last()).toMatchObject({ method: 'print', args: ['t1'] })
   })
 
   it('delivers tab events by type, and a bound tab hears only its own', async () => {

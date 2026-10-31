@@ -430,6 +430,12 @@ export function installCraftBridge(
         if (payload?.event === 'craftDesktopCommand' && typeof payload.detail?.id === 'string') callback(payload.detail.id)
       }),
       onQuit,
+      onOpenURL: (callback: (urls: string[]) => void) => protocol.on<AnyRecord>('CRAFT_EVENT', ({ payload }) => {
+        if (payload?.event === 'craftDesktopOpenURL' && Array.isArray(payload.detail?.urls)) callback(payload.detail.urls.filter((url: unknown) => typeof url === 'string'))
+      }),
+      takeOpenedURLs: () => request('Desktop', 'takeOpenedURLs', []),
+      isDefaultBrowser: () => request('Desktop', 'isDefaultBrowser', []),
+      setDefaultBrowser: () => request('Desktop', 'setDefaultBrowser', []),
     }
   }
 
@@ -444,12 +450,25 @@ export function installCraftBridge(
         if (payload?.event === 'craftWebView' && payload.detail && (type === '*' || payload.detail.type === type)) callback(payload.detail)
       }),
     }
-    for (const method of ['navigate', 'back', 'forward', 'reload', 'stop', 'close', 'state', 'focus', 'setZoom', 'setInspectable', 'evaluate', 'find', 'snapshot'])
+    const tabMethods = ['navigate', 'back', 'forward', 'reload', 'stop', 'close', 'state', 'focus', 'setZoom', 'setInspectable', 'evaluate', 'find', 'snapshot', 'print']
+    for (const method of tabMethods)
       web[method] = (id: string, ...args: unknown[]) => call(method, [String(id), ...args])
+    // What applies to every tab: content blockers, user scripts, site data, downloads, permission answers.
+    Object.assign(web, {
+      setContentRules: (identifier: string, list: AnyRecord) => call('setContentRules', [identifier, list]),
+      removeContentRules: (identifier: string) => call('removeContentRules', [identifier]),
+      allowContent: (hosts: string[]) => call('allowContent', [hosts]),
+      setUserScripts: (scripts: unknown[]) => call('setUserScripts', [scripts]),
+      answerPermission: (request: string, decision: string) => call('answerPermission', [request, decision]),
+      clearData: (options: AnyRecord) => call('clearData', [options]),
+      cancelDownload: (id: string) => call('cancelDownload', [id]),
+      revealDownload: (path: string) => call('revealDownload', [path]),
+      openDownload: (path: string) => call('openDownload', [path]),
+    })
     // One tab's methods and events, bound to its id: `craft.web.tab(id).back()`.
     web.tab = (id: string): AnyRecord => {
       const tab: AnyRecord = { id: String(id) }
-      for (const method of ['navigate', 'back', 'forward', 'reload', 'stop', 'close', 'state', 'focus', 'setZoom', 'setInspectable', 'evaluate', 'find', 'snapshot'])
+      for (const method of tabMethods)
         tab[method] = (...args: unknown[]) => web[method](id, ...args)
       tab.on = (type: string, callback: (event: AnyRecord) => void) => web.on(type, (event: AnyRecord) => { if (event.tab === tab.id) callback(event) })
       return tab
