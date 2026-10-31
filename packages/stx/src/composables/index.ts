@@ -487,6 +487,9 @@ export { defineForm, useForm } from './use-form'
 // Demand-bundled for client scripts like useForm.
 export { useCompletion, type Completion, type CompletionContext, type CompletionMeta, type UseCompletionOptions } from './use-completion'
 
+// A long list drawn through a window of its rows. Demand-bundled for client scripts.
+export { useVirtualList, type UseVirtualList, type UseVirtualListOptions, type VirtualRow } from './use-virtual-list'
+
 // Authenticated server broadcasts, demand-bundled for client scripts.
 export { useBroadcastStream, type BroadcastStreamFrame, type BroadcastStreamClientOptions } from './use-broadcast-stream'
 

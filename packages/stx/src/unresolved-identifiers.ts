@@ -52,7 +52,7 @@ export const SERVER_ONLY_COMPOSABLES: readonly string[] = [
   'usePermission', 'usePermissions', 'usePointer', 'usePost', 'useResizeObserver',
   'useResizeObserverMultiple', 'useSSE', 'useScroll', 'useSelectionPopup', 'useShare',
   'useSpeechRecognition', 'useSpeechSynthesis', 'useStorage', 'useTextObserver',
-  'useTextSelection', 'useTitle', 'useVisibility', 'useWakeLock', 'useWindowSize'
+  'useTextSelection', 'useTitle', 'useVirtualList', 'useVisibility', 'useWakeLock', 'useWindowSize'
 ]
 
 const SERVER_ONLY = new Set(SERVER_ONLY_COMPOSABLES)

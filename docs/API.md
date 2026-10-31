@@ -4800,6 +4800,25 @@ Behaviour you can rely on: a burst of edits asks once; a newer edit aborts the p
 
 `<AiTextarea>` in `@stacksjs/components` is the textarea built on it.
 
+### useVirtualList (long lists)
+
+`useVirtualList()` draws only the rows that can be seen. A list of thousands of rows costs the same to draw whether or not anyone is looking at it; this keeps the rows in the viewport (plus a few either side) and gives the scroller the full height, so the scroll bar and scroll position behave as if every row were there. It is demand-bundled into `<script client>` blocks, like `useForm`.
+
+```html
+<script client>
+  const todos = state([/* thousands */])
+  const virtual = useVirtualList(todos, { itemHeight: 44, height: 480, overscan: 6 })
+</script>
+
+<div :style="virtual.containerStyle()" @scroll="virtual.onScroll($event)">
+  <div :style="virtual.wrapperStyle()">
+    <div :for="row in virtual.list()" :key="row.index" style="height: 44px">{{ row.data.title }}</div>
+  </div>
+</div>
+```
+
+`itemHeight` is a number, or a function from index to height. Leave `height` out and the viewport is read from the scroller on its first scroll (or with `virtual.measure(element)`). `list()` holds `{ index, data }` entries, so keying on `index` keeps the same row elements while they scroll through the window; it is rebuilt only when the first or last drawn row changes. `scrollTo(index, scroller)` jumps to a row, and `start()`, `end()`, `totalHeight()` and `offsetTop()` are there for custom layouts.
+
 ### Async
 
 ```typescript
