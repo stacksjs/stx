@@ -46,4 +46,70 @@ export const SIGNALS_LOOP_CONDITIONAL_RUNTIME = `  // A :for row is a clone of i
       holder.content.appendChild(el);
     }
   }
+
+  // A conditional branch that holds a COMPONENT is the heaviest thing a row can
+  // carry and the one a row almost never shows: an inline editor for the one
+  // row that is open. Cloned into every row only to be parked by :if, a 200-line
+  // editor was a third of the time it took to draw a list, twice over (the
+  // clone, then the walk that gives each cloned component its own scope id).
+  // deferRowConditionals cannot take it (it holds a setup script, and a
+  // <template> in a row is cloned with its content all the same), so the row
+  // template keeps an EMPTY element with the same condition and the branch
+  // lives once, here. bindIf fills the element from it the first time the
+  // condition holds (materializeLazyBranch), as it would have been cloned.
+  var __stxLazyBranches = new Map();
+  var __stxLazyCounter = 0;
+  function shareHeavyRowBranches(root) {
+    if (stxHost.isNative || !root || !root.querySelectorAll || typeof document === 'undefined' || !document.createDocumentFragment) return;
+    var candidates = Array.prototype.slice.call(root.querySelectorAll('[data-stx-scope]'));
+    if (!candidates.length) return;
+    var branches = [];
+    candidates.forEach(function(component) {
+      for (var el = component.parentElement; el; el = el.parentElement) {
+        if (el.tagName === 'TEMPLATE') return;
+        var attr = null;
+        for (var a = 0; a < IF_ATTRS.length; a++) {
+          if (el.hasAttribute(IF_ATTRS[a])) { attr = IF_ATTRS[a]; break; }
+        }
+        if (attr) {
+          if (branches.indexOf(el) === -1 && eligibleHeavyBranch(el)) branches.push(el);
+          return;
+        }
+        if (!root.contains(el)) return;
+      }
+    });
+    branches.forEach(function(el) {
+      // An outer candidate already took this one's children with it.
+      if (!root.contains(el)) return;
+      var holder = document.createDocumentFragment();
+      while (el.firstChild) holder.appendChild(el.firstChild);
+      var id = 'lz' + (++__stxLazyCounter);
+      __stxLazyBranches.set(id, Array.prototype.slice.call(holder.childNodes));
+      el.__stx_lazy_holder = holder;
+      el.setAttribute('data-stx-lazy', id);
+    });
+  }
+  function eligibleHeavyBranch(el) {
+    for (var f = 0; f < FOR_ATTRS.length; f++) {
+      if (el.hasAttribute(FOR_ATTRS[f])) return false;
+    }
+    if (getElseAttrInfo(el)) return false;
+    var next = el.nextElementSibling;
+    if (next && (getElseAttrInfo(next) || next.tagName === 'SCRIPT')) return false;
+    if (el.hasAttribute('data-stx-scope') || el.hasAttribute('x-data')) return false;
+    return true;
+  }
+  // Fill a row's empty conditional element with a copy of its branch, with the
+  // component ids of THIS copy, before the branch is hydrated and bound.
+  function materializeLazyBranch(el) {
+    var id = el.getAttribute && el.getAttribute('data-stx-lazy');
+    if (!id) return;
+    el.removeAttribute('data-stx-lazy');
+    var source = __stxLazyBranches.get(id);
+    if (!source) return;
+    var fragment = document.createDocumentFragment();
+    source.forEach(function(node) { fragment.appendChild(stxHost.clone(node)); });
+    el.appendChild(fragment);
+    remapForComponentScopes([el]);
+  }
 `

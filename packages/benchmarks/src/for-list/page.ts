@@ -13,7 +13,10 @@
  *                     two conditional `<li>`s, five listeners, function-call
  *                     bindings that read shared signals, `:if` children and a
  *                     nested `:for` of chips
+ *   todo-editor       the same, whose second `<li>` holds a component of ~100
+ *                     elements and its setup script (an inline editor)
  *
+ * `?lazy=0` switches the shared row-branch optimisation off, to measure what it saves.
  * `?scope=N` pads the page scope with N extra names, because a real page holds
  * every name its components declare. `?prof=1` wraps the runtime's hot
  * functions with exclusive timers; read the table with `bench.profile()`.
@@ -34,6 +37,11 @@ const SIMPLE_ROW = `
       <div class="meta"><b :text="t.count"></b><em>{{ t.note }}</em></div>
     </li>`
 
+// The inline editor a row carries but almost never shows: a component of about a
+// hundred elements and its setup script, inside a row-level conditional.
+const EDITOR = Array.from({ length: 24 }, (_, i) => `<div class="field" data-field="${i}"><label for="f${i}">Field ${i}</label><input id="f${i}" type="text" :value="draft()"><button type="button" class="b" @click="save()"><i class="ico"></i></button></div>`).join('')
+const EDITOR_BRANCH = `<li class="card" :if="openId() === todo.id"><div data-stx-scope="stx_editor_1" data-stx-component-wrapper>${EDITOR}</div><script data-stx-scoped data-stx-run="always" data-stx-owner="stx_editor_1" client>(function(__scopeId){ var __s = window.stx._scopes = window.stx._scopes || {}; var v = __s[__scopeId] = __s[__scopeId] || {}; v.draft = window.stx.state(''); v.save = function () {}; })("stx_editor_1")</script></li>`
+
 const TODO_ROW = `
     <template :for="todo in rows" :key="todo.id">
       <li class="row" :if="openId() !== todo.id" role="listitem" draggable="true"
@@ -46,7 +54,7 @@ const TODO_ROW = `
           <div class="meta" :if="chips(todo).length"><span class="chip" :for="chip in chips(todo)" :key="chip.key" :class="chip.tone"><i class="ico" :class="chip.icon" style="width: 13px; height: 13px" aria-hidden="true"></i><span :text="chip.text"></span></span></div>
         </div>
       </li>
-      <li class="card" :if="openId() === todo.id">editor</li>
+      __EDITOR__
     </template>`
 
 const TODO_SETUP = `
@@ -78,7 +86,7 @@ const TODO_SETUP = `
 
 const BENCH = `
   const shape = new URLSearchParams(location.search).get('row') || 'simple'
-  const mk = (id, salt) => shape === 'todo'
+  const mk = (id, salt) => shape.startsWith('todo')
     ? { id, title: 'Task ' + id + (salt || ''), notes: id % 7 === 0 ? 'has notes' : '', deadline: id % 5 === 0 ? '2026-11-03' : null, completed_at: null, project: id % 4 === 0 ? 'Home' : '', tags: id % 3 === 0 ? ['work', 'home'] : [], checklist: id % 6 === 0 ? [{ done: false }] : [] }
     : { id, title: 'Task ' + id + (salt || ''), tag: 'tag' + (id % 7), due: 'D' + (id % 28), count: id % 100, done: id % 3 === 0, note: 'n' + id }
   const median = (xs) => xs.slice().sort((a, b) => a - b)[Math.floor(xs.length / 2)]
@@ -192,12 +200,17 @@ function instrument(runtime: string): string {
 
 export function benchPage(search = ''): string {
   const params = new URLSearchParams(search)
-  const todo = params.get('row') === 'todo'
-  const runtime = generateSignalsRuntime()
+  const kind = params.get('row')
+  const todo = kind === 'todo' || kind === 'todo-editor'
+  const todoRow = TODO_ROW.replace('__EDITOR__', kind === 'todo-editor' ? EDITOR_BRANCH : '<li class="card" :if="openId() === todo.id">editor</li>')
+  let runtime = generateSignalsRuntime()
+  // ?lazy=0 turns the shared row-branch optimisation off, to measure what it saves.
+  if (params.get('lazy') === '0')
+    runtime = runtime.replace(/function shareHeavyRowBranches\(([\w$]+)\)\{/, 'function shareHeavyRowBranches($1){return;')
   return `<!doctype html>
 <html><head><meta charset="utf-8"><title>stx :for benchmark</title>
 <style>.row{display:flex;gap:6px;padding:2px 4px;border-bottom:1px solid #ddd}.done{opacity:.6}body{font:12px system-ui}.meta{display:flex;gap:4px}</style></head>
-<body><main data-stx="__stx_setup_bench"><ul id="list">${todo ? TODO_ROW : SIMPLE_ROW}
+<body><main data-stx="__stx_setup_bench"><ul id="list">${todo ? todoRow : SIMPLE_ROW}
 </ul></main>
 <script>
 window.__stx_setup_bench = function () {

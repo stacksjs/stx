@@ -125,11 +125,13 @@ export const SIGNALS_FOR_RUNTIME = `  function bindFor(el, passedScope = compone
     if (isTemplate) {
       templateContent = el.content;
       deferRowConditionals(templateContent);
+      shareHeavyRowBranches(templateContent);
     }
 else {
       // Before the source is cloned into the row template, so that clone does
       // not build the conditional elements either.
       deferRowConditionals(el);
+      shareHeavyRowBranches(el);
       const wrapper = stxHost.clone(el);
       wrapper.removeAttribute('@for');
       wrapper.removeAttribute(':for');

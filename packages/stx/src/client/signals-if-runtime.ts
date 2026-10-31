@@ -305,6 +305,8 @@ else if (!value && isInserted) {
               detachedBranches.add(resume);
               return;
             }
+            // A row's heavy branch is an empty element until it is first shown.
+            materializeLazyBranch(el);
             var childScope = layerTemplateScopes(globalHelpers, capturedComponentScope, (capturedElementScope || {}));
             // A false single-element conditional is detached before the
             // DOMContentLoaded component-scope pass. When it becomes visible,
