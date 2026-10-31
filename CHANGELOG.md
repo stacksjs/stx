@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.764...v0.2.765)
+
+## 🐛 Bug Fixes
+
+- **layouts**: name the directories searched when a layout is not found ([ea96c98](https://github.com/stacksjs/stx/commit/ea96c98)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **components**: reread a component file whose size or mtime changed since it was cached ([98d2656](https://github.com/stacksjs/stx/commit/98d2656)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 📝 Documentation
+
+- **benchmarks**: how to run the real-browser :for list benchmark ([86acdcd](https://github.com/stacksjs/stx/commit/86acdcd)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.765 ([444e1f4](https://github.com/stacksjs/stx/commit/444e1f4)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.763...v0.2.764)
 
 ## ✨ Features
