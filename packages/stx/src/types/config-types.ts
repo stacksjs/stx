@@ -984,6 +984,14 @@ export interface StxConfig {
    * production too.
    */
   messages?: import('../message-catalogs').PageMessagesOptions
+  /**
+   * Modules a web page's bundles load another in place of, each path
+   * relative to the project root: `{ 'resources/functions/native-auth.ts':
+   * 'resources/web/native-auth.ts' }`. For code only a native compile runs,
+   * which a web page would otherwise ship with everything it imports for its
+   * side effects (src/web-modules.ts). Native compiles never read it.
+   */
+  webModules?: import('../web-modules').WebModulesOption
   /** Component configuration */
   components?: Partial<ComponentConfig>
   /** Route middleware configuration */

@@ -560,10 +560,13 @@ async function pageBundleTags(
   const { withModuleSubstitutes, moduleSubstitutionKey } = await import('./client-script-bundler')
   const catalogs = await import('./message-catalogs')
   const messagesOption = (options as { messages?: import('./message-catalogs').PageMessagesOptions }).messages
+  const webModulesOption = (options as { webModules?: import('./web-modules').WebModulesOption }).webModules
   let messages: import('./message-catalogs').PageMessages | null = null
+  let standIns: Map<string, string> | null = null
   // A build already standing modules in for others (a native screen's) keeps
   // its own: substitutes do not nest.
-  if (messagesOption && catalogs.pageMessagesEnabled(options as never) && moduleSubstitutionKey() === '' && !context.__stx_native_screen) {
+  const substitutable = moduleSubstitutionKey() === '' && !context.__stx_native_screen
+  if (messagesOption && catalogs.pageMessagesEnabled(options as never) && substitutable) {
     try {
       messages = await catalogs.loadPageMessages(process.cwd(), messagesOption)
     }
@@ -572,8 +575,19 @@ async function pageBundleTags(
       warnPageMessagesOnce(error)
     }
   }
+  if (webModulesOption && Object.keys(webModulesOption).length && substitutable) {
+    try {
+      standIns = await (await import('./web-modules')).loadWebModules(process.cwd(), webModulesOption)
+    }
+    catch (error) {
+      // Every page then bundles the real modules, as without the option.
+      warnWebModulesOnce(error)
+    }
+  }
+  // A message module keeps its stub: the messages script fills that object.
+  const substitutes = new Map([...(standIns ?? []), ...(messages?.stubs ?? [])])
   const build = (): Promise<PageBundles> => buildPageBundles(result, options, dependencies, context)
-  const built = messages ? await withModuleSubstitutes(messages.stubs, build) : await build()
+  const built = substitutes.size ? await withModuleSubstitutes(substitutes, build) : await build()
 
   let messagesTag: string | null = null
   if (messages) {
@@ -593,6 +607,13 @@ function warnPageMessagesOnce(error: unknown): void {
   if (warnedPageMessages) return
   warnedPageMessages = true
   console.warn(`[stx] messages: ${error instanceof Error ? error.message : String(error)}; pages ship every language`)
+}
+
+let warnedWebModules = false
+function warnWebModulesOnce(error: unknown): void {
+  if (warnedWebModules) return
+  warnedWebModules = true
+  console.warn(`[stx] ${error instanceof Error ? error.message : String(error)}; pages bundle the real modules`)
 }
 
 function placeSignalsRuntimeBeforeScripts(html: string, afterRuntime = ''): string {

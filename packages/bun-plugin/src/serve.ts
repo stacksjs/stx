@@ -3250,6 +3250,8 @@ function __stxOverlay(errs){
       ...('offline' in stxConfig && { offline: (stxConfig as { offline?: unknown }).offline }),
       // Message catalogs a language at a time (stx's message-catalogs.ts).
       ...('messages' in stxConfig && { messages: (stxConfig as { messages?: unknown }).messages }),
+      // Modules a web page bundles another in place of (stx's web-modules.ts).
+      ...('webModules' in stxConfig && { webModules: (stxConfig as { webModules?: unknown }).webModules }),
       // Forward plugin-registered component dirs so renderComponentWithSlot
       // can resolve tags exposed by stx plugins (e.g. `<Notification>` from
       // `@stacksjs/components` via a stx plugin shim). Populated by
@@ -3686,6 +3688,8 @@ function __stxOverlay(errs){
         // The offline worker's registration rides on every document.
         ...('offline' in stxConfig && { offline: (stxConfig as { offline?: unknown }).offline }),
         ...('messages' in stxConfig && { messages: (stxConfig as { messages?: unknown }).messages }),
+        // Modules a web page bundles another in place of (stx's web-modules.ts).
+        ...('webModules' in stxConfig && { webModules: (stxConfig as { webModules?: unknown }).webModules }),
         // Mirror the static-route config: forward plugin-registered component
         // dirs so dynamic routes also resolve `<Notification>` etc.
         ...('_pluginComponentDirs' in stxConfig && { _pluginComponentDirs: stxConfig._pluginComponentDirs }),

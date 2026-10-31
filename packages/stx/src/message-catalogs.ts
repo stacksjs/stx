@@ -112,6 +112,21 @@ export interface PageMessages extends CollectedMessages {
 const collected = new Map<string, { signature: string, messages: PageMessages }>()
 
 /**
+ * A file's path as written and as Bun may resolve it, the keys a module
+ * substitute is found by. macOS's /var and /tmp are links into /private, and
+ * a project there is named either way depending on who resolved it.
+ */
+export function pathSpellings(file: string): string[] {
+  const names = [file]
+  try { names.push(realpathSync(file)) }
+  catch {}
+  for (const named of [...names]) {
+    if (named.startsWith('/private/')) names.push(named.slice('/private'.length))
+  }
+  return [...new Set(names)]
+}
+
+/**
  * Whether web pages ship messages a language at a time: with the `messages`
  * option, in production. `STX_PAGE_MESSAGES=0` turns it off; `=1` turns it
  * on outside production too (a development server re-reads a catalog only
@@ -138,15 +153,7 @@ export async function loadPageMessages(root: string, options: PageMessagesOption
   const stubs = new Map<string, string>()
   for (const [file, { language, area }] of catalogs.files) {
     const stub = pageMessagesStub(language, area)
-    const names = [file]
-    try { names.push(realpathSync(file)) }
-    catch {}
-    // macOS's /var and /tmp are links into /private, and a project there is
-    // named either way depending on who resolved it.
-    for (const named of [...names]) {
-      if (named.startsWith('/private/')) names.push(named.slice('/private'.length))
-    }
-    for (const named of names) stubs.set(named, stub)
+    for (const named of pathSpellings(file)) stubs.set(named, stub)
   }
   const fallback = options.fallback ?? options.languages[0]!
   if (!options.languages.includes(fallback)) throw new Error(`messages.fallback "${fallback}" is not one of messages.languages`)
