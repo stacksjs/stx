@@ -434,6 +434,10 @@ export function installCraftBridge(
         if (payload?.event === 'craftDesktopOpenURL' && Array.isArray(payload.detail?.urls)) callback(payload.detail.urls.filter((url: unknown) => typeof url === 'string'))
       }),
       takeOpenedURLs: () => request('Desktop', 'takeOpenedURLs', []),
+      post: (message: unknown) => request('Desktop', 'post', [message]),
+      onMessage: (callback: (message: unknown, from: string) => void) => protocol.on<AnyRecord>('CRAFT_EVENT', ({ payload }) => {
+        if (payload?.event === 'craftDesktopMessage') callback(payload.detail?.message, String(payload.detail?.from ?? ''))
+      }),
       isDefaultBrowser: () => request('Desktop', 'isDefaultBrowser', []),
       setDefaultBrowser: () => request('Desktop', 'setDefaultBrowser', []),
     }

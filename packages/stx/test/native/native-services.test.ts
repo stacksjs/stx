@@ -108,6 +108,12 @@ describe('links from other apps', () => {
     const early = host.scope.craft.desktop.takeOpenedURLs()
     host.answer(host.requests().at(-1)!, ['https://launch.com'])
     expect(await early).toEqual(['https://launch.com'])
+    const heard: unknown[] = []
+    host.scope.craft.desktop.onMessage((message: unknown, from: string) => heard.push([message, from]))
+    host.receive({ type: 'CRAFT_EVENT', payload: { event: 'craftDesktopMessage', detail: { from: 'little', message: { adopt: 't1' } } } })
+    expect(heard).toEqual([[{ adopt: 't1' }, 'little']])
+    host.scope.craft.desktop.post({ hello: true }).catch(() => {}) // left unanswered on purpose
+    expect(host.requests().at(-1)!.payload).toMatchObject({ module: 'Desktop', method: 'post', args: [{ hello: true }] })
     host.scope.craft.desktop.setDefaultBrowser().catch(() => {}) // left unanswered on purpose
     expect(host.requests().at(-1)!.payload).toMatchObject({ module: 'Desktop', method: 'setDefaultBrowser', args: [] })
   })

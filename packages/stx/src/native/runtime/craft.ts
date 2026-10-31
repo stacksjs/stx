@@ -481,6 +481,10 @@ export interface NativeDesktop {
   onOpenURL: (callback: (urls: string[]) => void) => () => void
   /** What other apps opened before the screen listened (the link that launched the app); each is handed out once. */
   takeOpenedURLs: () => Promise<string[]>
+  /** A message for the app's other windows; each hears it through `onMessage`. */
+  post: (message: unknown) => Promise<boolean>
+  /** Messages other windows of the app posted, with the name of the window that posted each. Returns the unsubscribe. */
+  onMessage: (callback: (message: unknown, from: string) => void) => () => void
   isDefaultBrowser: () => Promise<boolean>
   /** Asks macOS to make this app the browser; the person confirms. Resolves whether it now is. */
   setDefaultBrowser: () => Promise<boolean>
