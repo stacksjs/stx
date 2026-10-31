@@ -1528,12 +1528,21 @@ async function processDirectivesInternal(
           ...layoutsIn(resolvedOptions.fallbackLayoutsDir),
         ].filter((name, index, all) => all.indexOf(name) === index).sort()
 
+        // Say where it looked. A layout kept beside the views but outside the
+        // one directory that is scanned reads as "not found" with no hint that
+        // another folder was never searched.
+        const searched = [resolvedOptions.layoutsDir, resolvedOptions.fallbackLayoutsDir]
+          .filter((dir): dir is string => typeof dir === 'string' && dir.length > 0)
+        const searchedNote = searched.length > 0
+          ? ` Searched: ${searched.join(', ')} (set \`layoutsDir\` to look elsewhere).`
+          : ''
         const warning = `Layout not found: ${layoutPath} (referenced from ${filePath})`
           + (available.length > 0
             ? `. Available layouts: ${available.join(', ')}`
             : resolvedOptions.layoutsDir
               ? `. No .stx layouts found in ${resolvedOptions.layoutsDir}`
               : '')
+          + searchedNote
         // errorLogger buffers in memory and only writes to a file when file
         // logging is on, so this message was never actually visible — the only
         // console output was a generic "Template not found" from the resolver,

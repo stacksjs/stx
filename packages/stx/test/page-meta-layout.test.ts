@@ -110,6 +110,8 @@ describe('a layout that does not exist', () => {
     expect(text).toContain('Layout not found')
     expect(text).toContain('app')
     expect(text).toContain('marketing')
+    // And the directory it looked in, so a layout kept somewhere else is findable.
+    expect(text).toContain('Searched:')
   })
 })
 
