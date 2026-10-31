@@ -59,6 +59,29 @@ bun run bench:yaml          # YAML parsing only
 bun run bench:sanitizer     # HTML sanitization only
 ```
 
+## Client `:for` list benchmark (real browser)
+
+`src/for-list/` times the client runtime's keyed list rendering in a real
+browser, with `performance.now()` around the synchronous work (the preview
+pane's `requestAnimationFrame` is throttled to 1 Hz, so never time frames).
+
+```bash
+bun run packages/benchmarks/src/for-list/serve.ts 3911   # serves the page, rebuilt from source per request
+# open http://127.0.0.1:3911/?row=todo&scope=300 and, in its console:
+JSON.stringify(window.bench.run(60))     # create, swap, partial, unchanged, replaceAll, removeOne, clear
+JSON.stringify(window.bench.run(1000, 3))
+window.bench.mutations(60)               # DOM mutation records per scenario
+# ?prof=1 wraps the runtime's hot functions with exclusive timers:
+window.bench.profile(60)
+```
+
+`?row=simple` is ten elements and six bindings per row; `?row=todo` is the row of
+a real app (a `<template :for>` of two conditional `<li>`s, five listeners,
+function-call bindings over shared signals, a nested `:for`). `?scope=N` adds N
+names to the page scope, which is what a real page's components declare and what
+made every row cost more. Numbers are milliseconds, the median of several runs;
+`script` is the time `signal.set()` takes to return, `total` adds a forced layout.
+
 ## Installation
 
 ```bash
