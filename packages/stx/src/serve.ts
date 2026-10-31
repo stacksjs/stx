@@ -150,6 +150,11 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
    */
   const fileCache = new Map<string, { content: string, mtime: number, status?: number, headers?: Record<string, string> }>()
 
+  /** `cache: false` in the stx options turns this cache off. Read per use: the config can reload. */
+  function useFileCache(): boolean {
+    return stxOptions.cache !== false
+  }
+
   /**
    * Process a stx file
    */
@@ -158,7 +163,7 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
     const cacheKey = `${filePath}:${stats.mtimeMs}`
 
     // Check cache
-    const cached = fileCache.get(cacheKey)
+    const cached = useFileCache() ? fileCache.get(cacheKey) : undefined
     if (cached) {
       return { content: cached.content, status: cached.status, headers: cached.headers }
     }
@@ -262,7 +267,8 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
     const headers = readResponseHeaders(context)
 
     // Cache result
-    fileCache.set(cacheKey, { content: output, mtime: stats.mtimeMs, status, headers })
+    if (useFileCache())
+      fileCache.set(cacheKey, { content: output, mtime: stats.mtimeMs, status, headers })
 
     return { content: output, status, headers }
   }
@@ -275,7 +281,7 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
     const cacheKey = `${filePath}:${stats.mtimeMs}`
 
     // Check cache
-    const cached = fileCache.get(cacheKey)
+    const cached = useFileCache() ? fileCache.get(cacheKey) : undefined
     if (cached) {
       return cached.content
     }
@@ -284,7 +290,8 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
     const { content } = await readMarkdownFile(filePath, stxOptions)
 
     // Cache result
-    fileCache.set(cacheKey, { content, mtime: stats.mtimeMs })
+    if (useFileCache())
+      fileCache.set(cacheKey, { content, mtime: stats.mtimeMs })
 
     return content
   }
