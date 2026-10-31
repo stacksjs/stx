@@ -950,3 +950,15 @@ The storage value is a JSON object. The example reads `sidebarStyle` and
 `dark` class, and writes `data-theme`. Stored values are accepted only when
 they match the configured appearance allowlist or one of `light`, `dark`, and
 `system`. Invalid or unavailable storage falls back to the declared defaults.
+
+**One colour-mode key.** Both mechanisms read and write the same preference, so an
+app that uses `@appearanceBootstrap` for first paint and `useColorMode()` /
+`useDark()` afterwards should point them at ONE `localStorage` key: pass
+`useColorMode({ storageKey })` the bootstrap's `storageKey`. The bootstrap accepts
+a bare `"light"`, `"dark"` or `"system"` string in that key as well as its JSON
+object (and keeps writing a bare string while no `appearance` is configured), so
+`useColorMode`'s plain-string format and the bootstrap never overwrite each other
+with a shape the other cannot read. Without `appearance`, `@appearanceBootstrap` is
+the first-paint script and `useColorMode` the runtime controller of the same value;
+the first paint is decided by whichever script runs first in `<head>`, which is the
+bootstrap when it is placed before any other script.
