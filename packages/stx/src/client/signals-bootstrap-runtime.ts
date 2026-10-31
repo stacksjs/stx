@@ -21,7 +21,7 @@ export const SIGNALS_CLOAK_RUNTIME = `  // Inject x-cloak CSS to prevent FOUC (F
   if (!cloakStyle) {
     cloakStyle = document.createElement('style');
     cloakStyle.id = 'stx-cloak-style';
-    cloakStyle.textContent = '[x-cloak] { display: none !important; }';
+    cloakStyle.textContent = '[x-cloak] { display: none !important; } [data-stx-component-wrapper]:not([stx-hydrate]) { display: contents; }';
     document.head.appendChild(cloakStyle);
   }
 

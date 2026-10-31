@@ -14,6 +14,16 @@ import type { AppHeadConfig } from './types/config-types'
 import { generateColorModeBootScript } from './color-mode-boot'
 
 /**
+ * A component's root is wrapped in `<div data-stx-component-wrapper>` to carry
+ * its scope. The wrapper is bookkeeping, not layout: as a grid or flex item it
+ * took the track and broke `grid-template-columns` and `.parent > .child`
+ * selectors, so it generates no box of its own. A deferred island
+ * (`stx-hydrate`) keeps one, because its visibility trigger observes it and an
+ * element with no box never intersects.
+ */
+export const COMPONENT_WRAPPER_RULE = '[data-stx-component-wrapper]:not([stx-hydrate]){display:contents}'
+
+/**
  * Inline x-cloak rule shipped in the SSR <head> (stacksjs/stx#1736).
  *
  * Must be parsed by the browser BEFORE first paint — so it goes in the head
@@ -24,7 +34,7 @@ import { generateColorModeBootScript } from './color-mode-boot'
  * belt-and-suspenders for SPA-nav fragments that arrive without SSR head
  * emission.
  */
-export const CLOAK_STYLE = '<style data-stx-cloak>[x-cloak]{display:none !important}</style>'
+export const CLOAK_STYLE = `<style data-stx-cloak>[x-cloak]{display:none !important}${COMPONENT_WRAPPER_RULE}</style>`
 
 /**
  * Markers recording which `<html>` attributes stx itself wrote from `htmlAttrs`
