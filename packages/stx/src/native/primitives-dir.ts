@@ -17,9 +17,13 @@ export function nativePrimitivesDir(): string {
   // `src/native/primitives` from source and `dist/native/primitives` from the
   // per-module build; the bundled CLI (chunks in `dist/`) reaches them as
   // `native/primitives`.
+  // A bundle of the compiler (`dist/native/compiler/bundle.js`) inlines this
+  // module, so `import.meta.dir` is then the compiler's directory, one level down.
   const candidates = [
     path.join(import.meta.dir, 'primitives'),
+    path.join(import.meta.dir, '..', 'primitives'),
     path.join(import.meta.dir, 'native', 'primitives'),
+    path.join(import.meta.dir, '..', 'native', 'primitives'),
   ]
   for (const candidate of candidates)
     if (existsSync(path.join(candidate, 'View.stx')))
