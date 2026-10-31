@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.775...v0.2.776)
+
+## ✨ Features
+
+- **native**: craft.desktop.onQuit runs work the app waits for before quitting ([4b3765c](https://github.com/stacksjs/stx/commit/4b3765c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.776 ([c784e2e](https://github.com/stacksjs/stx/commit/c784e2e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.774...v0.2.775)
 
 ## 🔧 Chores
