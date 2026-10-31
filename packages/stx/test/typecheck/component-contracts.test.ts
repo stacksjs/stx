@@ -139,3 +139,20 @@ function onChange(value: { id: number }) {}
   expect(parent.failure).toBeUndefined()
   expect(parent.diagnostics).toEqual([])
 })
+
+it('accepts a boolean prop written as plain "true" or "false" text, as the runtime does, and still rejects other text (stacksjs/stx#2141)', async () => {
+  const { dir, page } = await fixture('')
+  await Bun.write(join(dir, 'components/Figure.stx'), `<script>
+interface Props { src: string; priority?: boolean; label?: string }
+const { src, priority = false } = defineProps<Props>()
+</script><img src="{{ src }}">`)
+  await Bun.write(page, `<Figure src="a.webp" priority="true" />
+<Figure src="b.webp" priority="false" />
+<Figure src="c.webp" priority />
+<Figure src="d.webp" label="true" />
+<Figure src="e.webp" priority="yes" />`)
+  const result = await typecheckStxFiles([page])
+  expect(result.failure).toBeUndefined()
+  // Only the fifth tag is wrong: "yes" is not a boolean spelling.
+  expect(result.diagnostics.filter(d => d.blockKind === 'template').map(d => d.line)).toEqual([5])
+})

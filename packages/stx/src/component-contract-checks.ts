@@ -90,6 +90,9 @@ export function componentContractChecks(source: string, masked: string, options:
   const declarations = [COMPONENT_CONTRACT_HELPERS,
     'type __StxAssignedValue<T> = T extends { readonly _isSignal: true } | { readonly _isDerived: true } ? T extends () => infer V ? V : T : T;',
     'type __StxProp<P, K> = K extends keyof P ? P[K] : unknown;',
+    // An attribute written as plain text arrives as a string, and the runtime reads "true" and "false" for a boolean prop
+    // (`$bool`), so a boolean prop also takes those two spellings. Any other text for it is still an error.
+    'type __StxStaticProp<P, K> = __StxProp<P, K> extends infer T ? boolean extends T ? T | "true" | "false" : T : never;',
     // Runtime event lists have unbounded argument arrays, not array payloads.
     'type __StxEvent<E, K> = K extends keyof E ? E[K] extends readonly unknown[] ? number extends E[K]["length"] ? E[K][0] : Exclude<E[K]["length"], 0 | 1> extends never ? E[K][0] : E[K] : E[K] : any;']
   const events = new Map<number, string>()
@@ -168,7 +171,8 @@ export function componentContractChecks(source: string, masked: string, options:
       if (!contract.props) continue
       const dynamic = name.startsWith(':') || name.startsWith('v-bind:') || !!model || attribute.braced
       const code = dynamic ? value : attribute.value !== true ? JSON.stringify(value) : 'true'
-      check(position(offset, code, name), ';void ((', `) satisfies __StxProp<${contract.props}, ${JSON.stringify(prop)}>);`)
+      const staticBoolean = !dynamic && attribute.value !== true && (value === 'true' || value === 'false')
+      check(position(offset, code, name), ';void ((', `) satisfies ${staticBoolean ? '__StxStaticProp' : '__StxProp'}<${contract.props}, ${JSON.stringify(prop)}>);`)
     }
     if (contract.props) {
       // Values are checked individually above so errors map to their attribute.
