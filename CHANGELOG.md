@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.766...v0.2.767)
+
+## ⚡ Performance Improvements
+
+- **runtime**: build a row's heavy conditional branch when it is first shown, not once per row ([4938462](https://github.com/stacksjs/stx/commit/4938462)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.767 ([f1cfb9d](https://github.com/stacksjs/stx/commit/f1cfb9d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.765...v0.2.766)
 
 ## ✨ Features
