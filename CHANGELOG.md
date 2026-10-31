@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.777...v0.2.778)
+
+## ✨ Features
+
+- **native**: type craft.web.setUserScripts' page world and document-start scripts ([49f4b0a](https://github.com/stacksjs/stx/commit/49f4b0a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: any hyphenated spelling of a known event is that event ([bf0a4aa](https://github.com/stacksjs/stx/commit/bf0a4aa)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.778 ([08425a3](https://github.com/stacksjs/stx/commit/08425a3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.776...v0.2.777)
 
 ## ✨ Features
