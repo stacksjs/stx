@@ -1,5 +1,31 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.765...v0.2.766)
+
+## ✨ Features
+
+- **native**: selection-change, rowHeight and labelFontSize for the macOS host ([8fe35a5](https://github.com/stacksjs/stx/commit/8fe35a5)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **router**: start prefetching visible links only after the page's first contentful paint ([6240cf6](https://github.com/stacksjs/stx/commit/6240cf6)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_ ([stacksjs/stacks#3082](https://github.com/stacksjs/stacks/issues/3082))
+- **signals**: evaluate {{ }} inside a reactive attribute's string in a client @foreach ([bc030f0](https://github.com/stacksjs/stx/commit/bc030f0)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_ ([#2140](https://github.com/stacksjs/stx/issues/2140))
+- **typecheck**: accept "true" and "false" text for a boolean component prop, as the runtime does ([3c14854](https://github.com/stacksjs/stx/commit/3c14854)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_ ([#2141](https://github.com/stacksjs/stx/issues/2141))
+
+## 📝 Documentation
+
+- **claude**: the runtime rules the list-performance and binding-security fixes depend on ([7f84b62](https://github.com/stacksjs/stx/commit/7f84b62)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- say which server-script values @if and @foreach can and cannot see ([b72cc56](https://github.com/stacksjs/stx/commit/b72cc56)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_ ([#2144](https://github.com/stacksjs/stx/issues/2144))
+- **appearance**: one storage key for the bootstrap and useColorMode ([00e959a](https://github.com/stacksjs/stx/commit/00e959a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.766 ([558cfc3](https://github.com/stacksjs/stx/commit/558cfc3)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.764...v0.2.765)
 
 ## 🐛 Bug Fixes

@@ -57,7 +57,7 @@
     },
     "packages/bun-plugin": {
       "name": "bun-plugin-stx",
-      "version": "0.2.765",
+      "version": "0.2.766",
       "dependencies": {
         "@stacksjs/stx": "workspace:*",
         "stx-router": "workspace:*"
@@ -1591,7 +1591,7 @@
     },
     "packages/components": {
       "name": "@stacksjs/components",
-      "version": "0.2.765",
+      "version": "0.2.766",
       "dependencies": {
         "@iconify-json/f7": "^1.2.2",
         "@stacksjs/stx": "workspace:*",
@@ -1626,7 +1626,7 @@
     },
     "packages/devtools": {
       "name": "@stacksjs/devtools",
-      "version": "0.2.765",
+      "version": "0.2.766",
       "dependencies": {
         "bun-plugin-stx": "workspace:*"
       }
@@ -1648,7 +1648,7 @@
     },
     "packages/router": {
       "name": "stx-router",
-      "version": "0.2.765"
+      "version": "0.2.766"
     },
     "packages/sanitizer": {
       "name": "@stacksjs/sanitizer",
@@ -1656,7 +1656,7 @@
     },
     "packages/stx": {
       "name": "@stacksjs/stx",
-      "version": "0.2.765",
+      "version": "0.2.766",
       "dependencies": {
         "@stacksjs/clapp": "^0.2.16",
         "@stacksjs/desktop": "workspace:*",
