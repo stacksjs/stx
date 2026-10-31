@@ -152,6 +152,12 @@ export interface NativeHostOptions {
   stylesheetTheme?: NativeStylesheetTheme
   /** The page's own class rules, read with the utilities when a class changes. */
   stylesheetRules?: NativeStylesheetRules
+  /**
+   * The host has a pointer (a Mac): `hover:` and `active:` classes travel with
+   * the node as `hoverStyle` and `pressStyle` for the host to apply as the
+   * pointer moves, and `transition`/`duration-*` become `transitionDuration`.
+   */
+  pointer?: boolean
   /** Called with each batch. One call per flush, never per operation. */
   send: (operations: NativeMutationOperation[]) => void
   /**
@@ -623,7 +629,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     for (const source of record.styleAncestors ?? []) inherited = parseNativeStyleLayers([source], inherited, report).variables
     const resolved = parseNativeStyleLayers([record.styleSource, record.boundStyle, record.forwardedStyle], inherited, report)
     record.variables = resolved.variables
-    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules, appearance: colorScheme })
+    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules, appearance: colorScheme, pointer: options.pointer === true })
     const classStyle = { ...classes.style }
     // Width layers apply smallest first, as min-width media queries cascade.
     const responsive = (classes.responsive ?? []).filter(layer => viewportWidth >= layer.min && (layer.max === undefined || viewportWidth <= layer.max))
@@ -653,7 +659,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       Object.assign(classStyle, focused)
     }
     const style = applyNativeLayoutDefaults({ ...record.layoutDefaults, ...classStyle, ...record.dividerStyle, ...resolved.styles[0], ...record.baseStyle, ...resolved.styles[1], ...resolved.styles[2] } as STXStyle)
-    return { ...style, ...(record.visible && !isHiddenInput(record) ? {} : { display: 'none' }) }
+    const pointer: Record<string, unknown> = {}
+    for (const [state, key] of [['hover', 'hoverStyle'], ['active', 'pressStyle']] as const) {
+      const layer = classes.pointer?.[state]
+      if (layer) pointer[key] = { ...layer.style, ...(colorScheme === 'dark' ? layer.dark : {}) }
+    }
+    return { ...style, ...pointer, ...(record.visible && !isHiddenInput(record) ? {} : { display: 'none' }) }
   }
 
   function refreshFocusChain(node: NativeNode | null | undefined): void {

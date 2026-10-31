@@ -133,8 +133,8 @@ export interface NativeScreenOptions {
   /** What the app reports it can do (`health`, `haptics`, ...), as Craft's host does. */
   capabilities?: string[]
   capabilityTimeoutMs?: number
-  /** The phone: an iPhone (the default) or Android, as Craft's host says (`craft.platform`). */
-  platform?: 'ios' | 'android' | 'web'
+  /** The device: an iPhone (the default), Android, or a Mac (Craft's AppKit host, which has a pointer), as Craft's host says (`craft.platform`). */
+  platform?: 'ios' | 'android' | 'web' | 'macos'
   /**
    * The host's answer to a capability request (`Health`, `getWorkouts`,
    * args): data, or a thrown `{ code, message }` for an API_ERROR. Null when

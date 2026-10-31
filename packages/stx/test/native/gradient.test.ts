@@ -30,3 +30,26 @@ describe('gradient classes', () => {
     expect(root.style).toMatchObject({ gradientDirection: 'to-br', gradientFrom: '#f59e0b', gradientTo: '#ea580c' })
   })
 })
+
+describe('pointer hosts', () => {
+  it('keep hover and active classes as layers, and a transition as its duration', () => {
+    const compiled = compileClassStyles('bg-white/0 hover:bg-white/50 active:opacity-80 transition duration-200 rounded-lg', undefined, { pointer: true })
+    expect(compiled.style).toMatchObject({ transitionDuration: 200, borderRadius: 8 })
+    expect(compiled.pointer?.hover?.style).toMatchObject({ backgroundColor: expect.any(String) })
+    expect(compiled.pointer?.active?.style).toMatchObject({ opacity: 0.8 })
+    expect(compiled.unknown).toEqual([])
+  })
+
+  it('give a transition alone 150ms, and keep a dark hover apart', () => {
+    const compiled = compileClassStyles('transition hover:bg-slate-100 dark:hover:bg-slate-800', undefined, { pointer: true })
+    expect(compiled.style.transitionDuration).toBe(150)
+    expect(compiled.pointer?.hover?.style).toMatchObject({ backgroundColor: '#f1f5f9' })
+  })
+
+  it('leave phones as they were: no hover layer, no duration', () => {
+    const compiled = compileClassStyles('hover:bg-white/50 transition duration-200', undefined, {})
+    expect(compiled.pointer).toBeUndefined()
+    expect(compiled.style).not.toHaveProperty('transitionDuration')
+    expect(compiled.unknown).toEqual([])
+  })
+})

@@ -450,6 +450,8 @@ describe('style vocabulary coverage', () => {
     // Craft's native host lays out `display: grid` with `gridColumns`; this
     // older renderer has no grid (added with grid-cols-N, 2026-10).
     'gridAutoRows', 'gridColumns', 'gridTemplateColumns', 'gridTemplateRows',
+    // Pointer hosts only (a Mac): a phone has no hover, and is never sent these.
+    'hoverStyle', 'pressStyle', 'transitionDuration',
   ]
 
   it('iOS drops exactly the properties on the known list, and no more', () => {

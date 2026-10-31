@@ -264,6 +264,12 @@ export interface STXStyle {
    * and its colours. Drawn under the background colour's place.
    */
   gradientDirection?: string
+  /** Pointer hosts: how long a style change animates, in ms (`transition`, `duration-300`). */
+  transitionDuration?: number
+  /** Pointer hosts: what changes while the pointer is over the node (`hover:` classes). */
+  hoverStyle?: STXStyle
+  /** Pointer hosts: what changes while the node is pressed (`active:` classes). */
+  pressStyle?: STXStyle
   gradientFrom?: string
   gradientVia?: string
   gradientTo?: string

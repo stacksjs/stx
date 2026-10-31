@@ -1069,6 +1069,12 @@ export interface ClassStyles {
    * the first draws (the host applies it: a phone has no sibling selector).
    */
   divide?: { style: STXStyle, dark?: STXStyle }
+  /**
+   * What `hover:` and `active:` classes change, for a host with a pointer
+   * (`pointer: true`, a Mac). The host applies them itself, so hovering costs
+   * no round trip; a phone never gets them.
+   */
+  pointer?: { hover?: { style: STXStyle, dark?: STXStyle }, active?: { style: STXStyle, dark?: STXStyle } }
 }
 
 /**
@@ -1141,12 +1147,25 @@ function expandShortcuts(token: string, seen: Set<string> = new Set()): string[]
  * With `appearance`, semantic token defaults are resolved in the ordinary
  * style, leaving `dark` for selectors with explicit appearance specificity.
  */
-export function compileClassStyles(classes: string, variables?: NativeStyleVariables, options: { focus?: boolean, focusWithin?: boolean, rules?: NativeStylesheetRules, appearance?: 'light' | 'dark' } = {}): ClassStyles {
+/**
+ * Tailwind's durations: `transition` alone is 150ms, `duration-300` is 300ms.
+ * A pointer host animates a style change over it (`transitionDuration`, in ms).
+ */
+function transitionMilliseconds(utility: string): number | undefined {
+  if (/^transition(?:-(?:all|colors|opacity|shadow|transform))?$/.test(utility)) return 150
+  if (utility === 'transition-none') return 0
+  const duration = /^duration-(\d+)$/.exec(utility)
+  return duration ? Number(duration[1]) : undefined
+}
+
+export function compileClassStyles(classes: string, variables?: NativeStyleVariables, options: { focus?: boolean, focusWithin?: boolean, rules?: NativeStylesheetRules, appearance?: 'light' | 'dark', pointer?: boolean } = {}): ClassStyles {
   // Group the authored classes by the layer they belong to. Each group then
   // compiles as a plain class list (dark and focus kept inside it), and an
   // unknown class is reported by the name the author wrote.
-  const groups = new Map<string, { min?: number, max?: number, disabled?: boolean, state?: string, classes: string[], authored: Map<string, string> }>()
-  const group = (key: string, init: { min?: number, max?: number, disabled?: boolean, state?: string }) => {
+  const groups = new Map<string, { min?: number, max?: number, disabled?: boolean, state?: string, pointerState?: 'hover' | 'active', classes: string[], authored: Map<string, string> }>()
+  let transition: number | undefined
+  let duration: number | undefined
+  const group = (key: string, init: { min?: number, max?: number, disabled?: boolean, state?: string, pointerState?: 'hover' | 'active' }) => {
     if (!groups.has(key)) groups.set(key, { ...init, classes: [], authored: new Map() })
     return groups.get(key)!
   }
@@ -1173,6 +1192,22 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
       // A focus ring is the browser's keyboard cue; native controls draw the
       // platform's own focus, so the ring has nothing to do there.
       if (parts.some(variant => /^(?:group-|peer-)?focus(?:-visible|-within)?$/.test(variant)) && /^(?:ring|outline)(?:-|$)/.test(utility)) continue
+      // A pointer host keeps `hover:`/`active:` (alone) as layers of their own, and animates over `transition`/`duration-*`.
+      if (options.pointer && parts.length === 0 && transitionMilliseconds(utility) !== undefined) {
+        if (utility.startsWith('duration-')) duration = transitionMilliseconds(utility)
+        else transition = transitionMilliseconds(utility)
+        continue
+      }
+      // `dark:` may ride along (`dark:hover:bg-black/40`); the layer keeps it, as the disabled and state layers do.
+      const pointerVariants = parts.filter(variant => variant !== 'dark')
+      const pointerState = options.pointer && pointerVariants.length === 1 && parts.length - pointerVariants.length <= 1 && (pointerVariants[0] === 'hover' || pointerVariants[0] === 'active') ? pointerVariants[0] as 'hover' | 'active' : undefined
+      if (pointerState && !WEB_ONLY_UTILITY.test(utility)) {
+        const layer = group(`pointer:${pointerState}`, { pointerState })
+        const kept = parts.includes('dark') ? `dark:${utility}` : utility
+        layer.classes.push(kept)
+        if (!layer.authored.has(kept)) layer.authored.set(kept, authored === token ? token : `${authored} (${token})`)
+        continue
+      }
       if (WEB_ONLY_UTILITY.test(utility) || (!focusing && parts.some(variant => POINTER_ONLY_VARIANTS.has(variant)))) continue
       let min: number | undefined
       let max: number | undefined
@@ -1234,7 +1269,8 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
     const compiled = compileLayer(layer.classes.join(' '), variables, { appearance: options.appearance })
     result.unknown = [...new Set([...result.unknown, ...authoredNames(layer, compiled.unknown)])]
     const entry = { style: compiled.style, ...(compiled.dark ? { dark: compiled.dark } : {}) }
-    if (layer.disabled) result.disabled = entry
+    if (layer.pointerState) (result.pointer ??= {})[layer.pointerState] = entry
+    else if (layer.disabled) result.disabled = entry
     else if (layer.state) (result.states ??= {})[layer.state] = entry
     else responsive.push({ min: layer.min ?? 0, ...(layer.max === undefined ? {} : { max: layer.max }), ...entry })
   }
@@ -1248,6 +1284,8 @@ export function compileClassStyles(classes: string, variables?: NativeStyleVaria
     else responsive.push(layer)
   }
   if (responsive.length) result.responsive = responsive.sort((a, b) => a.min - b.min || (a.max ?? Infinity) - (b.max ?? Infinity))
+  // `duration-*` alone sets the time a `transition` would use; `transition` alone uses 150ms.
+  if (transition !== undefined && transition > 0) result.style = { ...result.style, transitionDuration: duration ?? transition } as STXStyle
   return result
 }
 
