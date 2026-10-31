@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@edda9c23439a37a35e0f828315e2380889cc75e9 # v0.11.92
+        uses: pantry-pm/pantry/packages/action@818fe6ccacd5f5812e71e3b8e3bea65de812f6a9 # v0.11.153
         with:
           version: '0.11.92'
           install: 'false'

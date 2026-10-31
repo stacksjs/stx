@@ -63,6 +63,6 @@
     "typecheck": "bun tsc --noEmit"
   },
   "dependencies": {
-    "craft-native": ">=0.0.393"
+    "craft-native": ">=0.0.411"
   }
 }
