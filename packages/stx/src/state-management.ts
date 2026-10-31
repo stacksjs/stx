@@ -47,6 +47,28 @@ import { recordStoreMutation, registerStore as registerDevToolsStore } from './d
 // Types
 // =============================================================================
 
+/**
+ * The stores of an app, by id. Empty here: an app fills it in, and
+ * `useStore('tasks')` is then typed as that store instead of `unknown`.
+ *
+ * ```ts
+ * // resources/stores/tasks.ts
+ * export const tasks = defineStore('tasks', () => ({ open: state<Todo[]>([]) }))
+ *
+ * // resources/stores/registry.d.ts
+ * declare module '@stacksjs/stx' {
+ *   interface StoreRegistry { tasks: typeof import('./tasks').tasks }
+ * }
+ * ```
+ *
+ * Auto-imported `useStore` in `.stx` files reads the global `StxStoreRegistry`
+ * (declared in `stx.d.ts`) the same way: `declare global { interface
+ * StxStoreRegistry { tasks: ... } }`. An id the registry does not name still
+ * works, and returns `useStore<T>`'s `T`.
+ */
+// eslint-disable-next-line ts/no-empty-object-type
+export interface StoreRegistry {}
+
 /** Subscription callback */
 // eslint-disable-next-line pickier/no-unused-vars
 export type Subscriber<T> = (value: T, previousValue: T | undefined) => void
@@ -763,6 +785,8 @@ export function throttleMiddleware<T>(ms: number): StoreMiddleware<T> {
  * Use a store in a template context.
  * Returns a reactive reference that auto-updates.
  */
+export function useStore<K extends keyof StoreRegistry>(name: K): StoreRegistry[K]
+export function useStore<T>(nameOrStore: string | Store<T>): T
 export function useStore<T>(nameOrStore: string | Store<T>): T {
   const store = typeof nameOrStore === 'string'
     ? getStore<T>(nameOrStore)

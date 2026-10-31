@@ -274,7 +274,7 @@ export {
   registerStoresClient,
   useStore,
 } from './state-management'
-export type { Store, StoreOptions, PersistOptions, DefineStoreOptions } from './state-management'
+export type { Store, StoreOptions, StoreRegistry, PersistOptions, DefineStoreOptions } from './state-management'
 // visual-testing moved to stx/visual-testing
 export * from './image-optimization'
 export * from './media'

@@ -937,6 +937,10 @@ declare function defineStore<S extends Record<string, any>, G extends Record<str
     persist?: boolean | StxStorePersistOptions
   },
 ): () => S & G & A
+// An app declares its stores here, by id, to type useStore('name'); see the
+// StoreRegistry in state-management.ts for the module-import spelling.
+interface StxStoreRegistry {}
+declare function useStore<K extends keyof StxStoreRegistry>(_id: K): StxStoreRegistry[K]
 declare function useStore<T = any>(_id: string): T
 declare function registerStoresClient(_stores: Record<string, unknown>): void
 // createStore / createSelector are exported by state-management.ts for server
