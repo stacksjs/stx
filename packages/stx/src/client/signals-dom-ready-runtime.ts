@@ -127,7 +127,12 @@ export const SIGNALS_DOM_READY_RUNTIME = `  // =================================
       el.removeAttribute('x-cloak');
       el.querySelectorAll('[x-cloak]').forEach(function(c) { c.removeAttribute('x-cloak'); });
 
-      runMountCallbacks(mountCallbacks, destroyCallbacks);
+      // Refs inside a component scope (content projected into a layout shell,
+      // for one) are attached when that scope hydrates, further down. A page
+      // that has such scopes mounts after them, in the global flush below, so
+      // an onMount reading a ref finds the element rather than null
+      // (stacksjs/stx#2142). A page without any mounts here, as it always did.
+      if (!el.querySelector('[data-stx-scope]')) runMountCallbacks(mountCallbacks, destroyCallbacks);
     });
 
     // Multi-root fragment fix: a no-body> setup page tags only the FIRST
