@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.767...v0.2.768)
+
+## 🐛 Bug Fixes
+
+- **expressions**: keep braces written inside a string literal in script code ([ea77641](https://github.com/stacksjs/stx/commit/ea77641)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.768 ([f74f4a0](https://github.com/stacksjs/stx/commit/f74f4a0)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.766...v0.2.767)
 
 ## ⚡ Performance Improvements
