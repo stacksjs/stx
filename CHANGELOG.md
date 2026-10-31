@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.776...v0.2.777)
+
+## ✨ Features
+
+- **native**: craft.web blockers, user scripts, permissions and downloads; links from other apps ([1153abf](https://github.com/stacksjs/stx/commit/1153abf)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.777 ([5553be2](https://github.com/stacksjs/stx/commit/5553be2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.775...v0.2.776)
 
 ## ✨ Features
