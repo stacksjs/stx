@@ -1,5 +1,36 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.763...v0.2.764)
+
+## ✨ Features
+
+- **types**: a StoreRegistry so useStore('id') is typed ([8b14e4b](https://github.com/stacksjs/stx/commit/8b14e4b)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **composables**: add useVirtualList to draw only the visible rows of a long list ([00a6921](https://github.com/stacksjs/stx/commit/00a6921)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: find the primitives from a bundled compiler's directory too ([383354d](https://github.com/stacksjs/stx/commit/383354d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **components**: give the scope wrapper no box of its own by default ([4fae0e3](https://github.com/stacksjs/stx/commit/4fae0e3)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **expressions**: keep braces written inside a binding's string literal ([76ddd52](https://github.com/stacksjs/stx/commit/76ddd52)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **runtime**: write true/false on data-* bindings as the strings the platform can select ([62c48be](https://github.com/stacksjs/stx/commit/62c48be)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **runtime**: layered scope views instead of a copy of the page scope per binding ([66c9516](https://github.com/stacksjs/stx/commit/66c9516)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **components**: pin component names and imports apart from the page's and siblings' ([40a2e60](https://github.com/stacksjs/stx/commit/40a2e60)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stores**: pin aliased store imports and x-model on a store property ([3a2d678](https://github.com/stacksjs/stx/commit/3a2d678)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.764 ([def98a6](https://github.com/stacksjs/stx/commit/def98a6)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.762...v0.2.763)
 
 ## ✨ Features
