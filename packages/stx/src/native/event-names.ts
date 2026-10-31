@@ -27,6 +27,9 @@ export const NATIVE_EVENT_NAMES: Readonly<Record<string, string>> = {
   // An inline completion shown as ghost text, taken with Tab (`ghostText` on a multi-line TextInput).
   'accept-completion': 'onAcceptCompletion',
   acceptcompletion: 'onAcceptCompletion',
+  // The caret or selection of a multi-line TextInput moved ({ start, end }, UTF-16 offsets).
+  'selection-change': 'onSelectionChange',
+  selectionchange: 'onSelectionChange',
   'end-editing': 'onEndEditing',
   endediting: 'onEndEditing',
   scroll: 'onScroll',

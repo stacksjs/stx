@@ -23,3 +23,11 @@ function accept() { body.set(body() + ghost()); ghost.set('') }
   }
   finally { phone.unmount() }
 })
+
+it('knows the other props and events the macOS host added for text editing and the sidebar', async () => {
+  const { nativePropName } = await import('../../src/native/prop-names')
+  const { NATIVE_EVENT_NAMES } = await import('../../src/native/event-names')
+  expect(nativePropName('rowheight')).toBe('rowHeight')
+  expect(nativePropName('label-font-size')).toBe('labelFontSize')
+  expect(NATIVE_EVENT_NAMES['selection-change']).toBe('onSelectionChange')
+})
