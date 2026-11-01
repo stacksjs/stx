@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.779...v0.2.780)
+
+## ✨ Features
+
+- **native**: craft.desktop.onWindowClosed ([d39f33d](https://github.com/stacksjs/stx/commit/d39f33d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: craft.web.setCookies puts imported cookies into a profile's store ([cedcd1c](https://github.com/stacksjs/stx/commit/cedcd1c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.780 ([dbf72a0](https://github.com/stacksjs/stx/commit/dbf72a0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.778...v0.2.779)
 
 ## ✨ Features
