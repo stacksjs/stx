@@ -438,6 +438,9 @@ export function installCraftBridge(
       onMessage: (callback: (message: unknown, from: string) => void) => protocol.on<AnyRecord>('CRAFT_EVENT', ({ payload }) => {
         if (payload?.event === 'craftDesktopMessage') callback(payload.detail?.message, String(payload.detail?.from ?? ''))
       }),
+      onWindowClosed: (callback: (name: string) => void) => protocol.on<AnyRecord>('CRAFT_EVENT', ({ payload }) => {
+        if (payload?.event === 'craftDesktopWindowClosed') callback(String(payload.detail?.name ?? ''))
+      }),
       isDefaultBrowser: () => request('Desktop', 'isDefaultBrowser', []),
       setDefaultBrowser: () => request('Desktop', 'setDefaultBrowser', []),
     }

@@ -485,6 +485,8 @@ export interface NativeDesktop {
   post: (message: unknown) => Promise<boolean>
   /** Messages other windows of the app posted, with the name of the window that posted each. Returns the unsubscribe. */
   onMessage: (callback: (message: unknown, from: string) => void) => () => void
+  /** Another window of the app closed, by name; its tabs closed with it. Returns the unsubscribe. */
+  onWindowClosed: (callback: (name: string) => void) => () => void
   isDefaultBrowser: () => Promise<boolean>
   /** Asks macOS to make this app the browser; the person confirms. Resolves whether it now is. */
   setDefaultBrowser: () => Promise<boolean>
