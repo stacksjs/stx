@@ -173,6 +173,8 @@ describe('web tabs', () => {
     expect(last()).toMatchObject({ method: 'answerPermission', args: ['r1', 'grant'] })
     web.clearData({ profile: 'work', host: 'x.com' }).catch(() => {}) // left unanswered on purpose
     expect(last()).toMatchObject({ method: 'clearData', args: [{ profile: 'work', host: 'x.com' }] })
+    web.setCookies({ profile: 'work', cookies: [{ name: 'sid', value: '1', domain: '.x.com', secure: true }] }).catch(() => {}) // left unanswered on purpose
+    expect(last()).toMatchObject({ method: 'setCookies', args: [{ profile: 'work', cookies: [{ name: 'sid', value: '1', domain: '.x.com', secure: true }] }] })
     web.revealDownload('/Users/me/Downloads/a.zip').catch(() => {}) // left unanswered on purpose
     expect(last()).toMatchObject({ method: 'revealDownload', args: ['/Users/me/Downloads/a.zip'] })
     web.tab('t1').print().catch(() => {}) // left unanswered on purpose

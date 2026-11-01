@@ -465,6 +465,7 @@ export function installCraftBridge(
       setUserScripts: (scripts: unknown[]) => call('setUserScripts', [scripts]),
       answerPermission: (request: string, decision: string) => call('answerPermission', [request, decision]),
       clearData: (options: AnyRecord) => call('clearData', [options]),
+      setCookies: (options: AnyRecord) => call('setCookies', [options]),
       cancelDownload: (id: string) => call('cancelDownload', [id]),
       revealDownload: (path: string) => call('revealDownload', [path]),
       openDownload: (path: string) => call('openDownload', [path]),

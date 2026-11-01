@@ -549,6 +549,20 @@ export interface NativeWebTab {
  * Tabs the host owns, shown by `<WebView tab="id">`. A tab outlives the view
  * showing it, so a page survives re-renders and moves between panes.
  */
+/** A cookie for `craft.web.setCookies`. */
+export interface NativeWebCookie {
+  name: string
+  value: string
+  /** A leading dot covers subdomains (`.example.com`). */
+  domain: string
+  path?: string
+  /** Milliseconds since 1970; absent for a cookie that lasts the session. */
+  expires?: number
+  secure?: boolean
+  httpOnly?: boolean
+  sameSite?: 'lax' | 'strict' | 'none'
+}
+
 export interface NativeWeb {
   /** `profile` keeps its own cookies and storage; `private` keeps nothing on disk. */
   create: (options?: { id?: string, url?: string, profile?: string, private?: boolean, inspectable?: boolean }) => Promise<NativeWebTabState>
@@ -588,6 +602,12 @@ export interface NativeWeb {
   answerPermission: (request: string, decision: 'grant' | 'deny' | 'prompt') => Promise<boolean>
   /** A profile's cookies, storage and caches: one site's, or all of them. */
   clearData: (options: { profile: string, private?: boolean, host?: string, types?: Array<'cookies' | 'storage' | 'cache'> }) => Promise<{ cleared: boolean, records?: number }>
+  /**
+   * Puts cookies into a profile's store, as an import from another browser
+   * brings them. Resolves how many were set, and how many could not form a
+   * cookie (no name or domain).
+   */
+  setCookies: (options: { profile: string, private?: boolean, cookies: NativeWebCookie[] }) => Promise<{ set: number, skipped: number }>
   cancelDownload: (id: string) => Promise<boolean>
   /** Shows a downloaded file in Finder. Only files in ~/Downloads. */
   revealDownload: (path: string) => Promise<boolean>
