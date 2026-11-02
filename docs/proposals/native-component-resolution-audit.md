@@ -1,6 +1,6 @@
 # Shared/native component resolution audit
 
-Updated against source after v0.2.784 plus the maintained shared-controls and Image acceptance suites
+Updated against source after v0.2.784 plus the maintained shared-controls, Image and Video acceptance suites
 for [#2090](https://github.com/stacksjs/stx/issues/2090). This is an acceptance audit
 for [#2091](https://github.com/stacksjs/stx/issues/2091), not a claim that every
 component is portable or that device rendering has been certified.
@@ -495,6 +495,26 @@ skipped per appearance; it does not certify native pixel output.
 See [reproduction, raster comparison and exact acceptance boundary](shared-controls-device-validation.md#shared-image-acceptance-2026-11-02)
 and [hashes/results](shared-image-ios-2026-11-02.json). Craft source was not
 modified. Keep #2091 open.
+
+### Video simulator follow-up (unreleased after v0.2.784)
+
+The new maintained `--suite videos` gate passes **5 tests / 0 failures / 0 skips**
+in both light and dark appearances against clean Craft `2140bc72e6033f0706312c6577819a5d97957d84`.
+Actual AVPlayer playback, display readiness, live flags/defaults, loop/end
+delivery, legacy sources, missing-file recovery, fresh screens and resource
+teardown are covered. Flag changes retain player/item identity; source replacement
+retains the view/controller while replacing the media player as intended.
+
+The gate exposed a stale initial source/flag replay on remount. Its native
+regression records five load starts instead of four before the STX batching
+fix; all four normal/minified iOS/Android protocol variants also fail before it.
+Initial media creation now settles the current props before sending them,
+without changing updates to existing players or Craft source.
+
+See [reproduction and limits](shared-controls-device-validation.md#shared-video-acceptance-2026-11-02)
+and [exact receipt](shared-video-ios-2026-11-02.json). #2091 remains open for its
+broader acceptance; simulator file playback is not physical-device/Android,
+provider/DRM, accessibility or pixel-parity certification.
 
 ## Platform controls (after v0.2.657)
 

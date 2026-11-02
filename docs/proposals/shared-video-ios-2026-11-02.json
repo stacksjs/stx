@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-02",
+  "issue": "https://github.com/stacksjs/stx/issues/2091",
+  "releaseStatus": "Unreleased source after STX 0.2.784; no release or tag changed",
+  "stxBase": "130981533de320f3e2c4408ff403f197bca3877d",
+  "stxImplementation": "fdaada689a8752ef223ea5d10b6d22ad295340d2",
+  "craft": {
+    "commit": "2140bc72e6033f0706312c6577819a5d97957d84",
+    "sourceVersion": "0.0.424",
+    "sourceEdited": false,
+    "cleanSnapshot": true
+  },
+  "environment": {
+    "xcode": "26.6",
+    "xcodeBuild": "17F113",
+    "model": "iPhone 17 Pro",
+    "os": "iOS 26.5",
+    "osBuildNumber": "23F77",
+    "platform": "iOS Simulator",
+    "ownedSimulator": "198A38F7-CF43-4FE0-A601-D67BF545140D"
+  },
+  "sourceSha256": {
+    "packages/stx/src/native/runtime/native-host.ts": "c23fab72e13569cb522d50c544bdcd3689f3dfd013464fbc03df7511e305bc64",
+    "packages/stx/src/native/runtime/initial-media-mutations.ts": "ef3cf947226383697406fcd20881856e01c65870ca1a5a21a404ecf508cca1c1",
+    "packages/stx/test/native/initial-image-mutations.test.ts": "33a14ff04a98e62809af2784562b9abe4a159339c18f23061f97f1ed964ea958",
+    "packages/stx/test/native/shared-video-device-fixture.test.ts": "950583323b84574d5befb69319e63e5deaf1e946d5ea617281028130b1205376",
+    "packages/stx/test/native/fixtures/shared-video-device.stx": "dfb6ad7d8acc941238fceafcc87cd78bc31f31345a4b8150bb457edc45ef08cc",
+    "packages/stx/test/native/fixtures/SharedVideoNativeTests.swift": "87e2257801b92748ed5b3c61c108990d1028f591d7749799ce50fd3dc65e5d15",
+    "packages/stx/test/native/fixtures/SharedVideoUITests.swift": "f9d1900f850e15701209d0e04ecb247f56acf390cbc06cda83eeb65584e974a8",
+    "scripts/native-portability-ios.ts": "0ff080f45e4ecc9df02156dba46329079c7f91a1295df6a70faf744f67c8acae"
+  },
+  "bundle": {
+    "sha256": "f846032eda99ff596f90d7ef370975315aa142b741f97cee39de252be00997f1",
+    "bytes": 501214
+  },
+  "generatedHostSha256": "008b63fcdcc902938353e9484bf8717b48f67001f5e8922c183fc0a8332f14ae",
+  "native": {
+    "light": {
+      "result": "Passed",
+      "totalTestCount": 5,
+      "passedTests": 5,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "summarySha256": "639f3f0c301e7409f891353bc5845acc65b7a18d92fd21b23598342c70686e28",
+      "localResultBundle": "/var/folders/sq/p6y46h2x6ddgq6w1yyxhd_9h0000gn/T/stx-portability-ios-5GGVfq/VideoAcceptanceLight.xcresult"
+    },
+    "dark": {
+      "result": "Passed",
+      "totalTestCount": 5,
+      "passedTests": 5,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "summarySha256": "0edbdb7ba9b54a8475f38f88228cccac1136dcf750a3e22b79e40f629df8569b",
+      "localResultBundle": "/var/folders/sq/p6y46h2x6ddgq6w1yyxhd_9h0000gn/T/stx-portability-ios-5GGVfq/VideoAcceptanceDark.xcresult"
+    }
+  },
+  "regressions": {
+    "nativeAndComponents": {
+      "passed": 3092,
+      "failed": 0,
+      "assertions": 20901,
+      "files": 299,
+      "seconds": 327.51
+    },
+    "focused": {
+      "passed": 10,
+      "failed": 0,
+      "assertions": 104,
+      "files": 2
+    }
+  },
+  "beforeFix": {
+    "protocolCases": {
+      "passed": 0,
+      "failed": 4,
+      "reason": "Initial Video createNode has old source and playback flags before prop replay"
+    },
+    "nativeRemount": {
+      "passed": 0,
+      "failed": 1,
+      "expectedLoadStarts": 4,
+      "actualLoadStarts": 5,
+      "failure": "XCTAssertEqual failed: (\"Optional(5)\") is not equal to (\"Optional(4)\")",
+      "summarySha256": "28c508a7f47039ad67e41346ef6729667665c391ce9a2fee3e68325a7ec2bce3",
+      "localResultBundle": "/var/folders/sq/p6y46h2x6ddgq6w1yyxhd_9h0000gn/T/stx-portability-ios-5GGVfq/VideoRemountBaseline.xcresult",
+      "baselineBundleSha256": "562503a85a9bb18b85bfbe242f698a72bd577aee045e7353cf75ee84ccc2aea3"
+    },
+    "firstExploratoryRun": {
+      "passed": 3,
+      "failed": 2,
+      "fixtureCorrections": [
+        "Show null diagnostic values explicitly using String(signal), since interpolation renders null as empty text",
+        "Wait for the asynchronous pause event before requesting resume; the original final pause-event assertion remains"
+      ]
+    },
+    "note": "The native remount regression uses the final Swift assertions against the original bundle and unchanged generated host. The final fixture also corrects its null-valued UI diagnostic label."
+  },
+  "mediaFixture": {
+    "generator": "AVAssetWriter in maintained SharedVideoNativeTests.swift",
+    "codec": "H.264",
+    "width": 64,
+    "height": 32,
+    "framesPerSecond": 10,
+    "audio": false,
+    "content": "Locally generated red/blue halves, no network or third-party media"
+  },
+  "observations": [
+    "Live flags retain the physical video view, AVPlayerViewController, AVPlayer and current item. Autoplay advances real time; decoded frames reach AVPlayerLayer; pause/resume events are delivered.",
+    "Source replacement retains the physical view/controller, stops the previous AVPlayer and intentionally creates a new source player. Clearing releases it. Conditional remount creates fresh host resources with the current source/flags, without an extra old-source load.",
+    "Loop enabled/disabled is checked at actual media end, with real progress/end events and unchanged item identity.",
+    "Legacy object URI sources, null defaults, missing-file errors, recovery, fresh screens and screen disposal are checked.",
+    "The UI test drives real shared Buttons, flag labels and conditional native views with no WebView. Playback is verified by the four native unit tests, not the empty-source UI scenario.",
+    "The compiler retains two exact unsupported browser custom-element selector diagnostics; additional diagnostics fail the protocol guard."
+  ],
+  "limits": [
+    "iOS Simulator evidence is not physical-device or Android playback certification. Android normal/minified coverage exercises the protocol only.",
+    "No provider embeds, HLS/DASH, DRM, PiP, background interruption, audio mixing, VoiceOver/TalkBack or pixel-parity certification.",
+    "The broader #2091 remains open. Craft source and the user-owned Map test edit are untouched."
+  ]
+}

@@ -268,3 +268,54 @@ Craft #441; ordinary Bun CI does not execute simulator XCTest.
 
 #2091 stays open for that host defect and remaining Android/device/accessibility
 acceptance. Craft source was untouched.
+
+## Shared Video acceptance: 2026-11-02
+
+```sh
+bun scripts/native-portability-ios.ts --craft-root /path/to/clean/craft \
+  --simulator "$STX_TEST_SIMULATOR" --appearance light --suite videos
+bun scripts/native-portability-ios.ts --craft-root /path/to/clean/craft \
+  --simulator "$STX_TEST_SIMULATOR" --appearance dark --suite videos
+```
+
+The maintained gate requires **five passes, no failures or skips**: four native
+tests and one UI test. All five pass in light and dark appearances on an iPhone
+17 Pro / iOS 26.5 simulator against clean Craft
+`2140bc72e6033f0706312c6577819a5d97957d84` (source version 0.0.424).
+The dark run uses the same build with system appearance changed.
+
+The native tests generate local silent 64x32 H.264 clips using AVAssetWriter.
+They verify actual playback time and AVPlayerLayer display readiness, live
+controls/autoplay/muted flags, pause/resume events, loop changes at real media
+end, null defaults, source replacement/clearing, legacy object-URI callers,
+missing-file failures, recovery, fresh screens and teardown. Flag changes
+preserve the physical view, controller, AVPlayer and current item. Source
+replacement retains the view/controller and intentionally replaces the player;
+conditional removal disposes its resources, with fresh ones on remount.
+The UI test drives real shared Buttons and conditional views without a WebView;
+it uses an empty source, so playback evidence comes from the native unit tests.
+
+This found a real STX remount defect: the first Video creation carried its old
+source/autoplay/loop values before current parent props replayed. The protocol
+guard failed in all four iOS/Android normal/minified cases. The native regression
+also failed against the original bundle: **five load starts instead of four**.
+Initial media batching now covers Video as well as Image, allowing prop replay
+to settle and combining initial source/style/handler updates into creation.
+Already-mounted updates keep their ordinary microtask schedule. Craft is unchanged.
+
+An initial exploratory run had two fixture mistakes: a null-valued diagnostic
+label expected literal `null` instead of empty interpolation, and a pause-event
+assertion ran before its asynchronous callback. Explicit String conversion and
+waiting for that event correct the fixture; the final pause assertion remains.
+The strengthened remount test then failed on the old bundle and passed with
+the fix. No timeout, native assertion or release gate was relaxed.
+
+The final native/components cohort passes **3,092 tests / zero failures**;
+focused Video and initial-media contracts pass **10 tests / 104 assertions**.
+Typecheck, lint and formatting pass. The two existing browser custom-element
+selector diagnostics remain visible and are pinned exactly by the protocol test.
+[Hashes, before/after counts and retained result paths](shared-video-ios-2026-11-02.json).
+
+This is unreleased source after **0.2.784**. It does not certify physical devices,
+Android playback, provider streams/embeds, DRM, PiP/background interruption,
+audio mixing, accessibility or pixel parity. Keep the broader #2091 open.
