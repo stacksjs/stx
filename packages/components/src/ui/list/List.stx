@@ -46,7 +46,7 @@ const webPadding = derived(() => {
   const vertical = style.paddingVertical ?? all
   const across = style.paddingHorizontal ?? all
   const px = value => `${Math.max(0, Number(value) || 0)}px`
-  return { maxHeight: horizontal() ? 'none' : '100dvh', maxWidth: '100%', boxSizing: 'border-box', ...(horizontal() ? { display: 'flex', flexDirection: 'row', overflowX: 'auto', overflowY: 'hidden' } : {}), paddingTop: px(style.paddingTop ?? vertical), paddingBottom: px(style.paddingBottom ?? vertical), paddingLeft: px(style.paddingLeft ?? across), paddingRight: px(style.paddingRight ?? across) }
+  return { maxWidth: '100%', boxSizing: 'border-box', ...(horizontal() ? { display: 'flex', flexDirection: 'row', overflowX: 'auto', overflowY: 'hidden' } : {}), paddingTop: px(style.paddingTop ?? vertical), paddingBottom: px(style.paddingBottom ?? vertical), paddingLeft: px(style.paddingLeft ?? across), paddingRight: px(style.paddingRight ?? across) }
 })
 onMount(() => {
   if (nativeHost || typeof IntersectionObserver !== 'function') return
@@ -76,9 +76,19 @@ onMount(() => {
   return () => { stop(); changes.disconnect(); observer.disconnect() }
 })
 </script>
-<div data-native="FlatList" ref="listRef" role="list" class="{{ viewportClasses }} {{ className }}" :horizontal="horizontal()" :contentContainerStyle="contentStyle()" :style="nativeHost ? {} : webPadding()" data-stx-list data-stx-layout-root @end-reached="reachedEnd()" @refresh="emit('refresh')">
+<div data-native="FlatList" ref="listRef" role="list" class="{{ viewportClasses }} {{ className }}" :horizontal="horizontal()" :contentContainerStyle="contentStyle()" :style="nativeHost ? {} : webPadding()" :data-stx-list-direction="horizontal ? 'horizontal' : 'vertical'" data-stx-list data-stx-layout-root @end-reached="reachedEnd()" @refresh="emit('refresh')">
   <slot />
   @if(!nativeHost)
   <div ref="endRef" aria-hidden="true" style="height:1px;width:1px;flex-shrink:0"></div>
   @endif
 </div>
+
+@if(!nativeHost)
+<style>
+/* A page list needs a fallback bound, but authored viewport classes win.
+   Keeping the fallback at zero specificity also works when it follows the
+   application's stylesheet, including during SPA navigation. */
+:where([data-stx-list]) { max-height: 100dvh; }
+:where([data-stx-list][data-stx-list-direction="horizontal"]) { max-height: none; }
+</style>
+@endif

@@ -206,3 +206,23 @@ window.probe = { rows, pages, refreshes, loading }
     expect(html).toContain('overflow-y-auto')
   })
 })
+
+
+it.each(['ios', 'android'] as const)('keeps authored List bounds and direct keyed roles on %s', async (platform) => {
+  const source = `@import('List', '${ui}/list/List.stx')
+<List className="max-h-[240px]" :contentContainerStyle="{ paddingTop:7, paddingBottom:23 }" testID="bounded">
+  <div key="heading" listRole="header"><p>Heading</p></div>
+  <div key="row"><p>Saved row</p></div>
+  <div key="retry" listRole="footer"><button>Retry</button></div>
+</List>`
+  const { code } = await compileNativeScreen(source)
+  const phone = mountNativeScreen(code, 'Screen', { platform })
+  await phone.settle()
+  const list = phone.byTestID('bounded')!
+  expect(list.type).toBe('FlatList')
+  expect(list.style.maxHeight).toBe(240)
+  expect(list.props.contentContainerStyle).toEqual({ paddingTop:7, paddingBottom:23 })
+  expect(list.children.filter(child => typeof child !== 'string')).toHaveLength(3)
+  expect(phone.texts()).toEqual(expect.arrayContaining(['Heading', 'Saved row', 'Retry']))
+  expect(JSON.stringify(list.style)).not.toContain('dvh')
+})

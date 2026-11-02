@@ -112,3 +112,90 @@ it('scrolls horizontal cards at their authored widths without widening the page'
   }
   finally { view.close(); server.stop(true) }
 }, 30_000)
+
+it('honors authored max-height and content padding without eagerly requesting every page', async () => {
+  const root = join(import.meta.dir, '..')
+  const html = await processDirectives(`@import('List', '${root}/src/ui/list/List.stx')
+<!doctype html><html><head><style>
+body { margin:0; } .overflow-y-auto { overflow-y:auto; } .bounded { max-height:180px; }
+</style></head><body>
+<script client>
+const rows = state(Array.from({ length:80 }, (_, index) => index + 1))
+const loading = state(false)
+const more = state(true)
+let requests = 0
+async function next() {
+  if (loading() || !more()) return
+  loading.set(true)
+  requests++
+  rows.set([...rows(), ...Array.from({ length:20 }, (_, index) => rows().length + index + 1)])
+  if (requests === 2) more.set(false)
+  loading.set(false)
+}
+window.probe = { requests: () => requests, rows, loading }
+</script>
+<List className="bounded" :contentContainerStyle="{ paddingTop:7, paddingBottom:23 }" :loading="loading" :hasMore="more" @end-reached="next()">
+  <div :for="row in rows" :key="row" style="height:40px" :data-row="row">Row</div>
+</List></body></html>`, {}, join(root, 'list-authored-bound.stx'), { ...defaultConfig, root, cache:false, debug:false }, new Set())
+  const server = Bun.serve({ port:0, hostname:'127.0.0.1', fetch: () => new Response(html, { headers:{ 'Content-Type':'text/html' } }) })
+  const view = new WebView({ headless:true })
+  async function until(expression: string) {
+    for (let attempt = 0; attempt < 100; attempt++) {
+      if (await view.evaluate(expression)) return
+      await Bun.sleep(25)
+    }
+    expect(await view.evaluate(expression)).toBe(true)
+  }
+  try {
+    await view.navigate(server.url.href)
+    await until('!!window.probe && document.querySelectorAll("[data-row]").length === 80')
+    const metrics = await view.evaluate(`(() => {
+      const list = document.querySelector('[data-stx-list]');
+      const style = getComputedStyle(list);
+      return { height:list.clientHeight, maximum:style.maxHeight, top:style.paddingTop, bottom:style.paddingBottom, overflow:style.overflowY };
+    })()`)
+    expect(metrics).toEqual({ height:180, maximum:'180px', top:'7px', bottom:'23px', overflow:'auto' })
+    await Bun.sleep(100)
+    expect(await view.evaluate('window.probe.requests()')).toBe(0)
+    await view.evaluate('(() => { const list = document.querySelector("[data-stx-list]"); list.scrollTop = list.scrollHeight })()')
+    await until('window.probe.requests() === 1 && document.querySelectorAll("[data-row]").length === 100')
+    await Bun.sleep(100)
+    expect(await view.evaluate('window.probe.requests()')).toBe(1)
+    await view.evaluate('(() => { const list = document.querySelector("[data-stx-list]"); list.scrollTop = list.scrollHeight })()')
+    await until('window.probe.requests() === 2 && document.querySelectorAll("[data-row]").length === 120')
+  }
+  finally { view.close(); server.stop(true) }
+}, 30_000)
+
+it('switches the default viewport cap with horizontal orientation without imposing it on tall cards', async () => {
+  const root = join(import.meta.dir, '..')
+  const html = await processDirectives(`@import('List', '${root}/src/ui/list/List.stx')
+<!doctype html><html><head><style>body{margin:0;width:320px}.overflow-y-auto{overflow-y:auto}</style></head><body>
+<script client>
+const horizontal = state(false)
+window.probe = { horizontal }
+</script>
+<List :horizontal="horizontal" :hasMore="false" :contentContainerStyle="{ paddingBottom:0 }">
+  <div style="height:2000px;width:180px;flex-shrink:0">Tall card</div>
+</List></body></html>`, {}, join(root, 'list-reactive-orientation.stx'), { ...defaultConfig, root, cache:false, debug:false }, new Set())
+  const server = Bun.serve({ port:0, hostname:'127.0.0.1', fetch: () => new Response(html, { headers:{ 'Content-Type':'text/html' } }) })
+  const view = new WebView({ headless:true })
+  async function until(expression: string) {
+    for (let attempt = 0; attempt < 100; attempt++) {
+      if (await view.evaluate(expression)) return
+      await Bun.sleep(25)
+    }
+    expect(await view.evaluate(expression)).toBe(true)
+  }
+  try {
+    await view.navigate(server.url.href)
+    await until('!!window.probe && !!document.querySelector("[data-stx-list]")')
+    expect(await view.evaluate('document.querySelector("[data-stx-list]").clientHeight <= innerHeight')).toBe(true)
+    await view.evaluate('window.probe.horizontal.set(true)')
+    await until('getComputedStyle(document.querySelector("[data-stx-list]")).maxHeight === "none"')
+    expect(await view.evaluate('document.querySelector("[data-stx-list]").clientHeight')).toBe(2000)
+    await view.evaluate('window.probe.horizontal.set(false)')
+    await until('document.querySelector("[data-stx-list]").clientHeight <= innerHeight')
+  }
+  finally { view.close(); server.stop(true) }
+}, 30_000)
