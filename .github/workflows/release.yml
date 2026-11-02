@@ -14,9 +14,9 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
-      - uses: pantry-pm/pantry/packages/action@2f29383de4744c64e98154414fb2d92f25ca9c7c # v0.11.160
+      - uses: pantry-pm/pantry/packages/action@7629c3138e2e36d3308a1381f07d508a1e9d0602 # v0.11.163
         with:
-          version: '0.11.160'
+          version: '0.11.163'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
       - run: bun install --frozen-lockfile
@@ -37,9 +37,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@2f29383de4744c64e98154414fb2d92f25ca9c7c # v0.11.160
+        uses: pantry-pm/pantry/packages/action@7629c3138e2e36d3308a1381f07d508a1e9d0602 # v0.11.163
         with:
-          version: '0.11.160'
+          version: '0.11.163'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
       - run: bun install --frozen-lockfile
@@ -47,6 +47,14 @@ jobs:
       - run: bun run format:check
       - run: bun run preflight:release
       - run: bun test --preload ./scripts/browser-test-preload.ts packages examples --max-concurrency=1
+
+      - name: Component Tests with Coverage
+        working-directory: ./packages/components
+        run: bun test --preload ../../scripts/browser-test-preload.ts --coverage
+
+      - name: Integration Tests
+        working-directory: ./packages/components
+        run: bun test --preload ../../scripts/browser-test-preload.ts test/integration/
 
   npm:
     needs: [gate, native-signing]
@@ -62,9 +70,9 @@ jobs:
           fetch-depth: 0
 
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@2f29383de4744c64e98154414fb2d92f25ca9c7c # v0.11.160
+        uses: pantry-pm/pantry/packages/action@7629c3138e2e36d3308a1381f07d508a1e9d0602 # v0.11.163
         with:
-          version: '0.11.160'
+          version: '0.11.163'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
 
@@ -128,9 +136,9 @@ jobs:
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: pantry-pm/pantry/packages/action@2f29383de4744c64e98154414fb2d92f25ca9c7c # v0.11.160
+        uses: pantry-pm/pantry/packages/action@7629c3138e2e36d3308a1381f07d508a1e9d0602 # v0.11.163
         with:
-          version: '0.11.160'
+          version: '0.11.163'
           install: 'false'
           release: true
           release-changelog: CHANGELOG.md
@@ -164,9 +172,9 @@ jobs:
           fetch-depth: 0
 
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@2f29383de4744c64e98154414fb2d92f25ca9c7c # v0.11.160
+        uses: pantry-pm/pantry/packages/action@7629c3138e2e36d3308a1381f07d508a1e9d0602 # v0.11.163
         with:
-          version: '0.11.160'
+          version: '0.11.163'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
 
