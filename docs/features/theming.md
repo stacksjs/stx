@@ -33,6 +33,25 @@ config file and no rebuild:
 }
 ```
 
+### Share native typography with browser views
+
+Use `nativeTextStyle` from `@stacksjs/stx/native/ui` when a shared view binds
+point-based typography through `:style`. Choose the rendering target explicitly:
+
+```ts
+import { nativeTextStyle } from '@stacksjs/stx/native/ui'
+
+const signature = { fontFamily: 'Signature', fontSize: 48, lineHeight: 60 }
+const native = nativeTextStyle(signature, 'native') // 48 / 60 points
+const web = nativeTextStyle(signature, 'web') // fontSize: '48px', lineHeight: '60px'
+```
+
+The adapter converts numeric `fontSize`, `lineHeight` and `letterSpacing` to CSS
+lengths for the browser and preserves other properties. Native metrics remain
+numeric. CSS treats a bare line height as a font-size multiplier, so passing
+native `lineHeight: 60` directly to a browser would create a sixty-line-high row.
+Ordinary CSS `:style` bindings retain their normal CSS semantics.
+
 ### Answer the roles in your css config — web and native
 
 A stylesheet override reaches the web only: a native screen compiles without

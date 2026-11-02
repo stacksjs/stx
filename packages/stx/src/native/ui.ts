@@ -95,3 +95,38 @@ export const nativeUi = {
 } as const
 
 export type NativeUiClass = keyof typeof nativeUi
+
+/** Typography authored in native points, shared with an ordinary browser view. */
+export interface NativeTextMetrics {
+  [property: string]: unknown
+  fontFamily?: string
+  fontSize?: number
+  lineHeight?: number
+  letterSpacing?: number
+}
+
+export type NativeTextTarget = 'native' | 'web'
+type WebTextMetric<Value> = Value extends number ? string : Value
+export type WebTextStyle<T> = {
+  [K in keyof T]: K extends 'fontSize' | 'lineHeight' | 'letterSpacing' ? WebTextMetric<T[K]> : T[K]
+}
+
+/**
+ * Native lineHeight is a length; CSS's bare number is a font-size multiplier.
+ * Adapt explicitly when a shared view binds native typography through :style.
+ * Other style properties, including unitless font weights, keep their meaning.
+ *
+ *   nativeTextStyle({ fontFamily: 'Signature', fontSize: 48, lineHeight: 60 }, 'web')
+ *   // { fontFamily: 'Signature', fontSize: '48px', lineHeight: '60px' }
+ */
+export function nativeTextStyle<T extends NativeTextMetrics>(style: T, target: 'native'): T
+export function nativeTextStyle<T extends NativeTextMetrics>(style: T, target: 'web'): WebTextStyle<T>
+export function nativeTextStyle<T extends NativeTextMetrics>(style: T, target: NativeTextTarget): T | WebTextStyle<T>
+export function nativeTextStyle<T extends NativeTextMetrics>(style: T, target: NativeTextTarget): T | WebTextStyle<T> {
+  if (target === 'native') return { ...style }
+  const css: Record<string, unknown> = { ...style }
+  for (const metric of ['fontSize', 'lineHeight', 'letterSpacing'] as const) {
+    if (typeof css[metric] === 'number') css[metric] = `${css[metric]}px`
+  }
+  return css as WebTextStyle<T>
+}
