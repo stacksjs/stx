@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.791...v0.2.792)
+
+## 🐛 Bug Fixes
+
+- **native**: compiled class styles are remembered per style config ([c8d5ec0](https://github.com/stacksjs/stx/commit/c8d5ec0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **native**: a screen ships its class lists compiled ([eba2179](https://github.com/stacksjs/stx/commit/eba2179)) _(by Chris <chrisbreuer93@gmail.com>)_
+- a component instance layers its scopes instead of copying its caller's ([4d81116](https://github.com/stacksjs/stx/commit/4d81116)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.792 ([1dab038](https://github.com/stacksjs/stx/commit/1dab038)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.790...v0.2.791)
 
 ## ⚡ Performance Improvements
