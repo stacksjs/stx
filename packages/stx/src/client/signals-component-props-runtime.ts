@@ -75,7 +75,6 @@ export const SIGNALS_COMPONENT_PROPS_RUNTIME = `  function bindParentComponentPr
   }
 
   function resolveComponentCallerScope(el, pageScope) {
-    var resolved = mergeTemplateScopes(pageScope);
     var ancestors = [];
     var current = el && (el.parentElement || el.parentNode);
     while (current && current !== document) {
@@ -83,10 +82,13 @@ export const SIGNALS_COMPONENT_PROPS_RUNTIME = `  function bindParentComponentPr
         ancestors.push(current.getAttribute('data-stx-scope'));
       current = current.parentElement || current.parentNode;
     }
+    // Layered rather than copied: a copy of the page scope (hundreds of
+    // names) per component instance was a fifth of mounting a list of rows.
+    var sources = [pageScope];
     ancestors.reverse().forEach(function(scopeId) {
       var ancestorScope = window.stx._scopes && window.stx._scopes[scopeId];
-      if (ancestorScope) assignTemplateScope(resolved, ancestorScope);
+      if (ancestorScope) sources.push(ancestorScope);
     });
-    return resolved;
+    return layerTemplateScopes.apply(null, sources);
   }
 `
