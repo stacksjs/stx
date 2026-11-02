@@ -169,7 +169,9 @@ export const SIGNALS_COMPONENT_HYDRATION_RUNTIME = `  /*
         return;
       }
       scopeVars.__el = root;
-      var childScope = mergeTemplateScopes(resolvedCallerScope, scopeVars);
+      // Layered: copying the caller's scope (a view over the page's hundreds
+      // of names) into every instance read each of them through the view.
+      var childScope = layerTemplateScopes(resolvedCallerScope, scopeVars);
       root.__stx_disposers = trackEffects(function() {
         processElement(root, childScope);
       });

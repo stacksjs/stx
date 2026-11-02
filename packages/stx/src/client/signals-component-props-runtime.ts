@@ -17,7 +17,7 @@ export const SIGNALS_COMPONENT_PROPS_RUNTIME = `  function bindParentComponentPr
     }).filter(Boolean);
     if (!bindings.length) return;
     el.__stx_parent_props_bound = true;
-    var scope = mergeTemplateScopes(globalHelpers, callerScope);
+    var scope = layerTemplateScopes(globalHelpers, callerScope);
 
     bindings.forEach(function(binding) {
       var name = binding.name;
