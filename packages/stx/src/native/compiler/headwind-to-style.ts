@@ -10,7 +10,7 @@ import { DENSITY_FONT_SIZES, DENSITY_SPACING, SEMANTIC_TOKENS, SHAPE_TOKENS, tok
 import type { NativeStyleVariables } from './style-variables'
 import { nativeDensitySpacing, nativeDensityType, nativeShapeRadius } from './design-tokens'
 import type { STXStyle } from './ir'
-import { nativeBreakpoint, nativeShortcut, nativeThemeColor, nativeThemeFont } from './style-config'
+import { activeNativeStyleConfig, nativeBreakpoint, nativeShortcut, nativeThemeColor, nativeThemeFont } from './style-config'
 import type { NativeStylesheetRules } from './stylesheet-rules'
 import { parseNativeStyle } from './inline-style'
 
@@ -1167,19 +1167,40 @@ type ClassStyleOptions = { focus?: boolean, focusWithin?: boolean, rules?: Nativ
 // rules and the flags, and every caller only reads it. So it is remembered per
 // variables map and rules object (both shared down a tree whose nodes declare
 // none of their own), then per class list and flags.
-const classStyleCache = new WeakMap<object, WeakMap<object, Map<string, ClassStyles>>>()
+// Per style config first: a project's colours, shortcuts and breakpoints change
+// what a class means, and one process can compile for more than one project.
+const classStyleCache = new WeakMap<object, WeakMap<object, WeakMap<object, Map<string, ClassStyles>>>>()
 const NONE = {}
+
+function classStylesFor(variables: NativeStyleVariables | undefined, rules: NativeStylesheetRules | undefined): Map<string, ClassStyles> {
+  const config = activeNativeStyleConfig()
+  let byVariables = classStyleCache.get(config)
+  if (!byVariables) classStyleCache.set(config, byVariables = new WeakMap())
+  let byRules = byVariables.get(variables ?? NONE)
+  if (!byRules) byVariables.set(variables ?? NONE, byRules = new WeakMap())
+  let byClasses = byRules.get(rules ?? NONE)
+  if (!byClasses) byRules.set(rules ?? NONE, byClasses = new Map())
+  return byClasses
+}
+
+/** How a class list and its flags are remembered: the build's class table uses the same keys. */
+export function classStyleKey(classes: string, options: Omit<ClassStyleOptions, 'rules'> = {}): string {
+  return `${options.focus ? 1 : 0}${options.focusWithin ? 1 : 0}${options.pointer ? 1 : 0}${options.appearance ?? ''}|${classes}`
+}
+
+/** Remember class lists compiled elsewhere (the build's class table) as if they had been compiled here. */
+export function seedClassStyles(variables: NativeStyleVariables | undefined, rules: NativeStylesheetRules | undefined, entries: Iterable<[string, ClassStyles]>): void {
+  const byClasses = classStylesFor(variables, rules)
+  for (const [key, compiled] of entries) if (!byClasses.has(key)) byClasses.set(key, compiled)
+}
 
 /**
  * The style a class list gives, with its dark, focus, pointer, width and state
  * layers. Remembered: callers must treat the result as read-only.
  */
 export function compileClassStyles(classes: string, variables?: NativeStyleVariables, options: ClassStyleOptions = {}): ClassStyles {
-  let byRules = classStyleCache.get(variables ?? NONE)
-  if (!byRules) classStyleCache.set(variables ?? NONE, byRules = new WeakMap())
-  let byClasses = byRules.get(options.rules ?? NONE)
-  if (!byClasses) byRules.set(options.rules ?? NONE, byClasses = new Map())
-  const key = `${options.focus ? 1 : 0}${options.focusWithin ? 1 : 0}${options.pointer ? 1 : 0}${options.appearance ?? ''}|${classes}`
+  const byClasses = classStylesFor(variables, options.rules)
+  const key = classStyleKey(classes, options)
   let compiled = byClasses.get(key)
   if (!compiled) {
     // A dev server compiles every edit's class lists in one process: start over rather than grow without end.

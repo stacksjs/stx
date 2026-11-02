@@ -78,6 +78,11 @@ function resolve(config: NativeStyleConfig): ResolvedStyleConfig {
 
 let currentSource: NativeStyleConfig = {}
 
+/** The resolved config in force, by identity: what a cache of compiled classes is valid for. */
+export function activeNativeStyleConfig(): object {
+  return active()
+}
+
 /** Use `config` for every native class resolution from now on. */
 export function setNativeStyleConfig(config: NativeStyleConfig | null | undefined): void {
   currentSource = config ?? {}
