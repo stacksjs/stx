@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.789...v0.2.790)
+
+## 🐛 Bug Fixes
+
+- **release**: require component coverage and integration before publishing ([b6ff980](https://github.com/stacksjs/stx/commit/b6ff980)) _(by Chris <chris@stacksjs.com>)_ ([#2148](https://github.com/stacksjs/stx/issues/2148))
+
+## 🔧 Chores
+
+- release v0.2.790 ([d309acc](https://github.com/stacksjs/stx/commit/d309acc)) _(by Chris <chris@stacksjs.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' into codex/settlers-release-component-gates ([4954385](https://github.com/stacksjs/stx/commit/4954385)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.788...v0.2.789)
 
 ## ✨ Features
