@@ -37,7 +37,7 @@ import fs from 'node:fs'
 import { isDevelopment } from './env'
 import { stripCommentsAndLiterals } from './strip-literals'
 import { createSafeFunction, getExpressionSafetyRule, safeEvaluate } from './safe-evaluator'
-import { componentClientSignalNames, createDetailedErrorMessage } from './utils'
+import { componentClientSignalNames, createDetailedErrorMessage, SIGNAL_COMPOSABLE_CALL } from './utils'
 import { createPlaceholder } from './placeholder'
 import { neutralizeTemplateSyntax } from './template-syntax-escape'
 import { classifyHtmlInterpolation, UnsafeInterpolationContextError } from './interpolation-context'
@@ -725,7 +725,7 @@ export function usesSignalsInScript(template: string, filePath?: string): boolea
   // attributes, or style bodies is not executable script.
   const { scripts } = stashScriptElements(template)
   for (const content of clientScriptBodies(scripts)) {
-    if (/\b(state|derived|effect|ref|reactive|computed|watch|watchEffect|useModel)\s*(?:<[^>]*>)?\s*\(/.test(content)) {
+    if (/\b(state|derived|effect|ref|reactive|computed|watch|watchEffect|useModel)\s*(?:<[^>]*>)?\s*\(/.test(content) || SIGNAL_COMPOSABLE_CALL.test(content)) {
       return true
     }
     // `const { signal } = makeProbe()` names no signal API, so the scan above
