@@ -270,6 +270,13 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   let counter = 0
   let colorScheme = options.colorScheme ?? 'light'
   let viewportWidth = Number.isFinite(options.viewportWidth) ? Math.max(0, options.viewportWidth!) : 0
+  // Every width a layer on screen starts or stops at: a resize that crosses none changes no style.
+  const widthBounds = { min: new Set<number>(), max: new Set<number>() }
+  const crossesWidthBound = (from: number, to: number): boolean => {
+    for (const min of widthBounds.min) if ((from >= min) !== (to >= min)) return true
+    for (const max of widthBounds.max) if ((from <= max) !== (to <= max)) return true
+    return false
+  }
   let stylesheetVariables = createStyleVariables(options.stylesheetTheme?.[colorScheme] ?? []).computed()
   let disposed = false
 
@@ -646,6 +653,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules, appearance: colorScheme, pointer: options.pointer === true })
     const classStyle = { ...classes.style }
     // Width layers apply smallest first, as min-width media queries cascade.
+    for (const layer of classes.responsive ?? []) {
+      widthBounds.min.add(layer.min)
+      if (layer.max !== undefined) widthBounds.max.add(layer.max)
+    }
     const responsive = (classes.responsive ?? []).filter(layer => viewportWidth >= layer.min && (layer.max === undefined || viewportWidth <= layer.max))
     for (const layer of responsive) Object.assign(classStyle, layer.style)
     // ts-css emits `.dark .dark:utility`: that selector outranks a plain
@@ -1014,7 +1025,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     setViewportWidth(width) {
       const next = Number.isFinite(width) ? Math.max(0, width) : 0
       if (next === viewportWidth) return
+      const crossed = crossesWidthBound(viewportWidth, next)
       viewportWidth = next
+      // A Mac window resizing reports every frame; only a step over a breakpoint restyles.
+      if (!crossed) return
       // Shortcuts can hide a width layer, so every node is resolved again;
       // applyClasses sends a patch only where the style changed.
       const children = new Set([...records.values()].flatMap(record => record.children.map(child => child.__stxId)))

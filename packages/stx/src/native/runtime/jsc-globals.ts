@@ -1,3 +1,5 @@
+import { createNativeMedia } from './native-media'
+
 type AnyRecord = Record<string, any> // eslint-disable-line ts/no-explicit-any
 
 const nativeDocuments = new WeakSet<object>()
@@ -867,6 +869,21 @@ export function installJSCGlobals(target: AnyRecord = globalThis as AnyRecord): 
   target.location ??= { href: '', pathname: '/', search: '', hash: '' }
   target.history ??= { back() {}, forward() {}, pushState() {}, replaceState() {} }
   target.navigator ??= { language: 'en' }
+  if (typeof target.matchMedia !== 'function') {
+    // What the host said about the screen, kept current by VIEWPORT and APPEARANCE (shared-screen).
+    const bridge = (target.__stxNativeBridge ?? {}) as AnyRecord
+    const media = createNativeMedia({
+      width: Number(bridge.viewportWidth) || 0,
+      height: Number(bridge.viewportHeight) || 0,
+      colorScheme: bridge.colorScheme === 'dark' ? 'dark' : 'light',
+      reducedMotion: bridge.reducedMotion === true,
+      pointer: bridge.platform === 'macos',
+    })
+    target.__stxNativeMedia = media
+    target.matchMedia = media.matchMedia
+    if (target.innerWidth === undefined) Object.defineProperty(target, 'innerWidth', { configurable: true, get: () => media.state.width })
+    if (target.innerHeight === undefined) Object.defineProperty(target, 'innerHeight', { configurable: true, get: () => media.state.height })
+  }
   if (target.document != null) return
   target.document = {
     body: null,
