@@ -2410,9 +2410,14 @@ export async function renderComponentWithSlot(
       // UIKit/Android do not implement display:contents. Keep the scope (and
       // separate parent/child event handlers) while giving its root a bound.
       const layoutRoot = /^\s*(?:(?:<!--[\s\S]*?-->|\x00STX_HTML_COMMENT_\d+\x00)\s*)*<[^>]+\bdata-stx-layout-root(?:\s|=|>)/i.test(result)
+      // A percentage-sized component needs its scope to keep the containing
+      // box too. An auto-height scope between Image and a definite parent
+      // otherwise turns 100% into the decoded image's intrinsic height.
+      const fillRoot = /^\s*(?:(?:<!--[\s\S]*?-->|\x00STX_HTML_COMMENT_\d+\x00)\s*)*<[^>]+\bdata-stx-fill-root(?:\s|=|>)/i.test(result)
       const wrapperTag = inlineRoot ? 'span' : 'div'
       const wrapperStyle = layoutRoot && options._nativeHostAttrs
         ? ' style="display:flex;flex-direction:column;flex:1;min-height:0;min-width:0"'
+        : fillRoot && options._nativeHostAttrs ? ' style="width:100%;height:100%"'
         : inlineRoot || layoutRoot ? ' style="display:contents"' : ''
       output = scopeOnRootElement(result, scopeAttrs) ?? `<${wrapperTag}${scopeAttrs} data-stx-component-wrapper${wrapperStyle}>${result}</${wrapperTag}>`
 

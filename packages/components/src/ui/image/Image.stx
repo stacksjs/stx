@@ -255,6 +255,7 @@ const imagePlaceholderStyles = derived(() => {
 </script>
 
 <picture class="{{ className }}" style="{{ frameStyle }}" :style="{ aspectRatio: imageRatio(), borderRadius: imageRadius(), ...imagePlaceholderStyles() }"
+  @if($native)data-stx-fill-root@endif
   @if(!$native)
     @if(zoomOnHover)data-stx-image-zoom@endif
     :data-stx-image-zoom="imageZoomEnabled() ? '' : null"
