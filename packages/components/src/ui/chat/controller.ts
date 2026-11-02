@@ -35,6 +35,8 @@ export interface ChatController {
   unread: DerivedSignal<number>
   canSend: DerivedSignal<boolean>
   selfId: DerivedSignal<number>
+  /** The account and tenant whose conversations are currently shown. */
+  scopeKey: DerivedSignal<string>
   load: () => Promise<void>
   open: (contact: ChatContact) => Promise<void>
   back: () => void
@@ -52,6 +54,7 @@ const CHAT_LISTEN_WAIT_MS = 1500
 /** Transport-injected messaging state shared by any STX app. */
 export function createChat(options: ChatOptions): ChatController {
   const endpoint = options.endpoint ?? '/messages'
+  const scopeKey = derived(options.scopeKey)
   const contacts = state<ChatContact[]>([])
   const conversations = state<ChatConversation[]>([])
   const selected = state<ChatContact | null>(null)
@@ -268,5 +271,5 @@ export function createChat(options: ChatOptions): ChatController {
   }
   // Coalesce events arriving during a send/read round trip, then reconcile once it finishes.
   function flushInvalidation() { if (invalidated) { invalidated = false; void reconcile() } }
-  return { contacts, conversations, selected, threadId, messages, loading, threadLoading, sending, error, draft, search, unreadOnly, hasMore, maxLength, rows, unread, canSend, selfId, load, open, back, send, older, refresh, reset, observe, connected }
+  return { contacts, conversations, selected, threadId, messages, loading, threadLoading, sending, error, draft, search, unreadOnly, hasMore, maxLength, rows, unread, canSend, selfId, scopeKey, load, open, back, send, older, refresh, reset, observe, connected }
 }

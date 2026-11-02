@@ -66,9 +66,10 @@ const sendLabel = derived(() => sending() ? 'Sending...' : 'Send message')
 function timestamp(value) { return new Date(value).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
 function submit() { return chat.send() }
 function keyboard(event) { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !event.isComposing) { event.preventDefault(); chat.send() } }
-onMount(() => chat.load())
 onMount(() => chat.observe(() => active() && visibility() === 'visible'))
-effect(() => { if (active() && visibility() === 'visible') chat.refresh(true) })
+watch(() => active() && visibility() === 'visible' ? chat.scopeKey() : null, (scope) => {
+  if (scope !== null) void chat.refresh(true)
+}, { immediate: true })
 </script>
 <section aria-label="Messages" data-compact="{{ compact }}" class="stx-chat-inbox flex flex-col {{ sizeClasses }} max-h-[900px] overflow-hidden bg-panel border border-line rounded-2xl {{ className }}">
   <div :if="error" role="alert" class="flex gap-3 items-center justify-between px-4 py-3 text-sm text-rose-800 dark:text-rose-200 bg-danger-soft">

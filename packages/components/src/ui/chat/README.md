@@ -26,6 +26,9 @@ defineStore('chat', () => createChat({
 `store` defaults to `chat`. Both components use the same controller. Polling
 pauses when the page is hidden; an inbox acknowledges only displayed messages.
 Drafts stay per contact until sent and clear when the account or tenant changes.
+The controller exposes the current `scopeKey` as a derived signal. An active
+inbox refreshes when that key changes or the inbox becomes visible. Updating
+other profile fields does not request the list again.
 Failed sends preserve the draft and retry key. Ctrl/Command + Enter sends;
 plain Enter starts a new line. Message bodies render as escaped text.
 
