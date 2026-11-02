@@ -19,9 +19,9 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: pantry-pm/pantry/packages/action@3436eff9cc46cad165a564f30d458963e148294c # v0.11.99
+      - uses: pantry-pm/pantry/packages/action@2f29383de4744c64e98154414fb2d92f25ca9c7c # v0.11.160
         with:
-          version: '0.11.99'
+          version: '0.11.160'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
       - run: bun install --frozen-lockfile
@@ -34,9 +34,9 @@ jobs:
       - uses: actions/checkout@v7.0.1
 
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@3436eff9cc46cad165a564f30d458963e148294c # v0.11.99
+        uses: pantry-pm/pantry/packages/action@2f29383de4744c64e98154414fb2d92f25ca9c7c # v0.11.160
         with:
-          version: '0.11.99'
+          version: '0.11.160'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
 
@@ -64,9 +64,9 @@ jobs:
       - uses: actions/checkout@v7.0.1
 
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@3436eff9cc46cad165a564f30d458963e148294c # v0.11.99
+        uses: pantry-pm/pantry/packages/action@2f29383de4744c64e98154414fb2d92f25ca9c7c # v0.11.160
         with:
-          version: '0.11.99'
+          version: '0.11.160'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
 
@@ -91,9 +91,9 @@ jobs:
       - uses: actions/checkout@v7.0.1
 
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@3436eff9cc46cad165a564f30d458963e148294c # v0.11.99
+        uses: pantry-pm/pantry/packages/action@2f29383de4744c64e98154414fb2d92f25ca9c7c # v0.11.160
         with:
-          version: '0.11.99'
+          version: '0.11.160'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
 
@@ -135,9 +135,9 @@ jobs:
           fetch-depth: 0
 
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@3436eff9cc46cad165a564f30d458963e148294c # v0.11.99
+        uses: pantry-pm/pantry/packages/action@2f29383de4744c64e98154414fb2d92f25ca9c7c # v0.11.160
         with:
-          version: '0.11.99'
+          version: '0.11.160'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
 
