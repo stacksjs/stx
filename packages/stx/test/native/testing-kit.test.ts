@@ -48,6 +48,48 @@ const text = (phone: NativeScreen, id: string) =>
   (phone.byTestID(id)?.children.filter(child => typeof child === 'string') ?? []).join('')
 
 describe('mountNativeScreen', () => {
+  it('settles a deferred media mutation after its API answer even when the event loop was busy', async () => {
+    const { code } = await compileNativeScreen(`<script client>
+const loaded = state(false)
+onMount(async () => {
+  setTimeout(() => { globalThis.__future = true }, 60_000)
+  setInterval(() => { globalThis.__ticks = (globalThis.__ticks || 0) + 1 }, 5)
+  const reply = await fetch('https://fixture.invalid/api/card')
+  const card = await reply.json()
+  loaded.set(true)
+  await craft.snapshots.set('card', card)
+})
+</script>
+<View><View :if="loaded"><Image source="https://fixture.invalid/logo.png" testID="card-logo" /><Text testID="card-name">Member</Text></View></View>`, { name: 'MediaSettlement' })
+    const phone = mountNativeScreen(code, 'MediaSettlement', {
+      apiBase: 'https://fixture.invalid/api',
+      api: () => ({ name: 'Member' }),
+      snapshotWrite: () => {
+        // Real synchronous host work can outlast settle's network quiet window.
+        const until = performance.now() + 80
+        while (performance.now() < until) { /* host is busy */ }
+      },
+    })
+    await phone.settle()
+    expect(phone.snapshots.card).toEqual({ name: 'Member' })
+    expect(phone.byTestID('card-logo')).toBeDefined()
+    expect(phone.byTestID('card-name')?.children).toContain('Member')
+    expect(phone.context.__future).toBeUndefined()
+    expect(phone.context.__ticks).toBeGreaterThan(0)
+  })
+
+  it('leaves explicit fake timers under the caller’s control', async () => {
+    const scheduled: Array<() => void> = []
+    const phone = mountNativeScreen('setTimeout(() => { globalThis.__fired = true }, 0)', 'FakeTimers', {
+      globals: { setTimeout: (run: () => void) => { scheduled.push(run); return scheduled.length } },
+    })
+    await phone.settle(0)
+    expect(phone.context.__fired).toBeUndefined()
+    expect(scheduled).toHaveLength(1)
+    scheduled[0]!()
+    expect(phone.context.__fired).toBe(true)
+  })
+
   it('native host contract: keeps navigation buttons across partial option updates', () => {
     const phone = mountNativeScreen('', 'Navigation')
     const navigation = phone.context.craft.navigation

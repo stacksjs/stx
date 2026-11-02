@@ -301,7 +301,8 @@ export interface NativeScreen {
   /**
    * Let the screen catch up: `ms`, then for as long as a request is still out
    * or was answered less than `ms` ago, since a screen that loads in steps
-   * asks again once the first answer lands. Capped at 5s.
+   * asks again once the first answer lands. Includes immediate deferred work,
+   * without draining future timers or recurring intervals. Capped at 5s.
    */
   settle: (ms?: number) => Promise<void>
   /** Every operation of the MUTATE batches sent so far, in order. */
@@ -349,19 +350,25 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
   let ended = false
   let online = true
   const timeouts = new Set<ReturnType<typeof setTimeout>>()
+  // Media-bearing native mutation batches flush in a zero-delay timer after
+  // the current microtask turn. Network quiet alone does not mean they ran.
+  const immediateTimeouts = new Set<ReturnType<typeof setTimeout>>()
   const intervals = new Set<ReturnType<typeof setInterval>>()
   const timers = {
     setTimeout: (run: (...args: any[]) => void, ms?: number, ...args: any[]) => {
       if (ended) return 0 as unknown as ReturnType<typeof setTimeout>
       const id = setTimeout((...rest: any[]) => {
         timeouts.delete(id)
+        immediateTimeouts.delete(id)
         if (!ended) run(...rest)
       }, ms, ...args)
       timeouts.add(id)
+      if ((ms ?? 0) <= 0) immediateTimeouts.add(id)
       return id
     },
     clearTimeout: (id: ReturnType<typeof setTimeout>) => {
       timeouts.delete(id)
+      immediateTimeouts.delete(id)
       clearTimeout(id)
     },
     setInterval: (run: (...args: any[]) => void, ms?: number, ...args: any[]) => {
@@ -696,6 +703,7 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
       for (const id of timeouts) clearTimeout(id)
       for (const id of intervals) clearInterval(id)
       timeouts.clear()
+      immediateTimeouts.clear()
       intervals.clear()
       streams.forEach(stream => stream.end())
     }
@@ -787,12 +795,13 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
     /**
      * Let the screen catch up: `ms`, then for as long as a request is still out
      * or was answered less than `ms` ago, since a screen that loads in steps
-     * asks again once the first answer lands. Capped at 5s.
+     * asks again once the first answer lands. Immediate deferred work also
+     * settles; future timers and recurring intervals are not drained. Capped at 5s.
      */
     settle: async (ms = 30) => {
       const started = performance.now()
       await Bun.sleep(ms)
-      while (performance.now() - started < 5000 && (fetching > 0 || performance.now() - answeredAt < ms))
+      while (!ended && performance.now() - started < 5000 && (fetching > 0 || performance.now() - answeredAt < ms || immediateTimeouts.size > 0))
         await Bun.sleep(5)
       if (mutationErrors.length) {
         const error = mutationErrors[0]
