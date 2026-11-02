@@ -1,6 +1,6 @@
 # Shared/native component resolution audit
 
-Updated against source after v0.2.784 plus the maintained shared-controls, Image and Video acceptance suites
+Updated against source after v0.2.784 plus the maintained shared-controls, Image, Video and toggle acceptance suites
 for [#2090](https://github.com/stacksjs/stx/issues/2090). This is an acceptance audit
 for [#2091](https://github.com/stacksjs/stx/issues/2091), not a claim that every
 component is portable or that device rendering has been certified.
@@ -14,8 +14,8 @@ directories and fails if a new overlap has no recorded compatibility decision.
 | Name | Current native selection | Browser selection without an explicit override | Remaining gate |
 | --- | --- | --- | --- |
 | Button | Shared app/plugin file, primitive fallback | Shared app/plugin file | Device accessibility/visual validation |
-| Checkbox | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | Preserve both APIs; device validation |
-| Switch | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | Preserve both APIs; device validation |
+| Checkbox | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | iOS same-source acceptance recorded; Android/accessibility remain |
+| Switch | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | iOS same-source acceptance recorded; Android/accessibility remain |
 | TextInput | Shared for value-model calls without `@input`; primitive for legacy/ambiguous calls | Shared file | Preserve object-payload callers; device validation |
 | Image | Shared for src + presentation API + alt/decorative; primitive for plain/legacy calls | Same shared selection; builtin for plain/legacy/transformation calls | Matching Craft 0.0.396+ shell; Craft #441 pixel drawing and remaining device validation |
 | Video | Shared for src with shared media events; primitive for source, mixed, bare or legacy-event calls | Shared file | Preserve legacy API; provider/DRM/API and device validation remain |
@@ -515,6 +515,19 @@ See [reproduction and limits](shared-controls-device-validation.md#shared-video-
 and [exact receipt](shared-video-ios-2026-11-02.json). #2091 remains open for its
 broader acceptance; simulator file playback is not physical-device/Android,
 provider/DRM, accessibility or pixel-parity certification.
+
+### Checkbox/Switch simulator follow-up (unreleased after v0.2.784)
+
+The maintained `--suite toggles` gate covers shared and legacy calls together,
+including actual native taps, checked/disabled/mixed state, exact boolean versus
+object event payloads, defaults, retained views, hidden updates/remounts and
+disposal. The shared Switch now sends an explicit boolean when its model clears;
+the previous null value left an on native switch uncontrolled and visibly on.
+Checkbox, legacy primitives and Craft were not changed.
+
+See [reproduction, screenshots and acceptance boundary](shared-controls-device-validation.md#shared-toggle-acceptance-2026-11-02)
+and [exact results/hashes](shared-toggles-ios-2026-11-02.json). #2091 remains open
+for the broader device/accessibility acceptance.
 
 ## Platform controls (after v0.2.657)
 

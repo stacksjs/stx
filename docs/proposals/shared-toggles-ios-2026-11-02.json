@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-02",
+  "issue": "https://github.com/stacksjs/stx/issues/2091",
+  "releaseStatus": "Unreleased source after STX 0.2.784; no version or tag changed",
+  "stxBase": "e0b86680db986e3cae1ffca5508f5a559fadf874",
+  "stxImplementation": "44b887fa2a36c3990ed03859dcc79f3d27b05b17",
+  "craft": {
+    "commit": "c7984f088be396f9b2c9bedab4a7d0a64e3fab4e",
+    "sourceVersion": "0.0.424",
+    "cleanSnapshot": true,
+    "sourceEdited": false
+  },
+  "environment": {
+    "xcode": "26.6",
+    "xcodeBuild": "17F113",
+    "model": "iPhone 17 Pro",
+    "os": "iOS 26.5",
+    "osBuildNumber": "23F77",
+    "platform": "iOS Simulator",
+    "ownedSimulator": "E35C9F19-8BB0-4055-AC0E-538CDD7E864C"
+  },
+  "sourceSha256": {
+    "packages/components/src/ui/switch/Switch.stx": "e8285ad0eec91fdefb616ef68122b5eb54b7f2083fb73be4011fd4cb8d23a5e9",
+    "packages/stx/test/native/shared-switch-reactivity.test.ts": "db662c04672db2985a40ea4f03f4f2d932344f18ea6ba83cbdb176e3b43e60e9",
+    "packages/stx/test/native/shared-toggle-device-fixture.test.ts": "d47d09464b1545ddce60c99e37ae598532e936d10b6a38a4f743aff9bd02b64f",
+    "packages/stx/test/native/fixtures/shared-toggle-device.stx": "201c0ecb955af53727b8a79b69a94e0b5f5e0cd3bcabdce878100cfcec729979",
+    "packages/stx/test/native/fixtures/SharedToggleNativeTests.swift": "a9d2af801568d044d472015848bd3a14bbd1d7f56480e3d9cf9d096e11b55cfe",
+    "packages/stx/test/native/fixtures/SharedToggleUITests.swift": "fbfbbc2a0ab317f36fe2654837146ec2f13523c8329954ba9dc617f58f34bf35",
+    "scripts/native-portability-ios.ts": "51b37448af763a108de603b1ec958a0ce3f8dd83edbdaa947b7c8dd4e9d5baea",
+    "packages/components/test/visual/__snapshots__/switch-template.snap.txt": "f52780ddaab8e8a4636b5578d4f7056c2a1ac33469b8d3d3408fcae108e0ad86"
+  },
+  "bundle": {
+    "sha256": "824e487a2a038aa82ce12fd72658a13e6b6419560d3344eddccc3815421634b5",
+    "bytes": 375749
+  },
+  "generatedHostSha256": "008b63fcdcc902938353e9484bf8717b48f67001f5e8922c183fc0a8332f14ae",
+  "native": {
+    "light": {
+      "result": "Passed",
+      "totalTestCount": 5,
+      "passedTests": 5,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "localResultBundle": "/var/folders/sq/p6y46h2x6ddgq6w1yyxhd_9h0000gn/T/stx-portability-ios-kUhUwA/ToggleReadableLight.xcresult",
+      "summarySha256": "f4e9267d8dcfa274d7e6ca3a6844ed5e01cde36d81329691e3213270c6db3e94"
+    },
+    "dark": {
+      "result": "Passed",
+      "totalTestCount": 5,
+      "passedTests": 5,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "localResultBundle": "/var/folders/sq/p6y46h2x6ddgq6w1yyxhd_9h0000gn/T/stx-portability-ios-kUhUwA/ToggleReadableDark.xcresult",
+      "summarySha256": "9b0a39daae34bb9c29268ea9a65a520dccbc512d95152973c089d15b669180f5"
+    }
+  },
+  "tests": {
+    "nativeAndComponents": {
+      "passed": 3098,
+      "failed": 0,
+      "assertions": 21067,
+      "files": 300,
+      "seconds": 290.85,
+      "logSha256": "e320b720caf285ad84a4bd2d4894c07ed2871f0e95551852083256a9c3760745"
+    },
+    "focused": {
+      "passed": 21,
+      "failed": 0,
+      "assertions": 356,
+      "files": 4
+    },
+    "affectedFilesRetry": {
+      "passed": 12,
+      "failed": 0,
+      "assertions": 50,
+      "files": 2
+    }
+  },
+  "beforeFix": {
+    "protocol": {
+      "passed": 0,
+      "failed": 4,
+      "expectedNativeSwitchValue": false,
+      "actualNativeSwitchValue": null
+    },
+    "initialNativeRun": {
+      "passed": 1,
+      "failed": 4,
+      "skipped": 0,
+      "relevantFailures": [
+        {
+          "failureText": "XCTAssertEqual failed: (\"Optional(\"1\")\") is not equal to (\"Optional(\"0\")\")",
+          "targetName": "SharedPortabilityUITests",
+          "testIdentifier": 2,
+          "testIdentifierString": "SharedToggleUITests/testHiddenChangesAndDefaultsSurviveTwoRemounts()",
+          "testIdentifierURL": "test://com.apple.xcode/StxPortability/SharedPortabilityUITests/SharedToggleUITests/testHiddenChangesAndDefaultsSurviveTwoRemounts",
+          "testName": "testHiddenChangesAndDefaultsSurviveTwoRemounts()"
+        },
+        {
+          "failureText": "XCTAssertTrue failed - defaults survive another retained remount",
+          "targetName": "SharedPortabilityUnitTests",
+          "testIdentifier": 4,
+          "testIdentifierString": "SharedToggleNativeTests/testHiddenUpdatesRemountWithCurrentStateAndFreshScreensRestoreDefaults()",
+          "testIdentifierURL": "test://com.apple.xcode/StxPortability/SharedPortabilityUnitTests/SharedToggleNativeTests/testHiddenUpdatesRemountWithCurrentStateAndFreshScreensRestoreDefaults",
+          "testName": "testHiddenUpdatesRemountWithCurrentStateAndFreshScreensRestoreDefaults()"
+        }
+      ],
+      "localResultBundle": "/var/folders/sq/p6y46h2x6ddgq6w1yyxhd_9h0000gn/T/stx-portability-ios-kUhUwA/TestResults.xcresult",
+      "baselineBundleSha256": "fd07625840af38f8916fbc62ed4054f841d3f0efd2fe27a3788d327f76f82173",
+      "baselineSourceHashes": {
+        "/var/folders/sq/p6y46h2x6ddgq6w1yyxhd_9h0000gn/T/stx-portability-ios-kUhUwA/screen.js": "fd07625840af38f8916fbc62ed4054f841d3f0efd2fe27a3788d327f76f82173",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/test/native/fixtures/shared-toggle-device.stx": "f2760516c306110ba1d094b6fb870be32b79fc6d661382cff0d639b53f3f7c2b",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/components/src/ui/button/Button.stx": "416b7d8ae739111dc6fa2e81312e7db2e23d7257e559d989196546963a7d2760",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/primitives/Switch.stx": "152268c72ba793e52c848923f2fae5892127248921e6a5c5cc86272770b8cab2",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/primitives/Checkbox.stx": "99f06ba09f4529c25ba4c9008af688894d95d0993511145da0fc221d473fc303",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/components/src/ui/switch/Switch.stx": "3067c15c9ab75f90def6325c2a48af43fc61f3b0c99a5d6db06f148fa830cca0",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/components/src/ui/checkbox/Checkbox.stx": "f90f4139605a02d6a1945517b46571bdff11c3f8c538bcbcdc979430457748fe",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/runtime/jsc-globals.ts": "7e5160d1013c94b2aae9ef69c1c6c3523ac6d19114d52b9be27726785a4bd7d1",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/runtime/shared-screen.ts": "a54a47b2413b761ca3f6973dd7a6b18fdaaefc31dc06bb60812a3c49bfb439c4",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/runtime/binding-diagnostics.ts": "9d93d294220e99da7b475781a00114061c10b3662ac6b38e8989047b403f872c",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/runtime/web-storage.ts": "423125ec7c0ac76f166f2915ef384cf5b2f2b8345737abd60a07850210494916",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/runtime/binding-tree.ts": "dd106be229f22a75c34d211dffb089ad5667c5e6423cd6b01a4c198d3a9089c2",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/runtime/native-host.ts": "c23fab72e13569cb522d50c544bdcd3689f3dfd013464fbc03df7511e305bc64",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/runtime/view-operations.ts": "3233c949608b14bfcf7b9604934648dbcf53bc7c3a39220f6d12d9afc23fc7fd",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/bridge/protocol.ts": "81fd63e42e6330edf6424c086a7b43446d7b1bdce5faa3e261d0618b5c321f51",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/runtime/web-navigation.ts": "9269aae5d5c984a0f225aca9ba4be26bfac8db0f1fe594c54d263b8d0097fc35",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/compiler/ir.ts": "79c7153d8d5740b611ef69b259c4bf8e7d095b2cb5458b05e6e2be3bb6f7aaae",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/runtime/craft-bridge.ts": "4ae00c7ab583c5f18976caff8ae7cc16ec33e89ea3e9251d98f93ba4db6aab08",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/accessibility.ts": "bd5cd361f923a0b353bcc828e105183aaee83c6bd058e10158a2845414a39d80",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/text-entry.ts": "dd3c40a4ee55722cc29d4e18d0acb422307fe51165f24c8e8e379693e72bdc06",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/compiler/style-variables.ts": "ee8862edd9ffacdbfa4ca29bc6a300c401942d07c9a30be3abecc70555885cae",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/compiler/svg.ts": "d2c4ed38f6fee2ac769fdffbbc6a5efc5c03d12d3dbb42447d61a4cbadec67db",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/event-names.ts": "f082d84b6f7c428174ca9111d691caad78cc614e93d19cdf10e762272b43c8d9",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/compiler/headwind-to-style.ts": "e9508207e93d1c673d41e574d25ca0906f8667c442d9f2535c851e325fdc71ff",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/runtime/initial-media-mutations.ts": "ef3cf947226383697406fcd20881856e01c65870ca1a5a21a404ecf508cca1c1",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/compiler/icons.ts": "a3d04c2b1303471664a207cac0810159806fd8a7f3e6b083b44c00f8e42b81e7",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/compiler/inline-style.ts": "706163978faa64149c0d8e08996c9b4f20fe2c4aa37b1178883a90dda3ae5ff5",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/prop-names.ts": "af8638575d815a505f1d1c891922f860b29c0fdae1e4abb171e4d8806f7e8348",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/runtime/overlay-presenter.ts": "abd7b617dddb55971c5a93658212870bf1ab6114f7e0011c76af5c7b87c10901",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/runtime/navigation-chrome.ts": "45c9f691e6bd96c999df241c62704c85492c6f0d340cd86e9d1f8a241ebaf2ea",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/runtime/event-stream.ts": "cbaf6fef0e6ef22cc8d3a11101d0a8025d7fb24f7d76454304a3acf8c95f1f4d",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/compiler/design-tokens.ts": "1725af3a661341b7c33f073ec2ae66c6686a4dfbf4f86e50be4a1a447db0ade1",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/theme-tokens.ts": "ec030d084055066a16d1514259748acc79d5ac90b4c3c5ef000d67771fd4d862",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/src/native/compiler/style-config.ts": "ec9137837381c2876424b06c44bcc322d81fc344d3f7dbe1584602be05e840b9",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/test/native/fixtures/SharedToggleUITests.swift": "8866ca6336e80cd789ab265a5ceaa74b933cc120e04818ccdc636a81ca5598b6",
+        "/Users/glennmichaeltorregosa/.codex/worktrees/slot-strict-fixes/stx/packages/stx/test/native/fixtures/SharedToggleNativeTests.swift": "978b4b8d9eecb8310e37686bd0f023b857a0f271c1945c280eafe6a38c2ed9fe"
+      }
+    },
+    "fixtureCorrections": [
+      "Read live XCUIElement.isEnabled in the predicate and tap disabled controls by coordinate; no diagnostic label remains.",
+      "Compare UISwitch accessibility trait getter to a plain UIKit switch, instead of assuming its computed disabled state is a raw trait bit. Physical enabled state and actual UI behavior remain asserted.",
+      "Inspecting screenshots exposed fixture contrast; paired background/foreground classes make the controls legible in both appearances."
+    ]
+  },
+  "earlierBroadRun": {
+    "passed": 3096,
+    "failed": 2,
+    "failures": [
+      "Unchanged backend shutdown test exceeded its 10-second deadline under concurrent load; isolated retry and both complete files passed without changes to the deadline.",
+      "Template structure snapshot needed the intentional boolean-binding/comment update; reviewed diff changes those two source lines only."
+    ],
+    "finalBroadRunIsSeparate": true
+  },
+  "observations": [
+    "Shared checked/change and primitive value/value-change calls resolve to their actual maintained files together.",
+    "The only production change is boolean output for the shared native Switch. Clearing its model no longer drops control of an on native switch; legacy omission/retention semantics remain unchanged.",
+    "Real native control actions and actual UI taps verify boolean shared and object legacy event payloads, exact counts, disabled rejection, defaults, mixed checkbox glyph/state, retained native identity during updates, hidden remounts, fresh screens and disposal.",
+    "Parent-driven state/default writes produce no extra user-change events. Checkbox form value remains separate from checked state.",
+    "UIKit owns UISwitch accessibility traits: its disabled raw trait getter matches the platform control. UI enabled/off state and interactions are asserted directly."
+  ],
+  "artifacts": {
+    "light": {
+      "path": "docs/proposals/assets/shared-toggles-light-2026-11-02.png",
+      "sha256": "0b6188b4677568151123cb396638b3ae247c52c5c9cee91e71298ab415c15b55"
+    },
+    "dark": {
+      "path": "docs/proposals/assets/shared-toggles-dark-2026-11-02.png",
+      "sha256": "7ca386272f6136eb8fa06a1b66961b519047b533ddc60b15962a3918c44f429c"
+    }
+  },
+  "limits": [
+    "iOS Simulator evidence is not physical-device or Android drawing certification; Android normal/minified tests exercise the native protocol.",
+    "No VoiceOver/TalkBack, hardware-keyboard navigation, broad pixel-parity or native navigation-chrome certification.",
+    "The broader #2091 stays open. Craft source and the user-owned Map test edit remain untouched."
+  ]
+}

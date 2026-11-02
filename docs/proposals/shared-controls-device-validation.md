@@ -319,3 +319,57 @@ selector diagnostics remain visible and are pinned exactly by the protocol test.
 This is unreleased source after **0.2.784**. It does not certify physical devices,
 Android playback, provider streams/embeds, DRM, PiP/background interruption,
 audio mixing, accessibility or pixel parity. Keep the broader #2091 open.
+
+## Shared toggle acceptance: 2026-11-02
+
+```sh
+bun scripts/native-portability-ios.ts --craft-root /path/to/clean/craft \
+  --simulator "$STX_TEST_SIMULATOR" --appearance light --suite toggles
+```
+
+Repeat with `--appearance dark`. The gate requires **five passing tests, zero
+failures/skips**: three native unit tests and two actual-tap UI tests. The fixture
+uses normal resolution for shared checked/change calls and legacy
+value/value-change calls together. Its dependency guard checks all four real
+component files in iOS/Android normal/minified bundles.
+
+The native checks exercise the real UIButton checkbox and UISwitch: live
+checked/disabled/mixed state, mixed-glyph changes, defaults, stable native-view
+identity during updates, boolean shared events versus object legacy events,
+retained legacy state without parent writeback, hidden updates, repeated
+remounts, fresh screens and disposal. UI tests tap the actual controls, verify
+disabled touches emit nothing, and check exact event counts without a WebView.
+
+This found an STX defect: clearing the shared Switch model sent a null native
+value, which means uncontrolled retention to the host. An on switch therefore
+stayed on while the browser and parent model indicated off. The shared native
+binding now explicitly sends its boolean state, including false on reset.
+Legacy primitives and Craft remain unchanged. The four protocol cases failed
+before the fix; the original native remount case also retained `1` instead of `0`.
+
+The native tests compare UISwitch accessibility traits to an ordinary UIKit
+switch instead of assuming a disabled trait bit that UIKit does not expose
+through that getter. UI enabled polling reads `element.isEnabled` directly;
+there is no extra diagnostic label or runtime workaround. Screenshot review
+also caught poor contrast in the fixture; explicit paired colors now keep its
+labels readable in both appearances. Native navigation chrome is outside this
+component fixture's acceptance.
+
+Against clean Craft `c7984f088be396f9b2c9bedab4a7d0a64e3fab4e`, all five
+checks pass in both light and dark on iPhone 17 Pro / iOS 26.5 Simulator, with
+zero failures or skips. The same build is used in both appearances.
+
+The final native/components cohort passes **3,098 tests / zero failures**.
+Focused browser/native/legacy checks pass **21 tests / 356 assertions**. The
+template snapshot was updated for the reviewed native binding change; the
+earlier backend-shutdown timeout passed unchanged on retry. Both affected full
+files pass **12 tests / 50 assertions**, without changing a deadline.
+[Exact results, hashes and remaining limits](shared-toggles-ios-2026-11-02.json).
+
+| Light fixture | Dark fixture |
+| --- | --- |
+| ![Shared and legacy toggles in light appearance](assets/shared-toggles-light-2026-11-02.png) | ![Shared and legacy toggles in dark appearance](assets/shared-toggles-dark-2026-11-02.png) |
+
+This is unreleased source after **0.2.784**. Keep #2091 open: iOS Simulator
+checks do not certify Android/physical-device drawing, VoiceOver/TalkBack,
+keyboard navigation, broad pixel parity or native navigation chrome.
