@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.780...v0.2.781)
+
+## 🐛 Bug Fixes
+
+- **chat**: refresh inboxes only when their visible scope changes ([ec2934c](https://github.com/stacksjs/stx/commit/ec2934c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.781 ([dcf9782](https://github.com/stacksjs/stx/commit/dcf9782)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.779...v0.2.780)
 
 ## ✨ Features
