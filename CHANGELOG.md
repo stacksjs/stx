@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.790...v0.2.791)
+
+## ⚡ Performance Improvements
+
+- a component's caller scope is layered, not copied ([0d9af6a](https://github.com/stacksjs/stx/commit/0d9af6a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: binding nodes share their methods ([f5502be](https://github.com/stacksjs/stx/commit/f5502be)) _(by Chris <chrisbreuer93@gmail.com>)_
+- an event handler reads the names it mentions, not its whole scope ([cf75fe6](https://github.com/stacksjs/stx/commit/cf75fe6)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.791 ([840bb24](https://github.com/stacksjs/stx/commit/840bb24)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.789...v0.2.790)
 
 ## 🐛 Bug Fixes
