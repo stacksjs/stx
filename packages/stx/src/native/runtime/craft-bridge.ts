@@ -466,6 +466,17 @@ export function installCraftBridge(
       removeContentRules: (identifier: string) => call('removeContentRules', [identifier]),
       allowContent: (hosts: string[]) => call('allowContent', [hosts]),
       setUserScripts: (scripts: unknown[]) => call('setUserScripts', [scripts]),
+      answerBridge: (request: string, value: unknown, error?: string) => call('answerBridge', error === undefined ? [request, value ?? null] : [request, null, error]),
+      onBridge: (handler: string, answer: (message: AnyRecord) => unknown) => web.on('bridge', (event: AnyRecord) => {
+        if (event.handler !== handler) return
+        // Read, not `instanceof Error`: a handler's error can come from another realm.
+        const refusal = (error: unknown) => typeof (error as AnyRecord | null)?.message === 'string' ? (error as AnyRecord).message : String(error)
+        Promise.resolve()
+          .then(() => answer({ tab: event.tab, url: event.url, mainFrame: event.mainFrame, body: event.body }))
+          .then(value => web.answerBridge(event.request, value), error => web.answerBridge(event.request, null, refusal(error)))
+          // The tab closed or the host gave up on it: nobody is waiting for this answer any more.
+          .catch(() => {})
+      }),
       answerPermission: (request: string, decision: string) => call('answerPermission', [request, decision]),
       clearData: (options: AnyRecord) => call('clearData', [options]),
       setCookies: (options: AnyRecord) => call('setCookies', [options]),

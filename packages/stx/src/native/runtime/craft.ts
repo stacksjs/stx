@@ -524,6 +524,37 @@ export type NativeWebEvent =
   | { type: 'download', tab: string, id: string, state: 'started' | 'progress' | 'finished' | 'failed', path: string, name: string, url: string, received: number, total: number, fraction: number, message?: string, cancelled?: boolean }
   /** A site asks for the camera or microphone; answer with `answerPermission(request, ...)`. */
   | { type: 'permission', tab: string, request: string, kind: 'camera' | 'microphone' | 'camera+microphone', origin: string, protocol: string, port: number, mainFrame: boolean }
+  /** A user script with a `bridge` posted to it; answer with `answerBridge(request, ...)`, or let `onBridge` answer. */
+  | { type: 'bridge', tab: string, request: string, handler: string, body: unknown, url: string, mainFrame: boolean }
+
+/** A user script for `craft.web.setUserScripts`. */
+export interface NativeUserScript {
+  id: string
+  /** Hosts it runs on, with their subdomains; none is every site. */
+  hosts: string[]
+  css?: string
+  js?: string
+  /** An isolated world of the app's own unless `'page'`, where the page's scripts can see what it sets. */
+  world?: 'isolated' | 'page'
+  /** Document end unless `'start'`. */
+  at?: 'start' | 'end'
+  allFrames?: boolean
+  /**
+   * The name of a message handler the script posts to, in its own world:
+   * `webkit.messageHandlers[bridge].postMessage(body)` resolves to the app's
+   * answer (see `onBridge`). The page's own scripts cannot reach it.
+   */
+  bridge?: string
+}
+
+/** What a bridged script posted, as `onBridge` hands it over. */
+export interface NativeBridgeMessage {
+  tab: string
+  /** The frame's address. */
+  url: string
+  mainFrame: boolean
+  body: unknown
+}
 
 export interface NativeWebTab {
   readonly id: string
@@ -599,7 +630,15 @@ export interface NativeWeb {
    * an isolated world unless `world: 'page'`. JS runs at document end unless
    * `at: 'start'`. Replaces the set; pages pick it up on their next load.
    */
-  setUserScripts: (scripts: Array<{ id: string, hosts: string[], css?: string, js?: string, world?: 'isolated' | 'page', at?: 'start' | 'end', allFrames?: boolean }>) => Promise<boolean>
+  setUserScripts: (scripts: NativeUserScript[]) => Promise<boolean>
+  /**
+   * Answers what scripts post to `handler`: `answer`'s value (or its promise's)
+   * resolves the script's post, and a throw rejects it with the error's
+   * message. Returns the unsubscribe.
+   */
+  onBridge: (handler: string, answer: (message: NativeBridgeMessage) => unknown) => () => void
+  /** Answers one `bridge` event by hand: `error` rejects the script's post. Resolves whether it was still waiting. */
+  answerBridge: (request: string, value: unknown, error?: string) => Promise<boolean>
   /** Resolves whether the request was still waiting. */
   answerPermission: (request: string, decision: 'grant' | 'deny' | 'prompt') => Promise<boolean>
   /** A profile's cookies, storage and caches: one site's, or all of them. */

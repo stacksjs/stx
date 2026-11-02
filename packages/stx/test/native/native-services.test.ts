@@ -203,6 +203,41 @@ describe('web tabs', () => {
     expect(titles).toEqual(['a:One', 'b:Two'])
     expect(opened).toEqual(['y'])
   })
+
+  it('answers what bridged scripts post to their handler, and refuses with what was thrown', async () => {
+    const host = await runtime(['web'])
+    const web = host.scope.craft.web
+    const heard: unknown[] = []
+    const stop = web.onBridge('blocker', async (message: any) => {
+      heard.push(message)
+      if (message.body.api === 'refuse') throw new Error('not here')
+      return { ok: true, settings: { enabled: true } }
+    })
+    const send = (detail: Record<string, unknown>) => host.receive({ type: 'CRAFT_EVENT', payload: { event: 'craftWebView', detail: { type: 'bridge', tab: 't1', url: 'https://x.com/', mainFrame: true, ...detail } } })
+    const answers = () => host.requests().filter(request => request.payload.method === 'answerBridge').map(request => request.payload.args)
+    const settle = () => new Promise(resolve => setTimeout(resolve, 0))
+
+    send({ request: 'r1', handler: 'blocker', body: { v: 1, api: 'runtime.sendMessage' } })
+    send({ request: 'r2', handler: 'someone-else', body: {} })
+    send({ request: 'r3', handler: 'blocker', body: { v: 1, api: 'refuse' } })
+    await settle()
+    expect(heard).toEqual([
+      { tab: 't1', url: 'https://x.com/', mainFrame: true, body: { v: 1, api: 'runtime.sendMessage' } },
+      { tab: 't1', url: 'https://x.com/', mainFrame: true, body: { v: 1, api: 'refuse' } },
+    ])
+    expect(answers()).toEqual([['r1', { ok: true, settings: { enabled: true } }], ['r3', null, 'not here']])
+
+    // Nothing to answer is the page's null, and a stopped handler hears nothing more.
+    web.answerBridge('r4', undefined).catch(() => {}) // left unanswered on purpose
+    expect(answers().at(-1)).toEqual(['r4', null])
+    stop()
+    send({ request: 'r5', handler: 'blocker', body: {} })
+    await settle()
+    expect(heard).toHaveLength(2)
+
+    web.setUserScripts([{ id: 'content', hosts: [], js: 'x', world: 'isolated', bridge: 'blocker' }]).catch(() => {}) // left unanswered on purpose
+    expect(host.requests().at(-1)!.payload).toMatchObject({ method: 'setUserScripts', args: [[{ id: 'content', bridge: 'blocker' }]] })
+  })
 })
 
 describe('the screen coming back, and new params', () => {
