@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.785...v0.2.786)
+
+## 🐛 Bug Fixes
+
+- settle immediate native host mutation work in screen tests ([3040a58](https://github.com/stacksjs/stx/commit/3040a58)) _(by Chris Breuer <chris@stacksjs.com>)_
+- honor authored bounds in shared list viewports ([1e6ca71](https://github.com/stacksjs/stx/commit/1e6ca71)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.786 ([13d3a6f](https://github.com/stacksjs/stx/commit/13d3a6f)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.784...v0.2.785)
 
 ## ✨ Features
