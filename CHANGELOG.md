@@ -1,5 +1,40 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.784...v0.2.785)
+
+## ✨ Features
+
+- adapt native text metrics for shared browser views ([a583f0c](https://github.com/stacksjs/stx/commit/a583f0c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: honor host link precedence in press tests (#2147) ([ebc846c](https://github.com/stacksjs/stx/commit/ebc846c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2147](https://github.com/stacksjs/stx/issues/2147), [#2147](https://github.com/stacksjs/stx/issues/2147))
+- **components**: reset the shared native Switch to an explicit off value ([641dda7](https://github.com/stacksjs/stx/commit/641dda7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: settle Video props before creating its player ([a6f1b4a](https://github.com/stacksjs/stx/commit/a6f1b4a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: create remounted images with settled source and handlers ([9a0c5c7](https://github.com/stacksjs/stx/commit/9a0c5c7)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091))
+- **components**: retain the native Image containing box across its scope ([813c0ee](https://github.com/stacksjs/stx/commit/813c0ee)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091))
+
+## 📝 Documentation
+
+- **native**: retain toggle acceptance and reset regression evidence ([96c1659](https://github.com/stacksjs/stx/commit/96c1659)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: retain shared Video simulator verification ([e0b8668](https://github.com/stacksjs/stx/commit/e0b8668)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: record shared Image acceptance and Craft pixel blocker ([1309815](https://github.com/stacksjs/stx/commit/1309815)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ✅ Tests
+
+- **native**: verify shared and legacy toggle controls with UIKit ([44b887f](https://github.com/stacksjs/stx/commit/44b887f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: verify shared Video playback with UIKit ([fdaada6](https://github.com/stacksjs/stx/commit/fdaada6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: add shared Image simulator acceptance gate ([645096c](https://github.com/stacksjs/stx/commit/645096c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#441](https://github.com/stacksjs/stx/issues/441))
+
+## 🔧 Chores
+
+- release v0.2.785 ([fa2b94e](https://github.com/stacksjs/stx/commit/fa2b94e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.782...v0.2.783)
 
 ## ⚡ Performance Improvements
