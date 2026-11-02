@@ -3290,12 +3290,17 @@ else {
   // for once more behind the swap. If it changed, the cache takes the new copy
   // and stx:updated says so, so the page can refresh what it shows; the
   // screen is never swapped out from under the user.
+  function prefetchHeaders(fragment){
+    var headers={'Accept':'text/html','Purpose':'prefetch'};
+    if(fragment)headers['X-STX-Router']='true';
+    return headers;
+  }
   function revalidate(key,url){
     if(!o.revalidate||!o.cache||!key||prefetching[key])return;
     if(Date.now()-(cacheAt[key]||0)<o.revalidateAfter)return;
     // Compare like with like, including documents prefetched across layouts.
     var before=cache[key],wantsFragment=before?isFragment(before):shouldUseFragmentResponse();
-    prefetching[key]=queuePrefetch(key,function(){return fetch(url,{priority:'low',headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
+    prefetching[key]=queuePrefetch(key,function(){return fetch(url,{priority:'low',headers:prefetchHeaders(wantsFragment)}).then(function(r){
       var incoming=r.headers.get('X-STX-Build')||'';
       if(isBuildSkew(incoming)){reloadForSkew(url,incoming,true);return null}
       return readPrefetchResponse(r,wantsFragment);
@@ -3712,7 +3717,7 @@ else {
     }
     var eager=link.getAttribute('data-stx-prefetch')==='eager';
     var wantsFragment=shouldUseFragmentResponse();
-    prefetching[key]=queuePrefetch(key,function(){return fetch(href,{priority:'low',headers:wantsFragment?{'X-STX-Router':'true','Accept':'text/html'}:{'Accept':'text/html'}}).then(function(r){
+    prefetching[key]=queuePrefetch(key,function(){return fetch(href,{priority:'low',headers:prefetchHeaders(wantsFragment)}).then(function(r){
       return readPrefetchResponse(r,wantsFragment);
     }).then(function(result){
       // A page in another layout cannot be swapped in as a fragment: the tap
@@ -3721,7 +3726,7 @@ else {
       // still reaching for the link, so the tap is a swap like any other.
       if(!result||!isFragment(result.html)||!checkLayoutChange(result.layout,href,result.layoutGroup))return result;
       // Same guards as any prefetch; the layout is the one the fragment declared.
-      return fetch(href,{priority:'low',headers:{'Accept':'text/html'}}).then(function(full){
+      return fetch(href,{priority:'low',headers:prefetchHeaders(false)}).then(function(full){
         return full.ok?readPrefetchResponse(full,false).then(function(doc){return doc&&(doc.layout=result.layout,doc.layoutGroup=result.layoutGroup,doc)}):null;
       });
     }).then(function(result){
@@ -4119,7 +4124,7 @@ else {
       var key=cacheKey(url);
       if(!cache[key]){
         var wantsFragment=shouldUseFragmentResponse();
-        fetch(url,{headers:wantsFragment?{'X-STX-Router':'true'}:{'Accept':'text/html'}}).then(function(r){return readPrefetchResponse(r,wantsFragment)}).then(function(result){if(result)setCache(key,result.html,result.layout,result.layoutGroup,result.title,result.containerAttrs)}).catch(function(){});
+        fetch(url,{headers:prefetchHeaders(wantsFragment)}).then(function(r){return readPrefetchResponse(r,wantsFragment)}).then(function(result){if(result)setCache(key,result.html,result.layout,result.layoutGroup,result.title,result.containerAttrs)}).catch(function(){});
       }
     },
     // Re-run the CURRENT route against the server and swap the result.

@@ -165,6 +165,9 @@ Background page prefetches and revalidations run at most two at a time. Hover or
 touch intent moves a queued page ahead of links merely visible on screen. A
 navigation starts its queued destination immediately and shares that request,
 so it never waits for the speculative queue or fetches the page twice.
+Speculative HTML requests declare `Purpose: prefetch`, including cross-layout
+document fallback, background revalidation and `router.prefetch()`. Ordinary
+navigation requests do not carry that declaration.
 
 ### Route Type Generation
 

@@ -37,6 +37,7 @@ const APP_HEADERS = { 'X-STX-Layout': 'layouts/app', 'X-STX-Layout-Group': 'app'
 
 function install(headers: Record<string, string>, extraBody = '', options: { revalidate?: boolean, revalidateAfter?: number, text?: () => string } = {}) {
   const requests: Array<'fragment' | 'document'> = []
+  const purposes: Array<string | null> = []
   const window = new Window({ url: 'http://localhost/home' })
   window.document.write(`<html><head>${APP_METAS}</head><body>`
     + '<nav id="app-nav"><a id="go" href="/explore" data-stx-link>Discover</a></nav>'
@@ -66,6 +67,7 @@ function install(headers: Record<string, string>, extraBody = '', options: { rev
     fetch: async (_url: string, init?: any) => {
       const wantsFragment = !!init?.headers?.['X-STX-Router']
       requests.push(wantsFragment ? 'fragment' : 'document')
+      purposes.push(new Headers(init?.headers).get('Purpose'))
       if (wantsFragment) {
         return new Response('<main data-stx-content>Explore</main>', {
           headers: { 'Content-Type': 'text/html', 'X-STX-Fragment': 'true', ...headers },
@@ -80,12 +82,33 @@ function install(headers: Record<string, string>, extraBody = '', options: { rev
   })
 
   new Function(getRouterScript())()
-  return { window: window as Window & { stxRouter: any }, requests }
+  return { window: window as Window & { stxRouter: any }, requests, purposes }
 }
 
 const settle = (ms = 60) => new Promise(resolve => setTimeout(resolve, ms))
 
 describe('a prefetch into another layout', () => {
+  it('declares both speculative requests while ordinary navigation keeps its purpose', async () => {
+    const prefetched = install(PUBLIC_HEADERS)
+    prefetched.window.document.getElementById('go')!.dispatchEvent(new prefetched.window.Event('mouseover', { bubbles: true }))
+    await settle()
+    expect(prefetched.requests).toEqual(['fragment', 'document'])
+    expect(prefetched.purposes).toEqual(['prefetch', 'prefetch'])
+
+    const ordinary = install(PUBLIC_HEADERS)
+    await ordinary.window.stxRouter.navigate('/explore')
+    expect(ordinary.requests.length).toBeGreaterThan(0)
+    expect(ordinary.purposes.every(purpose => purpose === null)).toBe(true)
+  })
+
+  it('declares public prefetch calls as speculative', async () => {
+    const { window, requests, purposes } = install(APP_HEADERS)
+    window.stxRouter.prefetch('/explore')
+    await settle()
+    expect(requests).toEqual(['fragment'])
+    expect(purposes).toEqual(['prefetch'])
+  })
+
   it('brings the whole document, so the tap needs nothing more', async () => {
     const { window, requests } = install(PUBLIC_HEADERS)
     window.document.getElementById('go')!.dispatchEvent(new window.Event('mouseover', { bubbles: true }))
@@ -118,7 +141,7 @@ describe('a prefetch into another layout', () => {
 
   it.each([false, true])('revalidates a cached document as a document (changed: %s)', async (changed) => {
     let text = 'Explore v1'
-    const { window, requests } = install(PUBLIC_HEADERS, '', { revalidate: true, revalidateAfter: 0, text: () => text })
+    const { window, requests, purposes } = install(PUBLIC_HEADERS, '', { revalidate: true, revalidateAfter: 0, text: () => text })
     const updated: unknown[] = []
     window.addEventListener('stx:updated', (event: any) => updated.push(event.detail))
     window.document.getElementById('go')!.dispatchEvent(new window.Event('mouseover', { bubbles: true }))
@@ -130,6 +153,7 @@ describe('a prefetch into another layout', () => {
 
     expect(window.document.querySelector('main')?.textContent?.trim()).toBe('Explore v1')
     expect(requests).toEqual(['fragment', 'document', 'document'])
+    expect(purposes).toEqual(['prefetch', 'prefetch', 'prefetch'])
     expect(updated).toEqual(changed ? [{ url: '/explore', kind: 'page' }] : [])
     expect(window.stxRouter.cache['/explore']).toStartWith('<!DOCTYPE html>')
     expect(window.stxRouter.cache['/explore']).toContain(text)
