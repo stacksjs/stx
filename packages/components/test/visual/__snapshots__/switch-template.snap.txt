@@ -107,12 +107,13 @@ defineExpose({ isChecked, toggle })
       :value="isChecked() ? '{{ checkedValue }}' : '{{ uncheckedValue }}'"
     />
     @endif
+  {{-- Keep the controlled value boolean when a nullable model resets. --}}
     <div
     data-native="Switch"
     data-stx-native-host-root
     role="switch"
     value="{{ checked ? 'true' : 'false' }}"
-    :value="isChecked()"
+    :value="!!isChecked()"
     aria-label="{{ label || 'Toggle switch' }}"
     :aria-label="currentLabel() || 'Toggle switch'"
     :aria-checked="isChecked() ? 'true' : 'false'"

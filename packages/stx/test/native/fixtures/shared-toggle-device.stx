@@ -1,0 +1,37 @@
+@import('Button', '../../../../../components/src/ui/button/Button.stx')
+<script client>
+const checked = state(false)
+const switched = state(false)
+const disabled = state(false)
+const mixed = state(false)
+const shown = state(true)
+const checkEvents = state([])
+const switchEvents = state([])
+const legacyEvents = state([])
+function checkChanged(value) {
+  checkEvents.set([...checkEvents(), value])
+  checked.set(value)
+  mixed.set(false)
+}
+function switchChanged(value) { switchEvents.set([...switchEvents(), value]) }
+function legacyChanged(kind, event) {
+  legacyEvents.set([...legacyEvents(), { kind, type: typeof event, value: event.value }])
+}
+window.toggleProbe = { checked, switched, disabled, mixed, shown, checkEvents, switchEvents, legacyEvents }
+</script>
+<section class="p-4 gap-2 bg-white dark:bg-black text-black dark:text-white">
+  <section :if="shown" class="gap-3">
+    <Checkbox testID="shared-check" :checked="checked" :disabled="disabled" :indeterminate="mixed" value="agreement" label="Shared checkbox" @change="checkChanged($event)" />
+    <Switch testID="shared-switch" v-model:checked="switched" :disabled="disabled" label="Shared switch" @change="switchChanged($event)" />
+  </section>
+  <Checkbox testID="legacy-check" value="false" label="Legacy checkbox" @value-change="legacyChanged('checkbox', $event)" />
+  <Switch testID="legacy-switch" value="false" label="Legacy switch" @value-change="legacyChanged('switch', $event)" />
+  <p testID="toggle-state">State: {{ Boolean(checked) }},{{ Boolean(switched) }}</p>
+  <p testID="toggle-events">Events: {{ checkEvents.length }},{{ switchEvents.length }},{{ legacyEvents.length }}</p>
+  <Button testID="toggle-disable" @click="disabled.set(!disabled())">Disable</Button>
+  <Button testID="toggle-mixed" @click="mixed.set(!mixed())">Mixed</Button>
+  <Button testID="toggle-true" @click="checked.set(true);switched.set(true)">Set true</Button>
+  <Button testID="toggle-false" @click="checked.set(false);switched.set(false)">Set false</Button>
+  <Button testID="toggle-defaults" @click="checked.set(null);switched.set(null);disabled.set(null);mixed.set(null)">Defaults</Button>
+  <Button testID="toggle-shown" @click="shown.set(!shown())">Toggle controls</Button>
+</section>

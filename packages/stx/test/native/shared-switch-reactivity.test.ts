@@ -128,4 +128,41 @@ describe.each([false, true])('shared Switch disabled state (minify=%s)', (minify
     expect(values().alerts).toBeUndefined()
     expect(browser.errors).toEqual([])
   }, 30_000)
+
+  it('keeps browser off/default and form semantics for nullable models through remount', async () => {
+    const root = createTempDir('stx-switch-defaults-browser-')
+    const html = await processDirectives(`<!DOCTYPE html><html><head></head><body>${source}</body></html>`, {}, join(root, 'Screen.stx'), {
+      ...defaultConfig, root, cache: false, buildMode: undefined, debug: !minify,
+    }, new Set())
+    const browser = await boot({ documents: new Map([['/', html]]), dispose: async () => {} }, '/')
+    await settle()
+    const control = () => find(browser, 'button[role="switch"]')
+    const probe = browser.window.probe
+    const values = () => Object.fromEntries(new browser.window.FormData(find(browser, 'form')).entries())
+    const button = control()
+    for (const empty of [null, undefined]) {
+      probe.checked.set(true)
+      await settle()
+      expect(control().getAttribute('aria-checked')).toBe('true')
+      probe.checked.set(empty)
+      await settle()
+      expect(control()).toBe(button)
+      expect(control().getAttribute('aria-checked')).toBe('false')
+      expect(values().alerts).toBe('false')
+    }
+    expect(probe.changes()).toBe(0)
+    control().click()
+    await settle()
+    expect(probe.checked()).toBe(true)
+    expect(probe.changes()).toBe(1)
+    probe.shown.set(false)
+    await settle()
+    probe.checked.set(null)
+    probe.shown.set(true)
+    await settle()
+    expect(control().getAttribute('aria-checked')).toBe('false')
+    expect(values().alerts).toBe('false')
+    expect(probe.changes()).toBe(1)
+    expect(browser.errors).toEqual([])
+  }, 30_000)
 })
