@@ -734,6 +734,16 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     return find(node)
   }
 
+  /** Whether `name` is one of the caller's bindings a component wrapper holds for its component. */
+  function callerBindingOnWrapper(node: NativeNode, name: string): boolean {
+    if (!isBindingNode(node) || !node.hasAttribute('data-stx-component-wrapper')) return false
+    const bindings = node.getAttribute('data-stx-parent-bindings')
+    if (!bindings) return false
+    const flat = (text: string) => text.replace(/-/g, '').toLowerCase()
+    const wanted = flat(name)
+    return bindings.split(/\s+/).some(binding => binding && flat(binding) === wanted)
+  }
+
   function applyForwardedStyle(node: NativeNode, name: string, value: unknown): boolean {
     const record = recordOf(node)
     if (name === 'class' || name === 'class-name' || name === 'className') {
@@ -1110,6 +1120,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         if (applyForwardedStyle(forwarded, name, value)) return
         node = forwarded
       }
+      // A component's wrapper carries its caller's bindings for the component
+      // to read (useReactiveProp reads the attribute set above). They are the
+      // component's props, not the wrapper view's: sent to the host as well,
+      // a row's testID landed on the view around it too, and a test pressed
+      // whichever of the two it found first.
+      else if (callerBindingOnWrapper(node, name)) return
       if (name === 'class' || name === 'className') {
         const record = recordOf(node)
         record.classes = String(value ?? '')
