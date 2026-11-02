@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.781...v0.2.782)
+
+## ✨ Features
+
+- **native**: craft.web.onBridge answers what bridged user scripts post ([76fc62a](https://github.com/stacksjs/stx/commit/76fc62a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.782 ([8607ac0](https://github.com/stacksjs/stx/commit/8607ac0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.780...v0.2.781)
 
 ## 🐛 Bug Fixes
