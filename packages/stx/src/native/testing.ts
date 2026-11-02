@@ -50,6 +50,17 @@ export interface NativeNode {
   key?: string
 }
 
+/** The host's tap decision, before any screen handler is dispatched (#2147). */
+function nativeTapAction(node: NativeNode): { kind: 'blocked' | 'event' } | { kind: 'navigate', target: string } {
+  if (node.props.disabled === true) return { kind: 'blocked' }
+  if (['Link', 'TouchableOpacity', 'TouchableHighlight', 'Pressable'].includes(node.type)) {
+    for (const value of [node.props.href, node.props.to]) {
+      if (typeof value === 'string' && value.trim()) return { kind: 'navigate', target: value.trim() }
+    }
+  }
+  return { kind: 'event' }
+}
+
 export interface NativeOperation { op: string, id: string, parentId?: string, childId?: string, index?: number, node?: NativeNode, patch?: Partial<NativeNode> }
 export interface NativeMessage { id: string, type: string, payload: { document?: NativeNode, operations?: NativeOperation[], handlerId?: string } & Record<string, unknown> }
 
@@ -218,7 +229,7 @@ export interface NativeScreen {
   requests: string[]
   /** The headers each request was sent with, in order. */
   headers: Array<Record<string, string>>
-  /** Screens opened (`navigation.open`, NAVIGATE_OPEN, NAVIGATE_REPLACE). */
+  /** Navigation targets requested by host taps or screen code, before platform routing. */
   opened: string[]
   /** Screens this one was replaced with. */
   replaced: string[]
@@ -252,7 +263,7 @@ export interface NativeScreen {
   ofType: (type: string) => NativeNode[]
   /** Every text on screen, in no particular order. */
   texts: () => string[]
-  /** Tap a node (or send it another event, with what the host would say about it). */
+  /** Tap with host link precedence, or deliver another named native event. */
   press: (node: NativeNode, event?: string, nativeEvent?: Record<string, unknown>) => void
   /** Type into a text input: its `onChangeText` with the whole new text. */
   type: (node: NativeNode, text: string) => void
@@ -696,6 +707,15 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
   const all = () => [...nodes.values()]
   const press = (node: NativeNode, event = 'onPress', nativeEvent: Record<string, unknown> = {}) => {
     if (!node) throw new Error(`nothing to ${event}`)
+    if (event === 'onPress' || event === 'onClick') {
+      if (ended || nodes.get(node.id) !== node) return
+      const action = nativeTapAction(node)
+      if (action.kind === 'blocked') return
+      if (action.kind === 'navigate') {
+        opened.push(action.target)
+        return
+      }
+    }
     if (!node.events[event]) throw new Error(`${node.type} has no ${event}`)
     send('EVENT', { handlerId: node.events[event], nativeEvent })
   }
@@ -711,7 +731,7 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
     ofType: (type: string) => all().filter(node => node.type === type),
     /** Every text on screen, in no particular order. */
     texts: () => all().flatMap(node => node.children.filter((child): child is string => typeof child === 'string')),
-    /** Tap a node (or send it another event, with what the host would say about it). */
+    /** Tap with host link precedence, or deliver another named native event. */
     press,
     /** Type into a text input: its `onChangeText` with the whole new text. */
     type: (node: NativeNode, text: string) => press(node, 'onChangeText', { text }),

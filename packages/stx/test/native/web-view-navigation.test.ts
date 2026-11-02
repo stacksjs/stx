@@ -1,10 +1,11 @@
 /**
- * Moving on from a web view on a native screen: `<a href>`, `<StxLink>`,
- * `navigate()`, `location` and `history` all go through Craft navigation, by
- * the web path the link names. The app's native routes are its web paths, so
- * nothing is rewritten on the way (no `/m` prefix).
+ * Host taps and delivered runtime events are distinct boundaries (#2147).
+ * Craft's current link target pre-empts the screen handler. If an EVENT is
+ * delivered, STX still owns URL normalization, cancellation and system links.
+ * Preserve those runtime assertions without presenting them as host tap behavior.
  */
 import { expect, test } from 'bun:test'
+import type { NativeNode, NativeScreen } from '../../src/native/testing'
 import { mountWebView, webApp } from './web-view-app'
 
 const linkTo = (phone: Awaited<ReturnType<typeof mountWebView>>, href: string) => {
@@ -13,7 +14,13 @@ const linkTo = (phone: Awaited<ReturnType<typeof mountWebView>>, href: string) =
   return link
 }
 
-test('pressing a link or a StxLink opens its web path', async () => {
+function deliverRuntimePress(phone: NativeScreen, node: NativeNode): void {
+  const handlerId = node.events.onPress
+  if (!handlerId) throw new Error('No runtime press handler')
+  phone.send('EVENT', { handlerId, nativeEvent: {} })
+}
+
+test('host taps retain their requested targets; delivered link events normalize web paths', async () => {
   const root = webApp({
     'views/home.stx': `<div>
   <a href="/plans/12">Plan</a>
@@ -24,12 +31,15 @@ test('pressing a link or a StxLink opens its web path', async () => {
 `,
   })
   const phone = await mountWebView(root, { Home: 'views/home.stx' }, 'Home')
-  phone.press(linkTo(phone, '/plans/12'))
-  phone.press(linkTo(phone, '/settings/profile'))
-  phone.press(linkTo(phone, 'settings'))
-  phone.press(linkTo(phone, 'https://fixture.invalid/workouts?week=2'))
+  const targets = ['/plans/12', '/settings/profile', 'settings', 'https://fixture.invalid/workouts?week=2']
+  for (const href of targets) phone.press(linkTo(phone, href))
   await phone.settle()
-  expect(phone.opened).toEqual(['/plans/12', '/settings/profile', '/settings', '/workouts?week=2'])
+  expect(phone.opened).toEqual(targets)
+  phone.unmount()
+  const runtime = await mountWebView(root, { Home: 'views/home.stx' }, 'Home')
+  for (const href of targets) deliverRuntimePress(runtime, linkTo(runtime, href))
+  await runtime.settle()
+  expect(runtime.opened).toEqual(['/plans/12', '/settings/profile', '/settings', '/workouts?week=2'])
 })
 
 test('a link a binding points elsewhere opens where it points now', async () => {
@@ -73,7 +83,7 @@ test('a link in a list row opens its own path, for rows added later too', async 
   expect(phone.opened).toEqual(['/plans/2', '/plans/3'])
 })
 
-test('a link\'s own click runs first, and one that prevents it stays', async () => {
+test('host link taps pre-empt callbacks; delivered runtime events preserve cancellation', async () => {
   const root = webApp({
     'views/home.stx': `<script client>
   const seen = state('none')
@@ -91,17 +101,24 @@ test('a link\'s own click runs first, and one that prevents it stays', async () 
   })
   const phone = await mountWebView(root, { Home: 'views/home.stx' }, 'Home')
   phone.press(linkTo(phone, '/stats'))
-  await phone.settle()
-  expect(phone.texts()).toContain('tracked')
   phone.press(linkTo(phone, '/elsewhere'))
-  phone.press(linkTo(phone, '#top'))
-  phone.press(linkTo(phone, 'javascript:void(0)'))
   await phone.settle()
-  expect(phone.texts()).toContain('stayed')
-  expect(phone.opened).toEqual(['/stats'])
+  expect(phone.texts()).toContain('none')
+  expect(phone.opened).toEqual(['/stats', '/elsewhere'])
+  phone.unmount()
+  const runtime = await mountWebView(root, { Home: 'views/home.stx' }, 'Home')
+  deliverRuntimePress(runtime, linkTo(runtime, '/stats'))
+  await runtime.settle()
+  expect(runtime.texts()).toContain('tracked')
+  deliverRuntimePress(runtime, linkTo(runtime, '/elsewhere'))
+  deliverRuntimePress(runtime, linkTo(runtime, '#top'))
+  deliverRuntimePress(runtime, linkTo(runtime, 'javascript:void(0)'))
+  await runtime.settle()
+  expect(runtime.texts()).toContain('stayed')
+  expect(runtime.opened).toEqual(['/stats'])
 })
 
-test('another site, mail and phone links go to the system', async () => {
+test('host link targets are recorded without fabricating runtime Linking calls', async () => {
   const root = webApp({
     'views/contact.stx': `<div>
   <a href="https://maps.example.com/gym">Map</a>
@@ -110,15 +127,24 @@ test('another site, mail and phone links go to the system', async () => {
 `,
   })
   const urls: unknown[] = []
-  const phone = await mountWebView(root, { Contact: 'views/contact.stx' }, 'Contact', {
+  const options = {
     capabilities: ['linking'],
-    native: (module, method, args) => { if (module === 'Linking') urls.push(args[0]); return true },
-  })
+    native: (module: string, method: string, args: unknown[]) => { if (module === 'Linking' && method === 'openURL') urls.push(args[0]); return true },
+  }
+  const phone = await mountWebView(root, { Contact: 'views/contact.stx' }, 'Contact', options)
   phone.press(linkTo(phone, 'https://maps.example.com/gym'))
   phone.press(linkTo(phone, 'mailto:coach@example.com'))
   await phone.settle()
+  expect(urls).toEqual([])
+  expect(phone.opened).toEqual(['https://maps.example.com/gym', 'mailto:coach@example.com'])
+  expect(phone.natives).not.toContain('Linking.openURL')
+  phone.unmount()
+  const runtime = await mountWebView(root, { Contact: 'views/contact.stx' }, 'Contact', options)
+  deliverRuntimePress(runtime, linkTo(runtime, 'https://maps.example.com/gym'))
+  deliverRuntimePress(runtime, linkTo(runtime, 'mailto:coach@example.com'))
+  await runtime.settle()
   expect(urls).toEqual(['https://maps.example.com/gym', 'mailto:coach@example.com'])
-  expect(phone.opened).toEqual([])
+  expect(runtime.opened).toEqual([])
 })
 
 test('navigate(), location and history move the screen', async () => {

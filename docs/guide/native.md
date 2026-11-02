@@ -769,8 +769,30 @@ What it returns:
 | `appState(state)`, `background()`, `resume()`, `appear()`, `disappear()`, `newParams(params)`, `appearance(scheme)`, `keepSnapshot(name, value)`, `craftEvent(event, detail)`, `send(type, payload)` | What the host tells the screen |
 | `setOnline(online)` | Airplane mode on and off |
 | `setSessionToken(token \| null)` | Another context signing in, out or as someone else: the token changes and `craft.session.onChange` hears it. A screen's own `SecureStorage.set/remove` of the token reports it the same way |
-| `requests`, `headers`, `natives`, `messages`, `operations()`, `opened`, `replaced`, `moves`, `bars`, `alerts`, `animations`, `streams`, `snapshots`, `secureStorage`, `stored`, `context` | What the screen did, and the vm it runs in |
+| `requests`, `headers`, `natives`, `messages`, `operations()`, `opened`, `replaced`, `moves`, `bars`, `alerts`, `animations`, `streams`, `snapshots`, `secureStorage`, `stored`, `context` | What the screen and host did, and the vm the screen runs in |
 | `unmount()`, `ended` | End the screen |
+
+For primary taps (`onPress`, or `onClick`), `press()` models the current mobile
+host's link precedence. A `Link`, `TouchableOpacity`, `TouchableHighlight` or
+`Pressable` requests its first nonempty string `href` or `to`, trimmed, and records
+that target in `opened`. The screen's press handler is not dispatched,
+including when it would call `preventDefault()`. A target needs no handler.
+Disabled controls, removed/replaced node references and ended screens stay inert.
+Other node types retain their ordinary handler behavior.
+
+`opened` records the requested target at that boundary, before platform URL
+handling. A host-handled external URL does not fabricate a screen-side
+`Linking.openURL` request. Runtime URL normalization and cancellation are tested
+separately by explicitly delivering bridge events.
+
+This catches a row with both a link target and an action handler: a test can
+now observe the host opening the target instead of running the action.
+[Craft #442](https://github.com/craft-native/craft/issues/442) tracks the host
+behavior discussion; the kit follows that contract rather than choosing its own.
+
+Other named events, such as `press(node, 'onPressOut', payload)`, retain their
+direct delivery. For deliberate bridge-message injection, use
+`send('EVENT', { handlerId, nativeEvent })`.
 
 A screen ends when its test does (an `afterEach` the module registers under
 `bun test`), or at `unmount()`, as it does on a phone: its own unmount runs,
