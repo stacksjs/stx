@@ -102,6 +102,8 @@ interface NodeRecord {
   divide?: { style: STXStyle, dark?: STXStyle }
   /** The border its parent's `divide-*` gives this node, when it is not the first child shown. */
   dividerStyle?: Record<string, unknown>
+  /** Its children have been given divider styles (it had `divide-*` classes at some point). */
+  hadDividers?: boolean
 }
 
 interface RetainedNativeNode extends NativeNode {
@@ -304,6 +306,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   }
 
   function refreshDividersOf(record: NodeRecord): void {
+    // A list without `divide-*` whose children never had a divider has nothing
+    // to refresh. This runs on every insert, so without the check filling a
+    // list walked every sibling each time: quadratic in the list's length.
+    if (!record.divide && !record.hadDividers) return
+    if (record.divide) record.hadDividers = true
     let first = true
     for (const child of record.children) {
       if (child.__stxAnchor !== undefined) continue
@@ -951,8 +958,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     // Children are adopted in order, so a divided parent that already holds
     // a shown child gives this one its divider before its first render.
     const ownerRecord = owner ? descriptorOf(owner) : undefined
-    if (ownerRecord?.divide && ownerRecord.children.some(child => child.__stxAnchor === undefined && descriptorOf(child)?.visible))
+    if (ownerRecord?.divide && ownerRecord.children.some(child => child.__stxAnchor === undefined && descriptorOf(child)?.visible)) {
       record.dividerStyle = { ...ownerRecord.divide.style, ...(colorScheme === 'dark' ? ownerRecord.divide.dark : {}) }
+      ownerRecord.hadDividers = true
+    }
     record.style = resolveStyle(record, node.__stxId)
     if (descriptor) descriptor.style = { ...record.style } as STXNode['style']
     records.set(node.__stxId, record)
@@ -1560,10 +1569,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
        * -- so measuring first reports a position one too far to the right, and
        * a row reordered to the end lands one short of it.
        */
-      const existing = record.children.findIndex(child => child.__stxId === node.__stxId)
+      // A node that was never placed (a new row) has nothing to take out.
+      const existing = oldOwner === parent ? record.children.findIndex(child => child.__stxId === node.__stxId) : -1
       if (existing !== -1)
         record.children.splice(existing, 1)
-      else if (oldOwner) {
+      else if (oldOwner && oldOwner !== parent) {
         const oldRecord = recordOf(oldOwner)
         const oldIndex = oldRecord.children.findIndex(child => child.__stxId === node.__stxId)
         if (oldIndex !== -1)
