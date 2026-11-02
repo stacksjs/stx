@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.782...v0.2.783)
+
+## ⚡ Performance Improvements
+
+- **native**: remember compiled class styles, so a screen compiles each class list once ([567ab95](https://github.com/stacksjs/stx/commit/567ab95)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.783 ([0e9e0ac](https://github.com/stacksjs/stx/commit/0e9e0ac)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.781...v0.2.782)
 
 ## ✨ Features
