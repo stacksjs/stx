@@ -1170,6 +1170,11 @@ function unresolvedComponentMarkup(componentPath: string): string {
  * interpolations such as `{{ title() }}` client-owned even when a static prop
  * named `title` also exists in the server context.
  */
+/** Props whose binding is the caller's business (structure, identity, styling), never the component's. */
+const SNAPSHOT_PROP_EXEMPT = new Set(['for', 'if', 'show', 'key', 'ref', 'class', 'className', 'style'])
+/** Each component and prop is warned about once a process. */
+const snapshotPropWarnings = new Set<string>()
+
 /**
  * Composables whose result is a signal the template reads (`{{ wide() }}`): a
  * script that only has one of these is still a client script, and the name it
@@ -1598,6 +1603,21 @@ export async function renderComponentWithSlot(
         if (new RegExp(`\\$props\\s*(?:\\.\\s*${escaped}\\b|\\[\\s*['"]${escaped}['"]\\s*\\])`).test(componentContent)
           || new RegExp(`\\buseReactiveProp\\s*\\(\\s*['"]${escaped}['"]`).test(componentContent))
           renderMetadata.consumedProps?.add(propName)
+      }
+    }
+
+    // A prop the caller binds (`:label="row.title"`, a :for's row) lives on the
+    // client, and defineProps() does not follow it: such a component rendered a
+    // stale value or, on a native screen and in a loop, nothing, with no word
+    // of why. Say so.
+    if (renderMetadata?.reactiveProps?.length && /\bdefineProps\s*(?:<[^>]*>)?\s*\(/.test(componentContent)) {
+      for (const propName of renderMetadata.reactiveProps) {
+        if (SNAPSHOT_PROP_EXEMPT.has(propName) || renderMetadata.consumedProps?.has(propName)) continue
+        if (new RegExp(`\\buse(?:ReactiveProp|Model)\\s*\\(\\s*['"]${propName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"]`).test(componentContent)) continue
+        const key = `${componentFilePath}\0${propName}`
+        if (snapshotPropWarnings.has(key)) continue
+        snapshotPropWarnings.add(key)
+        console.warn(`[stx] ${path.basename(componentFilePath)} reads \`${propName}\` with defineProps(), which is not live, but ${path.basename(parentFilePath)} binds it (:${propName}): the value can arrive empty or stale (on a native screen, and for a :for's rows, it does not arrive at all). Read it with useReactiveProp('${propName}').`)
       }
     }
 
