@@ -1,5 +1,29 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.786...v0.2.787)
+
+## ✨ Features
+
+- **components**: app-frame, the sidebar, card, command bar and panels of a document app ([92e952f](https://github.com/stacksjs/stx/commit/92e952f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: matchMedia on native screens, and resizes that cross no breakpoint restyle nothing ([e347ca9](https://github.com/stacksjs/stx/commit/e347ca9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: a component's props stay off the view around it ([2e9e29c](https://github.com/stacksjs/stx/commit/2e9e29c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- keep client text of a component inside another component's slot ([80e447d](https://github.com/stacksjs/stx/commit/80e447d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **native**: filling a list no longer walks every sibling per row ([1ac7546](https://github.com/stacksjs/stx/commit/1ac7546)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.787 ([9949114](https://github.com/stacksjs/stx/commit/9949114)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.785...v0.2.786)
 
 ## 🐛 Bug Fixes
