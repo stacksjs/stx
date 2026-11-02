@@ -1,0 +1,34 @@
+<script client>
+/**
+ * A search field with its results under it, for jumping anywhere by typing:
+ * Arc's command bar, a launcher, a palette of actions.
+ *
+ * It owns no state: the parent keeps the text and which result is
+ * highlighted, and hears `input`, `keydown` (arrows, Escape), `submit` and
+ * `pick` (a result's index). On a narrow screen it takes the full width.
+ *
+ * `results`: `{ key, title, detail?, image?, symbol? }`.
+ */
+const value = useReactiveProp('value', '')
+const placeholder = useReactiveProp('placeholder', 'Search or enter address')
+const results = useReactiveProp('results', [])
+const highlighted = useReactiveProp('highlighted', 0)
+const accent = useReactiveProp('accent', '#3b5bfd')
+const testId = useReactiveProp('testId', 'command')
+const emit = defineEmits(['input', 'keydown', 'submit', 'pick'])
+const narrow = useMediaQuery('(max-width: 720px)')
+</script>
+
+<View class="overflow-hidden gap-[4px] p-[8px] bg-white/90 rounded-[16px] shadow-2xl" material="hud" :style="{ width: narrow() ? '94%' : 680 }">
+  <View class="flex-row gap-[10px] items-center px-[10px] h-[48px]">
+    <Icon symbol="magnifyingglass" class="h-[17px] w-[17px]" :style="{ color: '#6b6e8f' }" />
+    <TextInput class="flex-1 text-[19px]" :bordered="false" :value="value()" autofocus select-text-on-focus :placeholder="placeholder()" :testID="testId()" @input="emit('input', $event)" @keydown="emit('keydown', $event)" @submit="emit('submit')" />
+  </View>
+  <View :if="results().length" class="mx-[6px] h-[1px] bg-black/10"></View>
+  <Pressable :for="(result, index) in results()" :key="result.key" class="flex-row gap-[10px] items-center px-[12px] h-[40px] rounded-[10px]" :style="index === highlighted() ? { backgroundColor: accent() } : {}" :testID="'result-' + index" @press="emit('pick', index)">
+    <Image :if="result.image" :src="result.image" class="h-[16px] w-[16px] rounded-[3px]" />
+    <Icon :if="!result.image" :symbol="result.symbol || 'globe'" class="h-[16px] w-[16px]" :style="{ color: index === highlighted() ? '#ffffff' : '#3a3d5c' }" />
+    <Text class="flex-1 text-[14px]" :style="{ color: index === highlighted() ? '#ffffff' : '#1b1d3a' }" :numberOfLines="1">{{ result.title }}</Text>
+    <Text :if="result.detail" class="text-[12px]" :style="{ color: index === highlighted() ? '#ffffffcc' : '#6b6e8f' }">{{ result.detail }}</Text>
+  </Pressable>
+</View>

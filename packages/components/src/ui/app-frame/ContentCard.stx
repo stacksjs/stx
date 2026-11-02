@@ -1,0 +1,19 @@
+<script client>
+/**
+ * The card a document sits on beside a sidebar: Arc's web page, rounded and
+ * lifted off the window's colour by a soft shadow, with a hairline across the
+ * top while it loads. The page goes in the default slot.
+ */
+/** 0 to 1 while loading; 0 hides the line. */
+const progress = useReactiveProp('progress', 0)
+const dark = useReactiveProp('dark', false)
+const accent = useReactiveProp('accent', '#3b5bfd')
+/** A ring round the card: the chosen pane of a split view. */
+const ring = useReactiveProp('ring', false)
+const testId = useReactiveProp('testId', '')
+</script>
+
+<View class="overflow-hidden flex-1 rounded-[10px]" :style="{ backgroundColor: dark() ? '#1d1e24' : '#ffffff', shadowColor: '#000000', shadowOpacity: 0.14, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, borderWidth: ring() ? 2 : 0, borderColor: ring() ? accent() : '#00000000' }" :testID="testId()">
+  <slot />
+  <View :if="progress() > 0" class="absolute left-0 top-0 h-[2px] duration-200 transition" :style="{ width: (progress() * 100) + '%', backgroundColor: accent() }"></View>
+</View>

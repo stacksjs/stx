@@ -1,0 +1,47 @@
+<script client>
+/**
+ * A grid of square-ish tiles: an app's favourites, pinned apps, shortcuts.
+ *
+ * Arc's favourites: four columns across the sidebar, 8pt apart, 12pt corners,
+ * an 18pt icon in the middle, a faint fill that darkens under the pointer (the
+ * host applies `hover:` itself, so hovering costs no script) and
+ * turns white for the open one. A short last row keeps its tiles the width of
+ * the others rather than stretching them. `columns` sets how many fit across,
+ * which a phone or a wide sidebar can raise.
+ *
+ * `items`: `{ id, label?, image?, symbol?, emoji?, active?, dragData?, dragUrl?, testId? }`.
+ */
+const items = useReactiveProp('items', [])
+const columns = useReactiveProp('columns', 4)
+const tint = useReactiveProp('tint', '#1b1d3a')
+const fill = useReactiveProp('fill', '#0000000d')
+const activeFill = useReactiveProp('activeFill', '#ffffffd9')
+/** The tile height; the width is the column's. */
+const height = useReactiveProp('height', 47)
+const emit = defineEmits(['select', 'menu', 'drop', 'imageerror'])
+
+/** The items in rows of `columns`, the last one padded with empty cells. */
+const grid = derived(() => {
+  const across = Math.max(1, Number(columns()) || 4)
+  const list = items() || []
+  const out = []
+  for (let start = 0; start < list.length; start += across) {
+    const row = list.slice(start, start + across).map(item => ({ key: item.id, item }))
+    while (row.length < across) row.push({ key: `pad-${start}-${row.length}`, item: null })
+    out.push({ key: `row-${start}`, cells: row })
+  }
+  return out
+})
+</script>
+
+<View class="gap-[8px]" @drop="emit('drop', $event)">
+  <View :for="row in grid()" :key="row.key" class="flex-row gap-[8px]">
+    <View :for="cell in row.cells" :key="cell.key" class="flex-1">
+      <Pressable :if="cell.item" class="items-center justify-center hover:bg-black/10 rounded-[12px] duration-150 transition" :style="{ height: height(), backgroundColor: cell.item.active ? activeFill() : fill(), shadowColor: '#000000', shadowOpacity: cell.item.active ? 0.08 : 0, shadowRadius: cell.item.active ? 2 : 0, shadowOffset: { width: 0, height: cell.item.active ? 1 : 0 } }" :draggable="Boolean(cell.item.dragData)" :drag-data="cell.item.dragData || ''" :drag-url="cell.item.dragUrl || ''" :testID="cell.item.testId || ''" :accessibilityLabel="cell.item.label || ''" @press="emit('select', cell.item.id)" @contextmenu="emit('menu', cell.item.id)">
+        <Image :if="cell.item.image" :src="cell.item.image" class="h-[18px] w-[18px] rounded-[4px]" @error="emit('imageerror', cell.item.image)" />
+        <Icon :if="!cell.item.image && cell.item.symbol" :symbol="cell.item.symbol" class="h-[18px] w-[18px]" :style="{ color: tint() }" />
+        <Text :if="!cell.item.image && !cell.item.symbol" class="text-[16px]">{{ cell.item.emoji || (cell.item.label || '?').slice(0, 1).toUpperCase() }}</Text>
+      </Pressable>
+    </View>
+  </View>
+</View>

@@ -1,0 +1,21 @@
+<script client>
+/**
+ * A panel that floats over the window on the system's HUD material: a
+ * popover's body, a find bar, a permission prompt. What it holds goes in the
+ * default slot; `place` positions it (`{ left: 14, top: 86 }`, or `right`,
+ * `bottom`), and without one it sits where its parent lays it out.
+ */
+const width = useReactiveProp('width', 300)
+const place = useReactiveProp('place', null)
+const padding = useReactiveProp('padding', 14)
+const testId = useReactiveProp('testId', '')
+const panelStyle = derived(() => ({
+  width: width(),
+  padding: padding(),
+  ...(place() ? { position: 'absolute', zIndex: 30, ...place() } : {}),
+}))
+</script>
+
+<View class="gap-[10px] bg-white/95 rounded-[14px] shadow-2xl" material="hud" :style="panelStyle()" :testID="testId()">
+  <slot />
+</View>

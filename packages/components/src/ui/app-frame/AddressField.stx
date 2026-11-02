@@ -1,0 +1,33 @@
+<script client>
+/**
+ * The page's address as a pill you press to edit: the address bar of a
+ * sidebar browser, or a search field that opens a search screen.
+ *
+ * Arc's: 36pt tall, 10pt corners, a fill a shade darker than the sidebar, the
+ * host in the sidebar's colour at three-quarters strength, and two buttons at
+ * the right end (copy the link, the site's controls) that come in under the
+ * pointer. A touch screen has no pointer, so there they stay.
+ */
+const text = useReactiveProp('text', '')
+const placeholder = useReactiveProp('placeholder', 'Search or enter address')
+/** A lock before the text, for a secure page. */
+const secure = useReactiveProp('secure', false)
+const tint = useReactiveProp('tint', '#1b1d3a')
+const fill = useReactiveProp('fill', '#0000000d')
+/** Shows the copy-link button. */
+const copyable = useReactiveProp('copyable', true)
+/** Shows the site-controls button. */
+const controls = useReactiveProp('controls', false)
+const testId = useReactiveProp('testId', 'address')
+const emit = defineEmits(['open', 'copylink', 'controls'])
+const touch = useMediaQuery('(hover: none)')
+const hovered = state(false)
+const actionsShown = derived(() => touch() || hovered())
+</script>
+
+<Pressable class="flex-row gap-[6px] items-center pl-[12px] pr-[3px] h-[36px] rounded-[10px] duration-150 transition" :style="{ backgroundColor: fill() }" :testID="testId()" @press="emit('open')" @hover-change="hovered.set($event.hovered)">
+  <Icon :if="secure()" symbol="lock.fill" class="h-[11px] w-[11px]" :style="{ color: tint(), opacity: 0.55 }" />
+  <Text class="flex-1 font-medium text-[14px]" :style="{ color: tint(), opacity: text() ? 0.75 : 0.45 }" :numberOfLines="1">{{ text() || placeholder() }}</Text>
+  <Button :if="actionsShown() && text() && copyable()" symbol="link" variant="ghost" iconOnly class="text-[12px]" :style="{ color: tint() }" :testID="testId() + '-copy'" @click.stop="emit('copylink')" />
+  <Button :if="actionsShown() && controls()" symbol="slider.horizontal.3" variant="ghost" iconOnly class="text-[12px]" :style="{ color: tint() }" testID="site-controls" @click.stop="emit('controls')" />
+</Pressable>
