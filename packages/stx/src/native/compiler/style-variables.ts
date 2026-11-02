@@ -44,6 +44,8 @@ function substitute(input: string, lookup: (name: string, fallback?: string) => 
 
 export type NativeStyleVariables = ReadonlyMap<string, string | undefined>
 
+const NO_VARIABLES: NativeStyleVariables = new Map()
+
 export interface NativeStyleVariableResolver {
   resolve: (text: string) => string | undefined
   used: Set<string>
@@ -122,6 +124,9 @@ export function createStyleVariables(entries: Array<[string, unknown]>, inherite
     })
   }
   return { resolve, used, computed(): NativeStyleVariables {
+    // A scope that declares nothing hands its parent's map down unchanged, so a
+    // subtree shares one map, and the class styles compiled against it.
+    if (!values.size) return inherited ?? NO_VARIABLES
     const result = new Map(inherited)
     for (const name of values.keys()) result.set(name, lookup(name, 0))
     return result

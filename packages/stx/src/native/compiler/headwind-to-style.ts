@@ -1158,7 +1158,38 @@ function transitionMilliseconds(utility: string): number | undefined {
   return duration ? Number(duration[1]) : undefined
 }
 
-export function compileClassStyles(classes: string, variables?: NativeStyleVariables, options: { focus?: boolean, focusWithin?: boolean, rules?: NativeStylesheetRules, appearance?: 'light' | 'dark', pointer?: boolean } = {}): ClassStyles {
+type ClassStyleOptions = { focus?: boolean, focusWithin?: boolean, rules?: NativeStylesheetRules, appearance?: 'light' | 'dark', pointer?: boolean }
+
+// A screen compiles the same class lists node after node, and each node more
+// than once (when it is adopted, for its style, for its dividers). A class list
+// costs about a millisecond in the native engine, most of a launch, yet the
+// result depends only on the classes, the variables in scope, the stylesheet
+// rules and the flags, and every caller only reads it. So it is remembered per
+// variables map and rules object (both shared down a tree whose nodes declare
+// none of their own), then per class list and flags.
+const classStyleCache = new WeakMap<object, WeakMap<object, Map<string, ClassStyles>>>()
+const NONE = {}
+
+/**
+ * The style a class list gives, with its dark, focus, pointer, width and state
+ * layers. Remembered: callers must treat the result as read-only.
+ */
+export function compileClassStyles(classes: string, variables?: NativeStyleVariables, options: ClassStyleOptions = {}): ClassStyles {
+  let byRules = classStyleCache.get(variables ?? NONE)
+  if (!byRules) classStyleCache.set(variables ?? NONE, byRules = new WeakMap())
+  let byClasses = byRules.get(options.rules ?? NONE)
+  if (!byClasses) byRules.set(options.rules ?? NONE, byClasses = new Map())
+  const key = `${options.focus ? 1 : 0}${options.focusWithin ? 1 : 0}${options.pointer ? 1 : 0}${options.appearance ?? ''}|${classes}`
+  let compiled = byClasses.get(key)
+  if (!compiled) {
+    // A dev server compiles every edit's class lists in one process: start over rather than grow without end.
+    if (byClasses.size >= 4096) byClasses.clear()
+    byClasses.set(key, compiled = compileClassList(classes, variables, options))
+  }
+  return compiled
+}
+
+function compileClassList(classes: string, variables: NativeStyleVariables | undefined, options: ClassStyleOptions): ClassStyles {
   // Group the authored classes by the layer they belong to. Each group then
   // compiles as a plain class list (dark and focus kept inside it), and an
   // unknown class is reported by the name the author wrote.
