@@ -13,6 +13,7 @@ window.probe = { href, to, disabled, shown }
 <View :if="shown">
 ${kinds.map(kind => `<${kind} testID="${kind}" :href="href" :to="to" :disabled="disabled" @click="window.calls.push('${kind}')">Open</${kind}>
 <${kind} testID="bare-${kind}" :to="to" :disabled="disabled">Open</${kind}>`).join('\n')}
+<Pressable testID="target" :href="href" :to="to">Bound target</Pressable>
 </View>
 <div data-native="Button" testID="button" href="/not-a-link" @click="$event.preventDefault(); window.calls.push('button')">Button</div>
 <View testID="view" href="/not-a-link" @click="$event.preventDefault(); window.calls.push('view')" />
@@ -23,21 +24,27 @@ const compiled = new Map<boolean, ReturnType<typeof compileNativeScreen>>()
 async function fixture(platform: 'ios' | 'android', minify: boolean) {
   let bundle = compiled.get(minify)
   if (!bundle) { bundle = compileNativeScreen(source, { minify }); compiled.set(minify, bundle) }
-  const phone = mountNativeScreen((await bundle).code, 'Screen', { platform })
+  const linked: unknown[] = []
+  const phone = mountNativeScreen((await bundle).code, 'Screen', { platform, capabilities: ['linking'], native: (module, method, args) => {
+    if (module === 'Linking' && method === 'openURL') linked.push(args[0])
+    return true
+  } })
   await phone.settle()
-  return phone
+  return Object.assign(phone, { linked })
 }
 
 const modes = [['ios', false], ['ios', true], ['android', false], ['android', true]] as const
-it.each(modes)('native tap targets take precedence over handlers (%s, minify=%s)', async (platform, minify) => {
+it.each(modes)('authored native handlers run before the uncancelled link default (%s, minify=%s)', async (platform, minify) => {
   const phone = await fixture(platform, minify)
   for (const kind of kinds) {
     phone.press(phone.byTestID(kind)!)
-    expect(phone.context.calls).toEqual([])
-    expect(phone.opened).toEqual(kinds.slice(0, kinds.indexOf(kind) + 1).map(() => '/terms?lang=en#read'))
+    phone.press(phone.byTestID(kind)!, 'onClick')
+    const expected = kinds.slice(0, kinds.indexOf(kind) + 1).flatMap(name => [name, name])
+    expect(phone.context.calls).toEqual(expected)
+    expect(phone.opened).toEqual(expected.map(() => '/terms?lang=en#read'))
   }
-  // Navigation is the host's action, not a fabricated screen EVENT/request.
-  expect(phone.messages.filter(message => message.type === 'NAVIGATE_OPEN')).toEqual([])
+  // The shared runtime follows the default only after authored handlers run.
+  expect(phone.messages.filter(message => message.type === 'NAVIGATE_OPEN')).toHaveLength(8)
 }, 30_000)
 
 it.each(modes)('handlerless links navigate and disabled links stay inert (%s, minify=%s)', async (platform, minify) => {
@@ -60,7 +67,7 @@ it.each(modes)('handlerless links navigate and disabled links stay inert (%s, mi
   expect(phone.context.calls).toEqual([])
 }, 30_000)
 
-it.each(modes)('exposes the broken consent row while the same business gate accepts its handler-only fix (%s, minify=%s)', async (platform, minify) => {
+it.each(modes)('consent actions run with or without a fallback href (%s, minify=%s)', async (platform, minify) => {
   const { code } = await compileNativeScreen(`<script client>window.pages = []</script><View>
 <Pressable testID="broken" href="/terms" @click="$event.preventDefault(); window.pages.push('/terms')">Read terms</Pressable>
 <Pressable testID="fixed" @click="$event.preventDefault(); window.pages.push('/terms')">Read terms</Pressable>
@@ -73,12 +80,7 @@ it.each(modes)('exposes the broken consent row while the same business gate acce
       expect(phone.opened).toEqual([])
     }
     phone.press(phone.byTestID(row)!)
-    if (row === 'broken') {
-      expect(() => readGate()).toThrow()
-      expect(phone.context.pages).toEqual([])
-      expect(phone.opened).toEqual(['/terms'])
-    }
-    else readGate()
+    readGate()
     phone.unmount()
   }
 }, 30_000)
@@ -86,7 +88,7 @@ it.each(modes)('exposes the broken consent row while the same business gate acce
 it.each(modes)('tap targets follow current bindings and their ordered string fallbacks (%s, minify=%s)', async (platform, minify) => {
   const phone = await fixture(platform, minify)
   const probe = phone.context.probe
-  const node = phone.byTestID('Pressable')!
+  const node = phone.byTestID('target')!
   for (const value of ['', ' \n\t ', null, 42, { invalid: true }]) {
     probe.href.set(value)
     await phone.settle()
@@ -97,21 +99,22 @@ it.each(modes)('tap targets follow current bindings and their ordered string fal
   probe.to.set('  https://example.invalid/privacy?x=%20#read  ')
   await phone.settle()
   phone.press(node)
-  expect(phone.opened.at(-1)).toBe('https://example.invalid/privacy?x=%20#read')
+  await phone.settle()
+  expect(phone.linked).toEqual(['https://example.invalid/privacy?x=%20#read'])
   probe.to.set(' \n ')
   await phone.settle()
   phone.press(node)
-  expect(phone.context.calls).toEqual(['Pressable'])
-  expect(phone.opened).toHaveLength(6)
+  expect(phone.context.calls).toEqual([])
+  expect(phone.opened).toHaveLength(5)
   probe.href.set('/current')
   await phone.settle()
-  expect(phone.byTestID('Pressable')).toBe(node)
+  expect(phone.byTestID('target')).toBe(node)
   phone.press(node)
   expect(phone.opened.at(-1)).toBe('/current')
-  expect(phone.context.calls).toEqual(['Pressable'])
+  expect(phone.context.calls).toEqual([])
 }, 30_000)
 
-it.each(modes)('only host link kinds pre-empt taps; other native events still reach their handler (%s, minify=%s)', async (platform, minify) => {
+it.each(modes)('other native events still reach their handlers (%s, minify=%s)', async (platform, minify) => {
   const phone = await fixture(platform, minify)
   phone.press(phone.byTestID('button')!)
   phone.press(phone.byTestID('view')!)
@@ -140,5 +143,5 @@ it.each(modes)('removed, replaced and disposed nodes cannot navigate (%s, minify
   phone.unmount()
   phone.press(current)
   expect(phone.opened).toEqual(['/remounted'])
-  expect(phone.context.calls).toEqual([])
+  expect(phone.context.calls).toEqual(['Pressable'])
 }, 30_000)

@@ -1,8 +1,7 @@
 /**
- * Host taps and delivered runtime events are distinct boundaries (#2147).
- * Craft's current link target pre-empts the screen handler. If an EVENT is
- * delivered, STX still owns URL normalization, cancellation and system links.
- * Preserve those runtime assertions without presenting them as host tap behavior.
+ * A native primary tap dispatches the screen handler before a link's default.
+ * The shared runtime normalizes URLs and honors cancellation as on the web;
+ * handlerless native targets remain a separate host action.
  */
 import { expect, test } from 'bun:test'
 import type { NativeNode, NativeScreen } from '../../src/native/testing'
@@ -20,7 +19,7 @@ function deliverRuntimePress(phone: NativeScreen, node: NativeNode): void {
   phone.send('EVENT', { handlerId, nativeEvent: {} })
 }
 
-test('host taps retain their requested targets; delivered link events normalize web paths', async () => {
+test('host taps and delivered link events normalize shared web paths', async () => {
   const root = webApp({
     'views/home.stx': `<div>
   <a href="/plans/12">Plan</a>
@@ -34,7 +33,7 @@ test('host taps retain their requested targets; delivered link events normalize 
   const targets = ['/plans/12', '/settings/profile', 'settings', 'https://fixture.invalid/workouts?week=2']
   for (const href of targets) phone.press(linkTo(phone, href))
   await phone.settle()
-  expect(phone.opened).toEqual(targets)
+  expect(phone.opened).toEqual(['/plans/12', '/settings/profile', '/settings', '/workouts?week=2'])
   phone.unmount()
   const runtime = await mountWebView(root, { Home: 'views/home.stx' }, 'Home')
   for (const href of targets) deliverRuntimePress(runtime, linkTo(runtime, href))
@@ -83,7 +82,7 @@ test('a link in a list row opens its own path, for rows added later too', async 
   expect(phone.opened).toEqual(['/plans/2', '/plans/3'])
 })
 
-test('host link taps pre-empt callbacks; delivered runtime events preserve cancellation', async () => {
+test('host taps and delivered runtime events preserve callback cancellation', async () => {
   const root = webApp({
     'views/home.stx': `<script client>
   const seen = state('none')
@@ -103,8 +102,8 @@ test('host link taps pre-empt callbacks; delivered runtime events preserve cance
   phone.press(linkTo(phone, '/stats'))
   phone.press(linkTo(phone, '/elsewhere'))
   await phone.settle()
-  expect(phone.texts()).toContain('none')
-  expect(phone.opened).toEqual(['/stats', '/elsewhere'])
+  expect(phone.texts()).toContain('stayed')
+  expect(phone.opened).toEqual(['/stats'])
   phone.unmount()
   const runtime = await mountWebView(root, { Home: 'views/home.stx' }, 'Home')
   deliverRuntimePress(runtime, linkTo(runtime, '/stats'))
@@ -118,7 +117,7 @@ test('host link taps pre-empt callbacks; delivered runtime events preserve cance
   expect(runtime.opened).toEqual(['/stats'])
 })
 
-test('host link targets are recorded without fabricating runtime Linking calls', async () => {
+test('host taps and delivered runtime events open external links through Linking', async () => {
   const root = webApp({
     'views/contact.stx': `<div>
   <a href="https://maps.example.com/gym">Map</a>
@@ -135,10 +134,11 @@ test('host link targets are recorded without fabricating runtime Linking calls',
   phone.press(linkTo(phone, 'https://maps.example.com/gym'))
   phone.press(linkTo(phone, 'mailto:coach@example.com'))
   await phone.settle()
-  expect(urls).toEqual([])
-  expect(phone.opened).toEqual(['https://maps.example.com/gym', 'mailto:coach@example.com'])
-  expect(phone.natives).not.toContain('Linking.openURL')
+  expect(urls).toEqual(['https://maps.example.com/gym', 'mailto:coach@example.com'])
+  expect(phone.opened).toEqual([])
+  expect(phone.natives.filter(name => name === 'Linking.openURL')).toHaveLength(2)
   phone.unmount()
+  urls.length = 0
   const runtime = await mountWebView(root, { Contact: 'views/contact.stx' }, 'Contact', options)
   deliverRuntimePress(runtime, linkTo(runtime, 'https://maps.example.com/gym'))
   deliverRuntimePress(runtime, linkTo(runtime, 'mailto:coach@example.com'))

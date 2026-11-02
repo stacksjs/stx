@@ -376,10 +376,13 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     return records.get(node.__stxId) ?? (node as RetainedNativeNode).__stxDetachedRecord
   }
 
-  /** The href a link node goes to (static, or as its `:href` last set it), or null. */
+  /** The first nonempty href/to, including current bindings, as on the native host. */
   function linkHref(node: NativeNode): string | null {
-    const href = descriptorOf(node)?.props.href
-    return typeof href === 'string' && href ? href : null
+    const props = descriptorOf(node)?.props
+    for (const value of [props?.href, props?.to]) {
+      if (typeof value === 'string' && value.trim()) return value.trim()
+    }
+    return null
   }
 
   /**

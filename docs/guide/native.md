@@ -772,23 +772,25 @@ What it returns:
 | `requests`, `headers`, `natives`, `messages`, `operations()`, `opened`, `replaced`, `moves`, `bars`, `alerts`, `animations`, `streams`, `snapshots`, `secureStorage`, `stored`, `context` | What the screen and host did, and the vm the screen runs in |
 | `unmount()`, `ended` | End the screen |
 
-For primary taps (`onPress`, or `onClick`), `press()` models the current mobile
-host's link precedence. A `Link`, `TouchableOpacity`, `TouchableHighlight` or
-`Pressable` requests its first nonempty string `href` or `to`, trimmed, and records
-that target in `opened`. The screen's press handler is not dispatched,
-including when it would call `preventDefault()`. A target needs no handler.
-Disabled controls, removed/replaced node references and ended screens stay inert.
-Other node types retain their ordinary handler behavior.
+For primary taps (`onPress`, or `onClick`), `press()` models Craft 0.0.426
+and later: an authored `onPress` (or `onClick` fallback) on a `Link`,
+`TouchableOpacity`, `TouchableHighlight` or `Pressable` owns the action and
+navigation. Its `href` or `to` is consulted only when there is no handler.
+A handler can open an in-app document or start native authentication without
+the host also navigating to its fallback URL. The shared runtime follows an
+uncancelled link after its authored callbacks; `preventDefault()` or
+`@click.prevent` cancels that default action. Disabled controls,
+removed/replaced node references and ended screens stay inert.
 
-`opened` records the requested target at that boundary, before platform URL
-handling. A host-handled external URL does not fabricate a screen-side
-`Linking.openURL` request. Runtime URL normalization and cancellation are tested
-separately by explicitly delivering bridge events.
+Handlerless links request their first nonempty string `href` or `to`, trimmed,
+and record that target in `opened` before platform URL handling. Such a tap
+does not fabricate a screen-side `Linking.openURL` request. Runtime URL
+normalization and cancellation are tested separately through bridge events.
 
-This catches a row with both a link target and an action handler: a test can
-now observe the host opening the target instead of running the action.
-[Craft #442](https://github.com/craft-native/craft/issues/442) tracks the host
-behavior discussion; the kit follows that contract rather than choosing its own.
+[Craft #442](https://github.com/craft-native/craft/issues/442) changed the host
+contract. Earlier hosts opened the link and dropped the handler; applications
+must upgrade their actual host as well as the testing kit. A passing simulation
+with this contract does not establish that an older installed host is fixed.
 
 Other named events, such as `press(node, 'onPressOut', payload)`, retain their
 direct delivery. For deliberate bridge-message injection, use
