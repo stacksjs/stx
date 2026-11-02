@@ -753,6 +753,12 @@ export interface NativeBridgeInterface {
    */
   viewportWidth?: number
 
+  /** The screen's height in points before the bundle starts, for `matchMedia` height and orientation queries. */
+  viewportHeight?: number
+
+  /** The person asked the system for reduced motion, for `prefers-reduced-motion`. */
+  reducedMotion?: boolean
+
   /** The secure-storage key the host keeps the signed-in token under (Craft, `auth.token` by default). */
   sessionTokenKey?: string
 

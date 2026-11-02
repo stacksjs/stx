@@ -1,0 +1,19 @@
+<script client>
+/**
+ * A hairline between two parts of a sidebar, with an optional quiet action at
+ * its end: Arc's line between pinned tabs and Today, and its "↓ Clear".
+ */
+const action = useReactiveProp('action', '')
+const actionSymbol = useReactiveProp('actionSymbol', 'arrow.down')
+const tint = useReactiveProp('tint', '#1b1d3a')
+const testId = useReactiveProp('testId', '')
+const emit = defineEmits(['action'])
+</script>
+
+<View class="flex-row gap-[8px] items-center pl-[10px] pr-[4px] h-[17px]">
+  <View class="flex-1 h-[1px]" :style="{ backgroundColor: tint(), opacity: 0.12 }"></View>
+  <Pressable :if="action()" class="flex-row gap-[3px] items-center px-[5px] h-[17px] hover:bg-black/5 rounded-[5px]" :testID="testId()" @press="emit('action')">
+    <Icon :symbol="actionSymbol()" class="h-[9px] w-[9px]" :style="{ color: tint(), opacity: 0.45 }" />
+    <Text class="font-semibold text-[11px]" :style="{ color: tint(), opacity: 0.45 }">{{ action() }}</Text>
+  </Pressable>
+</View>

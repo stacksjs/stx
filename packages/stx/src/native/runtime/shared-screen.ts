@@ -75,6 +75,7 @@ export function prepareSharedNativeScreen(
     if (scheme === 'light' || scheme === 'dark') {
       bridge.colorScheme = scheme
       host.setColorScheme(scheme)
+      ;(globalThis as Record<string, any>).__stxNativeMedia?.update({ colorScheme: scheme })
     }
   })
   // A rotation, a resized window, split view: `md:` and `lg:` classes follow.
@@ -82,6 +83,8 @@ export function prepareSharedNativeScreen(
     const width = Number(message.payload?.width)
     if (!Number.isFinite(width) || width < 0) return
     bridge.viewportWidth = width
+    const height = Number(message.payload?.height)
+    ;(globalThis as Record<string, any>).__stxNativeMedia?.update({ width, ...(Number.isFinite(height) && height >= 0 ? { height } : {}) })
     host.setViewportWidth(width)
   })
 

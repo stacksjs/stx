@@ -1,0 +1,51 @@
+<script client>
+/**
+ * One row of an app's sidebar: a tab, a folder, a pinned page, an action.
+ *
+ * Measured off Arc: 40pt tall, the icon's 18pt box at 9pt in, the label at
+ * 35pt, a 10pt radius, and the chosen row lifted out as a white card. A close
+ * button shows where a pointer hovers. On a touch screen (no hover) the row is
+ * 44pt, the touch target the platform asks for, and the button always shows.
+ *
+ * `item` is the row, read live so the component can stand in a `:for`:
+ * `{ label, image?, symbol?, emoji?, active?, strong?, muted?, depth?,
+ * closable?, closeSymbol?, editing?, highlighted?, dragData?, dragUrl?,
+ * dropInside?, testId? }`. One object rather than a prop each: every prop is a
+ * binding and a signal of its own, and a sidebar has dozens of rows.
+ * `theme`: `{ tint, activeBackground?, hoverBackground?, touch? }`, shared by every row; `touch`
+ * (no hovering pointer) makes the row 44pt and always shows its button.
+ */
+const item = useReactiveProp('item', {})
+const theme = useReactiveProp('theme', {})
+const emit = defineEmits(['select', 'close', 'menu', 'drop', 'rename', 'imageerror'])
+// Kept lean on purpose: a sidebar holds dozens of these, and every signal,
+// derived value and effect is a few objects more per row for the collector.
+// The theme carries `touch` (computed once by the parent) for the same reason.
+const hovered = state(false)
+let draft = null
+
+function rowStyle(row, look, over) {
+  return {
+    height: look.touch ? 44 : 40,
+    paddingLeft: 9 + (row.depth || 0) * 16,
+    backgroundColor: row.active ? look.activeBackground || '#ffffffd9' : over ? look.hoverBackground || '#0000000d' : '#00000000',
+    shadowColor: '#000000',
+    shadowOpacity: row.active ? 0.08 : 0,
+    shadowRadius: row.active ? 2 : 0,
+    shadowOffset: { width: 0, height: row.active ? 1 : 0 },
+    borderWidth: row.highlighted ? 2 : 0,
+    borderColor: row.highlighted ? '#3b5bfd' : '#00000000',
+  }
+}
+function finish() { emit('rename', (draft ?? item().label ?? '').trim()); draft = null }
+function typed(event) { draft = String(event?.text ?? event?.value ?? event?.target?.value ?? '') }
+</script>
+
+<Pressable class="flex-row gap-[8px] items-center pr-[5px] rounded-[10px] duration-100 transition" :style="rowStyle(item(), theme(), hovered())" :draggable="Boolean(item().dragData)" :drag-data="item().dragData || ''" :drag-url="item().dragUrl || ''" :drop-inside="Boolean(item().dropInside)" :testID="item().testId || ''" @press="emit('select')" @contextmenu="emit('menu')" @drop="emit('drop', $event)" @hover-change="hovered.set($event.hovered)">
+  <Image :if="item().image" :src="item().image" class="h-[18px] w-[18px] rounded-[4px]" @error="emit('imageerror', item().image)" />
+  <Icon :if="!item().image && item().symbol" :symbol="item().symbol" class="h-[17px] w-[18px]" :style="{ color: theme().tint || '#1b1d3a', opacity: item().muted ? 0.5 : 1 }" />
+  <Text :if="!item().image && !item().symbol && item().emoji" class="w-[18px] text-[14px] text-center">{{ item().emoji }}</Text>
+  <Text :if="!item().editing" class="flex-1 text-[14px]" :class="item().strong ? 'font-semibold' : 'font-medium'" :style="{ color: theme().tint || '#1b1d3a', opacity: item().muted ? 0.5 : 1 }" :numberOfLines="1">{{ item().label }}</Text>
+  <TextInput :if="item().editing" class="flex-1 font-medium text-[14px]" :bordered="false" :value="item().label" autofocus select-text-on-focus :testID="(item().testId || '') + '-rename'" @input="typed($event)" @submit="finish()" @blur="finish()" />
+  <Button :if="item().closable && !item().editing && (theme().touch || hovered())" :symbol="item().closeSymbol || 'xmark'" variant="ghost" iconOnly class="text-[11px]" :style="{ color: theme().tint || '#1b1d3a', opacity: item().muted ? 0.5 : 1 }" :testID="(item().testId || '') + '-close'" @click.stop="emit('close')" />
+</Pressable>

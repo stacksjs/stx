@@ -102,6 +102,8 @@ interface NodeRecord {
   divide?: { style: STXStyle, dark?: STXStyle }
   /** The border its parent's `divide-*` gives this node, when it is not the first child shown. */
   dividerStyle?: Record<string, unknown>
+  /** Its children have been given divider styles (it had `divide-*` classes at some point). */
+  hadDividers?: boolean
 }
 
 interface RetainedNativeNode extends NativeNode {
@@ -270,6 +272,13 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   let counter = 0
   let colorScheme = options.colorScheme ?? 'light'
   let viewportWidth = Number.isFinite(options.viewportWidth) ? Math.max(0, options.viewportWidth!) : 0
+  // Every width a layer on screen starts or stops at: a resize that crosses none changes no style.
+  const widthBounds = { min: new Set<number>(), max: new Set<number>() }
+  const crossesWidthBound = (from: number, to: number): boolean => {
+    for (const min of widthBounds.min) if ((from >= min) !== (to >= min)) return true
+    for (const max of widthBounds.max) if ((from <= max) !== (to <= max)) return true
+    return false
+  }
   let stylesheetVariables = createStyleVariables(options.stylesheetTheme?.[colorScheme] ?? []).computed()
   let disposed = false
 
@@ -297,6 +306,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   }
 
   function refreshDividersOf(record: NodeRecord): void {
+    // A list without `divide-*` whose children never had a divider has nothing
+    // to refresh. This runs on every insert, so without the check filling a
+    // list walked every sibling each time: quadratic in the list's length.
+    if (!record.divide && !record.hadDividers) return
+    if (record.divide) record.hadDividers = true
     let first = true
     for (const child of record.children) {
       if (child.__stxAnchor !== undefined) continue
@@ -646,6 +660,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules, appearance: colorScheme, pointer: options.pointer === true })
     const classStyle = { ...classes.style }
     // Width layers apply smallest first, as min-width media queries cascade.
+    for (const layer of classes.responsive ?? []) {
+      widthBounds.min.add(layer.min)
+      if (layer.max !== undefined) widthBounds.max.add(layer.max)
+    }
     const responsive = (classes.responsive ?? []).filter(layer => viewportWidth >= layer.min && (layer.max === undefined || viewportWidth <= layer.max))
     for (const layer of responsive) Object.assign(classStyle, layer.style)
     // ts-css emits `.dark .dark:utility`: that selector outranks a plain
@@ -721,6 +739,16 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       }
     }
     return find(node)
+  }
+
+  /** Whether `name` is one of the caller's bindings a component wrapper holds for its component. */
+  function callerBindingOnWrapper(node: NativeNode, name: string): boolean {
+    if (!isBindingNode(node) || !node.hasAttribute('data-stx-component-wrapper')) return false
+    const bindings = node.getAttribute('data-stx-parent-bindings')
+    if (!bindings) return false
+    const flat = (text: string) => text.replace(/-/g, '').toLowerCase()
+    const wanted = flat(name)
+    return bindings.split(/\s+/).some(binding => binding && flat(binding) === wanted)
   }
 
   function applyForwardedStyle(node: NativeNode, name: string, value: unknown): boolean {
@@ -930,8 +958,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     // Children are adopted in order, so a divided parent that already holds
     // a shown child gives this one its divider before its first render.
     const ownerRecord = owner ? descriptorOf(owner) : undefined
-    if (ownerRecord?.divide && ownerRecord.children.some(child => child.__stxAnchor === undefined && descriptorOf(child)?.visible))
+    if (ownerRecord?.divide && ownerRecord.children.some(child => child.__stxAnchor === undefined && descriptorOf(child)?.visible)) {
       record.dividerStyle = { ...ownerRecord.divide.style, ...(colorScheme === 'dark' ? ownerRecord.divide.dark : {}) }
+      ownerRecord.hadDividers = true
+    }
     record.style = resolveStyle(record, node.__stxId)
     if (descriptor) descriptor.style = { ...record.style } as STXNode['style']
     records.set(node.__stxId, record)
@@ -1014,7 +1044,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     setViewportWidth(width) {
       const next = Number.isFinite(width) ? Math.max(0, width) : 0
       if (next === viewportWidth) return
+      const crossed = crossesWidthBound(viewportWidth, next)
       viewportWidth = next
+      // A Mac window resizing reports every frame; only a step over a breakpoint restyles.
+      if (!crossed) return
       // Shortcuts can hide a width layer, so every node is resolved again;
       // applyClasses sends a patch only where the style changed.
       const children = new Set([...records.values()].flatMap(record => record.children.map(child => child.__stxId)))
@@ -1096,6 +1129,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         if (applyForwardedStyle(forwarded, name, value)) return
         node = forwarded
       }
+      // A component's wrapper carries its caller's bindings for the component
+      // to read (useReactiveProp reads the attribute set above). They are the
+      // component's props, not the wrapper view's: sent to the host as well,
+      // a row's testID landed on the view around it too, and a test pressed
+      // whichever of the two it found first.
+      else if (callerBindingOnWrapper(node, name)) return
       if (name === 'class' || name === 'className') {
         const record = recordOf(node)
         record.classes = String(value ?? '')
@@ -1530,10 +1569,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
        * -- so measuring first reports a position one too far to the right, and
        * a row reordered to the end lands one short of it.
        */
-      const existing = record.children.findIndex(child => child.__stxId === node.__stxId)
+      // A node that was never placed (a new row) has nothing to take out.
+      const existing = oldOwner === parent ? record.children.findIndex(child => child.__stxId === node.__stxId) : -1
       if (existing !== -1)
         record.children.splice(existing, 1)
-      else if (oldOwner) {
+      else if (oldOwner && oldOwner !== parent) {
         const oldRecord = recordOf(oldOwner)
         const oldIndex = oldRecord.children.findIndex(child => child.__stxId === node.__stxId)
         if (oldIndex !== -1)

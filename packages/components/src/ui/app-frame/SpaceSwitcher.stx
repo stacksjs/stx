@@ -1,0 +1,22 @@
+<script client>
+/**
+ * A row of icons that each switch the view to one of several spaces,
+ * workspaces or accounts: the foot of Arc's sidebar.
+ *
+ * Each icon is a 36 by 34pt target; the current one is drawn at full strength
+ * and the rest faded, as Arc does.
+ *
+ * `items`: `{ id, label?, symbol?, emoji?, testId? }`; `active` is the current id.
+ */
+const items = useReactiveProp('items', [])
+const active = useReactiveProp('active', '')
+const tint = useReactiveProp('tint', '#1b1d3a')
+const emit = defineEmits(['select', 'menu'])
+</script>
+
+<View class="flex-row items-center justify-center">
+  <Pressable :for="item in items()" :key="item.id" class="items-center justify-center h-[34px] w-[36px] hover:bg-black/5 rounded-[8px]" :testID="item.testId || ''" :accessibilityLabel="item.label || ''" @press="emit('select', item.id)" @contextmenu="emit('menu', item.id)">
+    <Icon :if="item.symbol" :symbol="item.symbol" class="h-[14px] w-[16px]" :style="{ color: tint(), opacity: item.id === active() ? 0.85 : 0.35 }" />
+    <Text :if="!item.symbol" class="text-[13px]" :style="{ color: tint(), opacity: item.id === active() ? 1 : 0.5 }">{{ item.emoji || '●' }}</Text>
+  </Pressable>
+</View>

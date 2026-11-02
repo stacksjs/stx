@@ -1170,9 +1170,19 @@ function unresolvedComponentMarkup(componentPath: string): string {
  * interpolations such as `{{ title() }}` client-owned even when a static prop
  * named `title` also exists in the server context.
  */
+/**
+ * Composables whose result is a signal the template reads (`{{ wide() }}`): a
+ * script that only has one of these is still a client script, and the name it
+ * declares is the client's, not the server's. Without them a screen whose only
+ * reactive value was `useMediaQuery(...)` rendered its text at build time, where
+ * the name is undefined, and showed nothing.
+ */
+const SIGNAL_COMPOSABLES = 'useMediaQuery|useDark|usePreferredDark|usePreferredLight|usePreferredReducedMotion|usePreferredContrast|useDocumentVisibility|useScrollLock'
+export const SIGNAL_COMPOSABLE_CALL: RegExp = new RegExp(`\\b(?:${SIGNAL_COMPOSABLES})\\s*(?:<[^>]*>)?\\s*\\(`)
+
 export function componentClientSignalNames(scripts: string[]): string[] {
   const names = new Set<string>()
-  const declaration = /\b(?:const|let|var)\s+([a-zA-Z_$][\w$]*)\s*=\s*(?:state|derived|computed|ref|reactive|signal|useModel|useReactiveProp|useLocalStorage|useSessionStorage|keptState|useCookie|useDebouncedValue)\s*(?:<[^>]*>)?\s*\(/g
+  const declaration = new RegExp(`\\b(?:const|let|var)\\s+([a-zA-Z_$][\\w$]*)\\s*=\\s*(?:state|derived|computed|ref|reactive|signal|useModel|useReactiveProp|useLocalStorage|useSessionStorage|keptState|useCookie|useDebouncedValue|${SIGNAL_COMPOSABLES})\\s*(?:<[^>]*>)?\\s*\\(`, 'g')
 
   for (const script of scripts) {
     let match: RegExpExecArray | null
@@ -1728,13 +1738,28 @@ export async function renderComponentWithSlot(
      */
     if (/<[A-Z][\w.-]*[\s/>]/.test(callerSlotContent)) {
       const { processComponents } = await importOnce('stx/component-renderer', () => import('./component-renderer'))
+      const slotComponentContext: Record<string, unknown> = { ...parentContext, __processedComponents: components, ...callerLoopScope }
       callerSlotContent = await processComponents(
         callerSlotContent,
-        { ...parentContext, __processedComponents: components, ...callerLoopScope },
+        slotComponentContext,
         parentFilePath,
         options,
         dependencies,
       )
+      // What those components left as `{{ }}` for the client was recorded on
+      // this copy. Handed back, so the caller's pass below and every pass
+      // after it leave them alone: otherwise a component inside another's
+      // slot had its `{{ title() }}` evaluated in the caller's scope, where
+      // the name is undefined, and rendered empty. On a native screen every
+      // element is a component (View, Text), so that was every component's
+      // text binding.
+      const recorded = slotComponentContext.__stx_preserved_client_expressions
+      if (Array.isArray(recorded) && recorded.length > 0) {
+        parentContext.__stx_preserved_client_expressions = [...new Set([
+          ...(Array.isArray(parentContext.__stx_preserved_client_expressions) ? parentContext.__stx_preserved_client_expressions as string[] : []),
+          ...recorded as string[],
+        ])]
+      }
     }
 
     /*

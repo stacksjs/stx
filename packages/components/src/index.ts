@@ -12,6 +12,7 @@ export * from './utils/overlays'
 export * from './theme'
 // Export UI components
 export * from './ui/accordion'
+export * from './ui/app-frame'
 export * from './ui/audio'
 export * from './ui/auth'
 export * from './ui/avatar'
