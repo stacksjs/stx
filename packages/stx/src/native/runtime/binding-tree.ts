@@ -36,6 +36,8 @@ export interface NativeBindingTree {
 
 /** Match the browser's decoded getAttribute() value without pulling compiler code into the runtime bundle. */
 function decodeBindingValue(value: string): string {
+  // Nearly every value holds no entity: six replaces each was most of a node's start.
+  if (!value.includes('&')) return value
   return value
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
@@ -43,6 +45,112 @@ function decodeBindingValue(value: string): string {
     .replace(/&#0?39;/g, '\'')
     .replace(/&#x27;/gi, '\'')
     .replace(/&amp;/g, '&')
+}
+
+/**
+ * A native node as the shared signals runtime sees it: the DOM element subset
+ * it reads and writes. A class, so a screen's hundreds of nodes share their
+ * methods; an object literal per node made a dozen closures and accessors for
+ * each, which an interpreted engine paid for on every mount.
+ */
+class BindingElement {
+  __stxId: string
+  __stxScope: string | undefined = undefined
+  nodeType = 1 as const
+  tagName: string
+  attributes: Array<{ name: string, value: string }>
+  parentNode: NativeBindingNode | null = null
+  parentElement: NativeBindingNode | null = null
+  childNodes: NativeNode[] = []
+  children: NativeNode[] = []
+  nextSibling: NativeNode | null = null
+  nextElementSibling: NativeBindingNode | null = null
+  namespaceURI = ''
+  isConnected = true
+  // The runtime asks a node for its attributes by name constantly (a binding's
+  // scope, a component's props); a list scanned per question was a fair share
+  // of mounting a screen of rows.
+  private readonly byName: Map<string, { name: string, value: string }>
+  private readonly onClassChange: ((value: string) => void) | undefined
+  private classTokens: { add: (...tokens: string[]) => void, remove: (...tokens: string[]) => void } | undefined
+
+  constructor(id: string, type: string, attributes: Array<{ name: string, value: string }>, onClassChange?: (value: string) => void) {
+    this.__stxId = id
+    this.tagName = type === 'TextInput' ? 'INPUT' : type === 'Picker' ? 'SELECT' : type.toUpperCase()
+    this.attributes = attributes
+    this.byName = new Map(attributes.map(attribute => [attribute.name, attribute]))
+    this.onClassChange = onClassChange
+  }
+
+  get className(): string { return this.getAttribute('class') ?? '' }
+  set className(value: string) { this.setAttribute('class', value) }
+
+  get classList(): { add: (...tokens: string[]) => void, remove: (...tokens: string[]) => void } {
+    const element = this
+    return this.classTokens ??= {
+      add(...tokens: string[]) { element.className = [...new Set([...element.className.split(/\s+/).filter(Boolean), ...tokens])].join(' ') },
+      remove(...tokens: string[]) { element.className = element.className.split(/\s+/).filter(token => token && !tokens.includes(token)).join(' ') },
+    }
+  }
+
+  // Native templates are recorded descriptors, not physical containers.
+  // bindFor clones their children into the real parent on either target.
+  get content(): NativeBindingNode | undefined { return this.tagName === 'TEMPLATE' ? this as unknown as NativeBindingNode : undefined }
+
+  hasAttribute(name: string): boolean {
+    return this.byName.has(name)
+  }
+
+  getAttribute(name: string): string | null {
+    return this.byName.get(name)?.value ?? null
+  }
+
+  setAttribute(name: string, value: unknown): void {
+    if (name === 'data-stx-scope') this.__stxScope = String(value)
+    const existing = this.byName.get(name)
+    if (existing) existing.value = String(value)
+    else {
+      const attribute = { name, value: String(value) }
+      this.attributes.push(attribute)
+      this.byName.set(name, attribute)
+    }
+    if (name === 'class') this.onClassChange?.(String(value))
+  }
+
+  removeAttribute(name: string): void {
+    if (name === 'data-stx-scope') this.__stxScope = undefined
+    const existing = this.byName.get(name)
+    if (existing) {
+      this.attributes.splice(this.attributes.indexOf(existing), 1)
+      this.byName.delete(name)
+    }
+    if (name === 'class') this.onClassChange?.('')
+  }
+
+  contains(candidate: NativeBindingNode): boolean {
+    for (let current: NativeBindingNode | null = candidate; current; current = current.parentNode)
+      if ((current as unknown) === this) return true
+    return false
+  }
+
+  querySelector(selector: string): NativeBindingNode | null {
+    return this.querySelectorAll(selector)[0] ?? null
+  }
+
+  querySelectorAll(selector: string): NativeBindingNode[] {
+    const found: NativeBindingNode[] = []
+    const attribute = /^\[([^\]]+)\]$/.exec(selector)?.[1]
+    const visit = (candidate: NativeNode): void => {
+      const element = candidate as NativeBindingNode
+      if (element.nodeType === 1) {
+        if (selector === '*' || (attribute && element.hasAttribute(attribute)))
+          found.push(element)
+        element.childNodes.forEach(visit)
+      }
+    }
+    this.childNodes.forEach(visit)
+    return found
+  }
 }
 
 function createBindingNode(id: string, type: string, bindings: ManifestEntry['bindings'], connected = true, classes = '', onClassChange?: (value: string) => void): NativeBindingNode {
@@ -53,82 +161,7 @@ function createBindingNode(id: string, type: string, bindings: ManifestEntry['bi
     value: decodeBindingValue(binding.value),
   }))
   if (classes && !attributes.some(attribute => attribute.name === 'class')) attributes.push({ name: 'class', value: classes })
-  // The runtime asks a node for its attributes by name constantly (a binding's
-  // scope, a component's props); a list scanned per question was a fair share
-  // of mounting a screen of rows.
-  const byName = new Map(attributes.map(attribute => [attribute.name, attribute]))
-  const node = {
-    __stxId: id,
-    __stxScope: undefined as string | undefined,
-    nodeType: 1 as const,
-    get className() { return node.getAttribute('class') ?? '' },
-    set className(value: string) { node.setAttribute('class', value) },
-    classList: {
-      add(...tokens: string[]) { node.className = [...new Set([...node.className.split(/\s+/).filter(Boolean), ...tokens])].join(' ') },
-      remove(...tokens: string[]) { node.className = node.className.split(/\s+/).filter(token => token && !tokens.includes(token)).join(' ') },
-    },
-    tagName: type === 'TextInput' ? 'INPUT' : type === 'Picker' ? 'SELECT' : type.toUpperCase(),
-    // Native templates are recorded descriptors, not physical containers.
-    // bindFor clones their children into the real parent on either target.
-    get content(): NativeBindingNode | undefined { return node.tagName === 'TEMPLATE' ? node : undefined },
-    attributes,
-    parentNode: null,
-    parentElement: null,
-    childNodes: [],
-    children: [],
-    nextSibling: null,
-    nextElementSibling: null,
-    namespaceURI: '',
-    isConnected: true,
-    hasAttribute(name: string) {
-      return byName.has(name)
-    },
-    getAttribute(name: string) {
-      return byName.get(name)?.value ?? null
-    },
-    setAttribute(name: string, value: unknown) {
-      if (name === 'data-stx-scope') node.__stxScope = String(value)
-      const existing = byName.get(name)
-      if (existing) existing.value = String(value)
-      else {
-        const attribute = { name, value: String(value) }
-        attributes.push(attribute)
-        byName.set(name, attribute)
-      }
-      if (name === 'class') onClassChange?.(String(value))
-    },
-    removeAttribute(name: string) {
-      if (name === 'data-stx-scope') node.__stxScope = undefined
-      const existing = byName.get(name)
-      if (existing) {
-        attributes.splice(attributes.indexOf(existing), 1)
-        byName.delete(name)
-      }
-      if (name === 'class') onClassChange?.('')
-    },
-    contains(candidate: NativeBindingNode) {
-      for (let current: NativeBindingNode | null = candidate; current; current = current.parentNode)
-        if (current === node) return true
-      return false
-    },
-    querySelector(selector: string) {
-      return node.querySelectorAll(selector)[0] ?? null
-    },
-    querySelectorAll(selector: string) {
-      const found: NativeBindingNode[] = []
-      const attribute = /^\[([^\]]+)\]$/.exec(selector)?.[1]
-      const visit = (candidate: NativeNode): void => {
-        const element = candidate as NativeBindingNode
-        if (element.nodeType === 1) {
-          if (selector === '*' || (attribute && element.hasAttribute(attribute)))
-            found.push(element)
-          element.childNodes.forEach(visit)
-        }
-      }
-      node.childNodes.forEach(visit)
-      return found
-    },
-  }
+  const node = new BindingElement(id, type, attributes, onClassChange) as unknown as NativeBindingNode
   node.isConnected = connected
   return node
 }
