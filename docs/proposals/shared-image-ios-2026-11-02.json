@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-02",
+  "issue": "https://github.com/stacksjs/stx/issues/2091",
+  "releaseStatus": "Unreleased source after STX 0.2.784; no version or release tag changed",
+  "stxBase": "81294bc76cc0c86a6ec481e37a292c3d5fa10e49",
+  "stxImplementation": "9a0c5c71d947e89128342ac97ff07a6ea07c003a",
+  "craft": {
+    "commit": "1e141f1d3a02c9e5798cb3d816bcffc2d0d66d55",
+    "sourceVersion": "0.0.424",
+    "cleanSnapshot": true,
+    "sourceEdited": false,
+    "pixelBlocker": "https://github.com/craft-native/craft/issues/441"
+  },
+  "environment": {
+    "xcode": "26.6",
+    "xcodeBuild": "17F113",
+    "model": "iPhone 17 Pro",
+    "os": "iOS 26.5",
+    "osBuild": "23F77",
+    "platform": "iOS Simulator",
+    "ownedSimulator": "0106F5C4-EAEA-4E5D-8E1D-4877E20BD099"
+  },
+  "sourceSha256": {
+    "packages/components/src/ui/image/Image.stx": "359540d3ca07a4f03a5c492ae4af258147acc6ea6ede7e965fbb6bf2fa990b0b",
+    "packages/stx/src/utils.ts": "6c53478699a4ffed1bc94c0c75c44bf45948919b915cf388a24d17454fc3eb4e",
+    "packages/stx/src/native/runtime/native-host.ts": "af9e323b839c3d7156efcb19256b0951f00a58f9702d89ae18bcde060df0480e",
+    "packages/stx/src/native/runtime/initial-image-mutations.ts": "459cc8a7a0c0a851cb8487821f3bb041b5cf70eb12264fe9264cdd8ab412490b",
+    "packages/stx/test/native/fixtures/shared-image-device.stx": "d20d2b6162ed83377542d585cbfe8ad2be3847ca1d6a27d009bb00043e4c5862",
+    "packages/stx/test/native/fixtures/SharedImageNativeTests.swift": "40654f3fe3d669ebe818298c30ffeb852bcd4db17c2e2a426a5370a92d66923b",
+    "packages/stx/test/native/fixtures/SharedImageUITests.swift": "42ffc8f2d796fcf405f7371d8ede32d97f4505b689c31676a1a26a236a337d1d",
+    "scripts/native-portability-ios.ts": "35c8915ef0d3a4ce20dc276a413e874309dfa17a81004a00436aa6266c58ac88"
+  },
+  "bundle": {
+    "sha256": "723e4e61212f92db60813a6adacbbaf9a1053cec066301e2d4b84a4735e17236",
+    "bytes": 370939
+  },
+  "generatedHostSha256": "2c92f020955b2a30a37ecf2d3781df7d514e82e320822c25978ab115eb59b414",
+  "tests": {
+    "contracts": {
+      "passed": 11,
+      "failed": 0,
+      "assertions": 128,
+      "files": 3
+    },
+    "nativeAndComponents": {
+      "passed": 3088,
+      "failed": 0,
+      "assertions": 20825,
+      "files": 298,
+      "seconds": 281.85
+    }
+  },
+  "native": {
+    "light": {
+      "result": "Failed",
+      "totalTestCount": 6,
+      "passedTests": 5,
+      "failedTests": 1,
+      "skippedTests": 0,
+      "failures": [
+        {
+          "failureText": "XCTAssertEqual failed: (\"(100.0, 74.0)\") is not equal to (\"(20.0, 10.0)\")",
+          "targetName": "SharedPortabilityUnitTests",
+          "testIdentifier": 5,
+          "testIdentifierString": "SharedImageNativeTests/testRawHostPaintsOnlyItsFittedPixels()",
+          "testIdentifierURL": "test://com.apple.xcode/StxPortability/SharedPortabilityUnitTests/SharedImageNativeTests/testRawHostPaintsOnlyItsFittedPixels",
+          "testName": "testRawHostPaintsOnlyItsFittedPixels()"
+        }
+      ],
+      "summarySha256": "1ac6c826a1a5644c4e0ce610ac4fee2ae77d38bbf9a8f0306e279cdf0ea601ee",
+      "localResultBundle": "/var/folders/sq/p6y46h2x6ddgq6w1yyxhd_9h0000gn/T/stx-portability-ios-Xzftc1/ImageAcceptanceLight.xcresult"
+    },
+    "dark": {
+      "result": "Failed",
+      "totalTestCount": 6,
+      "passedTests": 5,
+      "failedTests": 1,
+      "skippedTests": 0,
+      "failures": [
+        {
+          "failureText": "XCTAssertEqual failed: (\"(100.0, 74.0)\") is not equal to (\"(20.0, 10.0)\")",
+          "targetName": "SharedPortabilityUnitTests",
+          "testIdentifier": 5,
+          "testIdentifierString": "SharedImageNativeTests/testRawHostPaintsOnlyItsFittedPixels()",
+          "testIdentifierURL": "test://com.apple.xcode/StxPortability/SharedPortabilityUnitTests/SharedImageNativeTests/testRawHostPaintsOnlyItsFittedPixels",
+          "testName": "testRawHostPaintsOnlyItsFittedPixels()"
+        }
+      ],
+      "summarySha256": "db87df3dbc5ec7ae7a276ddcfefe1eeefd8d9066249cc0ab634d35e58079a5f8",
+      "localResultBundle": "/var/folders/sq/p6y46h2x6ddgq6w1yyxhd_9h0000gn/T/stx-portability-ios-Xzftc1/ImageAcceptanceDark.xcresult"
+    }
+  },
+  "pixelControl": {
+    "expectedBounds": [
+      80,
+      90,
+      20,
+      10
+    ],
+    "actualFittedChildFrame": [
+      80,
+      90,
+      20,
+      10
+    ],
+    "plainUIKitBounds": [
+      80,
+      90,
+      20,
+      10
+    ],
+    "craftPaintedBounds": [
+      0,
+      26,
+      100,
+      74
+    ],
+    "usesStxCompilerOrRuntime": false
+  },
+  "artifacts": {
+    "control": {
+      "path": "docs/proposals/assets/shared-image-raster-control-2026-11-02.png",
+      "sha256": "5be7a75217c49e1d605e5d45a2a937c0f9578290be6e98813de9c380b37ac4e5"
+    },
+    "host": {
+      "path": "docs/proposals/assets/shared-image-raster-host-2026-11-02.png",
+      "sha256": "7d53d9a8425bc5c9a2d4bafdd41f1787a8ff3662093406af5d2b40382aaad1fc"
+    }
+  },
+  "observations": [
+    "Scope wrapper previously collapsed a 100-point image box to intrinsic 10-point height. Native fill-root sizing repairs the containing box without changing browser output or unrelated scopes.",
+    "Valid remounts now create their image with current source, style and handlers, after prop replay. Existing-image updates retain microtask timing; explicit flush, disposal and timer-less runtimes remain supported.",
+    "An explicit empty source still forwards the existing native missing-source error. The change prevents additional false errors on valid remount, not legitimate host failures.",
+    "The initial complete test run had three image geometry/state failures plus a UI runner bootstrap failure. Later strict runs execute all six cases: five pass and the retained raw raster assertion fails in both appearances. No expected-failure annotation or skip is used."
+  ],
+  "limits": [
+    "Craft #441 blocks pixel acceptance despite correct fitted child frames.",
+    "Android protocol coverage is not Android device drawing or accessibility certification.",
+    "No physical-device, VoiceOver/TalkBack, broad pixel-parity or native navigation-chrome certification. Craft source and user-owned Map edits were not changed."
+  ]
+}

@@ -203,3 +203,68 @@ it during setup. `nested-overlay-close.test.ts` covers every Dialog/Drawer
 combination on web/native, repeated inner dismissal, independent close counts
 and teardown. Keep the broader issues open; the full device suite is not yet
 green against this Craft revision.
+
+## Shared Image acceptance: 2026-11-02
+
+`--suite images` compiles `shared-image-device.stx` through normal per-call
+resolution: presentation calls select the real shared Image, while legacy
+`source` calls retain the primitive. The fixture also uses the actual shared
+Button. STX owns the Swift tests; Craft only generates the temporary app.
+
+```sh
+bun scripts/native-portability-ios.ts --craft-root /path/to/clean/craft \
+  --simulator "$STX_TEST_SIMULATOR" --appearance light --suite images
+bun scripts/native-portability-ios.ts --craft-root /path/to/clean/craft \
+  --simulator "$STX_TEST_SIMULATOR" --appearance dark --suite images
+```
+
+The gate requires **six passing tests**, with no failures or skips: four native
+behavior/geometry tests, one actual-pixel test, and one UI interaction test.
+Against clean Craft `1e141f1d3a02c9e5798cb3d816bcffc2d0d66d55` (source version
+0.0.424), it currently exits nonzero: **5 passed / 1 failed / 0 skipped** in
+each appearance. The sole failure is
+`testRawHostPaintsOnlyItsFittedPixels`, tracked in [Craft #441](https://github.com/craft-native/craft/issues/441).
+This is not a green all-platform or pixel-acceptance claim.
+
+The run found and fixed two STX defects, unreleased after v0.2.784:
+
+- A component scope with auto height sat between the fixed parent and the
+  percentage-sized Image, collapsing its 100-point box to the decoded source's
+  10-point intrinsic height. The Image's native fill-root marker now preserves
+  its containing box through that scope. Browser output, other scopes and
+  legacy Image selection retain their behavior.
+- A remounted image reached the native loader with its retained old source
+  before current parent props replayed. New images now wait through that
+  microtask turn and combine initial source/style/handler patches with their
+  creation. Existing-image updates keep their microtask schedule. Explicit
+  flush, cancellation, object sources, clearing and runtimes without timers
+  remain supported. An explicitly cleared source still forwards the host's
+  missing-source error; valid remounts no longer add a false one.
+
+Passing native checks verify the actual 100-point box, all five fit modes,
+percentage and keyword positions, defaults, unchanged decoded CGImage and
+UIImageView identities during geometry updates, source replacement/clearing,
+hidden updates across separate host turns, fresh screens and teardown. The UI
+test drives real shared Buttons and checks loads, retained bounds and remounts.
+The same fixture passes iOS/Android normal/minified protocol execution.
+
+Screenshot inspection then exposed a defect the frame checks missed. With no
+STX involved, Craft's positioned UIImageView draws the original source behind
+its correctly fitted child. For a 20x10 source in a 100x100 box, the fitted
+child is correctly `(80, 90, 20, 10)`, but the actual red/blue pixels span
+`(0, 26, 100, 74)`. A plain UIKit control paints only `(80, 90, 20, 10)`.
+The test compares actual rasters and retains the failure rather than marking
+it expected or weakening the assertion.
+
+| Plain UIKit control | Existing Craft host |
+| --- | --- |
+| ![Only the fitted 20x10 pixels](assets/shared-image-raster-control-2026-11-02.png) | ![Unwanted large image behind the fitted pixels](assets/shared-image-raster-host-2026-11-02.png) |
+
+[Source/bundle hashes, exact results and retained local result paths](shared-image-ios-2026-11-02.json).
+The final native/components regression run passes **3,088 tests, zero failures**;
+the focused new contracts pass **11 tests / 128 assertions**. Typecheck, lint
+and formatting pass. The standalone XCTest pixel gate remains red under
+Craft #441; ordinary Bun CI does not execute simulator XCTest.
+
+#2091 stays open for that host defect and remaining Android/device/accessibility
+acceptance. Craft source was untouched.

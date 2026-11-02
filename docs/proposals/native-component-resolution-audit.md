@@ -1,6 +1,6 @@
 # Shared/native component resolution audit
 
-Updated against source after v0.2.754 plus the maintained shared-controls acceptance suite
+Updated against source after v0.2.784 plus the maintained shared-controls and Image acceptance suites
 for [#2090](https://github.com/stacksjs/stx/issues/2090). This is an acceptance audit
 for [#2091](https://github.com/stacksjs/stx/issues/2091), not a claim that every
 component is portable or that device rendering has been certified.
@@ -17,7 +17,7 @@ directories and fails if a new overlap has no recorded compatibility decision.
 | Checkbox | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | Preserve both APIs; device validation |
 | Switch | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | Preserve both APIs; device validation |
 | TextInput | Shared for value-model calls without `@input`; primitive for legacy/ambiguous calls | Shared file | Preserve object-payload callers; device validation |
-| Image | Shared for src + presentation API + alt/decorative; primitive for plain/legacy calls | Same shared selection; builtin for plain/legacy/transformation calls | Matching Craft 0.0.396+ shell and device validation |
+| Image | Shared for src + presentation API + alt/decorative; primitive for plain/legacy calls | Same shared selection; builtin for plain/legacy/transformation calls | Matching Craft 0.0.396+ shell; Craft #441 pixel drawing and remaining device validation |
 | Video | Shared for src with shared media events; primitive for source, mixed, bare or legacy-event calls | Shared file | Preserve legacy API; provider/DRM/API and device validation remain |
 
 Explicit imports and screen-local components remain overrides. The audit tests
@@ -475,6 +475,26 @@ in normal and minified builds.
 - This is scoped visual/layout and interaction evidence, not a VoiceOver,
   TalkBack, keyboard-modality, Android-device or pixel-parity certification.
   Remaining device acceptance continues under #2091.
+
+### Image simulator follow-up (unreleased after v0.2.784)
+
+The maintained `--suite images` acceptance gate found two STX defects after
+protocol tests had passed: an auto-height component scope collapsed the native
+percentage image box, and valid remounts sent a stale initial source before prop
+replay. Native fill-root sizing and complete initial image-creation batches fix
+those failures while preserving web/legacy selection, decoded-image identity
+and explicit native error delivery on an empty source.
+
+On the existing clean iOS host, all five behavioral/geometry/UI cases now pass
+in light and dark appearances. The sixth, actual-pixel case remains a strict
+failure: [Craft #441](https://github.com/craft-native/craft/issues/441) paints
+the original source behind its correctly fitted child. The raw host reproducer
+uses no STX runtime. The full six-case gate reports 5 passed / 1 failed / 0
+skipped per appearance; it does not certify native pixel output.
+
+See [reproduction, raster comparison and exact acceptance boundary](shared-controls-device-validation.md#shared-image-acceptance-2026-11-02)
+and [hashes/results](shared-image-ios-2026-11-02.json). Craft source was not
+modified. Keep #2091 open.
 
 ## Platform controls (after v0.2.657)
 
