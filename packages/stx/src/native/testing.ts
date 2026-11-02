@@ -50,10 +50,12 @@ export interface NativeNode {
   key?: string
 }
 
-/** The host's tap decision, before any screen handler is dispatched (#2147). */
-function nativeTapAction(node: NativeNode): { kind: 'blocked' | 'event' } | { kind: 'navigate', target: string } {
+/** Craft 0.0.426+: an authored primary handler owns navigation (#2149). */
+function nativeTapAction(node: NativeNode): { kind: 'blocked' | 'event' } | { kind: 'handler', handler: string } | { kind: 'navigate', target: string } {
   if (node.props.disabled === true) return { kind: 'blocked' }
   if (['Link', 'TouchableOpacity', 'TouchableHighlight', 'Pressable'].includes(node.type)) {
+    const handler = node.events.onPress || node.events.onClick
+    if (handler) return { kind: 'handler', handler }
     for (const value of [node.props.href, node.props.to]) {
       if (typeof value === 'string' && value.trim()) return { kind: 'navigate', target: value.trim() }
     }
@@ -263,7 +265,7 @@ export interface NativeScreen {
   ofType: (type: string) => NativeNode[]
   /** Every text on screen, in no particular order. */
   texts: () => string[]
-  /** Tap with host link precedence, or deliver another named native event. */
+  /** Tap with host handler ownership, or deliver another named native event. */
   press: (node: NativeNode, event?: string, nativeEvent?: Record<string, unknown>) => void
   /** Type into a text input: its `onChangeText` with the whole new text. */
   type: (node: NativeNode, text: string) => void
@@ -719,6 +721,10 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
       if (ended || nodes.get(node.id) !== node) return
       const action = nativeTapAction(node)
       if (action.kind === 'blocked') return
+      if (action.kind === 'handler') {
+        send('EVENT', { handlerId: action.handler, nativeEvent })
+        return
+      }
       if (action.kind === 'navigate') {
         opened.push(action.target)
         return
@@ -739,7 +745,7 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
     ofType: (type: string) => all().filter(node => node.type === type),
     /** Every text on screen, in no particular order. */
     texts: () => all().flatMap(node => node.children.filter((child): child is string => typeof child === 'string')),
-    /** Tap with host link precedence, or deliver another named native event. */
+    /** Tap with host handler ownership, or deliver another named native event. */
     press,
     /** Type into a text input: its `onChangeText` with the whole new text. */
     type: (node: NativeNode, text: string) => press(node, 'onChangeText', { text }),
