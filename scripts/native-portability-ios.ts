@@ -14,13 +14,15 @@ const { values } = parseArgs({ options: {
   appearance: { type: 'string', default: 'dark' },
   suite: { type: 'string', default: 'overlays' },
 } })
-if (!values['craft-root'] || !values.simulator || !['light', 'dark'].includes(values.appearance!) || !['overlays', 'controls', 'hud'].includes(values.suite!))
-  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|controls|hud]')
-const suite = values.suite === 'hud'
-  ? { source: 'native-hud-device.stx', tests: 'NativeHudUITests', count: 1 }
-  : values.suite === 'controls'
-    ? { source: 'shared-controls-device.stx', tests: 'SharedControlsUITests', count: 2 }
-    : { source: 'shared-overlays-device.stx', tests: 'SharedPortabilityUITests', count: 4 }
+const suites: Record<string, { source: string, tests: string, count: number, unitTests?: string, unitCount?: number }> = {
+  hud: { source: 'native-hud-device.stx', tests: 'NativeHudUITests', count: 1 },
+  controls: { source: 'shared-controls-device.stx', tests: 'SharedControlsUITests', count: 2 },
+  overlays: { source: 'shared-overlays-device.stx', tests: 'SharedPortabilityUITests', count: 4 },
+  images: { source: 'shared-image-device.stx', tests: 'SharedImageUITests', count: 1, unitTests: 'SharedImageNativeTests', unitCount: 5 },
+}
+if (!values['craft-root'] || !values.simulator || !['light', 'dark'].includes(values.appearance!) || !suites[values.suite!])
+  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|controls|hud|images]')
+const suite = suites[values.suite!]
 
 function run(command: string[], cwd?: string, capture = false, allowFailure = false): string {
   const result = Bun.spawnSync(command, { cwd, stdout: capture ? 'pipe' : 'inherit', stderr: 'inherit' })
@@ -50,9 +52,27 @@ await sdk.init({ name: 'StxPortability', bundleId: 'dev.stx.portability', output
 await sdk.build({ output, nativeBundlePath: bundle, generateProject: false, runtimeDir: null })
 mkdirSync(join(output, 'UITests'))
 copyFileSync(join(fixtures, `${suite.tests}.swift`), join(output, `UITests/${suite.tests}.swift`))
+if (suite.unitTests) {
+  mkdirSync(join(output, 'UnitTests'))
+  copyFileSync(join(fixtures, `${suite.unitTests}.swift`), join(output, `UnitTests/${suite.unitTests}.swift`))
+}
 const projectFile = join(output, 'project.yml')
 let project = readFileSync(projectFile, 'utf8')
-const targets = `
+const unitTarget = suite.unitTests ? `
+  SharedPortabilityUnitTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [UnitTests]
+    dependencies:
+      - target: StxPortability
+    settings:
+      TEST_HOST: "$(BUILT_PRODUCTS_DIR)/StxPortability.app/StxPortability"
+      BUNDLE_LOADER: "$(TEST_HOST)"
+      GENERATE_INFOPLIST_FILE: YES
+      PRODUCT_BUNDLE_IDENTIFIER: dev.stx.portability.tests
+      SWIFT_VERSION: "5.0"
+` : ''
+const targets = `${unitTarget}
   SharedPortabilityUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -69,11 +89,11 @@ const marker = '\nschemes:\n'
 const test = '    test:\n      config: Debug\n'
 if (!project.includes(marker) || !project.includes(test)) throw new Error('Craft generated an unfamiliar Xcode scheme')
 project = project.replace(marker, `${targets}${marker}`)
-project = project.replace(test, `${test}      targets:\n        - SharedPortabilityUITests\n`)
+project = project.replace(test, `${test}      targets:\n        - SharedPortabilityUITests\n${suite.unitTests ? '        - SharedPortabilityUnitTests\n' : ''}`)
 writeFileSync(projectFile, project)
 if (craftCommit !== run(['git', 'rev-parse', 'HEAD'], craft, true) || run(['git', 'status', '--porcelain'], craft, true))
   throw new Error('Craft changed during generation; rerun with a stable checkout')
-const hashes = Object.fromEntries([bundle, ...compiled.dependencies, join(fixtures, `${suite.tests}.swift`)]
+const hashes = Object.fromEntries([bundle, ...compiled.dependencies, join(fixtures, `${suite.tests}.swift`), ...(suite.unitTests ? [join(fixtures, `${suite.unitTests}.swift`)] : [])]
   .map(file => [file, createHash('sha256').update(readFileSync(file)).digest('hex')]))
 writeFileSync(join(workspace, 'provenance.json'), JSON.stringify({ craftCommit, stxCommit: run(['git', 'rev-parse', 'HEAD'], root, true), stxWorkingTree: run(['git', 'status', '--porcelain'], root, true), hashes, appearance: values.appearance, simulator: values.simulator }, null, 2))
 run(['xcodegen', 'generate'], output)
@@ -86,9 +106,11 @@ run(['xcodebuild', '-project', 'StxPortability.xcodeproj', '-scheme', 'StxPortab
   '-test-timeouts-enabled', 'YES', '-default-test-execution-time-allowance', '300', '-maximum-test-execution-time-allowance', '300',
   'CODE_SIGN_IDENTITY=-', 'CODE_SIGNING_REQUIRED=NO', 'ENABLE_TESTABILITY=YES',
   'ONLY_ACTIVE_ARCH=YES', 'SWIFT_OPTIMIZATION_LEVEL=-Onone', 'test',
-  `-only-testing:SharedPortabilityUITests/${suite.tests}`], output, false, true)
+  `-only-testing:SharedPortabilityUITests/${suite.tests}`,
+  ...(suite.unitTests ? [`-only-testing:SharedPortabilityUnitTests/${suite.unitTests}`] : [])], output, false, true)
 const summary = JSON.parse(run(['xcrun', 'xcresulttool', 'get', 'test-results', 'summary', '--path', results], undefined, true))
 writeFileSync(join(workspace, 'summary.json'), JSON.stringify(summary, null, 2))
-if (summary.result !== 'Passed' || summary.totalTestCount !== suite.count || summary.passedTests !== suite.count || summary.failedTests !== 0 || summary.skippedTests !== 0)
-  throw new Error(`Expected ${suite.count} passing ${values.suite} UI tests: ${JSON.stringify(summary)}`)
-console.log(`${suite.count} ${values.suite} iOS UI tests passed; evidence: ${workspace}`)
+const expectedCount = suite.count + (suite.unitCount ?? 0)
+if (summary.result !== 'Passed' || summary.totalTestCount !== expectedCount || summary.passedTests !== expectedCount || summary.failedTests !== 0 || summary.skippedTests !== 0)
+  throw new Error(`Expected ${expectedCount} passing ${values.suite} native tests: ${JSON.stringify(summary)}`)
+console.log(`${expectedCount} ${values.suite} iOS native tests passed; evidence: ${workspace}`)

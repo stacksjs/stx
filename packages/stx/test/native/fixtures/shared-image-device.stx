@@ -1,0 +1,30 @@
+@import('Button', '../../../../components/src/ui/button/Button.stx')
+<script client>
+// Small, local two-color PNGs make intrinsic-size assertions independent of networking.
+const wide = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAKCAYAAAC0VX7mAAAAHElEQVR4nGP4z8DwnxhMpLL/RKscNXDUwKFkIAC3/Y6AcbKdYQAAAABJRU5ErkJggg=='
+const tall = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAUCAYAAAC07qxWAAAAG0lEQVR4nGP4z8DwHx1jEfqPVXRU4ajCkacQAICvjoAG4SeeAAAAAElFTkSuQmCC'
+const source = state(wide)
+const fit = state('scale-down')
+const position = state('right bottom')
+const shown = state(true)
+const loads = state(0)
+const errors = state(0)
+const errorMessages = state([])
+window.imageProbe = { source, fit, position, shown, loads, errors, errorMessages, wide, tall }
+</script>
+<section class="p-4 gap-3 bg-white dark:bg-black text-black dark:text-white">
+  <div class="w-[100px] h-[100px]">
+    <Image :if="shown" testID="shared-photo" src="" :src="source" alt="Two-color fixture"
+      width="100" height="100" className="w-full h-full" placeholder="none"
+      :fit="fit" :position="position" @load="loads.set(loads() + 1)" @error="errors.set(errors() + 1); errorMessages.set([...errorMessages(), $event.error?.message ?? ''])" />
+  </div>
+  <Image testID="legacy-photo" :source="{ uri: wide }" resizeMode="contain" style="width:40px;height:40px" />
+  <span testID="image-loads" :text="'Loads: ' + loads()"></span>
+  <span testID="image-errors" :text="'Errors: ' + errors()"></span>
+  <span testID="image-fit-value" :text="'Fit: ' + fit()"></span>
+  <Button testID="image-fit" @click="fit.set(fit() === 'scale-down' ? 'contain' : 'scale-down')">Toggle fit</Button>
+  <Button testID="image-position" @click="position.set(position() === 'right bottom' ? 'left top' : 'right bottom')">Toggle position</Button>
+  <Button testID="image-source" @click="source.set(source() === wide ? tall : wide)">Replace source</Button>
+  <Button testID="image-defaults" @click="fit.set(null); position.set(null)">Restore defaults</Button>
+  <Button testID="image-toggle" @click="shown.set(!shown())">Toggle image</Button>
+</section>
