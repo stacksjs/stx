@@ -1,5 +1,28 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.788...v0.2.789)
+
+## ✨ Features
+
+- say when a bound prop is read with defineProps ([0ff51c6](https://github.com/stacksjs/stx/commit/0ff51c6)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: align press testing and link defaults with authored handlers ([e20e298](https://github.com/stacksjs/stx/commit/e20e298)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ⚡ Performance Improvements
+
+- **native**: attributes found by name, and no variable tables for nodes that declare none ([9be8eba](https://github.com/stacksjs/stx/commit/9be8eba)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.789 ([c07a74b](https://github.com/stacksjs/stx/commit/c07a74b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.786...v0.2.787)
 
 ## ✨ Features
