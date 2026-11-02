@@ -33,6 +33,7 @@
 import type { NativeMutationOperation } from '../bridge/protocol'
 import type { STXNode, STXStyle } from '../compiler/ir'
 import { accessibilityChanges, authoredAccessibilityProps, projectAccessibility } from '../accessibility'
+import { type NativeClassTable, seedClassTable } from '../compiler/class-table'
 import { compileClassStyles, NATIVE_STATE_VARIANTS } from '../compiler/headwind-to-style'
 import { resolveIconName } from '../compiler/icons'
 import { applyNativeLayoutDefaults, parseNativeStyleLayers } from '../compiler/inline-style'
@@ -155,6 +156,8 @@ export interface NativeHostOptions {
   stylesheetTheme?: NativeStylesheetTheme
   /** The page's own class rules, read with the utilities when a class changes. */
   stylesheetRules?: NativeStylesheetRules
+  /** The screen's class lists as the build compiled them, seeded into the class cache (class-table.ts). */
+  classTable?: NativeClassTable
   /**
    * The host has a pointer (a Mac): `hover:` and `active:` classes travel with
    * the node as `hoverStyle` and `pressStyle` for the host to apply as the
@@ -280,6 +283,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     return false
   }
   let stylesheetVariables = createStyleVariables(options.stylesheetTheme?.[colorScheme] ?? []).computed()
+  if (options.classTable) seedClassTable(options.classTable, colorScheme, stylesheetVariables, options.stylesheetRules)
   let disposed = false
 
   const schedule = options.schedule ?? ((flush: () => void) => queueMicrotask(flush))
@@ -1039,6 +1043,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       if (scheme === colorScheme) return
       colorScheme = scheme
       stylesheetVariables = createStyleVariables(options.stylesheetTheme?.[scheme] ?? []).computed()
+      if (options.classTable) seedClassTable(options.classTable, scheme, stylesheetVariables, options.stylesheetRules, false)
       // Traverse parent-first: cloned/reinserted nodes need not occur in map
       // insertion order. Each descendant inherits the new computed parent map.
       const children = new Set([...records.values()].flatMap(record => record.children.map(child => child.__stxId)))

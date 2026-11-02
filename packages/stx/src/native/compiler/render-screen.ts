@@ -34,6 +34,7 @@ import path from 'node:path'
 import { loadStxConfig } from '../../config'
 import { classifyAttribute, extractBindingManifest, type BindingManifest } from '../../binding-manifest'
 import { processDirectives } from '../../process'
+import { buildClassTable } from './class-table'
 import { processScriptSetup } from '../../signal-processing'
 import { appThemeCSS } from './app-theme'
 import { excludeNativeSubtrees, translateHtmlToDocument } from './html-to-ir'
@@ -150,6 +151,9 @@ export async function compileScreenSource(
   diagnostics.unshift(...chromeDiagnostics)
 
   enterTemplatedBindings(document.root, manifest)
+  // Compiled now, so the device does not compile the same lists as it mounts.
+  const classTable = buildClassTable(document.root)
+  if (classTable) document.root._classTable = classTable
 
   // The page's title, as the web's <title> has it: the navigation title.
   const head = (context as { __stx_runtime_head?: { title?: unknown } }).__stx_runtime_head

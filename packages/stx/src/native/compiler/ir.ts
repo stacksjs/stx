@@ -1,4 +1,5 @@
 /* eslint-disable style/max-statements-per-line */
+import type { NativeClassTable } from './class-table'
 import type { NativeStylesheetTheme } from './stylesheet-theme'
 import type { NativeStylesheetRules } from './stylesheet-rules'
 /**
@@ -140,6 +141,9 @@ export interface STXNode {
 
   /** The page's own class rules (`.panel-title { ... }`), by class name. */
   _stylesheetRules?: NativeStylesheetRules
+
+  /** The screen's class lists compiled by the build (class-table.ts), on the root. */
+  _classTable?: NativeClassTable
 
   /** Original Headwind classes, retained for native class and appearance updates. */
   _classes?: string
