@@ -53,6 +53,10 @@ function createBindingNode(id: string, type: string, bindings: ManifestEntry['bi
     value: decodeBindingValue(binding.value),
   }))
   if (classes && !attributes.some(attribute => attribute.name === 'class')) attributes.push({ name: 'class', value: classes })
+  // The runtime asks a node for its attributes by name constantly (a binding's
+  // scope, a component's props); a list scanned per question was a fair share
+  // of mounting a screen of rows.
+  const byName = new Map(attributes.map(attribute => [attribute.name, attribute]))
   const node = {
     __stxId: id,
     __stxScope: undefined as string | undefined,
@@ -77,22 +81,29 @@ function createBindingNode(id: string, type: string, bindings: ManifestEntry['bi
     namespaceURI: '',
     isConnected: true,
     hasAttribute(name: string) {
-      return attributes.some(attribute => attribute.name === name)
+      return byName.has(name)
     },
     getAttribute(name: string) {
-      return attributes.find(attribute => attribute.name === name)?.value ?? null
+      return byName.get(name)?.value ?? null
     },
     setAttribute(name: string, value: unknown) {
       if (name === 'data-stx-scope') node.__stxScope = String(value)
-      const existing = attributes.find(attribute => attribute.name === name)
+      const existing = byName.get(name)
       if (existing) existing.value = String(value)
-      else attributes.push({ name, value: String(value) })
+      else {
+        const attribute = { name, value: String(value) }
+        attributes.push(attribute)
+        byName.set(name, attribute)
+      }
       if (name === 'class') onClassChange?.(String(value))
     },
     removeAttribute(name: string) {
       if (name === 'data-stx-scope') node.__stxScope = undefined
-      const index = attributes.findIndex(attribute => attribute.name === name)
-      if (index !== -1) attributes.splice(index, 1)
+      const existing = byName.get(name)
+      if (existing) {
+        attributes.splice(attributes.indexOf(existing), 1)
+        byName.delete(name)
+      }
       if (name === 'class') onClassChange?.('')
     },
     contains(candidate: NativeBindingNode) {
