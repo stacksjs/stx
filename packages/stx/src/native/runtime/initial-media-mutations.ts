@@ -11,13 +11,13 @@ function merge<T extends object>(before: T | undefined, patch: T | undefined): T
   return next as T
 }
 
-/** Give a new image its bound source, geometry and handlers in its first host operation. */
-export function prepareInitialImages(operations: NativeMutationOperation[]): NativeMutationOperation[] {
-  if (!operations.some(op => op.op === 'createNode' && op.node.type === 'Image')) return operations
+/** Give newly created media its bound source, geometry and handlers immediately. */
+export function prepareInitialMedia(operations: NativeMutationOperation[]): NativeMutationOperation[] {
+  if (!operations.some(op => op.op === 'createNode' && (op.node.type === 'Image' || op.node.type === 'Video'))) return operations
   const created = new Map<string, Extract<NativeMutationOperation, { op: 'createNode' }>>()
   const result: NativeMutationOperation[] = []
   for (const operation of operations) {
-    if (operation.op === 'createNode' && operation.node.type === 'Image') {
+    if (operation.op === 'createNode' && (operation.node.type === 'Image' || operation.node.type === 'Video')) {
       const copy = { ...operation, node: { ...operation.node } }
       created.set(operation.id, copy)
       result.push(copy)
@@ -29,10 +29,10 @@ export function prepareInitialImages(operations: NativeMutationOperation[]): Nat
       result.push(operation)
       continue
     }
-    // Hosts can start loading during createNode. Sending a temporary empty
-    // source and only then its binding produces a false missing-source error.
+    // Hosts can start loading during createNode. A stale source/flag can load
+    // the wrong video; an empty source can report a false missing-image error.
     // Include handlers too, so the real first load is never lost. Updates to
-    // an image already committed in an earlier batch retain their ordering.
+    // media already committed in an earlier batch retain their ordering.
     initial.node.props = merge(initial.node.props, operation.patch.props)
     initial.node.style = merge(initial.node.style, operation.patch.style)
     initial.node.events = merge(initial.node.events, operation.patch.events)

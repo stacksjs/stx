@@ -46,7 +46,7 @@ import { authoredTextEntryProps, projectTextEntry, TEXT_ENTRY_SOURCES, textEntry
 import { cloneNativeBindingNode, type NativeBindingNode } from './binding-tree'
 import { NATIVE_FORM_ENTRIES } from './jsc-globals'
 import { createNativeOverlayPresenter, type NativeOverlayEntry } from './overlay-presenter'
-import { prepareInitialImages } from './initial-image-mutations'
+import { prepareInitialMedia } from './initial-media-mutations'
 import { nativeViewError, type NativeFocusOptions, type NativeViewBounds, type NativeViewOperations } from './view-operations'
 
 /** A handle on a node in the native tree. Not an element; just an identity. */
@@ -265,7 +265,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   const implicitSubmitListeners = new WeakMap<NativeNode, { listener: (event: unknown) => void, stop: () => void }>()
   const formResetCallbacks = new WeakMap<NativeNode, Set<() => void>>()
   let queue: NativeMutationOperation[] = []
-  let imageFlushTimer: ReturnType<typeof setTimeout> | undefined
+  let mediaFlushTimer: ReturnType<typeof setTimeout> | undefined
   let scheduled = false
   let counter = 0
   let colorScheme = options.colorScheme ?? 'light'
@@ -320,23 +320,23 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   }
 
   function flush(): void {
-    if (imageFlushTimer !== undefined) clearTimeout(imageFlushTimer)
-    imageFlushTimer = undefined
+    if (mediaFlushTimer !== undefined) clearTimeout(mediaFlushTimer)
+    mediaFlushTimer = undefined
     scheduled = false
     if (queue.length === 0)
       return
     const batch = queue
     queue = []
-    options.send(prepareInitialImages(batch))
+    options.send(prepareInitialMedia(batch))
   }
 
   function scheduledFlush(): void {
     // A remounted component replays parent props through attribute observers.
-    // Let the current microtask turn finish before creating an image: unlike
-    // a DOM img, its native loader starts inside createNode. Existing-image
+    // Let the current microtask turn finish before creating media: unlike
+    // DOM media, its native loader starts inside createNode. Existing-media
     // updates and every other batch keep the ordinary microtask schedule.
-    if (typeof setTimeout === 'function' && typeof clearTimeout === 'function' && queue.some(op => op.op === 'createNode' && op.node.type === 'Image'))
-      imageFlushTimer = setTimeout(flush, 0)
+    if (typeof setTimeout === 'function' && typeof clearTimeout === 'function' && queue.some(op => op.op === 'createNode' && (op.node.type === 'Image' || op.node.type === 'Video')))
+      mediaFlushTimer = setTimeout(flush, 0)
     else flush()
   }
 
@@ -1023,8 +1023,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     pending: () => queue.length,
     flush,
     dispose() {
-      if (imageFlushTimer !== undefined) clearTimeout(imageFlushTimer)
-      imageFlushTimer = undefined
+      if (mediaFlushTimer !== undefined) clearTimeout(mediaFlushTimer)
+      mediaFlushTimer = undefined
       overlayPresenter.dispose()
       disposed = true
       queue = []

@@ -1,7 +1,7 @@
 import { expect, it } from 'bun:test'
 import { join } from 'node:path'
 import type { NativeMutationOperation } from '../../src/native/bridge/protocol'
-import { prepareInitialImages } from '../../src/native/runtime/initial-image-mutations'
+import { prepareInitialMedia } from '../../src/native/runtime/initial-media-mutations'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
 import { mountNativeScreen } from '../../src/native/testing'
 import { createNativeHost } from '../../src/native/runtime/native-host'
@@ -51,12 +51,12 @@ it('preserves native object sources, tombstones, explicit missing sources and ex
     { op: 'createNode', id: 'empty', node: { type: 'Image', props: { source: '/clear.png' } } },
     { op: 'updateNode', id: 'empty', patch: { props: { source: null } } },
   ]
-  const prepared = prepareInitialImages(operations)
+  const prepared = prepareInitialMedia(operations)
   expect(prepared[0]).toMatchObject({ op: 'createNode', node: { props: { source: { uri: '/final.png', headers: { Authorization: 'fixture' } } }, style: {}, events: { onLoad: 'final-handler' } } })
   expect(prepared[1]).toBe(operations[2])
   expect(prepared[2]).toMatchObject({ op: 'createNode', node: { props: {} } })
   expect(operations[0]).toMatchObject({ node: { props: { source: '/old.png' }, style: { objectFit: 'cover' } } })
-  expect(prepareInitialImages([operations[2]])[0]).toBe(operations[2])
+  expect(prepareInitialMedia([operations[2]])[0]).toBe(operations[2])
 })
 
 it.each(['dispose', 'flush'] as const)('owns the pending image-creation task when explicitly asked to %s', async (action) => {

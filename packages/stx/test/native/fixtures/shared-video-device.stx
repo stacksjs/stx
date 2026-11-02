@@ -1,0 +1,33 @@
+@import('Button', '../../../../../components/src/ui/button/Button.stx')
+<script client>
+const source = state('')
+const legacySource = state('')
+const controls = state(false)
+const autoplay = state(false)
+const loop = state(false)
+const muted = state(true)
+const paused = state(false)
+const shown = state(true)
+const starts = state(0)
+const loads = state(0)
+const plays = state(0)
+const pauses = state(0)
+const ends = state(0)
+const progress = state(0)
+const errors = state([])
+window.videoProbe = { source, legacySource, controls, autoplay, loop, muted, paused, shown, starts, loads, plays, pauses, ends, progress, errors }
+</script>
+<section class="p-4 gap-2">
+  <Video :if="shown" testID="shared-movie" :src="source" :controls="controls" :autoplay="autoplay" :loop="loop" :muted="muted" :paused="paused" label="Shared test movie"
+    @loadstart="starts.set(starts() + 1)" @loadedmetadata="loads.set(loads() + 1)" @play="plays.set(plays() + 1)" @pause="pauses.set(pauses() + 1)"
+    @ended="ends.set(ends() + 1)" @timeupdate="progress.set($event.currentTime)" @error="errors.set([...errors(), $event.message])" />
+  <Video testID="legacy-movie" :source="{ uri: legacySource }" controls="false" muted="true" resizeMode="contain" style="width:64;height:32" />
+  <p testID="video-flags">Flags: {{ String(controls) }},{{ String(autoplay) }},{{ String(loop) }},{{ String(muted) }}</p>
+  <p testID="video-loads">Loads: {{ loads }}</p>
+  <Button testID="video-controls" @click="controls.set(!controls())">Controls</Button>
+  <Button testID="video-autoplay" @click="autoplay.set(!autoplay())">Autoplay</Button>
+  <Button testID="video-loop" @click="loop.set(!loop())">Loop</Button>
+  <Button testID="video-muted" @click="muted.set(!muted())">Muted</Button>
+  <Button testID="video-defaults" @click="controls.set(null);autoplay.set(null);loop.set(null);muted.set(null)">Defaults</Button>
+  <Button testID="video-toggle" @click="shown.set(!shown())">Toggle video</Button>
+</section>
