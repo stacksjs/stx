@@ -51,7 +51,8 @@ export const SIGNALS_HANDLER_RUNTIME = `  function expressionUsesSignalApi(expre
       }
       // First try component-level scope
       const elementScope = findElementScope(el || currentElement);
-      const scope = mergeTemplateScopes(globalHelpers, componentScope, (elementScope || {}));
+      // Layered, not copied: a merge copied every name in scope on each event.
+      const scope = layerTemplateScopes(globalHelpers, componentScope, (elementScope || {}));
 
       // Check for shorthand syntax (Feature #8)
       const shorthandFn = parseEventShorthand(expr, scope);
@@ -63,8 +64,10 @@ export const SIGNALS_HANDLER_RUNTIME = `  function expressionUsesSignalApi(expre
       // Loop items arrive as signals (see createItemElements). Unwrap them for
       // the same reason the inline @event path does: \`item.value\` in a handler
       // means the item's field, not the signal API.
+      // Only the names the handler mentions are read: a page's scope holds hundreds.
       const handlerScope = {};
-      Object.keys(scope).forEach(function(k) {
+      __stxNamesIn(expr).forEach(function(k) {
+        if (!(k in scope)) return;
         const v = scope[k];
         handlerScope[k] = (v && typeof v === 'function' && v._isStxLoopItem) ? v() : v;
       });

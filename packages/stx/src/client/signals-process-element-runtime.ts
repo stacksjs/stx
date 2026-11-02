@@ -651,7 +651,14 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
             // binding: \`pick(selectedPackage)\` passes the package. Leaving it
             // out handed the handler the derived's getter function, so
             // \`selectedPackage.trainer_id\` was undefined with nothing said.
-            var hasSignals = Object.values(eventCapturedScope).some(function(v) {
+            // Only the names the handler mentions. A page's scope holds
+            // hundreds; reading, testing and declaring every one of them on
+            // each click or hover cost far more than the handler itself.
+            var handlerNames = __stxNamesIn(value).filter(function(k) {
+              return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k) && (k in eventCapturedScope);
+            });
+            var hasSignals = handlerNames.some(function(k) {
+              var v = eventCapturedScope[k];
               return v && typeof v === 'function' && (v._isSignal || v._isDerived);
             });
             // Only use signal read/write proxy for DIRECT assignment expressions
@@ -660,10 +667,10 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
             // would RESET signals to their pre-handler values.
             var isDirectAssignment = hasSignals && /^[a-zA-Z_$]\\w*\\s*=/.test(value.trim()) && !value.trim().startsWith('==');
             if (isDirectAssignment) {
-              var getVars = Object.keys(eventCapturedScope).map(function(k) {
+              var getVars = handlerNames.map(function(k) {
                 return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && (__s["' + k + '"]._isSignal || __s["' + k + '"]._isDerived) ? __s["' + k + '"]() : __s["' + k + '"]';
               }).join(';');
-              var setVars = Object.keys(eventCapturedScope).filter(function(k) {
+              var setVars = handlerNames.filter(function(k) {
                 var v = eventCapturedScope[k];
                 return v && typeof v === 'function' && v._isSignal;
               }).map(function(k) {
@@ -676,7 +683,7 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
               // Function calls with signals in scope keep any signal used through
               // its object API as a raw signal function, and unwrap the rest for
               // primitive reads.
-              var unwrapVars = Object.keys(eventCapturedScope).map(function(k) {
+              var unwrapVars = handlerNames.map(function(k) {
                 var v = eventCapturedScope[k];
                 // A :for item is a signal only as an implementation detail, so
                 // that keyed rows can update in place. Its \`.value\` is a field
