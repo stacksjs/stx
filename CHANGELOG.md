@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.793...v0.2.794)
+
+## ⚡ Performance Improvements
+
+- **native**: resolve a node's style without closures of its own ([9378436](https://github.com/stacksjs/stx/commit/9378436)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: copy an element's attributes in a plain loop ([14a7360](https://github.com/stacksjs/stx/commit/14a7360)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.794 ([4cc71d9](https://github.com/stacksjs/stx/commit/4cc71d9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.792...v0.2.793)
 
 ## ⚡ Performance Improvements
