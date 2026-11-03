@@ -850,7 +850,7 @@
     },
     "packages/collections/iconify-logos": {
       "name": "@stacksjs/iconify-logos",
-      "version": "0.2.461",
+      "version": "0.2.795",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
@@ -1340,7 +1340,7 @@
     },
     "packages/collections/iconify-streamline-logos": {
       "name": "@stacksjs/iconify-streamline-logos",
-      "version": "0.2.461",
+      "version": "0.2.795",
       "dependencies": {
         "@stacksjs/iconify-core": "workspace:*",
       },
