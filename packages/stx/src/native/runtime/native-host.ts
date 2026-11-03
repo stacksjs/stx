@@ -44,7 +44,7 @@ import { affectsGeometry, applySvgAnimation, parseSvgMarkup, parseViewBox, SVG_A
 import { NATIVE_EVENT_NAMES } from '../event-names'
 import { nativePropName } from '../prop-names'
 import { authoredTextEntryProps, projectTextEntry, TEXT_ENTRY_SOURCES, textEntryChanges } from '../text-entry'
-import { cloneNativeBindingNode, type NativeBindingNode } from './binding-tree'
+import { BindingElement, cloneNativeBindingNode, type BindingElementClass, type NativeBindingNode } from './binding-tree'
 import { NATIVE_FORM_ENTRIES } from './jsc-globals'
 import { createNativeOverlayPresenter, type NativeOverlayEntry } from './overlay-presenter'
 import { prepareInitialMedia } from './initial-media-mutations'
@@ -190,6 +190,8 @@ export interface NativeHostOptions {
 export interface NativeHost {
   /** Native mutations and binding registration must reach one bridge batch. */
   readonly isNative: true
+  /** The element class a binding tree builds this screen's nodes from. */
+  readonly bindingElement?: BindingElementClass
   focus: (node: NativeNode, options?: NativeFocusOptions) => Promise<true>
   measure: (node: NativeNode) => Promise<NativeViewBounds>
   syncOverlays: (entries: NativeOverlayEntry[]) => void
@@ -871,36 +873,57 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     return (node as NativeBindingNode).nodeType === 1
   }
 
-  // One set of descriptors per screen, shared by every node: each node used to
-  // get five closures and their descriptors of its own, a cost per node that
-  // the interpreter feels on a long list. The methods read `this`, so they are
+  function nextSiblingOf(node: NativeNode): NativeNode | null {
+    const owner = node.__stxOwner
+    if (!owner) return null
+    const siblings = recordOf(owner).children
+    const index = lastIndexOfChild(siblings, node.__stxId)
+    return index === -1 ? null : siblings[index + 1] ?? null
+  }
+
+  function nextElementSiblingOf(node: NativeNode): NativeBindingNode | null {
+    let sibling = nextSiblingOf(node)
+    while (sibling && !isBindingNode(sibling))
+      sibling = nextSiblingOf(sibling)
+    return sibling
+  }
+
+  // A node's position helpers live on prototypes made once per screen: the
+  // screen's element class, and the prototypes its anchors and plain nodes are
+  // made from. Five closures and a defineProperties per node were a tenth of
+  // mounting a list in an interpreter. The methods read `this`, so they are
   // called on the node (`node.measure()`), as a DOM element's are.
   const positionDescriptors: PropertyDescriptorMap = {
-    focus: { configurable: true, value(this: NativeNode, focusOptions?: NativeFocusOptions) { return host.focus(this, focusOptions) } },
-    measure: { configurable: true, value(this: NativeNode) { return host.measure(this) } },
+    focus: { configurable: true, writable: true, value(this: NativeNode, focusOptions?: NativeFocusOptions) { return host.focus(this, focusOptions) } },
+    measure: { configurable: true, writable: true, value(this: NativeNode) { return host.measure(this) } },
     // Layout is an invalidation signal, not viewport bounds. Call measure()
     // after it, and retain polling for scroll/transform-only movement.
-    observeLayout: { configurable: true, value(this: NativeNode, callback: () => void) { return host.listen(this, 'layout', callback) } },
-    nextSibling: {
-      configurable: true,
-      get(this: NativeNode) {
-        const owner = this.__stxOwner
-        if (!owner) return null
-        const siblings = recordOf(owner).children
-        const index = lastIndexOfChild(siblings, this.__stxId)
-        return index === -1 ? null : siblings[index + 1] ?? null
-      },
-    },
-    nextElementSibling: {
-      configurable: true,
-      get(this: NativeNode) {
-        let sibling = (this as any).nextSibling as NativeNode | null
-        while (sibling && !isBindingNode(sibling))
-          sibling = (sibling as any).nextSibling as NativeNode | null
-        return sibling
-      },
-    },
+    observeLayout: { configurable: true, writable: true, value(this: NativeNode, callback: () => void) { return host.listen(this, 'layout', callback) } },
+    nextSibling: { configurable: true, get(this: NativeNode) { return nextSiblingOf(this) } },
+    nextElementSibling: { configurable: true, get(this: NativeNode) { return nextElementSiblingOf(this) } },
     __stxPositionDecorated: { configurable: true, writable: true, value: true },
+  }
+
+  class HostElement extends BindingElement {
+    protected override classChanged(value: string): void {
+      host.setAttribute(this as unknown as NativeNode, 'class', value)
+    }
+  }
+  Object.defineProperties(HostElement.prototype, positionDescriptors)
+
+  const plainNodePrototype: object = Object.create(Object.prototype, positionDescriptors)
+  // Structural bindings use a placeholder's parent on reinsertion, just as
+  // they do for a DOM comment. Anchors have no native view but still belong
+  // to the logical tree, including after a move or removal.
+  const anchorPrototype: object = Object.create(plainNodePrototype, {
+    parentNode: { configurable: true, get(this: NativeNode) { return this.__stxOwner ?? null } },
+    parentElement: { configurable: true, get(this: NativeNode) { return this.__stxOwner ?? null } },
+  })
+
+  function plainNode(id: string, prototype: object = plainNodePrototype): NativeNode {
+    const node = Object.create(prototype) as NativeNode
+    node.__stxId = id
+    return node
   }
 
   function decoratePosition(node: NativeNode): void {
@@ -1036,6 +1059,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
   const host: NativeHost = {
     isNative: true as const,
+    bindingElement: HostElement,
     focus: (node, focusOptions) => withMountedView(node, views => views.focus(node.__stxId, focusOptions)),
     measure: node => withMountedView(node, views => views.measure(node.__stxId)),
     syncOverlays: entries => overlayPresenter.sync(entries),
@@ -1138,8 +1162,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       record.markup = markup
       for (const source of parseSvgMarkup(markup)) {
         const materializeMarkup = (parent: NativeNode, descriptor: STXNode): void => {
-          const child = { __stxId: nextId('n') } as NativeNode
-          decoratePosition(child)
+          const child = plainNode(nextId('n'))
           adopt(child, descriptor.type, null, descriptor)
           records.get(child.__stxId)!.materialized = false
           this.insert(parent, child)
@@ -1523,15 +1546,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     anchor(label) {
       // Logical only: it is a position in this host's ordering and is never
       // created on the native side, so it costs no view.
-      const anchor: NativeNode = { __stxId: nextId('a'), __stxAnchor: label }
-      // Structural bindings use a placeholder's parent on reinsertion, just
-      // as they do for a DOM comment. Anchors have no native view but still
-      // belong to the logical tree, including after a move or removal.
-      Object.defineProperties(anchor, {
-        parentNode: { configurable: true, get: () => anchor.__stxOwner ?? null },
-        parentElement: { configurable: true, get: () => anchor.__stxOwner ?? null },
-      })
-      decoratePosition(anchor)
+      const anchor = plainNode(nextId('a'), anchorPrototype)
+      anchor.__stxAnchor = label
       return anchor
     },
 
@@ -1539,8 +1555,9 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const source = descriptorOf(node)
       const id = nextId('n')
       const copy: NativeNode = isBindingNode(node)
-        ? cloneNativeBindingNode(node, id, value => this.setAttribute(copy, 'class', value))
-        : { __stxId: id, __stxOwner: node.__stxOwner }
+        ? cloneNativeBindingNode(node, id, undefined, HostElement)
+        : plainNode(id)
+      if (!isBindingNode(node)) copy.__stxOwner = node.__stxOwner
       decoratePosition(copy)
       if (node.__stxScope !== undefined)
         copy.__stxScope = node.__stxScope

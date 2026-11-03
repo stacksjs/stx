@@ -51,9 +51,11 @@ function decodeBindingValue(value: string): string {
  * A native node as the shared signals runtime sees it: the DOM element subset
  * it reads and writes. A class, so a screen's hundreds of nodes share their
  * methods; an object literal per node made a dozen closures and accessors for
- * each, which an interpreted engine paid for on every mount.
+ * each, which an interpreted engine paid for on every mount. A native host
+ * extends it once per screen with its position methods (`measure`,
+ * `nextSibling`, ...), so even those cost a node nothing.
  */
-class BindingElement {
+export class BindingElement {
   __stxId: string
   __stxScope: string | undefined = undefined
   nodeType = 1 as const
@@ -63,8 +65,7 @@ class BindingElement {
   parentElement: NativeBindingNode | null = null
   childNodes: NativeNode[] = []
   children: NativeNode[] = []
-  nextSibling: NativeNode | null = null
-  nextElementSibling: NativeBindingNode | null = null
+  __stxOwner: NativeNode | null = null
   namespaceURI = ''
   isConnected = true
   // The runtime asks a node for its attributes by name constantly (a binding's
@@ -81,6 +82,13 @@ class BindingElement {
     this.byName = new Map(attributes.map(attribute => [attribute.name, attribute]))
     this.onClassChange = onClassChange
   }
+
+  // Accessors, not fields, so a host's subclass can answer from its tree.
+  get nextSibling(): NativeNode | null { return null }
+  get nextElementSibling(): NativeBindingNode | null { return null }
+
+  /** A class write a host has to carry to the native view. */
+  protected classChanged(value: string): void { this.onClassChange?.(value) }
 
   get className(): string { return this.getAttribute('class') ?? '' }
   set className(value: string) { this.setAttribute('class', value) }
@@ -114,7 +122,7 @@ class BindingElement {
       this.attributes.push(attribute)
       this.byName.set(name, attribute)
     }
-    if (name === 'class') this.onClassChange?.(String(value))
+    if (name === 'class') this.classChanged(String(value))
   }
 
   removeAttribute(name: string): void {
@@ -124,7 +132,7 @@ class BindingElement {
       this.attributes.splice(this.attributes.indexOf(existing), 1)
       this.byName.delete(name)
     }
-    if (name === 'class') this.onClassChange?.('')
+    if (name === 'class') this.classChanged('')
   }
 
   contains(candidate: NativeBindingNode): boolean {
@@ -153,7 +161,9 @@ class BindingElement {
   }
 }
 
-function createBindingNode(id: string, type: string, bindings: ManifestEntry['bindings'], connected = true, classes = '', onClassChange?: (value: string) => void): NativeBindingNode {
+export type BindingElementClass = new (id: string, type: string, attributes: Array<{ name: string, value: string }>, onClassChange?: (value: string) => void) => BindingElement
+
+function createBindingNode(id: string, type: string, bindings: ManifestEntry['bindings'], connected = true, classes = '', onClassChange?: (value: string) => void, Element: BindingElementClass = BindingElement): NativeBindingNode {
   // Browsers decode attribute entities before getAttribute(). Native binding
   // nodes must provide the same input to the shared signals runtime.
   const attributes = bindings.map(binding => ({
@@ -161,19 +171,19 @@ function createBindingNode(id: string, type: string, bindings: ManifestEntry['bi
     value: decodeBindingValue(binding.value),
   }))
   if (classes && !attributes.some(attribute => attribute.name === 'class')) attributes.push({ name: 'class', value: classes })
-  const node = new BindingElement(id, type, attributes, onClassChange) as unknown as NativeBindingNode
+  const node = new Element(id, type, attributes, onClassChange) as unknown as NativeBindingNode
   node.isConnected = connected
   return node
 }
 
 /** Clone the DOM-shaped metadata while the host clones the native descriptor. */
-export function cloneNativeBindingNode(source: NativeBindingNode, id: string, onClassChange?: (value: string) => void): NativeBindingNode {
+export function cloneNativeBindingNode(source: NativeBindingNode, id: string, onClassChange?: (value: string) => void, Element?: BindingElementClass): NativeBindingNode {
   const bindings = source.attributes.map(attribute => ({
     name: attribute.name,
     value: attribute.value,
     kind: 'attr' as const,
   }))
-  return createBindingNode(id, source.tagName, bindings, false, source.className, onClassChange)
+  return createBindingNode(id, source.tagName, bindings, false, source.className, onClassChange, Element)
 }
 
 /** Build host handles and a manifest-id lookup from already translated IR. */
@@ -196,7 +206,10 @@ export function materializeNativeBindingTree(
         runtimeBindings.push({ name: `:${name}`, value, kind: 'attr' })
       }
     }
-    const node = createBindingNode(id, source.type, runtimeBindings, true, source._classes, value => host.setAttribute(node, 'class', value))
+    // A host's own element class carries class writes to it with no closure per node.
+    const node = host.bindingElement
+      ? createBindingNode(id, source.type, runtimeBindings, true, source._classes, undefined, host.bindingElement)
+      : createBindingNode(id, source.type, runtimeBindings, true, source._classes, value => host.setAttribute(node, 'class', value))
     if (source.type === 'Checkbox' && source.props.type === 'checkbox') node.tagName = 'INPUT'
     if (source.props['data-stx-native-template']) node.tagName = 'TEMPLATE'
     // Static component metadata owns parent prop/event scopes too. The
