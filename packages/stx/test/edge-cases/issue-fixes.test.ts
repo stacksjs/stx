@@ -581,10 +581,33 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
     expect(runtime).toContain('root.getAttribute(candidate)')
   })
 
-  it('falls back to serialized static component props', () => {
-    expect(runtime).toContain("root.getAttribute('data-stx-props')")
-    expect(runtime).toContain('JSON.parse(serializedProps)')
-    expect(runtime).toContain('staticValue = parsedProps[camelName]')
+  it('reads serialized static props without sharing mutable values between component instances', () => {
+    const serialized = JSON.stringify({ displayName: 'Mira', enabled: false, count: 4, options: { color: 'blue' } })
+    const createRoot = () => ({
+      hasAttribute: () => false,
+      getAttribute: (name: string) => name === 'data-stx-props' ? serialized : null,
+    })
+    const window = { __STX_CURRENT_ELEMENT__: createRoot() }
+    const useReactiveProp = vm.runInNewContext(`${SIGNALS_HELPERS_RUNTIME}\n${signalsAuthoringRuntime('function() {}')}\nuseReactiveProp`, {
+      window,
+      state: (initial: unknown) => {
+        let current = initial
+        const signal = () => current
+        signal.set = (next: unknown) => { current = next }
+        return signal
+      },
+      stxHost: { observeAttributes: () => () => {} },
+      onMount: () => {},
+      onDestroy: () => {},
+    })
+    expect(useReactiveProp('display-name', 'fallback')()).toBe('Mira')
+    expect(useReactiveProp('enabled', true)()).toBe(false)
+    expect(useReactiveProp('count', 0)()).toBe(4)
+    expect(useReactiveProp('missing', 'fallback')()).toBe('fallback')
+    const firstOptions = useReactiveProp('options', {})()
+    firstOptions.color = 'red'
+    window.__STX_CURRENT_ELEMENT__ = createRoot()
+    expect(useReactiveProp('options', {})()).toEqual({ color: 'blue' })
   })
 
   it('subscribes through the host to catch parent-driven attribute changes', () => {
