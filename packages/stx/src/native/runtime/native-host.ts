@@ -114,6 +114,8 @@ interface NodeRecord {
    * resolves it once.
    */
   styleDirty?: boolean
+  /** The last compiled classes (classStylesOf). */
+  classMemo?: { source: string, variables: NativeStyleVariables | undefined, scheme: string, style?: ReturnType<typeof compileClassStyles>, props?: ReturnType<typeof compileClassStyles> }
 }
 
 interface RetainedNativeNode extends NativeNode {
@@ -304,6 +306,18 @@ function flatName(name: string): string {
     flatNames.set(name, flat)
   }
   return flat
+}
+
+/** The host's name for an event a binding listens for (`press` -> `onPress`), remembered. */
+const nativeEventNames = new Map<string, string>()
+function nativeEventName(event: string): string {
+  let name = nativeEventNames.get(event)
+  if (name === undefined) {
+    name = NATIVE_EVENT_NAMES[event.toLowerCase()] ?? event
+    if (nativeEventNames.size >= 2000) nativeEventNames.clear()
+    nativeEventNames.set(event, name)
+  }
+  return name
 }
 
 /** A link's own press listener: the press handler's default action follows it. */
@@ -669,7 +683,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     let delegatedPress = false
     if (pressable) {
       for (let owner = node.__stxOwner; owner; owner = owner.__stxOwner) {
-        if (componentListeners.get(owner)?.some(listener => (NATIVE_EVENT_NAMES[listener.event.toLowerCase()] ?? listener.event) === 'onPress')) {
+        if (componentListeners.get(owner)?.some(listener => nativeEventName(listener.event) === 'onPress')) {
           delegatedPress = true
           break
         }
@@ -699,7 +713,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     else if (!eligible && previous) {
       previous.stop()
       implicitSubmitListeners.delete(node)
-      const authored = componentListeners.get(node)?.some(listener => (NATIVE_EVENT_NAMES[listener.event.toLowerCase()] ?? listener.event) === 'onSubmitEditing')
+      const authored = componentListeners.get(node)?.some(listener => nativeEventName(listener.event) === 'onSubmitEditing')
       if (!authored) {
         const id = record.events.onSubmitEditing
         if (id) handlers.delete(id)
@@ -751,6 +765,34 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   }
   const NO_LAYERS: never[] = []
 
+  /**
+   * A node's compiled classes: for its style (in this appearance, with its
+   * pointer layers) or for what they say about its props. Both are asked at
+   * every resolve, and a node's classes and variables rarely change between
+   * two, so the last answers are kept on the record.
+   */
+  const classMemos = new Map<string, NonNullable<NodeRecord['classMemo']>>()
+  function classStylesOf(record: NodeRecord, forStyle: boolean): ReturnType<typeof compileClassStyles> {
+    const classes = record.forwardedClasses === undefined ? `${record.classes} ` : `${record.classes} ${record.forwardedClasses}`
+    // A text field's classes compile with focus layers of their own.
+    const source = record.type === 'TextInput' ? `\u0001${classes}` : classes
+    let memo = record.classMemo
+    if (!memo || memo.source !== source || memo.variables !== record.variables || memo.scheme !== colorScheme) {
+      // Shared by every node with the same classes under the same variables:
+      // a list's rows, mostly.
+      memo = classMemos.get(source)
+      if (!memo || memo.variables !== record.variables || memo.scheme !== colorScheme) {
+        memo = { source, variables: record.variables, scheme: colorScheme }
+        if (classMemos.size >= 2000) classMemos.clear()
+        classMemos.set(source, memo)
+      }
+      record.classMemo = memo
+    }
+    if (forStyle)
+      return memo.style ??= compileClassStyles(classes, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules, appearance: colorScheme, pointer: options.pointer === true })
+    return memo.props ??= compileClassStyles(classes, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules })
+  }
+
   function resolveStyle(record: NodeRecord, id: string): Record<string, unknown> {
     resolvingId = id
     const report = reportStyle
@@ -759,7 +801,34 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     if (ancestors) for (let i = 0; i < ancestors.length; i++) inherited = parseNativeStyleLayers([ancestors[i]], inherited, report).variables
     const resolved = parseNativeStyleLayers([record.styleSource, record.boundStyle, record.forwardedStyle], inherited, report)
     record.variables = resolved.variables
-    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules, appearance: colorScheme, pointer: options.pointer === true })
+    const classes = classStylesOf(record, true)
+    // A node whose style comes only from its classes and its style layers
+    // (no width, state, disabled or focus layer, no divider, no inline base)
+    // has the style every node with the same compiled classes and the same
+    // translated layers has: the rows of a list, mostly. Those are shared
+    // objects (classStylesOf, parseNativeStyleLayers), so the answer is kept
+    // by them; the caller gets its own copy.
+    const plain = !classes.responsive?.length && !classes.states && !classes.disabled && !record.focusWithin && !record.focused
+      && record.dividerStyle === undefined && isBlank(record.layoutDefaults) && isBlank(record.baseStyle) && !isHiddenInput(record)
+    let kept: Map<string, Record<string, unknown>> | undefined
+    // The appearance decides which of the compiled layers apply (`dark`), and a
+    // class table can give both appearances the same compiled object.
+    const keptAs = `${colorScheme}${record.visible ? 1 : 0}`
+    if (plain) {
+      let byFirst = resolvedStyles.get(classes)
+      if (!byFirst) resolvedStyles.set(classes, byFirst = new WeakMap())
+      const first = layerKey(resolved.styles[0])
+      let bySecond = byFirst.get(first)
+      if (!bySecond) byFirst.set(first, bySecond = new WeakMap())
+      const second = layerKey(resolved.styles[1])
+      let byThird = bySecond.get(second)
+      if (!byThird) bySecond.set(second, byThird = new WeakMap())
+      const third = layerKey(resolved.styles[2])
+      kept = byThird.get(third)
+      if (!kept) byThird.set(third, kept = new Map())
+      const known = kept.get(keptAs)
+      if (known) return { ...known }
+    }
     const classStyle = { ...classes.style }
     // Width layers apply smallest first, as min-width media queries cascade.
     for (const layer of classes.responsive ?? []) {
@@ -800,7 +869,21 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     if (hover) style.hoverStyle = { ...hover.style, ...(colorScheme === 'dark' ? hover.dark : {}) }
     if (active) style.pressStyle = { ...active.style, ...(colorScheme === 'dark' ? active.dark : {}) }
     if (!record.visible || isHiddenInput(record)) style.display = 'none'
+    if (kept) kept.set(keptAs, { ...style })
     return style
+  }
+
+  // Resolved styles by compiled classes, then by each style layer's
+  // translation (an empty layer counts as one), then by appearance and visibility.
+  const resolvedStyles = new WeakMap<object, WeakMap<object, WeakMap<object, WeakMap<object, Map<string, Record<string, unknown>>>>>>()
+  const BLANK_LAYER = {}
+  function layerKey(style: object | undefined): object {
+    return !style || isBlank(style) ? BLANK_LAYER : style
+  }
+  // Object.keys, not for...in: an interpreter builds an iterator for the
+  // latter even over an empty object.
+  function isBlank(value: object | undefined | null): boolean {
+    return !value || Object.keys(value).length === 0
   }
 
   function refreshFocusChain(node: NativeNode | null | undefined): void {
@@ -919,7 +1002,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       if (changed) emit({ op: 'updateNode', id, patch: { style: { ...patch, ...style } } })
     }
     record.style = style
-    const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules })
+    const classes = classStylesOf(record, false)
     // Re-checked on every application while there is a divider, since an
     // appearance change recolours it without changing the classes.
     const divideChanged = classes.divide !== record.divide && JSON.stringify(classes.divide) !== JSON.stringify(record.divide)
@@ -1180,6 +1263,24 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     setConnected(node, false)
   }
 
+  /**
+   * A prop the host only stores and sends on: not an accessibility source, a
+   * text-entry trait, a control state, a state variant, an icon name, a link,
+   * nor a drawing attribute (setAttribute's special cases).
+   */
+  const plainProps = new Map<string, boolean>()
+  function plainProp(prop: string, type: string): boolean {
+    const key = `${type}\u0001${prop}`
+    let plain = plainProps.get(key)
+    if (plain === undefined) {
+      plain = !((type === 'Image' && prop === 'alt') || prop === 'role' || prop.startsWith('aria-') || prop.startsWith('accessibility')
+        || TEXT_ENTRY_SOURCES.has(prop) || prop === 'multiline' || prop === 'disabled' || NATIVE_STATE_VARIANTS.has(prop)
+        || (type === 'Icon' && prop === 'name') || prop === 'href' || SVG_NODE_TYPES.has(type))
+      plainProps.set(key, plain)
+    }
+    return plain
+  }
+
   /** A detached copy of one node and its record, without its children. */
   function copyNode(node: NativeNode, source: NodeRecord | undefined, copy: NativeNode): NativeNode {
     if (!isBindingNode(node)) copy.__stxOwner = node.__stxOwner
@@ -1377,7 +1478,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       // with the typed renderer prop, as DOM getAttribute follows a write.
       reflectAttribute(node, name, value)
       if (forwarded) {
-        reflectAttribute(forwarded, name, value)
+        // A host root forwarding to itself was reflected just now.
+        if (forwarded !== node) reflectAttribute(forwarded, name, value)
         if (applyForwardedStyle(forwarded, name, value)) return
         node = forwarded
       }
@@ -1395,6 +1497,18 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       }
       const record = recordOf(node)
       const prop = nativePropName(name, record.type)
+      // Most props carry no meaning to the host beyond their value: nothing
+      // to project, no state class, no control behaviour. Written directly.
+      if (plainProp(prop, record.type)) {
+        record.props[prop] = value
+        if (record.focused && disabled(record)) {
+          record.focused = false
+          refreshFocusChain(node)
+        }
+        if (record.materialized)
+          emit({ op: 'updateNode', id: node.__stxId, patch: { props: { [prop]: value } } })
+        return
+      }
       const accessibilityBefore = (record.type === 'Image' && prop === 'alt') || prop === 'role' || prop.startsWith('aria-') || prop.startsWith('accessibility') ? projectAccessibility(record.props, record.type) : undefined
       const textEntryBefore = TEXT_ENTRY_SOURCES.has(prop) ? projectTextEntry(record.type, record.props) : undefined
       const wasDisabled = disabled(record)
@@ -1548,10 +1662,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     listen(node, event, handler, options) {
       if (disposed) return () => {}
       const listenerOptions = options as { once?: boolean, capture?: boolean } | undefined
-      const listeners = componentListeners.get(node) ?? []
+      let listeners = componentListeners.get(node)
+      if (!listeners) componentListeners.set(node, listeners = [])
       const listener = { event, handler, once: !!listenerOptions?.once, capture: !!listenerOptions?.capture }
       listeners.push(listener)
-      componentListeners.set(node, listeners)
       // Removing a subscription must not remove an authored handler sharing
       // the same native event ID. Keep that bounded per-node dispatcher until
       // node teardown; reopening adds no new dispatcher or retained callback.
@@ -1563,12 +1677,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       // back. Sending a function over a bridge is not possible, and the
       // binding layer never needs to know that -- it hands over a closure
       // either way.
-      const nativeEvent = NATIVE_EVENT_NAMES[event.toLowerCase()] ?? event
+      const nativeEvent = nativeEventName(event)
       const record = recordOf(node)
       // A renderer holds one handler id per event. Multiplex all listeners
       // behind that id, rather than replacing the previous registration.
-      const registrations = eventRegistrations.get(node) ?? new Map<string, string>()
-      eventRegistrations.set(node, registrations)
+      let registrations = eventRegistrations.get(node)
+      if (!registrations) eventRegistrations.set(node, registrations = new Map<string, string>())
       const existing = registrations.get(nativeEvent)
       if (existing && handlers.has(existing)) return unsubscribe
       const id = nextId('h')
@@ -1613,7 +1727,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
           if (physical) Object.defineProperty(physical, 'currentTarget', { configurable: true, value: target })
           const group = componentListeners.get(target) ?? []
           for (const current of [...group]) {
-            if ((NATIVE_EVENT_NAMES[current.event.toLowerCase()] ?? current.event) !== nativeEvent || current.capture !== capture) continue
+            if (nativeEventName(current.event) !== nativeEvent || current.capture !== capture) continue
             if (target !== node && (current.event === 'blur' || current.event === 'focus')) continue
             if (!group.includes(current)) continue
             if (current.once) group.splice(group.indexOf(current), 1)
@@ -1652,7 +1766,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
         const form = formOwner(node)
         if (form && nativeEvent === 'onSubmitEditing' && !physical?.defaultPrevented && !record.props.multiline && hostProps(record).returnKeyType !== 'next') {
           const implicit = implicitSubmitListeners.get(node)
-          const authored = componentListeners.get(node)?.some(listener => (NATIVE_EVENT_NAMES[listener.event.toLowerCase()] ?? listener.event) === 'onSubmitEditing' && listener.handler !== implicit?.listener)
+          const authored = componentListeners.get(node)?.some(listener => nativeEventName(listener.event) === 'onSubmitEditing' && listener.handler !== implicit?.listener)
           if (implicit && !authored) {
             const submitter = collectDescendants(form).find(control => {
               const candidate = descriptorOf(control)
@@ -1676,7 +1790,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       // A delegated listener needs the pressed control's identity, not a
       // gesture attached only to the ancestor. New/cloned controls take the
       // same path when materialized, so runtime tab lists remain interactive.
-      if (nativeEvent === 'onPress') {
+      if (nativeEvent === 'onPress' && record.children.length) {
         for (const child of collectDescendants(node)) {
           if (['Button', 'Pressable'].includes(descriptorOf(child)?.type ?? '')) installControlListeners(child)
         }

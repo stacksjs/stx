@@ -145,7 +145,42 @@ function declarations(css: string): Array<[string, string]> {
  * Pure JS: callers decode HTML entities only at the HTML boundary.
  * Unsupported values are reported and omitted, never sent to numeric host fields.
  */
+/**
+ * A style attribute's text, taken apart once: a node's inline style is read
+ * at every resolve of every copy of it, and the attempt to read CSS text as
+ * JSON throws, which an interpreter pays dearly for. Callers only read the
+ * entries.
+ */
+const textEntries = new Map<string, Array<[string, unknown]>>()
+
 function styleEntries(input: unknown, report: (diagnostic: NativeStyleDiagnostic) => void): Array<[string, unknown]> {
+  if (typeof input === 'string') {
+    const known = textEntries.get(input)
+    if (known) return known
+    const entries = textStyleEntries(input, report)
+    if (entries) {
+      if (textEntries.size >= 2000) textEntries.clear()
+      textEntries.set(input, entries)
+      return entries
+    }
+    return []
+  }
+  return objectStyleEntries(input, report)
+}
+
+/** The entries of a style's text, or null when it holds no style object or declarations (after reporting). */
+function textStyleEntries(text: string, report: (diagnostic: NativeStyleDiagnostic) => void): Array<[string, unknown]> | null {
+  let input: unknown = text.trim()
+  if (!input) return []
+  try { input = JSON.parse(input as string) }
+  catch { /* CSS text, not a serialized style object. */ }
+  if (typeof input === 'string') return declarations(input)
+  if (input && typeof input === 'object' && !Array.isArray(input)) return Object.entries(input)
+  if (input != null && input !== false) report({ kind: 'non-numeric-style', name: 'style' })
+  return null
+}
+
+function objectStyleEntries(input: unknown, report: (diagnostic: NativeStyleDiagnostic) => void): Array<[string, unknown]> {
   let entries: Array<[string, unknown]>
   if (typeof input === 'string') {
     input = input.trim()
@@ -173,54 +208,84 @@ export function parseNativeStyle(input: unknown, report: (diagnostic: NativeStyl
 const NO_STYLE_VARIABLES: NativeStyleVariables = new Map()
 
 export function parseNativeStyleLayers(inputs: unknown[], inheritedVariables: NativeStyleVariables | undefined, report: (diagnostic: NativeStyleDiagnostic) => void): { variables: NativeStyleVariables, styles: STXStyle[] } {
-  const layers = inputs.map(input => styleEntries(input, report))
+  // A style object's text is its key (one native JSON.stringify, rather than
+  // its entries taken apart in script): one translated before, standing alone
+  // (no custom property declared, none read), is taken as it was.
+  let known: STXStyle[] | null = null
+  let keys: Array<string | undefined> | null = null
+  const layers = new Array<Array<[string, unknown]>>(inputs.length)
+  let empty = true
+  for (let i = 0; i < inputs.length; i++) {
+    const input = inputs[i]
+    if ((input && typeof input === 'object' && !Array.isArray(input)) || (typeof input === 'string' && input)) {
+      const key = typeof input === 'string' ? standaloneStyleText(input) : standaloneStyleKey(input as object)
+      const kept = key === undefined ? undefined : rememberedStyles.get(key)
+      if (kept) {
+        (known ??= new Array<STXStyle>(inputs.length))[i] = kept
+        layers[i] = NO_ENTRIES
+        empty = false
+        continue
+      }
+      if (key !== undefined) (keys ??= new Array<string | undefined>(inputs.length))[i] = key
+    }
+    layers[i] = styleEntries(input, report)
+    if (layers[i]!.length) empty = false
+  }
   // Most nodes have no inline or bound style at all: nothing to parse, and
   // their variables are their parent's.
-  if (layers.every(entries => entries.length === 0))
+  if (empty)
     return { variables: inheritedVariables ?? NO_STYLE_VARIABLES, styles: layers.map(() => ({})) }
   const variables = createStyleVariables(layers.flat(), inheritedVariables)
   const computed = variables.computed()
-  return { variables: computed, styles: layers.map(entries => parseRememberedEntries(entries, variables, report)) }
+  const styles = new Array<STXStyle>(inputs.length)
+  for (let i = 0; i < inputs.length; i++) {
+    const kept = known?.[i]
+    if (kept) {
+      styles[i] = kept
+      continue
+    }
+    const key = keys?.[i]
+    if (key === undefined) {
+      styles[i] = parseEntries(layers[i]!, variables, report)
+      continue
+    }
+    // Remembered only when it translated cleanly, so a diagnostic still
+    // reaches the author each time. Callers copy the result; they must not change it.
+    let reported = false
+    const style = parseEntries(layers[i]!, variables, (diagnostic) => {
+      reported = true
+      report(diagnostic)
+    })
+    if (!reported) {
+      if (rememberedStyles.size >= 2000) rememberedStyles.clear()
+      rememberedStyles.set(key, style)
+    }
+    styles[i] = style
+  }
+  return { variables: computed, styles }
 }
+
+const NO_ENTRIES: Array<[string, unknown]> = []
 
 /**
  * A bound style is a new object on every evaluation, yet a list's rows bind
  * the same few styles over and over: a sidebar's forty rows give their icon
- * one style between them. Its translation is remembered by its text when it
- * stands alone (no custom property, no var()) and translated cleanly (no
- * diagnostic, which then still reaches the author each time). Callers copy
- * the result; they must not change it.
+ * one style between them. Its translation is remembered by its text.
  */
 const rememberedStyles = new Map<string, STXStyle>()
 
-function parseRememberedEntries(entries: Array<[string, unknown]>, variables: ReturnType<typeof createStyleVariables>, report: (diagnostic: NativeStyleDiagnostic) => void): STXStyle {
-  if (entries.length === 0) return {}
-  let key = ''
-  for (let i = 0; i < entries.length; i++) {
-    const [name, value] = entries[i]!
-    const kind = typeof value
-    if (name.includes('--') || (kind === 'string' && (value as string).includes('var('))) return parseEntries(entries, variables, report)
-    if (kind === 'string' || kind === 'number' || kind === 'boolean' || value == null) key += `${name}\u0001${kind[0]}${String(value)}\u0002`
-    else if (kind === 'object') {
-      let nested: string
-      try { nested = JSON.stringify(value) }
-      catch { return parseEntries(entries, variables, report) }
-      key += `${name}\u0001o${nested}\u0002`
-    }
-    else return parseEntries(entries, variables, report)
-  }
-  const known = rememberedStyles.get(key)
-  if (known) return known
-  let reported = false
-  const style = parseEntries(entries, variables, (diagnostic) => {
-    reported = true
-    report(diagnostic)
-  })
-  if (!reported) {
-    if (rememberedStyles.size >= 2000) rememberedStyles.clear()
-    rememberedStyles.set(key, style)
-  }
-  return style
+/** A style attribute's own text as its key (marked apart from object texts), unless it involves custom properties. */
+function standaloneStyleText(text: string): string | undefined {
+  return text.includes('var(') || text.includes('--') ? undefined : `\u0003${text}`
+}
+
+/** The style object's text, or undefined when it declares or reads a custom property (or has no text). */
+function standaloneStyleKey(input: object): string | undefined {
+  let text: string
+  try { text = JSON.stringify(input) }
+  catch { return undefined }
+  if (typeof text !== 'string' || text.includes('var(') || text.includes('"--')) return undefined
+  return text
 }
 
 function parseEntries(entries: Array<[string, unknown]>, variables: ReturnType<typeof createStyleVariables>, report: (diagnostic: NativeStyleDiagnostic) => void): STXStyle {
