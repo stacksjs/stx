@@ -170,8 +170,14 @@ export function parseNativeStyle(input: unknown, report: (diagnostic: NativeStyl
 }
 
 /** Resolve all same-element variable declarations before evaluating any style layer. */
+const NO_STYLE_VARIABLES: NativeStyleVariables = new Map()
+
 export function parseNativeStyleLayers(inputs: unknown[], inheritedVariables: NativeStyleVariables | undefined, report: (diagnostic: NativeStyleDiagnostic) => void): { variables: NativeStyleVariables, styles: STXStyle[] } {
   const layers = inputs.map(input => styleEntries(input, report))
+  // Most nodes have no inline or bound style at all: nothing to parse, and
+  // their variables are their parent's.
+  if (layers.every(entries => entries.length === 0))
+    return { variables: inheritedVariables ?? NO_STYLE_VARIABLES, styles: layers.map(() => ({})) }
   const variables = createStyleVariables(layers.flat(), inheritedVariables)
   const computed = variables.computed()
   return { variables: computed, styles: layers.map(entries => parseEntries(entries, variables, report)) }

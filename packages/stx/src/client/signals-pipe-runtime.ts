@@ -5,7 +5,15 @@ export const SIGNALS_PIPE_RUNTIME = `  // ======================================
 
   // Parse and execute pipe expressions like "value | fmt" or "value | truncate:20"
   // Must distinguish single | (pipe) from || (logical OR) and ?? (nullish coalescing)
+  // Where an expression's top-level pipe is, by its text: every binding
+  // evaluation asked, and the answer was a character-by-character scan, which
+  // an interpreted engine paid for on each evaluation of each binding.
+  const __stxPipeIndex = new Map();
   function parsePipeExpression(expr, scope) {
+    // No bar at all, no pipe: the case nearly every expression is.
+    if (expr.indexOf('|') === -1) return null;
+    const known = __stxPipeIndex.get(expr);
+    if (known === -1) return null;
     // Find pipe operators: single | that's not part of || or preceded by ?
     // We need to find | that is:
     // 1. Not preceded by | or ?
@@ -60,6 +68,8 @@ else if (char === stringChar) {
       }
     }
 
+    if (__stxPipeIndex.size >= 5000) __stxPipeIndex.clear();
+    __stxPipeIndex.set(expr, pipeIndex);
     if (pipeIndex === -1) return null;
 
     const valueExpr = expr.slice(0, pipeIndex).trim();
