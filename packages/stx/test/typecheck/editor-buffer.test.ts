@@ -28,13 +28,13 @@ describe('positions', () => {
     expect(lines(source)[1].indexOf('const')).toBe('<script client>'.length)
   })
 
-  it('substitutes interpolations and directive lines in a body without moving anything', () => {
+  it('projects interpolations and blanks directive lines without moving subsequent lines', () => {
     // `const url = {{ blogUrl }}` is a server value interpolated into a client
     // script. As TypeScript it is a syntax error, and one parse error hides
     // every real diagnostic in the file.
     const source = '<script client>\nconst url = {{ blogUrl }}\n@if (x)\nconst n = 1\n@endif\n</script>'
     const virtual = lines(source)
-    expect(virtual[1]).toBe(`const url = 0${' '.repeat('{{ blogUrl }}'.length - 1)}`)
+    expect(virtual[1]).toMatch(/^const url = __stxScript0_0/)
     expect(virtual[2].trim()).toBe('')
     expect(virtual[3]).toBe('const n = 1')
   })

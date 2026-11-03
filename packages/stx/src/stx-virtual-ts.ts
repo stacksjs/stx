@@ -135,6 +135,8 @@ export interface VirtualFile {
   lineMap: Map<number, MappedLine>
   /** Lines after this are synthetic. */
   sourceLineCount: number
+  /** Width-changing script interpolation edits, indexed by authored line. */
+  scriptColumns?: Map<number, ScriptColumnEdit[]>
 }
 
 const SCRIPT_RE = /<script(\s[^>]*)?>([\s\S]*?)<\/script>/gi
@@ -377,7 +379,8 @@ export function substituteInterpolations(value: string): string {
 }
 
 /**
- * The same substitution, but the result occupies the same space as the source.
+ * Legacy text-only substitution; retained for callers that do not check types.
+ * The checker uses projectScriptInterpolations and its edit map instead.
  *
  * A `<script client>` block may take a server value through an interpolation —
  * `const duration = {{ duration }}` — and 48 of the framework's own 95
@@ -403,6 +406,124 @@ export function substituteInterpolationsInPlace(code: string): string {
 
     return `0${' '.repeat(Math.max(0, width - 1))}${'\n'.repeat(newlines)}`
   })
+}
+
+/** A width-changing edit on one script line; untouched columns keep their offset. */
+export interface ScriptColumnEdit {
+  sourceStart: number
+  sourceEnd: number
+  generatedStart: number
+  generatedEnd: number
+}
+
+interface ScriptProjection {
+  code: string
+  columns: Map<number, ScriptColumnEdit[]>
+  declarations: Array<{ text: string, origin?: MappedLine }>
+}
+
+/**
+ * Infer interpolations inside the server's lexical scope, never by running it.
+ * A long generated identifier may not fit in `{{a}}`; keep newlines in place
+ * and record the changed columns instead of fabricating a short numeric value.
+ */
+export function projectScriptInterpolations(code: string, serverCode: string, key = '0'): ScriptProjection {
+  let prefix = `__stxScript${key}`
+  while ((code + serverCode).includes(prefix)) prefix += '_'
+  const columns = new Map<number, ScriptColumnEdit[]>()
+  const declarations: ScriptProjection['declarations'] = []
+  const expressions: Array<{ code: string, line: number, column: number }> = []
+  const searchable = stripCommentsAndLiterals(code)
+  const starts = lineStarts(code)
+  const chunks: string[] = []
+  let cursor = 0
+  // Scan the blanked copy so quoted braces cannot swallow a later real value
+  // or close an interpolation early. Slice expressions from the original.
+  for (const found of searchable.matchAll(/\{\{([\s\S]*?)\}\}|\{!!([\s\S]*?)!!\}/g)) {
+    const offset = found.index!
+    const match = code.slice(offset, offset + found[0].length)
+    const escaped = found[1] !== undefined
+    const expression = match.slice(escaped ? 2 : 3, escaped ? -2 : -3)
+    const index = expressions.length
+    const position = offsetToPosition(starts, offset)
+    const origin = offsetToPosition(starts, offset + (escaped ? 2 : 3))
+    expressions.push({ code: stripFilterChain(expression), ...origin })
+    const name = `${prefix}_${index}`
+    const pieces = match.split('\n')
+    const firstWidth = pieces[0].length
+    pieces[0] = name + ' '.repeat(Math.max(0, firstWidth - name.length))
+    for (let i = 1; i < pieces.length; i++) pieces[i] = pieces[i].replace(/[^\r]/g, ' ')
+    const edits = columns.get(position.line) ?? []
+    const previous = edits.at(-1)
+    const generatedStart = position.column + (previous ? previous.generatedEnd - previous.sourceEnd : 0)
+    edits.push({ sourceStart: position.column, sourceEnd: position.column + firstWidth, generatedStart, generatedEnd: generatedStart + pieces[0].length })
+    columns.set(position.line, edits)
+    chunks.push(code.slice(cursor, offset), pieces.join('\n'))
+    cursor = offset + match.length
+  }
+  chunks.push(code.slice(cursor))
+  const projected = chunks.join('')
+  if (!expressions.length) return { code: projected, columns, declarations }
+
+  const { imports, body } = splitTopLevelImports(serverCode)
+  const aliases: string[] = []
+  // Imports stay at module scope under private names. Namespace aliases retain
+  // both the value and type sides, while client-owned names cannot shadow them.
+  let moduleIndex = 0
+  for (const statement of imports.split(/\n(?=import\b)/)) {
+    if (!statement.trim()) continue
+    const from = /^import\s+(?:type\s+)?([\s\S]+?)\s+from\s*(['"][^'"]+['"])/.exec(statement)
+    if (!from) { declarations.push({ text: statement }); continue }
+    const module = `${prefix}Module${moduleIndex++}`
+    declarations.push({ text: `import * as ${module} from ${from[2]}` })
+    const clause = from[1]
+    const named = /\{([\s\S]*?)\}/.exec(clause)
+    for (const entry of named?.[1].split(',') ?? []) {
+      const [imported, local = imported] = entry.trim().replace(/^type\s+/, '').split(/\s+as\s+/)
+      if (imported === 'default') aliases.push(`const ${local} = ${module}.default; type ${local} = import(${from[2]}).default`)
+      else if (imported) aliases.push(`import ${local} = ${module}.${imported}`)
+    }
+    const rest = clause.replace(/\{[\s\S]*?\}/, '')
+    const namespace = /\*\s+as\s+(\w+)/.exec(rest)
+    if (namespace) aliases.push(`import ${namespace[1]} = ${module}`)
+    const defaultName = /^\s*([\w$]+)/.exec(rest)?.[1]
+    // `default` is not legal in an import-equals entity name. Preserve its
+    // separate value/type sides (the original server block checks their use).
+    if (defaultName) aliases.push(`const ${defaultName} = ${module}.default; type ${defaultName} = import(${from[2]}).default`)
+  }
+  declarations.push({ text: `namespace ${prefix}Scope {\n${aliases.join('\n')}\nexport async function read() {\n${blankScriptDirectives(body).replace(/^[ \t]*export[ \t]+(?=(?:const|let|var|function|async|class|interface|type)\b)/gm, '')}\nreturn {` })
+  for (const [index, expression] of expressions.entries()) {
+    declarations.push({ text: `value${index}: (` })
+    declarations.push({ text: expression.code, origin: { line: expression.line, column: expression.column } })
+    declarations.push({ text: '),' })
+  }
+  declarations.push({ text: '}\n}\n}' })
+  for (let index = 0; index < expressions.length; index++) {
+    declarations.push({ text: `declare var ${prefix}_${index}: Awaited<ReturnType<typeof ${prefix}Scope.read>>['value${index}']` })
+  }
+  return { code: projected, columns, declarations }
+}
+
+/** Map a generated script column back across all preceding edits on its line. */
+export function resolveScriptColumn(edits: readonly ScriptColumnEdit[], column: number): number {
+  let delta = 0
+  for (const edit of edits) {
+    if (column < edit.generatedStart) break
+    if (column < edit.generatedEnd) return edit.sourceStart + Math.min(column - edit.generatedStart, edit.sourceEnd - edit.sourceStart)
+    delta = edit.sourceEnd - edit.generatedEnd
+  }
+  return column + delta
+}
+
+/** The inverse used by editor hover/completions as well as diagnostics. */
+export function projectScriptColumn(edits: readonly ScriptColumnEdit[], column: number): number {
+  let delta = 0
+  for (const edit of edits) {
+    if (column < edit.sourceStart) break
+    if (column < edit.sourceEnd) return edit.generatedStart + Math.min(column - edit.sourceStart, edit.generatedEnd - edit.generatedStart)
+    delta = edit.generatedEnd - edit.sourceEnd
+  }
+  return column + delta
 }
 
 /**
@@ -1700,6 +1821,9 @@ export function buildVirtualTypeScript(
   const sourceLines = source.split('\n')
   const lines: string[] = Array.from({ length: sourceLines.length }, () => '')
   const lineMap = new Map<number, MappedLine>()
+  const scriptColumns = new Map<number, ScriptColumnEdit[]>()
+  const scriptDeclarations: Array<{ text: string, origin?: MappedLine }> = []
+  const serverCode = blocks.filter(block => block.kind === 'server').map(block => block.code).join('\n')
   const components = options.filePath && options.templateExpressions !== false
     ? componentContractChecks(source, maskNonTemplateRegions(source), {
         filePath: options.filePath,
@@ -1713,17 +1837,23 @@ export function buildVirtualTypeScript(
   /** Line indexes a block body was written to, and where each block ends. */
   const occupied = new Set<number>()
   const blockEnds: number[] = []
-  for (const block of blocks) {
+  for (const [blockIndex, block] of blocks.entries()) {
     // Line-count preserving, so every body line still lands on its own line (#1928).
     // The same position-preserving rewrites `stx typecheck` applies to a block:
     // a `{{ }}` or a directive line in a script body is a syntax error to
     // TypeScript, and one parse error hides every real diagnostic after it.
-    const code = blankScriptDirectives(substituteInterpolationsInPlace(block.code))
+    const projection = projectScriptInterpolations(firstLinePadding(block) + block.code, serverCode, String(blockIndex))
+    for (const [line, edits] of projection.columns) scriptColumns.set(block.startLine + line - 1, edits)
+    for (const declaration of projection.declarations) scriptDeclarations.push({
+      text: absolutizeRelativeSpecifiers(declaration.text, options.originDir ?? ''),
+      origin: declaration.origin ? { ...declaration.origin, line: declaration.origin.line + block.startLine - 1 } : undefined,
+    })
+    const code = blankScriptDirectives(projection.code)
     const bodyLines = absolutizeRelativeSpecifiers(code, options.originDir ?? '').split('\n')
     bodyLines.forEach((text, i) => {
       const index = block.startLine - 1 + i
       if (index < lines.length) {
-        lines[index] = i === 0 ? firstLinePadding(block) + text : text
+        lines[index] = text
         occupied.add(index)
       }
     })
@@ -1754,6 +1884,8 @@ export function buildVirtualTypeScript(
         lineMap.set(lines.length, index === 0 ? origin : { ...origin, line: origin.line + index, column: 1, prefixLength: 0 })
     }
   }
+
+  for (const declaration of scriptDeclarations) append(declaration.text, declaration.origin)
 
   if (options.globals !== false) {
     append('')
@@ -1956,7 +2088,7 @@ export function buildVirtualTypeScript(
   // lib.dom happens to claim — `name`, `status`, `length`, `close` — hits this.
   append('export {}')
 
-  return { text: lines.join('\n'), lineMap, sourceLineCount: sourceLines.length, componentDependencies: components?.dependencies, referenced }
+  return { text: lines.join('\n'), lineMap, sourceLineCount: sourceLines.length, componentDependencies: components?.dependencies, referenced, scriptColumns }
 }
 
 /** Offsets at which each 1-based line starts. */
@@ -2041,7 +2173,7 @@ export function resolvePosition(
 
   if (!mapped) {
     // Script-block content sits at the line it already occupies.
-    return line <= virtual.sourceLineCount ? { line, column } : null
+    return line <= virtual.sourceLineCount ? { line, column: resolveScriptColumn(virtual.scriptColumns?.get(line) ?? [], column) } : null
   }
 
   const within = mapped.expression?.anchor ? 0 : Math.max(0, column - 1 - (mapped.prefixLength ?? 0))

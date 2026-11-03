@@ -30,7 +30,7 @@
  * @module typecheck
  */
 
-import type { ScriptBlock, ScriptKind, VirtualFile } from './stx-virtual-ts'
+import type { MappedLine, ScriptBlock, ScriptKind, VirtualFile } from './stx-virtual-ts'
 import { existsSync, readFileSync } from 'node:fs'
 import { BROWSER_CORE_IMPORTS } from './browser-core-imports'
 import path from 'node:path'
@@ -51,7 +51,7 @@ import {
   declaredGlobalNames,
   firstLinePadding,
   isTemplateArtefact,
-  substituteInterpolationsInPlace,
+  projectScriptInterpolations,
 } from './stx-virtual-ts'
 import { stxImportDiagnostics } from './stx-module-imports'
 import { findStxPluginEntry } from './stx-plugin-config'
@@ -135,7 +135,7 @@ export interface TypecheckResult {
  * against the file containing it — so without this, `../target` was looked for
  * next to `.stx/typecheck/` (#1928).
  */
-export function buildVirtualSource(block: ScriptBlock, serverCode = '', originDir = ''): string {
+export function buildScriptVirtualFile(block: ScriptBlock, serverCode = '', originDir = ''): VirtualFile {
   const leadingNewlines = block.startLine > 1 ? '\n'.repeat(block.startLine - 1) : ''
 
   // A block may take a server value through an interpolation. As TypeScript
@@ -143,10 +143,11 @@ export function buildVirtualSource(block: ScriptBlock, serverCode = '', originDi
   // diagnostic in the same file — so the checker was blind wherever this is
   // used, which is 48 of the framework's own 95 components.
   // Interpolations first: the directive matcher requires the directive to be
-  // alone on its line, and a multi-line `{{ }}` in its argument is collapsed to
-  // one line by the substitution above.
+  // alone on its line. Projection retains each interpolation newline and
+  // records width changes for diagnostic and editor positions.
   // Padded so a body that starts on the tag's own line keeps its column.
-  const code = firstLinePadding(block) + blankScriptDirectives(substituteInterpolationsInPlace(block.code))
+  const projection = projectScriptInterpolations(firstLinePadding(block) + block.code, serverCode)
+  const code = blankScriptDirectives(projection.code)
 
   /*
    * A client block is checked in its own buffer, so a value reaching it through
@@ -165,7 +166,25 @@ export function buildVirtualSource(block: ScriptBlock, serverCode = '', originDi
   // Applied to the whole buffer rather than to `code` alone: a hoisted server
   // type can carry an `import('./x').Foo`, and the rewrite adds no lines, so
   // the padding above still puts every diagnostic on the author's line.
-  return absolutizeRelativeSpecifiers(`${leadingNewlines + code}\n${payload}\nexport {}\n`, originDir)
+  const lines = (leadingNewlines + code).split('\n')
+  const sourceLineCount = lines.length
+  const lineMap = new Map<number, MappedLine>()
+  for (const declaration of projection.declarations) {
+    for (const [index, text] of declaration.text.split('\n').entries()) {
+      lines.push(text)
+      if (declaration.origin) lineMap.set(lines.length, { ...declaration.origin, line: block.startLine + declaration.origin.line - 1 + index, column: index === 0 ? declaration.origin.column : 1 })
+    }
+  }
+  lines.push(payload, 'export {}', '')
+  return { text: absolutizeRelativeSpecifiers(lines.join('\n'), originDir), sourceLineCount, lineMap,
+    scriptColumns: new Map([...projection.columns].map(([line, edits]) => [line + block.startLine - 1, edits])),
+  }
+}
+
+
+/** Compatibility string surface; checking also retains the source edit map. */
+export function buildVirtualSource(block: ScriptBlock, serverCode = '', originDir = ''): string {
+  return buildScriptVirtualFile(block, serverCode, originDir).text
 }
 
 /**
@@ -573,8 +592,10 @@ export async function typecheckStxFiles(
     expressionCount += expressions
 
     blocks.forEach((block, i) => {
+      const virtual = buildScriptVirtualFile(block, serverCode, originDir)
       virtualFiles.set(virtualPathFor(file, block.kind, i), {
-        source: buildVirtualSource(block, serverCode, originDir),
+        virtual,
+        source: virtual.text,
         origin: file,
         kind: block.kind,
       })
@@ -767,11 +788,16 @@ export async function typecheckStxFiles(
     let expression: string | undefined
 
     if (entry.virtual) {
+      // An unfinished authored construct can make the parser complain at the
+      // following synthetic declaration (or EOF). Keep that syntax diagnostic
+      // at the block's end; dropping it would mute semantic checking too.
       const at = resolvePosition(entry.virtual, line, column)
-      // The template buffer inlines the script bodies, so it also reports the
-      // blocks' own errors — which the per-block files already cover. Only
-      // expression diagnostics are new; everything else would be a duplicate.
-      if (!at?.expression)
+        ?? (entry.kind !== 'template' && isSyntactic(Number(code))
+          ? resolvePosition(entry.virtual, entry.virtual.sourceLineCount, 1)
+          : null)
+      // Only template-expression errors are new in the template buffer; its
+      // script errors are already covered by the mapped per-block buffers.
+      if (!at || (entry.kind === 'template' && !at.expression))
         continue
 
       // The guard wrapper and TS2774 — see isTemplateArtefact.
@@ -780,7 +806,7 @@ export async function typecheckStxFiles(
 
       line = at.line
       column = at.column
-      expression = at.expression.code.trim()
+      expression = at.expression?.code.trim()
     }
 
     diagnostics.push({
