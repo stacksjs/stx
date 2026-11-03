@@ -1147,6 +1147,39 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     return node
   }
 
+  /**
+   * Whether a node can go into this unmaterialised parent with nothing but
+   * its place recorded: no `divide-*` to restyle siblings, nobody observing
+   * the children of it or of anything around it.
+   */
+  function placesQuietly(parent: NativeNode, record: NodeRecord, node: NativeNode): boolean {
+    if (record.divide || record.hadDividers) return false
+    if (node.__stxAnchor === undefined) {
+      const own = descriptorOf(node)
+      if (own && (own.materialized || own.focusWithin)) return false
+    }
+    for (let current: NativeNode | null | undefined = parent; current; current = current.__stxOwner)
+      if (childObservers.has(current)) return false
+    return true
+  }
+
+  /** Put a node with no owner at `index` under an unmaterialised parent, as insert would. */
+  function placeDetached(parent: NativeNode, record: NodeRecord, node: NativeNode, index: number): void {
+    record.children.splice(index, 0, node)
+    const isView = node.__stxAnchor === undefined
+    if (isView && record.viewCount !== undefined) record.viewCount++
+    node.__stxOwner = parent
+    if (isView) {
+      // Back in the records if it was parked by a removal, and resolved
+      // against this parent when it is created (materialize).
+      const own = recordOf(node)
+      own.inheritedVariables = record.variables
+      own.styleDirty = true
+    }
+    insertIntoBindingParent(parent, node, index)
+    setConnected(node, false)
+  }
+
   /** A detached copy of one node and its record, without its children. */
   function copyNode(node: NativeNode, source: NodeRecord | undefined, copy: NativeNode): NativeNode {
     if (!isBindingNode(node)) copy.__stxOwner = node.__stxOwner
@@ -1732,33 +1765,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     },
 
     append(parent, node) {
-      const record = recordOf(parent)
-      let general = record.materialized || !!node.__stxOwner || !!record.divide || !!record.hadDividers
-      for (let current: NativeNode | null | undefined = parent; current && !general; current = current.__stxOwner)
-        general = childObservers.has(current)
-      if (general) {
-        this.insert(parent, node)
-        return
-      }
-      record.children.push(node)
-      const isView = node.__stxAnchor === undefined
-      if (isView && record.viewCount !== undefined) record.viewCount++
-      node.__stxOwner = parent
-      if (isView) {
-        const own = records.get(node.__stxId)
-        if (own) {
-          own.inheritedVariables = record.variables
-          own.styleDirty = true
-        }
-      }
-      if (isBindingNode(parent)) {
-        parent.childNodes.push(node)
-        parent.children.push(node)
-        if (isBindingNode(node)) {
-          node.parentNode = parent as NativeBindingNode
-          node.parentElement = parent as NativeBindingNode
-        }
-      }
+      this.insert(parent, node)
     },
 
     cloneElement(node, attributes) {
@@ -1771,6 +1778,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     insert(parent, node, before) {
       const record = recordOf(parent)
       const oldOwner = node.__stxOwner
+      // A new node going into a parent that is itself still off the screen
+      // (a loop row or :if branch being built): only the ordering changes.
+      if (!oldOwner && !record.materialized && placesQuietly(parent, record, node)) {
+        placeDetached(parent, record, node, before ? Math.max(0, lastIndexOfChild(record.children, before.__stxId)) : record.children.length)
+        return
+      }
 
       /*
        * The node comes OUT of the ordering before the target index is worked

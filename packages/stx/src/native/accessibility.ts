@@ -166,12 +166,9 @@ export function projectAccessibility(props: Record<string, unknown>, type?: stri
   // accessibility field, no image alt. Asked for every node a row creates.
   let relevant = type === 'Image'
   if (!relevant) {
-    for (const name in props) {
-      if (isAccessibilityAttribute(name) || (ACCESSIBILITY_FIELDS as readonly string[]).includes(name)) {
-        relevant = true
-        break
-      }
-    }
+    const names = Object.keys(props)
+    for (let i = 0; i < names.length && !relevant; i++)
+      relevant = isAccessibilityAttribute(names[i]!) || (ACCESSIBILITY_FIELDS as readonly string[]).includes(names[i]!)
   }
   if (!relevant) return {}
   const projected = { ...props }

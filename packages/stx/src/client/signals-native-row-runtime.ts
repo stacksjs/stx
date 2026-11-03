@@ -81,21 +81,13 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
     var names = __stxNamesIn(source.replace(__STX_QUOTED, ' ')).filter(function(k) {
       return !__STX_KEYWORDS[k] && /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k);
     });
-    // A prop's scope keeps a signal its expression calls or uses as a signal
-    // (createAutoUnwrapProxy's rule); everything else follows the expression
-    // (StxAutoUnwrapHandler's).
-    var uses = names.map(function(name) {
-      return kind === 'prop'
-        ? (expressionCallsSignal(source, name) || expressionUsesSignalApi(source, name) ? 1 : 0)
-        : expressionSignalUse(source, name);
-    });
     for (var i = 0; i < names.length; i++) {
       if (group.nameIndex[names[i]] === undefined) {
         group.nameIndex[names[i]] = group.names.length;
         group.names.push(names[i]);
       }
     }
-    var site = { index: plan.sites.length, kind: kind, group: group, expr: source, body: body, names: names, uses: uses, placeholder: /^__[A-Z_]+__$/.test(source.trim()), ident: __STX_IDENT.test(source.trim()), handler: null };
+    var site = { index: plan.sites.length, kind: kind, group: group, expr: source, body: body, names: names, placeholder: /^__[A-Z_]+__$/.test(source.trim()), ident: __STX_IDENT.test(source.trim()), handler: null };
     plan.sites.push(site);
     return site;
   }
@@ -218,6 +210,16 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
     return shape;
   }
 
+  // How the expression uses a name its scope holds, worked out when a row
+  // first evaluates it: a prop's scope keeps a signal its expression calls or
+  // uses as a signal (createAutoUnwrapProxy's rule), everything else follows
+  // the expression (StxAutoUnwrapHandler's).
+  function rowSignalUse(site, name) {
+    return site.kind === 'prop'
+      ? (expressionCallsSignal(site.expr, name) || expressionUsesSignalApi(site.expr, name) ? 1 : 0)
+      : expressionSignalUse(site.expr, name);
+  }
+
   function compileRowSite(site, shape) {
     var nameIndex = site.group.nameIndex;
     var keys = [];
@@ -225,7 +227,7 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
     for (var i = 0; i < site.names.length; i++) {
       if (shape.signature.charCodeAt(nameIndex[site.names[i]]) === 49) {
         keys.push(site.names[i]);
-        uses.push(site.uses[i]);
+        uses.push(rowSignalUse(site, site.names[i]));
       }
     }
     var slots = keys.map(function(key) { return nameIndex[key]; });
