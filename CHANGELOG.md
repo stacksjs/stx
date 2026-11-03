@@ -1,5 +1,26 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.795...v0.2.796)
+
+## 🐛 Bug Fixes
+
+- **release**: rejoin the two logos collections to the version train ([e473947](https://github.com/stacksjs/stx/commit/e473947)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **native**: an absent style layer translates to nothing without parsing ([dc74da3](https://github.com/stacksjs/stx/commit/dc74da3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: plan rows and evaluate expressions with less repeated analysis ([dc59188](https://github.com/stacksjs/stx/commit/dc59188)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: resolve a row node's style from what its rows share ([46f8f40](https://github.com/stacksjs/stx/commit/46f8f40)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.796 ([8269641](https://github.com/stacksjs/stx/commit/8269641)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.794...v0.2.795)
 
 ## ✨ Features
