@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.796...v0.2.797)
+
+## ✨ Features
+
+- **native**: build installer images and accept zipped disk updates ([5d022fa](https://github.com/stacksjs/stx/commit/5d022fa)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- **deps**: require published installer and CSS engine fixes ([a64766e](https://github.com/stacksjs/stx/commit/a64766e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.797 ([b81faf3](https://github.com/stacksjs/stx/commit/b81faf3)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.795...v0.2.796)
 
 ## 🐛 Bug Fixes
