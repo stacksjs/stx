@@ -289,7 +289,17 @@ export interface NativeHealthBackground {
   onChange: (callback: (detail: { type: string }) => void) => () => void
 }
 
+export interface NativePedometerPassive {
+  /** Wear OS Health Services only. Ordinary phones may reject UNAVAILABLE. */
+  availability: () => Promise<{ supported: boolean, enabled: boolean, permissionGranted: boolean }>
+  start: () => Promise<boolean>
+  stop: () => Promise<boolean>
+  /** Retained provider daily totals, not counter-since-boot readings or pre-install backfill. */
+  history: () => Promise<Array<{ kind: 'daily', source: 'healthServices', day: string, timeZone: string, startDate: number, endDate: number, steps: number }>>
+}
+
 export interface NativeCraft {
+  pedometerPassive?: NativePedometerPassive
   healthBackground?: NativeHealthBackground
   pedometer?: NativePedometer
   /** Raw Android sensors; not iOS fused device motion. */

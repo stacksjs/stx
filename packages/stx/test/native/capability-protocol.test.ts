@@ -504,6 +504,22 @@ describe('shared-runtime native capability protocol', () => {
     expect(changed).toEqual([{ type: 'steps' }])
   })
 
+  it('keeps passive provider daily totals separate from the foreground pedometer', async () => {
+    expect((await runtime('', { capabilities: ['pedometer'] })).scope.craft.pedometerPassive).toBeUndefined()
+    const { scope, sent, receive } = await runtime('', { capabilities: ['pedometerPassive'] })
+    expect(scope.craft.pedometer).toBeUndefined()
+    const history = scope.craft.pedometerPassive.history()
+    const request = sent.at(-1)!
+    expect(request.payload).toMatchObject({ module: 'PedometerPassive', method: 'history', args: [] })
+    const days = [{ kind: 'daily', source: 'healthServices', day: '2026-11-03', timeZone: 'UTC', startDate: 1000, endDate: 2000, steps: 20 }]
+    receive({ type: 'API_RESPONSE', correlationId: request.id, payload: { version: 1, requestId: request.id, data: days } })
+    expect(await history).toEqual(days)
+    const start = scope.craft.pedometerPassive.start()
+    const rejected = sent.at(-1)!
+    receive({ type: 'API_ERROR', correlationId: rejected.id, payload: { version: 1, requestId: rejected.id, code: 'UNAVAILABLE', message: 'No Wear OS provider' } })
+    await expect(start).rejects.toMatchObject({ code: 'UNAVAILABLE' })
+  })
+
   it('names the phone in the user agent code shared with the page reads', async () => {
     const { scope } = await runtime()
     expect(scope.navigator.userAgent).toContain('iPhone')

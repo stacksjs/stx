@@ -35,6 +35,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     barometer: capabilities.has('barometer'),
     pedometer: capabilities.has('pedometer'),
     healthBackground: capabilities.has('healthBackground'),
+    pedometerPassive: capabilities.has('pedometerPassive'),
     speechRecognition: false,
     share: capabilities.has('share'),
     camera: capabilities.has('camera'),
@@ -379,6 +380,14 @@ export function installCraftBridge(
       acknowledge: (ids: string[]) => request('HealthBackground', 'acknowledge', [ids]),
       refresh: () => request('HealthBackground', 'refresh', []),
       onChange: (callback: (value: AnyRecord) => void) => onSensorUpdate('craftHealthBackground', callback),
+    }
+  }
+  if (capabilities.has('pedometerPassive')) {
+    craft.pedometerPassive = {
+      availability: () => request('PedometerPassive', 'availability', []),
+      start: () => request('PedometerPassive', 'start', []),
+      stop: () => request('PedometerPassive', 'stop', []),
+      history: () => request('PedometerPassive', 'history', []),
     }
   }
   craft.biometrics = {
