@@ -36,6 +36,10 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
 
   function __stxAlwaysVisible() { return true; }
 
+  // What planning throws for a template it leaves to the generic path: one
+  // object, not an Error with a stack to capture for every refusal.
+  var ROW_UNPLANNED = { unplanned: true };
+
   // A plan for rows cloned from \`template\`, or null where the generic path
   // has to make them.
   function planNativeRow(template) {
@@ -73,14 +77,13 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
         : 'return ' + raw;
     var source = kind === 'attr' || kind === 'text' || kind === 'if' ? expr : raw;
     var group = kind === 'prop' ? plan.prop : plan.eval;
-    if (parsePipeExpression(source, {}) !== null) throw new Error('pipe');
-    if (plan.component && raw.indexOf(plan.scopeId) !== -1) throw new Error('scope id in an expression');
+    if (parsePipeExpression(source, {}) !== null) throw ROW_UNPLANNED;
+    if (plan.component && raw.indexOf(plan.scopeId) !== -1) throw ROW_UNPLANNED;
     // The names the expression can read: not the words of its quoted strings
     // (a class list in a ternary) nor keywords, which every row would
     // otherwise look up in its scope for nothing.
-    var names = __stxNamesIn(source.replace(__STX_QUOTED, ' ')).filter(function(k) {
-      return !__STX_KEYWORDS[k] && /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k);
-    });
+    var unquoted = source.indexOf("'") === -1 && source.indexOf('"') === -1 ? source : source.replace(__STX_QUOTED, ' ');
+    var names = __stxNamesIn(unquoted).filter(function(k) { return !__STX_KEYWORDS[k]; });
     for (var i = 0; i < names.length; i++) {
       if (group.nameIndex[names[i]] === undefined) {
         group.nameIndex[names[i]] = group.names.length;
@@ -95,8 +98,8 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
   // One element of the template: its bindings, the attributes a row's copy
   // keeps, and its children. Throws where the template needs the generic path;
   // returns { generic: true } for an :if branch whose content does.
-  function planRowNode(plan, tmpl, isRoot, inBranch) {
-    var node = { tmpl: tmpl, attrs: [], ops: [], children: [], ifSite: null, generic: false, inert: false, remap: [] };
+  function planRowNode(plan, tmpl, isRoot, inBranch, gated) {
+    var node = { tmpl: tmpl, attrs: [], ops: [], children: [], ifSite: null, generic: false, inert: false, remap: [], gated: !!(gated || inBranch) };
     var attrs = getElementAttributes(tmpl);
     var parentEvents = __stxWords(tmpl.getAttribute('data-stx-parent-events') || '');
     var parentBindings = isRoot && plan.component ? __stxWords(tmpl.getAttribute('data-stx-parent-bindings') || '') : [];
@@ -116,22 +119,23 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
         delete deferredProps[propName];
       }
     }
+    if (getElseAttrInfo(tmpl)) throw ROW_UNPLANNED;
     var generic = false;
     for (var i = 0; i < attrs.length; i++) {
       var name = attrs[i].name;
       var value = attrs[i].value;
       if (!name) continue;
       if (name === ':if' || name === '@if') {
-        if (isRoot) throw new Error('root if');
-        if (getElseAttrInfo(tmpl.nextElementSibling)) throw new Error('if chain');
+        if (isRoot) throw ROW_UNPLANNED;
+        if (getElseAttrInfo(tmpl.nextElementSibling)) throw ROW_UNPLANNED;
         node.ifSite = planRowSite(plan, value, 'if');
         continue;
       }
-      if (name === 'x-if' || getElseAttrInfo(tmpl)) throw new Error('chain');
-      if ((name === ':for' || name === '@for' || name === 'x-for') && isForDirectiveExpression(value)) throw new Error('nested for');
+      if (name === 'x-if') throw ROW_UNPLANNED;
+      if ((name === ':for' || name === '@for' || name === 'x-for') && isForDirectiveExpression(value)) throw ROW_UNPLANNED;
       if (name === 'x-cloak') continue;
       if (name === 'data-stx-scope' || name === 'data-stx-template-scope') {
-        if (!isRoot) throw new Error('nested component');
+        if (!isRoot) throw ROW_UNPLANNED;
         continue;
       }
       if (__STX_ROW_GENERIC_ATTRS[name] || name.startsWith('::') || name.startsWith('x-') || name.startsWith('@bind:')) { generic = true; continue; }
@@ -160,7 +164,7 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
         var parts = name.slice(1).split('.');
         var eventName = parentEvents.find(function(event) { return event.toLowerCase() === parts[0].toLowerCase(); }) || parts[0];
         if (__STX_ROW_SKIPPED_EVENTS[eventName]) { generic = true; continue; }
-        if (plan.component && value.indexOf(plan.scopeId) !== -1) throw new Error('scope id in a handler');
+        if (plan.component && value.indexOf(plan.scopeId) !== -1) throw ROW_UNPLANNED;
         node.ops.push({
           kind: 'event',
           eventName: eventName,
@@ -179,15 +183,15 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
       node.attrs.push(attrs[i]);
     }
     if (generic) {
-      if (!inBranch || !node.ifSite) throw new Error('generic content');
+      if (!inBranch || !node.ifSite) throw ROW_UNPLANNED;
       return { tmpl: tmpl, generic: true, ifSite: node.ifSite };
     }
     var kids = tmpl.childNodes || [];
     for (var k = 0; k < kids.length; k++) {
       var child = kids[k];
-      if (child.nodeType !== 1 || child.tagName === 'SCRIPT' || child.tagName === 'TEMPLATE' || child.__stx_scope) throw new Error('child kind');
+      if (child.nodeType !== 1 || child.tagName === 'SCRIPT' || child.tagName === 'TEMPLATE' || child.__stx_scope) throw ROW_UNPLANNED;
       var hasIf = child.hasAttribute(':if') || child.hasAttribute('@if');
-      node.children.push(planRowNode(plan, child, false, hasIf));
+      node.children.push(planRowNode(plan, child, false, hasIf, node.gated));
     }
     return node;
   }
@@ -196,10 +200,29 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
   // compiled for that answer. Rows of one loop nearly always share one.
   function rowShape(group, own, layers) {
     var names = group.names;
+    var stack = own[__STX_LAYERS];
+    // A row's scope is its loop's layers (the same objects for every row)
+    // and a few of its own (its item, its component's variables), which hold
+    // the same names from row to row. When this row's are the last row's or
+    // hold the same names, every name lives where it did: nothing to look up.
+    var last = group.last;
+    if (last && stack.length === last.stack.length && own[__STX_HIDDEN] === undefined && Object.keys(own).length === 0) {
+      var same = true;
+      for (var j = 0; j < stack.length && same; j++) {
+        if (stack[j] !== last.stack[j]) same = Object.keys(stack[j]).join('\u0001') === last.names[j];
+      }
+      if (same) {
+        for (var n = 0; n < names.length; n++) layers[n] = last.at[n] < 0 ? null : stack[last.at[n]];
+        last.stack = stack;
+        return last.shape;
+      }
+    }
     var signature = '';
+    var at = new Array(names.length);
     for (var i = 0; i < names.length; i++) {
       var layer = __stxLayerOf(own, names[i]);
       layers[i] = layer;
+      at[i] = layer === null ? -1 : stack.lastIndexOf(layer);
       signature += layer === null ? '0' : '1';
     }
     var shape = group.shapes.get(signature);
@@ -207,6 +230,13 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
       shape = { signature: signature, compiled: [] };
       group.shapes.set(signature, shape);
     }
+    // Remembered for the next row only when every name was found in a layer
+    // (not on the scope's own object, which differs per row).
+    var ownless = Object.keys(own).length === 0 && own[__STX_HIDDEN] === undefined;
+    if (ownless) {
+      for (var k = 0; k < names.length; k++) if (layers[k] !== null && at[k] < 0) ownless = false;
+    }
+    group.last = ownless ? { stack: stack, names: stack.map(function(layer) { return Object.keys(layer).join('\u0001'); }), at: at, shape: shape } : null;
     return shape;
   }
 
@@ -330,7 +360,10 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
 
   // The visibility gates an element's attribute bindings wait on: every :if
   // around it, the row's own and those around the loop.
-  function rowVisibility(el, row) {
+  function rowVisibility(el, row, pnode) {
+    // Outside every :if of the row, in a loop no :if hides: always visible,
+    // without walking up to find that out.
+    if (!pnode.gated && !row.outer.length && !row.inserted) return __stxAlwaysVisible;
     var gates = [];
     for (var node = el; node; node = node.parentNode) {
       if (node.__stx_if_visible) gates.push(node.__stx_if_visible);
@@ -381,16 +414,16 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
     for (var i = 0; i < ops.length; i++) {
       var op = ops[i];
       if (op.kind === 'attr') {
-        if (!visible) visible = rowVisibility(el, row);
+        if (!visible) visible = rowVisibility(el, row, pnode);
         if (!urlWarning) urlWarning = { warned: false };
         bindRowAttribute(el, op, row, visible, urlWarning);
       }
       else if (op.kind === 'class') {
-        if (!visible) visible = rowVisibility(el, row);
+        if (!visible) visible = rowVisibility(el, row, pnode);
         bindRowClass(el, op.site, row, visible);
       }
       else if (op.kind === 'style') {
-        if (!visible) visible = rowVisibility(el, row);
+        if (!visible) visible = rowVisibility(el, row, pnode);
         bindRowStyle(el, op.site, row, visible);
       }
       else if (op.kind === 'text') {
@@ -401,8 +434,10 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
         if (el[op.key]) continue;
         el[op.key] = true;
         var forwarded = op.forwarded && !!el.__stx_parent_scope;
-        listenTemplateEvent(el, op.eventName, op.modifiers, op.value,
-          forwarded ? layerTemplateScopes(globalHelpers, el.__stx_parent_scope) : row.evalScope, forwarded);
+        // A forwarded handler runs in its caller's scope, which the listener
+        // layers again when it fires; one layering serves all of the row's.
+        if (forwarded && row.forwardedScope === null) row.forwardedScope = layerTemplateScopes(globalHelpers, el.__stx_parent_scope);
+        listenTemplateEvent(el, op.eventName, op.modifiers, op.value, forwarded ? row.forwardedScope : row.evalScope, forwarded);
       }
     }
     if (pnode.inert) return;
@@ -602,7 +637,7 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
   // A row of \`plan\`, bound before it is inserted. \`parent\` is where it will
   // go; the caller inserts it and then calls finishNativeRow.
   function createNativeRow(plan, itemScope, parent) {
-    var row = { plan: plan, root: null, scope: null, evalScope: null, local: null, caller: null, outer: [], after: [], inserted: false, scopeVars: null, scopeId: null };
+    var row = { plan: plan, root: null, scope: null, evalScope: null, local: null, caller: null, forwardedScope: null, outer: [], after: [], inserted: false, scopeVars: null, scopeId: null };
     for (var node = parent; node; node = node.parentNode) if (node.__stx_if_visible) row.outer.push(node.__stx_if_visible);
     if (plan.component) row.scopeId = plan.scopeId + '_for_' + (++__forComponentScopeCounter);
     var made = buildRowNode(plan.root, row);

@@ -14,6 +14,22 @@ export const SIGNALS_PIPE_RUNTIME = `  // ======================================
     if (expr.indexOf('|') === -1) return null;
     const known = __stxPipeIndex.get(expr);
     if (known === -1) return null;
+    // Nearly every bar is half of a ||: when no bar stands alone, there is no
+    // pipe, and the character scan below (slow in an interpreter, for an
+    // expression of any length) has nothing to find.
+    if (known === undefined) {
+      let bar = expr.indexOf('|');
+      while (bar !== -1) {
+        if (expr.charCodeAt(bar + 1) === 124) { bar = expr.indexOf('|', bar + 2); continue; }
+        if (bar > 0 && expr.charCodeAt(bar - 1) === 63) { bar = expr.indexOf('|', bar + 1); continue; }
+        break;
+      }
+      if (bar === -1) {
+        if (__stxPipeIndex.size >= 5000) __stxPipeIndex.clear();
+        __stxPipeIndex.set(expr, -1);
+        return null;
+      }
+    }
     // Find pipe operators: single | that's not part of || or preceded by ?
     // We need to find | that is:
     // 1. Not preceded by | or ?

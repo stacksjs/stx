@@ -27,6 +27,18 @@ export const SIGNALS_HELPERS_RUNTIME = `  // ===================================
     }
     return camel;
   }
+  // A component's static props, as its wrapper carries them: the same text
+  // for every row of a list, parsed once. Callers only read the result.
+  var __stxPropTexts = new Map();
+  function __stxParsedProps(text) {
+    var parsed = __stxPropTexts.get(text);
+    if (parsed === undefined) {
+      parsed = JSON.parse(text);
+      if (__stxPropTexts.size >= 2000) __stxPropTexts.clear();
+      __stxPropTexts.set(text, parsed);
+    }
+    return parsed;
+  }
   var __stxKebabNames = new Map();
   function __stxKebab(name) {
     var kebab = __stxKebabNames.get(name);

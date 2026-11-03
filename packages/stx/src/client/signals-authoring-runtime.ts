@@ -97,10 +97,13 @@ export function signalsAuthoringRuntime(createModelSignalSource: string): string
       var serializedProps = root.getAttribute('data-stx-props');
       if (serializedProps) {
         try {
-          var parsedProps = JSON.parse(serializedProps);
+          var parsedProps = __stxParsedProps(serializedProps);
           var camelName = __stxCamel(name);
           if (Object.prototype.hasOwnProperty.call(parsedProps, name)) staticValue = parsedProps[name];
           else if (Object.prototype.hasOwnProperty.call(parsedProps, camelName)) staticValue = parsedProps[camelName];
+          // A structured value is this instance's own, as a fresh parse made it.
+          if (staticValue && typeof staticValue === 'object' && staticValue !== defaultValue)
+            staticValue = JSON.parse(JSON.stringify(staticValue));
         }
         catch (e) {}
       }

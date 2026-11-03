@@ -1,8 +1,25 @@
 /** Signal-aware event expression handling for the generated client runtime. */
-export const SIGNALS_HANDLER_RUNTIME = `  function expressionUsesSignalApi(expression, name) {
-    var escapedName = name.replace(/[-/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&');
-    return expressionUsesSignalMethod(expression, name)
-      || expressionUsesSignalValue(expression, name);
+export const SIGNALS_HANDLER_RUNTIME = `  // Each answer depends only on the expression and the name, and each is a
+  // regular expression built for the pair: asked for every signal a binding
+  // or prop reads, so it is kept (and a name the expression does not hold
+  // is answered without one).
+  const __stxSignalPatterns = new Map();
+  function rememberedSignalPattern(kind, expression, name, test) {
+    if (expression.indexOf(name) === -1) return false;
+    var key = kind + '\\u0001' + name + '\\u0001' + expression;
+    var known = __stxSignalPatterns.get(key);
+    if (known === undefined) {
+      if (__stxSignalPatterns.size >= 5000) __stxSignalPatterns.clear();
+      known = test(expression, name);
+      __stxSignalPatterns.set(key, known);
+    }
+    return known;
+  }
+
+  function expressionUsesSignalApi(expression, name) {
+    return rememberedSignalPattern('api', expression, name, function(text, signalName) {
+      return expressionUsesSignalMethod(text, signalName) || expressionUsesSignalValue(text, signalName);
+    });
   }
 
   function expressionUsesSignalMethod(expression, name) {
@@ -16,6 +33,10 @@ export const SIGNALS_HANDLER_RUNTIME = `  function expressionUsesSignalApi(expre
   }
 
   function expressionCallsSignal(expression, name) {
+    return rememberedSignalPattern('call', expression, name, expressionCallsSignalNow);
+  }
+
+  function expressionCallsSignalNow(expression, name) {
     var escapedName = name.replace(/[-/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&');
     return new RegExp('(?:^|[^\\\\w$])' + escapedName + '\\\\s*\\\\(').test(expression);
   }
