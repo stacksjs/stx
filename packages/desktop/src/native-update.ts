@@ -25,7 +25,7 @@ export function parsePantryUpdateManifest(input: unknown, repository: string, ar
   const archives = manifest.assets.filter(asset => typeof asset?.name === 'string' && /-darwin-(arm64|x64)\.tar\.gz$/.test(asset.name))
   if (archives.length && !archives.some(asset => asset.name.endsWith(`-darwin-${arch}.tar.gz`)))
     throw new Error(`This release does not support ${arch} Macs`)
-  const images = manifest.assets.filter(asset => typeof asset?.name === 'string' && asset.name.endsWith('.dmg'))
+  const images = manifest.assets.filter(asset => typeof asset?.name === 'string' && /\.dmg(?:\.zip)?$/.test(asset.name))
   const candidates = images.length > 1 ? images.filter(asset => asset.name.includes(`-${arch}.`)) : images
   const asset = candidates[0]
   if (candidates.length !== 1 || !asset || !asset.name || /[/\\]/.test(asset.name)

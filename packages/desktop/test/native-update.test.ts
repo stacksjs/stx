@@ -20,6 +20,13 @@ describe('Pantry update feed', () => {
     expect(parsed.version).toBe('1.0.11')
     expect(parsed.platforms.darwin).toEqual({ url: 'https://github.com/stacksjs/launchpad/releases/download/v1.0.11/Launchpad-1.0.11.dmg', size: 300, sha256: 'a'.repeat(64) })
   })
+  it('uses the ZIP checksum and release URL when the notarized DMG is archived', () => {
+    const input = manifest()
+    input.assets[0]!.name += '.zip'
+    const parsed = parsePantryUpdateManifest(input, repository, 'arm64')
+    expect(parsed.platforms.darwin.url).toEndWith('/Launchpad-1.0.11.dmg.zip')
+    expect(parsed.platforms.darwin.sha256).toBe(input.assets[0]!.sha256)
+  })
   it('rejects another repository and an incompatible architecture', () => {
     expect(() => parsePantryUpdateManifest(manifest(), 'other/repository', 'arm64')).toThrow('Invalid')
     expect(() => parsePantryUpdateManifest(manifest(), repository, 'x64')).toThrow('does not support')

@@ -17,7 +17,7 @@ import { existsSync, mkdirSync, copyFileSync, chmodSync, rmSync } from 'node:fs'
 import { join, dirname, basename, resolve } from 'node:path'
 import { spawn } from 'node:child_process'
 import { platform as osPlatform } from 'node:os'
-import { resolveCraftExecutablePath } from '@stacksjs/desktop'
+import { createDiskImage, resolveCraftExecutablePath } from '@stacksjs/desktop'
 import { injectCraftBridge } from './craft-bridge'
 import { processCraftComponents, CRAFT_COMPONENT_STYLES } from './craft-components'
 import { renderTemplate } from './render'
@@ -832,29 +832,7 @@ async function createDMG(
   outputPath: string,
   volumeName: string,
 ): Promise<{ success: boolean; error?: string }> {
-  return new Promise((resolve) => {
-    const proc = spawn('hdiutil', [
-      'create',
-      '-volname', volumeName,
-      '-srcfolder', appBundlePath,
-      '-ov',
-      '-format', 'UDZO',
-      outputPath,
-    ])
-
-    proc.on('close', (code) => {
-      if (code === 0) {
-        resolve({ success: true })
-      }
-      else {
-        resolve({ success: false, error: `hdiutil exited with code ${code}` })
-      }
-    })
-
-    proc.on('error', (err) => {
-      resolve({ success: false, error: err.message })
-    })
-  })
+  return createDiskImage({ appBundlePath, outputPath, volumeName })
 }
 
 /**

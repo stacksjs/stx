@@ -232,7 +232,7 @@ export type { DesktopConfig } from './window'
 // =============================================================================
 // Packaging & Code Signing (re-exported from Craft)
 // =============================================================================
-export { craftBinaryNotFoundMessage, macOSRuntimeExecutablePath, pack, packageApp, resolveCraftBinary, resolveCraftExecutablePath } from './packaging'
+export { craftBinaryNotFoundMessage, createDiskImage, macOSRuntimeExecutablePath, pack, packageApp, resolveCraftBinary, resolveCraftExecutablePath } from './packaging'
 
 export type { PackageConfig, PackageResult } from './packaging'
 
