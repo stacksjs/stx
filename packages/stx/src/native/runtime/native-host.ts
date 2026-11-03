@@ -32,7 +32,7 @@
 
 import type { NativeMutationOperation } from '../bridge/protocol'
 import type { STXNode, STXStyle } from '../compiler/ir'
-import { accessibilityChanges, authoredAccessibilityProps, projectAccessibility } from '../accessibility'
+import { ACCESSIBILITY_FIELDS, accessibilityChanges, authoredAccessibilityProps, isAccessibilityAttribute, projectAccessibility } from '../accessibility'
 import { type NativeClassTable, seedClassTable } from '../compiler/class-table'
 import { compileClassStyles, NATIVE_STATE_VARIANTS } from '../compiler/headwind-to-style'
 import { resolveIconName } from '../compiler/icons'
@@ -645,13 +645,26 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
    * its marker: Craft lays a component's single root out through it.
    */
   function createdProps(record: NodeRecord): Record<string, unknown> {
-    const props = hostProps(record)
+    // One pass over the authored props, which also says whether there is
+    // anything to project: every accessibility source starts with `a` or
+    // `r` (aria-*, accessibility*, role), and only an image or a text field
+    // derives props from anything else. hostProps' spreads and a later
+    // delete per binding-layer key cost a row's nodes more than the rest of
+    // their createNode together.
+    const props = record.props
+    const created: Record<string, unknown> = {}
+    let accessible = record.type === 'Image'
     const names = Object.keys(props)
     for (let i = 0; i < names.length; i++) {
       const name = names[i]!
-      if (name === '__stxId' || (name.charCodeAt(0) === 100 && name.startsWith('data-stx-') && name !== 'data-stx-component-wrapper')) delete props[name]
+      const first = name.charCodeAt(0)
+      if (first === 100 ? name.startsWith('data-stx-') && name !== 'data-stx-component-wrapper' : name === '__stxId') continue
+      if (!accessible && (first === 97 || first === 114)) accessible = isAccessibilityAttribute(name) || (ACCESSIBILITY_FIELDS as readonly string[]).includes(name)
+      created[name] = props[name]
     }
-    return props
+    if (accessible) Object.assign(created, projectAccessibility(props, record.type))
+    if (record.type === 'TextInput') Object.assign(created, projectTextEntry(record.type, props))
+    return created
   }
 
   /** An ARIA state attribute that is on: `aria-selected="true"`, as the web's variant matches it. */
@@ -1295,7 +1308,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       own.styleDirty = true
     }
     insertIntoBindingParent(parent, node, index)
-    setConnected(node, false)
+    // Nothing to disconnect: a node placed here has no owner and was never
+    // created natively (placesQuietly), so it is a fresh copy or a removed
+    // node, and remove, copyNode and insert under an unmaterialised parent
+    // each leave a whole subtree disconnected.
   }
 
   /**
