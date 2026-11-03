@@ -679,10 +679,17 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     }
   }
 
+  // The node resolveStyle is on, for its diagnostics: one reporter for every
+  // call rather than a closure made for each, on a path every node takes.
+  let resolvingId = ''
+  const reportStyle = (diagnostic: { kind: string, name: string }): void => {
+    console.warn(`[STX Native] ${diagnostic.kind}: ${resolvingId}: ${diagnostic.name}`)
+  }
+  const NO_LAYERS: never[] = []
+
   function resolveStyle(record: NodeRecord, id: string): Record<string, unknown> {
-    const report = (diagnostic: { kind: string, name: string }): void => {
-      console.warn(`[STX Native] ${diagnostic.kind}: ${id}: ${diagnostic.name}`)
-    }
+    resolvingId = id
+    const report = reportStyle
     let inherited = record.inheritedVariables
     for (const source of record.styleAncestors ?? []) inherited = parseNativeStyleLayers([source], inherited, report).variables
     const resolved = parseNativeStyleLayers([record.styleSource, record.boundStyle, record.forwardedStyle], inherited, report)
@@ -694,7 +701,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       widthBounds.min.add(layer.min)
       if (layer.max !== undefined) widthBounds.max.add(layer.max)
     }
-    const responsive = (classes.responsive ?? []).filter(layer => viewportWidth >= layer.min && (layer.max === undefined || viewportWidth <= layer.max))
+    const responsive = classes.responsive?.length ? classes.responsive.filter(layer => viewportWidth >= layer.min && (layer.max === undefined || viewportWidth <= layer.max)) : NO_LAYERS
     for (const layer of responsive) Object.assign(classStyle, layer.style)
     // ts-css emits `.dark .dark:utility`: that selector outranks a plain
     // responsive utility even when its media rule comes later. Semantic
@@ -705,13 +712,13 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     }
     // `aria-selected:` and its kin, while the node says so. Before
     // `disabled:`, as Tailwind orders the two variants.
-    for (const [attribute, layer] of Object.entries(classes.states ?? {})) {
+    if (classes.states) for (const [attribute, layer] of Object.entries(classes.states)) {
       if (ariaState(record.props[attribute])) Object.assign(classStyle, layer.style, colorScheme === 'dark' ? layer.dark : {})
     }
     if (classes.disabled && disabled(record)) Object.assign(classStyle, classes.disabled.style, colorScheme === 'dark' ? classes.disabled.dark : {})
     // Like utility variant ordering, direct focus overrides focus-within;
     // authored inline/bound styles still win over both layers below.
-    for (const layer of [record.focusWithin && classes.focusWithin, record.focused && classes.focus]) {
+    if (record.focusWithin || record.focused) for (const layer of [record.focusWithin && classes.focusWithin, record.focused && classes.focus]) {
       if (!layer) continue
       const focused = { ...layer.style, ...(colorScheme === 'dark' ? layer.dark : {}) }
       if (classStyle.transform && focused.transform) {
@@ -748,8 +755,15 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     record.inheritedVariables = inherited
     applyClasses(node.__stxId, record, true)
     const after = record.variables!
-    if (!appearanceChanged && before?.size === after.size && [...after].every(([name, value]) => before.has(name) && before.get(name) === value)) return
+    if (!appearanceChanged && before !== undefined && sameVariables(before, after)) return
     for (const child of record.children) refreshStyleTree(child, after, appearanceChanged)
+  }
+
+  function sameVariables(before: NativeStyleVariables, after: NativeStyleVariables): boolean {
+    if (before === after) return true
+    if (before.size !== after.size) return false
+    for (const [name, value] of after) if (!before.has(name) || before.get(name) !== value) return false
+    return true
   }
 
   function forwardedHostRoot(node: NativeNode, name: string): NativeNode | undefined {
@@ -814,7 +828,9 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
   function applyClasses(id: string, record: NodeRecord, onlyIfChanged = false): void {
     const style = resolveStyle(record, id)
-    const patch = Object.fromEntries(Object.keys(record.style).filter(key => !(key in style)).map(key => [key, null]))
+    // Keys the style no longer has are cleared on the native view.
+    const patch: Record<string, null> = {}
+    for (const key in record.style) if (!(key in style)) patch[key] = null
     const changed = !onlyIfChanged || JSON.stringify(record.style) !== JSON.stringify(style)
     record.style = style
     if (record.materialized && changed) emit({ op: 'updateNode', id, patch: { style: { ...patch, ...style } } })
@@ -824,12 +840,15 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const divideChanged = JSON.stringify(classes.divide) !== JSON.stringify(record.divide)
     record.divide = classes.divide
     if (divideChanged || record.divide) refreshDividersOf(record)
-    const unsupported = new Set(classes.unknown)
-    for (const name of unsupported) {
-      if (!record.reportedClasses?.has(name))
-        console.warn(`[STX Native] unknown-class: ${id}: ${name}`)
+    // Nearly every node knows all its classes: no set to make for it.
+    if (classes.unknown.length || record.reportedClasses?.size) {
+      const unsupported = new Set(classes.unknown)
+      for (const name of unsupported) {
+        if (!record.reportedClasses?.has(name))
+          console.warn(`[STX Native] unknown-class: ${id}: ${name}`)
+      }
+      record.reportedClasses = unsupported
     }
-    record.reportedClasses = unsupported
     if (record.type === 'Icon' && classes.icon) {
       const icon = resolveNodeIcon(id, record, classes.icon)
       record.props.symbol = icon.symbol
