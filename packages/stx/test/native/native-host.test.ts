@@ -377,7 +377,10 @@ describe('the three operations a DOM shape would have leaked through', () => {
     const created = ops().filter(o => o.op === 'createNode')
     expect(created).toHaveLength(2)
     // The descriptor carried over, including the text child.
-    expect(created[0]).toMatchObject({ id: copy.__stxId, node: { type: 'View', props: { testID: 'row', __stxId: copy.__stxId } } })
+    // The op's id names the copy; its props carry only what a native view
+    // reads, not the binding layer's own id.
+    expect(created[0]).toMatchObject({ id: copy.__stxId, node: { type: 'View', props: { testID: 'row' } } })
+    expect((created[0] as any).node.props).not.toHaveProperty('__stxId')
     expect(created[1]).toMatchObject({ node: { type: 'Text', children: ['first'] } })
   })
 })
@@ -736,5 +739,39 @@ describe('native text edit acknowledgements', () => {
     expect(host.snapshot(input).props).toMatchObject({ value: '', mostRecentEventCount: 4 })
     host.dispatch(id, { nativeEvent: { text: 'Legacy' } })
     expect(host.snapshot(input).props.value).toBe('Legacy')
+  })
+})
+
+describe('what crosses the bridge for a component', () => {
+  const wrapper = (host: ReturnType<typeof harness>['host']) => materializeNativeBindingTree(createDocument(createNode('View', {
+    'data-stx-component-wrapper': true,
+    'data-stx-parent-events': 'select close',
+    'data-stx-parent-bindings': 'item',
+    'data-stx-scope': 'row',
+  }, {}, {}, [createNode('Pressable', {})]), { exports: {}, functions: [], code: '' }), { entries: [] }, host).root
+
+  it('creates a node with what a native view reads, keeping the component marker', () => {
+    const { host, node, ops } = harness()
+    const copy = host.clone(wrapper(host))
+    host.insert(node('parent'), copy)
+    host.flush()
+    const created = ops().find(o => o.op === 'createNode' && o.id === copy.__stxId) as any
+    expect(Object.keys(created.node.props).sort()).toEqual(['data-stx-component-wrapper'])
+    // The binding layer still reads its own attributes from the node.
+    expect(host.getAttribute(copy, 'data-stx-parent-events')).toBe('select close')
+  })
+
+  it('keeps a component event in script, and a native one on the view', () => {
+    const { host, ops } = harness()
+    const root = wrapper(host)
+    const heard: string[] = []
+    host.listen(root, 'select', () => heard.push('select'))
+    host.listen(root, 'close', () => heard.push('close'))
+    host.flush()
+    const registered = ops().flatMap(o => o.op === 'updateNode' && o.id === root.__stxId ? Object.keys((o as any).patch.events ?? {}) : [])
+    // `close` is also a native event (a sheet's onRequestClose); `select` is only ever emitted.
+    expect(registered).toEqual(['onRequestClose'])
+    expect(host.emitComponentEvent(root, new CustomEvent('select'))).toBe(true)
+    expect(heard).toEqual(['select'])
   })
 })

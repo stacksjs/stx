@@ -320,6 +320,18 @@ function nativeEventName(event: string): string {
   return name
 }
 
+/** Whether an event name is one no native host emits: not in the platform map, not spelled as a native prop (`onX`). */
+const scriptEventNames = new Map<string, boolean>()
+function scriptOnlyEvent(event: string): boolean {
+  let only = scriptEventNames.get(event)
+  if (only === undefined) {
+    only = NATIVE_EVENT_NAMES[event.toLowerCase()] === undefined && !/^on[A-Z]/.test(event)
+    if (scriptEventNames.size >= 2000) scriptEventNames.clear()
+    scriptEventNames.set(event, only)
+  }
+  return only
+}
+
 /** A link's own press listener: the press handler's default action follows it. */
 function followsHref(): void {}
 
@@ -624,6 +636,24 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     return { ...record.props, ...projectAccessibility(record.props, record.type), ...projectTextEntry(record.type, record.props) }
   }
 
+  /**
+   * The props a node is created with on the native side: the host's, less
+   * what only the binding layer reads (`data-stx-parent-bindings`,
+   * `-native-forward`, `-scope`, the node's own id, ...). No native host
+   * reads them, they were close to half of every row's createNode, and the
+   * bridge's cost grows with the text it carries. A component wrapper keeps
+   * its marker: Craft lays a component's single root out through it.
+   */
+  function createdProps(record: NodeRecord): Record<string, unknown> {
+    const props = hostProps(record)
+    const names = Object.keys(props)
+    for (let i = 0; i < names.length; i++) {
+      const name = names[i]!
+      if (name === '__stxId' || (name.charCodeAt(0) === 100 && name.startsWith('data-stx-') && name !== 'data-stx-component-wrapper')) delete props[name]
+    }
+    return props
+  }
+
   /** An ARIA state attribute that is on: `aria-selected="true"`, as the web's variant matches it. */
   function ariaState(value: unknown): boolean {
     return value === true || value === 'true'
@@ -742,7 +772,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       node: {
         type: record.type,
         ...(record.key === undefined ? {} : { key: record.key }),
-        props: hostProps(record),
+        props: createdProps(record),
         style: { ...record.style },
         ...(Object.keys(record.events).length ? { events: { ...record.events } } : {}),
         ...(record.text === undefined ? {} : { children: [record.text] }),
@@ -1058,6 +1088,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     if (node)
       visit(node)
     return out
+  }
+
+  /** A component event on the component's wrapper, heard only in script (see listen). */
+  function componentEventOnly(node: NativeNode, event: string): boolean {
+    return isBindingNode(node) && node.hasAttribute('data-stx-component-wrapper') && scriptOnlyEvent(event)
   }
 
   function isBindingNode(node: NativeNode): node is NativeBindingNode {
@@ -1677,6 +1712,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       // back. Sending a function over a bridge is not possible, and the
       // binding layer never needs to know that -- it hands over a closure
       // either way.
+      // A component's own event (`select`, `rename`) on its wrapper is
+      // emitted and heard in script (emitComponentEvent): no native view
+      // sends it, so it takes no handler id and stays out of the node's
+      // native events. Anything a native host could send keeps one.
+      if (componentEventOnly(node, event)) return unsubscribe
       const nativeEvent = nativeEventName(event)
       const record = recordOf(node)
       // A renderer holds one handler id per event. Multiplex all listeners
