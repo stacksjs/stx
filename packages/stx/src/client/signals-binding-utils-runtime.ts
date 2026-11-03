@@ -15,14 +15,22 @@ export const SIGNALS_BINDING_UTILS_RUNTIME = `  // Minimal attribute-only pass f
 
   function getElementAttributes(el) {
     if (!el || !el.attributes) return [];
-    return Array.from(el.attributes).map(function(attr) {
+    // A copy, since processing an element removes attributes as it goes. A
+    // plain loop: every element of every row comes through here, and
+    // Array.from with a map callback was a share of a launch in an interpreter.
+    var source = el.attributes;
+    // A Map of attributes (some DOMs' clones) has no length: list its entries.
+    if (typeof source.length !== 'number') source = Array.from(source);
+    var attrs = new Array(source.length);
+    for (var i = 0; i < source.length; i++) {
+      var attr = source[i];
       // Browser DOM exposes Attr records through NamedNodeMap. HappyDOM and
       // other standards-oriented DOM implementations may expose Map entries
       // for cloned nodes instead. Normalize both shapes so reactive nodes
       // created by :for hydrate exactly like their browser counterparts.
-      if (Array.isArray(attr)) return { name: attr[0], value: attr[1] };
-      return attr;
-    });
+      attrs[i] = Array.isArray(attr) ? { name: attr[0], value: attr[1] } : attr;
+    }
+    return attrs;
   }
 
   function getModelBinding(el) {
