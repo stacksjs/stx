@@ -7,6 +7,7 @@ import { rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { compileScreenSource } from '../../src/native/compiler/render-screen'
 import { createTempDir } from '../../src/temp-dir'
+import { compileNativeScreen, mountNativeScreen } from '../../src/native/testing'
 
 function find(node: any, id: string): any {
   if (!node || typeof node !== 'object') return null
@@ -53,7 +54,7 @@ it('hears a field\'s arrow keys as @keydown, and leaves a key filter to the brow
   finally { await rm(root, { recursive: true, force: true }) }
 }, 30_000)
 
-it('hears a right-click as @contextmenu, @longpress or @long-press', async () => {
+it('compiles @contextmenu, @longpress and @long-press to onLongPress', async () => {
   const root = createTempDir('stx-long-press-')
   const file = join(root, 'Main.stx')
   const source = `<script client>const n = state(0)</script>
@@ -64,4 +65,46 @@ it('hears a right-click as @contextmenu, @longpress or @long-press', async () =>
     for (const id of ['a', 'b', 'c']) expect(Object.keys(find(result.document.root ?? result.document, id).events)).toEqual(['onLongPress'])
   }
   finally { await rm(root, { recursive: true, force: true }) }
+}, 30_000)
+
+const longPressSource = `<script client>
+const shown = state(true)
+window.calls = []
+window.shown = shown
+</script><View><View :if="shown">
+<Pressable testID="context" @contextmenu="window.calls.push('context:' + $event.marker)">Context</Pressable>
+<Pressable testID="plain" @longpress="window.calls.push('plain:' + $event.marker)">Plain</Pressable>
+<Pressable testID="hyphen" @long-press="window.calls.push('hyphen:' + $event.marker)">Hyphen</Pressable>
+</View></View>`
+const longPressBundles = new Map<boolean, ReturnType<typeof compileNativeScreen>>()
+it.each([['ios', false], ['ios', true], ['android', false], ['android', true]] as const)('delivers long-press aliases once, including after remount (%s, minify=%s)', async (platform, minify) => {
+  let bundle = longPressBundles.get(minify)
+  if (!bundle) {
+    bundle = compileNativeScreen(longPressSource, { minify })
+    longPressBundles.set(minify, bundle)
+  }
+  const phone = mountNativeScreen((await bundle).code, 'Screen', { platform })
+  try {
+    await phone.settle()
+    const ids = ['context', 'plain', 'hyphen']
+    const old = ids.map(id => phone.byTestID(id)!)
+    for (const node of old) {
+      expect(node.events.onLongPress).toBeTruthy()
+      phone.press(node, 'onLongPress', { marker: 'first' })
+    }
+    expect(phone.context.calls).toEqual(ids.map(id => `${id}:first`))
+    phone.context.shown.set(false)
+    await phone.settle()
+    for (const node of old) phone.press(node, 'onLongPress', { marker: 'removed' })
+    expect(phone.context.calls).toHaveLength(3)
+    phone.context.shown.set(true)
+    await phone.settle()
+    for (const [index, id] of ids.entries()) {
+      const node = phone.byTestID(id)!
+      expect(node).not.toBe(old[index])
+      phone.press(node, 'onLongPress', { marker: 'remount' })
+    }
+    expect(phone.context.calls).toEqual([...ids.map(id => `${id}:first`), ...ids.map(id => `${id}:remount`)])
+  }
+  finally { phone.unmount() }
 }, 30_000)

@@ -307,3 +307,56 @@ onMount(() => { globalThis.mounts = (globalThis.mounts || 0) + 1 })
     expect(processed.setupCode).toBeNull()
   })
 })
+
+// Exercise the browser bundle and its DOM renderer, not just the compiled event table.
+it.each([false, true])('delivers right-clicks through all long-press aliases after remount (minify=%s)', async (minify) => {
+  const root = mkdtempSync(path.join(tmpdir(), 'stx-browser-long-press-'))
+  folders.push(root)
+  writeFileSync(path.join(root, 'Screen.stx'), `<script client>
+const shown = state(true)
+window.calls = []
+window.shown = shown
+</script><View><View :if="shown">
+<Pressable testID="context" @contextmenu="window.calls.push('context')">Context</Pressable>
+<Pressable testID="plain" @longpress="window.calls.push('plain')">Plain</Pressable>
+<Pressable testID="hyphen" @long-press="window.calls.push('hyphen')">Hyphen</Pressable>
+</View></View>`)
+  writeFileSync(path.join(root, 'platform.ts'), 'export async function createBrowserPlatform() { return { craft: {}, capabilities: [], call: async () => null, dispose() {} } }')
+  const compiled = await compileBrowserScreen({ root, source: 'Screen.stx', screen: 'Screen', minify, browser: { screen: 'Screen', container: '#screen', appURL: '/', routes: { '/': 'Screen' }, platformModule: path.join(root, 'platform.ts') } })
+  const browser = new Window({ url: 'https://fixture.invalid/' })
+  const container = browser.document.createElement('div')
+  container.id = 'screen'
+  browser.document.body.append(container)
+  const scope: Record<string, any> = { document: browser.document, navigator: browser.navigator, location: browser.location, history: browser.history, MutationObserver: browser.MutationObserver, matchMedia: browser.matchMedia.bind(browser), addEventListener: browser.addEventListener.bind(browser), removeEventListener: browser.removeEventListener.bind(browser), dispatchEvent: browser.dispatchEvent.bind(browser), console, setTimeout, clearTimeout, setInterval, clearInterval, queueMicrotask, URL, URLSearchParams, AbortController }
+  scope.window = scope
+  const ids = ['context', 'plain', 'hyphen']
+  const controls = () => ids.map(id => container.querySelector(`[data-testid="${id}"]`))
+  const waitFor = async (ready: () => boolean) => {
+    for (let i = 0; i < 100 && !ready(); i++) await new Promise(resolve => setTimeout(resolve, 5))
+    expect(ready()).toBe(true)
+  }
+  const rightClick = (element: NonNullable<ReturnType<typeof container.querySelector>>) => {
+    const event = new browser.MouseEvent('contextmenu', { bubbles: true, cancelable: true })
+    element.dispatchEvent(event)
+    expect(event.defaultPrevented).toBe(true)
+  }
+  try {
+    vm.runInNewContext(compiled.code, scope)
+    await waitFor(() => controls().every(Boolean))
+    const old = controls()
+    for (const element of old) rightClick(element!)
+    expect(scope.calls).toEqual(ids)
+    scope.shown.set(false)
+    await waitFor(() => controls().every(element => element === null))
+    for (const element of old) element!.dispatchEvent(new browser.MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+    expect(scope.calls).toEqual(ids)
+    scope.shown.set(true)
+    await waitFor(() => controls().every(Boolean))
+    for (const [index, element] of controls().entries()) {
+      expect(element).not.toBe(old[index])
+      rightClick(element!)
+    }
+    expect(scope.calls).toEqual([...ids, ...ids])
+  }
+  finally { scope.__stxNativeUnmount?.(); browser.close() }
+}, 30_000)
