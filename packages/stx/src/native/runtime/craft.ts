@@ -165,7 +165,23 @@ export interface NativeLocation {
   timestamp: number
 }
 
+/** Recorded pressure uses a new relative-altitude reference for each segment. */
+export type NativeRecordingPressureEvent = {
+  recordingId: string
+  /** Unix milliseconds when the native journal received this event. */
+  timestamp: number
+} & (
+  | { state: 'sample', segmentId: string, pressureHpa: number, referencePressureHpa: number, relativeAltitudeMeters: number, timestampMs: number }
+  | { state: 'segment', segmentId: string, reason: 'startedOrRecovered' | 'sampleGap', timestampMs?: number }
+  | { state: 'stopped', segmentId?: string, reason: 'paused' | 'stopped' | 'sensorOrStorageError' }
+)
+
 export interface NativeLocationRecordingState {
+  /** Android recorder opt-in, separate from the foreground Barometer stream. */
+  barometer?: boolean
+  barometerError?: string
+  /** Returned on stop, or by getRecordingState({ includeBarometerSamples: true }). */
+  barometerEvents?: NativeRecordingPressureEvent[]
   id: string | null
   active: boolean
   paused: boolean
@@ -444,12 +460,12 @@ export interface NativeCraft {
     getCurrentPosition: (options?: { enableHighAccuracy?: boolean, timeout?: number, maximumAge?: number }) => Promise<NativeLocation>
     watchPosition: (callback: (location: NativeLocation) => unknown, options?: Record<string, unknown>) => number
     clearWatch: (id?: number) => void
-    startRecording: (options?: Record<string, unknown> & { recordingId?: string }) => Promise<NativeLocationRecordingState>
+    startRecording: (options?: Record<string, unknown> & { recordingId?: string, barometer?: boolean }) => Promise<NativeLocationRecordingState>
     pauseRecording: (options?: { expectedId: string }) => Promise<NativeLocationRecordingState>
     resumeRecording: (options?: { expectedId: string }) => Promise<NativeLocationRecordingState>
     stopRecording: (options?: { expectedId: string }) => Promise<NativeLocationRecordingState & { locations: NativeLocation[] }>
     acknowledgeRecording: (options: { expectedId: string }) => Promise<boolean>
-    getRecordingState: (options?: { expectedId: string }) => Promise<NativeLocationRecordingState & { sampleCount: number }>
+    getRecordingState: (options?: { expectedId?: string, includeBarometerSamples?: boolean }) => Promise<NativeLocationRecordingState & { sampleCount: number }>
     readRecording: (options?: { expectedId: string }) => Promise<NativeLocation[]>
   }
   /** Keeps the screen from locking (`capabilities.keepAwake`), the page's name. */

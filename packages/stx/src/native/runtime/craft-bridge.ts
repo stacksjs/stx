@@ -51,6 +51,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     localDatabase: capabilities.has('database'),
     lifecycle: capabilities.has('lifecycle'),
     geolocation: capabilities.has('geolocation'),
+    locationRecordingBarometer: capabilities.has('locationRecordingBarometer'),
     locationRecordingOwnership: capabilities.has('locationRecordingOwnership'),
     locationRecordingIntentIdentity: capabilities.has('locationRecordingIntentIdentity'),
     music: capabilities.has('music'),
@@ -118,6 +119,12 @@ export function installCraftBridge(
   const ask = (module: string, method: string, args: unknown[]): Promise<any> =>
     protocol.callPersonFacingAPI(module, method, ...args)
   const recordingRequest = (module: 'Location' | 'HeartRate', method: string, options?: AnyRecord): Promise<any> => {
+    if (module === 'Location' && options && Object.prototype.hasOwnProperty.call(options, 'includeBarometerSamples')) {
+      if (typeof options.includeBarometerSamples !== 'boolean')
+        return Promise.reject(Object.assign(new Error('includeBarometerSamples must be boolean'), { code: 'INVALID_ARGUMENT' }))
+      if (options.includeBarometerSamples && !capabilities.has('locationRecordingBarometer'))
+        return Promise.reject(Object.assign(new Error('This app build cannot read recorded pressure'), { code: 'UNSUPPORTED' }))
+    }
     if (options && Object.prototype.hasOwnProperty.call(options, 'expectedId')) {
       if (typeof options.expectedId !== 'string' || !options.expectedId.trim())
         return Promise.reject(Object.assign(new Error('expectedId must be a nonempty recording ID'), { code: 'INVALID_ARGUMENT' }))
@@ -128,6 +135,12 @@ export function installCraftBridge(
     return request(module, method, options === undefined ? [] : [options])
   }
   const recordingStart = async (module: 'Location' | 'HeartRate', options: AnyRecord = {}): Promise<any> => {
+    if (module === 'Location' && Object.prototype.hasOwnProperty.call(options, 'barometer')) {
+      if (typeof options.barometer !== 'boolean')
+        throw Object.assign(new Error('barometer must be boolean'), { code: 'INVALID_ARGUMENT' })
+      if (options.barometer && !capabilities.has('locationRecordingBarometer'))
+        throw Object.assign(new Error('This app build cannot record background pressure'), { code: 'UNSUPPORTED' })
+    }
     if (Object.prototype.hasOwnProperty.call(options, 'recordingId')) {
       if (typeof options.recordingId !== 'string' || !options.recordingId.trim())
         throw Object.assign(new Error('recordingId must be a nonempty recording ID'), { code: 'INVALID_ARGUMENT' })

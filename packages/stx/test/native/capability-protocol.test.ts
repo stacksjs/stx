@@ -42,6 +42,23 @@ async function runtime(script: string = '', options: {
 }
 
 describe('shared-runtime native capability protocol', () => {
+  it('refuses pressure recording on old hosts and carries opt-in and recovery on supported hosts', async () => {
+    const old = await runtime('', { capabilities: ['geolocation'], timers: false })
+    expect(old.scope.craft.capabilities.locationRecordingBarometer).toBe(false)
+    await expect(old.scope.craft.location.startRecording({ barometer: true })).rejects.toMatchObject({ code: 'UNSUPPORTED' })
+    await expect(old.scope.craft.location.getRecordingState({ includeBarometerSamples: true })).rejects.toMatchObject({ code: 'UNSUPPORTED' })
+    expect(old.sent.filter(message => message.type === 'API_REQUEST')).toHaveLength(0)
+    const { scope, sent } = await runtime('', { capabilities: ['geolocation', 'locationRecordingBarometer', 'locationRecordingOwnership'], timers: false })
+    expect(scope.craft.capabilities.locationRecordingBarometer).toBe(true)
+    await expect(scope.craft.location.startRecording({ barometer: 'true' })).rejects.toMatchObject({ code: 'INVALID_ARGUMENT' })
+    scope.craft.location.startRecording({ barometer: true })
+    scope.craft.location.getRecordingState({ expectedId: 'trail-A', includeBarometerSamples: true })
+    expect(sent.filter(message => message.type === 'API_REQUEST').map(message => message.payload)).toEqual([
+      { version: 1, module: 'Location', method: 'startRecording', args: [{ barometer: true }], untimed: true },
+      { version: 1, module: 'Location', method: 'getRecordingState', args: [{ expectedId: 'trail-A', includeBarometerSamples: true }] },
+    ])
+  })
+
   it('exposes motion and barometer only when their distinct host capabilities are present', async () => {
     const missing = (await runtime('', { capabilities: [], timers: false })).scope.craft
     expect(missing.rawMotionSensors).toBeUndefined()
