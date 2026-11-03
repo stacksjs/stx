@@ -1,5 +1,44 @@
 /** Formatting helpers and object dependency tracking used by client bindings. */
 export const SIGNALS_HELPERS_RUNTIME = `  // ==========================================================================
+  // Name and word lists, remembered
+  // ==========================================================================
+
+  // The same few strings (a component's parent-binding names, a prop's name)
+  // are taken apart for every row of every list. A regular expression split
+  // or replace is among the slowest things an interpreted engine does, so
+  // each answer is kept. Callers must not change a returned list.
+  var __stxWordLists = new Map();
+  function __stxWords(text) {
+    var words = __stxWordLists.get(text);
+    if (words === undefined) {
+      words = String(text).split(/\\s+/).filter(Boolean);
+      if (__stxWordLists.size >= 2000) __stxWordLists.clear();
+      __stxWordLists.set(text, words);
+    }
+    return words;
+  }
+  var __stxCamelNames = new Map();
+  function __stxCamel(name) {
+    var camel = __stxCamelNames.get(name);
+    if (camel === undefined) {
+      camel = name.replace(/-([a-z0-9])/g, function(_, c) { return c.toUpperCase(); });
+      if (__stxCamelNames.size >= 2000) __stxCamelNames.clear();
+      __stxCamelNames.set(name, camel);
+    }
+    return camel;
+  }
+  var __stxKebabNames = new Map();
+  function __stxKebab(name) {
+    var kebab = __stxKebabNames.get(name);
+    if (kebab === undefined) {
+      kebab = name.replace(/([A-Z])/g, function(_, c) { return '-' + c.toLowerCase(); });
+      if (__stxKebabNames.size >= 2000) __stxKebabNames.clear();
+      __stxKebabNames.set(name, kebab);
+    }
+    return kebab;
+  }
+
+  // ==========================================================================
   // Global Helpers (Feature #5)
   // ==========================================================================
 

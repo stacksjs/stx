@@ -3,7 +3,46 @@ export function signalsProcessElementRuntime(
   eventRegexLiteral: string,
   handledXAttrsLiteral: string,
 ): string {
-  return `  // True for text a binding wrote, or markup :html injected: data, never
+  return `  // Known directive names to exclude from generic :attr binding
+  var DIRECTIVE_NAMES = ${directiveNamesLiteral};
+
+  // A bound value cannot introduce a URL scheme the page did not ask for.
+  // This is the client half of url-safety.ts: the server refuses a scheme
+  // substituted into an href, and x-href over a signal reaches the same
+  // attribute by another road. Same policy, same unsafe: prefix, so a page
+  // behaves the same whether the value arrived at render or at runtime.
+  var URL_NAV_ATTR = {href:1, 'xlink:href':1, action:1, formaction:1, ping:1, cite:1, manifest:1, data:1, to:1};
+  var URL_FETCH_ATTR = {src:1, srcset:1, poster:1, background:1};
+  function __stxSafeUrlAttr(attrName, value, warning) {
+    var navigable = URL_NAV_ATTR[attrName];
+    if (!navigable && !URL_FETCH_ATTR[attrName]) return value;
+    if (typeof value !== 'string' || !value) return value;
+    // Browsers ignore ASCII whitespace and controls inside a scheme and match
+    // it case-insensitively, so the spellings collapse before the test.
+    var probe = value.replace(/[\\u0000-\\u0020\\u00a0\\u2000-\\u200f\\u2028\\u2029\\ufeff]+/g, '').toLowerCase();
+    var refused = /^(?:javascript|vbscript|livescript|mocha|view-source):/.test(probe)
+      || (navigable
+        ? /^data:(?:text\\/html|text\\/xml|application\\/xhtml\\+xml|application\\/xml|image\\/svg\\+xml)/.test(probe)
+        : /^data:(?:text\\/html|application\\/xhtml\\+xml)/.test(probe));
+    if (!refused) return value;
+    if (!warning.warned) {
+      warning.warned = true;
+      console.warn('[stx] refused a ' + attrName + ' value whose scheme can run script: ' + probe.slice(0, 24));
+    }
+    return 'unsafe:' + value;
+  }
+  // SVG attributes are case-sensitive, but the HTML parser lowercases
+  // prefixed attribute names — ':viewBox' arrives as ':viewbox' because
+  // the spec's "adjust SVG attributes" step only covers unprefixed names.
+  // Without restoring the canonical casing, setAttribute('viewbox') creates
+  // a dead duplicate attribute and the real viewBox never updates.
+  var SVG_ATTR_CASE = {attributename:'attributeName', attributetype:'attributeType', basefrequency:'baseFrequency', baseprofile:'baseProfile', calcmode:'calcMode', clippathunits:'clipPathUnits', diffuseconstant:'diffuseConstant', edgemode:'edgeMode', filterunits:'filterUnits', glyphref:'glyphRef', gradienttransform:'gradientTransform', gradientunits:'gradientUnits', kernelmatrix:'kernelMatrix', kernelunitlength:'kernelUnitLength', keypoints:'keyPoints', keysplines:'keySplines', keytimes:'keyTimes', lengthadjust:'lengthAdjust', limitingconeangle:'limitingConeAngle', markerheight:'markerHeight', markerunits:'markerUnits', markerwidth:'markerWidth', maskcontentunits:'maskContentUnits', maskunits:'maskUnits', numoctaves:'numOctaves', pathlength:'pathLength', patterncontentunits:'patternContentUnits', patterntransform:'patternTransform', patternunits:'patternUnits', pointsatx:'pointsAtX', pointsaty:'pointsAtY', pointsatz:'pointsAtZ', preservealpha:'preserveAlpha', preserveaspectratio:'preserveAspectRatio', primitiveunits:'primitiveUnits', refx:'refX', refy:'refY', repeatcount:'repeatCount', repeatdur:'repeatDur', requiredextensions:'requiredExtensions', requiredfeatures:'requiredFeatures', specularconstant:'specularConstant', specularexponent:'specularExponent', spreadmethod:'spreadMethod', startoffset:'startOffset', stddeviation:'stdDeviation', stitchtiles:'stitchTiles', surfacescale:'surfaceScale', systemlanguage:'systemLanguage', tablevalues:'tableValues', targetx:'targetX', targety:'targetY', textlength:'textLength', viewbox:'viewBox', viewtarget:'viewTarget', xchannelselector:'xChannelSelector', ychannelselector:'yChannelSelector', zoomandpan:'zoomAndPan'};
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  var EVENT_RE = ${eventRegexLiteral};
+  var X_HANDLED = ${handledXAttrsLiteral};
+  var KEY_MAP = {enter:'Enter', tab:'Tab', escape:'Escape', space:' ', up:'ArrowUp', down:'ArrowDown', left:'ArrowLeft', right:'ArrowRight', 'delete':'Delete', backspace:'Backspace'};
+
+  // True for text a binding wrote, or markup :html injected: data, never
   // template. Checked only for text that holds braces, so the climb is rare.
   function isInertContent(node) {
     for (var n = node; n; n = n.parentNode) if (n.__stx_inert_content) return true;
@@ -290,44 +329,8 @@ catch (e2) {
       }
     };
 
-    // Known directive names to exclude from generic :attr binding
-    var DIRECTIVE_NAMES = ${directiveNamesLiteral};
-
-    // A bound value cannot introduce a URL scheme the page did not ask for.
-    // This is the client half of url-safety.ts: the server refuses a scheme
-    // substituted into an href, and x-href over a signal reaches the same
-    // attribute by another road. Same policy, same unsafe: prefix, so a page
-    // behaves the same whether the value arrived at render or at runtime.
-    var URL_NAV_ATTR = {href:1, 'xlink:href':1, action:1, formaction:1, ping:1, cite:1, manifest:1, data:1, to:1};
-    var URL_FETCH_ATTR = {src:1, srcset:1, poster:1, background:1};
-    var urlRefusalWarned = false;
-    function safeUrlAttr(attrName, value) {
-      var navigable = URL_NAV_ATTR[attrName];
-      if (!navigable && !URL_FETCH_ATTR[attrName]) return value;
-      if (typeof value !== 'string' || !value) return value;
-      // Browsers ignore ASCII whitespace and controls inside a scheme and match
-      // it case-insensitively, so the spellings collapse before the test.
-      var probe = value.replace(/[\\u0000-\\u0020\\u00a0\\u2000-\\u200f\\u2028\\u2029\\ufeff]+/g, '').toLowerCase();
-      var refused = /^(?:javascript|vbscript|livescript|mocha|view-source):/.test(probe)
-        || (navigable
-          ? /^data:(?:text\\/html|text\\/xml|application\\/xhtml\\+xml|application\\/xml|image\\/svg\\+xml)/.test(probe)
-          : /^data:(?:text\\/html|application\\/xhtml\\+xml)/.test(probe));
-      if (!refused) return value;
-      if (!urlRefusalWarned) {
-        urlRefusalWarned = true;
-        console.warn('[stx] refused a ' + attrName + ' value whose scheme can run script: ' + probe.slice(0, 24));
-      }
-      return 'unsafe:' + value;
-    }
-    // SVG attributes are case-sensitive, but the HTML parser lowercases
-    // prefixed attribute names — ':viewBox' arrives as ':viewbox' because
-    // the spec's "adjust SVG attributes" step only covers unprefixed names.
-    // Without restoring the canonical casing, setAttribute('viewbox') creates
-    // a dead duplicate attribute and the real viewBox never updates.
-    var SVG_ATTR_CASE = {attributename:'attributeName', attributetype:'attributeType', basefrequency:'baseFrequency', baseprofile:'baseProfile', calcmode:'calcMode', clippathunits:'clipPathUnits', diffuseconstant:'diffuseConstant', edgemode:'edgeMode', filterunits:'filterUnits', glyphref:'glyphRef', gradienttransform:'gradientTransform', gradientunits:'gradientUnits', kernelmatrix:'kernelMatrix', kernelunitlength:'kernelUnitLength', keypoints:'keyPoints', keysplines:'keySplines', keytimes:'keyTimes', lengthadjust:'lengthAdjust', limitingconeangle:'limitingConeAngle', markerheight:'markerHeight', markerunits:'markerUnits', markerwidth:'markerWidth', maskcontentunits:'maskContentUnits', maskunits:'maskUnits', numoctaves:'numOctaves', pathlength:'pathLength', patterncontentunits:'patternContentUnits', patterntransform:'patternTransform', patternunits:'patternUnits', pointsatx:'pointsAtX', pointsaty:'pointsAtY', pointsatz:'pointsAtZ', preservealpha:'preserveAlpha', preserveaspectratio:'preserveAspectRatio', primitiveunits:'primitiveUnits', refx:'refX', refy:'refY', repeatcount:'repeatCount', repeatdur:'repeatDur', requiredextensions:'requiredExtensions', requiredfeatures:'requiredFeatures', specularconstant:'specularConstant', specularexponent:'specularExponent', spreadmethod:'spreadMethod', startoffset:'startOffset', stddeviation:'stdDeviation', stitchtiles:'stitchTiles', surfacescale:'surfaceScale', systemlanguage:'systemLanguage', tablevalues:'tableValues', targetx:'targetX', targety:'targetY', textlength:'textLength', viewbox:'viewBox', viewtarget:'viewTarget', xchannelselector:'xChannelSelector', ychannelselector:'yChannelSelector', zoomandpan:'zoomAndPan'};
-    var SVG_NS = 'http://www.w3.org/2000/svg';
-    var EVENT_RE = ${eventRegexLiteral};
-    var KEY_MAP = {enter:'Enter', tab:'Tab', escape:'Escape', space:' ', up:'ArrowUp', down:'ArrowDown', left:'ArrowLeft', right:'ArrowRight', 'delete':'Delete', backspace:'Backspace'};
+    // One refusal warning per element, as before the policy moved out.
+    var urlWarning = { warned: false };
 
     // Handle attributes
     getElementAttributes(el).forEach(attr => {
@@ -362,13 +365,12 @@ catch (e2) {
       // :attr still works for backward compat but is reserved for structural directives.
       // x-text, x-html, x-model, x-show, x-if, x-for, x-cloak, x-ref, x-data are
       // handled by their own code paths below — exclude them here.
-      var X_HANDLED = ${handledXAttrsLiteral};
       if (name.startsWith('@bind:') || name.startsWith('x-bind:')
           || (name.startsWith(':') && !name.startsWith('::') && !DIRECTIVE_NAMES[name.slice(1).split('.')[0]] && !EVENT_RE.test(name.slice(1)))
           || (name.startsWith('x-') && !X_HANDLED[name.split('.')[0]] && !X_HANDLED[name])) {
         let attrName = name.startsWith('@bind:') ? name.slice(6) : name.startsWith('x-bind:') ? name.slice(7) : name.startsWith('x-') ? name.slice(2) : name.slice(1);
         if (el.namespaceURI === SVG_NS && SVG_ATTR_CASE[attrName]) attrName = SVG_ATTR_CASE[attrName];
-        var parentBindingNames = (el.getAttribute && el.getAttribute('data-stx-parent-bindings') || '').split(/\\s+/);
+        var parentBindingNames = __stxWords(el.getAttribute && el.getAttribute('data-stx-parent-bindings') || '');
         var bindingScope = el.__stx_parent_scope && parentBindingNames.includes(attrName)
           ? el.__stx_parent_scope
           : attrCapturedScope;
@@ -382,112 +384,7 @@ catch (e2) {
         effect(() => {
           if (!attributesVisible()) return;
           const v = evalAttrExpr(value, bindingScope);
-          // Form control values are live DOM properties. Setting only the HTML
-          // attribute does not update a <select>'s chosen option and can leave
-          // inputs displaying stale text after a reactive update.
-          if (attrName === 'value' && 'value' in el) {
-            var controlValue = v;
-            if (typeof v === 'object' && v !== null) {
-              try { controlValue = JSON.stringify(v); }
-              catch (e) { controlValue = String(v); }
-            }
-            controlValue = v === false || v === null || v === undefined ? '' : String(controlValue);
-            el.__stx_bound_value = controlValue;
-            var applyControlValue = function() {
-              if (!attributesVisible()) return;
-              var desiredValue = el.__stx_bound_value == null ? '' : String(el.__stx_bound_value);
-              el.value = desiredValue;
-              if (desiredValue === '' && el.tagName !== 'OPTION') el.removeAttribute(attrName);
-              else if (el.getAttribute(attrName) !== desiredValue) el.setAttribute(attrName, desiredValue);
-              if (typeof el.__stx_model_sync === 'function') el.__stx_model_sync();
-            };
-            applyControlValue();
-
-            // A select's value binding is processed before its child
-            // directives. When a nested :for creates the matching options
-            // afterward, the browser otherwise leaves the first option
-            // selected. Keep the desired value and reapply it whenever the
-            // option tree changes, including later reactive list updates.
-            if (el.tagName === 'SELECT' && !el.__stx_value_observer && typeof window.MutationObserver !== 'undefined') {
-              el.__stx_value_observer = new window.MutationObserver(applyControlValue);
-              el.__stx_value_observer.observe(el, {
-                childList: true,
-                subtree: true,
-                attributes: true,
-                attributeFilter: ['value'],
-              });
-              el.__stx_destroy = el.__stx_destroy || [];
-              el.__stx_destroy.push(function() {
-                if (el.__stx_value_observer) el.__stx_value_observer.disconnect();
-                el.__stx_value_observer = null;
-              });
-            }
-            return;
-          }
-          // Checked, selected, and indeterminate are live DOM properties, just like value.
-          // Updating only the HTML attribute leaves a user-touched checkbox or
-          // radio in its previous state because the property becomes dirty.
-          // Indeterminate has no corresponding effective HTML attribute at all.
-          if ((attrName === 'checked' || attrName === 'selected' || attrName === 'indeterminate') && attrName in el) {
-            var selectedState = Boolean(v);
-            el[attrName] = selectedState;
-            if (attrName === 'indeterminate') {
-              el.removeAttribute(attrName);
-            }
-            else if (selectedState) {
-              el.setAttribute(attrName, '');
-            }
-            else {
-              el.removeAttribute(attrName);
-            }
-            return;
-          }
-          // aria-* and data-* carry a STRING: the platform's boolean attribute
-          // is presence, which cannot say "false" and wrote data-open="" for
-          // true, so a [data-open='true'] selector never matched. React renders
-          // both as "true" / "false", and so does this.
-          if ((attrName.startsWith('aria-') || attrName.startsWith('data-')) && typeof v === 'boolean') {
-            stxHost.setAttribute(el, attrName, String(v));
-          }
-          else if (typeof v === 'boolean') {
-            stxHost.setAttribute(el, attrName, v);
-          }
-          else if (v === null || v === undefined) {
-            stxHost.removeAttribute(el, attrName);
-          }
-else {
-            var attrValue = v;
-            if (typeof v === 'object') {
-              try { attrValue = JSON.stringify(v); }
-              catch (e) { attrValue = String(v); }
-            }
-            var attrValueSafe = safeUrlAttr(attrName, attrValue);
-            // Keep structured values structured for non-DOM hosts. The DOM
-            // host serializes them at its boundary, preserving web output.
-            var hostValue = (typeof v === 'object' && v !== null) ? v : attrValueSafe;
-            // Writing the value an attribute already has is not nothing: a
-            // frame given its own src again loads again (an entry in the
-            // page's history each time) and a video restarts. A player whose
-            // rest and next set share a video re-set it on every step.
-            if (el.getAttribute(attrName) === String(attrValueSafe)) return;
-            // A frame already on the page that is pointed somewhere else
-            // navigates, and every navigation is an entry in the page's own
-            // history: a player showing a video per step left one per step,
-            // and Back had to be tapped through all of them before it left
-            // the screen. Out of the page and back in, the frame starts afresh
-            // (its first load adds no entry, and its old entries go with it).
-            var parentNode = el.parentNode;
-            if (attrName === 'src' && el.tagName === 'IFRAME' && parentNode && el.isConnected
-              && el.hasAttribute('src') && el.getAttribute('src') !== String(attrValueSafe)) {
-              var nextSibling = el.nextSibling;
-              parentNode.removeChild(el);
-              stxHost.setAttribute(el, attrName, hostValue);
-              parentNode.insertBefore(el, nextSibling);
-            }
-            else {
-              stxHost.setAttribute(el, attrName, hostValue);
-            }
-          }
+          applyBoundAttribute(el, attrName, v, attributesVisible, urlWarning);
         });
         el.removeAttribute(name);
       }
@@ -562,7 +459,7 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
         const parts = name.slice(1).split('.');
         // HTML folds attribute names to lowercase; the forwarding metadata
         // retains the declared event spelling (e.g. update:modelValue).
-        const parentEventNames = (el.getAttribute && el.getAttribute('data-stx-parent-events') || '').split(/\\s+/);
+        const parentEventNames = __stxWords(el.getAttribute && el.getAttribute('data-stx-parent-events') || '');
         const eventName = parentEventNames.find(function(event) {
           return event.toLowerCase() === parts[0].toLowerCase();
         }) || parts[0];
@@ -585,146 +482,11 @@ else if (name === 'ref' || name === ':ref' || name === 'x-ref' || name === 'data
 
         // Capture scope at setup time so @for loop variables are available when event fires
         const isForwardedComponentEvent = !!(el.__stx_parent_scope && parentEventNames.includes(eventName));
-        let eventCapturedScope = isForwardedComponentEvent
+        const eventCapturedScope = isForwardedComponentEvent
           ? layerTemplateScopes(globalHelpers, el.__stx_parent_scope)
           : layerTemplateScopes(globalHelpers, scope, (findElementScope(el) || {}));
 
-        stxHost.listen(el, eventName, (event) => {
-          // A forwarded handler belongs to the caller, whose scope can be
-          // resolved again after this listener is bound: a component inside
-          // another component's :if, in a dialog, was bound against the
-          // page's scope and only later handed its real caller, so
-          // @pick="pickFromBank" found nothing and did nothing. Read it now.
-          if (isForwardedComponentEvent && el.__stx_parent_scope)
-            eventCapturedScope = layerTemplateScopes(globalHelpers, el.__stx_parent_scope);
-          // Vue-style component listeners fall through to the rendered native
-          // root unless the child emits the same event. Signal components use
-          // a scope wrapper, so native events arrive here from a descendant.
-          // Ignore that native event only after defineEmits() has declared or
-          // emitted the same name, preventing submit/click handlers from
-          // firing once for the native event and again for the CustomEvent.
-          var componentEmits = el.__stx_component_emits;
-          if (isForwardedComponentEvent && event.target !== el
-            && componentEmits && componentEmits[eventName]) return;
-
-          // Vue-style component handlers receive the emitted payload directly.
-          // Native root events still receive the Event object so server-only
-          // components can forward clicks and other browser events.
-          var emittedArgs = isForwardedComponentEvent && event instanceof CustomEvent
-            && Array.isArray(event.__stx_emit_args) ? event.__stx_emit_args : null;
-          var handlerEvent = emittedArgs ? emittedArgs[0]
-            : isForwardedComponentEvent && event instanceof CustomEvent ? event.detail : event;
-
-          // Skip an opener click that reaches UI which just became visible in
-          // this frame. A click whose target is inside the revealed subtree is
-          // a real interaction and must not be discarded, especially for
-          // async lists whose controls are usable as soon as they render.
-          if (eventName === 'click') {
-            var ancestor = el;
-            while (ancestor) {
-              if (ancestor.__stx_shown_at
-                && (performance.now() - ancestor.__stx_shown_at) < 50
-                && !(ancestor.contains && ancestor.contains(event.target))) return;
-              ancestor = ancestor.parentElement;
-            }
-          }
-          // System key modifiers
-          if (modifiers.includes('self') && event.target !== el) return;
-          if (modifiers.includes('ctrl') && !event.ctrlKey) return;
-          if (modifiers.includes('alt') && !event.altKey) return;
-          if (modifiers.includes('shift') && !event.shiftKey) return;
-          if (modifiers.includes('meta') && !event.metaKey) return;
-          // Key modifiers
-          for (var mi = 0; mi < modifiers.length; mi++) {
-            if (KEY_MAP[modifiers[mi]] && event.key !== KEY_MAP[modifiers[mi]]) return;
-          }
-          if (modifiers.includes('prevent')) event.preventDefault();
-          if (modifiers.includes('stop')) event.stopPropagation();
-          // Execute with captured scope (includes @for loop variables)
-          // For x-data scopes, expressions like "mobileOpen = !mobileOpen" need to
-          // read the signal value AND write back through the signal's setter.
-          try {
-            if (!value || /^__[A-Z_]+__$/.test(value.trim())) return;
-            var shorthandFn = parseEventShorthand(value, eventCapturedScope);
-            if (shorthandFn) { shorthandFn.apply(null, emittedArgs || [handlerEvent]); return; }
-            // Check if any scope values are signals (x-data pattern)
-            // A derived value reads like a signal in a handler, as it does in a
-            // binding: \`pick(selectedPackage)\` passes the package. Leaving it
-            // out handed the handler the derived's getter function, so
-            // \`selectedPackage.trainer_id\` was undefined with nothing said.
-            // Only the names the handler mentions. A page's scope holds
-            // hundreds; reading, testing and declaring every one of them on
-            // each click or hover cost far more than the handler itself.
-            var handlerNames = __stxNamesIn(value).filter(function(k) {
-              return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k) && (k in eventCapturedScope);
-            });
-            var hasSignals = handlerNames.some(function(k) {
-              var v = eventCapturedScope[k];
-              return v && typeof v === 'function' && (v._isSignal || v._isDerived);
-            });
-            // Only use signal read/write proxy for DIRECT assignment expressions
-            // like "count = count + 1" or "open = !open". Function calls like
-            // "openModal()" handle their own signal.set() internally — the writeback
-            // would RESET signals to their pre-handler values.
-            var isDirectAssignment = hasSignals && /^[a-zA-Z_$]\\w*\\s*=/.test(value.trim()) && !value.trim().startsWith('==');
-            if (isDirectAssignment) {
-              var getVars = handlerNames.map(function(k) {
-                return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && (__s["' + k + '"]._isSignal || __s["' + k + '"]._isDerived) ? __s["' + k + '"]() : __s["' + k + '"]';
-              }).join(';');
-              var setVars = handlerNames.filter(function(k) {
-                var v = eventCapturedScope[k];
-                return v && typeof v === 'function' && v._isSignal;
-              }).map(function(k) {
-                return 'if(' + k + ' !== __s["' + k + '"]()) __s["' + k + '"].set(' + k + ')';
-              }).join(';');
-              var body = getVars + ';' + value + ';' + setVars;
-              var fn2 = __stxCompile(['__s', '$event'], body);
-              fn2(eventCapturedScope, handlerEvent);
-            } else if (hasSignals) {
-              // Function calls with signals in scope keep any signal used through
-              // its object API as a raw signal function, and unwrap the rest for
-              // primitive reads.
-              var unwrapVars = handlerNames.map(function(k) {
-                var v = eventCapturedScope[k];
-                // A :for item is a signal only as an implementation detail, so
-                // that keyed rows can update in place. Its \`.value\` is a field
-                // on the item, never the signal compatibility API — the same
-                // rule createAutoUnwrapProxy states for binding expressions.
-                // Without the carve-out, expressionUsesSignalApi sees
-                // \`option.value\` and hands the handler the raw signal, so a
-                // handler like \`pick(option.value)\` receives the whole item.
-                // It is not an error, so it lands silently: the wrong value is
-                // stored and only surfaces much later.
-                if (v && typeof v === 'function' && ((v._isSignal && !v._isStxLoopItem) || v._isDerived)
-                  && (expressionCallsSignal(value, k) || expressionUsesSignalApi(value, k))) {
-                  return 'var ' + k + ' = __s["' + k + '"]';
-                }
-                return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && (__s["' + k + '"]._isSignal || __s["' + k + '"]._isDerived) ? __s["' + k + '"]() : __s["' + k + '"]';
-              }).join(';');
-              var fn3 = __stxCompile(['__s', '$event'], unwrapVars + ';' + value);
-              fn3(eventCapturedScope, handlerEvent);
-            } else {
-              var fn = __stxCompileScoped(eventCapturedScope, ['$event'], value);
-              fn(...__stxArgs(fn, eventCapturedScope), handlerEvent);
-            }
-          }
-catch (e) {
-            // See #1694: dropping the TypeError/ReferenceError carve-out for inline
-            // handlers — same reason as executeHandler above. Silencing these hid
-            // the substring-detector bug (auto-unwrap missing .set( inside helper
-            // calls) for ~30min of bisecting in the field.
-            console.warn('[STX] Handler error:', value, e);
-          }
-        }, {
-          capture: modifiers.includes('capture'),
-          // A touch or wheel listener that is not passive holds every scroll
-          // starting on the element until this thread has run it. Passive
-          // unless .prevent needs preventDefault() or .nonpassive asks.
-          passive: modifiers.includes('passive')
-            || (/^(touchstart|touchmove|wheel|mousewheel)$/i.test(eventName)
-              && !modifiers.includes('prevent') && !modifiers.includes('nonpassive')),
-          once: modifiers.includes('once')
-        });
+        listenTemplateEvent(el, eventName, modifiers, value, eventCapturedScope, isForwardedComponentEvent);
         el.removeAttribute(name);
       }
     });
@@ -744,6 +506,260 @@ catch (e) {
         processElement(child, scope);
       });
     }
-  }`
-}
+  }
 
+  // A bound attribute's new value, written as the element's kind wants it:
+  // live properties for form controls, strings for aria-/data- booleans, a
+  // structured value kept structured for a native host. Shared by
+  // processElement and the native row plans so both write a value one way.
+  function applyBoundAttribute(el, attrName, v, attributesVisible, urlWarning) {
+    // Form control values are live DOM properties. Setting only the HTML
+    // attribute does not update a <select>'s chosen option and can leave
+    // inputs displaying stale text after a reactive update.
+    if (attrName === 'value' && 'value' in el) {
+      var controlValue = v;
+      if (typeof v === 'object' && v !== null) {
+        try { controlValue = JSON.stringify(v); }
+        catch (e) { controlValue = String(v); }
+      }
+      controlValue = v === false || v === null || v === undefined ? '' : String(controlValue);
+      el.__stx_bound_value = controlValue;
+      var applyControlValue = function() {
+        if (!attributesVisible()) return;
+        var desiredValue = el.__stx_bound_value == null ? '' : String(el.__stx_bound_value);
+        el.value = desiredValue;
+        if (desiredValue === '' && el.tagName !== 'OPTION') el.removeAttribute(attrName);
+        else if (el.getAttribute(attrName) !== desiredValue) el.setAttribute(attrName, desiredValue);
+        if (typeof el.__stx_model_sync === 'function') el.__stx_model_sync();
+      };
+      applyControlValue();
+
+      // A select's value binding is processed before its child
+      // directives. When a nested :for creates the matching options
+      // afterward, the browser otherwise leaves the first option
+      // selected. Keep the desired value and reapply it whenever the
+      // option tree changes, including later reactive list updates.
+      if (el.tagName === 'SELECT' && !el.__stx_value_observer && typeof window.MutationObserver !== 'undefined') {
+        el.__stx_value_observer = new window.MutationObserver(applyControlValue);
+        el.__stx_value_observer.observe(el, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['value'],
+        });
+        el.__stx_destroy = el.__stx_destroy || [];
+        el.__stx_destroy.push(function() {
+          if (el.__stx_value_observer) el.__stx_value_observer.disconnect();
+          el.__stx_value_observer = null;
+        });
+      }
+      return;
+    }
+    // Checked, selected, and indeterminate are live DOM properties, just like value.
+    // Updating only the HTML attribute leaves a user-touched checkbox or
+    // radio in its previous state because the property becomes dirty.
+    // Indeterminate has no corresponding effective HTML attribute at all.
+    if ((attrName === 'checked' || attrName === 'selected' || attrName === 'indeterminate') && attrName in el) {
+      var selectedState = Boolean(v);
+      el[attrName] = selectedState;
+      if (attrName === 'indeterminate') {
+        el.removeAttribute(attrName);
+      }
+      else if (selectedState) {
+        el.setAttribute(attrName, '');
+      }
+      else {
+        el.removeAttribute(attrName);
+      }
+      return;
+    }
+    // aria-* and data-* carry a STRING: the platform's boolean attribute
+    // is presence, which cannot say "false" and wrote data-open="" for
+    // true, so a [data-open='true'] selector never matched. React renders
+    // both as "true" / "false", and so does this.
+    if ((attrName.startsWith('aria-') || attrName.startsWith('data-')) && typeof v === 'boolean') {
+      stxHost.setAttribute(el, attrName, String(v));
+    }
+    else if (typeof v === 'boolean') {
+      stxHost.setAttribute(el, attrName, v);
+    }
+    else if (v === null || v === undefined) {
+      stxHost.removeAttribute(el, attrName);
+    }
+else {
+      var attrValue = v;
+      if (typeof v === 'object') {
+        try { attrValue = JSON.stringify(v); }
+        catch (e) { attrValue = String(v); }
+      }
+      var attrValueSafe = __stxSafeUrlAttr(attrName, attrValue, urlWarning);
+      // Keep structured values structured for non-DOM hosts. The DOM
+      // host serializes them at its boundary, preserving web output.
+      var hostValue = (typeof v === 'object' && v !== null) ? v : attrValueSafe;
+      // Writing the value an attribute already has is not nothing: a
+      // frame given its own src again loads again (an entry in the
+      // page's history each time) and a video restarts. A player whose
+      // rest and next set share a video re-set it on every step.
+      if (el.getAttribute(attrName) === String(attrValueSafe)) return;
+      // A frame already on the page that is pointed somewhere else
+      // navigates, and every navigation is an entry in the page's own
+      // history: a player showing a video per step left one per step,
+      // and Back had to be tapped through all of them before it left
+      // the screen. Out of the page and back in, the frame starts afresh
+      // (its first load adds no entry, and its old entries go with it).
+      var parentNode = el.parentNode;
+      if (attrName === 'src' && el.tagName === 'IFRAME' && parentNode && el.isConnected
+        && el.hasAttribute('src') && el.getAttribute('src') !== String(attrValueSafe)) {
+        var nextSibling = el.nextSibling;
+        parentNode.removeChild(el);
+        stxHost.setAttribute(el, attrName, hostValue);
+        parentNode.insertBefore(el, nextSibling);
+      }
+      else {
+        stxHost.setAttribute(el, attrName, hostValue);
+      }
+    }
+  }
+
+  // An authored @event listener. The scope is re-read for a forwarded
+  // component event, whose caller can be resolved after the listener is bound.
+  function listenTemplateEvent(el, eventName, modifiers, value, eventCapturedScope, isForwardedComponentEvent) {
+    stxHost.listen(el, eventName, (event) => {
+      // A forwarded handler belongs to the caller, whose scope can be
+      // resolved again after this listener is bound: a component inside
+      // another component's :if, in a dialog, was bound against the
+      // page's scope and only later handed its real caller, so
+      // @pick="pickFromBank" found nothing and did nothing. Read it now.
+      if (isForwardedComponentEvent && el.__stx_parent_scope)
+        eventCapturedScope = layerTemplateScopes(globalHelpers, el.__stx_parent_scope);
+      // Vue-style component listeners fall through to the rendered native
+      // root unless the child emits the same event. Signal components use
+      // a scope wrapper, so native events arrive here from a descendant.
+      // Ignore that native event only after defineEmits() has declared or
+      // emitted the same name, preventing submit/click handlers from
+      // firing once for the native event and again for the CustomEvent.
+      var componentEmits = el.__stx_component_emits;
+      if (isForwardedComponentEvent && event.target !== el
+        && componentEmits && componentEmits[eventName]) return;
+
+      // Vue-style component handlers receive the emitted payload directly.
+      // Native root events still receive the Event object so server-only
+      // components can forward clicks and other browser events.
+      var emittedArgs = isForwardedComponentEvent && event instanceof CustomEvent
+        && Array.isArray(event.__stx_emit_args) ? event.__stx_emit_args : null;
+      var handlerEvent = emittedArgs ? emittedArgs[0]
+        : isForwardedComponentEvent && event instanceof CustomEvent ? event.detail : event;
+
+      // Skip an opener click that reaches UI which just became visible in
+      // this frame. A click whose target is inside the revealed subtree is
+      // a real interaction and must not be discarded, especially for
+      // async lists whose controls are usable as soon as they render.
+      if (eventName === 'click') {
+        var ancestor = el;
+        while (ancestor) {
+          if (ancestor.__stx_shown_at
+            && (performance.now() - ancestor.__stx_shown_at) < 50
+            && !(ancestor.contains && ancestor.contains(event.target))) return;
+          ancestor = ancestor.parentElement;
+        }
+      }
+      // System key modifiers
+      if (modifiers.includes('self') && event.target !== el) return;
+      if (modifiers.includes('ctrl') && !event.ctrlKey) return;
+      if (modifiers.includes('alt') && !event.altKey) return;
+      if (modifiers.includes('shift') && !event.shiftKey) return;
+      if (modifiers.includes('meta') && !event.metaKey) return;
+      // Key modifiers
+      for (var mi = 0; mi < modifiers.length; mi++) {
+        if (KEY_MAP[modifiers[mi]] && event.key !== KEY_MAP[modifiers[mi]]) return;
+      }
+      if (modifiers.includes('prevent')) event.preventDefault();
+      if (modifiers.includes('stop')) event.stopPropagation();
+      // Execute with captured scope (includes @for loop variables)
+      // For x-data scopes, expressions like "mobileOpen = !mobileOpen" need to
+      // read the signal value AND write back through the signal's setter.
+      try {
+        if (!value || /^__[A-Z_]+__$/.test(value.trim())) return;
+        var shorthandFn = parseEventShorthand(value, eventCapturedScope);
+        if (shorthandFn) { shorthandFn.apply(null, emittedArgs || [handlerEvent]); return; }
+        // Check if any scope values are signals (x-data pattern)
+        // A derived value reads like a signal in a handler, as it does in a
+        // binding: \`pick(selectedPackage)\` passes the package. Leaving it
+        // out handed the handler the derived's getter function, so
+        // \`selectedPackage.trainer_id\` was undefined with nothing said.
+        // Only the names the handler mentions. A page's scope holds
+        // hundreds; reading, testing and declaring every one of them on
+        // each click or hover cost far more than the handler itself.
+        var handlerNames = __stxNamesIn(value).filter(function(k) {
+          return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k) && (k in eventCapturedScope);
+        });
+        var hasSignals = handlerNames.some(function(k) {
+          var v = eventCapturedScope[k];
+          return v && typeof v === 'function' && (v._isSignal || v._isDerived);
+        });
+        // Only use signal read/write proxy for DIRECT assignment expressions
+        // like "count = count + 1" or "open = !open". Function calls like
+        // "openModal()" handle their own signal.set() internally — the writeback
+        // would RESET signals to their pre-handler values.
+        var isDirectAssignment = hasSignals && /^[a-zA-Z_$]\\w*\\s*=/.test(value.trim()) && !value.trim().startsWith('==');
+        if (isDirectAssignment) {
+          var getVars = handlerNames.map(function(k) {
+            return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && (__s["' + k + '"]._isSignal || __s["' + k + '"]._isDerived) ? __s["' + k + '"]() : __s["' + k + '"]';
+          }).join(';');
+          var setVars = handlerNames.filter(function(k) {
+            var v = eventCapturedScope[k];
+            return v && typeof v === 'function' && v._isSignal;
+          }).map(function(k) {
+            return 'if(' + k + ' !== __s["' + k + '"]()) __s["' + k + '"].set(' + k + ')';
+          }).join(';');
+          var body = getVars + ';' + value + ';' + setVars;
+          var fn2 = __stxCompile(['__s', '$event'], body);
+          fn2(eventCapturedScope, handlerEvent);
+        } else if (hasSignals) {
+          // Function calls with signals in scope keep any signal used through
+          // its object API as a raw signal function, and unwrap the rest for
+          // primitive reads.
+          var unwrapVars = handlerNames.map(function(k) {
+            var v = eventCapturedScope[k];
+            // A :for item is a signal only as an implementation detail, so
+            // that keyed rows can update in place. Its \`.value\` is a field
+            // on the item, never the signal compatibility API — the same
+            // rule createAutoUnwrapProxy states for binding expressions.
+            // Without the carve-out, expressionUsesSignalApi sees
+            // \`option.value\` and hands the handler the raw signal, so a
+            // handler like \`pick(option.value)\` receives the whole item.
+            // It is not an error, so it lands silently: the wrong value is
+            // stored and only surfaces much later.
+            if (v && typeof v === 'function' && ((v._isSignal && !v._isStxLoopItem) || v._isDerived)
+              && (expressionCallsSignal(value, k) || expressionUsesSignalApi(value, k))) {
+              return 'var ' + k + ' = __s["' + k + '"]';
+            }
+            return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && (__s["' + k + '"]._isSignal || __s["' + k + '"]._isDerived) ? __s["' + k + '"]() : __s["' + k + '"]';
+          }).join(';');
+          var fn3 = __stxCompile(['__s', '$event'], unwrapVars + ';' + value);
+          fn3(eventCapturedScope, handlerEvent);
+        } else {
+          var fn = __stxCompileScoped(eventCapturedScope, ['$event'], value);
+          fn(...__stxArgs(fn, eventCapturedScope), handlerEvent);
+        }
+      }
+catch (e) {
+        // See #1694: dropping the TypeError/ReferenceError carve-out for inline
+        // handlers — same reason as executeHandler above. Silencing these hid
+        // the substring-detector bug (auto-unwrap missing .set( inside helper
+        // calls) for ~30min of bisecting in the field.
+        console.warn('[STX] Handler error:', value, e);
+      }
+    }, {
+      capture: modifiers.includes('capture'),
+      // A touch or wheel listener that is not passive holds every scroll
+      // starting on the element until this thread has run it. Passive
+      // unless .prevent needs preventDefault() or .nonpassive asks.
+      passive: modifiers.includes('passive')
+        || (/^(touchstart|touchmove|wheel|mousewheel)$/i.test(eventName)
+          && !modifiers.includes('prevent') && !modifiers.includes('nonpassive')),
+      once: modifiers.includes('once')
+    });
+  }
+`
+}

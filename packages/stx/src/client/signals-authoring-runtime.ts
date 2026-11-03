@@ -78,7 +78,7 @@ export function signalsAuthoringRuntime(createModelSignalSource: string): string
       return v;
     };
     var root = window.__STX_CURRENT_ELEMENT__;
-    var kebabName = name.replace(/([A-Z])/g, function(_, c) { return '-' + c.toLowerCase(); });
+    var kebabName = __stxKebab(name);
     var lowerName = name.toLowerCase();
     var attributeNames = [name];
     if (kebabName !== name) attributeNames.push(kebabName);
@@ -98,7 +98,7 @@ export function signalsAuthoringRuntime(createModelSignalSource: string): string
       if (serializedProps) {
         try {
           var parsedProps = JSON.parse(serializedProps);
-          var camelName = name.replace(/-([a-z0-9])/g, function(_, c) { return c.toUpperCase(); });
+          var camelName = __stxCamel(name);
           if (Object.prototype.hasOwnProperty.call(parsedProps, name)) staticValue = parsedProps[name];
           else if (Object.prototype.hasOwnProperty.call(parsedProps, camelName)) staticValue = parsedProps[camelName];
         }

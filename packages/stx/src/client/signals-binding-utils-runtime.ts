@@ -61,7 +61,7 @@ export const SIGNALS_BINDING_UTILS_RUNTIME = `  // Minimal attribute-only pass f
   }
 
   function preserveDeferredParentComponentProps(el) {
-    var names = (el.getAttribute('data-stx-parent-bindings') || '').split(/\\s+/).filter(Boolean);
+    var names = __stxWords(el.getAttribute('data-stx-parent-bindings') || '');
     if (!names.length) return;
     var deferred = readDeferredParentComponentProps(el);
     names.forEach(function(name) {
@@ -118,9 +118,7 @@ export const SIGNALS_BINDING_UTILS_RUNTIME = `  // Minimal attribute-only pass f
     if (!el || !el.getAttribute) return;
     var scopeId = el.getAttribute('data-stx-scope');
     var scopeVars = scopeId && window.stx._scopes && window.stx._scopes[scopeId];
-    var camelName = name.replace(/-([a-z0-9])/g, function(_, character) {
-      return character.toUpperCase();
-    });
+    var camelName = __stxCamel(name);
     // useReactiveProp signals are often intentionally aliased inside the
     // child, for example liveClosable = useReactiveProp('closable', true).
     // The public prop name therefore cannot be inferred from the variable

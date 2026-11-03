@@ -1,7 +1,7 @@
 /** Parent-to-component reactive prop bindings for the generated client runtime. */
 export const SIGNALS_COMPONENT_PROPS_RUNTIME = `  function bindParentComponentProps(el, callerScope) {
     if (!el || !el.getAttribute || el.__stx_parent_props_bound) return;
-    var names = (el.getAttribute('data-stx-parent-bindings') || '').split(/\\s+/).filter(Boolean);
+    var names = __stxWords(el.getAttribute('data-stx-parent-bindings') || '');
     if (!names.length) return;
     if (hasPendingLoopBoundary(el)) {
       preserveDeferredParentComponentProps(el);
@@ -75,8 +75,14 @@ export const SIGNALS_COMPONENT_PROPS_RUNTIME = `  function bindParentComponentPr
   }
 
   function resolveComponentCallerScope(el, pageScope) {
+    return componentCallerScopeFrom(el && (el.parentElement || el.parentNode), pageScope);
+  }
+
+  // The caller scope for a component placed under \`current\`: the page's
+  // scope, then every component scope around it, outermost first. A native
+  // loop row binds before it is inserted, so it asks from its future parent.
+  function componentCallerScopeFrom(current, pageScope) {
     var ancestors = [];
-    var current = el && (el.parentElement || el.parentNode);
     while (current && current !== document) {
       if (current.getAttribute && current.hasAttribute('data-stx-scope'))
         ancestors.push(current.getAttribute('data-stx-scope'));
