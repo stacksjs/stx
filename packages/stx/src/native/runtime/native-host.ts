@@ -105,6 +105,8 @@ interface NodeRecord {
   dividerStyle?: Record<string, unknown>
   /** Its children have been given divider styles (it had `divide-*` classes at some point). */
   hadDividers?: boolean
+  /** How many of its children are views rather than anchors; worked out when first needed. */
+  viewCount?: number
 }
 
 interface RetainedNativeNode extends NativeNode {
@@ -307,6 +309,21 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   function refreshDividers(parent: NativeNode | null | undefined): void {
     const record = parent && descriptorOf(parent)
     if (record) refreshDividersOf(record)
+  }
+
+  function viewCountOf(record: NodeRecord): number {
+    if (record.viewCount === undefined) {
+      let count = 0
+      for (const child of record.children) if (child.__stxAnchor === undefined) count++
+      record.viewCount = count
+    }
+    return record.viewCount
+  }
+
+  /** A child's position, searched from the end: rows go in before a loop's closing anchor, its last child. */
+  function lastIndexOfChild(children: NativeNode[], id: string): number {
+    for (let i = children.length - 1; i >= 0; i--) if (children[i]!.__stxId === id) return i
+    return -1
   }
 
   function refreshDividersOf(record: NodeRecord): void {
@@ -976,9 +993,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     decoratePosition(node)
     node.__stxOwner = owner ?? null
     if (owner) {
-      const children = recordOf(owner).children
-      if (!children.some(child => child.__stxId === node.__stxId))
+      const ownerRecord = recordOf(owner)
+      const children = ownerRecord.children
+      if (!children.some(child => child.__stxId === node.__stxId)) {
         children.push(node)
+        ownerRecord.viewCount = undefined
+      }
     }
     installControlListeners(node)
     installLinkListener(node)
@@ -1578,22 +1598,28 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
        * a row reordered to the end lands one short of it.
        */
       // A node that was never placed (a new row) has nothing to take out.
+      const isView = node.__stxAnchor === undefined
       const existing = oldOwner === parent ? record.children.findIndex(child => child.__stxId === node.__stxId) : -1
-      if (existing !== -1)
+      if (existing !== -1) {
         record.children.splice(existing, 1)
+        if (isView && record.viewCount !== undefined) record.viewCount--
+      }
       else if (oldOwner && oldOwner !== parent) {
         const oldRecord = recordOf(oldOwner)
         const oldIndex = oldRecord.children.findIndex(child => child.__stxId === node.__stxId)
-        if (oldIndex !== -1)
+        if (oldIndex !== -1) {
           oldRecord.children.splice(oldIndex, 1)
+          if (isView && oldRecord.viewCount !== undefined) oldRecord.viewCount--
+        }
       }
       removeFromBindingParent(node)
 
       const index = before
-        ? Math.max(0, record.children.findIndex(child => child.__stxId === before.__stxId))
+        ? Math.max(0, lastIndexOfChild(record.children, before.__stxId))
         : record.children.length
 
       record.children.splice(index, 0, node)
+      if (isView && record.viewCount !== undefined) record.viewCount++
       node.__stxOwner = parent
       refreshStyleTree(node, record.variables)
       insertIntoBindingParent(parent, node, index)
@@ -1622,10 +1648,22 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
        * holding no views, the host refused the whole batch as INVALID_INDEX,
        * and a screen stayed on its first branch for good.
        */
+      // Counted from the nearer end: filling a list counted every row before
+      // each new one, and a list of n rows cost n squared.
       let nativeIndex = 0
-      for (let i = 0; i < index; i++) {
-        if (record.children[i].__stxAnchor === undefined)
-          nativeIndex++
+      if (index <= record.children.length >> 1) {
+        for (let i = 0; i < index; i++) {
+          if (record.children[i]!.__stxAnchor === undefined)
+            nativeIndex++
+        }
+      }
+      else {
+        let viewsAfter = 0
+        for (let i = record.children.length - 1; i > index; i--) {
+          if (record.children[i]!.__stxAnchor === undefined)
+            viewsAfter++
+        }
+        nativeIndex = viewCountOf(record) - 1 - viewsAfter
       }
 
       emit({
@@ -1673,9 +1711,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       const owner = node.__stxOwner
       if (owner) {
         const record = recordOf(owner)
-        const at = record.children.findIndex(child => child.__stxId === node.__stxId)
-        if (at !== -1)
+        const at = lastIndexOfChild(record.children, node.__stxId)
+        if (at !== -1) {
           record.children.splice(at, 1)
+          if (node.__stxAnchor === undefined && record.viewCount !== undefined) record.viewCount--
+        }
       }
       removeFromBindingParent(node)
       node.__stxOwner = null
