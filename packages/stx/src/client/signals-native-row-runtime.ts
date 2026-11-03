@@ -31,6 +31,8 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
   var __STX_ROW_SKIPPED_EVENTS = { if: 1, for: 1, show: 1, model: 1, class: 1, style: 1, text: 1, html: 1, ref: 1 };
   var __STX_ROW_CONTROL_ATTRS = { value: 1, checked: 1, selected: 1, indeterminate: 1 };
   var __STX_IDENT = /^[A-Za-z_$][\\w$]*$/;
+  var __STX_QUOTED = /'(?:[^'\\\\]|\\\\.)*'|"(?:[^"\\\\]|\\\\.)*"/g;
+  var __STX_KEYWORDS = { return: 1, true: 1, false: 1, null: 1, typeof: 1, instanceof: 1, new: 1, this: 1, void: 1, in: 1, of: 1, delete: 1, function: 1, var: 1, let: 1, const: 1, if: 1, else: 1 };
 
   function __stxAlwaysVisible() { return true; }
 
@@ -38,7 +40,10 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
   // has to make them.
   function planNativeRow(template) {
     if (!template || template.nodeType !== 1 || !template.attributes) return null;
-    var plan = { sites: [], names: [], nameIndex: {}, shapes: new Map(), component: false, scopeId: null, setup: null, root: null };
+    // Two scopes a row reads from: its own (bindings inside the row) and, for
+    // a component, its caller's (the props the caller passes). Each keeps the
+    // names its expressions mention and the functions compiled per shape.
+    var plan = { sites: [], eval: rowGroup(), prop: rowGroup(), props: null, component: false, scopeId: null, setup: null, root: null };
     if (template.hasAttribute('data-stx-scope')) {
       plan.component = true;
       plan.scopeId = template.getAttribute('data-stx-template-scope') || template.getAttribute('data-stx-scope');
@@ -55,27 +60,42 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
     return plan.root ? plan : null;
   }
 
+  function rowGroup() {
+    return { names: [], nameIndex: {}, shapes: new Map() };
+  }
+
   function planRowSite(plan, raw, kind) {
     var expr = raw.indexOf('&') === -1 ? raw : raw.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#x27;/g, "'");
     // The same body text each path compiles, so the functions are the ones
     // the generic path would have made.
-    var body = kind === 'attr' || kind === 'text' ? 'return (' + expr + ')'
+    var body = kind === 'attr' || kind === 'text' || kind === 'prop' ? 'return (' + expr + ')'
       : kind === 'if' ? 'return ' + expr + ''
         : 'return ' + raw;
     var source = kind === 'attr' || kind === 'text' || kind === 'if' ? expr : raw;
+    var group = kind === 'prop' ? plan.prop : plan.eval;
     if (parsePipeExpression(source, {}) !== null) throw new Error('pipe');
     if (plan.component && raw.indexOf(plan.scopeId) !== -1) throw new Error('scope id in an expression');
-    var names = kind === 'class'
-      ? __stxNamesIn(source).filter(function(k) { return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k); })
-      : __stxNamesIn(body);
-    var uses = names.map(function(name) { return expressionSignalUse(source, name); });
+    // The names the expression can read: not the words of its quoted strings
+    // (a class list in a ternary) nor keywords, which every row would
+    // otherwise look up in its scope for nothing.
+    var names = __stxNamesIn(source.replace(__STX_QUOTED, ' ')).filter(function(k) {
+      return !__STX_KEYWORDS[k] && /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k);
+    });
+    // A prop's scope keeps a signal its expression calls or uses as a signal
+    // (createAutoUnwrapProxy's rule); everything else follows the expression
+    // (StxAutoUnwrapHandler's).
+    var uses = names.map(function(name) {
+      return kind === 'prop'
+        ? (expressionCallsSignal(source, name) || expressionUsesSignalApi(source, name) ? 1 : 0)
+        : expressionSignalUse(source, name);
+    });
     for (var i = 0; i < names.length; i++) {
-      if (plan.nameIndex[names[i]] === undefined) {
-        plan.nameIndex[names[i]] = plan.names.length;
-        plan.names.push(names[i]);
+      if (group.nameIndex[names[i]] === undefined) {
+        group.nameIndex[names[i]] = group.names.length;
+        group.names.push(names[i]);
       }
     }
-    var site = { index: plan.sites.length, kind: kind, expr: source, body: body, names: names, uses: uses, placeholder: /^__[A-Z_]+__$/.test(source.trim()), ident: __STX_IDENT.test(source.trim()), handler: null };
+    var site = { index: plan.sites.length, kind: kind, group: group, expr: source, body: body, names: names, uses: uses, placeholder: /^__[A-Z_]+__$/.test(source.trim()), ident: __STX_IDENT.test(source.trim()), handler: null };
     plan.sites.push(site);
     return site;
   }
@@ -88,6 +108,22 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
     var attrs = getElementAttributes(tmpl);
     var parentEvents = __stxWords(tmpl.getAttribute('data-stx-parent-events') || '');
     var parentBindings = isRoot && plan.component ? __stxWords(tmpl.getAttribute('data-stx-parent-bindings') || '') : [];
+    // A component's props, as bindParentComponentProps reads them: each
+    // parent binding from its :name attribute, else from the bindings an
+    // enclosing loop deferred (data-stx-deferred-parent-bindings). What the
+    // row leaves deferred is the same for every row.
+    var deferredProps = null;
+    if (isRoot && plan.component) {
+      plan.props = [];
+      deferredProps = readDeferredParentComponentProps(tmpl);
+      for (var b = 0; b < parentBindings.length; b++) {
+        var propName = parentBindings[b];
+        var propExpression = tmpl.hasAttribute(':' + propName) ? tmpl.getAttribute(':' + propName) : deferredProps[propName];
+        if (typeof propExpression !== 'string') continue;
+        plan.props.push({ name: propName, site: planRowSite(plan, propExpression, 'prop') });
+        delete deferredProps[propName];
+      }
+    }
     var generic = false;
     for (var i = 0; i < attrs.length; i++) {
       var name = attrs[i].name;
@@ -117,7 +153,7 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
           continue;
         }
         if (DIRECTIVE_NAMES[base] || EVENT_RE.test(bound)) { generic = true; continue; }
-        if (isRoot && plan.component && parentBindings.indexOf(bound) !== -1) { node.attrs.push(attrs[i]); continue; }
+        if (isRoot && plan.component && parentBindings.indexOf(bound) !== -1) continue;
         if ((__STX_ROW_CONTROL_ATTRS[bound] && bound in tmpl) || (bound === 'src' && tmpl.tagName === 'IFRAME')) { generic = true; continue; }
         node.ops.push({ kind: 'attr', attrName: bound, site: planRowSite(plan, value, 'attr') });
         continue;
@@ -143,6 +179,10 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
         });
         continue;
       }
+      if (deferredProps && name === 'data-stx-deferred-parent-bindings' && plan.props.length) {
+        if (Object.keys(deferredProps).length) node.attrs.push({ name: name, value: JSON.stringify(deferredProps) });
+        continue;
+      }
       if (plan.component && typeof value === 'string' && value.indexOf(plan.scopeId) !== -1) node.remap.push(node.attrs.length);
       node.attrs.push(attrs[i]);
     }
@@ -162,32 +202,33 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
 
   // Which of the plan's names this row's scope holds, and the functions
   // compiled for that answer. Rows of one loop nearly always share one.
-  function rowShape(plan, own, layers) {
-    var names = plan.names;
+  function rowShape(group, own, layers) {
+    var names = group.names;
     var signature = '';
     for (var i = 0; i < names.length; i++) {
       var layer = __stxLayerOf(own, names[i]);
       layers[i] = layer;
       signature += layer === null ? '0' : '1';
     }
-    var shape = plan.shapes.get(signature);
+    var shape = group.shapes.get(signature);
     if (!shape) {
-      shape = { signature: signature, compiled: new Array(plan.sites.length) };
-      plan.shapes.set(signature, shape);
+      shape = { signature: signature, compiled: [] };
+      group.shapes.set(signature, shape);
     }
     return shape;
   }
 
-  function compileRowSite(plan, site, shape) {
+  function compileRowSite(site, shape) {
+    var nameIndex = site.group.nameIndex;
     var keys = [];
     var uses = [];
     for (var i = 0; i < site.names.length; i++) {
-      if (shape.signature.charCodeAt(plan.nameIndex[site.names[i]]) === 49) {
+      if (shape.signature.charCodeAt(nameIndex[site.names[i]]) === 49) {
         keys.push(site.names[i]);
         uses.push(site.uses[i]);
       }
     }
-    var slots = keys.map(function(key) { return plan.nameIndex[key]; });
+    var slots = keys.map(function(key) { return nameIndex[key]; });
     var compiled = { keys: keys, slots: slots, uses: uses, fn: null, error: null };
     try { compiled.fn = __stxCompile(keys, site.body); }
     catch (e) { compiled.error = e; }
@@ -215,18 +256,26 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
       catch (e) { keep = true; }
       return keep ? value : value();
     }
-    if (value && typeof value === 'object' && value._isStxStore)
-      return new Proxy(value, site.handler || (site.handler = new StxAutoUnwrapHandler(null, site.expr)));
+    if (value && typeof value === 'object' && value._isStxStore) {
+      if (!site.handler) {
+        var expr = site.expr;
+        site.handler = site.kind === 'prop'
+          ? new StxAutoUnwrapHandler(function(prop) { return typeof prop === 'string' && (expressionCallsSignal(expr, prop) || expressionUsesSignalApi(expr, prop)); }, null)
+          : new StxAutoUnwrapHandler(null, expr);
+      }
+      return new Proxy(value, site.handler);
+    }
     return value;
   }
 
   // An expression evaluated as its generic path does: through the unwrapping
   // scope first, then the raw scope, then reported and replaced by \`fallback\`.
-  function evaluateRowSite(row, site, el, fallback, subscribe) {
+  // \`at\`: the scope the site reads, as the row found it (row.local or row.caller).
+  function evaluateRowSite(at, site, el, fallback, subscribe) {
     if (site.placeholder) return site.expr;
-    var compiled = row.shape.compiled[site.index] || compileRowSite(row.plan, site, row.shape);
+    var compiled = at.shape.compiled[site.index] || compileRowSite(site, at.shape);
     var keys = compiled.keys;
-    var layers = row.layers;
+    var layers = at.layers;
     var raw = new Array(keys.length);
     var args = new Array(keys.length);
     for (var i = 0; i < keys.length; i++) {
@@ -256,15 +305,19 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
           return retried;
         }
         catch (e2) {
-          return failRowSite(row, site, el, e2, fallback);
+          return failRowSite(at, site, el, e2, fallback);
         }
       }
     }
-    return failRowSite(row, site, el, compiled.error, fallback);
+    return failRowSite(at, site, el, compiled.error, fallback);
   }
 
-  function failRowSite(row, site, el, error, fallback) {
-    reportUnknownBinding(error, site.expr, row.scope, el);
+  function failRowSite(at, site, el, error, fallback) {
+    reportUnknownBinding(error, site.expr, at.scope, el);
+    if (site.kind === 'prop') {
+      if (!(error instanceof ReferenceError) && !(error instanceof TypeError)) console.warn('[STX] Parent component prop error:', site.expr, error);
+      return fallback;
+    }
     var label = site.kind === 'attr' || site.kind === 'text' ? '[STX] Attribute expression error:'
       : site.kind === 'style' ? '[STX] Style expression error:'
         : site.kind === 'class' ? '[STX] Class expression error:' : '[STX] Expression error:';
@@ -361,18 +414,18 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
   function bindRowAttribute(el, op, row, visible, urlWarning) {
     effect(function() {
       if (!visible()) return;
-      applyBoundAttribute(el, op.attrName, evaluateRowSite(row, op.site, el, ''), visible, urlWarning);
+      applyBoundAttribute(el, op.attrName, evaluateRowSite(row.local, op.site, el, ''), visible, urlWarning);
     });
   }
 
   function bindRowText(el, site, row) {
-    effect(function() { stxHost.setText(el, evaluateRowSite(row, site, el, '')); });
+    effect(function() { stxHost.setText(el, evaluateRowSite(row.local, site, el, '')); });
   }
 
   function bindRowStyle(el, site, row, visible) {
     effect(function() {
       if (!visible()) return;
-      stxHost.setStyle(el, evaluateRowSite(row, site, el, {}), true);
+      stxHost.setStyle(el, evaluateRowSite(row.local, site, el, {}), true);
     });
   }
 
@@ -381,7 +434,7 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
     var originalClasses = el.className;
     effect(function() {
       if (!visible()) return;
-      var value = evaluateRowSite(row, site, el, '', true);
+      var value = evaluateRowSite(row.local, site, el, '', true);
       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
         Object.keys(value).forEach(function(cls) {
           var tokens = cls.split(/\\s+/).filter(Boolean);
@@ -409,11 +462,11 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
     var isInserted = false;
     var childrenProcessed = false;
     var firstRun = true;
-    var direct = site.ident ? readRowScope(row.own, site.expr.trim()) : null;
+    var direct = site.ident ? readRowScope(row.local.own, site.expr.trim()) : null;
     var directSignal = direct && (direct._isSignal || direct._isDerived) ? direct : null;
     effect(function() {
       parent = followPlaceholder(placeholder, parent, el ? [el] : []);
-      var value = directSignal ? directSignal() : evaluateRowSite(row, site, null, '');
+      var value = directSignal ? directSignal() : evaluateRowSite(row.local, site, null, '');
       var initial = firstRun;
       firstRun = false;
       if (!el) {
@@ -507,16 +560,47 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
       }
       var wasTracked = !!el.__stx_disposers;
       if (wasTracked || !el.__stx_disposers)
-        el.__stx_if_disposers = trackEffects(function() { processElement(el, row.scope); });
+        el.__stx_if_disposers = trackEffects(function() { processElement(el, row.evalScope); });
       resumeDetachedBranches();
     };
     run();
   }
 
+  // The scope a row's expressions read, with the layer each name lives in
+  // found once (rowShape): the layers are the row's own objects and the
+  // scopes it was given, so a read goes straight to the layer.
+  function rowScopeAt(group, scope) {
+    var own = __stxOwnOf.get(scope);
+    var layers = new Array(group.names.length);
+    return { scope: scope, own: own, layers: layers, shape: rowShape(group, own, layers) };
+  }
+
+  // bindParentComponentProps for a planned row: the caller's props, each
+  // evaluated with the function compiled for it, written as the generic
+  // path writes them.
+  function bindRowProps(root, row, callerScope) {
+    root.__stx_parent_props_bound = true;
+    var props = row.plan.props;
+    var caller = row.caller = rowScopeAt(row.plan.prop, layerTemplateScopes(globalHelpers, callerScope));
+    for (var i = 0; i < props.length; i++) bindRowProp(root, props[i], caller);
+  }
+
+  function bindRowProp(root, prop, caller) {
+    var name = prop.name;
+    effect(function() {
+      var value = evaluateRowSite(caller, prop.site, root, undefined);
+      if (value && typeof value === 'function' && (value._isSignal || value._isDerived)) value = value();
+      if (name.startsWith('aria-') && typeof value === 'boolean') stxHost.setAttribute(root, name, String(value));
+      else if (value === null || value === undefined) stxHost.removeAttribute(root, name);
+      else stxHost.setAttribute(root, name, value);
+      syncComponentPropSignal(root, name, value);
+    });
+  }
+
   // A row of \`plan\`, bound before it is inserted. \`parent\` is where it will
   // go; the caller inserts it and then calls finishNativeRow.
   function createNativeRow(plan, itemScope, parent) {
-    var row = { plan: plan, root: null, scope: null, evalScope: null, own: null, layers: null, shape: null, outer: [], after: [], inserted: false, scopeVars: null, scopeId: null };
+    var row = { plan: plan, root: null, scope: null, evalScope: null, local: null, caller: null, outer: [], after: [], inserted: false, scopeVars: null, scopeId: null };
     for (var node = parent; node; node = node.parentNode) if (node.__stx_if_visible) row.outer.push(node.__stx_if_visible);
     if (plan.component) row.scopeId = plan.scopeId + '_for_' + (++__forComponentScopeCounter);
     var made = buildRowNode(plan.root, row);
@@ -528,21 +612,23 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
       if (!(window.stx._scopes && window.stx._scopes[row.scopeId])) runClonedComponentSetup(plan.setup, root);
       var callerScope = componentCallerScopeFrom(parent, itemScope);
       root.__stx_parent_scope = callerScope;
-      bindParentComponentProps(root, callerScope);
+      if (plan.props.length) bindRowProps(root, row, callerScope);
       var scopeVars = window.stx._scopes && window.stx._scopes[row.scopeId];
       if (!scopeVars) return { root: root, row: row };
       scopeVars.__el = root;
       row.scopeVars = scopeVars;
       row.scope = layerTemplateScopes(callerScope, scopeVars);
-      row.evalScope = layerTemplateScopes(globalHelpers, row.scope, scopeVars);
+      // processElement layers the helpers and the component's variables over
+      // this scope for each element; it already starts with the helpers (the
+      // item scope's first layer) and ends with the variables, so the same
+      // names resolve to the same layers through it as it is.
+      row.evalScope = row.scope;
     }
     else {
       row.scope = itemScope;
       row.evalScope = layerTemplateScopes(globalHelpers, itemScope, findElementScope(parent) || {});
     }
-    row.own = __stxOwnOf.get(row.evalScope);
-    row.layers = new Array(plan.names.length);
-    row.shape = rowShape(plan, row.own, row.layers);
+    row.local = rowScopeAt(plan.eval, row.evalScope);
     var dispose = trackEffects(function() { bindRowNode(made, row); });
     if (plan.component) root.__stx_disposers = dispose;
     else root.__stx_effect_disposers = dispose;

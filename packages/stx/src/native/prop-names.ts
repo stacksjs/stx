@@ -59,10 +59,19 @@ function normaliseKey(name: string): string {
   return name.replace(/[-_]/g, '').toLowerCase()
 }
 
+const propNameCache = new Map<string, string>()
+
 /** Restore a native protocol prop after HTML lowercasing or kebab-case binding emission. */
 export function nativePropName(name: string, type?: string): string {
   // HTML media uses src; the native media contract uses source. Keep this
   // type-specific so metadata on views and legacy source values are unchanged.
   if ((type === 'Image' || type === 'Video') && name.toLowerCase() === 'src') return 'source'
-  return nativePropNames.get(normaliseKey(name)) ?? name
+  // Asked on every attribute write; the answer depends on the name alone.
+  let prop = propNameCache.get(name)
+  if (prop === undefined) {
+    prop = nativePropNames.get(normaliseKey(name)) ?? name
+    if (propNameCache.size >= 2000) propNameCache.clear()
+    propNameCache.set(name, prop)
+  }
+  return prop
 }

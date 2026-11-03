@@ -79,7 +79,9 @@ export class BindingElement {
     this.__stxId = id
     this.tagName = type === 'TextInput' ? 'INPUT' : type === 'Picker' ? 'SELECT' : type.toUpperCase()
     this.attributes = attributes
-    this.byName = new Map(attributes.map(attribute => [attribute.name, attribute]))
+    const byName = new Map<string, { name: string, value: string }>()
+    for (let i = 0; i < attributes.length; i++) byName.set(attributes[i]!.name, attributes[i]!)
+    this.byName = byName
     this.onClassChange = onClassChange
   }
 

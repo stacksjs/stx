@@ -319,6 +319,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   const controlsWithDefaultListeners = new WeakSet<NativeNode>()
   const implicitSubmitListeners = new WeakMap<NativeNode, { listener: (event: unknown) => void, stop: () => void }>()
   const formResetCallbacks = new WeakMap<NativeNode, Set<() => void>>()
+  // Whether a template node binds its href, by node: asked for every copy.
+  const boundHrefs = new WeakMap<NativeNode, boolean>()
   let queue: NativeMutationOperation[] = []
   let mediaFlushTimer: ReturnType<typeof setTimeout> | undefined
   let scheduled = false
@@ -465,7 +467,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     if (!followLink) return
     // The authored node's attributes say whether the href is bound: a copy
     // made by cloneElement no longer carries the bindings its row applies.
-    const bound = isBindingNode(authored) && authored.attributes.some(attribute => attribute.name.endsWith('href') && /^(?::|x-bind:|@bind:|x-)href$/.test(attribute.name))
+    // A template is cloned for every row, so its answer is kept.
+    let bound = boundHrefs.get(authored)
+    if (bound === undefined || authored === node) {
+      bound = isBindingNode(authored) && authored.attributes.some(attribute => attribute.name.endsWith('href') && /^(?::|x-bind:|@bind:|x-)href$/.test(attribute.name))
+      if (authored !== node) boundHrefs.set(authored, bound)
+    }
     if (bound || typeof descriptorOf(node)?.props.href === 'string')
       host.listen(node, 'click', followsHref)
   }
@@ -546,8 +553,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   }
 
   function decorateControl(node: NativeNode, type: string): void {
-    const htmlCheckbox = type === 'Checkbox' && descriptorOf(node)?.props.type === 'checkbox'
-    const hidden = descriptorOf(node)?.props.type === 'hidden'
+    const own = descriptorOf(node)
+    // Nearly every node is neither a control nor a form: nothing to decorate.
+    if (type !== 'TextInput' && type !== 'Picker' && type !== 'Checkbox' && own?.props.type !== 'hidden' && !own?.props['data-stx-form'])
+      return
+    const htmlCheckbox = type === 'Checkbox' && own?.props.type === 'checkbox'
+    const hidden = own?.props.type === 'hidden'
     if (type === 'TextInput' || type === 'Picker' || htmlCheckbox || hidden) {
       // The shared x-model binder reads/writes a control's live value. A
       // native handle needs that property too, and writes must cross the
@@ -744,7 +755,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     resolvingId = id
     const report = reportStyle
     let inherited = record.inheritedVariables
-    for (const source of record.styleAncestors ?? []) inherited = parseNativeStyleLayers([source], inherited, report).variables
+    const ancestors = record.styleAncestors
+    if (ancestors) for (let i = 0; i < ancestors.length; i++) inherited = parseNativeStyleLayers([ancestors[i]], inherited, report).variables
     const resolved = parseNativeStyleLayers([record.styleSource, record.boundStyle, record.forwardedStyle], inherited, report)
     record.variables = resolved.variables
     const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules, appearance: colorScheme, pointer: options.pointer === true })
@@ -780,13 +792,15 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       }
       Object.assign(classStyle, focused)
     }
-    const style = applyNativeLayoutDefaults({ ...record.layoutDefaults, ...classStyle, ...record.dividerStyle, ...resolved.styles[0], ...record.baseStyle, ...resolved.styles[1], ...resolved.styles[2] } as STXStyle)
-    const pointer: Record<string, unknown> = {}
-    for (const [state, key] of [['hover', 'hoverStyle'], ['active', 'pressStyle']] as const) {
-      const layer = classes.pointer?.[state]
-      if (layer) pointer[key] = { ...layer.style, ...(colorScheme === 'dark' ? layer.dark : {}) }
-    }
-    return { ...style, ...pointer, ...(record.visible && !isHiddenInput(record) ? {} : { display: 'none' }) }
+    // One new object, written in place: a spread per layer was a large share
+    // of a node's creation in an interpreted engine.
+    const style = applyNativeLayoutDefaults({ ...record.layoutDefaults, ...classStyle, ...record.dividerStyle, ...resolved.styles[0], ...record.baseStyle, ...resolved.styles[1], ...resolved.styles[2] } as STXStyle) as Record<string, unknown>
+    const hover = classes.pointer?.hover
+    const active = classes.pointer?.active
+    if (hover) style.hoverStyle = { ...hover.style, ...(colorScheme === 'dark' ? hover.dark : {}) }
+    if (active) style.pressStyle = { ...active.style, ...(colorScheme === 'dark' ? active.dark : {}) }
+    if (!record.visible || isHiddenInput(record)) style.display = 'none'
+    return style
   }
 
   function refreshFocusChain(node: NativeNode | null | undefined): void {
@@ -897,16 +911,18 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
   function resolveClasses(id: string, record: NodeRecord, onlyIfChanged: boolean): void {
     const style = resolveStyle(record, id)
-    // Keys the style no longer has are cleared on the native view.
-    const patch: Record<string, null> = {}
-    for (const key in record.style) if (!(key in style)) patch[key] = null
-    const changed = !onlyIfChanged || JSON.stringify(record.style) !== JSON.stringify(style)
+    if (record.materialized) {
+      // Keys the style no longer has are cleared on the native view.
+      const patch: Record<string, null> = {}
+      for (const key in record.style) if (!(key in style)) patch[key] = null
+      const changed = !onlyIfChanged || JSON.stringify(record.style) !== JSON.stringify(style)
+      if (changed) emit({ op: 'updateNode', id, patch: { style: { ...patch, ...style } } })
+    }
     record.style = style
-    if (record.materialized && changed) emit({ op: 'updateNode', id, patch: { style: { ...patch, ...style } } })
     const classes = compileClassStyles(`${record.classes} ${record.forwardedClasses ?? ''}`, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules })
     // Re-checked on every application while there is a divider, since an
     // appearance change recolours it without changing the classes.
-    const divideChanged = JSON.stringify(classes.divide) !== JSON.stringify(record.divide)
+    const divideChanged = classes.divide !== record.divide && JSON.stringify(classes.divide) !== JSON.stringify(record.divide)
     record.divide = classes.divide
     if (divideChanged || record.divide) refreshDividersOf(record)
     // Nearly every node knows all its classes: no set to make for it.
@@ -1155,7 +1171,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       props: { ...descriptor.props, __stxId: copy.__stxId },
       style: { ...descriptor.style },
       baseStyle: { ...descriptor.baseStyle },
-      layoutDefaults: { ...descriptor.layoutDefaults },
+      layoutDefaults: descriptor.layoutDefaults === undefined ? undefined : { ...descriptor.layoutDefaults },
       styleSource: descriptor.styleSource,
       styleAncestors: descriptor.styleAncestors,
       inheritedVariables: descriptor.inheritedVariables,
@@ -1174,7 +1190,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       styleDirty: true,
     })
     decorateControl(copy, descriptor.type)
-    setConnected(copy, false)
+    // A copy has no children yet; a binding copy is made disconnected.
+    if (!isBindingNode(copy) || copy.isConnected) setConnected(copy, false)
     installLinkListener(copy, node)
     return copy
   }
