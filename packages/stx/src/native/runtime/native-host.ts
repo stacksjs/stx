@@ -417,7 +417,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   function installLinkListener(node: NativeNode): void {
     markCurrentLink(node)
     if (!followLink) return
-    const bound = isBindingNode(node) && node.attributes.some(attribute => /^(?::|x-bind:|@bind:|x-)href$/.test(attribute.name))
+    const bound = isBindingNode(node) && node.attributes.some(attribute => attribute.name.endsWith('href') && /^(?::|x-bind:|@bind:|x-)href$/.test(attribute.name))
     if (bound || typeof descriptorOf(node)?.props.href === 'string')
       host.listen(node, 'click', followsHref)
   }
@@ -603,8 +603,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       host.listen(node, 'blur', () => {})
     }
     if (!record || controlsWithDefaultListeners.has(node)) return
+    // Only a control has a default listener to install; everything else
+    // would walk its ancestors twice for nothing.
+    const pressable = record.type === 'Button' || record.type === 'Pressable'
+    if (!pressable && record.type !== 'TextInput' && record.type !== 'Picker' && record.type !== 'Checkbox') return
     let delegatedPress = false
-    if (record.type === 'Button' || record.type === 'Pressable') {
+    if (pressable) {
       for (let owner = node.__stxOwner; owner; owner = owner.__stxOwner) {
         if (componentListeners.get(owner)?.some(listener => (NATIVE_EVENT_NAMES[listener.event.toLowerCase()] ?? listener.event) === 'onPress')) {
           delegatedPress = true
@@ -981,9 +985,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   }
 
   function adopt(node: NativeNode, type: string, owner?: NativeNode | null, descriptor?: Pick<STXNode, 'key' | 'props' | 'style' | 'events' | 'children' | '_classes' | '_inlineStyle' | '_layoutDefaults' | '_styleSource' | '_styleAncestors' | '_accessibilitySource' | '_textEntrySource'>): NativeNode {
-    const suffix = /(?:^|\D)(\d+)$/.exec(node.__stxId)?.[1]
-    if (suffix)
-      counter = Math.max(counter, Number(suffix))
+    // Keep nextId() past any id adopted from elsewhere: its trailing number.
+    const id = node.__stxId
+    let digits = id.length
+    while (digits > 0 && id.charCodeAt(digits - 1) >= 48 && id.charCodeAt(digits - 1) <= 57) digits--
+    if (digits < id.length)
+      counter = Math.max(counter, Number(id.slice(digits)))
     const classes = descriptor?._classes ?? ''
     const compiledClasses = compileClassStyles(classes)
     const classStyle = compiledClasses.style as Record<string, unknown>
@@ -1019,11 +1026,14 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     records.set(node.__stxId, record)
     decorateControl(node, type)
     decoratePosition(node)
+    const previousOwner = node.__stxOwner
     node.__stxOwner = owner ?? null
     if (owner) {
       const ownerRecord = recordOf(owner)
       const children = ownerRecord.children
-      if (!children.some(child => child.__stxId === node.__stxId)) {
+      // Only a node this owner already held can be among its children, so a
+      // new one skips the scan, which made adopting a long list quadratic.
+      if (previousOwner !== owner || lastIndexOfChild(children, node.__stxId) === -1) {
         children.push(node)
         ownerRecord.viewCount = undefined
       }
