@@ -246,7 +246,8 @@ export function parseNativeStyleLayers(inputs: unknown[], inheritedVariables: Na
     }
     const key = keys?.[i]
     if (key === undefined) {
-      styles[i] = parseEntries(layers[i]!, variables, report)
+      // An absent layer (no inline style, no binding) has nothing to translate.
+      styles[i] = layers[i]!.length ? parseEntries(layers[i]!, variables, report) : {}
       continue
     }
     // Remembered only when it translated cleanly, so a diagnostic still
