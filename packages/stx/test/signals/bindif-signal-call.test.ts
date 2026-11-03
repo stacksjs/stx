@@ -15,42 +15,20 @@
  *
  * Two layers of coverage:
  *  1. Behavioral — reconstruct bindIf's exact two-tier evalExpr using the
- *     REAL createAutoUnwrapProxy + state extracted from the generated
- *     runtime, and assert the contract table from the issue. This exercises
+ *     REAL createAutoUnwrapProxy from the runtime's proxy chunk, and assert the contract table from the issue. This exercises
  *     the actual unwrap-proxy behavior and the actual fix mechanism.
  *  2. Structural — confirm the generated runtime's bindIf contains the
  *     nested try/catch so a future refactor can't silently drop it.
  */
 import { describe, expect, it } from 'bun:test'
+import { SIGNALS_PROXY_RUNTIME } from '../../src/client/signals-proxy-runtime'
 import { generateSignalsRuntimeDev } from '../../src/signals'
-
-// Extract a top-level `function NAME(...) {...}` body from the runtime
-// source by brace-matching. Used to pull the real createAutoUnwrapProxy
-// and state out of the generated runtime so the behavioral harness runs
-// against framework code, not a re-implementation.
-function extractFunction(src: string, name: string): string {
-  const startIdx = src.indexOf(`function ${name}(`)
-  if (startIdx === -1)
-    throw new Error(`${name} not found in runtime`)
-  let depth = 0
-  let i = src.indexOf('{', startIdx)
-  for (; i < src.length; i++) {
-    if (src[i] === '{')
-      depth++
-    else if (src[i] === '}') {
-      depth--
-      if (depth === 0)
-        return src.slice(startIdx, i + 1)
-    }
-  }
-  throw new Error(`unbalanced braces extracting ${name}`)
-}
 
 // Build a `state(initial)` factory + the real createAutoUnwrapProxy, then
 // a two-tier evalIf that is a faithful copy of the fixed bindIf evalExpr.
 function buildHarness() {
-  const runtime = generateSignalsRuntimeDev()
-  const proxySrc = extractFunction(runtime, 'createAutoUnwrapProxy')
+  // The whole proxy chunk: createAutoUnwrapProxy shares its handler class.
+  const proxySrc = SIGNALS_PROXY_RUNTIME
 
   // Minimal signal: a callable that returns its value, carries _isSignal,
   // and has .set. createAutoUnwrapProxy keys off _isSignal / _isDerived to
@@ -66,13 +44,14 @@ function buildHarness() {
   // eslint-disable-next-line no-new-func
   const factory = new Function(
     'isSignalLike',
+    'expressionKeepsSignal',
     `${proxySrc}\n;return createAutoUnwrapProxy;`,
   )
   // createAutoUnwrapProxy in the runtime references isSignal/isDerived-style
   // checks via the signal's own _isSignal/_isDerived brand, not an external
   // helper, so we don't need to pass anything — but provide a no-op in case
   // a build variant references a free identifier.
-  const createAutoUnwrapProxy = factory(() => false) as (scope: Record<string, unknown>) => Record<string, unknown>
+  const createAutoUnwrapProxy = factory(() => false, () => false) as (scope: Record<string, unknown>) => Record<string, unknown>
 
   // Faithful copy of the FIXED bindIf evalExpr (signals.ts ~2409).
   function evalIf(expression: string, scope: Record<string, unknown>): unknown {

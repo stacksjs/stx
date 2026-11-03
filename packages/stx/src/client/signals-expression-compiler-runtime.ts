@@ -52,7 +52,7 @@ export const SIGNALS_EXPRESSION_COMPILER_RUNTIME = `  // Compiled expression fun
     const names = __stxNamesIn(body);
     // A layered view answers from its layers directly: through the proxy,
     // each name cost a trap and a fresh property descriptor.
-    const own = __stxOwnOf.get(scope);
+    const own = __stxOwnOf.get(__stxUnwrapTargetOf.get(scope) || scope);
     for (let i = 0; i < names.length; i++) {
       if (own !== undefined ? __stxLayerOf(own, names[i]) !== null : Object.prototype.propertyIsEnumerable.call(scope, names[i])) keys.push(names[i]);
     }

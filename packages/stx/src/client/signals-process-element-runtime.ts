@@ -245,7 +245,8 @@ else if (part) {
       const activeScope = evaluationScope || attrCapturedScope;
       // Decode HTML entities that browsers may encode in attribute values
       // e.g. :text="a > b" may be stored as :text="a &gt; b" in HTML
-      var expr = rawExpr.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&#x27;/g,"'");
+      // Nearly no expression holds an entity: six replaces on every run of every binding.
+      var expr = rawExpr.indexOf('&') === -1 ? rawExpr : rawExpr.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&#x27;/g,"'");
       try {
         if (/^__[A-Z_]+__$/.test(expr.trim())) return expr;
 

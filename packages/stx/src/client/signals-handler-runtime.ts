@@ -20,27 +20,50 @@ export const SIGNALS_HANDLER_RUNTIME = `  function expressionUsesSignalApi(expre
     return new RegExp('(?:^|[^\\\\w$])' + escapedName + '\\\\s*\\\\(').test(expression);
   }
 
-  function createExpressionAutoUnwrapProxy(scope, expression) {
-    return createAutoUnwrapProxy(scope, function(prop, signal) {
-      if (typeof prop !== 'string') return false;
-      if (expressionCallsSignal(expression, prop) || expressionUsesSignalMethod(expression, prop))
-        return true;
-      if (!expressionUsesSignalValue(expression, prop))
-        return false;
+  // What an expression does with a signal it names: calls it, calls one of
+  // its methods, reads its .value, or none of these. It depends only on the
+  // expression and the name, so it is worked out once: three regular
+  // expressions were built for every signal an expression read, every time
+  // it ran.
+  const __stxSignalUse = new Map();
+  function expressionSignalUse(expression, name) {
+    let uses = __stxSignalUse.get(expression);
+    if (uses === undefined) {
+      if (__stxSignalUse.size >= 5000) __stxSignalUse.clear();
+      uses = new Map();
+      __stxSignalUse.set(expression, uses);
+    }
+    let use = uses.get(name);
+    if (use === undefined) {
+      use = expression.indexOf(name) === -1 ? 0
+        : expressionCallsSignal(expression, name) || expressionUsesSignalMethod(expression, name) ? 1
+          : expressionUsesSignalValue(expression, name) ? 2 : 0;
+      uses.set(name, use);
+    }
+    return use;
+  }
 
-      // A :for item is itself represented by a signal. If that item's value
-      // is an object with a real value field, item.value means the field,
-      // not the signal wrapper API. Primitive signals still support
-      // count.value, matching the explicit ref syntax.
-      try {
-        var currentValue = signal();
-        return !(currentValue && typeof currentValue === 'object'
-          && Object.prototype.hasOwnProperty.call(currentValue, 'value'));
-      }
-      catch (e) {
-        return true;
-      }
-    });
+  function expressionKeepsSignal(expression, prop, signal) {
+    if (typeof prop !== 'string') return false;
+    const use = expressionSignalUse(expression, prop);
+    if (use === 1) return true;
+    if (use === 0) return false;
+    // A :for item is itself represented by a signal. If that item's value
+    // is an object with a real value field, item.value means the field,
+    // not the signal wrapper API. Primitive signals still support
+    // count.value, matching the explicit ref syntax.
+    try {
+      var currentValue = signal();
+      return !(currentValue && typeof currentValue === 'object'
+        && Object.prototype.hasOwnProperty.call(currentValue, 'value'));
+    }
+    catch (e) {
+      return true;
+    }
+  }
+
+  function createExpressionAutoUnwrapProxy(scope, expression) {
+    return createExpressionUnwrapProxy(scope, expression);
   }
 
   function executeHandler(expr, event, el) {
