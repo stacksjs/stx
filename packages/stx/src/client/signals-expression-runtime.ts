@@ -127,8 +127,10 @@ export const SIGNALS_EXPRESSION_RUNTIME = `  // Setup accessors refer to lexical
       }
       else layers.push(source);
     }
+    // A symbol key, so it is never one of the view's names; assigned rather
+    // than defined, which an interpreter makes a far slower path.
     const own = {};
-    Object.defineProperty(own, __STX_LAYERS, { value: layers, configurable: true });
+    own[__STX_LAYERS] = layers;
     const view = new Proxy(own, __stxScopeHandler);
     __stxOwnOf.set(view, own);
     return view;

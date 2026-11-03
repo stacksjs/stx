@@ -50,8 +50,11 @@ export const SIGNALS_EXPRESSION_COMPILER_RUNTIME = `  // Compiled expression fun
   function __stxCompileScoped(scope, extraParams, body) {
     const keys = [];
     const names = __stxNamesIn(body);
+    // A layered view answers from its layers directly: through the proxy,
+    // each name cost a trap and a fresh property descriptor.
+    const own = __stxOwnOf.get(scope);
     for (let i = 0; i < names.length; i++) {
-      if (Object.prototype.propertyIsEnumerable.call(scope, names[i])) keys.push(names[i]);
+      if (own !== undefined ? __stxLayerOf(own, names[i]) !== null : Object.prototype.propertyIsEnumerable.call(scope, names[i])) keys.push(names[i]);
     }
     const fn = __stxCompile(extraParams.length ? keys.concat(extraParams) : keys, body);
     // The cache keys on the parameter list, so a function always has these keys.
