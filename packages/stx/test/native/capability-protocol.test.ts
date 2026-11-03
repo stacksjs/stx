@@ -481,6 +481,29 @@ describe('shared-runtime native capability protocol', () => {
     await expect(unsupported).rejects.toMatchObject({ code: 'UNSUPPORTED' })
   })
 
+  it('keeps durable HealthKit batches pending until the app explicitly acknowledges them', async () => {
+    expect((await runtime('', { capabilities: [] })).scope.craft.healthBackground).toBeUndefined()
+    const { scope, sent, receive } = await runtime('', { capabilities: ['healthBackground'] })
+    const pending = scope.craft.healthBackground.pending()
+    const request = sent.at(-1)!
+    expect(request.payload).toMatchObject({ module: 'HealthBackground', method: 'pending', args: [] })
+    const batches = [{ id: 'batch-1', type: 'steps', samples: [{ id: 'sample-1', startDate: 1000, endDate: 2000, value: 20, unit: 'count' }], deleted: ['sample-0'] }]
+    receive({ type: 'API_RESPONSE', correlationId: request.id, payload: { version: 1, requestId: request.id, data: batches } })
+    expect(await pending).toEqual(batches)
+    expect(sent.some(m => m.payload?.method === 'acknowledge')).toBe(false)
+    const ack = scope.craft.healthBackground.acknowledge(['batch-1'])
+    const save = sent.at(-1)!
+    expect(save.payload.args).toEqual([['batch-1']])
+    receive({ type: 'API_ERROR', correlationId: save.id, payload: { version: 1, requestId: save.id, code: 'STORAGE_ERROR', message: 'Disk full' } })
+    await expect(ack).rejects.toMatchObject({ code: 'STORAGE_ERROR' })
+    const changed: unknown[] = []
+    const stop = scope.craft.healthBackground.onChange((value: unknown) => changed.push(value))
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftHealthBackground', detail: { type: 'steps' } } })
+    stop()
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftHealthBackground', detail: { type: 'sleep' } } })
+    expect(changed).toEqual([{ type: 'steps' }])
+  })
+
   it('names the phone in the user agent code shared with the page reads', async () => {
     const { scope } = await runtime()
     expect(scope.navigator.userAgent).toContain('iPhone')

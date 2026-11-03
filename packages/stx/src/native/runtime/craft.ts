@@ -272,7 +272,25 @@ export interface NativePedometer {
   onUpdate: (callback: (event: NativePedometerEvent) => void) => () => void
 }
 
+export interface NativeHealthBackgroundBatch {
+  id: string
+  type: string
+  samples: Array<{ id: string, startDate: number, endDate: number, value?: number, unit?: string, category?: number, workoutActivity?: number, durationSeconds?: number }>
+  deleted: string[]
+}
+
+export interface NativeHealthBackground {
+  status: () => Promise<{ types: string[], frequency: string, pendingBatches: number, errors: Record<string, string> }>
+  /** Durable, at-least-once delivery. Acknowledge only after saving or uploading successfully. */
+  pending: () => Promise<NativeHealthBackgroundBatch[]>
+  acknowledge: (ids: string[]) => Promise<boolean>
+  refresh: () => Promise<boolean>
+  /** A hint to drain pending batches; also drain on launch. */
+  onChange: (callback: (detail: { type: string }) => void) => () => void
+}
+
 export interface NativeCraft {
+  healthBackground?: NativeHealthBackground
   pedometer?: NativePedometer
   /** Raw Android sensors; not iOS fused device motion. */
   rawMotionSensors?: NativeRawMotionSensors
