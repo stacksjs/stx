@@ -10,6 +10,7 @@ import os from 'node:os'
 import path from 'node:path'
 import vm from 'node:vm'
 import { signalsAuthoringRuntime } from '../../src/client/signals-authoring-runtime'
+import { SIGNALS_HELPERS_RUNTIME } from '../../src/client/signals-helpers-runtime'
 import { processDirectives } from '../../src/process'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import { runtimeWindowStxSurface } from '../../test-utils/runtime-surface'
@@ -603,7 +604,7 @@ describe('#1704 — useReactiveProp bridges parent clientReactive props into chi
     }
     const writes: unknown[] = []
     let notify = () => {}
-    const useReactiveProp = vm.runInNewContext(`${signalsAuthoringRuntime('function() {}')}\nuseReactiveProp`, {
+    const useReactiveProp = vm.runInNewContext(`${SIGNALS_HELPERS_RUNTIME}\n${signalsAuthoringRuntime('function() {}')}\nuseReactiveProp`, {
       window: { __STX_CURRENT_ELEMENT__: root },
       state: (initial: unknown) => {
         let current = initial
