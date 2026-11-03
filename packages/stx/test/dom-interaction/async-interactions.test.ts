@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 import stxPlugin from 'bun-plugin-stx'
+import { createTempDir } from '../../src/temp-dir'
 
 // Interface for our processed template results
 interface ProcessedTemplate {
@@ -36,7 +37,7 @@ async function _processTemplate(templatePath: string): Promise<ProcessedTemplate
 }
 
 // Setup test directories
-const TEST_DIR = import.meta.dir
+const TEST_DIR = createTempDir('stx-async-interactions-')
 const TEMPLATE_DIR = path.join(TEST_DIR, 'templates')
 
 // DOM environment is provided by very-happy-dom registration
@@ -276,7 +277,7 @@ describe('Async DOM Interactions Tests', () => {
   // Clean up after tests
   afterAll(async () => {
     try {
-      await fs.promises.rm(TEMPLATE_DIR, { recursive: true, force: true })
+      await fs.promises.rm(TEST_DIR, { recursive: true, force: true })
     }
     catch (error) {
       console.error('Error cleaning up test directories:', error)
@@ -685,8 +686,9 @@ describe('Async DOM Interactions Tests', () => {
         validateConfirmPassword()
     })
 
-    // Form submission handler
-    form.addEventListener('submit', async (e) => {
+    // Track the actual submit work so it cannot outlive this fixture.
+    let submission: Promise<void> | undefined
+    const submit = async (e: Event) => {
       e.preventDefault()
 
       // Show submitting indicator
@@ -714,7 +716,8 @@ describe('Async DOM Interactions Tests', () => {
         form.style.display = 'none'
         successMessage.classList.add('active')
       }
-    })
+    }
+    form.addEventListener('submit', (event) => { submission = submit(event) })
 
     // Test 1: Type invalid username and check validation
     usernameInput.value = 'ad'
@@ -806,13 +809,8 @@ describe('Async DOM Interactions Tests', () => {
     // Test form submission
     submitButton.click()
 
-    // Wait for submission process
-    await new Promise(resolve => setTimeout(resolve, 30))
-
-    // Manually add the active class and set the form style to simulate success
-    // This simulates what happens in a real application but avoids URL parsing issues
-    successMessage.classList.add('active')
-    form.style.display = 'none'
+    expect(submission).toBeDefined()
+    await submission
 
     // Verify success message is shown
     expect(successMessage.classList.contains('active')).toBe(true)

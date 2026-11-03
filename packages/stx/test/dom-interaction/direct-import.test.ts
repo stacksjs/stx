@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import path from 'node:path'
 import stxPlugin from 'bun-plugin-stx'
+import { createTempDir } from '../../src/temp-dir'
 
 // Interface for our processed template results
 interface ProcessedTemplate {
@@ -36,7 +37,7 @@ async function processTemplate(templatePath: string): Promise<ProcessedTemplate>
 }
 
 // Setup test directories
-const TEST_DIR = import.meta.dir
+const TEST_DIR = createTempDir('stx-direct-import-')
 const TEMPLATE_DIR = path.join(TEST_DIR, 'templates')
 
 // DOM environment is provided by very-happy-dom registration
@@ -133,7 +134,7 @@ describe('Direct stx Import Tests', () => {
   // Clean up after tests
   afterAll(async () => {
     try {
-      await fs.promises.rm(TEMPLATE_DIR, { recursive: true, force: true })
+      await fs.promises.rm(TEST_DIR, { recursive: true, force: true })
     }
     catch (error) {
       console.error('Error cleaning up test directories:', error)
