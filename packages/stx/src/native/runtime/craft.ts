@@ -254,7 +254,26 @@ export interface NativeBarometer {
   onUpdate: (callback: (event: NativeBarometerEvent) => void) => () => void
 }
 
+export type NativePedometerEvent =
+  | { state: 'sample', kind: 'interval', startDate: number, endDate: number, steps: number, distanceMeters?: number, cadenceStepsPerSecond?: number, paceSecondsPerMeter?: number, averageActivePaceSecondsPerMeter?: number, floorsAscended?: number, floorsDescended?: number }
+  | { state: 'sample', kind: 'counter', stepsSinceBoot: number, timestampMs: number }
+  | { state: 'sample', kind: 'step', count: 1, timestampMs: number }
+  | { state: 'stopped', reason: 'requested' | 'background' | 'disposed' | 'sensorError' | 'permissionDenied' }
+
+export interface NativePedometer {
+  getAvailability: () => Promise<Record<string, boolean>>
+  getPermissionStatus: () => Promise<'granted' | 'denied' | 'restricted' | 'notDetermined' | 'unavailable'>
+  requestPermission: () => Promise<'granted' | 'denied' | 'restricted' | 'notDetermined' | 'unavailable'>
+  /** Foreground only. iOS uses startDate (Unix milliseconds); Android selects a raw step sensor. */
+  start: (options?: { startDate?: number, sensor?: 'counter' | 'detector', background?: false }) => Promise<boolean>
+  stop: () => Promise<boolean>
+  /** iOS only, within the last seven days. Android rejects with UNSUPPORTED. */
+  query: (options: { startDate: number, endDate?: number }) => Promise<Extract<NativePedometerEvent, { kind: 'interval' }>>
+  onUpdate: (callback: (event: NativePedometerEvent) => void) => () => void
+}
+
 export interface NativeCraft {
+  pedometer?: NativePedometer
   /** Raw Android sensors; not iOS fused device motion. */
   rawMotionSensors?: NativeRawMotionSensors
   /** Foreground pressure and session-relative altitude. */

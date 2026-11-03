@@ -452,6 +452,35 @@ describe('shared-runtime native capability protocol', () => {
     expect(await sheet).toEqual({ cancelled: false, url: 'hq://done' })
   })
 
+  it('gates pedometer support and preserves history units, permission lifetime and event kinds', async () => {
+    expect((await runtime('', { capabilities: [] })).scope.craft.pedometer).toBeUndefined()
+    const { scope, sent, receive } = await runtime('', { capabilities: ['pedometer'], timeoutMs: 5 })
+    const permission = scope.craft.pedometer.requestPermission()
+    const prompt = sent.at(-1)!
+    expect(prompt.payload).toMatchObject({ module: 'Pedometer', method: 'requestPermission', untimed: true })
+    await Bun.sleep(20)
+    expect(sent.some(m => m.type === 'API_CANCEL')).toBe(false)
+    receive({ type: 'API_RESPONSE', correlationId: prompt.id, payload: { version: 1, requestId: prompt.id, data: 'granted' } })
+    expect(await permission).toBe('granted')
+    const query = scope.craft.pedometer.query({ startDate: 1000, endDate: 2000 })
+    const request = sent.at(-1)!
+    expect(request.payload.args).toEqual([{ startDate: 1000, endDate: 2000 }])
+    const sample = { state: 'sample', kind: 'interval', startDate: 1000, endDate: 2000, steps: 2, cadenceStepsPerSecond: 1.5 }
+    receive({ type: 'API_RESPONSE', correlationId: request.id, payload: { version: 1, requestId: request.id, data: sample } })
+    expect(await query).toEqual(sample)
+    const events: unknown[] = []
+    const unsubscribe = scope.craft.pedometer.onUpdate((event: unknown) => events.push(event))
+    const counter = { state: 'sample', kind: 'counter', stepsSinceBoot: 200, timestampMs: 300 }
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftPedometerUpdate', detail: counter } })
+    unsubscribe()
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftPedometerUpdate', detail: sample } })
+    expect(events).toEqual([counter])
+    const unsupported = scope.craft.pedometer.query({ startDate: 1 })
+    const rejected = sent.at(-1)!
+    receive({ type: 'API_ERROR', correlationId: rejected.id, payload: { version: 1, requestId: rejected.id, code: 'UNSUPPORTED', message: 'No interval history' } })
+    await expect(unsupported).rejects.toMatchObject({ code: 'UNSUPPORTED' })
+  })
+
   it('names the phone in the user agent code shared with the page reads', async () => {
     const { scope } = await runtime()
     expect(scope.navigator.userAgent).toContain('iPhone')
