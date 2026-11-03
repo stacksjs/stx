@@ -180,7 +180,47 @@ export function parseNativeStyleLayers(inputs: unknown[], inheritedVariables: Na
     return { variables: inheritedVariables ?? NO_STYLE_VARIABLES, styles: layers.map(() => ({})) }
   const variables = createStyleVariables(layers.flat(), inheritedVariables)
   const computed = variables.computed()
-  return { variables: computed, styles: layers.map(entries => parseEntries(entries, variables, report)) }
+  return { variables: computed, styles: layers.map(entries => parseRememberedEntries(entries, variables, report)) }
+}
+
+/**
+ * A bound style is a new object on every evaluation, yet a list's rows bind
+ * the same few styles over and over: a sidebar's forty rows give their icon
+ * one style between them. Its translation is remembered by its text when it
+ * stands alone (no custom property, no var()) and translated cleanly (no
+ * diagnostic, which then still reaches the author each time). Callers copy
+ * the result; they must not change it.
+ */
+const rememberedStyles = new Map<string, STXStyle>()
+
+function parseRememberedEntries(entries: Array<[string, unknown]>, variables: ReturnType<typeof createStyleVariables>, report: (diagnostic: NativeStyleDiagnostic) => void): STXStyle {
+  if (entries.length === 0) return {}
+  let key = ''
+  for (let i = 0; i < entries.length; i++) {
+    const [name, value] = entries[i]!
+    const kind = typeof value
+    if (name.includes('--') || (kind === 'string' && (value as string).includes('var('))) return parseEntries(entries, variables, report)
+    if (kind === 'string' || kind === 'number' || kind === 'boolean' || value == null) key += `${name}\u0001${kind[0]}${String(value)}\u0002`
+    else if (kind === 'object') {
+      let nested: string
+      try { nested = JSON.stringify(value) }
+      catch { return parseEntries(entries, variables, report) }
+      key += `${name}\u0001o${nested}\u0002`
+    }
+    else return parseEntries(entries, variables, report)
+  }
+  const known = rememberedStyles.get(key)
+  if (known) return known
+  let reported = false
+  const style = parseEntries(entries, variables, (diagnostic) => {
+    reported = true
+    report(diagnostic)
+  })
+  if (!reported) {
+    if (rememberedStyles.size >= 2000) rememberedStyles.clear()
+    rememberedStyles.set(key, style)
+  }
+  return style
 }
 
 function parseEntries(entries: Array<[string, unknown]>, variables: ReturnType<typeof createStyleVariables>, report: (diagnostic: NativeStyleDiagnostic) => void): STXStyle {

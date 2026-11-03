@@ -145,6 +145,9 @@ else {
       templateContent = wrapper;
     }
 
+    // The native row plan: undefined until the first row asks for it, null
+    // where this template keeps the generic path.
+    let rowPlan;
     let currentElements = [];
     // One entry per list item, each holding EVERY node that item rendered.
     // currentElements stays flat for transition snapshots, but the keyed
@@ -621,6 +624,37 @@ catch (e) {
             signals.index.set(i);
           }
         } else {
+          // A native screen builds its rows from a plan of the template, made
+          // with the first row (signals-native-row-runtime). A row is bound
+          // before it is inserted, so it reaches the host whole.
+          if (rowPlan === undefined) {
+            // A native :for is a template holding the row; a plan covers a
+            // template of one element (the usual row) or a bare element.
+            const rowTemplate = isTemplate
+              ? (templateContent.childNodes.length === 1 ? templateContent.childNodes[0] : null)
+              : templateContent;
+            rowPlan = stxHost.isNative && typeof planNativeRow === 'function' && typeof stxHost.cloneElement === 'function'
+              && rowTemplate && !slotScopeInfo && !componentSetupTemplates.length ? planNativeRow(rowTemplate) : null;
+          }
+          if (rowPlan && !tgIsGroup) {
+            const plannedItem = state(list[i]);
+            plannedItem._isStxLoopItem = true;
+            const plannedIndex = state(i);
+            const plannedScope = layerTemplateScopes(globalHelpers, passedScope, capturedScope || {});
+            Object.defineProperty(plannedScope, itemName, { value: plannedItem, writable: true, enumerable: true, configurable: true });
+            if (indexName) Object.defineProperty(plannedScope, indexName, { value: plannedIndex, writable: true, enumerable: true, configurable: true });
+            const created = createNativeRow(rowPlan, plannedScope, parent);
+            markLoopRow(created.root, itemName, plannedItem);
+            const plannedRow = isTemplate
+              ? [stxHost.anchor('stx-for-item-start'), created.root, stxHost.anchor('stx-for-item-end')]
+              : [created.root];
+            plannedRow.__stx_signals = { item: plannedItem, index: plannedIndex };
+            for (let pi = 0; pi < plannedRow.length; pi++) stxHost.insert(parent, plannedRow[pi], cursor || placeholder);
+            finishNativeRow(created);
+            newElements.push(...plannedRow);
+            newGroups.push(plannedRow);
+            continue;
+          }
           // New item — create DOM elements with a fresh item signal
           const elements = createItemElements(list[i], i, key);
           elements.forEach(el => {

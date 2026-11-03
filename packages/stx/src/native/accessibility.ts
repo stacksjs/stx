@@ -162,6 +162,18 @@ export const ACCESSIBILITY_FIELDS = ['accessibilityLabel', 'accessibilityRole', 
  * Reuse the compiler's role/state vocabulary rather than a second mapping.
  */
 export function projectAccessibility(props: Record<string, unknown>, type?: string): Record<string, unknown> {
+  // Nearly every node has nothing to project: no ARIA attribute, no native
+  // accessibility field, no image alt. Asked for every node a row creates.
+  let relevant = type === 'Image'
+  if (!relevant) {
+    for (const name in props) {
+      if (isAccessibilityAttribute(name) || (ACCESSIBILITY_FIELDS as readonly string[]).includes(name)) {
+        relevant = true
+        break
+      }
+    }
+  }
+  if (!relevant) return {}
   const projected = { ...props }
   applyStaticAccessibility(projected)
   // HTML names an image from alt, not just aria-label. Preserve explicit

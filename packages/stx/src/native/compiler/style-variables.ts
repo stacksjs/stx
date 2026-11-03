@@ -52,12 +52,21 @@ export interface NativeStyleVariableResolver {
   computed: () => NativeStyleVariables
 }
 
+/** Whether any entry declares a custom property; nearly every bound style declares none. */
+function declaresVariables(entries: Array<[string, unknown]>): boolean {
+  for (let i = 0; i < entries.length; i++) {
+    const name = entries[i]![0]
+    if (typeof name === 'string' && name.trim().startsWith('--')) return true
+  }
+  return false
+}
+
 /** Inherited values are already computed at their declaring element. */
 export function createStyleVariables(entries: Array<[string, unknown]>, inherited?: NativeStyleVariables): NativeStyleVariableResolver {
   // Most nodes declare no variables: they read their parent's, with nothing to
   // order or check for cycles. Resolved every time a node's style is, so the
   // general path's maps and sets were made and dropped per node.
-  if (!entries.length) {
+  if (!entries.length || !declaresVariables(entries)) {
     const used = new Set<string>()
     const resolve = (text: string, depth = 0): string | undefined => depth > 64 ? undefined : substitute(text, (name, fallback) => {
       used.add(name)

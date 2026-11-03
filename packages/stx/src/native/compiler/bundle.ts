@@ -409,7 +409,7 @@ export async function compileNativeBundle(options: CompileNativeBundleOptions): 
   if (appFile && options.screens[NATIVE_APP_ROUTE]) throw new Error(`${NATIVE_APP_ROUTE} is the app script's route, not a screen name`)
   const browser = options.browser
   if (options.screens[NATIVE_RUNTIME_ROUTE]) throw new Error(`${NATIVE_RUNTIME_ROUTE} is the runtime prelude's file, not a screen name`)
-  const signalsRuntime = generateSignalsRuntime()
+  const signalsRuntime = generateSignalsRuntime({ native: true })
   if (browser && options.routesDir) throw new Error('A browser screen is one route; routesDir is for device hosts')
   /**
    * `runtimeVersion`: the route file leans on the runtime prelude

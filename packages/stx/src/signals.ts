@@ -40,6 +40,7 @@ import { SIGNALS_EXPRESSION_RUNTIME } from './client/signals-expression-runtime'
 import { SIGNALS_FETCH_TRANSPORT_RUNTIME } from './client/signals-fetch-transport-runtime'
 import { signalsFetchRuntime } from './client/signals-fetch-runtime'
 import { SIGNALS_FOR_RUNTIME } from './client/signals-for-runtime'
+import { SIGNALS_NATIVE_ROW_RUNTIME } from './client/signals-native-row-runtime'
 import { SIGNALS_GLOBALS_RUNTIME } from './client/signals-globals-runtime'
 import { SIGNALS_HANDLER_RUNTIME } from './client/signals-handler-runtime'
 import { SIGNALS_HEAD_RUNTIME } from './client/signals-head-runtime'
@@ -99,7 +100,12 @@ export * from './signals-api'
  *
  * @returns Minified JavaScript runtime code
  */
-export function generateSignalsRuntime(): string {
+export interface SignalsRuntimeOptions {
+  /** A native screen's runtime: adds what only a native host uses (loop row plans). */
+  native?: boolean
+}
+
+export function generateSignalsRuntime(options: SignalsRuntimeOptions = {}): string {
   // Strip `console.log(...)` calls before minification. They're useful in dev
   // (and the dev build keeps them via generateSignalsRuntimeDev), but in prod
   // they're noise — every nav fires ~15 log lines and they show up in
@@ -112,7 +118,7 @@ export function generateSignalsRuntime(): string {
   // to production, and the only symptom was a console full of `[stx] signal.set:`
   // in a consumer's DevTools with nothing to explain it. Minification is the
   // optional part; removing the logs is not. See #1873.
-  const stripped = stripConsoleLog(generateSignalsRuntimeDev())
+  const stripped = stripConsoleLog(generateSignalsRuntimeDev(options))
 
   // Use Bun.Transpiler for minification, then fix ASI edge cases. Bun.Transpiler
   // strips newlines but doesn't always insert semicolons at statement boundaries
@@ -181,7 +187,7 @@ function stripConsoleLog(src: string): string {
  *
  * @returns Human-readable JavaScript runtime code
  */
-export function generateSignalsRuntimeDev(): string {
+export function generateSignalsRuntimeDev(options: SignalsRuntimeOptions = {}): string {
   return `${SIGNALS_PREAMBLE_RUNTIME}${SIGNALS_HOST_RUNTIME}
 ${signalsReactiveCoreBootstrapRuntime(SIGNALS_CLOAK_RUNTIME, SIGNALS_EXPRESSION_COMPILER_RUNTIME, SIGNALS_FETCH_TRANSPORT_RUNTIME)}
 
@@ -221,6 +227,7 @@ ${SIGNALS_LOOP_COMPONENT_REMAP_RUNTIME}
 ${SIGNALS_COMPONENT_HYDRATION_RUNTIME}
 ${SIGNALS_LOOP_ROW_RUNTIME}
 ${SIGNALS_FOR_RUNTIME}
+${options.native ? SIGNALS_NATIVE_ROW_RUNTIME : ''}
 ${SIGNALS_LOOP_CONDITIONAL_RUNTIME}
 ${SIGNALS_CONDITIONAL_CHAIN_RUNTIME}
 ${SIGNALS_IF_CHAIN_RUNTIME}

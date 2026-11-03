@@ -186,6 +186,15 @@ export function cloneNativeBindingNode(source: NativeBindingNode, id: string, on
   return createBindingNode(id, source.tagName, bindings, false, source.className, onClassChange, Element)
 }
 
+/** The same, with the attributes a caller chose (a loop row's, less what it binds itself). */
+export function cloneNativeBindingNodeWith(source: NativeBindingNode, id: string, attributes: Array<{ name: string, value: string }>, Element?: BindingElementClass): NativeBindingNode {
+  const copies = new Array<{ name: string, value: string }>(attributes.length)
+  for (let i = 0; i < attributes.length; i++) copies[i] = { name: attributes[i]!.name, value: attributes[i]!.value }
+  const node = new (Element ?? BindingElement)(id, source.tagName, copies) as unknown as NativeBindingNode
+  node.isConnected = false
+  return node
+}
+
 /** Build host handles and a manifest-id lookup from already translated IR. */
 export function materializeNativeBindingTree(
   document: STXDocument,

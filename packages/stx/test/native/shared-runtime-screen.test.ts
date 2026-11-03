@@ -416,7 +416,10 @@ function refresh() {
     vm.runInNewContext(code, scope)
     await Bun.sleep(0)
     const initial = sent.filter(message => message.type === 'MUTATE').flatMap(message => message.payload.operations)
-    expect(initial).toContainEqual(expect.objectContaining({ patch: { children: ['Session: Run'] } }))
+    // A loop row is bound before it is inserted, so its text arrives with the
+    // node it belongs to rather than as a patch after it.
+    const textsOf = (operations: any[]) => operations.flatMap(operation => operation.node?.children ?? operation.patch?.children ?? [])
+    expect(textsOf(initial)).toContain('Session: Run')
     const listener = initial.find(operation => operation.patch?.events?.onRefresh)
     expect(listener).toBeTruthy()
     sent.length = 0

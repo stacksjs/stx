@@ -44,7 +44,7 @@ import { affectsGeometry, applySvgAnimation, parseSvgMarkup, parseViewBox, SVG_A
 import { NATIVE_EVENT_NAMES } from '../event-names'
 import { nativePropName } from '../prop-names'
 import { authoredTextEntryProps, projectTextEntry, TEXT_ENTRY_SOURCES, textEntryChanges } from '../text-entry'
-import { BindingElement, cloneNativeBindingNode, type BindingElementClass, type NativeBindingNode } from './binding-tree'
+import { BindingElement, cloneNativeBindingNode, cloneNativeBindingNodeWith, type BindingElementClass, type NativeBindingNode } from './binding-tree'
 import { NATIVE_FORM_ENTRIES } from './jsc-globals'
 import { createNativeOverlayPresenter, type NativeOverlayEntry } from './overlay-presenter'
 import { prepareInitialMedia } from './initial-media-mutations'
@@ -107,6 +107,13 @@ interface NodeRecord {
   hadDividers?: boolean
   /** How many of its children are views rather than anchors; worked out when first needed. */
   viewCount?: number
+  /**
+   * Its style waits for it to be created on the native side. A node not yet
+   * materialised has nobody to show a style to, so the bindings, classes and
+   * parents that change it while a row is built only say so; materialize
+   * resolves it once.
+   */
+  styleDirty?: boolean
 }
 
 interface RetainedNativeNode extends NativeNode {
@@ -215,6 +222,19 @@ export interface NativeHost {
   setVisible: (node: NativeNode, visible: boolean) => boolean
   anchor: (label: string) => NativeNode
   clone: (node: NativeNode) => NativeNode
+  /**
+   * One node of a template, without its children, carrying `attributes`
+   * instead of the template's: a native loop row builds its rows node by
+   * node and leaves out what it has already bound.
+   */
+  cloneElement: (node: NativeNode, attributes: Array<{ name: string, value: string }>) => NativeNode
+  /**
+   * Place a node made by `cloneElement` (or an anchor) last under a parent
+   * that is itself still being built off the screen. The general insert's
+   * work (moving, styles, focus, observers, dividers) has nothing to do there;
+   * anything else takes the general insert.
+   */
+  append: (parent: NativeNode, node: NativeNode) => void
   insert: (parent: NativeNode, node: NativeNode, before?: NativeNode | null) => void
   remove: (node: NativeNode) => void
   descendants: (node: NativeNode) => NativeNode[]
@@ -259,6 +279,32 @@ export const HOST_METHODS: readonly string[] = [
   'descendants',
   'scopesIn',
 ]
+
+/**
+ * The words of a list attribute (`data-stx-native-forward`, a wrapper's parent
+ * bindings), remembered: every bound attribute write asks, and a regular
+ * expression split is among the slowest things an interpreted engine does.
+ */
+const wordLists = new Map<string, string[]>()
+function words(text: string): string[] {
+  let list = wordLists.get(text)
+  if (list === undefined) {
+    list = text.split(/\s+/).filter(Boolean)
+    if (wordLists.size >= 2000) wordLists.clear()
+    wordLists.set(text, list)
+  }
+  return list
+}
+const flatNames = new Map<string, string>()
+function flatName(name: string): string {
+  let flat = flatNames.get(name)
+  if (flat === undefined) {
+    flat = name.replace(/-/g, '').toLowerCase()
+    if (flatNames.size >= 2000) flatNames.clear()
+    flatNames.set(name, flat)
+  }
+  return flat
+}
 
 /** A link's own press listener: the press handler's default action follows it. */
 function followsHref(): void {}
@@ -414,10 +460,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
    * link adopted or cloned, since a :for row's copy of the template's
    * handler would follow the template's href.
    */
-  function installLinkListener(node: NativeNode): void {
+  function installLinkListener(node: NativeNode, authored: NativeNode = node): void {
     markCurrentLink(node)
     if (!followLink) return
-    const bound = isBindingNode(node) && node.attributes.some(attribute => attribute.name.endsWith('href') && /^(?::|x-bind:|@bind:|x-)href$/.test(attribute.name))
+    // The authored node's attributes say whether the href is bound: a copy
+    // made by cloneElement no longer carries the bindings its row applies.
+    const bound = isBindingNode(authored) && authored.attributes.some(attribute => attribute.name.endsWith('href') && /^(?::|x-bind:|@bind:|x-)href$/.test(attribute.name))
     if (bound || typeof descriptorOf(node)?.props.href === 'string')
       host.listen(node, 'click', followsHref)
   }
@@ -651,12 +699,17 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     }
   }
 
-  function materialize(node: NativeNode): void {
+  function materialize(node: NativeNode, inherited: NativeStyleVariables | undefined): void {
     const record = recordOf(node)
     if (record.materialized || node.__stxAnchor !== undefined)
       return
     installControlListeners(node)
-    record.style = resolveStyle(record, node.__stxId)
+    // Resolved once, now, against the parent it is created under: what was
+    // deferred while it was detached (see styleDirty), and what its classes
+    // say about its props (an icon, a line limit).
+    if (inherited !== undefined) record.inheritedVariables = inherited
+    record.styleDirty = false
+    resolveClasses(node.__stxId, record, false)
     record.materialized = true
     emit({
       op: 'createNode',
@@ -674,7 +727,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     for (const child of record.children) {
       if (child.__stxAnchor !== undefined)
         continue
-      materialize(child)
+      materialize(child, record.variables)
       emit({ op: 'insertChild', parentId: node.__stxId, childId: child.__stxId, index: index++ })
     }
   }
@@ -753,6 +806,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     const record = recordOf(node)
     const before = record.variables
     record.inheritedVariables = inherited
+    if (!record.materialized) {
+      // Its children are resolved from its variables when it is created.
+      record.styleDirty = true
+      return
+    }
     applyClasses(node.__stxId, record, true)
     const after = record.variables!
     if (!appearanceChanged && before !== undefined && sameVariables(before, after)) return
@@ -767,7 +825,9 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   }
 
   function forwardedHostRoot(node: NativeNode, name: string): NativeNode | undefined {
-    if (!isBindingNode(node) || !(node.getAttribute('data-stx-native-forward') ?? '').split(/\s+/).includes(name))
+    if (!isBindingNode(node)) return
+    const forward = node.getAttribute('data-stx-native-forward')
+    if (!forward || !words(forward).includes(name))
       return
     const find = (candidate: NativeNode): NativeNode | undefined => {
       if (candidate !== node && isBindingNode(candidate) && candidate.hasAttribute('data-stx-native-host-owner'))
@@ -790,9 +850,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     if (!isBindingNode(node) || !node.hasAttribute('data-stx-component-wrapper')) return false
     const bindings = node.getAttribute('data-stx-parent-bindings')
     if (!bindings) return false
-    const flat = (text: string) => text.replace(/-/g, '').toLowerCase()
-    const wanted = flat(name)
-    return bindings.split(/\s+/).some(binding => binding && flat(binding) === wanted)
+    const wanted = flatName(name)
+    const names = words(bindings)
+    for (let i = 0; i < names.length; i++) if (flatName(names[i]!) === wanted) return true
+    return false
   }
 
   function applyForwardedStyle(node: NativeNode, name: string, value: unknown): boolean {
@@ -827,6 +888,14 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
   }
 
   function applyClasses(id: string, record: NodeRecord, onlyIfChanged = false): void {
+    if (!record.materialized) {
+      record.styleDirty = true
+      return
+    }
+    resolveClasses(id, record, onlyIfChanged)
+  }
+
+  function resolveClasses(id: string, record: NodeRecord, onlyIfChanged: boolean): void {
     const style = resolveStyle(record, id)
     // Keys the style no longer has are cleared on the native view.
     const patch: Record<string, null> = {}
@@ -1060,6 +1129,54 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     installControlListeners(node)
     installLinkListener(node)
     return node
+  }
+
+  /** A detached copy of one node and its record, without its children. */
+  function copyNode(node: NativeNode, source: NodeRecord | undefined, copy: NativeNode): NativeNode {
+    if (!isBindingNode(node)) copy.__stxOwner = node.__stxOwner
+    decoratePosition(copy)
+    if (node.__stxScope !== undefined)
+      copy.__stxScope = node.__stxScope
+
+    const descriptor: NodeRecord = source ?? {
+      type: 'View',
+      props: {},
+      style: {},
+      baseStyle: {},
+      classes: '',
+      events: {},
+      children: [],
+      visible: true,
+      materialized: true,
+    }
+    records.set(copy.__stxId, {
+      type: descriptor.type,
+      key: descriptor.key,
+      props: { ...descriptor.props, __stxId: copy.__stxId },
+      style: { ...descriptor.style },
+      baseStyle: { ...descriptor.baseStyle },
+      layoutDefaults: { ...descriptor.layoutDefaults },
+      styleSource: descriptor.styleSource,
+      styleAncestors: descriptor.styleAncestors,
+      inheritedVariables: descriptor.inheritedVariables,
+      variables: descriptor.variables,
+      boundStyle: descriptor.boundStyle,
+      classes: descriptor.classes,
+      forwardedClasses: descriptor.forwardedClasses,
+      forwardedStyle: descriptor.forwardedStyle,
+      events: { ...descriptor.events },
+      text: descriptor.text,
+      children: [],
+      visible: descriptor.visible,
+      materialized: false,
+      controlDefaults: descriptor.controlDefaults,
+      divide: descriptor.divide,
+      styleDirty: true,
+    })
+    decorateControl(copy, descriptor.type)
+    setConnected(copy, false)
+    installLinkListener(copy, node)
+    return copy
   }
 
   const overlayPresenter = createNativeOverlayPresenter({
@@ -1563,10 +1680,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       }
       // `display` is how the IR spells it, so the renderers already understand
       // it; the host does not invent a second vocabulary for the same thing.
-      record.style = resolveStyle(record, node.__stxId)
-      const display = visible ? irDisplay(record.style.display) : 'none'
-      if (record.materialized)
+      if (record.materialized) {
+        record.style = resolveStyle(record, node.__stxId)
+        const display = visible ? irDisplay(record.style.display) : 'none'
         emit({ op: 'updateNode', id: node.__stxId, patch: { style: { display } } })
+      }
+      else record.styleDirty = true
       // Which child is the first one shown decides where dividers go.
       if (was !== visible) refreshDividers(node.__stxOwner)
       return was
@@ -1582,59 +1701,54 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
 
     clone(node) {
       const source = descriptorOf(node)
-      const id = nextId('n')
-      const copy: NativeNode = isBindingNode(node)
-        ? cloneNativeBindingNode(node, id, undefined, HostElement)
-        : plainNode(id)
-      if (!isBindingNode(node)) copy.__stxOwner = node.__stxOwner
-      decoratePosition(copy)
-      if (node.__stxScope !== undefined)
-        copy.__stxScope = node.__stxScope
-
-      const descriptor: NodeRecord = source ?? {
-        type: 'View',
-        props: {},
-        style: {},
-        baseStyle: {},
-        classes: '',
-        events: {},
-        children: [],
-        visible: true,
-        materialized: true,
-      }
-      records.set(copy.__stxId, {
-        type: descriptor.type,
-        key: descriptor.key,
-        props: { ...descriptor.props, __stxId: copy.__stxId },
-        style: { ...descriptor.style },
-        baseStyle: { ...descriptor.baseStyle },
-        layoutDefaults: { ...descriptor.layoutDefaults },
-        styleSource: descriptor.styleSource,
-        styleAncestors: descriptor.styleAncestors,
-        inheritedVariables: descriptor.inheritedVariables,
-        variables: descriptor.variables,
-        boundStyle: descriptor.boundStyle,
-        classes: descriptor.classes,
-        forwardedClasses: descriptor.forwardedClasses,
-        forwardedStyle: descriptor.forwardedStyle,
-        events: { ...descriptor.events },
-        text: descriptor.text,
-        children: [],
-        visible: descriptor.visible,
-        materialized: false,
-        controlDefaults: descriptor.controlDefaults,
-      })
-      decorateControl(copy, descriptor.type)
-      setConnected(copy, false)
-      installLinkListener(copy)
+      const copy = copyNode(node, source, isBindingNode(node)
+        ? cloneNativeBindingNode(node, nextId('n'), undefined, HostElement)
+        : plainNode(nextId('n')))
 
       // Materialised from the descriptor, depth first -- a view hierarchy
       // cannot be deep-copied the way a DOM subtree can.
-      for (const child of descriptor.children) {
+      for (const child of source?.children ?? []) {
         const childCopy = this.clone(child)
         this.insert(copy, childCopy)
       }
       return copy
+    },
+
+    append(parent, node) {
+      const record = recordOf(parent)
+      let general = record.materialized || !!node.__stxOwner || !!record.divide || !!record.hadDividers
+      for (let current: NativeNode | null | undefined = parent; current && !general; current = current.__stxOwner)
+        general = childObservers.has(current)
+      if (general) {
+        this.insert(parent, node)
+        return
+      }
+      record.children.push(node)
+      const isView = node.__stxAnchor === undefined
+      if (isView && record.viewCount !== undefined) record.viewCount++
+      node.__stxOwner = parent
+      if (isView) {
+        const own = records.get(node.__stxId)
+        if (own) {
+          own.inheritedVariables = record.variables
+          own.styleDirty = true
+        }
+      }
+      if (isBindingNode(parent)) {
+        parent.childNodes.push(node)
+        parent.children.push(node)
+        if (isBindingNode(node)) {
+          node.parentNode = parent as NativeBindingNode
+          node.parentElement = parent as NativeBindingNode
+        }
+      }
+    },
+
+    cloneElement(node, attributes) {
+      const source = descriptorOf(node)
+      return copyNode(node, source, isBindingNode(node)
+        ? cloneNativeBindingNodeWith(node, nextId('n'), attributes, HostElement)
+        : plainNode(nextId('n')))
     },
 
     insert(parent, node, before) {
@@ -1689,7 +1803,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       if (node.__stxAnchor !== undefined || !record.materialized)
         return
 
-      materialize(node)
+      materialize(node, record.variables)
 
       /*
        * The native parent holds views, never anchors (materialize skips them),
