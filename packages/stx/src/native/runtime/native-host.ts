@@ -871,37 +871,42 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     return (node as NativeBindingNode).nodeType === 1
   }
 
+  // One set of descriptors per screen, shared by every node: each node used to
+  // get five closures and their descriptors of its own, a cost per node that
+  // the interpreter feels on a long list. The methods read `this`, so they are
+  // called on the node (`node.measure()`), as a DOM element's are.
+  const positionDescriptors: PropertyDescriptorMap = {
+    focus: { configurable: true, value(this: NativeNode, focusOptions?: NativeFocusOptions) { return host.focus(this, focusOptions) } },
+    measure: { configurable: true, value(this: NativeNode) { return host.measure(this) } },
+    // Layout is an invalidation signal, not viewport bounds. Call measure()
+    // after it, and retain polling for scroll/transform-only movement.
+    observeLayout: { configurable: true, value(this: NativeNode, callback: () => void) { return host.listen(this, 'layout', callback) } },
+    nextSibling: {
+      configurable: true,
+      get(this: NativeNode) {
+        const owner = this.__stxOwner
+        if (!owner) return null
+        const siblings = recordOf(owner).children
+        const index = lastIndexOfChild(siblings, this.__stxId)
+        return index === -1 ? null : siblings[index + 1] ?? null
+      },
+    },
+    nextElementSibling: {
+      configurable: true,
+      get(this: NativeNode) {
+        let sibling = (this as any).nextSibling as NativeNode | null
+        while (sibling && !isBindingNode(sibling))
+          sibling = (sibling as any).nextSibling as NativeNode | null
+        return sibling
+      },
+    },
+    __stxPositionDecorated: { configurable: true, writable: true, value: true },
+  }
+
   function decoratePosition(node: NativeNode): void {
-    const target = node as NativeNode & { __stxPositionDecorated?: boolean }
-    if (target.__stxPositionDecorated)
+    if ((node as NativeNode & { __stxPositionDecorated?: boolean }).__stxPositionDecorated)
       return
-    Object.defineProperties(target, {
-      focus: { configurable: true, value: (focusOptions?: NativeFocusOptions) => host.focus(node, focusOptions) },
-      measure: { configurable: true, value: () => host.measure(node) },
-      // Layout is an invalidation signal, not viewport bounds. Call measure()
-      // after it, and retain polling for scroll/transform-only movement.
-      observeLayout: { configurable: true, value: (callback: () => void) => host.listen(node, 'layout', callback) },
-      nextSibling: {
-        configurable: true,
-        get() {
-          const owner = target.__stxOwner
-          if (!owner) return null
-          const siblings = recordOf(owner).children
-          const index = siblings.findIndex(candidate => candidate.__stxId === target.__stxId)
-          return index === -1 ? null : siblings[index + 1] ?? null
-        },
-      },
-      nextElementSibling: {
-        configurable: true,
-        get() {
-          let sibling = (target as any).nextSibling as NativeNode | null
-          while (sibling && !isBindingNode(sibling))
-            sibling = (sibling as any).nextSibling as NativeNode | null
-          return sibling
-        },
-      },
-    })
-    target.__stxPositionDecorated = true
+    Object.defineProperties(node, positionDescriptors)
   }
 
   async function withMountedView<T>(node: NativeNode, request: (views: NativeViewOperations) => Promise<T>): Promise<T> {
