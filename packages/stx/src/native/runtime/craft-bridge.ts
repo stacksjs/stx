@@ -31,6 +31,8 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
   return {
     desktop: capabilities.has('desktop'),
     haptics: capabilities.has('haptics'),
+    rawMotionSensors: capabilities.has('rawMotionSensors'),
+    barometer: capabilities.has('barometer'),
     speechRecognition: false,
     share: capabilities.has('share'),
     camera: capabilities.has('camera'),
@@ -332,6 +334,29 @@ export function installCraftBridge(
       onChange: (callback: (value: AnyRecord) => void) => protocol.on<any>('CRAFT_EVENT', ({ payload }) => {
         if (payload?.event === 'craftNetworkChange') callback(status(payload.detail))
       }),
+    }
+  }
+  const onSensorUpdate = (event: string, callback: (value: AnyRecord) => void): (() => void) => {
+    if (typeof callback !== 'function') throw new TypeError('sensor.onUpdate needs a function')
+    return protocol.on<any>('CRAFT_EVENT', ({ payload }) => {
+      if (payload?.event === event) callback(payload.detail)
+    })
+  }
+  if (capabilities.has('rawMotionSensors')) {
+    craft.rawMotionSensors = {
+      getAvailability: () => request('MotionSensors', 'getAvailability', []),
+      start: (options: AnyRecord) => request('MotionSensors', 'start', [options]),
+      stop: (sensor: string) => request('MotionSensors', 'stop', [sensor]),
+      stopAll: () => request('MotionSensors', 'stopAll', []),
+      onUpdate: (callback: (value: AnyRecord) => void) => onSensorUpdate('craftRawMotionUpdate', callback),
+    }
+  }
+  if (capabilities.has('barometer')) {
+    craft.barometer = {
+      getAvailability: () => request('Barometer', 'getAvailability', []),
+      start: (options: AnyRecord = {}) => request('Barometer', 'start', [options]),
+      stop: () => request('Barometer', 'stop', []),
+      onUpdate: (callback: (value: AnyRecord) => void) => onSensorUpdate('craftBarometerUpdate', callback),
     }
   }
   craft.biometrics = {

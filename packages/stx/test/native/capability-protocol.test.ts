@@ -42,6 +42,70 @@ async function runtime(script: string = '', options: {
 }
 
 describe('shared-runtime native capability protocol', () => {
+  it('exposes motion and barometer only when their distinct host capabilities are present', async () => {
+    const missing = (await runtime('', { capabilities: [], timers: false })).scope.craft
+    expect(missing.rawMotionSensors).toBeUndefined()
+    expect(missing.barometer).toBeUndefined()
+    expect(missing.capabilities.rawMotionSensors).toBe(false)
+    expect(missing.capabilities.barometer).toBe(false)
+    const { scope, sent } = await runtime('', { capabilities: ['rawMotionSensors', 'barometer'], timers: false })
+    expect(scope.craft.capabilities.rawMotionSensors).toBe(true)
+    expect(scope.craft.capabilities.barometer).toBe(true)
+    scope.craft.rawMotionSensors.getAvailability()
+    scope.craft.rawMotionSensors.start({ sensor: 'gyroscope', intervalMs: 20 })
+    scope.craft.rawMotionSensors.stop('gyroscope')
+    scope.craft.rawMotionSensors.stopAll()
+    scope.craft.barometer.getAvailability()
+    scope.craft.barometer.start()
+    scope.craft.barometer.start({ intervalMs: 1000, background: true })
+    scope.craft.barometer.stop()
+    expect(sent.filter(message => message.type === 'API_REQUEST').map(message => message.payload)).toEqual([
+      { version: 1, module: 'MotionSensors', method: 'getAvailability', args: [] },
+      { version: 1, module: 'MotionSensors', method: 'start', args: [{ sensor: 'gyroscope', intervalMs: 20 }] },
+      { version: 1, module: 'MotionSensors', method: 'stop', args: ['gyroscope'] },
+      { version: 1, module: 'MotionSensors', method: 'stopAll', args: [] },
+      { version: 1, module: 'Barometer', method: 'getAvailability', args: [] },
+      { version: 1, module: 'Barometer', method: 'start', args: [{}] },
+      { version: 1, module: 'Barometer', method: 'start', args: [{ intervalMs: 1000, background: true }] },
+      { version: 1, module: 'Barometer', method: 'stop', args: [] },
+    ])
+  })
+
+  it('preserves sensor units, pressure and explicit gap events and releases each subscription', async () => {
+    const { scope, receive } = await runtime('', { capabilities: ['rawMotionSensors', 'barometer'] })
+    const motion: any[] = [], pressure: any[] = []
+    const stopMotion = scope.craft.rawMotionSensors.onUpdate((value: any) => motion.push(value))
+    const stopPressure = scope.craft.barometer.onUpdate((value: any) => pressure.push(value))
+    const reading = { sensor: 'gyroscope', unit: 'rad/s', values: { x: 1, y: 2, z: 3 }, timestampMs: 100, accuracy: 3 }
+    const sample = { state: 'sample', pressureHpa: 1000, relativeAltitudeMeters: 12, timestampMs: 100 }
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftRawMotionUpdate', detail: reading } })
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftBarometerUpdate', detail: sample } })
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftBarometerUpdate', detail: { state: 'stopped', reason: 'background' } } })
+    expect(motion).toEqual([reading])
+    expect(pressure).toEqual([sample, { state: 'stopped', reason: 'background' }])
+    stopMotion()
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftRawMotionUpdate', detail: reading } })
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftBarometerUpdate', detail: sample } })
+    expect(motion).toHaveLength(1)
+    expect(pressure).toHaveLength(3)
+    stopPressure()
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftBarometerUpdate', detail: sample } })
+    expect(pressure).toHaveLength(3)
+    expect(() => scope.craft.barometer.onUpdate('invalid')).toThrow('needs a function')
+  })
+
+  it('propagates sensor hardware and background failures without synthesizing a sample', async () => {
+    const { scope, sent, receive } = await runtime('', { capabilities: ['barometer', 'rawMotionSensors'] })
+    const failed = scope.craft.barometer.start({ background: true }).catch((error: any) => error)
+    const call = sent.find(message => message.type === 'API_REQUEST')!
+    receive({ type: 'API_ERROR', correlationId: call.id, payload: { version: 1, requestId: call.id, code: 'UNSUPPORTED', message: 'Background unsupported' } })
+    expect((await failed).code).toBe('UNSUPPORTED')
+    const missing = scope.craft.rawMotionSensors.start({ sensor: 'gyroscope' }).catch((error: any) => error)
+    const next = sent.filter(message => message.type === 'API_REQUEST').at(-1)!
+    receive({ type: 'API_ERROR', correlationId: next.id, payload: { version: 1, requestId: next.id, code: 'UNAVAILABLE', message: 'No sensor' } })
+    expect((await missing).code).toBe('UNAVAILABLE')
+  })
+
   it('publishes the platform and capability flags through the existing Craft shape', async () => {
     const { scope } = await runtime()
     expect(scope.craft.platform).toBe('ios')

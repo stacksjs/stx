@@ -221,7 +221,44 @@ export interface NativeFile {
   size: number
 }
 
+export type NativeRawMotionSensor = 'accelerometer' | 'gyroscope' | 'magnetometer' | 'rotationVector'
+export type NativeRawMotionReading = {
+  /** Monotonic milliseconds since boot, not Unix time. */
+  timestampMs: number
+  accuracy: number
+} & (
+  | { sensor: 'accelerometer', unit: 'm/s²', values: { x: number, y: number, z: number } }
+  | { sensor: 'gyroscope', unit: 'rad/s', values: { x: number, y: number, z: number } }
+  | { sensor: 'magnetometer', unit: 'µT', values: { x: number, y: number, z: number } }
+  | { sensor: 'rotationVector', unit: 'quaternion', values: { w: number, x: number, y: number, z: number } }
+)
+
+export interface NativeRawMotionSensors {
+  getAvailability: () => Promise<Record<NativeRawMotionSensor, boolean>>
+  /** Foreground Android streams; intervalMs is an integer from 5 to 60000. */
+  start: (options: { sensor: NativeRawMotionSensor, intervalMs?: number }) => Promise<boolean>
+  stop: (sensor: NativeRawMotionSensor) => Promise<boolean>
+  stopAll: () => Promise<boolean>
+  onUpdate: (callback: (reading: NativeRawMotionReading) => void) => () => void
+}
+
+export type NativeBarometerEvent =
+  | { state: 'sample', pressureHpa: number, relativeAltitudeMeters: number, timestampMs: number, referencePressureHpa?: number }
+  | { state: 'stopped', reason: 'background' | 'requested' | 'disposed' | 'sensorError' | 'permissionDenied' }
+
+export interface NativeBarometer {
+  getAvailability: () => Promise<{ relativeAltitude: boolean, absoluteAltitude: boolean, background: boolean, permissionDenied?: boolean }>
+  /** Each start establishes a new reference. Background recording is currently unsupported. */
+  start: (options?: { intervalMs?: number, background?: boolean }) => Promise<boolean>
+  stop: () => Promise<boolean>
+  onUpdate: (callback: (event: NativeBarometerEvent) => void) => () => void
+}
+
 export interface NativeCraft {
+  /** Raw Android sensors; not iOS fused device motion. */
+  rawMotionSensors?: NativeRawMotionSensors
+  /** Foreground pressure and session-relative altitude. */
+  barometer?: NativeBarometer
   /** ActivityKit Lock Screen and Dynamic Island presentations (iOS). */
   liveActivity?: NativeLiveActivities
   /** AppKit window and menu operations (`capabilities.desktop`). */
