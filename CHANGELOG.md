@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.797...v0.2.798)
+
+## ⚡ Performance Improvements
+
+- **native**: build a created node's props in one pass ([eea982c](https://github.com/stacksjs/stx/commit/eea982c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **native**: send a node only what a native view reads ([94ac18b](https://github.com/stacksjs/stx/commit/94ac18b)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **signals**: verify static prop fallback behavior ([a8b767e](https://github.com/stacksjs/stx/commit/a8b767e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.798 ([0eaca37](https://github.com/stacksjs/stx/commit/0eaca37)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.796...v0.2.797)
 
 ## ✨ Features
