@@ -1,5 +1,45 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.794...v0.2.795)
+
+## ✨ Features
+
+- **native**: gate recording-owned pressure and type recovery events ([4b939c2](https://github.com/stacksjs/stx/commit/4b939c2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: distinguish passive daily steps from raw pedometer readings ([456534d](https://github.com/stacksjs/stx/commit/456534d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: expose durable background health batches and acknowledgements ([21e0941](https://github.com/stacksjs/stx/commit/21e0941)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: expose typed pedometer permissions and interval history ([ee985f9](https://github.com/stacksjs/stx/commit/ee985f9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: bridge raw motion and barometer capabilities ([f035114](https://github.com/stacksjs/stx/commit/f035114)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **typecheck**: infer script interpolation types and map source edits (#2150) ([37c4620](https://github.com/stacksjs/stx/commit/37c4620)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2150](https://github.com/stacksjs/stx/issues/2150), [#2150](https://github.com/stacksjs/stx/issues/2150), [#2150](https://github.com/stacksjs/stx/issues/2150))
+- **native**: deliver dashed long-press handlers on web and native ([e3c2a76](https://github.com/stacksjs/stx/commit/e3c2a76)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- **native**: place a node in an unbuilt parent by its position alone ([2b4a1d1](https://github.com/stacksjs/stx/commit/2b4a1d1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: a planned row binds its component's props itself ([da19595](https://github.com/stacksjs/stx/commit/da19595)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: build loop rows from a plan of their template ([6e30f0b](https://github.com/stacksjs/stx/commit/6e30f0b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **signals**: evaluate a binding through one shared unwrap handler ([34969b1](https://github.com/stacksjs/stx/commit/34969b1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ♻️ Code Refactoring
+
+- **signals**: share how a bound attribute is written and an event listened for ([0af0c3a](https://github.com/stacksjs/stx/commit/0af0c3a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **dom**: await submit work and isolate import fixtures ([6190e8a](https://github.com/stacksjs/stx/commit/6190e8a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **signals**: load shared helpers in the reactive prop fixture ([94d982a](https://github.com/stacksjs/stx/commit/94d982a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.795 ([adcdfca](https://github.com/stacksjs/stx/commit/adcdfca)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.793...v0.2.794)
 
 ## ⚡ Performance Improvements
