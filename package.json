@@ -112,7 +112,7 @@
     "packages/benchmarks/js-framework-benchmark"
   ],
   "dependencies": {
-    "@stacksjs/ts-css": "^0.3.11",
+    "@stacksjs/ts-css": "^0.3.21",
     "very-happy-dom": "^0.4.1"
   },
   "devDependencies": {
