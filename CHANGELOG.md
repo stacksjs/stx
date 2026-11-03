@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.792...v0.2.793)
+
+## ⚡ Performance Improvements
+
+- **signals**: ask a layered scope for names without its proxy ([8aed872](https://github.com/stacksjs/stx/commit/8aed872)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: skip work in adopt that only some nodes need ([d1d45ab](https://github.com/stacksjs/stx/commit/d1d45ab)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: build a screen's nodes from its own element class ([7acef59](https://github.com/stacksjs/stx/commit/7acef59)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: share one set of position helpers across a screen's nodes ([5268b46](https://github.com/stacksjs/stx/commit/5268b46)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: placing a row in a list no longer scans the list ([2dc8aae](https://github.com/stacksjs/stx/commit/2dc8aae)) _(by Chris <chrisbreuer93@gmail.com>)_
+- no pipe scan for an expression without a bar, no style parse for a node without styles ([fd8996d](https://github.com/stacksjs/stx/commit/fd8996d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.793 ([6e2a0ba](https://github.com/stacksjs/stx/commit/6e2a0ba)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.791...v0.2.792)
 
 ## 🐛 Bug Fixes
