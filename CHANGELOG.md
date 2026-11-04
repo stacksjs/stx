@@ -1,5 +1,27 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.799...v0.2.800)
+
+## ✨ Features
+
+- **native**: expose capability-gated passkey actions ([7a280ab](https://github.com/stacksjs/stx/commit/7a280ab)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2151](https://github.com/stacksjs/stx/issues/2151))
+
+## 🐛 Bug Fixes
+
+- **sidebar**: show pointer cursors for enabled web controls ([f1142c3](https://github.com/stacksjs/stx/commit/f1142c3)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2157](https://github.com/stacksjs/stx/issues/2157), [#41](https://github.com/stacksjs/stx/issues/41))
+
+## ✅ Tests
+
+- **browser**: retain opt-in lifecycle diagnostics for AiTextarea ([797f14c](https://github.com/stacksjs/stx/commit/797f14c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2156](https://github.com/stacksjs/stx/issues/2156))
+
+## 🔧 Chores
+
+- release v0.2.800 ([7b431b6](https://github.com/stacksjs/stx/commit/7b431b6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.798...v0.2.799)
 
 ## 🐛 Bug Fixes
