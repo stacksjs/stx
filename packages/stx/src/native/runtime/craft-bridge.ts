@@ -833,18 +833,39 @@ export function installCraftBridge(
   // fetched and the answer is `{ ok: false, reason: 'cellular' }` (Craft
   // >= 0.0.170; an older host fetches it anyway).
   if (capabilities.has('media')) {
+    const cacheKeys = capabilities.has('media-cache-key')
+    const cacheOptions = (options: AnyRecord) => {
+      if (options.cacheKey === undefined) return {}
+      if (!cacheKeys) throw new Error('This host does not support media cache keys')
+      if (typeof options.cacheKey !== 'string' || !options.cacheKey || options.cacheKey.length > 256) throw new TypeError('A media cache key must contain 1 to 256 characters')
+      return { cacheKey: options.cacheKey }
+    }
     craft.media = {
+      cacheKeys,
       keep: (url: string, options: AnyRecord = {}) => {
         if (typeof url !== 'string' || !url) return Promise.reject(new TypeError('media.keep needs a URL'))
+        let identity: AnyRecord
+        try { identity = cacheOptions(options) }
+        catch (error) { return Promise.reject(error) }
         const headers: Record<string, string> = {}
         const given = options.headers
         if (given && typeof given === 'object') Object.keys(given).forEach((name) => { headers[name] = String(given[name]) })
-        return ask('Media', 'keep', [url, options.cellular === false ? { headers, cellular: false } : { headers }])
+        return ask('Media', 'keep', [url, { headers, ...identity, ...(options.cellular === false ? { cellular: false } : {}) }])
       },
-      path: (url: string) => typeof url === 'string' && url
-        ? request('Media', 'path', [url]).then((path: unknown) => (typeof path === 'string' ? path : null))
-        : Promise.resolve(null),
-      prune: (urls: string[] = []) => request('Media', 'prune', [(Array.isArray(urls) ? urls : []).filter(url => typeof url === 'string')]),
+      path: (url: string, options: AnyRecord = {}) => {
+        let identity: AnyRecord
+        try { identity = cacheOptions(options) }
+        catch (error) { return Promise.reject(error) }
+        return typeof url === 'string' && url
+          ? request('Media', 'path', Object.keys(identity).length ? [url, identity] : [url]).then((path: unknown) => (typeof path === 'string' ? path : null))
+          : Promise.resolve(null)
+      },
+      prune: (sources: (string | { url: string, cacheKey: string })[] = []) => {
+        let keep: unknown[]
+        try { keep = (Array.isArray(sources) ? sources : []).filter(source => typeof source === 'string' || (source && typeof source === 'object' && typeof source.url === 'string')).map(source => typeof source === 'string' ? source : { url: source.url, ...cacheOptions(source) }) }
+        catch (error) { return Promise.reject(error) }
+        return request('Media', 'prune', [keep])
+      },
       clear: () => request('Media', 'clear', []),
       usage: () => request('Media', 'usage', []),
     }

@@ -608,6 +608,32 @@ describe('media kept on the phone for offline', () => {
     await expect(scope.craft.media.keep('')).rejects.toThrow('media.keep needs a URL')
   })
 
+  it('keeps the authorized URL separate from a stable account and version cache key', async () => {
+    const { scope, requests, answer } = await runtime([...ALL, 'media', 'media-cache-key'])
+    const url = 'https://hq.training/api/store/lessons/4/play.mp4?token=rotated'
+    const source = { url, cacheKey: 'account:7:lesson:4:version:a' }
+    expect(scope.craft.media.cacheKeys).toBe(true)
+    const kept = scope.craft.media.keep(url, { cacheKey: source.cacheKey })
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'Media', method: 'keep', args: [url, { headers: {}, cacheKey: source.cacheKey }] })
+    answer(requests().at(-1)!, { ok: true })
+    await kept
+    const path = scope.craft.media.path(url, { cacheKey: source.cacheKey })
+    expect(requests().at(-1)!.payload).toMatchObject({ method: 'path', args: [url, { cacheKey: source.cacheKey }] })
+    answer(requests().at(-1)!, '/kept/movie.bin')
+    expect(await path).toBe('/kept/movie.bin')
+    const pruned = scope.craft.media.prune([source])
+    expect(requests().at(-1)!.payload).toMatchObject({ method: 'prune', args: [[source]] })
+    answer(requests().at(-1)!, 0)
+    await pruned
+    await expect(scope.craft.media.keep(url, { cacheKey: '' })).rejects.toThrow('cache key')
+  })
+
+  it('refuses keyed caching on hosts that only support URL identity', async () => {
+    const { scope } = await runtime([...ALL, 'media'])
+    expect(scope.craft.media.cacheKeys).toBe(false)
+    await expect(scope.craft.media.keep('https://hq.training/lesson.mp4', { cacheKey: 'account:7' })).rejects.toThrow('does not support')
+  })
+
   it('has no media store where the host offers none', async () => {
     const { scope } = await runtime(ALL)
     expect(scope.craft.capabilities.media).toBe(false)
