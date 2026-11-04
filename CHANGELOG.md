@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.798...v0.2.799)
+
+## 🐛 Bug Fixes
+
+- **native**: preserve nested Info.plist configuration (#2152) ([5bb81e9](https://github.com/stacksjs/stx/commit/5bb81e9)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2152](https://github.com/stacksjs/stx/issues/2152), [#2152](https://github.com/stacksjs/stx/issues/2152), [#2152](https://github.com/stacksjs/stx/issues/2152))
+- **serve**: persist generated CSS across cached-page restarts (#2153) ([e9b5eb0](https://github.com/stacksjs/stx/commit/e9b5eb0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2153](https://github.com/stacksjs/stx/issues/2153), [#2153](https://github.com/stacksjs/stx/issues/2153), [#2153](https://github.com/stacksjs/stx/issues/2153))
+
+## ✅ Tests
+
+- **native**: qualify nested plist types and packaged consumers ([48d1f48](https://github.com/stacksjs/stx/commit/48d1f48)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.799 ([4d773c2](https://github.com/stacksjs/stx/commit/4d773c2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.797...v0.2.798)
 
 ## ⚡ Performance Improvements
