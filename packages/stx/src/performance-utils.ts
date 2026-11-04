@@ -317,7 +317,7 @@ export function debounce<T extends (...args: any[]) => any>(
   func: T,
   delay: number,
 ): (...args: Parameters<T>) => void {
-  let timeoutId: NodeJS.Timeout | undefined
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
 
   return (...args: Parameters<T>) => {
     if (timeoutId) {

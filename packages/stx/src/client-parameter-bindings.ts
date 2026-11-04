@@ -1,4 +1,5 @@
 /** Parameter bindings shadow ambient helpers only inside their function. */
+import { LRUCache } from './performance-utils'
 import { stripCommentsAndLiterals } from './strip-literals'
 
 interface Token { text: string, start: number, end: number }
@@ -6,8 +7,14 @@ interface Scope { start: number, end: number, bodyStart: number, functionBody: b
 interface Site { name: string, token: number, file?: boolean, functionScoped?: boolean }
 interface LoopScope { headStart: number, headEnd: number, start: number, end: number }
 interface Analysis { code: string, scopes: Scope[], loops: LoopScope[], declarations: Set<string>, sites: Site[], tokens: Token[], pairs: Map<number, number> }
-let cachedSource = ''
-let cached: Analysis | undefined
+// Callers alternate original, stripped and bundled scripts. A one-entry cache
+// re-tokenized each of them on the next pass (#2158). Retain a small working
+// set, bounded by entries and UTF-16 source + stripped-code bytes. Token/scope
+// objects add overhead proportional to that source; this is not a heap meter.
+const analyses = new LRUCache<string, Analysis>(32, {
+  maxBytes: 2 * 1024 * 1024,
+  sizeOf: analysis => analysis.code.length * 4,
+})
 
 const identifier = /^[A-Za-z_$][\w$]*$/
 const controls = new Set(['if', 'for', 'while', 'switch', 'with'])
@@ -29,7 +36,8 @@ function tokenize(source: string): { code: string, tokens: Token[] } {
 }
 
 function analyze(source: string): Analysis {
-  if (cached && source === cachedSource) return cached
+  const cached = analyses.get(source)
+  if (cached) return cached
   const { code, tokens } = tokenize(source)
   const pairs = new Map<number, number>()
   const stack: number[] = []
@@ -235,9 +243,9 @@ function analyze(source: string): Analysis {
     }
   }
 
-  cachedSource = source
-  cached = { code, scopes, loops, declarations, sites, tokens, pairs }
-  return cached
+  const analysis = { code, scopes, loops, declarations, sites, tokens, pairs }
+  analyses.set(source, analysis)
+  return analysis
 }
 
 export function parameterAnalysis(source: string): { code: string, shadows: (name: string, offset: number) => boolean } {
