@@ -1511,55 +1511,24 @@ interface SignalScriptRange {
 
 const SETUP_MARKER_SKIP_TAGS = new Set(['script', 'style', 'html', 'head', 'meta', 'link', 'title', '!doctype'])
 
-function overlapsSignalScript(start: number, end: number, ranges: readonly SignalScriptRange[]): boolean {
-  for (const range of ranges) {
-    if (range.start >= end)
-      return false
-    if (range.end > start)
-      return true
-  }
-  return false
-}
-
-function hasTextOutsideSignalScripts(template: string, text: string, ranges: readonly SignalScriptRange[]): boolean {
-  let from = 0
-  while (from < template.length) {
-    const index = template.indexOf(text, from)
-    if (index === -1)
-      return false
-    if (!overlapsSignalScript(index, index + text.length, ranges))
-      return true
-    from = index + text.length
-  }
-  return false
-}
-
-/** Locate the insertion point before `>` using the same matching rules as the old replace pass. */
-function findSetupMarkerInsertion(template: string, ranges: readonly SignalScriptRange[]): number | null {
-  // Preserve the existing case-sensitive body preference. When any lowercase
-  // `<body` text remains, the old path attempted only the body replacement and
-  // did not fall back to another element if that text was malformed.
-  if (hasTextOutsideSignalScripts(template, '<body', ranges)) {
-    const bodyTagRe = new RegExp(`<body(${TAG_ATTR_RUN})>`, 'g')
-    let match: RegExpExecArray | null
-    while ((match = bodyTagRe.exec(template)) !== null) {
-      if (!overlapsSignalScript(match.index, match.index + match[0].length, ranges))
-        return match.index + match[0].length - 1
-    }
-    return null
-  }
-
-  const openingTagRe = new RegExp(`<([a-zA-Z][a-zA-Z0-9-]*)\\b(${TAG_ATTR_RUN})>`, 'gi')
-  let match: RegExpExecArray | null
-  while ((match = openingTagRe.exec(template)) !== null) {
-    if (overlapsSignalScript(match.index, match.index + match[0].length, ranges))
-      continue
-    if (SETUP_MARKER_SKIP_TAGS.has(match[1].toLowerCase()))
-      continue
-    return match.index + match[0].length - 1
-  }
-
-  return null
+/** Choose an actual element, never tag-like text in comments, raw text or attributes. */
+function findSetupMarkerInsertion(template: string): number | null {
+  const openingTagRe = new RegExp(`<([a-zA-Z][a-zA-Z0-9-]*)\\b(${TAG_ATTR_RUN})>`, 'iy')
+  let first: number | null = null
+  let body: number | null = null
+  scanAtElementPosition(template, (html, index) => {
+    openingTagRe.lastIndex = index
+    const match = openingTagRe.exec(html)
+    if (!match) return -1
+    const tag = match[1].toLowerCase()
+    // Let the scanner consume raw-text elements as a whole.
+    if (tag === 'script' || tag === 'style') return -1
+    const insertion = index + match[0].length - 1
+    if (tag === 'body' && body === null) body = insertion
+    if (first === null && !SETUP_MARKER_SKIP_TAGS.has(tag)) first = insertion
+    return index + match[0].length
+  })
+  return body ?? first
 }
 
 /** Remove known script ranges and insert the owner marker in one materializing rebuild. */
@@ -1762,7 +1731,7 @@ if(window.stx)window.stx._latestSetup=${setupFnName};
   // The scanner already knows every source range. Remove those exact scripts
   // positionally and add the owner marker during the same rebuild, instead of
   // split+join once per script followed by a second page-wide replace (#1945).
-  const markerAt = findSetupMarkerInsertion(template, signalScripts)
+  const markerAt = findSetupMarkerInsertion(template)
   const output = rebuildSetupOwner(template, signalScripts, markerAt, setupFnName)
 
   return { output, setupCode }
