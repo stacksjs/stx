@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.800...v0.2.801)
+
+## 🐛 Bug Fixes
+
+- **signals**: select setup owners from real markup ([9ecedae](https://github.com/stacksjs/stx/commit/9ecedae)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_ ([#2159](https://github.com/stacksjs/stx/issues/2159))
+
+## 🔧 Chores
+
+- release v0.2.801 ([5bbc1e4](https://github.com/stacksjs/stx/commit/5bbc1e4)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.799...v0.2.800)
 
 ## ✨ Features
