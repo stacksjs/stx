@@ -2,6 +2,8 @@
  * Safe expression evaluator that reduces security risks from using new Function()
  */
 
+import { LRUCache } from './performance-utils'
+
 // =============================================================================
 // Configuration
 // =============================================================================
@@ -51,6 +53,7 @@ let currentConfig: SafeEvaluatorConfig = { ...defaultConfig }
  */
 export function configureSafeEvaluator(config: Partial<SafeEvaluatorConfig>): void {
   currentConfig = { ...currentConfig, ...config }
+  expressionPlans.clear()
 }
 
 /**
@@ -58,6 +61,7 @@ export function configureSafeEvaluator(config: Partial<SafeEvaluatorConfig>): vo
  */
 export function resetSafeEvaluatorConfig(): void {
   currentConfig = { ...defaultConfig }
+  expressionPlans.clear()
 }
 
 /**
@@ -984,11 +988,47 @@ export function isUsableParamName(name: string): boolean {
   return VALID_PARAM_IDENT.test(name) && !RESERVED_PARAM_NAMES.has(name)
 }
 
+interface ExpressionPlan {
+  sourceBytes: number
+  contextKeys: string[]
+  filteredKeys: string[]
+  validEntries: Array<{ key: string, index: number }>
+  validIndices: number[]
+  dynamicKeys: string[]
+  buildFunc: (extraParams: string[]) => (...args: unknown[]) => unknown
+}
+
+// Cache immutable preparation, never a context's values or retry/callback state.
+// The key includes the positional signature: expressions alone cannot describe
+// which argument supplies which binding. Configuration changes clear the plans.
+// The source/signature budget excludes binding metadata and JSC code overhead.
+const expressionPlans = new LRUCache<string, ExpressionPlan>(2000, {
+  maxBytes: 2 * 1024 * 1024,
+  sizeOf: plan => plan.sourceBytes,
+})
+
 export function createSafeFunction(
   expression: string,
   contextKeys: string[],
   onMissingIdentifier?: (name: string) => void,
 ): (...args: unknown[]) => unknown {
+  const key = JSON.stringify([expression, contextKeys])
+  let plan = expressionPlans.get(key)
+  if (!plan) {
+    plan = prepareFunctionPlan(expression, [...contextKeys])
+    plan.sourceBytes += key.length * 2
+    expressionPlans.set(key, plan)
+  }
+  // Missing-name retries and their notification belong to this evaluator,
+  // even when it shares the same compiled body with another request (#2158).
+  return guardDynamicKeys(
+    bindProjection(plan.buildFunc, plan.filteredKeys, plan.contextKeys, plan.validEntries, plan.validIndices, onMissingIdentifier),
+    plan.contextKeys,
+    plan.dynamicKeys,
+  )
+}
+
+function prepareFunctionPlan(expression: string, contextKeys: string[]): ExpressionPlan {
   // Validate the expression first
   const { source: sanitizedExpr, usesSafeConstructors, dynamicKeys } = prepareExpression(expression)
 
@@ -1057,11 +1097,16 @@ catch (e) {
         return (...args: unknown[]) => compiled(SAFE_OBJECT, ...SHADOWED_GLOBAL_VALUES, ...args)
       }
 
-  return guardDynamicKeys(
-    bindProjection(buildFunc, filteredKeys, contextKeys, validEntries, validIndices, onMissingIdentifier),
+  const initialFunc = buildFunc([])
+  return {
+    sourceBytes: expression.length * 2 + contextKeys.reduce((bytes, key) => bytes + key.length * 2, 0),
     contextKeys,
+    filteredKeys,
+    validEntries,
+    validIndices,
     dynamicKeys,
-  )
+    buildFunc: extraParams => extraParams.length === 0 ? initialFunc : buildFunc(extraParams),
+  }
 }
 
 function guardDynamicKeys(

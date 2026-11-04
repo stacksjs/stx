@@ -14,8 +14,8 @@
  * against another's variables — the same values, read under the wrong names.
  */
 
-import { describe, expect, it } from 'bun:test'
-import { createSafeFunction } from '../src/safe-evaluator'
+import { describe, expect, it, spyOn } from 'bun:test'
+import { configureSafeEvaluator, createSafeFunction, resetSafeEvaluatorConfig, safeEvaluateCondition } from '../src/safe-evaluator'
 
 describe('the compiled-expression cache', () => {
   it('returns the same answer on a repeat call', async () => {
@@ -53,5 +53,68 @@ describe('the compiled-expression cache', () => {
 
     expect(await two(1, 2)).toBe(3)
     expect(await three(1, 2, 99)).toBe(3)
+  })
+})
+
+
+describe('expression preparation cache (#2158)', () => {
+  it('reuses validation and preparation without retaining argument values', () => {
+    const trim = spyOn(String.prototype, 'trim')
+    try {
+      const first = createSafeFunction('cachedPlanValue + 17', ['cachedPlanValue'])
+      const preparationCalls = trim.mock.calls.length
+      expect(preparationCalls).toBeGreaterThan(0)
+      const second = createSafeFunction('cachedPlanValue + 17', ['cachedPlanValue'])
+      expect(trim.mock.calls.length).toBe(preparationCalls)
+      expect(first(2)).toBe(19)
+      expect(second(9)).toBe(26)
+    }
+    finally {
+      trim.mockRestore()
+    }
+  })
+
+  it('isolates missing-identifier callbacks and keeps every condition fail-closed', () => {
+    const firstMissing: string[] = []
+    const secondMissing: string[] = []
+    const first = createSafeFunction('!missingPlanGuard && value', ['value'], name => firstMissing.push(name))
+    const second = createSafeFunction('!missingPlanGuard && value', ['value'], name => secondMissing.push(name))
+    expect(first(1)).toBe(1)
+    expect(second(2)).toBe(2)
+    expect(firstMissing).toEqual(['missingPlanGuard'])
+    expect(secondMissing).toEqual(['missingPlanGuard'])
+    for (let i = 0; i < 3; i++) {
+      expect(safeEvaluateCondition('!missingPlanGuard && value', { value: true })).toBe(false)
+      expect(safeEvaluateCondition('!missingPlanGuard && value', { value: true, missingPlanGuard: false })).toBe(true)
+    }
+  })
+
+  it('snapshots positional keys and never aliases different context signatures', () => {
+    const keys = ['b', 'a', 'data-id']
+    const first = createSafeFunction('a - b + 11', keys)
+    keys.reverse()
+    const reversed = createSafeFunction('a - b + 11', keys)
+    expect(first(2, 7, 99)).toBe(16)
+    expect(reversed(99, 7, 2)).toBe(16)
+    expect(createSafeFunction('a - b + 11', ['b', 'a', 'data-id'])(5, 3, 99)).toBe(9)
+  })
+
+  it('invalidates validation after configuration changes and still guards runtime keys', () => {
+    try {
+      configureSafeEvaluator({ allowBracketNotation: true })
+      expect(createSafeFunction('planObject["label"]', ['planObject'])({ label: 'first' })).toBe('first')
+      resetSafeEvaluatorConfig()
+      expect(() => createSafeFunction('planObject["label"]', ['planObject'])).toThrow()
+      configureSafeEvaluator({ allowBracketNotation: true })
+      expect(createSafeFunction('planObject["label"]', ['planObject'])({ label: 'second' })).toBe('second')
+      const first = createSafeFunction('planObject[planKey]', ['planObject', 'planKey'])
+      const second = createSafeFunction('planObject[planKey]', ['planObject', 'planKey'])
+      expect(first({ label: 'safe' }, 'label')).toBe('safe')
+      expect(second({}, 'constructor')).toBeUndefined()
+      expect(second({}, '__proto__')).toBeUndefined()
+    }
+    finally {
+      resetSafeEvaluatorConfig()
+    }
   })
 })
