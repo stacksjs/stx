@@ -43,6 +43,19 @@ describe('public TypeScript surface', () => {
       import { safeEvaluate } from '@stacksjs/stx/safe-evaluator'
       import { deriveLayoutGroup } from 'stx-router/layout-metadata'
 
+import type { NativeBuildConfig, PlistValue } from '@stacksjs/stx/native-build'
+const services = [{ NSMenuItem: { default: 'Search' }, NSMessage: 'search', NSSendTypes: ['public.utf8-plain-text'] }] as const
+const nativeConfig = { input: 'app.stx', infoPlist: { NSServices: services, Ratio: 2.5, Enabled: true, Empty: {} } } satisfies NativeBuildConfig
+const nested: PlistValue = ['x', 2, false, { child: [] }]
+// @ts-expect-error null is not a supported plist value
+const nullPlist: PlistValue = null
+// @ts-expect-error functions cannot be serialized into a plist
+const callbackPlist: PlistValue = () => 1
+// @ts-expect-error undefined dictionary values are unsupported
+const missingPlist: PlistValue = { missing: undefined }
+void [nativeConfig, nested, nullPlist, callbackPlist, missingPlist]
+
+
       interface ProductProps {
         name: string
         price: number

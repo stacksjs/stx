@@ -769,3 +769,43 @@ Use `macos.helperEntitlements` when packaging with Craft. `app.getInfo()` from
 `@stacksjs/desktop/browser` reports `sandboxed`; use native file and folder
 pickers to obtain access before reading inputs or saving copies to a directory.
 No platform-specific source is needed in the application.
+
+
+## macOS Info.plist values
+
+`buildNative` accepts nested dictionaries and arrays through `infoPlist`, including
+macOS Services, URL schemes, document types and exported UTI declarations:
+
+```ts
+import { buildNative, type NativeBuildConfig } from '@stacksjs/stx/native-build'
+
+const config = {
+  input: 'src/app.stx',
+  target: 'macos',
+  name: 'MyApp',
+  infoPlist: {
+    NSServices: [{
+      NSMenuItem: { default: 'Search with MyApp' },
+      NSMessage: 'searchWithMyApp',
+      NSPortName: 'MyApp',
+      NSSendTypes: ['public.utf8-plain-text'],
+    }],
+    CFBundleURLTypes: [{
+      CFBundleURLName: 'org.example.myapp',
+      CFBundleURLSchemes: ['myapp'],
+    }],
+  },
+} satisfies NativeBuildConfig
+
+await buildNative(config)
+```
+
+Values can be strings, finite numbers, booleans, arrays or dictionaries; empty
+arrays/dictionaries and readonly configuration are supported. Keys and text are
+XML-escaped, and the plist is written before signing. Dates, binary data, null,
+undefined and cyclic structures are unsupported and fail the build.
+
+macOS reads `NSServices` when the application launches. Advertising a service in
+the plist and registering its matching `NSMessage` through the desktop
+`serviceMenu` bridge are separate requirements; declaring the plist entry does
+not register a runtime handler.
