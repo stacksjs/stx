@@ -1,5 +1,29 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.801...v0.2.802)
+
+## ✨ Features
+
+- **native**: separate authorized media URLs from cache identity ([79e12c9](https://github.com/stacksjs/stx/commit/79e12c9)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: preserve style variables and diagnostics on cache hits (#2155) ([bde2427](https://github.com/stacksjs/stx/commit/bde2427)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2155](https://github.com/stacksjs/stx/issues/2155), [#2155](https://github.com/stacksjs/stx/issues/2155))
+
+## ⚡ Performance Improvements
+
+- **ssr**: reuse expression preparation without retaining render state (#2158) ([8ffdb05](https://github.com/stacksjs/stx/commit/8ffdb05)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2158](https://github.com/stacksjs/stx/issues/2158), [#2158](https://github.com/stacksjs/stx/issues/2158))
+- **ssr**: retain client-script analysis across alternating passes (#2158) ([802a840](https://github.com/stacksjs/stx/commit/802a840)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2158](https://github.com/stacksjs/stx/issues/2158), [#2158](https://github.com/stacksjs/stx/issues/2158))
+
+## 🔧 Chores
+
+- release v0.2.802 ([aea8216](https://github.com/stacksjs/stx/commit/aea8216)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.800...v0.2.801)
 
 ## 🐛 Bug Fixes
