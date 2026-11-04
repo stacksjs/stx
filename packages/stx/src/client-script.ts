@@ -469,11 +469,10 @@ const JS_BUILTINS = new Set([
 ])
 
 
-function detectModelUsage(code: string): string[] {
+function detectModelUsage(code: string, analysis = parameterAnalysis(code)): string[] {
   const models: Set<string> = new Set()
   // Read with comments and literals blanked, and with parameter scopes known:
   // `(J) => J.get(key)` queries the parameter, not a model.
-  const analysis = parameterAnalysis(code)
   const declared = declaredNames(code)
 
   // Pattern: PascalCase identifier followed by query method
@@ -665,6 +664,10 @@ function transformAutoImportsUncached(code: string): AutoImportResult {
   }
 
   const locallyDeclared = collectLocalBindings(transformedCode)
+  // A large bundled registry can exceed the global analysis-cache budget.
+  // Keep this pass's analysis alive locally instead of re-tokenizing it for
+  // every ambient symbol; the shared cache stays bounded for other renders.
+  const sourceAnalysis = parameterAnalysis(transformedCode)
 
   // Detect usage of auto-importable symbols that weren't explicitly imported
   for (const symbol of STX_AUTO_IMPORTS) {
@@ -681,7 +684,7 @@ function transformAutoImportsUncached(code: string): AutoImportResult {
     // of those triggers a blanket destructure that happens to rescue the rest.
     // runtime-globals.ts:162 and signal-processing.ts:1165 already spell it
     // this way; this was the third copy and the one that drifted.
-    if (referencesName(transformedCode, symbol, true)) {
+    if (referencesAnalyzed(sourceAnalysis, symbol, true)) {
       usedStxImports.add(symbol)
     }
   }
@@ -704,6 +707,7 @@ function transformAutoImportsUncached(code: string): AutoImportResult {
   // and `new`, and requiring `(` would drop the legitimate uses along with the
   // prose.
   const searchableForBrowser = stripCommentsAndLiterals(transformedCode)
+  const browserAnalysis = parameterAnalysis(searchableForBrowser)
 
   // Names imported from ANY module, not just the three the regex above matches.
   //
@@ -739,13 +743,13 @@ function transformAutoImportsUncached(code: string): AutoImportResult {
 
   for (const symbol of BROWSER_CORE_IMPORTS) {
     if (existingImports.has(symbol) || locallyDeclared.has(symbol) || importedFromAnywhere.has(symbol)) continue
-    if (referencesName(searchableForBrowser, symbol)) {
+    if (referencesAnalyzed(browserAnalysis, symbol)) {
       usedBrowserImports.add(symbol)
     }
   }
 
   // Dynamically detect app-specific models (PascalCase with query methods)
-  const detectedModels = detectModelUsage(searchableForBrowser)
+  const detectedModels = detectModelUsage(searchableForBrowser, browserAnalysis)
   for (const model of detectedModels) {
     if (!existingImports.has(model) && !locallyDeclared.has(model)) {
       usedBrowserImports.add(model)
@@ -771,8 +775,11 @@ function transformAutoImportsUncached(code: string): AutoImportResult {
  * runtime is missing.
  */
 export function referencesName(code: string, name: string, call = false): boolean {
-  const analysis = parameterAnalysis(code)
-  code = analysis.code
+  return referencesAnalyzed(parameterAnalysis(code), name, call)
+}
+
+function referencesAnalyzed(analysis: ReturnType<typeof parameterAnalysis>, name: string, call = false): boolean {
+  const code = analysis.code
   const pattern = new RegExp(`\\b${name.replace(/[$]/g, '\\$')}\\b`, 'g')
   for (const match of code.matchAll(pattern)) {
     const start = match.index ?? 0
