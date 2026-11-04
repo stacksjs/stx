@@ -152,7 +152,6 @@ const macos: SidebarTheme = {
       'text-[13px] leading-[16px] font-normal',
       'text-black dark:text-white',
       'transition-colors duration-150 ease-out',
-      'cursor-default',
     ].join(' '),
     hover: 'hover:bg-black/4 dark:hover:bg-white/6',
     // Selection is painted by the `accent` model in Sidebar.stx's scoped CSS,
@@ -313,7 +312,6 @@ const arc: SidebarTheme = {
       'text-[13px] leading-[16px] font-normal',
       'text-current',
       'transition-[background-color,box-shadow,color] duration-150 ease-out',
-      'cursor-default',
     ].join(' '),
     hover: 'hover:bg-white/55 dark:hover:bg-white/8',
     // The signature: a raised white card rather than an accent fill. The label

@@ -20,6 +20,7 @@ const themeStyle = resolveSidebarTheme(theme).item
 
 export const rowClasses = [
   themeStyle.base,
+  disabled ? 'cursor-default' : 'cursor-pointer',
   disabled ? themeStyle.disabled : themeStyle.hover,
   disabled ? '' : themeStyle.pressed,
   active ? themeStyle.active : '',

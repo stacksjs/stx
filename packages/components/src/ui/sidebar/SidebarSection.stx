@@ -9,7 +9,7 @@ export const collapsed = $bool($props.collapsed)
 export const theme = $props.theme || $props.variant || 'macos'
 
 const themeStyle = resolveSidebarTheme(theme)
-export const headerClasses = themeStyle.sectionHeader + (collapsible ? ' cursor-default' : '')
+export const headerClasses = themeStyle.sectionHeader + (collapsible ? ' cursor-pointer' : '')
 export const chevronClasses = themeStyle.sectionChevron
 export const groupClasses = themeStyle.sectionGroup
 
