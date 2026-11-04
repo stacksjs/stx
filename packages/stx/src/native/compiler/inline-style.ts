@@ -208,28 +208,30 @@ export function parseNativeStyle(input: unknown, report: (diagnostic: NativeStyl
 const NO_STYLE_VARIABLES: NativeStyleVariables = new Map()
 
 export function parseNativeStyleLayers(inputs: unknown[], inheritedVariables: NativeStyleVariables | undefined, report: (diagnostic: NativeStyleDiagnostic) => void): { variables: NativeStyleVariables, styles: STXStyle[] } {
-  // A style object's text is its key (one native JSON.stringify, rather than
-  // its entries taken apart in script): one translated before, standing alone
-  // (no custom property declared, none read), is taken as it was.
   let known: STXStyle[] | null = null
   let keys: Array<string | undefined> | null = null
   const layers = new Array<Array<[string, unknown]>>(inputs.length)
   let empty = true
   for (let i = 0; i < inputs.length; i++) {
-    const input = inputs[i]
-    if ((input && typeof input === 'object' && !Array.isArray(input)) || (typeof input === 'string' && input)) {
-      const key = typeof input === 'string' ? standaloneStyleText(input) : standaloneStyleKey(input as object)
-      const kept = key === undefined ? undefined : rememberedStyles.get(key)
-      if (kept) {
-        (known ??= new Array<STXStyle>(inputs.length))[i] = kept
-        layers[i] = NO_ENTRIES
-        empty = false
-        continue
-      }
-      if (key !== undefined) (keys ??= new Array<string | undefined>(inputs.length))[i] = key
+    // Parse before checking the memo: JSON spelling is not the parser's input
+    // (trimmed/escaped declarations, VAR(), toJSON and nonfinite numbers).
+    // Snapshot structured getters once, then use that same snapshot for both
+    // the key and translation. No authored getter is read again on a miss.
+    const entries = snapshotStructuredEntries(styleEntries(inputs[i], report))
+    layers[i] = entries
+    if (!entries.length) continue
+    empty = false
+    const key = standaloneStyleKey(entries)
+    if (key === undefined) continue
+    const kept = rememberedStyles.get(key)
+    if (kept) {
+      (known ??= new Array<STXStyle>(inputs.length))[i] = kept
+      // Eligibility proved this layer declares and reads no variables.
+      layers[i] = NO_ENTRIES
     }
-    layers[i] = styleEntries(input, report)
-    if (layers[i]!.length) empty = false
+    else {
+      (keys ??= new Array<string | undefined>(inputs.length))[i] = key
+    }
   }
   // Most nodes have no inline or bound style at all: nothing to parse, and
   // their variables are their parent's.
@@ -266,8 +268,6 @@ export function parseNativeStyleLayers(inputs: unknown[], inheritedVariables: Na
   return { variables: computed, styles }
 }
 
-const NO_ENTRIES: Array<[string, unknown]> = []
-
 /**
  * A bound style is a new object on every evaluation, yet a list's rows bind
  * the same few styles over and over: a sidebar's forty rows give their icon
@@ -275,18 +275,48 @@ const NO_ENTRIES: Array<[string, unknown]> = []
  */
 const rememberedStyles = new Map<string, STXStyle>()
 
-/** A style attribute's own text as its key (marked apart from object texts), unless it involves custom properties. */
-function standaloneStyleText(text: string): string | undefined {
-  return text.includes('var(') || text.includes('--') ? undefined : `\u0003${text}`
+const NO_ENTRIES: Array<[string, unknown]> = []
+const INVALID_STRUCTURED_STYLE = Symbol('invalid native structured style')
+
+function normalizedProperty(rawProperty: string): string {
+  return STYLE_KEYS.has(rawProperty) || rawProperty.trim().startsWith('--')
+    ? rawProperty
+    : rawProperty.trim().toLowerCase().replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())
 }
 
-/** The style object's text, or undefined when it declares or reads a custom property (or has no text). */
-function standaloneStyleKey(input: object): string | undefined {
-  let text: string
-  try { text = JSON.stringify(input) }
-  catch { return undefined }
-  if (typeof text !== 'string' || text.includes('var(') || text.includes('"--')) return undefined
-  return text
+function snapshotStructuredEntries(entries: Array<[string, unknown]>): Array<[string, unknown]> {
+  let snapshots: Array<[string, unknown]> | undefined
+  for (let i = 0; i < entries.length; i++) {
+    const [name, raw] = entries[i]
+    if (!raw || typeof raw !== 'object') continue
+    const property = normalizedProperty(name)
+    if (property !== 'shadowOffset' && property !== 'transform') continue
+    snapshots ??= entries.slice()
+    snapshots[i] = [name, structuredStyle(property, raw) ?? INVALID_STRUCTURED_STYLE]
+  }
+  return snapshots ?? entries
+}
+
+/** Only values whose JSON representation preserves their parsed meaning. */
+function cacheableValue(name: string, value: unknown): boolean {
+  if (value == null || typeof value === 'string' || typeof value === 'boolean') return true
+  if (typeof value === 'number') return finite(value) && !Object.is(value, -0)
+  // Structured objects here are our validated snapshots, never authored objects.
+  const property = normalizedProperty(name)
+  if (property === 'shadowOffset' && value && typeof value === 'object' && !Array.isArray(value))
+    return Object.values(value).every(part => finite(part) && !Object.is(part, -0))
+  if (property === 'transform' && Array.isArray(value))
+    return value.every(step => Object.values(step).every(part => typeof part === 'string' || (finite(part) && !Object.is(part, -0))))
+  return false
+}
+
+/** Key actual parsed entries; variable-dependent layers must resolve afresh. */
+function standaloneStyleKey(entries: Array<[string, unknown]>): string | undefined {
+  for (const [name, value] of entries) {
+    if (name.trim().startsWith('--') || (typeof value === 'string' && /var\(/i.test(value))) return undefined
+    if (!cacheableValue(name, value)) return undefined
+  }
+  return JSON.stringify(entries)
 }
 
 function parseEntries(entries: Array<[string, unknown]>, variables: ReturnType<typeof createStyleVariables>, report: (diagnostic: NativeStyleDiagnostic) => void): STXStyle {
@@ -294,9 +324,7 @@ function parseEntries(entries: Array<[string, unknown]>, variables: ReturnType<t
   const declarationNames: string[] = []
   for (const [rawProperty, raw] of entries) {
     if (rawProperty.trim().startsWith('--')) { declarationNames.push(rawProperty.trim()); continue }
-    const property = STYLE_KEYS.has(rawProperty) || rawProperty.trim().startsWith('--')
-      ? rawProperty
-      : rawProperty.trim().toLowerCase().replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())
+    const property = normalizedProperty(rawProperty)
     if (!STYLE_KEYS.has(property)) {
       report({ kind: 'unknown-style', name: property })
       continue

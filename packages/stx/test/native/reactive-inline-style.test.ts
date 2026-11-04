@@ -2,6 +2,37 @@ import { describe, expect, it } from 'bun:test'
 import { compileNativeScreen, mountNativeScreen } from '../../src/native/testing'
 
 describe.each([false, true])('reactive native inline styles (minify=%s)', (minify) => {
+  it.each(['ios', 'android'] as const)('keeps warm variable layers reactive through retained updates and remounts (%s)', async (platform) => {
+    const { code } = await compileNativeScreen(`<script client>
+const theme = state({ ' --memo-accent': '#123456' })
+const paint = state({ color: 'VAR(--memo-accent)' })
+const shown = state(true)
+window.cacheProbe = { theme, paint, shown }
+</script><div :if="shown" :style="theme"><div testID="cache-painted" :style="paint">Themed</div></div>`, { minify })
+    const phone = mountNativeScreen(code, 'Screen', { platform })
+    try {
+      await phone.settle()
+      const original = phone.byTestID('cache-painted')!
+      expect(original.style.color).toBe('#123456')
+      for (const color of ['#abcdef', '#102030', '#abcdef']) {
+        phone.context.cacheProbe.theme.set({ ' --memo-accent': color })
+        phone.context.cacheProbe.paint.set('{"color":"\\u0076ar(--memo-accent)"}')
+        await phone.settle()
+        expect(phone.byTestID('cache-painted')).toBe(original)
+        expect(original.style.color).toBe(color)
+      }
+      phone.context.cacheProbe.shown.set(false)
+      await phone.settle()
+      expect(phone.byTestID('cache-painted')).toBeUndefined()
+      phone.context.cacheProbe.theme.set({ ' --memo-accent': '#fedcba' })
+      phone.context.cacheProbe.shown.set(true)
+      await phone.settle()
+      expect(phone.byTestID('cache-painted')!.style.color).toBe('#fedcba')
+      expect(phone.mutationErrors).toEqual([])
+    }
+    finally { phone.unmount() }
+  }, 30_000)
+
   it.each(['ios', 'android'] as const)('normalizes pointer policies through the compiled bundle and clears retained nodes (%s)', async (platform) => {
     const { code, diagnostics } = await compileNativeScreen(`<script client>
 const styles = state('pointer-events:none')

@@ -61,6 +61,18 @@ for (const file of ['native-hud-device.stx', 'NativeHudPanel.stx', 'native-hud-m
 copyFileSync(join(root, 'scripts/native-hud-package-probe.ts'), join(smokeRoot, 'native-hud-package-probe.ts'))
 run([process.execPath, 'native-hud-package-probe.ts'])
 
+// #2155: run maintained parser and reactive-bundle contracts against the
+// untouched package archives. Only test imports change to public entry points.
+for (const [fixture, sourceImport, installedImport] of [
+  ['inline-style-cache.test.ts', '../../src/native/compiler/inline-style', '@stacksjs/stx/native/compiler/inline-style'],
+  ['reactive-inline-style.test.ts', '../../src/native/testing', '@stacksjs/stx/native/testing'],
+]) {
+  const source = readFileSync(join(root, 'packages/stx/test/native', fixture), 'utf8')
+  if (!source.includes(sourceImport)) throw new Error(`Missing native fixture import: ${fixture}`)
+  writeFileSync(join(smokeRoot, fixture), source.replace(sourceImport, installedImport))
+}
+run([process.execPath, 'test', './inline-style-cache.test.ts', './reactive-inline-style.test.ts'])
+
 writeFileSync(join(smokeRoot, 'pages', 'index.stx'), `<script server>
 export const products = [
   { name: 'Cedar Wick Candle', price: '$28' },
