@@ -3,7 +3,7 @@ import { NativeCapabilityError, STXBridge } from '../bridge/protocol'
 import { createEventSourceClass, createStreamingBody, type StreamSink } from './event-stream'
 import { abortError, isNativeDocument, NativeFormData, nativeFormParts, updateNativeDocumentVisibility } from './jsc-globals'
 import type { NativeLayoutChrome } from '../compiler/ir'
-import type { NativeChromeButton, NativeNavigationButton, NativeNavigationChrome } from './craft'
+import type { NativeChromeButton, NativeNavigationButton, NativeNavigationChrome, NativePasskeyCreationOptions, NativePasskeyRequestOptions } from './craft'
 import { buttonsKey, changedTabItems, chromePath, hostButton, mergeChromeButtons, type ButtonSide } from './navigation-chrome'
 import { installNativeNavigation, nativeRouteParams } from './web-navigation'
 import { installNativeWebStorage } from './web-storage'
@@ -82,6 +82,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     fetch: capabilities.has('fetch'),
     badge: capabilities.has('badge'),
     wallet: capabilities.has('wallet'),
+    passkeys: capabilities.has('passkeys'),
     appReview: false,
     health: capabilities.has('health'),
     dialogs: capabilities.has('dialog'),
@@ -987,6 +988,13 @@ export function installCraftBridge(
     }
   }
 
+  if (capabilities.has('passkeys')) {
+    craft.passkeys = {
+      isAvailable: () => request('Passkeys', 'isAvailable', []).then(Boolean),
+      create: (options: NativePasskeyCreationOptions) => ask('Passkeys', 'create', [options]),
+      get: (options: NativePasskeyRequestOptions) => ask('Passkeys', 'get', [options]),
+    }
+  }
   if (capabilities.has('wallet')) {
     craft.wallet = {
       isAvailable: () => request('Wallet', 'isAvailable', []).then(Boolean),

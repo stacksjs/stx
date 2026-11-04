@@ -4,11 +4,11 @@ import vm from 'node:vm'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
 import { createTempDir } from '../../src/temp-dir'
 
-async function generate(script: string = '', template: string = '<View><Text>Capabilities</Text></View>'): Promise<string> {
+async function generate(script: string = '', template: string = '<View><Text>Capabilities</Text></View>', minify?: boolean): Promise<string> {
   const root = createTempDir('stx-native-capabilities-')
   const file = path.join(root, 'Capabilities.stx')
   await Bun.write(file, `<script client>${script}</script>${template}`)
-  return (await compileSharedScreenBundle(file)).code
+  return (await compileSharedScreenBundle(file, minify === undefined ? {} : { minify })).code
 }
 
 async function runtime(script: string = '', options: {
@@ -17,6 +17,7 @@ async function runtime(script: string = '', options: {
   timers?: boolean
   template?: string
   capabilities?: string[]
+  minify?: boolean
 } = {}) {
   const sent: Array<Record<string, any>> = []
   let callback: (message: string) => void = () => {}
@@ -36,12 +37,62 @@ async function runtime(script: string = '', options: {
     scope.setTimeout = setTimeout
     scope.clearTimeout = clearTimeout
   }
-  vm.runInNewContext(await generate(script, options.template), scope)
+  vm.runInNewContext(await generate(script, options.template, options.minify), scope)
   await Promise.resolve()
   return { scope, sent, receive: (message: Record<string, any>) => callback(JSON.stringify(message)) }
 }
 
 describe('shared-runtime native capability protocol', () => {
+  it.each([false, true])('gates passkeys and preserves untimed credential exchanges (minify=%s)', async (minify) => {
+    const missing = await runtime('', { capabilities: [], minify })
+    expect(missing.scope.craft.passkeys).toBeUndefined()
+    expect(missing.scope.craft.capabilities.passkeys).toBe(false)
+    expect(missing.sent.some(message => message.type === 'API_REQUEST')).toBe(false)
+    const { scope, sent, receive } = await runtime('', { capabilities: ['passkeys'], timeout: 5, minify })
+    expect(scope.craft.capabilities.passkeys).toBe(true)
+    for (const supported of [false, true]) {
+      const available = scope.craft.passkeys.isAvailable()
+      const availability = sent.at(-1)!
+      expect(availability.payload).toEqual({ version: 1, module: 'Passkeys', method: 'isAvailable', args: [] })
+      receive({ type: 'API_RESPONSE', correlationId: availability.id, payload: { version: 1, requestId: availability.id, data: supported } })
+      expect(await available).toBe(supported)
+    }
+    const registration = { id: '_-AA', rawId: '_-AA', type: 'public-key', response: { clientDataJSON: '_-BB', attestationObject: '_-CC' } }
+    const assertion = { id: '_-AA', rawId: '_-AA', type: 'public-key', response: { clientDataJSON: '_-DD', authenticatorData: '_-EE', signature: '_-FF', userHandle: '' } }
+    const exchanges = [
+      { method: 'create', options: { challenge: '_-BB', user: { id: '_-CC', name: 'member@example.test' }, rpId: 'example.test' }, answer: registration },
+      { method: 'get', options: { challenge: '_-DD', allowCredentials: [{ id: '_-AA' }], rpId: 'example.test' }, answer: assertion },
+      { method: 'get', options: { challenge: '_-EE' }, answer: { ...assertion, response: { clientDataJSON: '_-DD', authenticatorData: '_-EE', signature: '_-FF' } } },
+    ]
+    for (const { method, options, answer } of exchanges) {
+      const pending = scope.craft.passkeys[method](options)
+      const call = sent.at(-1)!
+      expect(call.payload).toEqual({ version: 1, module: 'Passkeys', method, args: [options], untimed: true })
+      await Bun.sleep(20)
+      expect(sent.some(message => message.type === 'API_CANCEL')).toBe(false)
+      receive({ type: 'API_RESPONSE', correlationId: call.id, payload: { version: 1, requestId: call.id, data: answer } })
+      expect(await pending).toEqual(answer)
+    }
+  }, 30_000)
+
+  it.each([false, true])('preserves passkey host errors and cancellation (minify=%s)', async (minify) => {
+    const { scope, sent, receive } = await runtime('', { capabilities: ['passkeys'], minify })
+    for (const method of ['create', 'get']) {
+      for (const code of ['CAPABILITY_DISABLED', 'UNAVAILABLE', 'INVALID_ARGUMENT', 'CANCELLED', 'PASSKEY_FAILED']) {
+        const pending = scope.craft.passkeys[method]({ challenge: 'invalid' }).catch((error: unknown) => error)
+        const call = sent.at(-1)!
+        expect(call.payload).toMatchObject({ module: 'Passkeys', method })
+        receive({ type: 'API_ERROR', correlationId: call.id, payload: { version: 1, requestId: call.id, code, message: `Host says ${code}` } })
+        expect(await pending).toMatchObject({ code, message: `Host says ${code}` })
+      }
+    }
+    const pending = scope.craft.passkeys.create({ challenge: '_-AA', user: { id: '_-BB', name: 'Member' } }).catch((error: unknown) => error)
+    const call = sent.at(-1)!
+    scope.__stxNativeUnmount()
+    expect(await pending).toMatchObject({ code: 'CANCELLED' })
+    expect(sent.filter(message => message.type === 'API_CANCEL')).toContainEqual(expect.objectContaining({ payload: { version: 1, requestId: call.id, reason: 'screen-closed' } }))
+  }, 30_000)
+
   it('refuses pressure recording on old hosts and carries opt-in and recovery on supported hosts', async () => {
     const old = await runtime('', { capabilities: ['geolocation'], timers: false })
     expect(old.scope.craft.capabilities.locationRecordingBarometer).toBe(false)

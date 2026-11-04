@@ -314,6 +314,35 @@ export interface NativePedometerPassive {
   history: () => Promise<Array<{ kind: 'daily', source: 'healthServices', day: string, timeZone: string, startDate: number, endDate: number, steps: number }>>
 }
 
+/** Challenge and user id are base64url strings, not browser ArrayBuffers. */
+export interface NativePasskeyCreationOptions {
+  challenge: string
+  user: { id: string, name: string }
+  rpId?: string
+}
+
+export interface NativePasskeyRequestOptions {
+  challenge: string
+  allowCredentials?: ReadonlyArray<{ id: string }>
+  rpId?: string
+}
+
+export interface NativePasskeyRegistration {
+  id: string
+  rawId: string
+  type: 'public-key'
+  response: { clientDataJSON: string, attestationObject: string }
+}
+
+export interface NativePasskeyAssertion {
+  id: string
+  rawId: string
+  type: 'public-key'
+  response: { clientDataJSON: string, authenticatorData: string, signature: string, userHandle?: string }
+}
+
+export type NativePasskeyCredential = NativePasskeyRegistration | NativePasskeyAssertion
+
 export interface NativeCraft {
   pedometerPassive?: NativePedometerPassive
   healthBackground?: NativeHealthBackground
@@ -509,6 +538,12 @@ export interface NativeCraft {
     grantedTypes?: () => Promise<string[]>
     /** The store's own screen for this app's permissions, or its install page. */
     openSettings?: () => Promise<boolean>
+  }
+  /** Host-owned passkeys, when advertised. Creation/sign-in wait for the user; credentials stay base64url encoded. */
+  passkeys?: {
+    isAvailable: () => Promise<boolean>
+    create: (options: NativePasskeyCreationOptions) => Promise<NativePasskeyRegistration>
+    get: (options: NativePasskeyRequestOptions) => Promise<NativePasskeyAssertion>
   }
   /** Apple Wallet or Google Wallet pass presentation, when the host advertises `wallet`. */
   wallet?: {

@@ -133,6 +133,27 @@ const callbackPlist: PlistValue = () => 1
 const missingPlist: PlistValue = { missing: undefined }
 void [nativeConfig, nested, nullPlist, callbackPlist, missingPlist]
 
+import type { NativeCraft, NativePasskeyCreationOptions, NativePasskeyRequestOptions, NativePasskeyCredential } from '@stacksjs/stx/native'
+async function passkeyTypes(craft: NativeCraft) {
+  if (!craft.passkeys || !await craft.passkeys.isAvailable()) return
+  const creation = { challenge: '_-AA', user: { id: '_-BB', name: 'Member' } } satisfies NativePasskeyCreationOptions
+  const registration = await craft.passkeys.create(creation)
+  const attestation: string = registration.response.attestationObject
+  const request = { challenge: '_-CC', allowCredentials: [{ id: registration.id }] } as const satisfies NativePasskeyRequestOptions
+  const assertion = await craft.passkeys.get(request)
+  const signature: string = assertion.response.signature
+  const userHandle: string | undefined = assertion.response.userHandle
+  const credential: NativePasskeyCredential = assertion
+  // @ts-expect-error Native challenges are base64url strings
+  craft.passkeys.create({ challenge: new Uint8Array(), user: { id: 'id', name: 'Member' } })
+  // @ts-expect-error A registration response is not a signature response
+  registration.response.signature
+  // @ts-expect-error An assertion response is not an attestation response
+  assertion.response.attestationObject
+  void [attestation, signature, userHandle, credential]
+}
+void passkeyTypes
+
 import { $path, definePageMeta, type CheckHref } from '@stacksjs/stx'
 import { createChat } from '@stacksjs/components/chat'
 import { createNativeUpdateApi, applicationDataDirectory, type NativeUpdateState } from '@stacksjs/desktop'
