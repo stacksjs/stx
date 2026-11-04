@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test'
 import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { buildNative } from '../src/native-build'
 import { embedMacOSProvisioningProfile, parseMacOSProfileEntitlements, signMacOSBundle } from '../src/native-signing'
 
 test.skipIf(process.platform === 'win32')('a private signing profile becomes a readable bundle resource without changing the input', () => {
@@ -77,3 +78,47 @@ test.skipIf(process.platform !== 'darwin')('macOS signing binds the app identity
     rmSync(work, { recursive: true, force: true })
   }
 })
+
+test.skipIf(process.platform !== 'darwin')('native builds preserve nested service and document declarations before signing (#2152)', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'stx-nested-plist-'))
+  try {
+    const input = join(root, 'app.stx')
+    writeFileSync(input, '<html><head><title>Services</title></head><body>Service provider</body></html>')
+    const services = [{
+      NSMenuItem: { default: 'Search & <Translate> 日本語' },
+      NSMessage: 'searchWithMyApp',
+      NSPortName: 'ServiceProvider',
+      NSSendTypes: ['public.utf8-plain-text'],
+      NSRequiredContext: { NSTimeout: 2.5, Enabled: true },
+    }]
+    const urlTypes = [{ CFBundleURLName: 'org.stx.services', CFBundleURLSchemes: ['stx-service'] }]
+    const documents = [{ CFBundleTypeName: 'Document', LSItemContentTypes: ['org.stx.document'] }]
+    const result = await buildNative({ input, target: 'macos', output: root, name: 'ServiceProvider',
+      craftPath: '/bin/echo', bundleStyle: 'executable', infoPlist: {
+        NSServices: services,
+        CFBundleURLTypes: urlTypes,
+        CFBundleDocumentTypes: documents,
+        UTExportedTypeDeclarations: [{ UTTypeIdentifier: 'org.stx.document', UTTypeConformsTo: ['public.data'] }],
+        EmptyArray: [], EmptyDictionary: {}, LegacyBoolean: false, LegacyNumber: 7,
+      } })
+    expect(result.success, result.error).toBe(true)
+    const app = join(root, 'ServiceProvider.app')
+    const plist = join(app, 'Contents/Info.plist')
+    const parsed = Bun.spawnSync(['/usr/bin/plutil', '-convert', 'json', '-o', '-', plist])
+    expect(parsed.exitCode, parsed.stderr.toString()).toBe(0)
+    const data = JSON.parse(parsed.stdout.toString())
+    expect(data.NSServices).toEqual(services)
+    expect(data.CFBundleURLTypes).toEqual(urlTypes)
+    expect(data.CFBundleDocumentTypes).toEqual(documents)
+    expect(data.UTExportedTypeDeclarations[0].UTTypeConformsTo).toEqual(['public.data'])
+    expect(data.EmptyArray).toEqual([])
+    expect(data.EmptyDictionary).toEqual({})
+    expect(data.LegacyBoolean).toBe(false)
+    expect(data.LegacyNumber).toBe(7)
+    expect(data.CFBundleExecutable).toBe('ServiceProvider')
+    expect(Bun.spawnSync(['/usr/libexec/PlistBuddy', '-c', 'Print :NSServices:0:NSMessage', plist]).stdout.toString().trim()).toBe('searchWithMyApp')
+    const signature = Bun.spawnSync(['/usr/bin/codesign', '--verify', '--strict', app])
+    expect(signature.exitCode, signature.stderr.toString()).toBe(0)
+  }
+  finally { rmSync(root, { recursive: true, force: true }) }
+}, 30_000)

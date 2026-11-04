@@ -24,6 +24,9 @@ import { renderTemplate } from './render'
 import { loadStxConfig } from './config'
 import { createTempDir, removeTempDir } from './temp-dir'
 import { signMacOSBundle, type MacOSSigningOptions } from './native-signing'
+import { renderInfoPlist, type PlistValue } from './info-plist'
+
+export type { PlistValue } from './info-plist'
 
 export type NativeTarget = 'macos' | 'windows' | 'linux' | 'ios' | 'android'
 export type NativeFormat = 'app' | 'dmg' | 'pkg' | 'msi' | 'zip' | 'deb' | 'rpm' | 'appimage' | 'ipa' | 'apk'
@@ -126,8 +129,10 @@ export interface NativeBuildConfig {
    * `NSFocusStatusUsageDescription` for Focus, `NSMicrophoneUsageDescription`
    * for audio, and so on. Without the key the system denies the request
    * silently, so there is no way to build a working app without this hook.
+   * Arrays and nested dictionaries support NSServices, URL/document types
+   * and UTI declarations. Dates, binary data and null are not supported.
    */
-  infoPlist?: Record<string, string | number | boolean>
+  infoPlist?: Record<string, PlistValue>
 
   /** Minimum macOS version (`LSMinimumSystemVersion`). */
   minimumSystemVersion?: string
@@ -491,7 +496,7 @@ exec "$DIR/craft" --html-file "$RESOURCES/index.html" \\
     copyFileSync(config.icon!, join(resourcesDir, 'AppIcon.icns'))
   }
 
-  const plistEntries: Record<string, string | number | boolean> = {
+  const plistEntries: Record<string, PlistValue> = {
     CFBundleInfoDictionaryVersion: '6.0',
     CFBundleExecutable: appName,
     CFBundleIdentifier: bundleId,
@@ -580,42 +585,6 @@ async function supportsBundleManifest(craftPath: string): Promise<boolean> {
   catch {
     return false
   }
-}
-
-/**
- * Escape a string for an XML text node. Bundle identifiers, app names and
- * copyright lines are all user-supplied; an unescaped `&` or `<` produces a
- * plist macOS refuses to parse, which surfaces as an app that simply will not
- * launch.
- */
-function escapeXml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-}
-
-/** Serialize a flat key/value map as an `Info.plist` document. */
-function renderInfoPlist(entries: Record<string, string | number | boolean>): string {
-  const body = Object.entries(entries)
-    .map(([key, value]) => {
-      const rendered = typeof value === 'boolean'
-        ? `<${value}/>`
-        : typeof value === 'number'
-          ? `<integer>${value}</integer>`
-          : `<string>${escapeXml(String(value))}</string>`
-      return `    <key>${escapeXml(key)}</key>\n    ${rendered}`
-    })
-    .join('\n')
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-${body}
-</dict>
-</plist>
-`
 }
 
 /**
