@@ -13,6 +13,9 @@ import { stateDir } from '../state-dir'
 import { dedupeScopedStyles, findDuplicateScopedStyleRanges } from '../style-scoping'
 import { colors } from './terminal-colors'
 import { contentKey, renderMemo } from '../render-memo'
+import { clearCssServeAssets, registerCssServeAsset } from './serve-css-assets'
+
+export { getCssServeAsset } from './serve-css-assets'
 
 // Type for Css module
 interface CssModule {
@@ -92,7 +95,6 @@ let isBuilding = false
 // dev sessions where every navigation adds a new class signature.
 const MAX_CACHE = 256
 const cssByClassSet = new Map<string, string>()
-const serveCssByHash = new Map<string, string>()
 let diskCacheRoot: string | null = null
 let configFingerprint: string | null = null
 
@@ -124,26 +126,6 @@ function setLruCache(key: string, value: string): void {
   else if (cssByClassSet.size >= MAX_CACHE)
     cssByClassSet.delete(cssByClassSet.keys().next().value as string)
   cssByClassSet.set(key, value)
-}
-
-function registerServeCss(css: string): string {
-  const hash = shortHash(css)
-  if (serveCssByHash.has(hash))
-    serveCssByHash.delete(hash)
-  else if (serveCssByHash.size >= MAX_CACHE)
-    serveCssByHash.delete(serveCssByHash.keys().next().value as string)
-  serveCssByHash.set(hash, css)
-  return hash
-}
-
-export function getCssServeAsset(hash: string): string | undefined {
-  const css = serveCssByHash.get(hash)
-  if (css === undefined)
-    return
-
-  serveCssByHash.delete(hash)
-  serveCssByHash.set(hash, css)
-  return css
 }
 
 async function readDiskCache(key: string, root: string | null = diskCacheRoot): Promise<string | null> {
@@ -362,7 +344,7 @@ export async function loadCssEngine(): Promise<CssModule | null> {
 export function resetCssCache(): void {
   cssByPage.clear()
   cssByClassSet.clear()
-  serveCssByHash.clear()
+  clearCssServeAssets()
 }
 
 export function resetCssCache(): void {
@@ -372,7 +354,7 @@ export function resetCssCache(): void {
   cachedConfig = null
   cachedCSS = ''
   cssByClassSet.clear()
-  serveCssByHash.clear()
+  clearCssServeAssets()
   // Don't blow away the on-disk cache here — tests reach for this
   // function to clear in-process state, and nuking the disk cache
   // every time would force every test to re-pay the regen cost. The
@@ -949,8 +931,9 @@ export async function injectCss(
     return dedupeRenderedScopedStyles ? dedupeScopedStyles(htmlContent) : htmlContent
   }
 
-  const assetTag = serveMode
-    ? `<link data-css="generated" rel="stylesheet" href="/_stx/css.${registerServeCss(css)}.css">`
+  const serveHash = serveMode ? registerCssServeAsset(css) : undefined
+  const assetTag = serveHash
+    ? `<link data-css="generated" rel="stylesheet" href="/_stx/css.${serveHash}.css">`
     : `<style data-css="generated">\n${css}\n</style>`
 
   if (dedupeRenderedScopedStyles)

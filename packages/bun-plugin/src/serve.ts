@@ -1855,13 +1855,30 @@ export async function serve(options: ServeOptions): Promise<void> {
     return renderCacheStore.begin().catch(() => undefined)
   }
 
+  const renderCssAssets = new WeakMap<HtmlCacheEntry, string[]>()
+
   /** Memory first, then what a previous process kept. */
   async function readRenderCache(key: string): Promise<HtmlCacheEntry | undefined> {
     const hit = htmlCache.read(key)
-    if (hit || !renderCacheStore)
-      return hit
-    const kept = await renderCacheStore.read(key).catch(() => undefined)
-    return kept ? htmlCache.remember(key, kept) : undefined
+    const entry = hit ?? await renderCacheStore?.read(key).catch(() => undefined)
+    if (!entry) return undefined
+    // Old cache entries predate durable CSS, and assets can also be cleared
+    // separately. Re-render such an entry instead of returning an unstyled
+    // page. Valid persisted stylesheets keep the normal warm-cache path.
+    let hashes = renderCssAssets.get(entry)
+    if (!hashes) {
+      hashes = []
+      for (const link of entry.html.matchAll(/<link\b[^>]*\bdata-css=(?:"generated"|'generated')[^>]*>/gi)) {
+        const hash = /\bhref=["']\/_stx\/css\.([a-f0-9]{16})\.css["']/i.exec(link[0])?.[1]
+        if (hash) hashes.push(hash)
+      }
+      renderCssAssets.set(entry, hashes)
+    }
+    if (hashes.length) {
+      const stx = await stxModule
+      for (const hash of hashes) if (stx.getCssServeAsset(hash) === undefined) return undefined
+    }
+    return hit ?? htmlCache.remember(key, entry)
   }
 
   function rememberRender(key: string, entry: HtmlCacheEntry, ticket: RenderTicket | undefined): void {
