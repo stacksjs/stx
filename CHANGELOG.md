@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.802...v0.2.803)
+
+## ⚡ Performance Improvements
+
+- reuse large client bundle analysis within compilation ([3e20b24](https://github.com/stacksjs/stx/commit/3e20b24)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.803 ([40421f8](https://github.com/stacksjs/stx/commit/40421f8)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.801...v0.2.802)
 
 ## ✨ Features
