@@ -9,11 +9,16 @@ import { join, resolve } from 'node:path'
 import { generateCss } from '../../stx/src/dev-server/ts-css'
 import { processDirectives } from '../../stx/src/process'
 import { createTempDir } from '../../stx/src/temp-dir'
+import { observeBrowserLifecycle } from '../../stx/test-utils/browser-lifecycle'
 
 let dir = ''
 let view: InstanceType<typeof WebView>
 let server: ReturnType<typeof Bun.serve>
+let lifecycle: Awaited<ReturnType<typeof observeBrowserLifecycle>> | undefined
 const posted: Array<Record<string, unknown>> = []
+// A pending CDP probe can influence GC/liveness. Normal acceptance must keep
+// the original operations; enable this only while diagnosing #2156.
+const traceLifecycle = process.env.STX_BROWSER_LIFECYCLE_TRACE === '1'
 
 const DOCUMENT = 'The quick brown fox jumps over the lazy dog and keeps running through the long meadow until the sun goes down behind the hills'
 
@@ -60,6 +65,7 @@ window.probe = { saved }
   })
   view = new WebView({ headless: true, width: 900, height: 700, backend: { type: 'chrome', url: false } })
   await view.navigate(server.url.href)
+  if (traceLifecycle) lifecycle = await observeBrowserLifecycle(view, 'AiTextarea')
   for (let i = 0; i < 150; i++) {
     if (await view.evaluate('!!window.probe && !!document.getElementById("note")'))
       break
@@ -68,6 +74,8 @@ window.probe = { saved }
 }, 30_000)
 
 afterAll(() => {
+  if (traceLifecycle) console.info('[browser lifecycle] AiTextarea: fixture teardown')
+  lifecycle?.dispose()
   view?.close()
   server?.stop(true)
   rmSync(dir, { recursive: true, force: true })
