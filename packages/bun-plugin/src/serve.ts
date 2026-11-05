@@ -856,6 +856,8 @@ export interface ServeOptions extends RenderAdmissionOptions {
    */
   exclude?: string[]
   port?: number
+  /** Maximum incoming body size in bytes, including multipart overhead. Keeps Bun's default when omitted. */
+  maxRequestBodySize?: number
   /**
    * Initial same-origin path opened by the `o + Enter` browser shortcut.
    * Defaults to `/`.
@@ -4096,6 +4098,7 @@ function __stxOverlay(errs){
   function listen(listenPort: number, reusePort: boolean, hostname?: string): ReturnType<typeof bunServe> {
     return bunServe({
       port: listenPort,
+      ...(options.maxRequestBodySize === undefined ? {} : { maxRequestBodySize: options.maxRequestBodySize }),
       ...(hostname ? { hostname } : {}),
       // SO_REUSEPORT opt-in for zero-downtime deploy overlaps — see the
       // ServeOptions doc.

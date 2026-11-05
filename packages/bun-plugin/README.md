@@ -1090,3 +1090,19 @@ The documentation will include:
 
 This makes it easy for developers to understand how to use your web components in their HTML.
 
+## Request body limits
+
+The programmatic server accepts an HTTP body budget in bytes:
+
+```typescript
+import { serve } from 'bun-plugin-stx/serve'
+
+await serve({
+  patterns: ['resources/views'],
+  maxRequestBodySize: 64 * 1024 * 1024,
+})
+```
+
+The budget includes multipart framing. Omitting it keeps Bun's default. Upload
+handlers still validate each file against their own limits.
+
