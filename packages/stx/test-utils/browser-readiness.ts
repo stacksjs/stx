@@ -13,15 +13,24 @@ type ReadinessOptions = Partial<Pick<FixtureOptions, 'createServer' | 'createVie
  */
 export async function prepareTestBrowser(options: ReadinessOptions = {}): Promise<void> {
   const startupTimeoutMs = options.startupTimeoutMs ?? 25_000
+  let loopbackRequests = 0
   const fixture = createBrowserFixture({
     createServer: options.createServer ?? (() => Bun.serve({
       port: 0,
       hostname: '127.0.0.1',
-      fetch: request => new URL(request.url).pathname === '/'
-        ? new Response('<!doctype html><html><head><title>STX browser readiness</title><style>#ready{color:rgb(1,2,3)}</style></head><body><div id="ready">ready</div></body></html>', { headers: { 'Content-Type': 'text/html' } })
-        : new Response(null, { status: 404 }),
+      fetch: (request) => {
+        loopbackRequests++
+        return new URL(request.url).pathname === '/'
+          ? new Response('<!doctype html><html><head><title>STX browser readiness</title><style>#ready{color:rgb(1,2,3)}</style></head><body><div id="ready">ready</div></body></html>', { headers: { 'Content-Type': 'text/html' } })
+          : new Response(null, { status: 404 })
+      },
     })),
-    createView: options.createView ?? (() => new WebView({ headless: true, backend: isolatedBrowserBackend() })),
+    createView: options.createView ?? (() => {
+      const backend = isolatedBrowserBackend()
+      // The first Chrome owns the process's stderr setting. Retain native
+      // startup/crash diagnostics rather than losing them behind a JS timer.
+      return new WebView({ headless: true, backend: backend ? { ...backend, stderr: 'inherit' } : { type: 'webkit', stderr: 'inherit' } })
+    }),
     // Startup has one bounded budget. This does not alter page navigation's
     // normal 15s limit or the 25s overall budget of individual browser cases.
     navigationTimeoutMs: startupTimeoutMs,
@@ -39,7 +48,7 @@ export async function prepareTestBrowser(options: ReadinessOptions = {}): Promis
     catch (error) {
       try { fixture.close() }
       catch { /* Preserve the startup failure, not a secondary cleanup error. */ }
-      throw new Error(`Browser startup readiness failed: ${error instanceof Error ? error.message : String(error)}`, { cause: error })
+      throw new Error(`Browser startup readiness failed: ${error instanceof Error ? error.message : String(error)} (Bun ${Bun.version}, ${process.platform}, loopback requests: ${loopbackRequests})`, { cause: error })
     }
     finally { fixture.close() }
   }

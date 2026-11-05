@@ -1,0 +1,42 @@
+name: Cold browser startup
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  startup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        bun: ['1.4.2', '1.4.4']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pantry-pm/pantry/packages/action@7629c3138e2e36d3308a1381f07d508a1e9d0602 # v0.11.163
+        with:
+          version: '0.11.163'
+          install: 'false'
+          packages: bun.com@${{ matrix.bun }} git-scm.org@2.53.0
+      - id: install
+        run: bun install --frozen-lockfile
+      - name: Cold standalone browser readiness
+        run: |
+          mkdir -p artifacts/browser-startup
+          set -o pipefail
+          bun scripts/browser-startup-diagnostic.ts 2>&1 | tee artifacts/browser-startup/standalone.log
+      - name: Cold test-preload browser readiness
+        if: always() && steps.install.outcome == 'success'
+        run: |
+          mkdir -p artifacts/browser-startup
+          set -o pipefail
+          bun test --preload ./scripts/browser-test-preload.ts ./examples/testing-example.test.ts 2>&1 | tee artifacts/browser-startup/preload.log
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: browser-startup-bun-${{ matrix.bun }}
+          path: artifacts/browser-startup
+          if-no-files-found: error
