@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.808...v0.2.809)
+
+## ✅ Tests
+
+- **image**: check per-render accessibility failures after prior renders ([4dad710](https://github.com/stacksjs/stx/commit/4dad710)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.809 ([064fd49](https://github.com/stacksjs/stx/commit/064fd49)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.807...v0.2.808)
 
 ## 🐛 Bug Fixes
