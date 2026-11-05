@@ -6,6 +6,8 @@
  * answer as a browser's does, and native fetch must send what it holds.
  */
 import { describe, expect, it } from 'bun:test'
+import { STXBridge } from '../../src/native/bridge/protocol'
+import { installCraftBridge } from '../../src/native/runtime/craft-bridge'
 import { installJSCGlobals, NativeHeaders } from '../../src/native/runtime/jsc-globals'
 
 describe('Headers in JSC', () => {
@@ -84,4 +86,36 @@ describe('a web view\'s request with Headers, drawn natively', () => {
     expect(phone.texts()).toContain('Bands as application/json')
     expect(seen).toEqual([{ path: '/gear', accept: 'application/json', authorization: 'Bearer fixture' }])
   })
+})
+
+// Exercise the real wire adapter: the screen harness supplies its own fetch,
+// so its header normalization cannot establish what the native host receives.
+describe('Headers over the native fetch bridge', () => {
+  for (const platform of ['ios', 'android']) {
+    for (const format of ['native', 'browser', 'pairs', 'record']) {
+      it(`${platform}: sends ${format} headers by name and value`, async () => {
+        const sent: Array<Record<string, any>> = []
+        let receive: (message: string) => void = () => {}
+        const native = {
+          postMessage(raw: string) { sent.push(JSON.parse(raw)) },
+          onMessage(callback: (message: string) => void) { receive = callback },
+        }
+        const protocol = new STXBridge()
+        protocol.initialize(native)
+        const target: Record<string, any> = { setTimeout, clearTimeout }
+        installJSCGlobals(target)
+        installCraftBridge(protocol, { ...native, platform, capabilities: ['fetch'] }, target)
+        const values = { Accept: 'application/json', Authorization: 'Bearer fixture', 'Content-Type': 'application/json' }
+        const headers = format === 'native' ? new target.Headers(values) : format === 'browser' ? new Headers(values) : format === 'pairs' ? Object.entries(values) : values
+        try {
+          const pending = target.fetch('https://fixture.invalid/api/store/gear/band/ownership', { method: 'PUT', headers, body: '{"owned":true}' })
+          const request = sent.find(message => message.payload?.module === 'Network')!
+          receive(JSON.stringify({ type: 'API_RESPONSE', correlationId: request.id, payload: { version: 1, requestId: request.id, data: { status: 200, body: '{}', headers: {} } } }))
+          expect((await pending).status).toBe(200)
+          expect(request.payload.args[0]).toMatchObject({ method: 'PUT', body: '{"owned":true}', headers: { accept: 'application/json', authorization: 'Bearer fixture', 'content-type': 'application/json' } })
+        }
+        finally { protocol.dispose() }
+      })
+    }
+  }
 })

@@ -1286,7 +1286,7 @@ export function installCraftBridge(
       const inputHeaders = init.headers || source.headers
       const addHeader = (name: string, value: unknown): void => { headers[String(name).toLowerCase()] = String(value) }
       if (Array.isArray(inputHeaders)) inputHeaders.forEach(pair => addHeader(pair[0], pair[1]))
-      else if (inputHeaders && typeof inputHeaders.forEach === 'function') inputHeaders.forEach(addHeader)
+      else if (inputHeaders && typeof inputHeaders.forEach === 'function') inputHeaders.forEach((value: unknown, name: string) => addHeader(name, value))
       else if (inputHeaders && typeof inputHeaders === 'object') Object.keys(inputHeaders).forEach(name => addHeader(name, inputHeaders[name]))
       let body = init.body !== undefined ? init.body : source.body
       // A FormData: the host builds the multipart body and its boundary.
