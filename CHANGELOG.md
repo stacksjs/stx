@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.803...v0.2.804)
+
+## ✨ Features
+
+- **native**: expose capability-gated selective media removal ([08a83aa](https://github.com/stacksjs/stx/commit/08a83aa)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.804 ([fd3538e](https://github.com/stacksjs/stx/commit/fd3538e)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.802...v0.2.803)
 
 ## ⚡ Performance Improvements
