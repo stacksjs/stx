@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.809...v0.2.810)
+
+## 💚 Continuous Integration
+
+- align managed setup on the qualified Pantry169 release ([019213d](https://github.com/stacksjs/stx/commit/019213d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.810 ([0e81b17](https://github.com/stacksjs/stx/commit/0e81b17)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.808...v0.2.809)
 
 ## ✅ Tests
