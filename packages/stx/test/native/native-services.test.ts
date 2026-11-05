@@ -628,6 +628,25 @@ describe('media kept on the phone for offline', () => {
     await expect(scope.craft.media.keep(url, { cacheKey: '' })).rejects.toThrow('cache key')
   })
 
+  it('removes one account/version identity only when the host advertises durable removal', async () => {
+    const { scope, requests, answer } = await runtime([...ALL, 'media', 'media-cache-key', 'media-remove'])
+    expect(scope.craft.media.selectiveRemoval).toBe(true)
+    const cacheKey = 'account:7:lesson:4:version:a'
+    const removed = scope.craft.media.remove('', { cacheKey })
+    expect(requests().at(-1)!.payload).toMatchObject({ module: 'Media', method: 'remove', args: ['', { cacheKey }] })
+    answer(requests().at(-1)!, 1)
+    expect(await removed).toBe(1)
+    const count = requests().length
+    await expect(scope.craft.media.remove('')).rejects.toThrow('URL or cache key')
+    await expect(scope.craft.media.remove('', { cacheKey: '' })).rejects.toThrow('cache key')
+    expect(requests()).toHaveLength(count)
+    const old = await runtime([...ALL, 'media', 'media-cache-key'])
+    expect(old.scope.craft.media.selectiveRemoval).toBe(false)
+    const oldCount = old.requests().length
+    await expect(old.scope.craft.media.remove('', { cacheKey })).rejects.toThrow('does not support selective')
+    expect(old.requests()).toHaveLength(oldCount)
+  })
+
   it('refuses keyed caching on hosts that only support URL identity', async () => {
     const { scope } = await runtime([...ALL, 'media'])
     expect(scope.craft.media.cacheKeys).toBe(false)

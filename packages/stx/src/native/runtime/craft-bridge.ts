@@ -834,6 +834,7 @@ export function installCraftBridge(
   // >= 0.0.170; an older host fetches it anyway).
   if (capabilities.has('media')) {
     const cacheKeys = capabilities.has('media-cache-key')
+    const selectiveRemoval = capabilities.has('media-remove')
     const cacheOptions = (options: AnyRecord) => {
       if (options.cacheKey === undefined) return {}
       if (!cacheKeys) throw new Error('This host does not support media cache keys')
@@ -842,6 +843,15 @@ export function installCraftBridge(
     }
     craft.media = {
       cacheKeys,
+      selectiveRemoval,
+      remove: (url: string, options: AnyRecord = {}) => {
+        if (!selectiveRemoval) return Promise.reject(new Error('This host does not support selective media removal'))
+        let identity: AnyRecord
+        try { identity = cacheOptions(options) }
+        catch (error) { return Promise.reject(error) }
+        if (typeof url !== 'string' || (!url && !identity.cacheKey)) return Promise.reject(new TypeError('media.remove needs a URL or cache key'))
+        return request('Media', 'remove', [url, identity])
+      },
       keep: (url: string, options: AnyRecord = {}) => {
         if (typeof url !== 'string' || !url) return Promise.reject(new TypeError('media.keep needs a URL'))
         let identity: AnyRecord
