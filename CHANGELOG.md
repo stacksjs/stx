@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.806...v0.2.807)
+
+## 🐛 Bug Fixes
+
+- **server**: expose the HTTP request body budget ([fcae3e8](https://github.com/stacksjs/stx/commit/fcae3e8)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.807 ([524d852](https://github.com/stacksjs/stx/commit/524d852)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.805...v0.2.806)
 
 ## 🐛 Bug Fixes
