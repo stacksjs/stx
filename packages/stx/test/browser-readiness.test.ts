@@ -92,3 +92,41 @@ it('qualifies the browser before every CI/release process that runs browser case
   expect(ci).toContain('bun test --preload ../../scripts/browser-test-preload.ts test/integration/')
   expect(release).toContain('bun test --preload ./scripts/browser-test-preload.ts packages examples --max-concurrency=1')
 })
+
+/**
+ * A stalled startup has to say WHICH phase stalled, because the two have
+ * different causes and the message is all CI leaves behind.
+ *
+ * stacksjs/stx#2160 stalled for the whole 25s budget on Ubuntu and the log
+ * could not say why: Chrome's stderr was discarded and nothing recorded how
+ * far the probe got. Measured locally, a cold `navigate` spends ~7s of ~7.5s
+ * launching Chrome before it asks for the document, then ~0.14s being served
+ * it -- so whether a loopback request arrived at all separates "Chrome never
+ * started" from "the document was served and the navigation never settled".
+ */
+it('names the launch phase when a stall never reached the readiness server', async () => {
+  // A view that never fetches: the default counting server stays untouched.
+  const createView = () => ({
+    navigate: () => new Promise<void>(() => {}),
+    evaluate: async () => true,
+    close() {},
+  })
+
+  await expect(prepareTestBrowser({ createView, startupTimeoutMs: 20 }))
+    .rejects
+    .toThrow('no loopback request, so it stalled before the renderer asked for the document')
+}, 1000)
+
+it('names the post-fetch phase when the document was served before the stall', async () => {
+  // A view that fetches the document the way a renderer would, then hangs.
+  const createView = () => ({
+    navigate: async (url: string) => { await fetch(url); return new Promise<void>(() => {}) },
+    evaluate: async () => true,
+    close() {},
+  })
+
+  const failure = await prepareTestBrowser({ createView, startupTimeoutMs: 200 }).catch((error: Error) => error)
+
+  expect(failure.message).toContain('loopback requests: 1')
+  expect(failure.message).toMatch(/first after \d+ms, so the document was served and the stall is later/)
+}, 2000)

@@ -14,11 +14,18 @@ type ReadinessOptions = Partial<Pick<FixtureOptions, 'createServer' | 'createVie
 export async function prepareTestBrowser(options: ReadinessOptions = {}): Promise<void> {
   const startupTimeoutMs = options.startupTimeoutMs ?? 25_000
   let loopbackRequests = 0
+  // How far startup actually got. A stall before the FIRST loopback request is
+  // Chrome launching - measured locally, the process spends about 7s of a 7.5s
+  // cold navigate before it asks for the document, and about 0.14s serving it.
+  // A stall after one is the renderer or the navigation lifecycle instead.
+  let firstLoopbackMs = -1
+  const startedAt = performance.now()
   const fixture = createBrowserFixture({
     createServer: options.createServer ?? (() => Bun.serve({
       port: 0,
       hostname: '127.0.0.1',
       fetch: (request) => {
+        if (firstLoopbackMs < 0) firstLoopbackMs = Math.round(performance.now() - startedAt)
         loopbackRequests++
         return new URL(request.url).pathname === '/'
           ? new Response('<!doctype html><html><head><title>STX browser readiness</title><style>#ready{color:rgb(1,2,3)}</style></head><body><div id="ready">ready</div></body></html>', { headers: { 'Content-Type': 'text/html' } })
@@ -48,7 +55,10 @@ export async function prepareTestBrowser(options: ReadinessOptions = {}): Promis
     catch (error) {
       try { fixture.close() }
       catch { /* Preserve the startup failure, not a secondary cleanup error. */ }
-      throw new Error(`Browser startup readiness failed: ${error instanceof Error ? error.message : String(error)} (Bun ${Bun.version}, ${process.platform}, loopback requests: ${loopbackRequests})`, { cause: error })
+      const reach = loopbackRequests === 0
+        ? 'no loopback request, so it stalled before the renderer asked for the document'
+        : `loopback requests: ${loopbackRequests}, first after ${firstLoopbackMs}ms, so the document was served and the stall is later`
+      throw new Error(`Browser startup readiness failed: ${error instanceof Error ? error.message : String(error)} (Bun ${Bun.version}, ${process.platform}, ${reach})`, { cause: error })
     }
     finally { fixture.close() }
   }
