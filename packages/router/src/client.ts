@@ -3343,7 +3343,7 @@ else {
   var sightObserver=null;
   var sightCount=0;
   // Prefetching is for the next page. It must not compete with the paint of
-  // this one, so the first sight-prefetch waits for first contentful paint
+  // this one, so sight and eager prefetch wait for first contentful paint
   // (stacksjs/stacks#3082's measurement: two 600 KB documents were already in flight
   // when the page the person asked for had drawn nothing, three seconds each on a
   // slow link). A browser without paint timing keeps the immediate behaviour, and
@@ -3855,10 +3855,13 @@ else {
         delete restored[key];
       }
     };
-    // Soon after the first paint rather than whenever the page next idles: on
-    // a distant server each page is a second away, and the first tap comes fast.
-    if(window.requestIdleCallback)window.requestIdleCallback(run,{timeout:500});
-    else setTimeout(run,100);
+    // Idle alone does not establish paint: it can arrive while critical styles
+    // or content are still in flight. Share the sight-prefetch paint gate, then
+    // keep the existing idle budget so eager tabs are ready for the first tap.
+    afterFirstPaint(function(){
+      if(window.requestIdleCallback)window.requestIdleCallback(run,{timeout:500});
+      else setTimeout(run,100);
+    });
   }
 
   // The page the app was opened on came as a whole document, so it is the

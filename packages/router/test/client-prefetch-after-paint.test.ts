@@ -43,20 +43,28 @@ class FakePaint {
   paint() { this.callback({ getEntriesByName: name => name === 'first-contentful-paint' ? [{}] : [] }) }
 }
 
-function install(paintTiming: boolean) {
+function install(paintTiming: boolean, eager = false) {
   FakeIntersection.created = 0
   FakePaint.last = null
   const window: any = new Window({ url: 'http://localhost/' })
-  window.document.write('<html><head><meta name="stx-build" content="b1"></head><body><a href="/one" data-stx-link>One</a><main>Home</main></body></html>')
-  window.__stxRouterConfig = { cache: true, prefetch: true, prefetchVisible: true, progress: false, viewTransitions: false, revalidate: false }
+  window.document.write(`<html><head><meta name="stx-build" content="b1"></head><body><a href="/one" data-stx-link${eager ? ' data-stx-prefetch="eager"' : ''}>One</a><main>Home</main></body></html>`)
+  window.__stxRouterConfig = { cache: true, prefetch: true, prefetchVisible: !eager, progress: false, viewTransitions: false, revalidate: false }
+  const requests: string[] = []
+  // Idle can occur while rendering still waits on styles, fonts or the first
+  // useful content. It is not evidence that this page has painted.
+  window.requestIdleCallback = (run: () => void) => { queueMicrotask(run); return 1 }
   Object.assign(globalThis, {
     window, document: window.document, location: window.location, history: window.history, navigator: window.navigator,
     CustomEvent: window.CustomEvent, Event: window.Event, DOMParser: window.DOMParser,
-    fetch: async () => new Response('<p>page</p>', { headers: { 'Content-Type': 'text/html' } }),
+    fetch: async (url: string) => {
+      requests.push(String(url))
+      return new Response('<p>page</p>', { headers: { 'Content-Type': 'text/html' } })
+    },
     IntersectionObserver: FakeIntersection,
     PerformanceObserver: paintTiming ? FakePaint : undefined,
   })
   new Function(getRouterScript())()
+  return { window, requests }
 }
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -74,5 +82,26 @@ describe('prefetch on sight and first paint', () => {
     install(false)
     await wait(30)
     expect(FakeIntersection.created).toBe(1)
+  })
+
+  it('keeps eager sibling requests behind paint even when the browser is already idle', async () => {
+    const { window, requests } = install(true, true)
+    window.dispatchEvent(new window.CustomEvent('stx:load'))
+    await wait(30)
+    expect(requests).toEqual([])
+    expect(FakePaint.last).not.toBeNull()
+    FakePaint.last!.paint()
+    await wait(30)
+    expect(requests).toHaveLength(1)
+    expect(new URL(requests[0], window.location.href).pathname).toBe('/one')
+    FakePaint.last!.paint()
+    await wait(30)
+    expect(requests).toHaveLength(1)
+  })
+
+  it('keeps eager prefetch available without paint timing', async () => {
+    const { requests } = install(false, true)
+    await wait(30)
+    expect(requests).toHaveLength(1)
   })
 })
