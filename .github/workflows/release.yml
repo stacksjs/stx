@@ -14,9 +14,9 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
-      - uses: pantry-pm/pantry/packages/action@7629c3138e2e36d3308a1381f07d508a1e9d0602 # v0.11.163
+      - uses: pantry-pm/pantry/packages/action@c1ef80f71239e7f3626e3ed0ef3eb960d61ae5b5 # v0.11.169
         with:
-          version: '0.11.163'
+          version: '0.11.169'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
       - run: bun install --frozen-lockfile
@@ -39,9 +39,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@7629c3138e2e36d3308a1381f07d508a1e9d0602 # v0.11.163
+        uses: pantry-pm/pantry/packages/action@c1ef80f71239e7f3626e3ed0ef3eb960d61ae5b5 # v0.11.169
         with:
-          version: '0.11.163'
+          version: '0.11.169'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
       - run: bun install --frozen-lockfile
@@ -72,9 +72,9 @@ jobs:
           fetch-depth: 0
 
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@7629c3138e2e36d3308a1381f07d508a1e9d0602 # v0.11.163
+        uses: pantry-pm/pantry/packages/action@c1ef80f71239e7f3626e3ed0ef3eb960d61ae5b5 # v0.11.169
         with:
-          version: '0.11.163'
+          version: '0.11.169'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
 
@@ -138,9 +138,9 @@ jobs:
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: pantry-pm/pantry/packages/action@7629c3138e2e36d3308a1381f07d508a1e9d0602 # v0.11.163
+        uses: pantry-pm/pantry/packages/action@c1ef80f71239e7f3626e3ed0ef3eb960d61ae5b5 # v0.11.169
         with:
-          version: '0.11.163'
+          version: '0.11.169'
           install: 'false'
           release: true
           release-changelog: CHANGELOG.md
@@ -174,9 +174,9 @@ jobs:
           fetch-depth: 0
 
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@7629c3138e2e36d3308a1381f07d508a1e9d0602 # v0.11.163
+        uses: pantry-pm/pantry/packages/action@c1ef80f71239e7f3626e3ed0ef3eb960d61ae5b5 # v0.11.169
         with:
-          version: '0.11.163'
+          version: '0.11.169'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
 
