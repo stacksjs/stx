@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.805...v0.2.806)
+
+## 🐛 Bug Fixes
+
+- **native**: preserve Headers names in bridged fetch requests ([dd60327](https://github.com/stacksjs/stx/commit/dd60327)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.806 ([3bb2cab](https://github.com/stacksjs/stx/commit/3bb2cab)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.804...v0.2.805)
 
 ## ✅ Tests
