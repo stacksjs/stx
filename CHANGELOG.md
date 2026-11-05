@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.807...v0.2.808)
+
+## 🐛 Bug Fixes
+
+- **router**: wait for paint before eager sibling prefetch ([f4778e7](https://github.com/stacksjs/stx/commit/f4778e7)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **browser**: name the phase a stalled startup died in ([cc0cdc3](https://github.com/stacksjs/stx/commit/cc0cdc3)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2160](https://github.com/stacksjs/stx/issues/2160))
+
+## 🔧 Chores
+
+- release v0.2.808 ([a3f1743](https://github.com/stacksjs/stx/commit/a3f1743)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.806...v0.2.807)
 
 ## 🐛 Bug Fixes
