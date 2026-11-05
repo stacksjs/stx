@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.804...v0.2.805)
+
+## ✅ Tests
+
+- retain cold browser startup diagnostics and compare runtimes ([b8e5aab](https://github.com/stacksjs/stx/commit/b8e5aab)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.805 ([1b7d761](https://github.com/stacksjs/stx/commit/1b7d761)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.803...v0.2.804)
 
 ## ✨ Features
