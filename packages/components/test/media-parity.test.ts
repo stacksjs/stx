@@ -1,6 +1,8 @@
 import path from 'node:path'
-import { describe, expect, it, spyOn } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import { processDirectives } from '../../stx/src/process'
+import { scanScriptTags } from '../../stx/src/signal-processing'
+import { extractVariables } from '../../stx/src/variable-extractor'
 
 async function render(tag: string, props: Record<string, unknown>): Promise<string> {
   const dir = path.resolve(import.meta.dir, `../src/ui/${tag.toLowerCase()}`)
@@ -58,12 +60,30 @@ describe('media features formerly shadowed in Stacks defaults', () => {
   })
 
   it('Image requires meaningful alt unless explicitly decorative', async () => {
-    const warning = spyOn(console, 'warn').mockImplementation(() => {})
-    try {
-      await render('Image', { src: '/photo.jpg' })
-      expect(warning.mock.calls.flat().join(' ')).toContain('Image alt text is required unless decorative is true')
+    const file = path.resolve(import.meta.dir, '../src/ui/image/Image.stx')
+    const script = scanScriptTags(await Bun.file(file).text()).find(tag => /\bserver\b/.test(tag.attrs))
+    expect(script).toBeDefined()
+    await render('Image', { src: '/photo.jpg' })
+    // The console intentionally deduplicates (file, cause) across the process.
+    // Per-render failure diagnostics must still reject these actual component
+    // inputs, even when a prior render already reported the same cause.
+    for (const props of [
+      { src: '/photo.jpg' },
+      { src: '/photo.jpg' },
+      { src: '/photo.jpg', alt: '   ' },
+      { src: '/photo.jpg', decorative: 'false' },
+    ]) {
+      const failures: Array<{ error: unknown, message: string }> = []
+      await extractVariables(script!.body, { props }, file, { onFailure: failure => failures.push(failure) })
+      expect(failures).toHaveLength(1)
+      expect(failures[0].error).toBeInstanceOf(TypeError)
+      expect(failures[0].message).toBe('Image alt text is required unless decorative is true')
     }
-    finally { warning.mockRestore() }
+    for (const props of [{ src: '/photo.jpg', alt: 'Photo' }, { src: '/decoration.svg', decorative: true }]) {
+      const failures: unknown[] = []
+      await extractVariables(script!.body, { props }, file, { onFailure: failure => failures.push(failure.error) })
+      expect(failures).toEqual([])
+    }
     const html = await render('Image', { src: '/decoration.svg', alt: 'ignored', decorative: true })
     expect(html).toContain('alt=""')
     expect(html).toContain('aria-hidden="true"')
