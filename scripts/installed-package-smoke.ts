@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict'
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createTempDir, removeTempDir } from '../packages/stx/src/temp-dir'
@@ -35,6 +36,15 @@ for (const directory of ['desktop', 'sanitizer', 'router', 'bun-plugin', 'stx', 
   // unpublished cohort together, without reaching for its not-yet-public
   // transitive versions or linking any file from the original checkout.
   await new Bun.Archive(await Bun.file(archive).bytes()).extract(join(smokeRoot, 'packages', directory))
+  // The MIT notice must travel with the actual archive. Bun's pack command
+  // silently omits a missing files entry; Pantry's publisher correctly rejects it.
+  if (manifest.files?.includes('LICENSE.md')) {
+    assert.equal(
+      readFileSync(join(smokeRoot, 'packages', directory, 'package', 'LICENSE.md'), 'utf8'),
+      readFileSync(join(root, 'LICENSE.md'), 'utf8'),
+      `${manifest.name} must ship the repository license`,
+    )
+  }
   dependencies[manifest.name] = 'workspace:*'
 }
 const workspace = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
