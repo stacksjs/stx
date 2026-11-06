@@ -6,8 +6,12 @@ import { mountNativeScreen } from '../../src/native/testing'
 it.each([['ios', false], ['ios', true], ['android', false], ['android', true]] as const)('runs the shared Video device fixture (%s, minify=%s)', async (platform, minify) => {
   const root = join(import.meta.dir, '../../../..')
   const result = await compileSharedScreenBundle(join(import.meta.dir, 'fixtures/shared-video-device.stx'), { root, minify })
+  // Both videos here are the shared component now: its media URL accepts the
+  // primitive's `source` name, including a `{ uri }` payload (#2091). The
+  // primitive still answers a native-only event alias, which
+  // remaining-component-resolution covers at compile level.
   expect(result.dependencies).toContain(join(root, 'packages/components/src/ui/video/Video.stx'))
-  expect(result.dependencies).toContain(join(root, 'packages/stx/src/native/primitives/Video.stx'))
+  expect(result.dependencies).not.toContain(join(root, 'packages/stx/src/native/primitives/Video.stx'))
   // Browser custom-element fallback selectors have no native meaning. Keep
   // those exact diagnostics visible; any additional diagnostic is a failure.
   expect(result.diagnostics.filter(item => !['dropped-subtree: script', 'dropped-subtree: style'].includes(item.message))).toEqual([
@@ -26,6 +30,11 @@ it.each([['ios', false], ['ios', true], ['android', false], ['android', true]] a
     probe.legacySource.set('file:///legacy.mp4')
     await phone.settle()
     expect(video.props.source).toBe('file:///fixture.mp4')
+    // A bound `{ uri }` payload reaches the host unchanged, as it did through
+    // the primitive: the shared component unwraps one only to decide the
+    // server-rendered URL, and the host accepts either shape (ios.swift takes
+    // a string or a dictionary). The maintained iOS gate drives this exact
+    // fixture against a real AVPlayer.
     expect(legacy.props.source).toEqual({ uri: 'file:///legacy.mp4' })
     const start = phone.operations().length
     for (const action of ['controls', 'autoplay', 'loop', 'muted'])

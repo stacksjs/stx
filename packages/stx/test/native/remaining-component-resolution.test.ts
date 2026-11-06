@@ -13,7 +13,30 @@ const components = join(import.meta.dir, '../../../components')
 const remaining = [
   ['TextInput', 'input', 'value="Seed" placeholder="Name"'],
   ['Image', 'image', 'src="/photo.jpg" source="/photo.jpg" alt="Photo"'],
-  ['Video', 'video', 'src="/movie.mp4" source="/movie.mp4" label="Movie"'],
+] as const
+
+/**
+ * Video's media URL migrated (#2091). The shared component accepts the
+ * primitive's `source` name, as a string or a `{ uri }` payload, and honours
+ * an explicit box instead of imposing its own.
+ *
+ * The box was the real blocker, not the props. The shared component wrapped
+ * its media in a `w-full` container with an aspect ratio and dropped the
+ * caller's style, so a legacy call asking for 64x32 rendered full width and
+ * pushed the next control off the screen; the iOS gate caught that twice,
+ * including once after resizeMode had been added, which is how it was
+ * established that no missing prop explained it.
+ *
+ * Native-only EVENT aliases did NOT migrate, for a reason of their own: a host
+ * collapses `@progress` onto the same event as `@timeupdate`, while on the web
+ * `progress` reports buffering and `timeupdate` playback position, so
+ * converging it would hand a web caller something different without saying so.
+ */
+const videoSelections = [
+  ['source only', 'source="/movie.mp4" label="Movie"', 'shared'],
+  ['mixed src and source', 'src="/movie.mp4" source="/legacy.mp4" label="Movie"', 'shared'],
+  ['src only', 'src="/movie.mp4" label="Movie"', 'shared'],
+  ['a native-only event alias', 'src="/movie.mp4" @progress="onProgress" label="Movie"', 'primitive'],
 ] as const
 
 it('inventories every shared/native name collision so new overlaps require a compatibility decision (#2091)', async () => {
@@ -52,6 +75,44 @@ it.each(remaining)('%s keeps its native contract until shared migration is verif
     await Bun.write(override, '<div data-source="screen-local">Local override</div>')
     clearComponentCache() // the watcher invalidates resolutions when files are added
     expect((await compileScreenSource(source, file, { root })).dependencies).toContain(override)
+  }
+  finally { await rm(root, { recursive: true, force: true }) }
+}, 30_000)
+
+it.each(videoSelections)('Video with %s compiles the %s implementation', async (_label, attributes, expected) => {
+  const root = createTempDir('stx-video-selection-')
+  try {
+    const file = join(root, 'Screen.stx')
+    const source = `<div><Video ${attributes} /></div>`
+    await Bun.write(join(root, 'stx.config.ts'), `export default { plugins: [${JSON.stringify(join(components, 'stx-plugin.ts'))}] }`)
+    await Bun.write(file, source)
+
+    const shared = join(components, 'src/ui/video/Video.stx')
+    const primitive = join(nativePrimitivesDir(), 'Video.stx')
+    const compiled = await compileScreenSource(source, file, { root })
+
+    expect(compiled.dependencies).toContain(expected === 'shared' ? shared : primitive)
+    expect(compiled.dependencies).not.toContain(expected === 'shared' ? primitive : shared)
+  }
+  finally { await rm(root, { recursive: true, force: true }) }
+}, 30_000)
+
+it('lets a caller size a shared Video instead of imposing a full-width box', async () => {
+  // The blocker the gate found: the explicit box has to reach the markup and
+  // the component's own w-full has to stand down, or the video grows and
+  // pushes whatever follows it off the screen.
+  const root = createTempDir('stx-video-box-')
+  try {
+    const file = join(root, 'Screen.stx')
+    const source = '<div><Video source="/movie.mp4" style="width:64;height:32" label="Movie" /></div>'
+    await Bun.write(join(root, 'stx.config.ts'), `export default { plugins: [${JSON.stringify(join(components, 'stx-plugin.ts'))}] }`)
+    await Bun.write(file, source)
+
+    const html = await processDirectives(source, {}, file, { ...defaultConfig, ...(await loadStxConfig(root)), root, cache: false }, new Set())
+    const figure = html.match(/<figure[^>]*>/)?.[0] ?? ''
+
+    expect(figure).toContain('width:64;height:32')
+    expect(figure).not.toContain('w-full')
   }
   finally { await rm(root, { recursive: true, force: true }) }
 }, 30_000)

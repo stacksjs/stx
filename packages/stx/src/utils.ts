@@ -1378,7 +1378,7 @@ export async function renderComponentWithSlot(
       const sharedImageUsage = usesSharedImageApi([...Object.keys(props), ...renderMetadata?.reactiveProps ?? []], renderMetadata?.events, props)
       const usesSrc = Object.hasOwn(props, 'src') || Boolean(renderMetadata?.reactiveProps?.includes('src'))
       const usesSource = Object.hasOwn(props, 'source') || Boolean(renderMetadata?.reactiveProps?.includes('source'))
-      const sharedVideoUsage = video && usesSrc && !usesSource && (renderMetadata?.events ?? []).every(event =>
+      const sharedVideoUsage = video && (usesSrc || usesSource) && (renderMetadata?.events ?? []).every(event =>
         /^(?:play|pause|ended|timeupdate|loadedmetadata|loadstart|error)$/.test(event.replace(/^@/, '').split('.')[0]),
       )
       // Button's desktop API has converged (#2091): the shared component names

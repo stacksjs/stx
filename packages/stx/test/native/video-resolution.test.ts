@@ -37,10 +37,38 @@ it.each(['src="/movie.mp4"', ':src="url"', 'src=""', ':src="unset"'])('selects t
   finally { await rm(root, { recursive: true, force: true }) }
 }, 30_000)
 
+/**
+ * The media URL migrated; the native-only event aliases did not (#2091).
+ *
+ * The shared component accepts the primitive's `source` name, as a string or
+ * a `{ uri }` payload, and honours an explicit box rather than imposing its
+ * own -- the box being the thing that actually blocked this, found by the iOS
+ * gate rejecting the change twice.
+ *
+ * An alias like `@progress` stays primitive for a reason of its own: a host
+ * collapses it onto the same event as `@timeupdate`, while on the web
+ * `progress` reports buffering and `timeupdate` playback position, so
+ * converging it would hand a web caller something different in silence.
+ */
 it.each([
-  '', 'source="/movie.mp4"', ':source="url"', 'src="/shared.mp4" source="/legacy.mp4"', ':src="url" :source="unset"',
+  'source="/movie.mp4"',
+  ':source="url"',
+  'src="/shared.mp4" source="/legacy.mp4"',
+  ':src="url" :source="unset"',
+])('resolves a migrated media-URL call to the shared component: %s', async (attributes) => {
+  const { root, file } = await fixture(`<script client>const url = state('/movie.mp4'); const unset = state(undefined)</script><Video ${attributes} />`)
+  try {
+    const result = await compileScreenSource(await Bun.file(file).text(), file, { root })
+    expect(result.dependencies).toContain(shared)
+    expect(result.dependencies).not.toContain(primitive)
+  }
+  finally { await rm(root, { recursive: true, force: true }) }
+}, 30_000)
+
+it.each([
+  '',
   ...['progress', 'end', 'load', 'playing', 'load-start', 'enterpictureinpicture'].map(event => `src="/movie.mp4" @${event}="void 0"`),
-])('keeps native primitives for legacy, mixed or ambiguous calls: %s', async (attributes) => {
+])('keeps native primitives for a call with no media URL or a native-only event: %s', async (attributes) => {
   const { root, file } = await fixture(`<script client>const url = state('/movie.mp4'); const unset = state(undefined)</script><Video ${attributes} />`)
   try {
     const result = await compileScreenSource(await Bun.file(file).text(), file, { root })

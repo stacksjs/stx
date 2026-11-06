@@ -100,7 +100,23 @@ export const playerConfig = JSON.stringify({ sources: playerSources, tracks: pla
  */
 export const isPage = /^https?:\/\/(?:[\w-]+\.)*(?:youtube\.com|youtube-nocookie\.com|youtu\.be|vimeo\.com)\//i.test(src)
 
-export const containerClasses = `relative w-full ${className}`.trim()
+/**
+ * A caller's explicit box wins over this component's own sizing.
+ *
+ * The native primitive is a single node that obeys the box it is given, so
+ * `style="width:64;height:32"` produced a 64x32 video. This component imposed
+ * `w-full` plus an aspect ratio and dropped the caller's style entirely, so
+ * the same call rendered full width and pushed everything below it down the
+ * screen. That is what kept legacy `source` calls on the primitive
+ * (stacksjs/stx#2091); it is the sizing, not the props.
+ *
+ * Only a box with BOTH dimensions counts: a caller setting one of them still
+ * wants the aspect ratio to supply the other, which is this component's whole
+ * reason for having one.
+ */
+export const styleProp = typeof $props.style === 'string' ? $props.style : ''
+export const hasExplicitBox = /(?:^|;)\s*width\s*:/.test(styleProp) && /(?:^|;)\s*height\s*:/.test(styleProp)
+export const containerClasses = `relative ${hasExplicitBox ? '' : 'w-full'} ${className}`.trim().replace(/\s+/g, ' ')
 </script>
 
 <script client>
@@ -144,6 +160,9 @@ function forwardNative(event, payload) {
 
 /** Width over height as CSS takes it, whatever the parent bound: "9/16", 0.5625. */
 const playerStyle = derived(() => {
+  // An explicit box from the caller decides both dimensions, so an aspect
+  // ratio alongside it would fight the size they asked for.
+  if ({{ hasExplicitBox }}) return null
   const value = String(liveRatio() ?? '').trim()
   const valid = /^\d+(?:\.\d+)?(?:\s*\/\s*\d+(?:\.\d+)?)?$/.test(value) ? value : '16 / 9'
   const [width, height = 1] = valid.split('/').map(Number)
@@ -161,7 +180,7 @@ effect(() => {
 })
 </script>
 
-<figure class="m-0 {{ containerClasses }}">
+<figure class="m-0 {{ containerClasses }}" @if(styleProp) style="{{ styleProp }}" @endif>
   @if(title)
     <figcaption class="mb-2 px-1 font-medium text-sm text-fg">{{ title }}</figcaption>
   @endif
@@ -202,8 +221,8 @@ effect(() => {
     keep-alive
     @if(autofocus) autofocus @endif
     @if(label) aria-label="{{ label }}" @endif
-    class="block overflow-hidden relative w-full bg-black rounded-panel focus-within:ring-2 focus-within:ring-accent"
-    style="aspect-ratio: {{ initialRatio }};"
+    class="block overflow-hidden relative w-full bg-black rounded-panel focus-within:ring-2 focus-within:ring-accent @if(hasExplicitBox) h-full @endif"
+    @if(!hasExplicitBox) style="aspect-ratio: {{ initialRatio }};" @endif
   >
     <media-error-display></media-error-display>
     @if(isPage)
