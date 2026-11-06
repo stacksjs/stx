@@ -2683,14 +2683,14 @@ function __stxOverlay(errs){
         // can read any header, including Authorization and Accept-Language.
         const snapshot = request
           ? {
-              ...reqCtx,
-              request: {
-                ...request,
-                url: request.url,
-                method: request.method,
-                headers: [...request.headers.entries()].sort(([a], [b]) => a.localeCompare(b)),
-              },
-            }
+          ...reqCtx,
+          request: {
+            ...request,
+            url: request.url,
+            method: request.method,
+            headers: [...request.headers.entries()].sort(([a], [b]) => a.localeCompare(b)),
+          },
+        }
           : reqCtx
         return `${filePath}\0${JSON.stringify(snapshot)}`
       }
@@ -2717,7 +2717,7 @@ function __stxOverlay(errs){
     if (noStore.test(reqCtx?.request?.headers.get('cache-control') ?? ''))
       return false
     return !Object.entries(reqCtx?.responseHeaders ?? {}).some(([name, value]) =>
-      name.toLowerCase() === 'cache-control' && noStore.test(value))
+    name.toLowerCase() === 'cache-control' && noStore.test(value))
   }
 
   const builtInMiddleware: Record<string, PageMiddleware> = authConfig === null ? {} : {
