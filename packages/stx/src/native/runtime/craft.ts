@@ -62,8 +62,8 @@ export interface NativeNavigationOptions {
   backTitle?: string
   leftButtons?: NativeNavigationButton[]
   rightButtons?: NativeNavigationButton[]
-  /** A destination in its own box beside the tab pill. Null removes it. */
-  tabAccessory?: { path: string, title: string, symbol: string, badge?: string | null, accessibilityLabel?: string, iconOnly?: boolean } | null
+  /** A destination beside the tab pill. Compact actions may carry up to two companion destinations; null removes the group. */
+  tabAccessory?: { path: string, title: string, symbol: string, badge?: string | null, accessibilityLabel?: string, iconOnly?: boolean, companions?: Array<{ path: string, title: string, symbol: string, accessibilityLabel?: string }> } | null
   tabItem?: NativeTabItemOptions
 }
 

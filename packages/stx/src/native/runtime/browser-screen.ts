@@ -48,7 +48,7 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
   const content = document.createElement('div')
   const tabs = document.createElement('nav')
   const tabPill = document.createElement('div')
-  let accessoryRenderer: BrowserScreenRenderer | null = null
+  const accessoryRenderers: BrowserScreenRenderer[] = []
   const shell = document.createElement('div')
   shell.setAttribute('data-stx-screen-shell', '')
   shell.style.cssText = 'display:flex;flex-direction:column;height:100dvh;max-width:512px;margin:auto;color:#1c1c1e;background:#f2f2f7;font:17px system-ui,-apple-system,sans-serif;overflow:hidden'
@@ -140,11 +140,12 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
     currentNavigation = { ...currentNavigation, ...patch }
     const settings = currentNavigation
     if ('tabAccessory' in patch) {
-      accessoryRenderer?.dispose()
-      accessoryRenderer = null
-      tabs.querySelector('[data-tab-accessory]')?.remove()
-      const item = patch.tabAccessory as { path: string, title: string, symbol: string, badge?: string | null, accessibilityLabel?: string } | null
-      if (item && item.path.startsWith('/') && !item.path.startsWith('//')) {
+      accessoryRenderers.splice(0).forEach(renderer => renderer.dispose())
+      tabs.querySelectorAll('[data-tab-accessory]').forEach(button => button.remove())
+      const primary = patch.tabAccessory as { path: string, title: string, symbol: string, badge?: string | null, accessibilityLabel?: string, companions?: Array<{ path: string, title: string, symbol: string, badge?: string | null, accessibilityLabel?: string }> } | null
+      const actions = primary ? [...(primary.companions || []).slice(0, 2), primary] : []
+      for (const item of actions) {
+        if (typeof item.path !== 'string' || !item.path.startsWith('/') || item.path.startsWith('//')) continue
         const button = document.createElement('button')
         button.type = 'button'
         button.setAttribute('data-tab-accessory', '')
@@ -152,7 +153,8 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
         button.style.cssText = 'position:relative;display:flex;align-items:center;justify-content:center;width:56px;height:56px;flex-shrink:0;border:0;border-radius:50%;background:#8882;color:inherit'
         const holder = document.createElement('span')
         button.append(holder)
-        accessoryRenderer = new BrowserScreenRenderer(holder, { icons: options.icons, event() {} })
+        const accessoryRenderer = new BrowserScreenRenderer(holder, { icons: options.icons, event() {} })
+        accessoryRenderers.push(accessoryRenderer)
         accessoryRenderer.render({ id: 'tab_accessory', type: 'Icon', props: { symbol: item.symbol }, style: { width: 24, height: 24 }, events: {}, children: [] })
         if (item.badge) {
           const badge = document.createElement('span')
@@ -306,7 +308,7 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
       globalThis.removeEventListener?.('resize', resized)
       stopEvents?.()
       renderer.dispose()
-      accessoryRenderer?.dispose()
+      accessoryRenderers.splice(0).forEach(renderer => renderer.dispose())
       for (const icon of chromeRenderers) icon.dispose()
       platform.dispose()
       shell.before(container)

@@ -45,11 +45,11 @@ function clear() { craft.navigation.setOptions({tabItem:{id:'/m/health',title:nu
 function live() { craft.navigation.setOptions({tabItem:{id:'/m/health',title:'142 bpm',iconText:null,iconTint:'#ff3b30',iconPulse:true,accessibilityLabel:'Health, live heart rate, 142 bpm'}}) }
 function nextBeat() { craft.navigation.setOptions({tabItem:{id:'/m/health',title:'143 bpm'}}) }
 function avatar() { craft.navigation.setOptions({tabItem:{id:'/m/me',image:'https://fixture.invalid/avatar.png'}}) }
-function accessory() { craft.navigation.setOptions({tabAccessory:{path:'/m/messages',title:'Messages',symbol:'message',badge:'3'}}) }
+function accessory() { craft.navigation.setOptions({tabAccessory:{path:'/m/messages',title:'Messages',symbol:'message',badge:'3',companions:[{path:'/m/nutrition',title:'Nutrition',symbol:'fork.knife'}]}}) }
 function hideAccessory() { craft.navigation.setOptions({tabAccessory:null}) }
 </script><View><Button testID="rate" @click="rate()">Rate</Button><Button testID="clear" @click="clear()">Clear</Button><Button testID="live" @click="live()">Live</Button><Button testID="next" @click="nextBeat()">Next</Button><Button testID="avatar" @click="avatar()">Avatar</Button><Button testID="accessory" @click="accessory()">Messages</Button><Button testID="hideAccessory" @click="hideAccessory()">Hide</Button></View>`)
     writeFileSync(path.join(root, 'platform.ts'), 'export async function createBrowserPlatform() { return {craft:{},capabilities:[],call:async()=>null,navigate(path){globalThis.lastNavigation=path},dispose(){}} }')
-    const compiled = await compileBrowserScreen({ root, source: 'Screen.stx', screen: 'Screen', browser: { screen: 'Screen', container: '#screen', appURL: '/m', routes: { '/m/health': 'Screen' }, icons: { message: { body: '', width: 24, height: 24 } }, tabs: [{ id: '/m/health', title: 'Health' }, { id: '/m/me', title: 'Me' }], platformModule: path.join(root, 'platform.ts') } })
+    const compiled = await compileBrowserScreen({ root, source: 'Screen.stx', screen: 'Screen', browser: { screen: 'Screen', container: '#screen', appURL: '/m', routes: { '/m/health': 'Screen' }, icons: { message: { body: '', width: 24, height: 24 }, 'fork.knife': { body: '', width: 24, height: 24 } }, tabs: [{ id: '/m/health', title: 'Health' }, { id: '/m/me', title: 'Me' }], platformModule: path.join(root, 'platform.ts') } })
     const browser = new Window({ url: 'https://fixture.invalid/m/health' })
     let hidden = false
     Object.defineProperty(browser.document, 'hidden', { configurable: true, get: () => hidden })
@@ -101,7 +101,12 @@ function hideAccessory() { craft.navigation.setOptions({tabAccessory:null}) }
     browser.document.dispatchEvent(new browser.Event('visibilitychange'))
     expect(pulses).toBe(3)
     await click('accessory')
-    const accessory = browser.document.querySelector('[data-tab-accessory]')!
+    const accessory = browser.document.querySelector('[data-tab-accessory][aria-label="Messages, 3"]')!
+    const nutrition = browser.document.querySelector('[data-tab-accessory][aria-label="Nutrition"]')!
+    expect(nutrition).not.toBeNull()
+    ;(nutrition as any).onclick()
+    expect(scope.lastNavigation).toBe('/m/nutrition')
+    expect(browser.document.querySelectorAll('[data-tab-accessory]')).toHaveLength(2)
     expect(accessory.getAttribute('aria-label')).toBe('Messages, 3')
     expect(accessory.parentElement?.tagName).toBe('NAV')
     expect(health.parentElement).not.toBe(accessory.parentElement)
