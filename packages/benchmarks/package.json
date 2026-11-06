@@ -43,6 +43,6 @@
   "devDependencies": {
     "@types/marked": "^6.0.0",
     "@types/sanitize-html": "^2.16.2",
-    "jsdom": "^30.1.1"
+    "jsdom": "^31.0.0"
   }
 }
