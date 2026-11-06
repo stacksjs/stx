@@ -20,13 +20,40 @@
  * The controls speak the page's language (`<html lang>`): ts-video-player
  * names its buttons and announces playback in it.
  *
- * On native, src calls using the shared media events select this component
- * when installed. Legacy source, mixed src/source and legacy-event calls
- * retain the native primitive. This is the host's Video control: `src`
+ * On native, src and source calls using the shared media events select this
+ * component when installed. Legacy-event calls (for example @progress rather
+ * than @timeupdate) retain the native primitive, because the two names mean
+ * different things on the web and collapse to one on a host. This is the
+ * host's Video control: `src`
  * must be a media URL the platform supports, not a YouTube/Vimeo page.
  * Browser source selection, tracks and DRM configuration remain web-only.
  */
-export const src = $props.src || ''
+/**
+ * `source` is the native primitive's name for the same media URL, and both
+ * hosts accept either a string or a `{ uri }` payload. Accepting it here is
+ * what lets a legacy native call select this component instead of the
+ * primitive (stacksjs/stx#2091); `src` wins a mixed call, being this
+ * component's own API.
+ */
+function mediaUrl(value) {
+  if (typeof value === 'string') return value
+  if (value && typeof value === 'object') return String(value.uri ?? '')
+  return ''
+}
+/**
+ * How the frame fills its box. `resizeMode` is the native name and the host
+ * interprets it; `object-fit` is the web's, and the four native values map
+ * onto it, so one call works on both (stacksjs/stx#2091).
+ *
+ * Unset keeps this component's existing contain behaviour rather than
+ * adopting the primitive's cover default, so no shared caller changes.
+ */
+const RESIZE_FIT = { contain: 'contain', cover: 'cover', stretch: 'fill', center: 'none' }
+export const resizeMode = typeof $props.resizeMode === 'string' ? $props.resizeMode.trim().toLowerCase() : ''
+export const objectFit = RESIZE_FIT[resizeMode] || 'contain'
+export const srcProp = $props.src || ''
+export const sourceUrl = mediaUrl($props.source)
+export const src = srcProp || sourceUrl
 export const poster = $props.poster || ''
 /** The accessible name of the player. Follows a binding. */
 export const label = $props.label || $props.title || ''
@@ -83,7 +110,11 @@ const nativeVideo = !!window.stx._host.isNative
 if (!nativeVideo)
   registerElements()
 
-const liveSrc = useReactiveProp('src', {{ src }})
+// Tracked separately so a parent driving either name keeps working: holding
+// one merged initial value would leave the other stale when it changed.
+const liveSrcProp = useReactiveProp('src', {{ srcProp }})
+const liveSourceProp = useReactiveProp('source', {{ sourceUrl }})
+const liveSrc = derived(() => liveSrcProp() || liveSourceProp() || '')
 const livePoster = useReactiveProp('poster', {{ poster }})
 const liveLabel = useReactiveProp('label', {{ label }})
 const liveRatio = useReactiveProp('aspectRatio', {{ aspectRatio }})
@@ -139,6 +170,7 @@ effect(() => {
   <video-player
     data-native="Video"
     data-stx-native-host-root
+    @if(resizeMode) resizeMode="{{ resizeMode }}" @endif
     ref="player"
     @play="forwardNative('play', $event)"
     @pause="forwardNative('pause', $event)"
@@ -177,7 +209,7 @@ effect(() => {
     @if(isPage)
       <span data-native-fallback class="block h-full w-full"></span>
     @else
-      <video data-native-fallback @if(src) src="{{ src }}" @endif @if(poster) poster="{{ poster }}" @endif @if(controls) controls @endif @if(loop) loop @endif @if(muted) muted @endif :controls="playerControls()" :loop="playerLoop()" :muted="playerMuted()" @if(playsinline) playsinline @endif preload="none" @if(crossorigin) crossorigin="{{ crossorigin }}" @endif controlslist="{{ controlslist }}" @if(disablePictureInPicture) disablepictureinpicture @endif @if(label) aria-label="{{ label }}" @endif class="object-contain h-full w-full"></video>
+      <video data-native-fallback @if(src) src="{{ src }}" @endif @if(poster) poster="{{ poster }}" @endif @if(controls) controls @endif @if(loop) loop @endif @if(muted) muted @endif :controls="playerControls()" :loop="playerLoop()" :muted="playerMuted()" @if(playsinline) playsinline @endif preload="none" @if(crossorigin) crossorigin="{{ crossorigin }}" @endif controlslist="{{ controlslist }}" @if(disablePictureInPicture) disablepictureinpicture @endif @if(label) aria-label="{{ label }}" @endif class="object-{{ objectFit }} h-full w-full"></video>
     @endif
     <video-skin>
       <media-seek-button slot="left" seconds="-10"></media-seek-button>
