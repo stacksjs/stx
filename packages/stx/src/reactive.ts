@@ -53,8 +53,17 @@ import { scanAtElementPosition } from './html-masking'
  *
  * ### x-init - Run code on mount
  * ```html
- * <div x-data="{ items: [] }" x-init="items = await fetchItems()">
+ * <div x-data="{ items: [] }" x-init="fetchItems().then(next => { items = next })">
  * ```
+ *
+ * ### x-destroy - Dispose a scope's resources
+ * ```html
+ * <div x-data="{ handle: null }" x-init="handle = follow()" x-destroy="handle?.stop()">
+ * ```
+ *
+ * Component initializers run after their own client helpers and props are ready.
+ * Bare assignments write through the scope's signals, including in callbacks.
+ * Standalone x-data initializes synchronously. Teardown belongs to the scope.
  *
  * @module reactive
  */
@@ -502,7 +511,7 @@ window.__stx_reactive = (function() {
 
   // Initialize an x-data scope: parse state, run init(), register into window.stx._scopes,
   // then let the signals runtime handle all directive processing (x-for, x-text, :bind, etc.)
-  function initScope(scopeEl, initialState, bindings, refs, initExpr) {
+  function initScope(scopeEl, initialState, bindings, refs, initExpr, deferInit) {
     // Parse initial state (may contain methods including async init())
     var state;
     try {
@@ -572,6 +581,11 @@ window.__stx_reactive = (function() {
         if (prop === '$refs') return $refs;
         if (prop === '$el') return scopeEl;
         if (prop === '$nextTick') return function(fn) { requestAnimationFrame(fn); };
+        if (prop === Symbol.unscopables) return undefined;
+        if (!(prop in signalState)) {
+          var owner = stx._scopeForBinding(scopeEl, prop);
+          return owner ? owner[prop] : undefined;
+        }
         var s = signalState[prop];
         if (!s) return undefined;
         if (rawState[prop] && s && typeof s === 'function' && typeof s.value !== 'undefined') {
@@ -605,7 +619,7 @@ window.__stx_reactive = (function() {
         return true;
       },
       has: function(target, prop) {
-        return prop in signalState || prop === '$refs' || prop === '$el' || prop === '$nextTick';
+        return prop in signalState || prop === '$refs' || prop === '$el' || prop === '$nextTick' || !!stx._scopeForBinding(scopeEl, prop);
       },
       ownKeys: function() {
         return Object.keys(signalState).concat(['$refs', '$el', '$nextTick']);
@@ -657,7 +671,8 @@ window.__stx_reactive = (function() {
 
     // Register scope — merge with any existing vars from partial signal scripts
     if (!stx._scopes) stx._scopes = {};
-    stx._scopes[scopeId] = Object.assign(stx._scopes[scopeId] || {}, scopeVars);
+    var registered = stx._scopes[scopeId] = Object.assign(stx._scopes[scopeId] || {}, scopeVars);
+    registered.__el = scopeEl;
 
     // Store on element for findElementScope
     scopeEl.__stx_scope = scopeVars;
@@ -670,10 +685,8 @@ window.__stx_reactive = (function() {
       }
       if (initExpr) {
         try {
-          var keys = Object.keys(scopeVars);
-          var vals = keys.map(function(k) { return scopeVars[k]; });
-          var fn = new Function(keys.join(','), initExpr);
-          var result = fn.apply(ctxProxy, vals);
+          var fn = new Function('with(this){' + initExpr + ';}');
+          var result = fn.call(ctxProxy);
           if (result && typeof result.then === 'function') maybePromise = result;
         } catch (e) {
           console.warn('[stx-reactive] init expression error:', e);
@@ -688,8 +701,23 @@ window.__stx_reactive = (function() {
       }
     }
 
-    // Run init before the signals runtime processes this scope
-    runInit();
+    // A component's helper setup follows its markup. Its own mount queue
+    // starts the initializer after all component factories have registered.
+    // Standalone x-data retains synchronous initialization.
+    if (deferInit) {
+      registered.__mountCallbacks = registered.__mountCallbacks || [];
+      registered.__mountCallbacks.push(runInit);
+    } else {
+      runInit();
+    }
+    var destroyExpr = scopeEl.getAttribute('data-stx-xdestroy') || scopeEl.getAttribute('x-destroy');
+    if (destroyExpr) {
+      registered.__destroyCallbacks = registered.__destroyCallbacks || [];
+      var teardown = function() { scopeEl.__stx_execute(destroyExpr); };
+      registered.__destroyCallbacks.push(teardown);
+      registered.__destroyHooks = registered.__destroyHooks || [];
+      registered.__destroyHooks.push(teardown);
+    }
 
     // Expose for debugging
     scopeEl.__stx_state = ctxProxy;
@@ -852,7 +880,7 @@ function substituteExpressionsInExpr(expr: string, context: Record<string, any>)
 /**
  * Generate initialization code for all scopes
  */
-function generateScopeInitializers(scopes: ReactiveScope[], context: Record<string, any>): string {
+function generateScopeInitializers(scopes: ReactiveScope[], context: Record<string, any>, deferInit: boolean): string {
   if (scopes.length === 0) return ''
 
   const initializers = scopes.map((scope) => {
@@ -867,7 +895,7 @@ function generateScopeInitializers(scopes: ReactiveScope[], context: Record<stri
     var scopeEl = document.querySelector('${scope.selector}');
     if (!scopeEl) return;
     var refs = ${refsJson};
-    __stx_reactive.initScope(scopeEl, ${stateExprJson}, [], refs, ${initExprJson});
+    window.__stx_reactive.initScope(scopeEl, ${stateExprJson}, [], refs, ${initExprJson}${deferInit ? ', true' : ''});
   })();`
   }).join('\n')
 
@@ -984,12 +1012,14 @@ function removeReactiveAttributes(template: string): string {
  * @param template - The HTML template string
  * @param context - Template context
  * @param filePath - Source file path for error messages
+ * @param deferInit - Wait for component helper registration before initialization
  * @returns Processed template with reactive runtime script
  */
 export function processReactiveDirectives(
   template: string,
   context: Record<string, unknown>,
   _filePath: string,
+  deferInit = false,
 ): string {
   /*
    * The counter is *not* reset here, and that is the point.
@@ -1030,7 +1060,7 @@ export function processReactiveDirectives(
   // the unsubstituted `{{ }}` ends up inside a string literal that
   // `processExpressions` (which runs later, on attribute values) never
   // reaches.
-  const script = generateScopeInitializers(scopes, context as Record<string, any>)
+  const script = generateScopeInitializers(scopes, context as Record<string, any>, deferInit)
 
   // Inject before the LAST </body> — earlier occurrences may be inside <script> tags
   const bodyCloseIdx = output.lastIndexOf('</body>')
@@ -1150,6 +1180,9 @@ function finalizeTemplate(template: string, scopes: ReactiveScope[]): string {
   output = output.replace(/\s*x-data\s*=\s*'([^']*)'/g, " data-stx-xdata='$1'")
   output = output.replace(/\s*x-init\s*=\s*"([^"]*)"/g, ' data-stx-xinit="$1"')
   output = output.replace(/\s*x-init\s*=\s*'([^']*)'/g, " data-stx-xinit='$1'")
+
+  output = output.replace(/\s*x-destroy\s*=\s*"([^"]*)"/g, ' data-stx-xdestroy="$1"')
+  output = output.replace(/\s*x-destroy\s*=\s*'([^']*)'/g, " data-stx-xdestroy='$1'")
 
   return output
 }

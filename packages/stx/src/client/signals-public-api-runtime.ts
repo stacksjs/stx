@@ -120,6 +120,7 @@ ${componentApiRuntime}
     _beginEffects: beginEffects,  // A component setup collects its effects (utils.ts)
     _registerSuspense: registerSuspense,  // <Suspense> query registration (#1742)
     _tg: { enter: tgEnter, leave: tgLeave, flip: tgFlip, snapshot: tgSnapshot },  // <TransitionGroup> helpers (#1742)
+    _scopeForBinding: findElementBindingScope,  // Named binding ownership for the reactive bridge
     _scopes: {},  // Component-level scopes
     _scopeCounter: 0,  // Counter for generating unique scope IDs during SPA navigation
     _latestSetup: window.__stx_latestSetup || null,  // Latest SFC setup function (including scripts parsed before the runtime)

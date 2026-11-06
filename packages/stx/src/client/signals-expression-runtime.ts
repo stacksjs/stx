@@ -144,15 +144,19 @@ export const SIGNALS_EXPRESSION_RUNTIME = `  // Setup accessors refer to lexical
   let currentElement = null;
 
   function findElementScope(el) {
+    return findElementBindingScope(el);
+  }
+
+  function findElementBindingScope(el, name) {
     let current = el;
     while (current && current !== document) {
       // Explicit element-local mounts own their scope, ahead of a registry.
-      if (current.__stx_scope) {
+      if (current.__stx_scope && (name === undefined || name in current.__stx_scope)) {
         return current.__stx_scope;
       }
       if (current.hasAttribute && current.hasAttribute('data-stx-scope')) {
         const scopeId = current.getAttribute('data-stx-scope');
-        if (window.stx._scopes && window.stx._scopes[scopeId]) {
+        if (window.stx._scopes && window.stx._scopes[scopeId] && (name === undefined || name in window.stx._scopes[scopeId])) {
           return window.stx._scopes[scopeId];
         }
       }

@@ -2232,7 +2232,7 @@ async function processOtherDirectives(
   }
 
   // Process reactive directives (x-data, x-model, x-show, etc.) - Alpine-style reactivity
-  output = processReactiveDirectives(output, context, filePath)
+  output = processReactiveDirectives(output, context, filePath, options.skipSignalsRuntime === true && Number(context.__stxProcessingDepth) > 0)
 
   // Dev warning: detect mixing of Alpine-style (x-data) and signals (state/derived/effect)
   // in the same template. Both systems work on the same page but not on the same element.
@@ -2589,7 +2589,7 @@ else {
   // So ask the finished output instead. Both decisions have been made by this
   // point, which is the whole reason it settles them: no processing order can
   // hide the answer from a question asked last.
-  if (!pageShipsSignalsRuntime(output) && outputNeedsSignalsRuntime(output))
+  if (!opts.skipSignalsRuntime && !pageShipsSignalsRuntime(output) && outputNeedsSignalsRuntime(output))
     output = await injectSignalsRuntime(output, opts)
 
   // Same question, asked of the same finished output: `x-tooltip` had a complete

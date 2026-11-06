@@ -506,3 +506,28 @@ describe('User Store', () => {
 - [Component API](/api/component) - Component state management
 - [Performance Guide](/guide/performance) - State performance optimization
 - [Testing Guide](/guide/testing) - State testing strategies
+
+
+## Client helpers in an x-data component
+
+An x-data component can call its own client helpers from x-init and read its
+serialized props through $props. Each instance has its own state and lifecycle:
+
+```stx
+<div x-data="{ message: '', handle: null }"
+     x-init="handle = follow($props.topic, next => { message = next })"
+     x-destroy="handle?.stop()">
+  <p x-text="message"></p>
+</div>
+<script client>
+import { subscribe } from './updates'
+function follow(topic, update) { return subscribe(topic, update) }
+</script>
+```
+
+The component's initializer runs after its client helpers are registered. Bare
+assignments, including assignments inside callbacks, update that instance's
+reactive state. x-destroy releases its handle when the scope is disposed, including
+when navigating away. Returning to the page creates the new instance's watcher.
+A standalone x-data scope keeps its synchronous initialization behavior. New
+components can use state, onMount and onDestroy directly.

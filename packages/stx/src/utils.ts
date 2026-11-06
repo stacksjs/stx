@@ -39,6 +39,7 @@ import { processScopedStyles } from './style-scoping'
 import { findSfcTemplateBlock } from './sfc-template'
 import { importOnce } from './lazy-module'
 import { scanAtElementPosition, stashScriptElements } from './html-masking'
+import { hasReactiveDirectives } from './reactive'
 import { markProjectedRefs } from './misc-directives'
 import { collectBlockDeclarations } from './stx-virtual-ts'
 import { CLIENT_LOOP_NAMES_KEY, inheritedClientLoopNames } from './loop-binding'
@@ -2296,7 +2297,7 @@ export async function renderComponentWithSlot(
     // where the handler is undefined. Its own handlers still need that scope.
     const callerEvents = parentContext.__stx_signals_gate === true
       && /\s(?:@[\w:.-]+|x-on:[\w:.-]+)\s*=/.test(componentSlotContent)
-    const hasSignalScripts = (options._nativeHostAttrs === true && clientScripts.length > 0) || (callerEvents && clientScripts.length > 0) || clientScripts.some(s =>
+    const hasSignalScripts = (clientScripts.length > 0 && hasReactiveDirectives(templateContent)) || (options._nativeHostAttrs === true && clientScripts.length > 0) || (callerEvents && clientScripts.length > 0) || clientScripts.some(s =>
       /\b(?:state|derived|effect|ref|useRef|reactive|computed|watch|watchEffect|useModel|useReactiveProp|onMount|onDestroy|defineProps|withDefaults|defineEmits|defineExpose|defineSlots)\s*(?:<[^<>()]*>)?\s*\(/.test(s),
     )
     const projectRefs = (content: string) => hasSignalScripts ? markProjectedRefs(content, componentUid) : content
@@ -3317,6 +3318,10 @@ async function buildComponentIsland(rawContent: string, componentFilePath: strin
     catch { __componentProps = {}; }
   }
   window.__STX_CURRENT_PROPS__ = __componentProps && typeof __componentProps === 'object' && !Array.isArray(__componentProps) ? __componentProps : {};
+  const __scopeProps = window.__STX_CURRENT_PROPS__;
+  Object.defineProperty(__scopeVars, '$props', { configurable: true, enumerable: true, get: function() {
+    return (__componentElement && __componentElement.__stx_props) || __scopeProps;
+  } });
 
   // Scope-specific lifecycle callbacks. The queues drain as they run; the
   // hook lists keep what setup registered, because a component behind an :if
