@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.810...v0.2.811)
+
+## 🐛 Bug Fixes
+
+- ship declared package licenses in published archives ([7df5d22](https://github.com/stacksjs/stx/commit/7df5d22)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.811 ([74dbbab](https://github.com/stacksjs/stx/commit/74dbbab)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.809...v0.2.810)
 
 ## 💚 Continuous Integration
