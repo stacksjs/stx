@@ -53,6 +53,8 @@ export interface NativeTabItemOptions {
 
 export interface NativeNavigationOptions {
   title?: string
+  /** Inline and large navigation title colour for this screen; null restores the host default. */
+  titleColor?: string | null
   largeTitle?: boolean
   hidden?: boolean
   /** Hide the app's tab bar while this screen is visible. */

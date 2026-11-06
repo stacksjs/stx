@@ -76,14 +76,14 @@ describe('typed native capability bridge', () => {
     const protocol = new STXBridge()
     protocol.initialize(native.bridge)
     const craft = installCraftBridge(protocol, { ...native.bridge, platform }, {})
-    const options: NativeNavigationOptions = { hidden: true, tabBarHidden: true, swipeBack: false }
+    const options: NativeNavigationOptions = { hidden: true, tabBarHidden: true, swipeBack: false, titleColor: '#eef7f0' }
     craft.navigation.setOptions(options)
     craft.navigation.open('/feed')
-    craft.navigation.setOptions({ hidden: false, tabBarHidden: false, swipeBack: true })
+    craft.navigation.setOptions({ hidden: false, tabBarHidden: false, swipeBack: true, titleColor: null })
     expect(native.sent.map(({ type, payload }) => ({ type, payload }))).toEqual([
       { type: 'NAVIGATION_SET_OPTIONS', payload: options },
       { type: 'NAVIGATE_OPEN', payload: { path: '/feed' } },
-      { type: 'NAVIGATION_SET_OPTIONS', payload: { hidden: false, tabBarHidden: false, swipeBack: true } },
+      { type: 'NAVIGATION_SET_OPTIONS', payload: { hidden: false, tabBarHidden: false, swipeBack: true, titleColor: null } },
     ])
     protocol.dispose()
   })
