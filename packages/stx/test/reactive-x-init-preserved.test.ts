@@ -20,7 +20,7 @@
  * reading" banner had never once appeared.
  */
 
-import { describe, expect, it } from 'bun:test'
+import { describe, expect, it, test } from 'bun:test'
 import { processReactiveDirectives } from '../src/reactive'
 
 const TEMPLATE = `<div x-data="{ tail: '' }" x-init="handle = watch({ onOutput: (t) => { tail = tail + t } })">
@@ -68,4 +68,34 @@ describe('x-init on a scope element', () => {
     expect(html).toContain('data-stx-xdata=')
     expect(html).not.toContain('data-stx-xinit=')
   })
+})
+
+
+describe('quoted lifecycle expressions', () => {
+  it('preserves an arrow callback in the initializer passed to the bridge', () => {
+    const expr = "handle = followRun((line) => { summary = line })"
+    const html = processReactiveDirectives(`<div x-data="{ summary: '', handle: null }" x-init="${expr}"></div>`, {}, 'page.stx')
+    expect(html).toContain(`, [], refs, ${JSON.stringify(expr)});`)
+  })
+
+  it('reads the full initializer with either quote style and greater-than expressions', () => {
+    const expr = 'count = rows.filter(row => row.score > 1).length'
+    for (const quote of ['"', "'"]) {
+      const html = processReactiveDirectives(`<div x-data=${quote}{ count: 0, rows: [] }${quote} x-init=${quote}${expr}${quote}></div>`, {}, 'page.stx')
+      expect(html).toContain(`, [], refs, ${JSON.stringify(expr)});`)
+    }
+  })
+})
+
+
+test('tag-like text cannot create a reactive scope', () => {
+  for (const source of [
+    '<!-- <div x-data="{ count: 0 }" x-init="count++"></div> -->',
+    '<script>const sample = \'<div x-data="{ count: 0 }"></div>\'</script>',
+    '<style>/* <div x-data="{ count: 0 }"></div> */</style>',
+    '<div title="example x-data=\'{ count: 0 }\'">Text</div>',
+    '<div data-x-data="{ count: 0 }">Text</div>',
+  ]) {
+    expect(processReactiveDirectives(source, {}, 'page.stx')).toBe(source)
+  }
 })

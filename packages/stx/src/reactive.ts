@@ -1,5 +1,6 @@
 /* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 import { evaluateExpression } from './expressions'
+import { scanAtElementPosition } from './html-masking'
 
 /**
  * Reactive Directives Module
@@ -141,15 +142,27 @@ function escapeRegex(str: string): string {
  * Extract attribute value handling both quote types
  */
 function extractAttributeValue(attributesStr: string, attrName: string): string | null {
-  // Try double quotes first
-  const doubleMatch = attributesStr.match(new RegExp(`${attrName}\\s*=\\s*"([^"]*)"`, 'i'))
-  if (doubleMatch) return doubleMatch[1]
-
-  // Try single quotes
-  const singleMatch = attributesStr.match(new RegExp(`${attrName}\\s*=\\s*'([^']*)'`, 'i'))
-  if (singleMatch) return singleMatch[1]
+  const attributes = /(?:^|\s)([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g
+  for (const match of attributesStr.matchAll(attributes)) {
+    if (match[1].toLowerCase() === attrName.toLowerCase())
+      return match[2] ?? match[3] ?? match[4] ?? null
+  }
 
   return null
+}
+
+/** Opening elements with x-data, ignoring tag-like text and quoted greater-than signs. */
+function reactiveOpeningTags(template: string): ParsedElement[] {
+  const tags: ParsedElement[] = []
+  const opening = /<([a-z][a-z0-9-]*)\b((?:"[^"]*"|'[^']*'|[^>"'])*)>/iy
+  scanAtElementPosition(template, (html, index) => {
+    opening.lastIndex = index
+    const match = opening.exec(html)
+    if (!match || !extractAttributeValue(match[2], 'x-data')) return -1
+    tags.push({ fullMatch: match[0], tagName: match[1], attributes: match[2], startIndex: index, endIndex: opening.lastIndex })
+    return opening.lastIndex
+  })
+  return tags
 }
 
 /**
@@ -158,14 +171,7 @@ function extractAttributeValue(attributesStr: string, attrName: string): string 
 function findReactiveScopes(template: string): ReactiveScope[] {
   const scopes: ReactiveScope[] = []
 
-  // Match elements with x-data attribute (both quote types)
-  const xDataRegex = /<([a-z][a-z0-9-]*)\s+([^>]*x-data\s*=\s*(?:"[^"]*"|'[^']*')[^>]*)>/gi
-  let match
-
-  while ((match = xDataRegex.exec(template)) !== null) {
-    const [fullMatch, tagName, attributesStr] = match
-    const startIndex = match.index
-
+  for (const { fullMatch, tagName, attributes: attributesStr, startIndex } of reactiveOpeningTags(template)) {
     // Extract x-data value
     const stateExpr = extractAttributeValue(attributesStr, 'x-data')
     if (!stateExpr) continue
@@ -1099,31 +1105,26 @@ function finalizeTemplate(template: string, scopes: ReactiveScope[]): string {
   // set of signals: opening one dropdown opened the other, and `querySelector`
   // meant only the first was ever initialised.
   //
-  // `findReactiveScopes` produced these in document order using the same
-  // pattern, so the nth match here is the nth scope.
-  let index = 0
-
-  let output = template.replace(
-    /<([a-z][a-z0-9-]*)(\s+[^>]*x-data\s*=\s*(?:"[^"]*"|'[^']*')[^>]*)>/gi,
-    (match, tagName, attributes) => {
-      const scope = scopes[index++]
-      if (!scope)
-        return match
-
-      // Already carries one, from a partial's `<script client>`. Adopt it
-      // rather than adding a second: the bridge has to address the element
-      // that exists, not the one it would have made.
-      const existing = /data-stx-scope="([^"]*)"/.exec(attributes)
-      if (existing) {
-        scope.id = existing[1]!
-        scope.selector = `[data-stx-scope="${scope.id}"]`
-
-        return match
-      }
-
-      return `<${tagName} data-stx-scope="${scope.id}"${attributes}>`
-    },
-  )
+  // Both passes use the same element-position scan, so their scope order agrees.
+  const parts: string[] = []
+  let end = 0
+  for (const [index, tag] of reactiveOpeningTags(template).entries()) {
+    const scope = scopes[index]
+    if (!scope) break
+    parts.push(template.slice(end, tag.startIndex))
+    const existing = extractAttributeValue(tag.attributes, 'data-stx-scope')
+    if (existing) {
+      scope.id = existing
+      scope.selector = `[data-stx-scope="${scope.id}"]`
+      parts.push(tag.fullMatch)
+    }
+    else {
+      parts.push(`<${tag.tagName} data-stx-scope="${scope.id}"${tag.attributes}>`)
+    }
+    end = tag.endIndex
+  }
+  parts.push(template.slice(end))
+  let output = parts.join('')
 
   /*
    * Renamed, both of them, rather than one renamed and one deleted.
