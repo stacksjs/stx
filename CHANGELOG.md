@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.814...v0.2.815)
+
+## ✨ Features
+
+- type per-screen native navigation title colours ([d8f96aa](https://github.com/stacksjs/stx/commit/d8f96aa)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.815 ([bcda6c7](https://github.com/stacksjs/stx/commit/bcda6c7)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.813...v0.2.814)
 
 ## 💄 Styles
