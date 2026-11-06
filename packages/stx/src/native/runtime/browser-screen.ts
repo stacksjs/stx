@@ -1,6 +1,6 @@
 import type { NativeBridgeInterface, NativeMutationPayload } from '../bridge/protocol'
 import type { STXNode } from '../compiler/ir'
-import type { NativeTabItemOptions } from './craft'
+import type { NativeAccessoryCompanion, NativeAccessoryMenuItem, NativeNavigationOptions, NativeTabItemOptions } from './craft'
 import { BrowserScreenRenderer, type BrowserRendererOptions } from './browser-renderer'
 
 export interface BrowserPlatform {
@@ -49,6 +49,52 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
   const tabs = document.createElement('nav')
   const tabPill = document.createElement('div')
   const accessoryRenderers: BrowserScreenRenderer[] = []
+  let dismissAccessoryMenu: (() => void) | null = null
+  const showAccessoryMenu = (button: HTMLButtonElement, choices: NativeAccessoryMenuItem[]): void => {
+    dismissAccessoryMenu?.()
+    const menu = document.createElement('div')
+    menu.setAttribute('data-tab-accessory-menu', '')
+    menu.setAttribute('role', 'menu')
+    menu.setAttribute('aria-label', button.getAttribute('aria-label') || '')
+    const anchor = button.getBoundingClientRect()
+    const width = Math.min(224, innerWidth - 24)
+    const dark = document.documentElement.classList.contains('dark')
+    menu.style.cssText = `position:fixed;z-index:1000;left:${Math.max(12, Math.min(anchor.right - width, innerWidth - width - 12))}px;bottom:${innerHeight - anchor.top + 8}px;width:${width}px;padding:4px;border:1px solid #8884;border-radius:16px;background:${dark ? '#1c1c1e' : '#fff'};color:${dark ? '#fff' : '#1c1c1e'};box-shadow:0 8px 32px #0003`
+    const rows = choices.map(choice => {
+      const row = document.createElement('button')
+      row.type = 'button'
+      row.setAttribute('role', 'menuitem')
+      row.textContent = choice.title
+      row.style.cssText = 'display:block;width:100%;min-height:48px;border:0;border-radius:10px;background:transparent;color:inherit;font:inherit;text-align:left;padding:12px'
+      row.onclick = () => { close(); platform.navigate(choice.path) }
+      menu.append(row)
+      return row
+    })
+    const outside = (event: Event): void => { if (!menu.contains(event.target as Node) && !button.contains(event.target as Node)) close() }
+    const keyboard = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); button.focus() }
+      else if (event.key === 'Tab') close()
+      else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+        event.preventDefault()
+        const index = rows.indexOf(document.activeElement as HTMLButtonElement)
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? rows.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length
+        rows[next]?.focus()
+      }
+    }
+    const close = (): void => {
+      menu.remove()
+      button.setAttribute('aria-expanded', 'false')
+      document.removeEventListener('click', outside, true)
+      document.removeEventListener('keydown', keyboard, true)
+      if (dismissAccessoryMenu === close) dismissAccessoryMenu = null
+    }
+    document.body.append(menu)
+    button.setAttribute('aria-expanded', 'true')
+    document.addEventListener('click', outside, true)
+    document.addEventListener('keydown', keyboard, true)
+    dismissAccessoryMenu = close
+    rows[0]?.focus()
+  }
   const shell = document.createElement('div')
   shell.setAttribute('data-stx-screen-shell', '')
   shell.style.cssText = 'display:flex;flex-direction:column;height:100dvh;max-width:512px;margin:auto;color:#1c1c1e;background:#f2f2f7;font:17px system-ui,-apple-system,sans-serif;overflow:hidden'
@@ -140,10 +186,11 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
     currentNavigation = { ...currentNavigation, ...patch }
     const settings = currentNavigation
     if ('tabAccessory' in patch) {
+      dismissAccessoryMenu?.()
       accessoryRenderers.splice(0).forEach(renderer => renderer.dispose())
       tabs.querySelectorAll('[data-tab-accessory]').forEach(button => button.remove())
-      const primary = patch.tabAccessory as { path: string, title: string, symbol: string, badge?: string | null, accessibilityLabel?: string, companions?: Array<{ path: string, title: string, symbol: string, badge?: string | null, accessibilityLabel?: string }> } | null
-      const actions = primary ? [...(primary.companions || []).slice(0, 2), primary] : []
+      const primary = patch.tabAccessory as NativeNavigationOptions['tabAccessory']
+      const actions: Array<NativeAccessoryCompanion & { badge?: string | null }> = primary ? [...(primary.companions || []).slice(0, 2), primary] : []
       for (const item of actions) {
         if (typeof item.path !== 'string' || !item.path.startsWith('/') || item.path.startsWith('//')) continue
         const button = document.createElement('button')
@@ -162,7 +209,13 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
           badge.style.cssText = 'position:absolute;top:0;right:0;background:#ff3b30;color:white;border-radius:10px;padding:1px 4px;font-size:11px'
           button.append(badge)
         }
-        button.onclick = () => platform.navigate(item.path)
+        const choices = item.menu?.slice(0, 12).filter(choice => typeof choice.path === 'string' && choice.path.startsWith('/') && !choice.path.startsWith('//') && choice.title)
+        if (choices?.length) {
+          button.setAttribute('aria-haspopup', 'menu')
+          button.setAttribute('aria-expanded', 'false')
+          button.onclick = () => { if (dismissAccessoryMenu) dismissAccessoryMenu(); else showAccessoryMenu(button, choices) }
+        }
+        else button.onclick = () => platform.navigate(item.path)
         tabs.append(button)
       }
     }
@@ -296,6 +349,7 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
       }
     },
     dispose() {
+      dismissAccessoryMenu?.()
       if (disposed) return
       disposed = true
       for (const controller of pending.values()) controller.abort()

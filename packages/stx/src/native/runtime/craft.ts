@@ -51,6 +51,22 @@ export interface NativeTabItemOptions {
   accessibilityLabel?: string | null
 }
 
+/** One destination offered by a floating action's compact popup. */
+export interface NativeAccessoryMenuItem {
+  path: string
+  title: string
+  symbol?: string
+}
+
+export interface NativeAccessoryCompanion {
+  path: string
+  title: string
+  symbol: string
+  accessibilityLabel?: string
+  /** Opens beside the pressed button. Dismissal leaves the current screen intact. */
+  menu?: NativeAccessoryMenuItem[]
+}
+
 export interface NativeNavigationOptions {
   title?: string
   /** Inline and large navigation title colour for this screen; null restores the host default. */
@@ -65,7 +81,7 @@ export interface NativeNavigationOptions {
   leftButtons?: NativeNavigationButton[]
   rightButtons?: NativeNavigationButton[]
   /** A destination beside the tab pill. Compact actions may carry up to two companion destinations; null removes the group. */
-  tabAccessory?: { path: string, title: string, symbol: string, badge?: string | null, accessibilityLabel?: string, iconOnly?: boolean, companions?: Array<{ path: string, title: string, symbol: string, accessibilityLabel?: string }> } | null
+  tabAccessory?: { path: string, title: string, symbol: string, badge?: string | null, accessibilityLabel?: string, iconOnly?: boolean, companions?: NativeAccessoryCompanion[] } | null
   tabItem?: NativeTabItemOptions
 }
 
