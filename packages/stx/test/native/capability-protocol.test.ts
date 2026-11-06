@@ -43,6 +43,34 @@ async function runtime(script: string = '', options: {
 }
 
 describe('shared-runtime native capability protocol', () => {
+  it('cancels the native transfer and releases progress listeners when a fetch is aborted', async () => {
+    const { scope, sent, receive } = await runtime('', { capabilities: ['fetch', 'uploadProgress'], timeout: 1000 })
+    const controller = new scope.AbortController()
+    const updates: unknown[] = []
+    const pending = scope.fetch('https://upload.test/video', { method: 'POST', body: 'video', signal: controller.signal, onUploadProgress: (value: unknown) => updates.push(value) })
+    const failure = pending.catch((error: any) => error)
+    const request = sent.find(message => message.type === 'API_REQUEST')!
+    const id = request.payload.args[0].uploadProgressId
+    expect(typeof id).toBe('string')
+    receive({ type: 'NETWORK_UPLOAD_PROGRESS', payload: { id, loaded: 2, total: 5 } })
+    expect(updates).toEqual([{ loaded: 2, total: 5 }])
+    controller.abort()
+    receive({ type: 'NETWORK_UPLOAD_PROGRESS', payload: { id, loaded: 5, total: 5 } })
+    expect(updates).toHaveLength(1)
+    expect((await failure).name).toBe('AbortError')
+    expect(sent.find(message => message.type === 'API_CANCEL')?.payload.requestId).toBe(request.id)
+    receive({ type: 'NETWORK_UPLOAD_PROGRESS', payload: { id, loaded: 5, total: 5 } })
+    expect(updates).toHaveLength(1)
+  })
+
+  it('does not send an already aborted upload or pretend an older host supports progress', async () => {
+    const { scope, sent } = await runtime('', { capabilities: ['fetch'] })
+    const controller = new scope.AbortController()
+    controller.abort()
+    await expect(scope.fetch('https://upload.test', { method: 'POST', body: 'x', signal: controller.signal })).rejects.toMatchObject({ name: 'AbortError' })
+    await expect(scope.fetch('https://upload.test', { method: 'POST', body: 'x', onUploadProgress() {} })).rejects.toMatchObject({ code: 'UPLOAD_PROGRESS_UNSUPPORTED' })
+    expect(sent.filter(message => message.type === 'API_REQUEST')).toEqual([])
+  })
   it.each([false, true])('gates passkeys and preserves untimed credential exchanges (minify=%s)', async (minify) => {
     const missing = await runtime('', { capabilities: [], minify })
     expect(missing.scope.craft.passkeys).toBeUndefined()

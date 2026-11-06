@@ -56,6 +56,7 @@ export type BridgeMessageType =
   | 'PUSH_TOKEN'          // A new push device token
   | 'SOUND_EVENT'         // A craft.audio sound ended or failed
   | 'NETWORK_STREAM'      // A piece, the end or the failure of a streaming fetch
+  | 'NETWORK_UPLOAD_PROGRESS' // Bytes sent by the screen's own upload task
   | 'CRAFT_EVENT'         // A host event in the page's name (craftLocationUpdate)
   | 'MEMORY_WARNING'      // Low memory warning
 
@@ -475,16 +476,32 @@ catch (error) {
   async request<T, R>(
     type: BridgeMessageType,
     payload: T,
-    timeout: number | null = this.defaultTimeout
+    timeout: number | null = this.defaultTimeout,
+    signal?: AbortSignal,
   ): Promise<R> {
     const message = this.createMessage(type, payload)
 
     return new Promise<R>((resolve, reject) => {
+      if (signal?.aborted) {
+        reject(new NativeCapabilityError('CANCELLED', 'The native request was aborted'))
+        return
+      }
+      const cleanup = () => signal?.removeEventListener('abort', cancel)
+      const cancel = () => {
+        const pending = this.pendingRequests.get(message.id)
+        if (!pending) return
+        this.pendingRequests.delete(message.id)
+        if (pending.timeout !== null) globalThis.clearTimeout?.(pending.timeout)
+        if (type === 'API_REQUEST') this.postToNative(this.createMessage<ApiCancelPayload>('API_CANCEL', { version: 1, requestId: message.id, reason: 'aborted' }))
+        cleanup()
+        reject(new NativeCapabilityError('CANCELLED', 'The native request was aborted'))
+      }
       const scheduleTimeout = timeout !== null && typeof globalThis.setTimeout === 'function'
         ? globalThis.setTimeout.bind(globalThis)
         : null
       const timeoutId = scheduleTimeout && timeout !== null ? scheduleTimeout(() => {
         this.pendingRequests.delete(message.id)
+        cleanup()
         if (type === 'API_REQUEST') {
           this.postToNative(this.createMessage<ApiCancelPayload>('API_CANCEL', {
             version: 1,
@@ -497,10 +514,11 @@ catch (error) {
 
       // Store pending request
       this.pendingRequests.set(message.id, {
-        resolve: resolve as (value: unknown) => void,
-        reject,
+        resolve: (value: unknown) => { cleanup(); resolve(value as R) },
+        reject: (error: unknown) => { cleanup(); reject(error) },
         timeout: timeoutId,
       })
+      signal?.addEventListener('abort', cancel, { once: true })
 
       // Send message
       this.postToNative(message)

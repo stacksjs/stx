@@ -80,6 +80,7 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     network: capabilities.has('network'),
     deviceInfo: capabilities.has('device'),
     fetch: capabilities.has('fetch'),
+    uploadProgress: capabilities.has('uploadProgress'),
     badge: capabilities.has('badge'),
     wallet: capabilities.has('wallet'),
     passkeys: capabilities.has('passkeys'),
@@ -1278,6 +1279,13 @@ export function installCraftBridge(
   }
 
   if (capabilities.has('fetch') && typeof target.fetch !== 'function') {
+    const uploads = new Map<string, (progress: { loaded: number, total: number }) => void>()
+    let nextUpload = 0
+    protocol.on<{ id: string, loaded: number, total: number }>('NETWORK_UPLOAD_PROGRESS', ({ payload }) => {
+      if (!Number.isFinite(payload?.loaded) || !Number.isFinite(payload?.total) || payload.loaded < 0 || payload.total <= 0) return
+      try { uploads.get(payload.id)?.({ loaded: Math.min(payload.loaded, payload.total), total: payload.total }) }
+      catch { /* A progress observer cannot change the transfer's result. */ }
+    })
     target.fetch = (input: any, init: AnyRecord = {}): Promise<any> => {
       const source = input && typeof input === 'object' ? input : {}
       const url = typeof input === 'string' ? input : String(source.url || input)
@@ -1302,9 +1310,13 @@ export function installCraftBridge(
       if (body != null && (method === 'GET' || method === 'HEAD')) return Promise.reject(new TypeError('A GET or HEAD request cannot have a body'))
       const signal: AnyRecord | undefined = init.signal || source.signal
       if (signal?.aborted) return Promise.reject(abortError(signal.reason))
+      if (typeof init.onUploadProgress === 'function' && !capabilities.has('uploadProgress'))
+        return Promise.reject(Object.assign(new Error('This app build cannot report upload progress'), { code: 'UPLOAD_PROGRESS_UNSUPPORTED' }))
       if (streaming && !form && /text\/event-stream/i.test(headers.accept || ''))
         return streamingFetch(url, method, headers, body == null ? null : body, signal)
-      const answer = (form ? ask : request)('Network', 'fetch', [{ url, method, headers, body: body == null ? null : body, ...(form ? { form } : {}) }]).then((data: AnyRecord) => {
+      const uploadProgressId = typeof init.onUploadProgress === 'function' ? `upload-${++nextUpload}` : ''
+      if (uploadProgressId) uploads.set(uploadProgressId, value => { if (!signal?.aborted) init.onUploadProgress(value) })
+      const answer = protocol.request<AnyRecord, AnyRecord>('API_REQUEST', { version: 1, module: 'Network', method: 'fetch', args: [{ url, method, headers, body: body == null ? null : body, ...(form ? { form } : {}), ...(uploadProgressId ? { uploadProgressId } : {}) }], ...(form ? { untimed: true } : {}) }, form ? null : undefined, signal as AbortSignal).then((data: AnyRecord) => {
         const responseBody = data?.body == null ? '' : String(data.body)
         let bodyUsed = false
         const consume = (): Promise<string> => {
@@ -1313,19 +1325,14 @@ export function installCraftBridge(
           return Promise.resolve(responseBody)
         }
         return response(data, { get bodyUsed() { return bodyUsed }, text: consume })
-      }, networkFailure)
-      // The host's request runs to its end; an aborted fetch stops waiting for it.
-      return signal ? Promise.race([answer, aborted(signal)]) : answer
+      }, (error: any) => { if (signal?.aborted) throw abortError(signal.reason); return networkFailure(error) })
+      return answer.finally(() => { if (uploadProgressId) uploads.delete(uploadProgressId) })
     }
   }
   if (streaming && typeof target.fetch === 'function' && typeof target.EventSource !== 'function')
     target.EventSource = createEventSourceClass(target)
 
   return craft
-}
-
-function aborted(signal: AnyRecord): Promise<never> {
-  return new Promise((_, reject) => signal.addEventListener?.('abort', () => reject(abortError(signal.reason))))
 }
 
 function networkFailure(error: any): never {
