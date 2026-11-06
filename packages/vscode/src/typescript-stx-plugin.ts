@@ -15,7 +15,7 @@ import {
   lineStarts,
   offsetToPosition,
   positionToOffset,
-  projectScriptColumn,
+  projectVirtualColumn,
   resolvePosition,
 } from '../../stx/src/stx-virtual-ts'
 import { stxImportDiagnostics } from '../../stx/src/stx-module-imports'
@@ -401,7 +401,7 @@ function init(modules: { typescript: typeof ts }, options: StxPluginOptions = {}
        */
       const toVirtual = (document: StxDocument, offset: number): number => {
         const position = offsetToPosition(document.sourceStarts, offset)
-        return positionToOffset(document.virtualStarts, position.line, projectScriptColumn(document.virtual.scriptColumns?.get(position.line) ?? [], position.column))
+        return positionToOffset(document.virtualStarts, position.line, projectVirtualColumn(document.virtual, position.line, position.column))
       }
 
       /** A virtual span → the `.stx` span it came from, if it came from one. */

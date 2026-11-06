@@ -156,3 +156,67 @@ const label = NOPE
     expect(result.diagnostics.some(d => d.code === 2307)).toBe(true)
   })
 })
+
+/**
+ * Rewriting the specifier moves every column after it on that line.
+ *
+ * absolutizeRelativeSpecifiers notes that it cannot change a line COUNT, so a
+ * diagnostic still lands on the author's line. Columns were never mapped: the
+ * rewrite replaces `'./target'` with an absolute path, widening the line by
+ * however deep the project sits on disk, so an error later on that line was
+ * reported far to the right of where it was written — column 170 for something
+ * authored at column 42 (stacksjs/stx#2154). An editor underlines the wrong
+ * span, and a terminal caret points into empty space.
+ */
+describe('columns after a rewritten specifier', () => {
+  it('reports an error on the import line at its authored column', async () => {
+    await Bun.write(join(dir, 'target.ts'), TARGET)
+    const line = `import { THING } from '../target'; const bad: number = THING`
+
+    const result = await check('cols/same-line.stx', `<script server>
+const seed = 1
+</script>
+<script client>
+${line}
+const used: number = seed
+</script>`)
+
+    const error = result.diagnostics.find(d => d.code === 2322)
+    expect(error).toBeDefined()
+    expect(error!.line).toBe(5)
+    expect(error!.column).toBe(line.indexOf('bad') + 1)
+  })
+
+  it('composes the specifier edit with an interpolation edit on the same line', async () => {
+    // Both rewrites touch this line, and they are applied in order: the
+    // interpolation is projected first, the specifier absolutized after. Undoing
+    // them in the wrong order reads the second map in coordinates it never used.
+    await Bun.write(join(dir, 'target.ts'), TARGET)
+    const line = `import { THING } from '../target'; const total: number = {{ seed }}; const bad: number = THING`
+
+    const result = await check('cols/both.stx', `<script server>
+const seed = 1
+</script>
+<script client>
+${line}
+</script>`)
+
+    const error = result.diagnostics.find(d => d.code === 2322)
+    expect(error).toBeDefined()
+    expect(error!.line).toBe(5)
+    expect(error!.column).toBe(line.indexOf('bad') + 1)
+  })
+
+  it('leaves columns alone on a line that imports nothing', async () => {
+    await Bun.write(join(dir, 'target.ts'), TARGET)
+    const line = `const bad: number = 'plain'`
+
+    const result = await check('cols/untouched.stx', `<script client>
+${line}
+</script>`)
+
+    const error = result.diagnostics.find(d => d.code === 2322)
+    expect(error).toBeDefined()
+    expect(error!.column).toBe(line.indexOf('bad') + 1)
+  })
+})

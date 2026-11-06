@@ -40,7 +40,7 @@ import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 import { stateDir } from './state-dir'
 import { loadStxConfig } from './config'
 import {
-  absolutizeRelativeSpecifiers,
+  rewriteRelativeSpecifiers,
   buildVirtualTypeScript,
   extractScriptBlocks,
   resolvePosition,
@@ -176,8 +176,12 @@ export function buildScriptVirtualFile(block: ScriptBlock, serverCode = '', orig
     }
   }
   lines.push(payload, 'export {}', '')
-  return { text: absolutizeRelativeSpecifiers(lines.join('\n'), originDir), sourceLineCount, lineMap,
+  // Padding above puts a body line at its authored line number, so the rewrite's
+  // own line keys are already authored ones for everything inside the block.
+  const rewritten = rewriteRelativeSpecifiers(lines.join('\n'), originDir)
+  return { text: rewritten.code, sourceLineCount, lineMap,
     scriptColumns: new Map([...projection.columns].map(([line, edits]) => [line + block.startLine - 1, edits])),
+    importColumns: rewritten.columns,
   }
 }
 

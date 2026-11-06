@@ -137,6 +137,8 @@ export interface VirtualFile {
   sourceLineCount: number
   /** Width-changing script interpolation edits, indexed by authored line. */
   scriptColumns?: Map<number, ScriptColumnEdit[]>
+  /** Width-changing relative-specifier edits, applied after the above. */
+  importColumns?: Map<number, ScriptColumnEdit[]>
 }
 
 const SCRIPT_RE = /<script(\s[^>]*)?>([\s\S]*?)<\/script>/gi
@@ -1740,15 +1742,76 @@ const RELATIVE_SPECIFIER_RE = /(\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)(['"])(\.
  * change a line count, so every diagnostic still lands on the author's line.
  */
 export function absolutizeRelativeSpecifiers(code: string, originDir: string): string {
-  if (!originDir)
-    return code
+  return rewriteRelativeSpecifiers(code, originDir).code
+}
 
-  return code.replace(RELATIVE_SPECIFIER_RE, (_whole, prefix: string, quote: string, specifier: string) => {
+/**
+ * The same rewrite, reporting the columns it moved.
+ *
+ * The comment above is right that this cannot change a line COUNT, so every
+ * diagnostic lands on the author's line. It says nothing about columns, and
+ * that was the gap: `'./numeric'` becoming an absolute path widens its line by
+ * however deep the project sits on disk, so anything after the import on that
+ * line is reported far to the right of where it was written -- column 170 for
+ * something authored at column 42 (stacksjs/stx#2154).
+ *
+ * The edits are shaped exactly like the interpolation ones so both can be
+ * undone by the same walker; see resolveVirtualColumn for the ordering.
+ */
+export function rewriteRelativeSpecifiers(code: string, originDir: string): { code: string, columns: Map<number, ScriptColumnEdit[]> } {
+  const columns = new Map<number, ScriptColumnEdit[]>()
+  if (!originDir)
+    return { code, columns }
+
+  const starts = lineStarts(code)
+  const chunks: string[] = []
+  let cursor = 0
+  for (const found of code.matchAll(RELATIVE_SPECIFIER_RE)) {
+    const offset = found.index!
+    const [whole, prefix, quote, specifier] = found as unknown as [string, string, string, string]
     // Forward slashes even on Windows: a backslash inside the quoted specifier
     // would be read as a string escape.
     const absolute = path.resolve(originDir, specifier).replace(/\\/g, '/')
-    return `${prefix}${quote}${absolute}${quote}`
-  })
+    const replacement = `${prefix}${quote}${absolute}${quote}`
+    chunks.push(code.slice(cursor, offset), replacement)
+    cursor = offset + whole.length
+    // `from` and its specifier may sit on separate lines. The rewrite is still
+    // correct; only its column edit would be, so that one goes unrecorded
+    // rather than recorded wrongly.
+    if (whole.includes('\n')) continue
+    const position = offsetToPosition(starts, offset)
+    const edits = columns.get(position.line) ?? []
+    const previous = edits.at(-1)
+    const generatedStart = position.column + (previous ? previous.generatedEnd - previous.sourceEnd : 0)
+    edits.push({
+      sourceStart: position.column,
+      sourceEnd: position.column + whole.length,
+      generatedStart,
+      generatedEnd: generatedStart + replacement.length,
+    })
+    columns.set(position.line, edits)
+  }
+  chunks.push(code.slice(cursor))
+  return { code: chunks.join(''), columns }
+}
+
+/**
+ * Undo both column projections, newest edit first.
+ *
+ * A line is written, then interpolations are projected into it, then its
+ * relative specifiers are absolutized. Walking back from a generated column
+ * therefore undoes the specifier rewrite before the interpolation one; doing
+ * it in the other order reads the second map in coordinates it never used.
+ */
+export function resolveVirtualColumn(virtual: Pick<VirtualFile, 'scriptColumns' | 'importColumns'>, line: number, column: number): number {
+  const projected = resolveScriptColumn(virtual.importColumns?.get(line) ?? [], column)
+  return resolveScriptColumn(virtual.scriptColumns?.get(line) ?? [], projected)
+}
+
+/** The inverse, in pipeline order, for editor hover and completions. */
+export function projectVirtualColumn(virtual: Pick<VirtualFile, 'scriptColumns' | 'importColumns'>, line: number, column: number): number {
+  const projected = projectScriptColumn(virtual.scriptColumns?.get(line) ?? [], column)
+  return projectScriptColumn(virtual.importColumns?.get(line) ?? [], projected)
 }
 
 /**
@@ -1857,6 +1920,7 @@ export function buildVirtualTypeScript(
   const lines: string[] = Array.from({ length: sourceLines.length }, () => '')
   const lineMap = new Map<number, MappedLine>()
   const scriptColumns = new Map<number, ScriptColumnEdit[]>()
+  const importColumns = new Map<number, ScriptColumnEdit[]>()
   const scriptDeclarations: Array<{ text: string, origin?: MappedLine }> = []
   const serverCode = blocks.filter(block => block.kind === 'server').map(block => block.code).join('\n')
   const components = options.filePath && options.templateExpressions !== false
@@ -1884,7 +1948,9 @@ export function buildVirtualTypeScript(
       origin: declaration.origin ? { ...declaration.origin, line: declaration.origin.line + block.startLine - 1 } : undefined,
     })
     const code = blankScriptDirectives(projection.code)
-    const bodyLines = absolutizeRelativeSpecifiers(code, options.originDir ?? '').split('\n')
+    const rewritten = rewriteRelativeSpecifiers(code, options.originDir ?? '')
+    for (const [line, edits] of rewritten.columns) importColumns.set(block.startLine + line - 1, edits)
+    const bodyLines = rewritten.code.split('\n')
     bodyLines.forEach((text, i) => {
       const index = block.startLine - 1 + i
       if (index < lines.length) {
@@ -2123,7 +2189,7 @@ export function buildVirtualTypeScript(
   // lib.dom happens to claim — `name`, `status`, `length`, `close` — hits this.
   append('export {}')
 
-  return { text: lines.join('\n'), lineMap, sourceLineCount: sourceLines.length, componentDependencies: components?.dependencies, referenced, scriptColumns }
+  return { text: lines.join('\n'), lineMap, sourceLineCount: sourceLines.length, componentDependencies: components?.dependencies, referenced, scriptColumns, importColumns }
 }
 
 /** Offsets at which each 1-based line starts. */
@@ -2208,7 +2274,7 @@ export function resolvePosition(
 
   if (!mapped) {
     // Script-block content sits at the line it already occupies.
-    return line <= virtual.sourceLineCount ? { line, column: resolveScriptColumn(virtual.scriptColumns?.get(line) ?? [], column) } : null
+    return line <= virtual.sourceLineCount ? { line, column: resolveVirtualColumn(virtual, line, column) } : null
   }
 
   const within = mapped.expression?.anchor ? 0 : Math.max(0, column - 1 - (mapped.prefixLength ?? 0))
