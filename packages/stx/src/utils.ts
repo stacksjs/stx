@@ -1975,6 +1975,16 @@ export async function renderComponentWithSlot(
       ],
     }
 
+    // Component scripts are stripped below, before their child tags are
+    // processed. Register explicit component imports while the scripts are
+    // still present, just as the page renderer does. Keep aliases local to
+    // this component so an import cannot change a sibling's resolution.
+    if (/import\s/.test(componentContent)) {
+      componentContext.__importedComponents = new Map(componentContext.__importedComponents as Map<string, string> | undefined)
+      const { processESImports } = await importOnce('stx/component-renderer', () => import('./component-renderer'))
+      componentContent = await processESImports(componentContent, componentContext, componentFilePath, options, dependencies)
+    }
+
     // Fill in `defineProps` destructuring defaults for any prop the caller
     // omitted, so server-side template evaluation sees them (the component's
     // `<script>` runs client-side only). Must run after `...props` above so
