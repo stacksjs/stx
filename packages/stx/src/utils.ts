@@ -13,7 +13,7 @@
 
 import type { StxOptions } from './types'
 import { extractExports as scopeExports, scopePropertyDescriptor } from './client-scope-bindings'
-import { pascalToKebab } from './component-resolution'
+import { packageComponentDirs, pascalToKebab } from './component-resolution'
 import { usesSharedImageApi } from './component-image-usage'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -916,6 +916,14 @@ export async function userComponentFileExists(
   const push = (dir?: string | null) => {
     if (dir && !searchDirs.includes(dir)) searchDirs.push(dir)
   }
+
+  // A tag written INSIDE a package is that package's question before it is the
+  // host's. Ranking the host first meant `<Avatar>` in @stacksjs/components
+  // resolved to the app's Avatar and the package component rendered against
+  // markup it was never written for (stacksjs/stx#2170). This adds nothing for
+  // a file in the project itself, so an app component still wins the names it
+  // shares with a package (stacksjs/stx#2927).
+  for (const dir of packageComponentDirs(parentFilePath, configuredRoot)) push(dir)
 
   const originalFilePath = parentContext.__originalFilePath as string | undefined
   if (originalFilePath) push(path.join(path.dirname(originalFilePath), 'components'))

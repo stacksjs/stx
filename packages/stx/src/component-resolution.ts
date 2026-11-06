@@ -131,6 +131,80 @@ export function importedComponentPath(name: string, context?: ComponentLookupCon
   }
 }
 
+/**
+ * The package a file belongs to, when that is not the project being built.
+ *
+ * Walking up to the nearest package.json answers "whose file is this" for both
+ * an installed dependency and a workspace package symlinked into node_modules,
+ * where a realpath would land outside node_modules and look like the app's own.
+ * A file in the host project returns undefined, so nothing about app
+ * resolution changes.
+ */
+export function owningPackageRoot(fromFile: string, projectRoot?: string): string | undefined {
+  const root = projectRoot ? path.resolve(projectRoot) : undefined
+  let dir = path.dirname(path.resolve(fromFile))
+  for (;;) {
+    if (fs.existsSync(path.join(dir, 'package.json')))
+      return root && dir === root ? undefined : dir
+    const parent = path.dirname(dir)
+    if (parent === dir)
+      return undefined
+    dir = parent
+  }
+}
+
+/** Conventional component roots inside a package that declares none. */
+const PACKAGE_COMPONENT_DIRS = ['src/ui', 'src/components', 'components', 'dist']
+
+/**
+ * Where a tag written INSIDE a package should look first (stacksjs/stx#2170).
+ *
+ * Resolution ranked the host's directories ahead of the referencing file's own,
+ * so `<Avatar>` written inside `@stacksjs/components` was answered by the app's
+ * `Avatar`, and the package's component rendered against markup it was never
+ * written for. In stacksjs/stacks#3213 that produced three native diagnostics
+ * per avatar, and moving the host's Avatar aside took them from nine to zero.
+ *
+ * It cannot be fixed by ranking packages first everywhere: an app writing
+ * `<EmptyState>` must still get the framework's (stacksjs/stx#2927). The two
+ * are different questions, and the file holding the tag is what separates them.
+ *
+ * A package may name its own roots in package.json, which is the only thing
+ * that works for one shipping a flat, content-hashed dist where neither a
+ * `components/` sibling nor a plain `Name.stx` exists:
+ *
+ *   { "stx": { "components": ["./src/ui", "./src/components"] } }
+ *
+ * Otherwise the conventional roots are tried, plus the directory holding the
+ * file itself, which is what a flat package needs.
+ */
+export function packageComponentDirs(fromFile: string, projectRoot?: string): string[] {
+  const resolved = path.resolve(fromFile)
+  // Without a known project root, "the nearest package.json" would be the app's
+  // own for an app file, and this would start ranking a page's own directory
+  // above the configured one. An installed dependency is the one case that can
+  // be recognised without that root, so it is the only one taken.
+  if (!projectRoot && !resolved.split(path.sep).includes('node_modules'))
+    return []
+  const pkg = owningPackageRoot(resolved, projectRoot)
+  if (!pkg)
+    return []
+  let declared: string[] = []
+  try {
+    const manifest = JSON.parse(fs.readFileSync(path.join(pkg, 'package.json'), 'utf8')) as { stx?: { components?: unknown } }
+    const listed = manifest.stx?.components
+    if (Array.isArray(listed))
+      declared = listed.filter((entry): entry is string => typeof entry === 'string')
+  }
+  catch {
+    // An unreadable or malformed manifest just means no declared roots.
+  }
+  const roots = declared.length ? declared : PACKAGE_COMPONENT_DIRS
+  // The file's own directory first: a flat package keeps its components beside
+  // whatever references them.
+  return [path.dirname(path.resolve(fromFile)), ...roots.map(entry => path.resolve(pkg, entry))]
+}
+
 /** The renderer and editor walk exactly the same ordered file candidates. */
 export function* componentFileCandidates(name: string, fromFile: string, options: ComponentLookupOptions = {}, context?: ComponentLookupContext): Generator<string> {
   const names = variants(name)
@@ -141,6 +215,9 @@ export function* componentFileCandidates(name: string, fromFile: string, options
   const files = [...new Set(names.map(base => `${base}.stx`))]
   const projectRoot = options.projectRoot || process.cwd()
   const directories = [
+    // A tag inside a package is that package's question first; for a file in
+    // the project this list is empty and the order below is unchanged.
+    ...packageComponentDirs(fromFile, options.projectRoot),
     ...(context?.__originalFilePath ? [path.join(path.dirname(context.__originalFilePath), 'components')] : []),
     ...(options.componentsDir ? [options.componentsDir] : []),
     path.join(path.dirname(fromFile), 'components'),
