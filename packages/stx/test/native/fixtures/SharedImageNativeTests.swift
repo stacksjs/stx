@@ -22,7 +22,9 @@ final class SharedImageNativeTests: XCTestCase {
         window.makeKeyAndVisible()
         screen.loadViewIfNeeded()
         try await wait("compiled shared Image loads", {
-            self.find("shared-photo", in: screen.view) is UIImageView &&
+            // Same reason as pixels(): the node is Craft's positioned wrapper,
+            // not a UIImageView, so waiting on the old type never completed.
+            self.find("shared-photo", in: screen.view) is CraftNativePositionedImageView &&
             screen.evaluateScript("imageProbe.loads() === 1")?.toBool() == true
         })
         window.layoutIfNeeded(); screen.view.layoutIfNeeded()
@@ -33,7 +35,11 @@ final class SharedImageNativeTests: XCTestCase {
         try XCTUnwrap(find("shared-photo", in: screen.view) as? CraftNativePositionedImageView)
     }
 
-    private func pixels(_ image: UIImageView) throws -> UIImageView {
+    /// Craft's positioned image view is a UIView wrapping the UIImageView that
+    /// actually holds the pixels (CraftNativeScreen.swift), not a UIImageView
+    /// subclass, so this takes the wrapper and digs out the child. It used to
+    /// take a UIImageView and stopped compiling when that changed.
+    private func pixels(_ image: UIView) throws -> UIImageView {
         try XCTUnwrap(image.subviews.compactMap { $0 as? UIImageView }.first)
     }
 
@@ -69,9 +75,12 @@ final class SharedImageNativeTests: XCTestCase {
             XCTAssertEqual(screen.evaluateScript("imageProbe.loads()")?.toInt32(), 1)
         }
         XCTAssertEqual(screen.evaluateScript("imageProbe.errors()")?.toInt32(), 0)
-        let legacy = try XCTUnwrap(find("legacy-photo", in: screen.view) as? UIImageView)
+        // The primitive's node is the same wrapper type. It overrides
+        // contentMode and forwards it to the image it holds, so both
+        // assertions keep their meaning; only the cast had gone stale.
+        let legacy = try XCTUnwrap(find("legacy-photo", in: screen.view) as? CraftNativePositionedImageView)
         XCTAssertEqual(legacy.contentMode, .scaleAspectFit)
-        XCTAssertFalse((legacy as? CraftNativePositionedImageView)?.usesObjectGeometry ?? true)
+        XCTAssertFalse(legacy.usesObjectGeometry)
     }
 
     func testSourceReplacementClearingAndRemountUseCurrentValues() async throws {
