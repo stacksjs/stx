@@ -23,6 +23,12 @@
     "bun",
     "component-library"
   ],
+  "stx": {
+    "components": [
+      "./src/ui",
+      "./src/components"
+    ]
+  },
   "sideEffects": [
     "**/*.css"
   ],
