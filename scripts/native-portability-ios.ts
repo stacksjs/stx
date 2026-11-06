@@ -16,7 +16,7 @@ const { values } = parseArgs({ options: {
 } })
 const suites: Record<string, { source: string, tests: string, count: number, unitTests?: string, unitCount?: number }> = {
   hud: { source: 'native-hud-device.stx', tests: 'NativeHudUITests', count: 1 },
-  controls: { source: 'shared-controls-device.stx', tests: 'SharedControlsUITests', count: 2 },
+  controls: { source: 'shared-controls-device.stx', tests: 'SharedControlsUITests', count: 3 },
   overlays: { source: 'shared-overlays-device.stx', tests: 'SharedPortabilityUITests', count: 4 },
   images: { source: 'shared-image-device.stx', tests: 'SharedImageUITests', count: 1, unitTests: 'SharedImageNativeTests', unitCount: 5 },
   videos: { source: 'shared-video-device.stx', tests: 'SharedVideoUITests', count: 1, unitTests: 'SharedVideoNativeTests', unitCount: 4 },

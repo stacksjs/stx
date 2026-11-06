@@ -21,6 +21,10 @@ const compact = state(false)
   <Card testID="token-card" data-testid="token-card" padding="none" className="w-full px-control-x">
     <span testID="token-content">Density sample</span>
   </Card>
+  {{-- The desktop/native button API: words named by title, glyph by symbol.
+       Resolving these to the shared label/slot API used to erase the words. --}}
+  <Button testID="title-button" data-testid="title-button" title="Share Report" />
+  <Button testID="symbol-button" data-testid="symbol-button" symbol="square.and.arrow.up" title="Share" />
   <Button testID="density-toggle" data-testid="density-toggle" @click="compact.set(!compact())">Toggle density</Button>
   <span testID="density" :text="compact ? 'Density: compact' : 'Density: comfortable'"></span>
 </section>

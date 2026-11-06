@@ -32,6 +32,23 @@ final class SharedControlsUITests: XCTestCase {
         }
     }
 
+    /// The desktop API's words must survive on the shared component.
+    ///
+    /// `title` names a button's words and `symbol` its glyph. Resolving such a
+    /// call to the shared label/slot API silently erased the words, which is
+    /// why those shapes stayed on the native primitive (stacksjs/stx#2091).
+    func testDesktopButtonApiKeepsItsWords() {
+        let app = launch()
+        let titled = app.buttons["title-button"]
+        XCTAssertTrue(titled.waitForExistence(timeout: 10))
+        XCTAssertEqual(titled.label, "Share Report")
+        let symbolic = app.buttons["symbol-button"]
+        XCTAssertTrue(symbolic.waitForExistence(timeout: 10))
+        XCTAssertEqual(symbolic.label, "Share")
+        titled.tap()
+        XCTAssertEqual(titled.label, "Share Report")
+    }
+
     func testSharedCardDensityChangesRealLayoutAndRestoresIt() {
         let app = launch()
         let card = app.otherElements["token-card"]

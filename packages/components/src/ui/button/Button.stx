@@ -19,7 +19,22 @@ export const fullWidth = $bool($props.fullWidth)
  * one, the button renders it in a span that tracks the parent's binding; given
  * none, the slot behaves exactly as before. See stacksjs/stx#1997.
  */
-export const label = $props.label || ''
+/**
+ * Desktop and native callers name a button's words `title` and its glyph
+ * `symbol`, with `iconOnly` meaning "draw the glyph alone". Accepting them is
+ * what lets such a call select this component rather than the native
+ * primitive (stacksjs/stx#2091).
+ *
+ * `title` supplies the words ONLY when nothing else does. It is also the web's
+ * tooltip attribute, so a caller writing both a tooltip and content keeps
+ * both: folding it into the label unconditionally would replace the slot with
+ * the tooltip text.
+ */
+export const symbol = $props.symbol || ''
+export const iconOnly = $bool($props.iconOnly)
+const slotWords = String($slots?.default ?? '').trim()
+const titleWords = !$props.label && !slotWords ? ($props.title || '') : ''
+export const label = $props.label || titleWords
 export const hasLabel = label !== ''
 
 /*
@@ -193,6 +208,8 @@ function onClick(event) {
   type="{{ type }}"
   class="{{ nativeButtonClasses }}"
   activeOpacity="0.6"
+  @if(symbol)symbol="{{ symbol }}"@endif
+  @if(iconOnly)iconOnly="true"@endif
   @if(isDisabled)disabled@endif
   :disabled="isDisabled()"
   aria-busy="{{ loading ? 'true' : 'false' }}"

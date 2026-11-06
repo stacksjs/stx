@@ -1381,11 +1381,24 @@ export async function renderComponentWithSlot(
       const sharedVideoUsage = video && usesSrc && !usesSource && (renderMetadata?.events ?? []).every(event =>
         /^(?:play|pause|ended|timeupdate|loadedmetadata|loadstart|error)$/.test(event.replace(/^@/, '').split('.')[0]),
       )
-      // Desktop callers already use title/symbol for an NSButton. Resolving
-      // those calls to the shared label/slot API silently erased their words.
-      const hasProp = (name: string) => Object.hasOwn(props, name) || Boolean(renderMetadata?.reactiveProps?.includes(name))
+      // Button's desktop API has converged (#2091): the shared component names
+      // its words with `title` when neither a label nor slot content does, and
+      // forwards `symbol` and `iconOnly` to the host, with the maintained iOS
+      // gate asserting the words survive on a device
+      // (SharedControlsUITests.testDesktopButtonApiKeepsItsWords). Those three
+      // shapes used to keep the primitive because resolving them to the shared
+      // label/slot API silently erased their words.
+      //
+      // A host-drawn VARIANT has not converged. The shared component implements
+      // primary, secondary, outline, ghost and danger; `toolbar` is the host's
+      // own control, so resolving it here would quietly draw a primary button
+      // where the author asked for a toolbar one. Only a written-out variant is
+      // read: a bound one is the shared component's own idiom, and the host
+      // variant is a static design choice rather than something a signal picks.
+      const sharedButtonVariants = new Set(['', 'primary', 'secondary', 'outline', 'ghost', 'danger'])
+      const buttonVariant = typeof props.variant === 'string' ? props.variant.trim().toLowerCase() : ''
       const nativeButtonUsage = options._nativeHostAttrs && /^button$/i.test(baseName)
-        && (hasProp('symbol') || hasProp('iconOnly') || (hasProp('title') && !hasProp('label') && !slotContent.trim()))
+        && !sharedButtonVariants.has(buttonVariant)
       const targetIsFallback = options._targetComponentFallbackNames?.some(name => name.toLowerCase() === baseName.toLowerCase())
         && (!checkedControl || sharedCheckedUsage)
         && (!textInput || sharedTextInputUsage)

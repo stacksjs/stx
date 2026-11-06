@@ -21,8 +21,33 @@ async function fixture(source: string, withPlugin = true) {
 
 afterEach(closeBrowser)
 
-it('retains native title and symbol buttons when the shared component package is installed', async () => {
-  const source = '<View><Button title="Pair a phone" testID="pair" /><Button title="Archive" symbol="archivebox" variant="toolbar" testID="archive" /></View>'
+/**
+ * Button's desktop API converged; its host-drawn variant did not (#2091).
+ *
+ * `title`, `symbol` and `iconOnly` used to keep the primitive, because
+ * resolving them to the shared label/slot API erased the words. The shared
+ * component now names its words with `title` when neither a label nor slot
+ * content does, and forwards the glyph, with the maintained iOS gate asserting
+ * the words survive on a device
+ * (SharedControlsUITests.testDesktopButtonApiKeepsItsWords).
+ *
+ * `variant="toolbar"` is a different question. The shared component implements
+ * primary, secondary, outline, ghost and danger; toolbar is the host's own
+ * control, so resolving it would draw a primary button where the author asked
+ * for a toolbar one.
+ */
+it('resolves a desktop title and symbol button to the shared component', async () => {
+  const source = '<View><Button title="Pair a phone" testID="pair" /><Button title="Share" symbol="square.and.arrow.up" testID="share" /></View>'
+  const { root, file } = await fixture(source)
+
+  const compiled = await compileScreenSource(source, file, { root })
+
+  expect(compiled.dependencies).toContain(sharedButton)
+  expect(compiled.dependencies).not.toContain(join(nativePrimitivesDir(), 'Button.stx'))
+})
+
+it('retains the native primitive for a host-drawn button variant', async () => {
+  const source = '<View><Button title="Archive" symbol="archivebox" variant="toolbar" testID="archive" /></View>'
   const { root, file } = await fixture(source)
   const compiled = await compileScreenSource(source, file, { root })
   expect(compiled.dependencies).toContain(join(nativePrimitivesDir(), 'Button.stx'))
@@ -31,10 +56,20 @@ it('retains native title and symbol buttons when the shared component package is
   const screen = mountNativeScreen(code, 'Screen')
   try {
     await screen.settle()
-    expect(screen.byTestID('pair')!.props.title).toBe('Pair a phone')
     expect(screen.byTestID('archive')!.props).toMatchObject({ title: 'Archive', symbol: 'archivebox', variant: 'toolbar' })
   }
   finally { screen.unmount() }
+})
+
+it('keeps a variant the shared component implements on the shared component', async () => {
+  // The guard against narrowing by variant too broadly: danger is its own.
+  const source = '<View><Button variant="danger" testID="delete">Delete</Button></View>'
+  const { root, file } = await fixture(source)
+
+  const compiled = await compileScreenSource(source, file, { root })
+
+  expect(compiled.dependencies).toContain(sharedButton)
+  expect(compiled.dependencies).not.toContain(join(nativePrimitivesDir(), 'Button.stx'))
 })
 
 describe.each([false, true])('shared Button resolution (minify=%s)', (minify) => {
