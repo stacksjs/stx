@@ -1,5 +1,39 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.815...v0.2.816)
+
+## ✨ Features
+
+- **media**: add a shared cancellable upload transport ([d37eefa](https://github.com/stacksjs/stx/commit/d37eefa)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **native**: converge Button's desktop API on the shared component ([0c371e3](https://github.com/stacksjs/stx/commit/0c371e3)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091))
+- **components**: accept source and resizeMode on the shared Video ([9d2bf5d](https://github.com/stacksjs/stx/commit/9d2bf5d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [pantry-pm/pantry#294](https://github.com/pantry-pm/pantry/issues/294))
+
+## 🐛 Bug Fixes
+
+- **native**: cancel fetch transfers and scope upload progress ([fc21971](https://github.com/stacksjs/stx/commit/fc21971)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **components**: resolve a tag inside a package against that package ([b7bb1cd](https://github.com/stacksjs/stx/commit/b7bb1cd)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2170](https://github.com/stacksjs/stx/issues/2170), [stacksjs/stacks#3213](https://github.com/stacksjs/stacks/issues/3213), [#2927](https://github.com/stacksjs/stx/issues/2927), [#2091](https://github.com/stacksjs/stx/issues/2091), [pantry-pm/pantry#294](https://github.com/pantry-pm/pantry/issues/294))
+- **typecheck**: map diagnostic columns back across specifier rewriting ([bc68a68](https://github.com/stacksjs/stx/commit/bc68a68)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2154](https://github.com/stacksjs/stx/issues/2154), [pantry-pm/pantry#294](https://github.com/pantry-pm/pantry/issues/294), [#2156](https://github.com/stacksjs/stx/issues/2156))
+- **typecheck**: end an interpolation at the delimiter that closes it ([7a19d35](https://github.com/stacksjs/stx/commit/7a19d35)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2154](https://github.com/stacksjs/stx/issues/2154), [pantry-pm/pantry#294](https://github.com/pantry-pm/pantry/issues/294))
+- **router**: bound prefetch on sight in bytes, not documents ([175a75c](https://github.com/stacksjs/stx/commit/175a75c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2161](https://github.com/stacksjs/stx/issues/2161), [stacksjs/stacks#3082](https://github.com/stacksjs/stacks/issues/3082))
+
+## ✅ Tests
+
+- **ci**: keep every workflow on one immutable Pantry pin ([a851fc1](https://github.com/stacksjs/stx/commit/a851fc1)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2166](https://github.com/stacksjs/stx/issues/2166))
+
+## 👷 Build System
+
+- **components**: declare the package's own component roots ([70b903b](https://github.com/stacksjs/stx/commit/70b903b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2170](https://github.com/stacksjs/stx/issues/2170))
+- take the bumpx that does not drop packages from a release ([d257bba](https://github.com/stacksjs/stx/commit/d257bba)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([pantry-pm/pantry#294](https://github.com/pantry-pm/pantry/issues/294))
+
+## 🔧 Chores
+
+- release v0.2.816 ([664fd77](https://github.com/stacksjs/stx/commit/664fd77)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.814...v0.2.815)
 
 ## ✨ Features
