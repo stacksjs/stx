@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.812...v0.2.813)
+
+## 🐛 Bug Fixes
+
+- **serve**: snapshot render cache inputs and honor no-store ([44328f9](https://github.com/stacksjs/stx/commit/44328f9)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.813 ([5e4f7ce](https://github.com/stacksjs/stx/commit/5e4f7ce)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.811...v0.2.812)
 
 ## ✨ Features
