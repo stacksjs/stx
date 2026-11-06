@@ -3341,7 +3341,7 @@ else {
   // save data, and not for a link marked data-stx-prefetch="false" or
   // "hover" (hover and touch still prefetch everything).
   var sightObserver=null;
-  var sightCount=0;
+  var sightCount=0;var sightBytes=0;var sightDocBytes;
   // Prefetching is for the next page. It must not compete with the paint of
   // this one, so sight and eager prefetch wait for first contentful paint
   // (stacksjs/stacks#3082's measurement: two 600 KB documents were already in flight
@@ -3370,6 +3370,22 @@ else {
     if(!o.prefetch||!o.cache||o.prefetchVisible===false||typeof IntersectionObserver!=='function')return;
     afterFirstPaint(observeLinksNow);
   }
+  // How many bytes of other pages one page load may fetch on sight. An author
+  // sets prefetchBudgetBytes; otherwise it is the size of the document this
+  // origin actually served, read once from navigation timing, so an app of
+  // small pages still prefetches freely and an app of large ones stops early.
+  // Zero means the browser did not tell us, and only the count cap applies.
+  function sightBudget(){
+    if(typeof o.prefetchBudgetBytes==='number')return o.prefetchBudgetBytes;
+    if(sightDocBytes===undefined){
+      sightDocBytes=0;
+      try{
+        var nav=performance.getEntriesByType('navigation')[0];
+        if(nav&&typeof nav.decodedBodySize==='number')sightDocBytes=nav.decodedBodySize;
+      }catch(e){}
+    }
+    return sightDocBytes;
+  }
   function observeLinksNow(){
     var c=navigator.connection;
     if(c&&(c.saveData||/2g/.test(c.effectiveType||'')))return;
@@ -3378,11 +3394,17 @@ else {
         if(!en.isIntersecting)return;
         sightObserver.unobserve(en.target);
         if(sightCount>=o.prefetchVisibleMax)return;
+        // The count alone caps documents, not bytes, and this router navigates
+        // by fetching a whole server-rendered page rather than a route chunk.
+        // Twelve chunks is modest; twelve pages was 1.4 MB against a 717 KB
+        // document on the Stacks dashboard. Stop on the budget as well.
+        var budget=sightBudget();
+        if(budget>0&&sightBytes>=budget)return;
         sightCount++;
         prefetchLink(en.target,false,true);
       });
     });
-    sightCount=0;
+    sightCount=0;sightBytes=0;
     var root=activeRoot()||document.body;
     if(!root||!root.querySelectorAll)return;
     root.querySelectorAll('[data-stx-link][href]').forEach(function(a){
@@ -3717,7 +3739,14 @@ else {
     }
     var eager=link.getAttribute('data-stx-prefetch')==='eager';
     var wantsFragment=shouldUseFragmentResponse();
-    prefetching[key]=queuePrefetch(key,function(){return fetch(href,{priority:'low',headers:prefetchHeaders(wantsFragment)}).then(function(r){
+    prefetching[key]=queuePrefetch(key,function(){
+      // Charged here, where the job is dequeued, and not where the link came
+      // into view: a viewport full of links is ONE observer callback, so every
+      // job would be queued before the first byte had been counted and the
+      // budget would never bite. Two prefetches run at a time, so by the time
+      // this one starts the pages before it have been weighed.
+      if(glance){var spent=sightBudget();if(spent>0&&sightBytes>=spent)return}
+      return fetch(href,{priority:'low',headers:prefetchHeaders(wantsFragment)}).then(function(r){
       return readPrefetchResponse(r,wantsFragment);
     }).then(function(result){
       // A page in another layout cannot be swapped in as a fragment: the tap
@@ -3735,6 +3764,9 @@ else {
         if(eager)keepPage(key,result);
       }
       if(result){
+        // Only what the viewport asked for is charged to the sight budget; a
+        // hover or a touch is a person saying they want that page.
+        if(glance&&result.html)sightBytes+=result.html.length;
         if(!glance)loadModuleRegistries(result.html,href);
         // Its stylesheet too, so the tap never waits on cssLoadTimeout for a
         // sheet it could have had all along. Added unapplied (media=print),

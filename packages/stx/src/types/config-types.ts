@@ -1143,6 +1143,14 @@ export interface StxConfig {
     /** At most this many links prefetched on sight per page. Default: 12. */
     prefetchVisibleMax?: number
     /**
+     * At most this many bytes of other pages fetched on sight per page load.
+     * The count cap above limits documents, not bytes, and this router fetches
+     * a whole page per prefetch, so a page of links can pull far more HTML than
+     * it shows. Default: the size of the document the origin served, read from
+     * navigation timing; the count cap alone applies where that is unavailable.
+     */
+    prefetchBudgetBytes?: number
+    /**
      * Fetch the fragment of the page the app was opened on once it is idle,
      * so Back to it is a swap rather than a round trip. Default: true.
      */

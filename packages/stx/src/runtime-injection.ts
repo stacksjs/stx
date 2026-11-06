@@ -433,6 +433,7 @@ export async function injectRouterScript(template: string, options?: StxOptions)
       if (routerConfig.progressHeight !== undefined) configObj.progressHeight = routerConfig.progressHeight
       if (routerConfig.prefetchVisible !== undefined) configObj.prefetchVisible = routerConfig.prefetchVisible
       if (routerConfig.prefetchVisibleMax !== undefined) configObj.prefetchVisibleMax = routerConfig.prefetchVisibleMax
+      if (routerConfig.prefetchBudgetBytes !== undefined) configObj.prefetchBudgetBytes = routerConfig.prefetchBudgetBytes
       if (routerConfig.keepOpening !== undefined) configObj.keepOpening = routerConfig.keepOpening
     }
 
