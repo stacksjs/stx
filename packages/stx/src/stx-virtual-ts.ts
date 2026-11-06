@@ -427,6 +427,35 @@ interface ScriptProjection {
  * A long generated identifier may not fit in `{{a}}`; keep newlines in place
  * and record the changed columns instead of fabricating a short numeric value.
  */
+/**
+ * Find the delimiter that CLOSES an interpolation, counting nesting.
+ *
+ * A non-greedy `\{\{([\s\S]*?)\}\}` stops at the first `}}` in the text, which
+ * inside a balanced expression is usually not the end of it:
+ *
+ *   {{ wrap({inner:{depth:data.inner.depth}}) }}
+ *                                        ^^ matched here
+ *
+ * The expression was then sliced off mid-term and the checker reported
+ * "',' expected" against source that is perfectly correct (stacksjs/stx#2154).
+ *
+ * `text` is the comment- and literal-blanked copy, so a brace inside a string
+ * cannot be counted and a raw `!!}` quoted in an expression cannot close it.
+ * Returns the offset of the closing delimiter, or -1 when it never closes.
+ */
+function findInterpolationEnd(text: string, start: number, close: string): number {
+  let depth = 0
+  for (let i = start; i < text.length; i++) {
+    const char = text[i]
+    if (char === '{') { depth++; continue }
+    if (char !== '}' && char !== '!') continue
+    if (text.startsWith(close, i) && depth === 0) return i
+    // A brace that belongs to a nested object literal, not to the delimiter.
+    if (char === '}' && depth > 0) depth--
+  }
+  return -1
+}
+
 export function projectScriptInterpolations(code: string, serverCode: string, key = '0'): ScriptProjection {
   let prefix = `__stxScript${key}`
   while ((code + serverCode).includes(prefix)) prefix += '_'
@@ -439,11 +468,17 @@ export function projectScriptInterpolations(code: string, serverCode: string, ke
   let cursor = 0
   // Scan the blanked copy so quoted braces cannot swallow a later real value
   // or close an interpolation early. Slice expressions from the original.
-  for (const found of searchable.matchAll(/\{\{([\s\S]*?)\}\}|\{!!([\s\S]*?)!!\}/g)) {
-    const offset = found.index!
-    const match = code.slice(offset, offset + found[0].length)
-    const escaped = found[1] !== undefined
-    const expression = match.slice(escaped ? 2 : 3, escaped ? -2 : -3)
+  for (let scan = 0; scan < searchable.length; scan++) {
+    const escaped = searchable.startsWith('{{', scan)
+    if (!escaped && !searchable.startsWith('{!!', scan)) continue
+    const open = escaped ? 2 : 3
+    const close = escaped ? '}}' : '!!}'
+    const end = findInterpolationEnd(searchable, scan + open, close)
+    if (end < 0) continue
+    const offset = scan
+    const match = code.slice(offset, end + close.length)
+    const expression = match.slice(open, -close.length)
+    scan = end + close.length - 1
     const index = expressions.length
     const position = offsetToPosition(starts, offset)
     const origin = offsetToPosition(starts, offset + (escaped ? 2 : 3))
