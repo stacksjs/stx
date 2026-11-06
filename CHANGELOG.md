@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.813...v0.2.814)
+
+## 💄 Styles
+
+- **serve**: apply shared formatter to cache guards ([90c7be6](https://github.com/stacksjs/stx/commit/90c7be6)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.814 ([0a54e4a](https://github.com/stacksjs/stx/commit/0a54e4a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.812...v0.2.813)
 
 ## 🐛 Bug Fixes
