@@ -1,5 +1,25 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.817...v0.2.818)
+
+## 🐛 Bug Fixes
+
+- **reactivity**: own component initializer bindings and teardown ([965fa44](https://github.com/stacksjs/stx/commit/965fa44)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **reactivity**: preserve quoted scope initializers ([fc3e61a](https://github.com/stacksjs/stx/commit/fc3e61a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **native**: repair the images gate against Craft's image view ([06738b8](https://github.com/stacksjs/stx/commit/06738b8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.818 ([7c7f687](https://github.com/stacksjs/stx/commit/7c7f687)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.812...v0.2.817)
 
 ## ✨ Features
