@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.811...v0.2.812)
+
+## ✨ Features
+
+- **native**: support companion actions beside the tab accessory ([2b08adf](https://github.com/stacksjs/stx/commit/2b08adf)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.812 ([0dab303](https://github.com/stacksjs/stx/commit/0dab303)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.810...v0.2.811)
 
 ## 🐛 Bug Fixes
