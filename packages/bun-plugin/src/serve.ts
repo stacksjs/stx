@@ -2678,7 +2678,21 @@ function __stxOverlay(errs){
       // context. Vary by the complete snapshot so an opt-in cache can never
       // cross user, host, query, IP, locale, or hook-derived boundaries.
       try {
-        return `${filePath}\0${JSON.stringify(reqCtx)}`
+        const request = reqCtx.request
+        // Native Request properties are not JSON-enumerable. Server scripts
+        // can read any header, including Authorization and Accept-Language.
+        const snapshot = request
+          ? {
+              ...reqCtx,
+              request: {
+                ...request,
+                url: request.url,
+                method: request.method,
+                headers: [...request.headers.entries()].sort(([a], [b]) => a.localeCompare(b)),
+              },
+            }
+          : reqCtx
+        return `${filePath}\0${JSON.stringify(snapshot)}`
       }
       catch {
         // A non-serializable hook value is not safely cacheable. Make this
@@ -2695,6 +2709,15 @@ function __stxOverlay(errs){
     if (!loc && !search && !host && !cookies && !ip)
       return filePath
     return `${filePath}\0${loc}\0${search}\0${host}\0${cookies}\0${ip}`
+  }
+
+  /** A page or request opting out of storage also opts out of the render cache. */
+  function allowsRenderCache(reqCtx?: ServeRequestContext): boolean {
+    const noStore = /(?:^|,)\s*no-store(?:\s*(?:=|,|$))/i
+    if (noStore.test(reqCtx?.request?.headers.get('cache-control') ?? ''))
+      return false
+    return !Object.entries(reqCtx?.responseHeaders ?? {}).some(([name, value]) =>
+      name.toLowerCase() === 'cache-control' && noStore.test(value))
   }
 
   const builtInMiddleware: Record<string, PageMiddleware> = authConfig === null ? {} : {
@@ -3177,12 +3200,17 @@ function __stxOverlay(errs){
     // never ran (#1847).
     const isMutating = !!reqCtx && reqCtx.method !== 'GET' && reqCtx.method !== 'HEAD'
 
+    // Capture the complete input once. Server scripts may add request context
+    // or response headers, which must not change where this render is stored.
+    const cacheKey = ENABLE_HTML_CACHE && !skipCacheHint && !isMutating && allowsRenderCache(reqCtx)
+      ? htmlCacheKey(filePath, reqCtx)
+      : undefined
+
     // Cache fast path — if every dependency mtime matches the previous
     // render, return the cached HTML. The stat fan-out is ~1ms total for a
     // typical 5-dep page; a fresh render is ~50ms, so even on miss we only
     // pay the stat cost once. Query-driven pages opt out entirely.
-    if (ENABLE_HTML_CACHE && !skipCacheHint && !isMutating) {
-      const cacheKey = htmlCacheKey(filePath, reqCtx)
+    if (cacheKey !== undefined) {
       const cachedEntry = await readRenderCache(cacheKey)
       if (cachedEntry && await templateSignatureFresh(cachedEntry.signature)) {
         // Braced: two statements now, and a brace-less `if` would have run the
@@ -3326,7 +3354,7 @@ function __stxOverlay(errs){
     // by processDirectives — every layout / component / partial it pulled
     // in is now part of the invalidation signature.
     if (
-      ENABLE_HTML_CACHE
+      cacheKey !== undefined
         && !context.__stx_skip_cache
         && !skipCacheHint
       // Never store a mutating render. The key is path-based, so caching the
@@ -3334,6 +3362,7 @@ function __stxOverlay(errs){
       // else's validation errors and submitted values — worse than the stale
       // read the guard above prevents.
         && !isMutating
+        && allowsRenderCache(reqCtx)
         && isRenderableCacheCandidate(output)
       // A render that beat the image warm-up used the fallbacks — flat colour,
       // original file. That is fine to serve and wrong to keep: the cache is
@@ -3342,7 +3371,7 @@ function __stxOverlay(errs){
         && placeholdersAreReady
     ) {
       const signature = await buildTemplateSignature(filePath, dependencies)
-      rememberRender(htmlCacheKey(filePath, reqCtx), { html: output, signature, status: reqCtx?.responseStatus ?? 200, headers: reqCtx?.responseHeaders }, ticket)
+      rememberRender(cacheKey, { html: output, signature, status: reqCtx?.responseStatus ?? 200, headers: reqCtx?.responseHeaders }, ticket)
     }
 
     return output
@@ -3616,6 +3645,7 @@ function __stxOverlay(errs){
       && paramNames.length > 0
       && !isMutating
       && !skipCacheHint
+      && allowsRenderCache(reqCtx)
       && !serverScriptsReadParams(dynServerScripts, paramNames)
     if (reqCtx)
       reqCtx.params = paramsObj
@@ -3758,6 +3788,7 @@ function __stxOverlay(errs){
       if (
         !context.__stx_skip_cache
           && !recordedResponse
+          && allowsRenderCache(reqCtx)
           && isRenderableCacheCandidate(output)
           && placeholdersAreReady
       ) {
