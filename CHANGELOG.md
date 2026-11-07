@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.825...v0.2.826)
+
+## 🐛 Bug Fixes
+
+- yield during warm server component rendering ([603b99f](https://github.com/stacksjs/stx/commit/603b99f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.826 ([1534123](https://github.com/stacksjs/stx/commit/1534123)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- integrate current renderer scope fixes ([6e35c02](https://github.com/stacksjs/stx/commit/6e35c02)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- integrate current caller scope fixes ([24c0af3](https://github.com/stacksjs/stx/commit/24c0af3)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.824...v0.2.825)
 
 ## 🐛 Bug Fixes
