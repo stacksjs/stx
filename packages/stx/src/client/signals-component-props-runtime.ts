@@ -75,16 +75,20 @@ export const SIGNALS_COMPONENT_PROPS_RUNTIME = `  function bindParentComponentPr
   }
 
   function resolveComponentCallerScope(el, pageScope) {
+    if (el && el.__stx_slot_scope) return el.__stx_slot_scope;
+    if (el && el.__stx_for_scope) return el.__stx_for_scope;
     return projectedSlotCallerScope(el, pageScope) || componentCallerScopeFrom(el && (el.parentElement || el.parentNode), pageScope);
   }
 
   function projectedSlotCallerScope(el, pageScope) {
+    if (el && el.__stx_row_scope) return el.__stx_row_scope;
     if (el && el.__stx_page_scope) return layerTemplateScopes(el.__stx_page_scope, pageScope);
     if (el && el.__stx_scope && !el.hasAttribute('data-stx-scope')) return el.__stx_scope;
     var owner = el && el.getAttribute && el.getAttribute('data-stx-slot-owner');
     if (!owner) return null;
     var receiver = el.parentElement || el.parentNode;
     while (receiver && receiver !== document) {
+      if (receiver.__stx_row_scope) return receiver.__stx_row_scope;
       if (receiver.__stx_page_scope) return layerTemplateScopes(receiver.__stx_page_scope, pageScope);
       // A routed page or keyed row can replace the caller inside a persistent shell.
       if (receiver.__stx_scope && !receiver.hasAttribute('data-stx-scope')) return receiver.__stx_scope;

@@ -58,6 +58,8 @@ export const SIGNALS_DOM_READY_RUNTIME = `  // =================================
       }
     });
     var pageScopeSnapshot = mergeTemplateScopes(componentScope);
+    // A new document setup owns the page even when the host reuses its body.
+    document.body.__stx_page_scope = pageScopeSnapshot;
 
     /*
      * Any x-data scope the reactive bridge did not reach, initialized here.
