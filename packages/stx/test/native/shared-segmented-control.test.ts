@@ -92,6 +92,21 @@ describe('SegmentedControl on a native host', () => {
   }, 30_000)
 })
 
+it('offers large touch targets without changing selection behaviour', async () => {
+  const { root, file } = await fixture()
+  const source = SCREEN.replace('<SegmentedControl testID=', '<SegmentedControl size="lg" testID=')
+  await Bun.write(file, source)
+  const { code } = await compileSharedScreenBundle(file, { root })
+  const phone = mountNativeScreen(code, 'Screen')
+  await phone.settle()
+  for (const value of ['week', 'month', 'all'])
+    expect(phone.byTestID(`period-${value}`)!.style.minHeight).toBe(44)
+  phone.press(phone.byTestID('period-month')!)
+  await phone.settle()
+  expect(phone.context.probe.period()).toBe('month')
+  expect(phone.context.probe.changes()).toEqual(['month'])
+}, 30_000)
+
 describe('SegmentedControl named from a binding', () => {
   it('names the group from a reactive label, as a translated one is', async () => {
     const root = createTempDir('stx-segmented-label-')

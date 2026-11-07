@@ -25,6 +25,8 @@
  * `v-model:value`, or `:value` with `@change`, which receives the new value.
  * `testID` names the group, and each segment is `<testID>-<value>`.
  *
+ * Use `size="lg"` for a 44px touch target, including the platform control.
+ *
  * Colour and shape come from roles, so an app restyles it without touching
  * it: the track is `surface-sunken`, the chosen segment `panel` (one step
  * lighter than the track in dark mode, as iOS draws it), the words `fg` and
@@ -36,18 +38,19 @@ export const options = $props.options || []
 export const label = $props.label || ''
 export const stretch = $bool($props.stretch)
 export const disabled = $bool($props.disabled)
-export const size = $props.size === 'sm' ? 'sm' : 'md'
+export const size = $props.size === 'sm' ? 'sm' : $props.size === 'lg' ? 'lg' : 'md'
 export const testID = $props.testID || ''
 export const className = $props.className || ''
 
 const sizeClasses = {
   sm: { segment: 'min-h-[28px] px-2.5 py-1', text: 'text-[13px]' },
   md: { segment: 'min-h-[32px] px-3 py-1.5', text: 'text-[13px]' },
+  lg: { segment: 'min-h-[44px] px-3 py-2', text: 'text-[13px]' },
 }
 // Stretched segments share the track evenly, so their side padding comes out
 // of each label's width: iOS keeps it small, or "Breakfast" in four quarters
 // of a phone broke in two ("Breakfa / st").
-const stretchedPadding = { sm: 'px-1', md: 'px-1.5' }
+const stretchedPadding = { sm: 'px-1', md: 'px-1.5', lg: 'px-1.5' }
 export const sizing = sizeClasses[size]
 
 // A block flex box already fills its column, so `stretch` needs no `w-full` -
@@ -147,7 +150,7 @@ defineExpose({ selected })
   @if(testID)testID="{{ testID }}"@endif
   :items="segments()" :value="selected()" :disabled="isDisabled()"
   :aria-label="groupLabel() || null"
-  class="min-h-[32px] text-fg {{ stretch ? '' : 'self-start' }} {{ className }}"
+  class="{{ size === 'lg' ? 'min-h-[44px]' : 'min-h-[32px]' }} text-fg {{ stretch ? '' : 'self-start' }} {{ className }}"
   @change="onNativeChange($event)"
 ></div>
 @endif

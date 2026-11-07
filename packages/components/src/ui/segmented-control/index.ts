@@ -23,7 +23,8 @@ export interface SegmentedControlProps {
   /** Fill the width, segments sharing it equally. */
   stretch?: boolean
   disabled?: boolean
-  size?: 'sm' | 'md'
+  /** Large keeps every segment at least 44px tall for touch input. */
+  size?: 'sm' | 'md' | 'lg'
   /** Names the group; each segment is `<testID>-<value>`. */
   testID?: string
   className?: string
