@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.820...v0.2.821)
+
+## 🐛 Bug Fixes
+
+- **stx**: preserve page bindings after queued layout mounts ([2e21d0c](https://github.com/stacksjs/stx/commit/2e21d0c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.821 ([677c16c](https://github.com/stacksjs/stx/commit/677c16c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.819...v0.2.820)
 
 ## 🐛 Bug Fixes
