@@ -154,6 +154,7 @@ export const SIGNALS_EXPRESSION_RUNTIME = `  // Setup accessors refer to lexical
       if (current.__stx_scope && (name === undefined || name in current.__stx_scope)) {
         return current.__stx_scope;
       }
+      if (current.__stx_row_scope && (name === undefined || name in current.__stx_row_scope)) return current.__stx_row_scope;
       if (current.hasAttribute && current.hasAttribute('data-stx-scope')) {
         const scopeId = current.getAttribute('data-stx-scope');
         if (window.stx._scopes && window.stx._scopes[scopeId] && (name === undefined || name in window.stx._scopes[scopeId])) {

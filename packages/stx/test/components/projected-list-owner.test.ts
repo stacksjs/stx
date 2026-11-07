@@ -10,7 +10,7 @@ test('a reactive list preserves caller rows, conditions and handlers through a n
   const root = createTempDir('stx-projected-list-owner-')
   await Bun.write(path.join(root, 'stx.config.ts'), 'export default {}')
   await Bun.write(path.join(root, 'components', 'Collection.stx'), `<script client>const rows = state(['wrong']); const label = state('receiver')</script><div data-native="FlatList"><slot /></div>`)
-  await Bun.write(path.join(root, 'components', 'Results.stx'), `<script client>const rows = state(['first']); const label = state('caller'); const open = state(false); function more() { rows.set([...rows(), 'second']) }</script><section><button testID="open" @click="open.set(!open())">Open</button><Collection :if="open"><span listRole="header" key="title">{{ label }}</span><span :for="item in rows" :key="item">{{ item }}</span><button listRole="footer" key="more" testID="more" @click="more()">More</button></Collection></section>`)
+  await Bun.write(path.join(root, 'components', 'Results.stx'), `<script client>const rows = state(['first']); const label = state('caller'); const open = state(false); function more() { rows.set([...rows(), 'second']) }</script><section><button testID="open" @click="open.set(!open())">Open</button><Collection :if="open"><span listRole="header" key="title">{{ label }}</span><button :for="item in rows" :key="item" :testID="'row-' + item" @click="label.set('picked ' + item)">{{ item }}</button><button listRole="footer" key="more" testID="more" @click="more()">More</button></Collection></section>`)
   const file = path.join(root, 'Screen.stx')
   await Bun.write(file, '<div><Results /></div>')
   const { code } = await compileSharedScreenBundle(file, { root })
@@ -23,6 +23,9 @@ test('a reactive list preserves caller rows, conditions and handlers through a n
     expect(screen.texts()).toContain('caller')
     expect(screen.texts()).toContain('first')
     expect(screen.texts()).not.toContain('receiver')
+    screen.press(screen.byTestID('row-first')!)
+    await screen.settle()
+    expect(screen.texts()).toContain('picked first')
     screen.press(screen.byTestID('more')!)
     await screen.settle()
     expect(screen.texts()).toContain('second')
@@ -50,3 +53,29 @@ test('browser default slots retain caller values when the receiver shadows their
   }
   finally { await closeBrowser() }
 })
+
+
+test('shared List keeps caller bindings through two nested conditional components', async () => {
+  const root = createTempDir('stx-projected-shared-list-')
+  await Bun.write(path.join(root, 'stx.config.ts'), 'export default {}')
+  await Bun.write(path.join(root, 'components', 'Collection.stx'), await Bun.file(path.resolve(import.meta.dir, '../../../components/src/ui/list/List.stx')).text())
+  await Bun.write(path.join(root, 'components', 'Results.stx'), `<script client>const rows = state(['first']); const label = state('caller'); const open = state(false); function more() { rows.set([...rows(), 'second']) }</script><section><button testID="open" @click="open.set(!open())">Open</button><div :if="open"><Collection :loading="false" :hasMore="true"><span listRole="header" key="title">{{ label }}</span><button :for="item in rows" :key="item" :testID="'row-' + item" @click="label.set('picked ' + item)">{{ item }}</button><button listRole="footer" key="more" testID="more" @click="more()">More</button></Collection></div></section>`)
+  await Bun.write(path.join(root, 'components', 'Card.stx'), `<script client>const expanded = state(false)</script><section><Collection><span>Other list</span></Collection><button testID="expand" @click="expanded.set(true)">Expand</button><div :if="expanded"><Results /></div></section>`)
+  const file = path.join(root, 'Screen.stx')
+  await Bun.write(file, '<div><Card /></div>')
+  const { code } = await compileSharedScreenBundle(file, { root })
+  const screen = mountNativeScreen(code, 'Screen')
+  try {
+    await screen.settle()
+    screen.press(screen.byTestID('expand')!)
+    await screen.settle()
+    screen.press(screen.byTestID('open')!)
+    await screen.settle()
+    expect(screen.texts()).toContain('caller')
+    expect(screen.texts()).toContain('first')
+    screen.press(screen.byTestID('more')!)
+    await screen.settle()
+    expect(screen.texts()).toContain('second')
+  }
+  finally { screen.unmount() }
+}, 30000)

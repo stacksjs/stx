@@ -333,7 +333,10 @@ catch (e) {
             // Structural directives need a live parent. Keep the iteration
             // scope on the clone until the keyed diff inserts it, then bind.
             clone.__stx_for_scope = itemScope;
-            if (slotScopeInfo && !clone.hasAttribute('data-stx-scope')) clone.__stx_scope = itemScope;
+            if (!clone.hasAttribute('data-stx-scope')) {
+              if (slotScopeInfo) clone.__stx_scope = itemScope;
+              else clone.__stx_row_scope = itemScope;
+            }
             markLoopRow(clone, itemName, itemSignal);
           }
           elements.push(clone);
@@ -345,10 +348,13 @@ catch (e) {
         // now owns its scope and must retain the new item/index bindings.
         if (clone.hasAttribute('data-stx-slot-owner')) {
           clone.removeAttribute('data-stx-slot-owner');
-          if (!clone.hasAttribute('data-stx-scope')) clone.__stx_scope = itemScope;
+          if (!clone.hasAttribute('data-stx-scope')) clone.__stx_row_scope = itemScope;
         }
         clone.__stx_for_scope = itemScope;
-        if (slotScopeInfo && !clone.hasAttribute('data-stx-scope')) clone.__stx_scope = itemScope;
+        if (!clone.hasAttribute('data-stx-scope')) {
+          if (slotScopeInfo) clone.__stx_scope = itemScope;
+          else clone.__stx_row_scope = itemScope;
+        }
         markLoopRow(clone, itemName, itemSignal);
         elements.push(clone);
         componentSetupTemplates.forEach(function(setupTemplate) {

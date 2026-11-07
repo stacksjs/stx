@@ -27,7 +27,7 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
   // Native row plans
   // ==========================================================================
 
-  var __STX_ROW_GENERIC_ATTRS = { 'stx-hydrate': 1, 'data-stx-memo': 1, 'data-stx-suspense': 1, 'x-data': 1, 'data-stx-xdata': 1, ref: 1, 'data-stx-ref': 1, 'data-stx-lazy': 1, 'data-stx-slot-scope': 1, 'data-stx-slot-owner': 1 };
+  var __STX_ROW_GENERIC_ATTRS = { 'stx-hydrate': 1, 'data-stx-memo': 1, 'data-stx-suspense': 1, 'x-data': 1, 'data-stx-xdata': 1, ref: 1, 'data-stx-ref': 1, 'data-stx-lazy': 1, 'data-stx-slot-scope': 1 };
   var __STX_ROW_SKIPPED_EVENTS = { if: 1, for: 1, show: 1, model: 1, class: 1, style: 1, text: 1, html: 1, ref: 1 };
   var __STX_ROW_CONTROL_ATTRS = { value: 1, checked: 1, selected: 1, indeterminate: 1 };
   var __STX_IDENT = /^[A-Za-z_$][\\w$]*$/;
@@ -663,7 +663,8 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
     }
     else {
       row.scope = itemScope;
-      row.evalScope = layerTemplateScopes(globalHelpers, itemScope, findElementScope(parent) || {});
+      row.evalScope = layerTemplateScopes(globalHelpers, findElementScope(parent) || {}, itemScope);
+      root.__stx_row_scope = row.evalScope;
     }
     row.local = rowScopeAt(plan.eval, row.evalScope);
     var dispose = trackEffects(function() { bindRowNode(made, row); });
