@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.819...v0.2.820)
+
+## 🐛 Bug Fixes
+
+- bound malformed HTML tag scans during rendering ([08ccb1b](https://github.com/stacksjs/stx/commit/08ccb1b)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.820 ([f63ea2f](https://github.com/stacksjs/stx/commit/f63ea2f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.818...v0.2.819)
 
 ## ✨ Features
