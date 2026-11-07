@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.822...v0.2.823)
+
+## 🐛 Bug Fixes
+
+- retain projected caller scopes across routed pages ([d2b4bfc](https://github.com/stacksjs/stx/commit/d2b4bfc)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.823 ([b4f60a4](https://github.com/stacksjs/stx/commit/b4f60a4)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.816...v0.2.822)
 
 ## ✨ Features
