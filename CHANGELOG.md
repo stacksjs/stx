@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.818...v0.2.819)
+
+## ✨ Features
+
+- **components**: add large segmented control touch targets ([392d0ee](https://github.com/stacksjs/stx/commit/392d0ee)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.819 ([dd48ef4](https://github.com/stacksjs/stx/commit/dd48ef4)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.817...v0.2.818)
 
 ## 🐛 Bug Fixes
