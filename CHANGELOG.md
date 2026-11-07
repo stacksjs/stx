@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.826...v0.2.827)
+
+## 🐛 Bug Fixes
+
+- yield during large server template renders ([73060ab](https://github.com/stacksjs/stx/commit/73060ab)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.827 ([598a77c](https://github.com/stacksjs/stx/commit/598a77c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.825...v0.2.826)
 
 ## 🐛 Bug Fixes
