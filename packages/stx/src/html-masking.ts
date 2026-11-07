@@ -33,6 +33,70 @@ export interface ElementPositionToken {
   token: string
 }
 
+export interface HtmlTagToken {
+  start: number
+  end: number
+  name: string
+  attributes: string
+  closing: boolean
+  selfClosing: boolean
+}
+
+const HTML_TAG_NAME = /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)\b/y
+
+/** Scan tags once, without overlapping whitespace quantifiers or rescanning suffixes. */
+export function scanHtmlTags(html: string): HtmlTagToken[] {
+  const tags: HtmlTagToken[] = []
+  let cursor = 0
+  while (cursor < html.length) {
+    const start = html.indexOf('<', cursor)
+    if (start === -1) break
+    if (html.startsWith('<!--', start)) {
+      const end = html.indexOf('-->', start + 4)
+      if (end === -1) break
+      cursor = end + 3
+      continue
+    }
+    HTML_TAG_NAME.lastIndex = start
+    const name = HTML_TAG_NAME.exec(html)
+    if (!name) {
+      cursor = start + 1
+      continue
+    }
+    const attributeStart = HTML_TAG_NAME.lastIndex
+    let end = attributeStart
+    let quote: string | null = null
+    for (; end < html.length; end++) {
+      const ch = html[end]
+      if (quote) {
+        if (ch === quote) quote = null
+      }
+      else if (ch === '"' || ch === "'") {
+        quote = ch
+      }
+      else if (ch === '>') {
+        break
+      }
+    }
+    // An unfinished tag consumes the suffix, including any tag-looking text
+    // inside its attributes. Retrying each '<' would be quadratic again.
+    if (end === html.length) break
+    const closing = name[1] === '/'
+    const selfClosing = html[end - 1] === '/'
+    tags.push({ start, end: end + 1, name: name[2], attributes: html.slice(attributeStart, selfClosing ? end - 1 : end), closing, selfClosing })
+    cursor = end + 1
+    const lower = name[2].toLowerCase()
+    if (!closing && (lower === 'script' || lower === 'style')) {
+      const close = lower === 'script' ? SCRIPT_CLOSE : STYLE_CLOSE
+      close.lastIndex = cursor
+      const found = close.exec(html)
+      if (!found) break
+      cursor = found.index
+    }
+  }
+  return tags
+}
+
 // Sticky (`y`) open matchers anchor at `lastIndex` without slicing; global (`g`)
 // close matchers scan forward from `lastIndex`. This keeps maskAtElementPosition
 // O(n) overall instead of O(n²) (no per-`<` substring copy).

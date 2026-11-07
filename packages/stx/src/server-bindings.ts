@@ -24,6 +24,8 @@ import { classifyHtmlInterpolation, UnsafeInterpolationContextError } from './in
 import { escapeAttributeValue, escapeHtmlValue } from './expressions'
 import { inheritedClientLoopNames, loopBoundNames, readsAnyName } from './loop-binding'
 import { isRuntimeOwnedColonAttr } from './runtime-globals'
+import { scanHtmlTags } from './html-masking'
+import { parseAttributes } from './component-processing'
 
 /** Boolean HTML attributes that should render as attribute-present/absent */
 const BOOLEAN_ATTRS = new Set([
@@ -32,6 +34,8 @@ const BOOLEAN_ATTRS = new Set([
   'loop', 'multiple', 'muted', 'nomodule', 'novalidate', 'open',
   'playsinline', 'reversed', 'selected',
 ])
+
+const LOOP_ATTRIBUTES = new Set([':for', 'x-for', 'v-for', '@for'])
 
 const VOID_TAGS = new Set([
   'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link',
@@ -60,46 +64,30 @@ export function reactiveLoopRanges(template: string): Array<[number, number]> {
  */
 export function reactiveLoopScopes(template: string): Array<{ start: number, end: number, names: string[] }> {
   const ranges: Array<{ start: number, end: number, names: string[] }> = []
-  const openingTag = /<([a-zA-Z][a-zA-Z0-9-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)\s*\/?>/g
-  let match: RegExpExecArray | null
-
-  // eslint-disable-next-line no-cond-assign
-  while ((match = openingTag.exec(template)) !== null) {
-    const attributes = match[2] || ''
-    const loopAttr = /(?:^|\s)(?::for|x-for|v-for|@for)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/.exec(attributes)
-    if (!loopAttr)
-      continue
-    const names = loopBoundNames(loopAttr[1] ?? loopAttr[2] ?? loopAttr[3] ?? '')
-
-    const start = match.index
-    const openingEnd = start + match[0].length
-    const tagName = match[1].toLowerCase()
-    if (match[0].endsWith('/>') || VOID_TAGS.has(tagName)) {
-      ranges.push({ start, end: openingEnd, names })
+  type Scope = (typeof ranges)[number]
+  const ancestors = new Map<string, Array<Scope | null>>()
+  for (const tag of scanHtmlTags(template)) {
+    const tagName = tag.name.toLowerCase()
+    if (tag.closing) {
+      const scope = ancestors.get(tagName)?.pop()
+      if (scope) scope.end = tag.end
       continue
     }
-
-    const escapedTag = tagName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    const sameTag = new RegExp(`<\\/?${escapedTag}\\b(?:[^>"']|"[^"]*"|'[^']*')*>`, 'gi')
-    sameTag.lastIndex = openingEnd
-    let depth = 1
-    let closingEnd = openingEnd
-    let nested: RegExpExecArray | null
-
-    // eslint-disable-next-line no-cond-assign
-    while ((nested = sameTag.exec(template)) !== null) {
-      if (nested[0].startsWith('</')) {
-        depth--
-        if (depth === 0) {
-          closingEnd = nested.index + nested[0].length
-          break
-        }
+    const hasLoop = /(?::for|x-for|v-for|@for)\s*=/.test(tag.attributes)
+    const loopAttr = hasLoop ? parseAttributes(tag.attributes).find(attr => LOOP_ATTRIBUTES.has(attr.name)) : undefined
+    const loopValue = typeof loopAttr?.value === 'string' ? loopAttr.value : null
+    const scope = loopValue !== null
+      ? { start: tag.start, end: tag.end, names: loopBoundNames(loopValue) }
+      : null
+    if (scope) ranges.push(scope)
+    if (!tag.selfClosing && !VOID_TAGS.has(tagName)) {
+      let stack = ancestors.get(tagName)
+      if (!stack) {
+        stack = []
+        ancestors.set(tagName, stack)
       }
-      else if (!nested[0].endsWith('/>')) {
-        depth++
-      }
+      stack.push(scope)
     }
-    ranges.push({ start, end: closingEnd, names })
   }
 
   return ranges
@@ -161,18 +149,8 @@ export function processServerBindings(
 
   // Process :attr="expr" bindings on HTML elements
   // Match opening tags with colon-prefixed attributes
-  /*
-   * The self-closing slash is its OWN group (stacksjs/stx#2043).
-   *
-   * The attribute class matches `/` like any other character, and the group
-   * was greedy, so for `<input ... />` the trailing slash was already inside
-   * the captured attributes and `\s*\/?>` matched just the `>`. Rebuilding the
-   * tag then appended a second one, and every control with a server-resolved
-   * `:attr` shipped as `<input ... / />`. Lazy, with the slash captured, so
-   * the attributes end where the attributes end. Same shape as the matcher
-   * fixed in #2039.
-   */
-  const tagRegex = /<([a-zA-Z][a-zA-Z0-9-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*?)\s*(\/?)>/g
+  // The shared quote-aware scanner bounds malformed tags and keeps the
+  // self-closing slash separate from the attributes (#2043).
   const replacements: Array<{ start: number, end: number, replacement: string }> = []
   // A binding's generated function closes over no render data: values are
   // passed positionally on every call. Reuse identical expression/scope-shape
@@ -180,12 +158,10 @@ export function processServerBindings(
   const compiledBindings = new Map<string, (...args: unknown[]) => unknown>()
   const maxCompiledBindings = 256
 
-  // eslint-disable-next-line no-cond-assign
-  while ((match = tagRegex.exec(output)) !== null) {
-    if (isProtected(match.index)) continue
+  for (const tag of scanHtmlTags(output)) {
+    if (tag.closing || isProtected(tag.start)) continue
 
-    const fullTag = match[0]
-    const attrs = match[2]
+    const attrs = tag.attributes.trimEnd()
     if (!attrs || !attrs.includes(':')) continue
     // Native host props are JSON data, including computed option arrays and
     // geometry objects. DOM attributes retain their ordinary string contract.
@@ -314,12 +290,12 @@ export function processServerBindings(
     }
 
     if (hadReplacement) {
-      const selfClose = match[3] ? ' /' : ''
-      const tagName = match[1]
+      const selfClose = tag.selfClosing ? ' /' : ''
+      const tagName = tag.name
       const newTag = `<${tagName}${newAttrs}${selfClose}>`
       replacements.push({
-        start: match.index,
-        end: match.index + fullTag.length,
+        start: tag.start,
+        end: tag.end,
         replacement: newTag,
       })
     }
