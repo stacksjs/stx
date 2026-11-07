@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.824...v0.2.825)
+
+## 🐛 Bug Fixes
+
+- retain captured callers while nested list branches are detached ([71f271e](https://github.com/stacksjs/stx/commit/71f271e)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.825 ([d20f823](https://github.com/stacksjs/stx/commit/d20f823)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.823...v0.2.824)
 
 ## 🐛 Bug Fixes
