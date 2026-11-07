@@ -43,6 +43,7 @@
  * ```
  */
 
+import { yieldDuringRendering } from './performance-utils'
 import { loopBoundNames, parseLoopBinding, readsAnyName } from './loop-binding'
 import { extractClientSignalNames } from './signal-processing'
 import type { StxOptions } from './types'
@@ -716,6 +717,24 @@ export function reportDeferredLoopWarnings(html: string): string {
  * skipping loops whose branch lost inside an enclosing iteration.
  */
 export function processLoops(template: string, context: Record<string, any>, filePath: string, options?: StxOptions, deferWarnings = false): string {
+  const steps = processLoopSteps(template, context, filePath, options, deferWarnings)
+  let next = steps.next()
+  while (!next.done) next = steps.next()
+  return next.value
+}
+
+/** Same evaluator and output as processLoops, with event-loop turns for SSR. */
+export async function processLoopsAsync(template: string, context: Record<string, any>, filePath: string, options?: StxOptions, deferWarnings = false): Promise<string> {
+  const steps = processLoopSteps(template, context, filePath, options, deferWarnings)
+  let next = steps.next()
+  while (!next.done) {
+    await yieldDuringRendering()
+    next = steps.next()
+  }
+  return next.value
+}
+
+function* processLoopSteps(template: string, context: Record<string, any>, filePath: string, options?: StxOptions, deferWarnings = false): Generator<void, string, void> {
   let output = template
   const clientSignals = new Set<string>(context.__stx_client_signal_names || [])
   for (const name of extractClientSignalNames(template)) clientSignals.add(name)
@@ -817,7 +836,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
   }
 
   // Process @foreach loops recursively from outermost to innermost
-  function processForeachWithContext(template: string, ctx: Record<string, any>): string {
+  function* processForeachWithContext(template: string, ctx: Record<string, any>): Generator<void, string, void> {
     let result = template
 
     while (true) {
@@ -943,6 +962,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
         // a nested loop inherits its parent's through the spread below.
         const sanitizeCache = (ctx as Record<symbol, unknown>)[SANITIZE_CACHE] ?? new WeakMap<object, unknown>()
         for (let index = 0; index < items.length; index++) {
+          if (index % 16 === 0) yield
           const item = items[index]
 
           // Create loop context object
@@ -1023,7 +1043,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
           // Expand inner loops before evaluating this loop's controls. A
           // conditional break in an inner body belongs to that inner scope.
           let processedContent = processForelse(content, itemContext)
-          processedContent = processLoops(processedContent, itemContext, filePath, options, true)
+          processedContent = yield* processLoopSteps(processedContent, itemContext, filePath, options, true)
           processedContent = processConditionals(processedContent, itemContext, filePath)
           processedContent = processLoopControl(processedContent, itemContext)
 
@@ -1071,7 +1091,7 @@ export function processLoops(template: string, context: Record<string, any>, fil
     return result
   }
 
-  output = processForeachWithContext(output, context)
+  output = yield* processForeachWithContext(output, context)
 
   // Process @for loops using proper parsing for nested parentheses.
   // filePath/options threaded through so per-iteration recursive

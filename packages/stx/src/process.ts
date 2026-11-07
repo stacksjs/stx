@@ -44,11 +44,11 @@ import { processBasicFormDirectives, processErrorDirective, processFormInputDire
 import { processTranslateDirective } from './i18n'
 import { processIncludes, processStackPushDirectives, processStackReplacements } from './includes'
 import { processJsDirectives, processTsDirectives } from './js-ts'
-import { processLoops, reportDeferredLoopWarnings } from './loops'
+import { processLoopsAsync, reportDeferredLoopWarnings } from './loops'
 import { processMarkdownDirectives } from './markdown'
 import { processMethodDirectives } from './method-spoofing'
 import { runPostProcessingMiddleware, runPreProcessingMiddleware } from './middleware'
-import { performanceMonitor } from './performance-utils'
+import { performanceMonitor, yieldDuringRendering } from './performance-utils'
 import { processRouteDirectives } from './routes'
 import { injectSeoTags, processMetaDirectives, processSeoDirective, processStructuredData } from './seo'
 import { fileExists, resolveTemplatePath, scopeSequenceKey } from './utils'
@@ -705,18 +705,6 @@ function restoreEscapedMustaches(html: string): string {
     const insideTag = before.lastIndexOf('<') > before.lastIndexOf('>')
     return insideTag ? `{{${content}}}` : `{<!--stx-literal-->{${content}}}`
   })
-}
-
-let lastRenderYield = 0
-
-/** Warm component renders otherwise form an uninterrupted microtask chain. */
-async function yieldDuringRendering(): Promise<void> {
-  if (performance.now() - lastRenderYield < 16)
-    return
-  // A resolved promise stays in the microtask queue. A timer gives sockets,
-  // disconnects and admission deadlines an actual event-loop turn.
-  await new Promise<void>(resolve => setTimeout(resolve, 0))
-  lastRenderYield = performance.now()
 }
 
 export async function processDirectives(
@@ -1975,6 +1963,7 @@ async function processOtherDirectives(
   dependencies: Set<string>,
 ): Promise<string> {
   let output = template
+  await yieldDuringRendering()
 
   // Use opts as alias for options (consistent with processDirectivesInternal)
   const opts = options
@@ -2005,6 +1994,7 @@ async function processOtherDirectives(
   // BEFORE any downstream processing that consumes script bodies (script
   // setup wrapping, signals transformation, minification).
   output = await interpolateClientScriptExpressions(output, context, filePath)
+  await yieldDuringRendering()
 
   // Process custom directives
   output = await processCustomDirectives(output, context, filePath, opts)
@@ -2028,6 +2018,7 @@ async function processOtherDirectives(
   // gets eliminated here too. Server-resolvable expression analysis
   // (the ~75% of `:if` reading server/loop scope) is Phase B.
   output = preEvalLiteralReactiveIfs(output)
+  await yieldDuringRendering()
 
   // Streaming SSR (#1746 Phase 3): extract @stream(...) boundaries BEFORE loops/
   // expressions so each boundary's inner template is captured raw (re-rendered
@@ -2040,7 +2031,8 @@ async function processOtherDirectives(
   // when components are processed, not after components have already been expanded
   // Warnings deferred until the conditionals below have decided which branches
   // are part of the page, so a loop in a losing branch does not warn.
-  output = processLoops(output, context, filePath, opts, true)
+  output = await processLoopsAsync(output, context, filePath, opts, true)
+  await yieldDuringRendering()
 
 
   // Dynamic components FIRST (#1817). The static pass resolves any unknown
@@ -2060,6 +2052,7 @@ async function processOtherDirectives(
   // Single unified pass replaces processImportDirectives, processBuiltInComponents,
   // processComponentDirectives, processCustomElements, and expandStxLinks
   output = await processComponents(output, context, filePath, opts, dependencies)
+  await yieldDuringRendering()
 
   // Process animations and transitions
   output = processAnimationDirectives(output, context, filePath, opts)
@@ -2106,6 +2099,7 @@ async function processOtherDirectives(
   output = processVirtualListDirectives(output, context, filePath)
   output = processVirtualGridDirectives(output, context, filePath)
   output = processInfiniteListDirectives(output, context, filePath)
+  await yieldDuringRendering()
 
   // Process partial hydration directives (@client:load, @client:idle, @client:visible, etc.)
   const { processPartialHydrationDirectives, processStaticDirectives } = await importOnce('stx/partial-hydration', () => import('./partial-hydration'))
@@ -2160,6 +2154,7 @@ async function processOtherDirectives(
 
   // Second component pass — catch components introduced by @include (e.g. StxLink in sidebar partials)
   output = await processComponents(output, context, filePath, opts, dependencies)
+  await yieldDuringRendering()
 
   // Strip any `@push(...) ... @endpush` markers that survived past
   // include resolution. The page-level push pass at line 495 ran
@@ -2178,6 +2173,7 @@ async function processOtherDirectives(
   // Process conditionals (@if, @unless, etc.) - AFTER loops to allow loop variables in scope
   output = processConditionals(output, context, filePath)
   output = reportDeferredLoopWarnings(output)
+  await yieldDuringRendering()
 
   // A server branch can remove the first component instance. Hoist shared
   // definitions only after those branches are resolved, or their prelude goes
@@ -2217,6 +2213,7 @@ async function processOtherDirectives(
 
   // Process translate directives (@translate, @t)
   output = await processTranslateDirective(output, context, filePath, opts)
+  await yieldDuringRendering()
 
   // Process accessibility directives (@a11y, @screenReader)
   output = processA11yDirectives(output, context, filePath, opts)
@@ -2246,6 +2243,7 @@ async function processOtherDirectives(
 
   // Process reactive directives (x-data, x-model, x-show, etc.) - Alpine-style reactivity
   output = processReactiveDirectives(output, context, filePath, options.skipSignalsRuntime === true && Number(context.__stxProcessingDepth) > 0)
+  await yieldDuringRendering()
 
   // Dev warning: detect mixing of Alpine-style (x-data) and signals (state/derived/effect)
   // in the same template. Both systems work on the same page but not on the same element.
@@ -2267,6 +2265,7 @@ async function processOtherDirectives(
 
   // Process expressions now (delayed to allow other directives to generate expressions)
   output = await processExpressions(output, context, filePath)
+  await yieldDuringRendering()
 
   // Add x-cloak to elements containing unresolved {{ }} expressions (preserved for client-side).
   // This prevents FOUC — raw mustache syntax flashing before the JS runtime processes them.
@@ -2303,6 +2302,7 @@ async function processOtherDirectives(
   // by both the signals/SFC setup path (below) and the client-script loop.
   const serverData = extractBridgeData(context as Record<string, unknown>)
   output = await processSignals(output, opts, pageFilePath, serverData)
+  await yieldDuringRendering()
 
   // Apply persisted appearance after signal analysis so this compiler-owned
   // script cannot cause a static page to load the signals runtime. It remains
@@ -2311,6 +2311,7 @@ async function processOtherDirectives(
 
   // Run post-processing middleware
   output = await runPostProcessingMiddleware(output, context, filePath, opts)
+  await yieldDuringRendering()
 
   // Auto-discover .webp/.avif siblings next to plain <img src="*.jpg|png">
   // refs and wrap them in <picture>. Opt-in via media.image.autoSiblings —

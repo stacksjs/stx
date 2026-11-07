@@ -64,6 +64,14 @@ const label = query.label
 await hold(label)
 console.log('CPU_RENDER_STARTED:' + label)
 </script><main>${Array.from({ length: 160 }, (_, index) => `<CpuRow index="${index}" />`).join('')}</main>`)
+  await Bun.write(path.join(dir, 'views', 'wide.stx'), `<script server>
+import { hold } from '../control'
+const label = query.label
+await hold(label)
+const identity = cookies.viewer
+const lines = Array.from({ length: 10000 }, (_, index) => ({ index, text: 'plain source text '.repeat(12) }))
+console.log('WIDE_RENDER_STARTED:' + label)
+</script><main><b>WIDE:{{ identity }}:END</b>@foreach(lines as line)<p id="line-{{ line.index }}"><span class="text-slate-500">{{ line.index }}</span>@if(line.text)<code>{{ line.text }}</code>@endif</p>@endforeach</main>`)
   await Bun.write(path.join(dir, 'stx.config.ts'), 'export default { strict: { enabled: true, failOnViolation: true } }')
   await Bun.write(path.join(dir, 'driver.ts'), `
 import { serve } from ${JSON.stringify(path.join(import.meta.dir, '..', 'src', 'serve.ts'))}
@@ -241,6 +249,43 @@ it('keeps the HTTP control path responsive during CPU-heavy component rendering'
     finally {
       await control('?release=all')
       await Promise.allSettled([page, ...(release ? [release] : [])])
+    }
+  }
+})
+
+it('keeps HTTP responsive between directive stages of a single large page', async () => {
+  for (const [label, viewer] of [['wide-cold', 'alice'], ['wide-warm', 'bravo']]) {
+    const page = fetch(`${base}/wide?label=${label}`, { headers: { cookie: `viewer=${viewer}` } })
+    let finished = false
+    let probes: Promise<void> | undefined
+    try {
+      await untilStarted(label)
+      const latencies: number[] = []
+      probes = (async () => {
+        while (!finished) {
+          const started = performance.now()
+          await control()
+          latencies.push(performance.now() - started)
+        }
+      })()
+      const released = control('?release=' + label)
+      const response = await page
+      const html = await response.text()
+      await released
+      finished = true
+      await probes
+      const elapsed = Math.max(...latencies)
+      expect(response.status).toBe(200)
+      expect(html).toContain(`WIDE:${viewer}:END`)
+      expect(html).not.toContain(`WIDE:${viewer === 'alice' ? 'bravo' : 'alice'}:END`)
+      expect(html).toContain('id="line-9999"')
+      console.log(`${label} control latency: ${elapsed.toFixed(1)}ms`)
+      expect(elapsed).toBeLessThan(250)
+    }
+    finally {
+      finished = true
+      await control('?release=all')
+      await Promise.allSettled([page, ...(probes ? [probes] : [])])
     }
   }
 })

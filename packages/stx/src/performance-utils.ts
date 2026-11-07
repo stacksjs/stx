@@ -907,3 +907,15 @@ export function applyDefaultBudgets(monitor: PerformanceMonitor = getPerformance
 export function resetPerformanceMonitor(): void {
   _performanceMonitor = null
 }
+
+let lastRenderYield = 0
+
+/** Bound consecutive render work across components, stages and collection rows. */
+export async function yieldDuringRendering(): Promise<void> {
+  if (performance.now() - lastRenderYield < 16)
+    return
+  // A resolved promise stays in the microtask queue. A timer gives sockets,
+  // disconnects and admission deadlines an actual event-loop turn.
+  await new Promise<void>(resolve => setTimeout(resolve, 0))
+  lastRenderYield = performance.now()
+}
