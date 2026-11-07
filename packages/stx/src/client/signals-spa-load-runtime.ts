@@ -54,6 +54,8 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
       });
     }
     var spaPageScopeSnapshot = mergeTemplateScopes(componentScope);
+    // The container's caller changes even when its outer slot receiver persists.
+    container.__stx_page_scope = spaPageScopeSnapshot;
 
     // Routed component mount scripts execute after DOMContentLoaded. Queue them
     // until the destination page setup is active so projected props and parent

@@ -79,10 +79,15 @@ export const SIGNALS_COMPONENT_PROPS_RUNTIME = `  function bindParentComponentPr
   }
 
   function projectedSlotCallerScope(el, pageScope) {
+    if (el && el.__stx_page_scope) return layerTemplateScopes(el.__stx_page_scope, pageScope);
+    if (el && el.__stx_scope && !el.hasAttribute('data-stx-scope')) return el.__stx_scope;
     var owner = el && el.getAttribute && el.getAttribute('data-stx-slot-owner');
     if (!owner) return null;
     var receiver = el.parentElement || el.parentNode;
     while (receiver && receiver !== document) {
+      if (receiver.__stx_page_scope) return layerTemplateScopes(receiver.__stx_page_scope, pageScope);
+      // A routed page or keyed row can replace the caller inside a persistent shell.
+      if (receiver.__stx_scope && !receiver.hasAttribute('data-stx-scope')) return receiver.__stx_scope;
       if (receiver.getAttribute && (receiver.getAttribute('data-stx-template-scope') || receiver.getAttribute('data-stx-scope')) === owner)
         return receiver.__stx_parent_scope || componentCallerScopeFrom(receiver.parentElement || receiver.parentNode, pageScope);
       receiver = receiver.parentElement || receiver.parentNode;
@@ -97,10 +102,10 @@ export const SIGNALS_COMPONENT_PROPS_RUNTIME = `  function bindParentComponentPr
     var ancestors = [];
     var projected = null;
     while (current && current !== document) {
-      projected = projectedSlotCallerScope(current, pageScope);
-      if (projected) break;
       if (current.getAttribute && current.hasAttribute('data-stx-scope'))
         ancestors.push(current.getAttribute('data-stx-scope'));
+      projected = projectedSlotCallerScope(current, pageScope);
+      if (projected) break;
       current = current.parentElement || current.parentNode;
     }
     // Layered rather than copied: a copy of the page scope (hundreds of
