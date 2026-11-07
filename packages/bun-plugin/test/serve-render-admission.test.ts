@@ -11,6 +11,8 @@ const port = freePort()
 const base = `http://127.0.0.1:${port}`
 let dir: string
 let proc: ReturnType<typeof Bun.spawn> | undefined
+let output = ''
+let outputDone: Promise<void> | undefined
 
 async function control(query = ''): Promise<{ started: string[], seen: string[] }> {
   return (await fetch(`${base}/__control${query}`)).json()
@@ -51,12 +53,23 @@ const identity = cookies.viewer
   await Bun.write(path.join(dir, 'views', 'dynamic', '[id].stx'), view('../../control'))
   await Bun.write(path.join(dir, 'public', 'health.txt'), 'static asset')
   await Bun.write(path.join(dir, 'views', 'failed.stx'), '<script>document.getElementById("capacity-test")</script>')
+  await Bun.write(path.join(dir, 'components', 'CpuRow.stx'), `<script server>
+const deadline = performance.now() + 5
+while (performance.now() < deadline) {}
+const identity = cookies.viewer
+</script><span>CPUROW:{{ identity }}:END</span>`)
+  await Bun.write(path.join(dir, 'views', 'cpu.stx'), `<script server>
+import { hold } from '../control'
+const label = query.label
+await hold(label)
+console.log('CPU_RENDER_STARTED:' + label)
+</script><main>${Array.from({ length: 160 }, (_, index) => `<CpuRow index="${index}" />`).join('')}</main>`)
   await Bun.write(path.join(dir, 'stx.config.ts'), 'export default { strict: { enabled: true, failOnViolation: true } }')
   await Bun.write(path.join(dir, 'driver.ts'), `
 import { serve } from ${JSON.stringify(path.join(import.meta.dir, '..', 'src', 'serve.ts'))}
 import { release, started, seen } from './control'
 serve({
-  patterns: ['views'], port: ${port}, renderConcurrency: 1, renderQueueLimit: 1, renderQueueTimeoutMs: 1500,
+  patterns: ['views'], componentsDir: 'components', port: ${port}, renderConcurrency: 1, renderQueueLimit: 1, renderQueueTimeoutMs: 1500,
   onRequest(req) {
     const url = new URL(req.url)
     if (url.pathname === '/__control') {
@@ -67,7 +80,11 @@ serve({
   },
 })
 `)
-  proc = Bun.spawn(['bun', 'driver.ts'], { cwd: dir, stdout: 'pipe', stderr: 'pipe' })
+  proc = Bun.spawn([process.execPath, 'driver.ts'], { cwd: dir, stdout: 'pipe', stderr: 'pipe' })
+  outputDone = (async () => {
+    const decoder = new TextDecoder()
+    for await (const chunk of proc!.stdout as ReadableStream<Uint8Array>) output += decoder.decode(chunk, { stream: true })
+  })()
   for (let i = 0; i < 500; i++) {
     try {
       await control()
@@ -77,14 +94,16 @@ serve({
   }
   proc.kill()
   await proc.exited
-  throw new Error('serve did not bind: ' + await new Response(proc.stderr).text() + await new Response(proc.stdout).text())
+  throw new Error('serve did not bind: ' + await new Response(proc.stderr).text() + output)
 })
 
 afterAll(async () => {
   proc?.kill()
   if (proc) await proc.exited
+  await outputDone
   if (dir) await rm(dir, { recursive: true, force: true })
 })
+
 
 it('bounds static and dynamic renders while API hooks and assets keep answering', async () => {
   const alpha = fetch(`${base}/dynamic/one?label=alpha`, { headers: { cookie: 'viewer=alice' } })
@@ -193,5 +212,35 @@ it('releases capacity after a template validation failure', async () => {
   finally {
     await control('?release=all')
     await Promise.allSettled([next])
+  }
+})
+
+it('keeps the HTTP control path responsive during CPU-heavy component rendering', async () => {
+  for (const [label, viewer] of [['cpu-cold', 'alice'], ['cpu-warm', 'bravo']]) {
+    const page = fetch(`${base}/cpu?label=${label}`, { headers: { cookie: `viewer=${viewer}` } })
+    let release: Promise<unknown> | undefined
+    try {
+      await untilStarted(label)
+      release = control('?release=' + label)
+      const deadline = performance.now() + 5000
+      while (!output.includes('CPU_RENDER_STARTED:' + label)) {
+        if (performance.now() > deadline) throw new Error('CPU render did not start')
+        await Bun.sleep(1)
+      }
+      const started = performance.now()
+      await control()
+      const elapsed = performance.now() - started
+      const response = await page
+      const html = await response.text()
+      expect(response.status).toBe(200)
+      expect(html.match(new RegExp(`CPUROW:${viewer}:END`, 'g'))?.length).toBe(160)
+      expect(html).not.toContain(`CPUROW:${viewer === 'alice' ? 'bravo' : 'alice'}:END`)
+      console.log(`${label} control latency: ${elapsed.toFixed(1)}ms`)
+      expect(elapsed).toBeLessThan(250)
+    }
+    finally {
+      await control('?release=all')
+      await Promise.allSettled([page, ...(release ? [release] : [])])
+    }
   }
 })

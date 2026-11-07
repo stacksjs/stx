@@ -707,6 +707,18 @@ function restoreEscapedMustaches(html: string): string {
   })
 }
 
+let lastRenderYield = 0
+
+/** Warm component renders otherwise form an uninterrupted microtask chain. */
+async function yieldDuringRendering(): Promise<void> {
+  if (performance.now() - lastRenderYield < 16)
+    return
+  // A resolved promise stays in the microtask queue. A timer gives sockets,
+  // disconnects and admission deadlines an actual event-loop turn.
+  await new Promise<void>(resolve => setTimeout(resolve, 0))
+  lastRenderYield = performance.now()
+}
+
 export async function processDirectives(
   template: string,
   context: Record<string, any>,
@@ -714,6 +726,7 @@ export async function processDirectives(
   options: StxOptions,
   dependencies: Set<string>,
 ): Promise<string> {
+  await yieldDuringRendering()
   // When SSR is explicitly disabled AND we're serving (not building),
   // skip directive processing and return the raw template as an SPA shell.
   // NOTE: ssr: false in stx.config.ts means SSG mode (build at build time),
