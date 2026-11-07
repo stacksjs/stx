@@ -29,7 +29,7 @@ const tiles = [{ id: 'a', emoji: 'A' }, { id: 'b', emoji: 'B' }]
     expect(result.success).toBe(true)
     const html = await getHtmlOutput(result)
     expect(html.match(/data-stx-scope=/g)?.length).toBeGreaterThanOrEqual(5)
-    expect(html).toContain('<p>Page</p>')
+    expect(html).toMatch(/<p(?:\s[^>]*)?>Page<\/p>/)
     expect(html).not.toContain('Error evaluating')
   })
 })

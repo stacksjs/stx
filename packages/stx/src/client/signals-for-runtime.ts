@@ -341,6 +341,12 @@ catch (e) {
         elements.push(stxHost.anchor('stx-for-item-end'));
       } else {
         const clone = stxHost.clone(templateContent);
+        // Projection selected the caller before cloning. The keyed iteration
+        // now owns its scope and must retain the new item/index bindings.
+        if (clone.hasAttribute('data-stx-slot-owner')) {
+          clone.removeAttribute('data-stx-slot-owner');
+          if (!clone.hasAttribute('data-stx-scope')) clone.__stx_scope = itemScope;
+        }
         clone.__stx_for_scope = itemScope;
         if (slotScopeInfo && !clone.hasAttribute('data-stx-scope')) clone.__stx_scope = itemScope;
         markLoopRow(clone, itemName, itemSignal);

@@ -40,7 +40,7 @@ import { findSfcTemplateBlock } from './sfc-template'
 import { importOnce } from './lazy-module'
 import { scanAtElementPosition, stashScriptElements } from './html-masking'
 import { hasReactiveDirectives } from './reactive'
-import { markProjectedRefs } from './misc-directives'
+import { markProjectedRefs, markProjectedSlotRoots } from './misc-directives'
 import { collectBlockDeclarations } from './stx-virtual-ts'
 import { CLIENT_LOOP_NAMES_KEY, inheritedClientLoopNames } from './loop-binding'
 import { isFallthroughAttribute } from './builtins/attrs'
@@ -2306,7 +2306,7 @@ export async function renderComponentWithSlot(
       ...slot,
       content: projectRefs(slot.content),
     }]))
-    templateContent = await applySlots(templateContent, projectRefs(defaultSlot), projectedSlots, componentContext, hasSignalScripts ? componentUid : '')
+    templateContent = await applySlots(templateContent, hasSignalScripts ? markProjectedSlotRoots(projectRefs(defaultSlot), componentUid) : defaultSlot, projectedSlots, componentContext, hasSignalScripts ? componentUid : '')
 
     // Entity decoding used to happen here, over every string in the component's
     // context, on the theory that a value which "looks like HTML" must have been

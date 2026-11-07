@@ -160,6 +160,8 @@ export const SIGNALS_EXPRESSION_RUNTIME = `  // Setup accessors refer to lexical
           return window.stx._scopes[scopeId];
         }
       }
+      var projected = projectedSlotCallerScope(current, componentScope);
+      if (projected && (name === undefined || name in projected)) return projected;
       current = current.parentElement || current.parentNode;
     }
     return null;
