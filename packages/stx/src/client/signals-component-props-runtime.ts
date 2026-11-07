@@ -77,7 +77,9 @@ export const SIGNALS_COMPONENT_PROPS_RUNTIME = `  function bindParentComponentPr
   function resolveComponentCallerScope(el, pageScope) {
     if (el && el.__stx_slot_scope) return el.__stx_slot_scope;
     if (el && el.__stx_for_scope) return el.__stx_for_scope;
-    return projectedSlotCallerScope(el, pageScope) || componentCallerScopeFrom(el && (el.parentElement || el.parentNode), pageScope);
+    // Detached conditional branches temporarily lose their ancestor chain.
+    // Keep the captured caller as the base until those ancestors reconnect.
+    return projectedSlotCallerScope(el, pageScope) || componentCallerScopeFrom(el && (el.parentElement || el.parentNode), (el && el.__stx_parent_scope) || pageScope);
   }
 
   function projectedSlotCallerScope(el, pageScope) {
