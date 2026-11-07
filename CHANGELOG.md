@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.823...v0.2.824)
+
+## 🐛 Bug Fixes
+
+- preserve projected row aliases across native and web scopes ([34806d8](https://github.com/stacksjs/stx/commit/34806d8)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.824 ([54f8cf3](https://github.com/stacksjs/stx/commit/54f8cf3)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.822...v0.2.823)
 
 ## 🐛 Bug Fixes
