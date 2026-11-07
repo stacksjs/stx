@@ -1,5 +1,68 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.822...v0.2.823)
+
+## 🐛 Bug Fixes
+
+- retain projected caller scopes across routed pages ([d2b4bfc](https://github.com/stacksjs/stx/commit/d2b4bfc)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.823 ([b4f60a4](https://github.com/stacksjs/stx/commit/b4f60a4)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.816...v0.2.822)
+
+## ✨ Features
+
+- **components**: add large segmented control touch targets ([392d0ee](https://github.com/stacksjs/stx/commit/392d0ee)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- support compact menus on floating native actions ([ffefe8e](https://github.com/stacksjs/stx/commit/ffefe8e)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **native**: converge Video's media URL on the shared component ([b40f5ba](https://github.com/stacksjs/stx/commit/b40f5ba)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091))
+
+## 🐛 Bug Fixes
+
+- preserve caller scopes for projected collection rows ([8b798f4](https://github.com/stacksjs/stx/commit/8b798f4)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: preserve page bindings after queued layout mounts ([2e21d0c](https://github.com/stacksjs/stx/commit/2e21d0c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- bound malformed HTML tag scans during rendering ([08ccb1b](https://github.com/stacksjs/stx/commit/08ccb1b)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **reactivity**: own component initializer bindings and teardown ([965fa44](https://github.com/stacksjs/stx/commit/965fa44)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **reactivity**: preserve quoted scope initializers ([fc3e61a](https://github.com/stacksjs/stx/commit/fc3e61a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- honor explicit component imports inside nested components ([2ce9d05](https://github.com/stacksjs/stx/commit/2ce9d05)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **native**: repair the images gate against Craft's image view ([06738b8](https://github.com/stacksjs/stx/commit/06738b8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.822 ([14630a5](https://github.com/stacksjs/stx/commit/14630a5)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- release v0.2.821 ([a0cd984](https://github.com/stacksjs/stx/commit/a0cd984)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- release v0.2.820 ([fe5b1ab](https://github.com/stacksjs/stx/commit/fe5b1ab)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- release v0.2.819 ([1ae6153](https://github.com/stacksjs/stx/commit/1ae6153)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- release v0.2.818 ([3f29789](https://github.com/stacksjs/stx/commit/3f29789)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- release v0.2.817 ([e9a05fc](https://github.com/stacksjs/stx/commit/e9a05fc)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.820...v0.2.821)
+
+## 🐛 Bug Fixes
+
+- **stx**: preserve page bindings after queued layout mounts ([2e21d0c](https://github.com/stacksjs/stx/commit/2e21d0c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.821 ([677c16c](https://github.com/stacksjs/stx/commit/677c16c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.819...v0.2.820)
 
 ## 🐛 Bug Fixes

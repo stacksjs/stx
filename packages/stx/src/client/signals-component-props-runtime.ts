@@ -75,7 +75,24 @@ export const SIGNALS_COMPONENT_PROPS_RUNTIME = `  function bindParentComponentPr
   }
 
   function resolveComponentCallerScope(el, pageScope) {
-    return componentCallerScopeFrom(el && (el.parentElement || el.parentNode), pageScope);
+    return projectedSlotCallerScope(el, pageScope) || componentCallerScopeFrom(el && (el.parentElement || el.parentNode), pageScope);
+  }
+
+  function projectedSlotCallerScope(el, pageScope) {
+    if (el && el.__stx_page_scope) return layerTemplateScopes(el.__stx_page_scope, pageScope);
+    if (el && el.__stx_scope && !el.hasAttribute('data-stx-scope')) return el.__stx_scope;
+    var owner = el && el.getAttribute && el.getAttribute('data-stx-slot-owner');
+    if (!owner) return null;
+    var receiver = el.parentElement || el.parentNode;
+    while (receiver && receiver !== document) {
+      if (receiver.__stx_page_scope) return layerTemplateScopes(receiver.__stx_page_scope, pageScope);
+      // A routed page or keyed row can replace the caller inside a persistent shell.
+      if (receiver.__stx_scope && !receiver.hasAttribute('data-stx-scope')) return receiver.__stx_scope;
+      if (receiver.getAttribute && (receiver.getAttribute('data-stx-template-scope') || receiver.getAttribute('data-stx-scope')) === owner)
+        return receiver.__stx_parent_scope || componentCallerScopeFrom(receiver.parentElement || receiver.parentNode, pageScope);
+      receiver = receiver.parentElement || receiver.parentNode;
+    }
+    return null;
   }
 
   // The caller scope for a component placed under \`current\`: the page's
@@ -83,14 +100,17 @@ export const SIGNALS_COMPONENT_PROPS_RUNTIME = `  function bindParentComponentPr
   // loop row binds before it is inserted, so it asks from its future parent.
   function componentCallerScopeFrom(current, pageScope) {
     var ancestors = [];
+    var projected = null;
     while (current && current !== document) {
       if (current.getAttribute && current.hasAttribute('data-stx-scope'))
         ancestors.push(current.getAttribute('data-stx-scope'));
+      projected = projectedSlotCallerScope(current, pageScope);
+      if (projected) break;
       current = current.parentElement || current.parentNode;
     }
     // Layered rather than copied: a copy of the page scope (hundreds of
     // names) per component instance was a fifth of mounting a list of rows.
-    var sources = [pageScope];
+    var sources = [projected || pageScope];
     ancestors.reverse().forEach(function(scopeId) {
       var ancestorScope = window.stx._scopes && window.stx._scopes[scopeId];
       if (ancestorScope) sources.push(ancestorScope);

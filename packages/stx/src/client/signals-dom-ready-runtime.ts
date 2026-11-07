@@ -111,7 +111,10 @@ export const SIGNALS_DOM_READY_RUNTIME = `  // =================================
     // compatibility scope. Page useRef accessors already captured the page's
     // map during setup; bind its DOM back into that same map before onMount.
     // Keep the layout's other exposed names available for legacy bindings.
-    componentScope.$refs = pageScopeSnapshot.$refs;
+    // Layout compatibility names remain available, but an explicit page
+    // declaration always owns its own bindings (including shared names such
+    // as items and loading). A queued bell mount must not replace a page list.
+    componentScope = mergeTemplateScopes(componentScope, pageScopeSnapshot);
     __stxScopeGen++;
 
     // Bind page roots after child components have registered their local scope.
