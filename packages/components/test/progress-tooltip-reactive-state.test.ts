@@ -186,8 +186,8 @@ it('keeps repeated tooltip ids unique and attached to their own controls', async
     expect(panels).toHaveLength(2)
     expect(new Set(panels.map(panel => panel.id)).size).toBe(2)
     for (const button of browser.document.querySelectorAll('nav button')) {
-      const described = browser.document.getElementById(button.getAttribute('aria-describedby'))
-      expect(described?.textContent).toContain(button.textContent)
+      const descriptions = (button.getAttribute('aria-describedby') || '').split(/\s+/).map(id => browser.document.querySelector('[id="' + id + '"]')).filter(Boolean)
+      expect(descriptions.some(panel => panel?.textContent?.includes(button.textContent || ''))).toBe(true)
     }
   }
   finally { await app.dispose() }

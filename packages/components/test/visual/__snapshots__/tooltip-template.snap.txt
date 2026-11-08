@@ -68,7 +68,7 @@ const delay = {{ delay }}
 // A live prop: a tooltip is commonly suppressed by state the page only learns
 // about later — while a field is being edited, or once a hint has been read —
 // and frozen it could only ever reflect the state the page was built in.
-const tooltipId = {{ tooltipId }}
+const activeTooltipId = useId('tooltip')
 const triggerRef = useRef('triggerRef')
 const panelRef = useRef('panelRef')
 const preferredSide = {{ position }}
@@ -77,6 +77,7 @@ const preferredSide = {{ position }}
 const panelLimits = 'position:fixed;max-width:calc(100vw - 16px);margin:0;'
 const panelStyle = state(nativePopup ? { position: 'absolute', margin: 0, transform: [] } : panelLimits)
 const arrowStyle = state('')
+const tooltipContent = useReactiveProp('content', {{ content }})
 const isDisabled = useReactiveProp('disabled', {{ disabled }})
 // Reactive prop binding — parent can drive `show` via signals. See #1704.
 const isVisible = useReactiveProp('show', {{ show }})
@@ -172,7 +173,7 @@ effect(() => {
     try {
       if (nativePopup && !window.craft?.capabilities?.viewMeasure)
         throw new Error('Native Tooltip requires viewMeasure support')
-      window.stx.overlays.open(tooltipId, { modal: false, root: nativePopup ? panelRef.value : null, panel: null, onEscape: hideTooltip, onBackdrop: hideTooltip })
+      window.stx.overlays.open(activeTooltipId, { modal: false, root: nativePopup ? panelRef.value : null, panel: null, onEscape: hideTooltip, onBackdrop: hideTooltip })
       if (nativePopup) stopPositioning = trackNativePopup(triggerRef.value, panelRef.value, preferredSide, style => panelStyle.set(style))
     }
     catch (error) {
@@ -180,7 +181,7 @@ effect(() => {
       hideTooltip()
     }
   }
-  else window.stx.overlays.close(tooltipId)
+  else window.stx.overlays.close(activeTooltipId)
 })
 
 onDestroy(() => {
@@ -188,7 +189,7 @@ onDestroy(() => {
   ++positionGeneration
   if (timeoutId) clearTimeout(timeoutId)
   if (stopPositioning) stopPositioning()
-  window.stx.overlays.close(tooltipId)
+  window.stx.overlays.close(activeTooltipId)
 })
 
 /*
@@ -219,8 +220,8 @@ function describeTrigger() {
   // there is nothing better to carry it.
   const target = wrapper.firstElementChild || wrapper
   const existing = (target.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean)
-  if (existing.indexOf(tooltipId) !== -1) return
-  existing.push(tooltipId)
+  if (existing.indexOf(activeTooltipId) !== -1) return
+  existing.push(activeTooltipId)
   target.setAttribute('aria-describedby', existing.join(' '))
 }
 
@@ -259,13 +260,14 @@ onDestroy(() => { if (restorePanel) restorePanel() })
     x-ref="panelRef"
     :style="panelStyle"
     id="{{ tooltipId }}"
+    :id="activeTooltipId"
     :show="isVisible() && !isDisabled()"
     class="{{ tooltipClasses }}"
     role="tooltip"
     @mouseenter="showTooltip()"
     @mouseleave="hideTooltip()"
   >
-      <span class="block" style="max-height:calc(100vh - 32px);overflow-y:auto;">
+      <span class="block" style="max-height:calc(100vh - 32px);overflow-y:auto;" :text="tooltipContent">
         {{ content }}
       </span>
       <span :show="!nativePopup" class="{{ arrowClass }}" :style="arrowStyle">
@@ -280,6 +282,7 @@ onDestroy(() => { if (restorePanel) restorePanel() })
 :
 ?
 absolute
+activeTooltipId
 aria-describedby
 arrowClass
 bg-inverse
@@ -292,6 +295,7 @@ border-t-inverse
 border-transparent
 bottom-full
 break-words
+content
 cursor-not-allowed
 disabled
 duration-200

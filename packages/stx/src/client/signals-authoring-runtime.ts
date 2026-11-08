@@ -4,24 +4,23 @@ export function signalsAuthoringRuntime(createModelSignalSource: string): string
 
   // Stable, scope-aware DOM ids for component authoring. A component setup
   // runs with window.__STX_CURRENT_ELEMENT__ pointing at its compiled root, so
-  // the data-stx scope id is already the canonical per-instance identity. The
-  // local counter supports multiple useId() calls in one component while the
-  // global fallback covers page scripts and manually-mounted roots.
+  // scope id identifies the owner, but a repeated component can still carry
+  // its template id during setup. A runtime counter separates those instances
+  // as well as multiple useId() calls within the same component.
   function useId(prefix) {
     var normalizedPrefix = String(prefix || 'stx')
       .trim()
       .replace(/[^a-zA-Z0-9_-]+/g, '-')
       .replace(/^-+|-+$/g, '') || 'stx';
     var root = window.__STX_CURRENT_ELEMENT__;
+    var id = ++__stxGeneratedIdCounter;
     if (root && root.getAttribute) {
       var scopeId = root.getAttribute('data-stx-scope') || root.getAttribute('data-stx') || '';
       if (scopeId) {
-        root.__stx_id_counter = (root.__stx_id_counter || 0) + 1;
-        return normalizedPrefix + '-' + String(scopeId).replace(/[^a-zA-Z0-9_-]+/g, '-') + '-' + root.__stx_id_counter;
+        return normalizedPrefix + '-' + String(scopeId).replace(/[^a-zA-Z0-9_-]+/g, '-') + '-' + id;
       }
     }
-    __stxGeneratedIdCounter++;
-    return normalizedPrefix + '-' + __stxGeneratedIdCounter;
+    return normalizedPrefix + '-' + id;
   }
 
   var createModelSignal = ${createModelSignalSource};
