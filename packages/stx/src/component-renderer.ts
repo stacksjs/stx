@@ -894,7 +894,9 @@ async function processComponentDirectives(
     // Parse: 'componentPath', optional { props }
     const pathMatch = innerArgs.match(/^\s*['"]([^'"]+)['"]/)
     if (!pathMatch) {
-      componentPat.lastIndex = 0
+      // This directive stays literal. Restarting at zero would find the same
+      // invalid call forever, blocking every request in the page process.
+      componentPat.lastIndex = directiveEnd
       continue
     }
     const componentPath = pathMatch[1]

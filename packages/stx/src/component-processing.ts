@@ -884,7 +884,12 @@ export async function processComponentDirectives(
 
     // Parse: 'componentPath', optional { props }
     const pathMatch = innerArgs.match(/^\s*['"]([^'"]+)['"]/)
-    if (!pathMatch) { componentPat.lastIndex = 0; continue }
+    if (!pathMatch) {
+      // Preserve malformed calls while advancing past them, including when a
+      // later valid component causes another scan of the rendered document.
+      componentPat.lastIndex = directiveEnd
+      continue
+    }
     const componentPath = pathMatch[1]
     let propsString: string | undefined
     const afterPath = innerArgs.slice(pathMatch[0].length)
