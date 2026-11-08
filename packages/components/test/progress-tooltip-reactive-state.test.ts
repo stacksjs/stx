@@ -175,3 +175,20 @@ it('keeps a tooltip description current when its caller changes the label', asyn
   }
   finally { await app.dispose() }
 })
+
+
+it('keeps repeated tooltip ids unique and attached to their own controls', async () => {
+  const app = await renderApp({ ...FILES, 'components/Host.stx': `<script client>const tools = state(['Calendar', 'Sharing'])</script><nav><Tooltip :for="tool in tools" :key="tool" :content="tool"><button>{{ tool }}</button></Tooltip></nav>` }, ROUTES)
+  try {
+    const browser = await boot(app, '/')
+    await settle()
+    const panels = [...browser.document.querySelectorAll('[role="tooltip"]')]
+    expect(panels).toHaveLength(2)
+    expect(new Set(panels.map(panel => panel.id)).size).toBe(2)
+    for (const button of browser.document.querySelectorAll('nav button')) {
+      const described = browser.document.getElementById(button.getAttribute('aria-describedby'))
+      expect(described?.textContent).toContain(button.textContent)
+    }
+  }
+  finally { await app.dispose() }
+})
