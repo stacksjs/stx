@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.831...v0.2.832)
+
+## ✅ Tests
+
+- refresh tooltip description snapshot ([fc0e1df](https://github.com/stacksjs/stx/commit/fc0e1df)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.832 ([6499a48](https://github.com/stacksjs/stx/commit/6499a48)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.830...v0.2.831)
 
 ## 🐛 Bug Fixes
