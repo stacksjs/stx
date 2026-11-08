@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.827...v0.2.828)
+
+## 🐛 Bug Fixes
+
+- **components**: keep tooltip descriptions reactive ([20aa905](https://github.com/stacksjs/stx/commit/20aa905)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.828 ([fbb7ff3](https://github.com/stacksjs/stx/commit/fbb7ff3)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.826...v0.2.827)
 
 ## 🐛 Bug Fixes
