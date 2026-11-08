@@ -72,6 +72,7 @@ const preferredSide = {{ position }}
 const panelLimits = 'position:fixed;max-width:calc(100vw - 16px);margin:0;'
 const panelStyle = state(nativePopup ? { position: 'absolute', margin: 0, transform: [] } : panelLimits)
 const arrowStyle = state('')
+const tooltipContent = useReactiveProp('content', {{ content }})
 const isDisabled = useReactiveProp('disabled', {{ disabled }})
 // Reactive prop binding — parent can drive `show` via signals. See #1704.
 const isVisible = useReactiveProp('show', {{ show }})
@@ -260,7 +261,7 @@ onDestroy(() => { if (restorePanel) restorePanel() })
     @mouseenter="showTooltip()"
     @mouseleave="hideTooltip()"
   >
-    <span class="block" style="max-height:calc(100vh - 32px);overflow-y:auto;">{{ content }}</span>
+    <span class="block" style="max-height:calc(100vh - 32px);overflow-y:auto;" :text="tooltipContent">{{ content }}</span>
     <span :show="!nativePopup" class="{{ arrowClass }}" :style="arrowStyle"></span>
   </span>
 </span>

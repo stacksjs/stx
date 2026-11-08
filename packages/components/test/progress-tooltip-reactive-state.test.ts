@@ -39,13 +39,15 @@ const HOST = `<script client>
   const total = state(0)
   const done = state(3)
   const editing = state(false)
+  const hint = state('Calendar')
+  function changeHint() { hint.set('Sharing') }
   function arrive() { total.set(10) }
   function edit() { editing.set(true) }
 </script>
 
 <div id="host">
   <Progress className="bar" variant="circular" :value="done()" :max="total() || 1" :indeterminate="!total()" />
-  <Tooltip className="tip" text="Hint" :disabled="editing()">
+  <Tooltip className="tip" :content="hint" :disabled="editing()">
     <span>trigger</span>
   </Tooltip>
 </div>`
@@ -156,4 +158,20 @@ describe('Tooltip reads disabled as a live prop', () => {
     expect(tip.isVisible()).toBe(false)
     await h.dispose()
   })
+})
+
+
+it('keeps a tooltip description current when its caller changes the label', async () => {
+  const app = await renderApp(FILES, ROUTES)
+  try {
+    const browser = await boot(app, '/')
+    await settle()
+    expect(find(browser, '[role="tooltip"]').textContent).toContain('Calendar')
+    const host = find(browser, '#host').closest('[data-stx-scope]')
+    browser.window.stx._scopes[host.getAttribute('data-stx-scope')].changeHint()
+    await settle()
+    expect(find(browser, '[role="tooltip"]').textContent).toContain('Sharing')
+    expect(find(browser, '[role="tooltip"]').textContent).not.toContain('Calendar')
+  }
+  finally { await app.dispose() }
 })
