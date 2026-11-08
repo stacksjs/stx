@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.832...v0.2.833)
+
+## 🐛 Bug Fixes
+
+- **stx**: advance past malformed component directives ([d622b15](https://github.com/stacksjs/stx/commit/d622b15)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.833 ([970f64c](https://github.com/stacksjs/stx/commit/970f64c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.831...v0.2.832)
 
 ## ✅ Tests
