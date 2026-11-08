@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.829...v0.2.830)
+
+## 🐛 Bug Fixes
+
+- **stx**: keep repeated component identities unique ([1a3ab3a](https://github.com/stacksjs/stx/commit/1a3ab3a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.830 ([f3b5576](https://github.com/stacksjs/stx/commit/f3b5576)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.828...v0.2.829)
 
 ## 🐛 Bug Fixes
