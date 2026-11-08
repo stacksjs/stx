@@ -24,12 +24,10 @@
  *
  * @module builtins/image-worker
  */
-
 import fs from 'node:fs'
 import os from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { Worker as ThreadWorker } from 'node:worker_threads'
 
 /** Tasks the worker entry knows how to run. */
 export type ImageTask = 'delivery' | 'placeholders'
@@ -172,6 +170,15 @@ function messageOf(error: unknown): string {
  * mid-pass is never silently re-run on the serving thread.
  */
 export async function runImageTask<T>(task: ImageTask, args: unknown): Promise<T | typeof WORKER_UNAVAILABLE> {
+  // The provider is optional, so importing the image helpers must not load it.
+  // Defer the actual module boundary until an off-thread pass is requested.
+  let ThreadWorker: typeof import('node:worker_threads').Worker
+  try {
+    ThreadWorker = (await import('node:worker_threads')).Worker
+  }
+  catch (error) {
+    return unavailable(`could not load node:worker_threads: ${messageOf(error)}`)
+  }
   if (typeof ThreadWorker !== 'function')
     return unavailable('node:worker_threads has no Worker in this runtime')
   const entry = imageWorkerEntry()
@@ -181,7 +188,7 @@ export async function runImageTask<T>(task: ImageTask, args: unknown): Promise<T
   await acquire()
   try {
     return await new Promise<T | typeof WORKER_UNAVAILABLE>((resolve, reject) => {
-      let worker: ThreadWorker
+      let worker: import('node:worker_threads').Worker
       try {
         worker = new ThreadWorker(entry)
       }
