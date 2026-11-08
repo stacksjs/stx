@@ -212,7 +212,11 @@ function describeTrigger() {
   // The control, or the wrapper itself when the trigger is bare text and
   // there is nothing better to carry it.
   const target = wrapper.firstElementChild || wrapper
-  const existing = (target.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean)
+  // A repeated trigger can inherit the template instance's description. Replace
+  // only our own previous id, preserving descriptions supplied by the caller.
+  const previous = target.getAttribute('data-stx-tooltip-description')
+  const existing = (target.getAttribute('aria-describedby') || '').split(/\s+/).filter(id => id && id !== previous)
+  target.setAttribute('data-stx-tooltip-description', activeTooltipId)
   if (existing.indexOf(activeTooltipId) !== -1) return
   existing.push(activeTooltipId)
   target.setAttribute('aria-describedby', existing.join(' '))
