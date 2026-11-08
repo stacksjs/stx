@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.830...v0.2.831)
+
+## 🐛 Bug Fixes
+
+- replace inherited tooltip descriptions on repeated controls ([a2fcd9f](https://github.com/stacksjs/stx/commit/a2fcd9f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.831 ([21d56c8](https://github.com/stacksjs/stx/commit/21d56c8)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.829...v0.2.830)
 
 ## 🐛 Bug Fixes
