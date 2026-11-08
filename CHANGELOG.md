@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.828...v0.2.829)
+
+## 🐛 Bug Fixes
+
+- **components**: identify repeated tooltips per instance ([f7fa9fc](https://github.com/stacksjs/stx/commit/f7fa9fc)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.829 ([4a35253](https://github.com/stacksjs/stx/commit/4a35253)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.827...v0.2.828)
 
 ## 🐛 Bug Fixes
