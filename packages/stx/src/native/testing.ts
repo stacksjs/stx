@@ -271,7 +271,7 @@ export interface NativeScreen {
   type: (node: NativeNode, text: string) => void
   /** The ids the navigation bar is currently offering on the right. */
   barButtons: () => string[]
-  /** Tap a button in the navigation bar, by id, as the host does. */
+  /** Tap a button in the navigation bar, or a choice in a button's menu, by id, as the host does. */
   tapBar: (id: string) => void
   /** The app going to the background (`background`) or coming back (`active`), as the host says. */
   appState: (state: 'active' | 'background' | 'inactive') => void
@@ -751,9 +751,17 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
     type: (node: NativeNode, text: string) => press(node, 'onChangeText', { text }),
     /** The ids the navigation bar is currently offering on the right. */
     barButtons: (): string[] => ((bars.findLast(bar => bar.rightButtons !== undefined)?.rightButtons || []) as { id: string }[]).map(button => button.id),
-    /** Tap a button in the navigation bar, by id, as the host does. */
+    /** Tap a button in the navigation bar, or a choice in a button's menu, by id, as the host does. */
     tapBar: (id: string) => {
-      if (!(bars.findLast(bar => bar.rightButtons !== undefined)?.rightButtons || []).some((button: { id: string }) => button.id === id)) throw new Error(`no bar button ${id}`)
+      type Choice = { id: string, disabled?: boolean }
+      const buttons = (bars.findLast(bar => bar.rightButtons !== undefined)?.rightButtons || []) as Array<{ id: string, menu?: Choice[] }>
+      const button = buttons.find(candidate => candidate.id === id)
+      // A button with a menu opens it and reports nothing itself: the host
+      // reports the choice, so a choice is what a test taps.
+      if (button?.menu?.length) throw new Error(`bar button ${id} opens a menu: tap one of ${button.menu.map(choice => choice.id).join(', ')}`)
+      const choice = buttons.flatMap(candidate => candidate.menu ?? []).find(candidate => candidate.id === id)
+      if (!button && !choice) throw new Error(`no bar button ${id}`)
+      if (choice?.disabled) throw new Error(`bar menu choice ${id} is disabled`)
       send('NAV_BUTTON', { id })
     },
     /** The app going to the background (`background`) or coming back (`active`), as the host says. */

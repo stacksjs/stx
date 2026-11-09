@@ -102,6 +102,20 @@ onMount(async () => {
     expect(() => phone.tapBar('done')).toThrow('no bar button done')
   })
 
+  it('native host contract: taps a choice in a bar button\'s menu, never the button that opens it', () => {
+    const phone = mountNativeScreen('', 'Navigation')
+    const navigation = phone.context.craft.navigation
+    navigation.setOptions({ rightButtons: [{ id: 'more', symbol: 'ellipsis', menu: [
+      { id: 'share', title: 'Share' },
+      { id: 'locked', title: 'Locked', disabled: true },
+    ] }] })
+    expect(phone.barButtons()).toEqual(['more'])
+    expect(() => phone.tapBar('share')).not.toThrow()
+    expect(() => phone.tapBar('more')).toThrow('bar button more opens a menu: tap one of share, locked')
+    expect(() => phone.tapBar('locked')).toThrow('bar menu choice locked is disabled')
+    expect(() => phone.tapBar('gone')).toThrow('no bar button gone')
+  })
+
   it('native host contract: observes synchronous reads without changing their values', () => {
     const reads: Array<[string, string]> = []
     const phone = mountNativeScreen('', 'HostReads', {
