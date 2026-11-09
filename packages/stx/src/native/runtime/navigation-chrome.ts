@@ -58,15 +58,37 @@ export function mergeChromeButtons(
   route: ChromeRoute,
 ): NativeChromeButton[] {
   if (!chrome || chrome.bare?.includes(route.name)) return [...own]
-  const shared = (chrome[side] ?? []).filter(button => button && button.id != null && showsChromeButton(button, route))
+  const shared = (chrome[side] ?? []).filter(button => button && button.id != null && showsChromeButton(button, route)).flatMap((button) => {
+    if (!button.menu) return [button]
+    // A choice is left out on the screen it opens, as a button is; a menu
+    // with nothing left to choose is not a button worth showing.
+    const menu = button.menu.filter(item => item && item.id != null && !(item.open && route.path && chromePath(item.open) === chromePath(route.path)))
+    return menu.length ? [{ ...button, menu }] : []
+  })
   const taken = new Set((chrome.leftButtons ?? []).concat(chrome.rightButtons ?? []).map(button => String(button?.id)))
   return [...own.filter(button => !taken.has(String(button?.id))), ...shared]
 }
 
 /** What the host is shown for a button: no callbacks, and nothing chrome-only. */
 export function hostButton(button: NativeChromeButton): NativeNavigationButton {
-  const { onPress, open, hideOn, ...rest } = button
-  return rest
+  const { onPress, open, hideOn, menu, ...rest } = button
+  if (!menu) return rest
+  return { ...rest, menu: menu.map(({ onPress: press, open: path, ...item }) => item) }
+}
+
+/** What pressing each button, or choosing from its menu, does in the screen. */
+export function buttonPresses(buttons: readonly NativeChromeButton[], open: (path: string) => unknown): Map<string, (event: { id: string }) => unknown> {
+  const presses = new Map<string, (event: { id: string }) => unknown>()
+  const add = (target: { id: string, open?: string, onPress?: (event: { id: string }) => unknown }) => {
+    const path = target.open
+    if (typeof target.onPress === 'function') presses.set(String(target.id), target.onPress)
+    else if (path) presses.set(String(target.id), () => open(path))
+  }
+  for (const button of buttons) {
+    add(button)
+    for (const item of button.menu ?? []) add(item)
+  }
+  return presses
 }
 
 /** The key two sends compare by, so an unchanged bar is not sent again. */

@@ -86,6 +86,35 @@ describe('craft.navigation.setChrome', () => {
     protocol.dispose()
   })
 
+  it('sends a button menu without callbacks or paths, and runs the choice that was picked', () => {
+    const { craft, sent, options, press, protocol } = host({ name: 'Feed', url: '/feed' })
+    const heard: string[] = []
+    const shared: string[] = []
+    craft.navigation.onButton(event => { heard.push(event.id) })
+    craft.navigation.setChrome({ rightButtons: [{ id: 'more', symbol: 'ellipsis', accessibilityLabel: 'More', menu: [
+      { id: 'store', title: 'Store', symbol: 'bag', open: '/store' },
+      { id: 'share', title: 'Share', onPress: (event) => { shared.push(event.id) } },
+      { id: 'feed', title: 'Feed', open: '/feed' },
+    ] }] })
+    expect(options().at(-1)).toEqual({ rightButtons: [{ id: 'more', symbol: 'ellipsis', accessibilityLabel: 'More', menu: [
+      { id: 'store', title: 'Store', symbol: 'bag' },
+      { id: 'share', title: 'Share' },
+    ] }] })
+    press('store')
+    press('share')
+    press('more')
+    expect(sent.filter(message => message.type === 'NAVIGATE_OPEN').map(message => message.payload)).toEqual([{ path: '/store' }])
+    expect(shared).toEqual(['share'])
+    expect(heard).toEqual(['store', 'share', 'more'])
+    protocol.dispose()
+  })
+
+  it('drops a menu button whose every choice opens the screen it is on', () => {
+    const more = { id: 'more', symbol: 'ellipsis', menu: [{ id: 'store', title: 'Store', open: '/store' }] }
+    expect(mergeChromeButtons([], { rightButtons: [more] }, 'rightButtons', { name: 'Store', path: '/store?tab=new' })).toEqual([])
+    expect(mergeChromeButtons([], { rightButtons: [more] }, 'rightButtons', { name: 'Feed', path: '/feed' })).toEqual([more])
+  })
+
   it('does not send an unchanged bar again, so the host does not rebuild its buttons', () => {
     const { craft, options, protocol } = host({ name: 'Feed', url: '/feed' })
     const account = (badge: string | null) => ({ rightButtons: [calendar], tabItems: [{ id: '/me', image: 'https://cdn.test/a.jpg', badge }] })

@@ -12,6 +12,20 @@ import type { NativeLiveActivities } from '../live-activity'
  * ```
  */
 
+/** One choice in a bar button's native menu. */
+export interface NativeNavigationMenuItem {
+  id: string
+  title: string
+  /** An SF Symbol name. */
+  symbol?: string
+  disabled?: boolean
+  destructive?: boolean
+  /** Where choosing it goes (`craft.navigation.open`). Left out on the screen it opens. */
+  open?: string
+  /** Kept in the screen; the host only sees the id. */
+  onPress?: (event: { id: string }) => unknown
+}
+
 export interface NativeNavigationButton {
   id: string
   /** An SF Symbol name. */
@@ -24,6 +38,12 @@ export interface NativeNavigationButton {
   variant?: 'accent' | 'account' | 'neutral'
   badge?: number
   badgeStyle?: 'count' | 'dot'
+  /**
+   * Choices the button opens in a native menu instead of being pressed
+   * itself. Choosing one runs its `onPress` or opens its `open` path, and
+   * reaches `onButton` listeners with the choice's id.
+   */
+  menu?: NativeNavigationMenuItem[]
   /** Kept in the screen; the host only sees the id. */
   onPress?: (event: { id: string }) => unknown
 }

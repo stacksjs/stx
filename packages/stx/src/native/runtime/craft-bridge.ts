@@ -4,7 +4,7 @@ import { createEventSourceClass, createStreamingBody, type StreamSink } from './
 import { abortError, isNativeDocument, NativeFormData, nativeFormParts, updateNativeDocumentVisibility } from './jsc-globals'
 import type { NativeLayoutChrome } from '../compiler/ir'
 import type { NativeChromeButton, NativeNavigationButton, NativeNavigationChrome, NativePasskeyCreationOptions, NativePasskeyRequestOptions } from './craft'
-import { buttonsKey, changedTabItems, chromePath, hostButton, mergeChromeButtons, type ButtonSide } from './navigation-chrome'
+import { buttonPresses, buttonsKey, changedTabItems, chromePath, hostButton, mergeChromeButtons, type ButtonSide } from './navigation-chrome'
 import { installNativeNavigation, nativeRouteParams } from './web-navigation'
 import { installNativeWebStorage } from './web-storage'
 
@@ -1076,14 +1076,7 @@ export function installCraftBridge(
     const merged = mergeChromeButtons(ownButtons[side] as NativeNavigationButton[], effectiveChrome(), side, { name: craft.route?.name ?? '', path: craft.route?.path })
     const presses = navButtonPresses[side]
     presses.clear()
-    for (const button of merged) {
-      const id = String(button.id)
-      if (typeof button.onPress === 'function') presses.set(id, button.onPress)
-      else if (button.open) {
-        const path = button.open
-        presses.set(id, () => craft.navigation.open(path))
-      }
-    }
+    buttonPresses(merged, path => craft.navigation.open(path)).forEach((press, id) => presses.set(id, press))
     sentButtons[side] = buttonsKey(merged)
     return merged.map(hostButton)
   }
