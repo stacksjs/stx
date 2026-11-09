@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.836...v0.2.837)
+
+## 🐛 Bug Fixes
+
+- resolve a package's own component tags inside the package (#2175) ([a9eaed6](https://github.com/stacksjs/stx/commit/a9eaed6)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2175](https://github.com/stacksjs/stx/issues/2175), [#2170](https://github.com/stacksjs/stx/issues/2170), [#2927](https://github.com/stacksjs/stx/issues/2927))
+
+## 🔧 Chores
+
+- release v0.2.837 ([99d2760](https://github.com/stacksjs/stx/commit/99d2760)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.833...v0.2.836)
 
 ## ✨ Features
