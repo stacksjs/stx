@@ -14,6 +14,7 @@ import path from 'node:path'
 
 // Directive processors
 import { injectCss } from './dev-server/ts-css'
+import { hoistDocumentStyles } from './document-styles'
 import { findBodyOpenTag, replaceBodyOpenTag } from './find-body-tag'
 import { findFirstScriptTag } from './first-script-tag'
 import { matchHtmlComment, matchStyleElement, maskAtElementPosition, restoreStashedScripts, stashScriptElements } from './html-masking'
@@ -1037,6 +1038,11 @@ export async function processDirectives(
         // the same scoped-style deduplication contract.
         result = dedupeScopedStyles(result)
       }
+
+      // A component's styles must arrive before its markup is painted. Keep
+      // their original cascade order, after the layout and generated reset.
+      if (isTopLevel)
+        result = hoistDocumentStyles(result)
 
       // Restore @@ escape placeholders to literal @ AFTER all directive processing
       result = result.replace(/\x00STX_ESCAPED_AT\x00/g, '@')
