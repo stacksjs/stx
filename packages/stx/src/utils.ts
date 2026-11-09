@@ -90,6 +90,8 @@ function fileStamp(filePath: string): string {
 // Keep successful resolutions for the dev-server lifetime; clearDevCaches()
 // invalidates this alongside component contents on every watched source edit.
 const componentResolutionCache = new LRUCache<string, string>(1000)
+/** Whether an app names a converged component itself; see renderComponentWithSlot. */
+const convergedOverrideCache = new Map<string, boolean>()
 // userComponentFileExists answers and the real paths it compares by, kept and
 // cleared the same way.
 const userComponentFileCache = new LRUCache<string, boolean>(2000)
@@ -1331,6 +1333,10 @@ export async function renderComponentWithSlot(
       for (const dir of packageComponentDirs(parentFilePath)) {
         if (!searchDirs.includes(dir)) searchDirs.push(dir)
       }
+      // Where a converged shared component is spliced in, below. A tag inside
+      // a package keeps its own package's component ahead of it: that is a
+      // different question, asked by the file holding the tag.
+      const packageDirCount = searchDirs.length
       // Named layer resources follow app-first precedence, even when a shared
       // page happens to have sibling components. Explicit imports stay local.
       for (const dir of options._layerComponentDirs ?? []) {
@@ -1461,6 +1467,56 @@ export async function renderComponentWithSlot(
       for (const fallback of fallbackDirs) {
         if (!searchDirs.includes(fallback)) {
           searchDirs.push(fallback)
+        }
+      }
+      // A converged name is RESOLVED by the predicates above, not merely
+      // suggested by them (stacksjs/stx#2175).
+      //
+      // They read this call's own props and events and decide it is the shared
+      // component. Re-entering the ordinary name search afterwards let
+      // something else answer, because the package holding the shared file is
+      // searched below every project directory. An app whose web dashboard had
+      // a `Dashboard/UI/Button.stx` got that on its native screens: markup the
+      // native compiler cannot render, 71 unknown-class/unknown-icon
+      // diagnostics, and nothing naming the cause. Before these shapes
+      // converged (#2091) they never reached the search at all -- they were
+      // pinned to the native primitive -- which is why the regression arrived
+      // with the convergence rather than with any ordering change.
+      //
+      // An override is still an override: a file the app itself named
+      // `Button.stx`, sitting in one of its component roots, wins as it always
+      // did. What no longer wins is a file of that name reached by descending
+      // into subdirectories, because a Dashboard's button is the Dashboard's
+      // and reading it as the app's `<Button>` is the whole defect. An explicit
+      // `@import` outranks all of this, and nothing here touches the web path
+      // or any name outside `_targetComponentFallbackNames`.
+      if (targetIsFallback) {
+        const sharedDirs = ((options as any)._pluginComponentDirs as unknown[] | undefined ?? [])
+          .filter((dir): dir is string => typeof dir === 'string' && dir.length > 0)
+        if (sharedDirs.length) {
+          const hostDirs = searchDirs.slice(packageDirCount)
+            .map(dir => path.isAbsolute(dir) ? dir : path.resolve(resolveBase, dir))
+          const overrideKey = `${baseName}\0${hostDirs.join('\0')}`
+          let overridden = convergedOverrideCache.get(overrideKey)
+          if (overridden === undefined) {
+            overridden = false
+            for (const dir of hostDirs) {
+              for (const variant of uniqueVariants) {
+                if (await fileExists(path.join(dir, variant))) {
+                  overridden = true
+                  break
+                }
+              }
+              if (overridden)
+                break
+            }
+            convergedOverrideCache.set(overrideKey, overridden)
+          }
+          if (!overridden) {
+            const converged = sharedDirs.filter(dir => !searchDirs.includes(dir))
+            if (converged.length)
+              searchDirs.splice(packageDirCount, 0, ...converged)
+          }
         }
       }
 
@@ -3218,6 +3274,7 @@ export function clearComponentCache(): void {
   componentsCache.clear()
   componentStamps.clear()
   componentResolutionCache.clear()
+  convergedOverrideCache.clear()
   userComponentFileCache.clear()
   realDirCache.clear()
   componentRenderCache.clear()
