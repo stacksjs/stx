@@ -1661,7 +1661,7 @@
     },
     "packages/stx": {
       "name": "@stacksjs/stx",
-      "version": "0.2.834",
+      "version": "0.2.835",
       "bin": {
         "stx": "./dist/cli.js",
       },

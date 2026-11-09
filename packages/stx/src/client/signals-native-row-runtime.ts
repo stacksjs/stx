@@ -468,7 +468,7 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
 
   // bindClass, reading its names through the row's scope.
   function bindRowClass(el, site, row, visible) {
-    var originalClasses = el.className;
+    var originalClasses = el.getAttribute('class') || '';
     effect(function() {
       if (!visible()) return;
       var value = evaluateRowSite(row.local, site, el, '', true);
@@ -480,10 +480,10 @@ export const SIGNALS_NATIVE_ROW_RUNTIME = `  // ================================
         });
       }
       else if (Array.isArray(value)) {
-        el.className = [originalClasses, value.filter(Boolean).join(' ')].filter(Boolean).join(' ');
+        el.setAttribute('class', [originalClasses, value.filter(Boolean).join(' ')].filter(Boolean).join(' '));
       }
       else {
-        el.className = [originalClasses, value || ''].filter(Boolean).join(' ');
+        el.setAttribute('class', [originalClasses, value || ''].filter(Boolean).join(' '));
       }
     });
   }
