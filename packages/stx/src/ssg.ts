@@ -1362,14 +1362,11 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
             }
           }
 
-          // Run route param validation if defined in page meta
-          const metaMatch = pageContent.match(/definePageMeta\s*\(\s*\{[\s\S]*?validate\s*:\s*((?:\([^)]*\)|[^,}])*(?:\{[\s\S]*?\})?)/m)
-          if (metaMatch) {
+          // Reuse the parsed metadata: extracting the function with another
+          // regex truncated block bodies and silently bypassed their refusal.
+          const validateFn = pageMeta?.validate
+          if (typeof validateFn === 'function') {
             try {
-              const validateFn = new Function('route', `
-                const validate = ${metaMatch[1]};
-                return validate(route);
-              `)
               const isValid = await validateFn({ params })
               if (!isValid) {
                 console.warn(`Validation failed for ${url}, skipping...`)
@@ -1377,7 +1374,7 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
               }
             }
             catch {
-              // If we can't extract/run the validate function, continue generating
+              // Preserve recovery when a validator throws or rejects.
             }
           }
 
