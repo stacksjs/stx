@@ -2,8 +2,6 @@ import type { ImageDeliveryManifest, ImageDeliveryStorage } from 'ts-images/deli
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { decode, generateThumbHash } from 'ts-images'
-import { createImageDeliveryCatalog } from 'ts-images/delivery'
 import { readAt, sourceAlpha, webpHeaderHasAlpha } from './image-alpha'
 import { runImageTask, WORKER_UNAVAILABLE } from './image-worker'
 
@@ -251,6 +249,8 @@ async function findTransparent(entries: Record<string, ImageDeliveryManifest>): 
   const candidates = Object.entries(entries).filter(([, manifest]) => manifest.fallback.format === 'png')
   const transparent = new Set<string>()
   const concurrency = 8
+  if (candidates.length === 0) return transparent
+  const { decode } = await import('ts-images')
 
   for (let offset = 0; offset < candidates.length; offset += concurrency) {
     await Promise.all(candidates.slice(offset, offset + concurrency).map(async ([key, manifest]) => {
@@ -321,6 +321,8 @@ function dropOpaqueWebp(entries: Record<string, ImageDeliveryManifest>, transpar
 async function decodableFiles(files: RasterFile[]): Promise<RasterFile[]> {
   const supported: RasterFile[] = []
   const concurrency = 8
+  if (files.length === 0) return supported
+  const { generateThumbHash } = await import('ts-images')
 
   for (let offset = 0; offset < files.length; offset += concurrency) {
     const batch = files.slice(offset, offset + concurrency)
@@ -588,6 +590,9 @@ export async function prepareImageDelivery(
     batchConcurrency: 4,
     concurrency: 4,
   }
+
+  // A backend that cannot initialize is not an unreadable source image.
+  const { createImageDeliveryCatalog } = await import('ts-images/delivery')
 
   let optimizedFiles = files
   let catalog: Awaited<ReturnType<typeof createImageDeliveryCatalog>>
